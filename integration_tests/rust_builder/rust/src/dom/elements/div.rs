@@ -7,7 +7,7 @@ pub async fn test_div_basic(metadata: TestCaseMetadata, context: ExecutingContex
   let document = context.document();
   let exception_state = context.create_exception_state();
 
-  let div = document.create_element("div", &exception_state).unwrap();
+  let div = document.create_element("div", NativeValue::new_null(), &exception_state).unwrap();
   let div_style = div.style();
   div_style.set_property("width", NativeValue::new_string("300px"), &exception_state).unwrap();
   div_style.set_property("height", NativeValue::new_string("300px"), &exception_state).unwrap();

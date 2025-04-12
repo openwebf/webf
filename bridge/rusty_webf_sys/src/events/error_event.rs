@@ -9,11 +9,11 @@ use crate::*;
 pub struct ErrorEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub message: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub filename: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub lineno: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub colno: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub error: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
+  pub message: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub filename: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub lineno: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub colno: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub error: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
 }
 pub struct ErrorEvent {
   pub event: Event,

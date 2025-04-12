@@ -12,8 +12,8 @@ enum MutationObserverRegistrationType {
 #[repr(C)]
 pub struct MutationObserverRegistrationRustMethods {
   pub version: c_double,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: MutationObserverRegistrationType) -> RustValue<c_void>,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: MutationObserverRegistrationType) -> RustValue<c_void>,
 }
 pub struct MutationObserverRegistration {
   pub ptr: *const OpaquePtr,

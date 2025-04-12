@@ -6,7 +6,7 @@
 #define WEBF_CORE_EVENTS_POINTER_EVENT_H_
 
 #include "mouse_event.h"
-#include "plugin_api/pointer_event.h"
+#include "plugin_api_gen/pointer_event.h"
 #include "qjs_pointer_event_init.h"
 
 namespace webf {

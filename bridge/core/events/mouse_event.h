@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_EVENTS_MOUSE_EVENT_H_
 #define WEBF_CORE_EVENTS_MOUSE_EVENT_H_
 
-#include "plugin_api/mouse_event.h"
+#include "plugin_api_gen/mouse_event.h"
 #include "qjs_mouse_event_init.h"
 #include "ui_event.h"
 

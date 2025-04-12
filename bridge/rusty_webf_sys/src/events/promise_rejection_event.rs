@@ -9,8 +9,8 @@ use crate::*;
 pub struct PromiseRejectionEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub promise: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
-  pub reason: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
+  pub promise: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub reason: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
 }
 pub struct PromiseRejectionEvent {
   pub event: Event,

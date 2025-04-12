@@ -9,14 +9,14 @@ use crate::*;
 pub struct GestureEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub state: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub direction: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub delta_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub delta_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub velocity_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub velocity_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub scale: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub rotation: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub state: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub direction: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub delta_x: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub delta_y: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub velocity_x: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub velocity_y: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub scale: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub rotation: extern "C" fn(*const OpaquePtr) -> c_double,
 }
 pub struct GestureEvent {
   pub event: Event,

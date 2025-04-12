@@ -9,10 +9,10 @@ use crate::*;
 pub struct ScreenRustMethods {
   pub version: c_double,
   pub event_target: EventTargetRustMethods,
-  pub avail_width: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub avail_height: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub width: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub height: extern "C" fn(ptr: *const OpaquePtr) -> i64,
+  pub avail_width: extern "C" fn(*const OpaquePtr) -> i64,
+  pub avail_height: extern "C" fn(*const OpaquePtr) -> i64,
+  pub width: extern "C" fn(*const OpaquePtr) -> i64,
+  pub height: extern "C" fn(*const OpaquePtr) -> i64,
 }
 pub struct Screen {
   pub event_target: EventTarget,

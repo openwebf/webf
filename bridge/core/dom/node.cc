@@ -29,7 +29,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-#include "plugin_api/node.h"
 #include <unordered_map>
 #include "character_data.h"
 #include "child_list_mutation_scope.h"

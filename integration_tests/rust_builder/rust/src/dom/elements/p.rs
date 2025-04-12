@@ -7,7 +7,7 @@ pub async fn test_tag_p_basic(metadata: TestCaseMetadata, context: ExecutingCont
   let document = context.document();
   let exception_state = context.create_exception_state();
 
-  let p = document.create_element("p", &exception_state).unwrap();
+  let p = document.create_element("p", NativeValue::new_null(), &exception_state).unwrap();
   let p_style = p.style();
   p_style.set_property("width", NativeValue::new_string("300px"), &exception_state).unwrap();
   p_style.set_property("height", NativeValue::new_string("300px"), &exception_state).unwrap();

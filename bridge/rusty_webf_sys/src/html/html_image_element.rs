@@ -9,26 +9,26 @@ use crate::*;
 pub struct HTMLImageElementRustMethods {
   pub version: c_double,
   pub html_element: HTMLElementRustMethods,
-  pub alt: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_alt: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub src: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_src: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub sizes: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_sizes: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub width: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub set_width: extern "C" fn(ptr: *const OpaquePtr, value: i64, exception_state: *const OpaquePtr) -> bool,
-  pub height: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub set_height: extern "C" fn(ptr: *const OpaquePtr, value: i64, exception_state: *const OpaquePtr) -> bool,
-  pub natural_width: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub natural_height: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub complete: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub current_src: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub decoding: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_decoding: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub fetch_priority: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_fetch_priority: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub loading: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_loading: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
+  pub alt: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_alt: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub src: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_src: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub sizes: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_sizes: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_width: extern "C" fn(*const OpaquePtr, value: i64, *const OpaquePtr) -> bool,
+  pub height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_height: extern "C" fn(*const OpaquePtr, value: i64, *const OpaquePtr) -> bool,
+  pub natural_width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub natural_height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub complete: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub current_src: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub decoding: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_decoding: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub fetch_priority: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_fetch_priority: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub loading: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_loading: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
 }
 pub struct HTMLImageElement {
   pub html_element: HTMLElement,
@@ -54,13 +54,13 @@ impl HTMLImageElement {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.html_element.context()
   }
-  pub fn alt(&self) -> String {
+  pub fn alt(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).alt)(self.ptr())
+      ((*self.method_pointer).alt)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_alt(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_alt(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_alt)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -75,7 +75,7 @@ impl HTMLImageElement {
     };
     value.to_string()
   }
-  pub fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_src)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -84,13 +84,13 @@ impl HTMLImageElement {
     }
     Ok(())
   }
-  pub fn sizes(&self) -> String {
+  pub fn sizes(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).sizes)(self.ptr())
+      ((*self.method_pointer).sizes)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_sizes(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_sizes(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_sizes)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -99,11 +99,11 @@ impl HTMLImageElement {
     }
     Ok(())
   }
-  pub fn width(&self) -> i64 {
+  pub fn width(&self, exception_state: &ExceptionState) -> i64 {
     let value = unsafe {
-      ((*self.method_pointer).width)(self.ptr())
+      ((*self.method_pointer).width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_int64()
   }
   pub fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -114,11 +114,11 @@ impl HTMLImageElement {
     }
     Ok(())
   }
-  pub fn height(&self) -> i64 {
+  pub fn height(&self, exception_state: &ExceptionState) -> i64 {
     let value = unsafe {
-      ((*self.method_pointer).height)(self.ptr())
+      ((*self.method_pointer).height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_int64()
   }
   pub fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -129,37 +129,37 @@ impl HTMLImageElement {
     }
     Ok(())
   }
-  pub fn natural_width(&self) -> i64 {
+  pub fn natural_width(&self, exception_state: &ExceptionState) -> i64 {
     let value = unsafe {
-      ((*self.method_pointer).natural_width)(self.ptr())
+      ((*self.method_pointer).natural_width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_int64()
   }
-  pub fn natural_height(&self) -> i64 {
+  pub fn natural_height(&self, exception_state: &ExceptionState) -> i64 {
     let value = unsafe {
-      ((*self.method_pointer).natural_height)(self.ptr())
+      ((*self.method_pointer).natural_height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_int64()
   }
-  pub fn complete(&self) -> bool {
+  pub fn complete(&self, exception_state: &ExceptionState) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).complete)(self.ptr())
+      ((*self.method_pointer).complete)(self.ptr(), exception_state.ptr)
     };
-    value != 0
+    value.to_bool()
   }
-  pub fn current_src(&self) -> String {
+  pub fn current_src(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).current_src)(self.ptr())
-    };
-    value.to_string()
-  }
-  pub fn decoding(&self) -> String {
-    let value = unsafe {
-      ((*self.method_pointer).decoding)(self.ptr())
+      ((*self.method_pointer).current_src)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_decoding(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn decoding(&self, exception_state: &ExceptionState) -> String {
+    let value = unsafe {
+      ((*self.method_pointer).decoding)(self.ptr(), exception_state.ptr)
+    };
+    value.to_string()
+  }
+  pub fn set_decoding(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_decoding)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -168,13 +168,13 @@ impl HTMLImageElement {
     }
     Ok(())
   }
-  pub fn fetch_priority(&self) -> String {
+  pub fn fetch_priority(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).fetch_priority)(self.ptr())
+      ((*self.method_pointer).fetch_priority)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_fetch_priority(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_fetch_priority(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_fetch_priority)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -183,13 +183,13 @@ impl HTMLImageElement {
     }
     Ok(())
   }
-  pub fn loading(&self) -> String {
+  pub fn loading(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).loading)(self.ptr())
+      ((*self.method_pointer).loading)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_loading(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_loading(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_loading)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -200,87 +200,87 @@ impl HTMLImageElement {
   }
 }
 pub trait HTMLImageElementMethods: HTMLElementMethods {
-  fn alt(&self) -> String;
-  fn set_alt(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn alt(&self, exception_state: &ExceptionState) -> String;
+  fn set_alt(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn src(&self) -> String;
-  fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn sizes(&self) -> String;
-  fn set_sizes(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn width(&self) -> i64;
+  fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn sizes(&self, exception_state: &ExceptionState) -> String;
+  fn set_sizes(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn width(&self, exception_state: &ExceptionState) -> i64;
   fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String>;
-  fn height(&self) -> i64;
+  fn height(&self, exception_state: &ExceptionState) -> i64;
   fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String>;
-  fn natural_width(&self) -> i64;
-  fn natural_height(&self) -> i64;
-  fn complete(&self) -> bool;
-  fn current_src(&self) -> String;
-  fn decoding(&self) -> String;
-  fn set_decoding(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn fetch_priority(&self) -> String;
-  fn set_fetch_priority(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn loading(&self) -> String;
-  fn set_loading(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn natural_width(&self, exception_state: &ExceptionState) -> i64;
+  fn natural_height(&self, exception_state: &ExceptionState) -> i64;
+  fn complete(&self, exception_state: &ExceptionState) -> bool;
+  fn current_src(&self, exception_state: &ExceptionState) -> String;
+  fn decoding(&self, exception_state: &ExceptionState) -> String;
+  fn set_decoding(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn fetch_priority(&self, exception_state: &ExceptionState) -> String;
+  fn set_fetch_priority(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn loading(&self, exception_state: &ExceptionState) -> String;
+  fn set_loading(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn as_html_image_element(&self) -> &HTMLImageElement;
 }
 impl HTMLImageElementMethods for HTMLImageElement {
-  fn alt(&self) -> String {
-    self.alt()
+  fn alt(&self, exception_state: &ExceptionState) -> String {
+    self.alt(exception_state)
   }
-  fn set_alt(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_alt(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_alt(value, exception_state)
   }
   fn src(&self) -> String {
     self.src()
   }
-  fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_src(value, exception_state)
   }
-  fn sizes(&self) -> String {
-    self.sizes()
+  fn sizes(&self, exception_state: &ExceptionState) -> String {
+    self.sizes(exception_state)
   }
-  fn set_sizes(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_sizes(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_sizes(value, exception_state)
   }
-  fn width(&self) -> i64 {
-    self.width()
+  fn width(&self, exception_state: &ExceptionState) -> i64 {
+    self.width(exception_state)
   }
   fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_width(value, exception_state)
   }
-  fn height(&self) -> i64 {
-    self.height()
+  fn height(&self, exception_state: &ExceptionState) -> i64 {
+    self.height(exception_state)
   }
   fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_height(value, exception_state)
   }
-  fn natural_width(&self) -> i64 {
-    self.natural_width()
+  fn natural_width(&self, exception_state: &ExceptionState) -> i64 {
+    self.natural_width(exception_state)
   }
-  fn natural_height(&self) -> i64 {
-    self.natural_height()
+  fn natural_height(&self, exception_state: &ExceptionState) -> i64 {
+    self.natural_height(exception_state)
   }
-  fn complete(&self) -> bool {
-    self.complete()
+  fn complete(&self, exception_state: &ExceptionState) -> bool {
+    self.complete(exception_state)
   }
-  fn current_src(&self) -> String {
-    self.current_src()
+  fn current_src(&self, exception_state: &ExceptionState) -> String {
+    self.current_src(exception_state)
   }
-  fn decoding(&self) -> String {
-    self.decoding()
+  fn decoding(&self, exception_state: &ExceptionState) -> String {
+    self.decoding(exception_state)
   }
-  fn set_decoding(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_decoding(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_decoding(value, exception_state)
   }
-  fn fetch_priority(&self) -> String {
-    self.fetch_priority()
+  fn fetch_priority(&self, exception_state: &ExceptionState) -> String {
+    self.fetch_priority(exception_state)
   }
-  fn set_fetch_priority(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_fetch_priority(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_fetch_priority(value, exception_state)
   }
-  fn loading(&self) -> String {
-    self.loading()
+  fn loading(&self, exception_state: &ExceptionState) -> String {
+    self.loading(exception_state)
   }
-  fn set_loading(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_loading(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_loading(value, exception_state)
   }
   fn as_html_image_element(&self) -> &HTMLImageElement {
@@ -288,17 +288,17 @@ impl HTMLImageElementMethods for HTMLImageElement {
   }
 }
 impl HTMLElementMethods for HTMLImageElement {
-  fn offset_top(&self) -> f64 {
-    self.html_element.offset_top()
+  fn offset_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_top(exception_state)
   }
-  fn offset_left(&self) -> f64 {
-    self.html_element.offset_left()
+  fn offset_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_left(exception_state)
   }
-  fn offset_width(&self) -> f64 {
-    self.html_element.offset_width()
+  fn offset_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_width(exception_state)
   }
-  fn offset_height(&self) -> f64 {
-    self.html_element.offset_height()
+  fn offset_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_height(exception_state)
   }
   fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.click(exception_state)
@@ -311,22 +311,22 @@ impl ElementMethods for HTMLImageElement {
   fn id(&self) -> String {
     self.html_element.element.id()
   }
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
     self.html_element.element.class_name()
   }
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
     self.html_element.element.dataset()
   }
-  fn name(&self) -> String {
-    self.html_element.element.name()
+  fn name(&self, exception_state: &ExceptionState) -> String {
+    self.html_element.element.name(exception_state)
   }
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
@@ -335,17 +335,17 @@ impl ElementMethods for HTMLImageElement {
   fn style(&self) -> CSSStyleDeclaration {
     self.html_element.element.style()
   }
-  fn client_height(&self) -> f64 {
-    self.html_element.element.client_height()
+  fn client_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_height(exception_state)
   }
-  fn client_left(&self) -> f64 {
-    self.html_element.element.client_left()
+  fn client_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_left(exception_state)
   }
-  fn client_top(&self) -> f64 {
-    self.html_element.element.client_top()
+  fn client_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_top(exception_state)
   }
-  fn client_width(&self) -> f64 {
-    self.html_element.element.client_width()
+  fn client_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_width(exception_state)
   }
   fn outer_html(&self) -> String {
     self.html_element.element.outer_html()
@@ -353,29 +353,29 @@ impl ElementMethods for HTMLImageElement {
   fn inner_html(&self) -> String {
     self.html_element.element.inner_html()
   }
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
     self.html_element.element.owner_document()
   }
-  fn scroll_left(&self) -> f64 {
-    self.html_element.element.scroll_left()
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_left(exception_state)
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_scroll_left(value, exception_state)
   }
-  fn scroll_top(&self) -> f64 {
-    self.html_element.element.scroll_top()
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_top(exception_state)
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_scroll_top(value, exception_state)
   }
-  fn scroll_width(&self) -> f64 {
-    self.html_element.element.scroll_width()
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_width(exception_state)
   }
-  fn scroll_height(&self) -> f64 {
-    self.html_element.element.scroll_height()
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_height(exception_state)
   }
   fn local_name(&self) -> String {
     self.html_element.element.local_name()
@@ -383,10 +383,10 @@ impl ElementMethods for HTMLImageElement {
   fn tag_name(&self) -> String {
     self.html_element.element.tag_name()
   }
-  fn dir(&self) -> String {
-    self.html_element.element.dir()
+  fn dir(&self, exception_state: &ExceptionState) -> String {
+    self.html_element.element.dir(exception_state)
   }
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
@@ -439,6 +439,12 @@ impl ElementMethods for HTMLImageElement {
   }
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.scroll_to_with_options(options, exception_state)
+  }
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_element.element.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_element.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.html_element.element.test_global_to_local(x, y, exception_state)

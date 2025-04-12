@@ -9,9 +9,9 @@ use crate::*;
 pub struct TransitionEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub property_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub elapsed_time: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub property_name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub pseudo_element: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
 }
 pub struct TransitionEvent {
   pub event: Event,

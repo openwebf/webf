@@ -7,7 +7,7 @@
 
 #include "html_element.h"
 #include "html_names.h"
-#include "plugin_api/html_image_element.h"
+#include "plugin_api_gen/html_image_element.h"
 
 namespace webf {
 

@@ -6,7 +6,7 @@
 #define WEBF_CORE_EVENTS_TOUCH_EVENT_H_
 
 #include "core/input/touch_list.h"
-#include "plugin_api/touch_event.h"
+#include "plugin_api_gen/touch_event.h"
 #include "qjs_touch_event_init.h"
 #include "ui_event.h"
 

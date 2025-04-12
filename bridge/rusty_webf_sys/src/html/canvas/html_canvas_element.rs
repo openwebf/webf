@@ -9,11 +9,11 @@ use crate::*;
 pub struct HTMLCanvasElementRustMethods {
   pub version: c_double,
   pub html_element: HTMLElementRustMethods,
-  pub width: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub set_width: extern "C" fn(ptr: *const OpaquePtr, value: i64, exception_state: *const OpaquePtr) -> bool,
-  pub height: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub set_height: extern "C" fn(ptr: *const OpaquePtr, value: i64, exception_state: *const OpaquePtr) -> bool,
-  pub get_context: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<CanvasRenderingContextRustMethods>,
+  pub width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_width: extern "C" fn(*const OpaquePtr, value: i64, *const OpaquePtr) -> bool,
+  pub height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_height: extern "C" fn(*const OpaquePtr, value: i64, *const OpaquePtr) -> bool,
+  pub get_context: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<CanvasRenderingContextRustMethods>,
 }
 pub struct HTMLCanvasElement {
   pub html_element: HTMLElement,
@@ -39,11 +39,11 @@ impl HTMLCanvasElement {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.html_element.context()
   }
-  pub fn width(&self) -> i64 {
+  pub fn width(&self, exception_state: &ExceptionState) -> i64 {
     let value = unsafe {
-      ((*self.method_pointer).width)(self.ptr())
+      ((*self.method_pointer).width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_int64()
   }
   pub fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -54,11 +54,11 @@ impl HTMLCanvasElement {
     }
     Ok(())
   }
-  pub fn height(&self) -> i64 {
+  pub fn height(&self, exception_state: &ExceptionState) -> i64 {
     let value = unsafe {
-      ((*self.method_pointer).height)(self.ptr())
+      ((*self.method_pointer).height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_int64()
   }
   pub fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -80,22 +80,22 @@ impl HTMLCanvasElement {
   }
 }
 pub trait HTMLCanvasElementMethods: HTMLElementMethods {
-  fn width(&self) -> i64;
+  fn width(&self, exception_state: &ExceptionState) -> i64;
   fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String>;
-  fn height(&self) -> i64;
+  fn height(&self, exception_state: &ExceptionState) -> i64;
   fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String>;
   fn get_context(&self, context_type: &str, exception_state: &ExceptionState) -> Result<CanvasRenderingContext, String>;
   fn as_html_canvas_element(&self) -> &HTMLCanvasElement;
 }
 impl HTMLCanvasElementMethods for HTMLCanvasElement {
-  fn width(&self) -> i64 {
-    self.width()
+  fn width(&self, exception_state: &ExceptionState) -> i64 {
+    self.width(exception_state)
   }
   fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_width(value, exception_state)
   }
-  fn height(&self) -> i64 {
-    self.height()
+  fn height(&self, exception_state: &ExceptionState) -> i64 {
+    self.height(exception_state)
   }
   fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_height(value, exception_state)
@@ -108,17 +108,17 @@ impl HTMLCanvasElementMethods for HTMLCanvasElement {
   }
 }
 impl HTMLElementMethods for HTMLCanvasElement {
-  fn offset_top(&self) -> f64 {
-    self.html_element.offset_top()
+  fn offset_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_top(exception_state)
   }
-  fn offset_left(&self) -> f64 {
-    self.html_element.offset_left()
+  fn offset_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_left(exception_state)
   }
-  fn offset_width(&self) -> f64 {
-    self.html_element.offset_width()
+  fn offset_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_width(exception_state)
   }
-  fn offset_height(&self) -> f64 {
-    self.html_element.offset_height()
+  fn offset_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_height(exception_state)
   }
   fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.click(exception_state)
@@ -131,22 +131,22 @@ impl ElementMethods for HTMLCanvasElement {
   fn id(&self) -> String {
     self.html_element.element.id()
   }
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
     self.html_element.element.class_name()
   }
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
     self.html_element.element.dataset()
   }
-  fn name(&self) -> String {
-    self.html_element.element.name()
+  fn name(&self, exception_state: &ExceptionState) -> String {
+    self.html_element.element.name(exception_state)
   }
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
@@ -155,17 +155,17 @@ impl ElementMethods for HTMLCanvasElement {
   fn style(&self) -> CSSStyleDeclaration {
     self.html_element.element.style()
   }
-  fn client_height(&self) -> f64 {
-    self.html_element.element.client_height()
+  fn client_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_height(exception_state)
   }
-  fn client_left(&self) -> f64 {
-    self.html_element.element.client_left()
+  fn client_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_left(exception_state)
   }
-  fn client_top(&self) -> f64 {
-    self.html_element.element.client_top()
+  fn client_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_top(exception_state)
   }
-  fn client_width(&self) -> f64 {
-    self.html_element.element.client_width()
+  fn client_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_width(exception_state)
   }
   fn outer_html(&self) -> String {
     self.html_element.element.outer_html()
@@ -173,29 +173,29 @@ impl ElementMethods for HTMLCanvasElement {
   fn inner_html(&self) -> String {
     self.html_element.element.inner_html()
   }
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
     self.html_element.element.owner_document()
   }
-  fn scroll_left(&self) -> f64 {
-    self.html_element.element.scroll_left()
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_left(exception_state)
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_scroll_left(value, exception_state)
   }
-  fn scroll_top(&self) -> f64 {
-    self.html_element.element.scroll_top()
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_top(exception_state)
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_scroll_top(value, exception_state)
   }
-  fn scroll_width(&self) -> f64 {
-    self.html_element.element.scroll_width()
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_width(exception_state)
   }
-  fn scroll_height(&self) -> f64 {
-    self.html_element.element.scroll_height()
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_height(exception_state)
   }
   fn local_name(&self) -> String {
     self.html_element.element.local_name()
@@ -203,10 +203,10 @@ impl ElementMethods for HTMLCanvasElement {
   fn tag_name(&self) -> String {
     self.html_element.element.tag_name()
   }
-  fn dir(&self) -> String {
-    self.html_element.element.dir()
+  fn dir(&self, exception_state: &ExceptionState) -> String {
+    self.html_element.element.dir(exception_state)
   }
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
@@ -259,6 +259,12 @@ impl ElementMethods for HTMLCanvasElement {
   }
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.scroll_to_with_options(options, exception_state)
+  }
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_element.element.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_element.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.html_element.element.test_global_to_local(x, y, exception_state)

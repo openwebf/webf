@@ -9,7 +9,7 @@
 #include "canvas_rendering_context.h"
 #include "core/html/html_element.h"
 #include "html_names.h"
-#include "plugin_api/html_canvas_element.h"
+#include "plugin_api_gen/html_canvas_element.h"
 
 namespace webf {
 

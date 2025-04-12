@@ -8,7 +8,7 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
-#include "plugin_api/error_event.h"
+#include "plugin_api_gen/error_event.h"
 #include "qjs_error_event_init.h"
 
 namespace webf {

@@ -12,8 +12,8 @@ enum CanvasRenderingContextType {
 #[repr(C)]
 pub struct CanvasRenderingContextRustMethods {
   pub version: c_double,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: CanvasRenderingContextType) -> RustValue<c_void>,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: CanvasRenderingContextType) -> RustValue<c_void>,
 }
 pub struct CanvasRenderingContext {
   pub ptr: *const OpaquePtr,

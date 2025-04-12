@@ -47,7 +47,7 @@ impl CharacterDataMethods for Text {
   fn data(&self) -> String {
     self.character_data.data()
   }
-  fn set_data(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_data(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.character_data.set_data(value, exception_state)
   }
   fn length(&self) -> i64 {

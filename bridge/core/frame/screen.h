@@ -6,7 +6,7 @@
 #define BRIDGE_SCREEN_H
 
 #include "core/dom/events/event_target.h"
-#include "plugin_api/screen.h"
+#include "plugin_api_gen/screen.h"
 
 namespace webf {
 

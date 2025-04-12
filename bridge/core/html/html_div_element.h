@@ -7,7 +7,7 @@
 #define BRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
 
 #include "html_element.h"
-#include "plugin_api/html_div_element.h"
+#include "plugin_api_gen/html_div_element.h"
 
 namespace webf {
 

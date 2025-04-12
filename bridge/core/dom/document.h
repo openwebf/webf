@@ -8,7 +8,7 @@
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
 #include "event_type_names.h"
-#include "plugin_api/document.h"
+#include "plugin_api_gen/document.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
 

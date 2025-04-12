@@ -9,7 +9,7 @@ use crate::*;
 pub struct IntersectionChangeEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub intersection_ratio: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub intersection_ratio: extern "C" fn(*const OpaquePtr) -> c_double,
 }
 pub struct IntersectionChangeEvent {
   pub event: Event,

@@ -14,7 +14,7 @@
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
-#include "plugin_api/element.h"
+#include "plugin_api_gen/element.h"
 #include "qjs_scroll_to_options.h"
 
 namespace webf {

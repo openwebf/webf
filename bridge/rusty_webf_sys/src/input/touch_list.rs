@@ -12,10 +12,10 @@ enum TouchListType {
 #[repr(C)]
 pub struct TouchListRustMethods {
   pub version: c_double,
-  pub length: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub item: extern "C" fn(ptr: *const OpaquePtr, c_double, exception_state: *const OpaquePtr) -> RustValue<TouchRustMethods>,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: TouchListType) -> RustValue<c_void>,
+  pub length: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub item: extern "C" fn(*const OpaquePtr, c_double, *const OpaquePtr) -> RustValue<TouchRustMethods>,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: TouchListType) -> RustValue<c_void>,
 }
 pub struct TouchList {
   pub ptr: *const OpaquePtr,

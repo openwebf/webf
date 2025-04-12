@@ -340,16 +340,18 @@ function genPluginAPICodeFromTypeDefine() {
     let b = blobs[i];
     let result = generatePluginAPI(b);
 
-    if (!fs.existsSync(b.dist)) {
-      fs.mkdirSync(b.dist, {recursive: true});
+    let headerFilePath = path.join(b.dist, '../out/plugin_api_header_gen', b.filename.replace('plugin_api_', ''));
+    let headerDirname = path.dirname(headerFilePath);
+    if (!fs.existsSync(headerDirname)) {
+      fs.mkdirSync(headerDirname, {recursive: true});
     }
-
-    let headerFilePath = path.join(b.dist, '../include/plugin_api', b.filename.replace('plugin_api_', ''));
-    let genFilePath = path.join(b.dist, b.filename);
-
     wirteFileIfChanged(headerFilePath + '.h', result.header);
 
     if (result.source) {
+      let genFilePath = path.join(b.dist, b.filename);
+      if (!fs.existsSync(b.dist)) {
+        fs.mkdirSync(b.dist, {recursive: true});
+      }
       wirteFileIfChanged(genFilePath + '.cc', result.source);
     }
   }

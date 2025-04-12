@@ -23,7 +23,7 @@ pub fn create_element_with_style(
   let document = context.document();
   let exception_state = context.create_exception_state();
 
-  let element = document.create_element(tag_name, &exception_state).unwrap();
+  let element = document.create_element(tag_name, NativeValue::new_null(), &exception_state).unwrap();
   set_element_style(&element, style, &exception_state);
 
   element

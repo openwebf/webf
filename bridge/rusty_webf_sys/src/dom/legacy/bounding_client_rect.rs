@@ -12,16 +12,16 @@ enum BoundingClientRectType {
 #[repr(C)]
 pub struct BoundingClientRectRustMethods {
   pub version: c_double,
-  pub x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub top: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub right: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub bottom: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub left: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: BoundingClientRectType) -> RustValue<c_void>,
+  pub x: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub y: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub width: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub height: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub top: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub right: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub bottom: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub left: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: BoundingClientRectType) -> RustValue<c_void>,
 }
 pub struct BoundingClientRect {
   pub ptr: *const OpaquePtr,

@@ -19,7 +19,7 @@ export const skipList = [
   // 'Element.scroll',
   // 'Element.scrollBy',
   // 'Element.scrollTo',
-  'Element.toBlob',
+  // 'Element.toBlob',
 
   'Window.window',
   'Window.parent',
@@ -27,8 +27,8 @@ export const skipList = [
   // 'Window.scroll',
   // 'Window.scrollTo',
   // 'Window.scrollBy',
-  'Window.postMessage',
-  'Window.requestAnimationFrame',
+  // 'Window.postMessage',
+  // 'Window.requestAnimationFrame',
 
   'HTMLBodyElement.onblur',
   'HTMLBodyElement.onerror',

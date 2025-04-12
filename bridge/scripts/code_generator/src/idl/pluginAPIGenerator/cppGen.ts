@@ -265,7 +265,7 @@ export function getMethodsWithoutOverload(methods: FunctionDeclaration[]) {
   methods.forEach(method => {
     const name = method.name;
     if (methodsNames.has(name)) {
-      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('');
+      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('And');
       methodsWithoutOverload.push({
         ...method,
         rustName: rustName,

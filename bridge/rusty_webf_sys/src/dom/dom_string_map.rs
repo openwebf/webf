@@ -12,8 +12,8 @@ enum DOMStringMapType {
 #[repr(C)]
 pub struct DOMStringMapRustMethods {
   pub version: c_double,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: DOMStringMapType) -> RustValue<c_void>,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: DOMStringMapType) -> RustValue<c_void>,
 }
 pub struct DOMStringMap {
   pub ptr: *const OpaquePtr,

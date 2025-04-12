@@ -9,13 +9,13 @@ use crate::*;
 pub struct TouchEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
-  pub touches: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<TouchListRustMethods>,
-  pub target_touches: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<TouchListRustMethods>,
-  pub changed_touches: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<TouchListRustMethods>,
-  pub alt_key: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub meta_key: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub ctrl_key: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub shift_key: extern "C" fn(ptr: *const OpaquePtr) -> i32,
+  pub touches: extern "C" fn(*const OpaquePtr) -> RustValue<TouchListRustMethods>,
+  pub target_touches: extern "C" fn(*const OpaquePtr) -> RustValue<TouchListRustMethods>,
+  pub changed_touches: extern "C" fn(*const OpaquePtr) -> RustValue<TouchListRustMethods>,
+  pub alt_key: extern "C" fn(*const OpaquePtr) -> i32,
+  pub meta_key: extern "C" fn(*const OpaquePtr) -> i32,
+  pub ctrl_key: extern "C" fn(*const OpaquePtr) -> i32,
+  pub shift_key: extern "C" fn(*const OpaquePtr) -> i32,
 }
 pub struct TouchEvent {
   pub ui_event: UIEvent,

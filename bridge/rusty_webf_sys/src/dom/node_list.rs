@@ -12,10 +12,10 @@ enum NodeListType {
 #[repr(C)]
 pub struct NodeListRustMethods {
   pub version: c_double,
-  pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub item: extern "C" fn(ptr: *const OpaquePtr, c_double, exception_state: *const OpaquePtr) -> RustValue<NodeRustMethods>,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: NodeListType) -> RustValue<c_void>,
+  pub length: extern "C" fn(*const OpaquePtr) -> i64,
+  pub item: extern "C" fn(*const OpaquePtr, c_double, *const OpaquePtr) -> RustValue<NodeRustMethods>,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: NodeListType) -> RustValue<c_void>,
 }
 pub struct NodeList {
   pub ptr: *const OpaquePtr,

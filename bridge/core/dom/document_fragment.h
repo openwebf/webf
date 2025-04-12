@@ -6,7 +6,7 @@
 #define BRIDGE_DOCUMENT_FRAGMENT_H
 
 #include "container_node.h"
-#include "plugin_api/document_fragment.h"
+#include "plugin_api_gen/document_fragment.h"
 
 namespace webf {
 

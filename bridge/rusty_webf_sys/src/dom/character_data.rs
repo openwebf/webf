@@ -9,9 +9,9 @@ use crate::*;
 pub struct CharacterDataRustMethods {
   pub version: c_double,
   pub node: NodeRustMethods,
-  pub data: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_data: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
+  pub data: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_data: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub length: extern "C" fn(*const OpaquePtr) -> i64,
 }
 pub struct CharacterData {
   pub node: Node,
@@ -43,7 +43,7 @@ impl CharacterData {
     };
     value.to_string()
   }
-  pub fn set_data(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_data(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_data)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -61,7 +61,7 @@ impl CharacterData {
 }
 pub trait CharacterDataMethods: NodeMethods {
   fn data(&self) -> String;
-  fn set_data(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_data(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn length(&self) -> i64;
   fn as_character_data(&self) -> &CharacterData;
 }
@@ -69,7 +69,7 @@ impl CharacterDataMethods for CharacterData {
   fn data(&self) -> String {
     self.data()
   }
-  fn set_data(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_data(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_data(value, exception_state)
   }
   fn length(&self) -> i64 {

@@ -9,7 +9,7 @@ use crate::*;
 pub struct PerformanceMarkRustMethods {
   pub version: c_double,
   pub performance_entry: PerformanceEntryRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
+  pub detail: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
 }
 pub struct PerformanceMark {
   pub performance_entry: PerformanceEntry,

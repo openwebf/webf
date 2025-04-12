@@ -38,7 +38,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/html/collection_type.h"
 #include "core/html/html_collection.h"
-#include "plugin_api/node_list.h"
+#include "plugin_api_gen/node_list.h"
 
 namespace webf {
 

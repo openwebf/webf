@@ -1,4 +1,4 @@
-use webf_sys::{ExecutingContext, NodeMethods};
+use webf_sys::{ExecutingContext, NativeValue, NodeMethods};
 use webf_test_macros::webf_test_async;
 use webf_test_utils::{common::TestCaseMetadata, snapshot::snapshot_with_filename};
 
@@ -7,14 +7,14 @@ pub async fn test_headings_default_margin(metadata: TestCaseMetadata, context: E
   let document = context.document();
   let exception_state = context.create_exception_state();
 
-  let div = document.create_element("div", &exception_state).unwrap();
+  let div = document.create_element("div", NativeValue::new_null(),  &exception_state).unwrap();
 
-  let h1 = document.create_element("h1", &exception_state).unwrap();
-  let h2 = document.create_element("h2", &exception_state).unwrap();
-  let h3 = document.create_element("h3", &exception_state).unwrap();
-  let h4 = document.create_element("h4", &exception_state).unwrap();
-  let h5 = document.create_element("h5", &exception_state).unwrap();
-  let h6 = document.create_element("h6", &exception_state).unwrap();
+  let h1 = document.create_element("h1", NativeValue::new_null(), &exception_state).unwrap();
+  let h2 = document.create_element("h2", NativeValue::new_null(), &exception_state).unwrap();
+  let h3 = document.create_element("h3", NativeValue::new_null(), &exception_state).unwrap();
+  let h4 = document.create_element("h4", NativeValue::new_null(), &exception_state).unwrap();
+  let h5 = document.create_element("h5", NativeValue::new_null(), &exception_state).unwrap();
+  let h6 = document.create_element("h6", NativeValue::new_null(), &exception_state).unwrap();
 
   let h1_text = document.create_text_node("Heading 1", &exception_state).unwrap();
   let h2_text = document.create_text_node("Heading 2", &exception_state).unwrap();

@@ -9,18 +9,18 @@ use crate::*;
 pub struct HTMLScriptElementRustMethods {
   pub version: c_double,
   pub html_element: HTMLElementRustMethods,
-  pub src: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_src: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub type_: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_type: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub no_module: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub set_no_module: extern "C" fn(ptr: *const OpaquePtr, value: i32, exception_state: *const OpaquePtr) -> bool,
-  pub async_: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub set_async: extern "C" fn(ptr: *const OpaquePtr, value: i32, exception_state: *const OpaquePtr) -> bool,
-  pub text: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_text: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub ready_state: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub supports: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> i32,
+  pub src: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_src: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub type_: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_type: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub no_module: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_no_module: extern "C" fn(*const OpaquePtr, value: i32, *const OpaquePtr) -> bool,
+  pub async_: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_async: extern "C" fn(*const OpaquePtr, value: i32, *const OpaquePtr) -> bool,
+  pub text: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_text: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub ready_state: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub supports: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> i32,
 }
 pub struct HTMLScriptElement {
   pub html_element: HTMLElement,
@@ -46,13 +46,13 @@ impl HTMLScriptElement {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.html_element.context()
   }
-  pub fn src(&self) -> String {
+  pub fn src(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).src)(self.ptr())
+      ((*self.method_pointer).src)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_src)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -61,13 +61,13 @@ impl HTMLScriptElement {
     }
     Ok(())
   }
-  pub fn type_(&self) -> String {
+  pub fn type_(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).type_)(self.ptr())
+      ((*self.method_pointer).type_)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_type(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_type(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_type)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -76,11 +76,11 @@ impl HTMLScriptElement {
     }
     Ok(())
   }
-  pub fn no_module(&self) -> bool {
+  pub fn no_module(&self, exception_state: &ExceptionState) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).no_module)(self.ptr())
+      ((*self.method_pointer).no_module)(self.ptr(), exception_state.ptr)
     };
-    value != 0
+    value.to_bool()
   }
   pub fn set_no_module(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -91,11 +91,11 @@ impl HTMLScriptElement {
     }
     Ok(())
   }
-  pub fn async_(&self) -> bool {
+  pub fn async_(&self, exception_state: &ExceptionState) -> bool {
     let value = unsafe {
-      ((*self.method_pointer).async_)(self.ptr())
+      ((*self.method_pointer).async_)(self.ptr(), exception_state.ptr)
     };
-    value != 0
+    value.to_bool()
   }
   pub fn set_async(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -106,13 +106,13 @@ impl HTMLScriptElement {
     }
     Ok(())
   }
-  pub fn text(&self) -> String {
+  pub fn text(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).text)(self.ptr())
+      ((*self.method_pointer).text)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_text)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -121,9 +121,9 @@ impl HTMLScriptElement {
     }
     Ok(())
   }
-  pub fn ready_state(&self) -> String {
+  pub fn ready_state(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).ready_state)(self.ptr())
+      ((*self.method_pointer).ready_state)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
@@ -138,53 +138,53 @@ impl HTMLScriptElement {
   }
 }
 pub trait HTMLScriptElementMethods: HTMLElementMethods {
-  fn src(&self) -> String;
-  fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn type_(&self) -> String;
-  fn set_type(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn no_module(&self) -> bool;
+  fn src(&self, exception_state: &ExceptionState) -> String;
+  fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn type_(&self, exception_state: &ExceptionState) -> String;
+  fn set_type(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn no_module(&self, exception_state: &ExceptionState) -> bool;
   fn set_no_module(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String>;
-  fn async_(&self) -> bool;
+  fn async_(&self, exception_state: &ExceptionState) -> bool;
   fn set_async(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String>;
-  fn text(&self) -> String;
-  fn set_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
-  fn ready_state(&self) -> String;
+  fn text(&self, exception_state: &ExceptionState) -> String;
+  fn set_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn ready_state(&self, exception_state: &ExceptionState) -> String;
   fn supports(&self, type_: &str, exception_state: &ExceptionState) -> Result<bool, String>;
   fn as_html_script_element(&self) -> &HTMLScriptElement;
 }
 impl HTMLScriptElementMethods for HTMLScriptElement {
-  fn src(&self) -> String {
-    self.src()
+  fn src(&self, exception_state: &ExceptionState) -> String {
+    self.src(exception_state)
   }
-  fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_src(value, exception_state)
   }
-  fn type_(&self) -> String {
-    self.type_()
+  fn type_(&self, exception_state: &ExceptionState) -> String {
+    self.type_(exception_state)
   }
-  fn set_type(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_type(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_type(value, exception_state)
   }
-  fn no_module(&self) -> bool {
-    self.no_module()
+  fn no_module(&self, exception_state: &ExceptionState) -> bool {
+    self.no_module(exception_state)
   }
   fn set_no_module(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_no_module(value, exception_state)
   }
-  fn async_(&self) -> bool {
-    self.async_()
+  fn async_(&self, exception_state: &ExceptionState) -> bool {
+    self.async_(exception_state)
   }
   fn set_async(&self, value: bool, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_async(value, exception_state)
   }
-  fn text(&self) -> String {
-    self.text()
+  fn text(&self, exception_state: &ExceptionState) -> String {
+    self.text(exception_state)
   }
-  fn set_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_text(value, exception_state)
   }
-  fn ready_state(&self) -> String {
-    self.ready_state()
+  fn ready_state(&self, exception_state: &ExceptionState) -> String {
+    self.ready_state(exception_state)
   }
   fn supports(&self, type_: &str, exception_state: &ExceptionState) -> Result<bool, String> {
     self.supports(type_, exception_state)
@@ -194,17 +194,17 @@ impl HTMLScriptElementMethods for HTMLScriptElement {
   }
 }
 impl HTMLElementMethods for HTMLScriptElement {
-  fn offset_top(&self) -> f64 {
-    self.html_element.offset_top()
+  fn offset_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_top(exception_state)
   }
-  fn offset_left(&self) -> f64 {
-    self.html_element.offset_left()
+  fn offset_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_left(exception_state)
   }
-  fn offset_width(&self) -> f64 {
-    self.html_element.offset_width()
+  fn offset_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_width(exception_state)
   }
-  fn offset_height(&self) -> f64 {
-    self.html_element.offset_height()
+  fn offset_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.offset_height(exception_state)
   }
   fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.click(exception_state)
@@ -217,22 +217,22 @@ impl ElementMethods for HTMLScriptElement {
   fn id(&self) -> String {
     self.html_element.element.id()
   }
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
     self.html_element.element.class_name()
   }
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
     self.html_element.element.dataset()
   }
-  fn name(&self) -> String {
-    self.html_element.element.name()
+  fn name(&self, exception_state: &ExceptionState) -> String {
+    self.html_element.element.name(exception_state)
   }
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
@@ -241,17 +241,17 @@ impl ElementMethods for HTMLScriptElement {
   fn style(&self) -> CSSStyleDeclaration {
     self.html_element.element.style()
   }
-  fn client_height(&self) -> f64 {
-    self.html_element.element.client_height()
+  fn client_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_height(exception_state)
   }
-  fn client_left(&self) -> f64 {
-    self.html_element.element.client_left()
+  fn client_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_left(exception_state)
   }
-  fn client_top(&self) -> f64 {
-    self.html_element.element.client_top()
+  fn client_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_top(exception_state)
   }
-  fn client_width(&self) -> f64 {
-    self.html_element.element.client_width()
+  fn client_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.client_width(exception_state)
   }
   fn outer_html(&self) -> String {
     self.html_element.element.outer_html()
@@ -259,29 +259,29 @@ impl ElementMethods for HTMLScriptElement {
   fn inner_html(&self) -> String {
     self.html_element.element.inner_html()
   }
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
     self.html_element.element.owner_document()
   }
-  fn scroll_left(&self) -> f64 {
-    self.html_element.element.scroll_left()
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_left(exception_state)
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_scroll_left(value, exception_state)
   }
-  fn scroll_top(&self) -> f64 {
-    self.html_element.element.scroll_top()
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_top(exception_state)
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_scroll_top(value, exception_state)
   }
-  fn scroll_width(&self) -> f64 {
-    self.html_element.element.scroll_width()
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_width(exception_state)
   }
-  fn scroll_height(&self) -> f64 {
-    self.html_element.element.scroll_height()
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_element.element.scroll_height(exception_state)
   }
   fn local_name(&self) -> String {
     self.html_element.element.local_name()
@@ -289,10 +289,10 @@ impl ElementMethods for HTMLScriptElement {
   fn tag_name(&self) -> String {
     self.html_element.element.tag_name()
   }
-  fn dir(&self) -> String {
-    self.html_element.element.dir()
+  fn dir(&self, exception_state: &ExceptionState) -> String {
+    self.html_element.element.dir(exception_state)
   }
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
@@ -345,6 +345,12 @@ impl ElementMethods for HTMLScriptElement {
   }
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_element.element.scroll_to_with_options(options, exception_state)
+  }
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_element.element.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_element.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.html_element.element.test_global_to_local(x, y, exception_state)

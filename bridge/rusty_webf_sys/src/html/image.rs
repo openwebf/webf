@@ -44,64 +44,64 @@ impl ImageMethods for Image {
   }
 }
 impl HTMLImageElementMethods for Image {
-  fn alt(&self) -> String {
-    self.html_image_element.alt()
+  fn alt(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.alt(exception_state)
   }
-  fn set_alt(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_alt(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_alt(value, exception_state)
   }
   fn src(&self) -> String {
     self.html_image_element.src()
   }
-  fn set_src(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_src(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_src(value, exception_state)
   }
-  fn sizes(&self) -> String {
-    self.html_image_element.sizes()
+  fn sizes(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.sizes(exception_state)
   }
-  fn set_sizes(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_sizes(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_sizes(value, exception_state)
   }
-  fn width(&self) -> i64 {
-    self.html_image_element.width()
+  fn width(&self, exception_state: &ExceptionState) -> i64 {
+    self.html_image_element.width(exception_state)
   }
   fn set_width(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_width(value, exception_state)
   }
-  fn height(&self) -> i64 {
-    self.html_image_element.height()
+  fn height(&self, exception_state: &ExceptionState) -> i64 {
+    self.html_image_element.height(exception_state)
   }
   fn set_height(&self, value: i64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_height(value, exception_state)
   }
-  fn natural_width(&self) -> i64 {
-    self.html_image_element.natural_width()
+  fn natural_width(&self, exception_state: &ExceptionState) -> i64 {
+    self.html_image_element.natural_width(exception_state)
   }
-  fn natural_height(&self) -> i64 {
-    self.html_image_element.natural_height()
+  fn natural_height(&self, exception_state: &ExceptionState) -> i64 {
+    self.html_image_element.natural_height(exception_state)
   }
-  fn complete(&self) -> bool {
-    self.html_image_element.complete()
+  fn complete(&self, exception_state: &ExceptionState) -> bool {
+    self.html_image_element.complete(exception_state)
   }
-  fn current_src(&self) -> String {
-    self.html_image_element.current_src()
+  fn current_src(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.current_src(exception_state)
   }
-  fn decoding(&self) -> String {
-    self.html_image_element.decoding()
+  fn decoding(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.decoding(exception_state)
   }
-  fn set_decoding(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_decoding(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_decoding(value, exception_state)
   }
-  fn fetch_priority(&self) -> String {
-    self.html_image_element.fetch_priority()
+  fn fetch_priority(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.fetch_priority(exception_state)
   }
-  fn set_fetch_priority(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_fetch_priority(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_fetch_priority(value, exception_state)
   }
-  fn loading(&self) -> String {
-    self.html_image_element.loading()
+  fn loading(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.loading(exception_state)
   }
-  fn set_loading(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_loading(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.set_loading(value, exception_state)
   }
   fn as_html_image_element(&self) -> &HTMLImageElement {
@@ -109,17 +109,17 @@ impl HTMLImageElementMethods for Image {
   }
 }
 impl HTMLElementMethods for Image {
-  fn offset_top(&self) -> f64 {
-    self.html_image_element.html_element.offset_top()
+  fn offset_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.offset_top(exception_state)
   }
-  fn offset_left(&self) -> f64 {
-    self.html_image_element.html_element.offset_left()
+  fn offset_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.offset_left(exception_state)
   }
-  fn offset_width(&self) -> f64 {
-    self.html_image_element.html_element.offset_width()
+  fn offset_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.offset_width(exception_state)
   }
-  fn offset_height(&self) -> f64 {
-    self.html_image_element.html_element.offset_height()
+  fn offset_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.offset_height(exception_state)
   }
   fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.click(exception_state)
@@ -132,22 +132,22 @@ impl ElementMethods for Image {
   fn id(&self) -> String {
     self.html_image_element.html_element.element.id()
   }
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
     self.html_image_element.html_element.element.class_name()
   }
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
     self.html_image_element.html_element.element.dataset()
   }
-  fn name(&self) -> String {
-    self.html_image_element.html_element.element.name()
+  fn name(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.html_element.element.name(exception_state)
   }
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
@@ -156,17 +156,17 @@ impl ElementMethods for Image {
   fn style(&self) -> CSSStyleDeclaration {
     self.html_image_element.html_element.element.style()
   }
-  fn client_height(&self) -> f64 {
-    self.html_image_element.html_element.element.client_height()
+  fn client_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.client_height(exception_state)
   }
-  fn client_left(&self) -> f64 {
-    self.html_image_element.html_element.element.client_left()
+  fn client_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.client_left(exception_state)
   }
-  fn client_top(&self) -> f64 {
-    self.html_image_element.html_element.element.client_top()
+  fn client_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.client_top(exception_state)
   }
-  fn client_width(&self) -> f64 {
-    self.html_image_element.html_element.element.client_width()
+  fn client_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.client_width(exception_state)
   }
   fn outer_html(&self) -> String {
     self.html_image_element.html_element.element.outer_html()
@@ -174,29 +174,29 @@ impl ElementMethods for Image {
   fn inner_html(&self) -> String {
     self.html_image_element.html_element.element.inner_html()
   }
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
     self.html_image_element.html_element.element.owner_document()
   }
-  fn scroll_left(&self) -> f64 {
-    self.html_image_element.html_element.element.scroll_left()
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.scroll_left(exception_state)
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_scroll_left(value, exception_state)
   }
-  fn scroll_top(&self) -> f64 {
-    self.html_image_element.html_element.element.scroll_top()
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.scroll_top(exception_state)
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_scroll_top(value, exception_state)
   }
-  fn scroll_width(&self) -> f64 {
-    self.html_image_element.html_element.element.scroll_width()
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.scroll_width(exception_state)
   }
-  fn scroll_height(&self) -> f64 {
-    self.html_image_element.html_element.element.scroll_height()
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.html_image_element.html_element.element.scroll_height(exception_state)
   }
   fn local_name(&self) -> String {
     self.html_image_element.html_element.element.local_name()
@@ -204,10 +204,10 @@ impl ElementMethods for Image {
   fn tag_name(&self) -> String {
     self.html_image_element.html_element.element.tag_name()
   }
-  fn dir(&self) -> String {
-    self.html_image_element.html_element.element.dir()
+  fn dir(&self, exception_state: &ExceptionState) -> String {
+    self.html_image_element.html_element.element.dir(exception_state)
   }
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
@@ -260,6 +260,12 @@ impl ElementMethods for Image {
   }
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.html_image_element.html_element.element.scroll_to_with_options(options, exception_state)
+  }
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_image_element.html_element.element.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.html_image_element.html_element.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.html_image_element.html_element.element.test_global_to_local(x, y, exception_state)

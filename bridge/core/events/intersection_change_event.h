@@ -9,7 +9,7 @@
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
-#include "plugin_api/intersection_change_event.h"
+#include "plugin_api_gen/intersection_change_event.h"
 #include "qjs_intersection_change_event_init.h"
 
 namespace webf {

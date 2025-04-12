@@ -7,7 +7,7 @@
 #define BRIDGE_CHARACTER_DATA_H
 
 #include "node.h"
-#include "plugin_api/character_data.h"
+#include "plugin_api_gen/character_data.h"
 
 namespace webf {
 

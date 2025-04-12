@@ -9,8 +9,8 @@ use crate::*;
 pub struct CustomEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
-  pub init_custom_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, NativeValue, exception_state: *const OpaquePtr) -> c_void,
+  pub detail: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub init_custom_event: extern "C" fn(*const OpaquePtr, *const c_char, i32, i32, NativeValue, *const OpaquePtr) -> c_void,
 }
 pub struct CustomEvent {
   pub event: Event,

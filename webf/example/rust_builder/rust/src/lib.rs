@@ -1,7 +1,7 @@
 use std::ffi::c_void;
 use webf_sys::event::Event;
 use webf_sys::executing_context::ExecutingContextRustMethods;
-use webf_sys::{initialize_webf_api, performance, AddEventListenerOptions, EventTargetMethods, NativeLibraryMetaData, NativeValue, PerformanceMarkOptions, RustValue};
+use webf_sys::{initialize_webf_api, AddEventListenerOptions, EventListenerOptions, EventTargetMethods, NativeLibraryMetaData, NativeValue, PerformanceMarkOptions, RustValue};
 use webf_sys::element::Element;
 use webf_sys::node::NodeMethods;
 
@@ -14,7 +14,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
   let click_event = document.create_event("custom_click", &exception_state).unwrap();
   document.dispatch_event(&click_event, &exception_state);
 
-  let div_element = document.create_element("div", &exception_state).unwrap();
+  let div_element = document.create_element("div",NativeValue::new_null(), &exception_state).unwrap();
 
   let performance = context.performance();
   let exception_state = context.create_exception_state();
@@ -43,7 +43,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
     let context = event.context();
     let exception_state = context.create_exception_state();
     let document = context.document();
-    let div = document.create_element("div", &exception_state).unwrap();
+    let div = document.create_element("div",NativeValue::new_null(), &exception_state).unwrap();
     let value = NativeValue::new_string("red");
     div.style().set_property("color", value, &exception_state).unwrap();
     let text_node = document.create_text_node("Created By Event Handler", &exception_state).unwrap();
@@ -60,7 +60,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
         let y = mouse_event.offset_y();
         let document = context.document();
         let exception_state = context.create_exception_state();
-        let div = document.create_element("div", &exception_state).unwrap();
+        let div = document.create_element("div",NativeValue::new_null(), &exception_state).unwrap();
         let text_node = document.create_text_node(format!("Mouse Clicked at x: {}, y: {}", x, y).as_str(), &exception_state).unwrap();
         div.append_child(&text_node.as_node(), &exception_state).unwrap();
         document.body().append_child(&div.as_node(), &exception_state).unwrap();
@@ -95,7 +95,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
 
   document.body().append_child(&div_element.as_node(), &exception_state).unwrap();
 
-  let event_cleaner_element = document.create_element("button", &exception_state).unwrap();
+  let event_cleaner_element = document.create_element("button", NativeValue::new_null(), &exception_state).unwrap();
 
   let event_cleaner_text_node = document.create_text_node("Remove Event", &exception_state).unwrap();
 
@@ -105,7 +105,7 @@ pub extern "C" fn init_webf_app(handle: RustValue<ExecutingContextRustMethods>, 
     let context = event.context();
     let exception_state = context.create_exception_state();
 
-    let _ = div_element.remove_event_listener("custom_click", event_handler.clone(), &exception_state);
+    let _ = div_element.remove_event_listener("custom_click", event_handler.clone(), &EventListenerOptions { capture: 0 }, &exception_state);
   });
 
   event_cleaner_element.add_event_listener("click", event_cleaner_handler, &event_listener_options, &exception_state).unwrap();

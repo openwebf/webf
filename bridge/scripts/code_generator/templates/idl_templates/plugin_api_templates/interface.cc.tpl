@@ -1,5 +1,5 @@
 <% if (className.endsWith('Event')) { %>
-#include "plugin_api/<%= _.snakeCase(className) %>_init.h"
+#include "plugin_api_gen/<%= _.snakeCase(className) %>_init.h"
 <% }%>
 namespace webf {
 
@@ -9,7 +9,7 @@ namespace webf {
 <%= generatePublicReturnTypeValue(prop.type, true, prop.typeMode) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (prop.typeMode.dartImpl) { %>
-  return <%= _.snakeCase(className) %>->GetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>,  FlushUICommandReason::kDependentsOnElement  <%= prop.typeMode.layoutDependent ? '| FlushUICommandReason::kDependentsOnLayout' : '' %>, shared_exception_state->exception_state);
+  return <%= _.snakeCase(className) %>->GetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>, FlushUICommandReason::kDependentsOnElement<%= prop.typeMode.layoutDependent ? ' | FlushUICommandReason::kDependentsOnLayout' : '' %>, shared_exception_state->exception_state);
   <% } else if (isPointerType(prop.type)) { %>
   auto* result = <%= _.snakeCase(className) %>-><%= prop.name %>();
   WebFValueStatus* status_block = result->KeepAlive();
@@ -46,6 +46,28 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
 <% _.forEach(methodsWithoutOverload, function(method, index) { %>
 <% var id = `${object.name}.${method.name}`; %>
 <% if (skipList.includes(id)) return; %>
+<% if (id === 'Element.toBlob') { %>
+void ElementPublicMethods::ToBlob(Element* element,
+                                  WebFNativeFunctionContext* callback_context,
+                                  SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return element->toBlob(callback_impl, shared_exception_state->exception_state);
+}
+void ElementPublicMethods::ToBlobWithDevicePixelRatio(Element* element,
+                                                      double device_pixel_ratio,
+                                                      WebFNativeFunctionContext* callback_context,
+                                                      SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return element->toBlob(device_pixel_ratio, callback_impl, shared_exception_state->exception_state);
+}
+<% } else if (id === 'Window.requestAnimationFrame') { %>
+double WindowPublicMethods::RequestAnimationFrame(Window* window,
+                                                  WebFNativeFunctionContext* callback_context,
+                                                  SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return window->requestAnimationFrame(callback_impl, shared_exception_state->exception_state);
+}
+<% } else { %>
 <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.rustName || method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (method.returnTypeMode?.dartImpl) { %>
@@ -117,6 +139,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   <% } %>
   <% } %>
 }
+<% } %>
 <% }); %>
 
 <% if (!object.parent) { %>

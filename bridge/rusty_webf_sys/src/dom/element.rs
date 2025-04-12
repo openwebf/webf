@@ -9,51 +9,53 @@ use crate::*;
 pub struct ElementRustMethods {
   pub version: c_double,
   pub node: NodeRustMethods,
-  pub id: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_id: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub class_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_class_name: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub dataset: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<DOMStringMapRustMethods>,
-  pub name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_name: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub attributes: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ElementAttributesRustMethods>,
-  pub style: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<CSSStyleDeclarationRustMethods>,
-  pub client_height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub client_left: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub client_top: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub client_width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub outer_html: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub inner_html: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_inner_html: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub owner_document: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<DocumentRustMethods>,
-  pub scroll_left: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub set_scroll_left: extern "C" fn(ptr: *const OpaquePtr, value: c_double, exception_state: *const OpaquePtr) -> bool,
-  pub scroll_top: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub set_scroll_top: extern "C" fn(ptr: *const OpaquePtr, value: c_double, exception_state: *const OpaquePtr) -> bool,
-  pub scroll_width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub scroll_height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub local_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub tag_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub dir: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_dir: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub set_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, *const c_char, exception_state: *const OpaquePtr) -> c_void,
-  pub remove_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> c_void,
-  pub has_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> i32,
-  pub get_bounding_client_rect: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<BoundingClientRectRustMethods>,
-  pub get_client_rects: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> VectorValueRef<BoundingClientRectRustMethods>,
-  pub get_elements_by_class_name: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub get_elements_by_tag_name: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub query_selector: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
-  pub query_selector_all: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub matches: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> i32,
-  pub closest: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
-  pub scroll: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_by: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_by_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_to: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_to_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub test_global_to_local: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> NativeValue,
+  pub id: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_id: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub class_name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_class_name: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub dataset: extern "C" fn(*const OpaquePtr) -> RustValue<DOMStringMapRustMethods>,
+  pub name: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_name: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub attributes: extern "C" fn(*const OpaquePtr) -> RustValue<ElementAttributesRustMethods>,
+  pub style: extern "C" fn(*const OpaquePtr) -> RustValue<CSSStyleDeclarationRustMethods>,
+  pub client_height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub client_left: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub client_top: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub client_width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub outer_html: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub inner_html: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_inner_html: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub owner_document: extern "C" fn(*const OpaquePtr) -> RustValue<DocumentRustMethods>,
+  pub scroll_left: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_scroll_left: extern "C" fn(*const OpaquePtr, value: c_double, *const OpaquePtr) -> bool,
+  pub scroll_top: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_scroll_top: extern "C" fn(*const OpaquePtr, value: c_double, *const OpaquePtr) -> bool,
+  pub scroll_width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub scroll_height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub local_name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub tag_name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub dir: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_dir: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub set_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const OpaquePtr) -> c_void,
+  pub remove_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> c_void,
+  pub has_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> i32,
+  pub get_bounding_client_rect: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> RustValue<BoundingClientRectRustMethods>,
+  pub get_client_rects: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> VectorValueRef<BoundingClientRectRustMethods>,
+  pub get_elements_by_class_name: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub get_elements_by_tag_name: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub query_selector: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub query_selector_all: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub matches: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> i32,
+  pub closest: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub scroll: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> c_void,
+  pub scroll_with_options: extern "C" fn(*const OpaquePtr, *const ScrollToOptions, *const OpaquePtr) -> c_void,
+  pub scroll_by: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> c_void,
+  pub scroll_by_with_options: extern "C" fn(*const OpaquePtr, *const ScrollToOptions, *const OpaquePtr) -> c_void,
+  pub scroll_to: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> c_void,
+  pub scroll_to_with_options: extern "C" fn(*const OpaquePtr, *const ScrollToOptions, *const OpaquePtr) -> c_void,
+  pub to_blob: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
+  pub to_blob_with_device_pixel_ratio: extern "C" fn(*const OpaquePtr, c_double, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
+  pub test_global_to_local: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> NativeValue,
 }
 pub struct Element {
   pub node: Node,
@@ -85,7 +87,7 @@ impl Element {
     };
     value.to_string()
   }
-  pub fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_id)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -100,7 +102,7 @@ impl Element {
     };
     value.to_string()
   }
-  pub fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_class_name)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -115,13 +117,13 @@ impl Element {
     };
     DOMStringMap::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
-  pub fn name(&self) -> String {
+  pub fn name(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).name)(self.ptr())
+      ((*self.method_pointer).name)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_name)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -142,29 +144,29 @@ impl Element {
     };
     CSSStyleDeclaration::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
-  pub fn client_height(&self) -> f64 {
+  pub fn client_height(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).client_height)(self.ptr())
+      ((*self.method_pointer).client_height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn client_left(&self) -> f64 {
+  pub fn client_left(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).client_left)(self.ptr())
+      ((*self.method_pointer).client_left)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn client_top(&self) -> f64 {
+  pub fn client_top(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).client_top)(self.ptr())
+      ((*self.method_pointer).client_top)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn client_width(&self) -> f64 {
+  pub fn client_width(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).client_width)(self.ptr())
+      ((*self.method_pointer).client_width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
   pub fn outer_html(&self) -> String {
     let value = unsafe {
@@ -178,7 +180,7 @@ impl Element {
     };
     value.to_string()
   }
-  pub fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_inner_html)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -193,11 +195,11 @@ impl Element {
     };
     Document::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
-  pub fn scroll_left(&self) -> f64 {
+  pub fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).scroll_left)(self.ptr())
+      ((*self.method_pointer).scroll_left)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
   pub fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -208,11 +210,11 @@ impl Element {
     }
     Ok(())
   }
-  pub fn scroll_top(&self) -> f64 {
+  pub fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).scroll_top)(self.ptr())
+      ((*self.method_pointer).scroll_top)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
   pub fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -223,17 +225,17 @@ impl Element {
     }
     Ok(())
   }
-  pub fn scroll_width(&self) -> f64 {
+  pub fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).scroll_width)(self.ptr())
+      ((*self.method_pointer).scroll_width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn scroll_height(&self) -> f64 {
+  pub fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).scroll_height)(self.ptr())
+      ((*self.method_pointer).scroll_height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
   pub fn local_name(&self) -> String {
     let value = unsafe {
@@ -247,13 +249,13 @@ impl Element {
     };
     value.to_string()
   }
-  pub fn dir(&self) -> String {
+  pub fn dir(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).dir)(self.ptr())
+      ((*self.method_pointer).dir)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_dir)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -443,6 +445,76 @@ impl Element {
     }
     Ok(())
   }
+  pub fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    let event_target: &EventTarget = &self.node.event_target;
+    let future_for_return = WebFNativeFuture::<Vec<u8>>::new();
+    let future_in_callback = future_for_return.clone();
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc == 1 {
+        let error_string = unsafe { (*argv).clone() };
+        let error_string = error_string.to_string();
+        future_in_callback.set_result(Err(error_string));
+        return NativeValue::new_null();
+      }
+      if argc == 2 {
+        let result = unsafe { (*argv.wrapping_add(1)).clone() };
+        let value = result.to_u8_bytes();
+        future_in_callback.set_result(Ok(Some(value)));
+        return NativeValue::new_null();
+      }
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
+    });
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+    unsafe {
+      (((*self.method_pointer).to_blob))(event_target.ptr, callback_context_ptr, exception_state.ptr);
+    }
+    future_for_return
+  }
+  pub fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    let event_target: &EventTarget = &self.node.event_target;
+    let future_for_return = WebFNativeFuture::<Vec<u8>>::new();
+    let future_in_callback = future_for_return.clone();
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc == 1 {
+        let error_string = unsafe { (*argv).clone() };
+        let error_string = error_string.to_string();
+        future_in_callback.set_result(Err(error_string));
+        return NativeValue::new_null();
+      }
+      if argc == 2 {
+        let result = unsafe { (*argv.wrapping_add(1)).clone() };
+        let value = result.to_u8_bytes();
+        future_in_callback.set_result(Ok(Some(value)));
+        return NativeValue::new_null();
+      }
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
+    });
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+    unsafe {
+      (((*self.method_pointer).to_blob_with_device_pixel_ratio))(event_target.ptr, device_pixel_ratio, callback_context_ptr, exception_state.ptr);
+    }
+    future_for_return
+  }
   pub fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     let value = unsafe {
       ((*self.method_pointer).test_global_to_local)(self.ptr(), x, y, exception_state.ptr)
@@ -455,32 +527,32 @@ impl Element {
 }
 pub trait ElementMethods: NodeMethods {
   fn id(&self) -> String;
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn class_name(&self) -> String;
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn dataset(&self) -> DOMStringMap;
-  fn name(&self) -> String;
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn name(&self, exception_state: &ExceptionState) -> String;
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn attributes(&self) -> ElementAttributes;
   fn style(&self) -> CSSStyleDeclaration;
-  fn client_height(&self) -> f64;
-  fn client_left(&self) -> f64;
-  fn client_top(&self) -> f64;
-  fn client_width(&self) -> f64;
+  fn client_height(&self, exception_state: &ExceptionState) -> f64;
+  fn client_left(&self, exception_state: &ExceptionState) -> f64;
+  fn client_top(&self, exception_state: &ExceptionState) -> f64;
+  fn client_width(&self, exception_state: &ExceptionState) -> f64;
   fn outer_html(&self) -> String;
   fn inner_html(&self) -> String;
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn owner_document(&self) -> Document;
-  fn scroll_left(&self) -> f64;
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64;
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String>;
-  fn scroll_top(&self) -> f64;
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64;
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String>;
-  fn scroll_width(&self) -> f64;
-  fn scroll_height(&self) -> f64;
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64;
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64;
   fn local_name(&self) -> String;
   fn tag_name(&self) -> String;
-  fn dir(&self) -> String;
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn dir(&self, exception_state: &ExceptionState) -> String;
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn remove_attribute(&self, qualified_name: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn has_attribute(&self, qualified_name: &str, exception_state: &ExceptionState) -> Result<bool, String>;
@@ -498,6 +570,8 @@ pub trait ElementMethods: NodeMethods {
   fn scroll_by_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
   fn scroll_to(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String>;
   fn as_element(&self) -> &Element;
 }
@@ -505,22 +579,22 @@ impl ElementMethods for Element {
   fn id(&self) -> String {
     self.id()
   }
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
     self.class_name()
   }
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
     self.dataset()
   }
-  fn name(&self) -> String {
-    self.name()
+  fn name(&self, exception_state: &ExceptionState) -> String {
+    self.name(exception_state)
   }
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
@@ -529,17 +603,17 @@ impl ElementMethods for Element {
   fn style(&self) -> CSSStyleDeclaration {
     self.style()
   }
-  fn client_height(&self) -> f64 {
-    self.client_height()
+  fn client_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.client_height(exception_state)
   }
-  fn client_left(&self) -> f64 {
-    self.client_left()
+  fn client_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.client_left(exception_state)
   }
-  fn client_top(&self) -> f64 {
-    self.client_top()
+  fn client_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.client_top(exception_state)
   }
-  fn client_width(&self) -> f64 {
-    self.client_width()
+  fn client_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.client_width(exception_state)
   }
   fn outer_html(&self) -> String {
     self.outer_html()
@@ -547,29 +621,29 @@ impl ElementMethods for Element {
   fn inner_html(&self) -> String {
     self.inner_html()
   }
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
     self.owner_document()
   }
-  fn scroll_left(&self) -> f64 {
-    self.scroll_left()
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.scroll_left(exception_state)
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_scroll_left(value, exception_state)
   }
-  fn scroll_top(&self) -> f64 {
-    self.scroll_top()
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.scroll_top(exception_state)
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_scroll_top(value, exception_state)
   }
-  fn scroll_width(&self) -> f64 {
-    self.scroll_width()
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.scroll_width(exception_state)
   }
-  fn scroll_height(&self) -> f64 {
-    self.scroll_height()
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.scroll_height(exception_state)
   }
   fn local_name(&self) -> String {
     self.local_name()
@@ -577,10 +651,10 @@ impl ElementMethods for Element {
   fn tag_name(&self) -> String {
     self.tag_name()
   }
-  fn dir(&self) -> String {
-    self.dir()
+  fn dir(&self, exception_state: &ExceptionState) -> String {
+    self.dir(exception_state)
   }
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
@@ -633,6 +707,12 @@ impl ElementMethods for Element {
   }
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.scroll_to_with_options(options, exception_state)
+  }
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.test_global_to_local(x, y, exception_state)

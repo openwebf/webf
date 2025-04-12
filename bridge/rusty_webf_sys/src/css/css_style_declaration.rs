@@ -14,14 +14,14 @@ enum CSSStyleDeclarationType {
 #[repr(C)]
 pub struct CSSStyleDeclarationRustMethods {
   pub version: c_double,
-  pub css_text: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_css_text: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub length: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub get_property_value: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub set_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, exception_state: *const OpaquePtr) -> c_void,
-  pub remove_property: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: CSSStyleDeclarationType) -> RustValue<c_void>,
+  pub css_text: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_css_text: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub length: extern "C" fn(*const OpaquePtr) -> i64,
+  pub get_property_value: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> AtomicStringRef,
+  pub set_property: extern "C" fn(*const OpaquePtr, *const c_char, NativeValue, *const OpaquePtr) -> c_void,
+  pub remove_property: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> AtomicStringRef,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: CSSStyleDeclarationType) -> RustValue<c_void>,
 }
 pub struct CSSStyleDeclaration {
   pub ptr: *const OpaquePtr,
@@ -51,7 +51,7 @@ impl CSSStyleDeclaration {
     };
     value.to_string()
   }
-  pub fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_css_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_css_text)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -123,7 +123,7 @@ impl Drop for CSSStyleDeclaration {
 }
 pub trait CSSStyleDeclarationMethods {
   fn css_text(&self) -> String;
-  fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_css_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn length(&self) -> i64;
   fn get_property_value(&self, property: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn set_property(&self, property: &str, value: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
@@ -134,7 +134,7 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
   fn css_text(&self) -> String {
     self.css_text()
   }
-  fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_css_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_css_text(value, exception_state)
   }
   fn length(&self) -> i64 {

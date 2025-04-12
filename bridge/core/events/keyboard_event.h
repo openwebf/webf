@@ -8,7 +8,7 @@
 
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
-#include "plugin_api/keyboard_event.h"
+#include "plugin_api_gen/keyboard_event.h"
 #include "qjs_keyboard_event_init.h"
 #include "ui_event.h"
 

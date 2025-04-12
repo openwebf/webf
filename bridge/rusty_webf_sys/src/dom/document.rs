@@ -9,35 +9,35 @@ use crate::*;
 pub struct DocumentRustMethods {
   pub version: c_double,
   pub node: NodeRustMethods,
-  pub title: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_title: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub body: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<HTMLBodyElementRustMethods>,
-  pub set_body: extern "C" fn(ptr: *const OpaquePtr, value: *const OpaquePtr, exception_state: *const OpaquePtr) -> bool,
-  pub cookie: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_cookie: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub domain: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub set_domain: extern "C" fn(ptr: *const OpaquePtr, value: *const c_char, exception_state: *const OpaquePtr) -> bool,
-  pub head: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<HTMLHeadElementRustMethods>,
-  pub document_element: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<HTMLHtmlElementRustMethods>,
-  pub location: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
-  pub compat_mode: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub ready_state: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub visibility_state: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub hidden: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub default_view: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
-  pub clear_cookies: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
-  pub create_element: extern "C" fn(ptr: *const OpaquePtr, *const c_char, NativeValue, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
-  pub create_text_node: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<TextRustMethods>,
-  pub create_document_fragment: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
-  pub create_comment: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<CommentRustMethods>,
-  pub create_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<EventRustMethods>,
-  pub get_element_by_id: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
-  pub get_elements_by_class_name: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub get_elements_by_tag_name: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub get_elements_by_name: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub query_selector: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
-  pub query_selector_all: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
-  pub element_from_point: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub title: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_title: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub body: extern "C" fn(*const OpaquePtr) -> RustValue<HTMLBodyElementRustMethods>,
+  pub set_body: extern "C" fn(*const OpaquePtr, value: *const OpaquePtr, *const OpaquePtr) -> bool,
+  pub cookie: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub set_cookie: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub domain: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub set_domain: extern "C" fn(*const OpaquePtr, value: *const c_char, *const OpaquePtr) -> bool,
+  pub head: extern "C" fn(*const OpaquePtr) -> RustValue<HTMLHeadElementRustMethods>,
+  pub document_element: extern "C" fn(*const OpaquePtr) -> RustValue<HTMLHtmlElementRustMethods>,
+  pub location: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub compat_mode: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub ready_state: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub visibility_state: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub hidden: extern "C" fn(*const OpaquePtr) -> i32,
+  pub default_view: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
+  pub clear_cookies: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> c_void,
+  pub create_element: extern "C" fn(*const OpaquePtr, *const c_char, NativeValue, *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub create_text_node: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<TextRustMethods>,
+  pub create_document_fragment: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> RustValue<DocumentFragmentRustMethods>,
+  pub create_comment: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<CommentRustMethods>,
+  pub create_event: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<EventRustMethods>,
+  pub get_element_by_id: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub get_elements_by_class_name: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub get_elements_by_tag_name: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub get_elements_by_name: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub query_selector: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub query_selector_all: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> VectorValueRef<ElementRustMethods>,
+  pub element_from_point: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> RustValue<ElementRustMethods>,
 }
 pub struct Document {
   pub node: Node,
@@ -63,13 +63,13 @@ impl Document {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.node.context()
   }
-  pub fn title(&self) -> String {
+  pub fn title(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).title)(self.ptr())
+      ((*self.method_pointer).title)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_title(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_title(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_title)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -84,7 +84,7 @@ impl Document {
     };
     HTMLBodyElement::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
-  pub fn set_body(&self, value: HTMLBodyElement, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_body(&self, value: &HTMLBodyElement, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_body)(self.ptr(), value.ptr(), exception_state.ptr)
     };
@@ -93,13 +93,13 @@ impl Document {
     }
     Ok(())
   }
-  pub fn cookie(&self) -> String {
+  pub fn cookie(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).cookie)(self.ptr())
+      ((*self.method_pointer).cookie)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn set_cookie(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_cookie(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_cookie)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -114,7 +114,7 @@ impl Document {
     };
     value.to_string()
   }
-  pub fn set_domain(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_domain(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_domain)(self.ptr(), CString::new(value).unwrap().as_ptr(), exception_state.ptr)
     };
@@ -153,9 +153,9 @@ impl Document {
     };
     value.to_string()
   }
-  pub fn visibility_state(&self) -> String {
+  pub fn visibility_state(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).visibility_state)(self.ptr())
+      ((*self.method_pointer).visibility_state)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
@@ -318,20 +318,20 @@ impl Document {
   }
 }
 pub trait DocumentMethods: NodeMethods {
-  fn title(&self) -> String;
-  fn set_title(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn title(&self, exception_state: &ExceptionState) -> String;
+  fn set_title(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn body(&self) -> HTMLBodyElement;
-  fn set_body(&self, value: HTMLBodyElement, exception_state: &ExceptionState) -> Result<(), String>;
-  fn cookie(&self) -> String;
-  fn set_cookie(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_body(&self, value: &HTMLBodyElement, exception_state: &ExceptionState) -> Result<(), String>;
+  fn cookie(&self, exception_state: &ExceptionState) -> String;
+  fn set_cookie(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn domain(&self) -> String;
-  fn set_domain(&self, value: String, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_domain(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String>;
   fn head(&self) -> HTMLHeadElement;
   fn document_element(&self) -> HTMLHtmlElement;
   fn location(&self, exception_state: &ExceptionState) -> NativeValue;
   fn compat_mode(&self) -> String;
   fn ready_state(&self) -> String;
-  fn visibility_state(&self) -> String;
+  fn visibility_state(&self, exception_state: &ExceptionState) -> String;
   fn hidden(&self) -> bool;
   fn default_view(&self) -> Window;
   fn clear_cookies(&self, exception_state: &ExceptionState) -> Result<(), String>;
@@ -350,28 +350,28 @@ pub trait DocumentMethods: NodeMethods {
   fn as_document(&self) -> &Document;
 }
 impl DocumentMethods for Document {
-  fn title(&self) -> String {
-    self.title()
+  fn title(&self, exception_state: &ExceptionState) -> String {
+    self.title(exception_state)
   }
-  fn set_title(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_title(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_title(value, exception_state)
   }
   fn body(&self) -> HTMLBodyElement {
     self.body()
   }
-  fn set_body(&self, value: HTMLBodyElement, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_body(&self, value: &HTMLBodyElement, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_body(value, exception_state)
   }
-  fn cookie(&self) -> String {
-    self.cookie()
+  fn cookie(&self, exception_state: &ExceptionState) -> String {
+    self.cookie(exception_state)
   }
-  fn set_cookie(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_cookie(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_cookie(value, exception_state)
   }
   fn domain(&self) -> String {
     self.domain()
   }
-  fn set_domain(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_domain(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_domain(value, exception_state)
   }
   fn head(&self) -> HTMLHeadElement {
@@ -389,8 +389,8 @@ impl DocumentMethods for Document {
   fn ready_state(&self) -> String {
     self.ready_state()
   }
-  fn visibility_state(&self) -> String {
-    self.visibility_state()
+  fn visibility_state(&self, exception_state: &ExceptionState) -> String {
+    self.visibility_state(exception_state)
   }
   fn hidden(&self) -> bool {
     self.hidden()

@@ -11,7 +11,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "performance_entry.h"
-#include "plugin_api/performance.h"
+#include "plugin_api_gen/performance.h"
 #include "qjs_performance_mark_options.h"
 
 namespace webf {

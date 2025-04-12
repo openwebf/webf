@@ -6,7 +6,7 @@
 #define BRIDGE_CORE_HTML_HTML_SCRIPT_ELEMENT_H_
 
 #include "html_element.h"
-#include "plugin_api/html_script_element.h"
+#include "plugin_api_gen/html_script_element.h"
 
 namespace webf {
 

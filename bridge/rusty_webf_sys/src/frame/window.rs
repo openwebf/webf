@@ -5,31 +5,34 @@
 */
 use std::ffi::*;
 use crate::*;
+pub type RequestAnimationFrameCallback = Box<dyn Fn(f64)>;
 #[repr(C)]
 pub struct WindowRustMethods {
   pub version: c_double,
   pub event_target: EventTargetRustMethods,
-  pub screen: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<ScreenRustMethods>,
-  pub scroll_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub scroll_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub page_x_offset: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub page_y_offset: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub device_pixel_ratio: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub color_scheme: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub inner_width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub inner_height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub btoa: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub atob: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub open: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<WindowRustMethods>,
-  pub scroll: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_with_options: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_to: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_to_with_xy: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_by: extern "C" fn(ptr: *const OpaquePtr, *const ScrollToOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub scroll_by_with_xy: extern "C" fn(ptr: *const OpaquePtr, c_double, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub post_message_with_message: extern "C" fn(ptr: *const OpaquePtr, NativeValue, exception_state: *const OpaquePtr) -> c_void,
-  pub cancel_animation_frame: extern "C" fn(ptr: *const OpaquePtr, c_double, exception_state: *const OpaquePtr) -> c_void,
-  pub get_computed_style: extern "C" fn(ptr: *const OpaquePtr, *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> RustValue<ComputedCssStyleDeclarationRustMethods>,
+  pub screen: extern "C" fn(*const OpaquePtr) -> RustValue<ScreenRustMethods>,
+  pub scroll_x: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub scroll_y: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub page_x_offset: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub page_y_offset: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub device_pixel_ratio: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub color_scheme: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub inner_width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub inner_height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub btoa: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> AtomicStringRef,
+  pub atob: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> AtomicStringRef,
+  pub open: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<WindowRustMethods>,
+  pub scroll: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> c_void,
+  pub scroll_with_options: extern "C" fn(*const OpaquePtr, *const ScrollToOptions, *const OpaquePtr) -> c_void,
+  pub scroll_to: extern "C" fn(*const OpaquePtr, *const ScrollToOptions, *const OpaquePtr) -> c_void,
+  pub scroll_to_with_x_and_y: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> c_void,
+  pub scroll_by: extern "C" fn(*const OpaquePtr, *const ScrollToOptions, *const OpaquePtr) -> c_void,
+  pub scroll_by_with_x_and_y: extern "C" fn(*const OpaquePtr, c_double, c_double, *const OpaquePtr) -> c_void,
+  pub post_message: extern "C" fn(*const OpaquePtr, NativeValue, *const OpaquePtr) -> c_void,
+  pub post_message_with_message_and_target_origin: extern "C" fn(*const OpaquePtr, NativeValue, *const c_char, *const OpaquePtr) -> c_void,
+  pub request_animation_frame: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_double,
+  pub cancel_animation_frame: extern "C" fn(*const OpaquePtr, c_double, *const OpaquePtr) -> c_void,
+  pub get_computed_style: extern "C" fn(*const OpaquePtr, *const OpaquePtr, *const c_char, *const OpaquePtr) -> RustValue<ComputedCssStyleDeclarationRustMethods>,
 }
 pub struct Window {
   pub event_target: EventTarget,
@@ -61,53 +64,53 @@ impl Window {
     };
     Screen::initialize(value.value, self.context(), value.method_pointer, value.status)
   }
-  pub fn scroll_x(&self) -> f64 {
+  pub fn scroll_x(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).scroll_x)(self.ptr())
+      ((*self.method_pointer).scroll_x)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn scroll_y(&self) -> f64 {
+  pub fn scroll_y(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).scroll_y)(self.ptr())
+      ((*self.method_pointer).scroll_y)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn page_x_offset(&self) -> f64 {
+  pub fn page_x_offset(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).page_x_offset)(self.ptr())
+      ((*self.method_pointer).page_x_offset)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn page_y_offset(&self) -> f64 {
+  pub fn page_y_offset(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).page_y_offset)(self.ptr())
+      ((*self.method_pointer).page_y_offset)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn device_pixel_ratio(&self) -> f64 {
+  pub fn device_pixel_ratio(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).device_pixel_ratio)(self.ptr())
+      ((*self.method_pointer).device_pixel_ratio)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn color_scheme(&self) -> String {
+  pub fn color_scheme(&self, exception_state: &ExceptionState) -> String {
     let value = unsafe {
-      ((*self.method_pointer).color_scheme)(self.ptr())
+      ((*self.method_pointer).color_scheme)(self.ptr(), exception_state.ptr)
     };
     value.to_string()
   }
-  pub fn inner_width(&self) -> f64 {
+  pub fn inner_width(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).inner_width)(self.ptr())
+      ((*self.method_pointer).inner_width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn inner_height(&self) -> f64 {
+  pub fn inner_height(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).inner_height)(self.ptr())
+      ((*self.method_pointer).inner_height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
   pub fn btoa(&self, string: &str, exception_state: &ExceptionState) -> Result<String, String> {
     let value = unsafe {
@@ -163,9 +166,9 @@ impl Window {
     }
     Ok(())
   }
-  pub fn scroll_to_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn scroll_to_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).scroll_to_with_xy)(self.ptr(), x, y, exception_state.ptr);
+      ((*self.method_pointer).scroll_to_with_x_and_y)(self.ptr(), x, y, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
@@ -181,23 +184,64 @@ impl Window {
     }
     Ok(())
   }
-  pub fn scroll_by_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn scroll_by_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).scroll_by_with_xy)(self.ptr(), x, y, exception_state.ptr);
+      ((*self.method_pointer).scroll_by_with_x_and_y)(self.ptr(), x, y, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
     Ok(())
   }
-  pub fn post_message_with_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn post_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
-      ((*self.method_pointer).post_message_with_message)(self.ptr(), message, exception_state.ptr);
+      ((*self.method_pointer).post_message)(self.ptr(), message, exception_state.ptr);
     };
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
     Ok(())
+  }
+  pub fn post_message_with_message_and_target_origin(&self, message: NativeValue, target_origin: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    unsafe {
+      ((*self.method_pointer).post_message_with_message_and_target_origin)(self.ptr(), message, CString::new(target_origin).unwrap().as_ptr(), exception_state.ptr);
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self.context()));
+    }
+    Ok(())
+  }
+  pub fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String> {
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc != 1 {
+        println!("Invalid argument count for timeout callback");
+        return NativeValue::new_null();
+      }
+      let time_stamp = unsafe { (*argv).clone() };
+      callback(time_stamp.to_float64());
+      NativeValue::new_null()
+    });
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+    let result = unsafe {
+      ((*self.method_pointer).request_animation_frame)(self.ptr(), callback_context_ptr, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self.event_target.context()));
+    }
+    Ok(result)
   }
   pub fn cancel_animation_frame(&self, request_id: f64, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -220,24 +264,26 @@ impl Window {
 }
 pub trait WindowMethods: EventTargetMethods {
   fn screen(&self) -> Screen;
-  fn scroll_x(&self) -> f64;
-  fn scroll_y(&self) -> f64;
-  fn page_x_offset(&self) -> f64;
-  fn page_y_offset(&self) -> f64;
-  fn device_pixel_ratio(&self) -> f64;
-  fn color_scheme(&self) -> String;
-  fn inner_width(&self) -> f64;
-  fn inner_height(&self) -> f64;
+  fn scroll_x(&self, exception_state: &ExceptionState) -> f64;
+  fn scroll_y(&self, exception_state: &ExceptionState) -> f64;
+  fn page_x_offset(&self, exception_state: &ExceptionState) -> f64;
+  fn page_y_offset(&self, exception_state: &ExceptionState) -> f64;
+  fn device_pixel_ratio(&self, exception_state: &ExceptionState) -> f64;
+  fn color_scheme(&self, exception_state: &ExceptionState) -> String;
+  fn inner_width(&self, exception_state: &ExceptionState) -> f64;
+  fn inner_height(&self, exception_state: &ExceptionState) -> f64;
   fn btoa(&self, string: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn atob(&self, string: &str, exception_state: &ExceptionState) -> Result<String, String>;
   fn open(&self, url: &str, exception_state: &ExceptionState) -> Result<Window, String>;
   fn scroll(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
   fn scroll_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
   fn scroll_to(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
-  fn scroll_to_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_to_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
   fn scroll_by(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String>;
-  fn scroll_by_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
-  fn post_message_with_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
+  fn scroll_by_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String>;
+  fn post_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String>;
+  fn post_message_with_message_and_target_origin(&self, message: NativeValue, target_origin: &str, exception_state: &ExceptionState) -> Result<(), String>;
+  fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String>;
   fn cancel_animation_frame(&self, request_id: f64, exception_state: &ExceptionState) -> Result<(), String>;
   fn get_computed_style(&self, element: &Element, pseudo_elt: &str, exception_state: &ExceptionState) -> Result<ComputedCssStyleDeclaration, String>;
   fn as_window(&self) -> &Window;
@@ -246,29 +292,29 @@ impl WindowMethods for Window {
   fn screen(&self) -> Screen {
     self.screen()
   }
-  fn scroll_x(&self) -> f64 {
-    self.scroll_x()
+  fn scroll_x(&self, exception_state: &ExceptionState) -> f64 {
+    self.scroll_x(exception_state)
   }
-  fn scroll_y(&self) -> f64 {
-    self.scroll_y()
+  fn scroll_y(&self, exception_state: &ExceptionState) -> f64 {
+    self.scroll_y(exception_state)
   }
-  fn page_x_offset(&self) -> f64 {
-    self.page_x_offset()
+  fn page_x_offset(&self, exception_state: &ExceptionState) -> f64 {
+    self.page_x_offset(exception_state)
   }
-  fn page_y_offset(&self) -> f64 {
-    self.page_y_offset()
+  fn page_y_offset(&self, exception_state: &ExceptionState) -> f64 {
+    self.page_y_offset(exception_state)
   }
-  fn device_pixel_ratio(&self) -> f64 {
-    self.device_pixel_ratio()
+  fn device_pixel_ratio(&self, exception_state: &ExceptionState) -> f64 {
+    self.device_pixel_ratio(exception_state)
   }
-  fn color_scheme(&self) -> String {
-    self.color_scheme()
+  fn color_scheme(&self, exception_state: &ExceptionState) -> String {
+    self.color_scheme(exception_state)
   }
-  fn inner_width(&self) -> f64 {
-    self.inner_width()
+  fn inner_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.inner_width(exception_state)
   }
-  fn inner_height(&self) -> f64 {
-    self.inner_height()
+  fn inner_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.inner_height(exception_state)
   }
   fn btoa(&self, string: &str, exception_state: &ExceptionState) -> Result<String, String> {
     self.btoa(string, exception_state)
@@ -288,17 +334,23 @@ impl WindowMethods for Window {
   fn scroll_to(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.scroll_to(options, exception_state)
   }
-  fn scroll_to_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
-    self.scroll_to_with_xy(x, y, exception_state)
+  fn scroll_to_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_to_with_x_and_y(x, y, exception_state)
   }
   fn scroll_by(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.scroll_by(options, exception_state)
   }
-  fn scroll_by_with_xy(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
-    self.scroll_by_with_xy(x, y, exception_state)
+  fn scroll_by_with_x_and_y(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<(), String> {
+    self.scroll_by_with_x_and_y(x, y, exception_state)
   }
-  fn post_message_with_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
-    self.post_message_with_message(message, exception_state)
+  fn post_message(&self, message: NativeValue, exception_state: &ExceptionState) -> Result<(), String> {
+    self.post_message(message, exception_state)
+  }
+  fn post_message_with_message_and_target_origin(&self, message: NativeValue, target_origin: &str, exception_state: &ExceptionState) -> Result<(), String> {
+    self.post_message_with_message_and_target_origin(message, target_origin, exception_state)
+  }
+  fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String> {
+    self.request_animation_frame(callback, exception_state)
   }
   fn cancel_animation_frame(&self, request_id: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.cancel_animation_frame(request_id, exception_state)

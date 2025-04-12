@@ -12,12 +12,12 @@ enum ElementAttributesType {
 #[repr(C)]
 pub struct ElementAttributesRustMethods {
   pub version: c_double,
-  pub get_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> AtomicStringRef,
-  pub set_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, *const c_char, exception_state: *const OpaquePtr) -> c_void,
-  pub has_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> i32,
-  pub remove_attribute: extern "C" fn(ptr: *const OpaquePtr, *const c_char, exception_state: *const OpaquePtr) -> c_void,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: ElementAttributesType) -> RustValue<c_void>,
+  pub get_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> AtomicStringRef,
+  pub set_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const c_char, *const OpaquePtr) -> c_void,
+  pub has_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> i32,
+  pub remove_attribute: extern "C" fn(*const OpaquePtr, *const c_char, *const OpaquePtr) -> c_void,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: ElementAttributesType) -> RustValue<c_void>,
 }
 pub struct ElementAttributes {
   pub ptr: *const OpaquePtr,

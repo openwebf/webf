@@ -30,11 +30,11 @@ enum EventTargetType {
 #[repr(C)]
 pub struct EventTargetRustMethods {
   pub version: c_double,
-  pub add_event_listener: extern "C" fn(ptr: *const OpaquePtr, *const c_char, *const EventCallbackContext, *const AddEventListenerOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub remove_event_listener: extern "C" fn(ptr: *const OpaquePtr, *const c_char, *const EventCallbackContext, *const EventListenerOptions, exception_state: *const OpaquePtr) -> c_void,
-  pub dispatch_event: extern "C" fn(ptr: *const OpaquePtr, *const OpaquePtr, exception_state: *const OpaquePtr) -> i32,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: EventTargetType) -> RustValue<c_void>,
+  pub add_event_listener: extern "C" fn(*const OpaquePtr, *const c_char, *const EventCallbackContext, *const AddEventListenerOptions, *const OpaquePtr) -> c_void,
+  pub remove_event_listener: extern "C" fn(*const OpaquePtr, *const c_char, *const EventCallbackContext, *const EventListenerOptions, *const OpaquePtr) -> c_void,
+  pub dispatch_event: extern "C" fn(*const OpaquePtr, *const OpaquePtr, *const OpaquePtr) -> i32,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: EventTargetType) -> RustValue<c_void>,
 }
 pub struct EventTarget {
   pub ptr: *const OpaquePtr,

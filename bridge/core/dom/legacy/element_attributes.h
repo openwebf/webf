@@ -10,7 +10,7 @@
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
-#include "plugin_api/element_attributes.h"
+#include "plugin_api_gen/element_attributes.h"
 
 namespace webf {
 

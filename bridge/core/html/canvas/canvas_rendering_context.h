@@ -7,7 +7,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "plugin_api/canvas_rendering_context.h"
+#include "plugin_api_gen/canvas_rendering_context.h"
 
 namespace webf {
 

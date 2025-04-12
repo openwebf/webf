@@ -9,11 +9,11 @@ use crate::*;
 pub struct HTMLElementRustMethods {
   pub version: c_double,
   pub element: ElementRustMethods,
-  pub offset_top: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_left: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_width: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub click: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
+  pub offset_top: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub offset_left: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub offset_width: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub offset_height: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub click: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> c_void,
 }
 pub struct HTMLElement {
   pub element: Element,
@@ -39,29 +39,29 @@ impl HTMLElement {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.element.context()
   }
-  pub fn offset_top(&self) -> f64 {
+  pub fn offset_top(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).offset_top)(self.ptr())
+      ((*self.method_pointer).offset_top)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn offset_left(&self) -> f64 {
+  pub fn offset_left(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).offset_left)(self.ptr())
+      ((*self.method_pointer).offset_left)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn offset_width(&self) -> f64 {
+  pub fn offset_width(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).offset_width)(self.ptr())
+      ((*self.method_pointer).offset_width)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
-  pub fn offset_height(&self) -> f64 {
+  pub fn offset_height(&self, exception_state: &ExceptionState) -> f64 {
     let value = unsafe {
-      ((*self.method_pointer).offset_height)(self.ptr())
+      ((*self.method_pointer).offset_height)(self.ptr(), exception_state.ptr)
     };
-    value
+    value.to_float64()
   }
   pub fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
@@ -74,25 +74,25 @@ impl HTMLElement {
   }
 }
 pub trait HTMLElementMethods: ElementMethods {
-  fn offset_top(&self) -> f64;
-  fn offset_left(&self) -> f64;
-  fn offset_width(&self) -> f64;
-  fn offset_height(&self) -> f64;
+  fn offset_top(&self, exception_state: &ExceptionState) -> f64;
+  fn offset_left(&self, exception_state: &ExceptionState) -> f64;
+  fn offset_width(&self, exception_state: &ExceptionState) -> f64;
+  fn offset_height(&self, exception_state: &ExceptionState) -> f64;
   fn click(&self, exception_state: &ExceptionState) -> Result<(), String>;
   fn as_html_element(&self) -> &HTMLElement;
 }
 impl HTMLElementMethods for HTMLElement {
-  fn offset_top(&self) -> f64 {
-    self.offset_top()
+  fn offset_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.offset_top(exception_state)
   }
-  fn offset_left(&self) -> f64 {
-    self.offset_left()
+  fn offset_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.offset_left(exception_state)
   }
-  fn offset_width(&self) -> f64 {
-    self.offset_width()
+  fn offset_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.offset_width(exception_state)
   }
-  fn offset_height(&self) -> f64 {
-    self.offset_height()
+  fn offset_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.offset_height(exception_state)
   }
   fn click(&self, exception_state: &ExceptionState) -> Result<(), String> {
     self.click(exception_state)
@@ -105,22 +105,22 @@ impl ElementMethods for HTMLElement {
   fn id(&self) -> String {
     self.element.id()
   }
-  fn set_id(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_id(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_id(value, exception_state)
   }
   fn class_name(&self) -> String {
     self.element.class_name()
   }
-  fn set_class_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_class_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_class_name(value, exception_state)
   }
   fn dataset(&self) -> DOMStringMap {
     self.element.dataset()
   }
-  fn name(&self) -> String {
-    self.element.name()
+  fn name(&self, exception_state: &ExceptionState) -> String {
+    self.element.name(exception_state)
   }
-  fn set_name(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_name(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_name(value, exception_state)
   }
   fn attributes(&self) -> ElementAttributes {
@@ -129,17 +129,17 @@ impl ElementMethods for HTMLElement {
   fn style(&self) -> CSSStyleDeclaration {
     self.element.style()
   }
-  fn client_height(&self) -> f64 {
-    self.element.client_height()
+  fn client_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.client_height(exception_state)
   }
-  fn client_left(&self) -> f64 {
-    self.element.client_left()
+  fn client_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.client_left(exception_state)
   }
-  fn client_top(&self) -> f64 {
-    self.element.client_top()
+  fn client_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.client_top(exception_state)
   }
-  fn client_width(&self) -> f64 {
-    self.element.client_width()
+  fn client_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.client_width(exception_state)
   }
   fn outer_html(&self) -> String {
     self.element.outer_html()
@@ -147,29 +147,29 @@ impl ElementMethods for HTMLElement {
   fn inner_html(&self) -> String {
     self.element.inner_html()
   }
-  fn set_inner_html(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_inner_html(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_inner_html(value, exception_state)
   }
   fn owner_document(&self) -> Document {
     self.element.owner_document()
   }
-  fn scroll_left(&self) -> f64 {
-    self.element.scroll_left()
+  fn scroll_left(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.scroll_left(exception_state)
   }
   fn set_scroll_left(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_scroll_left(value, exception_state)
   }
-  fn scroll_top(&self) -> f64 {
-    self.element.scroll_top()
+  fn scroll_top(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.scroll_top(exception_state)
   }
   fn set_scroll_top(&self, value: f64, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_scroll_top(value, exception_state)
   }
-  fn scroll_width(&self) -> f64 {
-    self.element.scroll_width()
+  fn scroll_width(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.scroll_width(exception_state)
   }
-  fn scroll_height(&self) -> f64 {
-    self.element.scroll_height()
+  fn scroll_height(&self, exception_state: &ExceptionState) -> f64 {
+    self.element.scroll_height(exception_state)
   }
   fn local_name(&self) -> String {
     self.element.local_name()
@@ -177,10 +177,10 @@ impl ElementMethods for HTMLElement {
   fn tag_name(&self) -> String {
     self.element.tag_name()
   }
-  fn dir(&self) -> String {
-    self.element.dir()
+  fn dir(&self, exception_state: &ExceptionState) -> String {
+    self.element.dir(exception_state)
   }
-  fn set_dir(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_dir(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.set_dir(value, exception_state)
   }
   fn set_attribute(&self, qualified_name: &str, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
@@ -233,6 +233,12 @@ impl ElementMethods for HTMLElement {
   }
   fn scroll_to_with_options(&self, options: &ScrollToOptions, exception_state: &ExceptionState) -> Result<(), String> {
     self.element.scroll_to_with_options(options, exception_state)
+  }
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.element.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.element.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
   }
   fn test_global_to_local(&self, x: f64, y: f64, exception_state: &ExceptionState) -> Result<NativeValue, String> {
     self.element.test_global_to_local(x, y, exception_state)

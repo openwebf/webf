@@ -4,7 +4,7 @@ import _ from 'lodash';
 import {getTemplateKind, TemplateKind} from '../generateHeader';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {IDLBlob} from '../IDLBlob';
-import {ClassObject, FunctionArguments, FunctionArgumentType, FunctionDeclaration} from '../declaration';
+import {ClassObject, FunctionArguments, FunctionArgumentType, FunctionDeclaration, ParameterMode} from '../declaration';
 import {getPointerType, isPointerType} from '../generateSource';
 import {ParameterType} from '../analyzer';
 import {isAnyType, isStringType, isVectorType} from './cppGen';
@@ -18,7 +18,10 @@ function isVoidType(type: ParameterType) {
   return type.value === FunctionArgumentType.void;
 }
 
-function generatePublicReturnTypeValue(type: ParameterType) {
+function generatePublicReturnTypeValue(type: ParameterType, typeMode?: ParameterMode): string {
+  if (typeMode && typeMode.dartImpl) {
+    return 'NativeValue';
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `RustValue<${pointerType}RustMethods>`;
@@ -47,6 +50,7 @@ function generatePublicReturnTypeValue(type: ParameterType) {
       return 'AtomicStringRef';
     }
     case FunctionArgumentType.void:
+    case FunctionArgumentType.promise:
       return 'c_void';
     default:
       return 'void*';
@@ -128,13 +132,17 @@ function generatePublicParameterType(type: ParameterType): string {
   }
 }
 
-function generatePublicParametersType(parameters: FunctionArguments[]): string {
+function generatePublicParametersType(parameters: FunctionArguments[], returnType: ParameterType): string {
   if (parameters.length === 0) {
     return '';
   }
-  return parameters.map(param => {
+  let params = parameters.map(param => {
     return `${generatePublicParameterType(param.type)}`;
   }).join(', ') + ', ';
+  if (returnType && returnType.value === FunctionArgumentType.promise) {
+    params += '*const WebFNativeFunctionContext, ';
+  }
+  return params;
 }
 
 function generatePublicParametersTypeWithName(parameters: FunctionArguments[]): string {
@@ -305,7 +313,23 @@ function generateMethodReturnStatements(type: ParameterType) {
   }
 }
 
-function generatePropReturnStatements(type: ParameterType) {
+function generatePropReturnStatements(type: ParameterType, typeMode?: ParameterMode) {
+  if (typeMode && typeMode.dartImpl) {
+    switch (type.value) {
+      case FunctionArgumentType.int64:
+        return 'value.to_int64()';
+      case FunctionArgumentType.double:
+        return 'value.to_float64()';
+      case FunctionArgumentType.boolean:
+        return 'value.to_bool()';
+      case FunctionArgumentType.dom_string:
+      case FunctionArgumentType.legacy_dom_string: {
+        return 'value.to_string()';
+      }
+      default:
+        return 'value';
+    }
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status)`;
@@ -329,7 +353,7 @@ function getMethodsWithoutOverload(methods: FunctionDeclaration[]) {
   methods.forEach(method => {
     const name = method.name;
     if (methodsNames.has(name)) {
-      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('');
+      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('And');
       methodsWithoutOverload.push({
         ...method,
         name: rustName,
@@ -390,6 +414,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generatePublicParametersTypeWithName,
           generateMethodReturnType,
           generateMethodParametersTypeWithName,
+          generateMethodParameterType,
           generateMethodParametersName,
           generateParentMethodParametersName,
           generateMethodReturnStatements,

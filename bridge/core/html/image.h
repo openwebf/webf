@@ -6,7 +6,7 @@
 #define WEBF_CORE_HTML_IMAGE_H_
 
 #include "html_image_element.h"
-#include "plugin_api/image.h"
+#include "plugin_api_gen/image.h"
 
 namespace webf {
 

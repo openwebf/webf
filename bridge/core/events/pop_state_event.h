@@ -6,7 +6,7 @@
 #define WEBF_CORE_EVENTS_POP_STATE_EVENT_H_
 
 #include "core/dom/events/event.h"
-#include "plugin_api/pop_state_event.h"
+#include "plugin_api_gen/pop_state_event.h"
 #include "qjs_pop_state_event_init.h"
 
 namespace webf {

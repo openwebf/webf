@@ -13,7 +13,7 @@
 #include "event_listener_map.h"
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
-#include "plugin_api/event_target.h"
+#include "plugin_api_gen/event_target.h"
 #include "qjs_add_event_listener_options.h"
 #include "qjs_unionadd_event_listener_options_boolean.h"
 #include "qjs_unionevent_listener_options_boolean.h"

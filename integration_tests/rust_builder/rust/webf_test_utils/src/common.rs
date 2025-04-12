@@ -23,13 +23,13 @@ fn reset_document_element(context: ExecutingContext) {
   let document_element = document.document_element();
   document.remove_child(document_element.as_node(), &exception_state).unwrap();
 
-  let html = document.create_element("html", &exception_state).unwrap();
+  let html = document.create_element("html", NativeValue::new_null(), &exception_state).unwrap();
   document.append_child(html.as_node(), &exception_state).unwrap();
 
   let document_element = document.document_element();
-  let head = document.create_element("head", &exception_state).unwrap();
+  let head = document.create_element("head", NativeValue::new_null(), &exception_state).unwrap();
   document_element.append_child(head.as_node(), &exception_state).unwrap();
-  let body = document.create_element("body", &exception_state).unwrap();
+  let body = document.create_element("body", NativeValue::new_null(), &exception_state).unwrap();
   document_element.append_child(body.as_node(), &exception_state).unwrap();
 
   let window = context.window();
@@ -44,7 +44,7 @@ fn reset_document_element(context: ExecutingContext) {
 fn clear_cookies(context: ExecutingContext) {
   let exception_state = context.create_exception_state();
   let document = context.document();
-  document.___clear_cookies__(&exception_state);
+  document.clear_cookies(&exception_state);
 }
 
 pub fn spec_done(context: ExecutingContext) {

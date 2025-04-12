@@ -8,7 +8,7 @@
 #include "core/dom/document.h"
 #include "core/frame/window_event_handlers.h"
 #include "html_element.h"
-#include "plugin_api/html_body_element.h"
+#include "plugin_api_gen/html_body_element.h"
 
 namespace webf {
 

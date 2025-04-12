@@ -10,7 +10,7 @@
 #include "bindings/qjs/source_location.h"
 #include "core/dom/events/event.h"
 #include "core/frame/window.h"
-#include "plugin_api/ui_event.h"
+#include "plugin_api_gen/ui_event.h"
 #include "qjs_ui_event_init.h"
 
 namespace webf {

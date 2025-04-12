@@ -9,9 +9,9 @@ use crate::*;
 pub struct CloseEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub code: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub reason: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub was_clean: extern "C" fn(ptr: *const OpaquePtr) -> i32,
+  pub code: extern "C" fn(*const OpaquePtr) -> i64,
+  pub reason: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub was_clean: extern "C" fn(*const OpaquePtr) -> i32,
 }
 pub struct CloseEvent {
   pub event: Event,

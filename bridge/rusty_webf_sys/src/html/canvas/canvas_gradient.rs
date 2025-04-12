@@ -12,9 +12,9 @@ enum CanvasGradientType {
 #[repr(C)]
 pub struct CanvasGradientRustMethods {
   pub version: c_double,
-  pub add_color_stop: extern "C" fn(ptr: *const OpaquePtr, c_double, *const c_char, exception_state: *const OpaquePtr) -> c_void,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: CanvasGradientType) -> RustValue<c_void>,
+  pub add_color_stop: extern "C" fn(*const OpaquePtr, c_double, *const c_char, *const OpaquePtr) -> c_void,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: CanvasGradientType) -> RustValue<c_void>,
 }
 pub struct CanvasGradient {
   pub ptr: *const OpaquePtr,

@@ -19,8 +19,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   scrollBy(options?: ScrollToOptions): void;
   scrollBy(x: number, y: number): void;
 
-  postMessage(message: any, targetOrigin: string): void;
   postMessage(message: any): void;
+  postMessage(message: any, targetOrigin: string): void;
 
   requestAnimationFrame(callback: Function): double;
   cancelAnimationFrame(request_id: double): void;
