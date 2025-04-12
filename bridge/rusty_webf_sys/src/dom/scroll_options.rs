@@ -7,5 +7,5 @@ use std::ffi::*;
 use crate::*;
 #[repr(C)]
 pub struct ScrollOptions {
-  pub behavior: *const c_char,
+  pub behavior: AtomicStringRef,
 }

@@ -566,7 +566,7 @@ class WebFViewController implements WidgetsBindingObserver {
         String oldUrl = rootController.url;
         HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
         historyModule.pushState(null, url: targetPath);
-        window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
+        await window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
         return;
       }
 

@@ -406,6 +406,7 @@ class KeyboardEvent extends UIEvent {
 
 /// reference: https://developer.mozilla.org/zh-CN/docs/Web/API/MouseEvent
 class MouseEvent extends UIEvent {
+  double button = 0;
   double clientX;
   double clientY;
   double offsetX;
@@ -441,10 +442,11 @@ class MouseEvent extends UIEvent {
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     List<int> methods = [
+      doubleToUint64(button),
       doubleToUint64(clientX),
       doubleToUint64(clientY),
       doubleToUint64(offsetX),
-      doubleToUint64(offsetY)
+      doubleToUint64(offsetY),
     ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length + extraLength).cast<RawEvent>();

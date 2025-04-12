@@ -9,11 +9,9 @@ use crate::*;
 pub struct AnimationEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_animation_name: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct AnimationEvent {
   pub event: Event,
@@ -43,8 +41,7 @@ impl AnimationEvent {
     let value = unsafe {
       ((*self.method_pointer).animation_name)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn elapsed_time(&self) -> f64 {
     let value = unsafe {
@@ -56,8 +53,7 @@ impl AnimationEvent {
     let value = unsafe {
       ((*self.method_pointer).pseudo_element)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait AnimationEventMethods: EventMethods {
@@ -128,5 +124,27 @@ impl EventMethods for AnimationEvent {
   }
   fn as_event(&self) -> &Event {
     &self.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_animation_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<AnimationEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_animation_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(AnimationEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_animation_event_with_options(&self, event_type: &str, options: &AnimationEventInit,  exception_state: &ExceptionState) -> Result<AnimationEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_animation_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(AnimationEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

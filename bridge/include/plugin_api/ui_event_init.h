@@ -7,9 +7,11 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_INIT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_UI_EVENT_INIT_H_
 #include <stdint.h>
+#include "core/native/vector_value_ref.h"
 #include "webf_value.h"
+#include "foundation/native_value.h"
 namespace webf {
-typedef struct Window Window;
+class Window;
 typedef struct WindowPublicMethods WindowPublicMethods;
 struct WebFUIEventInit {
   int32_t bubbles;

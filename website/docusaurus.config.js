@@ -69,6 +69,12 @@ const config = {
             position: 'left',
             label: 'Docs',
           },
+          {
+            type: 'doc',
+            docId: 'enterprise/flutter_widget_element',
+            position: 'left',
+            label: 'Enterprise'
+          },
           // {
           //   type: 'doc',
           //   docId: 'api/intro',

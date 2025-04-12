@@ -18,11 +18,19 @@ struct NativeLibraryLoadContext {
   std::shared_ptr<ScriptPromiseResolver> promise_resolver{nullptr};
 };
 
-struct NativeLibrartMetaData {
+struct NativeLibraryMetaDataCallback {
+  int32_t callback_id;
+  std::shared_ptr<WebFNativeFunction> callback;
+
+  NativeLibraryMetaDataCallback(int32_t id, std::shared_ptr<WebFNativeFunction> cb) : callback_id(id), callback(cb) {}
+};
+
+struct NativeLibraryMetaData {
   NativeValue* lib_name;
   NativeLibraryLoadContext* load_context;
-  std::vector<std::shared_ptr<WebFNativeFunction>> callbacks;
-  std::vector<std::shared_ptr<WebFNativeFunction>> removed_callbacks;
+  int32_t unique_id_{0};
+  std::vector<NativeLibraryMetaDataCallback> callbacks;
+  std::vector<int32_t> removed_callbacks;
 };
 
 class NativeLoader : public ScriptWrappable {

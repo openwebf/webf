@@ -37,6 +37,8 @@ pub struct DocumentRustMethods {
   pub document_element: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub head: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
   pub body: extern "C" fn(document: *const OpaquePtr) -> RustValue<ElementRustMethods>,
+  pub cookie: extern "C" fn(document: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
+  pub set_cookie: extern "C" fn(document: *const OpaquePtr, cookie: *const c_char, exception_state: *const OpaquePtr),
   pub ___clear_cookies__: extern "C" fn(*const OpaquePtr, *const OpaquePtr),
 }
 
@@ -265,6 +267,27 @@ impl Document {
     return HTMLElement::initialize(body_element_value.value, event_target.context(), body_element_value.method_pointer, body_element_value.status);
   }
 
+  pub fn cookie(&self, exception_state: &ExceptionState) -> String {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let cookie = unsafe {
+      ((*self.method_pointer).cookie)(event_target.ptr, exception_state.ptr)
+    };
+
+    if cookie.is_null() {
+      return "".to_string();
+    }
+
+    return cookie.to_string();
+  }
+
+  pub fn set_cookie(&self, cookie: &str, exception_state: &ExceptionState) {
+    let event_target: &EventTarget = &self.container_node.node.event_target;
+    let cookie_c_string = CString::new(cookie).unwrap();
+    unsafe {
+      ((*self.method_pointer).set_cookie)(event_target.ptr, cookie_c_string.as_ptr(), exception_state.ptr);
+    }
+  }
+
   pub fn ___clear_cookies__(&self, exception_state: &ExceptionState) {
     unsafe {
       ((*self.method_pointer).___clear_cookies__)(self.ptr(), exception_state.ptr);
@@ -325,6 +348,10 @@ impl EventTargetMethods for Document {
 
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.container_node.node.event_target.dispatch_event(event, exception_state)
+  }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self.container_node.node.event_target.as_event_target()
   }
 }
 

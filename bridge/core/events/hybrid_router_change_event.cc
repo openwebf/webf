@@ -79,6 +79,11 @@ bool HybridRouterChangeEvent::IsHybridRouterChangeEvent() const {
   return true;
 }
 
+const HybridRouterChangeEventPublicMethods* HybridRouterChangeEvent::hybridRouterChangeEventPublicMethods() {
+  static HybridRouterChangeEventPublicMethods hybrid_router_change_event_public_methods;
+  return &hybrid_router_change_event_public_methods;
+}
+
 void HybridRouterChangeEvent::Trace(GCVisitor* visitor) const {
   state_.Trace(visitor);
   Event::Trace(visitor);

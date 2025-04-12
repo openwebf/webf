@@ -87,7 +87,7 @@ describe('history API', () => {
     function onHashChange(e: HashChangeEvent) {
       expect(new URL(e.oldURL).hash).toBe('#/page_1');
       expect(new URL(e.newURL).hash).toBe('#hash=hashValue');
-      window.removeEventListener('popstate', onHashChange);
+      window.removeEventListener('hashchange', onHashChange);
       done();
     }
     window.addEventListener('hashchange', onHashChange);

@@ -409,42 +409,52 @@ void ExecutingContext::EnqueueMicrotask(MicrotaskCallback callback, void* data) 
   JS_FreeValue(ctx(), proxy_data);
 }
 
-void ExecutingContext::AddRustFutureTask(const std::shared_ptr<WebFNativeFunction>& run_future_task,
-                                         NativeLibrartMetaData* meta_data) {
-  meta_data->callbacks.push_back(run_future_task);
+int32_t ExecutingContext::AddRustFutureTask(const std::shared_ptr<WebFNativeFunction>& run_future_task,
+                                            NativeLibraryMetaData* meta_data) {
+  meta_data->unique_id_++;
+  meta_data->callbacks.emplace_back(meta_data->unique_id_, run_future_task);
+  return meta_data->unique_id_;
 }
 
-void ExecutingContext::RemoveRustFutureTask(const std::shared_ptr<WebFNativeFunction>& run_future_task,
-                                            NativeLibrartMetaData* meta_data) {
+void ExecutingContext::RemoveRustFutureTask(int32_t callback_id, NativeLibraryMetaData* meta_data) {
   // Add the callback to the removed_callbacks list to avoid removing the callback during the iteration.
-  meta_data->removed_callbacks.push_back(run_future_task);
+  meta_data->removed_callbacks.push_back(callback_id);
 }
 
 void ExecutingContext::RunRustFutureTasks() {
   for (auto& meta_data : native_library_meta_data_contaner_) {
     for (auto& callback : meta_data->callbacks) {
       dart_isolate_context_->profiler()->StartTrackAsyncEvaluation();
-      callback->Invoke(this, 0, nullptr);
+      callback.callback->Invoke(this, 0, nullptr);
       dart_isolate_context_->profiler()->FinishTrackAsyncEvaluation();
     }
+
+    if (meta_data->removed_callbacks.size() == 0) {
+      continue;
+    }
+
     for (auto& removed_callback : meta_data->removed_callbacks) {
       meta_data->callbacks.erase(std::remove_if(meta_data->callbacks.begin(), meta_data->callbacks.end(),
-                                                [&](const std::shared_ptr<WebFNativeFunction>& callback) {
-                                                  return callback->Matches(removed_callback);
+                                                [&](const NativeLibraryMetaDataCallback& callback) {
+                                                  return callback.callback_id == removed_callback;
                                                 }),
                                  meta_data->callbacks.end());
     }
+
     meta_data->removed_callbacks.clear();
+
     if (meta_data->callbacks.empty() && meta_data->load_context != nullptr) {
       meta_data->load_context->promise_resolver->Resolve(JS_NULL);
       meta_data->load_context->context->UnRegisterActiveScriptPromise(meta_data->load_context->promise_resolver.get());
       delete meta_data->load_context;
       meta_data->load_context = nullptr;
+    } else {
+      RunRustFutureTasks();
     }
   }
 }
 
-void ExecutingContext::RegisterNativeLibraryMetaData(NativeLibrartMetaData* meta_data) {
+void ExecutingContext::RegisterNativeLibraryMetaData(NativeLibraryMetaData* meta_data) {
   native_library_meta_data_contaner_.push_back(meta_data);
 }
 

@@ -50,10 +50,21 @@ export function isStringType(type: ParameterType): boolean {
     || type.value === FunctionArgumentType.legacy_dom_string;
 }
 
+export function isVoidType(type: ParameterType): boolean {
+  return type.value === FunctionArgumentType.void;
+}
+
+export function isVectorType(type: ParameterType): boolean {
+  return !!(type.isArray && typeof type.value === 'object' && !Array.isArray(type.value));
+}
+
 function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = false): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `WebFValue<${pointerType}, ${pointerType}PublicMethods>`;
+  }
+  if (isVectorType(type)) {
+    return `VectorValueRef`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -70,14 +81,48 @@ function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = f
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
-      if (is32Bit) {
-        return 'const char*';
-      }
-
-      return 'SharedNativeString*';
+      return 'AtomicStringRef';
     }
     case FunctionArgumentType.any: {
-      return 'WebFValue<ScriptValueRef, ScriptValueRefPublicMethods>';
+      return 'NativeValue';
+    }
+    case FunctionArgumentType.void:
+      return 'void';
+    default:
+      if (is32Bit) {
+        return 'int64_t';
+      }
+      return 'void*';
+  }
+}
+
+function generatePublicDictionaryFieldTypeValue(type: ParameterType, is32Bit: boolean = false): string {
+  if (isPointerType(type)) {
+    const pointerType = getPointerType(type);
+    return `WebFValue<${pointerType}, ${pointerType}PublicMethods>`;
+  }
+  if (isVectorType(type)) {
+    return `VectorValueRef`;
+  }
+  switch (type.value) {
+    case FunctionArgumentType.int64: {
+      return 'int64_t';
+    }
+    case FunctionArgumentType.int32: {
+      return 'int64_t';
+    }
+    case FunctionArgumentType.double: {
+      return 'double';
+    }
+    case FunctionArgumentType.boolean: {
+      return 'int32_t';
+    }
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string: {
+      return 'const char*';
+    }
+    case FunctionArgumentType.any: {
+      return 'NativeValue';
     }
     case FunctionArgumentType.void:
       return 'void';
@@ -102,6 +147,9 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
     }
     return `${pointerType}*`;
   }
+  if (isVectorType(type)) {
+    return `VectorValueRef`;
+  }
   switch (type.value) {
     case FunctionArgumentType.int64: {
       return 'int64_t';
@@ -116,15 +164,11 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
       return 'int32_t';
     }
     case FunctionArgumentType.any: {
-      return 'ScriptValueRef*';
+      return 'NativeValue';
     }
     case FunctionArgumentType.dom_string:
     case FunctionArgumentType.legacy_dom_string: {
-      if (is32Bit) {
-        return 'const char*';
-      }
-
-      return 'SharedNativeString*';
+      return 'const char*';
     }
     default:
       if (is32Bit) {
@@ -158,7 +202,7 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
   }
   return parameters.map(param => {
     const name = _.snakeCase(param.name);
-    return `${isStringType(param.type) ? name + '_atomic' : name}`;
+    return `${isPointerType(param.type) ? name + '_p' : isStringType(param.type) ? name + '_atomic' : isAnyType(param.type)? name + '_script_value': name}`;
   }).join(', ') + ', ';
 }
 
@@ -195,6 +239,9 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           if (isPointerType(method.returnType)) {
             dependentTypes.add(getPointerType(method.returnType));
           }
+          if (isVectorType(method.returnType)) {
+            dependentTypes.add(getPointerType(method.returnType.value as ParameterType));
+          }
         });
 
         const subClasses: string[] = [];
@@ -215,10 +262,13 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           parentClassName: object.parent,
           blob: blob,
           object,
+          generatePublicParameterType,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
           isStringType,
+          isAnyType,
+          isVectorType,
           dependentTypes: Array.from(dependentTypes),
           subClasses: _.uniq(subClasses),
           options,
@@ -234,24 +284,29 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
             dependentTypes.add(getPointerType(prop.type));
           }
         });
+        const parentObjects = [] as ClassObject[];
+        let node = object;
 
-        const parentObject = ClassObject.globalClassMap[object.parent];
-
-        if (parentObject) {
-          parentObject.props.forEach(prop => {
-            if (isPointerType(prop.type)) {
-              dependentTypes.add(getPointerType(prop.type));
-            }
-          });
+        while (node && node.parent) {
+          const parentObject = ClassObject.globalClassMap[node.parent];
+          if (parentObject) {
+            parentObjects.push(parentObject);
+            parentObject.props.forEach(prop => {
+              if (isPointerType(prop.type)) {
+                dependentTypes.add(getPointerType(prop.type));
+              }
+            });
+          }
+          node = parentObject;
         }
 
         return _.template(readHeaderTemplate('dictionary'))({
           className: getClassName(blob),
           parentClassName: object.parent,
-          parentObject,
+          parentObjects,
           blob: blob,
           object,
-          generatePublicReturnTypeValue,
+          generatePublicDictionaryFieldTypeValue,
           isStringType,
           dependentTypes: Array.from(dependentTypes),
           options,
@@ -302,6 +357,12 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           }
         });
 
+        object.construct?.args.forEach(param => {
+          if (isPointerType(param.type)) {
+            dependentTypes.add(getPointerType(param.type));
+          }
+        });
+
         const subClasses: string[] = [];
 
         function appendSubClasses(name: string) {
@@ -313,6 +374,25 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
 
         if (object.name in ClassObject.globalClassRelationMap) {
           appendSubClasses(object.name);
+        }
+
+        const dependentClasses: {[key: string]: ClassObject} = [...dependentTypes].reduce((classes, type) => {
+          classes[type] = ClassObject.globalClassMap[type];
+          return classes;
+        }, {} as {[key: string]: ClassObject});
+
+        for (const key in dependentClasses) {
+          if (key.endsWith('Options') || key.endsWith('Init')) {
+            const parents = [] as ClassObject[]
+            let node = dependentClasses[key];
+            while(node && node.parent) {
+              node = ClassObject.globalClassMap[node.parent];
+              parents.push(node);
+            }
+
+            const parentsProps = parents.flatMap(object => object.props);
+            dependentClasses[key].inheritedProps = parentsProps;
+          }
         }
 
         return _.template(readSourceTemplate('interface'))({
@@ -329,7 +409,10 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           getPointerType,
           isStringType,
           isAnyType,
+          isVectorType,
+          isVoidType,
           dependentTypes: Array.from(dependentTypes),
+          dependentClasses,
           subClasses: _.uniq(subClasses),
           options,
         });

@@ -38,4 +38,9 @@ bool PromiseRejectionEvent::IsPromiseRejectionEvent() const {
   return true;
 }
 
+const PromiseRejectionEventPublicMethods* PromiseRejectionEvent::promiseRejectionEventPublicMethods() {
+  static PromiseRejectionEventPublicMethods promise_rejection_event_public_methods;
+  return &promise_rejection_event_public_methods;
+}
+
 }  // namespace webf

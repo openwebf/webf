@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_EVENTS_PROMISE_REJECTION_EVENT_H_
 
 #include "core/dom/events/event.h"
+#include "plugin_api/promise_rejection_event.h"
 #include "qjs_promise_rejection_event_init.h"
 
 namespace webf {
@@ -36,9 +37,16 @@ class PromiseRejectionEvent : public Event {
 
   bool IsPromiseRejectionEvent() const override;
 
+  const PromiseRejectionEventPublicMethods* promiseRejectionEventPublicMethods();
+
  private:
   ScriptValue promise_;
   ScriptValue reason_;
+};
+
+template <>
+struct DowncastTraits<PromiseRejectionEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsPromiseRejectionEvent(); }
 };
 
 }  // namespace webf

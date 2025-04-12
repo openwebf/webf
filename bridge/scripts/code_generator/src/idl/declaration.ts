@@ -74,6 +74,7 @@ export class ClassObject {
   parent: string;
   mixinParent: string[];
   props: PropsDeclaration[] = [];
+  inheritedProps?: PropsDeclaration[] = [];
   indexedProp?: IndexedPropertyDeclaration;
   methods: FunctionDeclaration[] = [];
   staticMethods: FunctionDeclaration[] = [];

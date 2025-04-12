@@ -24,6 +24,7 @@ class Document;
 class Text;
 class Comment;
 class Event;
+typedef struct NativeValue NativeValue;
 
 struct WebFElementCreationOptions {
   const char* is;
@@ -68,6 +69,8 @@ using PublicDocumentElementFromPoint =
 using PublicDocumentGetDocumentElement = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 using PublicDocumentGetDocumentHeader = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 using PublicDocumentGetDocumentBody = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
+using PublicDocumentGetCookie = NativeValue (*)(Document*, SharedExceptionState*);
+using PublicDocumentSetCookie = void (*)(Document*, const char*, SharedExceptionState*);
 using PublicDocumentClearCookie = void (*)(Document*, SharedExceptionState*);
 
 struct DocumentPublicMethods : public WebFPublicMethods {
@@ -114,6 +117,8 @@ struct DocumentPublicMethods : public WebFPublicMethods {
   static WebFValue<Element, HTMLElementPublicMethods> DocumentElement(Document* document);
   static WebFValue<Element, HTMLElementPublicMethods> Head(Document* document);
   static WebFValue<Element, HTMLElementPublicMethods> Body(Document* document);
+  static NativeValue Cookie(Document* document, SharedExceptionState* shared_exception_state);
+  static void SetCookie(Document* document, const char* cookie, SharedExceptionState* shared_exception_state);
   static void ClearCookie(Document* document, SharedExceptionState* shared_exception_state);
 
   double version{1.0};
@@ -134,6 +139,8 @@ struct DocumentPublicMethods : public WebFPublicMethods {
   PublicDocumentGetDocumentElement document_get_document_element{DocumentElement};
   PublicDocumentGetDocumentHeader document_get_document_header{Head};
   PublicDocumentGetDocumentBody document_get_document_body{Body};
+  PublicDocumentGetCookie document_get_cookie{Cookie};
+  PublicDocumentSetCookie document_set_cookie{SetCookie};
   PublicDocumentClearCookie document_clear_cookie{ClearCookie};
 };
 

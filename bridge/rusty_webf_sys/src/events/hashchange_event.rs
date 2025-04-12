@@ -9,10 +9,8 @@ use crate::*;
 pub struct HashchangeEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub new_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_new_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub old_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_old_url: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub new_url: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub old_url: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct HashchangeEvent {
   pub event: Event,
@@ -42,15 +40,13 @@ impl HashchangeEvent {
     let value = unsafe {
       ((*self.method_pointer).new_url)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn old_url(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).old_url)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
 }
 pub trait HashchangeEventMethods: EventMethods {
@@ -117,5 +113,27 @@ impl EventMethods for HashchangeEvent {
   }
   fn as_event(&self) -> &Event {
     &self.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_hashchange_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<HashchangeEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_hashchange_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(HashchangeEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_hashchange_event_with_options(&self, event_type: &str, options: &HashchangeEventInit,  exception_state: &ExceptionState) -> Result<HashchangeEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_hashchange_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(HashchangeEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

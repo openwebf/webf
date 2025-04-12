@@ -49,6 +49,7 @@ void _handleDispatchResult(Object contextHandle, Pointer<NativeValue> returnValu
   Event event = context.event;
   event.cancelable = dispatchResult.ref.canceled;
   event.propagationStopped = dispatchResult.ref.propagationStopped;
+  event.defaultPrevented = dispatchResult.ref.preventDefaulted;
   event.sharedJSProps = Pointer.fromAddress(context.rawEvent.ref.bytes.elementAt(8).value);
   event.propLen = context.rawEvent.ref.bytes.elementAt(9).value;
   event.allocateLen = context.rawEvent.ref.bytes.elementAt(10).value;
@@ -97,9 +98,9 @@ class _DispatchEventResultContext {
 Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
   Pointer<NativeBindingObject>? pointer = event.currentTarget?.pointer;
   double? contextId = event.target?.contextId;
-  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
 
-  if (controller.view.disposed) return;
+  if (controller == null || controller.view.disposed) return;
 
   if (contextId != null &&
       pointer != null &&

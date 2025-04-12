@@ -10,7 +10,7 @@ pub struct AnimationEventInit {
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
-  pub animation_name: *const c_char,
+  pub animation_name: AtomicStringRef,
   pub elapsed_time: c_double,
-  pub pseudo_element: *const c_char,
+  pub pseudo_element: AtomicStringRef,
 }
