@@ -15,7 +15,6 @@ class FlutterCupertinoButton extends WidgetElement {
       getter: () => _variant,
       setter: (value) {
         _variant = value;
-        setState(() {});
       }
     );
 
@@ -24,7 +23,6 @@ class FlutterCupertinoButton extends WidgetElement {
       getter: () => _sizeStyle,
       setter: (value) {
         _sizeStyle = value;
-        setState(() {});
       }
     );
 
@@ -33,7 +31,6 @@ class FlutterCupertinoButton extends WidgetElement {
       getter: () => _disabled.toString(),
       setter: (value) {
         _disabled = value != 'false';
-        setState(() {});
       }
     );
 
@@ -42,7 +39,6 @@ class FlutterCupertinoButton extends WidgetElement {
       getter: () => _pressedOpacity.toString(),
       setter: (value) {
         _pressedOpacity = double.tryParse(value) ?? 0.4;
-        setState(() {});
       }
     );
   }
@@ -52,35 +48,47 @@ class FlutterCupertinoButton extends WidgetElement {
   bool _disabled = false;
   double _pressedOpacity = 0.4;
 
-  EdgeInsetsGeometry getDefaultPadding() {
-    return _sizeStyle == 'small'
-      ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
-      : const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
-  }
-
   double getDefaultMinSize() {
     return _sizeStyle == 'small' ? 32.0 : 44.0;
   }
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoButtonState(this);
+  }
+}
+
+class FlutterCupertinoButtonState extends WebFWidgetElementState {
+  FlutterCupertinoButtonState(super.widgetElement);
+
+  @override
+  FlutterCupertinoButton get widgetElement => super.widgetElement as FlutterCupertinoButton;
 
   Color? _parseCSSColor(CSSColor? color) {
     if (color == null) return null;
     return color.value;
   }
 
+  EdgeInsetsGeometry getDefaultPadding() {
+    return widgetElement._sizeStyle == 'small'
+        ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+        : const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+  }
+
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     // Get renderStyle
-    final style = renderStyle;
-    final hasWidth = style?.width?.computedValue != 0.0;
-    final hasHeight = style?.height?.computedValue != 0.0;
-    final hasPadding = style?.padding != null && style!.padding != EdgeInsets.zero;
-    final hasBorderRadius = style?.borderRadius != null;
-    final hasMinHeight = style?.minHeight?.computedValue != 0.0;
-    final textAlign = style?.textAlign ?? TextAlign.center;
-    final backgroundColor = _parseCSSColor(style?.backgroundColor);
+    final renderStyle = widgetElement.renderStyle;
+    final hasWidth = renderStyle.width.computedValue != 0.0;
+    final hasHeight = renderStyle.height.computedValue != 0.0;
+    final hasPadding = renderStyle.padding != EdgeInsets.zero;
+    final hasBorderRadius = renderStyle.borderRadius != null;
+    final hasMinHeight = renderStyle.minHeight.computedValue != 0.0;
+    final textAlign = renderStyle.textAlign ?? TextAlign.center;
+    final backgroundColor = _parseCSSColor(renderStyle.backgroundColor);
 
     // Determine the alignment based on textAlign
     AlignmentGeometry alignment;
@@ -97,15 +105,15 @@ class FlutterCupertinoButton extends WidgetElement {
 
     // Get the color of the disabled state
     Color getDisabledColor() {
-      switch (_variant) {
+      switch (widgetElement._variant) {
         case 'filled':
           return isDark
-            ? CupertinoColors.systemGrey4.darkColor
-            : CupertinoColors.systemGrey4;
+              ? CupertinoColors.systemGrey4.darkColor
+              : CupertinoColors.systemGrey4;
         case 'tinted':
           return isDark
-            ? CupertinoColors.systemGrey5.darkColor
-            : CupertinoColors.systemGrey5;
+              ? CupertinoColors.systemGrey5.darkColor
+              : CupertinoColors.systemGrey5;
         default:
           return Colors.transparent;
       }
@@ -113,13 +121,13 @@ class FlutterCupertinoButton extends WidgetElement {
 
     // Get the text color
     Color getTextColor() {
-      if (_disabled) {
+      if (widgetElement._disabled) {
         return isDark
-          ? CupertinoColors.systemGrey.darkColor
-          : CupertinoColors.systemGrey;
+            ? CupertinoColors.systemGrey.darkColor
+            : CupertinoColors.systemGrey;
       }
 
-      switch (_variant) {
+      switch (widgetElement._variant) {
         case 'filled':
           return CupertinoColors.white;
         case 'tinted':
@@ -130,69 +138,69 @@ class FlutterCupertinoButton extends WidgetElement {
     }
 
     Widget buttonChild = Container(
-      width: hasWidth ? style.width.computedValue : null,
-      height: hasHeight ? style.height.computedValue : null,
+      width: hasWidth ? renderStyle.width.computedValue : null,
+      height: hasHeight ? renderStyle.height.computedValue : null,
       alignment: alignment,
       child: DefaultTextStyle(
         style: TextStyle(
           color: getTextColor(),
-          fontSize: _sizeStyle == 'small' ? 14 : 16,
+          fontSize: widgetElement._sizeStyle == 'small' ? 14 : 16,
           fontWeight: FontWeight.w500,
         ),
-        child: childNodes.isEmpty
-          ? const SizedBox()
-          : childNodes.first.toWidget(),
+        child: widgetElement.childNodes.isEmpty
+            ? const SizedBox()
+            : widgetElement.childNodes.first.toWidget(),
       ),
     );
 
     Widget button;
-    switch (_variant) {
+    switch (widgetElement._variant) {
       case 'filled':
         button = CupertinoButton.filled(
-          onPressed: _disabled ? null : () {
-            dispatchEvent(Event('click'));
+          onPressed: widgetElement._disabled ? null : () {
+            widgetElement.dispatchEvent(Event('click'));
           },
-          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? style!.padding! : getDefaultPadding()),
+          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
           disabledColor: getDisabledColor(),
-          pressedOpacity: _pressedOpacity,
+          pressedOpacity: widgetElement._pressedOpacity,
           borderRadius: hasBorderRadius
-            ? BorderRadius.circular(style!.borderRadius!.first.x)
-            : BorderRadius.circular(8),
-          minSize: hasMinHeight ? style!.minHeight!.value : getDefaultMinSize(),
+              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
+              : BorderRadius.circular(8),
+          minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
           alignment: alignment,
           child: buttonChild,
         );
         break;
       case 'tinted':
         button = CupertinoButton.tinted(
-          onPressed: _disabled ? null : () {
-            dispatchEvent(Event('click'));
+          onPressed: widgetElement._disabled ? null : () {
+            widgetElement.dispatchEvent(Event('click'));
           },
-          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? style!.padding! : getDefaultPadding()),
+          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
           color: backgroundColor,
           disabledColor: getDisabledColor(),
-          pressedOpacity: _pressedOpacity,
+          pressedOpacity: widgetElement._pressedOpacity,
           borderRadius: hasBorderRadius
-            ? BorderRadius.circular(style!.borderRadius!.first.x)
-            : BorderRadius.circular(8),
-          minSize: hasMinHeight ? style!.minHeight!.value : getDefaultMinSize(),
+              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
+              : BorderRadius.circular(8),
+          minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
           alignment: alignment,
           child: buttonChild,
         );
         break;
       default:
         button = CupertinoButton(
-          onPressed: _disabled ? null : () {
-            dispatchEvent(Event('click'));
+          onPressed: widgetElement._disabled ? null : () {
+            widgetElement.dispatchEvent(Event('click'));
           },
-          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? style!.padding! : getDefaultPadding()),
+          padding: hasWidth ? EdgeInsets.zero : (hasPadding ? renderStyle.padding : getDefaultPadding()),
           color: backgroundColor,
           disabledColor: getDisabledColor(),
-          pressedOpacity: _pressedOpacity,
+          pressedOpacity: widgetElement._pressedOpacity,
           borderRadius: hasBorderRadius
-            ? BorderRadius.circular(style!.borderRadius!.first.x)
-            : BorderRadius.circular(8),
-          minSize: hasMinHeight ? style!.minHeight!.value : getDefaultMinSize(),
+              ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
+              : BorderRadius.circular(8),
+          minSize: hasMinHeight ? renderStyle.minHeight.value : widgetElement.getDefaultMinSize(),
           alignment: alignment,
           child: buttonChild,
         );
@@ -202,4 +210,5 @@ class FlutterCupertinoButton extends WidgetElement {
       child: button,
     );
   }
+
 }

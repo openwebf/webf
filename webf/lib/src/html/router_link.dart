@@ -57,9 +57,22 @@ class RouterLinkElement extends WidgetElement {
   }
 
   @override
-  flutter.Widget build(flutter.BuildContext context, ChildNodeList childNodes) {
-    return WebFHTMLElement(tagName: 'DIV', children: childNodes.toWidgetList(), inlineStyle: {
-      'position': 'relative'
-    }, controller: ownerDocument.controller, parentElement: this);
+  WebFWidgetElementState createState() {
+    return RouterLinkElementState(this);
   }
+}
+
+class RouterLinkElementState extends WebFWidgetElementState {
+  RouterLinkElementState(super.widgetElement);
+
+  @override
+  RouterLinkElement get widgetElement => super.widgetElement as RouterLinkElement;
+
+  @override
+  flutter.Widget build(flutter.BuildContext context) {
+    return WebFHTMLElement(tagName: 'DIV', children: widgetElement.childNodes.toWidgetList(), inlineStyle: {
+      'position': 'relative'
+    }, controller: widgetElement.ownerDocument.controller, parentElement: widgetElement);
+  }
+
 }

@@ -8,7 +8,18 @@ class PortalElement extends WidgetElement {
   PortalElement(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    return WebFEventListener(ownerElement: this, child: childNodes.isNotEmpty ? childNodes.first.toWidget() : SizedBox.shrink());
+  WebFWidgetElementState createState() {
+    return PortalElementState(this);
+  }
+}
+
+class PortalElementState extends WebFWidgetElementState {
+  PortalElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    return WebFEventListener(
+        ownerElement: widgetElement,
+        child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : SizedBox.shrink());
   }
 }

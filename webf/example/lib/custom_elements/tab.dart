@@ -7,6 +7,10 @@ import 'package:dynamic_tabbar/dynamic_tabbar.dart';
 class FlutterTabState extends WebFWidgetElementState with TickerProviderStateMixin {
   late final TabController _tabController;
 
+  bool isScrollable = false;
+  bool showNextIcon = true;
+  bool showBackIcon = true;
+
   FlutterTabState(super.widgetElement);
 
   @override
@@ -33,43 +37,22 @@ class FlutterTabState extends WebFWidgetElementState with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return super.build(context);
-  }
-}
-
-class FlutterTab extends WidgetElement {
-  FlutterTab(super.context);
-
-  bool isScrollable = false;
-  bool showNextIcon = true;
-  bool showBackIcon = true;
-
-  @override
-  FlutterTabState? get state => super.state as FlutterTabState?;
-
-  @override
-  WebFWidgetElementState createState() {
-    return FlutterTabState(this);
-  }
-
-  @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    final tabs = childNodes.whereType<dom.Element>().map((element) {
+    final tabs = widgetElement.childNodes.whereType<dom.Element>().map((element) {
       return Tab(text: element.getAttribute('title'));
     }).toList();
-    final children = childNodes.whereType<dom.Element>().map((element) {
+    final children = widgetElement.childNodes.whereType<dom.Element>().map((element) {
       return element.toWidget();
     }).toList();
 
     return Column(
       children: <Widget>[
         TabBar.secondary(
-          controller: state?._tabController,
+          controller: _tabController,
           tabs: tabs,
         ),
         Expanded(
           child: TabBarView(
-            controller: state?._tabController,
+            controller: _tabController,
             children: children,
           ),
         ),
@@ -78,12 +61,36 @@ class FlutterTab extends WidgetElement {
   }
 }
 
+class FlutterTab extends WidgetElement {
+  FlutterTab(super.context);
+
+  @override
+  FlutterTabState? get state => super.state as FlutterTabState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterTabState(this);
+  }
+}
+
 class FlutterTabItem extends WidgetElement {
   FlutterTabItem(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterTabItemState(this);
+  }
+}
+
+class FlutterTabItemState extends WebFWidgetElementState {
+  FlutterTabItemState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return WebFHTMLElement(
-        tagName: 'DIV', parentElement: this, controller: ownerDocument.controller, children: childNodes.toWidgetList());
+        tagName: 'DIV',
+        parentElement: widgetElement,
+        controller: widgetElement.ownerDocument.controller,
+        children: widgetElement.childNodes.toWidgetList());
   }
 }

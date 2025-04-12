@@ -32,7 +32,6 @@ class FlutterCupertinoSwitch extends WidgetElement {
       getter: () => _checked.toString(),
       setter: (value) {
         _checked = value == 'true';
-        setState(() {});
       }
     );
 
@@ -41,7 +40,6 @@ class FlutterCupertinoSwitch extends WidgetElement {
       getter: () => _disabled.toString(),
       setter: (value) {
         _disabled = value != 'false';
-        setState(() {});
       }
     );
 
@@ -50,7 +48,6 @@ class FlutterCupertinoSwitch extends WidgetElement {
       getter: () => _activeColor?.toString(),
       setter: (value) {
         _activeColor = _parseColor(value);
-        setState(() {});
       }
     );
 
@@ -59,29 +56,40 @@ class FlutterCupertinoSwitch extends WidgetElement {
       getter: () => _inactiveColor?.toString(),
       setter: (value) {
         _inactiveColor = _parseColor(value);
-        setState(() {});
       }
     );
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoSwitchState(this);
+  }
+}
+
+class FlutterCupertinoSwitchState extends WebFWidgetElementState {
+  FlutterCupertinoSwitchState(super.widgetElement);
+
+  @override
+  FlutterCupertinoSwitch get widgetElement => super.widgetElement as FlutterCupertinoSwitch;
+
+  @override
+  Widget build(BuildContext context) {
     return Opacity(
-      opacity: _disabled ? 0.5 : 1.0,
+      opacity: widgetElement._disabled ? 0.5 : 1.0,
       child: CupertinoSwitch(
         // Basic properties
-        value: _checked,
-        onChanged: _disabled ? null : (bool value) {
-          _checked = value;
+        value: widgetElement._checked,
+        onChanged: widgetElement._disabled ? null : (bool value) {
+          widgetElement._checked = value;
           setState(() {
-            dispatchEvent(CustomEvent('change', detail: value));
+            widgetElement.dispatchEvent(CustomEvent('change', detail: value));
           });
         },
-        
+
         // Track color
-        activeTrackColor: _activeColor ?? CupertinoColors.systemBlue,
-        inactiveTrackColor: _inactiveColor,
-        
+        activeTrackColor: widgetElement._activeColor ?? CupertinoColors.systemBlue,
+        inactiveTrackColor: widgetElement._inactiveColor,
+
         dragStartBehavior: DragStartBehavior.start,
       ),
     );

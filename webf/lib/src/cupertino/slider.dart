@@ -21,7 +21,6 @@ class FlutterCupertinoSlider extends WidgetElement {
         final newValue = double.tryParse(val) ?? _value;
         if (newValue != _value) {
           _value = newValue.clamp(_min, _max);
-          setState(() {});
         }
       }
     );
@@ -34,7 +33,6 @@ class FlutterCupertinoSlider extends WidgetElement {
         if (newMin != _min) {
           _min = newMin;
           _value = _value.clamp(_min, _max);
-          setState(() {});
         }
       }
     );
@@ -47,7 +45,6 @@ class FlutterCupertinoSlider extends WidgetElement {
         if (newMax != _max) {
           _max = newMax;
           _value = _value.clamp(_min, _max);
-          setState(() {});
         }
       }
     );
@@ -59,7 +56,6 @@ class FlutterCupertinoSlider extends WidgetElement {
         final steps = int.tryParse(val);
         if (steps != _divisions) {
           _divisions = steps;
-          setState(() {});
         }
       }
     );
@@ -69,34 +65,7 @@ class FlutterCupertinoSlider extends WidgetElement {
       getter: () => _disabled.toString(),
       setter: (val) {
         _disabled = val != 'false';
-        setState(() {});
       }
-    );
-  }
-
-  @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    final theme = CupertinoTheme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return CupertinoSlider(
-      value: _value,
-      min: _min,
-      max: _max,
-      divisions: _divisions,
-      activeColor: isDark ? CupertinoColors.activeBlue.darkColor : CupertinoColors.activeBlue,
-      thumbColor: CupertinoColors.white,
-      onChanged: _disabled ? null : (double value) {
-        _value = value;
-        dispatchEvent(CustomEvent('change', detail: value));
-        setState(() {});
-      },
-      onChangeStart: (double value) {
-        dispatchEvent(CustomEvent('changestart', detail: value));
-      },
-      onChangeEnd: (double value) {
-        dispatchEvent(CustomEvent('changeend', detail: value));
-      },
     );
   }
 
@@ -114,7 +83,6 @@ class FlutterCupertinoSlider extends WidgetElement {
         if (args.isNotEmpty) {
           final newValue = double.tryParse(args[0].toString()) ?? slider._value;
           slider._value = newValue.clamp(slider._min, slider._max);
-          slider.setState(() {});
         }
         return null;
       },
@@ -126,4 +94,43 @@ class FlutterCupertinoSlider extends WidgetElement {
     ...super.methods,
     sliderSyncMethods,
   ];
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoSliderState(this);
+  }
+}
+
+class FlutterCupertinoSliderState extends WebFWidgetElementState {
+  FlutterCupertinoSliderState(super.widgetElement);
+
+  @override
+  FlutterCupertinoSlider get widgetElement => super.widgetElement as FlutterCupertinoSlider;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = CupertinoTheme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return CupertinoSlider(
+      value: widgetElement._value,
+      min: widgetElement._min,
+      max: widgetElement._max,
+      divisions: widgetElement._divisions,
+      activeColor: isDark ? CupertinoColors.activeBlue.darkColor : CupertinoColors.activeBlue,
+      thumbColor: CupertinoColors.white,
+      onChanged: widgetElement._disabled ? null : (double value) {
+        setState(() {
+          widgetElement._value = value;
+        });
+        widgetElement.dispatchEvent(CustomEvent('change', detail: value));
+      },
+      onChangeStart: (double value) {
+        widgetElement.dispatchEvent(CustomEvent('changestart', detail: value));
+      },
+      onChangeEnd: (double value) {
+        widgetElement.dispatchEvent(CustomEvent('changeend', detail: value));
+      },
+    );
+  }
 }

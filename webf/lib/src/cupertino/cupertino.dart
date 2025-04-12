@@ -35,7 +35,6 @@ void installWebFCupertino() {
       'flutter-cupertino-segmented-tab-item', (context) => FlutterCupertinoSegmentedTabItem(context));
   WebF.defineCustomElement('flutter-cupertino-switch', (context) => FlutterCupertinoSwitch(context));
   WebF.defineCustomElement('flutter-cupertino-picker', (context) => FlutterCupertinoPicker(context));
-  WebF.defineCustomElement('flutter-cupertino-picker-item', (context) => FlutterCupertinoPickerItem(context));
   WebF.defineCustomElement('flutter-cupertino-date-picker', (context) => FlutterCupertinoDatePicker(context));
   WebF.defineCustomElement('flutter-cupertino-modal-popup', (context) => FlutterCupertinoModalPopup(context));
   WebF.defineCustomElement('flutter-cupertino-icon', (context) => FlutterCupertinoIcon(context));

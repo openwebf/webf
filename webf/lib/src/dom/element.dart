@@ -58,6 +58,7 @@ mixin ElementBase on Node {
   late CSSRenderStyle renderStyle;
 }
 
+typedef ForeachStateFunction = void Function(WebFElementWidgetState state);
 typedef BeforeRendererAttach = RenderObject Function();
 typedef GetTargetId = int Function();
 typedef GetRootElementFontSize = double Function();
@@ -121,13 +122,33 @@ abstract class Element extends ContainerNode
   final Map<String, dynamic> inlineStyle = {};
 
   /// The StatefulElements that holding the reference of this elements
-  final Set<WebFElementWidgetState> states = {};
+  @flutter.protected
+  final Set<WebFElementWidgetState> _states = {};
 
   @pragma('vm:prefer-inline')
   flutter.Key key = flutter.UniqueKey();
 
+  @protected
   void updateElementKey() {
     key = flutter.UniqueKey();
+  }
+
+  @nonVirtual
+  @protected
+  void forEachState(ForeachStateFunction fn) {
+    _states.forEach(fn);
+  }
+
+  @nonVirtual
+  @protected
+  void addState(WebFElementWidgetState state) {
+    _states.add(state);
+  }
+
+  @nonVirtual
+  @protected
+  void removeState(WebFElementWidgetState state) {
+    _states.remove(state);
   }
 
   /// The Element.classList is a read-only property that returns a collection of the class attributes of the element.
@@ -663,7 +684,7 @@ abstract class Element extends ContainerNode
   void dispose() async {
     renderStyle.detach();
     renderStyle.dispose();
-    states.clear();
+    _states.clear();
     style.dispose();
     attributes.clear();
     _attributeProperties.clear();
@@ -1344,19 +1365,6 @@ abstract class Element extends ContainerNode
     Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.
     dispatchEvent(clickEvent);
-  }
-
-  /// Moves the focus to the element.
-  /// https://html.spec.whatwg.org/multipage/interaction.html#dom-focus
-  void focus() {
-    // TODO
-  }
-
-  /// Moves the focus to the viewport. Use of this method is discouraged;
-  /// if you want to focus the viewport, call the focus() method on the Document's document element.
-  /// https://html.spec.whatwg.org/multipage/interaction.html#dom-blur
-  void blur() {
-    // TODO
   }
 
   Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {

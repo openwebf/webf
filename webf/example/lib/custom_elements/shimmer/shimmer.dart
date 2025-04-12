@@ -6,6 +6,15 @@ import 'shimmer_loading.dart';
 class FlutterShimmerElement extends WidgetElement {
   FlutterShimmerElement(BindingContext? context) : super(context);
 
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterShimerElementState(this);
+  }
+}
+
+class FlutterShimerElementState extends WebFWidgetElementState {
+  FlutterShimerElementState(super.widgetElement);
+
   // 定义渐变色，可以通过属性配置
   final LinearGradient _shimmerGradient = LinearGradient(
     colors: [
@@ -20,14 +29,12 @@ class FlutterShimmerElement extends WidgetElement {
   );
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  Widget build(BuildContext context) {
     return Shimmer(
       linearGradient: _shimmerGradient,
       child: ShimmerLoading(
-        isLoading: true,  // 这里可以通过属性控制
-        child: childNodes.isEmpty 
-          ? const SizedBox() 
-          : childNodes.first.toWidget(),
+        isLoading: true, // 这里可以通过属性控制
+        child: widgetElement.childNodes.isEmpty ? const SizedBox() : widgetElement.childNodes.first.toWidget(),
       ),
     );
   }

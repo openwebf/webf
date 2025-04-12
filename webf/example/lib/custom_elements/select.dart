@@ -17,7 +17,21 @@ class FlutterSelect extends WidgetElement {
   String? selectedValue;
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    // TODO: implement createState
+    throw UnimplementedError();
+  }
+}
+
+class FlutterSelectState extends WebFWidgetElementState {
+  FlutterSelectState(super.widgetElement);
+
+  @override
+  FlutterSelect get widgetElement => super.widgetElement as FlutterSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final renderStyle = widgetElement.renderStyle;
     return Container(
       width: renderStyle.width.computedValue,
       child: DropdownButton2<String>(
@@ -29,16 +43,16 @@ class FlutterSelect extends WidgetElement {
             color: Theme.of(context).hintColor,
           ),
         ),
-        items: childNodes.whereType<dom.Element>().map((element) {
+        items: widgetElement.childNodes.whereType<dom.Element>().map((element) {
           String value = element.getAttribute('value') ?? '';
           return DropdownMenuItem(value: value, child: element.toWidget(key: Key(value)));
         }).toList(),
-        value: selectedValue,
+        value: widgetElement.selectedValue,
         onChanged: (String? value) {
           setState(() {
-            selectedValue = value;
+            widgetElement.selectedValue = value;
           });
-          dispatchEvent(CustomEvent('change', detail: value));
+          widgetElement.dispatchEvent(CustomEvent('change', detail: value));
         },
         buttonStyleData: ButtonStyleData(
           padding: EdgeInsets.symmetric(horizontal: 16),
@@ -52,4 +66,5 @@ class FlutterSelect extends WidgetElement {
       ),
     );
   }
+
 }

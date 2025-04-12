@@ -68,7 +68,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   final Element webFElement;
 
   WebFElementWidgetState(this.webFElement) {
-    webFElement.states.add(this);
+    webFElement.addState(this);
   }
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
@@ -207,18 +207,18 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     webFElement._scrollControllerY = null;
     webFElement._scrollControllerX?.dispose();
     webFElement._scrollControllerX = null;
-    webFElement.states.remove(this);
+    webFElement.removeState(this);
   }
 
   @override
   void activate() {
     super.activate();
-    webFElement.states.add(this);
+    webFElement.addState(this);
   }
 
   @override
   void dispose() {
-    webFElement.states.remove(this);
+    webFElement.removeState(this);
     webFElement._scrollControllerY?.dispose();
     webFElement._scrollControllerY = null;
     webFElement._scrollControllerX?.dispose();
@@ -384,7 +384,7 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
-    webFElement.states.forEach((state) {
+    webFElement.forEachState((state) {
       state.requestForChildNodeUpdate(reason);
     });
   }

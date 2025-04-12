@@ -352,7 +352,7 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, {Bind
   if (bindingObject is WidgetElement) {
     bool shouldElementRebuild = bindingObject.shouldElementRebuild(key, originalValue, value);
     if (shouldElementRebuild) {
-      bindingObject.setState(() {});
+      bindingObject.state?.requestUpdateState();
     }
     bindingObject.propertyDidUpdate(key, value);
   }

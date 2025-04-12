@@ -56,7 +56,7 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     if (parent == null) return null;
     dom.Element? target;
     parent.visitAncestorElements((Element element) {
-      if (element is WebFWidgetElementElement) {
+      if (element is WebFWidgetElementAdapterElement) {
         target = element.widget.widgetElement;
         return false;
       } else if (element is SelfOwnedWebRenderLayoutWidgetElement) {

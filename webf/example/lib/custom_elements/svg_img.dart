@@ -15,7 +15,7 @@ class FlutterSVGImg extends WidgetElement {
 
   String? _src;
   bool _loaded = false;
-  
+
   int naturalWidth = 0;
   int naturalHeight = 0;
 
@@ -28,22 +28,22 @@ class FlutterSVGImg extends WidgetElement {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
-    
+
     properties['src'] = BindingObjectProperty(
       getter: () => src,
       setter: (value) => src = castToType<String>(value)
     );
-    
+
     properties['width'] = BindingObjectProperty(
       getter: () => width,
       setter: (value) => width = value
     );
-    
+
     properties['height'] = BindingObjectProperty(
       getter: () => height,
       setter: (value) => height = value
     );
-    
+
     properties['naturalWidth'] = BindingObjectProperty(getter: () => naturalWidth);
     properties['naturalHeight'] = BindingObjectProperty(getter: () => naturalHeight);
     properties['complete'] = BindingObjectProperty(getter: () => _loaded);
@@ -56,7 +56,7 @@ class FlutterSVGImg extends WidgetElement {
     attributes['src'] = ElementAttributeProperty(
       setter: (value) => src = attributeToProperty<String>(value)
     );
-    
+
     attributes['width'] = ElementAttributeProperty(
       setter: (value) {
         CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
@@ -65,7 +65,7 @@ class FlutterSVGImg extends WidgetElement {
         }
       }
     );
-    
+
     attributes['height'] = ElementAttributeProperty(
       setter: (value) {
         CSSLengthValue input = CSSLength.parseLength(attributeToProperty<String>(value), renderStyle);
@@ -84,7 +84,7 @@ class FlutterSVGImg extends WidgetElement {
       _loaded = false;
       ownerDocument.incrementLoadEventDelayCount();
       _loadSvg();
-      setState(() {});
+      state?.requestUpdateState();
     }
   }
 
@@ -169,7 +169,6 @@ class FlutterSVGImg extends WidgetElement {
       renderStyle.aspectRatio = naturalWidth / naturalHeight;
     }
   }
-
   Uri? _resolveResourceUri(String src) {
     String base = ownerDocument.controller.url;
     try {
@@ -190,12 +189,12 @@ class FlutterSVGImg extends WidgetElement {
     }
 
     try {
-      final bundle = ownerDocument.controller.getPreloadBundleFromUrl(resolvedUri.toString()) ?? 
-                    WebFBundle.fromUrl(resolvedUri.toString());
-      
+      final bundle = ownerDocument.controller.getPreloadBundleFromUrl(resolvedUri.toString()) ??
+          WebFBundle.fromUrl(resolvedUri.toString());
+
       await bundle.resolve(
-        baseUrl: ownerDocument.controller.url,
-        uriParser: ownerDocument.controller.uriParser
+          baseUrl: ownerDocument.controller.url,
+          uriParser: ownerDocument.controller.uriParser
       );
       await bundle.obtainData(ownerDocument.controller.view.contextId);
 
@@ -208,13 +207,13 @@ class FlutterSVGImg extends WidgetElement {
       naturalWidth = 100;
       naturalHeight = 100;
       _resizeImage();
-      
+
       _loaded = true;
       bundle.dispose();
-      
+
       ownerDocument.decrementLoadEventDelayCount();
       dispatchEvent(Event('load'));
-      setState(() {});
+      state?.requestUpdateState();
 
     } catch (e) {
       print('Error loading SVG: $e');
@@ -224,18 +223,34 @@ class FlutterSVGImg extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    if (_src == null || !_loaded) {
+  FlutterSVGImgState? get state => super.state as FlutterSVGImgState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterSVGImgState(this);
+  }
+}
+
+class FlutterSVGImgState extends WebFWidgetElementState {
+  FlutterSVGImgState(super.widgetElement);
+
+  @override
+  FlutterSVGImg get widgetElement => super.widgetElement as FlutterSVGImg;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widgetElement._src == null || !widgetElement._loaded) {
       return const SizedBox();
     }
 
     return SvgPicture.network(
-      _src!,
-      width: width.toDouble(),
-      height: height.toDouble(),
-      fit: renderStyle.objectFit,
-      alignment: renderStyle.objectPosition,
+      widgetElement._src!,
+      width: widgetElement.width.toDouble(),
+      height: widgetElement.height.toDouble(),
+      fit: widgetElement.renderStyle.objectFit,
+      alignment: widgetElement.renderStyle.objectPosition,
       placeholderBuilder: (context) => const SizedBox(),
     );
   }
+
 }

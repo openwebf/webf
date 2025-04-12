@@ -5,13 +5,6 @@ class FlutterCupertinoLoading extends WidgetElement {
   FlutterCupertinoLoading(super.context);
 
   OverlayEntry? _overlayEntry;
-  bool _isDisposed = false;
-
-  @override
-  void mount() {
-    super.mount();
-    _isDisposed = false;
-  }
 
   // Define static method map
   static StaticDefinedSyncBindingObjectMethodMap loadingSyncMethods = {
@@ -41,12 +34,11 @@ class FlutterCupertinoLoading extends WidgetElement {
       ];
 
   void _show(String? text) {
-    print('context: $context');
-    if (_isDisposed || context == null) return;
+    if (state == null) return;
 
     _hide(); // Hide existing overlay if any
 
-    final overlay = Overlay.maybeOf(context!);
+    final overlay = Overlay.maybeOf(state!.context);
     if (overlay == null) return;
 
     final bool maskClosable = attributes['maskClosable'] != null && attributes['maskClosable'] != 'false';
@@ -74,13 +66,24 @@ class FlutterCupertinoLoading extends WidgetElement {
 
   @override
   void dispose() {
-    _isDisposed = true;
     _hide();
     super.dispose();
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoLoadingState(this);
+  }
+}
+
+class FlutterCupertinoLoadingState extends WebFWidgetElementState {
+  FlutterCupertinoLoadingState(super.widgetElement);
+
+  @override
+  FlutterCupertinoLoading get widgetElement => super.widgetElement as FlutterCupertinoLoading;
+
+  @override
+  Widget build(BuildContext context) {
     return const SizedBox.shrink();
   }
 }

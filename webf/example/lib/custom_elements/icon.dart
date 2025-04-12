@@ -16,8 +16,20 @@ class FlutterIcon extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    IconData? iconType = getIconType(getAttribute('type') ?? '');
+  WebFWidgetElementState createState() {
+    return FlutterIconState(this);
+  }
+}
+
+class FlutterIconState extends WebFWidgetElementState {
+  FlutterIconState(super.widgetElement);
+
+  @override
+  WidgetElement get widgetElement => super.widgetElement as FlutterIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    IconData? iconType = FlutterIcon.getIconType(widgetElement.getAttribute('type') ?? '');
     if (iconType == null) return SizedBox.shrink();
 
     return Icon(

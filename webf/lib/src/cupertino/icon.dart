@@ -137,15 +137,27 @@ class FlutterCupertinoIcon extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    IconData? iconType = getIconType(getAttribute('type') ?? '');
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoIconState(this);
+  }
+}
+
+class FlutterCupertinoIconState extends WebFWidgetElementState {
+  FlutterCupertinoIconState(super.widgetElement);
+
+  @override
+  FlutterCupertinoIcon get widgetElement => super.widgetElement as FlutterCupertinoIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    IconData? iconType = FlutterCupertinoIcon.getIconType(widgetElement.getAttribute('type') ?? '');
     if (iconType == null) return SizedBox.shrink();
 
     return Icon(
       iconType,
-      color: renderStyle.color.value,
-      size: renderStyle.fontSize.value,
-      semanticLabel: getAttribute('label') ?? 'Text to announce in accessibility modes',
+      color: widgetElement.renderStyle.color.value,
+      size: widgetElement.renderStyle.fontSize.value,
+      semanticLabel: widgetElement.getAttribute('label') ?? 'Text to announce in accessibility modes',
     );
   }
 }

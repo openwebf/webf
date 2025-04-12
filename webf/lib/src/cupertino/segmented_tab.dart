@@ -1,23 +1,40 @@
 import 'package:flutter/cupertino.dart';
+import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 
 class FlutterCupertinoSegmentedTab extends WidgetElement {
   FlutterCupertinoSegmentedTab(super.context);
 
+  @override
+  FlutterCupertinoSegmentedTabState? get state => super.state as FlutterCupertinoSegmentedTabState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoSegmentedTabState(this);
+  }
+}
+
+class FlutterCupertinoSegmentedTabState extends WebFWidgetElementState {
+  FlutterCupertinoSegmentedTabState(super.widgetElement);
+
   int _currentIndex = 0;
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  FlutterCupertinoSegmentedTab get widgetElement => super.widgetElement as FlutterCupertinoSegmentedTab;
+
+  @override
+  Widget build(BuildContext context) {
     final tabs = <int, Widget>{};
     final contents = <Widget>[];
 
     // Default dimensions if not specified
     final double defaultWidth = 80.0;
     final double defaultHeight = 30.0;
+    final CSSRenderStyle renderStyle = widgetElement.renderStyle;
 
     int index = 0;
-    for (var element in childNodes.whereType<dom.Element>()) {
+    for (var element in widgetElement.childNodes.whereType<dom.Element>()) {
       tabs[index] = Container(
         width: renderStyle.width.isAuto ? defaultWidth : renderStyle.width.computedValue,
         height: renderStyle.height.isAuto ? defaultHeight : renderStyle.height.computedValue,
@@ -53,15 +70,13 @@ class FlutterCupertinoSegmentedTab extends WidgetElement {
                 setState(() {
                   _currentIndex = value;
                 });
-                dispatchEvent(CustomEvent('change', detail: value));
+                widgetElement.dispatchEvent(CustomEvent('change', detail: value));
               }
             },
           ),
         ),
         Expanded(
-          child: contents.isEmpty 
-              ? const SizedBox() 
-              : contents[_currentIndex],
+          child: contents.isEmpty ? const SizedBox() : contents[_currentIndex],
         ),
       ],
     );
@@ -72,12 +87,24 @@ class FlutterCupertinoSegmentedTabItem extends WidgetElement {
   FlutterCupertinoSegmentedTabItem(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoSegmentedTabItemState(this);
+  }
+}
+
+class FlutterCupertinoSegmentedTabItemState extends WebFWidgetElementState {
+  FlutterCupertinoSegmentedTabItemState(super.widgetElement);
+
+  @override
+  WidgetElement get widgetElement => super.widgetElement as FlutterCupertinoSegmentedTabItem;
+
+  @override
+  Widget build(BuildContext context) {
     return WebFHTMLElement(
       tagName: 'DIV',
-      parentElement: this,
-      controller: ownerDocument.controller,
-      children: childNodes.toWidgetList(),
+      parentElement: widgetElement,
+      controller: widgetElement.ownerDocument.controller,
+      children: widgetElement.childNodes.toWidgetList(),
     );
   }
 }

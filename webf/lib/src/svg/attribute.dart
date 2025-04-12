@@ -105,4 +105,10 @@ class DefsAttributeElement extends WidgetElement {
   flutter.Widget build(flutter.BuildContext context, ChildNodeList children) {
     return flutter.SizedBox.shrink();
   }
+
+  @override
+  WebFWidgetElementState createState() {
+    // TODO: implement createState
+    throw UnimplementedError();
+  }
 }

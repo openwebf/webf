@@ -235,17 +235,6 @@ class WebFViewController implements WidgetsBindingObserver {
     Timer(Duration(seconds: 3), () {
       window.dispatchEvent(Event('gcopen'));
     });
-
-    // Blur input element when new input focused.
-    window.addEventListener(EVENT_CLICK, (event) async {
-      if (event.target is Element) {
-        Element? focusedElement = document.focusedElement;
-        if (focusedElement != null && focusedElement != event.target) {
-          document.focusedElement!.blur();
-        }
-        (event.target as Element).focus();
-      }
-    });
   }
 
   Future<void> evaluateJavaScripts(String code) async {
@@ -644,42 +633,7 @@ class WebFViewController implements WidgetsBindingObserver {
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
-  void didChangeMetrics() {
-    if (!rootController.isFlutterAttached) return;
-    final ownerView = rootController.ownerFlutterView;
-    final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
-    final double bottomInsets;
-    if (resizeToAvoidBottomInsets && ownerView != null) {
-      bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
-    } else {
-      bottomInsets = 0;
-    }
-
-    if (resizeToAvoidBottomInsets && viewport?.hasSize == true) {
-      bool shouldScrollByToCenter = false;
-      Element? focusedElement = document.focusedElement;
-      double scrollOffset = 0;
-      if (focusedElement != null) {
-        RenderBox? renderer = focusedElement.attachedRenderer;
-        if (renderer != null && renderer.attached && renderer.hasSize) {
-          Offset focusOffset = renderer.localToGlobal(Offset.zero);
-          // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-          if (focusOffset.dy > viewport!.size.height - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
-            shouldScrollByToCenter = true;
-            scrollOffset = focusOffset.dy -
-                (viewport!.size.height - bottomInsets) +
-                renderer.size.height +
-                FOCUS_VIEWINSET_BOTTOM_OVERALL;
-          }
-        }
-      }
-      // Show keyboard
-      if (shouldScrollByToCenter) {
-        window.scrollBy(0, scrollOffset, false);
-      }
-    }
-    viewport?.bottomInset = bottomInsets;
-  }
+  void didChangeMetrics() {}
 
   @override
   void didChangePlatformBrightness() {

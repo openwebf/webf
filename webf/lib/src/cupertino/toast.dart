@@ -14,9 +14,6 @@ enum ToastType {
 class FlutterCupertinoToast extends WidgetElement {
   FlutterCupertinoToast(super.context);
 
-  OverlayEntry? _overlayEntry;
-  Timer? _timer;
-
   // Define static method map
   static StaticDefinedSyncBindingObjectMethodMap toastSyncMethods = {
     'show': StaticDefinedSyncBindingObjectMethod(
@@ -29,19 +26,16 @@ class FlutterCupertinoToast extends WidgetElement {
         final String? typeStr = params['type']?.toString();
         final int? durationMs = params['duration'] as int?;
 
-        final type =
-            typeStr != null ? toast._parseToastType(typeStr) : ToastType.normal;
-        final duration = durationMs != null
-            ? Duration(milliseconds: durationMs)
-            : const Duration(milliseconds: 2000);
+        final type = typeStr != null ? toast._parseToastType(typeStr) : ToastType.normal;
+        final duration = durationMs != null ? Duration(milliseconds: durationMs) : const Duration(milliseconds: 2000);
 
-        toast._show(content, type, duration);
+        toast.state?._show(content, type, duration);
       },
     ),
     'close': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
         final toast = castToType<FlutterCupertinoToast>(element);
-        toast._hide();
+        toast.state?._hide();
       },
     ),
   };
@@ -67,9 +61,30 @@ class FlutterCupertinoToast extends WidgetElement {
     }
   }
 
-  void _show(String message, ToastType type, Duration duration) {
-    if (context == null) return;
+  @override
+  FlutterCupertinoToastState? get state => super.state as FlutterCupertinoToastState?;
 
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoToastState(this);
+  }
+}
+
+class FlutterCupertinoToastState extends WebFWidgetElementState {
+  FlutterCupertinoToastState(super.widgetElement);
+
+  OverlayEntry? _overlayEntry;
+  Timer? _timer;
+
+  @override
+  FlutterCupertinoToast get widgetElement => super.widgetElement as FlutterCupertinoToast;
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox.shrink();
+  }
+
+  void _show(String message, ToastType type, Duration duration) {
     _hide();
 
     _overlayEntry = OverlayEntry(
@@ -79,7 +94,7 @@ class FlutterCupertinoToast extends WidgetElement {
       ),
     );
 
-    Overlay.of(context!).insert(_overlayEntry!);
+    Overlay.of(context).insert(_overlayEntry!);
 
     if (duration.inMilliseconds > 0) {
       _timer = Timer(duration, () {
@@ -99,11 +114,6 @@ class FlutterCupertinoToast extends WidgetElement {
   void dispose() {
     _hide();
     super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    return const SizedBox.shrink();
   }
 }
 
@@ -166,8 +176,7 @@ class _ToastWidget extends StatelessWidget {
                     children: [
                       if (type != ToastType.normal) ...[
                         type == ToastType.loading
-                            ? const CupertinoActivityIndicator(
-                                color: CupertinoColors.white)
+                            ? const CupertinoActivityIndicator(color: CupertinoColors.white)
                             : Icon(
                                 _getIcon(),
                                 color: CupertinoColors.white,

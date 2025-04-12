@@ -6,14 +6,23 @@ class FlutterButton extends WidgetElement {
   FlutterButton(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    Widget button = ElevatedButton(onPressed: () {
-      dispatchEvent(Event('press'));
-    }, child: childNodes.isNotEmpty ? childNodes.first.toWidget() : Text(''));
+  WebFWidgetElementState createState() {
+    return FlutterButtonState(this);
+  }
+}
 
-    return (renderStyle.width.isNotAuto || renderStyle.height.isNotAuto) ? Container(
-      width: renderStyle.width.isNotAuto ? renderStyle.width.computedValue : null,
-      height: renderStyle.height.isNotAuto ? renderStyle.height.computedValue : null,
+class FlutterButtonState extends WebFWidgetElementState {
+  FlutterButtonState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    Widget button = ElevatedButton(onPressed: () {
+      widgetElement.dispatchEvent(Event('press'));
+    }, child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : Text(''));
+
+    return (widgetElement.renderStyle.width.isNotAuto || widgetElement.renderStyle.height.isNotAuto) ? Container(
+      width: widgetElement.renderStyle.width.isNotAuto ? widgetElement.renderStyle.width.computedValue : null,
+      height: widgetElement.renderStyle.height.isNotAuto ? widgetElement.renderStyle.height.computedValue : null,
       child: button,
     ) : button;
   }

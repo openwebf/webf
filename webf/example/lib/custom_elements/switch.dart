@@ -6,11 +6,21 @@ class FlutterSwitch extends WidgetElement {
   FlutterSwitch(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    return Switch(value: getAttribute('selected') == 'true', onChanged: (value) {
+  WebFWidgetElementState createState() {
+    return FlutterSwitchState(this);
+  }
+}
+
+class FlutterSwitchState extends WebFWidgetElementState {
+  FlutterSwitchState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    return Switch(value: widgetElement.getAttribute('selected') == 'true', onChanged: (value) {
       setState(() {
-        dispatchEvent(CustomEvent('change', detail: value));
+        widgetElement.dispatchEvent(CustomEvent('change', detail: value));
       });
     });
   }
+
 }

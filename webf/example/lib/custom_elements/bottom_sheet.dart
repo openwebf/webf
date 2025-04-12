@@ -13,9 +13,10 @@ class FlutterBottomSheet extends WidgetElement {
   };
 
   void showBottomSheet() {
+    if (state == null) return;
     showModalBottomSheet(
       isScrollControlled: true,
-      context: context!,
+      context: state!.context,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
@@ -42,7 +43,16 @@ class FlutterBottomSheet extends WidgetElement {
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, bottomSheetMethods];
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterBottomSheetState(this);
+  }
+}
+
+class FlutterBottomSheetState extends WebFWidgetElementState {
+  FlutterBottomSheetState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return SizedBox.shrink();
   }
 }

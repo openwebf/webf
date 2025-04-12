@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
@@ -18,31 +19,27 @@ const Map<String, dynamic> _defaultStyle = {
 
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
+  final Set<WebFWidgetElementState> _widgetElementStates = {};
+
+  void _addWidgetElementState(WebFWidgetElementState newState) {
+    _widgetElementStates.add(newState);
+  }
+
+  void _removeWidgetElementState(WebFWidgetElementState oldState) {
+    _widgetElementStates.remove(oldState);
+  }
+
   WebFWidgetElementState? get state {
-    final stateFinder = states.where((state) => state.mounted == true);
-    return stateFinder.isEmpty ? null : stateFinder.first as WebFWidgetElementState;
+    final stateFinder = _widgetElementStates.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.last;
   }
 
-  set state(WebFWidgetElementState? newState) {
-    if (newState == null) return;
-    states.add(newState);
-  }
-
-  WebFWidgetElementState createState() {
-    WebFWidgetElementState state = WebFWidgetElementState(this);
-    return state;
-  }
+  @mustBeOverridden
+  WebFWidgetElementState createState();
 
   @override
   dom.ChildNodeList get childNodes => super.childNodes as dom.ChildNodeList;
-
   bool isRouterLinkElement = false;
-
-  /// Current BuildContext for the last build of WidgetElement
-  /// could be null if this widgetElement not was attached to screen in Flutter.
-  BuildContext? get context {
-    return state?.context;
-  }
 
   WidgetElement(BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -57,19 +54,6 @@ abstract class WidgetElement extends dom.Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
-  // State methods, proxy called from _state
-  void initState() {}
-
-  void didChangeDependencies() {}
-
-  void mount() {}
-
-  void unmount() {}
-
-  void stateDispose() {}
-
-  bool get mounted => state?.mounted ?? false;
-
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
 
@@ -80,8 +64,6 @@ abstract class WidgetElement extends dom.Element {
   void propertyDidUpdate(String key, value) {}
 
   void styleDidUpdate(String property, String value) {}
-
-  Widget build(BuildContext context, dom.ChildNodeList childNodes);
 
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
@@ -99,18 +81,9 @@ abstract class WidgetElement extends dom.Element {
     super.didDetachRenderer(flutterWidgetElement);
   }
 
-  @nonVirtual
-  void setState(VoidCallback callback) {
-    if (state != null) {
-      state!.requestUpdateState(callback);
-    } else {
-      callback();
-    }
-  }
-
   /// [willAttachRenderer] and [didAttachRenderer] on WidgetElement will be called when this WidgetElement's parent is
   /// standard WebF element.
-  /// If this WidgetElement's parent is another WidgetElement, [WebFWidgetElementElement.mount] and [WebFWidgetElementElement.unmount]
+  /// If this WidgetElement's parent is another WidgetElement, [WebFWidgetElementAdapterElement.mount] and [WebFWidgetElementAdapterElement.unmount]
   /// place the equivalence altitude to the [willAttachRenderer] and [didAttachRenderer].
   @mustCallSuper
   @override
@@ -212,14 +185,12 @@ class WidgetElementAdapter extends dom.WebFElementWidget {
 
   @override
   StatefulElement createElement() {
-    return WebFWidgetElementElement(this);
+    return WebFWidgetElementAdapterElement(this);
   }
 
   @override
   State<StatefulWidget> createState() {
-    WebFWidgetElementState state = widgetElement.createState();
-    widgetElement.state = state;
-    return state;
+    return WebFWidgetElementAdapterState(widgetElement);
   }
 
   @override
@@ -233,45 +204,55 @@ class WidgetElementAdapter extends dom.WebFElementWidget {
   }
 }
 
-class WebFWidgetElementElement extends StatefulElement {
-  WebFWidgetElementElement(super.widget);
+class WebFWidgetElementAdapterElement extends StatefulElement {
+  WebFWidgetElementAdapterElement(super.widget);
 
   @override
   WidgetElementAdapter get widget => super.widget as WidgetElementAdapter;
 
   @override
-  WebFWidgetElementState get state => super.state as WebFWidgetElementState;
+  WebFWidgetElementAdapterState get state => super.state as WebFWidgetElementAdapterState;
+}
+
+class WebFWidgetElement extends StatefulWidget {
+  final WidgetElement widgetElement;
+
+  WebFWidgetElement(this.widgetElement);
 
   @override
-  void mount(Element? parent, Object? newSlot) {
-    super.mount(parent, newSlot);
-    widget.widgetElement.mount();
-  }
-
-  @override
-  void unmount() {
-    WidgetElement widgetElement = widget.widgetElement;
-    super.unmount();
-    widgetElement.unmount();
+  State<StatefulWidget> createState() {
+    WebFWidgetElementState state = widgetElement.createState();
+    widgetElement._addWidgetElementState(state);
+    return state;
   }
 }
 
-class WebFWidgetElementState extends dom.WebFElementWidgetState {
-  WebFWidgetElementState(WidgetElement widgetElement): super(widgetElement);
+abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
+  final WidgetElement widgetElement;
+
+  WebFWidgetElementState(this.widgetElement);
+
+  void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
+    if (mounted) {
+      setState(() {
+        if (callback != null) {
+          callback();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    widgetElement._removeWidgetElementState(this);
+    super.dispose();
+  }
+}
+
+class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
+  WebFWidgetElementAdapterState(WidgetElement widgetElement): super(widgetElement);
 
   WidgetElement get widgetElement => super.webFElement as WidgetElement;
-
-  @override
-  void initState() {
-    super.initState();
-    widgetElement.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    widgetElement.didChangeDependencies();
-  }
 
   void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
     if (mounted) {
@@ -296,7 +277,7 @@ class WebFWidgetElementState extends dom.WebFElementWidgetState {
       return SizedBox.shrink();
     }
 
-    Widget child = widgetElement.build(context, widgetElement.childNodes);
+    Widget child = WebFWidgetElement(widgetElement);
 
     if (widgetElement.isRepaintBoundary) {
       child = RepaintBoundary(child: child);
@@ -312,12 +293,6 @@ class WebFWidgetElementState extends dom.WebFElementWidgetState {
     List<Widget> children = [child, ...positionedElements.map((element) => element.toWidget())];
 
     return WebFRenderWidgetAdaptor(widgetElement, children: children);
-  }
-
-  @override
-  void dispose() {
-    widgetElement.stateDispose();
-    super.dispose();
   }
 }
 
@@ -349,9 +324,9 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
-    widget.widgetElement.states.forEach((state) {
+    widget.widgetElement.forEachState((state) {
       if (!state.mounted) return;
-      (state as WebFWidgetElementState).requestUpdateState(null, reason);
+      (state as WebFWidgetElementAdapterState).requestUpdateState(null, reason);
     });
   }
 

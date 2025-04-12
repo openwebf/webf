@@ -5,8 +5,6 @@ import 'package:webf/dom.dart' as dom;
 class FlutterTabBar extends WidgetElement {
   FlutterTabBar(super.context);
 
-  final CupertinoTabController _controller = CupertinoTabController();
-
   // Define static method map
   static StaticDefinedSyncBindingObjectMethodMap tabBarSyncMethods = {
     'switchTab': StaticDefinedSyncBindingObjectMethod(
@@ -18,7 +16,7 @@ class FlutterTabBar extends WidgetElement {
         final paths = tabBar._getTabPaths();
         final targetIndex = paths.indexOf(targetPath);
         if (targetIndex != -1) {
-          tabBar._controller.index = targetIndex;
+          tabBar.state?._controller.index = targetIndex;
 
           tabBar.setAttribute('currentIndex', targetIndex.toString());
           tabBar.dispatchEvent(CustomEvent('tabchange', detail: targetIndex));
@@ -29,9 +27,9 @@ class FlutterTabBar extends WidgetElement {
 
   @override
   List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    tabBarSyncMethods,
-  ];
+        ...super.methods,
+        tabBarSyncMethods,
+      ];
 
   static final Map<String, IconData> _iconMap = {
     'home': CupertinoIcons.home,
@@ -89,13 +87,30 @@ class FlutterTabBar extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  FlutterTabBarState? get state => super.state as FlutterTabBarState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterTabBarState(this);
+  }
+}
+
+class FlutterTabBarState extends WebFWidgetElementState {
+  FlutterTabBarState(super.widgetElement);
+
+  @override
+  FlutterTabBar get widgetElement => super.widgetElement as FlutterTabBar;
+
+  final CupertinoTabController _controller = CupertinoTabController();
+
+  @override
+  Widget build(BuildContext context) {
     final theme = CupertinoTheme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final customBackgroundColor = _parseColor(getAttribute('backgroundColor'));
-    final customActiveColor = _parseColor(getAttribute('activeColor'));
-    final customInactiveColor = _parseColor(getAttribute('inactiveColor'));
+    final customBackgroundColor = widgetElement._parseColor(widgetElement.getAttribute('backgroundColor'));
+    final customActiveColor = widgetElement._parseColor(widgetElement.getAttribute('activeColor'));
+    final customInactiveColor = widgetElement._parseColor(widgetElement.getAttribute('inactiveColor'));
 
     final defaultBackgroundColor = isDark
         ? CupertinoDynamicColor.resolve(
@@ -107,42 +122,35 @@ class FlutterTabBar extends WidgetElement {
           )
         : CupertinoColors.systemBackground;
 
-    final defaultActiveColor = isDark
-        ? CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context)
-        : CupertinoColors.systemBlue;
+    final defaultActiveColor =
+        isDark ? CupertinoDynamicColor.resolve(CupertinoColors.systemBlue, context) : CupertinoColors.systemBlue;
 
-    final defaultInactiveColor = isDark
-        ? CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context)
-        : CupertinoColors.systemGrey;
+    final defaultInactiveColor =
+        isDark ? CupertinoDynamicColor.resolve(CupertinoColors.systemGrey, context) : CupertinoColors.systemGrey;
 
-    final paths = _getTabPaths();
-    final tabViews = _buildTabViews(childNodes);
+    final paths = widgetElement._getTabPaths();
+    final tabViews = widgetElement._buildTabViews(widgetElement.childNodes);
 
     return SizedBox(
         height: MediaQuery.of(context).size.height,
         child: CupertinoTabScaffold(
             controller: _controller,
             tabBar: CupertinoTabBar(
-                items: _buildTabItems(),
-                currentIndex: int.tryParse(getAttribute('currentIndex') ?? '0') ?? 0,
+                items: widgetElement._buildTabItems(),
+                currentIndex: int.tryParse(widgetElement.getAttribute('currentIndex') ?? '0') ?? 0,
                 backgroundColor: customBackgroundColor ?? defaultBackgroundColor,
                 activeColor: customActiveColor ?? defaultActiveColor,
                 inactiveColor: customInactiveColor ?? defaultInactiveColor,
-                iconSize: double.tryParse(getAttribute('iconSize') ?? '30.0') ?? 30.0,
-                height: double.tryParse(getAttribute('height') ?? '50.0') ?? 50.0,
+                iconSize: double.tryParse(widgetElement.getAttribute('iconSize') ?? '30.0') ?? 30.0,
+                height: double.tryParse(widgetElement.getAttribute('height') ?? '50.0') ?? 50.0,
                 border: isDark
                     ? Border(
                         top: BorderSide(
-                          color: CupertinoDynamicColor.resolve(
-                            CupertinoColors.separator,
-                            context
-                          ).withOpacity(0.3)
-                        )
-                      )
+                            color: CupertinoDynamicColor.resolve(CupertinoColors.separator, context).withOpacity(0.3)))
                     : null,
                 onTap: (index) {
-                  setAttribute('currentIndex', index.toString());
-                  dispatchEvent(CustomEvent('tabchange', detail: index));
+                  widgetElement.setAttribute('currentIndex', index.toString());
+                  widgetElement.dispatchEvent(CustomEvent('tabchange', detail: index));
                 }),
             tabBuilder: (BuildContext context, int index) {
               return CupertinoTabView(
@@ -174,8 +182,20 @@ class FlutterCupertinoTabBarItem extends WidgetElement {
   FlutterCupertinoTabBarItem(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoTabBarItemState(this);
+  }
+}
+
+class FlutterCupertinoTabBarItemState extends WebFWidgetElementState {
+  FlutterCupertinoTabBarItemState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return WebFHTMLElement(
-        tagName: 'DIV', controller: ownerDocument.controller, parentElement: this, children: childNodes.toWidgetList());
+        tagName: 'DIV',
+        controller: widgetElement.ownerDocument.controller,
+        parentElement: widgetElement,
+        children: widgetElement.childNodes.toWidgetList());
   }
 }

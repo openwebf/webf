@@ -6,10 +6,22 @@ class FlutterCupertinoPicker extends WidgetElement {
   FlutterCupertinoPicker(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoPickerState(this);
+  }
+}
+
+class FlutterCupertinoPickerState extends WebFWidgetElementState {
+  FlutterCupertinoPickerState(super.widgetElement);
+
+  @override
+  FlutterCupertinoPicker get widgetElement => super.widgetElement as FlutterCupertinoPicker;
+
+  @override
+  Widget build(BuildContext context) {
     final items = <Widget>[];
-    
-    for (var element in childNodes.whereType<dom.Element>()) {
+
+    for (var element in widgetElement.childNodes.whereType<dom.Element>()) {
       items.add(
         Center(
           child: Text(
@@ -21,25 +33,16 @@ class FlutterCupertinoPicker extends WidgetElement {
     }
 
     return SizedBox(
-      height: double.tryParse(getAttribute('height') ?? '') ?? 200,
+      height: double.tryParse(widgetElement.getAttribute('height') ?? '') ?? 200,
       child: CupertinoPicker(
-        itemExtent: double.tryParse(getAttribute('item-height') ?? '') ?? 32,
+        itemExtent: double.tryParse(widgetElement.getAttribute('item-height') ?? '') ?? 32,
         onSelectedItemChanged: (index) {
-          final selectedElement = childNodes.whereType<dom.Element>().elementAt(index);
+          final selectedElement = widgetElement.childNodes.whereType<dom.Element>().elementAt(index);
           final value = selectedElement.getAttribute('val') ?? selectedElement.getAttribute('label') ?? '';
-          dispatchEvent(CustomEvent('change', detail: value));
+          widgetElement.dispatchEvent(CustomEvent('change', detail: value));
         },
         children: items,
       ),
     );
-  }
-}
-
-class FlutterCupertinoPickerItem extends WidgetElement {
-  FlutterCupertinoPickerItem(super.context);
-
-  @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    return const SizedBox();
   }
 }

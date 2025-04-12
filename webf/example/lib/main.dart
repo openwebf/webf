@@ -90,6 +90,8 @@ void main() async {
       createController: () => WebFController(
             initialRoute: '/',
             routeObserver: routeObserver,
+
+            runningThread: FlutterUIThread(),
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
       bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),

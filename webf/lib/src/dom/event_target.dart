@@ -28,7 +28,6 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
 
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
-  @protected
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
 
   // TODO: Support addEventListener options: capture, once, passive, signal.
