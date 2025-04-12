@@ -5,6 +5,10 @@
 #ifndef WEBF_CORE_RUST_API_EXECUTING_CONTEXT_H_
 #define WEBF_CORE_RUST_API_EXECUTING_CONTEXT_H_
 
+#include "core/native/native_function.h"
+#include "core/native/native_loader.h"
+#include "exception_state.h"
+#include "foundation/native_value.h"
 #include "plugin_api_gen/animation_event_init.h"
 #include "plugin_api_gen/close_event_init.h"
 #include "plugin_api_gen/custom_event_init.h"
@@ -26,10 +30,6 @@
 #include "plugin_api_gen/transition_event_init.h"
 #include "plugin_api_gen/ui_event_init.h"
 #include "plugin_api_gen/window.h"
-#include "foundation/native_value.h"
-#include "core/native/native_function.h"
-#include "core/native/native_loader.h"
-#include "exception_state.h"
 
 namespace webf {
 

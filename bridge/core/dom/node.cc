@@ -29,6 +29,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+#include "node.h"
 #include <unordered_map>
 #include "character_data.h"
 #include "child_list_mutation_scope.h"
@@ -38,7 +39,6 @@
 #include "document_fragment.h"
 #include "element.h"
 #include "empty_node_list.h"
-#include "node.h"
 #include "node_data.h"
 #include "node_traversal.h"
 #include "qjs_node.h"
