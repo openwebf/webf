@@ -28,6 +28,7 @@ import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
 import 'custom_hybrid_history_delegate.dart';
+import 'expandable_fab.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
@@ -90,7 +91,6 @@ void main() async {
       createController: () => WebFController(
             initialRoute: '/',
             routeObserver: routeObserver,
-
             runningThread: FlutterUIThread(),
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
@@ -356,23 +356,59 @@ class FirstPageState extends State<FirstPage> {
             },
             child: Text('Open Cupertino Gallery / Button')),
       ]),
-      floatingActionButton: FloatingActionButton(
-          child: Text('Update'),
-          onPressed: () {
+      floatingActionButton: ExpandableFab(
+        distance: 112,
+        children: [
+          ActionButton(
+              onPressed: () {
+                WebFControllerManager.instance.updateWithPreload(
+                    createController: () => WebFController(
+                          initialRoute: '/',
+                          routeObserver: routeObserver,
+                          devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+                        ),
+                    name: 'html/css',
+                    routes: {
+                      '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
+                      '/positioned_layout': (context, controller) =>
+                          WebFSubView(path: '/positioned_layout', controller: controller),
+                    },
+                    bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'));
+              },
+              child: Text('H')),
+          ActionButton(onPressed: () {
+            final WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
+            javaScriptChannel.onMethodCall = (String method, dynamic args) async {
+              switch (method) {
+                case 'share':
+                  if (args is List && args.isNotEmpty) {
+                    final params = args[0] as Map<String, dynamic>;
+                    return handleShare(params);
+                  }
+                  return false;
+                default:
+                  return null;
+              }
+            };
+
             WebFControllerManager.instance.updateWithPreload(
                 createController: () => WebFController(
-                      initialRoute: '/',
-                      routeObserver: routeObserver,
-                      devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-                    ),
-                name: 'html/css',
-                routes: {
-                  '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
-                  '/positioned_layout': (context, controller) =>
-                      WebFSubView(path: '/positioned_layout', controller: controller),
-                },
-                bundle: WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
-          }),
+                  initialRoute: '/home',
+                  routeObserver: routeObserver,
+                  devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+                  javaScriptChannel: javaScriptChannel,
+                ),
+                name: 'miracle_plus',
+                bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'));
+          }, child: Text('M')),
+          ActionButton(onPressed: () => print(1), child: Text('V')),
+        ],
+      ),
+      // floatingActionButton: FloatingActionButton(
+      //     child: Text('Update'),
+      //     onPressed: () {
+
+      //     }),
     );
   }
 }
@@ -410,10 +446,6 @@ class _WebFDemoState extends State<WebFDemo> {
                 )),
           ],
         ),
-        floatingActionButton: FloatingActionButton(onPressed: () {
-          // WidgetsBinding.instance.performReassemble();
-          // print(controller.view.getRootRenderObject()!.toStringDeep());
-        }),
         body: Stack(
           children: [
             WebF.fromControllerName(
@@ -457,6 +489,7 @@ class _WebFDemoState extends State<WebFDemo> {
     super.dispose();
   }
 }
+
 Future<bool> handleShare(Map<String, dynamic> args) async {
   try {
     final List<dynamic> dynamicList = args['blob'];

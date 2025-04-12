@@ -409,6 +409,7 @@ class _WebFElement extends StatefulElement {
     print('start for loading..');
 
     await controller.controlledInitCompleter.future;
+    await controller.viewportLayoutCompleter.future;
 
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       // Sync element state.
@@ -549,6 +550,10 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
             (viewportWidth != null && viewportHeight != null) ? ui.Size(viewportWidth!, viewportHeight!) : null,
         controller: controller);
     controller.view.viewport = root;
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      controller.viewportLayoutCompleter.complete();
+    });
 
     return root;
   }

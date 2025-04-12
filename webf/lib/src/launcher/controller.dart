@@ -347,6 +347,7 @@ class WebFController {
   Completer controllerPreRenderingCompleter = Completer();
   Completer controllerOnLoadCompleter = Completer();
   Completer controllerOnDOMContentLoadedCompleter = Completer();
+  Completer viewportLayoutCompleter = Completer();
 
   bool externalController;
 
