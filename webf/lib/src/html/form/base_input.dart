@@ -61,91 +61,6 @@ mixin BaseInputElement on WidgetElement {
     }
   }
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-
-    properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
-    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
-    properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
-    properties['placeholder'] =
-        BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
-    properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
-    properties['readonly'] = BindingObjectProperty(getter: () => readonly, setter: (value) => readonly = value);
-    properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
-    properties['defaultValue'] =
-        BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
-    properties['selectionStart'] = BindingObjectProperty(
-        getter: () => selectionStart,
-        setter: (value) {
-          if (value == null) {
-            selectionStart = null;
-            return;
-          }
-
-          if (value is num) {
-            selectionStart = value.toInt();
-            return;
-          }
-
-          if (value is String) {
-            selectionStart = int.tryParse(value);
-            return;
-          }
-
-          selectionStart = null;
-        });
-    properties['selectionEnd'] = BindingObjectProperty(
-        getter: () => selectionEnd,
-        setter: (value) {
-          if (value == null) {
-            selectionEnd = null;
-            return;
-          }
-
-          if (value is num) {
-            selectionEnd = value.toInt();
-            return;
-          }
-
-          if (value is String) {
-            selectionEnd = int.tryParse(value);
-            return;
-          }
-
-          selectionEnd = null;
-        });
-    properties['maxLength'] = BindingObjectProperty(
-        getter: () => maxLength,
-        setter: (value) {
-          if (value == null) {
-            maxLength = null;
-            return;
-          }
-
-          if (value is num) {
-            maxLength = value.toInt();
-            return;
-          }
-
-          if (value is String) {
-            maxLength = int.tryParse(value);
-            return;
-          }
-
-          maxLength = null;
-        });
-  }
-
-  @override
-  void initializeAttributes(Map<String, dom.ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['value'] = dom.ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
-    attributes['disabled'] =
-        dom.ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
-  }
-
   TextInputType? getKeyboardType() {
     if (this is FlutterTextAreaElement) {
       return TextInputType.multiline;
@@ -378,11 +293,6 @@ mixin BaseInputElement on WidgetElement {
     if (value != null) {
       _selectionEnd = value;
     }
-  }
-
-  @override
-  void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
-    super.didDetachRenderer();
   }
 }
 

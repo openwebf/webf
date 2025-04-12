@@ -26,7 +26,7 @@ class FlutterCupertinoTimerPicker extends WidgetElement {
         s = s.clamp(0, 59);
         Duration result = Duration(hours: h, minutes: m, seconds: s);
         if (result.inSeconds >= 24 * 3600) {
-           return Duration(hours: 23, minutes: 59, seconds: 59);
+          return Duration(hours: 23, minutes: 59, seconds: 59);
         }
         return result;
       }
@@ -38,22 +38,29 @@ class FlutterCupertinoTimerPicker extends WidgetElement {
   // Helper to parse mode string into CupertinoTimerPickerMode
   CupertinoTimerPickerMode _getTimerPickerMode(String? mode) {
     switch (mode?.toLowerCase()) {
-      case 'hm': return CupertinoTimerPickerMode.hm;
-      case 'ms': return CupertinoTimerPickerMode.ms;
+      case 'hm':
+        return CupertinoTimerPickerMode.hm;
+      case 'ms':
+        return CupertinoTimerPickerMode.ms;
       case 'hms':
-      default: return CupertinoTimerPickerMode.hms;
+      default:
+        return CupertinoTimerPickerMode.hms;
     }
   }
 
   // Helper to parse color string
-   Color? _parseColor(String? colorString) {
+  Color? _parseColor(String? colorString) {
     if (colorString == null || colorString.isEmpty) return null;
     if (colorString.startsWith('#')) {
       String hex = colorString.substring(1);
       if (hex.length == 6) hex = 'FF' + hex;
       if (hex.length == 8) {
-         try { return Color(int.parse(hex, radix: 16)); }
-         catch (e) { print('Error parsing color: $colorString, Error: $e'); return null; }
+        try {
+          return Color(int.parse(hex, radix: 16));
+        } catch (e) {
+          print('Error parsing color: $colorString, Error: $e');
+          return null;
+        }
       }
     }
     print('Unsupported color format: $colorString');
@@ -61,13 +68,25 @@ class FlutterCupertinoTimerPicker extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    final mode = _getTimerPickerMode(getAttribute('mode'));
-    final rawInitialDuration = _parseDuration(getAttribute('initial-timer-duration'));
-    final minuteInterval = int.tryParse(getAttribute('minute-interval') ?? '1') ?? 1;
-    final secondInterval = int.tryParse(getAttribute('second-interval') ?? '1') ?? 1;
-    final backgroundColor = _parseColor(getAttribute('background-color'));
-    final height = double.tryParse(getAttribute('height') ?? '') ?? 216.0;
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoTimerPickerState(this);
+  }
+}
+
+class FlutterCupertinoTimerPickerState extends WebFWidgetElementState {
+  FlutterCupertinoTimerPickerState(super.widgetElement);
+
+  @override
+  FlutterCupertinoTimerPicker get widgetElement => super.widgetElement as FlutterCupertinoTimerPicker;
+
+  @override
+  Widget build(BuildContext context) {
+    final mode = widgetElement._getTimerPickerMode(widgetElement.getAttribute('mode'));
+    final rawInitialDuration = widgetElement._parseDuration(widgetElement.getAttribute('initial-timer-duration'));
+    final minuteInterval = int.tryParse(widgetElement.getAttribute('minute-interval') ?? '1') ?? 1;
+    final secondInterval = int.tryParse(widgetElement.getAttribute('second-interval') ?? '1') ?? 1;
+    final backgroundColor = widgetElement._parseColor(widgetElement.getAttribute('background-color'));
+    final height = double.tryParse(widgetElement.getAttribute('height') ?? '') ?? 216.0;
 
     // Ensure intervals are valid factors of 60
     final validMinuteInterval = (minuteInterval > 0 && 60 % minuteInterval == 0) ? minuteInterval : 1;
@@ -80,41 +99,45 @@ class FlutterCupertinoTimerPicker extends WidgetElement {
 
     // Adjust seconds based on secondInterval (if mode includes seconds)
     if (mode == CupertinoTimerPickerMode.ms || mode == CupertinoTimerPickerMode.hms) {
-        int secondsPart = initialSeconds % 60;
-        adjustedSeconds = initialSeconds - secondsPart + (secondsPart ~/ validSecondInterval) * validSecondInterval;
+      int secondsPart = initialSeconds % 60;
+      adjustedSeconds = initialSeconds - secondsPart + (secondsPart ~/ validSecondInterval) * validSecondInterval;
     }
 
     // Adjust minutes based on minuteInterval (if mode includes minutes)
     // Use the potentially second-adjusted time for minute calculation basis
     Duration tempDuration = Duration(seconds: adjustedSeconds);
     int minutesPart = tempDuration.inMinutes % 60;
-    int currentHours = tempDuration.inHours; 
+    int currentHours = tempDuration.inHours;
     adjustedMinutes = (minutesPart ~/ validMinuteInterval) * validMinuteInterval;
-    
+
     // Reconstruct the final adjusted duration based on the mode
     Duration adjustedInitialDuration;
     if (mode == CupertinoTimerPickerMode.hms) {
-       adjustedInitialDuration = Duration(hours: currentHours, minutes: adjustedMinutes, seconds: adjustedSeconds % 60);
+      adjustedInitialDuration = Duration(hours: currentHours, minutes: adjustedMinutes, seconds: adjustedSeconds % 60);
     } else if (mode == CupertinoTimerPickerMode.hm) {
-       adjustedInitialDuration = Duration(hours: currentHours, minutes: adjustedMinutes);
-    } else { // mode == CupertinoTimerPickerMode.ms
-        // For ms mode, total duration is based on adjusted minutes and seconds part
-        adjustedSeconds = adjustedSeconds % 3600; // Consider only minutes and seconds
-        adjustedInitialDuration = Duration(minutes: adjustedMinutes, seconds: adjustedSeconds % 60);
+      adjustedInitialDuration = Duration(hours: currentHours, minutes: adjustedMinutes);
+    } else {
+      // mode == CupertinoTimerPickerMode.ms
+      // For ms mode, total duration is based on adjusted minutes and seconds part
+      adjustedSeconds = adjustedSeconds % 3600; // Consider only minutes and seconds
+      adjustedInitialDuration = Duration(minutes: adjustedMinutes, seconds: adjustedSeconds % 60);
     }
-    
+
     // Ensure final duration is within range (redundant check, but safe)
-     if (adjustedInitialDuration.inSeconds >= 24*3600) {
-       adjustedInitialDuration = Duration(hours: 23, minutes: (59 ~/ validMinuteInterval) * validMinuteInterval, seconds: (59 ~/ validSecondInterval) * validSecondInterval);
-     } else if (adjustedInitialDuration.isNegative) {
-       adjustedInitialDuration = Duration.zero;
-     }
+    if (adjustedInitialDuration.inSeconds >= 24 * 3600) {
+      adjustedInitialDuration = Duration(
+          hours: 23,
+          minutes: (59 ~/ validMinuteInterval) * validMinuteInterval,
+          seconds: (59 ~/ validSecondInterval) * validSecondInterval);
+    } else if (adjustedInitialDuration.isNegative) {
+      adjustedInitialDuration = Duration.zero;
+    }
 
     if (mode == CupertinoTimerPickerMode.hm && validSecondInterval != 1) {
-       print('Warning: second-interval is ignored when mode is "hm".');
+      print('Warning: second-interval is ignored when mode is "hm".');
     }
-     if (mode == CupertinoTimerPickerMode.ms && validMinuteInterval != 1) {
-       print('Warning: minute-interval is ignored when mode is "ms".');
+    if (mode == CupertinoTimerPickerMode.ms && validMinuteInterval != 1) {
+      print('Warning: minute-interval is ignored when mode is "ms".');
     }
 
     return SizedBox(
@@ -122,12 +145,12 @@ class FlutterCupertinoTimerPicker extends WidgetElement {
       child: CupertinoTimerPicker(
         mode: mode,
         // Use the adjusted duration
-        initialTimerDuration: adjustedInitialDuration, 
+        initialTimerDuration: adjustedInitialDuration,
         minuteInterval: validMinuteInterval,
         secondInterval: validSecondInterval,
         backgroundColor: backgroundColor,
         onTimerDurationChanged: (Duration newDuration) {
-          dispatchEvent(CustomEvent('change', detail: newDuration.inSeconds));
+          widgetElement.dispatchEvent(CustomEvent('change', detail: newDuration.inSeconds));
         },
       ),
     );

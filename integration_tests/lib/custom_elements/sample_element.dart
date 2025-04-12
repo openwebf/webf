@@ -71,8 +71,18 @@ class SampleElement extends WidgetElement {
     return completer.future;
   };
 
+
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return SampleElementState(this);
+  }
+}
+
+class SampleElementState extends WebFWidgetElementState {
+  SampleElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return Container();
   }
 }

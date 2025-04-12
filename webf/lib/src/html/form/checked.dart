@@ -9,13 +9,10 @@ import 'package:webf/webf.dart';
 import 'base_input.dart';
 import 'radio.dart';
 
-mixin BaseCheckedElement on WidgetElement {
+mixin BaseCheckedElement on BaseInputElement {
   bool _checked = false;
 
-  @override
-  FlutterInputElementState? get state => super.state as FlutterInputElementState?;
-
-  bool _getChecked() {
+  bool getChecked() {
     if (this is FlutterInputElement) {
       FlutterInputElement input = this as FlutterInputElement;
       switch (input.type) {
@@ -30,7 +27,7 @@ mixin BaseCheckedElement on WidgetElement {
     return _checked;
   }
 
-  _setChecked(bool value) {
+  setChecked(bool value) {
     if (this is FlutterInputElement) {
       FlutterInputElement input = this as FlutterInputElement;
       state?.requestUpdateState(() {
@@ -71,25 +68,6 @@ mixin BaseCheckedElement on WidgetElement {
     }
   }
 
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-
-    properties['checked'] = BindingObjectProperty(
-        getter: () => _getChecked(),
-        setter: (value) {
-          _setChecked(value == true);
-        });
-  }
-
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['checked'] = ElementAttributeProperty(
-        getter: () => _getChecked().toString(), setter: (value) => _setChecked(value == 'true'));
-  }
-
   double getCheckboxSize() {
     //TODO support zoom
     //width and height
@@ -107,14 +85,14 @@ mixin CheckboxElementState on WebFWidgetElementState {
   Widget createCheckBox(BuildContext context) {
     return Transform.scale(
       child: Checkbox(
-        value: widgetElement._getChecked(),
+        value: widgetElement.getChecked(),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
         onChanged: widgetElement.disabled
             ? null
             : (bool? newValue) {
                 setState(() {
-                  widgetElement._setChecked(newValue!);
+                  widgetElement.setChecked(newValue!);
                   widgetElement.dispatchEvent(Event('change'));
                 });
               },

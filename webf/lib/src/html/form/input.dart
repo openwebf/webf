@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/dom.dart' as dom;
 
 import 'base_input.dart';
 import 'button.dart';
@@ -34,6 +35,100 @@ class FlutterInputElement extends WidgetElement
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
       state?.focus();
     });
+  }
+
+  @override
+  void initializeProperties(Map<String, BindingObjectProperty> properties) {
+    super.initializeProperties(properties);
+
+    properties['value'] = BindingObjectProperty(getter: () => value, setter: (value) => this.value = value);
+    properties['type'] = BindingObjectProperty(getter: () => type, setter: (value) => type = value);
+    properties['disabled'] = BindingObjectProperty(getter: () => disabled, setter: (value) => disabled = value);
+    properties['placeholder'] =
+        BindingObjectProperty(getter: () => placeholder, setter: (value) => placeholder = value);
+    properties['label'] = BindingObjectProperty(getter: () => label, setter: (value) => label = value);
+    properties['readonly'] = BindingObjectProperty(getter: () => readonly, setter: (value) => readonly = value);
+    properties['autofocus'] = BindingObjectProperty(getter: () => autofocus, setter: (value) => autofocus = value);
+    properties['defaultValue'] =
+        BindingObjectProperty(getter: () => defaultValue, setter: (value) => defaultValue = value);
+    properties['selectionStart'] = BindingObjectProperty(
+        getter: () => selectionStart,
+        setter: (value) {
+          if (value == null) {
+            selectionStart = null;
+            return;
+          }
+
+          if (value is num) {
+            selectionStart = value.toInt();
+            return;
+          }
+
+          if (value is String) {
+            selectionStart = int.tryParse(value);
+            return;
+          }
+
+          selectionStart = null;
+        });
+    properties['selectionEnd'] = BindingObjectProperty(
+        getter: () => selectionEnd,
+        setter: (value) {
+          if (value == null) {
+            selectionEnd = null;
+            return;
+          }
+
+          if (value is num) {
+            selectionEnd = value.toInt();
+            return;
+          }
+
+          if (value is String) {
+            selectionEnd = int.tryParse(value);
+            return;
+          }
+
+          selectionEnd = null;
+        });
+    properties['maxLength'] = BindingObjectProperty(
+        getter: () => maxLength,
+        setter: (value) {
+          if (value == null) {
+            maxLength = null;
+            return;
+          }
+
+          if (value is num) {
+            maxLength = value.toInt();
+            return;
+          }
+
+          if (value is String) {
+            maxLength = int.tryParse(value);
+            return;
+          }
+
+          maxLength = null;
+        });
+    properties['checked'] = BindingObjectProperty(
+        getter: () => getChecked(),
+        setter: (value) {
+          setChecked(value == true);
+        });
+    properties['name'] = BindingObjectProperty(getter: () => name, setter: (value) => name = value);
+  }
+
+  @override
+  void initializeAttributes(Map<String, dom.ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['value'] = dom.ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
+    attributes['disabled'] =
+        dom.ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
+    attributes['checked'] = dom.ElementAttributeProperty(
+        getter: () => getChecked().toString(), setter: (value) => setChecked(value == 'true'));
+    attributes['name'] = dom.ElementAttributeProperty(getter: () => name, setter: (value) => name = value);
   }
 
   @override

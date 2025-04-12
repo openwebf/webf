@@ -34,7 +34,6 @@ abstract class WidgetElement extends dom.Element {
     return stateFinder.isEmpty ? null : stateFinder.last;
   }
 
-  @mustBeOverridden
   WebFWidgetElementState createState();
 
   @override

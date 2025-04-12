@@ -13,19 +13,31 @@ class FlutterButtonElement extends WidgetElement {
     'display': 'inline-block'
   };
 
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterButtonElementState(this);
+  }
+}
+
+class FlutterButtonElementState extends WebFWidgetElementState {
+  FlutterButtonElementState(super.widgetElement);
+
   Widget buildButton(BuildContext context, String type, Widget child) {
     switch (type) {
       case 'primary':
-        return ElevatedButton(onPressed: () => handlePressed(context), child: child);
+        return ElevatedButton(onPressed: () => widgetElement.handlePressed(context), child: child);
       case 'default':
       default:
-        return OutlinedButton(onPressed: () => handlePressed(context), child: child);
+        return OutlinedButton(onPressed: () => widgetElement.handlePressed(context), child: child);
     }
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    String type = getAttribute('type') ?? 'default';
-    return buildButton(context, type, childNodes.isNotEmpty ? childNodes.first.toWidget() : Container());
+  FlutterButtonElement get widgetElement => super.widgetElement as FlutterButtonElement;
+
+  @override
+  Widget build(BuildContext context) {
+    String type = widgetElement.getAttribute('type') ?? 'default';
+    return buildButton(context, type, widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : Container());
   }
 }

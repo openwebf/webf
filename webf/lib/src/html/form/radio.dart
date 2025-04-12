@@ -6,7 +6,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/dom.dart' as dom;
@@ -15,10 +14,6 @@ import 'checked.dart';
 
 /// create a radio widget when input type='radio'
 mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
-  bool get disabled => getAttribute('disabled') != null;
-
-  String get value => getAttribute('value') ?? '';
-
   String _name = '';
 
   String get name => _name;
@@ -29,28 +24,6 @@ mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
     }
     _name = n?.toString() ?? '';
     RadioElementState._groupValues[_name] = _name;
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-
-    properties['name'] = BindingObjectProperty(getter: () => name, setter: (value) => name = value);
-
-    properties['value'] = BindingObjectProperty(
-        getter: () => value,
-        setter: (value) {
-          internalSetAttribute('value', value?.toString() ?? '');
-        });
-  }
-
-  @override
-  void initializeAttributes(Map<String, dom.ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['name'] = dom.ElementAttributeProperty(getter: () => name, setter: (value) => name = value);
-    attributes['value'] =
-        dom.ElementAttributeProperty(getter: () => value, setter: (value) => internalSetAttribute('value', value));
   }
 
   double getRadioSize() {
@@ -64,7 +37,7 @@ mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
 }
 
 mixin RadioElementState on WebFWidgetElementState {
-  late StreamSubscription<Map<String, String>> _subscription;
+  StreamSubscription<Map<String, String>>? _subscription;
 
   static final Map<String, String> _groupValues = <String, String>{};
 
@@ -100,7 +73,7 @@ mixin RadioElementState on WebFWidgetElementState {
   }
 
   void disposeRadio() {
-    _subscription.cancel();
+    _subscription?.cancel();
     if (_groupValues.containsKey(widgetElement.name)) {
       _groupValues.remove(widgetElement.name);
     }
@@ -110,7 +83,7 @@ mixin RadioElementState on WebFWidgetElementState {
   }
 
   Widget createRadio(BuildContext context) {
-    String singleRadioValue = '${widgetElement.name}-${widgetElement.value}';
+    String singleRadioValue = '${widgetElement.name}-${widgetElement.getAttribute('value')}';
     return Transform.scale(
       child: Radio<String>(
           value: singleRadioValue,
@@ -124,7 +97,6 @@ mixin RadioElementState on WebFWidgetElementState {
                       Map<String, String> map = <String, String>{};
                       map[widgetElement.name] = newValue;
                       _streamController.sink.add(map);
-
                       widgetElement.dispatchEvent(dom.InputEvent(inputType: 'radio', data: newValue));
                       widgetElement.dispatchEvent(dom.Event('change'));
                     });

@@ -14,7 +14,16 @@ class ImageWidgetElement extends WidgetElement {
   };
 
   @override
-  Widget build(BuildContext context, dom.ChildNodeList childNodes) {
-    return Image(image: AssetImage(getAttribute('src')!));
+  WebFWidgetElementState createState() {
+    return ImageWidgetElementState(this);
+  }
+}
+
+class ImageWidgetElementState extends WebFWidgetElementState {
+  ImageWidgetElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    return Image(image: AssetImage(widgetElement.getAttribute('src')!));
   }
 }

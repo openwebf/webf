@@ -7,24 +7,44 @@ class FlutterCupertinoActionSheet extends WidgetElement {
   // Constructor - removed isIntrinsicBox
   FlutterCupertinoActionSheet(super.context);
 
-  // Helper to parse action config and build CupertinoActionSheetAction
-  // Use the dialogContext provided by the builder for Navigator.pop
-  CupertinoActionSheetAction _buildAction(
-      Map<String, dynamic> actionConfig, BuildContext dialogContext) { 
-    String text = actionConfig['text'] as String? ?? 'Action';
-    bool isDefault = actionConfig['isDefault'] == true;
-    bool isDestructive = actionConfig['isDestructive'] == true;
-    String eventName = actionConfig['event'] as String? ?? text.toLowerCase().replaceAll(' ', '_'); 
+  // Synchronous wrapper method to be bound
+  void _showSync(List<dynamic> args) {
+    state?._showActionSheetImpl(args); // Fire-and-forget async task
+  }
 
-    return CupertinoActionSheetAction(
-      onPressed: () {
-        dispatchEvent(CustomEvent(eventName, detail: text));
-        Navigator.pop(dialogContext); // Pop using the builder's context
+  // Method Binding using StaticDefinedSyncBindingObjectMethodMap
+  static StaticDefinedSyncBindingObjectMethodMap actionSheetMethods = {
+    'show': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        final actionSheetElement = castToType<FlutterCupertinoActionSheet>(element);
+        actionSheetElement._showSync(args);
+        return null; // Sync method returns null
       },
-      isDefaultAction: isDefault,
-      isDestructiveAction: isDestructive,
-      child: Text(text),
-    );
+    )
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
+        ...super.methods,
+        actionSheetMethods,
+      ];
+
+  @override
+  FlutterCupertinoActionSheetState? get state => super.state as FlutterCupertinoActionSheetState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoActionSheetState(this);
+  }
+}
+
+class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
+  FlutterCupertinoActionSheetState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    // This element itself doesn't render anything visible
+    return const SizedBox();
   }
 
   // Async implementation detail
@@ -38,12 +58,11 @@ class FlutterCupertinoActionSheet extends WidgetElement {
     if (args[0] is Map) {
       config = Map<String, dynamic>.from(args[0]);
     } else if (args[0] is String) {
-      try { 
-        config = jsonDecode(args[0]); 
-      }
-      catch (e) { 
-        print('Error parsing ActionSheet config JSON: $e'); 
-        return; 
+      try {
+        config = jsonDecode(args[0]);
+      } catch (e) {
+        print('Error parsing ActionSheet config JSON: $e');
+        return;
       }
     } else {
       print('Error: ActionSheet config must be an object or JSON string.');
@@ -59,16 +78,16 @@ class FlutterCupertinoActionSheet extends WidgetElement {
     }
     // Ensure the context is still mounted
     if (!buildContext.mounted) {
-       print('Error: BuildContext is not mounted. Cannot show ActionSheet.');
-       return;
+      print('Error: BuildContext is not mounted. Cannot show ActionSheet.');
+      return;
     }
 
     // --- Extract Config ---
     String? title = config['title'] as String?;
     String? message = config['message'] as String?;
     List<dynamic> actionsRaw = config['actions'] is List ? config['actions'] : [];
-    Map<String, dynamic>? cancelButtonRaw = config['cancelButton'] is Map
-        ? Map<String, dynamic>.from(config['cancelButton']) : null;
+    Map<String, dynamic>? cancelButtonRaw =
+        config['cancelButton'] is Map ? Map<String, dynamic>.from(config['cancelButton']) : null;
 
     // --- Prepare Configs (no context needed yet) ---
     List<Map<String, dynamic>> actionConfigs = actionsRaw
@@ -85,55 +104,42 @@ class FlutterCupertinoActionSheet extends WidgetElement {
     try {
       // Use rootNavigator: true to ensure it pops correctly, especially in nested Navigators
       await showCupertinoModalPopup<void>(
-        context: buildContext,
-        useRootNavigator: true, 
-        builder: (BuildContext dialogContext) {
-          // Build actions *inside* the builder using the dialogContext
-          List<Widget> dialogActions = actionConfigs
-              .map((cfg) => _buildAction(cfg, dialogContext))
-              .toList();
-          Widget? dialogCancelButton = cancelActionConfig != null
-              ? _buildAction(cancelActionConfig, dialogContext)
-              : null;
+          context: buildContext,
+          useRootNavigator: true,
+          builder: (BuildContext dialogContext) {
+            // Build actions *inside* the builder using the dialogContext
+            List<Widget> dialogActions = actionConfigs.map((cfg) => _buildAction(cfg, dialogContext)).toList();
+            Widget? dialogCancelButton =
+                cancelActionConfig != null ? _buildAction(cancelActionConfig, dialogContext) : null;
 
-          return CupertinoActionSheet(
-            title: title != null ? Text(title) : null,
-            message: message != null ? Text(message) : null,
-            actions: dialogActions.isNotEmpty ? dialogActions : null,
-            cancelButton: dialogCancelButton,
-          );
-        }
-      );
+            return CupertinoActionSheet(
+              title: title != null ? Text(title) : null,
+              message: message != null ? Text(message) : null,
+              actions: dialogActions.isNotEmpty ? dialogActions : null,
+              cancelButton: dialogCancelButton,
+            );
+          });
     } catch (e, stacktrace) {
       print('Error showing CupertinoActionSheet: $e\n$stacktrace');
     }
   }
 
-  // Synchronous wrapper method to be bound
-  void _showSync(List<dynamic> args) {
-    _showActionSheetImpl(args); // Fire-and-forget async task
-  }
+  // Helper to parse action config and build CupertinoActionSheetAction
+  // Use the dialogContext provided by the builder for Navigator.pop
+  CupertinoActionSheetAction _buildAction(Map<String, dynamic> actionConfig, BuildContext dialogContext) {
+    String text = actionConfig['text'] as String? ?? 'Action';
+    bool isDefault = actionConfig['isDefault'] == true;
+    bool isDestructive = actionConfig['isDestructive'] == true;
+    String eventName = actionConfig['event'] as String? ?? text.toLowerCase().replaceAll(' ', '_');
 
-  // Method Binding using StaticDefinedSyncBindingObjectMethodMap
-  static StaticDefinedSyncBindingObjectMethodMap actionSheetMethods = {
-    'show': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final actionSheetElement = castToType<FlutterCupertinoActionSheet>(element);
-        actionSheetElement._showSync(args);
-        return null; // Sync method returns null
+    return CupertinoActionSheetAction(
+      onPressed: () {
+        widgetElement.dispatchEvent(CustomEvent(eventName, detail: text));
+        Navigator.pop(dialogContext); // Pop using the builder's context
       },
-    )
-  };
-
-  @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    actionSheetMethods,
-  ];
-
-  @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    // This element itself doesn't render anything visible
-    return const SizedBox();
+      isDefaultAction: isDefault,
+      isDestructiveAction: isDestructive,
+      child: Text(text),
+    );
   }
-} 
+}

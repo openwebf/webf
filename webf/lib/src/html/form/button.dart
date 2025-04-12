@@ -13,8 +13,6 @@ mixin BaseButtonElement on WidgetElement {
   bool checked = false;
   String _value = '';
 
-  bool get disabled => getAttribute('disabled') != null;
-
   @override
   void propertyDidUpdate(String key, value) {
     _setValue(key, value == null ? '' : value.toString());

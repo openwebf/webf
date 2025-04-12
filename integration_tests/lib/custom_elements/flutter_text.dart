@@ -14,8 +14,17 @@ class TextWidgetElement extends WidgetElement {
   };
 
   @override
-  Widget build(BuildContext context, dom.ChildNodeList childNodes) {
-    return Text(getAttribute('value') ?? '',
+  WebFWidgetElementState createState() {
+    return TextWidgetState(this);
+  }
+}
+
+class TextWidgetState extends WebFWidgetElementState {
+  TextWidgetState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(widgetElement.getAttribute('value') ?? '',
         textDirection: TextDirection.ltr,
         style: TextStyle(color: Color.fromARGB(255, 100, 100, 100)));
   }
