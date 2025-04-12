@@ -103,13 +103,20 @@ describe('DOM Element API async', () => {
     expect(JSON.parse(JSON.stringify(boundingClientRect))).toEqual({ bottom: 0, height: 0, left: 0, right: 0, top: 0, width: 0, x: 0, y: 0 });
   });
 
-  it('should work with string value property', async () => {
+  it('should work with string value property', async (done) => {
     let input = document.createElement('input');
-    // @ts-ignore
-    input.value_async = 'helloworld';
-    // @ts-ignore
-    let value = await input.value_async;
-    expect(value).toBe('helloworld');
+
+    input.addEventListener('onscreen', async () => {
+      // @ts-ignore
+      input.value_async = 'helloworld';
+
+      // @ts-ignore
+      let value = await input.value_async;
+      expect(value).toBe('helloworld');
+
+      done();
+    });    
+    document.body.appendChild(input);
   });
 
   it('should work with matches', async () => {

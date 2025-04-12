@@ -288,10 +288,14 @@ describe('DOM Element API', () => {
     expect(container.children[1]).toBe(b);
   });
 
-  it('should work with string value property', () => {
+  it('should work with string value property', (done) => {
     let input = document.createElement('input');
-    input.value = 'helloworld';
-    expect(input.value).toBe('helloworld');
+    document.body.appendChild(input);
+    input.addEventListener('onscreen', () => {
+      input.value = 'helloworld';
+      expect(input.value).toBe('helloworld');
+      done();
+    });
   });
 
   it('property default to undefined value', () => {

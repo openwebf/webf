@@ -234,18 +234,22 @@ describe('Tags input async', () => {
   });
 
 
-  it('should return empty string when set value to null', async () => {
+  it('should return empty string when set value to null', async (done) => {
     const input = document.createElement('input');
     document.body.appendChild(input);
-    input.value = '1234';
-    // @ts-ignore
-    let v = await input.value_async
-    expect(v).toBe('1234');
-    // @ts-ignore
-    input.value_async = null;
-    // @ts-ignore
-    v = await input.value_async
-    expect(v).toBe('');
+
+    input.addEventListener('onscreen', async () => {
+      input.value = '1234';
+      // @ts-ignore
+      let v = await input.value_async
+      expect(v).toBe('1234');
+      // @ts-ignore
+      input.value_async = null;
+      // @ts-ignore
+      v = await input.value_async
+      expect(v).toBe('');
+      done();
+    });
   });
 
   xit('input attribute and property value priority', (done) => {

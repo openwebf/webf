@@ -7,8 +7,6 @@ import 'package:card_swiper/card_swiper.dart';
 class SwiperElement extends WidgetElement {
   SwiperElement(BindingContext? context) : super(context);
 
-  late SwiperController _swiperController;
-
   String get index => getAttribute('index') ?? '0';
 
   set index(value) {
@@ -38,14 +36,7 @@ class SwiperElement extends WidgetElement {
   set duration(value) {
     internalSetAttribute('duration', value?.toString() ?? '300');
   }
-  late ScrollController controller;
 
-
-  @override
-  void initState() {
-    controller = ScrollController();
-    _swiperController = SwiperController();
-  }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
@@ -71,7 +62,7 @@ class SwiperElement extends WidgetElement {
   }
 
   void _move(int index) {
-    _swiperController.move(index);
+    state?._swiperController.move(index);
   }
 
   _getScrollDirection() {
@@ -102,6 +93,9 @@ class SwiperElement extends WidgetElement {
   }
 
   @override
+  SwiperElementState? get state => super.state as SwiperElementState?;
+
+  @override
   WebFWidgetElementState createState() {
     return SwiperElementState(this);
   }
@@ -109,6 +103,24 @@ class SwiperElement extends WidgetElement {
 
 class SwiperElementState extends WebFWidgetElementState {
   SwiperElementState(super.widgetElement);
+
+  late SwiperController _swiperController;
+  late ScrollController controller;
+
+
+  @override
+  void initState() {
+    super.initState();
+    controller = ScrollController();
+    _swiperController = SwiperController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    controller.dispose();
+    _swiperController.dispose();
+  }
 
   @override
   SwiperElement get widgetElement => super.widgetElement as SwiperElement;
@@ -127,7 +139,7 @@ class SwiperElementState extends WebFWidgetElementState {
       physics:
       const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       duration: int.parse(widgetElement.duration),
-      controller: widgetElement._swiperController,
+      controller: _swiperController,
       index: int.parse(widgetElement.index),
     );
   }
