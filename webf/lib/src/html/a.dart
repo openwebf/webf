@@ -2,13 +2,14 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/src/css/keywords.dart';
 import 'package:webf/webf.dart';
 
 const String ANCHOR = 'A';
 const String _TARGET_SELF = 'self';
-const Map<String, dynamic> _defaultStyle = {
+const Map<String, dynamic> _linkStyle = {
   TEXT_DECORATION_LINE: UNDERLINE,
   TEXT_DECORATION_COLOR: 'rgb(0, 0, 238)',
   COLOR: 'rgb(0, 0, 238)',
@@ -38,7 +39,15 @@ class HTMLAnchorElement extends Element {
   }
 
   @override
-  Map<String, dynamic> get defaultStyle => _defaultStyle;
+  Map<String, dynamic> get defaultStyle {
+    String? href = attributes['href'];
+    if (href != null && href.isNotEmpty) {
+      return _linkStyle;
+    }
+    return {
+      DISPLAY: BLOCK
+    };
+  }
 
   WebFNavigationType _getNavigationType(String scheme) {
     switch (scheme.toLowerCase()) {
