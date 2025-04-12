@@ -213,6 +213,27 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return textSpan;
   }
 
+  bool buildTextPlaceHolderSpan(WebFRenderParagraph paragraph) {
+    WebFTextSpan text = paragraph.text;
+    if (firstLineIndent > 0) {
+      // add a placeholder before text, must add a placeholder dimensions keep same size
+      if (text.children!.isEmpty) {
+        WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
+        text.children!.add(placeHolderSpan);
+        text.textSpanPosition.add(placeHolderSpan);
+      }
+      _updatePlaceHolderDimensions(paragraph);
+      return true;
+    } else if (firstLineIndent == 0 && text.children!.isNotEmpty) {
+      //clear placeholder and placeholder dimensions
+      text.children!.clear();
+      text.textSpanPosition.clear();
+      _clearPlaceHolderDimensions(paragraph);
+      return true;
+    }
+    return false;
+  }
+
   int get lines => _renderParagraph.lineMetrics.length;
 
   bool get happenVisualOverflow => _renderParagraph.happenVisualOverflow;
@@ -450,23 +471,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
       // first set text is no use, so need check again
       paragraph.text = buildTextSpan(oldText: paragraph.text);
-
-      WebFTextSpan text = paragraph.text;
-      if (firstLineIndent > 0 && firstLineIndent != _lastFirstLineIndent) {
-        // add a placeholder before text, must add a placeholder dimensions keep same size
-        if (text.children!.isEmpty) {
-          WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
-          text.children!.add(placeHolderSpan);
-          text.textSpanPosition.add(placeHolderSpan);
-        }
-        _updatePlaceHolderDimensions(paragraph);
-      } else if (firstLineIndent == 0 && (firstLineIndent != _lastFirstLineIndent || text.children!.isNotEmpty)) {
-        //clear placeholder and placeholder dimensions
-        text.children!.clear();
-        text.textSpanPosition.clear();
-        _clearPlaceHolderDimensions(paragraph);
-        // paragraph.markUpdateTextPainter();
-      }
+      buildTextPlaceHolderSpan(paragraph);
 
       _lastFirstLineIndent = firstLineIndent;
       paragraph.maxLines = _maxLines;

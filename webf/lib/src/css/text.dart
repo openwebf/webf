@@ -461,8 +461,13 @@ mixin CSSTextMixin on RenderStyle {
           // takes effect after text has been layouted.
           // renderParagraph.text = child.textSpan; TODO maybe need retain
           renderParagraph.text = child.buildTextSpan();
-          renderParagraph.layoutText();
-          renderParagraph.markNeedsPaint();
+          bool placeHolderSpanUpdate = child.buildTextPlaceHolderSpan(renderParagraph);
+          if (placeHolderSpanUpdate) {
+            renderParagraph.markNeedsLayout();
+          } else {
+            renderParagraph.layoutText();
+            renderParagraph.markNeedsPaint();
+          }
         } else {
           // Mark as needs layout if renderParagraph has not layouted yet.
           renderParagraph.markNeedsLayout();
