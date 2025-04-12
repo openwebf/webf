@@ -156,6 +156,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Action Sheet -->
+          <div class="component-item" @click="navigateTo('/action_sheet')">
+            <div class="item-content">
+              <div class="item-title">Action Sheet</div>
+              <div class="item-desc">An iOS-style action sheet component</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>

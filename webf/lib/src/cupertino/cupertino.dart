@@ -23,6 +23,7 @@ import 'slider.dart';
 import 'checkbox.dart';
 import 'radio.dart';
 import 'timer_picker.dart';
+import 'action_sheet.dart';
 
 void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-button', (context) => FlutterCupertinoButton(context));
@@ -50,4 +51,5 @@ void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-checkbox', (context) => FlutterCupertinoCheckbox(context));
   WebF.defineCustomElement('flutter-cupertino-radio', (context) => FlutterCupertinoRadio(context));
   WebF.defineCustomElement('flutter-cupertino-timer-picker', (context) => FlutterCupertinoTimerPicker(context));
+  WebF.defineCustomElement('flutter-cupertino-action-sheet', (context) => FlutterCupertinoActionSheet(context));
 }

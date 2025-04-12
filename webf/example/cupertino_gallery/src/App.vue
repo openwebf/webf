@@ -53,6 +53,9 @@
   <router-view path="/timer_picker" title="Timer Picker">
     <timer-picker-page></timer-picker-page>
   </router-view>
+  <router-view path="/action_sheet" title="Action Sheet">
+    <action-sheet-page></action-sheet-page>
+  </router-view>
 </template>
 
 <script>
@@ -75,6 +78,7 @@ import ContextMenuPage from './Pages/ContextMenuPage.vue';
 import CheckboxPage from './Pages/CheckboxPage.vue';
 import RadioPage from './Pages/RadioPage.vue';
 import TimerPickerPage from './Pages/TimerPickerPage.vue';
+import ActionSheetPage from './Pages/ActionSheetPage.vue';
 
 export default {
   name: 'App',
@@ -98,6 +102,7 @@ export default {
     CheckboxPage,
     RadioPage,
     TimerPickerPage,
+    ActionSheetPage,
   },
 };
 </script>
