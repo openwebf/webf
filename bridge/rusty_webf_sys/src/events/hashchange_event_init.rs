@@ -10,6 +10,6 @@ pub struct HashchangeEventInit {
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
-  pub old_url: AtomicStringRef,
-  pub new_url: AtomicStringRef,
+  pub old_url: *const c_char,
+  pub new_url: *const c_char,
 }

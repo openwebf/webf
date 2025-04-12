@@ -450,6 +450,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           blob,
           object,
           generatePublicReturnTypeValue,
+          generatePublicParameterType,
           isStringType,
           options,
         });

@@ -11,6 +11,6 @@ pub struct TransitionEventInit {
   pub cancelable: i32,
   pub composed: i32,
   pub elapsed_time: c_double,
-  pub property_name: AtomicStringRef,
-  pub pseudo_element: AtomicStringRef,
+  pub property_name: *const c_char,
+  pub pseudo_element: *const c_char,
 }

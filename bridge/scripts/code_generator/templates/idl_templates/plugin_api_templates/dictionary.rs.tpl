@@ -6,9 +6,9 @@ pub struct <%= className %> {
     <% if (!object.props.map(prop => prop.name).includes(prop.name)){ %>
     <% var propName = _.snakeCase(prop.name) %>
     <% if (isStringType(prop.type)) { %>
-  pub <%= propName %>: <%= generatePublicReturnTypeValue(prop.type, true) %>,
+  pub <%= propName %>: <%= generatePublicParameterType(prop.type, true) %>,
     <% } else { %>
-  pub <%= propName %>: <%= generatePublicReturnTypeValue(prop.type, true) %>,
+  pub <%= propName %>: <%= generatePublicParameterType(prop.type, true) %>,
     <% } %>
     <% } %>
   <% }); %>
@@ -18,9 +18,9 @@ pub struct <%= className %> {
 <% _.forEach(object.props, function(prop, index) { %>
   <% var propName = _.snakeCase(prop.name) %>
   <% if (isStringType(prop.type)) { %>
-  pub <%= propName %>: <%= generatePublicReturnTypeValue(prop.type, true) %>,
+  pub <%= propName %>: <%= generatePublicParameterType(prop.type, true) %>,
   <% } else { %>
-  pub <%= propName %>: <%= generatePublicReturnTypeValue(prop.type, true) %>,
+  pub <%= propName %>: <%= generatePublicParameterType(prop.type, true) %>,
   <% } %>
 <% }); %>
 }

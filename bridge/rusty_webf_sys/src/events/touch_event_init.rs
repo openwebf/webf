@@ -8,16 +8,16 @@ use crate::*;
 #[repr(C)]
 pub struct TouchEventInit {
   pub detail: c_double,
-  pub view: RustValue<WindowRustMethods>,
+  pub view: *const OpaquePtr,
   pub which: c_double,
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
   pub alt_key: i32,
-  pub changed_touches: RustValue<TouchListRustMethods>,
+  pub changed_touches: *const OpaquePtr,
   pub ctrl_key: i32,
   pub meta_key: i32,
   pub shift_key: i32,
-  pub target_touches: RustValue<TouchListRustMethods>,
-  pub touches: RustValue<TouchListRustMethods>,
+  pub target_touches: *const OpaquePtr,
+  pub touches: *const OpaquePtr,
 }
