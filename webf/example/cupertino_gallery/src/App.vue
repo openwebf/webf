@@ -50,6 +50,9 @@
   <router-view path="/radio" title="Radio">
     <radio-page></radio-page>
   </router-view>
+  <router-view path="/timer_picker" title="Timer Picker">
+    <timer-picker-page></timer-picker-page>
+  </router-view>
 </template>
 
 <script>
@@ -71,6 +74,7 @@ import SliderPage from './Pages/SliderPage.vue';
 import ContextMenuPage from './Pages/ContextMenuPage.vue';
 import CheckboxPage from './Pages/CheckboxPage.vue';
 import RadioPage from './Pages/RadioPage.vue';
+import TimerPickerPage from './Pages/TimerPickerPage.vue';
 
 export default {
   name: 'App',
@@ -93,6 +97,7 @@ export default {
     ContextMenuPage,
     CheckboxPage,
     RadioPage,
+    TimerPickerPage,
   },
 };
 </script>

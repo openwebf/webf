@@ -147,6 +147,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Timer Picker -->
+          <div class="component-item" @click="navigateTo('/timer_picker')">
+            <div class="item-content">
+              <div class="item-title">Timer Picker</div>
+              <div class="item-desc">A countdown timer picker component</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>
