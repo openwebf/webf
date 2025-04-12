@@ -557,4 +557,12 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
 
     return root;
   }
+
+  @override
+  void didUnmountRenderObject(covariant RenderObject renderObject) {
+    super.didUnmountRenderObject(renderObject);
+
+    controller.view.viewport = null;
+    controller.viewportLayoutCompleter = Completer();
+  }
 }
