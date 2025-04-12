@@ -44,6 +44,9 @@
   <router-view path="/context_menu" title="Context Menu">
     <context-menu-page></context-menu-page>
   </router-view>
+  <router-view path="/checkbox" title="Checkbox">
+    <checkbox-page></checkbox-page>
+  </router-view>
 </template>
 
 <script>
@@ -63,6 +66,7 @@ import ModalPopupPage from './Pages/ModalPopupPage.vue';
 import PickerPage from './Pages/PickerPage.vue';
 import SliderPage from './Pages/SliderPage.vue';
 import ContextMenuPage from './Pages/ContextMenuPage.vue';
+import CheckboxPage from './Pages/CheckboxPage.vue';
 
 export default {
   name: 'App',
@@ -83,6 +87,7 @@ export default {
     PickerPage,
     SliderPage,
     ContextMenuPage,
+    CheckboxPage,
   },
 };
 </script>

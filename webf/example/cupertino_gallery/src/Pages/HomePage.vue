@@ -129,6 +129,15 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+
+          <!-- Checkbox -->
+          <div class="component-item" @click="navigateTo('/checkbox')">
+            <div class="item-content">
+              <div class="item-title">Checkbox</div>
+              <div class="item-desc">A macOS-style checkbox component</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div>
     </webf-listview>
