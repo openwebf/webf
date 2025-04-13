@@ -65,12 +65,14 @@
 </div>
 </body>
 <script>
-  await snapshotAction(1.0);
-  let visible = true;
-  let container = document.querySelector('.container');
-  container.style.display = 'none';
-  await snapshotAction();
-  container.style.display = 'block';
-  await snapshotAction();
+  requestAnimationFrame(async () => {
+    await snapshotAction(1.0)
+    let visible = true;
+    let container = document.querySelector('.container');
+    await snapshotAction();
+    container.style.display = 'none';
+    container.style.display = 'block';
+    await snapshotAction();
+  })
 </script>
 </html>
