@@ -7,6 +7,8 @@ import 'alert.dart';
 import 'button.dart';
 import 'context_menu.dart';
 import 'date_picker.dart';
+import 'form_row.dart';
+import 'form_section.dart';
 import 'icon.dart';
 import 'input.dart';
 import 'loading.dart';
@@ -51,4 +53,6 @@ void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-radio', (context) => FlutterCupertinoRadio(context));
   WebF.defineCustomElement('flutter-cupertino-timer-picker', (context) => FlutterCupertinoTimerPicker(context));
   WebF.defineCustomElement('flutter-cupertino-action-sheet', (context) => FlutterCupertinoActionSheet(context));
+  WebF.defineCustomElement('flutter-cupertino-form-row', (context) => FlutterCupertinoFormRow(context));
+  WebF.defineCustomElement('flutter-cupertino-form-section', (context) => FlutterCupertinoFormSection(context));
 }

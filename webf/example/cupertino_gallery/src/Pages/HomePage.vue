@@ -90,6 +90,27 @@
           </div>
         </div>
 
+        <!-- Forms Category -->
+        <div class="section-title">Forms</div>
+        <div class="component-block category-block">
+          <!-- Form Row -->
+          <div class="component-item" @click="navigateTo('/form_row')">
+            <div class="item-content">
+              <div class="item-title">Form Row</div>
+              <div class="item-desc">An iOS-style form row for layout</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+          <!-- Form Section -->
+          <div class="component-item" @click="navigateTo('/form_section')">
+            <div class="item-content">
+              <div class="item-title">Form Section</div>
+              <div class="item-desc">Groups form rows into sections</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+        </div>
+
         <!-- Pickers Category -->
         <div class="section-title">Pickers</div>
         <div class="component-block category-block">

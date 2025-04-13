@@ -56,6 +56,12 @@
   <router-view path="/action_sheet" title="Action Sheet">
     <action-sheet-page></action-sheet-page>
   </router-view>
+  <router-view path="/form_row" title="Form Row">
+    <form-row-page></form-row-page>
+  </router-view>
+  <router-view path="/form_section" title="Form Section">
+    <form-section-page></form-section-page>
+  </router-view>
 </template>
 
 <script>
@@ -79,6 +85,8 @@ import CheckboxPage from './Pages/CheckboxPage.vue';
 import RadioPage from './Pages/RadioPage.vue';
 import TimerPickerPage from './Pages/TimerPickerPage.vue';
 import ActionSheetPage from './Pages/ActionSheetPage.vue';
+import FormRowPage from './Pages/FormRowPage.vue';
+import FormSectionPage from './Pages/FormSectionPage.vue';
 
 export default {
   name: 'App',
@@ -103,6 +111,8 @@ export default {
     RadioPage,
     TimerPickerPage,
     ActionSheetPage,
+    FormRowPage,
+    FormSectionPage,
   },
 };
 </script>
