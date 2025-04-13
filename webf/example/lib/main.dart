@@ -100,6 +100,19 @@ void main() async {
       });
 
   WebFControllerManager.instance.addWithPreload(
+      name: 'hybrid_router',
+      createController: () => WebFController(
+        initialRoute: '/',
+        routeObserver: routeObserver,
+        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+      ),
+      bundle: WebFBundle.fromUrl('http://localhost:3000/hybrid_router/build'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
+  WebFControllerManager.instance.addWithPreload(
       name: 'cupertino_gallery',
       createController: () => WebFController(
             initialRoute: '/',
@@ -359,6 +372,15 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open MiraclePlus App Login')),
+        SizedBox(height: 18),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'hybrid_router';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'hybrid_router');
+              }));
+            },
+            child: Text('Open Hybrid Router Example')),
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
