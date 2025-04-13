@@ -51,3 +51,8 @@ flutter:
     - cupertino_gallery/dist/
     - cupertino_gallery/dist/js/
     - cupertino_gallery/dist/css/
+    - react_project/build/
+    - react_project/build/static/
+    - react_project/build/static/js/
+    - react_project/build/static/css/
+    - react_project/build/static/media/

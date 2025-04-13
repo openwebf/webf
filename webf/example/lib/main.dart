@@ -38,7 +38,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 4,
+      maxAliveInstances: 5,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -60,7 +60,7 @@ void main() async {
   installWebFCupertino();
 
   // Add home controller with preloading
-  WebFControllerManager.instance.addWithPrerendering(
+  WebFControllerManager.instance.addWithPreload(
       name: 'html/css',
       createController: () => WebFController(
             routeObserver: routeObserver,
@@ -86,7 +86,20 @@ void main() async {
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
 
-  WebFControllerManager.instance.addWithPrerendering(
+  WebFControllerManager.instance.addWithPreload(
+      name: 'reactjs',
+      createController: () => WebFController(
+        initialRoute: '/',
+        routeObserver: routeObserver,
+        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+      ),
+      bundle: WebFBundle.fromUrl('http://localhost:3000/react_project/build'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
+  WebFControllerManager.instance.addWithPreload(
       name: 'cupertino_gallery',
       createController: () => WebFController(
             initialRoute: '/',
@@ -114,7 +127,7 @@ void main() async {
   };
 
   // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPrerendering(
+  WebFControllerManager.instance.addWithPreload(
       name: 'miracle_plus',
       createController: () => WebFController(
             initialRoute: '/home',
@@ -312,6 +325,17 @@ class FirstPageState extends State<FirstPage> {
             },
             child: Text('Open Vue.js demo Positioned Layout')),
         SizedBox(height: 18),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'react';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'reactjs',
+                );
+              }));
+            },
+            child: Text('Open React.js demo')),
+        SizedBox(height: 10),
         ElevatedButton(
             onPressed: () {
               widget.webfPageName.value = 'miracle_plus';
