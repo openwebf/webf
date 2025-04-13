@@ -9,7 +9,7 @@
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "plugin_api/bounding_client_rect.h"
+#include "plugin_api_gen/bounding_client_rect.h"
 
 namespace webf {
 

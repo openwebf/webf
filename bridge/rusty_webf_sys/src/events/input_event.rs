@@ -9,8 +9,8 @@ use crate::*;
 pub struct InputEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
-  pub input_type: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub data: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub input_type: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub data: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
 }
 pub struct InputEvent {
   pub ui_event: UIEvent,

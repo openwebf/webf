@@ -6,7 +6,7 @@
 #define BRIDGE_COMMENT_H
 
 #include "character_data.h"
-#include "plugin_api/comment.h"
+#include "plugin_api_gen/comment.h"
 
 namespace webf {
 

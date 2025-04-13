@@ -7,7 +7,7 @@
 
 #include "html_element.h"
 #include "html_names.h"
-#include "plugin_api/html_image_element.h"
+#include "plugin_api_gen/html_image_element.h"
 
 namespace webf {
 
@@ -24,6 +24,8 @@ class HTMLImageElement : public HTMLElement {
   DispatchEventResult FireEventListeners(Event&, bool isCapture, ExceptionState&) override;
 
   ScriptPromise decode(ExceptionState& exception_state) const;
+
+  virtual bool IsImage() const { return false; }
 
   const HTMLImageElementPublicMethods* htmlImageElementPublicMethods() {
     static HTMLImageElementPublicMethods html_image_element_public_methods;

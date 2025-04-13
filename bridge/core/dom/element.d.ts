@@ -65,12 +65,12 @@ interface Element extends Node, ParentNode, ChildNode {
 
   closest(selectors: string): Element | null;
 
-  scroll(options?: ScrollToOptions): void;
   scroll(x: number, y: number): void;
-  scrollBy(options?: ScrollToOptions): void;
+  scroll(options?: ScrollToOptions): void;
   scrollBy(x: number, y: number): void;
-  scrollTo(options?: ScrollToOptions): void;
+  scrollBy(options?: ScrollToOptions): void;
   scrollTo(x: number, y: number): void;
+  scrollTo(options?: ScrollToOptions): void;
 
   // Export the target element's rendering content to PNG.
   // WebF special API.

@@ -14,7 +14,7 @@
 #include "mutation_observer.h"
 #include "mutation_observer_registration.h"
 #include "node_data.h"
-#include "plugin_api/node.h"
+#include "plugin_api_gen/node.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
 

@@ -8,10 +8,10 @@ use crate::*;
 #[repr(C)]
 pub struct FocusEventInit {
   pub detail: c_double,
-  pub view: RustValue<WindowRustMethods>,
+  pub view: *const OpaquePtr,
   pub which: c_double,
   pub bubbles: i32,
   pub cancelable: i32,
   pub composed: i32,
-  pub related_target: RustValue<EventTargetRustMethods>,
+  pub related_target: *const OpaquePtr,
 }

@@ -9,7 +9,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"
-#include "plugin_api/dom_string_map.h"
+#include "plugin_api_gen/dom_string_map.h"
 
 namespace webf {
 

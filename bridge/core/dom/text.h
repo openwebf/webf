@@ -7,7 +7,7 @@
 #define BRIDGE_CORE_DOM_TEXT_H_
 
 #include "character_data.h"
-#include "plugin_api/text.h"
+#include "plugin_api_gen/text.h"
 
 namespace webf {
 
@@ -27,7 +27,7 @@ class Text : public CharacterData {
   }
 
   NodeType nodeType() const override;
-  const TextNodePublicMethods* textNodePublicMethods();
+  const TextPublicMethods* textPublicMethods();
 
  private:
   std::string nodeName() const override;

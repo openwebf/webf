@@ -14,13 +14,13 @@ enum PerformanceEntryType {
 #[repr(C)]
 pub struct PerformanceEntryRustMethods {
   pub version: c_double,
-  pub name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub entry_type: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub start_time: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub duration: extern "C" fn(ptr: *const OpaquePtr) -> i64,
-  pub to_json: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: PerformanceEntryType) -> RustValue<c_void>,
+  pub name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub entry_type: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub start_time: extern "C" fn(*const OpaquePtr) -> i64,
+  pub duration: extern "C" fn(*const OpaquePtr) -> i64,
+  pub to_json: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: PerformanceEntryType) -> RustValue<c_void>,
 }
 pub struct PerformanceEntry {
   pub ptr: *const OpaquePtr,

@@ -6,6 +6,7 @@
 #define BRIDGE_SCREEN_H
 
 #include "core/dom/events/event_target.h"
+#include "plugin_api_gen/screen.h"
 
 namespace webf {
 
@@ -30,8 +31,20 @@ class Screen : public EventTargetWithInlineData {
   [[nodiscard]] int64_t width() const { return extra_->width; }
   [[nodiscard]] int64_t height() const { return extra_->height; }
 
+  bool IsScreen() const override { return true; }
+
+  const ScreenPublicMethods* screenPublicMethods() {
+    static ScreenPublicMethods screen_public_methods;
+    return &screen_public_methods;
+  }
+
  private:
   ScreenData* extra_;
+};
+
+template <>
+struct DowncastTraits<Screen> {
+  static bool AllowFrom(const EventTarget& event_target) { return event_target.IsScreen(); }
 };
 
 }  // namespace webf

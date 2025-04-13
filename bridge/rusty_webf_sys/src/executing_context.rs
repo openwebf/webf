@@ -49,6 +49,8 @@ pub struct ExecutingContextRustMethods {
   pub create_input_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const InputEventInit, exception_state: *const OpaquePtr ) -> RustValue<InputEventRustMethods>,
   pub create_intersection_change_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,
   pub create_intersection_change_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const IntersectionChangeEventInit, exception_state: *const OpaquePtr ) -> RustValue<IntersectionChangeEventRustMethods>,
+  pub create_keyboard_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<KeyboardEventRustMethods>,
+  pub create_keyboard_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const KeyboardEventInit, exception_state: *const OpaquePtr ) -> RustValue<KeyboardEventRustMethods>,
   pub create_message_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<MessageEventRustMethods>,
   pub create_message_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const MessageEventInit, exception_state: *const OpaquePtr ) -> RustValue<MessageEventRustMethods>,
   pub create_mouse_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<MouseEventRustMethods>,
@@ -58,10 +60,16 @@ pub struct ExecutingContextRustMethods {
   pub create_promise_rejection_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const PromiseRejectionEventInit, exception_state: *const OpaquePtr ) -> RustValue<PromiseRejectionEventRustMethods>,
   pub create_pointer_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,
   pub create_pointer_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const PointerEventInit, exception_state: *const OpaquePtr ) -> RustValue<PointerEventRustMethods>,
+  pub create_touch_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<TouchEventRustMethods>,
+  pub create_touch_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const TouchEventInit, exception_state: *const OpaquePtr ) -> RustValue<TouchEventRustMethods>,
   pub create_transition_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
   pub create_transition_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const TransitionEventInit, exception_state: *const OpaquePtr ) -> RustValue<TransitionEventRustMethods>,
   pub create_ui_event: extern "C" fn(*const OpaquePtr, *const c_char, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
   pub create_ui_event_with_options: extern "C" fn(*const OpaquePtr, *const c_char, options: *const UIEventInit, exception_state: *const OpaquePtr ) -> RustValue<UIEventRustMethods>,
+  pub create_event_target: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<EventTargetRustMethods>,
+  pub create_document_fragment: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<DocumentFragmentRustMethods>,
+  pub create_document: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<DocumentRustMethods>,
+  pub create_image: extern "C" fn(*const OpaquePtr, exception_state: *const OpaquePtr ) -> RustValue<ImageRustMethods>,
 }
 
 pub type TimeoutCallback = Box<dyn Fn()>;
@@ -133,7 +141,7 @@ impl ExecutingContext {
     let result = unsafe {
       ((*self.method_pointer).get_document)(self.ptr)
     };
-    return Document::initialize::<DocumentRustMethods>(result.value, self, result.method_pointer, result.status);
+    return Document::initialize(result.value, self, result.method_pointer, result.status);
   }
 
   pub fn location(&self) -> Location {

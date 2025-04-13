@@ -9,8 +9,8 @@ use crate::*;
 pub struct HashchangeEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub new_url: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub old_url: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub new_url: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub old_url: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
 }
 pub struct HashchangeEvent {
   pub event: Event,

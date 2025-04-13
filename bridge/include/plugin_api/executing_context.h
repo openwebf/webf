@@ -5,28 +5,31 @@
 #ifndef WEBF_CORE_RUST_API_EXECUTING_CONTEXT_H_
 #define WEBF_CORE_RUST_API_EXECUTING_CONTEXT_H_
 
-#include "animation_event_init.h"
-#include "close_event_init.h"
 #include "core/native/native_function.h"
 #include "core/native/native_loader.h"
-#include "custom_event_init.h"
-#include "document.h"
-#include "error_event_init.h"
-#include "event_init.h"
 #include "exception_state.h"
-#include "focus_event_init.h"
 #include "foundation/native_value.h"
-#include "gesture_event_init.h"
-#include "hashchange_event_init.h"
-#include "input_event_init.h"
-#include "intersection_change_event_init.h"
-#include "message_event_init.h"
-#include "mouse_event_init.h"
-#include "pointer_event_init.h"
-#include "promise_rejection_event_init.h"
-#include "transition_event_init.h"
-#include "ui_event_init.h"
-#include "window.h"
+#include "plugin_api_gen/animation_event_init.h"
+#include "plugin_api_gen/close_event_init.h"
+#include "plugin_api_gen/custom_event_init.h"
+#include "plugin_api_gen/document.h"
+#include "plugin_api_gen/error_event_init.h"
+#include "plugin_api_gen/event_init.h"
+#include "plugin_api_gen/focus_event_init.h"
+#include "plugin_api_gen/gesture_event_init.h"
+#include "plugin_api_gen/hashchange_event_init.h"
+#include "plugin_api_gen/input_event_init.h"
+#include "plugin_api_gen/intersection_change_event_init.h"
+#include "plugin_api_gen/keyboard_event.h"
+#include "plugin_api_gen/keyboard_event_init.h"
+#include "plugin_api_gen/message_event_init.h"
+#include "plugin_api_gen/mouse_event_init.h"
+#include "plugin_api_gen/pointer_event_init.h"
+#include "plugin_api_gen/promise_rejection_event_init.h"
+#include "plugin_api_gen/touch_event_init.h"
+#include "plugin_api_gen/transition_event_init.h"
+#include "plugin_api_gen/ui_event_init.h"
+#include "plugin_api_gen/window.h"
 
 namespace webf {
 
@@ -37,6 +40,8 @@ class Performance;
 typedef struct PerformancePublicMethods PerformancePublicMethods;
 class UIEvent;
 typedef struct UIEventPublicMethods UIEventPublicMethods;
+class KeyboardEvent;
+typedef struct KeyboardEventPublicMethods KeyboardEventPublicMethods;
 class CustomEvent;
 typedef struct CustomEventPublicMethods CustomEventPublicMethods;
 class AnimationEvent;
@@ -67,8 +72,12 @@ class PromiseRejectionEvent;
 typedef struct PromiseRejectionEventPublicMethods PromiseRejectionEventPublicMethods;
 class PointerEvent;
 typedef struct PointerEventPublicMethods PointerEventPublicMethods;
+class TouchEvent;
+typedef struct TouchEventPublicMethods TouchEventPublicMethods;
 class TransitionEvent;
 typedef struct TransitionEventPublicMethods TransitionEventPublicMethods;
+class Image;
+typedef struct ImagePublicMethods ImagePublicMethods;
 
 using PublicContextGetDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext*);
 using PublicContextGetWindow = WebFValue<Window, WindowPublicMethods> (*)(ExecutingContext*);
@@ -209,7 +218,15 @@ using PublicContextCreateIntersectionChangeEventWithOptions =
                                                                                  const char* type,
                                                                                  WebFIntersectionChangeEventInit* init,
                                                                                  ExceptionState& exception_state);
-
+using PublicContextCreateKeyboardEvent =
+    WebFValue<KeyboardEvent, KeyboardEventPublicMethods> (*)(ExecutingContext* context,
+                                                             const char* type,
+                                                             ExceptionState& exception_state);
+using PublicContextCreateKeyboardEventWithOptions =
+    WebFValue<KeyboardEvent, KeyboardEventPublicMethods> (*)(ExecutingContext* context,
+                                                             const char* type,
+                                                             WebFKeyboardEventInit* init,
+                                                             ExceptionState& exception_state);
 using PublicContextCreateMessageEvent =
     WebFValue<MessageEvent, MessageEventPublicMethods> (*)(ExecutingContext* context,
                                                            const char* type,
@@ -254,6 +271,16 @@ using PublicContextCreatePointerEventWithOptions =
                                                            WebFPointerEventInit* init,
                                                            ExceptionState& exception_state);
 
+using PublicContextCreateTouchEvent =
+    WebFValue<TouchEvent, TouchEventPublicMethods> (*)(ExecutingContext* context,
+                                                       const char* type,
+                                                       ExceptionState& exception_state);
+using PublicContextCreateTouchEventWithOptions =
+    WebFValue<TouchEvent, TouchEventPublicMethods> (*)(ExecutingContext* context,
+                                                       const char* type,
+                                                       WebFTouchEventInit* init,
+                                                       ExceptionState& exception_state);
+
 using PublicContextCreateTransitionEvent =
     WebFValue<TransitionEvent, TransitionEventPublicMethods> (*)(ExecutingContext* context,
                                                                  const char* type,
@@ -272,6 +299,16 @@ using PublicContextCreateUIEventWithOptions =
                                                  const char* type,
                                                  WebFUIEventInit* init,
                                                  ExceptionState& exception_state);
+
+using PublicContextCreateEventTarget =
+    WebFValue<EventTarget, EventTargetPublicMethods> (*)(ExecutingContext* context, ExceptionState& exception_state);
+using PublicContextCreateDocumentFragment =
+    WebFValue<DocumentFragment, DocumentFragmentPublicMethods> (*)(ExecutingContext* context,
+                                                                   ExceptionState& exception_state);
+using PublicContextCreateDocument = WebFValue<Document, DocumentPublicMethods> (*)(ExecutingContext* context,
+                                                                                   ExceptionState& exception_state);
+using PublicContextCreateImage = WebFValue<Image, ImagePublicMethods> (*)(ExecutingContext* context,
+                                                                          ExceptionState& exception_state);
 
 // Memory aligned and readable from WebF side.
 // Only C type member can be included in this class, any C++ type and classes can is not allowed to use here.
@@ -417,6 +454,14 @@ struct ExecutingContextWebFMethods {
                                            WebFIntersectionChangeEventInit* init,
                                            ExceptionState& exception_state);
 
+  static WebFValue<KeyboardEvent, KeyboardEventPublicMethods> CreateKeyboardEvent(ExecutingContext* context,
+                                                                                  const char* type,
+                                                                                  ExceptionState& exception_state);
+  static WebFValue<KeyboardEvent, KeyboardEventPublicMethods> CreateKeyboardEventWithOptions(
+      ExecutingContext* context,
+      const char* type,
+      WebFKeyboardEventInit* init,
+      ExceptionState& exception_state);
   static WebFValue<MessageEvent, MessageEventPublicMethods> CreateMessageEvent(ExecutingContext* context,
                                                                                const char* type,
                                                                                ExceptionState& exception_state);
@@ -454,6 +499,15 @@ struct ExecutingContextWebFMethods {
       WebFPointerEventInit* init,
       ExceptionState& exception_state);
 
+  static WebFValue<TouchEvent, TouchEventPublicMethods> CreateTouchEvent(ExecutingContext* context,
+                                                                         const char* type,
+                                                                         ExceptionState& exception_state);
+
+  static WebFValue<TouchEvent, TouchEventPublicMethods> CreateTouchEventWithOptions(ExecutingContext* context,
+                                                                                    const char* type,
+                                                                                    WebFTouchEventInit* init,
+                                                                                    ExceptionState& exception_state);
+
   static WebFValue<TransitionEvent, TransitionEventPublicMethods>
   CreateTransitionEvent(ExecutingContext* context, const char* type, ExceptionState& exception_state);
   static WebFValue<TransitionEvent, TransitionEventPublicMethods> CreateTransitionEventWithOptions(
@@ -469,6 +523,14 @@ struct ExecutingContextWebFMethods {
                                                                            const char* type,
                                                                            WebFUIEventInit* init,
                                                                            ExceptionState& exception_state);
+  static WebFValue<EventTarget, EventTargetPublicMethods> CreateEventTarget(ExecutingContext* context,
+                                                                            ExceptionState& exception_state);
+  static WebFValue<DocumentFragment, DocumentFragmentPublicMethods> CreateDocumentFragment(
+      ExecutingContext* context,
+      ExceptionState& exception_state);
+  static WebFValue<Document, DocumentPublicMethods> CreateDocument(ExecutingContext* context,
+                                                                   ExceptionState& exception_state);
+  static WebFValue<Image, ImagePublicMethods> CreateImage(ExecutingContext* context, ExceptionState& exception_state);
 
   double version{1.0};
   PublicContextGetDocument context_get_document{document};
@@ -517,6 +579,9 @@ struct ExecutingContextWebFMethods {
       CreateIntersectionChangeEvent};
   PublicContextCreateIntersectionChangeEventWithOptions rust_context_create_intersection_change_event_with_options{
       CreateIntersectionChangeEventWithOptions};
+  PublicContextCreateKeyboardEvent rust_context_create_keyboard_event{CreateKeyboardEvent};
+  PublicContextCreateKeyboardEventWithOptions rust_context_create_keyboard_event_with_options{
+      CreateKeyboardEventWithOptions};
   PublicContextCreateMessageEvent rust_context_create_message_event{CreateMessageEvent};
   PublicContextCreateMessageEventWithOptions rust_context_create_message_event_with_options{
       CreateMessageEventWithOptions};
@@ -529,11 +594,17 @@ struct ExecutingContextWebFMethods {
   PublicContextCreatePointerEvent rust_context_create_pointer_event{CreatePointerEvent};
   PublicContextCreatePointerEventWithOptions rust_context_create_pointer_event_with_options{
       CreatePointerEventWithOptions};
+  PublicContextCreateTouchEvent rust_context_create_touch_event{CreateTouchEvent};
+  PublicContextCreateTouchEventWithOptions rust_context_create_touch_event_with_options{CreateTouchEventWithOptions};
   PublicContextCreateTransitionEvent rust_context_create_transition_event_event{CreateTransitionEvent};
   PublicContextCreateTransitionEventWithOptions rust_context_create_transition_event_with_options{
       CreateTransitionEventWithOptions};
   PublicContextCreateUIEvent rust_context_create_ui_event{CreateUIEvent};
   PublicContextCreateUIEventWithOptions rust_context_create_ui_event_with_options{CreateUIEventWithOptions};
+  PublicContextCreateEventTarget rust_context_create_event_target{CreateEventTarget};
+  PublicContextCreateDocumentFragment rust_context_create_document_fragment{CreateDocumentFragment};
+  PublicContextCreateDocument rust_context_create_document{CreateDocument};
+  PublicContextCreateImage rust_context_create_image{CreateImage};
 };
 
 }  // namespace webf

@@ -6,6 +6,7 @@
 #define BRIDGE_CORE_INPUT_TOUCH_LIST_H_
 
 #include "bindings/qjs/atomic_string.h"
+#include "plugin_api_gen/touch_list.h"
 #include "touch.h"
 
 namespace webf {
@@ -35,6 +36,8 @@ class TouchList : public ScriptWrappable {
 
   bool NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state);
   void NamedPropertyEnumerator(std::vector<AtomicString>& props, ExceptionState& exception_state);
+
+  const TouchListPublicMethods* touchListPublicMethods();
 
   void Trace(GCVisitor* visitor) const override;
 

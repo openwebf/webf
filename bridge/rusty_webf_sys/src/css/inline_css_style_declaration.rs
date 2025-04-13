@@ -47,7 +47,7 @@ impl CSSStyleDeclarationMethods for InlineCssStyleDeclaration {
   fn css_text(&self) -> String {
     self.css_style_declaration.css_text()
   }
-  fn set_css_text(&self, value: String, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_css_text(&self, value: &str, exception_state: &ExceptionState) -> Result<(), String> {
     self.css_style_declaration.set_css_text(value, exception_state)
   }
   fn length(&self) -> i64 {

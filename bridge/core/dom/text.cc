@@ -24,8 +24,8 @@ Node::NodeType Text::nodeType() const {
   return Node::kTextNode;
 }
 
-const TextNodePublicMethods* Text::textNodePublicMethods() {
-  static TextNodePublicMethods text_node_public_methods;
+const TextPublicMethods* Text::textPublicMethods() {
+  static TextPublicMethods text_node_public_methods;
   return &text_node_public_methods;
 }
 

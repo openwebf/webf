@@ -8,7 +8,7 @@ use crate::*;
 #[repr(C)]
 pub struct TouchInit {
   pub identifier: c_double,
-  pub target: RustValue<EventTargetRustMethods>,
+  pub target: *const OpaquePtr,
   pub client_x: c_double,
   pub client_y: c_double,
   pub screen_x: c_double,

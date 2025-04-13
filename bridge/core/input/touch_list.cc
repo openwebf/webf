@@ -68,4 +68,9 @@ void TouchList::Trace(GCVisitor* visitor) const {
   }
 }
 
+const TouchListPublicMethods* TouchList::touchListPublicMethods() {
+  static TouchListPublicMethods touch_list_public_methods;
+  return &touch_list_public_methods;
+}
+
 }  // namespace webf

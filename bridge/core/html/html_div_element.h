@@ -7,6 +7,7 @@
 #define BRIDGE_CORE_HTML_HTML_DIV_ELEMENT_H_
 
 #include "html_element.h"
+#include "plugin_api_gen/html_div_element.h"
 
 namespace webf {
 
@@ -16,6 +17,11 @@ class HTMLDivElement : public HTMLElement {
  public:
   using ImplType = HTMLDivElement*;
   explicit HTMLDivElement(Document&);
+
+  const HTMLDivElementPublicMethods* htmlDivElementPublicMethods() {
+    static HTMLDivElementPublicMethods html_element_public_methods;
+    return &html_element_public_methods;
+  }
 };
 
 }  // namespace webf

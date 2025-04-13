@@ -39,7 +39,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "mutation_observer.h"
 #include "mutation_observer_options.h"
-#include "plugin_api/mutation_observer_registration.h"
+#include "plugin_api_gen/mutation_observer_registration.h"
 
 namespace webf {
 

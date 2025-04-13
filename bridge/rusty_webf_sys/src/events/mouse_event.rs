@@ -9,11 +9,11 @@ use crate::*;
 pub struct MouseEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
-  pub button: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub client_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub client_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub offset_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub button: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub client_x: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub client_y: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub offset_x: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub offset_y: extern "C" fn(*const OpaquePtr) -> c_double,
 }
 pub struct MouseEvent {
   pub ui_event: UIEvent,

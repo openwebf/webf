@@ -38,6 +38,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/html/collection_type.h"
 #include "core/html/html_collection.h"
+#include "plugin_api_gen/node_list.h"
 
 namespace webf {
 
@@ -81,6 +82,11 @@ class NodeList : public ScriptWrappable {
     return list;
   }
   void Trace(GCVisitor* visitor) const override;
+
+  const NodeListPublicMethods* nodeListPublicMethods() {
+    static NodeListPublicMethods node_list_public_methods;
+    return &node_list_public_methods;
+  }
 
  protected:
   std::unordered_map<CollectionType, Member<HTMLCollection>> tag_collection_cache_;

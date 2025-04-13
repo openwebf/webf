@@ -1,8 +1,8 @@
-#include "rust_readable.h"
+#include "plugin_api/rust_readable.h"
 <% if (object.parent) { %>
 #include "<%= _.snakeCase(object.parent) %>.h"
 <% } else { %>
-#include "webf_value.h"
+#include "plugin_api/webf_value.h"
 <% } %>
 
 namespace webf {
@@ -21,6 +21,7 @@ class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
+typedef struct WebFNativeFunctionContext WebFNativeFunctionContext;
 class <%= className %>;
 
 <% if (!object.parent) { %>
@@ -33,16 +34,30 @@ enum class <%= className %>Type {
 <% } %>
 
 <% _.forEach(object.props, function(prop, index) { %>
+<% var id = `${object.name}.${prop.name}`; %>
+<% if (skipList.includes(id)) return; %>
   <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
-using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true) %> (*)(<%= className %>*<%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
+using Public<%= className %>Get<%= propName %> = <%= generatePublicReturnTypeValue(prop.type, true, prop.typeMode) %> (*)(<%= className %>*<%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>);
   <% if (!prop.readonly) { %>
 using Public<%= className %>Set<%= propName %> = void (*)(<%= className %>*, <%= generatePublicParameterType(prop.type, true) %>, SharedExceptionState*);
   <% } %>
 <% }); %>
 
-<% _.forEach(object.methods, function(method, index) { %>
-  <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
+<% _.forEach(methodsWithoutOverload, function(method, index) { %>
+  <% var id = `${object.name}.${method.name}`; %>
+  <% if (skipList.includes(id)) return; %>
+  <% if (id === 'Element.toBlob') { %>
+using PublicElementToBlob = void (*)(Element*, WebFNativeFunctionContext*, SharedExceptionState*);
+using PublicElementToBlobWithDevicePixelRatio = void (*)(Element*,
+                                                          double,
+                                                          WebFNativeFunctionContext*,
+                                                          SharedExceptionState*);
+  <% } else if (id === 'Window.requestAnimationFrame') { %>
+using PublicRequestAnimationFrame = double (*)(Window*, WebFNativeFunctionContext*, SharedExceptionState*);
+  <% } else { %>
+    <% var methodName = _.startCase(method.rustName || method.name).replace(/ /g, ''); %>
 using Public<%= className %><%= methodName %> = <%= generatePublicReturnTypeValue(method.returnType, true) %> (*)(<%= className %>*, <%= generatePublicParametersType(method.args, true) %>SharedExceptionState*);
+  <% } %>
 <% }); %>
 
 <% if (!object.parent) { %>
@@ -53,16 +68,32 @@ using Public<%= className %>DynamicTo = WebFValue<<%= className %>, WebFPublicMe
 struct <%= className %>PublicMethods : public WebFPublicMethods {
 
   <% _.forEach(object.props, function(prop, index) { %>
+  <% var id = `${object.name}.${prop.name}`; %>
+  <% if (skipList.includes(id)) return; %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
-  static <%= generatePublicReturnTypeValue(prop.type, true) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>);
+  static <%= generatePublicReturnTypeValue(prop.type, true, prop.typeMode) %> <%= propName %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>);
     <% if (!prop.readonly) { %>
   static void Set<%= propName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state);
     <% } %>
   <% }); %>
 
-  <% _.forEach(object.methods, function(method, index) { %>
-    <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
+  <% _.forEach(methodsWithoutOverload, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
+    <% if (id === 'Element.toBlob') { %>
+  static void ToBlob(Element* element, WebFNativeFunctionContext* context, SharedExceptionState* exception_state);
+  static void ToBlobWithDevicePixelRatio(Element* element,
+                                          double device_pixel_ratio,
+                                          WebFNativeFunctionContext* context,
+                                          SharedExceptionState* exception_state);
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  static double RequestAnimationFrame(Window* window,
+                                WebFNativeFunctionContext* callback_context,
+                                SharedExceptionState* shared_exception_state);
+    <% } else { %>
+      <% var methodName = _.startCase(method.rustName || method.name).replace(/ /g, ''); %>
   static <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= methodName %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state);
+    <% } %>
   <% }); %>
 
   <% if (!object.parent) { %>
@@ -76,6 +107,8 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = _.startCase(prop.name).replace(/ /g, ''); %>
   Public<%= className %>Get<%= propName %> <%= _.snakeCase(className) %>_get_<%= _.snakeCase(prop.name) %>{<%= propName %>};
     <% if (!prop.readonly) { %>
@@ -83,9 +116,18 @@ struct <%= className %>PublicMethods : public WebFPublicMethods {
     <% } %>
   <% }); %>
 
-  <% _.forEach(object.methods, function(method, index) { %>
-    <% var methodName = _.startCase(method.name).replace(/ /g, ''); %>
-  Public<%= className %><%= methodName %> <%= _.snakeCase(className) %>_<%= _.snakeCase(method.name) %>{<%= methodName %>};
+  <% _.forEach(methodsWithoutOverload, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
+    <% if (id === 'Element.toBlob') { %>
+  PublicElementToBlob element_to_blob{ToBlob};
+  PublicElementToBlobWithDevicePixelRatio element_to_blob_with_device_pixel_ratio{ToBlobWithDevicePixelRatio};
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  PublicRequestAnimationFrame window_request_animation_frame{RequestAnimationFrame};
+    <% } else { %>
+      <% var methodName =  _.startCase(method.rustName || method.name).replace(/ /g, ''); %>
+  Public<%= className %><%= methodName %> <%= _.snakeCase(className) %>_<%= _.snakeCase(methodName) %>{<%= methodName %>};
+    <% } %>
   <% }); %>
 
   <% if (!object.parent) { %>

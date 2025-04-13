@@ -6,6 +6,7 @@
 #define WEBF_CORE_EVENTS_TOUCH_EVENT_H_
 
 #include "core/input/touch_list.h"
+#include "plugin_api_gen/touch_event.h"
 #include "qjs_touch_event_init.h"
 #include "ui_event.h"
 
@@ -47,6 +48,8 @@ class TouchEvent : public UIEvent {
 
   bool IsTouchEvent() const override;
 
+  const TouchEventPublicMethods* touchEventPublicMethods();
+
  private:
   bool alt_key_;
   bool ctrl_key_;
@@ -55,6 +58,11 @@ class TouchEvent : public UIEvent {
   Member<TouchList> changed_touches_;
   Member<TouchList> target_touches_;
   Member<TouchList> touches_;
+};
+
+template <>
+struct DowncastTraits<TouchEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsTouchEvent(); }
 };
 
 }  // namespace webf

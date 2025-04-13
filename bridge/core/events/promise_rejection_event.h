@@ -7,7 +7,7 @@
 #define BRIDGE_CORE_EVENTS_PROMISE_REJECTION_EVENT_H_
 
 #include "core/dom/events/event.h"
-#include "plugin_api/promise_rejection_event.h"
+#include "plugin_api_gen/promise_rejection_event.h"
 #include "qjs_promise_rejection_event_init.h"
 
 namespace webf {

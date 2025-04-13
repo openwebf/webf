@@ -8,6 +8,7 @@
 
 #include "bindings/qjs/dictionary_base.h"
 #include "bindings/qjs/source_location.h"
+#include "plugin_api_gen/keyboard_event.h"
 #include "qjs_keyboard_event_init.h"
 #include "ui_event.h"
 
@@ -66,6 +67,8 @@ class KeyboardEvent : public UIEvent {
 
   bool IsKeyboardEvent() const override;
 
+  static const KeyboardEventPublicMethods* keyboardEventPublicMethods();
+
  private:
   bool alt_key_;
   double char_code_;
@@ -78,6 +81,11 @@ class KeyboardEvent : public UIEvent {
   bool meta_key_;
   bool repeat_;
   bool shift_key_;
+};
+
+template <>
+struct DowncastTraits<KeyboardEvent> {
+  static bool AllowFrom(const Event& event) { return event.IsKeyboardEvent(); }
 };
 
 }  // namespace webf

@@ -4,7 +4,6 @@
  */
 #include "custom_event.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "core/native/script_value_ref.h"
 #include "native_value_converter.h"
 
 namespace webf {

@@ -9,10 +9,10 @@ use crate::*;
 pub struct MessageEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub data: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
-  pub origin: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub last_event_id: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub source: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub data: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub origin: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub last_event_id: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub source: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
 }
 pub struct MessageEvent {
   pub event: Event,

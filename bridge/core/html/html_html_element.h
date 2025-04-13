@@ -6,6 +6,7 @@
 #define BRIDGE_CORE_HTML_HTML_HTML_ELEMENT_H_
 
 #include "html_element.h"
+#include "plugin_api_gen/html_html_element.h"
 
 namespace webf {
 
@@ -15,6 +16,11 @@ class HTMLHtmlElement : public HTMLElement {
  public:
   using ImplType = HTMLHtmlElement*;
   explicit HTMLHtmlElement(Document&);
+
+  const HTMLHtmlElementPublicMethods* htmlHtmlElementPublicMethods() {
+    static HTMLHtmlElementPublicMethods html_html_element_public_methods;
+    return &html_html_element_public_methods;
+  }
 };
 
 }  // namespace webf

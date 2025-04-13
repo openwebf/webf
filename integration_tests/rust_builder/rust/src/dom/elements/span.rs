@@ -9,7 +9,7 @@ pub async fn test_span_should_work_with_texts(metadata: TestCaseMetadata, contex
   let body = document.body();
 
   // Create first span with text
-  let span = document.create_element("span", &exception_state).unwrap();
+  let span = document.create_element("span", NativeValue::new_null(), &exception_state).unwrap();
   let text = document.create_text_node("hello world", &exception_state).unwrap();
   span.append_child(&text.as_node(), &exception_state).unwrap();
 
@@ -25,7 +25,7 @@ pub async fn test_span_should_work_with_texts(metadata: TestCaseMetadata, contex
   body.append_child(&span.as_node(), &exception_state).unwrap();
 
   // Create second span with text
-  let span2 = document.create_element("span", &exception_state).unwrap();
+  let span2 = document.create_element("span", NativeValue::new_null(), &exception_state).unwrap();
   let text2 = document.create_text_node("hello world", &exception_state).unwrap();
   span2.append_child(&text2.as_node(), &exception_state).unwrap();
 

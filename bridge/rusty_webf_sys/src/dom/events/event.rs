@@ -17,35 +17,37 @@ enum EventType {
   ErrorEvent = 7,
   IntersectionChangeEvent = 8,
   UIEvent = 9,
-  FocusEvent = 10,
-  InputEvent = 11,
-  MouseEvent = 12,
-  PointerEvent = 13,
-  PopStateEvent = 14,
-  TransitionEvent = 15,
-  PromiseRejectionEvent = 16,
-  HashchangeEvent = 17,
+  TouchEvent = 10,
+  FocusEvent = 11,
+  InputEvent = 12,
+  KeyboardEvent = 13,
+  MouseEvent = 14,
+  PointerEvent = 15,
+  PopStateEvent = 16,
+  TransitionEvent = 17,
+  PromiseRejectionEvent = 18,
+  HashchangeEvent = 19,
 }
 #[repr(C)]
 pub struct EventRustMethods {
   pub version: c_double,
-  pub bubbles: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub cancel_bubble: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub set_cancel_bubble: extern "C" fn(ptr: *const OpaquePtr, value: i32, exception_state: *const OpaquePtr) -> bool,
-  pub cancelable: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub current_target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub default_prevented: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub src_element: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
-  pub is_trusted: extern "C" fn(ptr: *const OpaquePtr) -> i32,
-  pub time_stamp: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub type_: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub init_event: extern "C" fn(ptr: *const OpaquePtr, *const c_char, i32, i32, exception_state: *const OpaquePtr) -> c_void,
-  pub prevent_default: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
-  pub stop_immediate_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
-  pub stop_propagation: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> c_void,
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: EventType) -> RustValue<c_void>,
+  pub bubbles: extern "C" fn(*const OpaquePtr) -> i32,
+  pub cancel_bubble: extern "C" fn(*const OpaquePtr) -> i32,
+  pub set_cancel_bubble: extern "C" fn(*const OpaquePtr, value: i32, *const OpaquePtr) -> bool,
+  pub cancelable: extern "C" fn(*const OpaquePtr) -> i32,
+  pub current_target: extern "C" fn(*const OpaquePtr) -> RustValue<EventTargetRustMethods>,
+  pub default_prevented: extern "C" fn(*const OpaquePtr) -> i32,
+  pub src_element: extern "C" fn(*const OpaquePtr) -> RustValue<EventTargetRustMethods>,
+  pub target: extern "C" fn(*const OpaquePtr) -> RustValue<EventTargetRustMethods>,
+  pub is_trusted: extern "C" fn(*const OpaquePtr) -> i32,
+  pub time_stamp: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub type_: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub init_event: extern "C" fn(*const OpaquePtr, *const c_char, i32, i32, *const OpaquePtr) -> c_void,
+  pub prevent_default: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> c_void,
+  pub stop_immediate_propagation: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> c_void,
+  pub stop_propagation: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> c_void,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: EventType) -> RustValue<c_void>,
 }
 pub struct Event {
   pub ptr: *const OpaquePtr,
@@ -264,6 +266,16 @@ impl Event {
     }
     Ok(UIEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const UIEventRustMethods, raw_ptr.status))
   }
+  pub fn as_touch_event(&self) -> Result<TouchEvent, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::TouchEvent)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of Event does not belong to the TouchEvent type.");
+    }
+    Ok(TouchEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const TouchEventRustMethods, raw_ptr.status))
+  }
   pub fn as_focus_event(&self) -> Result<FocusEvent, &str> {
     let raw_ptr = unsafe {
       assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
@@ -283,6 +295,16 @@ impl Event {
       return Err("The type value of Event does not belong to the InputEvent type.");
     }
     Ok(InputEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const InputEventRustMethods, raw_ptr.status))
+  }
+  pub fn as_keyboard_event(&self) -> Result<KeyboardEvent, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, EventType::KeyboardEvent)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of Event does not belong to the KeyboardEvent type.");
+    }
+    Ok(KeyboardEvent::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const KeyboardEventRustMethods, raw_ptr.status))
   }
   pub fn as_mouse_event(&self) -> Result<MouseEvent, &str> {
     let raw_ptr = unsafe {

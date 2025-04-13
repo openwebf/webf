@@ -8,7 +8,7 @@
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
 #include "performance_entry.h"
-#include "plugin_api/performance_measure.h"
+#include "plugin_api_gen/performance_measure.h"
 
 namespace webf {
 

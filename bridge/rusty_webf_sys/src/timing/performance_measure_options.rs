@@ -8,6 +8,6 @@ use crate::*;
 #[repr(C)]
 pub struct PerformanceMeasureOptions {
   pub detail: NativeValue,
-  pub start: AtomicStringRef,
-  pub end: AtomicStringRef,
+  pub start: *const c_char,
+  pub end: *const c_char,
 }

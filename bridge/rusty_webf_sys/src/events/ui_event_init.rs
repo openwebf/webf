@@ -11,6 +11,6 @@ pub struct UIEventInit {
   pub cancelable: i32,
   pub composed: i32,
   pub detail: c_double,
-  pub view: RustValue<WindowRustMethods>,
+  pub view: *const OpaquePtr,
   pub which: c_double,
 }

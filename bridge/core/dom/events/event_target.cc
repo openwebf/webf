@@ -2,7 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-#include "plugin_api/event_target.h"
+#include "plugin_api_gen/event_target.h"
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
@@ -136,6 +136,13 @@ bool EventTarget::removeEventListener(const AtomicString& event_type,
   }
 
   return RemoveEventListenerInternal(event_type, event_listener, event_listener_options);
+}
+
+bool EventTarget::removeEventListener(const AtomicString& event_type,
+                                      const std::shared_ptr<EventListener>& event_listener,
+                                      const std::shared_ptr<EventListenerOptions>& options,
+                                      ExceptionState& exception_state) {
+  return RemoveEventListenerInternal(event_type, event_listener, options);
 }
 
 bool EventTarget::removeEventListener(const AtomicString& event_type,

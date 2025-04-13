@@ -8,7 +8,7 @@
 
 #include "core/dom/element.h"
 #include "core/dom/global_event_handlers.h"
-#include "plugin_api/html_element.h"
+#include "plugin_api_gen/html_element.h"
 
 namespace webf {
 

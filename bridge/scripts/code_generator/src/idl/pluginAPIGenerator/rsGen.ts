@@ -4,10 +4,11 @@ import _ from 'lodash';
 import {getTemplateKind, TemplateKind} from '../generateHeader';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {IDLBlob} from '../IDLBlob';
-import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
+import {ClassObject, FunctionArguments, FunctionArgumentType, FunctionDeclaration, ParameterMode} from '../declaration';
 import {getPointerType, isPointerType} from '../generateSource';
 import {ParameterType} from '../analyzer';
 import {isAnyType, isStringType, isVectorType} from './cppGen';
+import { skipList } from './common';
 
 function readSourceTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.rs.tpl'), {encoding: 'utf-8'});
@@ -17,7 +18,10 @@ function isVoidType(type: ParameterType) {
   return type.value === FunctionArgumentType.void;
 }
 
-function generatePublicReturnTypeValue(type: ParameterType) {
+function generatePublicReturnTypeValue(type: ParameterType, typeMode?: ParameterMode): string {
+  if (typeMode && typeMode.dartImpl) {
+    return 'NativeValue';
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `RustValue<${pointerType}RustMethods>`;
@@ -46,6 +50,7 @@ function generatePublicReturnTypeValue(type: ParameterType) {
       return 'AtomicStringRef';
     }
     case FunctionArgumentType.void:
+    case FunctionArgumentType.promise:
       return 'c_void';
     default:
       return 'void*';
@@ -90,7 +95,14 @@ function generateMethodReturnType(type: ParameterType): string {
 function generatePublicParameterType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `*const ${pointerType}`;
+    // special case for EventListener
+    if (pointerType === 'JSEventListener') {
+      return '*const EventCallbackContext';
+    }
+    if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) {
+      return `*const ${pointerType}`;
+    }
+    return `*const OpaquePtr`;
   }
   switch (type.value) {
     case FunctionArgumentType.int64: {
@@ -112,18 +124,25 @@ function generatePublicParameterType(type: ParameterType): string {
     case FunctionArgumentType.legacy_dom_string: {
       return '*const c_char';
     }
+    case FunctionArgumentType.function: {
+      return '*const WebFNativeFunctionContext';
+    }
     default:
-      return 'void*';
+      return '*const c_void';
   }
 }
 
-function generatePublicParametersType(parameters: FunctionArguments[]): string {
+function generatePublicParametersType(parameters: FunctionArguments[], returnType: ParameterType): string {
   if (parameters.length === 0) {
     return '';
   }
-  return parameters.map(param => {
+  let params = parameters.map(param => {
     return `${generatePublicParameterType(param.type)}`;
   }).join(', ') + ', ';
+  if (returnType && returnType.value === FunctionArgumentType.promise) {
+    params += '*const WebFNativeFunctionContext, ';
+  }
+  return params;
 }
 
 function generatePublicParametersTypeWithName(parameters: FunctionArguments[]): string {
@@ -147,6 +166,10 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
 function generateMethodParameterType(type: ParameterType): string {
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
+    // special case for EventListener
+    if (pointerType === 'JSEventListener') {
+      return 'EventListenerCallback';
+    }
     return `&${pointerType}`;
   }
   switch (type.value) {
@@ -197,6 +220,16 @@ function generateMethodParametersName(parameters: FunctionArguments[]): string {
     return '';
   }
   return parameters.map(param => {
+    if (isPointerType(param.type)) {
+      const pointerType = getPointerType(param.type);
+      // special case for EventListener
+      if (pointerType === 'JSEventListener') {
+        return `${generateValidRustIdentifier(param.name)}_context_ptr`;
+      }
+      if (!pointerType.endsWith('Options') && !pointerType.endsWith('Init')) {
+        return `${generateValidRustIdentifier(param.name)}.ptr()`;
+      }
+    }
     switch (param.type.value) {
       case FunctionArgumentType.dom_string:
       case FunctionArgumentType.legacy_dom_string: {
@@ -252,6 +285,8 @@ function getClassName(blob: IDLBlob) {
 function generateValidRustIdentifier(name: string) {
   const rustKeywords = [
     'type',
+    'self',
+    'async',
   ];
   let identifier = _.snakeCase(name);
   return rustKeywords.includes(identifier) ? `${identifier}_` : identifier;
@@ -278,7 +313,23 @@ function generateMethodReturnStatements(type: ParameterType) {
   }
 }
 
-function generatePropReturnStatements(type: ParameterType) {
+function generatePropReturnStatements(type: ParameterType, typeMode?: ParameterMode) {
+  if (typeMode && typeMode.dartImpl) {
+    switch (type.value) {
+      case FunctionArgumentType.int64:
+        return 'value.to_int64()';
+      case FunctionArgumentType.double:
+        return 'value.to_float64()';
+      case FunctionArgumentType.boolean:
+        return 'value.to_bool()';
+      case FunctionArgumentType.dom_string:
+      case FunctionArgumentType.legacy_dom_string: {
+        return 'value.to_string()';
+      }
+      default:
+        return 'value';
+    }
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return `${pointerType}::initialize(value.value, self.context(), value.method_pointer, value.status)`;
@@ -296,6 +347,25 @@ function generatePropReturnStatements(type: ParameterType) {
   }
 }
 
+function getMethodsWithoutOverload(methods: FunctionDeclaration[]) {
+  const methodsWithoutOverload = [] as FunctionDeclaration[];
+  const methodsNames = new Set<string>();
+  methods.forEach(method => {
+    const name = method.name;
+    if (methodsNames.has(name)) {
+      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('And');
+      methodsWithoutOverload.push({
+        ...method,
+        name: rustName,
+      })
+    } else {
+      methodsNames.add(name);
+      methodsWithoutOverload.push(method);
+    }
+  });
+  return methodsWithoutOverload;
+}
+
 function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
   const baseTemplate = readSourceTemplate('base');
   const contents = blob.objects.map(object => {
@@ -311,6 +381,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
         let currentParentObject = object;
         while (currentParentObject.parent) {
           const parentObject = ClassObject.globalClassMap[currentParentObject.parent];
+          parentObject.methods = getMethodsWithoutOverload(parentObject.methods);
           inheritedObjects.push(parentObject);
           currentParentObject = parentObject;
         }
@@ -327,12 +398,14 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
         if (object.name in ClassObject.globalClassRelationMap) {
           appendSubClasses(object.name);
         }
+        object.methods = getMethodsWithoutOverload(object.methods);
 
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
           blob,
           object,
+          skipList,
           inheritedObjects,
           isPointerType,
           generatePublicReturnTypeValue,
@@ -341,6 +414,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           generatePublicParametersTypeWithName,
           generateMethodReturnType,
           generateMethodParametersTypeWithName,
+          generateMethodParameterType,
           generateMethodParametersName,
           generateParentMethodParametersName,
           generateMethodReturnStatements,
@@ -376,6 +450,7 @@ function generateRustSourceFile(blob: IDLBlob, options: GenerateOptions) {
           blob,
           object,
           generatePublicReturnTypeValue,
+          generatePublicParameterType,
           isStringType,
           options,
         });

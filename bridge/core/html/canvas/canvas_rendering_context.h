@@ -7,6 +7,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
+#include "plugin_api_gen/canvas_rendering_context.h"
 
 namespace webf {
 
@@ -18,6 +19,11 @@ class CanvasRenderingContext : public BindingObject {
   explicit CanvasRenderingContext(JSContext* ctx, NativeBindingObject* native_binding_object);
 
   virtual bool IsCanvas2d() const;
+
+  const CanvasRenderingContextPublicMethods* canvasRenderingContextPublicMethods() {
+    static CanvasRenderingContextPublicMethods canvas_rendering_context_public_methods;
+    return &canvas_rendering_context_public_methods;
+  }
 
  private:
 };

@@ -9,7 +9,7 @@ use crate::*;
 pub struct FocusEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
-  pub related_target: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<EventTargetRustMethods>,
+  pub related_target: extern "C" fn(*const OpaquePtr) -> RustValue<EventTargetRustMethods>,
 }
 pub struct FocusEvent {
   pub ui_event: UIEvent,

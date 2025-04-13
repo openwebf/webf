@@ -13,7 +13,7 @@
 #include "event_listener_map.h"
 #include "foundation/logging.h"
 #include "foundation/native_string.h"
-#include "plugin_api/event_target.h"
+#include "plugin_api_gen/event_target.h"
 #include "qjs_add_event_listener_options.h"
 #include "qjs_unionadd_event_listener_options_boolean.h"
 #include "qjs_unionevent_listener_options_boolean.h"
@@ -119,6 +119,10 @@ class EventTarget : public BindingObject {
                            ExceptionState& exception_state);
   bool removeEventListener(const AtomicString& event_type,
                            const std::shared_ptr<EventListener>& event_listener,
+                           const std::shared_ptr<EventListenerOptions>& options,
+                           ExceptionState& exception_state);
+  bool removeEventListener(const AtomicString& event_type,
+                           const std::shared_ptr<EventListener>& event_listener,
                            bool use_capture,
                            ExceptionState& exception_state);
   bool dispatchEvent(Event* event, ExceptionState& exception_state);
@@ -138,6 +142,7 @@ class EventTarget : public BindingObject {
 
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
   virtual bool IsNode() const { return false; }
+  virtual bool IsScreen() const { return false; }
   bool IsEventTarget() const override;
 
   const EventTargetPublicMethods* eventTargetPublicMethods();

@@ -7,7 +7,7 @@
 #define BRIDGE_CHARACTER_DATA_H
 
 #include "node.h"
-#include "plugin_api/character_data.h"
+#include "plugin_api_gen/character_data.h"
 
 namespace webf {
 
@@ -41,6 +41,9 @@ class CharacterData : public Node {
 template <>
 struct DowncastTraits<CharacterData> {
   static bool AllowFrom(const Node& node) { return node.IsCharacterDataNode(); }
+  static bool AllowFrom(const EventTarget& event_target) {
+    return event_target.IsNode() && To<Node>(event_target).IsCharacterDataNode();
+  }
 };
 
 }  // namespace webf

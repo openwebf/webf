@@ -7,7 +7,7 @@
 #define BRIDGE_CORE_EVENTS_MESSAGE_EVENT_H_
 
 #include "core/dom/events/event.h"
-#include "plugin_api/message_event.h"
+#include "plugin_api_gen/message_event.h"
 #include "qjs_message_event_init.h"
 
 namespace webf {

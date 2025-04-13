@@ -9,9 +9,9 @@ use crate::*;
 pub struct HybridRouterChangeEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub state: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
-  pub kind: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub state: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
+  pub kind: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
 }
 pub struct HybridRouterChangeEvent {
   pub event: Event,

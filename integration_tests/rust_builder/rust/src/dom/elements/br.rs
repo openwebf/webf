@@ -1,4 +1,4 @@
-use webf_sys::{ExecutingContext, NodeMethods};
+use webf_sys::{ExecutingContext, NativeValue, NodeMethods};
 use webf_test_macros::webf_test_async;
 use webf_test_utils::{common::TestCaseMetadata, dom_utils::create_element_with_style, snapshot::snapshot_with_filename};
 use serde_json::json;
@@ -8,9 +8,9 @@ pub async fn test_br_basic(metadata: TestCaseMetadata, context: ExecutingContext
   let document = context.document();
   let exception_state = context.create_exception_state();
 
-  let p = document.create_element("p", &exception_state).unwrap();
+  let p = document.create_element("p", NativeValue::new_null(), &exception_state).unwrap();
   let text1 = document.create_text_node(" Hello World! ", &exception_state).unwrap();
-  let br = document.create_element("br", &exception_state).unwrap();
+  let br = document.create_element("br", NativeValue::new_null(), &exception_state).unwrap();
   let text2 = document.create_text_node(" 你好，世界！", &exception_state).unwrap();
 
   p.append_child(&text1.as_node(), &exception_state).unwrap();

@@ -8,7 +8,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "core/binding_object.h"
 #include "css_style_declaration.h"
-#include "plugin_api/computed_css_style_declaration.h"
+#include "plugin_api_gen/computed_css_style_declaration.h"
 
 namespace webf {
 

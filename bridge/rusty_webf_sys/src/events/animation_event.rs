@@ -9,9 +9,9 @@ use crate::*;
 pub struct AnimationEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub animation_name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub elapsed_time: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub pseudo_element: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub animation_name: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
+  pub elapsed_time: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub pseudo_element: extern "C" fn(*const OpaquePtr) -> AtomicStringRef,
 }
 pub struct AnimationEvent {
   pub event: Event,

@@ -1,4 +1,4 @@
-use webf_sys::{ExecutingContext, NodeMethods};
+use webf_sys::{ExecutingContext, NativeValue, NodeMethods};
 use webf_test_macros::webf_test_async;
 use webf_test_utils::{common::TestCaseMetadata, snapshot::snapshot_with_filename};
 
@@ -8,7 +8,7 @@ pub async fn test_pre_element_basic(metadata: TestCaseMetadata, context: Executi
   let exception_state = context.create_exception_state();
 
   // Create pre element
-  let pre = document.create_element("pre", &exception_state).unwrap();
+  let pre = document.create_element("pre", NativeValue::new_null(), &exception_state).unwrap();
 
   // Create text node with preserved whitespace and line breaks
   let text_content = "

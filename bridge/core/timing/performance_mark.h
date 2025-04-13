@@ -8,7 +8,7 @@
 #include "bindings/qjs/script_value.h"
 #include "performance_entry.h"
 #include "performance_entry_names.h"
-#include "plugin_api/performance_mark.h"
+#include "plugin_api_gen/performance_mark.h"
 #include "qjs_performance_mark_options.h"
 
 namespace webf {

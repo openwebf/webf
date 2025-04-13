@@ -9,9 +9,9 @@ use crate::*;
 pub struct UIEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub detail: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub view: extern "C" fn(ptr: *const OpaquePtr) -> RustValue<WindowRustMethods>,
-  pub which: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
+  pub detail: extern "C" fn(*const OpaquePtr) -> c_double,
+  pub view: extern "C" fn(*const OpaquePtr) -> RustValue<WindowRustMethods>,
+  pub which: extern "C" fn(*const OpaquePtr) -> c_double,
 }
 pub struct UIEvent {
   pub event: Event,

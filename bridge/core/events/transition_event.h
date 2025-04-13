@@ -6,7 +6,7 @@
 #define WEBF_CORE_EVENTS_TRANSITION_EVENT_H_
 
 #include "core/dom/events/event.h"
-#include "plugin_api/transition_event.h"
+#include "plugin_api_gen/transition_event.h"
 #include "qjs_transition_event_init.h"
 
 namespace webf {

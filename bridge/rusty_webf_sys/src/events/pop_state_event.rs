@@ -9,7 +9,7 @@ use crate::*;
 pub struct PopStateEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub state: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
+  pub state: extern "C" fn(*const OpaquePtr, *const OpaquePtr) -> NativeValue,
 }
 pub struct PopStateEvent {
   pub event: Event,

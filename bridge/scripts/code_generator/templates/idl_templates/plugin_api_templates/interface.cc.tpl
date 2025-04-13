@@ -1,12 +1,16 @@
 <% if (className.endsWith('Event')) { %>
-#include "plugin_api/<%= _.snakeCase(className) %>_init.h"
+#include "plugin_api_gen/<%= _.snakeCase(className) %>_init.h"
 <% }%>
 namespace webf {
 
 <% _.forEach(object.props, function(prop, index) { %>
-<%= generatePublicReturnTypeValue(prop.type, true) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type)? ", SharedExceptionState* shared_exception_state": "" %>) {
+<% var id = `${object.name}.${prop.name}`; %>
+<% if (skipList.includes(id)) return; %>
+<%= generatePublicReturnTypeValue(prop.type, true, prop.typeMode) %> <%= className %>PublicMethods::<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %><%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", SharedExceptionState* shared_exception_state": "" %>) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
-  <% if (isPointerType(prop.type)) { %>
+  <% if (prop.typeMode.dartImpl) { %>
+  return <%= _.snakeCase(className) %>->GetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>, FlushUICommandReason::kDependentsOnElement<%= prop.typeMode.layoutDependent ? ' | FlushUICommandReason::kDependentsOnLayout' : '' %>, shared_exception_state->exception_state);
+  <% } else if (isPointerType(prop.type)) { %>
   auto* result = <%= _.snakeCase(className) %>-><%= prop.name %>();
   WebFValueStatus* status_block = result->KeepAlive();
   return <%= generatePublicReturnTypeValue(prop.type, true) %>(result, result-><%= _.camelCase(getPointerType(prop.type)) %>PublicMethods(), status_block);
@@ -17,6 +21,8 @@ namespace webf {
   <% } else if (isStringType(prop.type)) { %>
   auto value_atomic = <%= _.snakeCase(className) %>-><%= prop.name %>();
   return AtomicStringRef(value_atomic);
+  <% } else if (prop.typeMode.static) { %>
+  return <%= _.snakeCase(className) %>-><%= prop.name %>;
   <% } else { %>
   return <%= _.snakeCase(className) %>-><%= prop.name %>();
   <% } %>
@@ -24,17 +30,58 @@ namespace webf {
   <% if (!prop.readonly) { %>
 void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
-  <% if (isStringType(prop.type)) { %>
+  <% if (prop.typeMode.dartImpl) { %>
+  NativeValue <%= _.snakeCase(prop.name) %>_native = <%= generateNativeValueConverter(prop.type) %>(<%= prop.name %>);
+  <%= _.snakeCase(className) %>->SetBindingProperty(binding_call_methods::k<%= _.camelCase(prop.name) %>, <%= _.snakeCase(prop.name) %>_native, shared_exception_state->exception_state);
+  <% } else { %>
+    <% if (isStringType(prop.type)) { %>
   webf::AtomicString <%= prop.name %>Atomic = webf::AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= prop.name %>);
-  <% } %>
+    <% } %>
   <%= _.snakeCase(className) %>->set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= prop.name %><% if (isStringType(prop.type)) { %>Atomic<% } %>, shared_exception_state->exception_state);
+  <% } %>
 }
   <% } %>
 <% }); %>
 
-<% _.forEach(object.methods, function(method, index) { %>
-<%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
+<% _.forEach(methodsWithoutOverload, function(method, index) { %>
+<% var id = `${object.name}.${method.name}`; %>
+<% if (skipList.includes(id)) return; %>
+<% if (id === 'Element.toBlob') { %>
+void ElementPublicMethods::ToBlob(Element* element,
+                                  WebFNativeFunctionContext* callback_context,
+                                  SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return element->toBlob(callback_impl, shared_exception_state->exception_state);
+}
+void ElementPublicMethods::ToBlobWithDevicePixelRatio(Element* element,
+                                                      double device_pixel_ratio,
+                                                      WebFNativeFunctionContext* callback_context,
+                                                      SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return element->toBlob(device_pixel_ratio, callback_impl, shared_exception_state->exception_state);
+}
+<% } else if (id === 'Window.requestAnimationFrame') { %>
+double WindowPublicMethods::RequestAnimationFrame(Window* window,
+                                                  WebFNativeFunctionContext* callback_context,
+                                                  SharedExceptionState* shared_exception_state) {
+  auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
+  return window->requestAnimationFrame(callback_impl, shared_exception_state->exception_state);
+}
+<% } else { %>
+<%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.rustName || method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
+  <% if (method.returnTypeMode?.dartImpl) { %>
+    <% if (method.args.length != 0) { %>
+  NativeValue args[] = {
+    <% _.forEach(method.args, function(arg, index) { %>
+    <%= generateNativeValueConverter(arg.type) %>(<%= _.snakeCase(arg.name) %>),
+    <% }) %>
+  };
+    <% } %>
+  <%= _.snakeCase(className) %>->InvokeBindingMethod(binding_call_methods::kaddColorStop, <%= method.args.length %>, <%= method.args.length == 0 ? 'NULL' : 'args' %>, FlushUICommandReason::kDependentsOnElement<% if(method.returnTypeMode?.layoutDependent){ %> | FlushUICommandReason::kDependentsOnLayout <% } %>, shared_exception_state->exception_state);
+
+  <% } else { %>
+
   <% _.forEach(method.args, function(arg, index) { %>
     <% if (isStringType(arg.type)) { %>
   webf::AtomicString <%= _.snakeCase(arg.name) %>_atomic = webf::AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= _.snakeCase(arg.name) %>);
@@ -43,33 +90,36 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   ScriptValue <%=_.snakeCase(arg.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
     <% } %>
     <% if (isPointerType(arg.type)) { %>
-  std::shared_ptr<<%= arg.type.value %>> <%= arg.name %>_p = <%= arg.type.value %>::Create();
-    <% _.forEach([...dependentClasses[getPointerType(arg.type)].props, ...dependentClasses[getPointerType(arg.type)].inheritedProps], function (prop) { %>
-      <% if(isStringType(prop.type)) { %>
-  ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
+      <% var pointerType = getPointerType(arg.type); %>
+      <% if (pointerType === 'JSEventListener') { %>
+  auto <%= arg.name %>_impl = WebFPublicPluginEventListener::Create(<%= arg.name %>, shared_exception_state);
+      <% } else if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) { %>
+  std::shared_ptr<<%= pointerType %>> <%= arg.name %>_p = <%= pointerType %>::Create();
+        <% _.forEach([...(dependentClasses[getPointerType(arg.type)]?.props ?? []), ...(dependentClasses[getPointerType(arg.type)]?.inheritedProps ?? [])], function (prop) { %>
+          <% if(isStringType(prop.type)) { %>
+  auto <%=_.snakeCase(prop.name)%>_atomic = AtomicString(<%= _.snakeCase(className) %>->ctx(), <%= arg.name %>-><%=_.snakeCase(prop.name)%>);
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_atomic);
-      <% } else if (isAnyType(prop.type)) { %>
+          <% } else if (isAnyType(prop.type)) { %>
   NativeValue <%=_.snakeCase(prop.name)%> = <%= arg.name %>-><%=_.snakeCase(prop.name)%>;
   ScriptValue <%=_.snakeCase(prop.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(prop.name)%>);
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_script_value);
-      <% } else { %>
+          <% } else { %>
   <%= arg.name %>_p->set<%=_.upperFirst(prop.name)%>(<%= arg.name %>-><%=_.snakeCase(prop.name)%>);
-     <% } %>
-
-    <% }) %>
-
+          <% } %>
+        <% }) %>
+      <% } %>
     <% } %>
   <% }); %>
-    <% if (isStringType(method.returnType)) { %>
+  <% if (isStringType(method.returnType)) { %>
   auto value_atomic = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   return AtomicStringRef(value_atomic);
-    <% } else if (isVoidType(method.returnType)) { %>
+  <% } else if (isVoidType(method.returnType)) { %>
   <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
-    <% } else if (isAnyType(method.returnType)) { %>
+  <% } else if (isAnyType(method.returnType)) { %>
   auto return_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto return_native_value = return_value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);
   return return_native_value;
-    <% } else if (isVectorType(method.returnType)) { %>
+  <% } else if (isVectorType(method.returnType)) { %>
   auto vector_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto vector_size = vector_value.size();
   WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>* return_elements = (WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>*)dart_malloc(sizeof(WebFValue<<%= getPointerType(method.returnType.value) %>, WebFPublicMethods>) * vector_size);
@@ -82,10 +132,16 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   }
   auto result = VectorValueRef(return_elements, vector_size);
   return result;
-    <% } else { %>
+  <% } else if (isPointerType(method.returnType)) { %>
+  auto* result = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+  WebFValueStatus* status_block = result->KeepAlive();
+  return <%= generatePublicReturnTypeValue(method.returnType, true) %>(result, result-><%= _.camelCase(getPointerType(method.returnType)) %>PublicMethods(), status_block);
+  <% } else { %>
   return <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
-    <% } %>
+  <% } %>
+  <% } %>
 }
+<% } %>
 <% }); %>
 
 <% if (!object.parent) { %>

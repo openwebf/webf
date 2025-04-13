@@ -8,6 +8,10 @@ enum <%= className %>Type {
 }
 <% } %>
 
+<% if (object.name === 'Window') { %>
+pub type RequestAnimationFrameCallback = Box<dyn Fn(f64)>;
+<% } %>
+
 #[repr(C)]
 pub struct <%= className %>RustMethods {
   pub version: c_double,
@@ -16,21 +20,32 @@ pub struct <%= className %>RustMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
-  pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr<%= isAnyType(prop.type)? ", exception_state: *const OpaquePtr": "" %>) -> <%= generatePublicReturnTypeValue(prop.type) %>,
+  pub <%= propName %>: extern "C" fn(*const OpaquePtr<%= isAnyType(prop.type) || prop.typeMode.dartImpl ? ", *const OpaquePtr": "" %>) -> <%= generatePublicReturnTypeValue(prop.type, prop.typeMode) %>,
     <% if (!prop.readonly) { %>
-  pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr, value: <%= generatePublicParameterType(prop.type) %>, exception_state: *const OpaquePtr) -> bool,
+  pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(*const OpaquePtr, value: <%= generatePublicParameterType(prop.type) %>, *const OpaquePtr) -> bool,
     <% } %>
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
-  pub <%= methodName %>: extern "C" fn(ptr: *const OpaquePtr, <%= generatePublicParametersType(method.args) %>exception_state: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(method.returnType) %>,
+    <% if (id === 'Element.toBlob') { %>
+  pub to_blob: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
+  pub to_blob_with_device_pixel_ratio: extern "C" fn(*const OpaquePtr, c_double, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_void,
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  pub request_animation_frame: extern "C" fn(*const OpaquePtr, *const WebFNativeFunctionContext, *const OpaquePtr) -> c_double,
+    <% } else { %>
+  pub <%= methodName %>: extern "C" fn(*const OpaquePtr, <%= generatePublicParametersType(method.args, method.returnType) %>*const OpaquePtr) -> <%= generatePublicReturnTypeValue(method.returnType) %>,
+    <% } %>
   <% }); %>
 
   <% if (!object.parent) { %>
-  pub release: extern "C" fn(ptr: *const OpaquePtr) -> c_void,
-  pub dynamic_to: extern "C" fn(ptr: *const OpaquePtr, type_: <%= className %>Type) -> RustValue<c_void>,
+  pub release: extern "C" fn(*const OpaquePtr) -> c_void,
+  pub dynamic_to: extern "C" fn(*const OpaquePtr, type_: <%= className %>Type) -> RustValue<c_void>,
   <% } %>
 }
 
@@ -94,6 +109,8 @@ impl <%= className %> {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   pub fn <%= propName %>(&self) {
@@ -101,12 +118,12 @@ impl <%= className %> {
       ((*self.method_pointer).<%= propName %>)(self(.ptr()));
     };
   }
-    <% } else if (isAnyType(prop.type)) { %>
+    <% } else if (isAnyType(prop.type) || prop.typeMode.dartImpl) { %>
   pub fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %> {
     let value = unsafe {
       ((*self.method_pointer).<%= propName %>)(self.ptr(), exception_state.ptr)
     };
-    <%= generatePropReturnStatements(prop.type) %>
+    <%= generatePropReturnStatements(prop.type, prop.typeMode) %>
   }
     <% } else { %>
   pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
@@ -118,7 +135,7 @@ impl <%= className %> {
     <% } %>
 
     <% if (!prop.readonly) { %>
-  pub fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodReturnType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
+  pub fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodParameterType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
     unsafe {
       ((*self.method_pointer).set_<%= _.snakeCase(prop.name) %>)(self.ptr(), <%= generateMethodParametersName([{name: 'value', type: prop.type}]) %>exception_state.ptr)
     };
@@ -131,23 +148,199 @@ impl <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
-    <% if (isVoidType(method.returnType)) { %>
+    <% if (id === 'Element.toBlob') { %>
+  pub fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    let event_target: &EventTarget = &self.node.event_target;
+    let future_for_return = WebFNativeFuture::<Vec<u8>>::new();
+    let future_in_callback = future_for_return.clone();
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc == 1 {
+        let error_string = unsafe { (*argv).clone() };
+        let error_string = error_string.to_string();
+        future_in_callback.set_result(Err(error_string));
+        return NativeValue::new_null();
+      }
+      if argc == 2 {
+        let result = unsafe { (*argv.wrapping_add(1)).clone() };
+        let value = result.to_u8_bytes();
+        future_in_callback.set_result(Ok(Some(value)));
+        return NativeValue::new_null();
+      }
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
+    });
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+    unsafe {
+      (((*self.method_pointer).to_blob))(event_target.ptr, callback_context_ptr, exception_state.ptr);
+    }
+    future_for_return
+  }
+
+  pub fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    let event_target: &EventTarget = &self.node.event_target;
+    let future_for_return = WebFNativeFuture::<Vec<u8>>::new();
+    let future_in_callback = future_for_return.clone();
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc == 1 {
+        let error_string = unsafe { (*argv).clone() };
+        let error_string = error_string.to_string();
+        future_in_callback.set_result(Err(error_string));
+        return NativeValue::new_null();
+      }
+      if argc == 2 {
+        let result = unsafe { (*argv.wrapping_add(1)).clone() };
+        let value = result.to_u8_bytes();
+        future_in_callback.set_result(Ok(Some(value)));
+        return NativeValue::new_null();
+      }
+      println!("Invalid argument count for async storage callback");
+      NativeValue::new_null()
+    });
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+    unsafe {
+      (((*self.method_pointer).to_blob_with_device_pixel_ratio))(event_target.ptr, device_pixel_ratio, callback_context_ptr, exception_state.ptr);
+    }
+    future_for_return
+  }
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  pub fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String> {
+    let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
+      if argc != 1 {
+        println!("Invalid argument count for timeout callback");
+        return NativeValue::new_null();
+      }
+      let time_stamp = unsafe { (*argv).clone() };
+      callback(time_stamp.to_float64());
+      NativeValue::new_null()
+    });
+
+    let callback_data = Box::new(WebFNativeFunctionContextData {
+      func: general_callback,
+    });
+    let callback_context_data_ptr = Box::into_raw(callback_data);
+    let callback_context = Box::new(WebFNativeFunctionContext {
+      callback: invoke_webf_native_function,
+      free_ptr: release_webf_native_function,
+      ptr: callback_context_data_ptr,
+    });
+    let callback_context_ptr = Box::into_raw(callback_context);
+
+    let result = unsafe {
+      ((*self.method_pointer).request_animation_frame)(self.ptr(), callback_context_ptr, exception_state.ptr)
+    };
+
+    if exception_state.has_exception() {
+      unsafe {
+        let _ = Box::from_raw(callback_context_ptr);
+        let _ = Box::from_raw(callback_context_data_ptr);
+      }
+      return Err(exception_state.stringify(self.event_target.context()));
+    }
+
+    Ok(result)
+
+  }
+    <% } else if (isVoidType(method.returnType)) { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
+      <% _.forEach(method.args, function(arg, index) { %>
+        <% if (isPointerType(arg.type)) { %>
+          <% var pointerType = getPointerType(arg.type); %>
+          <% if (pointerType === 'JSEventListener') { %>
+    let <%= arg.name %>_context_data = Box::new(EventCallbackContextData {
+      executing_context_ptr: self.context().ptr,
+      executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_meta_data: self.context().meta_data,
+      executing_context_status: self.context().status,
+      func: <%= arg.name %>,
+    });
+    let <%= arg.name %>_context_data_ptr = Box::into_raw(<%= arg.name %>_context_data);
+    let <%= arg.name %>_context = Box::new(EventCallbackContext {
+      callback: invoke_event_listener_callback,
+      free_ptr: release_event_listener_callback,
+      ptr: <%= arg.name %>_context_data_ptr
+    });
+    let <%= arg.name %>_context_ptr = Box::into_raw(<%= arg.name %>_context);
+          <% } %>
+        <% } %>
+      <% }); %>
     unsafe {
       ((*self.method_pointer).<%= methodName %>)(self.ptr(), <%= generateMethodParametersName(method.args) %>exception_state.ptr);
     };
     if exception_state.has_exception() {
+      <% _.forEach(method.args, function(arg, index) { %>
+        <% if (isPointerType(arg.type)) { %>
+          <% var pointerType = getPointerType(arg.type); %>
+          <% if (pointerType === 'JSEventListener') { %>
+      unsafe {
+        let _ = Box::from_raw(<%= arg.name %>_context_ptr);
+        let _ = Box::from_raw(<%= arg.name %>_context_data_ptr);
+      }
+          <% } %>
+        <% } %>
+      <% }); %>
       return Err(exception_state.stringify(self.context()));
     }
     Ok(())
   }
     <% } else { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String> {
+    <% _.forEach(method.args, function(arg, index) { %>
+      <% if (isPointerType(arg.type)) { %>
+        <% var pointerType = getPointerType(arg.type); %>
+        <% if (pointerType === 'JSEventListener') { %>
+    let <%= arg.name %>_context_data = Box::new(EventCallbackContextData {
+      executing_context_ptr: self.context().ptr,
+      executing_context_method_pointer: self.context().method_pointer(),
+      executing_context_meta_data: self.context().meta_data,
+      executing_context_status: self.context().status,
+      func: <%= arg.name %>,
+    });
+    let <%= arg.name %>_context_data_ptr = Box::into_raw(<%= arg.name %>_context_data);
+    let <%= arg.name %>_context = Box::new(EventCallbackContext {
+      callback: invoke_event_listener_callback,
+      free_ptr: release_event_listener_callback,
+      ptr: <%= arg.name %>_context_data_ptr
+    });
+    let <%= arg.name %>_context_ptr = Box::into_raw(<%= arg.name %>_context);
+        <% } %>
+      <% } %>
+    <% }); %>
     let value = unsafe {
       ((*self.method_pointer).<%= methodName %>)(self.ptr(), <%= generateMethodParametersName(method.args) %>exception_state.ptr)
     };
     if exception_state.has_exception() {
+      <% _.forEach(method.args, function(arg, index) { %>
+        <% if (isPointerType(arg.type)) { %>
+          <% var pointerType = getPointerType(arg.type); %>
+          <% if (pointerType === 'JSEventListener') { %>
+      unsafe {
+        let _ = Box::from_raw(<%= arg.name %>_context_ptr);
+        let _ = Box::from_raw(<%= arg.name %>_context_data_ptr);
+      }
+          <% } %>
+        <% } %>
+      <% }); %>
       return Err(exception_state.stringify(self.context()));
     }
     <% if (isVectorType(method.returnType)) { %>
@@ -195,23 +388,32 @@ impl Drop for <%= className %> {
 <% var parentMethodsSuperTrait = object.parent ? `: ${object.parent}Methods` : ''; %>
 pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self);
-    <% } else if (isAnyType(prop.type)) { %>
+    <% } else if (isAnyType(prop.type) || prop.typeMode.dartImpl) { %>
   fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %>;
     <% } else { %>
   fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %>;
     <% } %>
 
     <% if (!prop.readonly) { %>
-  fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodReturnType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String>;
+  fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodParameterType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String>;
     <% } %>
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
-    <% if (isVoidType(method.returnType)) { %>
+    <% if (id === 'Element.toBlob') { %>
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>>;
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String>;
+    <% } else if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String>;
     <% } else { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<<%= generateMethodReturnType(method.returnType) %>, String>;
@@ -222,12 +424,14 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
 
 impl <%= className %>Methods for <%= className %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% var id = `${object.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
     self.<%= propName %>()
   }
-    <% } else if (isAnyType(prop.type)) { %>
+    <% } else if (isAnyType(prop.type) || prop.typeMode.dartImpl) { %>
   fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %> {
     self.<%= propName %>(exception_state)
   }
@@ -238,15 +442,28 @@ impl <%= className %>Methods for <%= className %> {
     <% } %>
 
     <% if (!prop.readonly) { %>
-  fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodReturnType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodParameterType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
     self.set_<%= _.snakeCase(prop.name) %>(value, exception_state)
   }
     <% } %>
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% var id = `${object.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
-    <% if (isVoidType(method.returnType)) { %>
+    <% if (id === 'Element.toBlob') { %>
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
+  }
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String> {
+    self.request_animation_frame(callback, exception_state)
+  }
+    <% } else if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
     self.<%= methodName %>(<%= generateParentMethodParametersName(method.args) %>exception_state)
   }
@@ -266,10 +483,16 @@ impl <%= className %>Methods for <%= className %> {
   <% parentKey = parentKey === '' ? _.snakeCase(parentObject.name) : `${parentKey}.${_.snakeCase(parentObject.name)}`; %>
 impl <%= parentObject.name %>Methods for <%= className %> {
   <% _.forEach(parentObject.props, function(prop, index) { %>
+    <% var id = `${parentObject.name}.${prop.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
     self.<%= parentKey %>.<%= propName %>()
+  }
+    <% } else if (isAnyType(prop.type) || prop.typeMode.dartImpl) { %>
+  fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %> {
+    self.<%= parentKey %>.<%= propName %>(exception_state)
   }
     <% } else { %>
   fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
@@ -278,15 +501,28 @@ impl <%= parentObject.name %>Methods for <%= className %> {
     <% } %>
 
     <% if (!prop.readonly) { %>
-  fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodReturnType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
+  fn set_<%= _.snakeCase(prop.name) %>(&self, value: <%= generateMethodParameterType(prop.type) %>, exception_state: &ExceptionState) -> Result<(), String> {
     self.<%= parentKey %>.set_<%= _.snakeCase(prop.name) %>(value, exception_state)
   }
     <% } %>
   <% }); %>
 
   <% _.forEach(parentObject.methods, function(method, index) { %>
+    <% var id = `${parentObject.name}.${method.name}`; %>
+    <% if (skipList.includes(id)) return; %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
-    <% if (isVoidType(method.returnType)) { %>
+    <% if (id === 'Element.toBlob') { %>
+  fn to_blob(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.<%= parentKey %>.to_blob(exception_state)
+  }
+  fn to_blob_with_device_pixel_ratio(&self, device_pixel_ratio: f64, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<u8>> {
+    self.<%= parentKey %>.to_blob_with_device_pixel_ratio(device_pixel_ratio, exception_state)
+  }
+    <% } else if (id === 'Window.requestAnimationFrame') { %>
+  fn request_animation_frame(&self, callback: RequestAnimationFrameCallback, exception_state: &ExceptionState) -> Result<f64, String> {
+    self.<%= parentKey %>.request_animation_frame(callback, exception_state)
+  }
+    <% } else if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
     self.<%= parentKey %>.<%= methodName %>(<%= generateParentMethodParametersName(method.args) %>exception_state)
   }

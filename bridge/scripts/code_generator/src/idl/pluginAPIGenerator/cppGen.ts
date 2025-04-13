@@ -3,10 +3,11 @@ import path from 'path';
 import {IDLBlob} from '../IDLBlob';
 import {getTemplateKind, TemplateKind} from '../generateHeader';
 import _ from 'lodash';
-import {ClassObject, FunctionArguments, FunctionArgumentType} from '../declaration';
+import {ClassObject, FunctionArguments, FunctionArgumentType, FunctionDeclaration, ParameterMode} from '../declaration';
 import {GenerateOptions, generateSupportedOptions} from '../generator';
 import {ParameterType} from '../analyzer';
 import {getPointerType, isPointerType} from '../generateSource';
+import { skipList } from './common';
 
 function readHeaderTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../../../templates/idl_templates/plugin_api_templates/' + name + '.h.tpl'), {encoding: 'utf-8'});
@@ -54,14 +55,23 @@ export function isVoidType(type: ParameterType): boolean {
   return type.value === FunctionArgumentType.void;
 }
 
+export function isDoubleType(type: ParameterType): boolean {
+  return type.value === FunctionArgumentType.double;
+}
+export function isIntType(type: ParameterType): boolean {
+  return type.value === FunctionArgumentType.int32 || type.value === FunctionArgumentType.int64;
+}
 export function isVectorType(type: ParameterType): boolean {
   return !!(type.isArray && typeof type.value === 'object' && !Array.isArray(type.value));
 }
 
-function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = false): string {
+function generatePublicReturnTypeValue(type: ParameterType, is32Bit: boolean = false, typeMode?: ParameterMode): string {
+  if (typeMode?.dartImpl) {
+    return 'NativeValue'
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
-    return `WebFValue<${pointerType}, ${pointerType}PublicMethods>`;
+    return `WebFValue<webf::${pointerType}, ${pointerType}PublicMethods>`;
   }
   if (isVectorType(type)) {
     return `VectorValueRef`;
@@ -178,6 +188,27 @@ function generatePublicParameterType(type: ParameterType, is32Bit: boolean = fal
   }
 }
 
+function generateNativeValueConverter(type: ParameterType): string {
+
+  if (isPointerType(type)) {
+    return `Native_NewPtr<${getPointerType(type)}>`;
+  }
+
+  switch (type.value) {
+    case FunctionArgumentType.int32:
+    case FunctionArgumentType.int64:
+      return `Native_NewInt64`;
+    case FunctionArgumentType.double:
+      return `Native_NewFloat64`;
+    case FunctionArgumentType.boolean:
+      return `Native_NewBool`;
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string:
+      return `Native_NewCString`;
+  }
+  return ''
+}
+
 function generatePublicParametersType(parameters: FunctionArguments[], is32Bit: boolean = false): string {
   if (parameters.length === 0) {
     return '';
@@ -202,12 +233,49 @@ function generatePublicParametersName(parameters: FunctionArguments[]): string {
   }
   return parameters.map(param => {
     const name = _.snakeCase(param.name);
-    return `${isPointerType(param.type) ? name + '_p' : isStringType(param.type) ? name + '_atomic' : isAnyType(param.type)? name + '_script_value': name}`;
+    if (isPointerType(param.type)) {
+      const pointerType = getPointerType(param.type);
+      // dictionary types
+      if (pointerType.endsWith('Options') || pointerType.endsWith('Init')) {
+        return name + '_p';
+      }
+      // special case for EventListener
+      else if (pointerType === 'JSEventListener') {
+        return name + '_impl';
+      }
+      return name;
+    }
+    else if (isStringType(param.type)) {
+      return name + '_atomic';
+    }
+    else if (isAnyType(param.type)) {
+      return name + '_script_value';
+    }
+    return name;
   }).join(', ') + ', ';
 }
 
 export function isAnyType(type: ParameterType): boolean {
   return type.value === FunctionArgumentType.any;
+}
+
+export function getMethodsWithoutOverload(methods: FunctionDeclaration[]) {
+  const methodsWithoutOverload = [] as (FunctionDeclaration | {rustName?: string})[];
+  const methodsNames = new Set<string>();
+  methods.forEach(method => {
+    const name = method.name;
+    if (methodsNames.has(name)) {
+      const rustName = name + 'With' + method.args.map(arg => _.upperFirst(arg.name)).join('And');
+      methodsWithoutOverload.push({
+        ...method,
+        rustName: rustName,
+      })
+    } else {
+      methodsNames.add(name);
+      methodsWithoutOverload.push(method);
+    }
+  });
+  return methodsWithoutOverload;
 }
 
 function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
@@ -257,21 +325,26 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           appendSubClasses(object.name);
         }
 
+        const methodsWithoutOverload = getMethodsWithoutOverload(object.methods);
         return _.template(readHeaderTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
           blob: blob,
           object,
+          methodsWithoutOverload,
           generatePublicParameterType,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
           isStringType,
+          generateNativeValueConverter,
+          isIntType,
           isAnyType,
           isVectorType,
           dependentTypes: Array.from(dependentTypes),
           subClasses: _.uniq(subClasses),
           options,
+          skipList,
         });
       }
       case TemplateKind.Dictionary: {
@@ -310,6 +383,7 @@ function generatePluginAPIHeaderFile(blob: IDLBlob, options: GenerateOptions) {
           isStringType,
           dependentTypes: Array.from(dependentTypes),
           options,
+          skipList,
         });
       }
       case TemplateKind.globalFunction: {
@@ -395,11 +469,13 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           }
         }
 
+        const methodsWithoutOverload = getMethodsWithoutOverload(object.methods);
         return _.template(readSourceTemplate('interface'))({
           className: getClassName(blob),
           parentClassName: object.parent,
           blob: blob,
           object,
+          methodsWithoutOverload,
           generatePublicReturnTypeValue,
           generatePublicParametersType,
           generatePublicParametersTypeWithName,
@@ -408,6 +484,8 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           isPointerType,
           getPointerType,
           isStringType,
+          generateNativeValueConverter,
+          isIntType,
           isAnyType,
           isVectorType,
           isVoidType,
@@ -415,6 +493,7 @@ function generatePluginAPISourceFile(blob: IDLBlob, options: GenerateOptions) {
           dependentClasses,
           subClasses: _.uniq(subClasses),
           options,
+          skipList,
         });
       }
       case TemplateKind.globalFunction: {

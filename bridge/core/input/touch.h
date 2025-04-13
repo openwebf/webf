@@ -8,7 +8,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dom/events/event_target.h"
-#include "plugin_api/touch.h"
+#include "plugin_api_gen/touch.h"
 #include "qjs_touch_init.h"
 
 namespace webf {

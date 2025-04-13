@@ -12,7 +12,7 @@
 #include "bindings/qjs/script_value.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "css_style_declaration.h"
-#include "plugin_api/inline_css_style_declaration.h"
+#include "plugin_api_gen/inline_css_style_declaration.h"
 
 namespace webf {
 
