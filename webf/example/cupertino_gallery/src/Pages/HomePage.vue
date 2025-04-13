@@ -111,6 +111,27 @@
           </div>
         </div>
 
+        <!-- Lists Category -->
+        <div class="section-title">Lists</div>
+        <div class="component-block category-block">
+          <!-- List Section -->
+          <div class="component-item" @click="navigateTo('/list_section')">
+            <div class="item-content">
+              <div class="item-title">List Section</div>
+              <div class="item-desc">Groups list tiles into sections</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+           <!-- List Tile -->
+          <div class="component-item" @click="navigateTo('/list_tile')">
+            <div class="item-content">
+              <div class="item-title">List Tile</div>
+              <div class="item-desc">An iOS-style list row</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
+        </div>
+
         <!-- Pickers Category -->
         <div class="section-title">Pickers</div>
         <div class="component-block category-block">

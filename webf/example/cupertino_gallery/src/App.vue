@@ -62,6 +62,12 @@
   <router-view path="/form_section" title="Form Section">
     <form-section-page></form-section-page>
   </router-view>
+    <router-view path="/list_tile" title="List Tile">
+    <list-tile-page></list-tile-page>
+  </router-view>
+  <router-view path="/list_section" title="List Section">
+    <list-section-page></list-section-page>
+  </router-view>
 </template>
 
 <script>
@@ -87,7 +93,8 @@ import TimerPickerPage from './Pages/TimerPickerPage.vue';
 import ActionSheetPage from './Pages/ActionSheetPage.vue';
 import FormRowPage from './Pages/FormRowPage.vue';
 import FormSectionPage from './Pages/FormSectionPage.vue';
-
+import ListTilePage from './Pages/ListTilePage.vue';
+import ListSectionPage from './Pages/ListSectionPage.vue';
 export default {
   name: 'App',
   components: {
@@ -113,6 +120,8 @@ export default {
     ActionSheetPage,
     FormRowPage,
     FormSectionPage,
+    ListTilePage,
+    ListSectionPage,
   },
 };
 </script>

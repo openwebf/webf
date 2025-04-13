@@ -11,6 +11,8 @@ import 'form_row.dart';
 import 'form_section.dart';
 import 'icon.dart';
 import 'input.dart';
+import 'list_section.dart';
+import 'list_tile.dart';
 import 'loading.dart';
 import 'modal_popup.dart';
 import 'picker.dart';
@@ -55,4 +57,6 @@ void installWebFCupertino() {
   WebF.defineCustomElement('flutter-cupertino-action-sheet', (context) => FlutterCupertinoActionSheet(context));
   WebF.defineCustomElement('flutter-cupertino-form-row', (context) => FlutterCupertinoFormRow(context));
   WebF.defineCustomElement('flutter-cupertino-form-section', (context) => FlutterCupertinoFormSection(context));
+  WebF.defineCustomElement('flutter-cupertino-list-section', (context) => FlutterCupertinoListSection(context));
+  WebF.defineCustomElement('flutter-cupertino-list-tile', (context) => FlutterCupertinoListTile(context));
 }
