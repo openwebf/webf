@@ -41,7 +41,7 @@ jobs:
         path: bridge/build/macos/
 
   bridge_unit_test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -49,14 +49,12 @@ jobs:
     - uses: actions/setup-node@v2
       with:
         node-version: ${{ env.nodeVersion }}
-    - uses: jwlawson/actions-setup-cmake@v2
+    - uses: actions/download-artifact@v4
       with:
-        cmake-version: ${{ env.cmakeVersion }}
-    - run: |
-        sudo apt-get update
-        sudo apt-get install chrpath ninja-build pkg-config -y
+        name: macos_bridge_binary
+        path: bridge/build/macos/
     - run: npm i
-    - run: ENABLE_ASAN=true npm run build:bridge:linux
+    - run: chmod +x ./bridge/build/macos/lib/x86_64/webf_unit_test
     - run: node scripts/run_bridge_unit_test.js
 
   webf_unit_test:

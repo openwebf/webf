@@ -80,7 +80,7 @@ if (ENABLE_ASAN)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
 
-if (NOT MSVC) 
+if (NOT MSVC)
   if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     # Avoid quickjs stackoverflow.
     add_compile_options(-O1)
@@ -218,7 +218,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
     add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
     target_compile_definitions(pthreadVC3
-      PRIVATE 
+      PRIVATE
       _UNICODE
       UNICODE
       WIN32
@@ -612,20 +612,37 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_svg_line_element.cc
 
     # plugin api
-    out/plugin_api_event.cc
     out/plugin_api_animation_event.cc
+    out/plugin_api_bounding_client_rect.cc
     out/plugin_api_close_event.cc
+    out/plugin_api_computed_css_style_declaration.cc
+    out/plugin_api_css_style_declaration.cc
+    out/plugin_api_custom_event.cc
+    out/plugin_api_dom_string_map.cc
+    out/plugin_api_element_attributes.cc
+    out/plugin_api_event.cc
+    out/plugin_api_error_event.cc
     out/plugin_api_focus_event.cc
     out/plugin_api_gesture_event.cc
     out/plugin_api_hashchange_event.cc
+    out/plugin_api_hybrid_router_change_event.cc
+    out/plugin_api_inline_css_style_declaration.cc
     out/plugin_api_input_event.cc
     out/plugin_api_intersection_change_event.cc
+    out/plugin_api_pop_state_event.cc
+    out/plugin_api_message_event.cc
     out/plugin_api_mouse_event.cc
+    out/plugin_api_mutation_observer_registration.cc
+    out/plugin_api_performance_entry.cc
+    out/plugin_api_performance.cc
+    out/plugin_api_performance_mark.cc
+    out/plugin_api_performance_measure.cc
     out/plugin_api_pointer_event.cc
+    out/plugin_api_promise_rejection_event.cc
+    out/plugin_api_touch.cc
     out/plugin_api_transition_event.cc
     out/plugin_api_ui_event.cc
-    out/plugin_api_custom_event.cc
-    )
+  )
 
 
   if (NOT MSVC)

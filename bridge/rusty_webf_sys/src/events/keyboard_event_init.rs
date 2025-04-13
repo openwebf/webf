@@ -10,6 +10,9 @@ pub struct KeyboardEventInit {
   pub detail: c_double,
   pub view: RustValue<WindowRustMethods>,
   pub which: c_double,
-  pub key: *const c_char,
-  pub code: *const c_char,
+  pub bubbles: i32,
+  pub cancelable: i32,
+  pub composed: i32,
+  pub key: AtomicStringRef,
+  pub code: AtomicStringRef,
 }

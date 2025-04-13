@@ -9,6 +9,7 @@ use crate::*;
 pub struct MouseEventRustMethods {
   pub version: c_double,
   pub ui_event: UIEventRustMethods,
+  pub button: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub client_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub client_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub offset_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -38,6 +39,12 @@ impl MouseEvent {
   pub fn context<'a>(&self) -> &'a ExecutingContext {
     self.ui_event.context()
   }
+  pub fn button(&self) -> f64 {
+    let value = unsafe {
+      ((*self.method_pointer).button)(self.ptr())
+    };
+    value
+  }
   pub fn client_x(&self) -> f64 {
     let value = unsafe {
       ((*self.method_pointer).client_x)(self.ptr())
@@ -64,6 +71,7 @@ impl MouseEvent {
   }
 }
 pub trait MouseEventMethods: UIEventMethods {
+  fn button(&self) -> f64;
   fn client_x(&self) -> f64;
   fn client_y(&self) -> f64;
   fn offset_x(&self) -> f64;
@@ -71,6 +79,9 @@ pub trait MouseEventMethods: UIEventMethods {
   fn as_mouse_event(&self) -> &MouseEvent;
 }
 impl MouseEventMethods for MouseEvent {
+  fn button(&self) -> f64 {
+    self.button()
+  }
   fn client_x(&self) -> f64 {
     self.client_x()
   }
@@ -149,5 +160,27 @@ impl EventMethods for MouseEvent {
   }
   fn as_event(&self) -> &Event {
     &self.ui_event.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_mouse_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<MouseEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_mouse_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(MouseEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_mouse_event_with_options(&self, event_type: &str, options: &MouseEventInit,  exception_state: &ExceptionState) -> Result<MouseEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_mouse_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(MouseEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

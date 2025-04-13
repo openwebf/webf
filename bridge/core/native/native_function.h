@@ -48,10 +48,6 @@ class WebFNativeFunction : public Function {
     return callback_context_->callback(callback_context_, argc, argv, shared_exception_state_);
   }
 
-  [[nodiscard]] bool Matches(const std::shared_ptr<WebFNativeFunction>& other) {
-    return other && other->callback_context_ && other->callback_context_->callback == callback_context_->callback;
-  }
-
  private:
   WebFNativeFunctionContext* callback_context_;
   SharedExceptionState* shared_exception_state_;

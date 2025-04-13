@@ -90,7 +90,9 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
       // To avoid concurrent exception while prev handler modify the original handler list, causing list iteration
       // with error, copy the handlers here.
       try {
-        for (EventHandler handler in [...existHandler]) {
+        List<EventHandler> handlers = [...existHandler];
+        for (int i = handlers.length - 1; i >= 0; i --) {
+          final handler = handlers[i];
           await handler(event);
         }
       } catch (e, stack) {
@@ -112,7 +114,9 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
       // To avoid concurrent exception while prev handler modify the original handler list, causing list iteration
       // with error, copy the handlers here.
       try {
-        for (EventHandler handler in [...existHandler]) {
+        List<EventHandler> handlers = [...existHandler];
+        for (int i = handlers.length - 1; i >= 0; i --) {
+          final handler = handlers[i];
           await handler(event);
         }
       } catch (e, stack) {

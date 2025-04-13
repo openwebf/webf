@@ -12,8 +12,7 @@ pub struct PointerEventRustMethods {
   pub height: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub is_primary: extern "C" fn(ptr: *const OpaquePtr) -> i32,
   pub pointer_id: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
-  pub pointer_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_pointer_type: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub pointer_type: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub pressure: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub tangential_pressure: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub tilt_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -67,8 +66,7 @@ impl PointerEvent {
     let value = unsafe {
       ((*self.method_pointer).pointer_type)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn pressure(&self) -> f64 {
     let value = unsafe {
@@ -156,6 +154,9 @@ impl PointerEventMethods for PointerEvent {
   }
 }
 impl MouseEventMethods for PointerEvent {
+  fn button(&self) -> f64 {
+    self.mouse_event.button()
+  }
   fn client_x(&self) -> f64 {
     self.mouse_event.client_x()
   }
@@ -234,5 +235,27 @@ impl EventMethods for PointerEvent {
   }
   fn as_event(&self) -> &Event {
     &self.mouse_event.ui_event.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_pointer_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<PointerEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_pointer_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(PointerEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_pointer_event_with_options(&self, event_type: &str, options: &PointerEventInit,  exception_state: &ExceptionState) -> Result<PointerEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_pointer_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(PointerEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

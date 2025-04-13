@@ -1,9 +1,10 @@
 use std::{future::Future, pin::Pin, sync::{Arc, Mutex}};
+use md5::{Md5, Digest};
 use webf_sys::ExecutingContext;
 use std::sync::LazyLock;
-use crate::common::spec_done;
+use crate::common::{spec_done, TestCaseMetadata};
 
-type TestFn = Arc<Box<dyn Fn(ExecutingContext) -> Pin<Box<dyn Future<Output = ()>>> + 'static + Sync + Send>>;
+type TestFn = Arc<Box<dyn Fn(TestCaseMetadata, ExecutingContext) -> Pin<Box<dyn Future<Output = ()>>> + 'static + Sync + Send>>;
 
 struct TestCase {
   mod_path: String,
@@ -37,7 +38,26 @@ pub async fn run_tests(context: ExecutingContext) {
       .skip(1)
       .collect::<Vec<_>>()
       .join("::");
-    (test_case.test_fn)(context.clone()).await;
+
+    let mut hasher = Md5::new();
+    let hash_string = format!("{}::{}", mod_path, test_case.test_name);
+    hasher.update(hash_string.as_bytes());
+    let test_hash = format!("{:x}", hasher.finalize()).chars().take(8).collect::<String>();
+
+    let filepath = test_case.source_file.split("/")
+      .skip(1)
+      .collect::<Vec<_>>()
+      .join("/");
+    let snapshot_path = format!("snapshots/{}.{}", filepath, test_hash);
+
+    let metadata = TestCaseMetadata {
+      mod_path: mod_path.clone(),
+      source_file: test_case.source_file.clone(),
+      test_name: test_case.test_name.clone(),
+      snapshot_filename: snapshot_path,
+    };
+
+    (test_case.test_fn)(metadata, context.clone()).await;
     println!("\x1b[32mPASS: \x1b[0m{}::{} ", mod_path, test_case.test_name);
     spec_done(context.clone());
   }

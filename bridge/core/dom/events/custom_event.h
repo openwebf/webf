@@ -49,11 +49,6 @@ class CustomEvent final : public Event {
                        bool cancelable,
                        const ScriptValue& detail,
                        ExceptionState& exception_state);
-  void initCustomEvent(const AtomicString& type,
-                       bool can_bubble,
-                       bool cancelable,
-                       const ScriptValueRef* script_value_ref,
-                       ExceptionState& exception_state);
 
   const CustomEventPublicMethods* customEventPublicMethods();
 

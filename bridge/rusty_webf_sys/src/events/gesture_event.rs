@@ -9,10 +9,8 @@ use crate::*;
 pub struct GestureEventRustMethods {
   pub version: c_double,
   pub event: EventRustMethods,
-  pub state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_state: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
-  pub dup_direction: extern "C" fn(ptr: *const OpaquePtr) -> *const c_char,
+  pub state: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub direction: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
   pub delta_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub delta_y: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
   pub velocity_x: extern "C" fn(ptr: *const OpaquePtr) -> c_double,
@@ -48,15 +46,13 @@ impl GestureEvent {
     let value = unsafe {
       ((*self.method_pointer).state)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn direction(&self) -> String {
     let value = unsafe {
       ((*self.method_pointer).direction)(self.ptr())
     };
-    let value = unsafe { std::ffi::CStr::from_ptr(value) };
-    value.to_str().unwrap().to_string()
+    value.to_string()
   }
   pub fn delta_x(&self) -> f64 {
     let value = unsafe {
@@ -183,5 +179,27 @@ impl EventMethods for GestureEvent {
   }
   fn as_event(&self) -> &Event {
     &self.event
+  }
+}
+impl ExecutingContext {
+  pub fn create_gesture_event(&self, event_type: &str, exception_state: &ExceptionState) -> Result<GestureEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_gesture_event)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(GestureEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  pub fn create_gesture_event_with_options(&self, event_type: &str, options: &GestureEventInit,  exception_state: &ExceptionState) -> Result<GestureEvent, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_gesture_event_with_options)(self.ptr, event_type_c_string.as_ptr(), options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(GestureEvent::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
   }
 }

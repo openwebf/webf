@@ -7,32 +7,27 @@
 #ifndef WEBF_CORE_WEBF_API_PLUGIN_API_ANIMATION_EVENT_H_
 #define WEBF_CORE_WEBF_API_PLUGIN_API_ANIMATION_EVENT_H_
 #include <stdint.h>
+#include "core/native/vector_value_ref.h"
 #include "rust_readable.h"
-#include "script_value_ref.h"
 #include "event.h"
 namespace webf {
 class SharedExceptionState;
 class ExecutingContext;
+typedef struct NativeValue NativeValue;
+typedef struct AtomicStringRef AtomicStringRef;
 class AnimationEvent;
-typedef struct ScriptValueRef ScriptValueRef;
-using PublicAnimationEventGetAnimationName = const char* (*)(AnimationEvent*);
-using PublicAnimationEventDupAnimationName = const char* (*)(AnimationEvent*);
+using PublicAnimationEventGetAnimationName = AtomicStringRef (*)(AnimationEvent*);
 using PublicAnimationEventGetElapsedTime = double (*)(AnimationEvent*);
-using PublicAnimationEventGetPseudoElement = const char* (*)(AnimationEvent*);
-using PublicAnimationEventDupPseudoElement = const char* (*)(AnimationEvent*);
+using PublicAnimationEventGetPseudoElement = AtomicStringRef (*)(AnimationEvent*);
 struct AnimationEventPublicMethods : public WebFPublicMethods {
-  static const char* AnimationName(AnimationEvent* animation_event);
-  static const char* DupAnimationName(AnimationEvent* animation_event);
+  static AtomicStringRef AnimationName(AnimationEvent* animation_event);
   static double ElapsedTime(AnimationEvent* animation_event);
-  static const char* PseudoElement(AnimationEvent* animation_event);
-  static const char* DupPseudoElement(AnimationEvent* animation_event);
+  static AtomicStringRef PseudoElement(AnimationEvent* animation_event);
   double version{1.0};
   EventPublicMethods event;
   PublicAnimationEventGetAnimationName animation_event_get_animation_name{AnimationName};
-  PublicAnimationEventDupAnimationName animation_event_dup_animation_name{DupAnimationName};
   PublicAnimationEventGetElapsedTime animation_event_get_elapsed_time{ElapsedTime};
   PublicAnimationEventGetPseudoElement animation_event_get_pseudo_element{PseudoElement};
-  PublicAnimationEventDupPseudoElement animation_event_dup_pseudo_element{DupPseudoElement};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_ANIMATION_EVENT_H_

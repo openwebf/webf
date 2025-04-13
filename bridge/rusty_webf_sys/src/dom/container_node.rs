@@ -72,6 +72,10 @@ impl EventTargetMethods for ContainerNode {
   fn dispatch_event(&self, event: &Event, exception_state: &ExceptionState) -> bool {
     self.node.dispatch_event(event, exception_state)
   }
+
+  fn as_event_target(&self) -> &EventTarget {
+    self.node.as_event_target()
+  }
 }
 
 impl ContainerNodeMethods for ContainerNode {}

@@ -10,31 +10,39 @@
 namespace webf {
 
 std::shared_ptr<FrameCallback> FrameCallback::Create(ExecutingContext* context,
-                                                     const std::shared_ptr<QJSFunction>& callback) {
+                                                     const std::shared_ptr<Function>& callback) {
   return std::make_shared<FrameCallback>(context, callback);
 }
 
-FrameCallback::FrameCallback(ExecutingContext* context, std::shared_ptr<QJSFunction> callback)
+FrameCallback::FrameCallback(ExecutingContext* context, std::shared_ptr<Function> callback)
     : context_(context), callback_(std::move(callback)) {}
 
 void FrameCallback::Fire(double highResTimeStamp) {
   if (callback_ == nullptr)
     return;
 
-  JSContext* ctx = context_->ctx();
+  if (auto* callback = DynamicTo<QJSFunction>(callback_.get())) {
+    JSContext* ctx = context_->ctx();
 
-  ScriptValue arguments[] = {ScriptValue(ctx, highResTimeStamp)};
+    ScriptValue arguments[] = {ScriptValue(ctx, highResTimeStamp)};
 
-  ScriptValue return_value = callback_->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
+    ScriptValue return_value = callback->Invoke(ctx, ScriptValue::Empty(ctx), 1, arguments);
 
-  context_->DrainMicrotasks();
-  if (return_value.IsException()) {
-    context_->HandleException(&return_value);
+    context_->DrainMicrotasks();
+    if (return_value.IsException()) {
+      context_->HandleException(&return_value);
+    }
+  } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_.get())) {
+    NativeValue time = Native_NewFloat64(highResTimeStamp);
+    callback->Invoke(context_, 1, &time);
+    context_->RunRustFutureTasks();
   }
 }
 
 void FrameCallback::Trace(GCVisitor* visitor) const {
-  callback_->Trace(visitor);
+  if (auto* callback = DynamicTo<QJSFunction>(callback_.get())) {
+    callback->Trace(visitor);
+  }
 }
 
 void FrameRequestCallbackCollection::RegisterFrameCallback(uint32_t callback_id,

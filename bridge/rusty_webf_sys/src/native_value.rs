@@ -1,9 +1,35 @@
 use std::ffi::*;
 use std::mem;
+use serde_json::Value;
 #[cfg(target_os = "windows")]
 use windows::Win32::System::Com::{CoTaskMemAlloc, CoTaskMemFree};
 
 use crate::memory_utils::safe_free_cpp_ptr;
+
+#[repr(C)]
+pub union AtomicStringValue {
+  pub characters8: *const u8,
+  pub characters16: *const u16,
+}
+
+#[repr(C)]
+pub struct AtomicStringRef {
+  pub is_8bit: bool,
+  pub data: AtomicStringValue,
+  pub length: i64,
+}
+
+impl AtomicStringRef {
+  pub fn to_string(&self) -> String {
+    if self.is_8bit {
+      let slice = unsafe { std::slice::from_raw_parts(self.data.characters8, self.length as usize) };
+      String::from_utf8_lossy(slice).to_string()
+    } else {
+      let slice = unsafe { std::slice::from_raw_parts(self.data.characters16, self.length as usize) };
+      String::from_utf16_lossy(slice).to_string()
+    }
+  }
+}
 
 #[repr(C)]
 pub struct SharedNativeString {
@@ -101,7 +127,7 @@ impl NativeValue {
     let mut value = Self::new();
     value.tag = NativeTag::TagString as i32;
     value.u.ptr = shared_string_ptr as *mut c_void;
-    value.uint32 = len as u32;
+    value.uint32 = 0;
     value
   }
 
@@ -227,6 +253,31 @@ impl NativeValue {
     values
   }
 
+  pub fn new_u8_bytes(values: Vec<u8>) -> Self {
+    let size = values.len();
+    let array_size = size * mem::size_of::<u8>();
+
+    #[cfg(target_os = "windows")]
+    let array_ptr = unsafe { CoTaskMemAlloc(array_size) };
+
+    #[cfg(not(target_os = "windows"))]
+    let array_ptr = unsafe { libc::malloc(array_size) };
+
+    let array_ptr = array_ptr as *mut u8;
+
+    for (i, val) in values.iter().enumerate() {
+      unsafe {
+        array_ptr.add(i).write(*val);
+      }
+    }
+
+    let mut value = Self::new();
+    value.tag = NativeTag::TagUint8Bytes as i32;
+    value.u.ptr = array_ptr as *mut c_void;
+    value.uint32 = size as u32;
+    value
+  }
+
   pub fn is_u8_bytes(&self) -> bool {
     self.tag == NativeTag::TagUint8Bytes as i32
   }
@@ -242,6 +293,30 @@ impl NativeValue {
       values.push(val);
     }
     values
+  }
+
+  pub fn new_json(val: &str) -> Self {
+    let len = val.len();
+    let shared_string_ptr = Self::create_string_ptr(val, len);
+    let mut value = Self::new();
+    value.tag = NativeTag::TagJson as i32;
+    value.u.ptr = shared_string_ptr as *mut c_void;
+    value.uint32 = 0;
+    value
+  }
+
+  pub fn is_json(&self) -> bool {
+    self.tag == NativeTag::TagJson as i32
+  }
+
+  pub fn to_json(&self) -> Value {
+    let ptr = unsafe {
+      self.u.ptr as *mut SharedNativeString
+    };
+    let string_struct = unsafe { ptr.read() };
+    let slice = unsafe { std::slice::from_raw_parts(string_struct.string_, string_struct.length_.try_into().unwrap()) };
+    let json_string = String::from_utf16_lossy(slice);
+    serde_json::from_str(&json_string).unwrap()
   }
 }
 

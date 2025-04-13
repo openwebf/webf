@@ -120,6 +120,10 @@ impl EventTargetMethods for Node {
                     exception_state: &ExceptionState) -> bool{
     self.event_target.dispatch_event(event, exception_state)
   }
+
+  fn as_event_target(&self) -> &EventTarget {
+    &self.event_target
+  }
 }
 
 impl NodeMethods for Node {

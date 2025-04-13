@@ -16,17 +16,16 @@ pub struct <%= className %>RustMethods {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
-  pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(prop.type) %>,
+  pub <%= propName %>: extern "C" fn(ptr: *const OpaquePtr<%= isAnyType(prop.type)? ", exception_state: *const OpaquePtr": "" %>) -> <%= generatePublicReturnTypeValue(prop.type) %>,
     <% if (!prop.readonly) { %>
-  pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr, value: <%= generatePublicReturnTypeValue(prop.type) %>, exception_state: *const OpaquePtr) -> bool,
-    <% } %>
-    <% if (isStringType(prop.type)) { %>
-  pub dup_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(prop.type) %>,
+  pub set_<%= _.snakeCase(prop.name) %>: extern "C" fn(ptr: *const OpaquePtr, value: <%= generatePublicParameterType(prop.type) %>, exception_state: *const OpaquePtr) -> bool,
     <% } %>
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
   pub <%= methodName %>: extern "C" fn(ptr: *const OpaquePtr, <%= generatePublicParametersType(method.args) %>exception_state: *const OpaquePtr) -> <%= generatePublicReturnTypeValue(method.returnType) %>,
   <% }); %>
@@ -97,12 +96,20 @@ impl <%= className %> {
   <% } %>
 
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   pub fn <%= propName %>(&self) {
     unsafe {
       ((*self.method_pointer).<%= propName %>)(self(.ptr()));
     };
+  }
+    <% } else if (isAnyType(prop.type)) { %>
+  pub fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %> {
+    let value = unsafe {
+      ((*self.method_pointer).<%= propName %>)(self.ptr(), exception_state.ptr)
+    };
+    <%= generatePropReturnStatements(prop.type) %>
   }
     <% } else { %>
   pub fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
@@ -127,6 +134,7 @@ impl <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   pub fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
@@ -146,6 +154,15 @@ impl <%= className %> {
     if exception_state.has_exception() {
       return Err(exception_state.stringify(self.context()));
     }
+    <% if (isVectorType(method.returnType)) { %>
+    let size = value.size as usize;
+    let mut result = Vec::with_capacity(size);
+    for i in 0..size {
+      let value = unsafe { &*value.data.add(i) };
+      let value = <%= getPointerType(method.returnType.value) %>::initialize(value.value, self.context(), value.method_pointer, value.status);
+      result.push(value);
+    }
+    <% } %>
     <%= generateMethodReturnStatements(method.returnType) %>
   }
     <% } %>
@@ -182,9 +199,12 @@ impl Drop for <%= className %> {
 <% var parentMethodsSuperTrait = object.parent ? `: ${object.parent}Methods` : ''; %>
 pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self);
+    <% } else if (isAnyType(prop.type)) { %>
+  fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %>;
     <% } else { %>
   fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %>;
     <% } %>
@@ -195,6 +215,7 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String>;
@@ -207,10 +228,15 @@ pub trait <%= className %>Methods<%= parentMethodsSuperTrait %> {
 
 impl <%= className %>Methods for <%= className %> {
   <% _.forEach(object.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
     self.<%= propName %>()
+  }
+    <% } else if (isAnyType(prop.type)) { %>
+  fn <%= propName %>(&self, exception_state: &ExceptionState) -> <%= generateMethodReturnType(prop.type) %> {
+    self.<%= propName %>(exception_state)
   }
     <% } else { %>
   fn <%= propName %>(&self) -> <%= generateMethodReturnType(prop.type) %> {
@@ -226,6 +252,7 @@ impl <%= className %>Methods for <%= className %> {
   <% }); %>
 
   <% _.forEach(object.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
@@ -247,6 +274,7 @@ impl <%= className %>Methods for <%= className %> {
   <% parentKey = parentKey === '' ? _.snakeCase(parentObject.name) : `${parentKey}.${_.snakeCase(parentObject.name)}`; %>
 impl <%= parentObject.name %>Methods for <%= className %> {
   <% _.forEach(parentObject.props, function(prop, index) { %>
+    <% if (prop.async_type) { return; } %>
     <% var propName = generateValidRustIdentifier(_.snakeCase(prop.name)); %>
     <% if (isVoidType(prop.type)) { %>
   fn <%= propName %>(&self) {
@@ -266,6 +294,7 @@ impl <%= parentObject.name %>Methods for <%= className %> {
   <% }); %>
 
   <% _.forEach(parentObject.methods, function(method, index) { %>
+    <% if (method.async_returnType) { return; } %>
     <% var methodName = generateValidRustIdentifier(_.snakeCase(method.name)); %>
     <% if (isVoidType(method.returnType)) { %>
   fn <%= methodName %>(&self, <%= generateMethodParametersTypeWithName(method.args) %>exception_state: &ExceptionState) -> Result<(), String> {
@@ -282,3 +311,48 @@ impl <%= parentObject.name %>Methods for <%= className %> {
   }
 }
 <% }); %>
+
+<% if (object.construct && !isVoidType(object.construct.returnType)) { %>
+impl ExecutingContext {
+
+  <% if (object.construct.args.length === 0) { %>
+  pub fn create_<%= _.snakeCase(className) %>(&self, exception_state: &ExceptionState) -> Result<<%= className %>, String> {
+    let new_obj = unsafe {
+      ((*self.method_pointer()).create_<%= _.snakeCase(className) %>)(self.ptr, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(<%= className %>::initialize(new_obj.value, self, new_obj.method_pointer, new_obj.status));
+  }
+  <% } %>
+
+  <% if (object.construct.args.length >= 1 && object.construct.args.some(arg => arg.name === 'type')) { %>
+  pub fn create_<%= _.snakeCase(className) %>(&self, event_type: &str, exception_state: &ExceptionState) -> Result<<%= className %>, String> {
+    let event_type_c_string = CString::new(event_type).unwrap();
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_<%= _.snakeCase(className) %>)(self.ptr, event_type_c_string.as_ptr(), exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(<%= className %>::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  <% } %>
+
+  <% if (object.construct.args.length > 1) { %>
+  pub fn create_<%= _.snakeCase(className) %>_with_options(&self, event_type: &str, options: &<%= className %>Init,  exception_state: &ExceptionState) -> Result<<%= className %>, String> {
+    <% if (object.construct.args.some(arg => arg.name === 'type')) { %>
+    let event_type_c_string = CString::new(event_type).unwrap();
+    <% } %>
+    let new_event = unsafe {
+      ((*self.method_pointer()).create_<%= _.snakeCase(className) %>_with_options)(self.ptr,<% if (object.construct.args.some(arg => arg.name === 'type')) { %> event_type_c_string.as_ptr(),<% } %> options, exception_state.ptr)
+    };
+    if exception_state.has_exception() {
+      return Err(exception_state.stringify(self));
+    }
+    return Ok(<%= className %>::initialize(new_event.value, self, new_event.method_pointer, new_event.status));
+  }
+  <% } %>
+}
+<% } %>

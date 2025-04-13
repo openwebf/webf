@@ -47,5 +47,5 @@ interface Event {
 
   [key: string]: any;
 
-  new(type: string, options?: EventInit) : Event;
+  new(type: string, init?: EventInit) : Event;
 }

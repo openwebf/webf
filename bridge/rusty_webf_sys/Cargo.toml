@@ -11,6 +11,7 @@ license = "Apache-2.0"
 [dependencies]
 libc = "0.2.0"
 futures = "0.3"
+serde_json = "1.0"
 
 [dependencies.windows]
 version = "0.58.0"
