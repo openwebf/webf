@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:path/path.dart';
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
@@ -644,7 +645,7 @@ class RenderBoxModel extends RenderBox
     // Get the outer box of overflow scroll box
     RenderBoxModel currentBox = this;
     // Root element of document is the child of viewport.
-    return currentBox.parent is RenderViewportBox;
+    return currentBox.parent is RootRenderViewportBox || currentBox.parent is RouterViewViewportBox;
   }
 
   // Width/height is overrided by flex-grow or flex-shrink in flex layout.
@@ -1417,10 +1418,10 @@ class RenderBoxModel extends RenderBox
   /// Get the root box model of document which corresponds to html element.
   RenderBoxModel? getRootBoxModel() {
     RenderBoxModel _self = this;
-    while (_self.parent != null && _self.parent is! RenderViewportBox) {
+    while (_self.parent != null && _self.parent is! RootRenderViewportBox) {
       _self = _self.parent as RenderBoxModel;
     }
-    return _self.parent is RenderViewportBox ? _self : null;
+    return _self.parent is RootRenderViewportBox ? _self : null;
   }
 
   @override

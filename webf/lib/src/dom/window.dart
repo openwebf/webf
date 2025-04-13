@@ -123,7 +123,7 @@ class Window extends EventTarget {
   double get innerHeight => _viewportSize.height;
 
   Size get _viewportSize {
-    RenderViewportBox? viewport = document.viewport;
+    RootRenderViewportBox? viewport = document.viewport;
     if (viewport != null && viewport.hasSize) {
       return viewport.size;
     } else {

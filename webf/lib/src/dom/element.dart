@@ -252,6 +252,19 @@ abstract class Element extends ContainerNode
     return parent;
   }
 
+  RenderEventListener? get attachedRendererEventListener {
+    if (attachedRenderer == null) {
+      return null;
+    }
+
+    RenderObject? parent = attachedRenderer?.parent;
+    while (parent is! RenderEventListener) {
+      parent = parent?.parent;
+    }
+
+    return parent;
+  }
+
   HTMLCollection? _collection;
 
   @pragma('vm:prefer-inline')

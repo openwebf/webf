@@ -616,7 +616,7 @@ class WebFController {
       devToolsService!.willReload();
     }
 
-    RenderViewportBox? rootRenderObject = view.viewport;
+    RootRenderViewportBox? rootRenderObject = view.viewport;
     if (rootRenderObject == null) return;
 
     await unload();
@@ -654,7 +654,7 @@ class WebFController {
 
     await controlledInitCompleter.future;
 
-    RenderViewportBox rootRenderObject = view.viewport!;
+    RootRenderViewportBox rootRenderObject = view.viewport!;
 
     await unload();
 

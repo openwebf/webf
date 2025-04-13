@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/bridge.dart';
 import 'package:webf/svg.dart';
 
@@ -93,7 +94,7 @@ class DoubleClickDetector {
 }
 
 class GestureDispatcher {
-  EventTarget target;
+  dom.Element target;
 
   GestureDispatcher(this.target) {
     _gestureRecognizers = {

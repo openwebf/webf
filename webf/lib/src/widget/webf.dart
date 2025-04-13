@@ -557,7 +557,7 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    RenderViewportBox root = RenderViewportBox(
+    RootRenderViewportBox root = RootRenderViewportBox(
         background: background,
         viewportSize:
             (viewportWidth != null && viewportHeight != null) ? ui.Size(viewportWidth!, viewportHeight!) : null,

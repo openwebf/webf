@@ -470,7 +470,7 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isParentRenderViewportBox() {
-    return attachedRenderBoxModel?.parent is RenderViewportBox;
+    return attachedRenderBoxModel?.parent is RootRenderViewportBox || attachedRenderBoxModel?.parent is RouterViewViewportBox;
   }
 
   @pragma('vm:prefer-inline')

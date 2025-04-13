@@ -62,7 +62,7 @@ class RenderEventListener extends RenderBoxModel
     _gestureDispatcher.handlePointerEvent(event);
 
     if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
+      rawPointerListener?.recordEventTarget(renderStyle.target);
     }
   }
 }

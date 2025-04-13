@@ -12,17 +12,15 @@ import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
 class RenderViewportParentData extends ContainerBoxParentData<RenderBox> {}
 
-class RenderViewportBox extends RenderBox
+class _BaseRenderViewportBox extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
         RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
-  RenderViewportBox({required Size? viewportSize, this.background, required this.controller})
+  _BaseRenderViewportBox({required Size? viewportSize, this.background, required this.controller})
       : _viewportSize = viewportSize,
         super();
 
   WebFController controller;
-
-  RawPointerListener rawPointerListener = RawPointerListener();
 
   @override
   void setupParentData(covariant RenderObject child) {
@@ -137,13 +135,6 @@ class RenderViewportBox extends RenderBox
   }
 
   @override
-  void handleEvent(PointerEvent event, HitTestEntry entry) {
-    super.handleEvent(event, entry as BoxHitTestEntry);
-
-    rawPointerListener.handleEvent(event);
-  }
-
-  @override
   void paint(PaintingContext context, Offset offset) {
     if (background != null) {
       Rect rect = Rect.fromLTWH(
@@ -170,5 +161,29 @@ class RenderViewportBox extends RenderBox
   void dispose() {
     removeAll();
     super.dispose();
+  }
+}
+
+class RootRenderViewportBox extends _BaseRenderViewportBox {
+  RootRenderViewportBox({required super.viewportSize, required super.controller, super.background});
+
+  RawPointerListener rawPointerListener = RawPointerListener();
+
+  @override
+  void handleEvent(PointerEvent event, HitTestEntry entry) {
+    super.handleEvent(event, entry as BoxHitTestEntry);
+
+    rawPointerListener.handleEvent(event);
+  }
+}
+
+class RouterViewViewportBox extends _BaseRenderViewportBox {
+  RouterViewViewportBox({required super.viewportSize, required super.controller});
+
+  @override
+  void handleEvent(PointerEvent event, HitTestEntry entry) {
+    super.handleEvent(event, entry as BoxHitTestEntry);
+
+    controller.view.viewport!.rawPointerListener.handleEvent(event);
   }
 }

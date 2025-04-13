@@ -150,7 +150,7 @@ class Document extends ContainerNode {
   @override
   EventTarget? get parentEventTarget => defaultView;
 
-  RenderViewportBox? get viewport => controller.view.viewport;
+  RootRenderViewportBox? get viewport => controller.view.viewport;
 
   ui.Size? _preloadViewportSize;
 

@@ -174,7 +174,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   bool get disposed => _disposed;
 
-  RenderViewportBox? viewport;
+  RootRenderViewportBox? viewport;
   late Document document;
   late Window window;
 
