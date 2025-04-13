@@ -423,8 +423,8 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
 
-    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
-    OnScreenEvent event = OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    flutter.ModalRoute? route = flutter.ModalRoute.of(this);
+    OnScreenEvent event = OnScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
     Element webfElement = webFElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       webfElement.dispatchEvent(event);
@@ -433,9 +433,9 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
 
   @override
   void deactivate() {
-    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
+    flutter.ModalRoute? route = flutter.ModalRoute.of(this);
     Element element = webFElement;
-    OffScreenEvent event = OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    OffScreenEvent event = OffScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
     SchedulerBinding.instance.addPostFrameCallback((_) {
       element.dispatchEvent(event);
     });

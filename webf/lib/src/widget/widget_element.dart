@@ -335,8 +335,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
 
-    ModalRoute route = ModalRoute.of(this)!;
-    dom.OnScreenEvent event = dom.OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    ModalRoute? route = ModalRoute.of(this);
+    dom.OnScreenEvent event = dom.OnScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
 
     WidgetElement widgetElement = widget.widgetElement;
 
@@ -347,8 +347,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
   @override
   void deactivate() {
-    ModalRoute route = ModalRoute.of(this)!;
-    dom.OffScreenEvent event = dom.OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    ModalRoute? route = ModalRoute.of(this);
+    dom.OffScreenEvent event = dom.OffScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
     WidgetElement widgetElement = widget.widgetElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       widgetElement.dispatchEvent(event);
