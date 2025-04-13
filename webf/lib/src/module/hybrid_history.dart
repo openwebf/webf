@@ -38,26 +38,26 @@ abstract class HybridHistoryDelegate {
 
   void replaceState(BuildContext context, Object? state, String name);
 
-  String path(BuildContext context);
+  String path(BuildContext context, String? initialRoute);
 
   dynamic state(BuildContext context, Map<String, dynamic>? initialState);
-  
+
   /// Pops until a route with the given name.
   void popUntil(BuildContext context, RoutePredicate predicate);
-  
+
   /// Whether the navigator can be popped.
   bool canPop(BuildContext context);
-  
+
   /// Pop the top-most route off, only if it's not the last route.
   Future<bool> maybePop<T extends Object?>(BuildContext context, [T? result]);
-  
+
   /// Pop the current route off and push a named route in its place.
   void popAndPushNamed(
     BuildContext context,
     String routeName, {
     Object? arguments,
   });
-  
+
   /// Push the route with the given name and remove routes until the predicate returns true.
   void pushNamedAndRemoveUntil(
     BuildContext context,
@@ -84,7 +84,7 @@ class HybridHistoryModule extends BaseModule {
   void back() async {
     pop();
   }
-  
+
   /// Pop the current route - matches Flutter's Navigator.pop
   void pop([Object? result]) {
     if (_delegate != null) {
@@ -140,13 +140,14 @@ class HybridHistoryModule extends BaseModule {
   }
 
   String path() {
+    String? initialRoute = moduleManager!.controller.initialRoute;
     if (_delegate != null) {
-      return _delegate!.path(_context);
+      return _delegate!.path(_context, initialRoute);
     }
     String? currentPath = ModalRoute.of(_context)?.settings.name;
-    return currentPath ?? '';
+    return currentPath ?? initialRoute ?? '';
   }
-  
+
   /// Whether the navigator can be popped.
   bool canPop() {
     if (_delegate != null) {
@@ -154,7 +155,7 @@ class HybridHistoryModule extends BaseModule {
     }
     return Navigator.canPop(_context);
   }
-  
+
   /// Pop the top-most route off, only if it's not the last route.
   Future<bool> maybePop([Object? result]) async {
     if (_delegate != null) {
@@ -162,7 +163,7 @@ class HybridHistoryModule extends BaseModule {
     }
     return await Navigator.maybePop(_context, result);
   }
-  
+
   /// Pop the current route off and push a named route in its place.
   void popAndPushNamed(String routeName, {Object? arguments}) {
     if (_delegate != null) {
@@ -171,7 +172,7 @@ class HybridHistoryModule extends BaseModule {
     }
     Navigator.popAndPushNamed(_context, routeName, arguments: arguments);
   }
-  
+
   /// Pops until a route with the given name.
   void popUntil(String routeName) {
     bool predicateFunc(Route<dynamic> route) => route.settings.name == routeName;
@@ -181,29 +182,29 @@ class HybridHistoryModule extends BaseModule {
     }
     Navigator.popUntil(_context, predicateFunc);
   }
-  
+
   /// Push the route with the given name and remove routes until the predicate returns true.
   /// Original API - kept for backward compatibility
   void pushNamedAndRemoveUntil(Object? state, String newRouteName, String untilRouteName) {
     pushNamedAndRemoveUntilRoute(newRouteName, untilRouteName, arguments: state);
   }
-  
+
   /// Push the route with the given name and remove routes until named route is reached.
   /// This is a more Flutter-like API
   void pushNamedAndRemoveUntilRoute(String newRouteName, String untilRouteName, {Object? arguments}) {
     bool predicateFunc(Route<dynamic> route) => route.settings.name == untilRouteName;
     if (_delegate != null) {
       _delegate!.pushNamedAndRemoveUntil(
-        _context, 
-        newRouteName, 
+        _context,
+        newRouteName,
         predicateFunc,
         arguments: arguments
       );
       return;
     }
     Navigator.pushNamedAndRemoveUntil(
-      _context, 
-      newRouteName, 
+      _context,
+      newRouteName,
       predicateFunc,
       arguments: arguments
     );
@@ -216,7 +217,7 @@ class HybridHistoryModule extends BaseModule {
     if (params != null) {
       paramsList = params as List<dynamic>;
     }
-    
+
     switch (method) {
       case 'state':
         Map<String, dynamic>? initialState = moduleManager!.controller.initialState;
@@ -233,7 +234,7 @@ class HybridHistoryModule extends BaseModule {
           return jsonEncode(initialState);
         }
         return '{}';
-      
+
       // Original API methods - for backward compatibility
       case 'back':
         back();
@@ -253,7 +254,7 @@ class HybridHistoryModule extends BaseModule {
           return restorablePopAndPushState(paramsList[0], paramsList[1]);
         }
         break;
-        
+
       // New Flutter-like API methods
       case 'pop':
         pop(paramsList.isNotEmpty ? paramsList[0] : null);
@@ -279,7 +280,7 @@ class HybridHistoryModule extends BaseModule {
           return restorablePopAndPushNamed(paramsList[0]);
         }
         break;
-        
+
       // Other methods
       case 'path':
         return path();
@@ -309,7 +310,7 @@ class HybridHistoryModule extends BaseModule {
           pushNamedAndRemoveUntil(paramsList[0], paramsList[1], paramsList[2]);
         } else if (paramsList.length >= 2) {
           // New style with 2+ params
-          pushNamedAndRemoveUntilRoute(paramsList[0], paramsList[1], 
+          pushNamedAndRemoveUntilRoute(paramsList[0], paramsList[1],
             arguments: paramsList.length > 2 ? paramsList[2] : null);
         }
         break;

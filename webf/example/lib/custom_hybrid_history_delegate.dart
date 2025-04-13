@@ -13,9 +13,9 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   }
 
   @override
-  String path(BuildContext context) {
+  String path(BuildContext context, String? initialRoute) {
     String? currentPath = ModalRoute.of(context)?.settings.name;
-    return currentPath ?? '';
+    return currentPath ?? initialRoute ?? '';
   }
 
   @override
@@ -36,7 +36,7 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
     }
     return '{}';
   }
-  
+
   @override
   String restorablePopAndPushNamed<T extends Object?, TO extends Object?>(
     BuildContext context,
@@ -51,17 +51,17 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   void popUntil(BuildContext context, RoutePredicate predicate) {
     Navigator.popUntil(context, predicate);
   }
-  
+
   @override
   bool canPop(BuildContext context) {
     return Navigator.canPop(context);
   }
-  
+
   @override
   Future<bool> maybePop<T extends Object?>(BuildContext context, [T? result]) {
     return Navigator.maybePop(context, result);
   }
-  
+
   @override
   void popAndPushNamed(
     BuildContext context,
@@ -70,7 +70,7 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   }) {
     Navigator.popAndPushNamed(context, routeName, arguments: arguments);
   }
-  
+
   @override
   void pushNamedAndRemoveUntil(
     BuildContext context,
