@@ -108,8 +108,7 @@ class FlutterCupertinoRadio extends WidgetElement {
 
   @override
   WebFWidgetElementState createState() {
-    // TODO: implement createState
-    throw UnimplementedError();
+    return FlutterCupertinoRadioState(this);
   }
 }
 

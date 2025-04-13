@@ -42,7 +42,7 @@ mixin FlutterCupertinoAlertMixin on WidgetElement {
   ];
 }
 
-class FlutterCupertinoAlert extends WidgetElement {
+class FlutterCupertinoAlert extends WidgetElement with FlutterCupertinoAlertMixin {
   FlutterCupertinoAlert(super.context);
 
   String? _tempTitle;

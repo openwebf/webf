@@ -1,50 +1,46 @@
 <template>
   <div id="main">
     <!-- Instantiate the non-visual action sheet component -->
-    <flutter-cupertino-action-sheet ref="actionSheet"
-      @share="handleShare"
-      @delete="handleDelete"
-      @archive="handleArchive"
-      @cancel="handleCancel"
-    />
-    
+    <flutter-cupertino-action-sheet ref="actionSheet" @share="handleShare" @delete="handleDelete"
+      @archive="handleArchive" @cancel="handleCancel" />
+
     <webf-listview id="list">
       <div class="component-section">
         <div class="section-title">Action Sheet</div>
         <div class="component-block">
-        
+
           <!-- Basic Action Sheet -->
           <div class="component-item">
             <div class="item-label">Basic Action Sheet</div>
-             <flutter-cupertino-button @click="showBasicActionSheet">
-               Show Basic Sheet
-             </flutter-cupertino-button>
+            <flutter-cupertino-button @click="showBasicActionSheet">
+              Show Basic Sheet
+            </flutter-cupertino-button>
           </div>
-          
-           <!-- With Title and Message -->
+
+          <!-- With Title and Message -->
           <div class="component-item">
             <div class="item-label">With Title and Message</div>
-             <flutter-cupertino-button @click="showTitleMessageActionSheet">
-               Show Sheet with Title/Message
-             </flutter-cupertino-button>
+            <flutter-cupertino-button @click="showTitleMessageActionSheet">
+              Show Sheet with Title/Message
+            </flutter-cupertino-button>
           </div>
-          
-           <!-- With Destructive and Cancel -->
+
+          <!-- With Destructive and Cancel -->
           <div class="component-item">
             <div class="item-label">With Destructive and Cancel Button</div>
-             <flutter-cupertino-button @click="showDestructiveCancelActionSheet">
-               Show Sheet with Destructive/Cancel
-             </flutter-cupertino-button>
+            <flutter-cupertino-button @click="showDestructiveCancelActionSheet">
+              Show Sheet with Destructive/Cancel
+            </flutter-cupertino-button>
           </div>
-          
-           <!-- With Default Action -->
+
+          <!-- With Default Action -->
           <div class="component-item">
             <div class="item-label">With Default Action</div>
-             <flutter-cupertino-button @click="showDefaultActionSheet">
-               Show Sheet with Default Action
-             </flutter-cupertino-button>
+            <flutter-cupertino-button @click="showDefaultActionSheet">
+              Show Sheet with Default Action
+            </flutter-cupertino-button>
           </div>
-          
+
         </div>
       </div>
     </webf-listview>
@@ -62,46 +58,46 @@ export default {
       }
     },
     showBasicActionSheet() {
-       this.showActionSheet({
-         actions: [
-           { text: 'Share File', event: 'share' },
-           { text: 'Archive File', event: 'archive' },
-         ]
-       });
+      this.showActionSheet({
+        actions: [
+          { text: 'Share File', event: 'share' },
+          { text: 'Archive File', event: 'archive' },
+        ]
+      });
     },
     showTitleMessageActionSheet() {
-       this.showActionSheet({
-         title: 'File Options',
-         message: 'Choose an action for the selected file.',
-         actions: [
-           { text: 'Share File', event: 'share' },
-           { text: 'Archive File', event: 'archive' },
-         ],
-         // Example with explicit cancel button config
-         cancelButton: { text: 'Cancel', event: 'cancel' }
-       });
+      this.showActionSheet({
+        title: 'File Options',
+        message: 'Choose an action for the selected file.',
+        actions: [
+          { text: 'Share File', event: 'share' },
+          { text: 'Archive File', event: 'archive' },
+        ],
+        // Example with explicit cancel button config
+        cancelButton: { text: 'Cancel', event: 'cancel' }
+      });
     },
-     showDestructiveCancelActionSheet() {
-       this.showActionSheet({
-         actions: [
-           { text: 'Share File', event: 'share' },
-           { text: 'Archive File', event: 'archive' },
-           { text: 'Delete File', event: 'delete', isDestructive: true },
-         ],
-         cancelButton: { text: 'Cancel', event: 'cancel' } // isDestructive defaults to false
-       });
+    showDestructiveCancelActionSheet() {
+      this.showActionSheet({
+        actions: [
+          { text: 'Share File', event: 'share' },
+          { text: 'Archive File', event: 'archive' },
+          { text: 'Delete File', event: 'delete', isDestructive: true },
+        ],
+        cancelButton: { text: 'Cancel', event: 'cancel' } // isDestructive defaults to false
+      });
     },
-     showDefaultActionSheet() {
-       this.showActionSheet({
-         title: 'Confirm Action',
-         actions: [
-           { text: 'Proceed', event: 'proceed', isDefault: true },
-           { text: 'Review', event: 'review' },
-         ],
-         cancelButton: { text: 'Cancel', event: 'cancel' }
-       });
+    showDefaultActionSheet() {
+      this.showActionSheet({
+        title: 'Confirm Action',
+        actions: [
+          { text: 'Proceed', event: 'proceed', isDefault: true },
+          { text: 'Review', event: 'review' },
+        ],
+        cancelButton: { text: 'Cancel', event: 'cancel' }
+      });
     },
-    
+
     // Event Handlers
     handleShare(event) {
       console.log('Action Sheet Event: share', event.detail);
@@ -124,6 +120,7 @@ export default {
 #main {
   // The action sheet component itself is not visual, so only list styles needed
 }
+
 #list {
   padding: 10px 0;
   height: 100vh;
@@ -159,13 +156,13 @@ export default {
         color: var(--font-color-secondary);
         margin-bottom: 12px;
       }
-      
+
       // Center the button
       flutter-cupertino-button {
-         display: block; 
-         margin: 0 auto;
+        display: block;
+        margin: 0 auto;
       }
     }
   }
 }
-</style> 
+</style>
