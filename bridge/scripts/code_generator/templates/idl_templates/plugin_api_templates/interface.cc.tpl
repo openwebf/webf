@@ -71,12 +71,14 @@ double WindowPublicMethods::RequestAnimationFrame(Window* window,
 <%= generatePublicReturnTypeValue(method.returnType, true) %> <%= className %>PublicMethods::<%= _.startCase(method.rustName || method.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParametersTypeWithName(method.args, true) %>SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (method.returnTypeMode?.dartImpl) { %>
+    <% if (method.args.length != 0) { %>
   NativeValue args[] = {
     <% _.forEach(method.args, function(arg, index) { %>
     <%= generateNativeValueConverter(arg.type) %>(<%= _.snakeCase(arg.name) %>),
     <% }) %>
   };
-  <%= _.snakeCase(className) %>->InvokeBindingMethod(binding_call_methods::kaddColorStop, <%= method.args.length %>, args, FlushUICommandReason::kDependentsOnElement<% if(method.returnTypeMode?.layoutDependent){ %> | FlushUICommandReason::kDependentsOnLayout <% } %>, shared_exception_state->exception_state);
+    <% } %>
+  <%= _.snakeCase(className) %>->InvokeBindingMethod(binding_call_methods::kaddColorStop, <%= method.args.length %>, <%= method.args.length == 0 ? 'NULL' : 'args' %>, FlushUICommandReason::kDependentsOnElement<% if(method.returnTypeMode?.layoutDependent){ %> | FlushUICommandReason::kDependentsOnLayout <% } %>, shared_exception_state->exception_state);
 
   <% } else { %>
 

@@ -356,6 +356,9 @@ function genPluginAPICodeFromTypeDefine() {
     }
   }
 
+  fs.rmSync(path.join(dist, '../include/plugin_api_gen'), {recursive: true, force: true});
+  fs.symlinkSync(path.join(dist, 'plugin_api_header_gen'), path.join(dist, '../include/plugin_api_gen'), 'dir');
+
 }
 
 function genRustCodeFromTypeDefine() {
