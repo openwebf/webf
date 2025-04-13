@@ -287,6 +287,7 @@ class WebFController {
   ui.FlutterView? get ownerFlutterView => _ownerFlutterView;
 
   final List<BuildContext> _buildContextStack = [];
+  List<BuildContext> get buildContextStack => _buildContextStack;
   void pushNewBuildContext(BuildContext context) {
     _buildContextStack.add(context);
   }

@@ -93,7 +93,7 @@ void main() async {
         routeObserver: routeObserver,
         devToolsService: kDebugMode ? ChromeDevToolsService() : null,
       ),
-      bundle: WebFBundle.fromUrl('http://localhost:3000/react_project/build'),
+      bundle: WebFBundle.fromUrl('assets:///react_project/build/index.html'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;

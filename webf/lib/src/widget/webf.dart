@@ -321,6 +321,20 @@ class WebFState extends State<WebF> with RouteAware {
                 );
           }
 
+          if (!widget.controller.viewportLayoutCompleter.isCompleted) {
+            return RepaintBoundary(
+              key: widget.controller.key,
+              child: WebFRootViewport(
+                widget.controller,
+                viewportWidth: widget.controller.viewportWidth,
+                viewportHeight: widget.controller.viewportHeight,
+                background: widget.controller.background,
+                resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
+                children: [],
+              ),
+            );
+          }
+
           List<Widget> children = [];
           if (widget.initialRoute != null) {
             RouterLinkElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
@@ -409,7 +423,6 @@ class _WebFElement extends StatefulElement {
     print('start for loading..');
 
     await controller.controlledInitCompleter.future;
-    await controller.viewportLayoutCompleter.future;
 
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       // Sync element state.
@@ -553,6 +566,7 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       controller.viewportLayoutCompleter.complete();
+      (controller.rootBuildContext as Element).markNeedsBuild();
     });
 
     return root;
