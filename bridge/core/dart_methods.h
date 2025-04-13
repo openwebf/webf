@@ -54,6 +54,7 @@ typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      SharedNativeString* moduleName,
                                      SharedNativeString* method,
                                      NativeValue* params,
+                                     const char* errmsg,
                                      AsyncModuleCallback callback);
 typedef void (*RequestBatchUpdate)(double context_id);
 typedef void (*ReloadApp)(double context_id);
@@ -169,6 +170,7 @@ class DartMethodPointer {
                             SharedNativeString* moduleName,
                             SharedNativeString* method,
                             NativeValue* params,
+                            const char* errmsg,
                             AsyncModuleCallback callback);
 
   void requestBatchUpdate(bool is_dedicated, double context_id);

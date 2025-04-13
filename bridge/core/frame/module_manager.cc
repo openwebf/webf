@@ -201,11 +201,19 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
                                                     context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
+                                                    nullptr,
                                                     handleInvokeModuleTransientCallbackWrapper);
   } else {
+    char errmsg[1024];
+    errmsg[0] = 0;
     result = context->dartMethodPtr()->invokeModule(
         context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
-        module_name_string.get(), method_name_string.get(), &params, handleInvokeModuleUnexpectedCallback);
+        module_name_string.get(), method_name_string.get(), &params, errmsg, nullptr);
+
+    if (errmsg[0] != 0) {
+      exception.ThrowException(context->ctx(), ErrorType::InternalError, errmsg);
+      return nullptr;
+    }
   }
 
   context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();

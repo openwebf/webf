@@ -4,6 +4,7 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
@@ -103,6 +104,7 @@ typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
+    Pointer<Uint8> errmsg,
     Pointer<NativeFunction<NativeAsyncModuleCallback>>);
 
 class _InvokeModuleResultContext {
@@ -140,7 +142,7 @@ void _handleInvokeModuleResult(Object handle, Pointer<NativeValue> result) {
 }
 
 dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, String moduleName, String method, params,
-    DartAsyncModuleCallback callback,
+    Pointer<Uint8> errmsg, Pointer<NativeFunction<NativeAsyncModuleCallback>> callback,
     {BindingOpItem? profileOp}) {
   WebFViewController currentView = controller.view;
   dynamic result;
@@ -165,14 +167,17 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
           _InvokeModuleResultContext context = _InvokeModuleResultContext(
               completer, currentView, moduleName, method, params,
               errmsgPtr: errmsgPtr, stopwatch: stopwatch);
-          callback(callbackContext, currentView.contextId, errmsgPtr, nullptr, context, handleResult);
+          DartAsyncModuleCallback fn = callback.asFunction();
+
+          fn(callbackContext, currentView.contextId, errmsgPtr, nullptr, context, handleResult);
         } else {
           Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
           toNativeValue(dataPtr, data);
           _InvokeModuleResultContext context = _InvokeModuleResultContext(
               completer, currentView, moduleName, method, params,
               data: dataPtr, stopwatch: stopwatch);
-          callback(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
+          DartAsyncModuleCallback fn = callback.asFunction();
+          fn(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
         }
       });
       return completer.future;
@@ -192,8 +197,17 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
       print('Invoke module failed: $e\n$stack');
     }
     String error = '$e\n$stack';
-    if (callback == nullptr) return;
-    callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr, {}, nullptr);
+
+    if (callback == nullptr) {
+      final msgList = errmsg.asTypedList(1024);
+      Uint8List bytes = utf8.encode(error);
+      int max = bytes.length > 1020 ? 1020 : bytes.length;
+      msgList.setAll(0, bytes.sublist(0, max));
+      msgList[max + 1] = 0;
+    } else {
+      DartAsyncModuleCallback fn = callback.asFunction();
+      fn(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr, {}, nullptr);
+    }
   }
 
   if (enableWebFCommandLog) {
@@ -211,6 +225,7 @@ Pointer<NativeValue> _invokeModule(
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
+    Pointer<Uint8> errmsg,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
   BindingOpItem? currentProfileOp;
   if (enableWebFProfileTracking) {
@@ -233,7 +248,7 @@ Pointer<NativeValue> _invokeModule(
   }
 
   dynamic result = invokeModule(
-      callbackContext, controller, moduleValue, methodValue, paramsValue, callback.asFunction(),
+      callbackContext, controller, moduleValue, methodValue, paramsValue, errmsg, callback,
       profileOp: currentProfileOp);
 
   if (enableWebFProfileTracking) {
@@ -428,10 +443,9 @@ void _requestIdleCallback(int newIdleId, Pointer<Void> callbackContext, double c
       DartRequestIdleAsyncCallback f = callback.asFunction();
       f(callbackContext, contextId, remainingTime);
     });
-  } catch(e, stack) {
+  } catch (e, stack) {
     print('$e $stack');
   }
-
 }
 
 final Pointer<NativeFunction<NativeRequestIdleCallback>> _nativeRequestIdleCallback =

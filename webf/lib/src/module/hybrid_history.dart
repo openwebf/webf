@@ -127,6 +127,9 @@ class HybridHistoryModule extends BaseModule {
 
   /// Original API - kept for backward compatibility
   void replaceState(Object? state, String name) {
+    if (moduleManager!.controller.buildContextStack.length == 1) {
+      throw FlutterError('Can not replaceState at the top stack of hybrid router');
+    }
     pushReplacementNamed(name, arguments: state);
   }
 
