@@ -6,6 +6,7 @@
 #define WEBF_CORE_FRAME_SCRIPT_IDLE_TASK_CONTROLLER_H_
 
 #include <memory>
+#include <unordered_map>
 #include "bindings/qjs/qjs_function.h"
 
 namespace webf {
