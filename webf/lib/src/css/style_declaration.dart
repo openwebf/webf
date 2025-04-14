@@ -27,6 +27,10 @@ const Map<String, bool> _CSSShorthandProperty = {
   BORDER_RIGHT: true,
   BORDER_TOP: true,
   BORDER_BOTTOM: true,
+  BORDER_INLINE_START: true,
+  BORDER_INLINE_END: true,
+  BORDER_BLOCK_START: true,
+  BORDER_BLOCK_END: true,
   FONT: true,
   FLEX: true,
   FLEX_FLOW: true,
@@ -181,6 +185,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       case BORDER_RIGHT:
       case BORDER_BOTTOM:
       case BORDER_LEFT:
+      case BORDER_INLINE_START:
+      case BORDER_INLINE_END:
+      case BORDER_BLOCK_START:
+      case BORDER_BLOCK_END:
       case BORDER_COLOR:
       case BORDER_STYLE:
       case BORDER_WIDTH:
@@ -255,6 +263,10 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         case BORDER_RIGHT:
         case BORDER_BOTTOM:
         case BORDER_LEFT:
+        case BORDER_INLINE_START:
+        case BORDER_INLINE_END:
+        case BORDER_BLOCK_START:
+        case BORDER_BLOCK_END:
         case BORDER_COLOR:
         case BORDER_STYLE:
         case BORDER_WIDTH:

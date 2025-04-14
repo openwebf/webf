@@ -37,6 +37,39 @@ const String MARGIN_TOP = 'marginTop';
 const String MARGIN_RIGHT = 'marginRight';
 const String MARGIN_BOTTOM = 'marginBottom';
 
+/// properties to writing directions
+const String MARGIN_INLINE_START = 'marginInlineStart';
+const String PADDING_INLINE_START = 'paddingInlineStart';
+const String BORDER_INLINE_START = 'borderInlineStart';
+const String BORDER_INLINE_START_WIDTH = 'borderInlineStartWidth';
+const String BORDER_INLINE_START_STYLE = 'borderInlineStartStyle';
+const String BORDER_INLINE_START_COLOR = 'borderInlineStartColor';
+const String INSET_INLINE_START = 'insetInlineStart';
+
+const String MARGIN_INLINE_END = 'marginInlineEnd';
+const String PADDING_INLINE_END = 'paddingInlineEnd';
+const String BORDER_INLINE_END = 'borderInlineEnd';
+const String BORDER_INLINE_END_WIDTH = 'borderInlineEndWidth';
+const String BORDER_INLINE_END_STYLE = 'borderInlineEndStyle';
+const String BORDER_INLINE_END_COLOR = 'borderInlineEndColor';
+const String INSET_INLINE_END = 'insetInlineEnd';
+
+const String MARGIN_BLOCK_START = 'marginBlockStart';
+const String PADDING_BLOCK_START = 'paddingBlockStart';
+const String BORDER_BLOCK_START = 'borderBlockStart';
+const String BORDER_BLOCK_START_WIDTH = 'borderBlockStartWidth';
+const String BORDER_BLOCK_START_STYLE = 'borderBlockStartStyle';
+const String BORDER_BLOCK_START_COLOR = 'borderBlockStartColor';
+const String INSET_BLOCK_START = 'insetBlockStart';
+
+const String MARGIN_BLOCK_END = 'marginBlockEnd';
+const String PADDING_BLOCK_END = 'paddingBlockEnd';
+const String BORDER_BLOCK_END = 'borderBlockEnd';
+const String BORDER_BLOCK_END_WIDTH = 'borderBlockEndWidth';
+const String BORDER_BLOCK_END_STYLE = 'borderBlockEndStyle';
+const String BORDER_BLOCK_END_COLOR = 'borderBlockEndColor';
+const String INSET_BLOCK_END = 'insetBlockEnd';
+
 const String BACKGROUND = 'background';
 const String BACKGROUND_ATTACHMENT = 'backgroundAttachment';
 const String BACKGROUND_REPEAT = 'backgroundRepeat';

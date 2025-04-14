@@ -1489,6 +1489,77 @@ class CSSRenderStyle extends RenderStyle
       }
     }
 
+    // Map logical properties to physical properties for LTR mode
+    String propertyName = name;
+
+    // Handle inline-start properties (for LTR, maps to left side)
+    if (name == MARGIN_INLINE_START) {
+      propertyName = MARGIN_LEFT;
+    } else if (name == PADDING_INLINE_START) {
+      propertyName = PADDING_LEFT;
+    } else if (name == BORDER_INLINE_START) {
+      propertyName = BORDER_LEFT;
+    } else if (name == BORDER_INLINE_START_WIDTH) {
+      propertyName = BORDER_LEFT_WIDTH;
+    } else if (name == BORDER_INLINE_START_STYLE) {
+      propertyName = BORDER_LEFT_STYLE;
+    } else if (name == BORDER_INLINE_START_COLOR) {
+      propertyName = BORDER_LEFT_COLOR;
+    } else if (name == INSET_INLINE_START) {
+      propertyName = LEFT;
+    }
+    // Handle inline-end properties (for LTR, maps to right side)
+    else if (name == MARGIN_INLINE_END) {
+      propertyName = MARGIN_RIGHT;
+    } else if (name == PADDING_INLINE_END) {
+      propertyName = PADDING_RIGHT;
+    } else if (name == BORDER_INLINE_END) {
+      propertyName = BORDER_RIGHT;
+    } else if (name == BORDER_INLINE_END_WIDTH) {
+      propertyName = BORDER_RIGHT_WIDTH;
+    } else if (name == BORDER_INLINE_END_STYLE) {
+      propertyName = BORDER_RIGHT_STYLE;
+    } else if (name == BORDER_INLINE_END_COLOR) {
+      propertyName = BORDER_RIGHT_COLOR;
+    } else if (name == INSET_INLINE_END) {
+      propertyName = RIGHT;
+    }
+    // Handle block-start properties (maps to top)
+    else if (name == MARGIN_BLOCK_START) {
+      propertyName = MARGIN_TOP;
+    } else if (name == PADDING_BLOCK_START) {
+      propertyName = PADDING_TOP;
+    } else if (name == BORDER_BLOCK_START) {
+      propertyName = BORDER_TOP;
+    } else if (name == BORDER_BLOCK_START_WIDTH) {
+      propertyName = BORDER_TOP_WIDTH;
+    } else if (name == BORDER_BLOCK_START_STYLE) {
+      propertyName = BORDER_TOP_STYLE;
+    } else if (name == BORDER_BLOCK_START_COLOR) {
+      propertyName = BORDER_TOP_COLOR;
+    } else if (name == INSET_BLOCK_START) {
+      propertyName = TOP;
+    }
+    // Handle block-end properties (maps to bottom)
+    else if (name == MARGIN_BLOCK_END) {
+      propertyName = MARGIN_BOTTOM;
+    } else if (name == PADDING_BLOCK_END) {
+      propertyName = PADDING_BOTTOM;
+    } else if (name == BORDER_BLOCK_END) {
+      propertyName = BORDER_BOTTOM;
+    } else if (name == BORDER_BLOCK_END_WIDTH) {
+      propertyName = BORDER_BOTTOM_WIDTH;
+    } else if (name == BORDER_BLOCK_END_STYLE) {
+      propertyName = BORDER_BOTTOM_STYLE;
+    } else if (name == BORDER_BLOCK_END_COLOR) {
+      propertyName = BORDER_BOTTOM_COLOR;
+    } else if (name == INSET_BLOCK_END) {
+      propertyName = BOTTOM;
+    }
+
+    // Use the mapped property name for the switch statement
+    name = propertyName;
+
     switch (name) {
       case DISPLAY:
         display = value;
@@ -1852,6 +1923,77 @@ class CSSRenderStyle extends RenderStyle
   @override
   dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
     RenderStyle renderStyle = this;
+
+    // Map logical properties to physical properties for LTR mode
+    String mappedPropertyName = propertyName;
+
+    // Handle inline-start properties (for LTR, maps to left side)
+    if (propertyName == MARGIN_INLINE_START) {
+      mappedPropertyName = MARGIN_LEFT;
+    } else if (propertyName == PADDING_INLINE_START) {
+      mappedPropertyName = PADDING_LEFT;
+    } else if (propertyName == BORDER_INLINE_START) {
+      mappedPropertyName = BORDER_LEFT;
+    } else if (propertyName == BORDER_INLINE_START_WIDTH) {
+      mappedPropertyName = BORDER_LEFT_WIDTH;
+    } else if (propertyName == BORDER_INLINE_START_STYLE) {
+      mappedPropertyName = BORDER_LEFT_STYLE;
+    } else if (propertyName == BORDER_INLINE_START_COLOR) {
+      mappedPropertyName = BORDER_LEFT_COLOR;
+    } else if (propertyName == INSET_INLINE_START) {
+      mappedPropertyName = LEFT;
+    }
+    // Handle inline-end properties (for LTR, maps to right side)
+    else if (propertyName == MARGIN_INLINE_END) {
+      mappedPropertyName = MARGIN_RIGHT;
+    } else if (propertyName == PADDING_INLINE_END) {
+      mappedPropertyName = PADDING_RIGHT;
+    } else if (propertyName == BORDER_INLINE_END) {
+      mappedPropertyName = BORDER_RIGHT;
+    } else if (propertyName == BORDER_INLINE_END_WIDTH) {
+      mappedPropertyName = BORDER_RIGHT_WIDTH;
+    } else if (propertyName == BORDER_INLINE_END_STYLE) {
+      mappedPropertyName = BORDER_RIGHT_STYLE;
+    } else if (propertyName == BORDER_INLINE_END_COLOR) {
+      mappedPropertyName = BORDER_RIGHT_COLOR;
+    } else if (propertyName == INSET_INLINE_END) {
+      mappedPropertyName = RIGHT;
+    }
+    // Handle block-start properties (maps to top)
+    else if (propertyName == MARGIN_BLOCK_START) {
+      mappedPropertyName = MARGIN_TOP;
+    } else if (propertyName == PADDING_BLOCK_START) {
+      mappedPropertyName = PADDING_TOP;
+    } else if (propertyName == BORDER_BLOCK_START) {
+      mappedPropertyName = BORDER_TOP;
+    } else if (propertyName == BORDER_BLOCK_START_WIDTH) {
+      mappedPropertyName = BORDER_TOP_WIDTH;
+    } else if (propertyName == BORDER_BLOCK_START_STYLE) {
+      mappedPropertyName = BORDER_TOP_STYLE;
+    } else if (propertyName == BORDER_BLOCK_START_COLOR) {
+      mappedPropertyName = BORDER_TOP_COLOR;
+    } else if (propertyName == INSET_BLOCK_START) {
+      mappedPropertyName = TOP;
+    }
+    // Handle block-end properties (maps to bottom)
+    else if (propertyName == MARGIN_BLOCK_END) {
+      mappedPropertyName = MARGIN_BOTTOM;
+    } else if (propertyName == PADDING_BLOCK_END) {
+      mappedPropertyName = PADDING_BOTTOM;
+    } else if (propertyName == BORDER_BLOCK_END) {
+      mappedPropertyName = BORDER_BOTTOM;
+    } else if (propertyName == BORDER_BLOCK_END_WIDTH) {
+      mappedPropertyName = BORDER_BOTTOM_WIDTH;
+    } else if (propertyName == BORDER_BLOCK_END_STYLE) {
+      mappedPropertyName = BORDER_BOTTOM_STYLE;
+    } else if (propertyName == BORDER_BLOCK_END_COLOR) {
+      mappedPropertyName = BORDER_BOTTOM_COLOR;
+    } else if (propertyName == INSET_BLOCK_END) {
+      mappedPropertyName = BOTTOM;
+    }
+
+    // Use the mapped property name for further processing
+    propertyName = mappedPropertyName;
 
     if (propertyValue == INITIAL) {
       propertyValue = CSSInitialValues[propertyName] ?? propertyValue;
