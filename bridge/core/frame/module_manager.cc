@@ -201,8 +201,7 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
                                                     context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
-                                                    nullptr,
-                                                    handleInvokeModuleTransientCallbackWrapper);
+                                                    nullptr, handleInvokeModuleTransientCallbackWrapper);
   } else {
     char errmsg[1024];
     errmsg[0] = 0;
