@@ -3,14 +3,14 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-let html = document.createElement('html');
-document.appendChild(html);
+let htmlElement = document.createElement('html');
+document.appendChild(htmlElement);
 
-let head = document.createElement('head');
-document.documentElement.appendChild(head);
+let headElement = document.createElement('head');
+document.documentElement.appendChild(headElement);
 
-let body = document.createElement('body');
-document.documentElement.appendChild(body);
+let bodyElement = document.createElement('body');
+document.documentElement.appendChild(bodyElement);
 
 
 // SVGMatrix are equal to DOMMatrix.

@@ -223,7 +223,7 @@ export class XMLHttpRequest extends EventTarget {
     // Set the defaults if they haven't been set
     for (let name in defaultHeaders) {
       if (!this.headersCache[name.toLowerCase()]) {
-        this.headers[name] = defaultHeaders[name];
+        this.headers[name] = defaultHeaders[name as keyof typeof defaultHeaders];
       }
     }
 

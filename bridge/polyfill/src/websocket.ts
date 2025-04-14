@@ -49,7 +49,7 @@ var BinaryType = Object.create(null);
   BinaryType["arraybuffer"] = "arraybuffer";
 })(BinaryType || (BinaryType = {}));
 
-const wsClientMap = {};
+const wsClientMap: Record<string, WebSocket> = {};
 
 function dispatchWebSocketEvent(clientId: string, event: any) {
   let client = wsClientMap[clientId];

@@ -31,7 +31,7 @@ export class Storage {
 
 export const storageProxyHandler = {
   get(target: Storage, p: string | symbol, receiver: any): any {
-    const result = p in target ? target[p] : target.getItem(p as string);
+    const result = p in target ? target[p as keyof Storage] : target.getItem(p as string);
     return result === null ? undefined : result;
   },
   set(target: Storage, p: string | symbol, newValue: any, receiver: any): boolean {

@@ -3,7 +3,7 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-const cookieStorage = {};
+const cookieStorage: Record<string, string> = {};
 
 // @TODO Persisent cookie and Session cookie support
 export const cookie = {
@@ -36,6 +36,6 @@ export const cookie = {
         }
       }
     }
-    cookieStorage[key] = value;
+    cookieStorage[key] = value || '';
   }
 };

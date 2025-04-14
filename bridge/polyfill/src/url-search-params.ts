@@ -7,7 +7,7 @@
 
 const find = /[!'\(\)~]|%20|%00/g;
 const plus = /\+/g;
-const replace = {
+const replace: Record<string, string> = {
   '!': '%21',
   "'": '%27',
   '(': '%28',
@@ -19,7 +19,6 @@ const replace = {
 const replacer = function(match: string) {
   return replace[match];
 };
-const DICT_KEY = '__URLSearchParams__';
 
 function encode(str: string) {
   return encodeURIComponent(str).replace(find, replacer);
@@ -30,6 +29,8 @@ function decode(str: string) {
 }
 
 export class URLSearchParams {
+  private _dict: Record<string, string[]> = Object.create(null);
+
   constructor(query: any) {
     this._reset();
     if (!query) return;
@@ -53,7 +54,7 @@ export class URLSearchParams {
   }
 
   _reset() {
-    this[DICT_KEY] = Object.create(null);
+    this._dict = Object.create(null);
   }
 
   _fromString(query: string) {
@@ -80,7 +81,7 @@ export class URLSearchParams {
    * Appends a specified key/value pair as a new search parameter.
    */
   append(name: string, value: string) {
-    var dict = this[DICT_KEY];
+    var dict = this._dict;
     if (name in dict) {
       dict[name].push('' + value);
     } else {
@@ -91,33 +92,33 @@ export class URLSearchParams {
    * Deletes the given search parameter, and its associated value, from the list of all search parameters.
    */
   delete(name: string) {
-    delete this[DICT_KEY][name];
+    delete this._dict[name];
   }
   /**
    * Returns the first value associated to the given search parameter.
    */
   get(name: string) {
-    var dict = this[DICT_KEY];
+    var dict = this._dict;
     return name in dict ? dict[name][0] : null;
   }
   /**
    * Returns all the values association with a given search parameter.
    */
   getAll(name: string) {
-    var dict = this[DICT_KEY];
+    var dict = this._dict;
     return name in dict ? dict[name].slice(0) : [];
   }
   /**
    * Returns a Boolean indicating if such a search parameter exists.
    */
   has(name: string) {
-    return name in this[DICT_KEY];
+    return name in this._dict;
   }
   /**
    * Sets the value associated to a given search parameter to the given value. If there were several values, delete the others.
    */
   set(name: string, value: string) {
-    this[DICT_KEY][name] = ['' + value];
+    this._dict[name] = ['' + value];
   }
   /**
    * Allows iteration through all values contained in this object via a callback function.
@@ -125,7 +126,7 @@ export class URLSearchParams {
    * @param thisArg
    */
   forEach(callback: (value: string, key: string, parent: URLSearchParams) => void, thisArg?: any) {
-    var dict = this[DICT_KEY];
+    var dict = this._dict;
     var params = this;
     Object.getOwnPropertyNames(dict).forEach(function(name) {
       dict[name].forEach(function invokeCallback(value: string) {
@@ -137,7 +138,7 @@ export class URLSearchParams {
    * Returns a string containing a query string suitable for use in a URL. Does not include the question mark.
    */
   toString() {
-    var dict = this[DICT_KEY], query = [], i, key, name, value;
+    var dict = this._dict, query = [], i, key, name, value;
     for (key in dict) {
       name = encode(key);
       for (i = 0, value = dict[key]; i < value.length; i++) {

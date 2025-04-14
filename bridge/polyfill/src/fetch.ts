@@ -31,7 +31,7 @@ function consumed(body: Body) {
 }
 
 export class Headers implements Headers {
-  public map = {};
+  public map: Record<string, string> = {};
 
   constructor(headers?: HeadersInit) {
     if (headers instanceof Headers) {
@@ -44,7 +44,9 @@ export class Headers implements Headers {
       }, this);
     } else if (headers) {
       Object.getOwnPropertyNames(headers).forEach((name) => {
-        this.append(name, headers[name])
+        // Type assertion to Record<string, string> since we know headers is a plain object here
+        const headerObj = headers as Record<string, string>;
+        this.append(name, headerObj[name]);
       }, this);
     }
   }
@@ -188,7 +190,7 @@ export class Request extends Body {
       }
       this.url = input.url;
       if (!init.headers) {
-        this.headers = new Headers(input.headers);
+        this.headers = new Headers(input.headers as unknown as HeadersInit);
       }
       this.method = input.method;
       this.mode = input.mode;
@@ -290,11 +292,12 @@ export class Response extends Body {
     this._initBody(body || null);
   }
 
-  clone(): Response {
+  clone(): Response {    
+    const headers = new Headers(this.headers as unknown as HeadersInit);
     return new Response(this._bodyInit, {
       status: this.status,
       statusText: this.statusText,
-      headers: new Headers(this.headers)
+      headers: headers as unknown as HeadersInit
     })
   }
 }

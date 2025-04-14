@@ -89,14 +89,15 @@ export class URL {
 
     const searchParams = this._searchParams = new URLSearchParams(this.search);
 
-    ['append', 'delete', 'set'].forEach((methodName) => {
+    ['append', 'delete', 'set'].forEach((methodName: keyof URLSearchParams) => {
       var method = searchParams[methodName];
 
       searchParams[methodName] = (...args: any) => {
-        method.apply(searchParams, args);
+        const result = method.apply(searchParams, args);
         this._shouldUpdateSearchParams = false;
         this.search = searchParams.toString();
         this._shouldUpdateSearchParams = true;
+        return result;
       };
     });
   }
