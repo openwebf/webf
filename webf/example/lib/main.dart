@@ -112,7 +112,7 @@ void main() async {
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
 
-  WebFControllerManager.instance.addWithPreload(
+  WebFControllerManager.instance.a z(
       name: 'cupertino_gallery',
       createController: () => WebFController(
             initialRoute: '/',
@@ -140,7 +140,7 @@ void main() async {
   };
 
   // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPreload(
+  WebFControllerManager.instance.addWithPrerendering(
       name: 'miracle_plus',
       createController: () => WebFController(
             initialRoute: '/home',
