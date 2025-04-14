@@ -1,9 +1,371 @@
+## 0.21.0-beta.3
+
+## WebF Core
+
+### Features
+
+- Added support for dashed border style.
+- Added support for CSS logical properties in LTR mode.
+- Added support for custom listview element rendering behavior.
+- Added support for `requestIdleCallback`.
+- Added support for `Event.preventDefault`.
+
+**The CSS Logical properties supported in LTR mode**
+
+```
+1. Margin Properties
+
+- margin-inline-start → margin-left
+- margin-inline-end → margin-right
+- margin-block-start → margin-top
+- margin-block-end → margin-bottom
+
+2. Padding Properties
+
+- padding-inline-start → padding-left
+- padding-inline-end → padding-right
+- padding-block-start → padding-top
+- padding-block-end → padding-bottom
+
+3. Border Shorthand Properties
+
+- border-inline-start → border-left
+- border-inline-end → border-right
+- border-block-start → border-top
+- border-block-end → border-bottom
+
+4. Border Width Properties
+
+- border-inline-start-width → border-left-width
+- border-inline-end-width → border-right-width
+- border-block-start-width → border-top-width
+- border-block-end-width → border-bottom-width
+
+5. Border Style Properties
+
+- border-inline-start-style → border-left-style
+- border-inline-end-style → border-right-style
+- border-block-start-style → border-top-style
+- border-block-end-style → border-bottom-style
+
+6. Border Color Properties
+
+- border-inline-start-color → border-left-color
+- border-inline-end-color → border-right-color
+- border-block-start-color → border-top-color
+- border-block-end-color → border-bottom-color
+
+7. Inset/Position Properties
+
+- inset-inline-start → left
+- inset-inline-end → right
+- inset-block-start → top
+- inset-block-end → bottom
+```
+
+### Bug Fixes
+
+- Fixed dispatch of `didpush` and `didpushNext` hybridRouterChange events.
+- Fixed type errors in bridge polyfill.
+- Fixed `controller.currentBuildContext` error with `replaceState` on the hybrid router.
+- Fixed error when Flutter was not attached in the hybrid history API.
+- Fixed Android build issues.
+- Fixed gesture handling event target in router link.
+- Fixed viewport rendering on layout.
+- Fixed delay in controller disposal.
+
+### Other Changes
+
+- Refactored widget elements to use the new API pattern.
+- Using `flutter_svg` to render SVG images for `<img>` tags.
+
+---
+
+### The New Pattern for Writing a WidgetElement
+
+```dart
+class FlutterCupertinoActionSheet extends WidgetElement {
+  /// WidgetElement will live much longer than Flutter widgets
+  /// and have the same lifecycle as the corresponding HTMLElement in JavaScript.
+  /// When the element is removed by JavaScript, this element will be disposed.
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterCupertinoActionSheetState(this);
+  }
+}
+
+// FlutterCupertinoActionSheetState is a subclass of Flutter's State class
+class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
+  FlutterCupertinoActionSheetState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    // This element itself doesn't render anything visible
+    return const SizedBox();
+  }
+  // ..
+}
+```
+
+---
+
+### How to Customize `<webf-listview />`
+
+```dart
+WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
+
+class CustomWebFListView extends WebFListViewElement {
+  CustomWebFListView(super.context);
+
+  @override
+  WebFWidgetElementState createState() {
+    return CustomListViewState(this);
+  }
+}
+
+class CustomListViewState extends WebFListViewState {
+  CustomListViewState(super.widgetElement);
+
+  @override
+  Widget buildLoadMore() {
+    return widgetElement.hasEventListener('loadmore')
+        ? Container(
+            height: 50,
+            alignment: Alignment.center,
+            child: isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
+          )
+        : const SizedBox.shrink();
+  }
+
+  @override
+  Widget buildRefreshControl() {
+    return CupertinoSliverRefreshControl(
+      onRefresh: () async {
+        if (widgetElement.hasEventListener('refresh')) {
+          widgetElement.dispatchEvent(dom.Event('refresh'));
+          await Future.delayed(const Duration(seconds: 2));
+        }
+      },
+    );
+  }
+
+  @override
+  Widget buildRefreshIndicator(Widget scrollView) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        if (widgetElement.hasEventListener('refresh')) {
+          widgetElement.dispatchEvent(dom.Event('refresh'));
+          await Future.delayed(const Duration(seconds: 2));
+        }
+      },
+      child: scrollView,
+    );
+  }
+
+  @override
+  void handleScroll() {
+    double scrollPixels = scrollController?.position.pixels ?? 0;
+    print('Scrolling... $scrollPixels');
+  }
+
+  @override
+  bool hasRefreshIndicator() {
+    return true;
+  }
+}
+```
+
+---
+
+## Examples
+
+### Cupertino Components
+
+- Added `formRow` and `formSection` components.
+- Added `action-sheet` component.
+- Added `timer picker` component.
+- Added `radio` and `checkbox` components.
+- Added `cupertino-context-menu` and `slider` widget.
+- Fixed context menu demo.
+- Fixed button text color to use CSS variables.
+- Added CSS variables for Cupertino gallery.
+- Updated Cupertino button implementation and usage.
+- Added `textarea` demo page.
+
+### MiraclePlus Examples
+
+- Switched MiraclePlus to prerendering mode.
+- Fixed MiraclePlus demo.
+- Fixed toast pop error.
+
+### Hybrid Router
+
+- Added hybrid router template.
+- Added `initialRoute` parameter for hybrid router delegate.
+- Added ECharts playground.
+- Added `ListTile` and `ListSection` components.
+- Enhanced `FlutterListViewElement` with platform-specific refresh controls.
+- Added loading icon for loading more items.
+- Added support for the `share` method.
+
+## 0.21.0-beta.2
+
+## Core Features
+
+**WebF API**
+
+1. **Add WebFRouterView.fromControllerName API**
+   When used in the `onGenerateRoute` callback of Navigator, this API automatically manages the lifecycle, including initialization, disposal, and displaying the loading widget. Users only need to specify the controller name and customize the loading widget.
+
+   Example:
+   ```dart
+   Route<dynamic>? handleOnGenerateRoute(RouteSettings settings) {
+       return CupertinoPageRoute(
+         settings: settings,
+         builder: (context) {
+           return WebFRouterView.fromControllerName(
+               controllerName: webfPageName.value,
+               path: settings.name!,
+               builder: (context, controller) {
+                 return WebFSubView(controller: controller, path: settings.name!);
+               },
+               loadingWidget: _WebFDemoState.buildSplashScreen());
+         },
+       );
+   }
+   ```
+
+2. **Support for Updating WebF Controller by Name in WebFControllerManager**
+   For created WebFControllers with a name, users can update the controller and its rendering content by calling `WebFControllerManager.instance.updateWithPreload` or `WebFControllerManager.instance.updateWithPrerendering` to reinitialize and preload or prerender with the same controller name.
+
+   Example:
+   ```dart
+   WebFControllerManager.instance.updateWithPreload(
+       createController: () => WebFController(
+             initialRoute: '/',
+             routeObserver: routeObserver,
+             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+           ),
+       name: 'html/css',
+       routes: {
+         '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
+         '/positioned_layout': (context, controller) =>
+             WebFSubView(path: '/positioned_layout', controller: controller),
+       },
+       bundle: WebFBundle.fromUrl('assets:///vue_project/dist/index.html'));
+   ```
+
+3. **Add WebFController.cookieManager for App-Level Cookie Management**
+4. Add `initialRoute` and `initialState` for the initialize hybrid route path and state when initialize WebF.
+
+---
+
+**Hybrid Router**
+
+1. **Add Hybrid Router Change Event for `<webf-router-link />` Element**
+   You can now listen for the `hybridrouterchange` event in the `<webf-router-link />` element when the hybrid router pushes in or pops back.
+
+   Example:
+   ```vue
+   <webf-router-link :path="path" @onscreen="onScreen" :title="title" @hybridrouterchange="onRouterChange">
+     <slot v-if="isMounted"></slot>
+   </webf-router-link>
+   ```
+
+   The `HybridRouterChangeEvent` provides the following properties:
+   ```typescript
+   interface HybridRouterChangeEvent extends Event {
+     readonly state: any; // The state object for the current path
+     readonly kind: string;
+     readonly path: string;
+     new(): HybridRouterChangeEvent;
+   }
+   ```
+
+   There are four kinds of `HybridRouterChangeEvent`:
+  1. `didPopNext` – Called when the top route is popped off, and the current route shows up.
+  2. `didPop` – Called when the current route is pushed.
+  3. `didPush` – Called when the current route is popped off.
+  5. `didPushNext` – Called when a new route is pushed, and the current route is no longer visible.
+
+2. **Fix WebF App Rebuild Triggered by Hybrid Router Push and Pop**
+3. **Fix hybridRouter.state When Pushing from Another Router Page**
+4. **Add More APIs for Hybrid Router**
+  1. `pushNamed` – Push a named route onto the navigator that most tightly encloses the given context.
+  2. `restorablePopAndPushNamed` – Restorably pop the current route and push a named route.
+  3. `pushReplacementNamed` – Push a replacement named route.
+  4. `canPop` – Whether the navigator can be popped.
+  6. `maybePop` – Pop the top-most route off, only if it's not the last route.
+  7. `popAndPushNamed` – Pop the current route off and push a named route in its place.
+  8. `popUntil` – Pops until a route with the given name.
+  9. `pushNamedAndRemoveUntil` – Push the route with the given name and remove routes until the named route is reached.
+
+---
+
+**Layout**
+
+1. **Fix Flex Item Layout Size When Parent is a Flex Container and Overflows**
+2. **Fix Positioned Element Not Updating Offset Position When Scrolling**
+3. **Fix Replaced Element Intrinsic Layout Size as Flex Item**
+
+---
+
+**Gestures**
+
+1. **Fix Draggable Effect Demo Built with React.js Based on `ontouchstart` and `ontouchmove` Gestures**
+   Demo URL: [http://andycall.oss-cn-beijing.aliyuncs.com/demo/dragable-list.js](http://andycall.oss-cn-beijing.aliyuncs.com/demo/dragable-list.js)
+
+---
+
+**JS Runtime**
+
+1. **Fix Memory Leaks for Unresolved Promises**
+2. **Fix Null Pointer Crash for `removeEventListener`**
+
+---
+
+**Miracle Plus**
+
+1. **Add Skeleton Effect for Page Loading**
+2. **Support Dark Mode for All Pages**
+3. **Add Cupertino Library Gallery**
+
+---
+
+**Others**
+
+1. **Upgrade Hive Dependencies to `hive_ce@2.10.1`**
+
+## 0.21.0-beta.1
+
+**Bug Fixes**
+
+1. Fixed known issues during the Rendering Architecture Migration:
+   1. Fixed `WebF.methodChannel` not being initialized.
+   2. Reworked CSS overflow.
+   3. Reworked CSS positioned layout.
+   4. Reworked CSSOM API (`Element.offsetTop`, `Element.scrollTo`, etc.).
+   5. Fixed margin collapse in various combination cases.
+   6. Supported CSSOM API for `<webf-listview />`.
+2. Fixed CSS style inspection through Chrome DevTools.
+
+**Features**
+
+1. Added `webf.hybridRouter.path` and `webf.hybridRouter.replaceState` APIs.
+2. Added `onscreen` and `offscreen` events for all DOM elements.
+3. Added CSS stacking context support.
+4. Supported reloading WebF pages through Chrome DevTools.
+5. Supported overriding WebF modules.
+6. Supported initializing `WebFController` without any rendering context.
+7. Added `WebFControllerManager` to maintain the maximum number of alive and attached `WebFController` instances.
+
+
 ## 0.20.0
 
 Upgrade to enterprise version, which starts at 0.20.0 version.
 
 + Feat: Add support for fully async internal binding API.
-+ Feat: Optimize the performance WidgetElement binding API. 
++ Feat: Optimize the performance WidgetElement binding API.
 + Feat: Add MediaQuery and Dark mode support.
 + Feat: Redesigned Flutter Widget Adapter System.
 + Feat: Add Echarts.js with line char graph support.
