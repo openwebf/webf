@@ -79,7 +79,7 @@ class HybridHistoryModule extends BaseModule {
 
   HybridHistoryModule(ModuleManager? moduleManager) : super(moduleManager);
 
-  BuildContext get _context => moduleManager!.controller.currentBuildContext!;
+  BuildContext? get _context => moduleManager?.controller.currentBuildContext;
 
   void back() async {
     pop();
@@ -88,10 +88,10 @@ class HybridHistoryModule extends BaseModule {
   /// Pop the current route - matches Flutter's Navigator.pop
   void pop([Object? result]) {
     if (_delegate != null) {
-      _delegate!.pop(_context);
+      _delegate!.pop(_context!);
       return;
     }
-    Navigator.pop(_context, result);
+    Navigator.pop(_context!, result);
   }
 
   /// Push a named route onto the navigator that most tightly encloses the given
@@ -104,10 +104,10 @@ class HybridHistoryModule extends BaseModule {
   /// Push a named route onto the navigator - matches Flutter's Navigator.pushNamed
   void pushNamed(String routeName, {Object? arguments}) {
     if (_delegate != null) {
-      _delegate!.pushNamed(_context, routeName, arguments: arguments);
+      _delegate!.pushNamed(_context!, routeName, arguments: arguments);
       return;
     }
-    Navigator.pushNamed(_context, routeName, arguments: arguments);
+    Navigator.pushNamed(_context!, routeName, arguments: arguments);
   }
 
   /// Pop the current route off the navigator that most tightly encloses the
@@ -120,9 +120,9 @@ class HybridHistoryModule extends BaseModule {
   /// Restorably pop the current route and push a named route - matches Flutter's Navigator
   String restorablePopAndPushNamed(String routeName, {Object? arguments}) {
     if (_delegate != null) {
-      return _delegate!.restorablePopAndPushNamed(_context, routeName, arguments: arguments);
+      return _delegate!.restorablePopAndPushNamed(_context!, routeName, arguments: arguments);
     }
-    return Navigator.restorablePopAndPushNamed(_context, routeName, arguments: arguments);
+    return Navigator.restorablePopAndPushNamed(_context!, routeName, arguments: arguments);
   }
 
   /// Original API - kept for backward compatibility
@@ -136,54 +136,54 @@ class HybridHistoryModule extends BaseModule {
   /// Push a replacement named route - matches Flutter's Navigator.pushReplacementNamed
   void pushReplacementNamed(String routeName, {Object? arguments}) {
     if (_delegate != null) {
-      _delegate!.replaceState(_context, arguments, routeName);
+      _delegate!.replaceState(_context!, arguments, routeName);
       return;
     }
-    Navigator.pushReplacementNamed(_context, routeName, arguments: arguments);
+    Navigator.pushReplacementNamed(_context!, routeName, arguments: arguments);
   }
 
   String path() {
     String? initialRoute = moduleManager!.controller.initialRoute;
     if (_delegate != null) {
-      return _delegate!.path(_context, initialRoute);
+      return _delegate!.path(_context!, initialRoute);
     }
-    String? currentPath = ModalRoute.of(_context)?.settings.name;
+    String? currentPath = ModalRoute.of(_context!)?.settings.name;
     return currentPath ?? initialRoute ?? '';
   }
 
   /// Whether the navigator can be popped.
   bool canPop() {
     if (_delegate != null) {
-      return _delegate!.canPop(_context);
+      return _delegate!.canPop(_context!);
     }
-    return Navigator.canPop(_context);
+    return Navigator.canPop(_context!);
   }
 
   /// Pop the top-most route off, only if it's not the last route.
   Future<bool> maybePop([Object? result]) async {
     if (_delegate != null) {
-      return await _delegate!.maybePop(_context, result);
+      return await _delegate!.maybePop(_context!, result);
     }
-    return await Navigator.maybePop(_context, result);
+    return await Navigator.maybePop(_context!, result);
   }
 
   /// Pop the current route off and push a named route in its place.
   void popAndPushNamed(String routeName, {Object? arguments}) {
     if (_delegate != null) {
-      _delegate!.popAndPushNamed(_context, routeName, arguments: arguments);
+      _delegate!.popAndPushNamed(_context!, routeName, arguments: arguments);
       return;
     }
-    Navigator.popAndPushNamed(_context, routeName, arguments: arguments);
+    Navigator.popAndPushNamed(_context!, routeName, arguments: arguments);
   }
 
   /// Pops until a route with the given name.
   void popUntil(String routeName) {
     bool predicateFunc(Route<dynamic> route) => route.settings.name == routeName;
     if (_delegate != null) {
-      _delegate!.popUntil(_context, predicateFunc);
+      _delegate!.popUntil(_context!, predicateFunc);
       return;
     }
-    Navigator.popUntil(_context, predicateFunc);
+    Navigator.popUntil(_context!, predicateFunc);
   }
 
   /// Push the route with the given name and remove routes until the predicate returns true.
@@ -198,7 +198,7 @@ class HybridHistoryModule extends BaseModule {
     bool predicateFunc(Route<dynamic> route) => route.settings.name == untilRouteName;
     if (_delegate != null) {
       _delegate!.pushNamedAndRemoveUntil(
-        _context,
+        _context!,
         newRouteName,
         predicateFunc,
         arguments: arguments
@@ -206,7 +206,7 @@ class HybridHistoryModule extends BaseModule {
       return;
     }
     Navigator.pushNamedAndRemoveUntil(
-      _context,
+      _context!,
       newRouteName,
       predicateFunc,
       arguments: arguments
@@ -221,15 +221,19 @@ class HybridHistoryModule extends BaseModule {
       paramsList = params as List<dynamic>;
     }
 
+    if (_context == null) {
+      throw FlutterError('Could not invoke HybridHistory API when flutter context was not attached');
+    }
+
     switch (method) {
       case 'state':
         Map<String, dynamic>? initialState = moduleManager!.controller.initialState;
 
         if (_delegate != null) {
-          return _delegate!.state(_context, initialState);
+          return _delegate!.state(_context!, initialState);
         }
 
-        var route = ModalRoute.of(_context);
+        var route = ModalRoute.of(_context!);
 
         if (route?.settings.arguments != null) {
           return jsonEncode(route!.settings.arguments);
