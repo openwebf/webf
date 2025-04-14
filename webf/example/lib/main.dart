@@ -28,6 +28,7 @@ import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
 import 'custom_hybrid_history_delegate.dart';
+import 'custom_listview.dart';
 import 'expandable_fab.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
@@ -38,7 +39,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 5,
+      maxAliveInstances: 6,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -106,7 +107,7 @@ void main() async {
         routeObserver: routeObserver,
         devToolsService: kDebugMode ? ChromeDevToolsService() : null,
       ),
-      bundle: WebFBundle.fromUrl('http://localhost:3000/hybrid_router/build'),
+      bundle: WebFBundle.fromUrl('assets:///hybrid_router/build/index.html'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -153,6 +154,8 @@ void main() async {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
+
+  WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
 
   runApp(MyApp(savedThemeMode: savedThemeMode));
 }

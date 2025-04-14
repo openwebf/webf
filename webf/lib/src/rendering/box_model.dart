@@ -62,8 +62,8 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
 
       Axis scrollDirection = Axis.vertical;
 
-      if (ancestor is RenderWidget && ancestor.renderStyle.target is FlutterListViewElement) {
-        scrollDirection = (ancestor.renderStyle.target as FlutterListViewElement).scrollDirection;
+      if (ancestor is RenderWidget && ancestor.renderStyle.target is WebFListViewElement) {
+        scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).scrollDirection;
       }
 
       double layoutOffset = (childRenderer.parentData as SliverMultiBoxAdaptorParentData).layoutOffset ?? 0.0;

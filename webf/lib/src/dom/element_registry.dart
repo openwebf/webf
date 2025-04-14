@@ -44,8 +44,8 @@ void defineElement(String name, ElementCreator creator) {
   _htmlRegistry[name] = creator;
 }
 
-void defineWidgetElement(String name, ElementCreator creator) {
-  if (_widgetElements.containsKey(name)) {
+void defineWidgetElement(String name, ElementCreator creator, {bool override = false}) {
+  if (_widgetElements.containsKey(name) && !override) {
     throw Exception('An element with name "$name" has already been defined.');
   }
   _widgetElements[name] = creator;
@@ -198,8 +198,8 @@ void defineBuiltInElements() {
   defineElement(BODY, (context) => BodyElement(context));
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
-  defineWidgetElement(LISTVIEW, (context) => FlutterListViewElement(context));
-  defineWidgetElement(WEBF_LISTVIEW, (context) => FlutterListViewElement(context));
+  defineWidgetElement(LISTVIEW, (context) => WebFListViewElement(context));
+  defineWidgetElement(WEBF_LISTVIEW, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
 
   // Hybrid Routers

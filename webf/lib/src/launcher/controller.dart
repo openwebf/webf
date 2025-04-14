@@ -287,6 +287,8 @@ class WebFController {
   ui.FlutterView? get ownerFlutterView => _ownerFlutterView;
 
   final List<BuildContext> _buildContextStack = [];
+  /// Get current attached buildContexts.
+  /// Especially useful to detect how many hybrid route pages attached to the Flutter tree.
   List<BuildContext> get buildContextStack => _buildContextStack;
   void pushNewBuildContext({required BuildContext context}) {
     _buildContextStack.add(context);
