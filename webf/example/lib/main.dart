@@ -112,7 +112,7 @@ void main() async {
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
 
-  WebFControllerManager.instance.a z(
+  WebFControllerManager.instance.addWithPreload(
       name: 'cupertino_gallery',
       createController: () => WebFController(
             initialRoute: '/',

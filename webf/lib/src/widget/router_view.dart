@@ -137,12 +137,12 @@ class _WebFRouterViewElement extends StatefulElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    widget.controller.pushNewBuildContext(this);
+    widget.controller.pushNewBuildContext(context: this);
   }
 
   @override
   void unmount() {
-    widget.controller.popBuildContext();
+    widget.controller.popBuildContext(context: this);
     super.unmount();
   }
 

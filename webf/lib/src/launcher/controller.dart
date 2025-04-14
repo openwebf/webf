@@ -288,13 +288,17 @@ class WebFController {
 
   final List<BuildContext> _buildContextStack = [];
   List<BuildContext> get buildContextStack => _buildContextStack;
-  void pushNewBuildContext(BuildContext context) {
+  void pushNewBuildContext({required BuildContext context}) {
     _buildContextStack.add(context);
   }
 
-  void popBuildContext() {
+  void popBuildContext({BuildContext? context}) {
     if (_buildContextStack.isNotEmpty) {
-      _buildContextStack.removeLast();
+      if (context != null) {
+        _buildContextStack.remove(context);
+      } else {
+        _buildContextStack.removeLast();
+      }
     }
   }
 
@@ -1005,7 +1009,7 @@ class WebFController {
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
-    pushNewBuildContext(context);
+    pushNewBuildContext(context: context);
   }
 
   /// Detaches the WebF controller from the Flutter widget tree.
