@@ -271,8 +271,7 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    await widget.controller.controllerOnLoadCompleter.future;
-    flushUICommand(widget.controller.view, nullptr);
+    await widget.controller.view.initialRouteElementMountedCompleter.future;
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
     widget.controller.view.document.dispatchEvent(event);
@@ -289,8 +288,7 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    await widget.controller.controllerOnLoadCompleter.future;
-    flushUICommand(widget.controller.view, nullptr);
+    await widget.controller.view.initialRouteElementMountedCompleter.future;
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
     widget.controller.view.document.dispatchEvent(event);

@@ -40,12 +40,12 @@ class WebFViewController implements WidgetsBindingObserver {
 
   WebFViewController(
       {this.background,
-        this.enableDebug = false,
-        required this.rootController,
-        required this.runningThread,
-        this.navigationDelegate,
-        this.gestureListener,
-        this.initialCookies}) {}
+      this.enableDebug = false,
+      required this.rootController,
+      required this.runningThread,
+      this.navigationDelegate,
+      this.gestureListener,
+      this.initialCookies}) {}
 
   bool _inited = false;
   bool get inited => _inited;
@@ -95,10 +95,16 @@ class WebFViewController implements WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
+  Completer<void> initialRouteElementMountedCompleter = Completer();
+
   final Map<String, WidgetElement> _hybridRouterViews = {};
 
   void setHybridRouterView(String path, WidgetElement root) {
     _hybridRouterViews[path] = root;
+
+    if (rootController.initialRoute == path && !initialRouteElementMountedCompleter.isCompleted) {
+      initialRouteElementMountedCompleter.complete();
+    }
   }
 
   RouterLinkElement? getHybridRouterView(String path) {
@@ -186,7 +192,7 @@ class WebFViewController implements WidgetsBindingObserver {
 
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
-    for (int i = 0; i < _onFlutterAttached.length; i ++) {
+    for (int i = 0; i < _onFlutterAttached.length; i++) {
       _onFlutterAttached[i]();
     }
     _onFlutterAttached.clear();
