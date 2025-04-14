@@ -25,8 +25,7 @@ describe('Box border', () => {
     await snapshot(div);
   });
 
-  // @TODO: Support border-style: dashed.
-  xit('dashed border', async () => {
+  it('dashed border', async () => {
     const div = createElementWithStyle('div', {
       width: '100px',
       height: '100px',
@@ -36,13 +35,39 @@ describe('Box border', () => {
     await snapshot(div);
   });
 
-  // @TODO: Support border-style: dashed.
-  xit('dashed with backgroundColor', async () => {
+  it('dashed with backgroundColor', async () => {
     const div = createElementWithStyle('div', {
       width: '100px',
       height: '100px',
       border: '10px dashed red',
       backgroundColor: 'green',
+    });
+    append(BODY, div);
+    await snapshot(div);
+  });
+
+  it('dashed border with border-radius', async () => {
+    const div = createElementWithStyle('div', {
+      width: '100px',
+      height: '100px',
+      border: '5px dashed blue',
+      borderRadius: '20px',
+      backgroundColor: 'yellow',
+    });
+    append(BODY, div);
+    await snapshot(div);
+  });
+
+  it('dashed border with different border-radius values', async () => {
+    const div = createElementWithStyle('div', {
+      width: '100px',
+      height: '100px',
+      border: '8px dashed purple',
+      borderTopLeftRadius: '10px',
+      borderTopRightRadius: '20px',
+      borderBottomRightRadius: '30px',
+      borderBottomLeftRadius: '40px',
+      backgroundColor: 'lightblue',
     });
     append(BODY, div);
     await snapshot(div);

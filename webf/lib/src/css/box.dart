@@ -13,8 +13,17 @@ mixin CSSBoxMixin on RenderStyle {
   final DecorationPosition decorationPosition = DecorationPosition.background;
   final ImageConfiguration imageConfiguration = ImageConfiguration.empty;
 
+  CSSBoxDecoration? _cachedDecoration;
+
+  @override
+  void resetBoxDecoration() {
+    _cachedDecoration = null;
+  }
+
   /// What decoration to paint, should get value after layout.
   CSSBoxDecoration? get decoration {
+    if (_cachedDecoration != null) return _cachedDecoration;
+
     List<Radius>? radius = this.borderRadius;
     List<BorderSide>? borderSides = this.borderSides;
 
@@ -57,7 +66,7 @@ mixin CSSBoxMixin on RenderStyle {
       );
     }
 
-    return CSSBoxDecoration(
+    return _cachedDecoration = CSSBoxDecoration(
       boxShadow: shadows,
       color: gradient != null ? null : backgroundColor?.value, // FIXME: chrome will work with gradient and color.
       image: decorationImage,

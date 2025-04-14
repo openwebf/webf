@@ -10,6 +10,7 @@ mixin CSSBoxShadowMixin on RenderStyle {
     if (value == _boxShadow) return;
     _boxShadow = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   List<CSSBoxShadow>? get boxShadow => _boxShadow;

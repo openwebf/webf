@@ -205,6 +205,7 @@ const String CLIP = 'clip';
 
 // Border
 const String SOLID = 'solid';
+const String DASHED = 'dashed';
 const String THIN = 'thin'; // A thin border.
 const String MEDIUM = 'medium'; // A medium border.
 const String THICK = 'thick'; // A thick border.

@@ -85,6 +85,8 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   void setCSSVariable(String identifier, String value);
 
+  void resetBoxDecoration();
+
   // Geometry
   CSSLengthValue get top;
 

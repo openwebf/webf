@@ -3,12 +3,27 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:ui' as ui show Image;
+import 'dart:ui' as ui show Image, PathMetrics;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
+
+// A circular list implementation that allows access in a circular fashion.
+class CircularIntervalList<T> {
+  CircularIntervalList(this._values);
+
+  final List<T> _values;
+  int _index = 0;
+
+  T get next {
+    if (_index >= _values.length) {
+      _index = 0;
+    }
+    return _values[_index++];
+  }
+}
 
 enum _BorderDirection { top, bottom, left, right }
 
@@ -79,6 +94,82 @@ class BoxDecorationPainter extends BoxPainter {
         _paintBoxShadow(canvas, rect, textDirection, boxShadow);
       }
     }
+  }
+
+  void _paintDashedBorder(Canvas canvas, Rect rect, TextDirection? textDirection) {
+    if (_decoration.border == null) return;
+
+    // Get the border instance and check if it's dashed
+    Border border = _decoration.border as Border;
+    if (border.top is! ExtendedBorderSide ||
+        (border.top as ExtendedBorderSide).extendBorderStyle != CSSBorderStyleType.dashed) {
+      return;
+    }
+
+    // Get side properties from the top border (assuming uniform border)
+    ExtendedBorderSide side = border.top as ExtendedBorderSide;
+
+    // Skip if the border side is not visible
+    if (side.extendBorderStyle == CSSBorderStyleType.none || side.width == 0.0) return;
+
+    // Create a paint object for the border
+    final Paint paint = Paint()
+      ..color = side.color
+      ..strokeWidth = side.width
+      ..style = PaintingStyle.stroke;
+
+    // Define dash pattern (dash length, gap length)
+    // Standard dash pattern is 3x the line width for the dash, 3x for the gap
+    final double dashLength = side.width * 3;
+    final double dashGap = side.width * 3;
+
+    // Create the path for the complete border
+    Path borderPath = Path();
+
+    // Handle differently based on whether we have border radius
+    if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+      RRect rrect = _decoration.borderRadius!.toRRect(rect);
+      borderPath.addRRect(rrect);
+    } else {
+      borderPath.addRect(rect);
+    }
+
+    // Draw the dashed border
+    canvas.drawPath(
+      dashPath(
+        borderPath,
+        dashArray: CircularIntervalList<double>([dashLength, dashGap]),
+      ),
+      paint,
+    );
+  }
+
+  // Helper function to create a dashed path
+  Path dashPath(
+    Path source, {
+    required CircularIntervalList<double> dashArray,
+  }) {
+    final Path dest = Path();
+    final ui.PathMetrics metrics = source.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0.0;
+      bool draw = true;
+
+      while (distance < metric.length) {
+        final double length = dashArray.next;
+        if (draw) {
+          dest.addPath(
+            metric.extractPath(distance, distance + length),
+            Offset.zero,
+          );
+        }
+        distance += length;
+        draw = !draw;
+      }
+    }
+
+    return dest;
   }
 
   /// An outer box-shadow casts a shadow as if the border-box of the element were opaque.
@@ -388,13 +479,30 @@ class BoxDecorationPainter extends BoxPainter {
       _paintBackgroundImage(canvas, backgroundImageRect, configuration);
     }
 
-    _decoration.border?.paint(
-      canvas,
-      rect,
-      shape: _decoration.shape,
-      borderRadius: _decoration.borderRadius,
-      textDirection: configuration.textDirection,
-    );
+    // Check if we have a dashed border
+    bool hasDashedBorder = false;
+
+    if (_decoration.border != null) {
+      Border border = _decoration.border as Border;
+
+      // Check if top border is dashed - assuming uniform border
+      hasDashedBorder = border.top is ExtendedBorderSide &&
+                       (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+    }
+
+    // If we have a dashed border, use our custom painter
+    if (hasDashedBorder) {
+      _paintDashedBorder(canvas, rect, textDirection);
+    } else {
+      // Otherwise use Flutter's built-in border painting
+      _decoration.border?.paint(
+        canvas,
+        rect,
+        shape: _decoration.shape,
+        borderRadius: _decoration.borderRadius,
+        textDirection: configuration.textDirection,
+      );
+    }
 
     _paintShadows(canvas, rect, textDirection);
   }
@@ -402,7 +510,6 @@ class BoxDecorationPainter extends BoxPainter {
   @override
   String toString() => 'BoxPainter for $_decoration';
 }
-
 /// Forked from flutter of [DecorationImagePainter] Class.
 /// https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/painting/decoration_image.dart#L208
 class BoxDecorationImagePainter {

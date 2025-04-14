@@ -149,6 +149,7 @@ mixin CSSBackgroundMixin on RenderStyle {
       });
     }
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-origin
@@ -160,6 +161,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundOrigin) return;
     _backgroundOrigin = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   @override
@@ -170,6 +172,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-image
@@ -185,6 +188,7 @@ mixin CSSBackgroundMixin on RenderStyle {
 
     _backgroundImage = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-position-x
@@ -196,6 +200,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundPositionX) return;
     _backgroundPositionX = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-position-y
@@ -207,6 +212,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundPositionY) return;
     _backgroundPositionY = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-size
@@ -218,6 +224,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundSize) return;
     _backgroundSize = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-attachment
@@ -229,6 +236,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundAttachment) return;
     _backgroundAttachment = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   /// Background-repeat
@@ -240,6 +248,7 @@ mixin CSSBackgroundMixin on RenderStyle {
     if (value == _backgroundRepeat) return;
     _backgroundRepeat = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 }
 

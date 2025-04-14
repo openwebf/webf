@@ -374,12 +374,44 @@ describe('border', () => {
       // const thin = Number(thinWidth.replace('px', ''))
       // const medium = Number(mediumWidth.replace('px', ''))
       // const thick = Number(thickWidth.replace('px', ''))
-        
+
       // console.log(thin, medium, thick);
       // expect(0).toBeLessThanOrEqual(thin);
       // expect(thin).toBeLessThanOrEqual(medium);
       // expect(medium).toBeLessThanOrEqual(thick);
       done();
     }
-  })
+  });
+
+  it('dashed border style', async () => {
+    let div = createElement('div', {
+      xmlns: 'http://www.w3.org/1999/xhtml',
+      style: {
+        border: '5px dashed blue',
+        height: '100px',
+        width: '100px',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(div);
+
+    await snapshot();
+  });
+
+  it('dashed border style with border-radius', async () => {
+    let div = createElement('div', {
+      xmlns: 'http://www.w3.org/1999/xhtml',
+      style: {
+        border: '8px dashed green',
+        borderRadius: '20px',
+        backgroundColor: 'yellow',
+        height: '100px',
+        width: '100px',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(div);
+
+    await snapshot();
+  });
 });
