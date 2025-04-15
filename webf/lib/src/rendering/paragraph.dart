@@ -573,7 +573,7 @@ class WebFRenderParagraph extends RenderBox
     // place each line according to W3C line-height rule.
     if (_lineRenders.length > 1) {
       _relayoutMultiLineText();
-    } else {
+    } else if (_lineRenders.length == 1) {
       _pollyFillSizeForOneLine();
     }
   }

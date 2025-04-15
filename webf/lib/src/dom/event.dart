@@ -132,7 +132,7 @@ mixin ElementEventMixin on ElementBase {
     }
   }
   void handleResizeChange(ResizeObserverEntry entry) {
-    dispatchEvent(ResizeEvent(entry));
+    dispatchEvent(ResizeEvent(entry).toCustomEvent());
   }
 }
 
