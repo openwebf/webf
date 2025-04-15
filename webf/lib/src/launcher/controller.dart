@@ -265,6 +265,21 @@ class WebFController {
     return getControllerOfJSContextId(contextId);
   }
 
+  /// Prints the render object tree for debugging purposes.
+  ///
+  /// @param routePath Optional path to a specific route whose render tree should be printed.
+  ///                 If null or matches initialRoute, prints the root render object tree.
+  ///                 Otherwise prints the render tree of the specified hybrid route view.
+  void printRenderObjectTree(String? routePath) {
+    if (routePath == null || routePath == initialRoute) {
+      debugPrint(view.getRootRenderObject()?.toStringDeep());
+    } else {
+      RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
+      String? renderObjectTree = routeLinkElement?.getRenderObjectTree();
+      debugPrint(renderObjectTree);
+    }
+  }
+
   /// Callback triggered when the title of the document changes.
   ///
   /// This is invoked when the document title is updated through JavaScript,

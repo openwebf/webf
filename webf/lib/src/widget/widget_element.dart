@@ -241,6 +241,10 @@ abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
     }
   }
 
+  String? getRenderObjectTree() {
+    return context.findRenderObject()?.toStringDeep();
+  }
+
   @override
   void dispose() {
     widgetElement._removeWidgetElementState(this);

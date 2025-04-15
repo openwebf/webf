@@ -43,6 +43,10 @@ class RouterLinkElement extends WidgetElement {
     }
   }
 
+  String? getRenderObjectTree() {
+    return state?.getRenderObjectTree();
+  }
+
   @override
   void disconnectedCallback() {
     super.disconnectedCallback();
