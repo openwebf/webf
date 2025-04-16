@@ -1,3 +1,20 @@
+## 0.21.0-beta.3+1
+
+### Features
+
+- feat: add WebFWidgetElementChild widget for pass outer constraints to inner HTMLElement child. (3a71af271)
+- feat: add controller.printRenderObjectTree API. (c505040ea)
+- feat: add create component utils for react (3373d4481)
+
+### Bug Fixes
+
+- fix: fix flush pending properties order. (1fa7d3673)
+- fix: fix change font size in html element with rem values. (80495dd1f)
+- fix: fix FontsAndImages specs. (7878474fc)
+- fix: fix module test specs. (b15a2bef4)
+- fix: fix null check with image onload. (fa2d8a935)
+- fix: fix race condition for check shared ui command is empty. (998bbd7a1)
+
 ## 0.21.0-beta.3
 
 ## WebF Core
