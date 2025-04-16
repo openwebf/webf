@@ -457,17 +457,8 @@ mixin CSSTextMixin on RenderStyle {
       } else if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
         if (renderParagraph.hasSize) {
-          // Manually layout text before text paint cause text style only
-          // takes effect after text has been layouted.
-          // renderParagraph.text = child.textSpan; TODO maybe need retain
-          renderParagraph.text = child.buildTextSpan();
-          bool placeHolderSpanUpdate = child.buildTextPlaceHolderSpan(renderParagraph);
-          if (placeHolderSpanUpdate) {
-            renderParagraph.markNeedsLayout();
-          } else {
-            renderParagraph.layoutText();
-            renderParagraph.markNeedsPaint();
-          }
+          // Mark as needs paint after text has been layouted.
+          renderParagraph.markNeedsPaint();
         } else {
           // Mark as needs layout if renderParagraph has not layouted yet.
           renderParagraph.markNeedsLayout();
