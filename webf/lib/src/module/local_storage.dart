@@ -54,7 +54,11 @@ class LocalStorageModule extends BaseModule {
         List<dynamic> keys = box.keys.toList();
         return keys;
       case 'key':
-        return box.keyAt(params);
+        try {
+          return box.keyAt(params);
+        } catch (e) {
+          return null;
+        }
       case 'clear':
         box.keys.forEach((key) {
           box.delete(key);

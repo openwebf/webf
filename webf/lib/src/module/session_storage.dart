@@ -32,7 +32,11 @@ class SessionStorageModule extends BaseModule {
         controller.sessionStorage.remove(params);
         break;
       case 'key':
-        return controller.sessionStorage.keys.elementAt(params);
+        try {
+          return controller.sessionStorage.keys.elementAt(params);
+        } catch(e, stack) {
+          return null;
+        }
       case 'clear':
         controller.sessionStorage.clear();
         break;

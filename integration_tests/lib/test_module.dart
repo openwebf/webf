@@ -51,9 +51,10 @@ class DemoModule extends BaseModule {
         return null;
       case 'callToDispatchEvent':
         CustomEvent customEvent = CustomEvent('click', detail: 'helloworld');
-        dynamic result =
-            dispatchEvent(event: customEvent, data: [1, 2, 3, 4, 5]);
-        assert(result == 'success');
+        dispatchEvent(event: customEvent, data: [1, 2, 3, 4, 5]).then((result) {
+          assert(result == 'success');
+        });
+        return '';
     }
   }
 
