@@ -27,4 +27,6 @@ export 'src/rendering/paragraph.dart';
 export 'src/rendering/line_break.dart';
 export 'src/rendering/box_wrapper.dart';
 export 'src/rendering/image.dart';
+export 'src/rendering/sliver_list.dart';
+export 'src/rendering/widget_element_child.dart';
 export 'src/rendering/child_node_size.dart';

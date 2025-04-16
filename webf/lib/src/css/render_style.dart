@@ -2306,7 +2306,13 @@ class CSSRenderStyle extends RenderStyle
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
-            logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
+            RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
+            if (ancestorRenderStyle.isSelfRenderWidget() && childWrapper != null) {
+              logicalWidth = childWrapper.constraints.maxWidth;
+            } else {
+              logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
+            }
+
             // Should subtract horizontal margin of own from its parent content width.
             if (logicalWidth != null) {
               logicalWidth -= renderStyle.margin.horizontal;

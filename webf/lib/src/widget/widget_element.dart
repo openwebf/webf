@@ -10,6 +10,7 @@ import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/launcher.dart';
 import 'package:webf/src/bridge/binding_object.dart';
 import 'package:webf/widget.dart';
 
@@ -28,6 +29,8 @@ abstract class WidgetElement extends dom.Element {
   void _removeWidgetElementState(WebFWidgetElementState oldState) {
     _widgetElementStates.remove(oldState);
   }
+
+  WebFController get controller => ownerDocument.controller;
 
   WebFWidgetElementState? get state {
     final stateFinder = _widgetElementStates.where((state) => state.mounted == true);

@@ -951,6 +951,21 @@ class RenderBoxModel extends RenderBox
     return scrollContainer;
   }
 
+  RenderWidgetElementChild? findWidgetElementChild() {
+    RenderObject? parent = this.parent;
+    while (parent != null) {
+      if (parent is RenderWidgetElementChild) {
+        return parent;
+      }
+      // There were no WebFWidgetElementChild in the build() of WebFWidgetElementState
+      if (parent is RenderWidget) {
+        return null;
+      }
+      parent = parent.parent;
+    }
+    return null;
+  }
+
   @override
   void applyPaintTransform(RenderBox child, Matrix4 transform) {
     super.applyPaintTransform(child, transform);
@@ -1290,7 +1305,8 @@ class RenderBoxModel extends RenderBox
 
   // Get the layout offset of renderObject to its ancestor which does not include the paint offset
   // such as scroll or transform.getLayoutTransformTo
-  Offset getOffsetToAncestor(Offset point, RenderBoxModel ancestor, {bool excludeScrollOffset = false, bool excludeAncestorBorderTop = true}) {
+  Offset getOffsetToAncestor(Offset point, RenderBoxModel ancestor,
+      {bool excludeScrollOffset = false, bool excludeAncestorBorderTop = true}) {
     Offset ancestorBorderWidth = Offset.zero;
     if (excludeAncestorBorderTop) {
       double ancestorBorderTop = ancestor.renderStyle.borderTopWidth?.computedValue ?? 0;
@@ -1461,6 +1477,8 @@ class RenderBoxModel extends RenderBox
         'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));
     properties.add(DiagnosticsProperty('width', renderStyle.width.value));
     properties.add(DiagnosticsProperty('height', renderStyle.height.value));
+    properties.add(DiagnosticsProperty('contentBoxLogicalWidth', renderStyle.contentBoxLogicalWidth));
+    properties.add(DiagnosticsProperty('contentBoxLogicalHeight', renderStyle.contentBoxLogicalHeight));
 
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));
