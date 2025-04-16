@@ -240,7 +240,7 @@ describe('Font', () => {
     return snapshot();
   });
 
-  it("computed", async () => {
+  it("computed", async (done) => {
     let target;
     let container;
     container = createElement(
@@ -263,6 +263,10 @@ describe('Font', () => {
       ]
     );
     BODY.appendChild(container);
-    test_computed_value('font', 'italic 800 12px 14px helvetica');
+    container.addEventListener('onscreen', () => {
+      test_computed_value('font', 'italic 800 12px 14px helvetica');
+      done();
+    })
+    
   })
 });

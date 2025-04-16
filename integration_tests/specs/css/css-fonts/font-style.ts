@@ -116,7 +116,7 @@ describe('FontStyle', () => {
     });
   });
 
-  it("computed", async () => {
+  it("computed", async (done) => {
     let target;
     target = createElement('div', {
       id: 'target',
@@ -127,8 +127,13 @@ describe('FontStyle', () => {
     });
     BODY.appendChild(target);
 
-    test_computed_value('font-style', 'normal');
-    test_computed_value('font-style', 'italic');
+    target.addEventListener('onscreen', () => {
+      test_computed_value('font-style', 'normal');
+      test_computed_value('font-style', 'italic');
+      done();
+    })
+
+    
     // test_computed_value('font-style', 'oblique');
 
   })
