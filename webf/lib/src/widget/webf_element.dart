@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
  */
 
 import 'package:flutter/widgets.dart';
