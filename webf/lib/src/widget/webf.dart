@@ -351,7 +351,9 @@ class WebFState extends State<WebF> with RouteAware {
           } else if (widget.controller.view.document.documentElement != null) {
             children.add(widget.controller.view.document.documentElement!.toWidget());
           } else {
-            children.add(Text('Load Error: HTML Element is Null'));
+            children.add(WebFHTMLElement(tagName: 'DIV', controller: widget.controller, parentElement: null, children: [
+              Text('Loading Error: the documentElement is Null')
+            ]));
           }
 
           Widget result = RepaintBoundary(

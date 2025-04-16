@@ -844,14 +844,14 @@ abstract class Element extends ContainerNode
 
   @override
   void connectedCallback() {
-    super.connectedCallback();
-    _updateNameMap(getAttribute(_NAME));
-    _updateIDMap(_id);
-
     if (managedByFlutterWidget) {
       applyStyle(style);
       style.flushPendingProperties();
     }
+
+    super.connectedCallback();
+    _updateNameMap(getAttribute(_NAME));
+    _updateIDMap(_id);
   }
 
   @override
