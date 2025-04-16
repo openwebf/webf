@@ -951,6 +951,20 @@ class RenderBoxModel extends RenderBox
     return scrollContainer;
   }
 
+  /// Finds the nearest [RenderWidgetElementChild] ancestor in the render tree.
+  /// 
+  /// This method traverses up the render tree looking for a [RenderWidgetElementChild]
+  /// which is used to pass Flutter widget constraints to WebF HTML elements.
+  /// 
+  /// The search stops when it either:
+  /// - Finds a [RenderWidgetElementChild] and returns it
+  /// - Encounters a [RenderWidget] (indicating no [WebFWidgetElementChild] was used in the build method)
+  /// - Reaches the root of the render tree
+  /// 
+  /// Returns null if no [RenderWidgetElementChild] is found in the ancestor chain.
+  /// 
+  /// This is used to access parent constraints for layout calculations, allowing HTML elements
+  /// to be aware of their Flutter widget container constraints for proper sizing and layout.
   RenderWidgetElementChild? findWidgetElementChild() {
     RenderObject? parent = this.parent;
     while (parent != null) {
