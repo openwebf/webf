@@ -452,7 +452,7 @@ class WebFRenderParagraph extends RenderBox
       usefulWidth = math.max(usefulWidth, newWidth);
     }
 
-    Rect lineRect = Rect.fromLTWH(totalLeft + metrics.left, old.top, usefulWidth - totalLeft, old.height);
+    Rect lineRect = Rect.fromLTWH(totalLeft,  old.top, usefulWidth - totalLeft, old.height);
 
     return [lineRect, textContent];
   }
