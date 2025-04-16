@@ -111,7 +111,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 
     // Fire image on load after codec created.
     scheduleMicrotask(() {
-      if (onImageLoad != null) {
+      if (onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
         onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
             codec.frameCount);
       }
