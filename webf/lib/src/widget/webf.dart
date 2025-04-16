@@ -348,8 +348,10 @@ class WebFState extends State<WebF> with RouteAware {
             } else {
               children.add(widget.controller.view.document.documentElement!.toWidget());
             }
-          } else {
+          } else if (widget.controller.view.document.documentElement != null) {
             children.add(widget.controller.view.document.documentElement!.toWidget());
+          } else {
+            children.add(Text('Load Error: HTML Element is Null'));
           }
 
           Widget result = RepaintBoundary(

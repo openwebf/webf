@@ -70,6 +70,15 @@ class HTMLElement extends Element {
   @override
   bool get isRendererAttachedToSegmentTree => attachedRenderer != null;
 
+  void _markEntireRenderObjectTreeNeedsLayout() {
+    visitor(flutter.RenderObject child) {
+      child.markNeedsLayout();
+      child.visitChildren(visitor);
+    }
+
+    renderStyle.visitChildren(visitor);
+  }
+
   @override
   void setRenderStyle(String property, String present, {String? baseHref}) {
     switch (property) {
@@ -83,6 +92,9 @@ class HTMLElement extends Element {
         } else if (present == CLIP) {
           present = HIDDEN;
         }
+        break;
+      case FONT_SIZE:
+        _markEntireRenderObjectTreeNeedsLayout();
         break;
     }
     super.setRenderStyle(property, present);

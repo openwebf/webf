@@ -1,6 +1,8 @@
 const path = require('path');
 const { minimatch } = require('minimatch');
 const glob = require('glob');
+const fs = require('fs');
+const JSON5 = require('json5');
 const execSync = require('child_process').execSync;
 const bableTransformSnapshotPlugin = require('./scripts/babel_transform_snapshot');
 
@@ -11,7 +13,7 @@ const resetRuntimePath = path.join(context, 'runtime/reset');
 const buildPath = path.join(context, '.specs');
 const testPath = path.join(context, 'specs');
 const snapshotPath = path.join(context, 'snapshots');
-const specGroup = require('./spec_group.json');
+const specGroup = JSON5.parse(fs.readFileSync(path.join(__dirname, './spec_group.json5')));
 
 let coreSpecFiles = [];
 let getSnapshotOption = () => ({ snapshotRoot: null, delayForSnapshot: false });
