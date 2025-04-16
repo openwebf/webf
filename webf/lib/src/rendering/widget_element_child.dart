@@ -8,13 +8,12 @@ import 'package:flutter/rendering.dart';
 /// A widget that passes outer constraints to inner WebF HTMLElement children.
 ///
 /// This widget serves as a bridge between Flutter widget constraints and WebF HTML elements.
-/// It exposes the Flutter layout constraints to the inner HTML elements, ensuring proper 
+/// It exposes the Flutter layout constraints to the inner HTML elements, ensuring proper
 /// sizing and layout when custom Flutter widgets interact with WebF HTML content.
 ///
 /// Typically used in custom WebFWidgetElementState implementations to ensure HTML elements
 /// properly receive and respect the parent widget's constraints.
 ///
-/// Example usage from example/lib/main.dart:
 /// ```dart
 /// @override
 /// Widget build(BuildContext context) {
