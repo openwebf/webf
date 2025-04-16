@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math' as math;

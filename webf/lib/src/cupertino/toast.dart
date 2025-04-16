@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Material, MaterialType, Colors;
 import 'package:webf/webf.dart';

@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'dart:ffi';
 import 'dart:convert' as convert;
 import 'dart:ui' as ui;

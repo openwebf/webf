@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 const TAG_SVG = 'SVG';
 const TAG_RECT = 'RECT';
 const TAG_PATH = 'PATH';

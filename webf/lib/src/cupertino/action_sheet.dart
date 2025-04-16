@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
