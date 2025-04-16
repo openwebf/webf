@@ -80,7 +80,14 @@ void SharedUICommand::clear() {
 // called by c++ to check if there are commands.
 bool SharedUICommand::empty() {
   if (context_->isDedicated()) {
-    return reserve_buffer_->empty() && waiting_buffer_->empty() && active_buffer->empty();
+    // simply spin wait for the swapBuffers to finish.
+    while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+    }
+
+    is_blocking_reading_.store(true, std::memory_order::memory_order_release);
+    int is_empty = reserve_buffer_->empty() && waiting_buffer_->empty() && active_buffer->empty();
+    is_blocking_reading_.store(false, std::memory_order::memory_order_release);
+    return is_empty;
   }
 
   return active_buffer->empty();
