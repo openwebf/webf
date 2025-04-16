@@ -33,7 +33,7 @@ class RenderLayoutParentData extends ContainerBoxParentData<RenderBox> {
 
 // Applies the layout transform up the tree to `ancestor`.
 //
-// ReturgetLayoutTransformTolocal layout coordinate system to the
+// Return getLayoutTransformTolocal layout coordinate system to the
 // coordinate system of `ancestor`.
 Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool excludeScrollOffset = false}) {
   final List<RenderObject> renderers = <RenderObject>[];
@@ -241,10 +241,6 @@ class RenderLayoutBox extends RenderBoxModel
 
   @override
   BoxConstraints getConstraints() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderLayoutBox.getConstraints()');
-    }
-
     BoxConstraints boxConstraints = super.getConstraints();
     if (isScrollingContentBox) {
       // fix overflow:scroll/auto nested overflow:scroll/auto
@@ -263,10 +259,6 @@ class RenderLayoutBox extends RenderBoxModel
           maxHeight: shouldInheritY ? parentConstraints.maxHeight : boxConstraints.maxHeight,
         );
       }
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
     }
 
     return boxConstraints;
@@ -318,21 +310,23 @@ class RenderLayoutBox extends RenderBoxModel
         child.renderStyle.effectiveOverflowX == CSSOverflowType.auto ||
         child.renderStyle.effectiveOverflowY == CSSOverflowType.auto ||
         child.renderStyle.effectiveOverflowY == CSSOverflowType.visible) {
-      Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
+      if (child.overflowRect != null) {
+        Rect childOverflowLayoutRect = child.overflowRect!.shift(Offset.zero);
 
-      // child overflowLayout rect need transform for parent`s cartesian coordinates
-      final Matrix4 transform = Matrix4.identity();
-      applyLayoutTransform(child, transform, false);
-      Offset tlOffset =
-      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
-      overflowRect = Rect.fromLTRB(
-          math.min(overflowRect.left, tlOffset.dx),
-          math.min(overflowRect.top, tlOffset.dy),
-          math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
-          math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
+        // child overflowLayout rect need transform for parent`s cartesian coordinates
+        final Matrix4 transform = Matrix4.identity();
+        applyLayoutTransform(child, transform, false);
+        Offset tlOffset =
+        MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+        overflowRect = Rect.fromLTRB(
+            math.min(overflowRect.left, tlOffset.dx),
+            math.min(overflowRect.top, tlOffset.dy),
+            math.max(overflowRect.right, tlOffset.dx + childOverflowLayoutRect.width),
+            math.max(overflowRect.bottom, tlOffset.dy + childOverflowLayoutRect.height));
+      }
+
+      addLayoutOverflow(overflowRect);
     }
-
-    addLayoutOverflow(overflowRect);
   }
 
   @override
@@ -450,6 +444,22 @@ class RenderLayoutBox extends RenderBoxModel
     return result;
   }
 
+  bool get isNegativeMarginChangeHSize {
+    return renderStyle.width.isAuto && isMarginNegativeHorizontal();
+  }
+
+  bool isMarginNegativeVertical() {
+    double? marginBottom = renderStyle.marginBottom.computedValue;
+    double? marginTop = renderStyle.marginTop.computedValue;
+    return marginBottom < 0 || marginTop < 0;
+  }
+
+  bool isMarginNegativeHorizontal() {
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    return marginLeft < 0 || marginRight < 0;
+  }
+
   /// Common layout content size (including flow and flexbox layout) calculation logic
   Size getContentSize({
     required double contentWidth,
@@ -462,6 +472,15 @@ class RenderLayoutBox extends RenderBoxModel
     double? specifiedContentWidth = renderStyle.contentBoxLogicalWidth;
     double? specifiedContentHeight = renderStyle.contentBoxLogicalHeight;
 
+    // Margin negative will set element which is static && not set width, size bigger
+    double? marginLeft = renderStyle.marginLeft.computedValue;
+    double? marginRight = renderStyle.marginRight.computedValue;
+    double? marginAddSizeLeft = 0;
+    double? marginAddSizeRight = 0;
+    if(isNegativeMarginChangeHSize) {
+      marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
+      marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
+    }
     // Flex basis takes priority over main size in flex item when flex-grow or flex-shrink not work.
     if (parent is RenderFlexLayout) {
       RenderBoxModel? parentRenderBoxModel = parent as RenderBoxModel?;
@@ -481,6 +500,11 @@ class RenderLayoutBox extends RenderBoxModel
 
     if (specifiedContentWidth != null) {
       finalContentWidth = math.max(specifiedContentWidth, contentWidth);
+    }
+    if(parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
+        parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
+      finalContentWidth += marginAddSizeLeft;
+      finalContentWidth += marginAddSizeRight;
     }
     if (specifiedContentHeight != null) {
       finalContentHeight = math.max(specifiedContentHeight, contentHeight);
@@ -917,6 +941,10 @@ class RenderBoxModel extends RenderBox
     }
   }
 
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
+  }
+
   @override
   void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
@@ -952,10 +980,6 @@ class RenderBoxModel extends RenderBox
   // Calculate constraints of renderBoxModel on layout stage and
   // only needed to be executed once on every layout.
   BoxConstraints getConstraints() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderBoxModel.getConstraints');
-    }
-
     // Inner scrolling content box of overflow element inherits constraints from parent
     // but has indefinite max constraints to allow children overflow
     if (isScrollingContentBox) {
@@ -985,10 +1009,6 @@ class RenderBoxModel extends RenderBox
           minHeight: 0,
           maxHeight: double.infinity,
         );
-      }
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
       }
 
       return constraints;
@@ -1080,10 +1100,6 @@ class RenderBoxModel extends RenderBox
       maxHeight: maxConstraintHeight,
     );
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
-    }
-
     return constraints;
   }
 
@@ -1120,6 +1136,16 @@ class RenderBoxModel extends RenderBox
     Size paddingBoxSize = renderStyle.wrapPaddingSize(_contentSize!);
     Size borderBoxSize = renderStyle.wrapBorderSize(paddingBoxSize);
     return constraints.constrain(borderBoxSize);
+  }
+
+  Size wrapOutContentSizeRight (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSizeRight(contentSize);
+    return renderStyle.wrapBorderSizeRight(paddingBoxSize);
+  }
+
+  Size wrapOutContentSize (Size contentSize) {
+    Size paddingBoxSize = renderStyle.wrapPaddingSize(contentSize);
+    return renderStyle.wrapBorderSize(paddingBoxSize);
   }
 
   // The contentSize of layout box
@@ -1233,7 +1259,7 @@ class RenderBoxModel extends RenderBox
     }
 
     // Positioned renderBoxModel will not trigger parent to relayout. Needs to update it's offset for itself.
-    if (parentData is RenderLayoutParentData) {
+    if (parentData is RenderLayoutParentData && parent is RenderBoxModel) {
       RenderLayoutParentData selfParentData = parentData as RenderLayoutParentData;
       RenderObject? parentBox = parent;
       if (parentBox is RenderPortal) {
@@ -1399,6 +1425,10 @@ class RenderBoxModel extends RenderBox
     Offset ancestorBorderWidth = Offset(ancestorBorderLeft, ancestorBorderTop);
 
     return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point - ancestorBorderWidth;
+  }
+
+  Offset getOffsetToRenderObjectAncestor(Offset point, RenderObject ancestor, {bool excludeScrollOffset = false}) {
+    return getLayoutTransformTo(this, ancestor, excludeScrollOffset: excludeScrollOffset) + point;
   }
 
   bool _hasLocalBackgroundImage(CSSRenderStyle renderStyle) {

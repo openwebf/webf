@@ -30,6 +30,7 @@ const String Q = 'Q';
 const String KBD = 'KBD';
 const String DFN = 'DFN';
 const String BR = 'BR';
+const String HR = 'HR';
 
 const Map<String, dynamic> _uDefaultStyle = {TEXT_DECORATION: UNDERLINE};
 
@@ -37,7 +38,10 @@ const Map<String, dynamic> _sDefaultStyle = {TEXT_DECORATION: LINE_THROUGH};
 
 const Map<String, dynamic> _smallDefaultStyle = {FONT_SIZE: SMALLER};
 
-const Map<String, dynamic> _codeDefaultStyle = {FONT_FAMILY: 'monospace'};
+const Map<String, dynamic> _codeDefaultStyle = {
+  DISPLAY: INLINE,
+  FONT_FAMILY: 'monospace'
+};
 
 const Map<String, dynamic> _boldDefaultStyle = {FONT_WEIGHT: BOLD};
 
@@ -46,7 +50,20 @@ const Map<String, dynamic> _abbrDefaultStyle = {
   TEXT_DECORATION_STYLE: DOTTED,
 };
 
+const Map<String, dynamic> _emDefaultStyle = {
+  DISPLAY: INLINE,
+  FONT_STYLE: ITALIC
+};
+
 const Map<String, dynamic> _markDefaultStyle = {BACKGROUND_COLOR: 'yellow', COLOR: 'black'};
+
+const Map<String, dynamic> _hrDefaultStyle = {
+  DISPLAY: BLOCK,
+  MARGIN: '1em 0',
+  BORDER_WIDTH: '0.5px',
+  BORDER_STYLE: SOLID,
+  BORDER_COLOR: 'rgb(136,136,136)',
+};
 
 const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
 
@@ -95,7 +112,7 @@ class EmphasisElement extends Element {
   EmphasisElement([BindingContext? context]) : super(context);
 
   @override
-  Map<String, dynamic> get defaultStyle => _defaultStyle;
+  Map<String, dynamic> get defaultStyle => _emDefaultStyle;
 }
 
 class CitationElement extends Element {
@@ -202,4 +219,11 @@ class MarkElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _markDefaultStyle;
+}
+
+class HRElement extends Element {
+  HRElement([BindingContext? context]) : super(context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => _hrDefaultStyle;
 }

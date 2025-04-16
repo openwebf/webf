@@ -54,10 +54,6 @@ class RenderLineBreak extends RenderReplaced {
 
   @override
   BoxConstraints getConstraints() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderLineBreak.getConstraints()');
-    }
-
     // BR element is a special element in HTML which accepts no style,
     // it dimension is only affected by the line-height of its parent.
     // https://www.w3.org/TR/CSS1/#br-elements
@@ -68,10 +64,6 @@ class RenderLineBreak extends RenderReplaced {
       minHeight: height,
       maxHeight: height,
     );
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
-    }
 
     return constraints;
   }

@@ -2383,17 +2383,11 @@ class CSSRenderStyle extends RenderStyle
   // Max width to constrain its children, used in deciding the line wrapping timing of layout.
   @override
   double get contentMaxConstraintsWidth {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderStyle.contentMaxConstraintsWidth');
-    }
 
     // If renderBoxModel definite content constraints, use it as max constrains width of content.
     BoxConstraints? contentConstraints =
         isSelfScrollingContentBox() ? getParentRenderStyle()!.contentConstraints() : this.contentConstraints();
     if (contentConstraints != null && contentConstraints.maxWidth != double.infinity) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
       return contentConstraints.maxWidth;
     }
 
@@ -2418,10 +2412,6 @@ class CSSRenderStyle extends RenderStyle
       //   </div>
       // </div>
       contentMaxConstraintsWidth = math.max(0, contentMaxConstraintsWidth);
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
     }
 
     return contentMaxConstraintsWidth;

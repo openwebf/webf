@@ -4,14 +4,44 @@
  */
 
 import 'dart:ui' as ui show LineMetrics, Gradient, Shader, TextBox, TextHeightBehavior;
+import 'dart:math' as math;
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/rendering/text.dart' show InlineBoxConstraints, MultiLineBoxConstraints, RenderTextBox, webfTextMaxLines;
+import 'package:webf/src/rendering/text_span.dart';
+import 'package:webf/src/rendering/webf_text_painter.dart';
 import 'package:webf/foundation.dart';
 
 const String _kEllipsis = '\u2026';
+
+class WebFRenderTextLine {
+  late Rect lineRect = Rect.zero;
+  late WebFTextPainter textPainter;
+  late Offset paintOffset = Offset.zero;
+  late double fontHeight = 0;
+  late double leading = 0;
+
+  WebFRenderTextLine();
+
+  double get paintTop {
+    if (paintOffset.dy > lineRect.top) {
+      return paintOffset.dy + leading/2;
+    }
+    // when lineHeight < fontSize, offset is negative
+    // if (fontHeight != 0 && fontHeight > lineRect.height) {
+    //   return lineRect.top + leading/2;
+    // }
+
+    return lineRect.top + leading/2;
+  }
+
+  double get paintLeft {
+    return lineRect.left + paintOffset.dx;
+  }
+}
 
 /// Forked from Flutter RenderParagraph
 /// Flutter's paragraph line-height calculation logic differs from web's
@@ -48,7 +78,7 @@ class WebFRenderParagraph extends RenderBox
         _softWrap = softWrap,
         _overflow = overflow,
         _foregroundCallback = foregroundCallback,
-        _textPainter = TextPainter(
+        _textPainter = WebFTextPainter(
             text: text,
             textAlign: textAlign,
             textDirection: textDirection,
@@ -65,29 +95,31 @@ class WebFRenderParagraph extends RenderBox
     child.parentData = TextParentData();
   }
 
-  final TextPainter _textPainter;
+  final WebFTextPainter _textPainter;
 
-  // The text painter of each line
-  late List<TextPainter> _lineTextPainters;
-
-  // The line mertics of paragraph
+  // The line metrics of paragraph
   late List<ui.LineMetrics> _lineMetrics;
 
-  // The vertical offset of each line
-  late List<double> _lineOffset;
+  List<ui.LineMetrics> get lineMetrics => _lineMetrics;
+
+  late List<WebFRenderTextLine> _lineRenders;
+
+  List<WebFRenderTextLine> get lineRenderList => _lineRenders;
 
   // The line height of paragraph
   double? _lineHeight;
+
   double? get lineHeight => _lineHeight;
+
   set lineHeight(double? value) {
     if (lineHeight == value) return;
     _lineHeight = value;
   }
 
   // The text to display.
-  TextSpan get text => _textPainter.text as TextSpan;
+  WebFTextSpan get text => _textPainter.text as WebFTextSpan;
 
-  set text(TextSpan value) {
+  set text(WebFTextSpan value) {
     switch (_textPainter.text!.compareTo(value)) {
       case RenderComparison.identical:
       case RenderComparison.metadata:
@@ -106,6 +138,10 @@ class WebFRenderParagraph extends RenderBox
   set textAlign(TextAlign value) {
     if (_textPainter.textAlign == value) return;
     _textPainter.textAlign = value;
+  }
+
+  ui.LineMetrics getLineMetricsByLineNum(int index) {
+    return _lineMetrics[index];
   }
 
   /// The directionality of the text.
@@ -145,7 +181,18 @@ class WebFRenderParagraph extends RenderBox
     markNeedsLayout();
   }
 
+  bool get outLineClampLimit {
+    if(constraints is MultiLineBoxConstraints
+        && (constraints as MultiLineBoxConstraints).maxLines != double.maxFinite.toInt()) {
+      return true;
+    }
+    return false;
+  }
+
   final TextPainterCallback? _foregroundCallback;
+
+  bool get happenVisualOverflow => _happenVisualOverflow;
+  bool _happenVisualOverflow = false;
 
   /// How visual overflow should be handled.
   TextOverflow get overflow => _overflow;
@@ -155,6 +202,12 @@ class WebFRenderParagraph extends RenderBox
     if (_overflow == value) return;
     _overflow = value;
     _textPainter.ellipsis = value == TextOverflow.ellipsis ? _kEllipsis : null;
+  }
+
+  /// TextPainter set overflow = TextOverflow.ellipsis and not set maxLines, which make
+  /// computeLineMetrics() return List<ui.LineMetrics> last one width lose
+  bool get happenEllipsis {
+    return (overflow == TextOverflow.ellipsis) && (maxLines ?? 0) > 0;
   }
 
   /// The number of font pixels for each logical pixel.
@@ -233,8 +286,8 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of first text line
   double computeDistanceToFirstLineBaseline() {
-    if (_lineOffset.isEmpty) return 0.0;
-    double firstLineOffset = _lineOffset[0];
+    if (_lineRenders.isEmpty) return 0.0;
+    double firstLineOffset = _lineRenders[0].lineRect.top;
     ui.LineMetrics firstLineMetrics = _lineMetrics[0];
 
     // Use the baseline of the last line as paragraph baseline.
@@ -243,12 +296,23 @@ class WebFRenderParagraph extends RenderBox
 
   /// Compute distance to baseline of last text line
   double computeDistanceToLastLineBaseline() {
-    if (_lineOffset.isEmpty) return 0;
-    double lastLineOffset = _lineOffset[_lineOffset.length - 1];
+    if (_lineRenders.isEmpty) {
+      return 0.0;
+    }
+    double lastLineOffset = _lineRenders[_lineRenders.length - 1].lineRect.top;
     ui.LineMetrics lastLineMetrics = _lineMetrics[_lineMetrics.length - 1];
 
     // Use the baseline of the last line as paragraph baseline.
     return text.text == '' ? 0.0 : (lastLineOffset + lastLineMetrics.ascent);
+  }
+
+  void setPlaceholderDimensions(List<PlaceholderDimensions>? value) {
+    _textPainter.setPlaceholderDimensions(value);
+  }
+
+  // Warning this function is high time consuming
+  void markUpdateTextPainter() {
+    _textPainter.markNeedsLayout();
   }
 
   @override
@@ -293,7 +357,8 @@ class WebFRenderParagraph extends RenderBox
   bool get debugHasOverflowShader => _overflowShader != null;
 
   void _layoutText({double minWidth = 0.0, double maxWidth = double.infinity}) {
-    final bool widthMatters = softWrap || overflow == TextOverflow.ellipsis;
+    final bool widthMatters = softWrap || happenEllipsis;
+    _textPainter.ellipsis = happenEllipsis ? _kEllipsis : null;
     _textPainter.layout(
       minWidth: minWidth,
       maxWidth: widthMatters ? maxWidth : double.infinity,
@@ -310,38 +375,86 @@ class WebFRenderParagraph extends RenderBox
     _layoutText(minWidth: constraints.minWidth, maxWidth: constraints.maxWidth);
   }
 
-  // Get text of each line in the paragraph.
-  List<String> _getLineTexts(TextPainter textPainter, TextSpan textSpan) {
-    TextSelection selection = TextSelection(baseOffset: 0, extentOffset: textSpan.text!.length);
-    List<TextBox> boxes = textPainter.getBoxesForSelection(selection);
+  List<String> _getLineTextByLineMetrics(WebFTextPainter textPainter, TextSpan textSpan) {
     List<String> lineTexts = [];
-    int start = 0;
-    int end;
-    int index = -1;
-    // Loop through each text box
-    for (TextBox box in boxes) {
-      // Text include ideographic characters such as Chinese may be counted as seperated text box
-      // if font-family not specified, it needs to filter text box not started from 0 such as following:
-      // TextBox.fromLTRBD(14.0, 1.7, 39.1, 18.2, TextDirection.ltr)
-      if (box.left != 0) {
-        continue;
+    int checkOffset = 0;
+    bool needClear = false;
+    for (int i = 0; i < _lineMetrics.length; i++) {
+      TextRange range = _textPainter.getLineBoundary(TextPosition(offset: checkOffset));
+      Rect old = _lineRenders[i].lineRect;
+      ui.LineMetrics metrics = _lineMetrics[i];
+      bool isLastLine = i == _lineMetrics.length - 1;
+      if(isLastLine && range != TextRange.empty) {
+        range = TextRange(start:range.start, end: (textSpan as WebFTextSpan).contentLength);
       }
 
-      index += 1;
-      if (index == 0) continue;
-      // Go one logical pixel within the box and get the position
-      // of the character in the string.
-      end = textPainter.getPositionForOffset(Offset(box.left + 1, box.top + 1)).offset;
-      // add the substring to the list of lines
-      final line = textSpan.text!.substring(start, end);
-      lineTexts.add(line);
-      start = end;
-    }
-    // get the last substring
-    final extra = textSpan.text!.substring(start);
-    lineTexts.add(extra);
+      List<Object> result = _updateLineRectFromMetrics(range, textSpan as WebFTextSpan, old, metrics,
+          isLastLine: isLastLine);
+      // Clear first line when this line is only for placeHolder, no string
+      if(i == 0 && ((result[1] as String).isEmpty && metrics.width == (parent as RenderTextBox).firstLineIndent)) {
+        needClear = true;
+      }
+      _lineRenders[i].lineRect = result[0] as Rect;
+      lineTexts.add(result[1] as String);
 
+      checkOffset = range.end + 1;
+    }
+    if(needClear) {
+      clearFirstLine();
+      lineTexts.removeAt(0);
+    }
     return lineTexts;
+  }
+
+  void clearFirstLine() {
+    List<double> _lineLeading = [];
+    for (int i = 1; i < _lineMetrics.length; i++) {
+      ui.LineMetrics lineMetric = _lineMetrics[i];
+      double leading = 0;
+      if (lineHeight != null && lineMetric.height != 0) {
+        leading = lineHeight! - lineMetric.height;
+      }
+      _lineLeading.add(leading);
+      double preLineBottom = 0;
+      if (i > 1) {
+        preLineBottom = _lineRenders[i - 1].lineRect.top + _lineMetrics[i - 1].height + _lineLeading[i - 1] / 2;
+      }
+      double offset = preLineBottom + leading / 2;
+      Rect old = _lineRenders[i].lineRect;
+      _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight ?? lineMetric.height);
+      _lineRenders[i].fontHeight = lineMetric.height;
+    }
+    _lineMetrics.removeAt(0);
+    _lineRenders.removeAt(0);
+  }
+
+  List<Object> _updateLineRectFromMetrics(TextRange range, WebFTextSpan textSpan, Rect old, ui.LineMetrics metrics,
+      {bool isLastLine = false}) {
+    List<Object> content = textSpan.subContent(range.start, range.end);
+    List<WebFTextPlaceHolderSpan> placeHolder = content.whereType<WebFTextPlaceHolderSpan>().toList();
+    List<String> stringContent = content.whereType<String>().toList();
+
+    double totalLeft = 0;
+    if (placeHolder.isNotEmpty) {
+      totalLeft = placeHolder
+          .map((element) => element.lastDimensions?.size.width ?? 0)
+          .reduce((value, element) => value + element);
+    }
+    String textContent = '';
+    if (stringContent.isNotEmpty) {
+      textContent = stringContent[0];
+    }
+    double usefulWidth = metrics.width;
+    if (isLastLine && textContent.endsWith(' ')) {
+      List<TextBox> boxes =
+      _textPainter.getBoxesForSelection(TextSelection(baseOffset: range.start, extentOffset: range.end));
+      final newWidth = boxes.map((e) => e.toRect().width).reduce((value, element) => value + element);
+      usefulWidth = math.max(usefulWidth, newWidth);
+    }
+
+    Rect lineRect = Rect.fromLTWH(totalLeft,  old.top, usefulWidth - totalLeft, old.height);
+
+    return [lineRect, textContent];
   }
 
   // Compute line metrics and line offset according to line-height spec.
@@ -351,17 +464,35 @@ class WebFRenderParagraph extends RenderBox
     // Leading of each line
     List<double> _lineLeading = [];
 
-    _lineOffset = [];
+    ///Happen overflow maxLines need drop other lines. Else if maxLines = 1, will use MultiLine logic
+    if(_lineMetrics.length >= (_textPainter.maxLines ?? webfTextMaxLines)) {
+      int endLineIndex = _textPainter.maxLines ?? webfTextMaxLines;
+      _lineMetrics = _lineMetrics.sublist(0, endLineIndex);
+    }
+    // create WebFRenderTextLines for each line as lineRenders
+    _lineRenders = _lineMetrics.map((element) => WebFRenderTextLine()).toList();
     for (int i = 0; i < _lineMetrics.length; i++) {
       ui.LineMetrics lineMetric = _lineMetrics[i];
+
       // Do not add line height in the case of textOverflow ellipsis
       // cause height of line metric equals to 0.
-      double leading = lineHeight != null && lineMetric.height != 0 ? lineHeight! - lineMetric.height : 0;
+      double leading = 0;
+      if (lineHeight != null && lineMetric.height != 0) {
+        leading = lineHeight! - lineMetric.height;
+      }
+
       _lineLeading.add(leading);
       // Offset of previous line
-      double preLineBottom = i > 0 ? _lineOffset[i - 1] + _lineMetrics[i - 1].height + _lineLeading[i - 1] / 2 : 0;
-      double offset = preLineBottom + leading / 2;
-      _lineOffset.add(offset);
+      double preLineBottom = 0;
+      if (i > 0) {
+        preLineBottom = _lineRenders[i - 1].lineRect.top + _lineMetrics[i - 1].height + _lineLeading[i - 1];
+      }
+
+      double offset = preLineBottom;
+      Rect old = _lineRenders[i].lineRect;
+      _lineRenders[i].leading = leading;
+      _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight ?? lineMetric.height);
+      _lineRenders[i].fontHeight = lineMetric.height;
     }
   }
 
@@ -371,6 +502,7 @@ class WebFRenderParagraph extends RenderBox
     // Height of paragraph
     for (int i = 0; i < _lineMetrics.length; i++) {
       ui.LineMetrics lineMetric = _lineMetrics[i];
+
       // Do not add line height in the case of textOverflow ellipsis
       // cause height of line metric equals to 0.
       double height = lineHeight != null && lineMetric.height != 0 ? lineHeight! : lineMetric.height;
@@ -380,36 +512,49 @@ class WebFRenderParagraph extends RenderBox
     return paragraphHeight;
   }
 
+  void _filterOverLinesMax(List<String> lineTexts) {
+    if(_lineMetrics.length >= (_textPainter.maxLines ?? double.infinity) && constraints is InlineBoxConstraints) {
+      InlineBoxConstraints inlineBoxConstraints = constraints as InlineBoxConstraints;
+      WebFRenderTextLine line = _lineRenders.first;
+      if(inlineBoxConstraints.isDynamicMaxLines && line.lineRect.left < inlineBoxConstraints.leftWidth) {
+        _lineRenders.removeAt(0);
+        _lineMetrics.removeAt(0);
+        lineTexts.removeAt(0);
+      }
+    }
+  }
+
   // Create and layout text painter of each line in the paragraph for later use
   // in the paint stage to adjust the vertical space between text painters according to
   // W3C line-height spec.
   void _relayoutMultiLineText() {
     final BoxConstraints constraints = this.constraints;
     // Get text of each line
-    List<String> lineTexts = _getLineTexts(_textPainter, _textPainter.text as TextSpan);
+    List<String> lineTexts = _getLineTextByLineMetrics(_textPainter, _textPainter.text as TextSpan);
+    _filterOverLinesMax(lineTexts);
 
-    _lineTextPainters = [];
     // Create text painter of each line and layout
     for (int i = 0; i < lineTexts.length; i++) {
       String lineText = lineTexts[i];
 
-      final TextSpan textSpan = TextSpan(
+      final TextSpan textSpan = WebFTextSpan(
         text: lineText,
         style: text.style,
       );
-      TextPainter _lineTextPainter = TextPainter(
+      WebFTextPainter _lineTextPainter = WebFTextPainter(
+          maxLines: 1,
           text: textSpan,
           textAlign: textAlign,
           textDirection: textDirection,
           textScaleFactor: textScaleFactor,
-          ellipsis: overflow == TextOverflow.ellipsis ? _kEllipsis : null,
+          ellipsis: happenEllipsis ? _kEllipsis : null,
           locale: locale,
           strutStyle: strutStyle,
           textWidthBasis: textWidthBasis,
           textHeightBehavior: textHeightBehavior);
-      _lineTextPainters.add(_lineTextPainter);
+      _lineRenders[i].textPainter = _lineTextPainter;
 
-      final bool widthMatters = softWrap || overflow == TextOverflow.ellipsis;
+      final bool widthMatters = softWrap || happenEllipsis;
       _lineTextPainter.layout(
         minWidth: constraints.minWidth,
         maxWidth: widthMatters ? constraints.maxWidth : double.infinity,
@@ -426,9 +571,21 @@ class WebFRenderParagraph extends RenderBox
     // in flutter text engine.
     // Layout each line of the paragraph individually to
     // place each line according to W3C line-height rule.
-    if (lineHeight != null) {
+    if (_lineRenders.length > 1) {
       _relayoutMultiLineText();
+    } else if (_lineRenders.length == 1) {
+      _pollyFillSizeForOneLine();
     }
+  }
+
+  void _pollyFillSizeForOneLine() {
+    ui.LineMetrics lineMetric = _lineMetrics[0];
+    Rect oldRect = _lineRenders[0].lineRect;
+    TextRange range = _textPainter.getLineBoundary(TextPosition(offset: 0));
+    _lineRenders[0].textPainter = _textPainter;
+    List<Object> result =
+    _updateLineRectFromMetrics(range, _textPainter.text as WebFTextSpan, oldRect, lineMetric, isLastLine: true);
+    _lineRenders[0].lineRect = oldRect = result[0] as Rect;
   }
 
   @override
@@ -436,18 +593,18 @@ class WebFRenderParagraph extends RenderBox
     if (!kReleaseMode) {
       Timeline.startSync('WebFRenderParagraph.performLayout');
     }
-    if (_foregroundCallback != null) {
-      _textPainter.layout();
-      Size size = _textPainter.size;
-      final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
-      if (paint != null) {
-        text = TextSpan(
-            text: text.text,
-            style: text.style?.copyWith(foreground: paint)
-        );
-      }
-    }
-
+    // TODO need recheck logic  more layout
+    // if (_foregroundCallback != null) {
+    //   _textPainter.layout();
+    //   Size size = _textPainter.size;
+    //   final paint = _foregroundCallback!(Rect.fromLTWH(0, 0, size.width, size.height));
+    //   if (paint != null) {
+    //     text = WebFTextSpan(
+    //         text: text.text,
+    //         style: text.style?.copyWith(foreground: paint)
+    //     );
+    //   }
+    // }
     if (!kReleaseMode) {
       Timeline.startSync('WebFRenderParagraph.layoutText');
     }
@@ -477,6 +634,7 @@ class WebFRenderParagraph extends RenderBox
     // a problem if we start having horizontal overflow and introduce a clip
     // that affects the actual (but undetected) vertical overflow.
     final bool hasVisualOverflow = didOverflowWidth || didOverflowHeight;
+    _happenVisualOverflow = hasVisualOverflow;
     if (hasVisualOverflow) {
       switch (_overflow) {
         case TextOverflow.visible:
@@ -491,7 +649,7 @@ class WebFRenderParagraph extends RenderBox
         case TextOverflow.fade:
           _needsClipping = true;
           final TextPainter fadeSizePainter = TextPainter(
-            text: TextSpan(style: _textPainter.text!.style, text: '\u2026'),
+            text: WebFTextSpan(style: _textPainter.text!.style, text: '\u2026'),
             textDirection: textDirection,
             textScaleFactor: textScaleFactor,
             locale: locale,
@@ -558,21 +716,16 @@ class WebFRenderParagraph extends RenderBox
       context.canvas.clipRect(bounds);
     }
 
-    if (lineHeight != null) {
+    if (_lineRenders.length > 1) {
       // Adjust text paint offset of each line according to line-height.
-      for (int i = 0; i < _lineTextPainters.length; i++) {
-        // _lineTextPainters and _lineOffset may not have the same length in some edge cases
-        // cause _lineTextPainters is computed from [getBoxesForSelection] api while
-        // _lineOffset is computed from [computeLineMetrics] api.
-        // Add protection here to prevent access the overflow index of _lineOffset list.
-        if (i >= _lineOffset.length) continue;
-
-        TextPainter _lineTextPainter = _lineTextPainters[i];
-        Offset lineOffset = Offset(offset.dx, offset.dy + _lineOffset[i]);
+      for (int i = 0; i < _lineRenders.length; i++) {
+        WebFTextPainter _lineTextPainter = _lineRenders[i].textPainter;
+        Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }
     } else {
-      _textPainter.paint(context.canvas, offset);
+      Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop);
+      _lineRenders[0].textPainter.paint(context.canvas, lineOffset);
     }
 
     if (_needsClipping) {

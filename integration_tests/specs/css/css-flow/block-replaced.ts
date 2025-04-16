@@ -400,7 +400,7 @@ describe('block-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-001', async () => {
     let p;

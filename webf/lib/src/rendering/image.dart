@@ -4,6 +4,7 @@
  */
 import 'dart:ui' as ui show Image;
 import 'package:flutter/rendering.dart';
+import 'package:webf/src/rendering/logic_box.dart';
 
 class WebFRenderImage extends RenderImage {
   WebFRenderImage({
@@ -20,5 +21,9 @@ class WebFRenderImage extends RenderImage {
   void performLayout() {
     Size trySize = constraints.biggest;
     size = trySize.isInfinite ? constraints.smallest : trySize;
+  }
+
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
   }
 }

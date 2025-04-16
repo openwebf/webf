@@ -8,6 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/logic_box.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
 /// such as an image or embedded document.
@@ -173,6 +174,11 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     final renderObject = super.copyWith(copiedRenderBoxModel) as RenderReplaced;
     renderObject._isInLazyRendering = _isInLazyRendering;
     return renderObject as T;
+  }
+
+  @override
+  LogicInlineBox createLogicInlineBox() {
+    return LogicInlineBox(renderObject: this);
   }
 }
 

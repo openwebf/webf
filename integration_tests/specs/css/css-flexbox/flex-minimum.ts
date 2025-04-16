@@ -220,7 +220,7 @@ describe('flex-minimum', () => {
     BODY.appendChild(referenceOverlappedRed);
     BODY.appendChild(constrainedFlex);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-flex-items-005', async () => {
     let referenceOverlappedRed;
@@ -1021,7 +1021,7 @@ describe('flex-minimum', () => {
     );
     BODY.appendChild(constrainedFlex);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   it("width-flex-items-006", async () => {

@@ -12,6 +12,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
@@ -1632,6 +1633,18 @@ abstract class Element extends ContainerNode
         WebFProfiler.instance.finishTrackUICommandStep();
       }
     }
+  }
+
+  bool recommendDeferredLoading() {
+    WebFScrollable? scrollable;
+    Element? next = this;
+    while (next != null && next.parentElement != null && next.parentElement is! HTMLElement) {
+      next = next.parentElement;
+    }
+    if(scrollable != null && scrollable.position != null) {
+      return scrollable.position!.recommendDeferredLoading(ownerDocument.controller.buildContext);
+    }
+    return false;
   }
 
   void _removeInlineStyle() {

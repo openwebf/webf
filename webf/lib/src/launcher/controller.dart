@@ -940,6 +940,7 @@ class WebFController {
 
   List<BuildContext> buildContextStack = [];
   bool resizeToAvoidBottomInsets;
+  final BuildContext buildContext;
 
   bool? _darkModeOverride;
   set darkModeOverride(value) {
@@ -1025,8 +1026,9 @@ class WebFController {
     this.initialCookies,
     this.routeObserver,
     this.externalController = true,
-    this.resizeToAvoidBottomInsets = true,
-  })  : _name = name,
+    this.resizeToAvoidBottomInsets = true
+  })  : buildContext = context,
+        _name = name,
         _entrypoint = bundle,
         _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
