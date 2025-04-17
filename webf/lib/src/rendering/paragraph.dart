@@ -723,7 +723,7 @@ class WebFRenderParagraph extends RenderBox
         Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }
-    } else {
+    } else if (_lineRenders.length == 1) {
       Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop);
       _lineRenders[0].textPainter.paint(context.canvas, lineOffset);
     }
