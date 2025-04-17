@@ -56,6 +56,7 @@
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
+#include "qjs_webf_touch_area_element.h"
 #include "qjs_hybrid_router_change_event.h"
 #include "qjs_idle_deadline.h"
 #include "qjs_image.h"
@@ -168,6 +169,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSHTMLCanvasElement::Install(context);
+  QJSWebFTouchAreaElement::Install(context);
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
   QJSCanvasPattern::Install(context);

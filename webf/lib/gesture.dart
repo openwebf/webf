@@ -3,7 +3,5 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-export 'src/gesture/swipe.dart';
-export 'src/gesture/monodrag.dart';
 export 'src/gesture/gesture_dispatcher.dart';
 export 'src/gesture/raw_pointer_listener.dart';

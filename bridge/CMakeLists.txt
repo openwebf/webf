@@ -426,6 +426,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+    core/html/touches/webf_touch_area_element.cc
 
     core/native/native_loader.cc
     core/native/script_value_ref.cc
@@ -583,6 +584,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_unionpath_2_d_dom_string.cc
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
+    out/qjs_webf_touch_area_element.cc
     out/qjs_performance.cc
     out/qjs_performance_entry.cc
     out/qjs_performance_mark.cc
@@ -593,6 +595,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/performance_mark_constants.cc
     out/html_element_factory.cc
     out/html_names.cc
+    out/webf_element_names.cc
     out/script_type_names.cc
     out/defined_properties.cc
     out/element_attribute_names.cc

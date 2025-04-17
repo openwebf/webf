@@ -158,6 +158,7 @@ class Element : public ContainerNode {
   // Step 5 of https://dom.spec.whatwg.org/#concept-node-clone
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
   virtual bool IsWidgetElement() const;
+  virtual bool IsWebFTouchAreaElement() const;
 
   void Trace(GCVisitor* visitor) const override;
   const ElementPublicMethods* elementPublicMethods();

@@ -91,8 +91,6 @@ enum VisibilityState { visible, hidden }
 class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
-  GestureListener? gestureListener;
-
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
 
@@ -129,7 +127,7 @@ class Document extends ContainerNode {
   @override
   bool get isConnected => true;
 
-  Document(BindingContext context, {required this.controller, this.gestureListener})
+  Document(BindingContext context, {required this.controller})
       : super(NodeType.DOCUMENT_NODE, context) {
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
@@ -614,7 +612,6 @@ class Document extends ContainerNode {
 
   @override
   Future<void> dispose() async {
-    gestureListener = null;
     styleSheets.clear();
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();

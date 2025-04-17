@@ -341,8 +341,9 @@ class WebFState extends State<WebF> with RouteAware {
           }
 
           List<Widget> children = [];
-          if (widget.initialRoute != null) {
-            RouterLinkElement? child = widget.controller.view.getHybridRouterView(widget.initialRoute!);
+          String? initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
+          if (initialRoute != null) {
+            RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
             if (child != null) {
               children.add(child.toWidget());
             } else {

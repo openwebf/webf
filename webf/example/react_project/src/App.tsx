@@ -1,38 +1,26 @@
 import React, { MouseEventHandler, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import { createComponent } from './utils/CreateComponent';
-
-// interface FlutterCupertinoButtonProps {
-//   onClick: MouseEventHandler<HTMLUnknownElement>;
-//   size: 'small' | 'large';
-// }
-
-// const FlutterCupertinoButton = createComponent({
-//   tagName: 'flutter-cupertino-button',
-//   displayName: 'FlutterCupertinoButton',
-//   events: {
-//     onClick: 'click'
-//   }
-// }) as React.ComponentType<FlutterCupertinoButtonProps & { children?: React.ReactNode; ref?: React.Ref<HTMLUnknownElement> }>
+import { WebFRouterLink } from './CustomElements/RouterLink';
+import { WebFTouchArea } from './CustomElements/WebFTouchArea';
+import Home from './Pages/Home';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
+      <WebFRouterLink path="/home">
+        <div>This is Home</div>
+        <WebFTouchArea
+          onTouchStart={(e) => console.log('touchstart', e.target.outerHTML)}
+          onTouchMove={(e) => console.log('touch move')}
+          onTouchEnd={(e) => console.log('touchend')}
         >
-          Learn React
-        </a>
-      </header>
+          <div>Touch Here</div>
+        </WebFTouchArea>
+      </WebFRouterLink>
+      <WebFRouterLink path="/page">
+        <div>This is Page</div>
+      </WebFRouterLink>
     </div>
   );
 }

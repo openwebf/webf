@@ -203,6 +203,9 @@ void defineBuiltInElements() {
   defineWidgetElement(WEBF_LISTVIEW, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
 
+  // Gesture Elements
+  defineElement(TOUCH_AREA, (context) => WebFTouchAreaElement(context));
+
   // Hybrid Routers
   defineElement(ROUTER_LINK, (context) => RouterLinkElement(context));
 

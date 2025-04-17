@@ -43,6 +43,10 @@ export function getClassName(blob: IDLBlob) {
     return 'UI' + raw.slice(2);
   }
 
+  if (raw == 'webfTouchAreaElement') {
+    return 'WebFTouchAreaElement';
+  }
+
   return `${raw[0].toUpperCase() + raw.slice(1)}`;
 }
 

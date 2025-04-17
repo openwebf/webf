@@ -18,8 +18,10 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "core/html/touches/webf_touch_area_element.h"
 #include "core/svg/svg_element.h"
 #include "element_namespace_uris.h"
+#include "webf_element_names.h"
 #include "element_traversal.h"
 #include "event_factory.h"
 #include "foundation/ascii_types.h"
@@ -52,6 +54,10 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
 
   if (auto* element = HTMLElementFactory::Create(local_name, *this)) {
     return element;
+  }
+
+  if (local_name == webf_element_names::kWebfToucharea) {
+    return MakeGarbageCollected<WebFTouchAreaElement>(*this);
   }
 
   if (WidgetElement::IsValidName(local_name)) {

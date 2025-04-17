@@ -163,12 +163,6 @@ class WebFController {
   /// debug JavaScript, monitor network requests, and analyze performance of the WebF content.
   final DevToolsService? devToolsService;
 
-  /// A listener for processing gesture events from the rendered content.
-  ///
-  /// Use this to intercept and handle user interactions with the rendered elements,
-  /// allowing custom gesture handling or additional processing of touch and pointer events.
-  final GestureListener? gestureListener;
-
   /// Interceptor for HTTP client operations initiated by JavaScript code.
   ///
   /// This allows you to intercept, modify, redirect or mock network requests made from JavaScript,
@@ -338,7 +332,6 @@ class WebFController {
     return _darkModeOverride ?? ownerFlutterView?.platformDispatcher.platformBrightness != Brightness.light;
   }
 
-  final GestureListener? _gestureListener;
   Map<String, WebFBundle>? _preloadBundleIndex;
 
   /// Retrieves a preloaded bundle that matches the given URL.
@@ -380,7 +373,6 @@ class WebFController {
     this.background,
     this.viewportWidth,
     this.viewportHeight,
-    this.gestureListener,
     this.javaScriptChannel,
     this.navigationDelegate,
     this.onLoad,
@@ -399,7 +391,6 @@ class WebFController {
     this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _entrypoint = bundle,
-        _gestureListener = gestureListener,
         runningThread = runningThread ?? DedicatedThread(),
         _methodChannel = javaScriptChannel {
     _initializePreloadBundle();
@@ -417,7 +408,6 @@ class WebFController {
         rootController: this,
         runningThread: this.runningThread!,
         navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
-        gestureListener: _gestureListener,
         initialCookies: initialCookies);
 
     _view!.initialize().then((_) {
@@ -570,7 +560,6 @@ class WebFController {
           enableDebug: _view?.enableDebug ?? false,
           rootController: this,
           navigationDelegate: _view?.navigationDelegate,
-          gestureListener: _view?.gestureListener,
           runningThread: runningThread!);
 
       await _view?.initialize();

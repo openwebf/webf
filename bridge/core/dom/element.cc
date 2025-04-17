@@ -378,6 +378,10 @@ bool Element::IsWidgetElement() const {
   return false;
 }
 
+bool Element::IsWebFTouchAreaElement() const {
+  return false;
+}
+
 void Element::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(attributes_);
   visitor->TraceMember(cssom_wrapper_);

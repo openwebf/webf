@@ -27,8 +27,6 @@ class WebFViewController implements WidgetsBindingObserver {
   // during a view's process of loading, and completing a navigation request.
   WebFNavigationDelegate? navigationDelegate;
 
-  GestureListener? gestureListener;
-
   List<Cookie>? initialCookies;
 
   final List<List<UICommand>> pendingUICommands = [];
@@ -44,7 +42,6 @@ class WebFViewController implements WidgetsBindingObserver {
       required this.rootController,
       required this.runningThread,
       this.navigationDelegate,
-      this.gestureListener,
       this.initialCookies}) {}
 
   bool _inited = false;
@@ -207,29 +204,7 @@ class WebFViewController implements WidgetsBindingObserver {
     document = Document(
       BindingContext(view, _contextId, pointer),
       controller: rootController,
-      gestureListener: gestureListener,
     );
-
-    // Listeners need to be registered to window in order to dispatch events on demand.
-    if (gestureListener != null) {
-      GestureListener listener = gestureListener!;
-      if (listener.onTouchStart != null) {
-        document.addEventListener(
-            EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent));
-      }
-
-      if (listener.onTouchMove != null) {
-        document.addEventListener(EVENT_TOUCH_MOVE, (Event event) async => listener.onTouchMove!(event as TouchEvent));
-      }
-
-      if (listener.onTouchEnd != null) {
-        document.addEventListener(EVENT_TOUCH_END, (Event event) async => listener.onTouchEnd!(event as TouchEvent));
-      }
-
-      if (listener.onDrag != null) {
-        document.addEventListener(EVENT_DRAG, (Event event) async => listener.onDrag!(event as GestureEvent));
-      }
-    }
 
     firstLoad = false;
   }
