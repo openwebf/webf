@@ -12,6 +12,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';

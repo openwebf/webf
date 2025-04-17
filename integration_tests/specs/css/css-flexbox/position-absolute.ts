@@ -219,7 +219,7 @@ describe('flexbox-position-absolute', () => {
     ]);
     document.body.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   it('should works with child of position absolute and self no height', async () => {

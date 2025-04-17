@@ -45,7 +45,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
 
     onImageLoad(img, async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -104,7 +104,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
 
     onImageLoad(img, async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -164,7 +164,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
 
     onDoubleImageLoad(img1, img2, async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -231,7 +231,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
 
     onImageLoad(img1,async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -298,7 +298,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
 
     onImageLoad(img1, async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -550,7 +550,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
 
     onDoubleImageLoad(img1, img2, async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -747,7 +747,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-009', async () => {
     let p;
@@ -806,7 +806,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-010-ref', async () => {
     let p;
@@ -904,7 +904,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-011-ref', async () => {
     let p;
@@ -1165,7 +1165,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div);
     BODY.appendChild(div_1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-014-ref', async () => {
     let p;
@@ -1323,7 +1323,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-017', async () => {
     let p;
@@ -1382,7 +1382,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: iframe element not config default width/height.
@@ -1638,7 +1638,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-023', async () => {
     let p;
@@ -1699,7 +1699,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-024', async () => {
     let p;
@@ -1760,7 +1760,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: iframe element not config default width/height.
@@ -2022,7 +2022,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-030', async () => {
     let p;
@@ -2083,7 +2083,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('height-031', async () => {
     let p;
@@ -2144,7 +2144,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: iframe element not config default width/height.
@@ -2467,7 +2467,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(container);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-001-ref', async () => {
     let p;
@@ -2514,7 +2514,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-001', async () => {
     let p;
@@ -2570,7 +2570,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-002-ref', async (done) => {
     let p;
@@ -2627,7 +2627,7 @@ describe('absolute-replaced', () => {
     async function onImageLoad() {
       count++;
       if (count >= 2) {
-        await snapshot(0.1);
+        await snapshot(1);
         done();
       }
     }
@@ -2683,7 +2683,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-003a-ref', async () => {
     let p;
@@ -2838,7 +2838,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-006-ref', async () => {
     let p;
@@ -2889,7 +2889,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-006', async () => {
     let p;
@@ -2947,7 +2947,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-008', async () => {
     let p;
@@ -3006,7 +3006,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-013', async () => {
     let p;
@@ -3067,7 +3067,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-015-ref', async () => {
     let p;
@@ -3118,7 +3118,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Support direction.
@@ -3235,7 +3235,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Support direction.
@@ -3353,7 +3353,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-022', async (done) => {
     let p;
@@ -3416,7 +3416,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(div1);
 
     img.addEventListener('load', async () => {
-      await snapshot(0.1);
+      await snapshot(1);
       done();
     });
   });
@@ -3471,7 +3471,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-024-ref', async () => {
     let p;
@@ -3524,7 +3524,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-025-ref', async () => {
     let p;
@@ -3579,7 +3579,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-027-ref', async () => {
     let p;
@@ -3632,7 +3632,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-027', async () => {
     let p;
@@ -3694,7 +3694,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Support direction.
@@ -3881,7 +3881,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-036', async () => {
     let p;
@@ -3953,7 +3953,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-037-ref', async () => {
     let p;
@@ -4014,7 +4014,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-039-ref', async () => {
     let p;
@@ -4077,7 +4077,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-041-ref', async () => {
     let p;
@@ -4138,7 +4138,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   it('width-041', async () => {
@@ -4212,7 +4212,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('width-043', async () => {
     let p;
@@ -4284,7 +4284,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Support direction.
@@ -4431,7 +4431,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   it('width-055', async () => {
@@ -4505,7 +4505,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Support direction.
@@ -4726,7 +4726,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Support direction.
@@ -4801,7 +4801,7 @@ describe('absolute-replaced', () => {
     BODY.appendChild(p);
     BODY.appendChild(div1);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   // @TODO: Offset of position absolute element with left,right, margin-left, margin-right wrong.

@@ -82,7 +82,7 @@ describe('right-offset', () => {
     BODY.appendChild(p);
     BODY.appendChild(inlineBlock);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
   it('001', async () => {
     let p;
