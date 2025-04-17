@@ -278,7 +278,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     if (widget.controller.initialRoute != null) {
       RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
-      routerLinkElement?.dispatchEvent(event);
+      routerLinkElement?.dispatchEventUtilAdded(event);
     }
   }
 
@@ -296,7 +296,7 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.controller.initialRoute != null) {
       RouterLinkElement? routerLinkElement =
       widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
-      routerLinkElement?.dispatchEvent(event);
+      routerLinkElement?.dispatchEventUtilAdded(event);
     }
   }
 

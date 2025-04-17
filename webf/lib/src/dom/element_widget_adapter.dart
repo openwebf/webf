@@ -283,7 +283,7 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     OnScreenEvent event = OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
     // Should dispatch onscreen event after did build and layout
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      webFElement.dispatchEvent(event);
+      webFElement.dispatchEventUtilAdded(event);
     });
 
     if (webFElement is ImageElement && webFElement.shouldLazyLoading) {
@@ -427,7 +427,7 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
     OnScreenEvent event = OnScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
     Element webfElement = webFElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      webfElement.dispatchEvent(event);
+      webfElement.dispatchEventUtilAdded(event);
     });
   }
 

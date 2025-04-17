@@ -135,7 +135,6 @@ abstract class Element extends ContainerNode
   }
 
   @nonVirtual
-  @protected
   void forEachState(ForeachStateFunction fn) {
     _states.forEach(fn);
   }

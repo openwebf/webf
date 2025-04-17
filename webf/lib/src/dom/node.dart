@@ -417,6 +417,12 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     super.dispatchEvent(event);
   }
 
+  @override
+  Future<void> dispatchEventUtilAdded(Event event) async {
+    if (disposed) return;
+    super.dispatchEventUtilAdded(event);
+  }
+
   @pragma('vm:prefer-inline')
   @override
   EventTarget? get parentEventTarget => parentNode;

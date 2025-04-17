@@ -348,7 +348,7 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     WidgetElement widgetElement = widget.widgetElement;
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
-      widgetElement.dispatchEvent(event);
+      widgetElement.dispatchEventUtilAdded(event);
     });
   }
 

@@ -5,6 +5,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
@@ -52,6 +53,12 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
         }
       });
     }
+    if (_eventWaitingCompleter.containsKey(eventType)) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        _eventWaitingCompleter[eventType]!();
+        _eventWaitingCompleter.remove(eventType);
+      });
+    }
   }
 
   @mustCallSuper
@@ -68,6 +75,23 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
           _eventHandlers.remove(eventType);
         }
       }
+    }
+  }
+
+  @protected
+  final Map<String, VoidCallback> _eventWaitingCompleter = {};
+
+  Future<void> dispatchEventUtilAdded(Event event) async {
+    bool hasEvent = hasEventListener(event.type);
+    if (hasEvent) {
+      await dispatchEvent(event);
+    } else {
+      Completer completer = Completer();
+      _eventWaitingCompleter[event.type] = () async {
+        await dispatchEvent(event);
+        completer.complete();
+      };
+      return completer.future;
     }
   }
 
@@ -141,6 +165,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   void dispose() async {
     _disposed = true;
     _eventHandlers.clear();
+    _eventWaitingCompleter.clear();
     super.dispose();
   }
 

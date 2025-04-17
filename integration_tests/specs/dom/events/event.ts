@@ -824,4 +824,26 @@ describe('Event', () => {
 
     anchorElement.click();
   });
+
+  it('onscreen should fired when add event listener was listenerd', (done) => {
+    const div = document.createElement('div');
+    document.body.appendChild(div);
+
+    setTimeout(() => {
+      div.addEventListener('onscreen', () => {
+        done();
+      });
+    }, 2000);
+  });
+
+  it('onscreen should fired on widget element when add event listener was listenered', (done) => {
+    const listview = document.createElement('webf-listview');
+    document.body.append(listview);
+
+    setTimeout(() => {
+      listview.addEventListener('onscreen', () => {
+        done();
+      });
+    }, 2000);
+  });
 });
