@@ -257,15 +257,6 @@ class WebFViewController implements WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
   }
 
-  // Attach renderObject to an renderObject.
-  void attachTo(RenderObject parent, [RenderObject? previousSibling]) {
-    if (parent is ContainerRenderObjectMixin) {
-      parent.insert(document.domRenderer!, after: previousSibling);
-    } else if (parent is RenderObjectWithChildMixin) {
-      parent.child = document.domRenderer;
-    }
-  }
-
   // Dispose controller and recycle all resources.
   Future<void> dispose() async {
     if (!_inited) return;
