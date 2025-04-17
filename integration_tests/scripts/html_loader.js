@@ -153,9 +153,13 @@ const loader = function(source) {
     }
   })
 
-  const htmlString = root.toString().replace(/['\n]/g, function(c){
-    return {'\n': '','\'': '\\'}[c];
-  });
+  const htmlString = root.toString()
+  // .replace(/['\n]/g, function(c){
+  //   return {'\n': '','\'': '\\'}[c];
+  // });
+
+
+
 
   const { snapshotRoot, delayForSnapshot } = this.query.getSnapshotOption(filepath);
   const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'document.documentElement';

@@ -2,6 +2,8 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:ui';
+import 'dart:math';
 
 import 'dart:developer';
 
@@ -11,6 +13,7 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/text_span.dart';
 
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
@@ -20,6 +23,8 @@ final String _documentWhiteSpace = '\u0020\u0009\u000A\u000D';
 final RegExp _collapseWhiteSpaceReg = RegExp(r'[' + _documentWhiteSpace + r']+');
 final RegExp _trimLeftWhitespaceReg = RegExp(r'^[' + _documentWhiteSpace + r']([^' + _documentWhiteSpace + r']+)');
 final RegExp _trimRightWhitespaceReg = RegExp(r'([^' + _documentWhiteSpace + r']+)[' + _documentWhiteSpace + r']$');
+final webfTextMaxLines = double.maxFinite.toInt();
+Size _miniCharSize = Size.zero;
 
 class TextParentData extends ContainerBoxParentData<RenderBox> {}
 
@@ -38,6 +43,9 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     );
   }
 
+  RenderTextLineBoxes lineBoxes = RenderTextLineBoxes();
+  late WebFRenderParagraph _renderParagraph;
+  double _lastFirstLineIndent = 0;
   String _data;
 
   set data(String value) {
@@ -92,7 +100,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       } else if (previousSibling is RenderBoxModel &&
           (previousSibling.renderStyle.display == CSSDisplay.block ||
               previousSibling.renderStyle.display == CSSDisplay.flex)) {
-        // If previousSibling is block,should trimLeft slef.
+        // If previousSibling is block,should trimLeft self.
         CSSDisplay? display = previousSibling.renderStyle.display;
         if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimLeftWhitespace(collapsedData);
@@ -106,12 +114,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         nextSibling = (parentData as RenderLayoutParentData).nextSibling;
       }
 
-      if (nextSibling == null) {
+      if (nextSibling == null || !mayHappenLineJoin()) {
         collapsedData = _trimRightWhitespace(collapsedData);
       } else if (nextSibling is RenderBoxModel &&
           (nextSibling.renderStyle.display == CSSDisplay.block ||
               nextSibling.renderStyle.display == CSSDisplay.flex)) {
-        // If nextSibling is block,should trimRight slef.
+        // If nextSibling is block,should trimRight self.
         CSSDisplay? display = nextSibling.renderStyle.display;
         if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           collapsedData = _trimRightWhitespace(collapsedData);
@@ -124,9 +132,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return _data;
   }
 
-  late WebFRenderParagraph _renderParagraph;
   CSSRenderStyle renderStyle;
-
   BoxSizeType? widthSizeType;
   BoxSizeType? heightSizeType;
 
@@ -135,6 +141,15 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   // https://www.w3.org/TR/css-sizing-3/#min-content
   double minContentWidth = 0;
   double minContentHeight = 0;
+
+  double get firstLineIndent {
+    if (constraints is InlineBoxConstraints) {
+      return (constraints as InlineBoxConstraints).leftWidth;
+    }
+    return 0;
+  }
+
+  LogicTextInlineBox get firstInlineBox => lineBoxes.firstChild;
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
@@ -156,11 +171,27 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   int? get _maxLines {
+    int? maxParentLineLimit;
     int? lineClamp = renderStyle.lineClamp;
+    if (constraints is MultiLineBoxConstraints) {
+      maxParentLineLimit = (constraints as MultiLineBoxConstraints).maxLines;
+    }
+
     // Forcing a break after a set number of lines.
     // https://drafts.csswg.org/css-overflow-3/#max-lines
-    if (lineClamp != null) {
-      return lineClamp;
+    if (lineClamp != null || maxParentLineLimit != null) {
+      int? realLineLimit = lineClamp ?? maxParentLineLimit;
+
+      realLineLimit = (maxParentLineLimit != null && realLineLimit != null)
+          ? min(realLineLimit, maxParentLineLimit)
+          : realLineLimit;
+
+      if (constraints is InlineBoxConstraints &&
+          (constraints as InlineBoxConstraints).isDynamicMaxLines &&
+          realLineLimit! < webfTextMaxLines) {
+        realLineLimit = realLineLimit + 1;
+      }
+      return realLineLimit;
     }
     // Force display single line when white-space is nowrap.
     if (renderStyle.whiteSpace == WhiteSpace.nowrap) {
@@ -174,6 +205,71 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       return renderStyle.lineHeight.computedValue;
     }
     return null;
+  }
+
+  WebFTextSpan buildTextSpan({TextSpan? oldText}) {
+    String clippedText = _getClippedText(_trimmedData);
+    WebFTextSpan textSpan = CSSTextMixin.createTextSpan(clippedText, renderStyle, oldTextSpan: oldText) as WebFTextSpan;
+    return textSpan;
+  }
+
+  bool buildTextPlaceHolderSpan(WebFRenderParagraph paragraph) {
+    WebFTextSpan text = paragraph.text;
+    if (firstLineIndent > 0) {
+      // add a placeholder before text, must add a placeholder dimensions keep same size
+      if (text.children!.isEmpty) {
+        WebFTextPlaceHolderSpan placeHolderSpan = WebFTextPlaceHolderSpan();
+        text.children!.add(placeHolderSpan);
+        text.textSpanPosition.add(placeHolderSpan);
+      }
+      _updatePlaceHolderDimensions(paragraph);
+      return true;
+    } else if (firstLineIndent == 0 && text.children!.isNotEmpty) {
+      //clear placeholder and placeholder dimensions
+      text.children!.clear();
+      text.textSpanPosition.clear();
+      _clearPlaceHolderDimensions(paragraph);
+      return true;
+    }
+    return false;
+  }
+
+  int get lines => _renderParagraph.lineMetrics.length;
+
+  bool get happenVisualOverflow => _renderParagraph.happenVisualOverflow;
+
+  // RenderTextBox content's first line will join a LogicLineBox which have some InlineBoxes as children,
+  bool happenLineJoin() {
+    if (firstLineIndent > 0 &&
+        (lineBoxes.firstChild.logicRect.left >= firstLineIndent ||
+            lines == 1 && lineBoxes.firstChild.width < constraints.maxWidth - firstLineIndent)) {
+      return true;
+    }
+    return false;
+  }
+
+  List<double>? getLineAscent(int lineNum) {
+    LineMetrics lineMetrics = _renderParagraph.getLineMetricsByLineNum(lineNum);
+    double lineHeight = _lineHeight ?? 0;
+    double leading = 0;
+    if (lineHeight > 0) {
+      leading = lineHeight - lineMetrics.height;
+    }
+    return [lineMetrics.ascent + leading / 2, lineMetrics.descent + leading / 2];
+  }
+
+  bool mayHappenLineJoin() {
+    RenderObject? nextSibling = (parentData as RenderLayoutParentData).nextSibling;
+
+    RenderObject? parentNextSibling = null;
+    if (parent != null && parent is RenderBox) {
+      ParentData? parentData = (parent as RenderBox).parentData;
+      if (parentData != null && parentData is RenderLayoutParentData) {
+        parentNextSibling = parentData.nextSibling;
+      }
+    }
+
+    return nextSibling != null || parentNextSibling != null;
   }
 
   TextSpan get textSpan {
@@ -213,16 +309,9 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     needsLayout = true;
   }
 
-  BoxConstraints getConstraints() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayoutStep('RenderTextBox.getConstraints()');
-    }
-
+  BoxConstraints getConstraints(int maxLinesFromParent) {
     if (renderStyle.whiteSpace == WhiteSpace.nowrap && renderStyle.effectiveTextOverflow != TextOverflow.ellipsis) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackLayoutStep();
-      }
-      return BoxConstraints();
+      return InlineBoxConstraints(maxLines: maxLinesFromParent);
     }
 
     double maxConstraintWidth = double.infinity;
@@ -256,33 +345,37 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       }
     }
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayoutStep();
-    }
-
     // Text will not overflow from container, so it can inherit
     // constraints from parents
-    return BoxConstraints(minWidth: 0, maxWidth: maxConstraintWidth, minHeight: 0, maxHeight: double.infinity);
+    return InlineBoxConstraints(
+        maxLines: maxLinesFromParent,
+        minWidth: 0,
+        maxWidth: maxConstraintWidth,
+        minHeight: 0,
+        maxHeight: double.infinity);
   }
 
   // Empty string is the minimum size character, use it as the base size
   // for calculating the maximum characters to display in its container.
   Size get minCharSize {
-    TextStyle textStyle = TextStyle(
-      fontFamilyFallback: renderStyle.fontFamily,
-      fontSize: renderStyle.fontSize.computedValue,
-      textBaseline: CSSText.getTextBaseLine(),
-      package: CSSText.getFontPackage(),
-      locale: CSSText.getLocale(),
-    );
-    TextPainter painter = TextPainter(
-        text: TextSpan(
-          text: ' ',
-          style: textStyle,
-        ),
-        textDirection: TextDirection.ltr);
-    painter.layout();
-    return painter.size;
+    if (_miniCharSize == Size.zero) {
+      TextStyle textStyle = TextStyle(
+        fontFamilyFallback: renderStyle.fontFamily,
+        fontSize: renderStyle.fontSize.computedValue,
+        textBaseline: CSSText.getTextBaseLine(),
+        package: CSSText.getFontPackage(),
+        locale: CSSText.getLocale(),
+      );
+      TextPainter painter = TextPainter(
+          text: TextSpan(
+            text: ' ',
+            style: textStyle,
+          ),
+          textDirection: TextDirection.ltr);
+      painter.layout();
+      _miniCharSize = painter.size;
+    }
+    return _miniCharSize;
   }
 
   // Avoid to render the whole text when text overflows its parent and text is not
@@ -348,17 +441,44 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     return string.replaceAllMapped(_trimRightWhitespaceReg, (Match m) => '${m[1]}');
   }
 
+  void _updatePlaceHolderDimensions(WebFRenderParagraph paragraph) {
+    if (firstLineIndent > 0) {
+      double defaultHeight = 12;
+
+      paragraph.setPlaceholderDimensions([
+        PlaceholderDimensions(
+            size: Size(firstLineIndent, defaultHeight),
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            baselineOffset: defaultHeight)
+      ]);
+    }
+  }
+
+  void _clearPlaceHolderDimensions(WebFRenderParagraph paragraph) {
+    paragraph.setPlaceholderDimensions([]);
+  }
 
   @override
   void performLayout() {
     WebFRenderParagraph? paragraph = child as WebFRenderParagraph?;
+    lineBoxes.clear();
     if (paragraph != null) {
       paragraph.overflow = renderStyle.effectiveTextOverflow;
       paragraph.textAlign = renderStyle.textAlign;
-      paragraph.text = textSpan;
+
+      // first set text is no use, so need check again
+      paragraph.text = buildTextSpan(oldText: paragraph.text);
+      buildTextPlaceHolderSpan(paragraph);
+
+      _lastFirstLineIndent = firstLineIndent;
       paragraph.maxLines = _maxLines;
       paragraph.lineHeight = _lineHeight;
       paragraph.layout(constraints, parentUsesSize: true);
+      // lineRenderList be created after layout, and init with TextPainter lineMetrics
+      paragraph.lineRenderList.forEach((element) {
+        lineBoxes.createAndAppendTextBox(this, element.lineRect);
+      });
 
       size = paragraph.size;
 
@@ -367,7 +487,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       // Set minimum width to 0 to allow flex item containing text to shrink into
       // flex container which is similar to the effect of word-break: break-all in the browser.
       minContentWidth = 0;
-      minContentHeight = size.height;
+      minContentWidth = size.height;
     } else {
       performResize();
     }
@@ -404,4 +524,164 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   bool hitTest(BoxHitTestResult result, {Offset? position}) {
     return hasSize && size.contains(position!);
   }
+
+  void updateRenderTextLineOffset(int index, Offset offset) {
+    if (_renderParagraph.lineRenderList.length > index) {
+      _renderParagraph.lineRenderList[index].paintOffset = offset;
+    }
+  }
+}
+
+class RenderTextLineBoxes {
+  List<LogicTextInlineBox> inlineBoxList = [];
+
+  LogicTextInlineBox get firstChild => inlineBoxList.first;
+
+  LogicTextInlineBox get lastChild => inlineBoxList.last;
+
+  bool get happenVisualOverflow => (inlineBoxList.last.renderObject as RenderTextBox).happenVisualOverflow;
+
+  LogicTextInlineBox createAndAppendTextBox(RenderTextBox renderObject, Rect rect) {
+    inlineBoxList.add(LogicTextInlineBox(logicRect: rect, renderObject: renderObject));
+    return inlineBoxList.last;
+  }
+
+  bool containLineBox(LogicTextInlineBox box) {
+    return inlineBoxList.contains(box);
+  }
+
+  bool get isEmpty {
+    return inlineBoxList.isEmpty;
+  }
+
+  int get length {
+    return inlineBoxList.length;
+  }
+
+  void clear() {
+    inlineBoxList.clear();
+  }
+
+  LogicTextInlineBox get(int index) {
+    return inlineBoxList[index];
+  }
+
+  int findIndex(LogicTextInlineBox box) {
+    return inlineBoxList.indexOf(box);
+  }
+
+  void updateTextPaintOffset(Offset offset, LogicTextInlineBox box) {
+    RenderTextBox renderTextBox = box.renderObject as RenderTextBox;
+    int index = findIndex(box);
+    renderTextBox.updateRenderTextLineOffset(index, offset);
+  }
+}
+
+class MultiLineBoxConstraints extends BoxConstraints {
+  final int? maxLines;
+  final int? joinLineNum;
+  final bool? overflow;
+
+  MultiLineBoxConstraints.from(int? maxLines, int? joinLine, bool? overflow, BoxConstraints constraints)
+      : maxLines = maxLines ?? webfTextMaxLines,
+        joinLineNum = joinLine ?? 0,
+        overflow = overflow ?? false,
+        super(
+            minWidth: constraints.minWidth,
+            maxWidth: constraints.maxWidth,
+            minHeight: constraints.minHeight,
+            maxHeight: constraints.maxHeight);
+
+  MultiLineBoxConstraints({
+    int? maxLines,
+    int? joinLine,
+    bool? overflow,
+    super.minWidth,
+    super.maxWidth,
+    super.minHeight,
+    super.maxHeight,
+  })  : maxLines = maxLines ?? webfTextMaxLines,
+        joinLineNum = joinLine ?? 0,
+        overflow = overflow ?? false;
+
+  @override
+  String toString() {
+    final String annotation = isNormalized ? '' : '; NOT NORMALIZED';
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'MultiLineBoxConstraints(biggest$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity && minHeight == 0 && maxHeight == double.infinity) {
+      return 'MultiLineBoxConstraints(unconstrained$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'MultiLineBoxConstraints($width, $height$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
+  }
+}
+
+class InlineBoxConstraints extends MultiLineBoxConstraints {
+  final double leftWidth;
+  final double lineMainExtent;
+  final bool jumpPaint;
+
+  InlineBoxConstraints(
+      {this.leftWidth = 0.0,
+      this.lineMainExtent = 0.0,
+      this.jumpPaint = false,
+      super.maxLines,
+      super.joinLine,
+      super.overflow,
+      super.minWidth,
+      super.maxWidth,
+      super.minHeight,
+      super.maxHeight});
+
+  bool get isDynamicMaxLines {
+    return leftWidth > 0 && joinLineNum != null && joinLineNum! > 0;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    assert(debugAssertIsValid());
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+    assert(other is InlineBoxConstraints && other.debugAssertIsValid());
+    return other is InlineBoxConstraints &&
+        other.minWidth == minWidth &&
+        other.maxWidth == maxWidth &&
+        other.minHeight == minHeight &&
+        other.maxHeight == maxHeight &&
+        other.leftWidth == leftWidth;
+  }
+
+  @override
+  String toString() {
+    final String annotation = isNormalized ? '' : '; NOT NORMALIZED';
+    if (minWidth == double.infinity && minHeight == double.infinity) {
+      return 'InlineBoxConstraints(biggest$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow), leftWidth($leftWidth), lineMainExtent($lineMainExtent), jumpPaint($jumpPaint))';
+    }
+    if (minWidth == 0 && maxWidth == double.infinity && minHeight == 0 && maxHeight == double.infinity) {
+      return 'InlineBoxConstraints(unconstrained$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow), leftWidth($leftWidth), lineMainExtent($lineMainExtent), jumpPaint($jumpPaint))';
+    }
+    String describe(double min, double max, String dim) {
+      if (min == max) {
+        return '$dim=${min.toStringAsFixed(1)}';
+      }
+      return '${min.toStringAsFixed(1)}<=$dim<=${max.toStringAsFixed(1)}';
+    }
+
+    final String width = describe(minWidth, maxWidth, 'w');
+    final String height = describe(minHeight, maxHeight, 'h');
+    return 'InlineBoxConstraints($width, $height$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow), leftWidth($leftWidth), lineMainExtent($lineMainExtent), jumpPaint($jumpPaint))';
+  }
+
+  @override
+  int get hashCode => Object.hash(leftWidth, lineMainExtent, minWidth, maxWidth, minHeight, maxHeight);
 }
