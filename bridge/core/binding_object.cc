@@ -11,6 +11,7 @@
 #include "core/dom/events/event_target.h"
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
+#include "core/html/canvas/canvas_rendering_context_2d.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
 #include "logging.h"
@@ -119,6 +120,10 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
                                                ExceptionState& exception_state) const {
   auto* context = GetExecutingContext();
   auto* profiler = context->dartIsolateContext()->profiler();
+
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
 
   profiler->StartTrackSteps("BindingObject::InvokeBindingMethod");
 
@@ -413,6 +418,10 @@ bool BindingObject::IsComputedCssStyleDeclaration() const {
 }
 
 bool BindingObject::IsCanvasGradient() const {
+  return false;
+}
+
+bool BindingObject::IsCanvasRenderingContext2D() const {
   return false;
 }
 

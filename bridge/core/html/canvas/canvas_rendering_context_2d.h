@@ -87,13 +87,22 @@ class CanvasRenderingContext2D : public CanvasRenderingContext {
                        std::shared_ptr<const QJSUnionDoubleSequenceDouble> radii,
                        ExceptionState& exception_state);
 
+  bool IsCanvasRenderingContext2D() const override;
+
+  void requestPaint() const;
   void needsPaint() const;
 
   void Trace(GCVisitor* visitor) const override;
 
  private:
+  mutable bool _needsPaint = false;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> fill_style_ = nullptr;
   std::shared_ptr<QJSUnionDomStringCanvasGradient> stroke_style_ = nullptr;
+};
+
+template <>
+struct DowncastTraits<CanvasRenderingContext2D> {
+  static bool AllowFrom(const BindingObject& binding_object) { return binding_object.IsCanvasRenderingContext2D(); }
 };
 
 }  // namespace webf
