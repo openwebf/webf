@@ -1,5 +1,18 @@
 const SECRET = {};
 
+export interface AbortSignalInterface extends EventTarget {
+  readonly aborted: boolean;
+  onabort: ((this: AbortSignalInterface, ev: Event) => any) | null;
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+  dispatchEvent(event: Event): boolean;
+}
+
+export interface AbortControllerInterface {
+  readonly signal: AbortSignalInterface;
+  abort(): void;
+}
+
 // @ts-ignore
 export class _AbortSignal extends EventTarget {
   public _aborted: boolean;
@@ -28,7 +41,6 @@ export class _AbortSignal extends EventTarget {
     this._onabort = callback;
     this.addEventListener("abort", callback);
   }
-
 }
 
 export class _AbortController {

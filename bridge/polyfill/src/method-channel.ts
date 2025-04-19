@@ -6,11 +6,17 @@
 import { webfInvokeModule } from './bridge';
 
 type MethodCallHandler = (args: any[]) => void;
+export interface MethodChannelInterface {
+  addMethodCallHandler(method: string, handler: MethodCallHandler): void;
+  removeMethodCallHandler(method: string): void;
+  clearMethodCallHandler(): void;
+  invokeMethod(method: string, ...args: any[]): Promise<string>;
+}
 
 let methodCallHandlers: {[key: string]: MethodCallHandler} = {};
 
 // Like flutter platform channels
-export const methodChannel = {
+export const methodChannel: MethodChannelInterface = {
   addMethodCallHandler(method: string, handler: MethodCallHandler) {
     if (typeof handler !== 'function') {
       throw new Error('webf.addMethodCallHandler: handler should be an function.');

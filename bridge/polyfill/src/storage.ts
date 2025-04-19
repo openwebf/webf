@@ -1,7 +1,17 @@
 import { webf } from "./webf";
 
-export class Storage {
-  public moduleName;
+export interface StorageInterface {
+  readonly length: number;
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+  clear(): void;
+  key(index: number): string | null;
+  getAllKeys(): string[];
+}
+
+export class Storage implements StorageInterface {
+  public moduleName: string;
 
   constructor(moduleName: string) {
     this.moduleName = moduleName;

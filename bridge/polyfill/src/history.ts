@@ -5,7 +5,18 @@
 
 import { webf } from './webf';
 
-class History {
+export interface HistoryInterface {
+  readonly length: number;
+  readonly state: any;
+  
+  back(): void;
+  forward(): void;
+  go(delta?: number): void;
+  pushState(state: any, title: string, url?: string): void;
+  replaceState(state: any, title: string, url?: string): void;
+}
+
+class History implements HistoryInterface {
   constructor() {
   }
 

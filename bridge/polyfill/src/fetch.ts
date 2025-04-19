@@ -3,7 +3,27 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-import {webf} from './webf';
+import { webf } from './webf';
+
+export type HeadersInit = Headers | Record<string, string> | [string, string][];
+
+export interface RequestInit {
+  body?: BodyInit | null;
+  headers?: HeadersInit;
+  method?: string;
+  mode?: RequestMode;
+  signal?: AbortSignal;
+}
+
+export interface ResponseInit {
+  headers?: HeadersInit;
+  status?: number;
+  statusText?: string;
+}
+
+type RequestMode = 'cors' | 'no-cors' | 'same-origin' | 'navigate';
+type ResponseType = 'basic' | 'cors' | 'default' | 'error' | 'opaque' | 'opaqueredirect';
+export type BodyInit = string | Blob | ArrayBuffer | FormData | URLSearchParams | null;
 
 function normalizeName(name: any) {
   if (typeof name !== 'string') {
@@ -240,7 +260,7 @@ export class Request extends Body {
   readonly mode: RequestMode;
 
   clone(): Request {
-    return new Request(this, {body: this._bodyInit});
+    return new Request(this, { body: this._bodyInit });
   }
 }
 
@@ -248,7 +268,7 @@ let redirectStatuses = [301, 302, 303, 307, 308];
 
 export class Response extends Body {
   static error(): Response {
-    let response = new Response(null, {status: 0, statusText: ''});
+    let response = new Response(null, { status: 0, statusText: '' });
     response.type = 'error';
     return response;
   };
@@ -258,7 +278,7 @@ export class Response extends Body {
       throw new RangeError('Invalid status code')
     }
 
-    let response = new Response(null, {status: status, headers: {location: url}});
+    let response = new Response(null, { status: status, headers: { location: url } });
     response.redirected = true;
     return response;
   };
@@ -292,7 +312,7 @@ export class Response extends Body {
     this._initBody(body || null);
   }
 
-  clone(): Response {    
+  clone(): Response {
     const headers = new Headers(this.headers as unknown as HeadersInit);
     return new Response(this._bodyInit, {
       status: this.status,
@@ -302,44 +322,45 @@ export class Response extends Body {
   }
 }
 
-export function fetch(input: Request | string, init?: RequestInit) {
+export type Fetch = (input: Request | string, init?: RequestInit) => Promise<Response>;
+
+export const fetch: Fetch = (input: Request | string, init?: RequestInit): Promise<Response> => {
   return new Promise((resolve, reject) => {
-      let request = new Request(input, init);
+    let request = new Request(input, init);
 
-      if (request.signal && request.signal.aborted) {
-        return reject(new DOMException('Aborted', 'AbortError'))
+    if (request.signal && request.signal.aborted) {
+      return reject(new DOMException('Aborted', 'AbortError'))
+    }
+    let headers = request.headers || new Headers();
+
+    function abortRequest() {
+      webf.invokeModule('Fetch', 'abortRequest');
+    }
+
+    webf.invokeModule('Fetch', request.url, ({
+      ...init,
+      headers: (headers as Headers).map
+    }), (e, data) => {
+      request.signal.removeEventListener('abort', abortRequest);
+      if (e) return reject(e);
+      let [err, statusCode, body] = data;
+      // network error didn't have statusCode
+      if (err && !statusCode) {
+        reject(new Error(err));
+        return;
       }
-      let headers = request.headers || new Headers();
 
-      function abortRequest() {
-        webf.invokeModule('Fetch', 'abortRequest');
-      }
-
-      webf.invokeModule('Fetch', request.url, ({
-        ...init,
-        headers: (headers as Headers).map
-      }), (e, data) => {
-        request.signal.removeEventListener('abort', abortRequest);
-        if (e) return reject(e);
-        let [err, statusCode, body] = data;
-        // network error didn't have statusCode
-        if (err && !statusCode) {
-          reject(new Error(err));
-          return;
-        }
-
-        let res = new Response(body, {
-          status: statusCode
-        });
-
-        res.url = request.url;
-
-        return resolve(res);
+      let res = new Response(body, {
+        status: statusCode
       });
+
+      res.url = request.url;
+
+      return resolve(res);
+    });
 
     if (request.signal) {
       request.signal.addEventListener('abort', abortRequest)
     }
-    }
-  );
+  });
 }

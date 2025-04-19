@@ -5,6 +5,17 @@
 
 // https://github.com/WebReflection/url-search-params
 
+export interface URLSearchParamsInterface {
+  append(name: string, value: string): void;
+  delete(name: string): void;
+  get(name: string): string | null;
+  getAll(name: string): string[];
+  has(name: string): boolean;
+  set(name: string, value: string): void;
+  forEach(callback: (value: string, key: string, parent: URLSearchParams) => void, thisArg?: any): void;
+  toString(): string;
+}
+
 const find = /[!'\(\)~]|%20|%00/g;
 const plus = /\+/g;
 const replace: Record<string, string> = {
@@ -28,7 +39,7 @@ function decode(str: string) {
   return decodeURIComponent(str.replace(plus, ' '));
 }
 
-export class URLSearchParams {
+export class URLSearchParams implements URLSearchParamsInterface {
   private _dict: Record<string, string[]> = Object.create(null);
 
   constructor(query: any) {

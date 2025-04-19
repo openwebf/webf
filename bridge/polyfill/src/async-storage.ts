@@ -5,7 +5,16 @@
 
 import { webf } from './webf';
 
-export const asyncStorage = {
+export interface AsyncStorage {
+  getItem(key: number | string): Promise<string>;
+  setItem(key: number | string, value: number | string): Promise<any>;
+  removeItem(key: number | string): Promise<any>;
+  clear(): Promise<any>;
+  getAllKeys(): Promise<string[]>;
+  length(): Promise<number>;
+}
+
+export const asyncStorage: AsyncStorage = {
   getItem(key: number | string) {
     return new Promise((resolve, reject) => {
       webf.invokeModule('AsyncStorage', 'getItem', String(key), (e, data) => {

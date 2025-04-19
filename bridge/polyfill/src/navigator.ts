@@ -5,7 +5,21 @@
 
 import { webf } from './webf';
 
-export const navigator = {
+export interface NavigatorInterface {
+  readonly userAgent: string;
+  readonly platform: string;
+  readonly language: string;
+  readonly languages: string[];
+  readonly appName: string;
+  readonly appVersion: string;
+  readonly hardwareConcurrency: number;
+  readonly clipboard: {
+    readText(): Promise<string>;
+    writeText(text: string): Promise<void>;
+  };
+}
+
+export const navigator: NavigatorInterface = {
   // UA is read-only.
   get userAgent() {
     return webf.invokeModule('Navigator', 'getUserAgent');

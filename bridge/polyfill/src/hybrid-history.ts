@@ -5,7 +5,33 @@
 
 import { webf } from './webf';
 
-class HybridHistory {
+export interface HybridHistoryInterface {
+  // State management
+  readonly state: any;
+  readonly path: string;
+  
+  // Original API methods
+  back(): void;
+  pushState(state: any, name: string): void;
+  replaceState(state: any, name: string): void;
+  restorablePopAndPushState(state: any, name: string): string;
+  
+  // Flutter-like API methods
+  pop(result?: any): void;
+  pushNamed(routeName: string, options?: { arguments?: any }): void;
+  pushReplacementNamed(routeName: string, options?: { arguments?: any }): void;
+  restorablePopAndPushNamed(routeName: string, options?: { arguments?: any }): string;
+  
+  // Utility methods
+  canPop(): boolean;
+  maybePop(result?: any): boolean;
+  popAndPushNamed(routeName: string, options?: { arguments?: any }): void;
+  popUntil(routeName: string): void;
+  pushNamedAndRemoveUntil(state: any, newRouteName: string, untilRouteName: string): void;
+  pushNamedAndRemoveUntilRoute(newRouteName: string, untilRouteName: string, options?: { arguments?: any }): void;
+}
+
+class HybridHistory implements HybridHistoryInterface {
   // State management
   get state() {
     return JSON.parse(webf.invokeModule('HybridHistory', 'state'));
