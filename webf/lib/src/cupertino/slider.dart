@@ -3,10 +3,114 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/webf.dart';
 
-class FlutterCupertinoSlider extends WidgetElement {
+abstract class FlutterCupertinoSliderBindings extends WidgetElement {
+  FlutterCupertinoSliderBindings(super.context);
+
+  double get val;
+  set val(value);
+
+  double get min;
+  set min(value);
+
+  double get max;
+  set max(value);
+
+  int? get divisions;
+  set divisions(value);
+
+  bool get disabled;
+  set disabled(value);
+
+  @override
+  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
+    super.initializeAttributes(attributes);
+
+    attributes['val'] = ElementAttributeProperty(
+        getter: () => val.toString(),
+        setter: (value) => val = value
+    );
+
+    // Minimum value
+    attributes['min'] = ElementAttributeProperty(
+        getter: () => min.toString(),
+        setter: (val) => min = val
+    );
+
+    // Maximum value
+    attributes['max'] = ElementAttributeProperty(
+        getter: () => max.toString(),
+        setter: (val) => max = val
+    );
+
+    // Step divisions
+    attributes['step'] = ElementAttributeProperty(
+        getter: () => divisions?.toString() ?? '',
+        setter: (val) => divisions = val
+    );
+
+    // Disabled state
+    attributes['disabled'] = ElementAttributeProperty(
+        getter: () => disabled.toString(),
+        setter: (val) => disabled = val
+    );
+  }
+
+  static StaticDefinedBindingPropertyMap flutterCupertinoSliderProperties = {
+    'val': StaticDefinedBindingProperty(
+      getter: (element) => castToType<FlutterCupertinoSliderBindings>(element).val,
+      setter: (element, value) =>
+      castToType<FlutterCupertinoSliderBindings>(element).val = value,
+    ),
+  };
+
+  @override
+  List<StaticDefinedBindingPropertyMap> get properties =>
+      [
+        ...super.properties,
+        flutterCupertinoSliderProperties,
+      ];
+
+  double getValue(List<dynamic> args);
+  void setValue(List<dynamic> args);
+
+  // Define static method map
+  static StaticDefinedSyncBindingObjectMethodMap sliderSyncMethods = {
+    'getValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        return castToType<FlutterCupertinoSlider>(element).getValue(args);
+      },
+    ),
+    'setValue': StaticDefinedSyncBindingObjectMethod(
+      call: (element, args) {
+        castToType<FlutterCupertinoSlider>(element).setValue(args);
+      },
+    ),
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods =>
+      [
+        ...super.methods,
+        sliderSyncMethods,
+      ];
+}
+
+class FlutterCupertinoSlider extends FlutterCupertinoSliderBindings {
   FlutterCupertinoSlider(super.context);
+
+  @override
+  double get val => _value;
+
+  @override
+  set val(value) {
+    final newValue = double.tryParse(value) ?? _value;
+    if (newValue != _value) {
+      _value = newValue.clamp(_min, _max);
+    }
+  }
 
   double _value = 0.0;
   double _min = 0.0;
@@ -15,93 +119,60 @@ class FlutterCupertinoSlider extends WidgetElement {
   bool _disabled = false;
 
   @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    // Current value
-    attributes['val'] = ElementAttributeProperty(
-      getter: () => _value.toString(),
-      setter: (val) {
-        final newValue = double.tryParse(val) ?? _value;
-        if (newValue != _value) {
-          _value = newValue.clamp(_min, _max);
-        }
-      }
-    );
-
-    // Minimum value
-    attributes['min'] = ElementAttributeProperty(
-      getter: () => _min.toString(),
-      setter: (val) {
-        final newMin = double.tryParse(val) ?? _min;
-        if (newMin != _min) {
-          _min = newMin;
-          _value = _value.clamp(_min, _max);
-        }
-      }
-    );
-
-    // Maximum value
-    attributes['max'] = ElementAttributeProperty(
-      getter: () => _max.toString(),
-      setter: (val) {
-        final newMax = double.tryParse(val) ?? _max;
-        if (newMax != _max) {
-          _max = newMax;
-          _value = _value.clamp(_min, _max);
-        }
-      }
-    );
-
-    // Step divisions
-    attributes['step'] = ElementAttributeProperty(
-      getter: () => _divisions?.toString() ?? '',
-      setter: (val) {
-        final steps = int.tryParse(val);
-        if (steps != _divisions) {
-          _divisions = steps;
-        }
-      }
-    );
-
-    // Disabled state
-    attributes['disabled'] = ElementAttributeProperty(
-      getter: () => _disabled.toString(),
-      setter: (val) {
-        _disabled = val != 'false';
-      }
-    );
-  }
-
-  // Define static method map
-  static StaticDefinedSyncBindingObjectMethodMap sliderSyncMethods = {
-    'getValue': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final slider = castToType<FlutterCupertinoSlider>(element);
-        return slider._value;
-      },
-    ),
-    'setValue': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final slider = castToType<FlutterCupertinoSlider>(element);
-        if (args.isNotEmpty) {
-          final newValue = double.tryParse(args[0].toString()) ?? slider._value;
-          slider._value = newValue.clamp(slider._min, slider._max);
-        }
-        return null;
-      },
-    ),
-  };
-
-  @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    sliderSyncMethods,
-  ];
-
-  @override
   WebFWidgetElementState createState() {
     return FlutterCupertinoSliderState(this);
+  }
+
+  @override
+  double getValue(List args) {
+    return _value;
+  }
+
+  @override
+  void setValue(List<dynamic> args) {
+    if (args.isNotEmpty) {
+      final newValue = double.tryParse(args[0].toString()) ?? _value;
+      _value = newValue.clamp(_min, _max);
+    }
+  }
+
+  @override
+  double get min => _min;
+  @override
+  set min(value) {
+    final newMin = double.tryParse(value) ?? _min;
+    if (newMin != _min) {
+      _min = newMin;
+      _value = _value.clamp(_min, _max);
+    }
+  }
+
+  @override
+  double get max => _max;
+  @override
+  set max(value) {
+    final newMax = double.tryParse(value) ?? _max;
+    if (newMax != _max) {
+      _max = newMax;
+      _value = _value.clamp(_min, _max);
+    }
+  }
+
+  @override
+  int? get divisions => _divisions;
+  @override
+  set divisions(value) {
+    final steps = int.tryParse(value);
+    if (steps != _divisions) {
+      _divisions = steps;
+    }
+  }
+
+  @override
+  bool get disabled => _disabled;
+  @override
+  set disabled(value) {
+    _disabled = value != 'false';
   }
 }
 
