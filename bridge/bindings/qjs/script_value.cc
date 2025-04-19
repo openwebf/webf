@@ -68,7 +68,8 @@ static JSValue FromNativeValue(ExecutingContext* context,
 #endif
       };
 
-      return JS_NewArrayBuffer(context->ctx(), (uint8_t*)native_value.u.ptr, native_value.uint32, free_func, nullptr, 0);
+      return JS_NewArrayBuffer(context->ctx(), (uint8_t*)native_value.u.ptr, native_value.uint32, free_func, nullptr,
+                               0);
     }
     case NativeTag::TAG_LIST: {
       size_t length = native_value.uint32;
@@ -225,11 +226,7 @@ std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString(JSContext* ctx) 
   return ToString(ctx).ToNativeString(ctx);
 }
 
-namespace {
-
-
-
-}  // namespace
+namespace {}  // namespace
 
 NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value) const {
   int8_t tag = JS_VALUE_GET_TAG(value_);

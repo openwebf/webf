@@ -4,8 +4,8 @@
  */
 
 #include "native_byte_data.h"
-#include "bindings/qjs/qjs_engine_patch.h"
 #include <cstdio>  // For printf
+#include "bindings/qjs/qjs_engine_patch.h"
 
 namespace webf {
 
@@ -20,6 +20,5 @@ NativeByteData* NativeByteData::Create(uint8_t* bytes,
   native_byte_data->context = context;
   return native_byte_data;
 }
-
 
 }  // namespace webf
