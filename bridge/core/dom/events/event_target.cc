@@ -6,6 +6,7 @@
 #include <cstdint>
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
+#include "core/html/custom/webf_router_link_element.h"
 #include "event_factory.h"
 #include "event_target.h"
 #include "include/dart_api.h"
@@ -301,8 +302,17 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
         return false;
       }
     }
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(
-        UICommand::kAddEvent, event_type.ToNativeString(ctx()).release(), bindingObject(), listener_options);
+
+    if (IsRouterLinkElement()) {
+      NativeValue arguments[] = {
+          NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), event_type),
+          NativeValueConverter<NativeTypePointer<DartAddEventListenerOptions>>::ToNativeValue(listener_options)};
+      InvokeBindingMethod(binding_call_methods::kaddEvent, 2, arguments, FlushUICommandReason::kDependentsOnElement,
+                          ASSERT_NO_EXCEPTION());
+    } else {
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(
+          UICommand::kAddEvent, event_type.ToNativeString(ctx()).release(), bindingObject(), listener_options);
+    }
   }
 
   return added;

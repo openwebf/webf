@@ -138,6 +138,7 @@ class EventTarget : public BindingObject {
 
   virtual bool IsWindowOrWorkerGlobalScope() const { return false; }
   virtual bool IsNode() const { return false; }
+  virtual bool IsRouterLinkElement() const { return false; }
   bool IsEventTarget() const override;
 
   const EventTargetPublicMethods* eventTargetPublicMethods();

@@ -3,10 +3,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
@@ -30,6 +32,21 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
+
+  static final StaticDefinedSyncBindingObjectMethodMap _eventTargetSyncMethods = {
+    'addEvent':
+    StaticDefinedSyncBindingObjectMethod(call: (eventTarget, args) => castToType<EventTarget>(eventTarget)._addEventListenerFromBindingCall(args)),
+  };
+
+  void _addEventListenerFromBindingCall(List<dynamic> args) {
+    String eventType = args[0];
+    Pointer<AddEventListenerOptions> eventListenerOptions = args[1] as Pointer<AddEventListenerOptions>;
+    ownerView.addEvent(pointer!, eventType, addEventListenerOptions: eventListenerOptions);
+  }
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _eventTargetSyncMethods];
+
 
   // TODO: Support addEventListener options: capture, once, passive, signal.
   @mustCallSuper

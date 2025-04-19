@@ -374,6 +374,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
     core/html/custom/widget_element.cc
+    core/html/custom/webf_router_link_element.cc
     core/html/custom/widget_element_shape.cc
     core/events/error_event.cc
     core/events/message_event.cc
@@ -585,6 +586,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     out/qjs_html_template_element.cc
     out/qjs_html_unknown_element.cc
     out/qjs_webf_touch_area_element.cc
+    out/qjs_webf_router_link_element.cc
     out/qjs_performance.cc
     out/qjs_performance_entry.cc
     out/qjs_performance_mark.cc

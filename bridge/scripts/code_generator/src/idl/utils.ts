@@ -46,6 +46,9 @@ export function getClassName(blob: IDLBlob) {
   if (raw == 'webfTouchAreaElement') {
     return 'WebFTouchAreaElement';
   }
+  if (raw == 'webfRouterLinkElement') {
+    return 'WebFRouterLinkElement';
+  }
 
   return `${raw[0].toUpperCase() + raw.slice(1)}`;
 }

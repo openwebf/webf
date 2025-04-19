@@ -22,7 +22,7 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
 }
 
 CanvasRenderingContext2D::~CanvasRenderingContext2D() {
-  if (GetExecutingContext()->IsContextValid()) {
+  if (GetExecutingContext()->IsContextValid() && GetExecutingContext()->IsCtxValid()) {
     GetExecutingContext()->RemoveCanvasContext2D(this);
   }
 }

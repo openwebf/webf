@@ -16,6 +16,12 @@
       "interfaceName": "WebFTouchAreaElement",
       "interfaceHeaderDir": "core/html/touches",
       "filename": "webf_touch_area_element"
+    },
+    {
+      "name": "webf-router-link",
+      "interfaceName": "WebFRouterLinkElement",
+      "interfaceHeaderDir": "core/html/custom",
+      "filename": "webf_router_link_element"
     }
   ]
 }
