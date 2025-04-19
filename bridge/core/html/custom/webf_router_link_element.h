@@ -12,14 +12,13 @@ namespace webf {
 
 class WebFRouterLinkElement : public WidgetElement {
   DEFINE_WRAPPERTYPEINFO();
+
  public:
   explicit WebFRouterLinkElement(Document&);
 
   bool IsRouterLinkElement() const override;
 };
 
-
-
-}
+}  // namespace webf
 
 #endif  // WEBF_CORE_HTML_HYBRID_ROUTER_WEBF_ROUTER_LINK_H_

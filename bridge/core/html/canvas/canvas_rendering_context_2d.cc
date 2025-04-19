@@ -245,7 +245,8 @@ bool CanvasRenderingContext2D::IsCanvasRenderingContext2D() const {
 void CanvasRenderingContext2D::needsPaint() const {
   if (bindingObject()->invoke_bindings_methods_from_native == nullptr)
     return;
-  if (!_needsPaint) return;
+  if (!_needsPaint)
+    return;
   InvokeBindingMethod(binding_call_methods::kneedsPaint, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
 }
 
