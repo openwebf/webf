@@ -231,7 +231,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     if (widget.initialRoute != null) {
       widget.controller.initialState = widget.initialState;
-      widget.controller.initialRoute = widget.initialRoute;
+      widget.controller.initialRoute = widget.initialRoute ?? '/';
     }
   }
 
@@ -239,14 +239,13 @@ class WebFState extends State<WebF> with RouteAware {
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String path = route.settings.name ?? widget.controller.initialRoute ?? '';
+    String path = route.settings.name ?? widget.controller.initialRoute;
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    if (widget.controller.initialRoute != null) {
-      RouterLinkElement? routerLinkElement =
-          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+    if (widget.controller.initialRoute != '/') {
+      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
       routerLinkElement?.dispatchEvent(event);
     }
   }
@@ -261,9 +260,8 @@ class WebFState extends State<WebF> with RouteAware {
         HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    if (widget.controller.initialRoute != null) {
-      RouterLinkElement? routerLinkElement =
-          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+    if (widget.controller.initialRoute != '/') {
+      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
       routerLinkElement?.dispatchEvent(event);
     }
   }
@@ -277,11 +275,9 @@ class WebFState extends State<WebF> with RouteAware {
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
     widget.controller.view.document.dispatchEventUtilAdded(event);
 
-    await widget.controller.view.initialRouteElementMountedCompleter.future;
-
-    if (widget.controller.initialRoute != null) {
-      RouterLinkElement? routerLinkElement =
-          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+    if (widget.controller.initialRoute != '/') {
+      await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute);
+      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
       routerLinkElement?.dispatchEventUtilAdded(event);
     }
   }
@@ -292,14 +288,13 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
+    Event event =
+        HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
     widget.controller.view.document.dispatchEventUtilAdded(event);
 
-    await widget.controller.view.initialRouteElementMountedCompleter.future;
-
-    if (widget.controller.initialRoute != null) {
-      RouterLinkElement? routerLinkElement =
-          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+    if (widget.controller.initialRoute != '/') {
+      await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute);
+      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
       routerLinkElement?.dispatchEventUtilAdded(event);
     }
   }
@@ -328,56 +323,56 @@ class WebFState extends State<WebF> with RouteAware {
       return const SizedBox(width: 0, height: 0);
     }
 
-    String? initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
+    String initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
 
-    List<Future> pendingFutures = [widget.controller.controllerOnDOMContentLoadedCompleter.future];
-    if (initialRoute != null && initialRoute != '/') {
-      pendingFutures.add(widget.controller.view.initialRouteElementMountedCompleter.future);
+    List<Future> pendingFutures = [
+      widget.controller.controllerOnDOMContentLoadedCompleter.future,
+      widget.controller.viewportLayoutCompleter.future
+    ];
+    if (initialRoute != '/') {
+      pendingFutures.add(widget.controller.view.awaitForHybridRouteLoaded(initialRoute));
     }
 
-    return FutureBuilder(
-        future: Future.wait(pendingFutures),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
-            return widget.loadingWidget ??
-                const SizedBox(
-                  width: 50,
-                  height: 50,
-                  child: Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-          }
+    return _buildRootView([
+      FutureBuilder(
+          future: Future.wait(pendingFutures),
+          key: widget.controller.key,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return widget.loadingWidget ??
+                  const SizedBox(
+                    width: 50,
+                    height: 50,
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+            }
 
-          if (!widget.controller.viewportLayoutCompleter.isCompleted) {
-            return _buildRootView([]);
-          }
+            if (initialRoute != '/') {
+              RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
+              if (child == null) {
+                return WebFHTMLElement(
+                    tagName: 'DIV',
+                    controller: widget.controller,
+                    parentElement: null,
+                    children: [Text('Loading Error: the route path for $initialRoute was not found')]);
+              }
 
-          if (initialRoute != null) {
-            RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
-            if (child == null) {
+              return child.toWidget();
+            }
+
+            if (widget.controller.view.document.documentElement == null) {
               return WebFHTMLElement(
                   tagName: 'DIV',
                   controller: widget.controller,
                   parentElement: null,
-                  children: [Text('Loading Error: the route path for $initialRoute was not found')]);
+                  children: [Text('Loading Error: the documentElement is Null')]);
             }
 
-            return _buildRootView([child.toWidget()]);
-          }
-
-          if (widget.controller.view.document.documentElement == null) {
-            return WebFHTMLElement(
-                tagName: 'DIV',
-                controller: widget.controller,
-                parentElement: null,
-                children: [Text('Loading Error: the documentElement is Null')]);
-          }
-
-          return _buildRootView([
-            widget.controller.view.document.documentElement!.toWidget()
-          ]);
-        });
+            return widget.controller.view.document.documentElement!.toWidget();
+          })
+    ]);
   }
 
   @override
@@ -583,10 +578,11 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
         controller: controller);
     controller.view.viewport = root;
 
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      controller.viewportLayoutCompleter.complete();
-      controller.state?.requestForUpdate(RenderViewportBoxAttachedReason());
-    });
+    if (!controller.viewportLayoutCompleter.isCompleted) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        controller.viewportLayoutCompleter.complete();
+      });
+    }
 
     return root;
   }

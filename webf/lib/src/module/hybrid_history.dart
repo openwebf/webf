@@ -143,12 +143,12 @@ class HybridHistoryModule extends BaseModule {
   }
 
   String path() {
-    String? initialRoute = moduleManager!.controller.initialRoute;
+    String initialRoute = moduleManager!.controller.initialRoute;
     if (_delegate != null) {
       return _delegate!.path(_context!, initialRoute);
     }
     String? currentPath = ModalRoute.of(_context!)?.settings.name;
-    return currentPath ?? initialRoute ?? '';
+    return currentPath ?? initialRoute ?? '/';
   }
 
   /// Whether the navigator can be popped.

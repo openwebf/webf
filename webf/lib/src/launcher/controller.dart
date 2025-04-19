@@ -207,7 +207,7 @@ class WebFController {
   ///
   /// Sets the initial path that the router will navigate to when the application starts.
   /// This is the entry point for the hybrid routing system in WebF.
-  String? initialRoute;
+  String initialRoute = '/';
 
   /// The default route state for the hybrid router in WebF.
   ///
@@ -416,7 +416,7 @@ class WebFController {
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
-    this.initialRoute,
+    this.initialRoute = '/',
     this.initialState,
     this.routeObserver,
     this.routes,

@@ -176,7 +176,7 @@ class _AsyncWebFRouterView extends StatelessWidget {
     return FutureBuilder(
         future: WebFControllerManager.instance.getController(controllerName),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return loadingWidget ??
                 const SizedBox(
                   width: 50,

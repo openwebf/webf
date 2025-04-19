@@ -92,15 +92,26 @@ class WebFViewController implements WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
-  Completer<void> initialRouteElementMountedCompleter = Completer();
+
+  final Map<String, Completer<void>> _hybridRouteLoadCompleter = {};
+  Future<void> awaitForHybridRouteLoaded(String routePath) {
+    if (!_hybridRouteLoadCompleter.containsKey(routePath)) {
+      _hybridRouteLoadCompleter[routePath] = Completer<void>();
+    }
+    return _hybridRouteLoadCompleter[routePath]!.future;
+  }
 
   final Map<String, WidgetElement> _hybridRouterViews = {};
 
   void setHybridRouterView(String path, WidgetElement root) {
     _hybridRouterViews[path] = root;
 
-    if (rootController.initialRoute == path && !initialRouteElementMountedCompleter.isCompleted) {
-      initialRouteElementMountedCompleter.complete();
+    if (!_hybridRouteLoadCompleter.containsKey(path)) {
+      _hybridRouteLoadCompleter[path] = Completer();
+    }
+
+    if (!_hybridRouteLoadCompleter[path]!.isCompleted) {
+      _hybridRouteLoadCompleter[path]!.complete();
     }
   }
 
@@ -238,6 +249,7 @@ class WebFViewController implements WidgetsBindingObserver {
     await waitingSyncTaskComplete(contextId);
     _disposed = true;
     debugDOMTreeChanged = null;
+    _hybridRouteLoadCompleter.clear();
 
     _teardownObserver();
     _unregisterPlatformBrightnessChange();

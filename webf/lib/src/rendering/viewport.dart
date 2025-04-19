@@ -76,10 +76,6 @@ class RenderViewportBox extends RenderBox
 
   @override
   void performLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayout(this);
-    }
-
     if (_viewportSize != null) {
       double width = _viewportSize!.width;
       double height = _viewportSize!.height - _bottomInset;
@@ -101,28 +97,21 @@ class RenderViewportBox extends RenderBox
     }
 
     RenderObject? child = firstChild;
-    while (child != null) {
-      final ContainerBoxParentData<RenderObject> childParentData =
-          child.parentData as ContainerBoxParentData<RenderObject>;
 
-      RenderBoxModel rootRenderLayoutBox = child as RenderBoxModel;
+    if (child != null && child is! RenderBoxModel) {
+      child.layout(constraints);
+    } else {
+      while (child != null) {
+        final ContainerBoxParentData<RenderObject> childParentData =
+        child.parentData as ContainerBoxParentData<RenderObject>;
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentLayoutOp();
+        RenderBoxModel rootRenderLayoutBox = child as RenderBoxModel;
+
+        child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
+
+        assert(child.parentData == childParentData);
+        child = childParentData.nextSibling;
       }
-
-      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentLayoutOp();
-      }
-
-      assert(child.parentData == childParentData);
-      child = childParentData.nextSibling;
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayout(this);
     }
   }
 
