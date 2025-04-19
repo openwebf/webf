@@ -14,6 +14,7 @@
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "foundation/native_byte_data.h"
 #include "foundation/native_value_converter.h"
 #include "html/canvas/canvas_rendering_context_2d.h"
 #include "html/custom/widget_element_shape.h"
@@ -143,6 +144,10 @@ ExecutingContext::~ExecutingContext() {
   // Free active wrappers.
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
+  }
+
+  for (auto& active_native_byte_data_context : active_native_byte_datas_) {
+    JS_FreeValue(ctx(), active_native_byte_data_context->value);
   }
 }
 
@@ -767,6 +772,22 @@ void ExecutingContext::UnRegisterActiveScriptPromise(const ScriptPromiseResolver
                          });
   if (it != active_pending_promises_.end()) {
     active_pending_promises_.erase(it);
+  }
+}
+
+void ExecutingContext::RegisterActiveNativeByteData(
+    NativeByteDataFinalizerContext* native_byte_data_finalizer_context) {
+  active_native_byte_datas_.emplace(native_byte_data_finalizer_context);
+}
+
+void ExecutingContext::UnRegisterActiveNativeByteData(
+    NativeByteDataFinalizerContext* native_byte_data_finalizer_context) {
+  auto it = std::find_if(active_native_byte_datas_.begin(), active_native_byte_datas_.end(),
+                         [native_byte_data_finalizer_context](NativeByteDataFinalizerContext* ptr) {
+                           return ptr == native_byte_data_finalizer_context;
+                         });
+  if (it != active_native_byte_datas_.end()) {
+    active_native_byte_datas_.erase(it);
   }
 }
 

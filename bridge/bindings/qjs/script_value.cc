@@ -227,11 +227,7 @@ std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString(JSContext* ctx) 
 
 namespace {
 
-struct NativeByteDataFinalizerContext {
-  DartIsolateContext* dart_isolate_context;
-  ExecutingContext* context;
-  JSValue value;
-};
+
 
 }  // namespace
 
@@ -272,7 +268,6 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
         auto* native_byte_data = NativeByteData::Create(
             bytes, byte_len,
             [](void* raw_finalizer_ptr) {
-              WEBF_LOG(VERBOSE) << " CALL NATIVE FINALIZER " << raw_finalizer_ptr;
               auto* finalizer_context = static_cast<NativeByteDataFinalizerContext*>(raw_finalizer_ptr);
 
               // Check if the JS context is alive.
@@ -292,11 +287,13 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
 
                     // Free the JSValue reference when the JS heap and context is alive.
                     JS_FreeValue(finalizer_context->context->ctx(), finalizer_context->value);
+                    finalizer_context->context->UnRegisterActiveNativeByteData(finalizer_context);
                   },
                   finalizer_context);
             },
             finalizer_context);
 
+        context->RegisterActiveNativeByteData(finalizer_context);
         return Native_NewPtr(JSPointerType::NativeByteData, native_byte_data);
 
       } else if (JS_IsArray(ctx, value_)) {
