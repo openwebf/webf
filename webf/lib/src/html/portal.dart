@@ -24,6 +24,7 @@ class PortalElementState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     return WebFEventListener(
         ownerElement: widgetElement,
-        child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : SizedBox.shrink());
+        child: widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first.toWidget() : SizedBox.shrink(),
+        hasEvent: true);
   }
 }

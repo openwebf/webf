@@ -11,12 +11,25 @@ import 'package:webf/dom.dart' as dom;
 /// Use this widget to make the gesture dispatcher works.
 class WebFEventListener extends SingleChildRenderObjectWidget {
   final dom.Element ownerElement;
+  final bool hasEvent;
 
-  WebFEventListener({Widget? child, required this.ownerElement, Key? key}) : super(child: child, key: key);
+  WebFEventListener({Widget? child, required this.ownerElement, Key? key, required this.hasEvent})
+      : super(child: child, key: key);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
-    return RenderEventListener(controller: ownerElement.ownerDocument.controller, renderStyle: ownerElement.renderStyle);
+    return RenderEventListener(
+        controller: ownerElement.ownerDocument.controller, renderStyle: ownerElement.renderStyle, hasEvent: hasEvent);
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, RenderEventListener renderObject) {
+    super.updateRenderObject(context, renderObject);
+    if (hasEvent) {
+      renderObject.enableEventCapture();
+    } else {
+      renderObject.disabledEventCapture();
+    }
   }
 
   @override

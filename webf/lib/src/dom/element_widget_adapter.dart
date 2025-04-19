@@ -193,11 +193,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       widget = WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
     }
 
-    if (webFElement.hasEvent) {
-      widget = WebFEventListener(ownerElement: webFElement, child: widget);
-    }
-
-    return widget;
+    return WebFEventListener(ownerElement: webFElement, child: widget, hasEvent: webFElement.hasEvent);
   }
 
   @override

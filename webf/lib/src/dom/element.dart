@@ -140,13 +140,11 @@ abstract class Element extends ContainerNode
   }
 
   @nonVirtual
-  @protected
   void addState(WebFElementWidgetState state) {
     _states.add(state);
   }
 
   @nonVirtual
-  @protected
   void removeState(WebFElementWidgetState state) {
     _states.remove(state);
   }

@@ -11,19 +11,33 @@ import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 class RenderPortalsParentData extends RenderLayoutParentData {}
 
 class RenderEventListener extends RenderBoxModel
-    with
-        RenderObjectWithChildMixin<RenderBox>,
-        RenderProxyBoxMixin<RenderBox> {
-  RenderEventListener({
-    required CSSRenderStyle renderStyle,
-    required this.controller
-  }) : super(renderStyle: renderStyle) {
+    with RenderObjectWithChildMixin<RenderBox>, RenderProxyBoxMixin<RenderBox> {
+  RenderEventListener({required CSSRenderStyle renderStyle, required this.controller, required bool hasEvent})
+      : _enableEvent = hasEvent,
+        super(renderStyle: renderStyle) {
+    if (hasEvent) {
+      _gestureDispatcher = GestureDispatcher(renderStyle.target);
+    }
+  }
+
+  bool _enableEvent = false;
+
+  bool get enableEvent => _enableEvent;
+
+  void disabledEventCapture() {
+    _enableEvent = false;
+    _gestureDispatcher = null;
+  }
+
+  void enableEventCapture() {
+    _enableEvent = true;
     _gestureDispatcher = GestureDispatcher(renderStyle.target);
   }
 
   WebFController controller;
 
-  late GestureDispatcher _gestureDispatcher;
+  GestureDispatcher? _gestureDispatcher;
+
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
 
   @override
@@ -55,7 +69,7 @@ class RenderEventListener extends RenderBoxModel
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);
 
-    _gestureDispatcher.handlePointerEvent(event);
+    _gestureDispatcher?.handlePointerEvent(event);
 
     if (event is PointerDownEvent) {
       rawPointerListener.recordEventTarget(renderStyle.target);

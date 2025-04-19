@@ -257,12 +257,13 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
+    Event event =
+        HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
     if (widget.controller.initialRoute != null) {
       RouterLinkElement? routerLinkElement =
-      widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
       routerLinkElement?.dispatchEvent(event);
     }
   }
@@ -273,13 +274,14 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
+    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
+    widget.controller.view.document.dispatchEventUtilAdded(event);
+
     await widget.controller.view.initialRouteElementMountedCompleter.future;
 
-    Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
-    widget.controller.view.document.dispatchEvent(event);
-
     if (widget.controller.initialRoute != null) {
-      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+      RouterLinkElement? routerLinkElement =
+          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
       routerLinkElement?.dispatchEventUtilAdded(event);
     }
   }
@@ -290,14 +292,14 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
-    await widget.controller.view.initialRouteElementMountedCompleter.future;
-
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
-    widget.controller.view.document.dispatchEvent(event);
+    widget.controller.view.document.dispatchEventUtilAdded(event);
+
+    await widget.controller.view.initialRouteElementMountedCompleter.future;
 
     if (widget.controller.initialRoute != null) {
       RouterLinkElement? routerLinkElement =
-      widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
+          widget.controller.view.getHybridRouterView(widget.controller.initialRoute!);
       routerLinkElement?.dispatchEventUtilAdded(event);
     }
   }
@@ -308,14 +310,33 @@ class WebFState extends State<WebF> with RouteAware {
     setState(() {});
   }
 
+  Widget _buildRootView(List<Widget> children) {
+    return WebFRootViewport(
+      widget.controller,
+      key: widget.controller.key,
+      viewportWidth: widget.controller.viewportWidth,
+      viewportHeight: widget.controller.viewportHeight,
+      background: widget.controller.background,
+      resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
+      children: children,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_flutterScreenIsReady) {
       return const SizedBox(width: 0, height: 0);
     }
 
+    String? initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
+
+    List<Future> pendingFutures = [widget.controller.controllerOnDOMContentLoadedCompleter.future];
+    if (initialRoute != null && initialRoute != '/') {
+      pendingFutures.add(widget.controller.view.initialRouteElementMountedCompleter.future);
+    }
+
     return FutureBuilder(
-        future: widget.controller.controllerOnDOMContentLoadedCompleter.future,
+        future: Future.wait(pendingFutures),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
             return widget.loadingWidget ??
@@ -329,43 +350,33 @@ class WebFState extends State<WebF> with RouteAware {
           }
 
           if (!widget.controller.viewportLayoutCompleter.isCompleted) {
-            return WebFRootViewport(
-              widget.controller,
-              key: widget.controller.key,
-              viewportWidth: widget.controller.viewportWidth,
-              viewportHeight: widget.controller.viewportHeight,
-              background: widget.controller.background,
-              resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
-              children: [],
-            );
+            return _buildRootView([]);
           }
 
-          List<Widget> children = [];
-          String? initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
           if (initialRoute != null) {
             RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
-            if (child != null) {
-              children.add(child.toWidget());
-            } else {
-              children.add(widget.controller.view.document.documentElement!.toWidget());
+            if (child == null) {
+              return WebFHTMLElement(
+                  tagName: 'DIV',
+                  controller: widget.controller,
+                  parentElement: null,
+                  children: [Text('Loading Error: the route path for $initialRoute was not found')]);
             }
-          } else if (widget.controller.view.document.documentElement != null) {
-            children.add(widget.controller.view.document.documentElement!.toWidget());
-          } else {
-            children.add(WebFHTMLElement(tagName: 'DIV', controller: widget.controller, parentElement: null, children: [
-              Text('Loading Error: the documentElement is Null')
-            ]));
+
+            return _buildRootView([child.toWidget()]);
           }
 
-          return WebFRootViewport(
-            widget.controller,
-            key: widget.controller.key,
-            viewportWidth: widget.controller.viewportWidth,
-            viewportHeight: widget.controller.viewportHeight,
-            background: widget.controller.background,
-            resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
-            children: children,
-          );
+          if (widget.controller.view.document.documentElement == null) {
+            return WebFHTMLElement(
+                tagName: 'DIV',
+                controller: widget.controller,
+                parentElement: null,
+                children: [Text('Loading Error: the documentElement is Null')]);
+          }
+
+          return _buildRootView([
+            widget.controller.view.document.documentElement!.toWidget()
+          ]);
         });
   }
 

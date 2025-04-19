@@ -109,7 +109,7 @@ class ImageElement extends Element {
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
     flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
-    return WebFEventListener(ownerElement: this, child: child);
+    return WebFEventListener(ownerElement: this, child: child, hasEvent: true);
   }
 
   @override

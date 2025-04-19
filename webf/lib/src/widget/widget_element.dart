@@ -256,7 +256,7 @@ abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
 }
 
 class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
-  WebFWidgetElementAdapterState(WidgetElement widgetElement): super(widgetElement);
+  WebFWidgetElementAdapterState(WidgetElement widgetElement) : super(widgetElement);
 
   WidgetElement get widgetElement => super.webFElement as WidgetElement;
 
@@ -283,14 +283,8 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
       return SizedBox.shrink();
     }
 
-    Widget child = WebFWidgetElement(widgetElement);
-
-    if (widgetElement.isRepaintBoundary) {
-      child = RepaintBoundary(child: child);
-    }
-    if (widgetElement.hasEvent) {
-      child = WebFEventListener(ownerElement: widgetElement, child: child);
-    }
+    Widget child = WebFEventListener(
+        ownerElement: widgetElement, child: WebFWidgetElement(widgetElement), hasEvent: widgetElement.hasEvent);
 
     final positionedElements = widgetElement.childNodes.where((node) {
       return node is dom.Element && (node.renderStyle.isSelfPositioned());
