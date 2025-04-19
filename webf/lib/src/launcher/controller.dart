@@ -230,16 +230,12 @@ class WebFController {
   Map<String, SubViewBuilder>? routes;
 
   static final Map<double, WebFController?> _controllerMap = {};
-  static final Map<String, double> _nameIdMap = {};
 
   /// The loading mode for WebF content.
   ///
   /// Controls how resources are loaded and when execution occurs.
   /// Default is standard mode where everything is loaded and executed when mounted.
   WebFLoadingMode mode = WebFLoadingMode.standard;
-
-  bool get isPreLoadingOrPreRenderingComplete =>
-      preloadStatus == PreloadingStatus.done || preRenderingStatus == PreRenderingStatus.done;
 
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
@@ -251,12 +247,6 @@ class WebFController {
 
   static Map<double, WebFController?> getControllerMap() {
     return _controllerMap;
-  }
-
-  static WebFController? getControllerOfName(String name) {
-    if (!_nameIdMap.containsKey(name)) return null;
-    double? contextId = _nameIdMap[name];
-    return getControllerOfJSContextId(contextId);
   }
 
   /// Prints the render object tree for debugging purposes.
@@ -326,6 +316,21 @@ class WebFController {
         _buildContextStack.removeLast();
       }
     }
+  }
+
+  final Set<WebFState> _rootState = {};
+
+  WebFState? get state {
+    final stateFinder = _rootState.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.last;
+  }
+
+  void attachWebFState(WebFState state) {
+    _rootState.add(state);
+  }
+
+  void removeWebFState(WebFState state) {
+    _rootState.remove(state);
   }
 
   UniqueKey key = UniqueKey();

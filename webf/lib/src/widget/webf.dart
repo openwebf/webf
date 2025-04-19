@@ -227,6 +227,8 @@ class WebFState extends State<WebF> with RouteAware {
     super.initState();
     watchWindowIsReady();
 
+    widget.controller.attachWebFState(this);
+
     if (widget.initialRoute != null) {
       widget.controller.initialState = widget.initialState;
       widget.controller.initialRoute = widget.initialRoute;
@@ -382,6 +384,7 @@ class WebFState extends State<WebF> with RouteAware {
   void dispose() {
     super.dispose();
     widget.controller.routeObserver?.unsubscribe(this);
+    widget.controller.removeWebFState(this);
   }
 }
 
@@ -576,7 +579,7 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       controller.viewportLayoutCompleter.complete();
-      (controller.rootBuildContext as Element).markNeedsBuild();
+      controller.state?.requestForUpdate(RenderViewportBoxAttachedReason());
     });
 
     return root;
