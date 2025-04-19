@@ -784,6 +784,10 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
 
   int commandLength = nativeCommandPack.ref.length;
   if (nativeCommandPack == nullptr || commandLength == 0) {
+    _freeActiveCommandBuffer(nativeCommandPack.ref.head);
+
+    malloc.free(nativeCommandPack);
+
     return _NativeCommandData.empty();
   }
 
@@ -791,6 +795,8 @@ _NativeCommandData readNativeUICommandMemory(double contextId) {
       nativeCommandPack.ref.data.cast<Int64>().asTypedList((commandLength) * nativeCommandSize).toList(growable: false);
 
   _freeActiveCommandBuffer(nativeCommandPack.ref.head);
+
+  malloc.free(nativeCommandPack);
 
   return _NativeCommandData(commandLength, rawMemory);
 }
