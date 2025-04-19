@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/bridge/native_byte_data.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_context.dart';
 import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
@@ -48,6 +49,7 @@ enum JSPointerType {
   DOMPoint,
   CanvasGradient,
   CanvasPattern,
+  NativeByteData,
   Others
 }
 
@@ -101,7 +103,12 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:
       JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
-      if (pointerType.index < JSPointerType.Others.index) {
+
+      if (pointerType == JSPointerType.NativeByteData) {
+        return NativeByteData(Pointer.fromAddress(nativeValue.ref.u));
+      }
+
+      if (pointerType.index < JSPointerType.NativeByteData.index) {
         return view.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
       }
 

@@ -23,6 +23,7 @@ addWebfModuleListener('MethodChannel', (event, data) => triggerMethodCallHandler
 export type Webf = {
   methodChannel: MethodChannelInterface;
   invokeModule: WebfInvokeModule;
+  invokeModuleAsync: typeof invokeModuleAsync;
   hybridHistory: HybridHistoryInterface;
   addWebfModuleListener: AddWebfModuleListener;
   clearWebfModuleListener: ClearWebfModuleListener;
@@ -30,9 +31,21 @@ export type Webf = {
   requestIdleCallback: RequestIdleCallback;
 }
 
+function invokeModuleAsync(module: string, method: string, params?: any | null) {
+  return new Promise((resolve, reject) => {
+    webfInvokeModule(module, method, params, (err, data) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(data);
+    });
+  });
+}
+
 export const webf: Webf = {
   methodChannel,
   invokeModule: webfInvokeModule,
+  invokeModuleAsync: invokeModuleAsync,
   hybridHistory: hybridHistory,
   addWebfModuleListener: addWebfModuleListener,
   clearWebfModuleListener: clearWebfModuleListener,

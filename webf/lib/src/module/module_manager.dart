@@ -9,6 +9,7 @@ import 'local_storage.dart';
 import 'session_storage.dart';
 import 'websocket.dart';
 
+@Deprecated('Use WebFBaseModule instead')
 abstract class BaseModule {
   String get name;
   final ModuleManager? moduleManager;
@@ -22,6 +23,10 @@ abstract class BaseModule {
   }
 
   void dispose();
+}
+
+abstract class WebFBaseModule extends BaseModule {
+  WebFBaseModule(super.moduleManager);
 }
 
 typedef InvokeModuleCallback = Future<dynamic> Function({String? error, Object? data});

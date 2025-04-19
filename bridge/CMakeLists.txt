@@ -102,6 +102,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
+  foundation/native_byte_data.cc
   foundation/native_type.cc
   foundation/stop_watch.cc
   foundation/profiler.cc
