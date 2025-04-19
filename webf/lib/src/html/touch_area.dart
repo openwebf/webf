@@ -4,9 +4,17 @@
  */
 
 import 'package:webf/dom.dart';
+import 'package:webf/css.dart';
 
 const String TOUCH_AREA = 'WEBF-TOUCHAREA';
 
+const Map<String, dynamic> _defaultStyle = {
+  DISPLAY: BLOCK,
+};
+
 class WebFTouchAreaElement extends Element {
+  @override
+  Map<String, dynamic> get defaultStyle => _defaultStyle;
+
   WebFTouchAreaElement(super.context);
 }
