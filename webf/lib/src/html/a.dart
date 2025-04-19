@@ -10,6 +10,7 @@ import 'package:webf/webf.dart';
 const String ANCHOR = 'A';
 const String _TARGET_SELF = 'self';
 const Map<String, dynamic> _linkStyle = {
+  DISPLAY : INLINE,
   TEXT_DECORATION_LINE: UNDERLINE,
   TEXT_DECORATION_COLOR: 'rgb(0, 0, 238)',
   COLOR: 'rgb(0, 0, 238)',
