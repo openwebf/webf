@@ -28,6 +28,8 @@ class AdapterUpdateReason {}
 
 class WebFInitReason extends AdapterUpdateReason {}
 
+class RenderViewportBoxAttachedReason extends AdapterUpdateReason {}
+
 class DocumentElementChangedReason extends AdapterUpdateReason {}
 
 class UpdateDisplayReason extends AdapterUpdateReason {}
@@ -763,9 +765,6 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // Get the offset of current element relative to specified ancestor element.
   Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
-    // Need to flush layout to get correct size.
-    flushLayout();
-
     // Returns (0, 0) when ancestor is null.
     if (ancestorRenderBox == null) {
       return Offset.zero;

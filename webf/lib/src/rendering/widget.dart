@@ -209,10 +209,6 @@ class RenderWidget extends RenderBoxModel
     }
   }
 
-  RawPointerListener get rawPointerListener {
-    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
-  }
-
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);

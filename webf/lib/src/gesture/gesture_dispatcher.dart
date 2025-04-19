@@ -9,6 +9,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 
 class GestureDispatcher {
@@ -61,13 +62,16 @@ class GestureDispatcher {
   }
 
   EventTarget getCurrentEventTarget() {
-    EventTarget target = this.target.ownerView.viewport?.rawPointerListener.lastActiveEventTarget ?? this.target;
+    final context = target.ownerDocument.controller.currentBuildContext!.context;
+    RenderViewportBox viewportBox = context.findRenderObject() as RenderViewportBox;
 
-    if (target is SVGElement && target.hostingImageElement != null) {
-      target = target.hostingImageElement!;
+    EventTarget currentTarget = viewportBox.rawPointerListener.lastActiveEventTarget ?? target;
+
+    if (currentTarget is SVGElement && currentTarget.hostingImageElement != null) {
+      currentTarget = currentTarget.hostingImageElement!;
     }
 
-    return target;
+    return currentTarget;
   }
 
   void _handleMouseEvent(String type, {Offset localPosition = Offset.zero, Offset globalPosition = Offset.zero}) {

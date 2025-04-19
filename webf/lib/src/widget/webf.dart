@@ -329,16 +329,14 @@ class WebFState extends State<WebF> with RouteAware {
           }
 
           if (!widget.controller.viewportLayoutCompleter.isCompleted) {
-            return RepaintBoundary(
+            return WebFRootViewport(
+              widget.controller,
               key: widget.controller.key,
-              child: WebFRootViewport(
-                widget.controller,
-                viewportWidth: widget.controller.viewportWidth,
-                viewportHeight: widget.controller.viewportHeight,
-                background: widget.controller.background,
-                resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
-                children: [],
-              ),
+              viewportWidth: widget.controller.viewportWidth,
+              viewportHeight: widget.controller.viewportHeight,
+              background: widget.controller.background,
+              resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
+              children: [],
             );
           }
 
@@ -359,18 +357,15 @@ class WebFState extends State<WebF> with RouteAware {
             ]));
           }
 
-          Widget result = RepaintBoundary(
+          return WebFRootViewport(
+            widget.controller,
             key: widget.controller.key,
-            child: WebFRootViewport(
-              widget.controller,
-              viewportWidth: widget.controller.viewportWidth,
-              viewportHeight: widget.controller.viewportHeight,
-              background: widget.controller.background,
-              resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
-              children: children,
-            ),
+            viewportWidth: widget.controller.viewportWidth,
+            viewportHeight: widget.controller.viewportHeight,
+            background: widget.controller.background,
+            resizeToAvoidBottomInsets: widget.controller.resizeToAvoidBottomInsets,
+            children: children,
           );
-          return result;
         });
   }
 
@@ -558,15 +553,15 @@ class WebFRootViewport extends MultiChildRenderObjectWidget {
   final double? viewportHeight;
 
   // Creates a widget that visually hides its child.
-  WebFRootViewport(
+  const WebFRootViewport(
     this.controller, {
-    Key? key,
+    super.key,
     this.background,
     this.viewportWidth,
     this.viewportHeight,
     required List<Widget> children,
     this.resizeToAvoidBottomInsets = true,
-  }) : super(key: key, children: children);
+  }) : super(children: children);
 
   @override
   RenderObject createRenderObject(BuildContext context) {

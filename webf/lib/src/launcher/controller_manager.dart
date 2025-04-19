@@ -589,7 +589,7 @@ class WebFControllerManager {
     ControllerState? currentState = getControllerState(name);
     final oldController = getControllerSync(name);
     final wasAttached = currentState == ControllerState.attached;
-    BuildContext? currentContext = oldController?.currentBuildContext;
+    BuildContext? currentContext = oldController?.currentBuildContext?.context;
     Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
 
     // Get existing initialization parameters if available
@@ -681,7 +681,7 @@ class WebFControllerManager {
     ControllerState? currentState = getControllerState(name);
     final oldController = getControllerSync(name);
     final wasAttached = currentState == ControllerState.attached;
-    BuildContext? currentContext = oldController?.currentBuildContext;
+    BuildContext? currentContext = oldController?.currentBuildContext?.context;
     Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
 
     // Get existing initialization parameters if available

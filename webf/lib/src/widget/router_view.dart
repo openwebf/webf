@@ -13,12 +13,17 @@ import 'package:webf/widget.dart';
 class WebFRouterViewport extends MultiChildRenderObjectWidget {
   final WebFController controller;
 
-  WebFRouterViewport({required this.controller, super.children});
+  WebFRouterViewport({required this.controller, super.children, super.key});
 
   @override
   RenderObject createRenderObject(BuildContext context) {
     RouterViewViewportBox root = RouterViewViewportBox(viewportSize: null, controller: controller);
     return root;
+  }
+
+  @override
+  void didUnmountRenderObject(covariant RenderObject renderObject) {
+    super.didUnmountRenderObject(renderObject);
   }
 }
 
@@ -36,7 +41,7 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
     return WebFContext(
         controller: widget.controller,
-        child: WebFRouterViewport(controller: widget.controller, children: [child.toWidget()]));
+        child: WebFRouterViewport(controller: widget.controller, key: child.key, children: [child.toWidget()]));
   }
 
   @override
@@ -141,12 +146,12 @@ class _WebFRouterViewElement extends StatefulElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    widget.controller.pushNewBuildContext(context: this);
+    widget.controller.pushNewBuildContext(context: this, routePath: widget.path);
   }
 
   @override
   void unmount() {
-    widget.controller.popBuildContext(context: this);
+    widget.controller.popBuildContext(context: this, routePath: widget.path);
     super.unmount();
   }
 

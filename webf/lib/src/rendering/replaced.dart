@@ -144,9 +144,6 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
   }
 
-  RawPointerListener get rawPointerListener {
-    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
-  }
 
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {

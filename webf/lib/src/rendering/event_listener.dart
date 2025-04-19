@@ -26,10 +26,6 @@ class RenderEventListener extends RenderBoxModel
   late GestureDispatcher _gestureDispatcher;
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
 
-  RawPointerListener get rawPointerListener {
-    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
-  }
-
   @override
   void setupParentData(covariant RenderObject child) {
     if (child.parentData is! RenderPortalsParentData) {
@@ -62,7 +58,7 @@ class RenderEventListener extends RenderBoxModel
     _gestureDispatcher.handlePointerEvent(event);
 
     if (event is PointerDownEvent) {
-      rawPointerListener?.recordEventTarget(renderStyle.target);
+      rawPointerListener.recordEventTarget(renderStyle.target);
     }
   }
 }

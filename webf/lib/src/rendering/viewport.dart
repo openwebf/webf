@@ -12,15 +12,17 @@ import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
 class RenderViewportParentData extends ContainerBoxParentData<RenderBox> {}
 
-class _BaseRenderViewportBox extends RenderBox
+class RenderViewportBox extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
         RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
-  _BaseRenderViewportBox({required Size? viewportSize, this.background, required this.controller})
+  RenderViewportBox({required Size? viewportSize, this.background, required this.controller})
       : _viewportSize = viewportSize,
         super();
 
   WebFController controller;
+
+  RawPointerListener rawPointerListener = RawPointerListener();
 
   @override
   void setupParentData(covariant RenderObject child) {
@@ -159,10 +161,8 @@ class _BaseRenderViewportBox extends RenderBox
   }
 }
 
-class RootRenderViewportBox extends _BaseRenderViewportBox {
+class RootRenderViewportBox extends RenderViewportBox {
   RootRenderViewportBox({required super.viewportSize, required super.controller, super.background});
-
-  RawPointerListener rawPointerListener = RawPointerListener();
 
   @override
   void handleEvent(PointerEvent event, HitTestEntry entry) {
@@ -172,13 +172,13 @@ class RootRenderViewportBox extends _BaseRenderViewportBox {
   }
 }
 
-class RouterViewViewportBox extends _BaseRenderViewportBox {
+class RouterViewViewportBox extends RenderViewportBox {
   RouterViewViewportBox({required super.viewportSize, required super.controller});
 
   @override
   void handleEvent(PointerEvent event, HitTestEntry entry) {
     super.handleEvent(event, entry as BoxHitTestEntry);
 
-    controller.view.viewport!.rawPointerListener.handleEvent(event);
+    rawPointerListener.handleEvent(event);
   }
 }

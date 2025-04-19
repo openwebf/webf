@@ -47,6 +47,16 @@ typedef OnCustomElementDetached = void Function(WidgetElementAdapter detachedWid
 
 typedef TraverseElementCallback = void Function(Element element);
 
+class HybridRoutePageContext {
+  /// The route path for the hybrid router in WebF.
+  String path;
+
+  /// The attached flutter buildContexts for this hybrid route page.
+  BuildContext context;
+
+  HybridRoutePageContext(this.path, this.context);
+}
+
 enum WebFLoadingMode {
   /// The default loading mode.
   /// All associated page resources begin loading once the WebF widget is mounted into the Flutter tree.
@@ -300,18 +310,20 @@ class WebFController {
   ui.FlutterView? _ownerFlutterView;
   ui.FlutterView? get ownerFlutterView => _ownerFlutterView;
 
-  final List<BuildContext> _buildContextStack = [];
+  final List<HybridRoutePageContext> _buildContextStack = [];
   /// Get current attached buildContexts.
   /// Especially useful to detect how many hybrid route pages attached to the Flutter tree.
-  List<BuildContext> get buildContextStack => _buildContextStack;
-  void pushNewBuildContext({required BuildContext context}) {
-    _buildContextStack.add(context);
+  List<HybridRoutePageContext> get buildContextStack => _buildContextStack;
+
+  void pushNewBuildContext({required BuildContext context, required String routePath}) {
+    _buildContextStack.add(HybridRoutePageContext(routePath, context));
   }
 
-  void popBuildContext({BuildContext? context}) {
+  void popBuildContext({BuildContext? context, String? routePath}) {
     if (_buildContextStack.isNotEmpty) {
       if (context != null) {
-        _buildContextStack.remove(context);
+        assert(routePath != null);
+        _buildContextStack.removeWhere((context) => context.path == routePath);
       } else {
         _buildContextStack.removeLast();
       }
@@ -335,8 +347,8 @@ class WebFController {
 
   UniqueKey key = UniqueKey();
 
-  BuildContext? get currentBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
-  BuildContext? get rootBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
+  HybridRoutePageContext? get currentBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
+  HybridRoutePageContext? get rootBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
 
   bool? _darkModeOverride;
 
@@ -1035,7 +1047,7 @@ class WebFController {
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
-    pushNewBuildContext(context: context);
+    pushNewBuildContext(context: context, routePath: initialRoute ?? '/');
   }
 
   /// Detaches the WebF controller from the Flutter widget tree.

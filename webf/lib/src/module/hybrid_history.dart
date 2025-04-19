@@ -79,7 +79,7 @@ class HybridHistoryModule extends BaseModule {
 
   HybridHistoryModule(ModuleManager? moduleManager) : super(moduleManager);
 
-  BuildContext? get _context => moduleManager?.controller.currentBuildContext;
+  BuildContext? get _context => moduleManager?.controller.currentBuildContext?.context;
 
   void back() async {
     pop();

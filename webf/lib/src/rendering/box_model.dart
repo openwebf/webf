@@ -484,10 +484,6 @@ class RenderLayoutBox extends RenderBoxModel
     return repaintBoundaryFlowLayout;
   }
 
-  RawPointerListener get rawPointerListener {
-    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
-  }
-
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);
@@ -570,6 +566,12 @@ class RenderBoxModel extends RenderBox
 
   // Cached positioned children for apply offsets when self had layout
   final Set<RenderBoxModel> positionedChildren = {};
+
+  RawPointerListener get rawPointerListener {
+    final context = renderStyle.target.ownerDocument.controller.currentBuildContext!.context;
+    RenderViewportBox viewportBox = context.findRenderObject() as RenderViewportBox;
+    return viewportBox.rawPointerListener;
+  }
 
   @override
   String toStringShort() {
