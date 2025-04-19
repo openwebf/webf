@@ -50,14 +50,6 @@ class _WebFTesterState extends State<WebFTester> {
           'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'),
       javaScriptChannel: javaScriptChannel,
       onLoad: onLoad,
-      gestureListener: GestureListener(
-        onDrag: (GestureEvent gestureEvent) {
-          if (gestureEvent.state == EVENT_STATE_START) {
-            var event = CustomEvent('nativegesture', detail: 'nativegesture');
-            controller.view.document.documentElement?.dispatchEvent(event);
-          }
-        },
-      ),
     );
 
     await controller.controlledInitCompleter.future;

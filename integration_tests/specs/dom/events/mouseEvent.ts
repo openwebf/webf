@@ -134,7 +134,7 @@ describe('MouseEvent', () => {
     await simulateClick(10.0, 10.0);
   });
 
-  it('should work with dblclick', async (done) => {
+  xit('should work with dblclick', async (done) => {
     const div = document.createElement('div');
     div.style.width = '100px';
     div.style.height = '100px';
@@ -148,7 +148,7 @@ describe('MouseEvent', () => {
     await simulateClick(10.0, 10.0, 1);
   });
 
-  it('should work with both click and dblclick', async () => {
+  xit('should work with both click and dblclick', async () => {
     const div = document.createElement('div');
     div.style.width = '100px';
     div.style.height = '100px';

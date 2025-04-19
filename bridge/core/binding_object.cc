@@ -221,6 +221,10 @@ ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method
                                                               webf::ExceptionState& exception_state) const {
   auto* context = GetExecutingContext();
 
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
+
   NativeValue* dart_method_name = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy(dart_method_name, &method, sizeof(NativeValue));
 
@@ -281,6 +285,10 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
                                                ExceptionState& exception_state) const {
   auto* context = GetExecutingContext();
   auto* profiler = context->dartIsolateContext()->profiler();
+
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
 
   profiler->StartTrackSteps("BindingObject::InvokeBindingMethod");
 
