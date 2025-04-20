@@ -41,6 +41,17 @@ class RenderEventListener extends RenderBoxModel
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
 
   @override
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    return computeDistanceToBaseline();
+  }
+
+  @override
+  double? computeDistanceToBaseline() {
+    return renderStyle.attachedRenderBoxModel!.computeDistanceToBaseline();
+  }
+
+
+  @override
   void setupParentData(covariant RenderObject child) {
     if (child.parentData is! RenderPortalsParentData) {
       child.parentData = RenderPortalsParentData();
@@ -48,9 +59,27 @@ class RenderEventListener extends RenderBoxModel
   }
 
   @override
-  void markNeedsLayout() {
-    super.markNeedsLayout();
-    parent?.markNeedsLayout();
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('hasEvent', _enableEvent));
+  }
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    if (child == null) {
+      return false;
+    }
+
+    final BoxParentData childParentData = child!.parentData as BoxParentData;
+    bool isHit = result.addWithPaintOffset(offset: childParentData.offset, position: position, hitTest: (result, position) {
+      // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
+      if (child!.hitTest(result, position: position)) {
+        result.add(BoxHitTestEntry(this, position));
+        return true;
+      }
+      return false;
+    });
+    return isHit;
   }
 
   @override

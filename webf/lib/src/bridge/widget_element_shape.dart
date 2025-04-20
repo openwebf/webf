@@ -32,7 +32,7 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
     List<String> syncMethods = [];
     List<String> asyncMethods = [];
 
-    for (int i = 1; i < widgetElement.methods.length; i ++) {
+    for (int i = 2; i < widgetElement.methods.length; i ++) {
       syncMethods.addAll(widgetElement.methods[i].keys);
     }
 

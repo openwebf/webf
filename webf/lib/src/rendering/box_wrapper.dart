@@ -79,12 +79,57 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    final RenderBox? child = this.child;
+    if (!hasSize || !contentVisibilityHitTest(result, position: position) || renderStyle.isVisibilityHidden) {
+      return false;
+    }
+
+    assert(() {
+      if (!hasSize) {
+        if (debugNeedsLayout) {
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('Cannot hit test a render box that has never been laid out.'),
+            describeForError('The hitTest() method was called on this RenderBox'),
+            ErrorDescription("Unfortunately, this object's geometry is not known at this time, "
+                'probably because it has never been laid out. '
+                'This means it cannot be accurately hit-tested.'),
+            ErrorHint('If you are trying '
+                'to perform a hit test during the layout phase itself, make sure '
+                "you only hit test nodes that have completed layout (e.g. the node's "
+                'children, after their layout() method has been called).'),
+          ]);
+        }
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('Cannot hit test a render box with no size.'),
+          describeForError('The hitTest() method was called on this RenderBox'),
+          ErrorDescription('Although this node is not marked as needing layout, '
+              'its size is not set.'),
+          ErrorHint('A RenderBox object must have an '
+              'explicit size before it can be hit-tested. Make sure '
+              'that the RenderBox in question sets its size during layout.'),
+        ]);
+      }
+      return true;
+    }());
+
+    // Determine whether the hittest position is within the visible area of the node in scroll.
+    if ((clipX || clipY) && !size.contains(position)) {
+      return false;
+    }
+
     if (child == null) {
       return false;
     }
-    final BoxParentData childParentData = child.parentData as BoxParentData;
-    return super.hitTest(result, position: position - childParentData.offset);
+
+    final BoxParentData childParentData = child!.parentData as BoxParentData;
+    bool isHit = result.addWithPaintOffset(offset: childParentData.offset, position: position, hitTest: (result, position) {
+      // addWithPaintOffset is to add an offset to the child node, the calculation itself does not need to bring an offset.
+      if (hasSize && hitTestChildren(result, position: position) || hitTestSelf(position)) {
+        result.add(BoxHitTestEntry(this, position));
+        return true;
+      }
+      return false;
+    });
+    return isHit;
   }
 }
 

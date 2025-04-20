@@ -31,28 +31,4 @@ class WebFEventListener extends SingleChildRenderObjectWidget {
       renderObject.disabledEventCapture();
     }
   }
-
-  @override
-  _EventListenerElement createElement() => _EventListenerElement(this);
-}
-
-class _EventListenerElement extends SingleChildRenderObjectElement {
-  _EventListenerElement(super.widget);
-
-  @override
-  WebFEventListener get widget => super.widget as WebFEventListener;
-
-  @override
-  RenderEventListener get renderObject => super.renderObject as RenderEventListener;
-
-  @override
-  void insertRenderObjectChild(RenderObject child, Object? slot) {
-    assert(renderObject.debugValidateChild(child));
-    renderObject.child = child as RenderBox;
-  }
-
-  @override
-  void removeRenderObjectChild(RenderObject child, Object? slot) {
-    renderObject.child = null;
-  }
 }
