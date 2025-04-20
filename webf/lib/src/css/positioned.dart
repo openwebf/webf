@@ -271,16 +271,8 @@ class CSSPositionedLayout {
     }
 
     if (isChildNeedsLayout) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentLayoutOp();
-      }
-
       // Should create relayoutBoundary for positioned child.
       child.layout(childConstraints, parentUsesSize: false);
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentLayoutOp();
-      }
     }
   }
 

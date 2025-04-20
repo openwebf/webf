@@ -76,10 +76,6 @@ class RenderWidget extends RenderBoxModel
 
   @override
   void performLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayout(this);
-    }
-
     beforeLayout();
 
     List<RenderBoxModel> _positionedChildren = [];
@@ -134,10 +130,6 @@ class RenderWidget extends RenderBoxModel
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
     didLayout();
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayout(this);
-    }
   }
 
   @override
@@ -181,15 +173,7 @@ class RenderWidget extends RenderBoxModel
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaint(this);
-    }
-
     paintBoxModel(context, offset);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaint(this);
-    }
   }
 
   @override

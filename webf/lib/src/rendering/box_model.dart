@@ -1222,22 +1222,11 @@ class RenderBoxModel extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaint(this);
-    }
-
     if (!shouldPaint) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackPaint(this);
-      }
       return;
     }
 
     paintBoxModel(context, offset);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaint(this);
-    }
   }
 
   void debugPaintOverlay(PaintingContext context, Offset offset) {

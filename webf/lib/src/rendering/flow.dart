@@ -198,10 +198,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayout(this);
-    }
-
     doingThisLayout = true;
 
     _doPerformLayout();
@@ -211,10 +207,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayout(this);
-    }
   }
 
   void _doPerformLayout() {
@@ -498,15 +490,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
         bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.pauseCurrentLayoutOp();
-        }
-
         child.layout(childConstraints, parentUsesSize: parentUseSize);
-
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.resumeCurrentLayoutOp();
-        }
       }
 
       double childMainAxisExtent = RenderFlowLayout.getPureMainAxisExtent(child);
@@ -773,15 +757,7 @@ class RenderFlowLayout extends RenderLayoutBox {
                 maxHeight: child.constraints.maxHeight,
               );
 
-              if (enableWebFProfileTracking) {
-                WebFProfiler.instance.pauseCurrentLayoutOp();
-              }
-
               child.layout(childConstraints, parentUsesSize: true);
-
-              if (enableWebFProfileTracking) {
-                WebFProfiler.instance.resumeCurrentLayoutOp();
-              }
             }
           }
         }

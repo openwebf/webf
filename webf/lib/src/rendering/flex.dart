@@ -621,9 +621,6 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayout(this);
-    }
     doingThisLayout = true;
 
     _doPerformLayout();
@@ -633,9 +630,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       needsRelayout = false;
     }
     doingThisLayout = false;
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayout(this);
-    }
   }
 
   void _doPerformLayout() {

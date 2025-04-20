@@ -693,9 +693,6 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaint(this);
-    }
     assert(() {
       if (debugRepaintTextRainbowEnabled) {
         final Paint paint = Paint()..color = debugCurrentRepaintColor.toColor();
@@ -737,10 +734,6 @@ class WebFRenderParagraph extends RenderBox
         context.canvas.drawRect(Offset.zero & size, paint);
       }
       context.canvas.restore();
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaint(this);
     }
   }
 
