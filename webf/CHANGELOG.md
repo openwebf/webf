@@ -1,3 +1,47 @@
+## 0.21.0-beta.4
+
+### Features
+
+- Add WebFTouchArea element to avoid SyntheticEvent side effects in React.js
+- Add NativeByteData for receiving bytes from JavaScript to Dart
+- Make webf.invokeModule accept multiple parameters
+- Use Completer for async returns for modules
+- Add helper functions in render style
+- Add controller.printDOMTree API for debugging
+- Make Cupertino slider code generator friendly
+- Optimize onscreen event priority for `<webf-router-path />` element
+- Optimize page loading to avoid rebuilding the whole widget tree
+- Optimize loading screen for already loaded pages
+- Optimize canvas needsPaint UI commands
+
+### Bug Fixes
+
+- Fix share demo and miracle plus share demo
+- Fix flex-item size with flex-basics
+- Fix mark parent needs relayout with RenderEventListener
+- Fix RenderEventListener stopping the mark needs layout
+- Fix minContentWidth and minContentHeight calculation in event listener
+- Fix localStorage.removeItem
+- Fix flex layout baseline computation affected by renderEventListener
+- Fix dump rendering snapshots on widget elements
+- Fix hit test for event listeners and box wrapper
+- Fix array buffer memory leaks when dispose the engine
+- Fix memory leaks due to ui command items
+- Fix widget element state disposed by add event listener on element
+- Fix event target gesture target mixed between main and hybrid route pages
+- Fix mark needs build for root WebFState
+- Fix WebF touch area default style
+- Fix height constraints from parent widget elements
+- Fix avoid repeat call needsPaint for canvas element
+
+### Other Changes
+
+- Enhance type definitions and interfaces across polyfill modules
+- Remove the profile tracking in layout and paint
+- Add NativeBytedata test specs
+- Add array buffer demo for testing
+
+
 ## 0.21.0-beta.3+1
 
 ### Features
