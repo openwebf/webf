@@ -305,7 +305,7 @@ class WebFState extends State<WebF> with RouteAware {
     setState(() {});
   }
 
-  Widget _buildRootView(List<Widget> children) {
+  Widget buildViewport(List<Widget> children) {
     return WebFRootViewport(
       widget.controller,
       key: widget.controller.key,
@@ -333,12 +333,12 @@ class WebFState extends State<WebF> with RouteAware {
       pendingFutures.add(widget.controller.view.awaitForHybridRouteLoaded(initialRoute));
     }
 
-    return _buildRootView([
+    return buildViewport([
       FutureBuilder(
           future: Future.wait(pendingFutures),
           key: widget.controller.key,
           builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
+            if (!widget.controller.evaluated && snapshot.connectionState != ConnectionState.done) {
               return widget.loadingWidget ??
                   const SizedBox(
                     width: 50,
@@ -349,30 +349,34 @@ class WebFState extends State<WebF> with RouteAware {
                   );
             }
 
-            if (initialRoute != '/') {
-              RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
-              if (child == null) {
-                return WebFHTMLElement(
-                    tagName: 'DIV',
-                    controller: widget.controller,
-                    parentElement: null,
-                    children: [Text('Loading Error: the route path for $initialRoute was not found')]);
-              }
-
-              return child.toWidget();
-            }
-
-            if (widget.controller.view.document.documentElement == null) {
-              return WebFHTMLElement(
-                  tagName: 'DIV',
-                  controller: widget.controller,
-                  parentElement: null,
-                  children: [Text('Loading Error: the documentElement is Null')]);
-            }
-
-            return widget.controller.view.document.documentElement!.toWidget();
+            return buildRootView(initialRoute);
           })
     ]);
+  }
+
+  Widget buildRootView(String initialRoute) {
+    if (initialRoute != '/') {
+      RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
+      if (child == null) {
+        return WebFHTMLElement(
+            tagName: 'DIV',
+            controller: widget.controller,
+            parentElement: null,
+            children: [Text('Loading Error: the route path for $initialRoute was not found')]);
+      }
+
+      return child.toWidget();
+    }
+
+    if (widget.controller.view.document.documentElement == null) {
+      return WebFHTMLElement(
+          tagName: 'DIV',
+          controller: widget.controller,
+          parentElement: null,
+          children: [Text('Loading Error: the documentElement is Null')]);
+    }
+
+    return widget.controller.view.document.documentElement!.toWidget();
   }
 
   @override
@@ -391,6 +395,11 @@ class WebFState extends State<WebF> with RouteAware {
 
 class _WebFElement extends StatefulElement {
   _WebFElement(super.widget);
+
+  @override
+  void markNeedsBuild() {
+    super.markNeedsBuild();
+  }
 
   @override
   void mount(Element? parent, Object? newSlot) {

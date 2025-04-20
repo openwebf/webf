@@ -173,17 +173,13 @@ class _AsyncWebFRouterView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    WebFController? existController = WebFControllerManager.instance.getControllerSync(controllerName);
-    if (existController != null) {
-      return builder != null
-          ? builder!(context, existController)
-          : WebFRouterView(controller: existController, path: path);
-    }
-
     return FutureBuilder(
         future: WebFControllerManager.instance.getController(controllerName),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          WebFController? existController = WebFControllerManager.instance.getControllerSync(controllerName);
+          if (existController == null ||
+              !existController.evaluated ||
+              snapshot.connectionState == ConnectionState.waiting) {
             return loadingWidget ??
                 const SizedBox(
                   width: 50,
