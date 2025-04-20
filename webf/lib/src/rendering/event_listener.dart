@@ -94,7 +94,8 @@ class RenderEventListener extends RenderBoxModel
 
   @override
   void performLayout() {
-    super.performLayout();
+    size = (child?..layout(constraints, parentUsesSize: true))?.size
+        ?? computeSizeForNoChild(constraints);
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
 
