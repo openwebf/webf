@@ -50,6 +50,10 @@ class RenderEventListener extends RenderBoxModel
     return renderStyle.attachedRenderBoxModel!.computeDistanceToBaseline();
   }
 
+  @override
+  double get minContentWidth => (child as RenderBoxModel).minContentWidth;
+  @override
+  double get minContentHeight => (child as RenderBoxModel).minContentHeight;
 
   @override
   void setupParentData(covariant RenderObject child) {
