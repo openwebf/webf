@@ -41,6 +41,12 @@ class RenderEventListener extends RenderBoxModel
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
 
   @override
+  void markNeedsLayout() {
+    super.markNeedsLayout();
+    parent?.markNeedsLayout();
+  }
+
+  @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
     return computeDistanceToBaseline();
   }

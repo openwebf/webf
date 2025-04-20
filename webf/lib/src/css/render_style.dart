@@ -849,8 +849,6 @@ abstract class RenderStyle extends DiagnosticableTree {
     widgetRenderBox?.clearIntersectionChangeListeners();
   }
 
-  void attachToRenderBoxModel() {}
-
   @pragma('vm:prefer-inline')
   void markNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
