@@ -509,6 +509,11 @@ abstract class RenderStyle extends DiagnosticableTree {
   }
 
   @pragma('vm:prefer-inline')
+  bool isParentRenderFlowLayout() {
+    return getParentRenderStyle()?.isSelfRenderFlowLayout() == true;
+  }
+
+  @pragma('vm:prefer-inline')
   bool isLayoutBox() {
     return everyRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
@@ -765,6 +770,9 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   // Get the offset of current element relative to specified ancestor element.
   Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
+    // Need to flush layout to get correct size.
+    flushLayout();
+
     // Returns (0, 0) when ancestor is null.
     if (ancestorRenderBox == null) {
       return Offset.zero;

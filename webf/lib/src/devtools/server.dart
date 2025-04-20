@@ -160,7 +160,7 @@ class IsolateInspectorServer extends IsolateInspector {
       _httpServer = await HttpServer.bind(address, port);
       this.port = port;
     } on SocketException {
-      if (_bindServerRetryTime < 10) {
+      if (_bindServerRetryTime < 100) {
         _bindServerRetryTime++;
         await _bindServer(port + 1);
       } else {
