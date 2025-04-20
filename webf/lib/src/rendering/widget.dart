@@ -239,3 +239,10 @@ class RenderWidget extends RenderBoxModel
     return false;
   }
 }
+
+class RenderRepaintBoundaryWidget extends RenderWidget {
+  RenderRepaintBoundaryWidget({required super.renderStyle});
+
+  @override
+  bool get isRepaintBoundary => true;
+}

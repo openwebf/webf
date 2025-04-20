@@ -292,7 +292,7 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
 
     List<Widget> children = [child, ...positionedElements.map((element) => element.toWidget())];
 
-    return WebFRenderWidgetAdaptor(widgetElement, children: children);
+    return WebFRenderWidgetAdaptor(widgetElement, children: children, key: widgetElement.key);
   }
 }
 

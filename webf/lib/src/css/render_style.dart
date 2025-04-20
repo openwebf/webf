@@ -2707,13 +2707,19 @@ class CSSRenderStyle extends RenderStyle
     return paddingBoxHeight! - paddingTop.computedValue - paddingBottom.computedValue;
   }
 
-  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget}) {
+  RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool isRepaintBoundary = false}) {
     RenderWidget nextReplaced;
 
     if (previousRenderWidget == null || target.managedByFlutterWidget) {
-      nextReplaced = RenderWidget(
-        renderStyle: this,
-      );
+      if (isRepaintBoundary) {
+        nextReplaced = RenderRepaintBoundaryWidget(
+          renderStyle: this,
+        );
+      } else {
+        nextReplaced = RenderWidget(
+          renderStyle: this,
+        );
+      }
     } else {
       nextReplaced = previousRenderWidget;
     }
@@ -2870,7 +2876,7 @@ class CSSRenderStyle extends RenderStyle
   RenderBoxModel updateOrCreateRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (target.isWidgetElement) {
-      nextRenderBoxModel = _createRenderWidget();
+      nextRenderBoxModel = _createRenderWidget(isRepaintBoundary: target.isRepaintBoundary);
     } else if (target.isReplacedElement) {
       nextRenderBoxModel = _createRenderReplaced(isRepaintBoundary: target.isRepaintBoundary);
     } else if (target.isSVGElement) {
