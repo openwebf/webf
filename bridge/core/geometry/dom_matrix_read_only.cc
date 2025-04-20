@@ -25,10 +25,9 @@ DOMMatrixReadOnly* DOMMatrixReadOnly::Create(webf::ExecutingContext* context, we
 DOMMatrix* DOMMatrixReadOnly::fromMatrix(ExecutingContext* context,
                                          DOMMatrixReadOnly* matrix,
                                          ExceptionState& exception_state) {
-  std::vector<DOMMatrixReadOnly*> matrix_vec { matrix };
+  std::vector<DOMMatrixReadOnly*> matrix_vec{matrix};
   NativeValue arguments[] = {
-      NativeValueConverter<NativeTypeArray<NativeTypePointer<DOMMatrixReadOnly>>>::ToNativeValue(matrix_vec)
-  };
+      NativeValueConverter<NativeTypeArray<NativeTypePointer<DOMMatrixReadOnly>>>::ToNativeValue(matrix_vec)};
   // auto* context = matrix->GetExecutingContext();
   AtomicString module_name = AtomicString(context->ctx(), "DOMMatrix");
   AtomicString method_name = AtomicString(context->ctx(), "fromMatrix");
