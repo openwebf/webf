@@ -38,12 +38,12 @@ class LocalStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  dynamic invoke(String method, params) {
+  dynamic invoke(String method, List<dynamic> params) {
     Box box = Hive.box(getBoxKey(moduleManager!));
 
     switch (method) {
       case 'getItem':
-        return box.get(params);
+        return box.get(params[0]);
       case 'setItem':
         box.put(params[0], params[1]);
         break;
@@ -55,7 +55,7 @@ class LocalStorageModule extends BaseModule {
         return keys;
       case 'key':
         try {
-          return box.keyAt(params);
+          return box.keyAt(params[0]);
         } catch (e) {
           return null;
         }

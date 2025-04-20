@@ -77,12 +77,12 @@ class AsyncStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  Future<dynamic> invoke(String method, params) {
+  Future<dynamic> invoke(String method, List<dynamic> params) {
     Completer<dynamic> completer = Completer();
     switch (method) {
       case 'getItem':
-        getItem(params).then((String? value) {
-          completer.complete(value);
+        getItem(params[0]).then((String? value) {
+          completer.complete(value ?? '');
         }).catchError((e, stack) {
           completer.completeError(e, stack);
         });
@@ -97,7 +97,7 @@ class AsyncStorageModule extends BaseModule {
         });
         break;
       case 'removeItem':
-        removeItem(params).then((bool isSuccess) {
+        removeItem(params[0]).then((bool isSuccess) {
           completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
           completer.completeError(e, stack);

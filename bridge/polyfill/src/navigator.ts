@@ -45,24 +45,10 @@ export const navigator: NavigatorInterface = {
   },
   clipboard: {
     readText() {
-      return new Promise((resolve, reject) => {
-        webf.invokeModule('Clipboard', 'readText', null, (e, data) => {
-          if (e) {
-            return reject(e);
-          }
-          resolve(data);
-        });
-      });
+      return webf.invokeModuleAsync('Clipboard', 'readText', null);
     },
     writeText(text: string) {
-      return new Promise((resolve, reject) => {
-        webf.invokeModule('Clipboard', 'writeText', String(text), (e, data) => {
-          if (e) {
-            return reject(e);
-          }
-          resolve(data);
-        });
-      });
+      return webf.invokeModuleAsync('Clipboard', 'writeText', String(text));
     }
   }
 }

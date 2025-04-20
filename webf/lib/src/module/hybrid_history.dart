@@ -215,12 +215,9 @@ class HybridHistoryModule extends BaseModule {
   }
 
   @override
-  dynamic invoke(String method, Object? params) {
+  dynamic invoke(String method, List<dynamic> params) {
     // Handle the case where params might be null
-    List<dynamic> paramsList = [];
-    if (params != null) {
-      paramsList = params as List<dynamic>;
-    }
+    List<dynamic> paramsList = params;
 
     if (_context == null) {
       throw FlutterError('Could not invoke HybridHistory API when flutter context was not attached');

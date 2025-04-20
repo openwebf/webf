@@ -27,7 +27,7 @@ class ClipBoardModule extends BaseModule {
   void dispose() {}
 
   @override
-  Future<dynamic> invoke(String method, params) {
+  Future<dynamic> invoke(String method, List<dynamic> params) {
     Completer<dynamic> completer = Completer();
     if (method == 'readText') {
       ClipBoardModule.readText().then((String value) {
@@ -36,7 +36,7 @@ class ClipBoardModule extends BaseModule {
         completer.completeError(e, stack);
       });
     } else if (method == 'writeText') {
-      ClipBoardModule.writeText(params).then((_) {
+      ClipBoardModule.writeText(params[0]).then((_) {
         completer.complete();
       }).catchError((e, stack) {
         completer.completeError(e, stack);

@@ -20,7 +20,7 @@ export class Storage implements StorageInterface {
     return webf.invokeModule(this.moduleName, 'getItem', String(key));
   }
   setItem(key: number | string, value: number | string) {
-    return webf.invokeModule(this.moduleName, 'setItem', [String(key), String(value)]);
+    return webf.invokeModule(this.moduleName, 'setItem', String(key), String(value));
   }
   removeItem(key: number | string) {
     return webf.invokeModule(this.moduleName, 'removeItem', String(key));

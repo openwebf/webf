@@ -337,12 +337,11 @@ export const fetch: Fetch = (input: Request | string, init?: RequestInit): Promi
       webf.invokeModule('Fetch', 'abortRequest');
     }
 
-    webf.invokeModule('Fetch', request.url, ({
+    webf.invokeModuleAsync('Fetch', request.url, ({
       ...init,
       headers: (headers as Headers).map
-    }), (e, data) => {
+    })).then((data: any) => {
       request.signal.removeEventListener('abort', abortRequest);
-      if (e) return reject(e);
       let [err, statusCode, body] = data;
       // network error didn't have statusCode
       if (err && !statusCode) {
@@ -357,8 +356,7 @@ export const fetch: Fetch = (input: Request | string, init?: RequestInit): Promi
       res.url = request.url;
 
       return resolve(res);
-    });
-
+    }).catch(e => reject(e));
     if (request.signal) {
       request.signal.addEventListener('abort', abortRequest)
     }

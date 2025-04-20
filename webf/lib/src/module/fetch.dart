@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 
@@ -93,16 +94,16 @@ class FetchModule extends BaseModule {
   }
 
   @override
-  Future<dynamic> invoke(String method, params) {
-    Completer<dynamic> completer = Completer();
+  dynamic invoke(String method, List<dynamic> params) {
     if (method == 'abortRequest') {
       _abortRequest();
-      completer.complete('');
-      return completer.future;
+      return '';
     }
 
+    Completer<dynamic> completer = Completer();
+
     Uri uri = _resolveUri(method);
-    Map<String, dynamic> options = params;
+    Map<String, dynamic> options = params[0];
 
     _handleError(Object error, StackTrace? stackTrace) {
       completer.completeError(error, stackTrace);

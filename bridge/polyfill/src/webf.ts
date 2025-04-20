@@ -22,7 +22,7 @@ addWebfModuleListener('MethodChannel', (event, data) => triggerMethodCallHandler
 
 export type Webf = {
   methodChannel: MethodChannelInterface;
-  invokeModule: WebfInvokeModule;
+  invokeModule: typeof invokeModuleSync;
   invokeModuleAsync: typeof invokeModuleAsync;
   hybridHistory: HybridHistoryInterface;
   addWebfModuleListener: AddWebfModuleListener;
@@ -33,7 +33,7 @@ export type Webf = {
 
 const MAGIC_RESULT_FOR_ASYNC = 0x01fa2f << 4;
 
-function invokeModuleAsync(module: string, method: string, params?: any | null) {
+function invokeModuleAsync<T>(module: string, method: string, ...params: any[]): Promise<T> {
   return new Promise((resolve, reject) => {
     try {
       let isResolved = false;
@@ -55,9 +55,17 @@ function invokeModuleAsync(module: string, method: string, params?: any | null) 
   });
 }
 
+function invokeModuleSync(module: string, method: string, ...params: any[]) {
+  const result = webfInvokeModule(module, method, params);
+  if (result == MAGIC_RESULT_FOR_ASYNC) {
+    throw new Error(`webf.invokeModule: the method ${method} from ${module} was implemented in async, but invoked with sync`);
+  }
+  return result;
+}
+
 export const webf: Webf = {
   methodChannel,
-  invokeModule: webfInvokeModule,
+  invokeModule: invokeModuleSync,
   invokeModuleAsync: invokeModuleAsync,
   hybridHistory: hybridHistory,
   addWebfModuleListener: addWebfModuleListener,

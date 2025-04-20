@@ -9,28 +9,28 @@ class DemoModule extends BaseModule {
   String get name => "Demo";
 
   @override
-  dynamic invoke(String method, params) {
+  dynamic invoke(String method, List<dynamic> params) {
     switch (method) {
       case 'noParams':
-        assert(params == null);
+        assert(params.isEmpty);
         return true;
       case 'callInt':
-        assert(params is int);
-        return params + params;
+        assert(params[0] is int);
+        return params[0] + params[0];
       case 'callDouble':
-        assert(params is double);
-        return (params as double) + params;
+        assert(params[0] is double);
+        return (params[0] as double) + params[0];
       case 'callString':
-        assert(params == 'helloworld');
-        return (params as String).toUpperCase();
+        assert(params[0] == 'helloworld');
+        return (params[0] as String).toUpperCase();
       case 'callArray':
-        assert(params is List);
-        return (params as List).reduce((e, i) => e + i);
+        assert(params[0] is List);
+        return (params[0] as List).reduce((e, i) => e + i);
       case 'callNull':
         return null;
       case 'callObject':
-        assert(params is Map);
-        return params['value'];
+        assert(params[0] is Map);
+        return params[0]['value'];
       case 'callToDispatchEvent':
         CustomEvent customEvent = CustomEvent('click', detail: 'helloworld');
         dispatchEvent(event: customEvent, data: [1, 2, 3, 4, 5]).then((result) {

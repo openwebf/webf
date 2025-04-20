@@ -14,10 +14,11 @@ class DOMMatrixModule extends BaseModule {
   }
 
   @override
-  dynamic invoke(String method, params) {
+  dynamic invoke(String method, List<dynamic> params) {
     if (method == 'fromMatrix') {
-      if (params.runtimeType == DOMMatrix) {
-        DOMMatrix domMatrix = (params as DOMMatrix);
+      final firstValue = params[0];
+      if (firstValue.runtimeType == DOMMatrix) {
+        DOMMatrix domMatrix = firstValue;
         return DOMMatrix.fromMatrix4(
             BindingContext(domMatrix.ownerView, domMatrix.ownerView.contextId, allocateNewBindingObject()),
             domMatrix.matrix.clone(),

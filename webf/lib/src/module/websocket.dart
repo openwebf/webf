@@ -31,9 +31,9 @@ class WebSocketModule extends BaseModule {
   WebSocketModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
-  String invoke(String method, params) {
+  String invoke(String method, List<dynamic> params) {
     if (method == 'init') {
-      return init(params, (String id, Event event) {
+      return init(params[0], (String id, Event event) {
         moduleManager!.emitModuleEvent(name, event: event, data: id);
       });
     } else if (method == 'addEvent') {

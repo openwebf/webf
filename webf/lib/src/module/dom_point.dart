@@ -14,10 +14,11 @@ class DOMPointModule extends BaseModule {
   }
 
   @override
-  dynamic invoke(String method, params) {
+  dynamic invoke(String method, List<dynamic> params) {
     if (method == 'fromPoint') {
-      if (params.runtimeType == DOMPoint) {
-        DOMPoint domPoint = (params as DOMPoint);
+      final firstValue = params[0];
+      if (firstValue.runtimeType == DOMPoint) {
+        DOMPoint domPoint = firstValue;
 
         return DOMPoint.fromPoint(
             BindingContext(domPoint.ownerView, domPoint.ownerView.contextId, allocateNewBindingObject()), domPoint);

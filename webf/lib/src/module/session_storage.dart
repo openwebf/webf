@@ -19,21 +19,21 @@ class SessionStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  dynamic invoke(String method, params) {
+  dynamic invoke(String method, List<dynamic> params) {
     WebFController controller = moduleManager!.controller;
     switch (method) {
       case 'getItem':
-        if (!controller.sessionStorage.containsKey(params)) return null;
-        return controller.sessionStorage[params];
+        if (!controller.sessionStorage.containsKey(params[0])) return null;
+        return controller.sessionStorage[params[0]];
       case 'setItem':
         controller.sessionStorage[params[0]] = params[1];
         break;
       case 'removeItem':
-        controller.sessionStorage.remove(params);
+        controller.sessionStorage.remove(params[0]);
         break;
       case 'key':
         try {
-          return controller.sessionStorage.keys.elementAt(params);
+          return controller.sessionStorage.keys.elementAt(params[0]);
         } catch(e, stack) {
           return null;
         }

@@ -9,12 +9,12 @@ class ArrayBufferModule extends WebFBaseModule {
   String get name => "ArrayBufferTest";
 
   @override
-  dynamic invoke(String method, params) {
+  dynamic invoke(String method, List<dynamic> params) {
     print('method: $method $params');
     switch (method) {
       case 'receiveArrayBuffer':
-        if (params is NativeByteData) {
-          final bytes = params.bytes;
+        if (params[0] is NativeByteData) {
+          final bytes = params[0].bytes;
           // Return information about the received array buffer
           return {
             'received': true,
@@ -30,9 +30,9 @@ class ArrayBufferModule extends WebFBaseModule {
         }
       
       case 'receiveAndCallback':
-        if (params is NativeByteData) {
+        if (params[0] is NativeByteData) {
           Completer<dynamic> completer = Completer();
-          final bytes = params.bytes;
+          final bytes = params[0].bytes;
           Timer(Duration(milliseconds: 50), () {
             completer.complete({
               'byteLength': bytes.length,

@@ -45,7 +45,10 @@ DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
 DOMPoint* DOMPointReadOnly::fromPoint(ExecutingContext* context,
                                       DOMPointReadOnly* point,
                                       ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<DOMPointReadOnly>>::ToNativeValue(point)};
+  std::vector<DOMPointReadOnly*> matrix_vec { point };
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypeArray<NativeTypePointer<DOMPointReadOnly>>>::ToNativeValue(matrix_vec)
+  };
   AtomicString module_name = AtomicString(context->ctx(), "DOMPoint");
   AtomicString method_name = AtomicString(context->ctx(), "fromPoint");
 

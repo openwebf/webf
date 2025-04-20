@@ -17,7 +17,7 @@ abstract class BaseModule {
 
   BaseModule(this.moduleManager);
 
-  dynamic invoke(String method, params);
+  dynamic invoke(String method, List<dynamic> params);
 
   dynamic dispatchEvent({Event? event, data}) {
     return moduleManager!.emitModuleEvent(name, event: event, data: data);
