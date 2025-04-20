@@ -3,7 +3,7 @@
         <template v-if="loading">
             <share-link-skeleton />
         </template>
-        <webf-listview id="share_root" class="webf-listview" @refresh="onRefresh">
+        <webf-listview class="webf-listview" @refresh="onRefresh">
             <!-- 共用的分享头部 -->
             <PostHeader :user="shareLink.user" />
             <PostContent :post="shareLink" />
@@ -28,6 +28,31 @@
             <!-- 评论输入框 -->
             <slot name="comment-input" :handle-comment-submit="handleCommentSubmit" />
         </webf-listview>
+        <div id="share_root" v-if="enableSnapshot"  style="background-color: white; padding: 10px;">
+            <!-- 共用的分享头部 -->
+            <PostHeader :user="shareLink.user" />
+            <PostContent :post="shareLink" />
+            <LinkPreview v-if="shareLink.link" :title="shareLink.title" :introduction="shareLink.introduction"
+                :logo-url="shareLink.logoUrl" />
+
+            <!-- 内容块 -->
+            <ContentBlock v-if="shareLink.introduction" title="内容导读" :content="shareLink.introduction" />
+            <ContentBlock v-if="shareLink.summariedLinkContent" title="自动总结"
+                :content="shareLink.summariedLinkContent" />
+            <RecommendList :recommend-list="recommendList" @recommend-click="handleRecommendClick" />
+
+            <!-- 交互栏 -->
+            <InteractionBar v-bind="interactionBarProps" @follow="handleFollow" @like="handleLike"
+                @bookmark="handleBookmark" @invite="handleInvite" @share="handleShare" />
+
+            <!-- 可选的"查看全部"按钮 -->
+            <slot name="view-all" :comments-count="shareLink.commentsCount" />
+            <!-- 评论区 -->
+            <CommentsSection :comments="allComments" :total="shareLink.commentsCount" />
+
+            <!-- 评论输入框 -->
+            <slot name="comment-input" :handle-comment-submit="handleCommentSubmit" />
+        </div>
 
         <!-- 通用的弹窗组件 -->
         <alert-dialog ref="alertRef" />
@@ -91,6 +116,7 @@ export default {
             searchKeyword: '',
             recommendList: [],
             loading: true,
+            enableSnapshot: false,
         }
     },
 
@@ -311,15 +337,15 @@ export default {
             }
         },
         async handleShare() {
+            this.enableSnapshot = true;
             return new Promise((resolve) => {
-                requestAnimationFrame(async () => {
+                setTimeout(async () => {
                     try {
-                        console.log(11);
                         const element = document.getElementById('share_root');
                         if (!element) {
                             throw new Error('Share element not found');
                         }
-                        const blob = await element.toBlob(2.0);
+                        const blob = await element.toBlob(window.devicePixelRatio);
 
                         const arrayBuffer = await blob.arrayBuffer();
 
@@ -328,6 +354,7 @@ export default {
                         // Call native share through WebF method channel
                         const result = await window.webf.invokeModuleAsync('Share', 'share', arrayBuffer, title, subject);
                         console.log('Share result:', result);
+                        this.enableSnapshot = false;
                         resolve(result);
                     } catch (error) {
                         console.error('Share failed:', error);
@@ -336,7 +363,7 @@ export default {
                         });
                         resolve();
                     }
-                });
+                }, 500);
             });
         },
         async handleLike() {
