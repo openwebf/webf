@@ -19,7 +19,7 @@ class SessionStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  dynamic invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, params) {
     WebFController controller = moduleManager!.controller;
     switch (method) {
       case 'getItem':

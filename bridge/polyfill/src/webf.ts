@@ -31,14 +31,27 @@ export type Webf = {
   requestIdleCallback: RequestIdleCallback;
 }
 
+const MAGIC_RESULT_FOR_ASYNC = 0x01fa2f << 4;
+
 function invokeModuleAsync(module: string, method: string, params?: any | null) {
   return new Promise((resolve, reject) => {
-    webfInvokeModule(module, method, params, (err, data) => {
-      if (err) {
-        return reject(err);
+    try {
+      let isResolved = false;
+      const result = webfInvokeModule(module, method, params, (err, data) => {
+        if (isResolved) return;
+        if (err) {
+          return reject(err);
+        }
+        return resolve(data);
+      });
+
+      if (result != MAGIC_RESULT_FOR_ASYNC) {
+        resolve(result);
+        isResolved = true;
       }
-      return resolve(data);
-    });
+    } catch (e) {
+      reject(e);
+    }
   });
 }
 

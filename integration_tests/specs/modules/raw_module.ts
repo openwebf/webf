@@ -23,31 +23,6 @@ describe('Modules.invokeModule', () => {
     expect(webf.invokeModule('Demo', 'callNull', null)).toBe(null);
     expect(webf.invokeModule('Demo', 'callNull', undefined)).toBe(null);
   });
-  it('invokeModule can accept callback and receive value from callback', () => {
-    return new Promise((resolve, reject) => {
-      let callParams = 10;
-      let syncResult = webf.invokeModule('Demo', 'callAsyncFn', callParams, (err, data) => {
-        if (err) {
-          return reject(err);
-        }
-        expect(data).toEqual([1, '2', null, 4.0, { value: 1}]);
-        setTimeout(() => resolve());
-        return 'success';
-      });
-      expect(syncResult).toBe(callParams);
-    });
-  });
-  it('invokeModule can accept callback and handle the error', () => {
-    return new Promise((resolve) => {
-      let syncResult = webf.invokeModule('Demo', 'callAsyncFnFail', null, (err, data) => {
-        expect(err).toBeInstanceOf(Error);
-        expect(err.message).toBe('Must to fail');
-        setTimeout(() => resolve());
-        return 'fail';
-      });
-      expect(syncResult).toBe(null);
-    });
-  });
 });
 
 describe('Module.addModuleListener', () => {

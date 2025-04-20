@@ -163,7 +163,7 @@ class HistoryModule extends BaseModule {
   }
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  String invoke(String method, params) {
     switch (method) {
       case 'length':
         return (_previousStack.length + _nextStack.length).toString();

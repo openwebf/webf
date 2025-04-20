@@ -37,7 +37,7 @@ class LocationModule extends BaseModule {
   }
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  String invoke(String method, params) {
     switch (method) {
       case 'href':
         return href;

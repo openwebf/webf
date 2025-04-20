@@ -12,15 +12,18 @@ import 'websocket.dart';
 @Deprecated('Use WebFBaseModule instead')
 abstract class BaseModule {
   String get name;
+
   final ModuleManager? moduleManager;
+
   BaseModule(this.moduleManager);
-  dynamic invoke(String method, params, InvokeModuleCallback callback);
+
+  dynamic invoke(String method, params);
+
   dynamic dispatchEvent({Event? event, data}) {
     return moduleManager!.emitModuleEvent(name, event: event, data: data);
   }
 
-  Future<void> initialize() async {
-  }
+  Future<void> initialize() async {}
 
   void dispose();
 }
@@ -32,6 +35,8 @@ abstract class WebFBaseModule extends BaseModule {
 typedef InvokeModuleCallback = Future<dynamic> Function({String? error, Object? data});
 typedef NewModuleCreator = BaseModule Function(ModuleManager);
 typedef ModuleCreator = BaseModule Function(ModuleManager? moduleManager);
+
+final MAGIC_RESULT_FOR_ASYNC = 0x01fa2f << 4;
 
 bool _isDefined = false;
 
@@ -102,12 +107,27 @@ class ModuleManager {
     }
 
     BaseModule module = _moduleMap[moduleName]!;
-    return module.invoke(method, params, ({String? error, Object? data}) async {
+
+    handleInvokeModuleWithFuture({String? error, Object? data}) async {
       if (disposed) {
         return null;
       }
       return callback(error: error, data: data);
-    });
+    }
+
+    dynamic result = module.invoke(method, params);
+
+    if (result is Future) {
+      result.then((result) {
+        handleInvokeModuleWithFuture(data: result);
+      }).catchError((e, stack) {
+        String errmsg = '$e\n$stack';
+        handleInvokeModuleWithFuture(error: errmsg);
+      });
+      return MAGIC_RESULT_FOR_ASYNC;
+    }
+
+    return result;
   }
 
   void dispose() {

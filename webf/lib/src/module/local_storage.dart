@@ -38,7 +38,7 @@ class LocalStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  dynamic invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, params) {
     Box box = Hive.box(getBoxKey(moduleManager!));
 
     switch (method) {

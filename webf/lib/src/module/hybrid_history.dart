@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
@@ -214,7 +215,7 @@ class HybridHistoryModule extends BaseModule {
   }
 
   @override
-  dynamic invoke(String method, Object? params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, Object? params) {
     // Handle the case where params might be null
     List<dynamic> paramsList = [];
     if (params != null) {
@@ -294,11 +295,12 @@ class HybridHistoryModule extends BaseModule {
       case 'canPop':
         return canPop().toString();
       case 'maybePop':
+        Completer<String> completer = Completer();
         // We need to handle this specially because it returns a Future
         maybePop(paramsList.isNotEmpty ? paramsList[0] : null).then((value) {
-          callback(data: value.toString());
+          completer.complete(value.toString());
         });
-        return EMPTY_STRING;
+        return completer.future;
       case 'popAndPushNamed':
         if (paramsList.length >= 2) {
           popAndPushNamed(paramsList[0], arguments: paramsList[1]);

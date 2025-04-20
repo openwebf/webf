@@ -77,57 +77,58 @@ class AsyncStorageModule extends BaseModule {
   void dispose() {}
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  Future<dynamic> invoke(String method, params) {
+    Completer<dynamic> completer = Completer();
     switch (method) {
       case 'getItem':
         getItem(params).then((String? value) {
-          callback(data: value ?? '');
+          completer.complete(value);
         }).catchError((e, stack) {
-          callback(error: '$e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'setItem':
         String key = params[0];
         String value = params[1];
         setItem(key, value).then((bool isSuccess) {
-          callback(data: isSuccess.toString());
+          completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'removeItem':
         removeItem(params).then((bool isSuccess) {
-          callback(data: isSuccess.toString());
+          completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'getAllKeys':
         getAllKeys().then((Set<dynamic> set) {
           List<String> list = List.from(set);
-          callback(data: list);
+          completer.complete(list);
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'clear':
         clear().then((bool isSuccess) {
-          callback(data: isSuccess.toString());
+          completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'length':
         length().then((int length) {
-          callback(data: length);
+          completer.complete(length);
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       default:
         throw Exception('AsyncStorage: Unknown method $method');
     }
 
-    return '';
+    return completer.future;
   }
 }

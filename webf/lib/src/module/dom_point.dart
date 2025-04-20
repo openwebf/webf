@@ -14,7 +14,7 @@ class DOMPointModule extends BaseModule {
   }
 
   @override
-  invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, params) {
     if (method == 'fromPoint') {
       if (params.runtimeType == DOMPoint) {
         DOMPoint domPoint = (params as DOMPoint);

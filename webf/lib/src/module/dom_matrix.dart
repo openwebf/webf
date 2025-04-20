@@ -14,7 +14,7 @@ class DOMMatrixModule extends BaseModule {
   }
 
   @override
-  invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, params) {
     if (method == 'fromMatrix') {
       if (params.runtimeType == DOMMatrix) {
         DOMMatrix domMatrix = (params as DOMMatrix);

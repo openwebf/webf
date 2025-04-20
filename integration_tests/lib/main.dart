@@ -15,6 +15,7 @@ import 'test_module.dart';
 import 'local_http_server.dart';
 import 'utils/mem_leak_detector.dart';
 import 'webf_tester.dart';
+import 'modules/array_buffer_module.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
@@ -56,6 +57,7 @@ void main() async {
   int mockServerPort = await findAvailablePort();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
+  ModuleManager.defineModule((moduleManager) => ArrayBufferModule(moduleManager));
   Process mockHttpServer = await startHttpMockServer(mockServerPort);
   sleep(Duration(seconds: 2));
 

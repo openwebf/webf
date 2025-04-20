@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -92,21 +93,19 @@ class FetchModule extends BaseModule {
   }
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  Future<dynamic> invoke(String method, params) {
+    Completer<dynamic> completer = Completer();
     if (method == 'abortRequest') {
       _abortRequest();
-      return '';
+      completer.complete('');
+      return completer.future;
     }
 
     Uri uri = _resolveUri(method);
     Map<String, dynamic> options = params;
 
     _handleError(Object error, StackTrace? stackTrace) {
-      String errmsg = '$error';
-      if (stackTrace != null) {
-        errmsg += '\n$stackTrace';
-      }
-      callback(error: errmsg);
+      completer.completeError(error, stackTrace);
     }
 
     if (uri.host.isEmpty) {
@@ -132,7 +131,7 @@ class FetchModule extends BaseModule {
         }
       }).then((Uint8List? bytes) {
         if (bytes != null) {
-          callback(data: [EMPTY_STRING, response?.statusCode, bytes]);
+          completer.complete([EMPTY_STRING, response?.statusCode, bytes]);
         } else {
           throw FlutterError('Failed to read response.');
         }
@@ -143,6 +142,6 @@ class FetchModule extends BaseModule {
       });
     }
 
-    return EMPTY_STRING;
+    return completer.future;
   }
 }
