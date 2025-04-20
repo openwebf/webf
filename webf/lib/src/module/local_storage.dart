@@ -48,7 +48,7 @@ class LocalStorageModule extends BaseModule {
         box.put(params[0], params[1]);
         break;
       case 'removeItem':
-        box.delete(params);
+        box.delete(params[0]);
         break;
       case '_getAllKeys':
         List<dynamic> keys = box.keys.toList();
