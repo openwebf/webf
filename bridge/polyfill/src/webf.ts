@@ -15,8 +15,8 @@ import {
   RemoveWebfModuleListener,
   RequestIdleCallback
 } from './bridge';
-import { methodChannel, MethodChannelInterface, triggerMethodCallHandler } from './method-channel';
-import { hybridHistory, HybridHistoryInterface } from './hybrid-history';
+import {methodChannel, MethodChannelInterface, triggerMethodCallHandler} from './method-channel';
+import {hybridHistory, HybridHistoryInterface} from './hybrid-history';
 
 addWebfModuleListener('MethodChannel', (event, data) => triggerMethodCallHandler(data[0], data[1]));
 
@@ -58,7 +58,8 @@ function invokeModuleAsync<T>(module: string, method: string, ...params: any[]):
 function invokeModuleSync(module: string, method: string, ...params: any[]) {
   const result = webfInvokeModule(module, method, params);
   if (result == MAGIC_RESULT_FOR_ASYNC) {
-    throw new Error(`webf.invokeModule: the method ${method} from ${module} was implemented in async, but invoked with sync`);
+    throw new Error(`webf.invokeModule: The method ${method} from module ${module} was implemented asynchronously in Dart,
+but was invoked synchronously. Please use webf.invokeModuleAsync instead`);
   }
   return result;
 }
