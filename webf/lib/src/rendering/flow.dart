@@ -1013,7 +1013,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Margin does not work for inline element.
     double marginTop = !isInline ? renderStyle.marginTop.computedValue : 0;
     double marginBottom = !isInline ? renderStyle.marginBottom.computedValue : 0;
-    bool isParentFlowLayout = parent is RenderFlowLayout || parent is RenderEventListener;
+    bool isParentFlowLayout = renderStyle.isParentRenderFlowLayout();
     bool isDisplayInline = effectiveDisplay == CSSDisplay.inline ||
         effectiveDisplay == CSSDisplay.inlineBlock ||
         effectiveDisplay == CSSDisplay.inlineFlex;
@@ -1147,7 +1147,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     Size? childSize = _getChildSize(child);
 
-    double baseline = parent is RenderFlowLayout
+    double baseline = renderStyle.isParentRenderFlowLayout()
         ? childMarginTop + childSize!.height + childMarginBottom
         : childMarginTop + childSize!.height;
     // When baseline of children not found, use boundary of margin bottom as baseline.
