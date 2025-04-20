@@ -72,7 +72,7 @@ class HybridHistory implements HybridHistoryInterface {
     webf.invokeModule('HybridHistory', 'pop', result !== undefined ? [result] : []);
   }
   
-  pushNamed(routeName: string, options: { arguments?: any } = {}) {
+    pushNamed(routeName: string, options: { arguments?: any } = {}) {
     if (arguments.length < 1) {
       throw TypeError("Failed to execute 'pushNamed' on 'HybridHistory': 1 argument required, but only " + arguments.length + " present");
     }

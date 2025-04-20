@@ -30,8 +30,10 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'custom_hybrid_history_delegate.dart';
 import 'custom_listview.dart';
 import 'expandable_fab.dart';
+import 'test_module.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +41,7 @@ void main() async {
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 6,
+      maxAliveInstances: 2,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -58,6 +60,9 @@ void main() async {
   WebF.defineCustomElement('flutter-shimmer-avatar', (context) => FlutterShimmerAvatarElement(context));
   WebF.defineCustomElement('flutter-shimmer-text', (context) => FlutterShimmerTextElement(context));
   WebF.defineCustomElement('flutter-shimmer-button', (context) => FlutterShimmerButtonElement(context));
+
+  WebF.defineModule((context) => TestModule(context));
+
   installWebFCupertino();
 
   // Add home controller with preloading
@@ -343,7 +348,7 @@ class FirstPageState extends State<FirstPage> {
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
-              widget.webfPageName.value = 'react';
+              widget.webfPageName.value = 'reactjs';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(
                   webfPageName: 'reactjs',
@@ -351,6 +356,17 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open React.js demo')),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'reactjs';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'reactjs',
+                  initialRoute: '/array-buffer-demo',
+                );
+              }));
+            },
+            child: Text('Open ArrayBuffer Demo')),
         SizedBox(height: 10),
         ElevatedButton(
             onPressed: () {
