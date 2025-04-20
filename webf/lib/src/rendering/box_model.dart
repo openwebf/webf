@@ -365,11 +365,11 @@ class RenderLayoutBox extends RenderBoxModel
       marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
     }
     // Flex basis takes priority over main size in flex item when flex-grow or flex-shrink not work.
-    if (parent is RenderFlexLayout) {
-      RenderBoxModel? parentRenderBoxModel = parent as RenderBoxModel?;
+    if (renderStyle.isParentRenderFlexLayout()) {
+      CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
       double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto ? null : renderStyle.flexBasis?.computedValue;
       if (flexBasis != null) {
-        if (CSSFlex.isHorizontalFlexDirection(parentRenderBoxModel!.renderStyle.flexDirection)) {
+        if (CSSFlex.isHorizontalFlexDirection(parentRenderStyle!.flexDirection)) {
           if (!hasOverrideContentLogicalWidth) {
             specifiedContentWidth = _getContentWidth(flexBasis);
           }

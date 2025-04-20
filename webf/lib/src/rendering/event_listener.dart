@@ -57,6 +57,20 @@ class RenderEventListener extends RenderBoxModel
   }
 
   @override
+  bool get hasOverrideContentLogicalWidth => (child as RenderBoxModel).hasOverrideContentLogicalWidth;
+  @override
+  set hasOverrideContentLogicalWidth(value) {
+    (child as RenderBoxModel).hasOverrideContentLogicalWidth = value;
+  }
+
+  @override
+  bool get hasOverrideContentLogicalHeight => (child as RenderBoxModel).hasOverrideContentLogicalHeight;
+  @override
+  set hasOverrideContentLogicalHeight(value) {
+    (child as RenderBoxModel).hasOverrideContentLogicalHeight = value;
+  }
+
+  @override
   double get minContentWidth => (child as RenderBoxModel).minContentWidth;
   @override
   double get minContentHeight => (child as RenderBoxModel).minContentHeight;
