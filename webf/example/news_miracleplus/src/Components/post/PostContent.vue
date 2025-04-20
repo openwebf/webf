@@ -9,7 +9,7 @@
       </div>
     </div>
   </template>
-  
+
   <script>
   import markdownit from 'markdown-it'
   import { parseRichContent, checkIsRichContent } from '@/utils/parseRichContent';
@@ -36,11 +36,11 @@
     }
   }
   </script>
-  
+
   <style lang="scss" scoped>
   .post-content {
     margin: 16px 0;
-    
+
     .title {
       font-size: 18px;
       font-weight: bold;

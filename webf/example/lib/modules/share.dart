@@ -1,6 +1,7 @@
 
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -29,17 +30,20 @@ class ShareModule extends WebFBaseModule {
       String text = args[1];
       String subject = args[2];
 
-      final downloadDir = await getDownloadsDirectory();
+      print('snapshot length: ${snapshot.length}');
+      final downloadDir = await getTemporaryDirectory();
       final now = DateTime.now().millisecondsSinceEpoch;
-      final filePath = '${downloadDir?.path}/screenshot_$now.png';
+      final filePath = '${downloadDir.path}/screenshot_$now.png';
+
+      Uint8List bytes = snapshot.bytes;
 
       final file = File(filePath);
       await file.writeAsBytes(snapshot.bytes);
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: text,
-        subject: subject,
+        // text: text,
+        // subject: subject,
       );
 
       return true;

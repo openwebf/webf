@@ -363,7 +363,7 @@ export default {
                         });
                         resolve();
                     }
-                }, 500);
+                }, 200);
             });
         },
         async handleLike() {
