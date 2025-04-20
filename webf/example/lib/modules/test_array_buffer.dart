@@ -11,11 +11,11 @@ class TestModule extends WebFBaseModule {
   }
 
   @override
-  invoke(String method, params) {
+  invoke(String method, List<dynamic> params) {
     print('method: $method, params: $params');
-    if (params is NativeByteData) {
+    if (params[0] is NativeByteData) {
       Completer<String> completer = Completer();
-      String log = 'Received bytes from JS, length: ${params.bytes.length}';
+      String log = 'Received bytes from JS, length: ${params[0].bytes.length}';
       print(log);
       // You can use params.bytes (Uint8List) here to process the binary data
       completer.complete(log);

@@ -3,7 +3,7 @@
         <template v-if="loading">
             <share-link-skeleton />
         </template>
-        <webf-listview class="webf-listview" @refresh="onRefresh">
+        <webf-listview id="share_root" class="webf-listview" @refresh="onRefresh">
             <!-- 共用的分享头部 -->
             <PostHeader :user="shareLink.user" />
             <PostContent :post="shareLink" />
@@ -33,15 +33,9 @@
         <alert-dialog ref="alertRef" />
         <flutter-cupertino-loading ref="loading" />
         <flutter-cupertino-toast ref="toast" />
-        <InviteModal
-            :show="showInviteModal"
-            :loading="loadingUsers"
-            :users="invitedUsers"
-            :search-keyword="searchKeyword"
-            @close="onInviteModalClose"
-            @search="handleSearchInput"
-            @invite="handleInviteUser"
-        />
+        <InviteModal :show="showInviteModal" :loading="loadingUsers" :users="invitedUsers"
+            :search-keyword="searchKeyword" @close="onInviteModalClose" @search="handleSearchInput"
+            @invite="handleInviteUser" />
     </div>
 </template>
 
@@ -320,22 +314,19 @@ export default {
             return new Promise((resolve) => {
                 requestAnimationFrame(async () => {
                     try {
-                        const element = document.body;
+                        console.log(11);
+                        const element = document.getElementById('share_root');
                         if (!element) {
                             throw new Error('Share element not found');
                         }
-                        const blob = await element.toBlob(1.0);
-                        
+                        const blob = await element.toBlob(2.0);
+
                         const arrayBuffer = await blob.arrayBuffer();
-                        const uint8Array = new Uint8Array(arrayBuffer); 
-                        const array = Array.from(uint8Array);
-                        
+
+                        const title = this.shareLink.title || '分享';
+                        const subject = this.shareLink.introduction || '';
                         // Call native share through WebF method channel
-                        const result = await window.webf.methodChannel.invokeMethod('share', {
-                            blob: array,
-                            title: this.shareLink.title || '分享',
-                            text: this.shareLink.introduction || ''
-                        });
+                        const result = await window.webf.invokeModuleAsync('Share', 'share', arrayBuffer, title, subject);
                         console.log('Share result:', result);
                         resolve(result);
                     } catch (error) {
@@ -408,7 +399,7 @@ export default {
         },
         async handleCommentSubmit(content) {
             const richContent = formatToRichContent(content);
-            
+
             const commentRes = await api.comments.create({
                 resourceId: this.shareLinkId,
                 resourceType: 'ShareLink',

@@ -30,7 +30,8 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 import 'custom_hybrid_history_delegate.dart';
 import 'custom_listview.dart';
 import 'expandable_fab.dart';
-import 'test_module.dart';
+import 'modules/test_array_buffer.dart';
+import 'modules/share.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
@@ -62,6 +63,7 @@ void main() async {
   WebF.defineCustomElement('flutter-shimmer-button', (context) => FlutterShimmerButtonElement(context));
 
   WebF.defineModule((context) => TestModule(context));
+  WebF.defineModule((context) => ShareModule(context));
 
   installWebFCupertino();
 
@@ -131,19 +133,6 @@ void main() async {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
-  final WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
-  javaScriptChannel.onMethodCall = (String method, dynamic args) async {
-    switch (method) {
-      case 'share':
-        if (args is List && args.isNotEmpty) {
-          final params = args[0] as Map<String, dynamic>;
-          return handleShare(params);
-        }
-        return false;
-      default:
-        return null;
-    }
-  };
 
   // Add vue controller with preloading
   WebFControllerManager.instance.addWithPrerendering(
@@ -152,7 +141,6 @@ void main() async {
             initialRoute: '/home',
             routeObserver: routeObserver,
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-            javaScriptChannel: javaScriptChannel,
           ),
       bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
       setup: (controller) {
@@ -442,26 +430,11 @@ class FirstPageState extends State<FirstPage> {
               },
               child: Text('H')),
           ActionButton(onPressed: () {
-            final WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
-            javaScriptChannel.onMethodCall = (String method, dynamic args) async {
-              switch (method) {
-                case 'share':
-                  if (args is List && args.isNotEmpty) {
-                    final params = args[0] as Map<String, dynamic>;
-                    return handleShare(params);
-                  }
-                  return false;
-                default:
-                  return null;
-              }
-            };
-
             WebFControllerManager.instance.updateWithPreload(
                 createController: () => WebFController(
                   initialRoute: '/home',
                   routeObserver: routeObserver,
                   devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-                  javaScriptChannel: javaScriptChannel,
                 ),
                 name: 'miracle_plus',
                 bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'));
@@ -555,28 +528,3 @@ class _WebFDemoState extends State<WebFDemo> {
   }
 }
 
-Future<bool> handleShare(Map<String, dynamic> args) async {
-  try {
-    final List<dynamic> dynamicList = args['blob'];
-    final List<int> blobData = dynamicList.map((e) => e as int).toList();
-
-    final downloadDir = await getDownloadsDirectory();
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final filePath = '${downloadDir?.path}/screenshot_$now.png';
-
-    final file = File(filePath);
-    await file.writeAsBytes(blobData);
-
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: args['text'],
-      subject: args['title'],
-    );
-
-    return true;
-  } catch (e, stackTrace) {
-    print('Share failed: $e');
-    print('Stack trace: $stackTrace');
-    return false;
-  }
-}
