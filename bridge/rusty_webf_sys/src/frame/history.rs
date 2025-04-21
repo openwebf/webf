@@ -42,8 +42,8 @@ impl History {
 
   pub fn go(&self, delta: Option<i64>, exception_state: &ExceptionState) {
     let delta_string = match delta {
-      Some(delta) => NativeValue::new_int64(delta),
-      None => NativeValue::new_null(),
+      Some(delta) => NativeValue::new_list(vec![NativeValue::new_int64(delta)]),
+      None => NativeValue::new_list(vec![]),
     };
     self.context().webf_invoke_module_with_params("History", "go", &delta_string, exception_state);
   }

@@ -147,7 +147,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   const AtomicString& module_name,
                                                   const AtomicString& method,
                                                   ExceptionState& exception) {
-  ScriptValue empty = ScriptValue::Empty(context->ctx());
+  ScriptValue empty = ScriptValue::CreateJsonObject(context->ctx(), "[]", 2);
   return __webf_invoke_module__(context, module_name, method, empty, nullptr, exception);
 }
 

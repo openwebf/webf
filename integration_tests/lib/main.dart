@@ -49,7 +49,7 @@ List<List<int>> mems = [];
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
-  enableWebFProfileTracking = true;
+  // enableWebFProfileTracking = true;
   // Overrides library name.
   WebFDynamicLibrary.testLibName = 'webf_test';
   defineWebFCustomElements();

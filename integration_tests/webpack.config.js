@@ -45,10 +45,15 @@ if (process.env.SPEC_SCOPE) {
     throw new Error('Unknown target spec scope: ' + process.env.SPEC_SCOPE);
   }
 } else {
-  coreSpecFiles = glob.sync('specs/**/*.{js,jsx,ts,tsx,html,svg}', {
-    cwd: context,
-    ignore: ['node_modules/**'],
-  }).map((file) => './' + file);
+  specGroup.forEach((group) => {
+    group.specs.forEach(spec => {
+      let files = glob.sync(spec, {
+        cwd: context,
+        ignore: ['node_modules/**'],
+      }).map((file) => './' + file);
+      coreSpecFiles = coreSpecFiles.concat(files);
+    });
+  })
   if (process.env.WEBF_TEST_FILTER) {
     coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
   }

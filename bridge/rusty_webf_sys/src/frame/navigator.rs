@@ -2,6 +2,8 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
+use std::vec;
+
 use crate::*;
 
 pub struct Clipboard {
@@ -21,7 +23,7 @@ impl Clipboard {
   }
 
   pub fn read_text(&self, exception_state: &ExceptionState) -> WebFNativeFuture<String> {
-    let params = NativeValue::new_null();
+    let params = NativeValue::new_list(vec![]);
     let future_for_return = WebFNativeFuture::<String>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
@@ -49,7 +51,9 @@ impl Clipboard {
   }
 
   pub fn write_text(&self, text: &str, exception_state: &ExceptionState) -> WebFNativeFuture<()> {
-    let text_string = NativeValue::new_string(text);
+    let text_string = NativeValue::new_list(vec![
+      NativeValue::new_string(text)
+    ]);
     let future_for_return = WebFNativeFuture::<()>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
