@@ -151,9 +151,9 @@ export class WebSocket extends EventTarget implements WebSocketInterface {
     webf.invokeModule('WebSocket', 'send', this.id, message);
   }
 
-  close(code?: number, reason?: string) {
+  close(code: number, reason: string) {
     this.readyState = ReadyState.CLOSING;
-    webf.invokeModule('WebSocket', 'close', this.id, code?.toString(), reason);
+    webf.invokeModule('WebSocket', 'close', this.id, code, reason);
   }
 }
 
