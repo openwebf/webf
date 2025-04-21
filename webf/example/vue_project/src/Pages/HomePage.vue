@@ -50,6 +50,6 @@ export default {
 #list {
   padding: 10px 0;
   height: 100vh;
-  width: 100vw;
+  width: 100%;
 }
 </style>

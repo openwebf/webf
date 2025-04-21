@@ -12,6 +12,11 @@ const demos: DemoItem[] = [
     description: 'Demonstrates sending binary data from JavaScript to Dart using NativeByteData',
     path: '/array-buffer-demo'
   },
+  {
+    title: 'Modal Popup Demo',
+    description: 'Demonstrates Flutter Cupertino modal popup integration with React',
+    path: '/modal-popup-demo'
+  },
   // Add more demos here as needed
 ];
 

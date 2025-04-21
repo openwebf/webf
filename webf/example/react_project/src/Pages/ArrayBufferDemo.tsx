@@ -15,12 +15,15 @@ export default function ArrayBufferDemo() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const buffer = await response.arrayBuffer();
-      setStatus('Image fetched! Size: ' + buffer.byteLength + ' bytes');
+      const data = new Uint8Array([]);
+      const arrayBuffer = data.buffer;
+      
+      // const buffer = await response.arrayBuffer();
+      setStatus('Image fetched! Size: ' + arrayBuffer.byteLength + ' bytes');
       
       // Send the ArrayBuffer to the Dart module
       // @ts-ignore
-      const result = await window.webf.invokeModuleAsync('TestBlob', 'uploadFile', buffer);
+      const result = await window.webf.invokeModuleAsync('TestBlob', 'uploadFile', arrayBuffer);
       
       setStatus('Upload success! Response: ' + result);
     } catch (error) {
