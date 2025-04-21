@@ -474,7 +474,8 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isParentRenderViewportBox() {
-    return attachedRenderBoxModel?.parent is RootRenderViewportBox || attachedRenderBoxModel?.parent is RouterViewViewportBox;
+    return attachedRenderBoxModel?.parent is RootRenderViewportBox ||
+        attachedRenderBoxModel?.parent is RouterViewViewportBox;
   }
 
   @pragma('vm:prefer-inline')
@@ -822,7 +823,8 @@ abstract class RenderStyle extends DiagnosticableTree {
 
   @pragma('vm:prefer-inline')
   bool isRepaintBoundary() {
-    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary) ?? false;
+    return getRenderBoxValueByType(RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.isRepaintBoundary) ??
+        false;
   }
 
   @pragma('vm:prefer-inline')
@@ -2433,7 +2435,9 @@ class CSSRenderStyle extends RenderStyle
         if (parentRenderStyle != null) {
           RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
           // Override the default logicalHeight value is the parent is RenderWidget
-          if (parentRenderStyle.isSelfRenderWidget() && childWrapper != null) {
+          if (parentRenderStyle.isSelfRenderWidget() &&
+              childWrapper != null &&
+              childWrapper.constraints.maxHeight.isFinite) {
             logicalHeight = childWrapper.constraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;

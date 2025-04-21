@@ -763,17 +763,9 @@ class WebFController {
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
 
     await Future.wait([_resolveEntrypoint(), module.initialize()]);
 

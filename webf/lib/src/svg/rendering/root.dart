@@ -67,13 +67,7 @@ class RenderSVGRoot extends RenderSVGContainer {
           // Draw debug rect
           // context.canvas.drawRect(_renderViewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
           visitChildren((child) {
-            if (enableWebFProfileTracking) {
-              WebFProfiler.instance.pauseCurrentPaintOp();
-            }
             context.paintChild(child, offset);
-            if (enableWebFProfileTracking) {
-              WebFProfiler.instance.resumeCurrentPaintOp();
-            }
           });
         }, oldLayer: _innerClipLayer.layer);
       }, oldLayer: _transformLayer.layer);

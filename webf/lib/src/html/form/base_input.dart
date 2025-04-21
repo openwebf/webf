@@ -75,7 +75,7 @@ mixin BaseInputElement on WidgetElement {
             case 'tel':
               return TextInputType.phone;
             case 'decimal':
-              return TextInputType.numberWithOptions(decimal: true);
+              return TextInputType.numberWithOptions(decimal: true, signed: true);
             case 'email':
               return TextInputType.emailAddress;
             case 'url':
@@ -235,7 +235,7 @@ mixin BaseInputElement on WidgetElement {
   List<TextInputFormatter>? getInputFormatters() {
     switch (type) {
       case 'number':
-        return [FilteringTextInputFormatter.digitsOnly];
+        return [];
     }
     return null;
   }

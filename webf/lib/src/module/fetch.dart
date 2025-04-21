@@ -131,6 +131,10 @@ class FetchModule extends BaseModule {
           return consolidateHttpClientResponseBytes(res);
         }
       }).then((Uint8List? bytes) {
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackNetwork(currentNetworkOp!);
+        }
+
         if (bytes != null) {
           completer.complete([EMPTY_STRING, response?.statusCode, bytes]);
         } else {
