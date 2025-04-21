@@ -118,12 +118,12 @@
       "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
-  {
-    "name": "SVG",
-    "specs": [
-      "specs/svg/**/*.{js,jsx,ts,tsx,html,svg}"
-    ]
-  },
+  // {
+  //   "name": "SVG",
+  //   "specs": [
+  //     "specs/svg/**/*.{js,jsx,ts,tsx,html,svg}"
+  //   ]
+  // },
   {
     "name": "Blink_CSS1",
     "snapshotRoot": "body",

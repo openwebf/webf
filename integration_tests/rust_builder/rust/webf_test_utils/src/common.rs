@@ -1,10 +1,52 @@
 use webf_sys::{ElementMethods, ExecutingContext, NativeValue, NodeMethods};
+use std::fmt::Debug;
 
 pub struct TestCaseMetadata {
   pub mod_path: String,
   pub source_file: String,
   pub test_name: String,
   pub snapshot_filename: String,
+}
+
+/// Checks if two values are equal without causing a panic
+/// 
+/// Returns true if values are equal, false otherwise.
+/// On failure, prints an error message with the file, line, expected and actual values.
+pub fn check_eq<T: PartialEq + Debug>(left: T, right: T, file: &str, line: u32) -> bool {
+  if left != right {
+    eprintln!("Assertion failed at {}:{}", file, line);
+    eprintln!("Expected: {:?}", right);
+    eprintln!("Got: {:?}", left);
+    false
+  } else {
+    true
+  }
+}
+
+/// Specialized version for String and &str comparison
+pub fn check_eq_str(left: String, right: &str, file: &str, line: u32) -> bool {
+  if left != right {
+    eprintln!("Assertion failed at {}:{}", file, line);
+    eprintln!("Expected: {:?}", right);
+    eprintln!("Got: {:?}", left);
+    false
+  } else {
+    true
+  }
+}
+
+/// Macro wrapper for check_eq that automatically captures file and line info
+// Make check_eq available at crate root to be used by the macro
+#[doc(hidden)]
+pub use self::check_eq as _check_eq;
+#[doc(hidden)]
+pub use self::check_eq_str as _check_eq_str;
+
+#[macro_export]
+macro_rules! safe_assert_eq {
+  ($left:expr, $right:expr) => {
+    $crate::_check_eq($left, $right, file!(), line!())
+  };
 }
 
 fn clear_all_timer(context: ExecutingContext) {
