@@ -69,7 +69,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
 
     if (exception_state.HasException()) {
       context->HandleException(exception_state);
-      return nullptr;
+      return return_value;
     }
 
     return return_value;
@@ -123,8 +123,10 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
       [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
          Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
         NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
-        module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
-            module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+        if (result != nullptr && result_callback != nullptr) {
+          module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
+              module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+        }
       },
       moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
   return nullptr;

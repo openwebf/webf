@@ -179,6 +179,13 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
           DartAsyncModuleCallback fn = callback.asFunction();
           fn(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
         }
+
+        // Add fallbacks for handing result was not returned.
+        Timer(Duration(seconds: 1), () {
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        });
       });
       return completer.future;
     }
