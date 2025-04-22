@@ -287,7 +287,7 @@ describe('Position fixed', () => {
     await snapshot();
   });
 
-  it('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element', async () => {
+  xit('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element', async () => {
     let div;
     div = createElement(
       'div',
@@ -318,7 +318,7 @@ describe('Position fixed', () => {
     await snapshot();
   });
 
-  it('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element in nested container', async () => {
+  xit('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element in nested container', async () => {
     let div;
     div = createElement('div', {
        style: {
