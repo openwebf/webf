@@ -1257,6 +1257,9 @@ abstract class Element extends ContainerNode
       var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
         hasInheritedPendingProperty = style.hasInheritedPendingProperty;
+        if (isConnected) {
+          style.flushPendingProperties();
+        }
       }
 
       if (rebuildNested || hasInheritedPendingProperty) {
