@@ -53,6 +53,13 @@ class ToPositionPlaceHolderUpdateReason extends AdapterUpdateReason {
   ToPositionPlaceHolderUpdateReason({required this.positionedElement, required this.containingBlockElement});
 }
 
+class AttachPositionedChild extends AdapterUpdateReason {
+  Element positionedElement;
+  Element containingBlockElement;
+
+  AttachPositionedChild({required this.positionedElement, required this.containingBlockElement});
+}
+
 class ToStaticLayoutUpdateReason extends AdapterUpdateReason {}
 
 class RemovePositionedChild extends AdapterUpdateReason {
@@ -434,6 +441,9 @@ abstract class RenderStyle extends DiagnosticableTree {
       case ToStaticLayoutUpdateReason:
         target.holderAttachedPositionedElement = null;
         target.holderAttachedContainingBlockElement = null;
+        break;
+      case AttachPositionedChild:
+        target.addFixedPositionedElement((reason as AttachPositionedChild).positionedElement);
         break;
       default:
         break;

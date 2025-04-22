@@ -286,11 +286,11 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
     Widget child = WebFEventListener(
         ownerElement: widgetElement, child: WebFWidgetElement(widgetElement), hasEvent: widgetElement.hasEvent);
 
-    final positionedElements = widgetElement.childNodes.where((node) {
-      return node is dom.Element && (node.renderStyle.isSelfPositioned());
-    });
+    List<Widget> children = [child];
 
-    List<Widget> children = [child, ...positionedElements.map((element) => element.toWidget())];
+    widgetElement.fixedPositionElements.forEach((element) {
+      children.add(element.toWidget());
+    });
 
     return WebFRenderWidgetAdaptor(widgetElement, children: children, key: widgetElement.key);
   }

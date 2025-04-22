@@ -253,8 +253,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
       if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
 
-      if (child.renderStyle.position == CSSPositionType.absolute ||
-          child.renderStyle.position == CSSPositionType.fixed) {
+      if (child.renderStyle.position == CSSPositionType.absolute) {
         containingBlockElement.attachedRenderer!.positionedChildren.add(child);
         if (!containingBlockElement.attachedRenderer!.needsLayout) {
           CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);

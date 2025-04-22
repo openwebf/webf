@@ -518,8 +518,8 @@ abstract class Element extends ContainerNode
 
   void handleScroll(double scrollOffset, AxisDirection axisDirection) {
     if (!renderStyle.hasRenderBox()) return;
-    _applyStickyChildrenOffset();
-    _applyFixedChildrenOffset(scrollOffset, axisDirection);
+    // _applyStickyChildrenOffset();
+    // _applyFixedChildrenOffset(scrollOffset, axisDirection);
 
     if (!_shouldConsumeScrollTicker) {
       // Make sure scroll listener trigger most to 1 time each frame.
@@ -580,8 +580,7 @@ abstract class Element extends ContainerNode
     // No need to detach and reattach renderBoxMode when its position
     // changes between static and relative.
     if (currentPosition == CSSPositionType.absolute ||
-        currentPosition == CSSPositionType.sticky ||
-        currentPosition == CSSPositionType.fixed) {
+        currentPosition == CSSPositionType.sticky) {
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
 
@@ -589,6 +588,15 @@ abstract class Element extends ContainerNode
 
       renderStyle.requestWidgetToRebuild(
           ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
+    } else if (currentPosition == CSSPositionType.fixed) {
+      // Find the renderBox of its containing block.
+      Element? containingBlockElement = getContainingBlockElement();
+      if (containingBlockElement == null) return;
+
+      renderStyle.requestWidgetToRebuild(
+          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
+      containingBlockElement.renderStyle.requestWidgetToRebuild(
+          AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
     } else if (currentPosition == CSSPositionType.static) {
       renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
       updateElementKey();
@@ -702,6 +710,7 @@ abstract class Element extends ContainerNode
     ownerDocument.clearElementStyleDirty(this);
     holderAttachedPositionedElement = null;
     holderAttachedContainingBlockElement = null;
+    clearFixedPositionedElements();
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
@@ -858,6 +867,7 @@ abstract class Element extends ContainerNode
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_NAME));
     if (renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.absolute) {
+      holderAttachedContainingBlockElement?.removeFixedPositionedElement(this);
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
   }
@@ -1235,7 +1245,6 @@ abstract class Element extends ContainerNode
       var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
         hasInheritedPendingProperty = style.hasInheritedPendingProperty;
-        style.flushPendingProperties();
       }
 
       if (rebuildNested || hasInheritedPendingProperty) {

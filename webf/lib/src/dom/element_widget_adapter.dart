@@ -16,7 +16,36 @@ import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
+
 mixin ElementAdapterMixin on ElementBase {
+  final List<Element> _fixedPositionElements = [];
+
+  @flutter.immutable
+  List<Element> get fixedPositionElements => _fixedPositionElements;
+
+  void addFixedPositionedElement(Element newElement) {
+    assert(() {
+      if (_fixedPositionElements.contains(newElement)) {
+        throw FlutterError('Found repeat element in $_fixedPositionElements for $newElement');
+      }
+
+      return true;
+    }());
+    _fixedPositionElements.add(newElement);
+  }
+
+  Element? getFixedPositionedElementByIndex(int index) {
+    return (index >= 0 && index < _fixedPositionElements.length ? _fixedPositionElements[index] : null);
+  }
+
+  void removeFixedPositionedElement(Element element) {
+    _fixedPositionElements.remove(element);
+  }
+
+  void clearFixedPositionedElements() {
+    _fixedPositionElements.clear();
+  }
+
   // Rendering this element as an RenderPositionHolder
   Element? holderAttachedPositionedElement;
   Element? holderAttachedContainingBlockElement;
@@ -93,11 +122,12 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       webFElement.childNodes.forEach((node) {
         if (node is Element &&
             (node.renderStyle.position == CSSPositionType.sticky ||
-                node.renderStyle.position == CSSPositionType.absolute ||
-                node.renderStyle.position == CSSPositionType.fixed)) {
+                node.renderStyle.position == CSSPositionType.absolute)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
           return;
+        } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
+          children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
         } else if (node is RouterLinkElement) {
           webFState ??= context.findAncestorStateOfType<WebFState>();
           String routerPath = node.path;
@@ -117,6 +147,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         } else {
           children.add(node.toWidget());
         }
+      });
+      webFElement.fixedPositionElements.forEach((positionedElement) {
+        children.add(positionedElement.toWidget());
       });
     }
 
