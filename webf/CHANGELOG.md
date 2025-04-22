@@ -1,3 +1,29 @@
+## 0.21.0-beta.4+2
+
+### Features
+- Support fixed positioned layout both for overflow and <webf-listview /> without stacking context support.
+
+### Bug Fixes
+
+- Fix recalculate style for connected node.
+- Fix change position value to static.
+- Fix put positioned elements in route link element.
+- Fix scrolling with fixed elements.
+- Fix rust integration test.
+
+### Tests
+-
+- Temporarily disable test specs with stacking context.
+- Add position fixed tests with router link specs.
+- Add position fixed listview specs.
+- Add position-fixed-comprehensive test specs.
+- Add position fixed click tests.
+- Fix rust integration tests.
+
+### Other Changes
+- Remove profile tracking.
+- Add flutter cupertino demo in react.js
+
 ## 0.21.0-beta.4
 
 ### Features
