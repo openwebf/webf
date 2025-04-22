@@ -1,5 +1,5 @@
 /*auto generated*/
-fdescribe('position-fixed-listview', () => {
+describe('position-fixed-listview', () => {
   // Test fixed element outside WebF ListView
   it('fixed-outside-listview', async () => {
     const listview = createElement('webf-listview', {
@@ -602,6 +602,7 @@ fdescribe('position-fixed-listview', () => {
     
     // Find the inner listview and scroll it
     const innerListview = document.querySelector('webf-listview webf-listview');
+    
     if (innerListview) {
       await innerListview.scroll(0, 50);
       await snapshot();
