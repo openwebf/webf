@@ -1,0 +1,30 @@
+{
+  "name": "@openwebf/webf-typings",
+  "version": "1.0.0",
+  "main": "",
+  "types": "index.d.ts",
+  "files": [
+    "index.d.ts",
+    "types/**/*.d.ts"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openwebf/webf-typings.git"
+  },
+  "keywords": [
+    "webf",
+    "typescript",
+    "typings",
+    "types"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/openwebf/webf-typings/issues"
+  },
+  "homepage": "https://github.com/openwebf/webf-typings#readme",
+  "description": "TypeScript type definitions for WebF"
+}
