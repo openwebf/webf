@@ -1,5 +1,5 @@
 /*auto generated*/
-fdescribe('position-fixed-router-link', () => {
+describe('position-fixed-router-link', () => {
   // Basic test with fixed element inside router link
   it('fixed-inside-router-link', async () => {
     const routerLink = createElement('webf-router-link', {
