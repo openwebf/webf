@@ -226,7 +226,8 @@ class CSSPositionedLayout {
   static void applyStickyChildOffset(RenderBoxModel scrollContainer, RenderBoxModel child) {
     RenderPositionPlaceholder? childRenderPositionHolder = child.renderStyle.getSelfPositionPlaceHolder();
     if (childRenderPositionHolder == null) return;
-    RenderLayoutParentData childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData;
+    RenderLayoutParentData? childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData?;
+    if (childPlaceHolderParentData == null) return;
     // Original offset of sticky child in relative status
     Offset childOriginalOffset = childPlaceHolderParentData.offset;
 

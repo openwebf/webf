@@ -518,7 +518,7 @@ abstract class Element extends ContainerNode
 
   void handleScroll(double scrollOffset, AxisDirection axisDirection) {
     if (!renderStyle.hasRenderBox()) return;
-    // _applyStickyChildrenOffset();
+    _applyStickyChildrenOffset();
     _applyFixedChildrenOffset(scrollOffset, axisDirection);
 
     if (!_shouldConsumeScrollTicker) {
@@ -598,7 +598,18 @@ abstract class Element extends ContainerNode
       containingBlockElement.renderStyle.requestWidgetToRebuild(
           AttachPositionedChild(positionedElement: this, containingBlockElement: containingBlockElement));
     } else if (currentPosition == CSSPositionType.static) {
-      renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
+
+      Element? elementNeedsToRebuild;
+
+      if (oldPosition == CSSPositionType.fixed) {
+        Element? containingBlockElement = getContainingBlockElement(positionType: oldPosition);
+        containingBlockElement?.removeFixedPositionedElement(this);
+        elementNeedsToRebuild = containingBlockElement;
+      } else {
+        elementNeedsToRebuild = parentElement;
+      }
+
+      elementNeedsToRebuild?.renderStyle.requestWidgetToRebuild(ToStaticLayoutUpdateReason());
       updateElementKey();
     }
   }
@@ -872,9 +883,9 @@ abstract class Element extends ContainerNode
     }
   }
 
-  Element? getContainingBlockElement() {
+  Element? getContainingBlockElement({ CSSPositionType? positionType}) {
     Element? containingBlockElement;
-    CSSPositionType positionType = renderStyle.position;
+    positionType ??= renderStyle.position;
 
     switch (positionType) {
       case CSSPositionType.relative:
@@ -978,7 +989,8 @@ abstract class Element extends ContainerNode
       return;
     }
     if (oldDisplay == CSSDisplay.none && presentDisplay != oldDisplay) {
-      parentElement?.renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
+      Element? targetElement = holderAttachedContainingBlockElement ?? parentElement;
+      targetElement?.renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
       return;
     }
 

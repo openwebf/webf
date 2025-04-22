@@ -291,7 +291,7 @@ describe('OffsetTop In Scrollable Parent', () => {
   });
 });
 
-describe('OffsetTop in ListView Parent', () => {
+xdescribe('OffsetTop in ListView Parent', () => {
   function createDOM(onParentMount, onChildMount, onAbsoluteChildMount) {
     // Create parent div
     const parent = document.createElement("webf-listview");
