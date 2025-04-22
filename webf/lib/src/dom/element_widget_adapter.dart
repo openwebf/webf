@@ -424,16 +424,11 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
     super.mount(parent, newSlot);
     webFElement.didAttachRenderer();
 
-    if (webFElement.renderStyle.position == CSSPositionType.fixed) {
-      webFElement.ownerDocument.fixedChildren.add(renderObject as RenderBoxModel);
-    }
-
     webFElement.style.flushPendingProperties();
   }
 
   @override
   void unmount() {
-    webFElement.ownerDocument.fixedChildren.remove(renderObject as RenderBoxModel);
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = webFElement;
     element.willDetachRenderer(this);

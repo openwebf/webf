@@ -519,7 +519,7 @@ abstract class Element extends ContainerNode
   void handleScroll(double scrollOffset, AxisDirection axisDirection) {
     if (!renderStyle.hasRenderBox()) return;
     // _applyStickyChildrenOffset();
-    // _applyFixedChildrenOffset(scrollOffset, axisDirection);
+    _applyFixedChildrenOffset(scrollOffset, axisDirection);
 
     if (!_shouldConsumeScrollTicker) {
       // Make sure scroll listener trigger most to 1 time each frame.
@@ -533,12 +533,12 @@ abstract class Element extends ContainerNode
   /// So it needs to manually mark element needs paint and add scroll offset in paint stage
   void _applyFixedChildrenOffset(double scrollOffset, AxisDirection axisDirection) {
     // Only root element has fixed children.
-    for (RenderBoxModel child in ownerDocument.fixedChildren) {
+    for (Element fixedElement in fixedPositionElements) {
       // Save scrolling offset for paint
       if (axisDirection == AxisDirection.down) {
-        child.additionalPaintOffsetY = scrollOffset;
+        fixedElement.attachedRenderer?.additionalPaintOffsetY = scrollOffset;
       } else if (axisDirection == AxisDirection.right) {
-        child.additionalPaintOffsetX = scrollOffset;
+        fixedElement.attachedRenderer?..additionalPaintOffsetX = scrollOffset;
       }
     }
   }
