@@ -427,13 +427,13 @@ class LogicLineBox {
     }
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
-      if (nextLineBox.inlineBoxes.length == 1 && theLineLastRender is RenderFlowLayout && !theLineLastRender.lineBoxes.isEmpty) {
-        nextLineBox = theLineLastRender.lineBoxes.last;
-        wrapWidth = flowLayoutWrap(theLineLastRender, wrapWidth);
+      RenderFlowLayout? theLineLastRenderFlowLayout = getRenderFlowlayout(theLineLastRender);
+
+      if (nextLineBox.inlineBoxes.length == 1 && theLineLastRenderFlowLayout != null && !theLineLastRenderFlowLayout.lineBoxes.isEmpty) {
+        nextLineBox = theLineLastRenderFlowLayout.lineBoxes.last;
+        wrapWidth = flowLayoutWrap(theLineLastRenderFlowLayout, wrapWidth);
         continue;
       }
-
-      RenderFlowLayout? theLineLastRenderFlowLayout = getRenderFlowlayout(theLineLastRender);
       if (theLineLastRenderFlowLayout != null && theLineLastRenderFlowLayout.happenLineJoin()) {
         wrapWidth = flowLayoutWrap(theLineLastRenderFlowLayout, wrapWidth);
         mainAxisExtentUse = nextLineBox.mainAxisExtentWithoutLineJoin + wrapWidth;
