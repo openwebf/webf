@@ -847,7 +847,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       for (LogicInlineBox childBox in runLineBox.inlineBoxes) {
         double usefulRunCrossAxisExtent = runCrossAxisExtent;
         // for all box which in line the first's box is happen line join, need use last line extent
-        if ((crossAxisLineJoinOffset != 0 || runLineBox.isFirstInlineBoxHasMoreLine()) &&
+        if ((crossAxisLineJoinOffset != 0) &&
             childBox != runLineBox.first) {
           List<double> lineExtentParams = runLineBox.findFirstLineJoinCrossAxisExtent();
           usefulRunCrossAxisExtent = runCrossAxisExtent - (lineExtentParams[0] + lineExtentParams[1]);
