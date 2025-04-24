@@ -80,9 +80,9 @@ class WebF extends StatefulWidget {
     this.loadingWidget,
     this.initialRoute,
     this.initialState,
+    this.errorBuilder,
     required this.controller,
-  })  : errorBuilder = null,
-        super(key: key);
+  })  : super(key: key);
 
   /// Create a WebF widget using a controller name from WebFControllerManager.
   ///
@@ -145,6 +145,7 @@ class _AsyncWebF extends StatelessWidget {
         key: controller.key,
         initialRoute: initialRoute,
         initialState: initialState,
+        errorBuilder: errorBuilder,
         loadingWidget: loadingWidget ??
             const SizedBox(
               width: 50,
@@ -323,6 +324,13 @@ class WebFState extends State<WebF> with RouteAware {
       return const SizedBox(width: 0, height: 0);
     }
 
+    if (widget.controller.hasLoadingError) {
+      if (widget.errorBuilder != null) {
+        return widget.errorBuilder!(context, widget.controller.loadingError!);
+      }
+      return Center(child: Text('Error loading: ' + widget.controller.loadingError!.toString()));
+    }
+
     String initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
 
     List<Future> pendingFutures = [
@@ -453,6 +461,11 @@ class _WebFElement extends StatefulElement {
 
       if (controller.evaluated) {
         _resumeForLoaded();
+        return;
+      }
+
+      if (controller.hasLoadingError) {
+        markNeedsBuild();
         return;
       }
 

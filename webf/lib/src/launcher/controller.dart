@@ -86,9 +86,10 @@ enum PreloadingStatus {
   none,
   preloading,
   done,
+  fail,
 }
 
-enum PreRenderingStatus { none, preloading, evaluate, rendering, done }
+enum PreRenderingStatus { none, preloading, evaluate, rendering, done, fail }
 
 class WebFController {
   /// The background color for viewport, default to transparent.
@@ -608,6 +609,7 @@ class WebFController {
       _preRenderingStatus = PreRenderingStatus.none;
       _isComplete = false;
       _evaluated = false;
+      _loadingError = null;
 
       controlledInitCompleter.complete();
     });
@@ -767,43 +769,61 @@ class WebFController {
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
 
-    await Future.wait([_resolveEntrypoint(), module.initialize()]);
+    try {
+      await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
-    if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
-      // Convert the JavaScript code into bytecode.
-      if (_entrypoint!.isJavascript) {
-        await _entrypoint!.preProcessing(view.contextId);
-      }
-      _preloadStatus = PreloadingStatus.done;
-      controllerPreloadingCompleter.complete();
-    } else if (_entrypoint!.isHTML) {
-      EvaluateOpItem? evaluateOpItem;
-      if (enableWebFProfileTracking) {
-        evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
-      }
-
-      // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-      await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
-      }
-
-      // Initialize document, window and the documentElement.
-      flushUICommand(view, view.window.pointer!);
-
-      if (view.document.scriptRunner.hasPreloadScripts()) {
-        _onPreloadingFinished = () {
-          _preloadStatus = PreloadingStatus.done;
-          controllerPreloadingCompleter.complete();
-        };
-      } else {
+      if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+        // Convert the JavaScript code into bytecode.
+        if (_entrypoint!.isJavascript) {
+          await _entrypoint!.preProcessing(view.contextId);
+        }
         _preloadStatus = PreloadingStatus.done;
         controllerPreloadingCompleter.complete();
+      } else if (_entrypoint!.isHTML) {
+        EvaluateOpItem? evaluateOpItem;
+        if (enableWebFProfileTracking) {
+          evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
+        }
+
+        // Evaluate the HTML entry point, and loading the stylesheets and scripts.
+        await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
+
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
+        }
+
+        // Initialize document, window and the documentElement.
+        flushUICommand(view, view.window.pointer!);
+
+        if (view.document.scriptRunner.hasPreloadScripts()) {
+          _onPreloadingFinished = () {
+            _preloadStatus = PreloadingStatus.done;
+            controllerPreloadingCompleter.complete();
+          };
+        } else {
+          _preloadStatus = PreloadingStatus.done;
+          controllerPreloadingCompleter.complete();
+        }
       }
+    } catch(e, stack) {
+      _preloadStatus = PreloadingStatus.fail;
+      _handlingLoadingError(e, stack);
+      controllerPreloadingCompleter.complete();
     }
 
     return controllerPreloadingCompleter.future;
+  }
+
+  Object? _loadingError;
+  Object? get loadingError => _loadingError;
+
+  bool get hasLoadingError => _loadingError != null;
+
+  void _handlingLoadingError(Object error, StackTrace stack) {
+    if (onLoadError != null) {
+      onLoadError!(FlutterError(error.toString()), stack);
+    }
+    _loadingError = error;
   }
 
   PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
@@ -856,32 +876,39 @@ class WebFController {
       WebFProfiler.instance.finishTrackUICommand();
     }
 
-    // Preparing the entrypoint
-    await Future.wait([_resolveEntrypoint(), module.initialize()]);
+    try {
+      // Preparing the entrypoint
+      await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
-    // Stop the animation frame
-    module.pauseAnimationFrame();
+      // Stop the animation frame
+      module.pauseAnimationFrame();
 
-    // Pause the animation timeline.
-    view.stopAnimationsTimeLine();
+      // Pause the animation timeline.
+      view.stopAnimationsTimeLine();
 
-    view.window.addEventListener(EVENT_LOAD, (event) async {
-      _preRenderingStatus = PreRenderingStatus.done;
-    });
+      view.window.addEventListener(EVENT_LOAD, (event) async {
+        _preRenderingStatus = PreRenderingStatus.done;
+      });
 
-    if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
-      // Convert the JavaScript code into bytecode.
-      if (_entrypoint!.isJavascript) {
-        await _entrypoint!.preProcessing(view.contextId);
+      if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+        // Convert the JavaScript code into bytecode.
+        if (_entrypoint!.isJavascript) {
+          await _entrypoint!.preProcessing(view.contextId);
+        }
       }
+
+      _preRenderingStatus = PreRenderingStatus.evaluate;
+
+      // Evaluate the entry point, and loading the stylesheets and scripts.
+      await evaluateEntrypoint();
+
+      view.flushPendingCommandsPerFrame();
+    } catch(e, stack) {
+      _preRenderingStatus = PreRenderingStatus.fail;
+      _handlingLoadingError(e, stack);
+      controllerPreRenderingCompleter.complete();
+      return;
     }
-
-    _preRenderingStatus = PreRenderingStatus.evaluate;
-
-    // Evaluate the entry point, and loading the stylesheets and scripts.
-    await evaluateEntrypoint();
-
-    view.flushPendingCommandsPerFrame();
 
     // If there are no <script /> elements, finish this prerendering process.
     if (!view.document.scriptRunner.hasPendingScripts()) {
@@ -979,6 +1006,7 @@ class WebFController {
 
     devToolsService?.dispose();
     routes = null;
+    _loadingError = null;
     _disposed = true;
   }
 
@@ -1018,9 +1046,7 @@ class WebFController {
       await bundleToLoad.resolve(baseUrl: url, uriParser: uriParser);
       await bundleToLoad.obtainData(view.contextId);
     } catch (e, stack) {
-      if (onLoadError != null) {
-        onLoadError!(FlutterError(e.toString()), stack);
-      }
+
       // Not to dismiss this error.
       rethrow;
     }
