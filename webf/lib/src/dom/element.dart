@@ -883,6 +883,14 @@ abstract class Element extends ContainerNode
     }
   }
 
+  RenderViewportBox? getRootViewport() {
+    return ownerDocument.controller.currentBuildContext?.context.findRenderObject() as RenderViewportBox?;
+  }
+
+  RenderBoxModel? getRootRenderBoxModel() {
+    return getRootViewport()?.firstChild as RenderBoxModel?;
+  }
+
   Element? getContainingBlockElement({ CSSPositionType? positionType}) {
     Element? containingBlockElement;
     positionType ??= renderStyle.position;
@@ -1303,8 +1311,7 @@ abstract class Element extends ContainerNode
       }
 
       if (renderStyle.isBoxModelHaveSize()) {
-        RenderBoxModel ancestor = ownerDocument.documentElement!.attachedRenderer as RenderBoxModel;
-        Offset offset = renderStyle.getOffset(ancestorRenderBox: ancestor, excludeScrollOffset: true);
+        Offset offset = renderStyle.getOffset(ancestorRenderBox: getRootRenderBoxModel(), excludeScrollOffset: true);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
@@ -1386,7 +1393,7 @@ abstract class Element extends ContainerNode
 
     while (parent != null) {
       bool isNonStatic = parent.renderStyle.position != CSSPositionType.static;
-      if (parent is BodyElement || isNonStatic) {
+      if (parent is BodyElement || parent is RouterLinkElement || isNonStatic) {
         break;
       }
       parent = parent.parentElement;
