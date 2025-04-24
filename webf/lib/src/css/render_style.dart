@@ -2324,7 +2324,8 @@ class CSSRenderStyle extends RenderStyle
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
             RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
-            if (ancestorRenderStyle.isSelfRenderWidget() && childWrapper != null) {
+            if (ancestorRenderStyle.isSelfRenderWidget() &&
+                childWrapper != null) {
               logicalWidth = childWrapper.constraints.maxWidth;
             } else {
               logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
@@ -2447,7 +2448,8 @@ class CSSRenderStyle extends RenderStyle
           // Override the default logicalHeight value is the parent is RenderWidget
           if (parentRenderStyle.isSelfRenderWidget() &&
               childWrapper != null &&
-              childWrapper.constraints.maxHeight.isFinite) {
+              (childWrapper.constraints.maxHeight.isFinite &&
+                  childWrapper.constraints.maxHeight != renderStyle.target.ownerView.viewport!.boxSize!.height)) {
             logicalHeight = childWrapper.constraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;
