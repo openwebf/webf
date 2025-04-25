@@ -125,6 +125,18 @@ void main() async {
       });
 
   WebFControllerManager.instance.addWithPreload(
+      name: 'tailwind_react',
+      createController: () =>
+          WebFController(initialRoute: '/',
+              routeObserver: routeObserver,
+              devToolsService: kDebugMode ? ChromeDevToolsService() : null),
+      bundle: WebFBundle.fromUrl('assets:///tailwind_react/build/index.html'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
+  WebFControllerManager.instance.addWithPreload(
       name: 'cupertino_gallery',
       createController: () => WebFController(
             initialRoute: '/',
@@ -372,6 +384,16 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open ArrayBuffer Demo')),
+        SizedBox(height: 10),
+        ElevatedButton(onPressed: () {
+          widget.webfPageName.value = 'tailwind_react';
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return WebFDemo(
+              webfPageName: 'tailwind_react',
+              initialRoute: '/',
+            );
+          }));
+        }, child: Text('Open React.js with TailwindCSS 3')),
         SizedBox(height: 10),
         ElevatedButton(
             onPressed: () {
