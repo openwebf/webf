@@ -369,6 +369,20 @@ describe('Canvas context 2d', () => {
     await snapshot(canvas);
   });
 
+  it('should work with arc draw [pi/2,-pi] anticlockwise correctly', async () => {
+    const canvas = <canvas />;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0f0';
+    ctx.fillRect(0, 0, 100, 50);
+    ctx.fillStyle = '#f00';
+    ctx.beginPath();
+    ctx.moveTo(100, 0);
+    ctx.arc(100, 0, 150, Math.PI/2, -Math.PI, true);
+    ctx.fill();
+    await snapshot(canvas);
+  });
+
   it('should work with fill and fillRect and clearRect', async () => {
     const canvas = <canvas />;
     document.body.appendChild(canvas);
