@@ -238,15 +238,16 @@ class CSSLengthValue {
             parentRenderStyle?.paddingBoxLogicalHeight ?? parentRenderStyle?.paddingBoxHeight;
         double? parentContentBoxHeight =
             parentRenderStyle?.contentBoxLogicalHeight ?? parentRenderStyle?.contentBoxHeight;
+        double? parentContentBoxLogicalHeight = parentRenderStyle?.contentBoxLogicalHeight;
 
         if (shouldInheritRenderWidgetElementConstraintsHeight) {
           parentContentBoxHeight = parentWidgetConstraintHeight;
+          parentContentBoxLogicalHeight = parentWidgetConstraintHeight;
         }
 
         // Positioned element is positioned relative to the padding box of its containing block
         // while the others relative to the content box.
         double? relativeParentWidth = isPositioned ? parentPaddingBoxWidth : parentContentBoxWidth;
-        double? relativeParentHeight = isPositioned ? parentPaddingBoxHeight : parentContentBoxHeight;
 
         switch (realPropertyName) {
           case FONT_SIZE:
@@ -289,6 +290,7 @@ class CSSLengthValue {
             // The percentage height of positioned element and flex item resolves against the rendered height
             // of parent, mark parent as needs relayout if rendered height is not ready yet.
             if (isPositioned || isGrandParentFlexLayout) {
+              double? relativeParentHeight = isPositioned ? parentPaddingBoxHeight : parentContentBoxHeight;
               if (relativeParentHeight != null) {
                 _computedValue = value! * relativeParentHeight;
               } else {
@@ -297,6 +299,7 @@ class CSSLengthValue {
                 _computedValue = double.infinity;
               }
             } else {
+              double? relativeParentHeight = parentContentBoxLogicalHeight;
               if (relativeParentHeight != null) {
                 _computedValue = value! * relativeParentHeight;
               } else {
