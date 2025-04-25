@@ -330,6 +330,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     });
   }
 
+  RouteSettings? _currentRouteSettings;
+
   @override
   void mount(Element? parent, Object? newSlot) {
     widget.widgetElement.willAttachRenderer(this);
@@ -337,7 +339,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     widget.widgetElement.didAttachRenderer(this);
 
     ModalRoute? route = ModalRoute.of(this);
-    dom.OnScreenEvent event = dom.OnScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
+    _currentRouteSettings = route?.settings;
+    dom.OnScreenEvent event = dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
 
     WidgetElement widgetElement = widget.widgetElement;
 
@@ -347,19 +350,15 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
   }
 
   @override
-  void deactivate() {
-    ModalRoute? route = ModalRoute.of(this);
-    dom.OffScreenEvent event = dom.OffScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
-    WidgetElement widgetElement = widget.widgetElement;
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      widgetElement.dispatchEvent(event);
-    });
-    super.deactivate();
-  }
-
-  @override
   void unmount() {
+    dom.OffScreenEvent event = dom.OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     dom.Element widgetElement = widget.widgetElement;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      widgetElement.dispatchEventUtilAdded(event);
+    });
+
+    _currentRouteSettings = null;
+
     widgetElement.willDetachRenderer(this);
     super.unmount();
     widgetElement.didDetachRenderer(this);

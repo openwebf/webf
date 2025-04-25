@@ -304,6 +304,8 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     });
   }
 
+  flutter.RouteSettings? _currentRouteSettings;
+
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     Element webFElement = widget.webFElement;
@@ -314,8 +316,11 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
 
     webFElement.style.flushPendingProperties();
 
-    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
-    OnScreenEvent event = OnScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
+    flutter.ModalRoute? route = flutter.ModalRoute.of(this);
+
+    _currentRouteSettings = route?.settings;
+
+    OnScreenEvent event = OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     // Should dispatch onscreen event after did build and layout
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       webFElement.dispatchEventUtilAdded(event);
@@ -330,21 +335,14 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   }
 
   @override
-  void deactivate() {
-    flutter.ModalRoute route = flutter.ModalRoute.of(this)!;
-    Element element = widget.webFElement;
-    OffScreenEvent event = OffScreenEvent(state: route.settings.arguments, path: route.settings.name ?? '');
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      element.dispatchEvent(event);
-    });
-
-    super.deactivate();
-  }
-
-  @override
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = widget.webFElement;
+    OffScreenEvent event = OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      element.dispatchEvent(event);
+    });
+    _currentRouteSettings = null;
     element.willDetachRenderer(this);
     super.unmount();
     element.didDetachRenderer(this);
@@ -449,12 +447,17 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
 
   ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
+  flutter.RouteSettings? _currentRouteSettings;
+
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
 
     flutter.ModalRoute? route = flutter.ModalRoute.of(this);
-    OnScreenEvent event = OnScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
+
+    _currentRouteSettings = route?.settings;
+
+    OnScreenEvent event = OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     Element webfElement = webFElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       webfElement.dispatchEventUtilAdded(event);
@@ -462,18 +465,14 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
   }
 
   @override
-  void deactivate() {
-    flutter.ModalRoute? route = flutter.ModalRoute.of(this);
+  void unmount() {
     Element element = webFElement;
-    OffScreenEvent event = OffScreenEvent(state: route?.settings.arguments, path: route?.settings.name ?? '');
+    OffScreenEvent event = OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     SchedulerBinding.instance.addPostFrameCallback((_) {
       element.dispatchEvent(event);
     });
-    super.deactivate();
-  }
+    _currentRouteSettings = null;
 
-  @override
-  void unmount() {
     super.unmount();
   }
 
