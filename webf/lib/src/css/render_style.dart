@@ -990,56 +990,6 @@ abstract class RenderStyle extends DiagnosticableTree {
     return false;
   }
 
-  // Sort children by zIndex, used for paint and hitTest.
-  List<RenderBox> get paintingOrder {
-    if (attachedRenderBoxModel == null) return [];
-
-    RenderBoxModel attachedRoot = attachedRenderBoxModel as RenderBoxModel;
-
-    if (attachedRoot is RenderObjectWithChildMixin && (attachedRoot as RenderObjectWithChildMixin).child != null) {
-      return [(attachedRoot as RenderObjectWithChildMixin).child as RenderBox];
-    }
-
-    RenderLayoutBox containerLayoutBox = attachedRoot as RenderLayoutBox;
-
-    if (containerLayoutBox.childCount == 0) {
-      // No child.
-      return const [];
-    } else if (containerLayoutBox.childCount == 1) {
-      // Only one child.
-      final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
-      return order;
-    } else {
-      // Sort by zIndex.
-      List<RenderBox> children = [];
-      List<RenderBox> negativeStackingChildren = [];
-      List<RenderBoxModel> stackingChildren = [];
-      containerLayoutBox.visitChildren((RenderObject child) {
-        if (child is RenderBoxModel) {
-          bool isNeedsStacking = child.renderStyle.needsStacking;
-          if (child.renderStyle.zIndex != null && child.renderStyle.zIndex! < 0) {
-            negativeStackingChildren.add(child);
-          } else if (isNeedsStacking) {
-            stackingChildren.add(child);
-          } else {
-            children.add(child);
-          }
-        } else {
-          children.add(child as RenderBox);
-        }
-      });
-
-      stackingChildren.sort((RenderBoxModel left, RenderBoxModel right) {
-        return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
-      });
-
-      children.insertAll(0, negativeStackingChildren);
-      children.addAll(stackingChildren);
-
-      return children;
-    }
-  }
-
   // Sizing may affect parent size, mark parent as needsLayout in case
   // renderBoxModel has tight constraints which will prevent parent from marking.
   @pragma('vm:prefer-inline')

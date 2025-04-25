@@ -216,9 +216,51 @@ class RenderLayoutBox extends RenderBoxModel
     _cachedPaintingOrder = null;
   }
 
+  // Sort children by zIndex, used for paint and hitTest.
+  List<RenderBox> _computePaintingOrder() {
+    RenderLayoutBox containerLayoutBox = this;
+
+    if (containerLayoutBox.childCount == 0) {
+      // No child.
+      return const [];
+    } else if (containerLayoutBox.childCount == 1) {
+      // Only one child.
+      final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
+      return order;
+    } else {
+      // Sort by zIndex.
+      List<RenderBox> children = [];
+      List<RenderBox> negativeStackingChildren = [];
+      List<RenderBoxModel> stackingChildren = [];
+      containerLayoutBox.visitChildren((RenderObject child) {
+        if (child is RenderBoxModel) {
+          bool isNeedsStacking = child.renderStyle.needsStacking;
+          if (child.renderStyle.zIndex != null && child.renderStyle.zIndex! < 0) {
+            negativeStackingChildren.add(child);
+          } else if (isNeedsStacking) {
+            stackingChildren.add(child);
+          } else {
+            children.add(child);
+          }
+        } else {
+          children.add(child as RenderBox);
+        }
+      });
+
+      stackingChildren.sort((RenderBoxModel left, RenderBoxModel right) {
+        return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+      });
+
+      children.insertAll(0, negativeStackingChildren);
+      children.addAll(stackingChildren);
+
+      return children;
+    }
+  }
+
   List<RenderBox>? _cachedPaintingOrder;
   List<RenderBox> get paintingOrder {
-    _cachedPaintingOrder ??= renderStyle.paintingOrder;
+    _cachedPaintingOrder ??= _computePaintingOrder();
     return _cachedPaintingOrder!;
   }
 
