@@ -25,6 +25,7 @@ dependencies:
   cupertino_icons: ^1.0.0
   flutter_svg: ^2.0.17
   share_plus: ^10.0.0
+  showcaseview: ^4.0.1
   path_provider: ^2.1.5
 
 # When depending on this package from a real application,
@@ -61,3 +62,6 @@ flutter:
     - hybrid_router/build/static/js/
     - hybrid_router/build/static/css/
     - hybrid_router/build/static/media/
+    - use_cases/dist/
+    - use_cases/dist/js/
+    - use_cases/dist/css/

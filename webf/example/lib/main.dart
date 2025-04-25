@@ -24,6 +24,7 @@ import 'custom_elements/slider.dart';
 import 'custom_elements/svg_img.dart';
 import 'custom_elements/shimmer/shimmer.dart';
 import 'custom_elements/shimmer/shimmer_items.dart';
+import 'custom_elements/show_case_view.dart';
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 
@@ -61,6 +62,9 @@ void main() async {
   WebF.defineCustomElement('flutter-shimmer-avatar', (context) => FlutterShimmerAvatarElement(context));
   WebF.defineCustomElement('flutter-shimmer-text', (context) => FlutterShimmerTextElement(context));
   WebF.defineCustomElement('flutter-shimmer-button', (context) => FlutterShimmerButtonElement(context));
+  WebF.defineCustomElement('flutter-showcase-view', (context) => FlutterShowCaseView(context));
+  WebF.defineCustomElement('flutter-showcase-item', (context) => FlutterShowCaseItem(context));
+  WebF.defineCustomElement('flutter-showcase-description', (context) => FlutterShowCaseDescription(context));
 
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
@@ -129,6 +133,19 @@ void main() async {
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
       bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+  
+  WebFControllerManager.instance.addWithPreload(
+      name: 'use_cases',
+      createController: () => WebFController(
+        initialRoute: '/',
+        routeObserver: routeObserver,
+        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+      ),
+      bundle: WebFBundle.fromUrl('assets:///use_cases/dist/index.html'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -408,7 +425,16 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open Cupertino Gallery / Button')),
-      ]),
+        SizedBox(height: 18),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'use_cases';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'use_cases');
+              }));
+            },
+            child: Text('Open Use Cases')),
+        ]),
       floatingActionButton: ExpandableFab(
         distance: 112,
         children: [
