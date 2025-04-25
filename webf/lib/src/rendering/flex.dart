@@ -1475,37 +1475,21 @@ class RenderFlexLayout extends RenderLayoutBox {
   ) {
     if (childFlexedMainSize != null) {
       if (_isHorizontalFlexDirection) {
-        if ((child.renderStyle.isSelfRenderLayoutBox() ||
-            child.renderStyle.isSelfRenderWidget() ||
-            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minWidth.isNotAuto))) {
-          _overrideChildContentBoxLogicalWidth(child, childFlexedMainSize);
-        }
+        _overrideChildContentBoxLogicalWidth(child, childFlexedMainSize);
       } else {
-        if (child.renderStyle.isSelfRenderLayoutBox() ||
-            child.renderStyle.isSelfRenderWidget() ||
-            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minHeight.isNotAuto)) {
-          _overrideChildContentBoxLogicalHeight(child, childFlexedMainSize);
-        }
+        _overrideChildContentBoxLogicalHeight(child, childFlexedMainSize);
       }
     }
 
     if (childStretchedCrossSize != null) {
       if (_isHorizontalFlexDirection) {
-        if (child.renderStyle.isSelfRenderLayoutBox() ||
-            child.renderStyle.isSelfRenderWidget() ||
-            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minHeight.isNotAuto)) {
-          _overrideChildContentBoxLogicalHeight(child, childStretchedCrossSize);
-        }
+        _overrideChildContentBoxLogicalHeight(child, childStretchedCrossSize);
       } else {
-        if (child.renderStyle.isSelfRenderLayoutBox() ||
-            child.renderStyle.isSelfRenderWidget() ||
-            (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.minWidth.isNotAuto)) {
-          _overrideChildContentBoxLogicalWidth(child, childStretchedCrossSize);
-        }
+        _overrideChildContentBoxLogicalWidth(child, childStretchedCrossSize);
       }
     }
 
-    if (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.aspectRatio != null) {
+    if (child is RenderReplaced && child.renderStyle.aspectRatio != null) {
       _overrideReplacedChildLength(child, childFlexedMainSize, childStretchedCrossSize);
     }
 
