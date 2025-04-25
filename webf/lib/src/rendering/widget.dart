@@ -194,15 +194,6 @@ class RenderWidget extends RenderBoxModel
   }
 
   @override
-  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
-    super.handleEvent(event, entry);
-
-    if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
-    }
-  }
-
-  @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     if (renderStyle.transformMatrix != null) {
       return hitTestIntrinsicChild(result, firstChild, position!);

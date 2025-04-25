@@ -124,9 +124,18 @@ class RenderEventListener extends RenderBoxModel
     super.handleEvent(event, entry);
 
     _gestureDispatcher?.handlePointerEvent(event);
+  }
+}
 
-    if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
-    }
+class RenderTouchEventListener extends RenderEventListener {
+  RenderTouchEventListener({required super.renderStyle, required super.controller, required super.hasEvent});
+
+  final RawPointerListener rawPointerListener = RawPointerListener();
+
+  @override
+  void handleEvent(PointerEvent event, covariant BoxHitTestEntry entry) {
+    super.handleEvent(event, entry);
+
+    rawPointerListener.handleEvent(renderStyle.target, event);
   }
 }

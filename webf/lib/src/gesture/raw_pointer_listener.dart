@@ -36,30 +36,17 @@ class TouchPoint {
 // Get the raw pointer events without the filtering of GestureRecognizer.
 // Used for implementing the touchstart, touchmove and touchend DOM events.
 class RawPointerListener {
-  final List<EventTarget> eventTriggeredEventTargets = [];
-
-  void recordEventTarget(EventTarget eventTarget) {
-    eventTriggeredEventTargets.add(eventTarget);
-  }
-
-  EventTarget? lastActiveEventTarget;
   final Map<int, EventTarget> _activeEventTarget = {};
   final Map<int, TouchPoint> _activeTouches = {};
 
-  void handleEvent(PointerEvent event) {
+  void handleEvent(EventTarget target, PointerEvent event) {
     TouchPoint touchPoint = _toTouchPoint(event);
 
-    if (event is PointerDownEvent && eventTriggeredEventTargets.isNotEmpty) {
-      EventTarget target = eventTriggeredEventTargets.first;
-
-      lastActiveEventTarget = target;
-
+    if (event is PointerDownEvent) {
       _activeTouches[touchPoint.id] = touchPoint;
       _activeEventTarget[touchPoint.id] = target;
 
       _handleTouchPoint(target, touchPoint);
-
-      eventTriggeredEventTargets.clear();
     }
 
     if (event is PointerMoveEvent && _activeEventTarget.containsKey(touchPoint.id)) {
@@ -73,7 +60,6 @@ class RawPointerListener {
       scheduleMicrotask(() {
         _activeEventTarget.remove(touchPoint.id);
         _activeTouches.remove(touchPoint.id);
-        lastActiveEventTarget = null;
       });
     }
   }

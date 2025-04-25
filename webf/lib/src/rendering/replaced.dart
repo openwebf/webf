@@ -144,16 +144,6 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
   }
 
-
-  @override
-  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
-    super.handleEvent(event, entry);
-
-    if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
-    }
-  }
-
   @override
   void performPaint(PaintingContext context, Offset offset) {
     offset += Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);

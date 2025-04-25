@@ -7,6 +7,7 @@ import 'dart:async';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
@@ -23,37 +24,27 @@ class GestureDispatcher {
 
   late Map<String, GestureRecognizer> _gestureRecognizers;
 
-  void _handlePointerDown(EventTarget currentTarget, PointerDownEvent event) {
+  void _handlePointerDown(PointerDownEvent event) {
     // Add pointer to gestures then register the gesture recognizer to the arena.
     _gestureRecognizers.forEach((eventName, gesture) {
-      if (currentTarget.getEventHandlers().containsKey(eventName) ||
-          currentTarget.getCaptureEventHandlers().containsKey(eventName)) {
-        // Register the recognizer that needs to be monitored.
-        gesture.addPointer(event);
-      }
+      gesture.addPointer(event);
     });
   }
 
-  void _handlePointerPanZoomStart(EventTarget currentTarget, PointerPanZoomStartEvent event) {
+  void _handlePointerPanZoomStart(PointerPanZoomStartEvent event) {
     // Add pointer to gestures then register the gesture recognizer to the arena.
     _gestureRecognizers.forEach((eventName, gesture) {
-      if (currentTarget.getEventHandlers().containsKey(eventName) ||
-          currentTarget.getCaptureEventHandlers().containsKey(eventName)) {
-        // Register the recognizer that needs to be monitored.
-        gesture.addPointerPanZoom(event);
-      }
+      gesture.addPointerPanZoom(event);
     });
   }
 
   void handlePointerEvent(PointerEvent event) {
-    EventTarget currentTarget = getCurrentEventTarget();
-
     if (event is PointerDownEvent) {
-      _handlePointerDown(currentTarget, event);
+      _handlePointerDown(event);
     }
 
     if (event is PointerPanZoomStartEvent) {
-      _handlePointerPanZoomStart(currentTarget, event);
+      _handlePointerPanZoomStart(event);
     }
   }
 
@@ -62,10 +53,7 @@ class GestureDispatcher {
   }
 
   EventTarget getCurrentEventTarget() {
-    final context = target.ownerDocument.controller.currentBuildContext!.context;
-    RenderViewportBox viewportBox = context.findRenderObject() as RenderViewportBox;
-
-    EventTarget currentTarget = viewportBox.rawPointerListener.lastActiveEventTarget ?? target;
+    EventTarget currentTarget = target;
 
     if (currentTarget is SVGElement && currentTarget.hostingImageElement != null) {
       currentTarget = currentTarget.hostingImageElement!;
@@ -81,7 +69,29 @@ class GestureDispatcher {
       return;
     }
 
-    EventTarget target = getCurrentEventTarget();
+    EventTarget target = this.target;
+
+    if (target is dom.Element) {
+      BoxHitTestResult boxHitTestResult = BoxHitTestResult();
+      Offset offset = Offset(localPosition.dx, localPosition.dy);
+      target.attachedRenderer!.hitTest(boxHitTestResult, position: offset);
+
+      // Find the first top RenderBoxModel
+      RenderBoxModel? targetBoxModel;
+      if (boxHitTestResult.path.isNotEmpty) {
+        boxHitTestResult.path.firstWhere((entry) {
+          if (entry.target is RenderBoxModel) {
+            targetBoxModel = entry.target as RenderBoxModel;
+            return true;
+          }
+          return false;
+        });
+      }
+
+      if (targetBoxModel != null) {
+        target = targetBoxModel?.renderStyle.target as EventTarget;
+      }
+    }
 
     Offset globalOffset = root.globalToLocal(Offset(globalPosition.dx, globalPosition.dy));
     double clientX = globalOffset.dx;

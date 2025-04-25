@@ -485,14 +485,6 @@ class RenderLayoutBox extends RenderBoxModel
   }
 
   @override
-  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
-    super.handleEvent(event, entry);
-    if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
-    }
-  }
-
-  @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
     properties.add(DiagnosticsProperty('paintingOrder', paintingOrder));
@@ -566,12 +558,6 @@ class RenderBoxModel extends RenderBox
 
   // Cached positioned children for apply offsets when self had layout
   final Set<RenderBoxModel> positionedChildren = {};
-
-  RawPointerListener get rawPointerListener {
-    final context = renderStyle.target.ownerDocument.controller.currentBuildContext!.context;
-    RenderViewportBox viewportBox = context.findRenderObject() as RenderViewportBox;
-    return viewportBox.rawPointerListener;
-  }
 
   @override
   String toStringShort() {

@@ -12,12 +12,18 @@ import 'package:webf/dom.dart' as dom;
 class WebFEventListener extends SingleChildRenderObjectWidget {
   final dom.Element ownerElement;
   final bool hasEvent;
+  final bool enableTouchEvent;
 
-  WebFEventListener({Widget? child, required this.ownerElement, Key? key, required this.hasEvent})
+  WebFEventListener(
+      {Widget? child, required this.ownerElement, Key? key, required this.hasEvent, this.enableTouchEvent = false})
       : super(child: child, key: key);
 
   @override
   RenderObject createRenderObject(BuildContext context) {
+    if (enableTouchEvent) {
+      return RenderTouchEventListener(
+          renderStyle: ownerElement.renderStyle, controller: ownerElement.ownerDocument.controller, hasEvent: hasEvent);
+    }
     return RenderEventListener(
         controller: ownerElement.ownerDocument.controller, renderStyle: ownerElement.renderStyle, hasEvent: hasEvent);
   }

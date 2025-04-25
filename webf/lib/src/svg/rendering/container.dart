@@ -45,17 +45,4 @@ class RenderSVGContainer extends RenderBoxModel
   void setupParentData(covariant RenderObject child) {
     child.parentData = RenderLayoutParentData();
   }
-
-  RawPointerListener get rawPointerListener {
-    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
-  }
-
-  @override
-  void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
-    super.handleEvent(event, entry);
-
-    if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
-    }
-  }
 }

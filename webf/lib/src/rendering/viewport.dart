@@ -22,8 +22,6 @@ class RenderViewportBox extends RenderBox
 
   WebFController controller;
 
-  RawPointerListener rawPointerListener = RawPointerListener();
-
   @override
   void setupParentData(covariant RenderObject child) {
     child.parentData = RenderViewportParentData();
@@ -152,22 +150,8 @@ class RenderViewportBox extends RenderBox
 
 class RootRenderViewportBox extends RenderViewportBox {
   RootRenderViewportBox({required super.viewportSize, required super.controller, super.background});
-
-  @override
-  void handleEvent(PointerEvent event, HitTestEntry entry) {
-    super.handleEvent(event, entry as BoxHitTestEntry);
-
-    rawPointerListener.handleEvent(event);
-  }
 }
 
 class RouterViewViewportBox extends RenderViewportBox {
   RouterViewViewportBox({required super.viewportSize, required super.controller});
-
-  @override
-  void handleEvent(PointerEvent event, HitTestEntry entry) {
-    super.handleEvent(event, entry as BoxHitTestEntry);
-
-    rawPointerListener.handleEvent(event);
-  }
 }

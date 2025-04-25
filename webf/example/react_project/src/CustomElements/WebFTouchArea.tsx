@@ -5,10 +5,11 @@ import { HybridRouterChangeEventHandler } from './RouterLink';
 interface WebFHybridRouterProps {
   onScreen?: HybridRouterChangeEventHandler;
   offScreen?: HybridRouterChangeEventHandler;
-  onTouchStart?: TouchEventHandler;
-  onTouchMove?: TouchEventHandler;
-  onTouchEnd?: TouchEventHandler;
-  onTouchCancel?: TouchEventHandler;
+  onTouchStart?: TouchEventHandler<HTMLElement>;
+  onTouchMove?: TouchEventHandler<HTMLElement>;
+  onTouchEnd?: TouchEventHandler<HTMLElement>;
+  onTouchCancel?: TouchEventHandler<HTMLElement>;
+  onClick?: MouseEventHandler<HTMLElement>;
 }
 
 export const WebFTouchArea = createComponent({
@@ -20,6 +21,7 @@ export const WebFTouchArea = createComponent({
     onTouchStart: 'touchstart',
     onTouchMove: 'touchmove',
     onTouchEnd: 'touchend',
-    onTouchCancel: 'touchcancel'
+    onTouchCancel: 'touchcancel',
+    onClick: 'click'
   }
 }) as React.ComponentType<WebFHybridRouterProps & { children?: React.ReactNode; ref?: React.Ref<HTMLUnknownElement> }>

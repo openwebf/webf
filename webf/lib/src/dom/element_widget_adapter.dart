@@ -16,7 +16,6 @@ import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
-
 mixin ElementAdapterMixin on ElementBase {
   final List<Element> _fixedPositionElements = [];
 
@@ -51,9 +50,11 @@ mixin ElementAdapterMixin on ElementBase {
   Element? holderAttachedContainingBlockElement;
 
   flutter.ScrollController? _scrollControllerX;
+
   flutter.ScrollController? get scrollControllerX => _scrollControllerX;
 
   flutter.ScrollController? _scrollControllerY;
+
   flutter.ScrollController? get scrollControllerY => _scrollControllerY;
 
   final Set<flutter.RenderObjectElement> positionHolderElements = {};
@@ -226,7 +227,12 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       widget = WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
     }
 
-    return WebFEventListener(ownerElement: webFElement, child: widget, hasEvent: webFElement.hasEvent);
+    return WebFEventListener(
+      ownerElement: webFElement,
+      child: widget,
+      hasEvent: webFElement.hasEvent,
+      enableTouchEvent: webFElement is WebFTouchAreaElement
+    );
   }
 
   @override
@@ -513,7 +519,6 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
     if (pairedRenderBoxModel?.renderPositionPlaceholder == renderObject) {
       pairedRenderBoxModel?.renderPositionPlaceholder = null;
     }
-
 
     super.unmount();
   }

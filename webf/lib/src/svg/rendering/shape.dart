@@ -146,16 +146,8 @@ abstract class RenderSVGShape extends RenderBoxModel {
     return null;
   }
 
-  RawPointerListener get rawPointerListener {
-    return renderStyle.target.ownerDocument.viewport!.rawPointerListener;
-  }
-
   @override
   void handleEvent(PointerEvent event, BoxHitTestEntry entry) {
     super.handleEvent(event, entry);
-
-    if (event is PointerDownEvent) {
-      rawPointerListener.recordEventTarget(renderStyle.target);
-    }
   }
 }
