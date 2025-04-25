@@ -2217,13 +2217,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isChildLengthAuto =
         _isHorizontalFlexDirection ? child.renderStyle.height.isAuto : child.renderStyle.width.isAuto;
 
-    bool isChildMinLengthAuto =
-        _isHorizontalFlexDirection ? child.renderStyle.minHeight.isAuto : child.renderStyle.minWidth.isAuto;
-
     // If the cross size property of the flex item computes to auto, and neither of
     // the cross axis margins are auto, the flex item is stretched.
     // https://www.w3.org/TR/css-flexbox-1/#valdef-align-items-stretch
-    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && isChildLengthAuto && isChildMinLengthAuto) {
+    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && (isChildLengthAuto)) {
       return true;
     }
 
