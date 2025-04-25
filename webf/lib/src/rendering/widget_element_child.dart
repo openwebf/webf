@@ -5,6 +5,7 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/rendering.dart';
 
 /// A widget that passes outer constraints to inner WebF HTMLElement children.
 ///
@@ -49,4 +50,13 @@ class WebFWidgetElementChild extends SingleChildRenderObjectWidget {
 /// This render object extends [RenderProxyBox] to maintain the original
 /// constraints from the parent render object, making them accessible to
 /// WebF HTML elements through the [findWidgetElementChild] method.
-class RenderWidgetElementChild extends RenderProxyBox {}
+class RenderWidgetElementChild extends RenderProxyBox {
+  @override
+  void performLayout() {
+    if (child is RenderBoxModel) {
+      (child as RenderBoxModel).renderStyle.computeContentBoxLogicalWidth();
+      (child as RenderBoxModel).renderStyle.computeContentBoxLogicalHeight();
+    }
+    super.performLayout();
+  }
+}

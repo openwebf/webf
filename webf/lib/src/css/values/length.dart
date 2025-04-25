@@ -212,14 +212,36 @@ class CSSLengthValue {
           parentRenderStyle = parentRenderStyle.getParentRenderStyle();
         }
 
-        // Percentage relative width priority: logical width > renderer width
+        RenderWidgetElementChild? renderWidgetElementChild =
+            currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
+        bool shouldInheritRenderWidgetElementConstraintsWidth =
+            parentRenderStyle?.isSelfRenderWidget() == true && renderWidgetElementChild != null;
+        double? parentWidgetConstraintWidth = renderWidgetElementChild?.constraints.maxWidth;
+        bool shouldInheritRenderWidgetElementConstraintsHeight = parentRenderStyle?.isSelfRenderWidget() == true &&
+            renderWidgetElementChild != null &&
+            renderWidgetElementChild.constraints.maxHeight.isFinite &&
+            renderWidgetElementChild.constraints.maxHeight !=
+                currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
+        double? parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
+
+        // Percentage relative width priority: RenderWidgetChild's constraints > logical width > renderer width
         double? parentPaddingBoxWidth = parentRenderStyle?.paddingBoxLogicalWidth ?? parentRenderStyle?.paddingBoxWidth;
         double? parentContentBoxWidth = parentRenderStyle?.contentBoxLogicalWidth ?? parentRenderStyle?.contentBoxWidth;
+
+        // Override the contentBoxWidth
+        if (shouldInheritRenderWidgetElementConstraintsWidth) {
+          parentContentBoxWidth = parentWidgetConstraintWidth;
+        }
+
         // Percentage relative height priority: logical height > renderer height
         double? parentPaddingBoxHeight =
             parentRenderStyle?.paddingBoxLogicalHeight ?? parentRenderStyle?.paddingBoxHeight;
         double? parentContentBoxHeight =
             parentRenderStyle?.contentBoxLogicalHeight ?? parentRenderStyle?.contentBoxHeight;
+
+        if (shouldInheritRenderWidgetElementConstraintsHeight) {
+          parentContentBoxHeight = parentWidgetConstraintHeight;
+        }
 
         // Positioned element is positioned relative to the padding box of its containing block
         // while the others relative to the content box.
@@ -275,7 +297,6 @@ class CSSLengthValue {
                 _computedValue = double.infinity;
               }
             } else {
-              double? relativeParentHeight = parentRenderStyle?.contentBoxLogicalHeight;
               if (relativeParentHeight != null) {
                 _computedValue = value! * relativeParentHeight;
               } else {

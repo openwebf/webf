@@ -86,26 +86,17 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
         BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
     element.parentOrShadowHostNode = widget.parentElement;
+    element.isConnected = true;
     element.isWidgetOwned = true;
+
     _webFElement = element;
 
-    super.mount(parent, newSlot);
-
-    dom.Element? parentElement = findClosestAncestorHTMLElement(this);
-
-    if (parentElement != null) {
-      if (widget.inlineStyle != null) {
-        fullFillInlineStyle(widget.inlineStyle!);
-      }
-
-      // htmlElement!.ensureChildAttached();
-      _webFElement!.applyStyle(_webFElement!.style);
-
-      if (_webFElement!.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-        // Flush pending style before child attached.
-        _webFElement!.style.flushPendingProperties();
-      }
+    if (widget.inlineStyle != null) {
+      fullFillInlineStyle(widget.inlineStyle!);
     }
+    element.style.flushDisplayProperties();
+
+    super.mount(parent, newSlot);
   }
 
   @override
