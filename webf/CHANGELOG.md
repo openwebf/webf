@@ -1,3 +1,22 @@
+## 0.21.0-beta.4+3
+
+### Features
+
+- Support dashed border for single side
+- New implementation for gesture handling
+- Display error when widget loading fails
+
+### Bug Fixes
+
+- Fix min-height with parent fit-content
+- Fix offscreen event dispatch on hybrid router
+- Fix conversion of widget elements constraints to inner HTML Elements
+- Fix flex cross size affected by min-height
+- Fix min-height definition triggering flex item not to stretch
+- Fix painting order with multiple renderObject instances
+- Fix max constraint height inheritance in WebFWidgetElementChild
+- Fix Element.getBoundingClientRect in hybrid router mode
+
 ## 0.21.0-beta.4+2
 
 ### Features
