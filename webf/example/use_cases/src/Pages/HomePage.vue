@@ -14,6 +14,13 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+          <div class="component-item" @click="navigateTo('/listview')">
+            <div class="item-content">
+              <div class="item-title">Custom Listview</div>
+              <div class="item-desc">A custom listview component.</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div> <!-- End of main component-section -->
     </webf-listview>

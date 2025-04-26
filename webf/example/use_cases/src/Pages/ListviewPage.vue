@@ -1,52 +1,38 @@
 <template>
   <div class="page-container">
     <webf-listview>
-    <h2>ListView Examples</h2>
+      <h2>Custom ListView Examples</h2>
 
-    <!-- Example 4: Custom Cupertino Refresh Style -->
-    <flutter-cupertino-list-section title="Custom Cupertino Refresh Style">
-      <p class="description">Uses a custom element for the refresh indicator (Cupertino only).</p>
-      <webf-listview
-        class="listview-container"
-        refresh-style="customCupertino"
-        @refresh="handleRefresh('custom')"
-        @loadmore="handleLoadMore"
-      >
-        <!-- Custom refresh indicator element (hidden by default) -->
-        <div slotName="refresh-indicator" class="custom-refresh-indicator">
-          <img src="https://img.icons8.com/ios-glyphs/30/000000/refresh--v1.png" width="20" height="20" alt="loading" />
-          <span>Refreshing data...</span>
-        </div>
+      <!-- Example 1: Custom Refresh and Load More Style -->
+      <flutter-cupertino-list-section title="Custom Refresh and Load More Style">
+        <p class="description">Uses a custom element for the refresh and load more indicator.</p>
+        <webf-listview
+          class="listview-container"
+          refresh-style="customCupertino"
+          @refresh="handleRefresh('custom')"
+          @loadmore="handleLoadMore"
+        >
+          <!-- List items -->
+          <div v-for="item in customItems" :key="item" class="list-item">Custom Item {{ item }}</div>
+        </webf-listview>
+        <p class="description">Scroll down to load more items.</p>
+      </flutter-cupertino-list-section>
 
-        <!-- List items -->
-        <div v-for="item in customItems" :key="item" class="list-item">Custom Item {{ item }}</div>
-      </webf-listview>
-      <p class="description">Scroll down to load more items.</p>
-    </flutter-cupertino-list-section>
+      <!-- Example 2: Cupertino Refresh Style -->
+      <flutter-cupertino-list-section title="Cupertino Refresh Style">
+        <p class="description">Forced Cupertino style.</p>
+        <webf-listview-cupertino class="listview-container" @refresh="handleRefresh('cupertino')">
+          <div v-for="item in items" :key="item" class="list-item">Item {{ item }}</div>
+        </webf-listview-cupertino>
+      </flutter-cupertino-list-section>
 
-    <!-- Example 1: Default Refresh Style -->
-    <flutter-cupertino-list-section title="Default Refresh Style">
-      <p class="description">Default behavior (Cupertino on iOS/macOS, Material on others).</p>
-      <webf-listview class="listview-container" @refresh="handleRefresh('default')">
-        <div v-for="item in items" :key="item" class="list-item">Item {{ item }}</div>
-      </webf-listview>
-    </flutter-cupertino-list-section>
-
-    <!-- Example 2: Cupertino Refresh Style -->
-    <flutter-cupertino-list-section title="Cupertino Refresh Style">
-      <p class="description">Forced Cupertino style.</p>
-      <webf-listview class="listview-container" refresh-style="cupertino" @refresh="handleRefresh('cupertino')">
-        <div v-for="item in items" :key="item" class="list-item">Item {{ item }}</div>
-      </webf-listview>
-    </flutter-cupertino-list-section>
-
-    <!-- Example 3: Material Refresh Style -->
-    <flutter-cupertino-list-section title="Material Refresh Style">
-      <p class="description">Forced Material style.</p>
-      <webf-listview class="listview-container" refresh-style="material" @refresh="handleRefresh('material')">
-        <div v-for="item in items" :key="item" class="list-item">Item {{ item }}</div>
-      </webf-listview>
-    </flutter-cupertino-list-section>
+      <!-- Example 3: Material Refresh Style -->
+      <flutter-cupertino-list-section title="Material Refresh Style">
+        <p class="description">Forced Material style.</p>
+        <webf-listview-material class="listview-container" @refresh="handleRefresh('material')">
+          <div v-for="item in items" :key="item" class="list-item">Item {{ item }}</div>
+        </webf-listview-material>
+      </flutter-cupertino-list-section>
     </webf-listview>
   </div>
 </template>
