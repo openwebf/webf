@@ -479,6 +479,7 @@ class _WebFElement extends StatefulElement {
 
       controller.evaluated = true;
     });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   Future<void> _loadingInNormalMode() async {
