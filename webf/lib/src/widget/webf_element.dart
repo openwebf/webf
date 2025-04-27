@@ -94,6 +94,7 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     if (widget.inlineStyle != null) {
       fullFillInlineStyle(widget.inlineStyle!);
     }
+    _webFElement!.applyStyle(_webFElement!.style);
     element.style.flushDisplayProperties();
 
     super.mount(parent, newSlot);

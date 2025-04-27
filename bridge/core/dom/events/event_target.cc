@@ -303,16 +303,16 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
       }
     }
 
-    if (IsRouterLinkElement()) {
-      NativeValue arguments[] = {
-          NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), event_type),
-          NativeValueConverter<NativeTypePointer<DartAddEventListenerOptions>>::ToNativeValue(listener_options)};
-      InvokeBindingMethod(binding_call_methods::kaddEvent, 2, arguments, FlushUICommandReason::kDependentsOnElement,
-                          ASSERT_NO_EXCEPTION());
-    } else {
+//    if (IsRouterLinkElement()) {
+//      NativeValue arguments[] = {
+//          NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), event_type),
+//          NativeValueConverter<NativeTypePointer<DartAddEventListenerOptions>>::ToNativeValue(listener_options)};
+//      InvokeBindingMethod(binding_call_methods::kaddEvent, 2, arguments, FlushUICommandReason::kDependentsOnElement,
+//                          ASSERT_NO_EXCEPTION());
+//    } else {
       GetExecutingContext()->uiCommandBuffer()->AddCommand(
           UICommand::kAddEvent, event_type.ToNativeString(ctx()).release(), bindingObject(), listener_options);
-    }
+//    }
   }
 
   return added;
