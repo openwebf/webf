@@ -1,3 +1,31 @@
+## 0.21.0-beta.4+5
+
+New Features
+
+- Added support for custom ListView components
+  - Includes both Material and Cupertino implementations
+  - Added to example application with demo page
+- Added support for ShowCaseView component
+  - Integrated showcase examples in the demo application
+- Added WebFControllerManager.instance.cancelUpdateOrLoadingIfNecessary API
+  - Allows canceling pending updates or loading operations
+
+Bug Fixes
+
+- Fixed issue where loading didn't properly request an animation frame
+- Fixed override default widget element functionality
+- Enhanced element registry system
+
+## 0.21.0-beta.4+4
+
+### Bug Fixes
+
+- Fix onScreen event on RouterLinkElement
+- Fix router change events
+- Fix did change metrics not updating viewport CSS values
+- Fix forEach element attached flutter state
+
+
 ## 0.21.0-beta.4+3
 
 ### Features
