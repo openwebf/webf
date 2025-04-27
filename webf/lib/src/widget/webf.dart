@@ -57,14 +57,14 @@ class WebF extends StatefulWidget {
     if (!_isValidCustomElementName(tagName)) {
       throw ArgumentError('The element name "$tagName" is not valid.');
     }
-    defineWidgetElement(tagName.toUpperCase(), creator, override: false);
+    defineWidgetElement(tagName.toUpperCase(), creator);
   }
 
   static void overrideCustomElement(String tagName, ElementCreator creator) {
     if (!_isValidCustomElementName(tagName)) {
       throw ArgumentError('The element name "$tagName" is not valid.');
     }
-    defineWidgetElement(tagName.toUpperCase(), creator, override: true);
+    defineOverrideWidgetElement(tagName.toUpperCase(), creator);
   }
 
   static void defineModule(ModuleCreator creator) {
