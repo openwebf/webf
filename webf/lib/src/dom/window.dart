@@ -107,6 +107,12 @@ class Window extends EventTarget {
     _watchedViewportElements.remove(element);
   }
 
+  void resizeViewportRelatedElements() {
+    _watchedViewportElements.forEach((element) {
+      element.renderStyle.markNeedsLayout();
+    });
+  }
+
   String get colorScheme =>
       document.controller.ownerFlutterView?.platformDispatcher.platformBrightness == Brightness.light ? 'light' : 'dark';
 

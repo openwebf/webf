@@ -617,7 +617,9 @@ class WebFViewController implements WidgetsBindingObserver {
   static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
 
   @override
-  void didChangeMetrics() {}
+  void didChangeMetrics() {
+    window.resizeViewportRelatedElements();
+  }
 
   @override
   void didChangePlatformBrightness() {
