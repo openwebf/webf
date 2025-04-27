@@ -136,7 +136,11 @@ abstract class Element extends ContainerNode
 
   @nonVirtual
   void forEachState(ForeachStateFunction fn) {
-    _states.forEach(fn);
+    _states.forEach((state) {
+      if (state.mounted) {
+        fn(state);
+      }
+    });
   }
 
   @nonVirtual
