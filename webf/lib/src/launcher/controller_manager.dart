@@ -284,6 +284,22 @@ class WebFControllerManager {
     return controller;
   }
 
+  /// Stop the current pending loading or updating controller to be added in this manager
+  void cancelUpdateOrLoadingIfNecessary(String name) {
+    final _ControllerInstance? instance = _controllersByName[name];
+    if (instance != null) {
+      // Set status to prevent further processing
+      if (instance.controller.preloadStatus == PreloadingStatus.preloading) {
+        instance.controller.preloadStatus = PreloadingStatus.fail;
+      }
+      if (instance.controller.preRenderingStatus == PreRenderingStatus.preloading ||
+          instance.controller.preRenderingStatus == PreRenderingStatus.evaluate ||
+          instance.controller.preRenderingStatus == PreRenderingStatus.rendering) {
+        instance.controller.preRenderingStatus = PreRenderingStatus.fail;
+      }
+    }
+  }
+
   /// Re-create a controller that was previously disposed using stored parameters
   Future<WebFController> _recreateController(String name) async {
     // Remove the disposed controller instance
@@ -639,6 +655,11 @@ class WebFControllerManager {
     // Preload the new bundle
     await newController.preload(bundle);
 
+    // Should check if this controller was canceled during preloading
+    if (newController.preloadStatus == PreloadingStatus.fail) {
+      return oldController ?? newController;
+    }
+
     // Remove the old controller from tracking if it exists
     final instance = _controllersByName.remove(name);
     _recentlyUsedControllers.removeWhere((element) => element == name);
@@ -730,6 +751,11 @@ class WebFControllerManager {
 
     // Prerender the new bundle
     await newController.preRendering(bundle);
+
+    // Should check if this controller was canceled during prerendering
+    if (newController.preRenderingStatus == PreRenderingStatus.fail) {
+      return oldController ?? newController;
+    }
 
     // Remove the old controller from tracking if it exists
     final instance = _controllersByName.remove(name);

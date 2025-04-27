@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
+import 'package:path/path.dart' as path;
 
 import 'local_http_server.dart';
 import 'src/css/style_animations_parser.dart' as style_animations_parser;
@@ -22,14 +23,20 @@ import 'src/foundation/environment.dart' as environment;
 import 'src/foundation/http_cache.dart' as http_cache;
 import 'src/foundation/http_client.dart' as http_client;
 import 'src/foundation/http_client_interceptor.dart' as http_client_interceptor;
+import 'src/foundation/mock_bundle_test.dart' as mock_bundle_test;
 import 'src/foundation/uri_parser.dart' as uri_parser;
+import 'src/launcher/controller_manager.dart' as controller_manager;
 import 'src/module/fetch.dart' as fetch;
+
+final String __dirname = path.dirname(Platform.script.path);
 
 // The main entry for kraken unit test.
 // Setup all common logic.
 void main() {
   // Setup environment.
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  print(__dirname);
 
   // Start local HTTP server.
   LocalHttpServer.basePath = 'test/fixtures';
@@ -38,6 +45,8 @@ void main() {
 
   // Inject a custom user agent, to avoid reading from bridge.
   NavigatorModule.setCustomUserAgent('webf/test');
+
+  WebFDynamicLibrary.dynamicLibraryPath = path.join(__dirname, '../bridge/build/macos/lib/x86_64');
 
   // Work around with path_provider.
   Directory tempDirectory = Directory('./temp');
@@ -57,7 +66,12 @@ void main() {
     http_client.main();
     http_client_interceptor.main();
     environment.main();
+    mock_bundle_test.main();
     uri_parser.main();
+  });
+
+  group('launcher', () {
+    controller_manager.main();
   });
 
   group('module', () {

@@ -732,6 +732,13 @@ class WebFController {
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
 
   PreloadingStatus get preloadStatus => _preloadStatus;
+
+  /// Sets the preloading status
+  ///
+  /// This is used internally and by WebFControllerManager to control the preloading state
+  set preloadStatus(PreloadingStatus status) {
+    _preloadStatus = status;
+  }
   VoidCallback? _onPreloadingFinished;
   int unfinishedPreloadResources = 0;
 
@@ -829,6 +836,13 @@ class WebFController {
   PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
 
   PreRenderingStatus get preRenderingStatus => _preRenderingStatus;
+
+  /// Sets the prerendering status
+  ///
+  /// This is used internally and by WebFControllerManager to control the prerendering state
+  set preRenderingStatus(PreRenderingStatus status) {
+    _preRenderingStatus = status;
+  }
 
   /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
   /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
