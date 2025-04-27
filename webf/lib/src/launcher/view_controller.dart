@@ -97,6 +97,13 @@ class WebFViewController implements WidgetsBindingObserver {
   Future<void> awaitForHybridRouteLoaded(String routePath) {
     if (!_hybridRouteLoadCompleter.containsKey(routePath)) {
       _hybridRouteLoadCompleter[routePath] = Completer<void>();
+
+      // Add timeout fallback for route load.
+      Timer(Duration(seconds: 3), () {
+        if (_hybridRouteLoadCompleter[routePath]?.isCompleted == false) {
+          _hybridRouteLoadCompleter[routePath]!.complete();
+        }
+      });
     }
     return _hybridRouteLoadCompleter[routePath]!.future;
   }

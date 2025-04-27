@@ -63,8 +63,11 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     String path = route.settings.name ?? '';
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPop', path: path);
+
+    widget.controller.view.document.dispatchEvent(event);
+
     RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEvent(event);
+    routerLinkElement.dispatchEventUtilAdded(event);
   }
 
   @override
@@ -74,8 +77,11 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     String path = route.settings.name ?? '';
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPopNext', path: path);
+
+    widget.controller.view.document.dispatchEvent(event);
+
     RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEvent(event);
+    routerLinkElement.dispatchEventUtilAdded(event);
   }
 
   @override
@@ -85,8 +91,11 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     String path = route.settings.name ?? '';
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
+
+    widget.controller.view.document.dispatchEvent(event);
+
     RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEvent(event);
+    routerLinkElement.dispatchEventUtilAdded(event);
   }
 
   @override
@@ -96,8 +105,11 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     String path = route.settings.name ?? '';
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
+
+    widget.controller.view.document.dispatchEvent(event);
+
     RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEvent(event);
+    routerLinkElement.dispatchEventUtilAdded(event);
   }
 }
 

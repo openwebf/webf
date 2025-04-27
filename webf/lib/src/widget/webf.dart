@@ -245,10 +245,8 @@ class WebFState extends State<WebF> with RouteAware {
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    if (widget.controller.initialRoute != '/') {
-      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
-      routerLinkElement?.dispatchEvent(event);
-    }
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    routerLinkElement?.dispatchEvent(event);
   }
 
   @override
@@ -261,10 +259,8 @@ class WebFState extends State<WebF> with RouteAware {
         HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    if (widget.controller.initialRoute != '/') {
-      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
-      routerLinkElement?.dispatchEvent(event);
-    }
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    routerLinkElement?.dispatchEvent(event);
   }
 
   @override
@@ -278,9 +274,9 @@ class WebFState extends State<WebF> with RouteAware {
 
     if (widget.controller.initialRoute != '/') {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute);
-      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
-      routerLinkElement?.dispatchEventUtilAdded(event);
     }
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
   @override
@@ -295,9 +291,9 @@ class WebFState extends State<WebF> with RouteAware {
 
     if (widget.controller.initialRoute != '/') {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute);
-      RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
-      routerLinkElement?.dispatchEventUtilAdded(event);
     }
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
   void requestForUpdate(AdapterUpdateReason reason) {
