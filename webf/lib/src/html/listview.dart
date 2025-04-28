@@ -126,7 +126,7 @@ class WebFListViewState extends WebFWidgetElementState {
   /// When true, the loading indicator is shown at the bottom of the list and
   /// additional 'loadmore' events are prevented until loading completes.
   bool _isLoadingMore = false;
-  
+
   /// Returns whether the list is currently loading more items
   bool get isLoadingMore => _isLoadingMore;
 
@@ -234,11 +234,11 @@ class WebFListViewState extends WebFWidgetElementState {
   @protected
   void handleScroll() {
     final position = scrollController!.position;
-    if (position.extentAfter < 50 && !isLoadingMore && widgetElement.hasEventListener('loadmore')) {
+    if (position.extentAfter < 100 && !isLoadingMore && widgetElement.hasEventListener('loadmore')) {
       _isLoadingMore = true;
       widgetElement.dispatchEvent(dom.Event('loadmore'));
       setState(() {});
-      Future.delayed(const Duration(milliseconds: 2000), () {
+      Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted) {
           _isLoadingMore = false;
           setState(() {});
@@ -385,10 +385,10 @@ class WebFListViewState extends WebFWidgetElementState {
 enum RefreshControlStyle {
   /// Use platform default style (Material on Android, Cupertino on iOS/macOS)
   platform,
-  
+
   /// Force Material style
   material,
-  
+
   /// Force Cupertino style
   cupertino,
 }
