@@ -161,9 +161,135 @@ class WebFControllerManager {
   int get detachedControllersCount =>
       _controllersByName.values.where((i) => i.state == ControllerState.detached).length;
 
-  /// Adds a controller with preloading enabled
+  /// Manages controller lifecycle with preloading
+  /// Works as both adding a new controller or updating an existing one
+  /// Returns the preloaded controller ready for use
+  ///
+  /// When used as addWithPreload (createController is required):
+  ///   - Creates a new controller with the factory
+  ///   - Registers it with the provided name
+  ///   - Preloads the bundle
+  ///
+  /// When used as updateWithPreload (createController is optional):
+  ///   - If an existing controller is found, it preserves its context and state
+  ///   - Creates a new controller instance to replace the old one
+  ///   - Maintains attachment state and context
+  ///   - Disposes the old controller once the new one is ready
+  Future<WebFController> addOrUpdateWithPreload({
+    required String name,
+    ControllerFactory? createController,
+    required WebFBundle bundle,
+    Map<String, SubViewBuilder>? routes,
+    ControllerSetup? setup,
+    bool forceReplace = false
+  }) async {
+    // Check if controller already exists
+    final oldController = getControllerSync(name);
+    final currentState = getControllerState(name);
+    final wasAttached = currentState == ControllerState.attached;
+    final BuildContext? currentContext = oldController?.currentBuildContext?.context;
+    final Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
+
+    // Get existing initialization parameters if available
+    final oldParams = _controllerInitParams[name];
+
+    // Determine which factory to use - logic differs based on whether this is an add or update
+    ControllerFactory actualCreateController;
+    if (createController != null) {
+      // Explicit factory provided
+      actualCreateController = createController;
+    } else if (oldParams != null && oldParams['createController'] != null) {
+      // Use previously stored factory for update case
+      actualCreateController = oldParams['createController'];
+    } else {
+      // Add operation requires a factory
+      throw ArgumentError('createController is required when adding a new controller');
+    }
+
+    // If we have an existing controller and force replace is false, just update usage and return
+    if (oldController != null && !forceReplace && currentState != ControllerState.disposed) {
+      _updateUsageOrder(name);
+      return oldController;
+    }
+
+    // Check if we've reached max capacity and enforce limits if needed (only for new controllers)
+    if ((oldController == null || currentState == ControllerState.disposed) &&
+        _controllersByName.length >= _config.maxAliveInstances &&
+        _config.autoDisposeWhenLimitReached) {
+      _disposeLeastRecentlyUsed();
+    }
+
+    // Create a new controller instance
+    WebFController newController = actualCreateController();
+
+    // Handle routes - preserve old routes if needed
+    if (routes == null && oldRoutes != null) {
+      newController.routes = oldRoutes;
+    } else if (routes != null) {
+      newController.routes = routes;
+    }
+
+    // Store initialization parameters for potential re-initialization
+    _controllerInitParams[name] = {
+      'type': 'preload',
+      'createController': actualCreateController,
+      'bundle': bundle,
+      'routes': newController.routes,
+      'setup': setup ?? oldParams?['setup'],
+    };
+
+    // Wait for the new controller to initialize
+    await newController.controlledInitCompleter.future;
+
+    // Apply optional setup
+    if (setup != null) {
+      setup(newController);
+    } else if (oldParams?['setup'] != null) {
+      // Apply the previous setup if available and no new setup is provided
+      ControllerSetup oldSetup = oldParams!['setup'];
+      oldSetup(newController);
+    }
+
+    // Preload the bundle
+    await newController.preload(bundle);
+
+    // Should check if this controller was canceled during preloading
+    if (newController.preloadStatus == PreloadingStatus.fail) {
+      return oldController ?? newController;
+    }
+
+    // Remove the old controller from tracking if it exists
+    final instance = _controllersByName.remove(name);
+    _recentlyUsedControllers.removeWhere((element) => element == name);
+    _attachedControllers.removeWhere((element) => element == name);
+
+    // Register the new controller with the same name and preserve attached state if needed
+    _controllersByName[name] = _ControllerInstance(
+      newController,
+      wasAttached ? ControllerState.attached : ControllerState.detached
+    );
+    _updateUsageOrder(name);
+
+    // If the old controller was attached and we have a context, attach the new one
+    if (wasAttached && currentContext != null) {
+      _attachedControllers.add(name);
+      newController.attachToFlutter(currentContext);
+    }
+
+    // Schedule disposal of the old controller after returning the new one, if it exists
+    if (instance != null && !instance.controller.disposed) {
+      Future.microtask(() async {
+        await instance.controller.dispose();
+      });
+    }
+
+    return newController;
+  }
+
+  /// Adds a controller with preloading enabled (legacy support)
   /// This handles controller creation, initialization, preloading, and registration
   /// Returns the preloaded controller ready for use
+  @Deprecated('Use addOrUpdateWithPreload instead')
   Future<WebFController> addWithPreload({
     required String name,
     required ControllerFactory createController,
@@ -171,54 +297,14 @@ class WebFControllerManager {
     Map<String, SubViewBuilder>? routes,
     ControllerSetup? setup
   }) async {
-    // Store initialization parameters for potential re-initialization
-    _controllerInitParams[name] = {
-      'type': 'preload',
-      'createController': createController,
-      'bundle': bundle,
-      'routes': routes,
-      'setup': setup,
-    };
-
-    // Check if controller already exists
-    if (_controllersByName.containsKey(name)) {
-      final instance = _controllersByName[name]!;
-
-      // If it's disposed, remove it
-      if (instance.state == ControllerState.disposed) {
-        _controllersByName.remove(name);
-      } else {
-        // If it's not disposed, update usage order and return
-        _updateUsageOrder(name);
-        return instance.controller;
-      }
-    }
-
-    // Check if we've reached max capacity and enforce limits if needed
-    if (_controllersByName.length >= _config.maxAliveInstances &&
-        _config.autoDisposeWhenLimitReached) {
-      _disposeLeastRecentlyUsed();
-    }
-
-    // Create the controller
-    WebFController controller = createController();
-
-    // Merge hybrid route config
-    controller.routes = routes;
-
-    // Wait for initialization
-    await controller.controlledInitCompleter.future;
-
-    // Apply optional setup
-    if (setup != null) {
-      setup(controller);
-    }
-
-    // Preload the bundle
-    await controller.preload(bundle);
-
-    // Register the controller
-    return registerController(name, controller);
+    return addOrUpdateWithPreload(
+      name: name,
+      createController: createController,
+      bundle: bundle,
+      routes: routes,
+      setup: setup,
+      forceReplace: false,
+    );
   }
 
   /// Adds a controller with prerendering enabled
@@ -310,7 +396,7 @@ class WebFControllerManager {
 
     // Re-create based on type
     if (params['type'] == 'preload') {
-      return await addWithPreload(
+      return await addOrUpdateWithPreload(
         name: name,
         createController: params['createController'],
         bundle: params['bundle'],
@@ -601,91 +687,14 @@ class WebFControllerManager {
     Map<String, SubViewBuilder>? routes,
     ControllerSetup? setup
   }) async {
-    // Get the current state of the controller if it exists
-    ControllerState? currentState = getControllerState(name);
-    final oldController = getControllerSync(name);
-    final wasAttached = currentState == ControllerState.attached;
-    BuildContext? currentContext = oldController?.currentBuildContext?.context;
-    Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
-
-    // Get existing initialization parameters if available
-    final oldParams = _controllerInitParams[name];
-
-    // Determine which factory to use (prefer provided, fallback to existing, or create default)
-    ControllerFactory actualCreateController;
-    if (createController != null) {
-      actualCreateController = createController;
-    } else if (oldParams != null && oldParams['createController'] != null) {
-      actualCreateController = oldParams['createController'];
-    } else {
-      actualCreateController = () => WebFController();
-    }
-
-    // Create a new controller instance
-    WebFController newController = actualCreateController();
-
-    // Copy relevant properties from old controller to new controller
-    if (routes == null && oldRoutes != null) {
-      newController.routes = oldRoutes;
-    } else if (routes != null) {
-      newController.routes = routes;
-    }
-
-    // Store updated initialization parameters
-    _controllerInitParams[name] = {
-      'type': 'preload',
-      'createController': actualCreateController,
-      'bundle': bundle,
-      'routes': newController.routes,
-      'setup': setup ?? oldParams?['setup'],
-    };
-
-    // Wait for the new controller to initialize
-    await newController.controlledInitCompleter.future;
-
-    // Apply optional setup
-    if (setup != null) {
-      setup(newController);
-    } else if (oldParams?['setup'] != null) {
-      // Apply the previous setup if available and no new setup is provided
-      ControllerSetup oldSetup = oldParams!['setup'];
-      oldSetup(newController);
-    }
-
-    // Preload the new bundle
-    await newController.preload(bundle);
-
-    // Should check if this controller was canceled during preloading
-    if (newController.preloadStatus == PreloadingStatus.fail) {
-      return oldController ?? newController;
-    }
-
-    // Remove the old controller from tracking if it exists
-    final instance = _controllersByName.remove(name);
-    _recentlyUsedControllers.removeWhere((element) => element == name);
-    _attachedControllers.removeWhere((element) => element == name);
-
-    // Register the new controller with the same name
-    _controllersByName[name] = _ControllerInstance(
-      newController,
-      wasAttached ? ControllerState.attached : ControllerState.detached
+    return addOrUpdateWithPreload(
+      name: name,
+      createController: createController,
+      bundle: bundle,
+      routes: routes,
+      setup: setup,
+      forceReplace: true, // Update always forces replacement
     );
-    _updateUsageOrder(name);
-
-    // If the old controller was attached and we have a context, attach the new one
-    if (wasAttached && currentContext != null) {
-      _attachedControllers.add(name);
-      newController.attachToFlutter(currentContext);
-    }
-
-    // Schedule disposal of the old controller after returning the new one, if it exists
-    if (instance != null && !instance.controller.disposed) {
-      Future.microtask(() async {
-        await instance.controller.dispose();
-      });
-    }
-
-    return newController;
   }
 
   /// Updates a controller by creating a new instance with prerendering
