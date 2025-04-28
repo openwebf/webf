@@ -1,3 +1,25 @@
+## 0.21.0-beta.5
+
+**New Features**
+
+- Added Inline Formatting Context support for improved text rendering and layout
+  - Introduces more accurate text layout with proper inline element handling
+  - Added line-join functionality for inline elements
+  - Implemented WebFTextPainter for enhanced text rendering performance
+  - Added TextSpan and LogicBox rendering support
+- Increased loadmore event frequency in WebFListView for smoother infinite scrolling experiences
+  - Reduced the delay between loadmore events from 1000ms to 500ms
+  - Improved user experience when scrolling through large lists
+
+**Performance Improvements**
+
+- Optimized text CSS style handling to prevent unnecessary renders
+- Enhanced text layout and rendering performance
+
+**Bug Fixes**
+
+- Removed unnecessary showcaseview dependency
+
 ## 0.21.0-beta.4+5
 
 New Features
