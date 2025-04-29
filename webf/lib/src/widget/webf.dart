@@ -20,6 +20,13 @@ import 'package:webf/launcher.dart';
 typedef OnControllerCreated = void Function(WebFController controller);
 
 /// The entry-point widget class responsible for rendering all content created by HTML, CSS, and JavaScript in WebF.
+///
+/// WebF can be used in two ways:
+/// 1. Directly with a WebFController instance using the default constructor
+/// 2. By referencing a controller name managed by WebFControllerManager using `WebF.fromControllerName`
+///
+/// The second approach supports automatic initialization of controllers that don't exist yet,
+/// if proper bundle and initialization parameters are provided.
 class WebF extends StatefulWidget {
   /// The WebF controller to use for rendering content
   final WebFController controller;
@@ -40,6 +47,9 @@ class WebF extends StatefulWidget {
 
   /// Custom error builder when using controllerName
   final Widget Function(BuildContext context, Object error)? errorBuilder;
+
+  /// Callbacks for this controller of WebF had been disposed
+  final VoidCallback? onDispose;
 
   // Set webf http cache mode.
   static void setHttpCacheMode(HttpCacheMode mode) {
@@ -81,6 +91,7 @@ class WebF extends StatefulWidget {
     this.initialRoute,
     this.initialState,
     this.errorBuilder,
+    this.onDispose,
     required this.controller,
   })  : super(key: key);
 
@@ -89,21 +100,36 @@ class WebF extends StatefulWidget {
   /// This constructor will asynchronously load the controller and automatically handle
   /// recreation of disposed controllers.
   ///
+  /// If the controller doesn't exist and a bundle is provided, it will be automatically
+  /// initialized with addOrUpdateWithPreload.
+  ///
   /// You can customize the loading experience with loadingWidget and handle errors
   /// with errorBuilder. The builder allows you to create custom UI with the controller.
-  static _AsyncWebF fromControllerName(
+  static AutoManagedWebF fromControllerName(
       {Key? key,
       required String controllerName,
       String? initialRoute,
       Map<String, dynamic>? initialState,
       Widget? loadingWidget,
-      Widget Function(BuildContext context, Object error)? errorBuilder}) {
-    return _AsyncWebF(
+      Widget Function(BuildContext context, Object error)? errorBuilder,
+      // Parameters for auto-initialization if controller is not found
+      WebFBundle? bundle,
+      ControllerFactory? createController,
+      Map<String, SubViewBuilder>? routes,
+      VoidCallback? onDispose,
+      ControllerSetup? setup}) {
+    return AutoManagedWebF(
         controllerName: controllerName,
         loadingWidget: loadingWidget,
         errorBuilder: errorBuilder,
         initialRoute: initialRoute,
-        initialState: initialState);
+        initialState: initialState,
+        bundle: bundle,
+        onDispose: onDispose,
+        createController: createController,
+        routes: routes,
+        key: key,
+        setup: setup);
   }
 
   @override
@@ -125,28 +151,23 @@ class WebF extends StatefulWidget {
 
   @override
   StatefulElement createElement() {
-    return _WebFElement(this);
+    return WebFStateElement(this);
   }
 }
 
-class _AsyncWebF extends StatelessWidget {
-  final String controllerName;
-  final Widget? loadingWidget;
-  final String? initialRoute;
-  final Map<String, dynamic>? initialState;
-  final Widget Function(BuildContext context, Object error)? errorBuilder;
-
-  _AsyncWebF(
-      {required this.controllerName, this.loadingWidget, this.errorBuilder, this.initialRoute, this.initialState});
-
+class AutoManagedWebFState extends State<AutoManagedWebF> {
   Widget buildWebF(WebFController controller) {
     return WebF(
         controller: controller,
         key: controller.key,
-        initialRoute: initialRoute,
-        initialState: initialState,
-        errorBuilder: errorBuilder,
-        loadingWidget: loadingWidget ??
+        initialRoute: widget.initialRoute,
+        initialState: widget.initialState,
+        errorBuilder: widget.errorBuilder,
+        onDispose: () {
+          print('webf $controller disposed');
+          setState(() {});
+        },
+        loadingWidget: widget.loadingWidget ??
             const SizedBox(
               width: 50,
               height: 50,
@@ -156,13 +177,35 @@ class _AsyncWebF extends StatelessWidget {
             ));
   }
 
+  // This function tries to create a controller if it doesn't exist
+  Future<WebFController?> _getOrCreateController() async {
+    WebFController? controller = await WebFControllerManager.instance.getController(widget.controllerName);
+
+    // If controller doesn't exist but we have enough info to create it
+    if (controller == null && widget.bundle != null) {
+      // Create a controller factory if not provided
+      ControllerFactory actualCreateController = widget.createController ??
+          (() => WebFController(initialRoute: widget.initialRoute ?? '/'));
+
+      controller = await WebFControllerManager.instance.addOrUpdateWithPreload(
+          name: widget.controllerName,
+          createController: actualCreateController,
+          bundle: widget.bundle!,
+          routes: widget.routes,
+          setup: widget.setup
+      );
+    }
+
+    return controller;
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<WebFController?>(
-      future: WebFControllerManager.instance.getController(controllerName),
+      future: _getOrCreateController(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
-          return loadingWidget ??
+          return widget.loadingWidget ??
               const SizedBox(
                 width: 50,
                 height: 50,
@@ -173,19 +216,60 @@ class _AsyncWebF extends StatelessWidget {
         }
 
         if (snapshot.hasError) {
-          return errorBuilder != null
-              ? errorBuilder!(context, snapshot.error!)
-              : Center(child: Text('Error: ${snapshot.error}'));
+          return widget.errorBuilder != null
+              ? widget.errorBuilder!(context, snapshot.error!)
+              : Center(child: Text('Error: ${snapshot.error}\n  ${snapshot.stackTrace}'));
         }
 
         if (!snapshot.hasData || snapshot.data == null) {
-          final errorMsg = 'Controller "$controllerName" not found';
-          return errorBuilder != null ? errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
+          final String errorMsg;
+          if (widget.bundle == null) {
+            errorMsg = 'Controller "${widget.controllerName}" not found and no bundle provided for auto-initialization';
+          } else {
+            errorMsg = 'Failed to initialize controller "${widget.controllerName}"';
+          }
+          return widget.errorBuilder != null ? widget.errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
         }
 
         return buildWebF(snapshot.data!);
       },
     );
+  }
+}
+
+class AutoManagedWebF extends StatefulWidget {
+  final String controllerName;
+  final Widget? loadingWidget;
+  final String? initialRoute;
+  final Map<String, dynamic>? initialState;
+  final Widget Function(BuildContext context, Object error)? errorBuilder;
+  /// Callbacks for this controller of WebF had been disposed
+  final VoidCallback? onDispose;
+
+  // Auto-initialization parameters
+  final WebFBundle? bundle;
+  final ControllerFactory? createController;
+  final Map<String, SubViewBuilder>? routes;
+  final ControllerSetup? setup;
+
+  AutoManagedWebF({
+    required this.controllerName,
+    this.loadingWidget,
+    this.errorBuilder,
+    this.initialRoute,
+    this.initialState,
+    this.onDispose,
+    // Auto-initialization parameters
+    this.bundle,
+    this.createController,
+    this.routes,
+    this.setup,
+    super.key
+  });
+
+  @override
+  State<StatefulWidget> createState() {
+    return AutoManagedWebFState();
   }
 }
 
@@ -299,6 +383,10 @@ class WebFState extends State<WebF> with RouteAware {
   void requestForUpdate(AdapterUpdateReason reason) {
     if (!mounted) return;
 
+    if (reason is ControllerDisposeChangeReason && widget.onDispose != null) {
+      widget.onDispose!();
+    }
+
     setState(() {});
   }
 
@@ -397,8 +485,8 @@ class WebFState extends State<WebF> with RouteAware {
   }
 }
 
-class _WebFElement extends StatefulElement {
-  _WebFElement(super.widget);
+class WebFStateElement extends StatefulElement {
+  WebFStateElement(super.widget);
 
   @override
   void markNeedsBuild() {
@@ -430,10 +518,10 @@ class _WebFElement extends StatefulElement {
 
     // If the controller is managed by WebFControllerManager, use its detach method
     if (controllerName != null) {
-      WebFControllerManager.instance.detachController(controllerName);
+      WebFControllerManager.instance.detachController(controllerName, this);
     } else {
       // Fallback to direct detachment if not managed by WebFControllerManager
-      widget.controller.detachFromFlutter();
+      widget.controller.detachFromFlutter(this);
     }
 
     widget.controller.pause();
@@ -447,7 +535,7 @@ class _WebFElement extends StatefulElement {
       throw FlutterError('Consider providing a WebFBundle resource as the entry point for WebF');
     }
 
-    print('start for loading..');
+    debugPrint('WebF: start for loading ${controller.entrypoint?.url}..');
 
     await controller.controlledInitCompleter.future;
 
