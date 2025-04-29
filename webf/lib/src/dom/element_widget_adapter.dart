@@ -122,8 +122,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     } else {
       webFElement.childNodes.forEach((node) {
         if (node is Element &&
-            (node.renderStyle.position == CSSPositionType.sticky ||
-                node.renderStyle.position == CSSPositionType.absolute)) {
+            (node.renderStyle.position == CSSPositionType.absolute)) {
           children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           children.add(node.toWidget());
           return;
