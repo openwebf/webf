@@ -8,6 +8,8 @@ require('./tasks');
 
 // Run tasks
 series(
+  'update-typings-version',
+  'generate-typings',
   'compile-polyfill',
   'generate-bindings-code',
 )((err) => {

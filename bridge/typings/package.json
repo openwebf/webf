@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf-typings",
-  "version": "1.0.0",
+  "version": "0.21.0-beta.5",
   "main": "",
   "types": "index.d.ts",
   "files": [
@@ -23,8 +23,8 @@
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/openwebf/webf-typings/issues"
+    "url": "https://github.com/openwebf/webf/issues"
   },
-  "homepage": "https://github.com/openwebf/webf-typings#readme",
+  "homepage": "https://github.com/openwebf/webf#readme",
   "description": "TypeScript type definitions for WebF"
 }

@@ -28,5 +28,5 @@ export declare class WebSocket extends EventTarget implements WebSocketInterface
     constructor(url: string, protocol: string);
     addEventListener(type: string, callback: EventListener | EventListenerObject): void;
     send(message: string): void;
-    close(code?: number, reason?: string): void;
+    close(code: number, reason: string): void;
 }
