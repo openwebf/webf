@@ -812,10 +812,10 @@ class WebFController {
           controllerPreloadingCompleter.complete();
         }
       }
-    } catch(e, stack) {
+    } catch (e, stack) {
       _preloadStatus = PreloadingStatus.fail;
       _handlingLoadingError(e, stack);
-      controllerPreloadingCompleter.complete();
+      controllerPreloadingCompleter.completeError(e, stack);
     }
 
     return controllerPreloadingCompleter.future;
