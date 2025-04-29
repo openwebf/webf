@@ -10,19 +10,19 @@
             <div class="item-desc">Demonstrates the basic functionality of ShowcaseView</div>
             <div class="showcase-container">
               <flutter-cupertino-button variant="filled" @click="startBasicShowcase">Start Showcase</flutter-cupertino-button>
-              <flutter-cupertino-showcase-view ref="basicShowcase" @finish="onBasicFinish" class="showcase-view">
+              <flutter-showcase-view ref="basicShowcase" @finish="onBasicFinish" class="showcase-view">
                 <div class="target-element blue-bg basic-target">
                   <flutter-cupertino-icon type="info_circle_fill" color="#ffffff" size="30"></flutter-cupertino-icon>
                   <span>Basic Target</span>
                 </div>
-                <flutter-cupertino-showcase-description>
+                <flutter-showcase-description>
                   <div class="description-container">
                     <h3>Welcome to ShowcaseView</h3>
                     <p>This is a simple tooltip to guide users in understanding interface features.</p>
                     <p>Click anywhere outside to close this tooltip.</p>
                   </div>
-                </flutter-cupertino-showcase-description>
-              </flutter-cupertino-showcase-view>
+                </flutter-showcase-description>
+              </flutter-showcase-view>
             </div>
           </div>
 
@@ -37,7 +37,7 @@
             <div class="showcase-row">
               <!-- 允许背景点击的 Showcase -->
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view 
+                <flutter-showcase-view 
                   ref="interactiveShowcase" 
                   @finish="onInteractiveFinish" 
                   class="showcase-view"
@@ -46,19 +46,19 @@
                     <span>Allow Background Click</span>
                     <p class="target-desc">Click mask to close</p>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container">
                       <h3>Allow Background Click</h3>
                       <p>This showcase allows users to close by clicking the background.</p>
                       <p>Try clicking anywhere outside this tooltip.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
               
               <!-- Disable Background Click -->
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view 
+                <flutter-showcase-view 
                   ref="nonInteractiveShowcase" 
                   disableBarrierInteraction="true"
                   @finish="onNonInteractiveFinish" 
@@ -68,7 +68,7 @@
                     <span>Disable Background Click</span>
                     <p class="target-desc">Mask clicks disabled</p>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container red-container">
                       <h3>Disable Background Click</h3>
                       <p>This showcase prevents users from closing by clicking the background.</p>
@@ -77,8 +77,8 @@
                         <flutter-cupertino-button size="small" variant="filled" @click="closeNonInteractive">Close</flutter-cupertino-button>
                       </div>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
             </div>
           </div>
@@ -95,7 +95,7 @@
             <div class="showcase-row">
               <!-- 提示框在上方 -->
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view 
+                <flutter-showcase-view 
                   ref="topShowcase" 
                   tooltipPosition="top"
                   @finish="onTopFinish" 
@@ -104,19 +104,19 @@
                   <div class="target-element blue-bg">
                     <span>Tooltip At Top</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container">
                       <h3>Top Display</h3>
                       <p>This example uses tooltipPosition="top" to display the tooltip above the target element.</p>
                       <p>This is useful when the target element is near the bottom of the screen.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
               
               <!-- Tooltip At Bottom -->
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view 
+                <flutter-showcase-view 
                   ref="bottomShowcase" 
                   tooltipPosition="bottom"
                   @finish="onBottomFinish" 
@@ -125,19 +125,19 @@
                   <div class="target-element green-bg">
                     <span>Tooltip At Bottom</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container green-container">
                       <h3>Bottom Display</h3>
                       <p>This example uses tooltipPosition="bottom" to display the tooltip below the target element.</p>
                       <p>This is useful when the target element is near the top of the screen.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
               
               <!-- Auto Position -->
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view 
+                <flutter-showcase-view 
                   ref="autoShowcase"
                   @finish="onAutoFinish" 
                   class="showcase-view"
@@ -145,14 +145,14 @@
                   <div class="target-element orange-bg">
                     <span>Auto Position</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container orange-container">
                       <h3>Automatic Position</h3>
                       <p>This example doesn't set the tooltipPosition attribute, so the component automatically determines whether to display the tooltip above or below the target based on its position on screen.</p>
                       <p>When the target is in the top half of the screen, the tooltip appears below; when in the bottom half, it appears above.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
             </div>
           </div>
@@ -164,48 +164,48 @@
             <flutter-cupertino-button variant="filled" @click="startMultistepShowcase">Start Multi-Step Guide</flutter-cupertino-button>
             <div class="showcase-row">
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view ref="step1Showcase" @finish="onStep1Finish" class="showcase-view">
+                <flutter-showcase-view ref="step1Showcase" @finish="onStep1Finish" class="showcase-view">
                   <div class="target-element blue-bg">
                     <span>Step 1</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container">
                       <h3>Step 1</h3>
                       <p>This is the first step of the multi-step guide.</p>
                       <p>Click the background to continue to the next step.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
 
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view ref="step2Showcase" @finish="onStep2Finish" class="showcase-view">
+                <flutter-showcase-view ref="step2Showcase" @finish="onStep2Finish" class="showcase-view">
                   <div class="target-element green-bg">
                     <span>Step 2</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container green-container">
                       <h3>Step 2</h3>
                       <p>This is the second step of the multi-step guide.</p>
                       <p>Click the background to continue to the next step.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
 
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view ref="step3Showcase" @finish="onStep3Finish" class="showcase-view">
+                <flutter-showcase-view ref="step3Showcase" @finish="onStep3Finish" class="showcase-view">
                   <div class="target-element orange-bg">
                     <span>Step 3</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container orange-container">
                       <h3>Step 3</h3>
                       <p>This is the final step of the multi-step guide.</p>
                       <p>Click the background to complete the guide.</p>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
             </div>
           </div>
@@ -217,48 +217,48 @@
             <flutter-cupertino-button variant="filled" @click="startMultistepShowcaseButton">Start Button-Controlled Guide</flutter-cupertino-button>
             <div class="showcase-row">
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view ref="step1ShowcaseButton" disableBarrierInteraction class="showcase-view">
+                <flutter-showcase-view ref="step1ShowcaseButton" disableBarrierInteraction class="showcase-view">
                   <div class="target-element blue-bg">
                     <span>Step 1</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container">
                       <h3>Step 1</h3>
                       <p>This is the first step of the button-controlled guide.</p>
                       <flutter-cupertino-button variant="filled" @click="moveToStep2">Continue</flutter-cupertino-button>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
 
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view ref="step2ShowcaseButton" disableBarrierInteraction class="showcase-view">
+                <flutter-showcase-view ref="step2ShowcaseButton" disableBarrierInteraction class="showcase-view">
                   <div class="target-element green-bg">
                     <span>Step 2</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container green-container">
                       <h3>Step 2</h3>
                       <p>This is the second step of the button-controlled guide.</p>
                       <flutter-cupertino-button variant="filled" @click="moveToStep3">Continue</flutter-cupertino-button>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
 
               <div class="showcase-item">
-                <flutter-cupertino-showcase-view ref="step3ShowcaseButton" disableBarrierInteraction class="showcase-view">
+                <flutter-showcase-view ref="step3ShowcaseButton" disableBarrierInteraction class="showcase-view">
                   <div class="target-element orange-bg">
                     <span>Step 3</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container orange-container">
                       <h3>Step 3</h3>
                       <p>This is the final step of the button-controlled guide.</p>
                       <flutter-cupertino-button variant="filled" @click="onStep3End">Finish</flutter-cupertino-button>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
             </div>
           </div>
@@ -270,7 +270,7 @@
             <div class="showcase-container">
               <flutter-cupertino-button variant="filled" @click="startButtonDemo">Start Showcase</flutter-cupertino-button>
               <div class="showcase-row">
-                <flutter-cupertino-showcase-view 
+                <flutter-showcase-view 
                   ref="buttonShowcase" 
                   disableBarrierInteraction="true"
                   tooltipPosition="top"
@@ -280,7 +280,7 @@
                   <div class="target-element purple-bg">
                     <span>Button Control</span>
                   </div>
-                  <flutter-cupertino-showcase-description>
+                  <flutter-showcase-description>
                     <div class="description-container purple-container button-demo-container">
                       <h3>Button Control Demo</h3>
                       <p>This example uses a button to control the showcase behavior instead of background clicks.</p>
@@ -289,8 +289,8 @@
                         <flutter-cupertino-button size="small" variant="filled" @click="onButtonDemoClose">Close</flutter-cupertino-button>
                       </div>
                     </div>
-                  </flutter-cupertino-showcase-description>
-                </flutter-cupertino-showcase-view>
+                  </flutter-showcase-description>
+                </flutter-showcase-view>
               </div>
             </div>
           </div>
@@ -305,6 +305,7 @@ export default {
   name: 'HighlightPage',
   methods: {
     startBasicShowcase() {
+      console.log('startBasicShowcase', this.$refs.basicShowcase.start);
       this.$refs.basicShowcase.start();
     },
     onBasicFinish() {
@@ -312,6 +313,7 @@ export default {
     },
 
     startInteractiveShowcase() {
+      console.log('startInteractiveShowcase', this.$refs.interactiveShowcase);
       this.$refs.interactiveShowcase.start();
     },
     startNonInteractiveShowcase() {

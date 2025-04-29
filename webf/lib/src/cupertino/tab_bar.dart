@@ -66,7 +66,7 @@ class FlutterTabBar extends WidgetElement {
   List<String> _getTabPaths() {
     List<String> paths = [];
     for (var child in childNodes) {
-      if (child is! dom.Element || child.tagName != 'FLUTTER-TAB-BAR-ITEM') continue;
+      if (child is! dom.Element || child.tagName != 'FLUTTER-CUPERTINO-TAB-BAR-ITEM') continue;
       paths.add(child.getAttribute('path') ?? '/');
     }
     return paths;

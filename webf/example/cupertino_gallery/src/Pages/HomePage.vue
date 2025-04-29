@@ -217,6 +217,14 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+          <!-- Tab Bar -->
+          <div class="component-item" @click="navigateTo('/tab_bar')">
+            <div class="item-content">
+              <div class="item-title">Tab Bar</div>
+              <div class="item-desc">An iOS-style bottom tab bar for navigation</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
 
       </div> <!-- End of main component-section -->

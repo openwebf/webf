@@ -68,6 +68,10 @@
   <router-view path="/list_section" title="List Section">
     <list-section-page></list-section-page>
   </router-view>
+  <router-view path="/tab_bar" title="Tab Bar">
+    <tab-bar-page></tab-bar-page>
+  </router-view>
+
 </template>
 
 <script>
@@ -95,6 +99,7 @@ import FormRowPage from './Pages/FormRowPage.vue';
 import FormSectionPage from './Pages/FormSectionPage.vue';
 import ListTilePage from './Pages/ListTilePage.vue';
 import ListSectionPage from './Pages/ListSectionPage.vue';
+import TabBarPage from './Pages/TabBarPage.vue';
 export default {
   name: 'App',
   components: {
@@ -122,6 +127,7 @@ export default {
     FormSectionPage,
     ListTilePage,
     ListSectionPage,
+    TabBarPage,
   },
 };
 </script>
