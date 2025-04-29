@@ -316,7 +316,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     if (widget.initialRoute != null) {
       widget.controller.initialState = widget.initialState;
-      widget.controller.initialRoute = widget.initialRoute ?? '/';
+      widget.controller.initialRoute = widget.initialRoute;
     }
   }
 
@@ -324,12 +324,12 @@ class WebFState extends State<WebF> with RouteAware {
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String path = route.settings.name ?? widget.controller.initialRoute;
+    String path = route.settings.name ?? widget.controller.initialRoute ?? '/';
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEvent(event);
   }
 
@@ -343,7 +343,7 @@ class WebFState extends State<WebF> with RouteAware {
         HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEvent(event);
   }
 
@@ -353,13 +353,16 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
+    await widget.controller.controlledInitCompleter.future;
+
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
     widget.controller.view.document.dispatchEventUtilAdded(event);
 
-    if (widget.controller.initialRoute != '/') {
-      await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute);
+    if (widget.controller.initialRoute != null) {
+      await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
@@ -369,14 +372,16 @@ class WebFState extends State<WebF> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? widget.controller.initialRoute ?? '';
 
+    await widget.controller.controlledInitCompleter.future;
+
     Event event =
         HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
     widget.controller.view.document.dispatchEventUtilAdded(event);
 
-    if (widget.controller.initialRoute != '/') {
-      await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute);
+    if (widget.controller.initialRoute != null) {
+      await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute);
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
@@ -415,13 +420,14 @@ class WebFState extends State<WebF> with RouteAware {
       return Center(child: Text('Error loading: ' + widget.controller.loadingError!.toString()));
     }
 
-    String initialRoute = widget.initialRoute ?? widget.controller.initialRoute;
+    bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;
+    String initialRoute = widget.initialRoute ?? widget.controller.initialRoute ?? '/';
 
     List<Future> pendingFutures = [
       widget.controller.controllerOnDOMContentLoadedCompleter.future,
       widget.controller.viewportLayoutCompleter.future
     ];
-    if (initialRoute != '/') {
+    if (hasInitialRoute && initialRoute != '/') {
       pendingFutures.add(widget.controller.view.awaitForHybridRouteLoaded(initialRoute));
     }
 

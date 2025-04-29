@@ -66,8 +66,8 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
     widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEventUtilAdded(event);
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
+    routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
   @override
@@ -80,8 +80,8 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
     widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEventUtilAdded(event);
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
+    routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
   @override

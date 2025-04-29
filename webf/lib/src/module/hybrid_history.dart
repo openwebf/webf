@@ -144,7 +144,7 @@ class HybridHistoryModule extends BaseModule {
   }
 
   String path() {
-    String initialRoute = moduleManager!.controller.initialRoute;
+    String initialRoute = moduleManager!.controller.initialRoute ?? '/';
     if (_delegate != null) {
       return _delegate!.path(_context!, initialRoute);
     }
