@@ -186,8 +186,6 @@ class WebFControllerManager {
     // Check if controller already exists
     final oldController = getControllerSync(name);
     final currentState = getControllerState(name);
-    final wasAttached = currentState == ControllerState.attached;
-    final BuildContext? currentContext = oldController?.currentBuildContext?.context;
     final Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
 
     // Get existing initialization parameters if available
@@ -266,15 +264,9 @@ class WebFControllerManager {
     // Register the new controller with the same name and preserve attached state if needed
     _controllersByName[name] = _ControllerInstance(
       newController,
-      wasAttached ? ControllerState.attached : ControllerState.detached
+      ControllerState.detached
     );
     _updateUsageOrder(name);
-
-    // If the old controller was attached and we have a context, attach the new one
-    if (wasAttached && currentContext != null) {
-      _attachedControllers.add(name);
-      newController.attachToFlutter(currentContext);
-    }
 
     // Schedule disposal of the old controller after returning the new one, if it exists
     if (instance != null && !instance.controller.disposed) {
@@ -447,7 +439,7 @@ class WebFControllerManager {
 
   /// Detaches a controller from Flutter
   /// Call this when the WebF widget is unmounted
-  void detachController(String name) {
+  void detachController(String name, BuildContext context) {
     if (!_controllersByName.containsKey(name)) {
       return;
     }
@@ -457,7 +449,7 @@ class WebFControllerManager {
 
     // Only detach if currently attached
     if (instance.state == ControllerState.attached) {
-      controller.detachFromFlutter();
+      controller.detachFromFlutter(context);
       instance.state = ControllerState.detached;
 
       // Update tracking queue
@@ -489,7 +481,7 @@ class WebFControllerManager {
     // Detach the controller if it exists and is attached
     if (instance != null && instance.state == ControllerState.attached) {
       final controller = instance.controller;
-      controller.detachFromFlutter();
+      controller.detachFromFlutter(null);
       instance.state = ControllerState.detached;
 
       // Notify through callback if provided
@@ -680,6 +672,7 @@ class WebFControllerManager {
   /// Updates a controller by creating a new instance with preload
   /// This replaces the existing controller with a fresh instance
   /// Returns the new controller ready for use
+  @Deprecated('Use addOrUpdateWithPreload instead')
   Future<WebFController> updateWithPreload({
     required String name,
     ControllerFactory? createController,
@@ -707,11 +700,7 @@ class WebFControllerManager {
     Map<String, SubViewBuilder>? routes,
     ControllerSetup? setup
   }) async {
-    // Get the current state of the controller if it exists
-    ControllerState? currentState = getControllerState(name);
     final oldController = getControllerSync(name);
-    final wasAttached = currentState == ControllerState.attached;
-    BuildContext? currentContext = oldController?.currentBuildContext?.context;
     Map<String, SubViewBuilder>? oldRoutes = oldController?.routes;
 
     // Get existing initialization parameters if available
@@ -774,15 +763,9 @@ class WebFControllerManager {
     // Register the new controller with the same name
     _controllersByName[name] = _ControllerInstance(
       newController,
-      wasAttached ? ControllerState.attached : ControllerState.detached
+      ControllerState.detached
     );
     _updateUsageOrder(name);
-
-    // If the old controller was attached and we have a context, attach the new one
-    if (wasAttached && currentContext != null) {
-      _attachedControllers.add(name);
-      newController.attachToFlutter(currentContext);
-    }
 
     // Schedule disposal of the old controller after returning the new one, if it exists
     if (instance != null && !instance.controller.disposed) {

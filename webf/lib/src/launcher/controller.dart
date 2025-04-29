@@ -1015,6 +1015,14 @@ class WebFController {
       _controllerMap.remove(_view!.contextId);
     }
 
+    if (isFlutterAttached) {
+      BuildContext? rootBuildContext = this.rootBuildContext?.context;
+      if (rootBuildContext != null) {
+        WebFState state = (rootBuildContext as StatefulElement).state as WebFState;
+        state.requestForUpdate(ControllerDisposeChangeReason());
+      }
+    }
+
     // To release entrypoint bundle memory.
     _entrypoint?.dispose();
 
