@@ -175,6 +175,7 @@ class WebFControllerManager {
   ///   - Creates a new controller instance to replace the old one
   ///   - Maintains attachment state and context
   ///   - Disposes the old controller once the new one is ready
+  ///   - If update fails at any stage, falls back to the previous controller if available
   Future<WebFController> addOrUpdateWithPreload({
     required String name,
     ControllerFactory? createController,
@@ -794,7 +795,7 @@ class WebFControllerManager {
     if (instance != null && !instance.controller.disposed) {
       // Detach first if attached
       if (instance.state == ControllerState.attached) {
-        instance.controller.detachFromFlutter();
+        instance.controller.detachFromFlutter(null);
         _attachedControllers.removeWhere((element) => element == name);
       }
 

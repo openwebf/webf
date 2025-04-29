@@ -25,6 +25,7 @@ import 'package:flutter/widgets.dart'
         ModalRoute,
         RouteInformation,
         RouteObserver,
+        StatefulElement,
         View,
         WidgetsBinding,
         WidgetsBindingObserver;
@@ -58,10 +59,6 @@ class HybridRoutePageContext {
 }
 
 enum WebFLoadingMode {
-  /// The default loading mode.
-  /// All associated page resources begin loading once the WebF widget is mounted into the Flutter tree.
-  standard,
-
   /// This mode preloads remote resources into memory and begins execution when the WebF widget is mounted into the Flutter tree.
   /// If the entrypoint is an HTML file, the HTML will be parsed, and its elements will be organized into a DOM tree.
   /// CSS files loaded through `<style>` and `<link>` elements will be parsed and the calculated styles applied to the corresponding DOM elements.
@@ -91,7 +88,7 @@ enum PreloadingStatus {
 
 enum PreRenderingStatus { none, preloading, evaluate, rendering, done, fail }
 
-class WebFController {
+class WebFController with Diagnosticable {
   /// The background color for viewport, default to transparent.
   /// This determines the background color of the WebF widget content area.
   final Color? background;
@@ -246,7 +243,7 @@ class WebFController {
   ///
   /// Controls how resources are loaded and when execution occurs.
   /// Default is standard mode where everything is loaded and executed when mounted.
-  WebFLoadingMode mode = WebFLoadingMode.standard;
+  WebFLoadingMode mode = WebFLoadingMode.preloading;
 
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
@@ -309,9 +306,11 @@ class WebFController {
   }
 
   ui.FlutterView? _ownerFlutterView;
+
   ui.FlutterView? get ownerFlutterView => _ownerFlutterView;
 
   final List<HybridRoutePageContext> _buildContextStack = [];
+
   /// Get current attached buildContexts.
   /// Especially useful to detect how many hybrid route pages attached to the Flutter tree.
   List<HybridRoutePageContext> get buildContextStack => _buildContextStack;
@@ -349,6 +348,7 @@ class WebFController {
   UniqueKey key = UniqueKey();
 
   HybridRoutePageContext? get currentBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
+
   HybridRoutePageContext? get rootBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
 
   bool? _darkModeOverride;
@@ -397,8 +397,6 @@ class WebFController {
   Completer controllerOnDOMContentLoadedCompleter = Completer();
   Completer viewportLayoutCompleter = Completer();
 
-  bool externalController;
-
   WebFController({
     bool enableDebug = false,
     WebFBundle? bundle,
@@ -421,7 +419,6 @@ class WebFController {
     this.initialState,
     this.routeObserver,
     this.routes,
-    this.externalController = true,
     this.resizeToAvoidBottomInsets = true,
   })  : _entrypoint = bundle,
         runningThread = runningThread ?? DedicatedThread(),
@@ -467,10 +464,6 @@ class WebFController {
       flushUICommand(view, nullptr);
 
       controlledInitCompleter.complete();
-    }).then((_) {
-      if (externalController && _entrypoint != null) {
-        preload(_entrypoint!);
-      }
     });
   }
 
@@ -526,8 +519,7 @@ class WebFController {
   ///
   /// @param id Optional JavaScript context ID to make the URI unique per context
   /// @return A URI object representing the virtual bundle location
-  static Uri
-  fallbackBundleUri([double? id]) {
+  static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
   }
@@ -570,53 +562,6 @@ class WebFController {
     });
   }
 
-  /// Unloads the current WebF content and prepares a fresh environment.
-  ///
-  /// This method clears the current page, disposes resources, and sets up a new
-  /// controller instance, allowing a complete reset of the WebF environment.
-  Future<void> unload() async {
-    assert(!view.disposed, 'WebF have already disposed');
-    // Should clear previous page cached ui commands
-    clearUICommand(view.contextId);
-
-    await controlledInitCompleter.future;
-    controlledInitCompleter = Completer();
-
-    Future.microtask(() async {
-      _module?.dispose();
-      await _view?.dispose();
-
-      double oldId = _view!.contextId;
-
-      _view = WebFViewController(
-          background: _view?.background,
-          enableDebug: _view?.enableDebug ?? false,
-          rootController: this,
-          navigationDelegate: _view?.navigationDelegate,
-          runningThread: runningThread!);
-
-      await _view?.initialize();
-
-      _module = WebFModuleController(this, _view!.contextId);
-
-      flushUICommand(view, nullptr);
-
-      // Reconnect the new contextId to the Controller
-      _controllerMap.remove(oldId);
-      _controllerMap[_view!.contextId] = this;
-
-      _preloadStatus = PreloadingStatus.none;
-      _preRenderingStatus = PreRenderingStatus.none;
-      _isComplete = false;
-      _evaluated = false;
-      _loadingError = null;
-
-      controlledInitCompleter.complete();
-    });
-
-    return controlledInitCompleter.future;
-  }
-
   String? get _url {
     HistoryModule historyModule = module.moduleManager.getModule<HistoryModule>('History')!;
     return historyModule.stackTop?.url;
@@ -653,80 +598,30 @@ class WebFController {
   ///
   /// This performs a full reload of the current content, including disposing the old
   /// environment and re-executing the entrypoint JavaScript/HTML.
-  Future<void> reload() async {
+  Future<WebFController?> reload() async {
     assert(!_view!.disposed, 'WebF have already disposed');
 
-    if (devToolsService != null) {
-      devToolsService!.willReload();
-    }
+    String? currentPageId = WebFControllerManager.instance.getControllerName(this);
 
-    RootRenderViewportBox? rootRenderObject = view.viewport;
-    if (rootRenderObject == null) return;
+    if (currentPageId == null) return null;
 
-    await unload();
-
-    view.viewport = rootRenderObject;
-
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      // Starting to flush ui commands every frames.
-      view.flushPendingCommandsPerFrame();
-
-      await executeEntrypoint();
-
-      flushUICommand(view, nullptr);
-
-      evaluated = true;
-
-      if (devToolsService != null) {
-        devToolsService!.didReload();
-      }
-    });
-
-    return controlledInitCompleter.future;
+    return WebFControllerManager.instance
+        .addOrUpdateWithPreload(name: currentPageId, bundle: entrypoint!, forceReplace: true);
   }
 
   /// Loads content from the provided WebFBundle.
   ///
   /// Unloads any existing content, adds the bundle to history, and executes the new content.
   /// This is the main method for loading new content into WebF.
-  Future<void> load(WebFBundle bundle) async {
+  Future<WebFController?> load(WebFBundle bundle) async {
     assert(!_view!.disposed, 'WebF have already disposed');
 
-    if (devToolsService != null) {
-      devToolsService!.willReload();
-    }
+    String? currentPageId = WebFControllerManager.instance.getControllerName(this);
 
-    await controlledInitCompleter.future;
+    if (currentPageId == null) return null;
 
-    RootRenderViewportBox rootRenderObject = view.viewport!;
-
-    await unload();
-
-    view.viewport = rootRenderObject;
-
-    // Initialize document, window and the documentElement.
-    flushUICommand(view, nullptr);
-
-    // Update entrypoint.
-    _entrypoint = bundle;
-    _addHistory(bundle);
-
-    Completer completer = Completer();
-
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-      // Starting to flush ui commands every frames.
-      view.flushPendingCommandsPerFrame();
-
-      await executeEntrypoint();
-
-      if (devToolsService != null) {
-        devToolsService!.didReload();
-      }
-
-      completer.complete();
-    });
-
-    return completer.future;
+    return WebFControllerManager.instance
+        .addOrUpdateWithPreload(name: currentPageId, bundle: bundle, forceReplace: true);
   }
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
@@ -739,6 +634,7 @@ class WebFController {
   set preloadStatus(PreloadingStatus status) {
     _preloadStatus = status;
   }
+
   VoidCallback? _onPreloadingFinished;
   int unfinishedPreloadResources = 0;
 
@@ -822,6 +718,7 @@ class WebFController {
   }
 
   Object? _loadingError;
+
   Object? get loadingError => _loadingError;
 
   bool get hasLoadingError => _loadingError != null;
@@ -917,7 +814,7 @@ class WebFController {
       await evaluateEntrypoint();
 
       view.flushPendingCommandsPerFrame();
-    } catch(e, stack) {
+    } catch (e, stack) {
       _preRenderingStatus = PreRenderingStatus.fail;
       _handlingLoadingError(e, stack);
       controllerPreRenderingCompleter.complete();
@@ -1068,7 +965,6 @@ class WebFController {
       await bundleToLoad.resolve(baseUrl: url, uriParser: uriParser);
       await bundleToLoad.obtainData(view.contextId);
     } catch (e, stack) {
-
       // Not to dismiss this error.
       rethrow;
     }
@@ -1094,12 +990,12 @@ class WebFController {
   ///
   /// Disconnects the WebF environment from Flutter, stopping rendering and interactions.
   /// Should be called when the WebF content is no longer displayed or needed.
-  void detachFromFlutter() {
+  void detachFromFlutter(BuildContext? context) {
     view.detachFromFlutter();
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     _isFlutterAttached = false;
     _ownerFlutterView = null;
-    popBuildContext();
+    popBuildContext(context: context, routePath: initialRoute ?? '/');
   }
 
   // Execute the content from entrypoint bundle.
@@ -1180,10 +1076,12 @@ class WebFController {
 
   // window.onload
   bool _isComplete = false;
+
   bool get isComplete => _isComplete;
 
   // window.onDOMContentLoaded
   bool _isDOMComplete = false;
+
   bool get isDOMComplete => _isDOMComplete;
 
   bool _evaluated = false;
@@ -1329,6 +1227,11 @@ class WebFController {
   Future<void> dispatchWindowResizeEvent() async {
     Event event = Event(EVENT_RESIZE);
     await view.window.dispatchEvent(event);
+  }
+
+  @override
+  String toStringShort() {
+    return '${describeIdentity(this)} (evaluated: $evaluated, preloadStatus: $_preloadStatus, preRenderingStatus: $_preRenderingStatus) ';
   }
 }
 

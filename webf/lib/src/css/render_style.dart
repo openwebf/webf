@@ -32,6 +32,8 @@ class RenderViewportBoxAttachedReason extends AdapterUpdateReason {}
 
 class DocumentElementChangedReason extends AdapterUpdateReason {}
 
+class ControllerDisposeChangeReason extends AdapterUpdateReason {}
+
 class UpdateDisplayReason extends AdapterUpdateReason {}
 
 class UpdateTransformReason extends AdapterUpdateReason {}

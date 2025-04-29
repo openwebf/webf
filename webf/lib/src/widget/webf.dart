@@ -83,9 +83,9 @@ class WebF extends StatefulWidget {
 
   /// Create a WebF widget with an existing controller.
   ///
-  /// If the controller is managed by WebFControllerManager, the widget will
-  /// coordinate with the manager for proper lifecycle management.
-  const WebF({
+  /// The controller must be managed by WebFControllerManager with proper lifecycle management.
+  @protected
+  const WebF._({
     Key? key,
     this.loadingWidget,
     this.initialRoute,
@@ -157,7 +157,7 @@ class WebF extends StatefulWidget {
 
 class AutoManagedWebFState extends State<AutoManagedWebF> {
   Widget buildWebF(WebFController controller) {
-    return WebF(
+    return WebF._(
         controller: controller,
         key: controller.key,
         initialRoute: widget.initialRoute,
@@ -557,9 +557,7 @@ class WebFStateElement extends StatefulElement {
       controller.view.flushPendingCommandsPerFrame();
 
       // Bundle could be executed before mount to the flutter tree.
-      if (controller.mode == WebFLoadingMode.standard) {
-        await _loadingInNormalMode();
-      } else if (controller.mode == WebFLoadingMode.preloading) {
+      if (controller.mode == WebFLoadingMode.preloading) {
         await _loadingInPreloadMode();
       } else if (controller.mode == WebFLoadingMode.preRendering) {
         await _loadingInPreRenderingMode();
@@ -578,7 +576,6 @@ class WebFStateElement extends StatefulElement {
     WebFController controller = widget.controller;
     await controller.controllerPreloadingCompleter.future;
     assert(controller.entrypoint!.isResolved);
-    assert(controller.entrypoint!.isDataObtained);
 
     if (controller.unfinishedPreloadResources == 0 && controller.entrypoint!.isHTML) {
       await controller.view.document.scriptRunner.executePreloadedBundles();

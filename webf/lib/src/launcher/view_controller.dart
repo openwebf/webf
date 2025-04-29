@@ -20,7 +20,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
-class WebFViewController implements WidgetsBindingObserver {
+class WebFViewController with Diagnosticable implements WidgetsBindingObserver  {
   WebFController rootController;
 
   // The methods of the WebFNavigationDelegate help you implement custom behaviors that are triggered
@@ -45,6 +45,7 @@ class WebFViewController implements WidgetsBindingObserver {
       this.initialCookies}) {}
 
   bool _inited = false;
+
   bool get inited => _inited;
 
   Future<void> initialize() async {
@@ -92,8 +93,8 @@ class WebFViewController implements WidgetsBindingObserver {
     SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
   }
 
-
   final Map<String, Completer<void>> _hybridRouteLoadCompleter = {};
+
   Future<void> awaitForHybridRouteLoaded(String routePath) {
     if (!_hybridRouteLoadCompleter.containsKey(routePath)) {
       _hybridRouteLoadCompleter[routePath] = Completer<void>();
@@ -675,4 +676,9 @@ class WebFViewController implements WidgetsBindingObserver {
 
   @override
   void didChangeViewFocus(event) {}
+
+  @override
+  String toStringShort() {
+    return describeIdentity(this);
+  }
 }
