@@ -87,6 +87,16 @@ class _ControllerInstance {
   _ControllerInstance(this.controller, this.state);
 }
 
+enum ControllerLoadState { idle, loading, success, error }
+
+class _ConcurrencyControllerInstance {
+  WebFController controller;
+  Stopwatch stopwatch;
+  ControllerLoadState state;
+
+  _ConcurrencyControllerInstance(this.controller, this.stopwatch, this.state);
+}
+
 /// Function that creates a WebFController
 typedef ControllerFactory = WebFController Function();
 
@@ -108,8 +118,10 @@ class WebFControllerManager {
   /// Map of controller instances by name
   final Map<String, _ControllerInstance> _controllersByName = {};
 
-  /// Map of controller instances is in pending by name
-  final Map<String, List<_ControllerInstance>> _pendingControllerByName = {};
+  /// Map of controller instances requested in concurrency at the same time by name
+  final Map<String, List<_ConcurrencyControllerInstance>> _concurrencyControllerByName = {};
+
+  final Map<String, Completer<WebFController>> _concurrencyRaceCompleter = {};
 
   /// Queue to track the order of controller usage for LRU tracking
   final Queue<String> _recentlyUsedControllers = Queue<String>();
@@ -182,6 +194,91 @@ class WebFControllerManager {
   /// Count of detached controllers
   int get detachedControllersCount =>
       _controllersByName.values.where((i) => i.state == ControllerState.detached).length;
+
+  Future<WebFController> _raceConcurrencyController(
+    String name,
+    WebFController newController,
+    Future<void> newControllerRequestFuture,
+    _ConcurrencyControllerInstance newControllerConcurrencyInstance,
+    List<_ConcurrencyControllerInstance> concurrencyLists,
+  ) async {
+    newControllerRequestFuture.then((_) {
+      debugPrint('WebFControllerManager: $newController load success');
+      newControllerConcurrencyInstance.state = ControllerLoadState.success;
+      // Handing single success request.
+      if (concurrencyLists.length == 1) {
+        _concurrencyRaceCompleter[name]!.complete(concurrencyLists[0].controller);
+      } else {
+        // Handing multiple requests
+        // For multiple requests, we check the race state and return the final winner controller instance.
+        for (int i = concurrencyLists.length - 1; i >= 0; i--) {
+          _ConcurrencyControllerInstance instance = concurrencyLists[i];
+          // If the last concurrency was success, the winner is him.
+          if (i == concurrencyLists.length - 1 && instance.state == ControllerLoadState.success) {
+            _concurrencyRaceCompleter[name]!.complete(instance.controller);
+          }
+        }
+        // if the resolved controller was not in the last one, we do nothing and wait for the last one to finish.
+      }
+    }).catchError((e, stack) {
+      debugPrint('WebFControllerManager: $newController load failed');
+      newControllerConcurrencyInstance.state = ControllerLoadState.error;
+      if (concurrencyLists.length == 1) {
+        _concurrencyRaceCompleter[name]!.completeError(e, stack);
+      } else {}
+    });
+
+    return _concurrencyRaceCompleter[name]!.future;
+    // If preloading fails and we have an old controller to fall back to
+    // if (oldController != null &&
+    //     currentState != ControllerState.disposed && _isControllerAvailable(oldController)) {
+    //   debugPrint('WebFControllerManager: Falling back to existing controller: $oldController.');
+    //
+    //   return oldController;
+    // }
+    // if (_pendingControllerByName[name]!.isEmpty) {
+    //   // If no fallback is available, rethrow the error
+    //   debugPrint('WebFControllerManager: no existing controller available, report the error to the caller');
+    //   rethrow;
+    // }
+    // Currently
+    // Check if controller was canceled during preloading
+    // if (!_isControllerAvailable(newController)) {
+    //   // if (newController.isCanceled) {
+    //   //   debugPrint('WebFControllerManager: we found the $newController was canceled by other new preload requests.');
+    //   // }
+    //   //
+    //   // List<_ControllerInstance> previousPendingInstances = _pendingControllerByName[name]!;
+    //   //
+    //   // // Find the alived old controller
+    //   // _ControllerInstance? oldInstance = previousPendingInstances.lastWhereOrNull((instance) {
+    //   //   return instance.state != ControllerState.disposed && _isControllerAvailable(instance.controller);
+    //   // });
+    //   //
+    //   // // We found one of the last pending preload was success.
+    //   // if (oldInstance != null) {
+    //   //   debugPrint('WebFControllerManager: start to using ${oldInstance.controller} as a fallback options');
+    //   //   // newController = oldInstance.controller;
+    //   // } else {
+    //   //   debugPrint('WebFControllerManager: no available controller was available in this period, report the error to the caller');
+    //   //   // Every loading was failed
+    //   //   // throw newControllerLoadingError ?? FlutterError('Bundle preloading failed: all previous pending request were all failed.');
+    //   // }
+    //
+    //   // // Try to dispose the failed controller
+    //   // try {
+    //   //   // Notify through callback if provided
+    //   //   if (_config.onControllerDisposed != null) {
+    //   //     _config.onControllerDisposed!(name, newController);
+    //   //   }
+    //   //   await newController.dispose();
+    //   // } catch (_) {
+    //   //   // Ignore disposal errors for already failed controller
+    //   // }
+    // }
+    // Clear new controller from the pending queue.
+    // _pendingControllerByName[name]!.removeWhere((instance) => instance.controller == newController);
+  }
 
   /// Unified method to add or update a controller with preloading or prerendering
   ///
@@ -286,24 +383,26 @@ class WebFControllerManager {
 
     // Store initialization parameters for potential re-initialization
     _controllerInitParams[name] = {
-      'type': 'preload',
+      'type': mode,
       'createController': actualCreateController,
       'bundle': bundle,
       'routes': newController.routes,
-      'mode': mode,
       'setup': setup ?? oldParams?['setup'],
     };
 
-    if (_pendingControllerByName.containsKey(name)) {
-      List<_ControllerInstance> pendingControllers = _pendingControllerByName[name]!;
-      pendingControllers.forEach((instance) {
-        _cancelUpdateOrLoadingIfNecessary(instance.controller);
-      });
-    } else {
-      _pendingControllerByName[name] = [];
+    if (!_concurrencyControllerByName.containsKey(name)) {
+      _concurrencyControllerByName[name] = [];
+      _concurrencyRaceCompleter[name] = Completer<WebFController>();
     }
 
-    _pendingControllerByName[name]!.add(_ControllerInstance(newController, ControllerState.detached));
+    Stopwatch stopwatch = Stopwatch()..start();
+
+    // Record an request for the concurrency checks
+    _ConcurrencyControllerInstance _concurrencyControllerInstance =
+        _ConcurrencyControllerInstance(newController, stopwatch, ControllerLoadState.idle);
+
+    List<_ConcurrencyControllerInstance> concurrencyInstanceList = _concurrencyControllerByName[name]!;
+    concurrencyInstanceList.add(_concurrencyControllerInstance);
 
     // Wait for the new controller to initialize with fallback
     await newController.controlledInitCompleter.future;
@@ -319,107 +418,70 @@ class WebFControllerManager {
       oldSetup(newController);
     }
 
-    Object? newControllerLoadingError;
+    Future<void> newControllerRequestFuture;
 
-    Stopwatch stopwatch = Stopwatch()..start();
+    _concurrencyControllerInstance.state = ControllerLoadState.loading;
 
-    // Preload the bundle with fallback
-    try {
-      await newController.preload(bundle);
-    } catch (e) {
-      debugPrint('WebFControllerManager: $newController preload Error: ');
-      debugPrint(e.toString());
-      newControllerLoadingError = e;
-      // If preloading fails and we have an old controller to fall back to
-      if (oldController != null &&
-          currentState != ControllerState.disposed &&
-          oldController.preloadStatus.index < PreloadingStatus.canceled.index) {
-        debugPrint('WebFControllerManager: Falling back to existing controller: $oldController.');
-
-        // Try to dispose the failed controller
-        try {
-          // Notify through callback if provided
-          if (_config.onControllerDisposed != null) {
-            _config.onControllerDisposed!(name, newController);
-          }
-          await newController.dispose();
-        } catch (_) {
-          // Ignore disposal errors for already failed controller
-        }
-
-        return oldController;
-      }
-
-      if (_pendingControllerByName[name]!.isEmpty) {
-        // If no fallback is available, rethrow the error
-        debugPrint('WebFControllerManager: no existing controller available, report the error to the caller');
-        rethrow;
-      }
+    switch (mode) {
+      case WebFLoadingMode.preloading:
+        newControllerRequestFuture = newController.preload(bundle);
+        break;
+      case WebFLoadingMode.preRendering:
+        newControllerRequestFuture = newController.preRendering(bundle);
+        break;
     }
 
-    // Check if controller was canceled during preloading
-    if (newController.isCanceled || newController.preloadStatus == PreloadingStatus.fail) {
-      if (newController.isCanceled) {
-        debugPrint('WebFControllerManager: we found the $newController was canceled by other new preload requests.');
-      }
+    // Race the concurrency request and find the target controller instance.
+    // Success! Now we can safely replace the old controller
+    WebFController winnerController = await _raceConcurrencyController(
+      name,
+      newController,
+      newControllerRequestFuture,
+      _concurrencyControllerInstance,
+      concurrencyInstanceList,
+    );
 
-      // Try to dispose the failed controller
-      try {
-        // Notify through callback if provided
-        if (_config.onControllerDisposed != null) {
-          _config.onControllerDisposed!(name, newController);
-        }
+    // The newController was failed to win the race.
+    if (winnerController != newController) {
+      // Dispose the abandon controller instance
+      Future.microtask(() async {
+        debugPrint('WebFController: dispose loser controller: $newController');
         await newController.dispose();
-      } catch (_) {
-        // Ignore disposal errors for already failed controller
-      }
-
-      List<_ControllerInstance> previousPendingInstances = _pendingControllerByName[name]!;
-
-      // Find the alived old controller
-      _ControllerInstance? oldInstance = previousPendingInstances.lastWhereOrNull((instance) {
-        final controller = instance.controller;
-        return instance.state != ControllerState.disposed && controller.preloadStatus.index < PreloadingStatus.canceled.index;
       });
 
-      // We found one of the last pending preload was success.
-      if (oldInstance != null) {
-        debugPrint('WebFControllerManager: start to using ${oldInstance.controller} as a fallback options');
-        newController = oldInstance.controller;
-      } else {
-        debugPrint('WebFControllerManager: no available controller was available in this period, report the error to the caller');
-        // Every loading was failed
-        throw newControllerLoadingError ?? FlutterError('Bundle preloading failed: all previous pending request were all failed.');
-      }
+      return winnerController;
+    } else {
+      debugPrint('WebFControllerManager: the winner controller is $winnerController');
     }
 
-    print('WebFControllerManager: $newController preload complete with bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
+    // Clear the race check status
+    _concurrencyControllerByName.remove(name);
+    _concurrencyRaceCompleter.remove(name);
 
-    // Clear new controller from the pending queue.
-    _pendingControllerByName[name]!.removeWhere((instance) => instance.controller == newController);
-
-    // Success! Now we can safely replace the old controller
     // Remove the old controller from tracking
     final instance = _controllersByName.remove(name);
     _recentlyUsedControllers.removeWhere((element) => element == name);
     _attachedControllers.removeWhere((element) => element == name);
 
     // Register the new controller with the same name and preserve attached state if needed
-    _controllersByName[name] = _ControllerInstance(newController, ControllerState.detached);
+    _controllersByName[name] = _ControllerInstance(winnerController, ControllerState.detached);
     _updateUsageOrder(name);
+
+    print('WebFControllerManager: $newController preload complete with '
+        'bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
 
     // Schedule disposal of the old controller after returning the new one, if it exists
     if (instance != null && !instance.controller.disposed) {
       Future.microtask(() async {
         // Notify through callback if provided
         if (_config.onControllerDisposed != null) {
-          _config.onControllerDisposed!(name, newController);
+          _config.onControllerDisposed!(name, instance.controller);
         }
         await instance.controller.dispose();
       });
     }
 
-    return newController;
+    return winnerController;
   }
 
   /// Adds a new controller with preloading enabled
@@ -495,18 +557,19 @@ class WebFControllerManager {
     final params = _controllerInitParams[name]!;
 
     // Re-create based on type
-    if (params['type'] == 'preload') {
+    if (params['type'] == WebFLoadingMode.preloading) {
       return await addOrUpdateControllerWithLoading(
         name: name,
-        mode: params['mode'],
+        mode: WebFLoadingMode.preloading,
         createController: params['createController'],
         bundle: params['bundle'],
         routes: params['routes'],
         setup: params['setup'],
       );
     } else {
-      return await addWithPrerendering(
+      return await addOrUpdateControllerWithLoading(
         name: name,
+        mode: WebFLoadingMode.preRendering,
         createController: params['createController'],
         bundle: params['bundle'],
         routes: params['routes'],
@@ -555,7 +618,7 @@ class WebFControllerManager {
   /// from the Flutter widget tree. It updates the controller's state, removes it from
   /// the attached controllers list, and physically detaches it from Flutter while keeping
   /// it available for future reuse.
-  void detachController(String name, BuildContext context) {
+  void detachController(String name, BuildContext? context) {
     if (!_controllersByName.containsKey(name)) {
       return;
     }
@@ -740,12 +803,48 @@ class WebFControllerManager {
       return instance.controller;
     }
 
+    // If the controller was in race conditions,
+    if (_concurrencyControllerByName.containsKey(name)) {
+      Completer<WebFController> completer = Completer<WebFController>();
+      _concurrencyRaceCompleter[name]!.future.then((WebFController controller) {
+        // Should schedule to next microtask to make sure controllerManager._controllersByName had been updated.
+        scheduleMicrotask(() {
+          completer.complete(controller);
+        });
+      });
+      return completer.future;
+    }
+
     // If controller doesn't exist but we have init params, recreate it
     if (_controllerInitParams.containsKey(name)) {
       return await _recreateController(name);
     }
 
     return null;
+  }
+
+  /// Checks if a controller with the given name exists and is managed
+  ///
+  /// This method verifies whether a controller with the specified name is currently
+  /// registered with the manager, regardless of its state (attached, detached, or disposed).
+  /// It is similar to hasController() but with a more descriptive name for the UI context.
+  ///
+  /// @param name The name of the controller to check
+  /// @return true if a controller with this name exists, false otherwise
+  bool isControllerAlive(String name) {
+    return _controllersByName.containsKey(name);
+  }
+
+  /// Checks if a controller is currently attached to Flutter
+  ///
+  /// This method determines whether a named controller is in the attached state,
+  /// meaning it is currently connected to the Flutter widget tree and actively rendering.
+  /// This is useful for UI logic that needs to know a controller's attachment state.
+  ///
+  /// @param name The name of the controller to check
+  /// @return true if the controller exists and is attached, false otherwise
+  bool isControllerAttached(String name) {
+    return _attachedControllers.contains(name);
   }
 
   /// Updates the usage order of controllers for LRU (Least Recently Used) tracking
@@ -969,7 +1068,6 @@ class WebFControllerManager {
       _recentlyUsedControllers.removeWhere((element) => element == name);
       _attachedControllers.removeWhere((element) => element == name);
 
-
       // Notify through callback if provided
       if (_config.onControllerDisposed != null) {
         _config.onControllerDisposed!(name, controller);
@@ -999,6 +1097,8 @@ class WebFControllerManager {
       await removeAndDisposeController(name);
     }
 
+    _concurrencyControllerByName.clear();
+    _concurrencyRaceCompleter.clear();
     // Clear all tracking structures
     _controllersByName.clear();
     _recentlyUsedControllers.clear();

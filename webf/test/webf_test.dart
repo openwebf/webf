@@ -30,13 +30,9 @@ import 'src/module/fetch.dart' as fetch;
 
 final String __dirname = path.dirname(Platform.script.path);
 
-// The main entry for kraken unit test.
-// Setup all common logic.
-void main() {
+Directory setupTest() {
   // Setup environment.
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  print(__dirname);
 
   // Start local HTTP server.
   LocalHttpServer.basePath = 'test/fixtures';
@@ -57,7 +53,19 @@ void main() {
     }
     throw FlutterError('Not implemented for method ${methodCall.method}.');
   });
+  return tempDirectory;
+}
 
+// The main entry for kraken unit test.
+// Setup all common logic.
+void main() {
+
+  Directory? tempDirectory;
+  setUp(() {
+    tempDirectory = setupTest();
+  });
+
+  setupTest();
   // Start tests.
   group('foundation', () {
     bundle.main();
@@ -87,8 +95,8 @@ void main() {
   });
 
   tearDownAll(() {
-    if (tempDirectory.existsSync()) {
-      tempDirectory.deleteSync(recursive: true);
+    if (tempDirectory!.existsSync()) {
+      tempDirectory!.deleteSync(recursive: true);
     }
   });
 }

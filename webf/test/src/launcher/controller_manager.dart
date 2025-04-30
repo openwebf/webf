@@ -10,12 +10,15 @@ import 'package:webf/webf.dart';
 import 'package:webf/launcher.dart';
 import 'package:mockito/mockito.dart';
 
+import '../../webf_test.dart';
 import '../foundation/mock_bundle.dart';
 
 // We'll need to patch the controller to avoid the actual attachToFlutter call
 class TestWebFController extends WebFController {
 
   bool _isFlutterAttached = false;
+
+  @override
   bool get isFlutterAttached => _isFlutterAttached;
 
   @override
@@ -25,7 +28,7 @@ class TestWebFController extends WebFController {
   }
 
   @override
-  void detachFromFlutter() {
+  void detachFromFlutter(BuildContext? context) {
     // Skip the actual detachment
     _isFlutterAttached = false;
   }
@@ -35,6 +38,10 @@ class TestWebFController extends WebFController {
 class MockBuildContext extends Fake implements BuildContext {}
 
 void main() {
+  setUp(() {
+    setupTest();
+  });
+
   group('WebFControllerManager', () {
     late WebFControllerManager manager;
 
@@ -53,9 +60,9 @@ void main() {
       );
     });
 
-    tearDown(() {
+    tearDown(() async {
       // Clean up after each test
-      manager.disposeAll();
+      await manager.disposeAll();
     });
 
     test('should initialize with default configuration', () {
@@ -75,6 +82,7 @@ void main() {
       expect(controller, isNotNull);
       expect(manager.hasController('test'), isTrue);
       expect(manager.controllerCount, 1);
+      expect(manager.isControllerAlive('test'), true);
     });
 
     test('should get controller by name', () async {
@@ -119,7 +127,7 @@ void main() {
       expect(manager.attachedControllersCount, 1);
 
       // Simulate detaching from Flutter
-      manager.detachController('test');
+      manager.detachController('test', null);
 
       expect(manager.getControllerState('test'), equals(ControllerState.detached));
       expect(manager.attachedControllersCount, 0);
@@ -144,129 +152,62 @@ void main() {
       expect(manager.controllerCount, 1);
     });
 
-    // Test race condition handling
-    test('should handle race condition in updateWithPreload', () async {
-      final MockTimedBundle initialBundle = MockTimedBundle.fast(content: 'console.log("Initial")');
-      final initialController = await manager.addWithPreload(
-        name: 'test',
-        createController: () => TestWebFController(),
-        bundle: initialBundle,
-      );
+    // // Test race condition handling
+    // test('should handle race condition in updateWithPreload', () async {
+    //   // Start two update operations - a slow one and a fast one
+    //   final slowCompleter = Completer<void>();
+    //   final MockTimedBundle slowBundle = MockTimedBundle.controlled(
+    //     completer: slowCompleter,
+    //     content: 'console.log("Slow Update")',
+    //   );
+    //
+    //   final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Update")');
+    //
+    //   // Create a controller factory that will wait for the completer
+    //   TestWebFController createSlowController() {
+    //     final controller = TestWebFController();
+    //     // We'll manually set it to done in the test
+    //     return controller;
+    //   }
+    //
+    //   // Start the slow update (but don't await it)
+    //   final slowUpdateFuture = manager.updateWithPreload(
+    //     name: 'test',
+    //     createController: createSlowController,
+    //     bundle: slowBundle,
+    //   );
+    //
+    //   // Give a small delay to ensure the slow update starts first
+    //   await Future.delayed(const Duration(milliseconds: 20));
+    //
+    //   // Start and await the fast update
+    //   final fastUpdateFuture = manager.updateWithPreload(
+    //     name: 'test',
+    //     bundle: fastBundle,
+    //   );
+    //
+    //   // Cancel the slow update operation
+    //   manager.cancelUpdateOrLoadingIfNecessary('test');
+    //
+    //   // Now allow the slow update to complete
+    //   slowCompleter.complete();
+    //
+    //   // Get both results
+    //   final slowController = await slowUpdateFuture;
+    //   final fastController = await fastUpdateFuture;
+    //
+    //   // The fast controller should be the one that's active
+    //   final currentController = await manager.getController('test');
+    //
+    //   // Current controller should equal the fast controller, not the slow one
+    //   expect(currentController, equals(fastController));
+    //   expect(currentController, isNot(equals(slowController)));
+    //
+    //   // There should still only be one controller
+    //   expect(manager.controllerCount, 1);
+    // });
+    //
 
-      // Start two update operations - a slow one and a fast one
-      final slowCompleter = Completer<void>();
-      final MockTimedBundle slowBundle = MockTimedBundle.controlled(
-        completer: slowCompleter,
-        content: 'console.log("Slow Update")',
-      );
-
-      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Update")');
-
-      // Create a controller factory that will wait for the completer
-      TestWebFController createSlowController() {
-        final controller = TestWebFController();
-        // We'll manually set it to done in the test
-        return controller;
-      }
-
-      // Start the slow update (but don't await it)
-      final slowUpdateFuture = manager.updateWithPreload(
-        name: 'test',
-        createController: createSlowController,
-        bundle: slowBundle,
-      );
-
-      // Give a small delay to ensure the slow update starts first
-      await Future.delayed(const Duration(milliseconds: 20));
-
-      // Start and await the fast update
-      final fastUpdateFuture = manager.updateWithPreload(
-        name: 'test',
-        bundle: fastBundle,
-      );
-
-      // Cancel the slow update operation
-      manager.cancelUpdateOrLoadingIfNecessary('test');
-
-      // Now allow the slow update to complete
-      slowCompleter.complete();
-
-      // Get both results
-      final slowController = await slowUpdateFuture;
-      final fastController = await fastUpdateFuture;
-
-      // The fast controller should be the one that's active
-      final currentController = await manager.getController('test');
-
-      // Current controller should equal the fast controller, not the slow one
-      expect(currentController, equals(fastController));
-      expect(currentController, isNot(equals(slowController)));
-
-      // There should still only be one controller
-      expect(manager.controllerCount, 1);
-    });
-
-    test('should handle race condition in updateWithPrerendering', () async {
-      final MockTimedBundle initialBundle = MockTimedBundle.fast(content: 'console.log("Initial")');
-      final initialController = await manager.addWithPrerendering(
-        name: 'test',
-        createController: () => TestWebFController(),
-        bundle: initialBundle,
-      );
-
-      // Start two update operations - a slow one and a fast one
-      final slowCompleter = Completer<void>();
-      final MockTimedBundle slowBundle = MockTimedBundle.controlled(
-        completer: slowCompleter,
-        content: 'console.log("Slow Prerender")',
-      );
-
-      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
-
-      // Create a controller factory that will wait for the completer
-      TestWebFController createSlowController() {
-        final controller = TestWebFController();
-
-        // We'll manually set it to done in the test
-        return controller;
-      }
-
-      // Start the slow update (but don't await it)
-      final slowUpdateFuture = manager.updateWithPrerendering(
-        name: 'test',
-        createController: createSlowController,
-        bundle: slowBundle,
-      );
-
-      // Give a small delay to ensure the slow update starts first
-      await Future.delayed(const Duration(milliseconds: 20));
-
-      // Start and await the fast update
-      final fastUpdateFuture = manager.updateWithPrerendering(
-        name: 'test',
-        bundle: fastBundle,
-      );
-
-      // Cancel the slow update operation
-      manager.cancelUpdateOrLoadingIfNecessary('test');
-
-      // Now allow the slow update to complete
-      slowCompleter.complete();
-
-      // Get both results
-      final slowController = await slowUpdateFuture;
-      final fastController = await fastUpdateFuture;
-
-      // The fast controller should be the one that's active
-      final currentController = await manager.getController('test');
-
-      // Current controller should equal the fast controller, not the slow one
-      expect(currentController, equals(fastController));
-      expect(currentController, isNot(equals(slowController)));
-
-      // There should still only be one controller
-      expect(manager.controllerCount, 1);
-    });
 
     test('should enforce maximum limits for alive instances', () async {
       // Add more controllers than the maximum allowed
@@ -312,6 +253,315 @@ void main() {
       expect(manager.getControllerState('test1'), equals(ControllerState.attached));
       expect(manager.getControllerState('test2'), equals(ControllerState.attached));
       expect(manager.getControllerState('test3'), equals(ControllerState.attached));
+    });
+
+    test('should handle race condition with two success requests', () async {
+      // Start two update operations - a slow one and a fast one
+      final slowCompleter = Completer<void>();
+      final MockTimedBundle slowBundle = MockTimedBundle.controlled(
+        completer: slowCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: slowBundle,
+      );
+
+      // Give a small delay to ensure the slow update starts first
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: fastBundle,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      // Now allow the slow update to complete
+      slowCompleter.complete();
+
+      // Get both results
+      final slowController = await slowUpdateFuture;
+      final fastController = await fastUpdateFuture;
+
+      expect(slowController, equals(fastController));
+
+      // The fast controller should be the one that's active
+      final currentController = await manager.getController('test');
+
+      expect(currentController, equals(fastController));
+      expect(currentController!.entrypoint, equals(fastBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with two success requests, but faster one in the first', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start two update operations - a slow one and a fast one
+      final MockTimedBundle slowBundle = MockTimedBundle.slow(
+        content: 'console.log("Slow Prerender")',
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+
+        bundle: slowBundle,
+      );
+
+      // Give a small delay to ensure the slow update starts first
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // Get both results
+      final slowController = await slowUpdateFuture;
+      final fastController = await fastUpdateFuture;
+
+      expect(slowController == fastController, true);
+
+      // The fast controller should be the one that's active
+      final currentController = await manager.getController('test');
+
+      expect(currentController, equals(slowController));
+      expect(slowController.entrypoint, equals(slowBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with three success requests, fast slow medium', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast")');
+      final MockTimedBundle slowBundle = MockTimedBundle.fast(content: 'console.log("Slow")');
+      final MockTimedBundle mediumBundle = MockTimedBundle.fast(content: 'console.log("Medium")');
+
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+
+        bundle: slowBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final mediumUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: mediumBundle,
+      );
+
+      // Give a small delay to ensure the slow update starts first
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      // Get both results
+      final slowController = await slowUpdateFuture;
+      final fastController = await fastUpdateFuture;
+      final mediumController = await mediumUpdateFuture;
+
+      expect(slowController == fastController, true);
+      expect(fastController == mediumController, true);
+
+      // The fast controller should be the one that's active
+      final currentController = await manager.getController('test');
+
+      expect(currentController, equals(slowController));
+      expect(slowController.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with three success requests, and the earlier getController will returns the winner one', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast")');
+      final MockTimedBundle slowBundle = MockTimedBundle.fast(content: 'console.log("Slow")');
+      final MockTimedBundle mediumBundle = MockTimedBundle.fast(content: 'console.log("Medium")');
+
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: slowBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final mediumUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: mediumBundle,
+      );
+
+      // The fast controller should be the one that's active
+      WebFController? currentController = await manager.getController('test');
+
+      final fastController = await fastUpdateFuture;
+
+      expect(currentController?.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+
+      // Give a small delay to ensure the slow update starts first
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      // Get both results
+      final slowController = await slowUpdateFuture;
+      final mediumController = await mediumUpdateFuture;
+
+      expect(slowController == fastController, true);
+      expect(fastController == mediumController, true);
+
+      // The fast controller should be the one that's active
+      currentController = await manager.getController('test');
+
+      expect(currentController, equals(slowController));
+      expect(slowController.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with three success requests, and the getController will invoke at at middle await', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast")');
+      final MockTimedBundle slowBundle = MockTimedBundle.fast(content: 'console.log("Slow")');
+      final MockTimedBundle mediumBundle = MockTimedBundle.fast(content: 'console.log("Medium")');
+
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: slowBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final mediumUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: mediumBundle,
+      );
+
+      final fastController = await fastUpdateFuture;
+
+      // The fast controller should be the one that's active
+      WebFController? currentController = await manager.getController('test');
+
+      expect(currentController?.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+
+      // Give a small delay to ensure the slow update starts first
+      await Future.delayed(const Duration(milliseconds: 20));
+
+      // Get both results
+      final slowController = await slowUpdateFuture;
+      final mediumController = await mediumUpdateFuture;
+
+      expect(slowController == fastController, true);
+      expect(fastController == mediumController, true);
+
+      // The fast controller should be the one that's active
+      currentController = await manager.getController('test');
+
+      expect(currentController, equals(slowController));
+      expect(slowController.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with three success requests, and the getController will invoke at at last await', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast")');
+      final MockTimedBundle slowBundle = MockTimedBundle.fast(content: 'console.log("Slow")');
+      final MockTimedBundle mediumBundle = MockTimedBundle.fast(content: 'console.log("Medium")');
+
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: slowBundle,
+      );
+
+      // Start the slow update (but don't await it)
+      final mediumUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        bundle: mediumBundle,
+      );
+
+      final fastController = await fastUpdateFuture;
+
+      // Get both results
+      final slowController = await slowUpdateFuture;
+
+
+      // The fast controller should be the one that's active
+      WebFController? currentController = await manager.getController('test');
+
+      expect(currentController?.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
+
+
+      final mediumController = await mediumUpdateFuture;
+
+      expect(slowController == fastController, true);
+      expect(fastController == mediumController, true);
+
+      // The fast controller should be the one that's active
+      currentController = await manager.getController('test');
+
+      expect(currentController, equals(slowController));
+      expect(slowController.entrypoint, equals(mediumBundle));
+
+      // // There should still only be one controller
+      expect(manager.controllerCount, 1);
     });
   });
 }

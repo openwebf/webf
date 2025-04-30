@@ -22,16 +22,9 @@ class MockTimedBundle extends WebFBundle {
     this.autoResolve = true,
     ContentType? contentType,
   }) : super(url, contentType: contentType) {
-    // If neither content nor bytecode is provided, use a default content
-    if (content == null && bytecode == null) {
-      _content = 'console.log("Default mock content")';
-    } else {
-      _content = content;
-    }
-
     // If automatic resolution is enabled, prepare the data
-    if (autoResolve && _content != null) {
-      data = Uint8List.fromList(utf8.encode(_content!));
+    if (autoResolve && content != null) {
+      data = Uint8List.fromList(utf8.encode(content!));
     } else if (autoResolve && bytecode != null) {
       data = bytecode;
     }
@@ -42,7 +35,6 @@ class MockTimedBundle extends WebFBundle {
 
   /// Optional text content for the bundle
   final String? content;
-  String? _content;
 
   /// Optional bytecode for the bundle
   final Uint8List? bytecode;
@@ -80,7 +72,7 @@ class MockTimedBundle extends WebFBundle {
   }
 
   @override
-  String toString() {
+  String toStringShort() {
     return 'MockTimedBundle($content)';
   }
 
@@ -105,8 +97,8 @@ class MockTimedBundle extends WebFBundle {
     }
 
     // Set the content based on what was provided
-    if (_content != null) {
-      data = Uint8List.fromList(utf8.encode(_content!));
+    if (content != null) {
+      data = Uint8List.fromList(utf8.encode(content!));
     } else if (bytecode != null) {
       data = bytecode;
     } else {
@@ -124,6 +116,22 @@ class MockTimedBundle extends WebFBundle {
     return MockTimedBundle(
       url,
       delayInMilliseconds: 10,
+      content: content,
+      bytecode: bytecode,
+      contentType: contentType ?? javascriptContentType,
+    );
+  }
+
+  /// Creates a MockTimedBundle that will resolve quickly (10ms delay)
+  static MockTimedBundle medium({
+    String? content,
+    Uint8List? bytecode,
+    ContentType? contentType,
+    String url = 'mock://medium.js',
+  }) {
+    return MockTimedBundle(
+      url,
+      delayInMilliseconds: 100,
       content: content,
       bytecode: bytecode,
       contentType: contentType ?? javascriptContentType,
