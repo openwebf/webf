@@ -93,7 +93,7 @@ class WebF extends StatefulWidget {
     this.errorBuilder,
     this.onDispose,
     required this.controller,
-  })  : super(key: key);
+  }) : super(key: key);
 
   /// Create a WebF widget using a controller name from WebFControllerManager.
   ///
@@ -184,16 +184,17 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
     // If controller doesn't exist but we have enough info to create it
     if (controller == null && widget.bundle != null) {
       // Create a controller factory if not provided
-      ControllerFactory actualCreateController = widget.createController ??
-          (() => WebFController(initialRoute: widget.initialRoute ?? '/'));
+      ControllerFactory actualCreateController =
+          widget.createController ?? (() => WebFController(initialRoute: widget.initialRoute ?? '/'));
 
-      controller = await WebFControllerManager.instance.addOrUpdateWithPreload(
+      controller = await WebFControllerManager.instance.addOrUpdateControllerWithLoading(
           name: widget.controllerName,
+          mode: WebFLoadingMode.preloading,
           createController: actualCreateController,
           bundle: widget.bundle!,
           routes: widget.routes,
-          setup: widget.setup
-      );
+          setup: widget.setup,
+          forceReplace: false);
     }
 
     return controller;
@@ -231,6 +232,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
           return widget.errorBuilder != null ? widget.errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
         }
 
+        debugPrint('WebF: loading with controller: ${snapshot.data}');
         return buildWebF(snapshot.data!);
       },
     );
@@ -243,6 +245,7 @@ class AutoManagedWebF extends StatefulWidget {
   final String? initialRoute;
   final Map<String, dynamic>? initialState;
   final Widget Function(BuildContext context, Object error)? errorBuilder;
+
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
 
@@ -252,20 +255,19 @@ class AutoManagedWebF extends StatefulWidget {
   final Map<String, SubViewBuilder>? routes;
   final ControllerSetup? setup;
 
-  AutoManagedWebF({
-    required this.controllerName,
-    this.loadingWidget,
-    this.errorBuilder,
-    this.initialRoute,
-    this.initialState,
-    this.onDispose,
-    // Auto-initialization parameters
-    this.bundle,
-    this.createController,
-    this.routes,
-    this.setup,
-    super.key
-  });
+  AutoManagedWebF(
+      {required this.controllerName,
+      this.loadingWidget,
+      this.errorBuilder,
+      this.initialRoute,
+      this.initialState,
+      this.onDispose,
+      // Auto-initialization parameters
+      this.bundle,
+      this.createController,
+      this.routes,
+      this.setup,
+      super.key});
 
   @override
   State<StatefulWidget> createState() {
@@ -329,7 +331,8 @@ class WebFState extends State<WebF> with RouteAware {
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPop', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+    RouterLinkElement? routerLinkElement =
+        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEvent(event);
   }
 
@@ -343,7 +346,8 @@ class WebFState extends State<WebF> with RouteAware {
         HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPopNext', path: path);
     widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+    RouterLinkElement? routerLinkElement =
+        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEvent(event);
   }
 
@@ -362,7 +366,8 @@ class WebFState extends State<WebF> with RouteAware {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
 
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+    RouterLinkElement? routerLinkElement =
+        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
@@ -381,7 +386,8 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.controller.initialRoute != null) {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
-    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+    RouterLinkElement? routerLinkElement =
+        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
     routerLinkElement?.dispatchEventUtilAdded(event);
   }
 
@@ -464,6 +470,12 @@ class WebFState extends State<WebF> with RouteAware {
       }
 
       return child.toWidget();
+    }
+
+    if (widget.controller.disposed) {
+      return Center(
+        child: Text('${widget.controller} was disposed'),
+      );
     }
 
     if (widget.controller.view.document.documentElement == null) {

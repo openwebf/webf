@@ -80,7 +80,7 @@ void _failedToResolveBundle(String url) {
   throw FlutterError('Failed to resolve bundle for $url');
 }
 
-abstract class WebFBundle {
+abstract class WebFBundle with Diagnosticable {
   WebFBundle(this.url, { ContentType? contentType }): _contentType = contentType;
 
   // Unique resource locator.
@@ -167,6 +167,11 @@ abstract class WebFBundle {
     HttpCacheController cacheController = HttpCacheController.instance(origin);
     HttpCacheObject cacheObject = await cacheController.getCacheObject(uri);
     await cacheObject.remove();
+  }
+
+  @override
+  String toStringShort() {
+    return '${describeIdentity(this)} (url: $url, contentType: $contentType, isLoaded: ${data != null}) ';
   }
 
   static WebFBundle fromUrl(String url, {Map<String, String>? additionalHttpHeaders, ContentType? contentType}) {

@@ -606,7 +606,7 @@ class WebFController with Diagnosticable {
     if (currentPageId == null) return null;
 
     return WebFControllerManager.instance
-        .addOrUpdateWithPreload(name: currentPageId, bundle: entrypoint!, forceReplace: true);
+        .addOrUpdateControllerWithLoading(name: currentPageId, bundle: entrypoint!, forceReplace: true, mode: mode);
   }
 
   /// Loads content from the provided WebFBundle.
@@ -621,7 +621,7 @@ class WebFController with Diagnosticable {
     if (currentPageId == null) return null;
 
     return WebFControllerManager.instance
-        .addOrUpdateWithPreload(name: currentPageId, bundle: bundle, forceReplace: true);
+        .addOrUpdateControllerWithLoading(name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
   }
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
@@ -1079,6 +1079,14 @@ class WebFController with Diagnosticable {
 
   bool get isComplete => _isComplete;
 
+  bool _isCanceled = false;
+
+  bool get isCanceled => _isCanceled;
+
+  set isCanceled(bool value) {
+    _isCanceled = value;
+  }
+
   // window.onDOMContentLoaded
   bool _isDOMComplete = false;
 
@@ -1231,7 +1239,7 @@ class WebFController with Diagnosticable {
 
   @override
   String toStringShort() {
-    return '${describeIdentity(this)} (evaluated: $evaluated, preloadStatus: $_preloadStatus, preRenderingStatus: $_preRenderingStatus) ';
+    return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, preloadStatus: $_preloadStatus, preRenderingStatus: $_preRenderingStatus) ';
   }
 }
 
