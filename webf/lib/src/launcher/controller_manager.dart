@@ -106,39 +106,48 @@ typedef ControllerSetup = Function(WebFController controller);
 /// Function that creates an WebFSubView
 typedef SubViewBuilder = Widget Function(BuildContext context, WebFController);
 
-/// A manager class that holds multiple WebFController instances
-/// It manages the lifecycle of controllers and enforces resource limits
+/// A manager class that holds multiple WebFController instances.
+///
+/// It manages the lifecycle of controllers and enforces resource limits to prevent
+/// memory leaks while providing efficient controller reuse. Key features include:
+///
+/// - Caching and reusing controllers by name
+/// - Automatic recreation of disposed controllers when needed
+/// - Limiting the number of active and attached controllers
+/// - Handling concurrent requests for the same controller
+/// - Supporting preloading and prerendering for optimal performance
 class WebFControllerManager {
-  /// The singleton instance of the manager
+  /// The singleton instance of the manager.
   static final WebFControllerManager _instance = WebFControllerManager._internal();
 
-  /// The configuration for the manager
+  /// The configuration for the manager.
   WebFControllerManagerConfig _config;
 
-  /// Map of controller instances by name
+  /// Map of controller instances by name.
   final Map<String, _ControllerInstance> _controllersByName = {};
 
-  /// Map of controller instances requested in concurrency at the same time by name
+  /// Map of controller instances requested in concurrency at the same time by name.
   final Map<String, List<_ConcurrencyControllerInstance>> _concurrencyControllerByName = {};
 
+  /// Map of completers used to coordinate concurrent requests for the same controller.
   final Map<String, Completer<WebFController>> _concurrencyRaceCompleter = {};
 
-  /// Queue to track the order of controller usage for LRU tracking
+  /// Queue to track the order of controller usage for LRU tracking.
   final Queue<String> _recentlyUsedControllers = Queue<String>();
 
-  /// Queue to track attached controllers
+  /// Queue to track attached controllers.
   final Queue<String> _attachedControllers = Queue<String>();
 
-  /// Map to store creation parameters for re-initialization
+  /// Map to store creation parameters for future re-initialization.
   final Map<String, Map<String, dynamic>> _controllerInitParams = {};
 
-  /// Private constructor for singleton
+  /// Private constructor for the singleton implementation.
   WebFControllerManager._internal() : _config = const WebFControllerManagerConfig();
 
-  /// Get the singleton instance of the manager
+  /// Gets the singleton instance of the manager.
   static WebFControllerManager get instance => _instance;
 
-  /// Get all registered route configurations from all controllers
+  /// Gets all registered route configurations from all controllers.
   ///
   /// This collects all routes registered with individual controllers and combines them
   /// into a single map that can be used with Flutter navigation.
@@ -160,15 +169,16 @@ class WebFControllerManager {
     return routes;
   }
 
-  /// Get the appropriate widget for a specific route within a named controller
+  /// Gets the appropriate widget for a specific route within a named controller.
   ///
   /// This method looks up a named controller and attempts to find a matching route handler
   /// within that controller's registered routes.
   ///
-  /// @param context The BuildContext to be passed to the route builder
-  /// @param pageName The name of the controller to look up
-  /// @param settings The route settings containing the path to match
-  /// @return A Widget if the controller and route are found, null otherwise
+  /// [context] The BuildContext to be passed to the route builder.
+  /// [pageName] The name of the controller to look up.
+  /// [settings] The route settings containing the path to match.
+  ///
+  /// Returns a Widget if the controller and route are found, null otherwise.
   Widget? getRouterBuilderBySettings(BuildContext context, String pageName, RouteSettings settings) {
     _ControllerInstance? instance = _controllersByName[pageName];
     if (instance == null) return null;
@@ -177,24 +187,41 @@ class WebFControllerManager {
     return builder(context, instance.controller);
   }
 
-  /// Initialize the manager with custom configuration
+  /// Initializes the manager with custom configuration.
   ///
   /// This method allows customizing the behavior of the controller manager, including
   /// setting resource limits and callback handlers.
   ///
-  /// @param config The configuration object containing settings such as max instances,
-  ///               auto-disposal behavior, and callbacks for lifecycle events
+  /// [config] The configuration object containing settings such as max instances,
+  ///          auto-disposal behavior, and callbacks for lifecycle events.
   void initialize(WebFControllerManagerConfig config) {
     _config = config;
   }
 
-  /// Count of attached controllers
+  /// Gets the count of currently attached controllers.
   int get attachedControllersCount => _attachedControllers.length;
 
-  /// Count of detached controllers
+  /// Gets the count of currently detached controllers.
   int get detachedControllersCount =>
       _controllersByName.values.where((i) => i.state == ControllerState.detached).length;
 
+  /// Handles concurrent requests for the same controller.
+  ///
+  /// This internal method ensures that multiple simultaneous requests for the same
+  /// controller are handled efficiently with a race condition pattern. Only one request
+  /// will actually create the controller, and all other concurrent requests will wait
+  /// for that one to complete and then receive the same controller instance.
+  ///
+  /// [name] The unique name of the controller being requested.
+  /// [actualCreateController] The factory function to create the controller.
+  /// [bundle] The content bundle to load.
+  /// [mode] The loading mode (preloading or prerendering).
+  /// [routes] Optional routing configuration.
+  /// [setup] Optional function to configure the controller.
+  /// [oldController] Optional existing controller to use as fallback.
+  /// [oldParams] Optional previously stored parameters for this controller.
+  ///
+  /// Returns a WebFController instance that satisfies all concurrent requests.
   Future<WebFController> _raceConcurrencyController(
     String name,
     WebFController newController,
@@ -229,63 +256,14 @@ class WebFControllerManager {
     });
 
     return _concurrencyRaceCompleter[name]!.future;
-    // If preloading fails and we have an old controller to fall back to
-    // if (oldController != null &&
-    //     currentState != ControllerState.disposed && _isControllerAvailable(oldController)) {
-    //   debugPrint('WebFControllerManager: Falling back to existing controller: $oldController.');
-    //
-    //   return oldController;
-    // }
-    // if (_pendingControllerByName[name]!.isEmpty) {
-    //   // If no fallback is available, rethrow the error
-    //   debugPrint('WebFControllerManager: no existing controller available, report the error to the caller');
-    //   rethrow;
-    // }
-    // Currently
-    // Check if controller was canceled during preloading
-    // if (!_isControllerAvailable(newController)) {
-    //   // if (newController.isCanceled) {
-    //   //   debugPrint('WebFControllerManager: we found the $newController was canceled by other new preload requests.');
-    //   // }
-    //   //
-    //   // List<_ControllerInstance> previousPendingInstances = _pendingControllerByName[name]!;
-    //   //
-    //   // // Find the alived old controller
-    //   // _ControllerInstance? oldInstance = previousPendingInstances.lastWhereOrNull((instance) {
-    //   //   return instance.state != ControllerState.disposed && _isControllerAvailable(instance.controller);
-    //   // });
-    //   //
-    //   // // We found one of the last pending preload was success.
-    //   // if (oldInstance != null) {
-    //   //   debugPrint('WebFControllerManager: start to using ${oldInstance.controller} as a fallback options');
-    //   //   // newController = oldInstance.controller;
-    //   // } else {
-    //   //   debugPrint('WebFControllerManager: no available controller was available in this period, report the error to the caller');
-    //   //   // Every loading was failed
-    //   //   // throw newControllerLoadingError ?? FlutterError('Bundle preloading failed: all previous pending request were all failed.');
-    //   // }
-    //
-    //   // // Try to dispose the failed controller
-    //   // try {
-    //   //   // Notify through callback if provided
-    //   //   if (_config.onControllerDisposed != null) {
-    //   //     _config.onControllerDisposed!(name, newController);
-    //   //   }
-    //   //   await newController.dispose();
-    //   // } catch (_) {
-    //   //   // Ignore disposal errors for already failed controller
-    //   // }
-    // }
-    // Clear new controller from the pending queue.
-    // _pendingControllerByName[name]!.removeWhere((instance) => instance.controller == newController);
   }
 
-  /// Unified method to add or update a controller with preloading or prerendering
+  /// Unified method to add or update a controller with preloading or prerendering.
   ///
   /// This is the core method that handles all controller lifecycle operations, including:
   /// - Creating new controllers
   /// - Updating existing controllers
-  /// - Preloading or Prerendering content
+  /// - Preloading or prerendering content
   /// - Managing fallback mechanisms for error handling
   /// - Enforcing resource limits
   /// - Tracking controller state and usage
@@ -308,14 +286,15 @@ class WebFControllerManager {
   ///   - If preloading fails, attempts to return to previous working controller
   ///   - If all attempts fail, throws an appropriate error
   ///
-  /// @param name The unique name to identify this controller
-  /// @param createController Optional factory function to create a controller (required for new controllers)
-  /// @param bundle The content bundle to load
-  /// @param mode The loading mode (preloading or prerendering)
-  /// @param routes Optional routing configuration
-  /// @param setup Optional function to configure the controller after creation
-  /// @param forceReplace Whether to force replacement of an existing controller
-  /// @return The created or updated controller
+  /// [name] The unique name to identify this controller.
+  /// [createController] Optional factory function to create a controller (required for new controllers).
+  /// [bundle] The content bundle to load.
+  /// [mode] The loading mode (preloading or prerendering).
+  /// [routes] Optional routing configuration.
+  /// [setup] Optional function to configure the controller after creation.
+  /// [forceReplace] Whether to force replacement of an existing controller.
+  ///
+  /// Returns the created or updated controller.
   Future<WebFController> addOrUpdateControllerWithLoading(
       {required String name,
       ControllerFactory? createController,
@@ -484,7 +463,7 @@ class WebFControllerManager {
     return winnerController;
   }
 
-  /// Adds a new controller with preloading enabled
+  /// Adds a new controller with preloading enabled.
   ///
   /// This is a convenience method that calls addOrUpdateControllerWithLoading with
   /// the preloading mode. It creates a new controller, preloads the bundle, and
@@ -492,6 +471,14 @@ class WebFControllerManager {
   ///
   /// Use this method when you want to create a controller that loads resources
   /// but doesn't execute JavaScript until the WebF widget is mounted.
+  ///
+  /// [name] The unique name to identify this controller.
+  /// [createController] Factory function to create the controller.
+  /// [bundle] The content bundle to load.
+  /// [routes] Optional routing configuration.
+  /// [setup] Optional function to configure the controller.
+  ///
+  /// Returns the preloaded controller ready for use.
   Future<WebFController> addWithPreload(
       {required String name,
       required ControllerFactory createController,
@@ -509,7 +496,7 @@ class WebFControllerManager {
     );
   }
 
-  /// Adds a new controller with prerendering enabled
+  /// Adds a new controller with prerendering enabled.
   ///
   /// This is a convenience method that calls addOrUpdateControllerWithLoading with
   /// the prerendering mode. It creates a new controller, prerenders the bundle content
@@ -518,6 +505,14 @@ class WebFControllerManager {
   /// Use this method when you want a controller that aggressively preloads content
   /// for the fastest possible rendering time, at the cost of some compatibility issues
   /// with dimension-dependent code.
+  ///
+  /// [name] The unique name to identify this controller.
+  /// [createController] Factory function to create the controller.
+  /// [bundle] The content bundle to load.
+  /// [routes] Optional routing configuration.
+  /// [setup] Optional function to configure the controller.
+  ///
+  /// Returns the prerendered controller ready for use.
   Future<WebFController> addWithPrerendering(
       {required String name,
       required ControllerFactory createController,
@@ -535,20 +530,27 @@ class WebFControllerManager {
     );
   }
 
-  /// Cancels a controller's loading or preloading process
+  /// Cancels a controller's loading or preloading process.
   ///
-  /// This is used internally to mark a controller as canceled when a newer
-  /// controller is being loaded with the same name, preventing resource conflicts.
+  /// This internal method is used to mark a controller as canceled when a newer
+  /// controller is being loaded with the same name. This prevents resource conflicts
+  /// and ensures that only the most recently requested controller continues loading.
+  ///
+  /// [controller] The controller to cancel.
   void _cancelUpdateOrLoadingIfNecessary(WebFController controller) {
     debugPrint('WebFControllerManager: cancel $controller');
     controller.isCanceled = true;
   }
 
-  /// Recreates a controller using previously stored initialization parameters
+  /// Recreates a controller using previously stored initialization parameters.
   ///
-  /// This method is used internally to reconstruct controllers that were disposed
+  /// This internal method reconstructs controllers that were disposed
   /// but might be needed again. It uses the stored initialization parameters to
   /// create a new instance with the same configuration as the original.
+  ///
+  /// [name] The name of the controller to recreate.
+  ///
+  /// Returns a newly created controller with the same configuration as the original.
   Future<WebFController> _recreateController(String name) async {
     // Remove the disposed controller instance
     _controllersByName.remove(name);
@@ -578,11 +580,14 @@ class WebFControllerManager {
     }
   }
 
-  /// Attaches a named controller to a Flutter BuildContext
+  /// Attaches a named controller to a Flutter BuildContext.
   ///
   /// This method should be called when a WebF widget using this controller is mounted
   /// in the Flutter widget tree. It manages the controller's state, enforces attachment
   /// limits, and handles the physical connection between the controller and Flutter.
+  ///
+  /// [name] The name of the controller to attach.
+  /// [context] The Flutter BuildContext to attach the controller to.
   void attachController(String name, BuildContext context) {
     if (!_controllersByName.containsKey(name)) {
       throw FlutterError('Cannot attach non-existent controller: $name');
@@ -612,12 +617,15 @@ class WebFControllerManager {
     _updateUsageOrder(name);
   }
 
-  /// Detaches a named controller from a Flutter BuildContext
+  /// Detaches a named controller from a Flutter BuildContext.
   ///
   /// This method should be called when a WebF widget using this controller is unmounted
   /// from the Flutter widget tree. It updates the controller's state, removes it from
   /// the attached controllers list, and physically detaches it from Flutter while keeping
   /// it available for future reuse.
+  ///
+  /// [name] The name of the controller to detach.
+  /// [context] The Flutter BuildContext the controller was attached to.
   void detachController(String name, BuildContext? context) {
     if (!_controllersByName.containsKey(name)) {
       return;
@@ -641,11 +649,13 @@ class WebFControllerManager {
     }
   }
 
-  /// Updates the order of attached controllers for LRU (Least Recently Used) tracking
+  /// Updates the order of attached controllers for LRU (Least Recently Used) tracking.
   ///
   /// This internal method ensures that the most recently used controller is
   /// always at the end of the queue, allowing the least recently used one
   /// to be identified and potentially detached when limits are reached.
+  ///
+  /// [name] The name of the controller whose usage order is being updated.
   void _updateAttachedOrder(String name) {
     // Remove the name from its current position in the queue
     _attachedControllers.removeWhere((element) => element == name);
@@ -653,7 +663,7 @@ class WebFControllerManager {
     _attachedControllers.add(name);
   }
 
-  /// Detaches the least recently used controller when attachment limits are reached
+  /// Detaches the least recently used controller when attachment limits are reached.
   ///
   /// This internal method is called when the number of attached controllers exceeds
   /// the configured limit. It identifies the least recently used controller,
@@ -679,15 +689,16 @@ class WebFControllerManager {
     }
   }
 
-  /// Manually register an existing WebFController with the manager
+  /// Manually registers an existing WebFController with the manager.
   ///
   /// This method allows registering an externally created controller with the manager.
   /// It handles duplicate name resolution, enforces resource limits, and adds the
   /// controller to the tracking systems.
   ///
-  /// @param name The unique name to identify this controller
-  /// @param controller The existing WebFController instance to register
-  /// @return The registered controller (which might be a different instance if the name was already in use)
+  /// [name] The unique name to identify this controller.
+  /// [controller] The existing WebFController instance to register.
+  ///
+  /// Returns the registered controller (which might be a different instance if the name was already in use).
   WebFController registerController(String name, WebFController controller) {
     // If a controller with this name already exists, update its usage order and return it
     if (_controllersByName.containsKey(name) && _controllersByName[name]!.state != ControllerState.disposed) {
@@ -713,19 +724,20 @@ class WebFControllerManager {
     return controller;
   }
 
-  /// Static convenience method to get a controller by name
+  /// Static convenience method to get a controller by name.
   ///
   /// This is a static shorthand for calling instance.getController(name).
   /// It asynchronously retrieves a controller by name, potentially recreating it
   /// if it was disposed but has initialization parameters stored.
   ///
-  /// @param name The unique name of the controller to retrieve
-  /// @return The controller if found or recreated, null otherwise
+  /// [name] The unique name of the controller to retrieve.
+  ///
+  /// Returns the controller if found or recreated, null otherwise.
   static Future<WebFController?> getInstance(String name) async {
     return await _instance.getController(name);
   }
 
-  /// Synchronously retrieves a controller by name without recreation
+  /// Synchronously retrieves a controller by name without recreation.
   ///
   /// Unlike getController, this method only returns existing, non-disposed controllers.
   /// It will not attempt to recreate controllers that were disposed, making it
@@ -735,8 +747,9 @@ class WebFControllerManager {
   /// This method updates the usage order of returned controllers, keeping them
   /// from being disposed due to inactivity.
   ///
-  /// @param name The unique name of the controller to retrieve
-  /// @return The controller if found and not disposed, null otherwise
+  /// [name] The unique name of the controller to retrieve.
+  ///
+  /// Returns the controller if found and not disposed, null otherwise.
   WebFController? getControllerSync(String name) {
     if (_controllersByName.containsKey(name)) {
       final instance = _controllersByName[name]!;
@@ -757,16 +770,20 @@ class WebFControllerManager {
     return null;
   }
 
-  /// Static convenience method to get a controller synchronously
+  /// Static convenience method to get a controller synchronously.
   ///
   /// This is a static shorthand for calling instance.getControllerSync(name).
   /// It synchronously retrieves a controller by name without attempting recreation
   /// of disposed controllers.
+  ///
+  /// [name] The unique name of the controller to retrieve.
+  ///
+  /// Returns the controller if found and not disposed, null otherwise.
   static WebFController? getInstanceSync(String name) {
     return _instance.getControllerSync(name);
   }
 
-  /// Asynchronously retrieves or recreates a controller by name
+  /// Asynchronously retrieves or recreates a controller by name.
   ///
   /// This method attempts to find a controller with the given name and:
   /// - Returns it directly if it exists and is not disposed
@@ -776,8 +793,9 @@ class WebFControllerManager {
   /// When a controller is returned, its usage order is updated to keep
   /// it from being disposed due to inactivity.
   ///
-  /// @param name The unique name of the controller to retrieve
-  /// @return The controller if found or recreated, null otherwise
+  /// [name] The unique name of the controller to retrieve.
+  ///
+  /// Returns the controller if found or recreated, null otherwise.
   Future<WebFController?> getController(String name) async {
     // If the controller exists
     if (_controllersByName.containsKey(name)) {
@@ -823,35 +841,39 @@ class WebFControllerManager {
     return null;
   }
 
-  /// Checks if a controller with the given name exists and is managed
+  /// Checks if a controller with the given name exists and is managed.
   ///
   /// This method verifies whether a controller with the specified name is currently
   /// registered with the manager, regardless of its state (attached, detached, or disposed).
   /// It is similar to hasController() but with a more descriptive name for the UI context.
   ///
-  /// @param name The name of the controller to check
-  /// @return true if a controller with this name exists, false otherwise
+  /// [name] The name of the controller to check.
+  ///
+  /// Returns true if a controller with this name exists, false otherwise.
   bool isControllerAlive(String name) {
     return _controllersByName.containsKey(name);
   }
 
-  /// Checks if a controller is currently attached to Flutter
+  /// Checks if a controller is currently attached to Flutter.
   ///
   /// This method determines whether a named controller is in the attached state,
   /// meaning it is currently connected to the Flutter widget tree and actively rendering.
   /// This is useful for UI logic that needs to know a controller's attachment state.
   ///
-  /// @param name The name of the controller to check
-  /// @return true if the controller exists and is attached, false otherwise
+  /// [name] The name of the controller to check.
+  ///
+  /// Returns true if the controller exists and is attached, false otherwise.
   bool isControllerAttached(String name) {
     return _attachedControllers.contains(name);
   }
 
-  /// Updates the usage order of controllers for LRU (Least Recently Used) tracking
+  /// Updates the usage order of controllers for LRU (Least Recently Used) tracking.
   ///
   /// This internal method ensures that the most recently used controller is
   /// always at the end of the queue, allowing the least recently used one
   /// to be identified and potentially disposed when limits are reached.
+  ///
+  /// [name] The name of the controller whose usage order is being updated.
   void _updateUsageOrder(String name) {
     // Remove the name from its current position in the queue
     _recentlyUsedControllers.removeWhere((element) => element == name);
