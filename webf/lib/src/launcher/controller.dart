@@ -38,13 +38,19 @@ import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
+/// A callback that is invoked when a WebFController is fully initialized but before the content is executed.
+///
+/// Use this to perform early configuration or setup of the WebF environment before any content is loaded.
+/// This provides a chance to interact with the controller when its native components are ready but before
+/// the JavaScript execution begins.
+///
+/// The callback must return a Future to allow for asynchronous setup operations.
+typedef OnControllerInit = Future<void> Function(WebFController controller);
 typedef LoadHandler = void Function(WebFController controller);
 typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(WidgetElementAdapter newWidget);
-typedef OnCustomElementDetached = void Function(WidgetElementAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -159,6 +165,27 @@ class WebFController with Diagnosticable {
   /// images, and subframes to finish loading.
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
   LoadHandler? onDOMContentLoaded;
+
+  /// Callback triggered after the controller is fully initialized but before content loading.
+  ///
+  /// This callback provides an opportunity to perform setup tasks after the WebF controller
+  /// has been initialized with all its core components, but before any content has been evaluated.
+  /// Use this for early controller configuration, such as setting up custom JavaScript APIs or
+  /// initializing features that need to be available when the page loads.
+  ///
+  /// Since this is executed during the controller's initialization phase, any asynchronous operations
+  /// performed here will block the controller initialization completion (controlledInitCompleter),
+  /// ensuring your setup is complete before any content begins loading.
+  ///
+  /// ```dart
+  /// WebFController(
+  ///   onControllerInit: (controller) async {
+  ///     // Perform early setup before any content loads
+  ///     await controller.methodChannel.invokeMethod('registerCustomAPI', {...});
+  ///   }
+  /// )
+  /// ```
+  OnControllerInit? onControllerInit;
 
   /// Callback triggered when a JavaScript error occurs during loading.
   ///
@@ -409,6 +436,7 @@ class WebFController with Diagnosticable {
     this.onLoad,
     this.onDOMContentLoaded,
     this.onLoadError,
+    this.onControllerInit,
     this.onJSError,
     this.httpClientInterceptor,
     this.devToolsService,
@@ -440,7 +468,7 @@ class WebFController with Diagnosticable {
         navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
         initialCookies: initialCookies);
 
-    _view!.initialize().then((_) {
+    _view!.initialize().then((_) async {
       final double contextId = view.contextId;
 
       _module = WebFModuleController(this, contextId);
@@ -462,6 +490,10 @@ class WebFController with Diagnosticable {
       }
 
       flushUICommand(view, nullptr);
+
+      if (onControllerInit != null) {
+        await onControllerInit!(this);
+      }
 
       controlledInitCompleter.complete();
     });

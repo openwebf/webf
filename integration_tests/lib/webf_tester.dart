@@ -33,31 +33,15 @@ class _WebFTesterState extends State<WebFTester> {
   var width = 360.0;
   var height = 640.0;
 
+  WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
+
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
 
-    WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
     navigationDelegate.setDecisionHandler((WebFNavigationAction action) async {
       return WebFNavigationActionPolicy.allow; // Allows for all
     });
-
-    controller = WebFController(
-      navigationDelegate: navigationDelegate,
-      viewportWidth: width,
-      viewportHeight: height,
-      bundle: WebFBundle.fromUrl(
-          'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'),
-      javaScriptChannel: javaScriptChannel,
-      onLoad: onLoad,
-    );
-
-    await controller.controlledInitCompleter.future;
-
-    double contextId = controller.view.contextId;
-    testContext = initTestFramework(contextId);
-    registerDartTestMethodsToCpp(contextId);
-    await controller.view.evaluateJavaScripts(widget.preCode);
   }
 
   _WebFTesterState() {
@@ -66,8 +50,12 @@ class _WebFTesterState extends State<WebFTester> {
         case 'helloInt64':
           return Future.value(1111111111111111);
         case 'resizeViewport':
-          double newWidth = arguments[0] == -1 ? 360 : double.tryParse(arguments[0].toString())!;
-          double newHeight = arguments[1] == -1 ? 640 : double.tryParse(arguments[1].toString())!;
+          double newWidth = arguments[0] == -1
+              ? 360
+              : double.tryParse(arguments[0].toString())!;
+          double newHeight = arguments[1] == -1
+              ? 640
+              : double.tryParse(arguments[1].toString())!;
           if (newWidth != width || newHeight != height) {
             setState(() {
               width = newWidth;
@@ -76,7 +64,8 @@ class _WebFTesterState extends State<WebFTester> {
           }
           return Future.value(null);
         default:
-          dynamic returnedValue = await javaScriptChannel.invokeMethod(method, arguments);
+          dynamic returnedValue =
+              await javaScriptChannel.invokeMethod(method, arguments);
           return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
       }
     };
@@ -84,9 +73,23 @@ class _WebFTesterState extends State<WebFTester> {
 
   @override
   Widget build(BuildContext context) {
-    return WebF(
-      controller: controller,
-    );
+    return WebF.fromControllerName(
+        controllerName: 'tester',
+        initialRoute: '/',
+        createController: () => WebFController(
+            navigationDelegate: navigationDelegate,
+            viewportWidth: width,
+            viewportHeight: height,
+            javaScriptChannel: javaScriptChannel,
+            onLoad: onLoad,
+            onControllerInit: (controller) async {
+              double contextId = controller.view.contextId;
+              testContext = initTestFramework(contextId);
+              registerDartTestMethodsToCpp(contextId);
+              await controller.view.evaluateJavaScripts(widget.preCode);
+            }),
+        bundle: WebFBundle.fromUrl(
+            'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'));
   }
 
   onLoad(WebFController controller) async {
@@ -98,7 +101,8 @@ class _WebFTesterState extends State<WebFTester> {
 
     try {
       // Preload load test cases
-      String result = await executeTest(testContext!, controller.view.contextId);
+      String result =
+          await executeTest(testContext!, controller.view.contextId);
       // Manual dispose context for memory leak check.
       await controller.dispose();
 
