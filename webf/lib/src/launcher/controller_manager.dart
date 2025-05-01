@@ -10,13 +10,13 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 
-/// WebFController is the main controller for WebF applications.
+/// Configuration options for the WebFControllerManager.
 ///
-/// This manager (WebFControllerManager) provides a way to:
-/// 1. Keep track of multiple WebFController instances
-/// 2. Cache and reuse controllers by name
-/// 3. Limit the number of active controllers to prevent memory leaks
-/// 4. Dispose controllers when they are no longer needed
+/// This class provides settings to control how the manager handles controller
+/// lifecycle, resource limits, and notifications. Key configuration options include:
+/// - Maximum number of alive and attached controllers
+/// - Auto-disposal policy for controllers
+/// - Callbacks for controller lifecycle events
 ///
 /// Usage example:
 /// ```dart
@@ -47,22 +47,40 @@ import 'package:webf/launcher.dart';
 /// }
 /// ```
 class WebFControllerManagerConfig {
-  /// Maximum number of WebFController instances that can be alive at the same time
+  /// Maximum number of WebFController instances that can be alive at the same time.
+  ///
+  /// When this limit is reached and a new controller is requested, the least
+  /// recently used controller will be disposed if autoDisposeWhenLimitReached is true.
   final int maxAliveInstances;
 
-  /// Maximum number of attached WebFController instances at the same time
+  /// Maximum number of WebFController instances that can be attached to Flutter at the same time.
+  ///
+  /// When this limit is reached and a new controller is attached, the least
+  /// recently used attached controller will be detached (but not disposed).
   final int maxAttachedInstances;
 
-  /// Whether to dispose controllers when they exceed the maximum limit
+  /// Whether to automatically dispose controllers when limits are exceeded.
+  ///
+  /// When true, the manager will dispose the least recently used controllers
+  /// when the maxAliveInstances limit is reached. When false, the limit acts
+  /// as a soft limit and new controllers will still be created.
   final bool autoDisposeWhenLimitReached;
 
-  /// Callback triggered when a controller is disposed due to limit being reached
+  /// Callback triggered when a controller is disposed.
+  ///
+  /// This callback is invoked whenever a controller is disposed, whether due to
+  /// resource limits being reached or explicit disposal by the application.
   final void Function(String name, WebFController controller)? onControllerDisposed;
 
-  /// Callback triggered when a controller is detached due to limit being reached
+  /// Callback triggered when a controller is detached from Flutter.
+  ///
+  /// This callback is invoked whenever a controller is detached, whether due to
+  /// attachment limits being reached or explicit detachment by the application.
   final void Function(String name, WebFController controller)? onControllerDetached;
 
-  /// Constructor for WebFControllerManagerConfig
+  /// Creates a new configuration object for WebFControllerManager.
+  ///
+  /// All parameters have reasonable defaults suitable for most applications.
   const WebFControllerManagerConfig({
     this.maxAliveInstances = 5,
     this.maxAttachedInstances = 3,
@@ -72,14 +90,20 @@ class WebFControllerManagerConfig {
   });
 }
 
-/// Controller state within the manager
+/// Represents the possible states of a controller within the manager.
+///
+/// - attached: Controller is connected to Flutter and actively rendering
+/// - detached: Controller is loaded but not currently rendering
+/// - disposed: Controller has released its resources and is no longer usable
 enum ControllerState {
   attached, // Controller is attached to Flutter
   detached, // Controller is loaded but detached
   disposed // Controller is disposed
 }
 
-/// Instance configuration holding controller and state
+/// Internal class that pairs a controller with its current state.
+///
+/// Used to track controllers in the manager's collections.
 class _ControllerInstance {
   WebFController controller;
   ControllerState state;
@@ -87,8 +111,18 @@ class _ControllerInstance {
   _ControllerInstance(this.controller, this.state);
 }
 
+/// Represents the loading state of a controller during initialization.
+///
+/// - idle: Controller is not currently loading anything
+/// - loading: Controller is in the process of loading
+/// - success: Controller has successfully loaded its content
+/// - error: Controller encountered an error during loading
 enum ControllerLoadState { idle, loading, success, error }
 
+/// Internal class used to track controllers during concurrent loading operations.
+///
+/// Maintains the controller reference, a stopwatch to measure loading time,
+/// and the current loading state.
 class _ConcurrencyControllerInstance {
   WebFController controller;
   Stopwatch stopwatch;
@@ -97,13 +131,19 @@ class _ConcurrencyControllerInstance {
   _ConcurrencyControllerInstance(this.controller, this.stopwatch, this.state);
 }
 
-/// Function that creates a WebFController
+/// Function type for factory methods that create new WebFController instances.
+///
+/// Used when adding or updating controllers to create new instances on demand.
 typedef ControllerFactory = WebFController Function();
 
-/// Function for configuring a controller
+/// Function type for setup callbacks that configure a controller after creation.
+///
+/// Used to customize a controller's properties or behavior before it's used.
 typedef ControllerSetup = Function(WebFController controller);
 
-/// Function that creates an WebFSubView
+/// Function type for creating widgets using a WebFController.
+///
+/// Used for defining route handlers and subviews in the hybrid routing system.
 typedef SubViewBuilder = Widget Function(BuildContext context, WebFController);
 
 /// A manager class that holds multiple WebFController instances.
