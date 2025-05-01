@@ -34,12 +34,10 @@ import 'package:adaptive_theme/adaptive_theme.dart';
 
 import 'custom_hybrid_history_delegate.dart';
 import 'custom_listview.dart';
-import 'expandable_fab.dart';
 import 'modules/test_array_buffer.dart';
 import 'modules/share.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -86,85 +84,6 @@ void main() async {
             devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
       bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPreload(
-      name: 'vuejs',
-      createController: () => WebFController(
-            initialRoute: '/',
-            routeObserver: routeObserver,
-            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-          ),
-      bundle: WebFBundle.fromUrl('assets:///vue_project/dist/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  WebFControllerManager.instance.addWithPreload(
-      name: 'reactjs',
-      createController: () => WebFController(
-        initialRoute: '/',
-        routeObserver: routeObserver,
-        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-      ),
-      bundle: WebFBundle.fromUrl('assets:///react_project/build/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  WebFControllerManager.instance.addWithPreload(
-      name: 'hybrid_router',
-      createController: () => WebFController(
-        initialRoute: '/',
-        routeObserver: routeObserver,
-        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-      ),
-      bundle: WebFBundle.fromUrl('assets:///hybrid_router/build/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  WebFControllerManager.instance.addWithPreload(
-      name: 'tailwind_react',
-      createController: () =>
-          WebFController(initialRoute: '/',
-              routeObserver: routeObserver,
-              devToolsService: kDebugMode ? ChromeDevToolsService() : null),
-      bundle: WebFBundle.fromUrl('assets:///tailwind_react/build/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  WebFControllerManager.instance.addWithPreload(
-      name: 'cupertino_gallery',
-      createController: () => WebFController(
-            initialRoute: '/',
-            routeObserver: routeObserver,
-            runningThread: FlutterUIThread(),
-            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-          ),
-      bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-  
-  WebFControllerManager.instance.addWithPreload(
-      name: 'use_cases',
-      createController: () => WebFController(
-        initialRoute: '/',
-        routeObserver: routeObserver,
-        devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-      ),
-      bundle: WebFBundle.fromUrl('assets:///use_cases/dist/index.html'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -392,15 +311,17 @@ class FirstPageState extends State<FirstPage> {
             },
             child: Text('Open ArrayBuffer Demo')),
         SizedBox(height: 10),
-        ElevatedButton(onPressed: () {
-          widget.webfPageName.value = 'tailwind_react';
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
-            return WebFDemo(
-              webfPageName: 'tailwind_react',
-              initialRoute: '/',
-            );
-          }));
-        }, child: Text('Open React.js with TailwindCSS 3')),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'tailwind_react';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'tailwind_react',
+                  initialRoute: '/',
+                );
+              }));
+            },
+            child: Text('Open React.js with TailwindCSS 3')),
         SizedBox(height: 10),
         ElevatedButton(
             onPressed: () {
@@ -463,46 +384,32 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open Use Cases')),
-        ]),
-      floatingActionButton: ExpandableFab(
-        distance: 112,
-        children: [
-          ActionButton(
-              onPressed: () {
-                WebFControllerManager.instance.updateWithPreload(
-                    createController: () => WebFController(
-                          initialRoute: '/',
-                          routeObserver: routeObserver,
-                          devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-                        ),
-                    name: 'html/css',
-                    routes: {
-                      '/todomvc': (context, controller) => WebFSubView(path: '/todomvc', controller: controller),
-                      '/positioned_layout': (context, controller) =>
-                          WebFSubView(path: '/positioned_layout', controller: controller),
-                    },
-                    bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'));
-              },
-              child: Text('H')),
-          ActionButton(onPressed: () {
-            WebFControllerManager.instance.updateWithPreload(
-                createController: () => WebFController(
-                  initialRoute: '/home',
-                  routeObserver: routeObserver,
-                  devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-                ),
-                name: 'miracle_plus',
-                bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'));
-          }, child: Text('M')),
-          ActionButton(onPressed: () => print(1), child: Text('V')),
-        ],
-      ),
-      // floatingActionButton: FloatingActionButton(
-      //     child: Text('Update'),
-      //     onPressed: () {
+      ]));
+  }
+}
 
-      //     }),
-    );
+// Helper method to determine the appropriate bundle based on controller name
+WebFBundle? _getBundleForControllerName(String controllerName) {
+  switch (controllerName) {
+    case 'html/css':
+      return WebFBundle.fromUrl('assets:///assets/bundle.html');
+    case 'vuejs':
+      return WebFBundle.fromUrl('assets:///vue_project/dist/index.html');
+    case 'reactjs':
+      return WebFBundle.fromUrl('assets:///react_project/build/index.html');
+    case 'miracle_plus':
+      return WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html');
+    case 'hybrid_router':
+      return WebFBundle.fromUrl('assets:///hybrid_router/build/index.html');
+    case 'tailwind_react':
+      return WebFBundle.fromUrl('assets:///tailwind_react/build/index.html');
+    case 'cupertino_gallery':
+      return WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html');
+    case 'use_cases':
+      return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
+    default:
+      // Return null if the controller name is not recognized
+      return null;
   }
 }
 
@@ -520,6 +427,8 @@ class WebFDemo extends StatefulWidget {
 class _WebFDemoState extends State<WebFDemo> {
   @override
   Widget build(BuildContext context) {
+    bool darkModeOverride =  AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
+    // bool isDarkModeEnabled = AdaptiveTheme.of(context).
     return Scaffold(
         appBar: AppBar(
           title: Text('WebF Demo'),
@@ -534,7 +443,7 @@ class _WebFDemoState extends State<WebFDemo> {
                     WebFController? controller =
                         await WebFControllerManager.instance.getController(widget.webfPageName);
                     controller?.darkModeOverride = isDarkModeEnabled;
-                    controller?.view.onPlatformBrightnessChanged();
+                    controller?.view.didChangePlatformBrightness();
                   },
                 )),
           ],
@@ -542,10 +451,21 @@ class _WebFDemoState extends State<WebFDemo> {
         body: Stack(
           children: [
             WebF.fromControllerName(
-                controllerName: widget.webfPageName,
-                loadingWidget: buildSplashScreen(),
+              controllerName: widget.webfPageName,
+              loadingWidget: buildSplashScreen(),
+              initialRoute: widget.initialRoute,
+              initialState: widget.initialState,
+              bundle: _getBundleForControllerName(widget.webfPageName),
+              createController: () => WebFController(
+                routeObserver: routeObserver,
+                devToolsService: kDebugMode ? ChromeDevToolsService() : null,
                 initialRoute: widget.initialRoute,
-                initialState: widget.initialState)
+              ),
+              setup: (controller) {
+                controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+                controller.darkModeOverride = darkModeOverride;
+              }
+            )
           ],
         ));
   }
@@ -582,4 +502,3 @@ class _WebFDemoState extends State<WebFDemo> {
     super.dispose();
   }
 }
-
