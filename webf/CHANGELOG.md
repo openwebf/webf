@@ -1,3 +1,40 @@
+## 0.21.0-beta.5+1
+
+Features
+
+**Controller Lifecycle Management**
+
+- Fallback Mechanism: Added support for fallback to previous controller when concurrent requests fail, ensuring uninterrupted user experience
+- Preload/Prerender Handling: Implemented race condition handling for multiple bundle operations, optimizing performance for parallel requests
+- Auto-managed WebF Widgets: Added controller manager for automatic widget lifecycle management
+- Dynamic Controller Replacement: Support replacing WebFController instances for existing WebF widgets
+
+**API Improvements**
+
+- Exception Handling: Enhanced error handling by throwing exceptions for failed preloading requests
+- Streamlined API: Merged addWithPreload and updateWithPreload methods into a single implementation
+- TypeScript Support: Added auto-generated typings with improved documentation
+
+Fixes
+
+**Stability Improvements**
+
+- Position Fixes: Fixed sticky position holder null error and temporarily disabled problematic sticky position layouts
+- Navigation Fixes: Resolved hybrid router pop event issues when path is "/"
+- Preload API: Fixed addOrUpdateWithPreload API when applied to attached controllers
+
+**Other Improvements**
+
+- Test Reliability: Fixed integration test setup and execution
+- Example App: Updated example application configuration and added build scripts
+- Documentation: Enhanced API annotations for WebFControllerManager
+
+Chores
+
+- Package Renaming: Reorganized package structure for better clarity
+- Build Tools: Added example build scripts to streamline development workflow
+- Test Coverage: Added test specs for parallel request handling scenarios
+
 ## 0.21.0-beta.5
 
 **New Features**
