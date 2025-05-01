@@ -813,6 +813,8 @@ class WebFController with Diagnosticable {
       // Evaluate the entry point, and loading the stylesheets and scripts.
       await evaluateEntrypoint();
 
+      evaluated = true;
+
       view.flushPendingCommandsPerFrame();
     } catch (e, stack) {
       _preRenderingStatus = PreRenderingStatus.fail;
