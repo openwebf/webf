@@ -228,21 +228,29 @@ class WebFControllerManager {
     Future<void> newControllerRequestFuture,
     _ConcurrencyControllerInstance newControllerConcurrencyInstance,
     List<_ConcurrencyControllerInstance> concurrencyLists,
+    Completer<WebFController> raceCompleter,
   ) async {
     newControllerRequestFuture.then((_) {
       debugPrint('WebFControllerManager: $newController load success');
       newControllerConcurrencyInstance.state = ControllerLoadState.success;
+
+      if (raceCompleter.isCompleted) return;
+
       // Handing single success request.
       if (concurrencyLists.length == 1) {
         _concurrencyRaceCompleter[name]!.complete(concurrencyLists[0].controller);
       } else {
+        int errorAmount = 0;
         // Handing multiple requests
         // For multiple requests, we check the race state and return the final winner controller instance.
         for (int i = concurrencyLists.length - 1; i >= 0; i--) {
           _ConcurrencyControllerInstance instance = concurrencyLists[i];
           // If the last concurrency was success, the winner is him.
-          if (i == concurrencyLists.length - 1 && instance.state == ControllerLoadState.success) {
+          if (i == concurrencyLists.length - 1 - errorAmount && instance.state == ControllerLoadState.success) {
             _concurrencyRaceCompleter[name]!.complete(instance.controller);
+          }
+          if (instance.state == ControllerLoadState.error) {
+            errorAmount++;
           }
         }
         // if the resolved controller was not in the last one, we do nothing and wait for the last one to finish.
@@ -250,9 +258,26 @@ class WebFControllerManager {
     }).catchError((e, stack) {
       debugPrint('WebFControllerManager: $newController load failed');
       newControllerConcurrencyInstance.state = ControllerLoadState.error;
+
+      if (raceCompleter.isCompleted) return;
+
+      // Handing single failed request.
       if (concurrencyLists.length == 1) {
-        _concurrencyRaceCompleter[name]!.completeError(e, stack);
-      } else {}
+        raceCompleter.completeError(e, stack);
+      } else {
+        for (int i = concurrencyLists.length - 1; i >= 0; i--) {
+          _ConcurrencyControllerInstance instance = concurrencyLists[i];
+          // If there are still pending instance, waiting for the last one returns.
+          if (instance.state == ControllerLoadState.loading) return;
+          // Use the most closest previous sibling as possible
+          if (instance.state == ControllerLoadState.success) {
+            raceCompleter.complete(instance.controller);
+            return;
+          }
+        }
+        // No available success controller instance found.
+        raceCompleter.completeError(e, stack);
+      }
     });
 
     return _concurrencyRaceCompleter[name]!.future;
@@ -374,6 +399,8 @@ class WebFControllerManager {
       _concurrencyRaceCompleter[name] = Completer<WebFController>();
     }
 
+    Completer<WebFController> raceCompleter = _concurrencyRaceCompleter[name]!;
+
     Stopwatch stopwatch = Stopwatch()..start();
 
     // Record an request for the concurrency checks
@@ -410,57 +437,64 @@ class WebFControllerManager {
         break;
     }
 
-    // Race the concurrency request and find the target controller instance.
-    // Success! Now we can safely replace the old controller
-    WebFController winnerController = await _raceConcurrencyController(
-      name,
-      newController,
-      newControllerRequestFuture,
-      _concurrencyControllerInstance,
-      concurrencyInstanceList,
-    );
+    try {
+      // Race the concurrency request and find the target controller instance.
+      // Success! Now we can safely replace the old controller
+      WebFController winnerController = await _raceConcurrencyController(name, newController,
+          newControllerRequestFuture, _concurrencyControllerInstance, concurrencyInstanceList, raceCompleter);
 
-    // The newController was failed to win the race.
-    if (winnerController != newController) {
+      // The newController was failed to win the race.
+      if (winnerController != newController) {
+        // Dispose the abandon controller instance
+        Future.microtask(() async {
+          debugPrint('WebFController: dispose loser controller: $newController');
+          await newController.dispose();
+        });
+
+        return winnerController;
+      } else {
+        debugPrint('WebFControllerManager: the winner controller is $winnerController');
+      }
+
+      // Clear the race check status
+      _concurrencyControllerByName.remove(name);
+      _concurrencyRaceCompleter.remove(name);
+
+      // Remove the old controller from tracking
+      final instance = _controllersByName.remove(name);
+      _recentlyUsedControllers.removeWhere((element) => element == name);
+      _attachedControllers.removeWhere((element) => element == name);
+
+      // Register the new controller with the same name and preserve attached state if needed
+      _controllersByName[name] = _ControllerInstance(winnerController, ControllerState.detached);
+      _updateUsageOrder(name);
+
+      print('WebFControllerManager: $newController preload complete with '
+          'bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
+
+      // Schedule disposal of the old controller after returning the new one, if it exists
+      if (instance != null && !instance.controller.disposed) {
+        Future.microtask(() async {
+          // Notify through callback if provided
+          if (_config.onControllerDisposed != null) {
+            _config.onControllerDisposed!(name, instance.controller);
+          }
+          await instance.controller.dispose();
+        });
+      }
+
+      return winnerController;
+    } catch (e, stack) {
       // Dispose the abandon controller instance
       Future.microtask(() async {
         debugPrint('WebFController: dispose loser controller: $newController');
         await newController.dispose();
       });
-
-      return winnerController;
-    } else {
-      debugPrint('WebFControllerManager: the winner controller is $winnerController');
+      // Clear the race check status
+      _concurrencyControllerByName.remove(name);
+      _concurrencyRaceCompleter.remove(name);
+      rethrow;
     }
-
-    // Clear the race check status
-    _concurrencyControllerByName.remove(name);
-    _concurrencyRaceCompleter.remove(name);
-
-    // Remove the old controller from tracking
-    final instance = _controllersByName.remove(name);
-    _recentlyUsedControllers.removeWhere((element) => element == name);
-    _attachedControllers.removeWhere((element) => element == name);
-
-    // Register the new controller with the same name and preserve attached state if needed
-    _controllersByName[name] = _ControllerInstance(winnerController, ControllerState.detached);
-    _updateUsageOrder(name);
-
-    print('WebFControllerManager: $newController preload complete with '
-        'bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
-
-    // Schedule disposal of the old controller after returning the new one, if it exists
-    if (instance != null && !instance.controller.disposed) {
-      Future.microtask(() async {
-        // Notify through callback if provided
-        if (_config.onControllerDisposed != null) {
-          _config.onControllerDisposed!(name, instance.controller);
-        }
-        await instance.controller.dispose();
-      });
-    }
-
-    return winnerController;
   }
 
   /// Adds a new controller with preloading enabled.
@@ -828,6 +862,10 @@ class WebFControllerManager {
         // Should schedule to next microtask to make sure controllerManager._controllersByName had been updated.
         scheduleMicrotask(() {
           completer.complete(controller);
+        });
+      }).catchError((e, stack) {
+        scheduleMicrotask(() {
+          completer.completeError(e, stack);
         });
       });
       return completer.future;

@@ -608,5 +608,233 @@ void main() {
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
     });
+    test('should handle race condition with last request where failed', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preRendering,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start two update operations - a slow one and a fast one
+      final failedCompleter = Completer<void>();
+      final MockTimedBundle failedBundle = MockTimedBundle.controlled(
+        completer: failedCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      final failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: failedBundle,
+      );
+
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      failedCompleter.completeError(FlutterError('ERROR'));
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+
+      expect(currentController?.entrypoint, equals(fastBundle));
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with last request where failed and earlier than first', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preRendering,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start two update operations - a slow one and a fast one
+      final failedCompleter = Completer<void>();
+      final MockTimedBundle failedBundle = MockTimedBundle.controlled(
+        completer: failedCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      final failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: failedBundle,
+      );
+
+      Timer(Duration(seconds: 1), () {
+        failedCompleter.completeError(FlutterError('ERROR'));
+      });
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+
+      expect(currentController?.entrypoint, equals(fastBundle));
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition with middle request were failed', () async {
+      // Start two update operations - a slow one and a fast one
+      final slowCompleter = Completer<void>();
+      final MockTimedBundle slowBundle = MockTimedBundle.controlled(
+        completer: slowCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: slowBundle,
+      );
+
+      Timer(Duration(seconds: 2), () {
+        slowCompleter.complete();
+      });
+
+      // Start two update operations - a slow one and a fast one
+      final failedCompleter = Completer<void>();
+      final MockTimedBundle failedBundle = MockTimedBundle.controlled(
+        completer: failedCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      final failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: failedBundle,
+      );
+
+      Timer(Duration(seconds: 1), () {
+        failedCompleter.completeError(FlutterError('ERROR'));
+      });
+
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preRendering,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+
+      expect(currentController?.entrypoint, equals(fastBundle));
+      expect(manager.controllerCount, 1);
+    });
+
+    test('should handle race condition all requests were failed', () async {
+      // Start two update operations - a slow one and a fast one
+      final failedCompleter = Completer<void>();
+      final MockTimedBundle failedBundle = MockTimedBundle.controlled(
+        completer: failedCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      Future<WebFController> failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: failedBundle,
+      );
+      failedUpdateFuture.catchError((e, stack) {
+        return TestWebFController();
+      });
+
+      Timer(Duration(seconds: 1), () {
+        failedCompleter.completeError(FlutterError('ERROR'));
+      });
+      //
+      // // Start two update operations - a slow one and a fast one
+      final failedCompleter2 = Completer<void>();
+      final MockTimedBundle failedBundle2 = MockTimedBundle.controlled(
+        completer: failedCompleter2,
+      );
+
+      // Start the slow update (but don't await it)
+      final failedUpdateFuture2 = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: failedBundle2,
+      );
+      failedUpdateFuture2.catchError((e, stack) {
+        return TestWebFController();
+      });
+
+      Timer(Duration(milliseconds: 500), () {
+        failedCompleter2.completeError(FlutterError('ERROR2'));
+      });
+
+      bool isErrorCalled = true;
+      try {
+        WebFController? currentController = await WebFControllerManager.instance.getController('test');
+        isErrorCalled = false;
+        throw FlutterError('should failed');
+      } catch (e, stack) {
+        expect(e.toString(), 'ERROR');
+        expect(isErrorCalled, true);
+      }
+    });
+
+    test('should handle race condition when last request first finished and failed', () async {
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preRendering,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+      );
+
+      // Start two update operations - a slow one and a fast one
+      final slowCompleter = Completer<void>();
+      final MockTimedBundle slowBundle = MockTimedBundle.controlled(
+        completer: slowCompleter,
+      );
+
+      // Start the slow update (but don't await it)
+      final slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: slowBundle,
+      );
+
+      // Start two update operations - a slow one and a fast one
+      final failedCompleter = Completer<void>();
+      final MockTimedBundle failedBundle = MockTimedBundle.controlled(
+        completer: failedCompleter,
+      );
+      failedCompleter.future.catchError((e, stack) {});
+
+      // Start the slow update (but don't await it)
+      Future<WebFController> failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: failedBundle,
+      );
+      failedUpdateFuture.catchError((e, stack) {
+
+      });
+
+      // Make the error first happened
+      Timer(Duration(microseconds: 1), () {
+        failedCompleter.completeError(FlutterError('ERROR'));
+      });
+
+      Timer(Duration(seconds: 2), () {
+        slowCompleter.complete();
+      });
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+      expect(currentController?.entrypoint, equals(slowBundle));
+    });
   });
 }
