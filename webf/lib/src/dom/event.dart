@@ -327,10 +327,8 @@ class UIEvent extends Event {
     this.detail = 0.0,
     this.view,
     this.which = 0.0,
-    super.bubbles,
-    super.cancelable,
     super.composed,
-  }) : super(type);
+  }) : super(type, bubbles: true, cancelable: true);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -355,8 +353,6 @@ class FocusEvent extends UIEvent {
     super.detail,
     super.view,
     super.which,
-    super.bubbles,
-    super.cancelable,
     super.composed,
   }) : super(type);
 
@@ -383,8 +379,6 @@ class KeyboardEvent extends UIEvent {
     String type, {
     this.key = '',
     this.code = '',
-    super.bubbles = true,
-    super.cancelable = true,
     super.composed = true,
   }) : super(type);
 
@@ -421,7 +415,7 @@ class MouseEvent extends UIEvent {
     double detail = 0.0,
     EventTarget? view,
     double which = 0.0,
-  }) : super(type, detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
+  }) : super(type, detail: detail, view: view, which: which, composed: false);
 
   static MouseEvent fromTapUp(Element ownerElement, TapUpDetails tapDetails) {
     Offset globalPosition = tapDetails.globalPosition;
@@ -561,8 +555,6 @@ class InputEvent extends UIEvent {
   InputEvent({
     this.inputType = '',
     this.data = '',
-    super.bubbles,
-    super.cancelable,
     super.composed,
   }) : super(EVENT_INPUT);
 }
@@ -722,7 +714,7 @@ class TouchEvent extends UIEvent {
   })  : touches = touches ?? TouchList(),
         targetTouches = targetTouches ?? TouchList(),
         changedTouches = changedTouches ?? TouchList(),
-        super(type, bubbles: true, cancelable: true, composed: true);
+        super(type, composed: true);
 
   TouchList touches;
   TouchList targetTouches;

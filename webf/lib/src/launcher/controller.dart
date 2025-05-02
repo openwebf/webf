@@ -1274,7 +1274,7 @@ class WebFController with Diagnosticable {
   @override
   String toStringShort() {
     String status = mode == WebFLoadingMode.preloading ? _preloadStatus.toString() : _preRenderingStatus.toString();
-    return '${describeIdentity(this)} (disposed: $disposed, evaluated: status: $evaluated, $status)';
+    return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, status: $status)';
   }
 }
 

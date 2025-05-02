@@ -13,7 +13,7 @@ export declare type Webf = {
     invokeModule: typeof invokeModuleSync;
     /** Asynchronously invoke a native module method */
     invokeModuleAsync: typeof invokeModuleAsync;
-    /** Interface for managing navigation history in hybrid applications */
+    /** Interface for managing navigation history in webf applications */
     hybridHistory: HybridHistoryInterface;
     /** Register a listener for a specific module's events */
     addWebfModuleListener: AddWebfModuleListener;
