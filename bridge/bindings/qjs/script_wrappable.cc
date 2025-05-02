@@ -316,8 +316,8 @@ void ScriptWrappable::ReleaseAlive() {
   if (alive_count == 0) {
     delete status_block_;
     status_block_ = nullptr;
-    if (context_->IsContextValid()) {
-      context_->InActiveScriptWrappers(this);
+    if (isContextValid(context_id_)) {
+      context_->RemoveActiveScriptWrappers(this);
     }
     if (context_->IsCtxValid()) {
       JS_FreeValue(ctx_, jsObject_);

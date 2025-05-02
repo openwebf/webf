@@ -122,7 +122,7 @@ class ExecutingContext {
 
   // Register active script wrappers.
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
-  void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
+  void RemoveActiveScriptWrappers(ScriptWrappable* script_wrappable);
 
   void RegisterActiveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
   void RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
