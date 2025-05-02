@@ -278,7 +278,7 @@ class WebFControllerManager {
 
       // Handing single success request.
       if (concurrencyLists.length == 1) {
-        _concurrencyRaceCompleter[name]!.complete(concurrencyLists[0].controller);
+        raceCompleter.complete(concurrencyLists[0].controller);
       } else {
         int errorAmount = 0;
         // Handing multiple requests
@@ -287,7 +287,7 @@ class WebFControllerManager {
           _ConcurrencyControllerInstance instance = concurrencyLists[i];
           // If the last concurrency was success, the winner is him.
           if (i == concurrencyLists.length - 1 - errorAmount && instance.state == ControllerLoadState.success) {
-            _concurrencyRaceCompleter[name]!.complete(instance.controller);
+            raceCompleter.complete(instance.controller);
           }
           if (instance.state == ControllerLoadState.error) {
             errorAmount++;
@@ -296,7 +296,7 @@ class WebFControllerManager {
         // if the resolved controller was not in the last one, we do nothing and wait for the last one to finish.
       }
     }).catchError((e, stack) {
-      debugPrint('WebFControllerManager: $newController load failed');
+      debugPrint('WebFControllerManager: $newController load failed. $e');
       newControllerConcurrencyInstance.state = ControllerLoadState.error;
 
       if (raceCompleter.isCompleted) return;
@@ -320,7 +320,7 @@ class WebFControllerManager {
       }
     });
 
-    return _concurrencyRaceCompleter[name]!.future;
+    return raceCompleter.future;
   }
 
   /// Unified method to add or update a controller with preloading or prerendering.
@@ -366,6 +366,7 @@ class WebFControllerManager {
       ControllerFactory? createController,
       required WebFBundle bundle,
       required WebFLoadingMode mode,
+      Duration? timeout,
       Map<String, SubViewBuilder>? routes,
       ControllerSetup? setup,
       bool forceReplace = false}) async {
@@ -472,10 +473,10 @@ class WebFControllerManager {
 
     switch (mode) {
       case WebFLoadingMode.preloading:
-        newControllerRequestFuture = newController.preload(bundle);
+        newControllerRequestFuture = newController.preload(bundle, timeout: timeout);
         break;
       case WebFLoadingMode.preRendering:
-        newControllerRequestFuture = newController.preRendering(bundle);
+        newControllerRequestFuture = newController.preRendering(bundle, timeout: timeout);
         break;
     }
 
@@ -512,7 +513,7 @@ class WebFControllerManager {
       _controllersByName[name] = _ControllerInstance(winnerController, ControllerState.detached);
       _updateUsageOrder(name);
 
-      print('WebFControllerManager: $newController preload complete with '
+      print('WebFControllerManager: $newController load complete with '
           'bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
 
       // Schedule disposal of the old controller after returning the new one, if it exists

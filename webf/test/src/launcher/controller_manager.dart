@@ -837,5 +837,110 @@ void main() {
       WebFController? currentController = await WebFControllerManager.instance.getController('test');
       expect(currentController?.entrypoint, equals(slowBundle));
     });
+
+    test('should handle race condition when first request timeout', () async {
+      Completer<void> timeoutCompleter = Completer();
+      final MockTimedBundle timeoutBundle = MockTimedBundle.controlled(completer: timeoutCompleter);
+      // Start and await the fast update
+      final timeoutFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preloading,
+        createController: () => TestWebFController(),
+        bundle: timeoutBundle,
+        timeout: Duration(seconds: 2)
+      );
+
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+        name: 'test',
+        mode: WebFLoadingMode.preRendering,
+        createController: () => TestWebFController(),
+        bundle: fastBundle,
+        timeout: Duration(seconds: 2)
+      );
+
+      final timeout = await timeoutFuture;
+      final fast = await fastUpdateFuture;
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+      expect(currentController?.entrypoint, equals(fastBundle));
+      expect(currentController, equals(fast));
+      expect(timeout, equals(null));
+    });
+
+    test('pending preload request with timeout should failed', () async {
+      Completer<void> timeoutCompleter = Completer();
+      final MockTimedBundle timeoutBundle = MockTimedBundle.controlled(completer: timeoutCompleter);
+      // Start and await the fast update
+      final timeoutFuture = manager.addOrUpdateControllerWithLoading(
+          name: 'test',
+          mode: WebFLoadingMode.preloading,
+          createController: () => TestWebFController(),
+          bundle: timeoutBundle,
+          timeout: Duration(seconds: 2)
+      ).catchError((e, stack) { return null; });
+
+      bool shouldError = false;
+      try {
+        WebFController? currentController = await WebFControllerManager.instance.getController('test');
+      } catch (e, stack) {
+        shouldError = true;
+      }
+
+      expect(shouldError, equals(true));
+
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+          name: 'test',
+          mode: WebFLoadingMode.preloading,
+          createController: () => TestWebFController(),
+          bundle: fastBundle,
+          timeout: Duration(seconds: 2)
+      );
+
+      final fastController = await fastUpdateFuture;
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+      expect(currentController, equals(fastController));
+    });
+
+    test('pending prerendering request with timeout should failed', () async {
+      Completer<void> timeoutCompleter = Completer();
+      final MockTimedBundle timeoutBundle = MockTimedBundle.controlled(completer: timeoutCompleter);
+      // Start and await the fast update
+      final timeoutFuture = manager.addOrUpdateControllerWithLoading(
+          name: 'test',
+          mode: WebFLoadingMode.preRendering,
+          createController: () => TestWebFController(),
+          bundle: timeoutBundle,
+          timeout: Duration(seconds: 2)
+      ).catchError((e, stack) { return null; });
+
+      bool shouldError = false;
+      try {
+        WebFController? currentController = await WebFControllerManager.instance.getController('test');
+      } catch (e, stack) {
+        shouldError = true;
+      }
+
+      expect(shouldError, equals(true));
+
+      final MockTimedBundle fastBundle = MockTimedBundle.fast(content: 'console.log("Fast Prerender")');
+      // Start and await the fast update
+      final fastUpdateFuture = manager.addOrUpdateControllerWithLoading(
+          name: 'test',
+          mode: WebFLoadingMode.preRendering,
+          createController: () => TestWebFController(),
+          bundle: fastBundle,
+          timeout: Duration(seconds: 2)
+      );
+
+      final fastController = await fastUpdateFuture;
+
+      WebFController? currentController = await WebFControllerManager.instance.getController('test');
+      expect(currentController, equals(fastController));
+    });
   });
 }

@@ -677,7 +677,7 @@ class WebFController with Diagnosticable {
   /// If the entrypoint is a JavaScript file, WebF only do loading until the WebF widget is mounted into the Flutter tree.
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
-  Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
+  Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize, Duration? timeout}) async {
     if (_preloadStatus == PreloadingStatus.done) return;
     controllerPreloadingCompleter = Completer();
 
@@ -704,47 +704,70 @@ class WebFController with Diagnosticable {
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
 
-    try {
-      await Future.wait([_resolveEntrypoint(), module.initialize()]);
+    run() async {
+      bool isTimeout = false;
+      try {
+        Timer(timeout ?? Duration(seconds: 10), () {
+          if (controllerPreloadingCompleter.isCompleted) return;
+          isTimeout = true;
+          _preloadStatus = PreloadingStatus.fail;
+          controllerPreloadingCompleter.completeError(FlutterError('Preloading failed with exceed timeout limits'));
+        });
 
-      if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
-        // Convert the JavaScript code into bytecode.
-        if (_entrypoint!.isJavascript) {
-          await _entrypoint!.preProcessing(view.contextId);
-        }
-        _preloadStatus = PreloadingStatus.done;
-        controllerPreloadingCompleter.complete();
-      } else if (_entrypoint!.isHTML) {
-        EvaluateOpItem? evaluateOpItem;
-        if (enableWebFProfileTracking) {
-          evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
-        }
+        await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
-        // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-        await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
+        if (isTimeout) return;
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
-        }
+        if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+          // Convert the JavaScript code into bytecode.
+          if (_entrypoint!.isJavascript) {
+            await _entrypoint!.preProcessing(view.contextId);
+          }
 
-        // Initialize document, window and the documentElement.
-        flushUICommand(view, view.window.pointer!);
+          if (isTimeout) return;
 
-        if (view.document.scriptRunner.hasPreloadScripts()) {
-          _onPreloadingFinished = () {
-            _preloadStatus = PreloadingStatus.done;
-            controllerPreloadingCompleter.complete();
-          };
-        } else {
           _preloadStatus = PreloadingStatus.done;
           controllerPreloadingCompleter.complete();
+        } else if (_entrypoint!.isHTML) {
+          EvaluateOpItem? evaluateOpItem;
+          if (enableWebFProfileTracking) {
+            evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
+          }
+
+          // Evaluate the HTML entry point, and loading the stylesheets and scripts.
+          await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
+
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
+          }
+
+          if (isTimeout) return;
+
+          // Initialize document, window and the documentElement.
+          flushUICommand(view, view.window.pointer!);
+
+          if (view.document.scriptRunner.hasPreloadScripts()) {
+            _onPreloadingFinished = () {
+              if (isTimeout) return;
+
+              _preloadStatus = PreloadingStatus.done;
+              controllerPreloadingCompleter.complete();
+            };
+          } else {
+            _preloadStatus = PreloadingStatus.done;
+            controllerPreloadingCompleter.complete();
+          }
         }
+      } catch (e, stack) {
+        if (isTimeout) return;
+
+        _preloadStatus = PreloadingStatus.fail;
+        _handlingLoadingError(e, stack);
+        controllerPreloadingCompleter.completeError(e, stack);
       }
-    } catch (e, stack) {
-      _preloadStatus = PreloadingStatus.fail;
-      _handlingLoadingError(e, stack);
-      controllerPreloadingCompleter.completeError(e, stack);
     }
+
+    run();
 
     return controllerPreloadingCompleter.future;
   }
@@ -785,7 +808,7 @@ class WebFController with Diagnosticable {
   ///
   /// This mode loads, parses, and executes content in a simulated environment before mounting.
   /// Can improve loading performance by up to 90%, but requires special handling for dimension-dependent code.
-  Future<void> preRendering(WebFBundle bundle) async {
+  Future<void> preRendering(WebFBundle bundle, { Duration? timeout }) async {
     if (_preRenderingStatus == PreRenderingStatus.done) return;
 
     controllerPreRenderingCompleter = Completer();
@@ -819,47 +842,67 @@ class WebFController with Diagnosticable {
       WebFProfiler.instance.finishTrackUICommand();
     }
 
-    try {
-      // Preparing the entrypoint
-      await Future.wait([_resolveEntrypoint(), module.initialize()]);
+    run() async {
+      bool isTimeout = false;
 
-      // Stop the animation frame
-      module.pauseAnimationFrame();
+      try {
+        Timer(timeout ?? Duration(seconds: 20), () {
+          if (controllerPreRenderingCompleter.isCompleted) return;
+          isTimeout = true;
+          _preRenderingStatus = PreRenderingStatus.fail;
+          controllerPreRenderingCompleter.completeError(FlutterError('Prerendering failed with exceed timeout limits'));
+        });
 
-      // Pause the animation timeline.
-      view.stopAnimationsTimeLine();
+        // Preparing the entrypoint
+        await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
-      view.window.addEventListener(EVENT_LOAD, (event) async {
-        _preRenderingStatus = PreRenderingStatus.done;
-      });
+        if (isTimeout) return;
 
-      if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
-        // Convert the JavaScript code into bytecode.
-        if (_entrypoint!.isJavascript) {
-          await _entrypoint!.preProcessing(view.contextId);
+        // Stop the animation frame
+        module.pauseAnimationFrame();
+
+        // Pause the animation timeline.
+        view.stopAnimationsTimeLine();
+
+        view.window.addEventListener(EVENT_LOAD, (event) async {
+          _preRenderingStatus = PreRenderingStatus.done;
+        });
+
+        if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+          // Convert the JavaScript code into bytecode.
+          if (_entrypoint!.isJavascript) {
+            await _entrypoint!.preProcessing(view.contextId);
+          }
         }
+
+        if (isTimeout) return;
+
+        _preRenderingStatus = PreRenderingStatus.evaluate;
+
+        // Evaluate the entry point, and loading the stylesheets and scripts.
+        await evaluateEntrypoint();
+
+        if (isTimeout) return;
+
+        evaluated = true;
+
+        view.flushPendingCommandsPerFrame();
+      } catch (e, stack) {
+        if (isTimeout) return;
+        _preRenderingStatus = PreRenderingStatus.fail;
+        _handlingLoadingError(e, stack);
+        controllerPreRenderingCompleter.complete();
+        return;
       }
 
-      _preRenderingStatus = PreRenderingStatus.evaluate;
-
-      // Evaluate the entry point, and loading the stylesheets and scripts.
-      await evaluateEntrypoint();
-
-      evaluated = true;
-
-      view.flushPendingCommandsPerFrame();
-    } catch (e, stack) {
-      _preRenderingStatus = PreRenderingStatus.fail;
-      _handlingLoadingError(e, stack);
-      controllerPreRenderingCompleter.complete();
-      return;
+      // If there are no <script /> elements, finish this prerendering process.
+      if (!view.document.scriptRunner.hasPendingScripts()) {
+        controllerPreRenderingCompleter.complete();
+        return;
+      }
     }
 
-    // If there are no <script /> elements, finish this prerendering process.
-    if (!view.document.scriptRunner.hasPendingScripts()) {
-      controllerPreRenderingCompleter.complete();
-      return;
-    }
+    run();
 
     return controllerPreRenderingCompleter.future;
   }
