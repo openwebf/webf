@@ -3,7 +3,9 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:math' as math;
+import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -633,7 +635,15 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   void _doPerformLayout() {
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.beforeLayout');
+    }
+
     beforeLayout();
+
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
 
     List<RenderBoxModel> _positionedChildren = [];
     List<RenderPositionPlaceholder> _positionPlaceholderChildren = [];
@@ -657,6 +667,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       child = childParentData.nextSibling;
     }
 
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.layoutPositionedChild');
+    }
+
     // Need to layout out of flow positioned element before normal flow element
     // cause the size of RenderPositionPlaceholder in flex layout needs to use
     // the size of its original RenderBoxModel.
@@ -664,9 +678,25 @@ class RenderFlexLayout extends RenderLayoutBox {
       CSSPositionedLayout.layoutPositionedChild(this, child);
     }
 
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex._layoutFlexItems');
+    }
+
     // Layout non positioned element (include element in normal flow and
     // placeholder of positioned element).
     _layoutFlexItems(_flexItemChildren);
+
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.adjustPositionChildren');
+    }
 
     // init overflowLayout size
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
@@ -721,6 +751,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+
     didLayout();
   }
 
@@ -736,20 +771,63 @@ class RenderFlexLayout extends RenderLayoutBox {
       return;
     }
 
+    if (!kReleaseMode) {
+      print(describeIdentity(this));
+      developer.Timeline.startSync('RenderFlex.layoutFlexItems.computeRunMetrics', arguments: {
+        'renderObject': describeIdentity(this)
+      });
+    }
+
     // Layout children to compute metrics of flex lines.
     List<_RunMetrics> _runMetrics = _computeRunMetrics(children);
+
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.layoutFlexItems.setContainerSize');
+    }
 
     // Set flex container size.
     _setContainerSize(_runMetrics);
 
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.layoutFlexItems.adjustChildrenSize');
+    }
+
     // Adjust children size based on flex properties which may affect children size.
     _adjustChildrenSize(_runMetrics);
+
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.layoutFlexItems.setChildrenOffset');
+    }
 
     // Set children offset based on flex alignment properties.
     _setChildrenOffset(_runMetrics);
 
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
+
+    if (!kReleaseMode) {
+      developer.Timeline.startSync('RenderFlex.layoutFlexItems.setMaxScrollableSize');
+    }
+
     // Set the size of scrollable overflow area for flex layout.
     _setMaxScrollableSize(_runMetrics);
+
+    if (!kReleaseMode) {
+      developer.Timeline.finishSync();
+    }
   }
 
   // Layout position placeholder.
