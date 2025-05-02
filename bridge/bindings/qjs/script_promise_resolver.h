@@ -77,6 +77,7 @@ class ScriptPromiseResolver {
   void ResolveOrRejectImmediately(JSValue value);
 
   ResolutionState state_;
+  double context_id_;
   ExecutingContext* context_{nullptr};
   JSValue promise_{JS_NULL};
   JSValue resolve_func_{JS_NULL};

@@ -12,7 +12,7 @@ std::shared_ptr<ScriptPromiseResolver> ScriptPromiseResolver::Create(ExecutingCo
 }
 
 ScriptPromiseResolver::ScriptPromiseResolver(ExecutingContext* context)
-    : context_(context), state_(ResolutionState::kPending) {
+    : context_(context), state_(ResolutionState::kPending), context_id_(context->contextId()) {
   JSValue resolving_funcs[2];
   promise_ = JS_NewPromiseCapability(context->ctx(), resolving_funcs);
   resolve_func_ = resolving_funcs[0];
@@ -20,7 +20,9 @@ ScriptPromiseResolver::ScriptPromiseResolver(ExecutingContext* context)
 }
 
 ScriptPromiseResolver::~ScriptPromiseResolver() {
-  Reset();
+  if (isContextValid(context_id_)) {
+    Reset();
+  }
 }
 
 void ScriptPromiseResolver::Reset() {
