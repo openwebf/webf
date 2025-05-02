@@ -359,8 +359,9 @@ class WebFControllerManager {
   /// [setup] Optional function to configure the controller after creation.
   /// [forceReplace] Whether to force replacement of an existing controller.
   ///
-  /// Returns the created or updated controller.
-  Future<WebFController> addOrUpdateControllerWithLoading(
+  /// Returns the created or updated controller, or null if the controller was canceled due to concurrency rules.
+  /// The return value is nullable to handle race conditions where another concurrent request won.
+  Future<WebFController?> addOrUpdateControllerWithLoading(
       {required String name,
       ControllerFactory? createController,
       required WebFBundle bundle,
@@ -392,6 +393,7 @@ class WebFControllerManager {
     // If we have an existing controller and force replace is false, just update usage and return
     if (oldController != null && !forceReplace && currentState != ControllerState.disposed) {
       _updateUsageOrder(name);
+      debugPrint('WebFControllerManager: use cached $oldController for ${oldController.entrypoint}');
       return oldController;
     }
 
@@ -409,7 +411,7 @@ class WebFControllerManager {
     } catch (e) {
       // If creating a new controller fails and we have an old one, log and return old controller
       if (oldController != null && currentState != ControllerState.disposed) {
-        print('Failed to create new controller: $e. Falling back to existing controller.');
+        print('WebFControllerManager: Failed to create new controller, $e. Falling back to existing controller.');
         return oldController;
       }
       // If no fallback is available, rethrow the error
@@ -487,11 +489,12 @@ class WebFControllerManager {
       if (winnerController != newController) {
         // Dispose the abandon controller instance
         Future.microtask(() async {
-          debugPrint('WebFController: dispose loser controller: $newController');
+          debugPrint('WebFControllerManager: dispose loser controller: $newController');
           await newController.dispose();
         });
 
-        return winnerController;
+        // The new controller was been replaced by the winner controller
+        return null;
       } else {
         debugPrint('WebFControllerManager: the winner controller is $winnerController');
       }
@@ -519,6 +522,7 @@ class WebFControllerManager {
           if (_config.onControllerDisposed != null) {
             _config.onControllerDisposed!(name, instance.controller);
           }
+          print('WebFControllerManager: dispose the replaced controller ${instance.controller}');
           await instance.controller.dispose();
         });
       }
@@ -527,7 +531,7 @@ class WebFControllerManager {
     } catch (e, stack) {
       // Dispose the abandon controller instance
       Future.microtask(() async {
-        debugPrint('WebFController: dispose loser controller: $newController');
+        debugPrint('WebFControllerManager: dispose loser controller: $newController');
         await newController.dispose();
       });
       // Clear the race check status
@@ -552,8 +556,9 @@ class WebFControllerManager {
   /// [routes] Optional routing configuration.
   /// [setup] Optional function to configure the controller.
   ///
-  /// Returns the preloaded controller ready for use.
-  Future<WebFController> addWithPreload(
+  /// Returns the preloaded controller ready for use, or null if the controller was canceled due to concurrency rules.
+  /// The return value is nullable to handle race conditions where another concurrent request won.
+  Future<WebFController?> addWithPreload(
       {required String name,
       required ControllerFactory createController,
       required WebFBundle bundle,
@@ -586,8 +591,9 @@ class WebFControllerManager {
   /// [routes] Optional routing configuration.
   /// [setup] Optional function to configure the controller.
   ///
-  /// Returns the prerendered controller ready for use.
-  Future<WebFController> addWithPrerendering(
+  /// Returns the prerendered controller ready for use, or null if the controller was canceled due to concurrency rules.
+  /// The return value is nullable to handle race conditions where another concurrent request won.
+  Future<WebFController?> addWithPrerendering(
       {required String name,
       required ControllerFactory createController,
       required WebFBundle bundle,
@@ -624,8 +630,9 @@ class WebFControllerManager {
   ///
   /// [name] The name of the controller to recreate.
   ///
-  /// Returns a newly created controller with the same configuration as the original.
-  Future<WebFController> _recreateController(String name) async {
+  /// Returns a newly created controller with the same configuration as the original, or null if the controller was canceled due to concurrency rules.
+  /// The return value is nullable to handle race conditions where another concurrent request won.
+  Future<WebFController?> _recreateController(String name) async {
     // Remove the disposed controller instance
     _controllersByName.remove(name);
 
@@ -1004,6 +1011,7 @@ class WebFControllerManager {
       // Make sure script fully evaluated
       controller.controllerOnDOMContentLoadedCompleter.future.then((_) {
         // Delay dispose and waiting for the executing for current scripts
+        debugPrint('WebFControllerManager: dispose controller $controller due to out of LRU cache');
         controller.dispose();
       });
     }
@@ -1072,9 +1080,10 @@ class WebFControllerManager {
   /// @param bundle The content bundle to load
   /// @param routes Optional routing configuration
   /// @param setup Optional function to configure the controller
-  /// @return The updated controller
+  /// @return The updated controller, or null if the controller was canceled due to concurrency rules.
+  /// The return value is nullable to handle race conditions where another concurrent request won.
   @Deprecated('Use addOrUpdateWithPreload instead')
-  Future<WebFController> updateWithPreload(
+  Future<WebFController?> updateWithPreload(
       {required String name,
       ControllerFactory? createController,
       required WebFBundle bundle,
@@ -1105,8 +1114,9 @@ class WebFControllerManager {
   /// @param bundle The content bundle to load
   /// @param routes Optional routing configuration
   /// @param setup Optional function to configure the controller
-  /// @return The updated controller
-  Future<WebFController> updateWithPrerendering(
+  /// @return The updated controller, or null if the controller was canceled due to concurrency rules.
+  /// The return value is nullable to handle race conditions where another concurrent request won.
+  Future<WebFController?> updateWithPrerendering(
       {required String name,
       ControllerFactory? createController,
       required WebFBundle bundle,

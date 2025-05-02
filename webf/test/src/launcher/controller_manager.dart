@@ -232,7 +232,7 @@ void main() {
       final slowController = await slowUpdateFuture;
       final fastController = await fastUpdateFuture;
 
-      expect(slowController, equals(fastController));
+      expect(slowController, equals(null));
 
       // The fast controller should be the one that's active
       final currentController = await manager.getController('test');
@@ -273,13 +273,14 @@ void main() {
       final slowController = await slowUpdateFuture;
       final fastController = await fastUpdateFuture;
 
-      expect(slowController == fastController, true);
+      expect(fastController, equals(null));
 
       // The fast controller should be the one that's active
       final currentController = await manager.getController('test');
 
       expect(currentController, equals(slowController));
-      expect(slowController.entrypoint, equals(slowBundle));
+      expect(slowController!.entrypoint, equals(slowBundle));
+      expect(fastController, equals(null));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -320,14 +321,14 @@ void main() {
       final fastController = await fastUpdateFuture;
       final mediumController = await mediumUpdateFuture;
 
-      expect(slowController == fastController, true);
-      expect(fastController == mediumController, true);
+      expect(slowController, equals(null));
+      expect(fastController, equals(null));
 
       // The fast controller should be the one that's active
       final currentController = await manager.getController('test');
 
-      expect(currentController, equals(slowController));
-      expect(slowController.entrypoint, equals(mediumBundle));
+      expect(currentController, equals(mediumController));
+      expect(mediumController!.entrypoint, equals(mediumBundle));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -367,7 +368,7 @@ void main() {
 
       final fastController = await fastUpdateFuture;
 
-      expect(currentController?.entrypoint, equals(mediumBundle));
+      expect(fastController?.entrypoint, equals(null));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -379,14 +380,14 @@ void main() {
       final slowController = await slowUpdateFuture;
       final mediumController = await mediumUpdateFuture;
 
-      expect(slowController == fastController, true);
-      expect(fastController == mediumController, true);
+      expect(slowController, equals(null));
+      expect(fastController, equals(null));
 
       // The fast controller should be the one that's active
       currentController = await manager.getController('test');
 
-      expect(currentController, equals(slowController));
-      expect(slowController.entrypoint, equals(mediumBundle));
+      expect(currentController, equals(mediumController));
+      expect(mediumController!.entrypoint, equals(mediumBundle));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -426,7 +427,7 @@ void main() {
       // The fast controller should be the one that's active
       WebFController? currentController = await manager.getController('test');
 
-      expect(currentController?.entrypoint, equals(mediumBundle));
+      expect(fastController?.entrypoint, equals(null));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -438,14 +439,14 @@ void main() {
       final slowController = await slowUpdateFuture;
       final mediumController = await mediumUpdateFuture;
 
-      expect(slowController == fastController, true);
-      expect(fastController == mediumController, true);
+      expect(slowController, equals(null));
+      expect(fastController, equals(null));
 
       // The fast controller should be the one that's active
       currentController = await manager.getController('test');
 
-      expect(currentController, equals(slowController));
-      expect(slowController.entrypoint, equals(mediumBundle));
+      expect(currentController, equals(mediumController));
+      expect(mediumController!.entrypoint, equals(mediumBundle));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -494,14 +495,14 @@ void main() {
 
       final mediumController = await mediumUpdateFuture;
 
-      expect(slowController == fastController, true);
-      expect(fastController == mediumController, true);
+      expect(slowController, equals(null));
+      expect(fastController, equals(null));
 
       // The fast controller should be the one that's active
       currentController = await manager.getController('test');
 
-      expect(currentController, equals(slowController));
-      expect(slowController.entrypoint, equals(mediumBundle));
+      expect(currentController, equals(mediumController));
+      expect(mediumController!.entrypoint, equals(mediumBundle));
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -524,7 +525,7 @@ void main() {
 
       final MockTimedBundle slowBundle = MockTimedBundle.slow(content: 'console.log("Slow")');
 
-      Future<WebFController> slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
+      Future<WebFController?> slowUpdateFuture = manager.addOrUpdateControllerWithLoading(
           name: 'test',
           bundle: slowBundle,
           mode: WebFLoadingMode.preloading,
@@ -596,14 +597,14 @@ void main() {
       final slowController = await slowUpdateFuture;
       final fastController = await fastUpdateFuture;
 
-      expect(slowController, equals(fastController));
+      expect(slowController, equals(null));
 
       // The fast controller should be the one that's active
       final currentController = await manager.getController('test');
 
       expect(currentController, equals(fastController));
       expect(currentController!.entrypoint, equals(fastBundle));
-      expect(fastController.evaluated, true);
+      expect(fastController!.evaluated, true);
 
       // // There should still only be one controller
       expect(manager.controllerCount, 1);
@@ -736,7 +737,7 @@ void main() {
       );
 
       // Start the slow update (but don't await it)
-      Future<WebFController> failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+      Future<WebFController?> failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
         name: 'test',
         mode: WebFLoadingMode.preloading,
         createController: () => TestWebFController(),
@@ -814,7 +815,7 @@ void main() {
       failedCompleter.future.catchError((e, stack) {});
 
       // Start the slow update (but don't await it)
-      Future<WebFController> failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
+      Future<WebFController?> failedUpdateFuture = manager.addOrUpdateControllerWithLoading(
         name: 'test',
         mode: WebFLoadingMode.preloading,
         createController: () => TestWebFController(),
