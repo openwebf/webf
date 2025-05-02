@@ -137,14 +137,17 @@ ExecutingContext::~ExecutingContext() {
     assert_m(false, "Unhandled exception found when Dispose JSContext.");
   }
 
-  active_pending_promises_.clear();
-
   JS_FreeValue(script_state_.ctx(), global_object_);
 
   // Free active wrappers.
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
   }
+
+  for (auto& script_promise : active_pending_promises_) {
+    script_promise->Reset();
+  }
+  active_pending_promises_.clear();
 
   for (auto& active_native_byte_data_context : active_native_byte_datas_) {
     JS_FreeValue(ctx(), active_native_byte_data_context->value);
