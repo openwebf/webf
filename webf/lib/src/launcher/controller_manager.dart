@@ -349,12 +349,14 @@ class WebFControllerManager {
   /// Error handling:
   ///   - If controller creation fails, falls back to existing controller if available
   ///   - If preloading fails, attempts to return to previous working controller
+  ///   - If loading times out (when timeout is specified), cancels the operation with an error
   ///   - If all attempts fail, throws an appropriate error
   ///
   /// [name] The unique name to identify this controller.
   /// [createController] Optional factory function to create a controller (required for new controllers).
   /// [bundle] The content bundle to load.
   /// [mode] The loading mode (preloading or prerendering).
+  /// [timeout] Optional duration after which the loading operation will be canceled with an error.
   /// [routes] Optional routing configuration.
   /// [setup] Optional function to configure the controller after creation.
   /// [forceReplace] Whether to force replacement of an existing controller.
@@ -433,6 +435,7 @@ class WebFControllerManager {
       'type': mode,
       'createController': actualCreateController,
       'bundle': bundle,
+      'timeout': timeout,
       'routes': newController.routes,
       'setup': setup ?? oldParams?['setup'],
     };
@@ -554,6 +557,7 @@ class WebFControllerManager {
   /// [name] The unique name to identify this controller.
   /// [createController] Factory function to create the controller.
   /// [bundle] The content bundle to load.
+  /// [timeout] Optional duration after which the loading operation will be canceled with an error.
   /// [routes] Optional routing configuration.
   /// [setup] Optional function to configure the controller.
   ///
@@ -563,6 +567,7 @@ class WebFControllerManager {
       {required String name,
       required ControllerFactory createController,
       required WebFBundle bundle,
+      Duration? timeout,
       Map<String, SubViewBuilder>? routes,
       ControllerSetup? setup}) async {
     return addOrUpdateControllerWithLoading(
@@ -570,6 +575,7 @@ class WebFControllerManager {
       createController: createController,
       mode: WebFLoadingMode.preloading,
       bundle: bundle,
+      timeout: timeout,
       routes: routes,
       setup: setup,
       forceReplace: false,
@@ -589,6 +595,7 @@ class WebFControllerManager {
   /// [name] The unique name to identify this controller.
   /// [createController] Factory function to create the controller.
   /// [bundle] The content bundle to load.
+  /// [timeout] Optional duration after which the loading operation will be canceled with an error.
   /// [routes] Optional routing configuration.
   /// [setup] Optional function to configure the controller.
   ///
@@ -598,6 +605,7 @@ class WebFControllerManager {
       {required String name,
       required ControllerFactory createController,
       required WebFBundle bundle,
+      Duration? timeout,
       Map<String, SubViewBuilder>? routes,
       ControllerSetup? setup}) async {
     return addOrUpdateControllerWithLoading(
@@ -605,6 +613,7 @@ class WebFControllerManager {
       createController: createController,
       mode: WebFLoadingMode.preRendering,
       bundle: bundle,
+      timeout: timeout,
       routes: routes,
       setup: setup,
       forceReplace: false,
@@ -647,6 +656,7 @@ class WebFControllerManager {
         mode: WebFLoadingMode.preloading,
         createController: params['createController'],
         bundle: params['bundle'],
+        timeout: params['timeout'],
         routes: params['routes'],
         setup: params['setup'],
       );
@@ -656,6 +666,7 @@ class WebFControllerManager {
         mode: WebFLoadingMode.preRendering,
         createController: params['createController'],
         bundle: params['bundle'],
+        timeout: params['timeout'],
         routes: params['routes'],
         setup: params['setup'],
       );
@@ -1079,6 +1090,7 @@ class WebFControllerManager {
   /// @param name The name of the controller to update
   /// @param createController Optional factory to create the new controller
   /// @param bundle The content bundle to load
+  /// @param timeout Optional duration after which the loading operation will be canceled with an error
   /// @param routes Optional routing configuration
   /// @param setup Optional function to configure the controller
   /// @return The updated controller, or null if the controller was canceled due to concurrency rules.
@@ -1088,6 +1100,7 @@ class WebFControllerManager {
       {required String name,
       ControllerFactory? createController,
       required WebFBundle bundle,
+      Duration? timeout,
       Map<String, SubViewBuilder>? routes,
       ControllerSetup? setup}) async {
     return addOrUpdateControllerWithLoading(
@@ -1095,6 +1108,7 @@ class WebFControllerManager {
       createController: createController,
       mode: WebFLoadingMode.preloading,
       bundle: bundle,
+      timeout: timeout,
       routes: routes,
       setup: setup,
       forceReplace: true, // Update always forces replacement
@@ -1113,6 +1127,7 @@ class WebFControllerManager {
   /// @param name The name of the controller to update
   /// @param createController Optional factory to create the new controller
   /// @param bundle The content bundle to load
+  /// @param timeout Optional duration after which the loading operation will be canceled with an error
   /// @param routes Optional routing configuration
   /// @param setup Optional function to configure the controller
   /// @return The updated controller, or null if the controller was canceled due to concurrency rules.
@@ -1121,6 +1136,7 @@ class WebFControllerManager {
       {required String name,
       ControllerFactory? createController,
       required WebFBundle bundle,
+      Duration? timeout,
       Map<String, SubViewBuilder>? routes,
       ControllerSetup? setup}) async {
     return addOrUpdateControllerWithLoading(
@@ -1128,6 +1144,7 @@ class WebFControllerManager {
       createController: createController,
       mode: WebFLoadingMode.preRendering,
       bundle: bundle,
+      timeout: timeout,
       routes: routes,
       setup: setup,
       forceReplace: true, // Update always forces replacement
