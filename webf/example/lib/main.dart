@@ -27,6 +27,7 @@ import 'custom_elements/shimmer/shimmer_items.dart';
 import 'custom_elements/show_case_view.dart';
 import 'custom_elements/custom_listview_cupertino.dart';
 import 'custom_elements/custom_listview_material.dart';
+import 'custom_elements/form.dart';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -70,7 +71,8 @@ void main() async {
   WebF.defineCustomElement('flutter-showcase-description', (context) => FlutterShowCaseDescription(context));
   WebF.defineCustomElement('webf-listview-cupertino', (context) => CustomWebFListViewWithCupertinoRefreshIndicator(context));
   WebF.defineCustomElement('webf-listview-material', (context) => CustomWebFListViewWithMeterialRefreshIndicator(context));
-
+  WebF.defineCustomElement('flutter-webf-form', (context) => FlutterWebFForm(context));
+  WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
 

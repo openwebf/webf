@@ -21,6 +21,13 @@
             </div>
             <div class="item-arrow">></div>
           </div>
+          <div class="component-item" @click="navigateTo('/form')">
+            <div class="item-content">
+              <div class="item-title">Form Validator</div>
+              <div class="item-desc">A customizable form with validation support.</div>
+            </div>
+            <div class="item-arrow">></div>
+          </div>
         </div>
       </div> <!-- End of main component-section -->
     </webf-listview>
