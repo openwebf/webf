@@ -1,3 +1,45 @@
+## 0.21.0-beta.5+2
+
+**Features**
+
+Controller Management Improvements
+- Add timeout request limits for preload and prerendering to prevent hanging requests
+- Make addOrUpdateControllerWithLoading return null if the race condition fails, improving error handling
+
+Performance Enhancements
+- Add timeline tracking for flex layout performance monitoring
+- Optimize concurrent request handling with race conditions
+- Upgrade web_socket_channel version to 3.0.1 for better WebSocket performance
+
+React.js Integration
+
+- Make input events compatible with React.js event system, improving framework integration
+- Enhanced synthetic event handling for better cross-framework support
+
+Bug Fixes
+
+Memory Management
+- Fix memory leaks with pending script promises by properly tracking promise lifecycle
+- Fix context check during release of alive script wrappable objects
+- Fix crash when disposing script promises by checking context availability
+- Fix crash when finalizing JavaScript runtime with canvas context
+
+Timeout and Request Handling
+- Fix parameters and annotations with timeout functionality
+- Improve error handling during concurrent controller operations
+- Add proper race condition resolution for multiple preload/prerendering requests
+
+Stability Improvements
+- Fix canvas rendering context finalization crash
+- Fix sticky position holder null error that caused layout issues
+- Implement more robust controller lifecycle management
+
+Other Changes
+
+- Move most of WebF pages to cold load in example app for better performance
+- Add test specifications for color change functionality
+- Improve code documentation and type annotations
+
 ## 0.21.0-beta.5+1
 
 Features
