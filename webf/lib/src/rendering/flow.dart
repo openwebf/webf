@@ -1303,7 +1303,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     // For line break judge, when inline element have chance to line join
     if (child is RenderFlowLayout && child.firstLineExtent > 0) {
-      return child.wrapOutContentSizeRight(Size(child.lastLineExtent, child.boxSize?.height ?? 0)).width +
+      return child.wrapOutContentSize(Size(child.lastLineExtent, child.boxSize?.height ?? 0)).width +
           marginHorizontal;
     }
 
@@ -1311,7 +1311,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       RenderFlowLayout flowLayout = child.renderStyle.target.attachedRenderer! as RenderFlowLayout;
       if (flowLayout.firstLineExtent > 0) {
         return flowLayout
-                .wrapOutContentSizeRight(Size(flowLayout.lastLineExtent, flowLayout.boxSize?.height ?? 0))
+                .wrapOutContentSize(Size(flowLayout.lastLineExtent, flowLayout.boxSize?.height ?? 0))
                 .width +
             marginHorizontal;
       }
