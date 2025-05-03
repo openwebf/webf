@@ -368,11 +368,11 @@ class RenderFlowLayout extends RenderLayoutBox {
     return false;
   }
 
-  RenderFlowLayout? getRenderFlowLayout(RenderBox child) {
-    if (child is RenderFlowLayout) {
-      return child;
-    } else if (child is RenderBoxModel && child.renderStyle.isSelfRenderFlowLayout()) {
-      return child.renderStyle.target.attachedRenderer! as RenderFlowLayout;
+  static RenderFlowLayout? getRenderFlowLayout(RenderObject renderObject) {
+    if (renderObject is RenderFlowLayout) {
+      return renderObject;
+    } else if (renderObject is RenderBoxModel && renderObject.renderStyle.isSelfRenderFlowLayout()) {
+      return renderObject.renderStyle.target.attachedRenderer! as RenderFlowLayout;
     }
     return null;
   }

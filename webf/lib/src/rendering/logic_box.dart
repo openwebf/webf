@@ -6,15 +6,6 @@ import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text.dart';
 
-RenderFlowLayout? getRenderFlowlayout(RenderObject renderObject) {
-  if (renderObject is RenderFlowLayout) {
-    return renderObject;
-  }
-  if (renderObject is RenderBoxModel && renderObject.renderStyle.isSelfRenderFlowLayout()) {
-    return (renderObject.renderStyle.target.attachedRenderer! as RenderFlowLayout);
-  }
-  return null;
-}
 
 class LogicInlineBox {
   RenderBox renderObject;
@@ -26,7 +17,7 @@ class LogicInlineBox {
 
 
   bool get happenLineJoin {
-    RenderFlowLayout? flowLayout = getRenderFlowlayout(renderObject);
+    RenderFlowLayout? flowLayout = RenderFlowLayout.getRenderFlowLayout(renderObject);
     if(flowLayout != null) {
       return flowLayout.happenLineJoin();
     }
@@ -37,7 +28,7 @@ class LogicInlineBox {
   }
 
   bool get isBlockLevel {
-    RenderFlowLayout? flowLayout = getRenderFlowlayout(renderObject);
+    RenderFlowLayout? flowLayout = RenderFlowLayout.getRenderFlowLayout(renderObject);
     if(flowLayout != null) {
       return flowLayout.isBlockLevel(renderObject);
     }
@@ -427,7 +418,7 @@ class LogicLineBox {
     }
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
-      RenderFlowLayout? theLineLastRenderFlowLayout = getRenderFlowlayout(theLineLastRender);
+      RenderFlowLayout? theLineLastRenderFlowLayout = RenderFlowLayout.getRenderFlowLayout(theLineLastRender);
 
       if (nextLineBox.inlineBoxes.length == 1 && theLineLastRenderFlowLayout != null && !theLineLastRenderFlowLayout.lineBoxes.isEmpty) {
         nextLineBox = theLineLastRenderFlowLayout.lineBoxes.last;
@@ -464,7 +455,7 @@ class LogicLineBox {
     nextLineBox = this;
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
-      RenderFlowLayout? flowLayout = getRenderFlowlayout(theLineLastRender);
+      RenderFlowLayout? flowLayout = RenderFlowLayout.getRenderFlowLayout(theLineLastRender);
       if (flowLayout != null) {
         RenderFlowLayout ref = flowLayout;
         if (ref.isInlineBlockLevel(ref) && !ref.lineBoxes.isEmpty) {
@@ -518,7 +509,7 @@ class LogicLineBox {
     nextLineBox = this;
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.first.renderObject;
-      RenderFlowLayout? flowLayout = getRenderFlowlayout(theLineLastRender);
+      RenderFlowLayout? flowLayout = RenderFlowLayout.getRenderFlowLayout(theLineLastRender);
       if (flowLayout != null) {
         RenderFlowLayout ref = flowLayout;
         if (ref.isInlineBlockLevel(ref) && !ref.lineBoxes.isEmpty) {
@@ -570,7 +561,7 @@ class LogicLineBox {
     nextLineBox = this;
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.first.renderObject;
-      RenderFlowLayout? flowLayout = getRenderFlowlayout(theLineLastRender);
+      RenderFlowLayout? flowLayout = RenderFlowLayout.getRenderFlowLayout(theLineLastRender);
 
       if (flowLayout != null) {
         RenderFlowLayout ref = flowLayout;
