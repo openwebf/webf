@@ -347,10 +347,16 @@ class ImageElement extends Element {
     dispatchEvent(Event(EVENT_ERROR));
   }
 
+  bool hadTryReload = false;
+
   void _onImageError(Object exception, StackTrace? stackTrace) async {
     if (_resolvedUri != null) {
       // Invalidate http cache for this failed image loads.
       await WebFBundle.invalidateCache(_resolvedUri!.toString());
+      if (!hadTryReload) {
+        _reloadImage(forceUpdate: true);
+        hadTryReload = true;
+      }
     }
 
     debugPrint('$exception\n$stackTrace');
@@ -621,7 +627,19 @@ class ImageElement extends Element {
 
   // Reload current image when width/height/boxFit changed.
   // If url is changed, please call [_startLoadNewImage] instead.
-  void _reloadImage() {
+  void _reloadImage({ bool forceUpdate = false }) {
+
+    // Clear the cache and previous loaded provider
+    if (forceUpdate) {
+      _currentImageProvider = null;
+      BoxFitImageKey previousUnSizedKey = BoxFitImageKey(
+        url: _resolvedUri!,
+        configuration: ImageConfiguration.empty,
+      );
+      PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
+    }
+
+
     if (_isSVGMode) {
       // In svg mode, we don't need to reload
     } else {
