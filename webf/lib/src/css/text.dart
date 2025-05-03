@@ -40,7 +40,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_color == value) return;
     _color = value?.value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(this, COLOR);
+    _markChildrenTextNeedsLayout(this, COLOR);
   }
 
   // Current not update the dependent property relative to the color.
@@ -130,7 +130,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontStyle == value) return;
     _fontStyle = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(this, FONT_STYLE);
+    _markChildrenTextNeedsLayout(this, FONT_STYLE);
   }
 
   List<String>? _fontFamily;
@@ -279,7 +279,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_textShadow == value) return;
     _textShadow = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(this, TEXT_SHADOW);
+    _markChildrenTextNeedsLayout(this, TEXT_SHADOW);
   }
 
   WhiteSpace? _whiteSpace;
@@ -436,33 +436,6 @@ mixin CSSTextMixin on RenderStyle {
       } else if (child is RenderTextBox) {
         WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
         renderParagraph.markNeedsLayout();
-      } else {
-        child.visitChildren(visitor);
-      }
-    }
-
-    renderStyle.visitChildren(visitor);
-  }
-
-  // Mark nested children text as needs paint.
-  // Inheritable style change should loop nest children to update text node with specified style property
-  // not set in its parent.
-  void _markChildrenTextNeedsPaint(RenderStyle renderStyle, String styleProperty) {
-    visitor(RenderObject child) {
-      if (child is RenderBoxModel && child is! RenderEventListener) {
-        // Only need to update child text when style property is not set.
-        if (child.renderStyle.target.style[styleProperty].isEmpty) {
-          _markChildrenTextNeedsPaint(child.renderStyle, styleProperty);
-        }
-      } else if (child is RenderTextBox) {
-        WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-        if (renderParagraph.hasSize) {
-          // Mark as needs paint after text has been layouted.
-          renderParagraph.markNeedsPaint();
-        } else {
-          // Mark as needs layout if renderParagraph has not layouted yet.
-          renderParagraph.markNeedsLayout();
-        }
       } else {
         child.visitChildren(visitor);
       }
