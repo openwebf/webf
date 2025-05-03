@@ -347,7 +347,12 @@ class ImageElement extends Element {
     dispatchEvent(Event(EVENT_ERROR));
   }
 
-  void _onImageError(Object exception, StackTrace? stackTrace) {
+  void _onImageError(Object exception, StackTrace? stackTrace) async {
+    if (_resolvedUri != null) {
+      // Invalidate http cache for this failed image loads.
+      await WebFBundle.invalidateCache(_resolvedUri!.toString());
+    }
+
     debugPrint('$exception\n$stackTrace');
     scheduleMicrotask(_dispatchErrorEvent);
     // Decrement load event delay count after decode.
