@@ -772,7 +772,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     if (!kReleaseMode) {
-      print(describeIdentity(this));
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.computeRunMetrics', arguments: {
         'renderObject': describeIdentity(this)
       });
