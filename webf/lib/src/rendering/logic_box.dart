@@ -429,7 +429,7 @@ class LogicLineBox {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
       RenderFlowLayout? theLineLastRenderFlowLayout = getRenderFlowlayout(theLineLastRender);
 
-      if (nextLineBox.inlineBoxes.length == 1 && theLineLastRenderFlowLayout != null && !theLineLastRenderFlowLayout.lineBoxes.isEmpty) {
+      if (theLineLastRenderFlowLayout != null && !theLineLastRenderFlowLayout.lineBoxes.isEmpty) {
         nextLineBox = theLineLastRenderFlowLayout.lineBoxes.last;
         wrapWidth = flowLayoutWrap(theLineLastRenderFlowLayout, wrapWidth);
         continue;
