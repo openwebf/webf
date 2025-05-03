@@ -18,7 +18,7 @@ dependencies:
   #    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
   #    version: ^0.20.0
   flutter_highlight: ^0.7.0
-  flutter_form_builder: ^10.0.1
+  flutter_form_builder: ^9.7.0
   form_builder_validators: ^11.1.2
   dropdown_button2: ^2.3.9
   dynamic_tabbar: ^1.0.9
