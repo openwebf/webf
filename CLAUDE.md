@@ -17,14 +17,15 @@
 - Run bridge unit tests: `node scripts/run_bridge_unit_test.js`
 - Run Flutter dart tests: `cd webf && flutter test`
 - Run a single Flutter test: `cd webf && flutter test test/path/to/test_file.dart`
-- Run integration tests: `cd integration_tests && flutter test`
-- Run plugin tests: `npm run plugin_test`
+- Run integration tests: `cd integration_tests && npm run integration_test`
 
 ## Lint Commands
+
 - Lint: `npm run lint` (runs flutter analyze in webf directory)
 - Format: `npm run format` (formats with 120 char line length)
 
 ## Code Style Guidelines
+
 ### Dart (webf/)
 - Follow rules in webf/analysis_options.yaml
 - Use single quotes for strings
@@ -39,3 +40,8 @@
 - Standard: C++17
 - Column limit: 120 characters
 - Use 2-space indentation
+
+## Memory
+
+- [HTTP Cache Invalidation Fix](./claude_memory/http_cache_invalidation.md) - Cache invalidation mechanism for handling corrupt image cache files
+
