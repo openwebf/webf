@@ -5,6 +5,8 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/cupertino.dart';
@@ -40,6 +42,9 @@ import 'modules/share.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 void main() async {
+  debugProfileLayoutsEnabled = true;
+  debugTracePostFrameCallbacks = true;
+  debugProfileBuildsEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 

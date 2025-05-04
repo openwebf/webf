@@ -155,7 +155,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 #endif
 
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-          WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
+          WEBF_LOG(VERBOSE) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
           return;
         }
         binding_object_->invoke_bindings_methods_from_native(contextId, profile_id, binding_object, return_value,
@@ -319,7 +319,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 #endif
 
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-          WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
+          WEBF_LOG(VERBOSE) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
           return;
         }
         binding_object_->invoke_bindings_methods_from_native(contextId, profile_id, binding_object, return_value,
