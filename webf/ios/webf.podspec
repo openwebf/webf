@@ -29,7 +29,8 @@ Pod::Spec.new do |s|
     'HEADER_SEARCH_PATHS' => '$(inherited) ' +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/quickjs/include" '  +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/gumbo-parser/src" ' +
-      ' "${PODS_TARGET_SRCROOT}/../src/third_party/modp_b64/include"'
+      ' "${PODS_TARGET_SRCROOT}/../src/third_party/modp_b64/include" ' +
+      ' "${PODS_TARGET_SRCROOT}/../src/third_party/dart/include"'
   }
   s.swift_version = '5.0'
 end
