@@ -6,8 +6,8 @@
     "build": "cross-env NODE_ENV=development rollup --config rollup.config.js && npm run mainToC && npm run testToC",
     "build:dts": "tsc --emitDeclarationOnly && mv dist/*.d.ts ../typings/types/",
     "build:release": "cross-env NODE_ENV=production rollup --config rollup.config.js && npm run mainToC && npm run testToC",
-    "mainToC": "node scripts/js_to_c.js -s ../dist/main.js -o ../dist",
-    "testToC": "node scripts/js_to_c.js -s ../dist/test.js -o ../dist -n TestFramework"
+    "mainToC": "node scripts/js_to_c.js -s ../dist/main.js -o ../../code_gen",
+    "testToC": "node scripts/js_to_c.js -s ../dist/test.js -o ../../code_gen -n TestFramework"
   },
   "dependencies": {
     "@types/raf": "^3.4.0",

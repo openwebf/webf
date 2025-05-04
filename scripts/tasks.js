@@ -559,7 +559,7 @@ task('generate-bindings-code', (done) => {
     return done(buildResult.status);
   }
 
-  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out'], {
+  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../code_gen'], {
     cwd: paths.codeGen,
     env: {
       ...process.env,

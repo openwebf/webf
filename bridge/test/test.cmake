@@ -1,7 +1,7 @@
 list(APPEND WEBF_TEST_SOURCE
   include/webf_bridge_test.h
   webf_bridge_test.cc
-  polyfill/dist/testframework.cc
+  code_gen/testframework.cc
 )
 
 set(gtest_disable_pthreads ON)
