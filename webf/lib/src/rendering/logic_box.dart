@@ -183,19 +183,7 @@ class LogicInlineBox {
         ? marginTop + childSize!.height + marginBottom
         : marginTop + childSize!.height;
 
-    // getDistanceToBaseline() return RenderObject baselineExtent is not right for us.
-    // need to update for RenderFlowLayout and RenderTextBox
-    // if(renderObject is RenderFlowLayout && !(renderObject as RenderFlowLayout).lineBoxes.isEmpty) {
-    //   if(childAscent != null && childAscent == childSize.height) {
-    //     childAscent = childAscent - (renderObject as RenderFlowLayout).lineBoxes.last!.baselineBelowExtent;
-    //   } else if((renderObject as RenderFlowLayout).lineBoxes.length == 1) {
-    //     childAscent = (renderObject as RenderFlowLayout).lineBoxes.last!.baselineExtent;
-    //   }
-    // }
-
-
     // When baseline of children not found, use boundary of margin bottom as baseline.
-    // double extentAboveBaseline = childAscent ?? baseline;
     double extentAboveBaseline = (childAscent != null && childAscent > 0) ? childAscent  : baseline;
     extentAboveBaseline = min(baseline, extentAboveBaseline);
     extentAboveBaseline = max(extentAboveBaseline, 0);
@@ -391,10 +379,11 @@ class LogicLineBox {
 
   double defaultLastLineMainExtent() {
     double lineMainExtent = mainAxisExtent;
-    if (last?.renderObject != null &&
-        last?.renderObject is RenderFlowLayout &&
-        (last!.renderObject as RenderFlowLayout).happenLineJoin()) {
-      lineMainExtent = mainAxisExtentWithoutLineJoin;
+    if (last?.renderObject != null) {
+      RenderFlowLayout? lastRenderFlowLayout = RenderFlowLayout.getRenderFlowLayout(last!.renderObject);
+      if (lastRenderFlowLayout != null && lastRenderFlowLayout.happenLineJoin()) {
+        lineMainExtent = mainAxisExtentWithoutLineJoin;
+      }
     }
     return lineMainExtent;
   }
@@ -412,23 +401,24 @@ class LogicLineBox {
         return render.wrapOutContentSize(Size.fromWidth(oldSize)).width;
       }
       if(render.lineBoxes.lineSize > 1) {
-        return render.wrapOutContentSize(Size.fromWidth(oldSize)).width;
+        return render.wrapOutContentSizeRight(Size.fromWidth(oldSize)).width;
       }
       return oldSize;
     }
     do {
       RenderObject theLineLastRender = nextLineBox!.inlineBoxes.last.renderObject;
-      RenderFlowLayout? theLineLastRenderFlowLayout = RenderFlowLayout.getRenderFlowLayout(theLineLastRender);
-
-      if (nextLineBox.inlineBoxes.length == 1 && theLineLastRenderFlowLayout != null && !theLineLastRenderFlowLayout.lineBoxes.isEmpty) {
-        nextLineBox = theLineLastRenderFlowLayout.lineBoxes.last;
-        wrapWidth = flowLayoutWrap(theLineLastRenderFlowLayout, wrapWidth);
-        continue;
-      }
-      if (theLineLastRenderFlowLayout != null && theLineLastRenderFlowLayout.happenLineJoin()) {
-        wrapWidth = flowLayoutWrap(theLineLastRenderFlowLayout, wrapWidth);
-        mainAxisExtentUse = nextLineBox.mainAxisExtentWithoutLineJoin + wrapWidth;
-        break;
+      RenderFlowLayout? renderFlowLayout = RenderFlowLayout.getRenderFlowLayout(theLineLastRender);
+      if (renderFlowLayout != null) {
+        if (nextLineBox.inlineBoxes.length == 1 && !renderFlowLayout.lineBoxes.isEmpty) {
+          nextLineBox = renderFlowLayout.lineBoxes.last;
+          wrapWidth = flowLayoutWrap(renderFlowLayout, wrapWidth);
+          continue;
+        }
+        if (renderFlowLayout.happenLineJoin()) {
+          wrapWidth = flowLayoutWrap(renderFlowLayout, wrapWidth);
+          mainAxisExtentUse = nextLineBox.mainAxisExtentWithoutLineJoin + wrapWidth;
+          break;
+        }
       }
       if (theLineLastRender is RenderTextBox && theLineLastRender.lineBoxes.length > 1) {
         mainAxisExtentUse = theLineLastRender.lineBoxes.lastChild.width + wrapWidth;
