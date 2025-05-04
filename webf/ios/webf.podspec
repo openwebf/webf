@@ -13,14 +13,21 @@ Pod::Spec.new do |s|
   s.author           = { 'OpenWebF' => 'dongtiangche@outlook.com' }
   s.source           = { :path => '.' }
   s.source_files = 'Classes/**/*'
-  s.public_header_files = 'Classes/**/*.h'
   s.dependency 'Flutter'
-  s.platform = :ios, '11.0'
-  s.prepare_command = 'bash prepare.sh'
-  s.vendored_frameworks = ['Frameworks/*.xcframework']
-  s.resource = 'Frameworks/*.xcframework'
-
+  s.platform = :ios, '12.0'
+  s.libraries = 'c++'
   # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'OTHER_CFLAGS' => '-std=c99',
+    'CLANG_CXX_LIBRARY' => 'libc++',
+    'GCC_ENABLE_CPP_EXCEPTIONS' => 'NO',
+    'GCC_ENABLE_CPP_RTTI' => 'YES',
+    'OTHER_CPLUSPLUSFLAGS' => '$(inherited)', # Add specific C++ flags
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) APP_REV=\\"a804e0950\\" APP_VERSION=\\"0.21.0-beta.5+3\\" CONFIG_VERSION=\\"2021-03-27\\"',
+    'HEADER_SEARCH_PATHS' => '$(inherited) "${PODS_TARGET_SRCROOT}/../src/third_party/quickjs/include"'
+  }
   s.swift_version = '5.0'
 end
