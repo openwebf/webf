@@ -1,3 +1,26 @@
+## 0.21.0-beta.5+3
+
+Image Loading Reliability
+
+- Added automatic fallback mechanism for failed image loads:
+  - Images that fail to load now automatically retry once after invalidating cache
+  - Prevents broken images due to corrupted cache files or temporary network issues
+  - Improved user experience by reducing instances of broken images
+
+Technical Improvements
+
+- Enhanced ImageElement with smart retry logic:
+  - Added tracking to prevent unnecessary multiple reload attempts
+  - Implemented forced cache eviction during reload attempts
+  - Images are properly cleared from Flutter's image cache during reload
+  - Built on top of existing HTTP cache invalidation mechanism
+
+Bug Fixes
+
+- Fixed case with border rendering in inline elements
+- Improved logic flow in LogicLineBox for better handling of nested inline elements
+- Fixed HTTP cache invalidation mechanism for consistent behavior across image and script loading
+
 ## 0.21.0-beta.5+2
 
 **Features**

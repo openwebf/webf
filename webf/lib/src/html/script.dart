@@ -118,7 +118,7 @@ class ScriptRunner {
       } catch (err, stack) {
         debugPrint('$err\n$stack');
         _document.decrementDOMContentLoadedEventDelayCount();
-        await bundle.invalidateCache();
+        await WebFBundle.invalidateCache(bundle.url);
         return;
       } finally {
         bundle.dispose();

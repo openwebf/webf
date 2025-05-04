@@ -160,7 +160,7 @@ abstract class WebFBundle with Diagnosticable {
     data = null;
   }
 
-  Future<void> invalidateCache() async {
+  static Future<void> invalidateCache(String url) async {
     Uri? uri = Uri.tryParse(url);
     if (uri == null) return;
     String origin = getOrigin(uri);
@@ -326,7 +326,7 @@ class NetworkBundle extends WebFBundle {
     }
 
     if (bytes.isEmpty) {
-      await invalidateCache();
+      await WebFBundle.invalidateCache(url);
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackNetwork(currentProfileOp!);
       }
