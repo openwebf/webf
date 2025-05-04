@@ -21,13 +21,15 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
-    'OTHER_CFLAGS' => '-std=c99',
     'CLANG_CXX_LIBRARY' => 'libc++',
     'GCC_ENABLE_CPP_EXCEPTIONS' => 'NO',
     'GCC_ENABLE_CPP_RTTI' => 'YES',
     'OTHER_CPLUSPLUSFLAGS' => '$(inherited)', # Add specific C++ flags
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) APP_REV=\\"a804e0950\\" APP_VERSION=\\"0.21.0-beta.5+3\\" CONFIG_VERSION=\\"2021-03-27\\"',
-    'HEADER_SEARCH_PATHS' => '$(inherited) "${PODS_TARGET_SRCROOT}/../src/third_party/quickjs/include"'
+    'HEADER_SEARCH_PATHS' => '$(inherited) ' +
+      ' "${PODS_TARGET_SRCROOT}/../src/third_party/quickjs/include" '  +
+      ' "${PODS_TARGET_SRCROOT}/../src/third_party/gumbo-parser/src" ' +
+      ' "${PODS_TARGET_SRCROOT}/../src/third_party/modp_b64/include"'
   }
   s.swift_version = '5.0'
 end
