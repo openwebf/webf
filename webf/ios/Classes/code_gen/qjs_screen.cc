@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_screen.cc"
+#include "../../../src/code_gen/qjs_screen.cc"

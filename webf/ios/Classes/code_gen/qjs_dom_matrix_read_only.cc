@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_dom_matrix_read_only.cc"
+#include "../../../src/code_gen/qjs_dom_matrix_read_only.cc"

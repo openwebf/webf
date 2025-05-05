@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_svg_text_element.cc"
+#include "../../../src/code_gen/qjs_svg_text_element.cc"

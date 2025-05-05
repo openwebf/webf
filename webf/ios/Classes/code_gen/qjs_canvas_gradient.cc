@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_canvas_gradient.cc"
+#include "../../../src/code_gen/qjs_canvas_gradient.cc"

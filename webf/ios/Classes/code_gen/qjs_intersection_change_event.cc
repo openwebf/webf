@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_intersection_change_event.cc"
+#include "../../../src/code_gen/qjs_intersection_change_event.cc"

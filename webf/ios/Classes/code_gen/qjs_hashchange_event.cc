@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_hashchange_event.cc"
+#include "../../../src/code_gen/qjs_hashchange_event.cc"

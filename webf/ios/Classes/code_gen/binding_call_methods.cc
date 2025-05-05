@@ -1,1 +1,1 @@
-#include "../../../src/out/binding_call_methods.cc"
+#include "../../../src/code_gen/binding_call_methods.cc"

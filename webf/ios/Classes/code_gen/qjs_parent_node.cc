@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_parent_node.cc"
+#include "../../../src/code_gen/qjs_parent_node.cc"

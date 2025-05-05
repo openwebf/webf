@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_computed_css_style_declaration.cc"
+#include "../../../src/code_gen/qjs_computed_css_style_declaration.cc"

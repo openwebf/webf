@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_mutation_record.cc"
+#include "../../../src/code_gen/qjs_mutation_record.cc"

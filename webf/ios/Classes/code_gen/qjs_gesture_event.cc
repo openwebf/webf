@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_gesture_event.cc"
+#include "../../../src/code_gen/qjs_gesture_event.cc"

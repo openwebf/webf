@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_bounding_client_rect.cc"
+#include "../../../src/code_gen/qjs_bounding_client_rect.cc"

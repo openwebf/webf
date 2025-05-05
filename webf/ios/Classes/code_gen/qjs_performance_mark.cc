@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_performance_mark.cc"
+#include "../../../src/code_gen/qjs_performance_mark.cc"

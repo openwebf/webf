@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_blob.cc"
+#include "../../../src/code_gen/qjs_blob.cc"

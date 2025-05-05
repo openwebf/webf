@@ -1,1 +1,1 @@
-#include "../../../src/out/script_type_names.cc"
+#include "../../../src/code_gen/script_type_names.cc"

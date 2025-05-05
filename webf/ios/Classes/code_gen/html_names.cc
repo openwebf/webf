@@ -1,1 +1,1 @@
-#include "../../../src/out/html_names.cc"
+#include "../../../src/code_gen/html_names.cc"

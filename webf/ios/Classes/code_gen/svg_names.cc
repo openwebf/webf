@@ -1,1 +1,1 @@
-#include "../../../src/out/svg_names.cc"
+#include "../../../src/code_gen/svg_names.cc"

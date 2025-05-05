@@ -1,1 +1,1 @@
-#include "../../../src/out/webf_element_names.cc"
+#include "../../../src/code_gen/webf_element_names.cc"

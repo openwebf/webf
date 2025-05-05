@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_element_attributes.cc"
+#include "../../../src/code_gen/qjs_element_attributes.cc"

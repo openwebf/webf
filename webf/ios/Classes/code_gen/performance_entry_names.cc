@@ -1,1 +1,1 @@
-#include "../../../src/out/performance_entry_names.cc"
+#include "../../../src/code_gen/performance_entry_names.cc"

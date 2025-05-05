@@ -1,1 +1,1 @@
-#include "../../../src/out/element_namespace_uris.cc"
+#include "../../../src/code_gen/element_namespace_uris.cc"

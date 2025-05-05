@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_event_target.cc"
+#include "../../../src/code_gen/qjs_event_target.cc"

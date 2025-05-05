@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_text_metrics.cc"
+#include "../../../src/code_gen/qjs_text_metrics.cc"

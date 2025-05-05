@@ -1,1 +1,1 @@
-#include "../../../src/out/event_factory.cc"
+#include "../../../src/code_gen/event_factory.cc"

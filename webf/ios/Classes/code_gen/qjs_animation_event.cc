@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_animation_event.cc"
+#include "../../../src/code_gen/qjs_animation_event.cc"

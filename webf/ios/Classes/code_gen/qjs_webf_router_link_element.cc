@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_webf_router_link_element.cc"
+#include "../../../src/code_gen/qjs_webf_router_link_element.cc"

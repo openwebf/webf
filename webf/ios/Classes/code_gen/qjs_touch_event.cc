@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_touch_event.cc"
+#include "../../../src/code_gen/qjs_touch_event.cc"

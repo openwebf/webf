@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_promise_rejection_event_init.cc"
+#include "../../../src/code_gen/qjs_promise_rejection_event_init.cc"

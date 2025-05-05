@@ -1,1 +1,1 @@
-#include "../../../src/out/qjs_idle_deadline.cc"
+#include "../../../src/code_gen/qjs_idle_deadline.cc"
