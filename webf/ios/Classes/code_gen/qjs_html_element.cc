@@ -1,4 +1,4 @@
-// Auto-generated mirror file - DO NOT EDIT
-// Original source: ../../../bridge/out/qjs_html_element.cc
 
-#include "../../../bridge/out/qjs_html_element.cc"
+
+
+#include "../../../src/code_gen/qjs_html_element.cc"

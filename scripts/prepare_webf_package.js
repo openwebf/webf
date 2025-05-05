@@ -81,8 +81,10 @@ function copyCppSourceFiles(rootDir, webfDir) {
     'include',
     'code_gen',
     'multiple_threading',
-    'third_party',
-    'rusty_webf_sys',
+    'third_party/dart',
+    'third_party/gumbo-parser',
+    'third_party/modp_b64',
+    'third_party/quickjs',
   ];
   
   // Copy all directories recursively

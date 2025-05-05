@@ -1,1 +1,1 @@
-#include "../../../../src/polyfill/dist/polyfill.cc"
+#include "../../../src/code_gen/polyfill.cc"
