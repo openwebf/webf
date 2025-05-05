@@ -41,10 +41,9 @@ Pod::Spec.new do |s|
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/modp_b64/include" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/dart" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/foundation" ' +
-      ' "${PODS_TARGET_SRCROOT}/../src/out" ' +
+      ' "${PODS_TARGET_SRCROOT}/../src/code_gen" ' +
       ' "${PODS_TARGET_SRCROOT}/../src" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/include" ' +
-      ' "${PODS_TARGET_SRCROOT}/../src/polyfill/dist" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/core_rs/include" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/core" ' +

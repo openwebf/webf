@@ -79,9 +79,9 @@ function copyCppSourceFiles(rootDir, webfDir) {
     'core',
     'foundation',
     'include',
+    'code_gen',
     'multiple_threading',
     'third_party',
-    'polyfill',
     'rusty_webf_sys',
   ];
   
