@@ -10,8 +10,8 @@ require('./tasks');
 series(
   'update-typings-version',
   'generate-typings',
-  'compile-polyfill',
   'generate-bindings-code',
+  'compile-polyfill',
 )((err) => {
   if (err) {
     console.log(err);
