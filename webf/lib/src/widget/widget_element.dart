@@ -340,22 +340,17 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
     ModalRoute? route = ModalRoute.of(this);
     _currentRouteSettings = route?.settings;
-    dom.OnScreenEvent event = dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    dom.OnScreenEvent event = dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '/');
 
     WidgetElement widgetElement = widget.widgetElement;
-
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      widgetElement.dispatchEventUtilAdded(event);
-    });
+    widgetElement.dispatchEventUtilAdded(event);
   }
 
   @override
   void unmount() {
     dom.OffScreenEvent event = dom.OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     dom.Element widgetElement = widget.widgetElement;
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      widgetElement.dispatchEventUtilAdded(event);
-    });
+    widgetElement.dispatchEventUtilAdded(event);
 
     _currentRouteSettings = null;
 

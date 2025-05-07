@@ -366,9 +366,12 @@ class WebFState extends State<WebF> with RouteAware {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
 
-    RouterLinkElement? routerLinkElement =
-        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
-    routerLinkElement?.dispatchEventUtilAdded(event);
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      RouterLinkElement? routerLinkElement =
+      widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+      routerLinkElement?.dispatchEventUtilAdded(event);
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   @override
@@ -386,9 +389,13 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.controller.initialRoute != null) {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
-    RouterLinkElement? routerLinkElement =
-        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
-    routerLinkElement?.dispatchEventUtilAdded(event);
+
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      RouterLinkElement? routerLinkElement =
+      widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+      routerLinkElement?.dispatchEventUtilAdded(event);
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   void requestForUpdate(AdapterUpdateReason reason) {

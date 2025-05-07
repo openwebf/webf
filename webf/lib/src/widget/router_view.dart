@@ -3,6 +3,7 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
@@ -90,12 +91,16 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? '';
 
-    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
+    // Make sure the router push event was fired after the onscreen event dispatched.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
 
-    widget.controller.view.document.dispatchEvent(event);
+      widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEventUtilAdded(event);
+      RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
+      routerLinkElement.dispatchEventUtilAdded(event);
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   @override
@@ -104,12 +109,16 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? '';
 
-    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
+    // Make sure the router push event was fired after the onscreen event dispatched.
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
 
-    widget.controller.view.document.dispatchEvent(event);
+      widget.controller.view.document.dispatchEvent(event);
 
-    RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-    routerLinkElement.dispatchEventUtilAdded(event);
+      RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
+      routerLinkElement.dispatchEventUtilAdded(event);
+    });
+    SchedulerBinding.instance.scheduleFrame();
   }
 }
 
