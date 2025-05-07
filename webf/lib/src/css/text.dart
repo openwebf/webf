@@ -6,6 +6,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
@@ -427,21 +428,18 @@ mixin CSSTextMixin on RenderStyle {
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
-    visitor(RenderObject child) {
-      if (child is RenderBoxModel && child is! RenderEventListener) {
-        // Only need to update child text when style property is not set.
-        if (child.renderStyle.target.style[styleProperty].isEmpty) {
-          _markChildrenTextNeedsLayout(child.renderStyle, styleProperty);
-        }
-      } else if (child is RenderTextBox) {
-        WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-        renderParagraph.markNeedsLayout();
-      } else {
+    visitor(dom.Node child) {
+      if (child is dom.TextNode) {
+        RenderTextBox? renderTextBox = child.attachedRenderer as RenderTextBox?;
+        WebFRenderParagraph? renderParagraph = renderTextBox?.child as WebFRenderParagraph?;
+        renderParagraph?.markNeedsLayout();
+      }
+
+      if (child is dom.Element && child.style[styleProperty].isEmpty) {
         child.visitChildren(visitor);
       }
     }
-
-    renderStyle.visitChildren(visitor);
+    renderStyle.target.visitChildren(visitor);
   }
 
   static TextAlign? resolveTextAlign(String value) {

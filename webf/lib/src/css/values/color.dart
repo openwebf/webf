@@ -5,6 +5,7 @@
 
 import 'dart:math';
 
+import 'package:flutter/src/foundation/diagnostics.dart';
 import 'package:quiver/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
@@ -180,7 +181,7 @@ final LinkedLruHashMap<String, Color> _cachedParsedColor = LinkedLruHashMap(maxi
 /// #123456
 /// rgb(r,g,b)
 /// rgba(r,g,b,a)
-class CSSColor {
+class CSSColor with Diagnosticable {
   late Color value;
 
   CSSColor(this.value);
@@ -369,6 +370,11 @@ class CSSColor {
     } else {
       return 'rgb(${value.red}, ${value.green}, ${value.blue})';
     }
+  }
+
+  @override
+  String toStringShort() {
+    return value.toString();
   }
 }
 
