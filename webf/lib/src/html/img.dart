@@ -536,6 +536,7 @@ class ImageElement extends Element {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
       });
+      SchedulerBinding.instance.scheduleFrame();
 
       _dispatchLoadEvent();
     } catch (e, stack) {
