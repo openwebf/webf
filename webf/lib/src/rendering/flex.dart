@@ -800,7 +800,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     // Adjust children size based on flex properties which may affect children size.
-    // _adjustChildrenSize(_runMetrics);
     _adjustChildrenSize(_runMetrics);
 
     // _runMetrics maybe update after adjust, set flex containerSize again
