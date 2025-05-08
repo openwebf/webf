@@ -28,7 +28,9 @@ mixin CSSVariableMixin on RenderStyle {
     CSSVariable? variable = _getRawVariable(identifier);
     _addDependency(identifier, propertyName);
     if (variable != null) {
+      String originalIdentifier = identifier;
       identifier = variable.identifier.trim();
+      _addDependency(identifier, originalIdentifier);
     }
     if (_identifierStorage != null && _identifierStorage![identifier] != null) {
       return _identifierStorage![identifier];
@@ -90,14 +92,12 @@ mixin CSSVariableMixin on RenderStyle {
 
       String propertyValue = target.style.getPropertyValue(propertyName);
       if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(propertyValue)) {
-        scheduleMicrotask(() {
-          String propertyValue = variableString ?? value;
-          if (CSSColor.isColor(propertyValue)) {
-            CSSColor.clearCachedColorValue(propertyValue);
-          }
-          target.style.setProperty(propertyName, variableString ?? value);
-          target.style.flushPendingProperties();
-        });
+        String propertyValue = variableString ?? value;
+        if (CSSColor.isColor(propertyValue)) {
+          CSSColor.clearCachedColorValue(propertyValue);
+        }
+        target.style.setProperty(propertyName, variableString ?? value);
+        target.style.flushPendingProperties();
       }
     });
 

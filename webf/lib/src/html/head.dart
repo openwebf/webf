@@ -132,6 +132,11 @@ class LinkElement extends Element {
   String? _cachedStyleSheetText;
 
   void reloadStyle() {
+    if (_cachedStyleSheetText == null) {
+      _fetchAndApplyCSSStyle();
+      return;
+    }
+
     if (_styleSheet != null) {
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
