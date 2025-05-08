@@ -453,6 +453,11 @@ class _WebFDemoState extends State<WebFDemo> {
                 )),
           ],
         ),
+        floatingActionButton: FloatingActionButton(onPressed: () async {
+          WebFController? controller =
+          await WebFControllerManager.instance.getController(widget.webfPageName);
+          controller?.printRenderObjectTree(null);
+        }),
         body: Stack(
           children: [
             WebF.fromControllerName(

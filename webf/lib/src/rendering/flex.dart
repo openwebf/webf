@@ -800,7 +800,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     // Adjust children size based on flex properties which may affect children size.
+    // _adjustChildrenSize(_runMetrics);
     _adjustChildrenSize(_runMetrics);
+
+    // _runMetrics maybe update after adjust, set flex containerSize again
+    _setContainerSize(_runMetrics);
 
     if (!kReleaseMode) {
       developer.Timeline.finishSync();
@@ -1470,9 +1474,9 @@ class RenderFlexLayout extends RenderLayoutBox {
         childMainAxisExtent = _getMainAxisExtent(child);
         mainAxisExtent += childMainAxisExtent;
       }
-
-      // Update run main axis extent after child is relayouted.
+      // Update run main axis & cross axis extent after child is relayouted.
       metrics.mainAxisExtent = mainAxisExtent;
+      metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
     }
   }
 
