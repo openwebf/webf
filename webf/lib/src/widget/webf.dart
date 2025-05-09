@@ -51,6 +51,9 @@ class WebF extends StatefulWidget {
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
 
+  /// Callbacks when WebFController was created by this WebF widget.
+  final OnControllerCreated? onControllerCreated;
+
   // Set webf http cache mode.
   static void setHttpCacheMode(HttpCacheMode mode) {
     HttpCacheController.mode = mode;
@@ -92,6 +95,7 @@ class WebF extends StatefulWidget {
     this.initialState,
     this.errorBuilder,
     this.onDispose,
+    this.onControllerCreated,
     required this.controller,
   }) : super(key: key);
 
@@ -187,7 +191,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
       ControllerFactory actualCreateController =
           widget.createController ?? (() => WebFController(initialRoute: widget.initialRoute ?? '/'));
 
-      controller = await WebFControllerManager.instance.addOrUpdateControllerWithLoading(
+      WebFController? newController = await WebFControllerManager.instance.addOrUpdateControllerWithLoading(
           name: widget.controllerName,
           mode: WebFLoadingMode.preloading,
           createController: actualCreateController,
@@ -195,6 +199,11 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
           routes: widget.routes,
           setup: widget.setup,
           forceReplace: false);
+
+      if (newController != null && widget.onControllerCreated != null) {
+        widget.onControllerCreated!(newController);
+      }
+      controller = newController;
     }
 
     return controller;
@@ -248,6 +257,7 @@ class AutoManagedWebF extends StatefulWidget {
 
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
+  final OnControllerCreated? onControllerCreated;
 
   // Auto-initialization parameters
   final WebFBundle? bundle;
@@ -262,6 +272,7 @@ class AutoManagedWebF extends StatefulWidget {
       this.initialRoute,
       this.initialState,
       this.onDispose,
+      this.onControllerCreated,
       // Auto-initialization parameters
       this.bundle,
       this.createController,
