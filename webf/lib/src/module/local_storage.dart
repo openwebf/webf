@@ -9,6 +9,8 @@ import 'package:hive_ce/hive.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 
+Map<String, Box> _sharedSyncBox = {};
+
 class LocalStorageModule extends BaseModule {
   @override
   String get name => 'LocalStorage';
@@ -24,18 +26,26 @@ class LocalStorageModule extends BaseModule {
     final key = getBoxKey(moduleManager!);
     final tmpPath = await getWebFTemporaryPath();
     final storagePath = path.join(tmpPath, 'LocalStorage');
+
+    if (_sharedSyncBox.containsKey(key)) {
+      return;
+    }
+
     try {
-      await Hive.openBox(key, path: storagePath);
+      _sharedSyncBox[key] = await Hive.openBox(key, path: storagePath);
     } catch (e) {
       // Try again to avoid resources are temporarily unavailable.
-      await Hive.openBox(key, path: storagePath);
+      _sharedSyncBox[key] = await Hive.openBox(key, path: storagePath);
     }
   }
 
   LocalStorageModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
-  void dispose() {}
+  void dispose() {
+    final key = getBoxKey(moduleManager!);
+    _sharedSyncBox.remove(key);
+  }
 
   @override
   dynamic invoke(String method, List<dynamic> params) {

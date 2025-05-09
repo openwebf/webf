@@ -10,6 +10,8 @@ import 'package:hive_ce/hive.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/module/module_manager.dart';
 
+Map<String, LazyBox<String>> _sharedSyncBox = {};
+
 class AsyncStorageModule extends BaseModule {
   @override
   String get name => 'AsyncStorage';
@@ -29,11 +31,17 @@ class AsyncStorageModule extends BaseModule {
     final key = getBoxKey(moduleManager!);
     final tmpPath = await getWebFTemporaryPath();
     final storagePath = path.join(tmpPath, 'AsyncStorage');
+
+    if (_sharedSyncBox.containsKey(key)) {
+      _lazyBox = _sharedSyncBox[key]!;
+      return;
+    }
+
     try {
-      _lazyBox = await Hive.openLazyBox(key, path: storagePath);
+      _lazyBox = _sharedSyncBox[key] = await Hive.openLazyBox(key, path: storagePath);
     } catch (e) {
       // Try again to avoid resources are temporarily unavailable.
-      _lazyBox = await Hive.openLazyBox(key, path: storagePath);
+      _lazyBox = _sharedSyncBox[key] = await Hive.openLazyBox(key, path: storagePath);
     }
   }
 
@@ -74,7 +82,10 @@ class AsyncStorageModule extends BaseModule {
   }
 
   @override
-  void dispose() {}
+  void dispose() {
+    final key = getBoxKey(moduleManager!);
+    _sharedSyncBox.remove(key);
+  }
 
   @override
   Future<dynamic> invoke(String method, List<dynamic> params) {
