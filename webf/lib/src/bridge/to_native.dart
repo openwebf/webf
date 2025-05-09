@@ -57,6 +57,10 @@ final WebFInfo _cachedInfo = WebFInfo(_getWebFInfo());
 
 final HashMap<double, Pointer<Void>> _allocatedPages = HashMap();
 
+bool isPageAlive(double contextId) {
+  return _allocatedPages.containsKey(contextId);
+}
+
 Pointer<Void>? getAllocatedPage(double contextId) {
   return _allocatedPages[contextId];
 }

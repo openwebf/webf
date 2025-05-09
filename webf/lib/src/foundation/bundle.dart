@@ -121,7 +121,7 @@ abstract class WebFBundle with Diagnosticable {
 
   // Pre process the data before the data actual used.
   Future<void> preProcessing(double contextId) async {
-    if (isJavascript && data != null) {
+    if (isJavascript && data != null && isPageAlive(contextId)) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
 
       EvaluateOpItem? currentProfileOp;
