@@ -90,8 +90,7 @@ mixin CSSVariableMixin on RenderStyle {
         variableString = group[1];
       }
 
-      String propertyValue = target.style.getPropertyValue(propertyName);
-      if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(propertyValue)) {
+      if (target.style.contains(propertyName)) {
         String propertyValue = variableString ?? value;
         if (CSSColor.isColor(propertyValue)) {
           CSSColor.clearCachedColorValue(propertyValue);
