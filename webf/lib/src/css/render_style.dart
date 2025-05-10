@@ -82,7 +82,12 @@ enum RenderObjectGetType { self, parent, firstChild, lastChild, previousSibling,
 
 /// The abstract class for render-style, declare the
 /// getter interface for all available CSS rule.
-abstract class RenderStyle extends DiagnosticableTree {
+abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
+  @override
+  String toStringShort() {
+    return describeIdentity(this) + ' target: $target';
+  }
+
   // Common
   Element get target;
 
@@ -1251,6 +1256,55 @@ class CSSRenderStyle extends RenderStyle
         CSSAnimationMixin,
         CSSSvgMixin {
   CSSRenderStyle({required this.target});
+
+  @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('position', position));
+    properties.add(DiagnosticsProperty('backgroundColor', backgroundColor?.value));
+    properties.add(DiagnosticsProperty('effectiveDisplay', effectiveDisplay));
+    properties.add(DiagnosticsProperty('width', width.value));
+    properties.add(DiagnosticsProperty('height', height.value));
+    properties.add(DiagnosticsProperty('contentBoxLogicalWidth', contentBoxLogicalWidth));
+    properties.add(DiagnosticsProperty('contentBoxLogicalHeight', contentBoxLogicalHeight));
+    properties.add(DiagnosticsProperty('intrinsicWidth', intrinsicWidth));
+    properties.add(DiagnosticsProperty('intrinsicHeight', intrinsicHeight));
+    if (aspectRatio != null) properties.add(DiagnosticsProperty('intrinsicRatio', aspectRatio));
+
+    debugBoxDecorationProperties(properties);
+    debugVisibilityProperties(properties);
+    debugTransformProperties(properties);
+    debugCSSVariableProperties(properties);
+  }
+
+  void debugBoxDecorationProperties(DiagnosticPropertiesBuilder properties) {
+    properties.add(DiagnosticsProperty('borderEdge', border));
+    if (backgroundClip != null)
+      properties.add(DiagnosticsProperty('backgroundClip', backgroundClip));
+    if (backgroundOrigin != null)
+      properties.add(DiagnosticsProperty('backgroundOrigin', backgroundOrigin));
+    CSSBoxDecoration? _decoration = decoration;
+    if (_decoration != null && _decoration.hasBorderRadius)
+      properties.add(DiagnosticsProperty('borderRadius', _decoration.borderRadius));
+    if (_decoration != null && _decoration.image != null)
+      properties.add(DiagnosticsProperty('backgroundImage', _decoration.image));
+    if (_decoration != null && _decoration.boxShadow != null)
+      properties.add(DiagnosticsProperty('boxShadow', _decoration.boxShadow));
+    if (_decoration != null && _decoration.gradient != null)
+      properties.add(DiagnosticsProperty('gradient', _decoration.gradient));
+  }
+
+  void debugVisibilityProperties(DiagnosticPropertiesBuilder properties) {
+    properties.add(DiagnosticsProperty<ContentVisibility>('contentVisibility', contentVisibility));
+  }
+
+  void debugTransformProperties(DiagnosticPropertiesBuilder properties) {
+    Offset transformOffset = this.transformOffset;
+    Alignment transformAlignment = this.transformAlignment;
+    properties.add(DiagnosticsProperty('transformMatrix', transformMatrix));
+    properties.add(DiagnosticsProperty('transformOffset', transformOffset));
+    properties.add(DiagnosticsProperty('transformAlignment', transformAlignment));
+  }
 
   @override
   Element target;

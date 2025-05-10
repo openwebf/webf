@@ -1527,33 +1527,20 @@ class RenderBoxModel extends RenderBox
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
+    properties.add(renderStyle.toDiagnosticsNode(name: 'renderStyle'));
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
     properties.add(DiagnosticsProperty('contentConstraints', _contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('needsLayout', needsLayout, missingIfNull: true));
-    properties.add(DiagnosticsProperty('position', renderStyle.position));
-    properties.add(DiagnosticsProperty('backgroundColor', renderStyle.backgroundColor?.value));
     properties.add(DiagnosticsProperty('isSizeTight', isSizeTight));
-    properties.add(DiagnosticsProperty('effectiveDisplay', renderStyle.effectiveDisplay));
     properties.add(DiagnosticsProperty(
         'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));
-    properties.add(DiagnosticsProperty('width', renderStyle.width.value));
-    properties.add(DiagnosticsProperty('height', renderStyle.height.value));
-    properties.add(DiagnosticsProperty('contentBoxLogicalWidth', renderStyle.contentBoxLogicalWidth));
-    properties.add(DiagnosticsProperty('contentBoxLogicalHeight', renderStyle.contentBoxLogicalHeight));
-
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));
-    properties.add(DiagnosticsProperty('intrinsicWidth', renderStyle.intrinsicWidth));
-    properties.add(DiagnosticsProperty('intrinsicHeight', renderStyle.intrinsicHeight));
-    if (renderStyle.aspectRatio != null) properties.add(DiagnosticsProperty('intrinsicRatio', renderStyle.aspectRatio));
-
-    debugBoxDecorationProperties(properties);
-    debugVisibilityProperties(properties);
+    renderStyle.debugFillProperties(properties);
     debugOverflowProperties(properties);
-    debugTransformProperties(properties);
     debugOpacityProperties(properties);
   }
 }
