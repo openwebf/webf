@@ -1,3 +1,52 @@
+## 0.21.0-beta.7
+
+**Bug Fixes**
+
+Dark Mode Improvements
+
+- Enhanced darkModeOverride: Improved dark mode handling in widget mode with a more robust implementation [d6908531c]
+  - Added proper change detection to prevent unnecessary style recalculations
+  - Ensured events and style updates occur only when actual changes happen
+  - Simplified API by eliminating need for manual platform brightness change calls
+  - Added clear documentation explaining conditional logic
+
+QuickJS Runtime Fixes
+
+- JSClassID Overflow Fix: Fixed critical crash that occurred when total created controller instances exceeded 200. [89c1887ef]
+- Bundle Preprocessing: Added checks to ensure page is alive when preprocessing JavaScript bundles, preventing potential crashes.
+  [2dd2b7d91]
+
+CSS & Styling Fixes
+
+- CSS Variables: Fixed issues when overriding CSS variable properties with normal CSS values, improving CSS variable reliability.
+  [936562108]
+- Head Element Style Reload: Fixed null exception that occurred when reloading styles in head elements. [907804f4d]
+
+Layout Engine Improvements
+
+- Flexbox Container Sizing: Significantly improved flexbox margin handling with proper container dimension recalculation
+  - Added container size recalculation after child sizing adjustments
+  - Added cross-axis extent recalculation after child relayout
+  - Enhanced flexbox margin behavior with comprehensive test cases [99b08a88c]
+
+**New Features**
+
+- Controller Creation Callbacks: Added callbacks to notify when a controller is created by WebF widget, improving lifecycle
+  management. [cc53ddf23]
+
+Storage Enhancements
+
+- Shared Storage Cache: Implemented shared storage box cache for AsyncStorage and LocalStorage [30d2b6339]
+  - Added Maps to cache box instances across the application
+  - Maintained shared instances between modules
+  - Improved cleanup in dispose methods
+
+**Other Changes**
+
+- Test Coverage: Added extensive CSS variable test specifications, improving test coverage. [a4d2de1dd]
+- Documentation: Fixed changelog formatting. [cbe51803c]
+
+
 ## 0.21.0-beta.6
 
 **iOS Native Integration**
