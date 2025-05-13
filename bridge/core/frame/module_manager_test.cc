@@ -67,8 +67,7 @@ TEST(ModuleManager, invokeModuleError) {
   auto env = TEST_init([](double contextId, const char* errmsg) {});
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-    EXPECT_STREQ(
-        message.c_str(), "InternalError: Fail!!");
+    EXPECT_STREQ(message.c_str(), "InternalError: Fail!!");
   };
 
   auto context = env->page()->executingContext();

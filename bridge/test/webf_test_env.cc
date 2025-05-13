@@ -63,9 +63,9 @@ NativeValue* TEST_invokeModule(void* callback_context,
 
   if (module == "throwError") {
     char err[] = "Fail!!";
-    memcpy((void*) errmsg, err, sizeof(err));
+    memcpy((void*)errmsg, err, sizeof(err));
     return nullptr;
-//    callback(callback_context, context_id, nativeStringToStdString(method).c_str(), nullptr, nullptr, nullptr);
+    //    callback(callback_context, context_id, nativeStringToStdString(method).c_str(), nullptr, nullptr, nullptr);
   }
 
   if (module == "MethodChannel") {
