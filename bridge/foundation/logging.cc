@@ -60,9 +60,6 @@ LogMessage::~LogMessage() {
     case INFO:
       priority = ANDROID_LOG_INFO;
       break;
-    case DEBUG:
-      priority = ANDROID_LOG_DEBUG;
-      break;
     case WARN:
       priority = ANDROID_LOG_WARN;
       break;
