@@ -43,6 +43,7 @@ jobs:
 
   bridge_unit_test:
     runs-on: [self-hosted, macOS, ARM64]
+    needs: [ setup, build_bridge ]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -60,6 +61,7 @@ jobs:
 
   webf_unit_test:
     runs-on: [self-hosted, macOS, ARM64]
+    needs: [ setup, build_bridge ]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -69,6 +71,10 @@ jobs:
         flutter-version: ${{ env.flutter }}
     - run: flutter config --enable-macos-desktop
     - run: flutter doctor -v
+    - uses: actions/download-artifact@v4
+      with:
+        name: macos_bridge_binary
+        path: bridge/build/macos/
     - run: cd webf && flutter test
 
   integration_test:
