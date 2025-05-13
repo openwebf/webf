@@ -15,21 +15,9 @@ class CanvasPainter extends CustomPainter {
   CanvasRenderingContext2D? context;
 
   final Paint _saveLayerPaint = Paint();
-  final Paint _snapshotPaint = Paint();
-
-  // Cache the last paint image.
-  Image? _snapshot;
-  Image? get snapshot {
-    // picture.toImage
-    return _snapshot;
-  }
-
   bool _shouldRepaint = false;
-  // Indicate that snapshot is not generated yet, should not to perform next frame now.
-  bool _updatingSnapshot = false;
 
   bool get _shouldPainting => context != null;
-  bool get _hasSnapshot => context != null && _snapshot != null;
 
   // Notice: Canvas is stateless, change scaleX or scaleY will case dropping drawn content.
   /// https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-set-bitmap-dimensions
@@ -51,25 +39,21 @@ class CanvasPainter extends CustomPainter {
     }
   }
 
-  Picture? lastPicture;
+  final List<Picture> paintedPictures = [];
 
-  bool _firstPaint = true;
   @override
   void paint(Canvas rootCanvas, Size size) async {
-    if (lastPicture != null) {
-      rootCanvas.drawPicture(lastPicture!);
+    if (paintedPictures.isNotEmpty) {
+      paintedPictures.forEach((picture) {
+        rootCanvas.drawPicture(picture);
+      });
     }
 
     final PictureRecorder pictureRecorder = PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
 
-    if(_firstPaint && context != null) {
-      _firstPaint = false;
-      context?.scaleX = _scaleX;
-      context?.scaleY = _scaleY;
-      if (_scaleX != 1.0 || _scaleY != 1.0) {
-        canvas.scale(_scaleX, _scaleY);
-      }
+    if (_scaleX != 1.0 || _scaleY != 1.0) {
+      canvas.scale(_scaleX, _scaleY);
     }
     // This lets you create composite effects, for example making a group of drawing commands semi-transparent.
     // Without using saveLayer, each part of the group would be painted individually,
@@ -84,6 +68,8 @@ class CanvasPainter extends CustomPainter {
       actions = context!.performActions(canvas, size);
     }
 
+    int actionLen = actions?.length ?? 0;
+
     // Must pair each call to save()/saveLayer() with a later matching call to restore().
     canvas.restore();
 
@@ -92,29 +78,24 @@ class CanvasPainter extends CustomPainter {
       context!.clearActions(actions);
     }
 
-    lastPicture = pictureRecorder.endRecording();
-    rootCanvas.drawPicture(lastPicture!);
-  }
-
-  @override
-  bool shouldRepaint(CanvasPainter oldDelegate) {
-    if (_shouldRepaint) {
-      _shouldRepaint = false;
-      return true;
+    Picture picture = pictureRecorder.endRecording();
+    if (actionLen > 0) {
+      paintedPictures.add(picture);
     }
-    return !_updatingSnapshot;
+
+    rootCanvas.drawPicture(picture);
   }
 
   void _resetPaintingContext() {
     _shouldRepaint = true;
   }
 
-  void _disposeSnapshot() {
-    _snapshot?.dispose();
-    _snapshot = null;
+  void dispose() {
+    paintedPictures.clear();
   }
 
-  void dispose() {
-    _disposeSnapshot();
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
   }
 }

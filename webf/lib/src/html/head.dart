@@ -132,6 +132,11 @@ class LinkElement extends Element {
   String? _cachedStyleSheetText;
 
   void reloadStyle() {
+    if (_cachedStyleSheetText == null) {
+      _fetchAndApplyCSSStyle();
+      return;
+    }
+
     if (_styleSheet != null) {
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
@@ -245,7 +250,7 @@ class LinkElement extends Element {
       } finally {
         bundle.dispose();
 
-        if (ownerDocument.controller.preloadStatus != PreloadingStatus.none) {
+        if (ownerDocument.controller.preloadStatus != PreloadingStatus.done) {
           ownerDocument.controller.unfinishedPreloadResources--;
           ownerDocument.controller.checkPreloadCompleted();
         }

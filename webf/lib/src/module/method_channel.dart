@@ -22,15 +22,17 @@ class MethodChannelModule extends BaseModule {
   void dispose() {}
 
   @override
-  dynamic invoke(String method, params, callback) {
+  dynamic invoke(String method, params) {
+    Completer<dynamic> completer = Completer();
     if (method == 'invokeMethod') {
       _invokeMethodFromJavaScript(moduleManager!.controller, params[0], params[1]).then((result) {
-        callback(data: result);
+        completer.complete(result);
+        // callback(data: result);
       }).catchError((e, stack) {
-        callback(error: '$e\n$stack');
+        completer.completeError(e, stack);
       });
     }
-    return '';
+    return completer.future;
   }
 }
 

@@ -36,6 +36,7 @@ class IntegrationTestUriParser extends UriParser {
 
 class MultiplePageState extends State<MultiplePage> {
   BuildContext? _context;
+  late WebFController controller;
 
   void navigateBack() {
     Navigator.pop(_context!);
@@ -44,16 +45,21 @@ class MultiplePageState extends State<MultiplePage> {
   WebF? webf;
 
   @override
-  Widget build(BuildContext context) {
-    _context = context;
-    return webf = WebF(
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    controller = WebFController(
       viewportWidth: 360,
       viewportHeight: 640,
       bundle: WebFBundle.fromContent(widget.bundle, contentType: widget.contentType),
-      disableViewportWidthAssertion: true,
-      disableViewportHeightAssertion: true,
       uriParser: IntegrationTestUriParser(),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _context = context;
+    return webf = WebF(controller: controller);
   }
 }
 
@@ -73,7 +79,8 @@ class MultiplePage extends StatefulWidget {
 
 class MultiplePageKey extends LabeledGlobalKey<MultiplePageState> {
   final String name;
-  MultiplePageKey(this.name): super('$name');
+
+  MultiplePageKey(this.name) : super('$name');
 
   @override
   bool operator ==(other) {
@@ -111,6 +118,7 @@ class RootPage extends StatefulWidget {
 
 class RootPageState extends State<RootPage> {
   BuildContext? _context;
+
   Future<void> navigateToPage(String nextPage) {
     return Navigator.pushNamed(_context!, '/$nextPage');
   }
@@ -126,6 +134,7 @@ class CodeUnit {
   final String name;
   final String code;
   final ContentType contentType;
+
   CodeUnit(this.name, this.code, this.contentType);
 }
 
@@ -133,14 +142,12 @@ Map<String, WidgetBuilder> buildRoutes(MultiplePageController pageController, Li
   Map<String, WidgetBuilder> routes = {};
   codes.forEach((code) {
     routes['/${code.name}'] = (context) => Scaffold(
-      appBar: AppBar(title: Text('WebF Multiple Page Tests')),
-      body: MultiplePage(code.name, code.code, code.contentType, key: pageController.createKey(code.name)),
-    );
+          appBar: AppBar(title: Text('WebF Multiple Page Tests')),
+          body: MultiplePage(code.name, code.code, code.contentType, key: pageController.createKey(code.name)),
+        );
   });
-  routes['/'] = (context) => Scaffold(
-    appBar: AppBar(title: Text('WebF Multiple Page Tests')),
-    body: RootPage(key: rootPageKey)
-  );
+  routes['/'] =
+      (context) => Scaffold(appBar: AppBar(title: Text('WebF Multiple Page Tests')), body: RootPage(key: rootPageKey));
   return routes;
 }
 
@@ -189,7 +196,7 @@ void main() {
   runApp(MaterialApp(
     title: 'WebF Multiple Page Tests',
     debugShowCheckedModeBanner: false,
-    initialRoute:  '/',
+    initialRoute: '/',
     routes: buildRoutes(pageController, codes),
   ));
 
@@ -210,10 +217,9 @@ void main() {
           Completer completer = Completer();
           rootPageKey.currentState!.navigateToPage(specName);
 
-
           WidgetsBinding.instance.addPostFrameCallback((_) {
             MultiplePageState state = pageController.state(specName)!;
-            state.webf!.controller!.onLoad = (_) {
+            state.webf!.controller?.onLoad = (_) {
               Timer(Duration(milliseconds: 500), () async {
                 await state.webf!.controller!.reload();
                 Timer(Duration(milliseconds: 500), () async {

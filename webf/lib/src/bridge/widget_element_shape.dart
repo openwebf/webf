@@ -16,11 +16,7 @@ class WidgetElementShape extends Struct {
   external Pointer<NativeValue> asyncMethods;
 }
 
-Pointer<WidgetElementShape>? _cachedWidgetElementShape;
-
 Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator> creators) {
-  if (_cachedWidgetElementShape != null) return _cachedWidgetElementShape!;
-
   Pointer<WidgetElementShape> nativeShapes = malloc.allocate(sizeOf<WidgetElementShape>() * creators.length);
   int shapeIndex = 0;
 
@@ -36,8 +32,12 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
     List<String> syncMethods = [];
     List<String> asyncMethods = [];
 
-    if (!Element.isElementStaticSyncMethods(widgetElement.methods.last)) {
-      syncMethods.addAll(widgetElement.methods.last.keys);
+    for (int i = 2; i < widgetElement.methods.length; i ++) {
+      syncMethods.addAll(widgetElement.methods[i].keys);
+    }
+
+    for (int i = 0; i < widgetElement.asyncMethods.length; i ++) {
+      asyncMethods.addAll(widgetElement.asyncMethods[i].keys);
     }
 
     widgetElement.dynamicMethods.forEach((key, method) {
@@ -62,14 +62,5 @@ Pointer<WidgetElementShape> createWidgetElementShape(Map<String, ElementCreator>
     shapeIndex++;
   });
 
-  _cachedWidgetElementShape = nativeShapes;
-
   return nativeShapes;
-}
-
-void clearCachedWidgetElementShape() {
-  if (_cachedWidgetElementShape != null) {
-    malloc.free(_cachedWidgetElementShape!);
-  }
-  _cachedWidgetElementShape = null;
 }

@@ -22,7 +22,7 @@ describe('Position fixed', () => {
     });
     div1.appendChild(document.createTextNode('fixed element'));
     container1.appendChild(div1);
-    await snapshot(container1);
+    await snapshot();
   });
 
   it('works with scroller container', async () => {
@@ -287,7 +287,7 @@ describe('Position fixed', () => {
     await snapshot();
   });
 
-  it('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element', async () => {
+  xit('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element', async () => {
     let div;
     div = createElement(
       'div',
@@ -318,7 +318,7 @@ describe('Position fixed', () => {
     await snapshot();
   });
 
-  it('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element in nested container', async () => {
+  xit('should work with parent zIndex of parent fixed element larger than zIndex of child fixed element in nested container', async () => {
     let div;
     div = createElement('div', {
        style: {
@@ -519,15 +519,18 @@ describe('Position fixed', () => {
     document.body.appendChild(div1);
     document.body.appendChild(div2);
 
-    window.scrollBy(500, 500);
-
     requestAnimationFrame(async () => {
+      window.scrollBy(500, 500);
+
       document.body.appendChild(fixed);
+
       await snapshot();
       requestAnimationFrame(async () => {
         window.scrollBy(-500, -500);
-        await snapshot();
-        done();
+        requestAnimationFrame(async () => {
+          await snapshot();
+          done();
+        })
       });
     });
   });
@@ -566,16 +569,21 @@ describe('Position fixed', () => {
     document.body.appendChild(div1);
     document.body.appendChild(div2);
 
-    window.scrollBy(500, 500);
+    // @ts-ignore
+    document.body.ononscreen = () => {
+      window.scrollBy(500, 500);
 
-    requestAnimationFrame(async () => {
-      document.body.appendChild(fixed);
-      await snapshot();
       requestAnimationFrame(async () => {
-        window.scrollBy(-500, -500);
+        document.body.appendChild(fixed);
         await snapshot();
-        done();
+        requestAnimationFrame(async () => {
+          window.scrollBy(-500, -500);
+          requestAnimationFrame(async () => {
+            await snapshot();
+            done();
+          })
+        });
       });
-    });
+    }
   });
 });

@@ -88,6 +88,11 @@ WebFHttpOverrides setupHttpOverrides(HttpClientInterceptor? httpClientIntercepto
   return httpOverrides;
 }
 
+void removeHttpOverrides({required double contextId}) {
+  final WebFHttpOverrides httpOverrides = WebFHttpOverrides.instance();
+  httpOverrides.unregisterWebFContext(contextId);
+}
+
 // Returns the origin of the URI in the form scheme://host:port
 String getOrigin(Uri uri) {
   if (uri.isScheme('http') || uri.isScheme('https')) {

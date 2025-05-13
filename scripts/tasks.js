@@ -559,7 +559,7 @@ task('generate-bindings-code', (done) => {
     return done(buildResult.status);
   }
 
-  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../out'], {
+  let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../code_gen'], {
     cwd: paths.codeGen,
     env: {
       ...process.env,
@@ -839,3 +839,64 @@ function getDevicesInfo() {
   }
   return androidDevices;
 }
+
+// Update typings version
+task('update-typings-version', (done) => {
+  try {
+    // Read version from webf/pubspec.yaml
+    const webfPubspecPath = join(WEBF_ROOT, 'webf/pubspec.yaml');
+    const webfPubspec = readFileSync(webfPubspecPath, 'utf-8');
+    const webfVersion = webfPubspec.match(/version: (.*)/)[1].trim();
+
+    // Update version in bridge/typings/package.json
+    const typingsPackageJsonPath = join(WEBF_ROOT, 'bridge/typings/package.json');
+    const typingsPackageContent = readFileSync(typingsPackageJsonPath, 'utf-8');
+    
+    try {
+      const typingsPackageJson = JSON.parse(typingsPackageContent);
+      typingsPackageJson.version = webfVersion;
+      writeFileSync(typingsPackageJsonPath, JSON.stringify(typingsPackageJson, null, 2));
+      console.log(chalk.green(`Update typings version to ${webfVersion}`));
+    } catch (e) {
+      console.error(chalk.red('Parse package.json failed:'), e);
+    }
+    
+    done();
+  } catch (err) {
+    done(err);
+  }
+});
+
+// Generate type definitions file
+task('generate-typings', (done) => {
+  try {
+    console.log(chalk.blue('Generating type definitions file...'));
+    const polyfillPath = join(WEBF_ROOT, 'bridge/polyfill');
+    
+    // Ensure node_modules is installed
+    if (!fs.existsSync(path.join(polyfillPath, 'node_modules'))) {
+      console.log(chalk.yellow('Installing polyfill dependencies...'));
+      spawnSync(NPM, ['install'], {
+        cwd: polyfillPath,
+        stdio: 'inherit'
+      });
+    }
+    
+    const result = spawnSync(NPM, ['run', 'build:dts'], {
+      cwd: polyfillPath,
+      stdio: 'inherit'
+    });
+    
+    if (result.error || result.status !== 0) {
+      console.error(chalk.red('Failed to generate type definitions file'));
+      if (result.error) console.error(result.error);
+      done(new Error('Failed to generate type definitions file'));
+    } else {
+      console.log(chalk.green('Type definitions file generated successfully'));
+      done();
+    }
+  } catch (err) {
+    console.error(chalk.red('An error occurred during execution:'), err);
+    done(err);
+  }
+});

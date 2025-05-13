@@ -30,7 +30,7 @@ class ScriptPromise final {
   void Trace(GCVisitor* visitor);
 
  private:
-  JSContext* ctx_;
+  JSContext* ctx_{nullptr};
   ScriptValue promise_;
 };
 

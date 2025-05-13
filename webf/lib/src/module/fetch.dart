@@ -3,10 +3,12 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 
@@ -92,21 +94,19 @@ class FetchModule extends BaseModule {
   }
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, List<dynamic> params) {
     if (method == 'abortRequest') {
       _abortRequest();
       return '';
     }
 
+    Completer<dynamic> completer = Completer();
+
     Uri uri = _resolveUri(method);
-    Map<String, dynamic> options = params;
+    Map<String, dynamic> options = params[0];
 
     _handleError(Object error, StackTrace? stackTrace) {
-      String errmsg = '$error';
-      if (stackTrace != null) {
-        errmsg += '\n$stackTrace';
-      }
-      callback(error: errmsg);
+      completer.completeError(error, stackTrace);
     }
 
     if (uri.host.isEmpty) {
@@ -131,8 +131,12 @@ class FetchModule extends BaseModule {
           return consolidateHttpClientResponseBytes(res);
         }
       }).then((Uint8List? bytes) {
+        if (enableWebFProfileTracking) {
+          WebFProfiler.instance.finishTrackNetwork(currentNetworkOp!);
+        }
+
         if (bytes != null) {
-          callback(data: [EMPTY_STRING, response?.statusCode, bytes]);
+          completer.complete([EMPTY_STRING, response?.statusCode, bytes]);
         } else {
           throw FlutterError('Failed to read response.');
         }
@@ -143,6 +147,6 @@ class FetchModule extends BaseModule {
       });
     }
 
-    return EMPTY_STRING;
+    return completer.future;
   }
 }

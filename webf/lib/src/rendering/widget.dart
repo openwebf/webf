@@ -7,11 +7,16 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
-class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
+class RenderWidget extends RenderBoxModel
+    with ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderWidget({required super.renderStyle});
+
+  // Cache sticky children to calculate the base offset of sticky children
+  final Set<RenderBoxModel> stickyChildren = {};
 
   @override
   BoxSizeType get widthSizeType {
@@ -27,12 +32,7 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
 
   @override
   void setupParentData(RenderBox child) {
-    if (child is RenderBoxModel) {
-      RenderLayoutParentData parentData = RenderLayoutParentData();
-      child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
-    } else {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
   }
 
   void _layoutChild(RenderBox child) {
@@ -41,9 +41,13 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
     Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
     BoxConstraints childConstraints = BoxConstraints(
         minWidth: contentConstraints!.minWidth,
-        maxWidth: math.min(viewportSize.width, contentConstraints!.maxWidth),
+        maxWidth: contentConstraints!.hasTightWidth
+            ? contentConstraints!.maxWidth
+            : math.min(viewportSize.width, contentConstraints!.maxWidth),
         minHeight: contentConstraints!.minHeight,
-        maxHeight: math.min(viewportSize.height, contentConstraints!.maxHeight));
+        maxHeight: contentConstraints!.hasTightHeight
+            ? contentConstraints!.maxHeight
+            : math.min(viewportSize.height, contentConstraints!.maxHeight));
 
     child.layout(childConstraints, parentUsesSize: true);
 
@@ -54,14 +58,24 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
 
     minContentWidth = renderStyle.intrinsicWidth;
     minContentHeight = renderStyle.intrinsicHeight;
+
+    _setChildrenOffset(child);
+  }
+
+  void _setChildrenOffset(RenderBox child) {
+    double borderLeftWidth = renderStyle.borderLeftWidth?.computedValue ?? 0.0;
+    double borderTopWidth = renderStyle.borderTopWidth?.computedValue ?? 0.0;
+
+    double paddingLeftWidth = renderStyle.paddingLeft.computedValue ?? 0.0;
+    double paddingTopWidth = renderStyle.paddingTop.computedValue ?? 0.0;
+
+    Offset offset = Offset(borderLeftWidth + paddingLeftWidth, borderTopWidth + paddingTopWidth);
+    // Apply position relative offset change.
+    CSSPositionedLayout.applyRelativeOffset(offset, child);
   }
 
   @override
   void performLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayout(this);
-    }
-
     beforeLayout();
 
     List<RenderBoxModel> _positionedChildren = [];
@@ -71,7 +85,7 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      if (child is RenderBoxModel && childParentData.isPositioned) {
+      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         _positionedChildren.add(child);
       } else {
         _nonPositionedChildren.add(child);
@@ -91,20 +105,31 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
 
     if (_nonPositionedChildren.isNotEmpty) {
       _layoutChild(_nonPositionedChildren.first);
-      didLayout();
     } else {
       performResize();
     }
 
     for (RenderBoxModel child in _positionedChildren) {
-      CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
+      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
+
+      if (child.renderStyle.position == CSSPositionType.absolute) {
+        containingBlockElement.attachedRenderer!.positionedChildren.add(child);
+        if (!containingBlockElement.attachedRenderer!.needsLayout) {
+          CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
+        }
+      } else {
+        CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      }
     }
+
+    // // Calculate the offset of its sticky children.
+    // for (RenderBoxModel stickyChild in stickyChildren) {
+    //   CSSPositionedLayout.applyStickyChildOffset(this, stickyChild);
+    // }
 
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayout(this);
-    }
+    didLayout();
   }
 
   @override
@@ -127,6 +152,13 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
     return computeDistanceToBaseline();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    stickyChildren.clear();
+  }
+
+
   /// Compute distance to baseline of replaced element
   @override
   double computeDistanceToBaseline() {
@@ -141,28 +173,22 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaint(this);
-    }
-
     paintBoxModel(context, offset);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaint(this);
-    }
   }
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    offset += Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
-
-    offset +=
-        Offset(renderStyle.effectiveBorderLeftWidth.computedValue, renderStyle.effectiveBorderTopWidth.computedValue);
-
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-      context.paintChild(child, offset + childParentData.offset);
+
+      Offset childPaintOffset = childParentData.offset;
+      if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
+        Offset totalScrollOffset = getTotalScrollOffset();
+        childPaintOffset += totalScrollOffset;
+      }
+
+      context.paintChild(child, offset + childPaintOffset);
       child = childParentData.nextSibling;
     }
   }
@@ -173,13 +199,6 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
       return hitTestIntrinsicChild(result, firstChild, position!);
     }
 
-    // Reduce the area occupied by the padding and border size of RenderWidget.
-    if (position != null) {
-      position -=
-          Offset(renderStyle.borderLeftWidth?.computedValue ?? 0.0, renderStyle.borderTopWidth?.computedValue ?? 0.0);
-      position -= Offset(renderStyle.paddingLeft.computedValue, renderStyle.paddingTop.computedValue);
-    }
-
     RenderBox? child = lastChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
@@ -188,7 +207,16 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
         offset: childParentData.offset,
         position: position!,
         hitTest: (BoxHitTestResult result, Offset transformed) {
-          assert(transformed == position! - childParentData.offset);
+          assert(transformed == position - childParentData.offset);
+
+          if (child is RenderBoxModel) {
+            CSSPositionType positionType = child.renderStyle.position;
+            if (positionType == CSSPositionType.fixed) {
+              Offset totalScrollOffset = (this as RenderBoxModel).getTotalScrollOffset();
+              transformed -= totalScrollOffset;
+            }
+          }
+
           return child!.hitTest(result, position: transformed);
         },
       );
@@ -201,4 +229,11 @@ class RenderWidget extends RenderBoxModel with ContainerRenderObjectMixin<Render
 
     return false;
   }
+}
+
+class RenderRepaintBoundaryWidget extends RenderWidget {
+  RenderRepaintBoundaryWidget({required super.renderStyle});
+
+  @override
+  bool get isRepaintBoundary => true;
 }

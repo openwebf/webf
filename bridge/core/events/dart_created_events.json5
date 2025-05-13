@@ -95,6 +95,13 @@
       ]
     },
     {
+      "class": "ScreenEvent",
+      "types": [
+        "onscreen",
+        "offscreen"
+      ]
+    },
+    {
       "class": "MouseEvent",
       "types": [
         "click",

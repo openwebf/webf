@@ -45,14 +45,24 @@ DOMPointReadOnly* DOMPointReadOnly::Create(webf::ExecutingContext* context,
 DOMPoint* DOMPointReadOnly::fromPoint(ExecutingContext* context,
                                       DOMPointReadOnly* point,
                                       ExceptionState& exception_state) {
-  NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<DOMPointReadOnly>>::ToNativeValue(point)};
+  std::vector<DOMPointReadOnly*> matrix_vec{point};
+  NativeValue arguments[] = {
+      NativeValueConverter<NativeTypeArray<NativeTypePointer<DOMPointReadOnly>>>::ToNativeValue(matrix_vec)};
   AtomicString module_name = AtomicString(context->ctx(), "DOMPoint");
   AtomicString method_name = AtomicString(context->ctx(), "fromPoint");
+
+  char errmsg[1024];
+  errmsg[0] = 0;
 
   NativeValue* dart_result = context->dartMethodPtr()->invokeModule(
       context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
       module_name.ToNativeString(context->ctx()).release(), method_name.ToNativeString(context->ctx()).release(),
-      arguments, nullptr);
+      arguments, errmsg, nullptr);
+
+  if (errmsg[0] != 0) {
+    exception_state.ThrowException(context->ctx(), ErrorType::InternalError, errmsg);
+    return nullptr;
+  }
 
   NativeBindingObject* native_binding_object =
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(*dart_result);

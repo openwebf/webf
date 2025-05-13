@@ -57,6 +57,7 @@ class MutationObserver;
 class BindingObject;
 struct NativeBindingObject;
 class ScriptWrappable;
+class NativeByteDataFinalizerContext;
 class ScriptPromiseResolver;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
@@ -121,13 +122,16 @@ class ExecutingContext {
 
   // Register active script wrappers.
   void RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable);
-  void InActiveScriptWrappers(ScriptWrappable* script_wrappable);
+  void RemoveActiveScriptWrappers(ScriptWrappable* script_wrappable);
 
   void RegisterActiveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
   void RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_rendering_context_2d);
 
   void RegisterActiveScriptPromise(std::shared_ptr<ScriptPromiseResolver> promise_resolver);
   void UnRegisterActiveScriptPromise(const ScriptPromiseResolver* promise_resolver);
+
+  void RegisterActiveNativeByteData(NativeByteDataFinalizerContext* native_byte_data);
+  void UnRegisterActiveNativeByteData(NativeByteDataFinalizerContext* native_byte_data);
 
   // Gets the DOMTimerCoordinator which maintains the "active timer
   // list" of tasks created by setTimeout and setInterval. The
@@ -246,6 +250,7 @@ class ExecutingContext {
   std::unordered_set<ScriptWrappable*> active_wrappers_;
   WebFValueStatus* executing_context_status_{new WebFValueStatus()};
   std::unordered_set<std::shared_ptr<ScriptPromiseResolver>> active_pending_promises_;
+  std::unordered_set<NativeByteDataFinalizerContext*> active_native_byte_datas_;
   std::unordered_map<AtomicString, std::unique_ptr<WidgetElementShape>, AtomicString::KeyHasher> widget_element_shapes_;
   bool is_dedicated_;
 

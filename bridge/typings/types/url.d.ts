@@ -1,0 +1,54 @@
+import { URLSearchParams } from './url-search-params';
+export interface URLInterface {
+    href: string;
+    protocol: string;
+    host: string;
+    hostname: string;
+    port: string;
+    pathname: string;
+    search: string;
+    hash: string;
+    origin: string;
+    readonly searchParams: URLSearchParams;
+    toString(): string;
+}
+export declare class URL implements URLInterface {
+    _url: string;
+    _isInvalid: boolean;
+    _isRelative: boolean;
+    _username: string;
+    _password: null | string;
+    _scheme: string;
+    _query: string;
+    _fragment: string;
+    _host: string;
+    _port: string;
+    _path: any[];
+    _schemeData: string;
+    _searchParams: URLSearchParams;
+    _shouldUpdateSearchParams: boolean;
+    constructor(url: string, base?: string | URL);
+    private _clear;
+    private _invalid;
+    private _IDNAToASCII;
+    private _parse;
+    get href(): string;
+    set href(href: string);
+    get protocol(): string;
+    set protocol(protocol: string);
+    get host(): string;
+    set host(host: string);
+    get hostname(): string;
+    set hostname(hostname: string);
+    get port(): string;
+    set port(port: string);
+    get pathname(): string;
+    set pathname(pathname: string);
+    get search(): string;
+    set search(search: string);
+    get searchParams(): URLSearchParams;
+    get hash(): string;
+    set hash(hash: string);
+    get origin(): string;
+    toString(): string;
+}

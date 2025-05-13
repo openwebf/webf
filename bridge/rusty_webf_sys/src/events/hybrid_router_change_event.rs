@@ -11,7 +11,7 @@ pub struct HybridRouterChangeEventRustMethods {
   pub event: EventRustMethods,
   pub state: extern "C" fn(ptr: *const OpaquePtr, exception_state: *const OpaquePtr) -> NativeValue,
   pub kind: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
-  pub name: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
+  pub path: extern "C" fn(ptr: *const OpaquePtr) -> AtomicStringRef,
 }
 pub struct HybridRouterChangeEvent {
   pub event: Event,
@@ -49,9 +49,9 @@ impl HybridRouterChangeEvent {
     };
     value.to_string()
   }
-  pub fn name(&self) -> String {
+  pub fn path(&self) -> String {
     let value = unsafe {
-      ((*self.method_pointer).name)(self.ptr())
+      ((*self.method_pointer).path)(self.ptr())
     };
     value.to_string()
   }
@@ -59,7 +59,7 @@ impl HybridRouterChangeEvent {
 pub trait HybridRouterChangeEventMethods: EventMethods {
   fn state(&self, exception_state: &ExceptionState) -> NativeValue;
   fn kind(&self) -> String;
-  fn name(&self) -> String;
+  fn path(&self) -> String;
   fn as_hybrid_router_change_event(&self) -> &HybridRouterChangeEvent;
 }
 impl HybridRouterChangeEventMethods for HybridRouterChangeEvent {
@@ -69,8 +69,8 @@ impl HybridRouterChangeEventMethods for HybridRouterChangeEvent {
   fn kind(&self) -> String {
     self.kind()
   }
-  fn name(&self) -> String {
-    self.name()
+  fn path(&self) -> String {
+    self.path()
   }
   fn as_hybrid_router_change_event(&self) -> &HybridRouterChangeEvent {
     self

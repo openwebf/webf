@@ -1,7 +1,17 @@
 import { webf } from "./webf";
 
-export class Storage {
-  public moduleName;
+export interface StorageInterface {
+  readonly length: number;
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+  clear(): void;
+  key(index: number): string | null;
+  getAllKeys(): string[];
+}
+
+export class Storage implements StorageInterface {
+  public moduleName: string;
 
   constructor(moduleName: string) {
     this.moduleName = moduleName;
@@ -10,7 +20,7 @@ export class Storage {
     return webf.invokeModule(this.moduleName, 'getItem', String(key));
   }
   setItem(key: number | string, value: number | string) {
-    return webf.invokeModule(this.moduleName, 'setItem', [String(key), String(value)]);
+    return webf.invokeModule(this.moduleName, 'setItem', String(key), String(value));
   }
   removeItem(key: number | string) {
     return webf.invokeModule(this.moduleName, 'removeItem', String(key));
@@ -31,7 +41,7 @@ export class Storage {
 
 export const storageProxyHandler = {
   get(target: Storage, p: string | symbol, receiver: any): any {
-    const result = p in target ? target[p] : target.getItem(p as string);
+    const result = p in target ? target[p as keyof Storage] : target.getItem(p as string);
     return result === null ? undefined : result;
   },
   set(target: Storage, p: string | symbol, newValue: any, receiver: any): boolean {

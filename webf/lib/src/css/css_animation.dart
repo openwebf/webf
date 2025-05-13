@@ -83,14 +83,11 @@ mixin CSSAnimationMixin on RenderStyle {
   }
 
   bool shouldAnimation(List<String> properties) {
-    if (hasRenderBox()) {
-      bool shouldAnimation = false;
-      if (properties.any((element) => element.startsWith('animation'))) {
-        shouldAnimation = true;
-      }
-      return shouldAnimation;
+    bool shouldAnimation = false;
+    if (properties.any((element) => element.startsWith('animation'))) {
+      shouldAnimation = true;
     }
-    return false;
+    return shouldAnimation;
   }
 
   final Map<String, Animation> _runningAnimation = {};

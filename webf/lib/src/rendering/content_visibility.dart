@@ -23,8 +23,4 @@ mixin RenderContentVisibilityMixin on RenderBoxModelBase {
     }
     callback(context, offset);
   }
-
-  void debugVisibilityProperties(DiagnosticPropertiesBuilder properties) {
-    properties.add(DiagnosticsProperty<ContentVisibility>('contentVisibility', renderStyle.contentVisibility));
-  }
 }

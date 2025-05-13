@@ -94,7 +94,7 @@ describe('FontFamily', () => {
     });
   });
 
-  it("computed", () => {
+  it("computed", (done) => {
     let target;
     target = createElement('div', {
       id: 'target',
@@ -104,19 +104,24 @@ describe('FontFamily', () => {
     });
     BODY.appendChild(target);
 
-    test_computed_value('font-family', 'serif', 'Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo');
-    test_computed_value('font-family', 'sans-serif', 'Helvetica, Roboto, PingFang SC, PingFang TC');
-    test_computed_value('font-family', 'cursive', 'Snell Roundhand, Apple Chancery, DancingScript, Comic Sans MS');
-    test_computed_value('font-family', 'fantasy', 'Papyrus, Impact');
-    test_computed_value('font-family', 'monospace', 'Courier, Courier New, DroidSansMono, Monaco, Heiti SC, Heiti TC');
-    test_computed_value(
-      'font-family',
-      'serif, sans-serif, cursive, fantasy, monospace',
-      'Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo, Helvetica, Roboto, PingFang SC, PingFang TC, Snell Roundhand, Apple Chancery, DancingScript, Comic Sans MS, Papyrus, Impact, Courier, Courier New, DroidSansMono, Monaco, Heiti SC, Heiti TC'
-    );
+    target.addEventListener('onscreen', () => {
 
-    test_computed_value('font-family', 'Helvetica, Verdana, sans-serif', 'helvetica, verdana, Helvetica, Roboto, PingFang SC, PingFang TC');
-    test_computed_value('font-family', 'New Century Schoolbook, serif', 'new century schoolbook, Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo');
-    test_computed_value('font-family', '"21st Century", fantasy', '21st century, Papyrus, Impact');
+      test_computed_value('font-family', 'serif', 'Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo');
+      test_computed_value('font-family', 'sans-serif', 'Helvetica, Roboto, PingFang SC, PingFang TC');
+      test_computed_value('font-family', 'cursive', 'Snell Roundhand, Apple Chancery, DancingScript, Comic Sans MS');
+      test_computed_value('font-family', 'fantasy', 'Papyrus, Impact');
+      test_computed_value('font-family', 'monospace', 'Courier, Courier New, DroidSansMono, Monaco, Heiti SC, Heiti TC');
+      test_computed_value(
+        'font-family',
+        'serif, sans-serif, cursive, fantasy, monospace',
+        'Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo, Helvetica, Roboto, PingFang SC, PingFang TC, Snell Roundhand, Apple Chancery, DancingScript, Comic Sans MS, Papyrus, Impact, Courier, Courier New, DroidSansMono, Monaco, Heiti SC, Heiti TC'
+      );
+  
+      test_computed_value('font-family', 'Helvetica, Verdana, sans-serif', 'helvetica, verdana, Helvetica, Roboto, PingFang SC, PingFang TC');
+      test_computed_value('font-family', 'New Century Schoolbook, serif', 'new century schoolbook, Times, Times New Roman, Noto Serif, Songti SC, Songti TC, Hiragino Mincho ProN, AppleMyungjo, Apple SD Gothic Neo');
+      test_computed_value('font-family', '"21st Century", fantasy', '21st century, Papyrus, Impact');
+
+      done();
+    });
   })
 });

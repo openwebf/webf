@@ -51,22 +51,26 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
   ts->os_frameCallbacks.erase(th->callbackId);
 }
 
-NativeValue* TEST_invokeModule(void* callbackContext,
-                               double contextId,
+NativeValue* TEST_invokeModule(void* callback_context,
+                               double context_id,
                                int64_t profile_link_id,
                                SharedNativeString* moduleName,
                                SharedNativeString* method,
-                               SharedNativeString* params,
+                               NativeValue* params,
+                               const char* errmsg,
                                AsyncModuleCallback callback) {
   std::string module = nativeStringToStdString(moduleName);
 
   if (module == "throwError") {
-    callback(callbackContext, contextId, nativeStringToStdString(method).c_str(), nullptr, nullptr, nullptr);
+    char err[] = "Fail!!";
+    memcpy((void*)errmsg, err, sizeof(err));
+    return nullptr;
+    //    callback(callback_context, context_id, nativeStringToStdString(method).c_str(), nullptr, nullptr, nullptr);
   }
 
   if (module == "MethodChannel") {
     NativeValue data = Native_NewCString("{\"result\": 1234}");
-    callback(callbackContext, contextId, nullptr, &data, nullptr, nullptr);
+    callback(callback_context, context_id, nullptr, &data, nullptr, nullptr);
   }
 
   auto* result = static_cast<NativeValue*>(malloc(sizeof(NativeValue)));
@@ -326,6 +330,10 @@ void TEST_simulateChangeDarkMode(MousePointer*, int32_t length, int32_t pointer)
 
 void TEST_simulateInputText(SharedNativeString* nativeString) {}
 
+void TEST_requestIdleCallback() {}
+
+void TEST_cancelIdleCallback() {}
+
 std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   std::vector<uint64_t> mockMethods{reinterpret_cast<uint64_t>(TEST_invokeModule),
                                     reinterpret_cast<uint64_t>(TEST_requestBatchUpdate),
@@ -334,7 +342,10 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_setInterval),
                                     reinterpret_cast<uint64_t>(TEST_clearTimeout),
                                     reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_requestIdleCallback),
                                     reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
+                                    reinterpret_cast<uint64_t>(TEST_cancelIdleCallback),
+
                                     reinterpret_cast<uint64_t>(TEST_toBlob),
                                     reinterpret_cast<uint64_t>(TEST_flushUICommand),
                                     reinterpret_cast<uint64_t>(TEST_CreateBindingObject),

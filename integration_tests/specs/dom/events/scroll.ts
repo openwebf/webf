@@ -25,6 +25,8 @@ describe('Event scroll', () => {
     }
 
     container.addEventListener('scroll', scrollListener);
-    container.scrollTo(0, 50);
+    requestAnimationFrame(() => {
+      container.scrollTo(0, 50);
+    });
   });
 });

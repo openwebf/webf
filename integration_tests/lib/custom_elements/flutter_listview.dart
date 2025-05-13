@@ -4,11 +4,28 @@ import 'package:webf/webf.dart';
 
 class FlutterListViewElement extends WidgetElement {
   FlutterListViewElement(BindingContext? context) : super(context);
+  @override
+  Map<String, dynamic> get defaultStyle => {'display': 'block'};
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterListViewElementState(this);
+  }
+}
+
+class FlutterListViewElementState extends WebFWidgetElementState {
+  FlutterListViewElementState(super.widgetElement);
 
   late ScrollController controller;
 
-  @override
-  Map<String, dynamic> get defaultStyle => {'display': 'block'};
+  void _scrollListener() {
+    if (controller.position.atEdge) {
+      bool isReachBottom = controller.position.pixels != 0;
+      if (isReachBottom) {
+        widgetElement.dispatchEvent(Event('loadmore'));
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -16,28 +33,22 @@ class FlutterListViewElement extends WidgetElement {
     controller = ScrollController()..addListener(_scrollListener);
   }
 
-  void _scrollListener() {
-    if (controller.position.atEdge) {
-      bool isReachBottom = controller.position.pixels != 0;
-      if (isReachBottom) {
-        dispatchEvent(Event('loadmore'));
-      }
-    }
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  Widget build(BuildContext context) {
     return Padding(
         padding: EdgeInsets.all(10),
         child: WebFChildNodeSize(
-          ownerElement: this,
+          ownerElement: widgetElement,
           child: ListView(
-            children: childNodes.toWidgetList(),
+            children: widgetElement.childNodes.toWidgetList(),
             controller: controller,
             physics: const AlwaysScrollableScrollPhysics(),
           ),
         ));
-
-    ;
   }
 }

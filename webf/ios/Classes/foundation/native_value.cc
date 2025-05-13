@@ -1,0 +1,1 @@
+#include "../../../src/foundation/native_value.cc"

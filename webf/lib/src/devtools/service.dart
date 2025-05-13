@@ -30,7 +30,7 @@ void spawnIsolateInspectorServer(DevToolsService devTool, WebFController control
     } else if (data is InspectorFrontEndMessage) {
       devTool.uiInspector!.messageRouter(data.id, data.module, data.method, data.params);
     } else if (data is InspectorServerStart) {
-      devTool.uiInspector!.onServerStart(port);
+      devTool.uiInspector!.onServerStart(data.port);
     } else if (data is InspectorClientConnected) {
       devTool.uiInspector!.onClientConnected();
     }

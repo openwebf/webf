@@ -3,12 +3,27 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:ui' as ui show Image;
+import 'dart:ui' as ui show Image, PathMetrics;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
+
+// A circular list implementation that allows access in a circular fashion.
+class CircularIntervalList<T> {
+  CircularIntervalList(this._values);
+
+  final List<T> _values;
+  int _index = 0;
+
+  T get next {
+    if (_index >= _values.length) {
+      _index = 0;
+    }
+    return _values[_index++];
+  }
+}
 
 enum _BorderDirection { top, bottom, left, right }
 
@@ -79,6 +94,262 @@ class BoxDecorationPainter extends BoxPainter {
         _paintBoxShadow(canvas, rect, textDirection, boxShadow);
       }
     }
+  }
+
+  void _paintDashedBorder(Canvas canvas, Rect rect, TextDirection? textDirection) {
+    if (_decoration.border == null) return;
+
+    // Get the border instance
+    Border border = _decoration.border as Border;
+
+    // Check if borders are uniform (same style, width, and color for all sides)
+    bool isUniform = _isUniformDashedBorder(border);
+
+    if (isUniform) {
+      // Use the original implementation for uniform borders
+      // Get side properties from the top border
+      ExtendedBorderSide side = border.top as ExtendedBorderSide;
+
+      // Skip if the border side is not visible or not dashed
+      if (side.extendBorderStyle != CSSBorderStyleType.dashed || side.width == 0.0) return;
+
+      // Create a paint object for the border
+      final Paint paint = Paint()
+        ..color = side.color
+        ..strokeWidth = side.width
+        ..style = PaintingStyle.stroke;
+
+      // Define dash pattern (dash length, gap length)
+      // Standard dash pattern is 3x the line width for the dash, 3x for the gap
+      final double dashLength = side.width * 3;
+      final double dashGap = side.width * 3;
+
+      // Create the path for the complete border
+      Path borderPath = Path();
+
+      // Handle differently based on whether we have border radius
+      if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+        RRect rrect = _decoration.borderRadius!.toRRect(rect);
+        borderPath.addRRect(rrect);
+      } else {
+        borderPath.addRect(rect);
+      }
+
+      // Draw the dashed border
+      canvas.drawPath(
+        dashPath(
+          borderPath,
+          dashArray: CircularIntervalList<double>([dashLength, dashGap]),
+        ),
+        paint,
+      );
+    } else {
+      // Handle non-uniform borders - draw each side individually if it's dashed
+      // Check which sides have dashed borders
+      bool hasTopDashedBorder = border.top is ExtendedBorderSide && 
+          (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
+          border.top.width > 0;
+          
+      bool hasRightDashedBorder = border.right is ExtendedBorderSide && 
+          (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
+          border.right.width > 0;
+          
+      bool hasBottomDashedBorder = border.bottom is ExtendedBorderSide && 
+          (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
+          border.bottom.width > 0;
+          
+      bool hasLeftDashedBorder = border.left is ExtendedBorderSide && 
+          (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
+          border.left.width > 0;
+      
+      // Return early if no dashed borders
+      if (!hasTopDashedBorder && !hasRightDashedBorder && 
+          !hasBottomDashedBorder && !hasLeftDashedBorder) return;
+
+      // Handle border radius
+      RRect? rrect;
+      if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
+        rrect = _decoration.borderRadius!.toRRect(rect);
+      }
+
+      // Draw each dashed border side individually
+      if (hasTopDashedBorder) {
+        _paintDashedBorderSide(canvas, rect, rrect, border.top as ExtendedBorderSide, _BorderDirection.top);
+      }
+      
+      if (hasRightDashedBorder) {
+        _paintDashedBorderSide(canvas, rect, rrect, border.right as ExtendedBorderSide, _BorderDirection.right);
+      }
+      
+      if (hasBottomDashedBorder) {
+        _paintDashedBorderSide(canvas, rect, rrect, border.bottom as ExtendedBorderSide, _BorderDirection.bottom);
+      }
+      
+      if (hasLeftDashedBorder) {
+        _paintDashedBorderSide(canvas, rect, rrect, border.left as ExtendedBorderSide, _BorderDirection.left);
+      }
+    }
+  }
+  
+  // Check if all four borders have the same style, width, and color
+  bool _isUniformDashedBorder(Border border) {
+    // Check if all sides are ExtendedBorderSide
+    if (border.top is! ExtendedBorderSide || 
+        border.right is! ExtendedBorderSide || 
+        border.bottom is! ExtendedBorderSide || 
+        border.left is! ExtendedBorderSide) {
+      return false;
+    }
+    
+    ExtendedBorderSide topSide = border.top as ExtendedBorderSide;
+    ExtendedBorderSide rightSide = border.right as ExtendedBorderSide;
+    ExtendedBorderSide bottomSide = border.bottom as ExtendedBorderSide;
+    ExtendedBorderSide leftSide = border.left as ExtendedBorderSide;
+    
+    // Check if all sides have the same style
+    if (topSide.extendBorderStyle != rightSide.extendBorderStyle ||
+        topSide.extendBorderStyle != bottomSide.extendBorderStyle ||
+        topSide.extendBorderStyle != leftSide.extendBorderStyle) {
+      return false;
+    }
+    
+    // Check if all sides have the same width
+    if (topSide.width != rightSide.width ||
+        topSide.width != bottomSide.width ||
+        topSide.width != leftSide.width) {
+      return false;
+    }
+    
+    // Check if all sides have the same color
+    if (topSide.color != rightSide.color ||
+        topSide.color != bottomSide.color ||
+        topSide.color != leftSide.color) {
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // Helper method to paint a dashed border on a specific side
+  void _paintDashedBorderSide(Canvas canvas, Rect rect, RRect? rrect, ExtendedBorderSide side, _BorderDirection direction) {
+    // Create a paint object for the border
+    final Paint paint = Paint()
+      ..color = side.color
+      ..strokeWidth = side.width
+      ..style = PaintingStyle.stroke;
+
+    // Define dash pattern (dash length, gap length)
+    // Standard dash pattern is 3x the line width for the dash, 3x for the gap
+    final double dashLength = side.width * 3;
+    final double dashGap = side.width * 3;
+    final dashArray = CircularIntervalList<double>([dashLength, dashGap]);
+
+    // Create the path for just this side
+    Path borderPath = Path();
+    
+    if (rrect != null) {
+      // Handle rounded corners
+      switch (direction) {
+        case _BorderDirection.top:
+          borderPath.moveTo(rrect.left, rrect.top + rrect.tlRadiusY);
+          borderPath.arcToPoint(
+            Offset(rrect.left + rrect.tlRadiusX, rrect.top),
+            radius: Radius.elliptical(rrect.tlRadiusX, rrect.tlRadiusY),
+            clockwise: false,
+          );
+          borderPath.lineTo(rrect.right - rrect.trRadiusX, rrect.top);
+          borderPath.arcToPoint(
+            Offset(rrect.right, rrect.top + rrect.trRadiusY),
+            radius: Radius.elliptical(rrect.trRadiusX, rrect.trRadiusY),
+            clockwise: true,
+          );
+          break;
+        case _BorderDirection.right:
+          borderPath.moveTo(rrect.right, rrect.top + rrect.trRadiusY);
+          borderPath.lineTo(rrect.right, rrect.bottom - rrect.brRadiusY);
+          borderPath.arcToPoint(
+            Offset(rrect.right - rrect.brRadiusX, rrect.bottom),
+            radius: Radius.elliptical(rrect.brRadiusX, rrect.brRadiusY),
+            clockwise: true,
+          );
+          break;
+        case _BorderDirection.bottom:
+          borderPath.moveTo(rrect.right - rrect.brRadiusX, rrect.bottom);
+          borderPath.lineTo(rrect.left + rrect.blRadiusX, rrect.bottom);
+          borderPath.arcToPoint(
+            Offset(rrect.left, rrect.bottom - rrect.blRadiusY),
+            radius: Radius.elliptical(rrect.blRadiusX, rrect.blRadiusY),
+            clockwise: true,
+          );
+          break;
+        case _BorderDirection.left:
+          borderPath.moveTo(rrect.left, rrect.bottom - rrect.blRadiusY);
+          borderPath.lineTo(rrect.left, rrect.top + rrect.tlRadiusY);
+          borderPath.arcToPoint(
+            Offset(rrect.left + rrect.tlRadiusX, rrect.top),
+            radius: Radius.elliptical(rrect.tlRadiusX, rrect.tlRadiusY),
+            clockwise: false,
+          );
+          break;
+      }
+    } else {
+      // Handle non-rounded corners
+      switch (direction) {
+        case _BorderDirection.top:
+          borderPath.moveTo(rect.left, rect.top);
+          borderPath.lineTo(rect.right, rect.top);
+          break;
+        case _BorderDirection.right:
+          borderPath.moveTo(rect.right, rect.top);
+          borderPath.lineTo(rect.right, rect.bottom);
+          break;
+        case _BorderDirection.bottom:
+          borderPath.moveTo(rect.right, rect.bottom);
+          borderPath.lineTo(rect.left, rect.bottom);
+          break;
+        case _BorderDirection.left:
+          borderPath.moveTo(rect.left, rect.bottom);
+          borderPath.lineTo(rect.left, rect.top);
+          break;
+      }
+    }
+    
+    // Draw the dashed border for this side
+    canvas.drawPath(
+      dashPath(
+        borderPath,
+        dashArray: dashArray,
+      ),
+      paint,
+    );
+  }
+
+  // Helper function to create a dashed path
+  Path dashPath(
+    Path source, {
+    required CircularIntervalList<double> dashArray,
+  }) {
+    final Path dest = Path();
+    final ui.PathMetrics metrics = source.computeMetrics();
+
+    for (final metric in metrics) {
+      double distance = 0.0;
+      bool draw = true;
+
+      while (distance < metric.length) {
+        final double length = dashArray.next;
+        if (draw) {
+          dest.addPath(
+            metric.extractPath(distance, distance + length),
+            Offset.zero,
+          );
+        }
+        distance += length;
+        draw = !draw;
+      }
+    }
+
+    return dest;
   }
 
   /// An outer box-shadow casts a shadow as if the border-box of the element were opaque.
@@ -388,13 +659,30 @@ class BoxDecorationPainter extends BoxPainter {
       _paintBackgroundImage(canvas, backgroundImageRect, configuration);
     }
 
-    _decoration.border?.paint(
-      canvas,
-      rect,
-      shape: _decoration.shape,
-      borderRadius: _decoration.borderRadius,
-      textDirection: configuration.textDirection,
-    );
+    // Check if we have a dashed border
+    bool hasDashedBorder = false;
+
+    if (_decoration.border != null) {
+      Border border = _decoration.border as Border;
+
+      // Check if top border is dashed - assuming uniform border
+      hasDashedBorder = border.top is ExtendedBorderSide &&
+                       (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+    }
+
+    // If we have a dashed border, use our custom painter
+    if (hasDashedBorder) {
+      _paintDashedBorder(canvas, rect, textDirection);
+    } else {
+      // Otherwise use Flutter's built-in border painting
+      _decoration.border?.paint(
+        canvas,
+        rect,
+        shape: _decoration.shape,
+        borderRadius: _decoration.borderRadius,
+        textDirection: configuration.textDirection,
+      );
+    }
 
     _paintShadows(canvas, rect, textDirection);
   }
@@ -402,7 +690,6 @@ class BoxDecorationPainter extends BoxPainter {
   @override
   String toString() => 'BoxPainter for $_decoration';
 }
-
 /// Forked from flutter of [DecorationImagePainter] Class.
 /// https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/painting/decoration_image.dart#L208
 class BoxDecorationImagePainter {

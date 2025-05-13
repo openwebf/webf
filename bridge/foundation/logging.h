@@ -32,7 +32,7 @@ typedef int LogSeverity;
 constexpr LogSeverity VERBOSE = 0;
 constexpr LogSeverity INFO = 1;
 constexpr LogSeverity WARN = 2;
-constexpr LogSeverity DEBUG = 3;
+// constexpr LogSeverity DEBUG = 3;
 constexpr LogSeverity ERROR = 4;
 constexpr LogSeverity NUM_SEVERITIES = 5;
 constexpr LogSeverity FATAL = 6;

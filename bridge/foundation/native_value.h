@@ -39,7 +39,8 @@ enum class JSPointerType {
   DOMPoint = 6,
   CanvasGradient = 7,
   CanvasPattern = 8,
-  Others = 9
+  NativeByteData = 9,
+  Others = 10
 };
 
 class ExecutingContext;

@@ -142,6 +142,9 @@ WEBF_EXPORT_C
 void* getUICommandItems(void* page);
 
 WEBF_EXPORT_C
+int64_t getUICommandItemSize(void* page);
+
+WEBF_EXPORT_C
 void freeActiveCommandBuffer(void* ui_command_buffer);
 
 WEBF_EXPORT_C

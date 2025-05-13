@@ -23,7 +23,9 @@ impl Storage {
   }
 
   pub fn get_item(&self, key: &str, exception_state: &ExceptionState) -> Result<Option<String>, String> {
-    let key_string = NativeValue::new_string(key);
+    let key_string = NativeValue::new_list(vec![
+      NativeValue::new_string(key)
+    ]);
     let item_string = self.context().webf_invoke_module_with_params(&self.module_name, "getItem", &key_string, exception_state).unwrap();
 
     if exception_state.has_exception() {
@@ -52,7 +54,9 @@ impl Storage {
   }
 
   pub fn remove_item(&self, key: &str, exception_state: &ExceptionState) -> Result<(), String> {
-    let key_string = NativeValue::new_string(key);
+    let key_string = NativeValue::new_list(vec![
+      NativeValue::new_string(key)
+    ]);
     let result = self.context().webf_invoke_module_with_params(&self.module_name, "removeItem", &key_string, exception_state);
 
     if exception_state.has_exception() {
@@ -69,7 +73,9 @@ impl Storage {
   }
 
   pub fn key(&self, index: u32, exception_state: &ExceptionState) -> String {
-    let index_string = NativeValue::new_int64(index.into());
+    let index_string = NativeValue::new_list(vec![
+      NativeValue::new_int64(index.into())
+    ]);
     let key_string = self.context().webf_invoke_module_with_params(&self.module_name, "key", &index_string, exception_state).unwrap();
     key_string.to_string()
   }

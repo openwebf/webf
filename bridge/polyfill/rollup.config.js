@@ -1,9 +1,8 @@
 const resolve = require('@rollup/plugin-node-resolve');
 const typescript = require('@rollup/plugin-typescript');
 const replace = require('@rollup/plugin-replace');
-const bundleSize = require('rollup-plugin-bundle-size');
 const commonjs = require('@rollup/plugin-commonjs');
-const { terser } = require('rollup-plugin-terser');
+const terser = require('@rollup/plugin-terser');
 
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 const output = {
@@ -31,13 +30,15 @@ const plugins = [
     delimiters: ['', ''],
     preventAssignment: false
   }),
-  bundleSize(),
 ];
 
 module.exports = [
   {
     input: 'src/index.ts',
-    output: Object.assign({ file: 'dist/main.js' }, output),
+    output: Object.assign({
+      dir: 'dist',
+      entryFileNames: 'main.js',
+     }, output),
     plugins: [
       ...plugins,
       typescript(),
@@ -47,7 +48,10 @@ module.exports = [
   },
   {
     input: 'src/test/index.js',
-    output: Object.assign({ file: 'dist/test.js' }, Object.assign({ name: 'polyfillTester' }, output)),
+    output: Object.assign({ 
+      dir: 'dist',
+      entryFileNames: 'test.js',
+    }, Object.assign({ name: 'polyfillTester' }, output)),
     plugins: [
       ...plugins,
       commonjs(),

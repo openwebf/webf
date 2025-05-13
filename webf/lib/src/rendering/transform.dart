@@ -75,12 +75,4 @@ mixin RenderTransformMixin on RenderBoxModelBase {
     if (isHit) return true;
     return false;
   }
-
-  void debugTransformProperties(DiagnosticPropertiesBuilder properties) {
-    Offset transformOffset = renderStyle.transformOffset;
-    Alignment transformAlignment = renderStyle.transformAlignment;
-    properties.add(DiagnosticsProperty('transformMatrix', renderStyle.effectiveTransformMatrix));
-    properties.add(DiagnosticsProperty('transformOffset', transformOffset));
-    properties.add(DiagnosticsProperty('transformAlignment', transformAlignment));
-  }
 }

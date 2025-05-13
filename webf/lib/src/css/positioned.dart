@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 
 // CSS Positioned Layout: https://drafts.csswg.org/css-position/
@@ -28,26 +29,21 @@ Offset? _getRenderPositionHolderScrollOffset(RenderPositionPlaceholder holder, R
 }
 
 // Get the offset of the RenderPlaceholder of positioned element to its parent RenderBoxModel.
-Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, RenderBoxModel parent) {
+Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, RenderBoxModel parent,
+    {bool excludeScrollOffset = false}) {
   if (placeholder == null || !placeholder.attached) {
     return Offset.zero;
   }
   Offset positionHolderScrollOffset = _getRenderPositionHolderScrollOffset(placeholder, parent) ?? Offset.zero;
   // Offset of positioned element should exclude scroll offset to its containing block.
-  Offset toParentOffset = placeholder.getOffsetToAncestor(Offset.zero, parent, excludeScrollOffset: true);
+  Offset toParentOffset =
+      placeholder.getOffsetToAncestor(Offset.zero, parent, excludeScrollOffset: excludeScrollOffset);
   Offset placeholderOffset = positionHolderScrollOffset + toParentOffset;
 
   return placeholderOffset;
 }
 
 class CSSPositionedLayout {
-  static RenderLayoutParentData getPositionParentData(
-      RenderBoxModel renderBoxModel, RenderLayoutParentData parentData) {
-    CSSPositionType positionType = renderBoxModel.renderStyle.position;
-    parentData.isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
-    return parentData;
-  }
-
   static Offset? getRelativeOffset(RenderStyle renderStyle) {
     CSSLengthValue left = renderStyle.left;
     CSSLengthValue right = renderStyle.right;
@@ -136,7 +132,7 @@ class CSSPositionedLayout {
         offsetX += stickyLeft - offsetLeftToScrollContainer;
         // Sticky child can not exceed the left boundary of its parent container
         RenderBoxModel parentContainer = child.parent as RenderBoxModel;
-        double maxOffsetX = parentContainer.boxSize!.width - childWidth;
+        double maxOffsetX = parentContainer.scrollableSize.width - childWidth;
         if (offsetX > maxOffsetX) {
           offsetX = maxOffsetX;
         }
@@ -191,8 +187,9 @@ class CSSPositionedLayout {
       if (isVerticalFixed) {
         offsetY += stickyTop - offsetTopToScrollContainer;
         // Sticky child can not exceed the bottom boundary of its parent container
-        RenderBoxModel parentContainer = child.parent as RenderBoxModel;
-        double maxOffsetY = parentContainer.boxSize!.height - childHeight;
+        // RenderBoxModel parentContainer = child.parent as RenderBoxModel;
+        RenderBoxModel parentContainer = child.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!;
+        double maxOffsetY = parentContainer.scrollableSize.height - childHeight;
         if (offsetY > maxOffsetY) {
           offsetY = maxOffsetY;
         }
@@ -227,14 +224,16 @@ class CSSPositionedLayout {
   // the offsets are automatically calculated in reference to the nearest scrollport.
   // https://www.w3.org/TR/css-position-3/#stickypos-insets
   static void applyStickyChildOffset(RenderBoxModel scrollContainer, RenderBoxModel child) {
-    RenderPositionPlaceholder childRenderPositionHolder = child.renderPositionPlaceholder!;
-    RenderLayoutParentData childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData;
+    RenderPositionPlaceholder? childRenderPositionHolder = child.renderStyle.getSelfPositionPlaceHolder();
+    if (childRenderPositionHolder == null) return;
+    RenderLayoutParentData? childPlaceHolderParentData = childRenderPositionHolder.parentData as RenderLayoutParentData?;
+    if (childPlaceHolderParentData == null) return;
     // Original offset of sticky child in relative status
     Offset childOriginalOffset = childPlaceHolderParentData.offset;
 
     // Offset of sticky child to scroll container
     Offset childToScrollContainerOffset =
-        childRenderPositionHolder.localToGlobal(Offset.zero, ancestor: scrollContainer);
+        childRenderPositionHolder.getOffsetToAncestor(Offset.zero, scrollContainer, excludeScrollOffset: true);
 
     bool isVerticalFixed = false;
     bool isHorizontalFixed = false;
@@ -273,16 +272,8 @@ class CSSPositionedLayout {
     }
 
     if (isChildNeedsLayout) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentLayoutOp();
-      }
-
       // Should create relayoutBoundary for positioned child.
       child.layout(childConstraints, parentUsesSize: false);
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentLayoutOp();
-      }
     }
   }
 
@@ -295,21 +286,8 @@ class CSSPositionedLayout {
     final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;
+
     RenderStyle parentRenderStyle = parent.renderStyle;
-
-    // Calculate offset to overflow container box first, then subtract border and padding
-    // to get the offset to scrolling content box.
-    if (parent.isScrollingContentBox) {
-      RenderLayoutBox overflowContainerBox = parent.parent as RenderLayoutBox;
-      parentRenderStyle = overflowContainerBox.renderStyle;
-
-      // Overflow scroll container has width and height specified surely.
-      if (overflowContainerBox.widthSizeType == BoxSizeType.specified &&
-          overflowContainerBox.heightSizeType == BoxSizeType.specified) {
-        parentSize = Size(overflowContainerBox.renderStyle.width.computedValue,
-            overflowContainerBox.renderStyle.height.computedValue);
-      }
-    }
 
     CSSLengthValue parentBorderLeftWidth = parentRenderStyle.effectiveBorderLeftWidth;
     CSSLengthValue parentBorderRightWidth = parentRenderStyle.effectiveBorderRightWidth;
@@ -325,7 +303,7 @@ class CSSPositionedLayout {
         parentSize.width - parentBorderLeftWidth.computedValue - parentBorderRightWidth.computedValue,
         parentSize.height - parentBorderTopWidth.computedValue - parentBorderBottomWidth.computedValue);
 
-    RenderStyle childRenderStyle = child.renderStyle;
+    CSSRenderStyle childRenderStyle = child.renderStyle;
     CSSLengthValue left = childRenderStyle.left;
     CSSLengthValue right = childRenderStyle.right;
     CSSLengthValue top = childRenderStyle.top;
@@ -335,27 +313,38 @@ class CSSPositionedLayout {
     CSSLengthValue marginTop = childRenderStyle.marginTop;
     CSSLengthValue marginBottom = childRenderStyle.marginBottom;
 
-    // ScrollTop and scrollLeft will be added to offset of renderBox in the paint stage
-    // for positioned fixed element.
-    if (childRenderStyle.position == CSSPositionType.fixed) {
-      Element rootElement = parentRenderStyle.target;
-      child.scrollingOffsetX = rootElement.scrollLeft;
-      child.scrollingOffsetY = rootElement.scrollTop;
-    }
-
     // Fix side effects by render portal.
-    if (child is RenderPortal && child.child is RenderBoxModel) {
+    if (child is RenderEventListener && child.child is RenderBoxModel) {
       child = child.child as RenderBoxModel;
     }
 
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderPositionPlaceholder, parent);
+    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.getSelfPositionPlaceHolder(), parent,
+        excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
+
+    Offset ancestorOffset = Offset.zero;
+
+    if (child.renderStyle.position == CSSPositionType.absolute) {
+      bool containingBlockEqualToParent = child.renderStyle.target.parentElement == parent.renderStyle.target;
+      if (!containingBlockEqualToParent) {
+        ancestorOffset = child.renderStyle.target.parentElement!.attachedRenderer?.getOffsetToAncestor(Offset.zero, parent,
+                    excludeScrollOffset: true, excludeAncestorBorderTop: false) ?? Offset.zero;
+      }
+    }
+
+    // ScrollTop and scrollLeft will be added to offset of renderBox in the paint stage
+    // for positioned fixed element.
+    if (childRenderStyle.position == CSSPositionType.fixed) {
+      Offset scrollOffset = child.getTotalScrollOffset();
+      child.additionalPaintOffsetX = scrollOffset.dx;
+      child.additionalPaintOffsetY = scrollOffset.dy;
+    }
 
     double x = _computePositionedOffset(
       Axis.horizontal,
-      parent.isScrollingContentBox,
+      false,
       parentBorderLeftWidth,
       parentPaddingLeft,
       containingBlockSize.width,
@@ -369,7 +358,7 @@ class CSSPositionedLayout {
 
     double y = _computePositionedOffset(
       Axis.vertical,
-      parent.isScrollingContentBox,
+      false,
       parentBorderTopWidth,
       parentPaddingTop,
       containingBlockSize.height,
@@ -381,7 +370,7 @@ class CSSPositionedLayout {
       marginBottom,
     );
 
-    childParentData.offset = Offset(x, y);
+    childParentData.offset = Offset(x, y) - ancestorOffset;
   }
 
   // Compute the offset of positioned element in one axis.

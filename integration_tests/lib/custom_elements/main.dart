@@ -13,6 +13,8 @@ import 'flutter_swiper.dart';
 import 'multiple_rendering.dart';
 import 'event_container.dart';
 import 'event_container_unpoped.dart';
+import 'flutter_constraint_container.dart';
+import 'flutter_constraint_container_2.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -33,4 +35,7 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('multiple-rendering', (context) => MultipleRenderElement(context));
   WebF.defineCustomElement('event-container', (context) => EventContainer(context));
   WebF.defineCustomElement('event-container-unpoped', (context) => EventContainerUnpoped(context));
+  WebF.defineCustomElement('flutter-constraint-container', (context) => FlutterConstraintContainer(context));
+  WebF.defineCustomElement('flutter-constraint-container-2', (context) => FlutterConstraintContainer2(context));
+  WebF.defineCustomElement('flutter-constraint-container-2-item', (context) => FlutterConstraintContainer2Item(context));
 }

@@ -2,8 +2,13 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'dart:async';
+import 'dart:ffi';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
@@ -26,8 +31,22 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
 
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
-  @protected
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
+
+  static final StaticDefinedSyncBindingObjectMethodMap _eventTargetSyncMethods = {
+    'addEvent':
+    StaticDefinedSyncBindingObjectMethod(call: (eventTarget, args) => castToType<EventTarget>(eventTarget)._addEventListenerFromBindingCall(args)),
+  };
+
+  void _addEventListenerFromBindingCall(List<dynamic> args) {
+    String eventType = args[0];
+    Pointer<AddEventListenerOptions> eventListenerOptions = args[1] as Pointer<AddEventListenerOptions>;
+    ownerView.addEvent(pointer!, eventType, addEventListenerOptions: eventListenerOptions);
+  }
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _eventTargetSyncMethods];
+
 
   // TODO: Support addEventListener options: capture, once, passive, signal.
   @mustCallSuper
@@ -45,7 +64,17 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
     existHandler.add(eventHandler);
     if (this is Element) {
-      (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
+      scheduleMicrotask(() {
+        if (_eventHandlers[eventType]?.isNotEmpty == true && !(this as Element).hasEvent) {
+          (this as Element).renderStyle.requestWidgetToRebuild(AddEventUpdateReason());
+        }
+      });
+    }
+    if (_eventWaitingCompleter.containsKey(eventType)) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        _eventWaitingCompleter[eventType]!();
+        _eventWaitingCompleter.remove(eventType);
+      });
     }
   }
 
@@ -63,6 +92,23 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
           _eventHandlers.remove(eventType);
         }
       }
+    }
+  }
+
+  @protected
+  final Map<String, VoidCallback> _eventWaitingCompleter = {};
+
+  Future<void> dispatchEventUtilAdded(Event event) async {
+    bool hasEvent = hasEventListener(event.type);
+    if (hasEvent) {
+      await dispatchEvent(event);
+    } else {
+      Completer completer = Completer();
+      _eventWaitingCompleter[event.type] = () async {
+        await dispatchEvent(event);
+        completer.complete();
+      };
+      return completer.future;
     }
   }
 
@@ -136,9 +182,11 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   void dispose() async {
     _disposed = true;
     _eventHandlers.clear();
+    _eventWaitingCompleter.clear();
     super.dispose();
   }
 
+  @pragma('vm:prefer-inline')
   EventTarget? get parentEventTarget;
 
   List<EventTarget> get eventPath {

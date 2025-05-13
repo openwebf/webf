@@ -1,6 +1,7 @@
 use webf_sys::{CustomEventInit, ExecutingContext, NativeValue};
 use webf_test_macros::webf_test;
-use webf_test_utils::common::TestCaseMetadata;
+use webf_test_utils::common::*;
+use webf_test_utils::safe_assert_eq;
 
 #[webf_test]
 pub fn it_should_work_as_expected(_metadata: TestCaseMetadata, context: ExecutingContext) {
@@ -17,5 +18,5 @@ pub fn it_should_work_as_expected(_metadata: TestCaseMetadata, context: Executin
     "customEvent", &custom_event_init, &exception_state).unwrap();
 
   let detail_property = custom_event.detail(&exception_state).to_string();
-  assert_eq!(detail_property, "detailMessage");
+  safe_assert_eq!(detail_property, "detailMessage".to_string());
 }

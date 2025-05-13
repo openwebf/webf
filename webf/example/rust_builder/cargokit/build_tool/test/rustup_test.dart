@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'package:build_tool/src/rustup.dart';
 import 'package:build_tool/src/util.dart';
 import 'package:test/test.dart';

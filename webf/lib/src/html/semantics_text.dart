@@ -67,33 +67,6 @@ const Map<String, dynamic> _hrDefaultStyle = {
 
 const Map<String, dynamic> _defaultStyle = {FONT_STYLE: ITALIC};
 
-// https://html.spec.whatwg.org/multipage/text-level-semantics.html#htmlbrelement
-class BRElement extends Element {
-  BRElement([BindingContext? context]) : super(context);
-
-  @override
-  bool get isReplacedElement => true;
-
-  @override
-  void setRenderStyle(String property, String present, { String? baseHref }) {
-    // Noop
-  }
-
-  @override
-  RenderBox createRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    RenderLineBreak lineBreak = RenderLineBreak(renderStyle);
-
-    if (managedByFlutterWidget) {
-      assert(flutterWidgetElement != null);
-      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, lineBreak);
-    } else {
-      renderStyle.setDomRenderObject(lineBreak);
-    }
-
-    return lineBreak;
-  }
-}
-
 class BringElement extends Element {
   BringElement([BindingContext? context]) : super(context);
 

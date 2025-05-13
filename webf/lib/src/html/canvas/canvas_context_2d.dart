@@ -79,7 +79,7 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
           castToType<num>(args[2]).toDouble(),
           castToType<num>(args[3]).toDouble(),
           castToType<num>(args[4]).toDouble(),
-          anticlockwise: (args.length > 5 && args[5] == 1) ? true : false);
+          anticlockwise: (args.length > 5 && args[5]) ? true : false);
     }),
     'arcTo': StaticDefinedSyncBindingObjectMethod(call: (context, args) {
       return castToType<CanvasRenderingContext2D>(context).arcTo(
@@ -410,19 +410,8 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
   List<CanvasAction> _actions = [];
   List<CanvasAction> _pendingActions = [];
 
-  double _scaleX = 1.0;
-  double _scaleY = 1.0;
-
-  set scaleX(double? value) {
-    if (value != null && value != _scaleX) {
-      _scaleX = value;
-    }
-  }
-
-  set scaleY(double? value) {
-    if (value != null && value != _scaleY) {
-      _scaleY = value;
-    }
+  bool isActionsNotEmpty() {
+    return _actions.isNotEmpty;
   }
 
   void addAction(String name, CanvasActionFn action, [CanvasActionType type = CanvasActionType.execute] ) {
@@ -918,12 +907,13 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
 
   // Resets the current transform to the identity matrix.
   void resetTransform() {
+    CanvasElement canvasElement = canvas;
     addAction('resetTransform', (Canvas canvas, Size size) {
       Float64List curM4Storage = canvas.getTransform();
       Matrix4 curM4 = Matrix4.fromFloat64List(curM4Storage);
       Matrix4 m4 = Matrix4.inverted(curM4);
       canvas.transform(m4.storage);
-      canvas.scale(_scaleX, _scaleY);
+      canvas.scale(canvasElement.painter.scaleX, canvasElement.painter.scaleY);
     });
   }
 
@@ -1035,11 +1025,9 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
         double xRepeatNum = ((w - x) / patternWidth);
         double yRepeatNum = ((h - y) / patternHeight);
         // CanvasPattern created from an image
-        if (canvasPattern.image.image_element != null ||
-            (canvasPattern.image.canvas_element != null &&
-                canvasPattern.image.canvas_element?.painter.snapshot != null)) {
+        if (canvasPattern.image.image_element != null) {
           Image? repeatImg =
-              canvasPattern.image.image_element?.image ?? canvasPattern.image.canvas_element?.painter.snapshot;
+              canvasPattern.image.image_element?.image;
 
           if (repetition == 'no-repeat') {
             xRepeatNum = 1;
@@ -1050,9 +1038,11 @@ class CanvasRenderingContext2D extends DynamicBindingObject with StaticDefinedBi
             xRepeatNum = 1;
           }
 
-          for (int i = 0; i < xRepeatNum; i++) {
-            for (int j = 0; j < yRepeatNum; j++) {
-              canvas.drawImage(repeatImg!, Offset(x + i * patternWidth, y + j * patternHeight), paint);
+          if (repeatImg != null) {
+            for (int i = 0; i < xRepeatNum; i++) {
+              for (int j = 0; j < yRepeatNum; j++) {
+                canvas.drawImage(repeatImg, Offset(x + i * patternWidth, y + j * patternHeight), paint);
+              }
             }
           }
         } else {

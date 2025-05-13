@@ -2,7 +2,10 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/widgets.dart' as flutter;
+import 'package:webf/css.dart';
 import 'package:webf/svg.dart';
+import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 
 class SVGGraphicsElement extends SVGElement {
@@ -20,6 +23,11 @@ class SVGGraphicsElement extends SVGElement {
       SVGPresentationAttributeConfig('stroke-linejoin'),
       SVGPresentationAttributeConfig('transform')
     ]);
+
+  @override
+  flutter.Widget toWidget({flutter.Key? key}) {
+    return WebFReplacedElementWidget(webFElement: this,);
+  }
 
   SVGGraphicsElement([BindingContext? context]) : super(context);
 }

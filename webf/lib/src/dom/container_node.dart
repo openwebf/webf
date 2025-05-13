@@ -185,13 +185,6 @@ abstract class ContainerNode extends Node {
   Node? removeChild(Node oldChild) {
     Node child = oldChild;
 
-    // Not remove node type which is not present in RenderObject tree such as Comment
-    // Only append node types which is visible in RenderObject tree
-    // Only remove childNode when it has parent
-    if (child.isRendererAttachedToSegmentTree && !child.managedByFlutterWidget) {
-      child.unmountRenderObjectInDOMMode();
-    }
-
     if (this is Element) {
       ownerDocument.markElementStyleDirty(this as Element);
     }
@@ -362,6 +355,17 @@ abstract class ContainerNode extends Node {
   @override
   Node? get firstChild => _firstChild;
 
+  Node? get firstAttachedRenderChild {
+    Node? firstChild = _firstChild;
+    do {
+      if (firstChild?.attachedRenderer != null) {
+        return firstChild;
+      }
+      firstChild = firstChild?.nextSibling;
+    } while(firstChild != null);
+    return null;
+  }
+
   set firstChild(Node? value) {
     _firstChild = value;
   }
@@ -370,6 +374,18 @@ abstract class ContainerNode extends Node {
 
   @override
   Node? get lastChild => _lastChild;
+
+  Node? get lastAttachedRenderChild {
+    Node? lastChild = _lastChild;
+    do {
+      if (lastChild?.attachedRenderer != null) {
+        return lastChild;
+      }
+      lastChild = lastChild?.previousSibling;
+    } while(lastChild != null);
+    return null;
+  }
+
 
   set lastChild(Node? value) {
     _lastChild = value;

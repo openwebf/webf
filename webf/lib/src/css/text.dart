@@ -6,6 +6,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
@@ -40,7 +41,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_color == value) return;
     _color = value?.value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(this, COLOR);
+    _markChildrenTextNeedsLayout(this, COLOR);
   }
 
   // Current not update the dependent property relative to the color.
@@ -130,7 +131,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_fontStyle == value) return;
     _fontStyle = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(this, FONT_STYLE);
+    _markChildrenTextNeedsLayout(this, FONT_STYLE);
   }
 
   List<String>? _fontFamily;
@@ -189,7 +190,7 @@ mixin CSSTextMixin on RenderStyle {
   void updateFontRelativeLength() {
     if (_fontRelativeProperties.isEmpty) return;
     markNeedsLayout();
-    if (isSelfBoxModelSizeTight() && isParentRenderBox()) {
+    if (isSelfBoxModelSizeTight()) {
       markParentNeedsLayout();
     }
   }
@@ -202,7 +203,7 @@ mixin CSSTextMixin on RenderStyle {
   void updateRootFontRelativeLength() {
     if (_rootFontRelativeProperties.isEmpty) return;
     markNeedsLayout();
-    if (isSelfBoxModelSizeTight() && isParentRenderBox()) {
+    if (isSelfBoxModelSizeTight()) {
       markParentNeedsLayout();
     }
   }
@@ -279,7 +280,7 @@ mixin CSSTextMixin on RenderStyle {
     if (_textShadow == value) return;
     _textShadow = value;
     // Update all the children text with specified style property not set due to style inheritance.
-    _markChildrenTextNeedsPaint(this, TEXT_SHADOW);
+    _markChildrenTextNeedsLayout(this, TEXT_SHADOW);
   }
 
   WhiteSpace? _whiteSpace;
@@ -371,7 +372,7 @@ mixin CSSTextMixin on RenderStyle {
     if (renderStyle.isSelfRenderFlowLayout()) {
       renderStyle.markNeedsLayout();
       visitor(RenderObject child) {
-        if (child is RenderFlowLayout && child is! RenderPortal) {
+        if (child is RenderFlowLayout && child is! RenderEventListener) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestFlowLayoutNeedsLayout(child.renderStyle, styleProperty);
@@ -391,7 +392,7 @@ mixin CSSTextMixin on RenderStyle {
       renderStyle.markNeedsLayout();
 
       visitor(RenderObject child) {
-        if (child is RenderLayoutBox && child is! RenderPortal) {
+        if (child is RenderLayoutBox && child is! RenderEventListener) {
           // Only need to layout when the specified style property is not set.
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestChildrenTextAndLayoutNeedsLayout(child.renderStyle, styleProperty);
@@ -427,48 +428,18 @@ mixin CSSTextMixin on RenderStyle {
   // Inheritable style change should loop nest children to update text node with specified style property
   // not set in its parent.
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
-    visitor(RenderObject child) {
-      if (child is RenderBoxModel && child is! RenderPortal) {
-        // Only need to update child text when style property is not set.
-        if (child.renderStyle.target.style[styleProperty].isEmpty) {
-          _markChildrenTextNeedsLayout(child.renderStyle, styleProperty);
-        }
-      } else if (child is RenderTextBox) {
-        WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-        renderParagraph.markNeedsLayout();
-      } else {
+    visitor(dom.Node child) {
+      if (child is dom.TextNode) {
+        RenderTextBox? renderTextBox = child.attachedRenderer as RenderTextBox?;
+        WebFRenderParagraph? renderParagraph = renderTextBox?.child as WebFRenderParagraph?;
+        renderParagraph?.markNeedsLayout();
+      }
+
+      if (child is dom.Element && child.style[styleProperty].isEmpty) {
         child.visitChildren(visitor);
       }
     }
-
-    renderStyle.visitChildren(visitor);
-  }
-
-  // Mark nested children text as needs paint.
-  // Inheritable style change should loop nest children to update text node with specified style property
-  // not set in its parent.
-  void _markChildrenTextNeedsPaint(RenderStyle renderStyle, String styleProperty) {
-    visitor(RenderObject child) {
-      if (child is RenderBoxModel && child is! RenderPortal) {
-        // Only need to update child text when style property is not set.
-        if (child.renderStyle.target.style[styleProperty].isEmpty) {
-          _markChildrenTextNeedsPaint(child.renderStyle, styleProperty);
-        }
-      } else if (child is RenderTextBox) {
-        WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-        if (renderParagraph.hasSize) {
-          // Mark as needs paint after text has been layouted.
-          renderParagraph.markNeedsPaint();
-        } else {
-          // Mark as needs layout if renderParagraph has not layouted yet.
-          renderParagraph.markNeedsLayout();
-        }
-      } else {
-        child.visitChildren(visitor);
-      }
-    }
-
-    renderStyle.visitChildren(visitor);
+    renderStyle.target.visitChildren(visitor);
   }
 
   static TextAlign? resolveTextAlign(String value) {

@@ -17,3 +17,4 @@ export 'src/foundation/type.dart';
 export 'src/foundation/uri_parser.dart';
 export 'src/foundation/bytecode_cache.dart';
 export 'src/foundation/profiler.dart';
+export 'src/foundation/cookie_jar.dart';

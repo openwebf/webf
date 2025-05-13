@@ -15,7 +15,17 @@ class FlutterContainerElement extends WidgetElement {
   Map<String, dynamic> get defaultStyle => _flutterContainerDefaultStyle;
 
   @override
-  Widget build(BuildContext context,ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterContainerElementState(this);
+  }
+}
+
+class FlutterContainerElementState extends WebFWidgetElementState {
+  FlutterContainerElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
+    final renderStyle = widgetElement.renderStyle;
     double? topWidth = renderStyle.borderTopWidth?.value;
     double? rightWidth = renderStyle.borderRightWidth?.value;
     double? bottomWidth = renderStyle.borderBottomWidth?.value;
@@ -26,21 +36,13 @@ class FlutterContainerElement extends WidgetElement {
       height: renderStyle.height.value,
       decoration: BoxDecoration(
         border: Border(
-            top: BorderSide(
-                width: topWidth ?? 0.0,
-                color: renderStyle.borderTopColor.value),
-            bottom: BorderSide(
-                width: bottomWidth ?? 0.0,
-                color: renderStyle.borderBottomColor.value),
-            left: BorderSide(
-                width: leftWidth ?? 0.0,
-                color: renderStyle.borderLeftColor.value),
-            right: BorderSide(
-                width: rightWidth ?? 0.0,
-                color: renderStyle.borderRightColor.value)),
+            top: BorderSide(width: topWidth ?? 0.0, color: renderStyle.borderTopColor.value),
+            bottom: BorderSide(width: bottomWidth ?? 0.0, color: renderStyle.borderBottomColor.value),
+            left: BorderSide(width: leftWidth ?? 0.0, color: renderStyle.borderLeftColor.value),
+            right: BorderSide(width: rightWidth ?? 0.0, color: renderStyle.borderRightColor.value)),
       ),
       child: Column(
-        children: childNodes.toWidgetList(),
+        children: widgetElement.childNodes.toWidgetList(),
       ),
     );
   }

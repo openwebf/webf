@@ -33,7 +33,7 @@ HybridRouterChangeEvent::HybridRouterChangeEvent(ExecutingContext* context,
     : Event(context, type),
       state_(initializer->hasState() ? initializer->state() : ScriptValue::Empty(ctx())),
       kind_(initializer->hasKind() ? initializer->kind() : AtomicString::Empty()),
-      name_(initializer->hasName() ? initializer->name() : AtomicString::Empty()) {}
+      path_(initializer->hasPath() ? initializer->path() : AtomicString::Empty()) {}
 
 HybridRouterChangeEvent::HybridRouterChangeEvent(ExecutingContext* context,
                                                  const AtomicString& type,
@@ -46,9 +46,9 @@ HybridRouterChangeEvent::HybridRouterChangeEvent(ExecutingContext* context,
       kind_(AtomicString(
           ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->kind)))),
-      name_(AtomicString(
+      path_(AtomicString(
           ctx(),
-          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->name))))
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->path))))
 #else
       state_(ScriptValue::CreateJsonObject(context->ctx(),
                                            static_cast<const char*>(native_event->state),
@@ -56,9 +56,9 @@ HybridRouterChangeEvent::HybridRouterChangeEvent(ExecutingContext* context,
       kind_(AtomicString(
           ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->kind)))),
-      name_(AtomicString(
+      path_(AtomicString(
           ctx(),
-          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->name))))
+          std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->path))))
 #endif
 {
 }
@@ -71,8 +71,8 @@ AtomicString HybridRouterChangeEvent::kind() const {
   return kind_;
 }
 
-AtomicString HybridRouterChangeEvent::name() const {
-  return name_;
+AtomicString HybridRouterChangeEvent::path() const {
+  return path_;
 }
 
 bool HybridRouterChangeEvent::IsHybridRouterChangeEvent() const {

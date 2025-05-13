@@ -19,12 +19,10 @@ final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 final GlobalKey<RootPageState> rootPageKey = GlobalKey();
 
 final bool isPreloadMode = Platform.environment['LOAD_MODE'] == 'preload';
-final String specFolder =
-    isPreloadMode ? 'preload_page_specs' : 'prerendering_page_specs';
+final String specFolder = isPreloadMode ? 'preload_page_specs' : 'prerendering_page_specs';
 final specDir = Directory(path.join(testDirectory, specFolder));
 final List<FileSystemEntity> specs = specDir.listSync();
-final List<CodeUnit> codes =
-    specs.where((element) => !element.path.contains('.DS_Store')).map((spec) {
+final List<CodeUnit> codes = specs.where((element) => !element.path.contains('.DS_Store')).map((spec) {
   final fileName = getFileName(spec.path);
   final List<FileSystemEntity> files = Directory(spec.path).listSync();
 
@@ -57,18 +55,19 @@ class PreRenderingPageState extends State<PreRenderingPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     print('Loading ${widget.name}');
-    controller = WebFController(context,
+    controller = WebFController(
         viewportWidth: 360,
-        viewportHeight: 640, onDOMContentLoaded: (controller) async {
-      await sleep(Duration(seconds: 1));
-      Uint8List snapshot = await controller.view.document.documentElement!
-          .toBlob(devicePixelRatio: 1);
-      bool isMatch = await matchImageSnapshot(snapshot, widget.path);
-      if (!isMatch) {
-        throw FlutterError('Snapshot of ${widget.name} is not match');
-      }
-      Navigator.pop(context);
-    }, uriParser: IntegrationTestUriParser());
+        viewportHeight: 640,
+        onDOMContentLoaded: (controller) async {
+          await sleep(Duration(seconds: 1));
+          Uint8List snapshot = await controller.view.document.documentElement!.toBlob(devicePixelRatio: 1);
+          bool isMatch = await matchImageSnapshot(snapshot, widget.path);
+          if (!isMatch) {
+            throw FlutterError('Snapshot of ${widget.name} is not match');
+          }
+          Navigator.pop(context);
+        },
+        uriParser: IntegrationTestUriParser());
   }
 
   void navigateBack() {
@@ -87,9 +86,7 @@ class PreRenderingPageState extends State<PreRenderingPage> {
   Widget build(BuildContext context) {
     WebFBundle entrypoint = WebFBundle.fromUrl('file://${widget.path}?time=${DateTime.now().microsecondsSinceEpoch}');
     return FutureBuilder(
-        future: isPreloadMode
-            ? controller.preload(entrypoint)
-            : controller.preRendering(entrypoint),
+        future: isPreloadMode ? controller.preload(entrypoint) : controller.preRendering(entrypoint),
         builder: (BuildContext context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
             print('Current Load mode: ${controller.mode}');
@@ -202,15 +199,13 @@ class CodeUnit {
   }
 }
 
-Map<String, WidgetBuilder> buildRoutes(
-    PageController pageController, List<CodeUnit> codes) {
+Map<String, WidgetBuilder> buildRoutes(PageController pageController, List<CodeUnit> codes) {
   Map<String, WidgetBuilder> routes = {};
   codes.forEach((code) {
     routes['/${code.name}'] = (context) => Scaffold(
           body: Scaffold(
               appBar: AppBar(title: Text(code.name)),
-              body: PreRenderingPage(code.name, code.path,
-                  key: pageController.createKey(code.name))),
+              body: PreRenderingPage(code.name, code.path, key: pageController.createKey(code.name))),
         );
   });
   routes['/'] = (context) => Scaffold(body: FirstRoute(key: rootPageKey));

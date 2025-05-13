@@ -3,10 +3,15 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-const cookieStorage = {};
+export interface Cookie {
+  get(): string;
+  set(str: string): void;
+}
+
+const cookieStorage: Record<string, string> = {};
 
 // @TODO Persisent cookie and Session cookie support
-export const cookie = {
+export const cookie: Cookie = {
   get: () => {
     const output = [];
     for (let cookieName in cookieStorage) {
@@ -36,6 +41,6 @@ export const cookie = {
         }
       }
     }
-    cookieStorage[key] = value;
+    cookieStorage[key] = value || '';
   }
 };

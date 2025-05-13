@@ -204,6 +204,8 @@
     "transformPoint",
     "matrixTransform",
     "__test_global_to_local__",
-    "needsPaint"
+    "___force_rebuild__",
+    "needsPaint",
+    "addEvent"
   ]
 }

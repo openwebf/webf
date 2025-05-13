@@ -6,6 +6,7 @@ import {WindowEventHandlers} from "./window_event_handlers";
 import {GlobalEventHandlers} from "../dom/global_event_handlers";
 import {ComputedCssStyleDeclaration} from "../css/computed_css_style_declaration";
 import {Element} from "../dom/element";
+import {WindowIdleRequestOptions} from "./window_idle_request_options";
 
 interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   // base64 utility methods
@@ -23,7 +24,8 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   postMessage(message: any): void;
 
   requestAnimationFrame(callback: Function): double;
-  cancelAnimationFrame(request_id: double): void;
+  __requestIdleCallback__(callback: Function, options?: WindowIdleRequestOptions): int64;
+  cancelAnimationFrame(request_id: int64): void;
 
   getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<ComputedCssStyleDeclaration>;
 

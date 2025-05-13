@@ -225,6 +225,8 @@
     "zoom",
     "intersectionchange",
     "gcopen",
-    "hybridrouterchange"
+    "hybridrouterchange",
+    "onscreen",
+    "offscreen"
   ]
 }

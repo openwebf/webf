@@ -3,9 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:collection/collection.dart';
 import 'package:flutter/animation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -111,265 +113,15 @@ mixin ElementOverflowMixin on ElementBase {
   // The duration time for element scrolling to a significant place.
   static const SCROLL_DURATION = Duration(milliseconds: 250);
 
-  WebFScrollable? _scrollableX;
-  WebFScrollable? _scrollableY;
-
-  void disposeScrollable() {
-    _scrollableX?.position?.dispose();
-    _scrollableY?.position?.dispose();
-    _scrollableX = null;
-    _scrollableY = null;
-  }
-
-  void updateRenderBoxModelWithOverflowX(ScrollListener scrollListener) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.updateRenderBoxModelWithOverflowX');
-    }
-    if (renderStyle.hasRenderBox()) {
-      RenderBoxModel renderBoxModel = renderStyle.domRenderBoxModel!;
-      CSSOverflowType overflowX = renderStyle.effectiveOverflowX;
-      switch (overflowX) {
-        case CSSOverflowType.clip:
-          _scrollableX = null;
-          break;
-        case CSSOverflowType.hidden:
-        case CSSOverflowType.auto:
-        case CSSOverflowType.scroll:
-        // If the render has been offset when previous overflow is auto or scroll, _scrollableX should not reset.
-          if (_scrollableX == null) {
-            _scrollableX = WebFScrollable(
-                axisDirection: AxisDirection.right,
-                scrollListener: scrollListener,
-                overflowType: overflowX,
-                currentView: renderStyle.currentFlutterView);
-            renderBoxModel.scrollOffsetX = _scrollableX!.position;
-          }
-          // Reset canDrag by overflow because hidden is can't drag.
-          bool canDrag = overflowX != CSSOverflowType.hidden;
-          _scrollableX!.overflowType = overflowX;
-          _scrollableX!.setCanDrag(canDrag);
-          break;
-        case CSSOverflowType.visible:
-        default:
-          _scrollableX = null;
-          break;
-      }
-
-      renderBoxModel.scrollListener = scrollListener;
-      renderBoxModel.scrollablePointerListener = _scrollablePointerListener;
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
-  }
-
-  void updateRenderBoxModelWithOverflowY(ScrollListener scrollListener) {
-    if (renderStyle.hasRenderBox()) {
-      RenderBoxModel renderBoxModel = renderStyle.domRenderBoxModel!;
-      CSSOverflowType overflowY = renderStyle.effectiveOverflowY;
-      switch (overflowY) {
-        case CSSOverflowType.clip:
-          _scrollableY = null;
-          break;
-        case CSSOverflowType.hidden:
-        case CSSOverflowType.auto:
-        case CSSOverflowType.scroll:
-        // If the render has been offset when previous overflow is auto or scroll, _scrollableY should not reset.
-          if (_scrollableY == null) {
-            _scrollableY = WebFScrollable(
-                axisDirection: AxisDirection.down,
-                scrollListener: scrollListener,
-                overflowType: overflowY,
-                currentView: renderStyle.currentFlutterView);
-            renderBoxModel.scrollOffsetY = _scrollableY!.position;
-          }
-          // Reset canDrag by overflow because hidden is can't drag.
-          bool canDrag = overflowY != CSSOverflowType.hidden;
-          _scrollableY!.overflowType = overflowY;
-          _scrollableY!.setCanDrag(canDrag);
-          break;
-        case CSSOverflowType.visible:
-        default:
-          _scrollableY = null;
-          break;
-      }
-
-      renderBoxModel.scrollListener = scrollListener;
-      renderBoxModel.scrollablePointerListener = _scrollablePointerListener;
-    }
-  }
-
-  void scrollingContentBoxStyleListener(String property, String? original, String present, {String? baseHref}) {
-    if (!renderStyle.hasRenderBox()) return;
-
-    RenderLayoutBox? scrollingContentBox = (renderStyle.domRenderBoxModel as RenderLayoutBox).renderScrollingContent;
-    // Sliver content has no multi scroll content box.
-    if (scrollingContentBox == null) return;
-
-    CSSRenderStyle scrollingContentRenderStyle = scrollingContentBox.renderStyle;
-
-    switch (property) {
-      case DISPLAY:
-        scrollingContentRenderStyle.display = renderStyle.display;
-        break;
-      case LINE_HEIGHT:
-        scrollingContentRenderStyle.lineHeight = renderStyle.lineHeight;
-        break;
-      case TEXT_ALIGN:
-        scrollingContentRenderStyle.textAlign = renderStyle.textAlign;
-        break;
-      case WHITE_SPACE:
-        scrollingContentRenderStyle.whiteSpace = renderStyle.whiteSpace;
-        break;
-      case FLEX_DIRECTION:
-        scrollingContentRenderStyle.flexDirection = renderStyle.flexDirection;
-        break;
-      case FLEX_WRAP:
-        scrollingContentRenderStyle.flexWrap = renderStyle.flexWrap;
-        break;
-      case ALIGN_CONTENT:
-        scrollingContentRenderStyle.alignContent = renderStyle.alignContent;
-        break;
-      case ALIGN_ITEMS:
-        scrollingContentRenderStyle.alignItems = renderStyle.alignItems;
-        break;
-      case ALIGN_SELF:
-        scrollingContentRenderStyle.alignSelf = renderStyle.alignSelf;
-        break;
-      case JUSTIFY_CONTENT:
-        scrollingContentRenderStyle.justifyContent = renderStyle.justifyContent;
-        break;
-      case COLOR:
-        scrollingContentRenderStyle.color = renderStyle.color;
-        break;
-      case TEXT_DECORATION_LINE:
-        scrollingContentRenderStyle.textDecorationLine = renderStyle.textDecorationLine;
-        break;
-      case TEXT_DECORATION_COLOR:
-        scrollingContentRenderStyle.textDecorationColor = renderStyle.textDecorationColor;
-        break;
-      case TEXT_DECORATION_STYLE:
-        scrollingContentRenderStyle.textDecorationStyle = renderStyle.textDecorationStyle;
-        break;
-      case FONT_WEIGHT:
-        scrollingContentRenderStyle.fontWeight = renderStyle.fontWeight;
-        break;
-      case FONT_STYLE:
-        scrollingContentRenderStyle.fontStyle = renderStyle.fontStyle;
-        break;
-      case FONT_FAMILY:
-        scrollingContentRenderStyle.fontFamily = renderStyle.fontFamily;
-        break;
-      case FONT_SIZE:
-        scrollingContentRenderStyle.fontSize = renderStyle.fontSize;
-        break;
-      case LETTER_SPACING:
-        scrollingContentRenderStyle.letterSpacing = renderStyle.letterSpacing;
-        break;
-      case WORD_SPACING:
-        scrollingContentRenderStyle.wordSpacing = renderStyle.wordSpacing;
-        break;
-      case TEXT_SHADOW:
-        scrollingContentRenderStyle.textShadow = renderStyle.textShadow;
-        break;
-      case TEXT_OVERFLOW:
-        scrollingContentRenderStyle.textOverflow = renderStyle.textOverflow;
-        break;
-      case LINE_CLAMP:
-        scrollingContentRenderStyle.lineClamp = renderStyle.lineClamp;
-        break;
-    }
-  }
-
-  // Update renderBox according to overflow value.
-  void updateOverflowRenderBox() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.updateOverflowRenderBox');
-    }
-    CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
-    CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
-
-    if (renderStyle.domRenderBoxModel is RenderLayoutBox) {
-      // Create two repaintBoundary for scroll container if any direction is scrollable.
-      bool shouldScrolling =
-          (effectiveOverflowX == CSSOverflowType.auto || effectiveOverflowX == CSSOverflowType.scroll) ||
-              (effectiveOverflowY == CSSOverflowType.auto || effectiveOverflowY == CSSOverflowType.scroll);
-
-      if (shouldScrolling) {
-        _attachScrollingContentBox();
-      } else {
-        _detachScrollingContentBox();
-      }
-    }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
-  }
-
-  void updateScrollingContentBox() {
-    _detachScrollingContentBox();
-    _attachScrollingContentBox();
-  }
-
-  // Create two repaintBoundary for an overflow scroll container.
-  // Outer repaintBoundary avoid repaint of parent and sibling renderObjects when scrolling.
-  // Inner repaintBoundary avoid repaint of child renderObjects when scrolling.
-  void _attachScrollingContentBox() {
-    RenderLayoutBox outerLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
-    RenderLayoutBox? scrollingContentBox = outerLayoutBox.renderScrollingContent;
-    if (scrollingContentBox != null) {
-      return;
-    }
-
-    Element element = this as Element;
-    // If outer scrolling box already has children in the case of element already attached,
-    // move them into the children of inner scrolling box.
-    List<RenderBox> children = outerLayoutBox.detachChildren();
-
-    RenderLayoutBox renderScrollingContent = element.createScrollingContentLayout();
-    renderScrollingContent.addAll(children);
-
-    outerLayoutBox.add(renderScrollingContent);
-    element.style.addStyleChangeListener(scrollingContentBoxStyleListener);
-
-    // Manually copy already set filtered styles to the renderStyle of scrollingContentLayoutBox.
-    _scrollingContentBoxCopyStyles.forEach((String styleProperty) {
-      scrollingContentBoxStyleListener(styleProperty, null, '');
-    });
-  }
-
-  void _detachScrollingContentBox() {
-    RenderLayoutBox outerLayoutBox = renderStyle.domRenderBoxModel as RenderLayoutBox;
-    RenderLayoutBox? scrollingContentBox = outerLayoutBox.renderScrollingContent;
-    if (scrollingContentBox == null) return;
-
-    List<RenderBox> children = scrollingContentBox.detachChildren();
-    // Remove scrolling content box.
-    outerLayoutBox.remove(scrollingContentBox);
-
-    (this as Element).style.removeStyleChangeListener(scrollingContentBoxStyleListener);
-    // Move children of scrolling content box to the children to outer layout box.
-    outerLayoutBox.addAll(children);
-  }
-
-  void _scrollablePointerListener(PointerEvent event) {
-    if (event is PointerDownEvent) {
-      _scrollableX?.handlePointerDown(event);
-      _scrollableY?.handlePointerDown(event);
-    } else if (event is PointerSignalEvent) {
-      _scrollableX?.handlePinterSignal(event);
-      _scrollableY?.handlePinterSignal(event);
-    } else if (event is PointerPanZoomStartEvent) {
-      _scrollableX?.handlePointerPanZoomStart(event);
-      _scrollableY?.handlePointerPanZoomStart(event);
-    }
-  }
+  flutter.ScrollController? scrollControllerX;
+  flutter.ScrollController? scrollControllerY;
 
   double get scrollTop {
-    WebFScrollable? scrollableY = _getScrollable(Axis.vertical);
-    if (scrollableY != null) {
-      return scrollableY.position?.pixels ?? 0;
+    ownerDocument.forceRebuild();
+    if (scrollControllerY != null) {
+      return scrollControllerY?.position.pixels ?? 0;
     }
+
     return 0.0;
   }
 
@@ -378,14 +130,17 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void scroll(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.forceRebuild();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
   void scrollBy(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.forceRebuild();
     _scrollBy(dx: x, dy: y, withAnimation: withAnimation);
   }
 
   void scrollTo(double x, double y, [bool withAnimation = false]) {
+    ownerDocument.forceRebuild();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
@@ -396,11 +151,9 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollLeft {
-    WebFScrollable? scrollableX = _getScrollable(Axis.horizontal);
-    if (scrollableX != null) {
-      return scrollableX.position?.pixels ?? 0;
-    }
-    return 0.0;
+    ownerDocument.forceRebuild();
+
+    return scrollControllerX?.position.pixels ?? 0;
   }
 
   set scrollLeft(double value) {
@@ -408,14 +161,17 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollHeight {
+    ownerDocument.forceRebuild();
     if (!isRendererAttached) {
       return 0.0;
     }
     _ensureRenderObjectHasLayout();
-    WebFScrollable? scrollable = _getScrollable(Axis.vertical);
-    if (scrollable?.position?.maxScrollExtent != null) {
+
+    flutter.ScrollController? scrollController = scrollControllerY;
+
+    if (scrollController != null) {
       // Viewport height + maxScrollExtent
-      return renderStyle.clientHeight()! + scrollable!.position!.maxScrollExtent;
+      return renderStyle.clientHeight()! + scrollController.position.maxScrollExtent;
     }
 
     Size scrollContainerSize = renderStyle.scrollableSize()!;
@@ -423,13 +179,15 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollWidth {
+    ownerDocument.forceRebuild();
     if (!isRendererAttached) {
       return 0.0;
     }
     _ensureRenderObjectHasLayout();
-    WebFScrollable? scrollable = _getScrollable(Axis.horizontal);
-    if (scrollable?.position?.maxScrollExtent != null) {
-      return renderStyle.clientWidth()! + scrollable!.position!.maxScrollExtent;
+    flutter.ScrollController? scrollController = scrollControllerX;
+
+    if (scrollController != null) {
+      return renderStyle.clientWidth()! + scrollController.position.maxScrollExtent;
     }
     Size scrollContainerSize = renderStyle.scrollableSize()!;
     return scrollContainerSize.width;
@@ -440,32 +198,38 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get clientTop {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
   }
 
   double get clientLeft {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
   }
 
   double get clientWidth {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.clientWidth() ?? 0.0;
   }
 
   double get clientHeight {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.clientHeight() ?? 0.0;
   }
 
   double get offsetWidth {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
+    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);
@@ -490,31 +254,23 @@ mixin ElementOverflowMixin on ElementBase {
     }
   }
 
-  WebFScrollable? _getScrollable(Axis direction) {
-    WebFScrollable? scrollable;
-
-    if (direction == Axis.horizontal) {
-      scrollable = _scrollableX;
-    } else if (direction == Axis.vertical) {
-      scrollable = _scrollableY;
-    }
-    return scrollable;
-  }
-
   void _scroll(num aim, Axis direction, {bool? withAnimation = false}) {
-    WebFScrollable? scrollable = _getScrollable(direction);
-    if (scrollable != null) {
-      double distance = aim.toDouble();
+    if (attachedRenderer == null) return;
 
-      // Apply scroll effect after layout.
-      assert(isRendererAttached, 'Overflow can only be added to a RenderBox.');
-      RendererBinding.instance.rootPipelineOwner.flushLayout();
+    flutter.ScrollController? scrollController = direction == Axis.horizontal ? scrollControllerX : scrollControllerY;
 
-      scrollable.position!.moveTo(
-        distance,
-        duration: withAnimation == true ? SCROLL_DURATION : null,
-        curve: withAnimation == true ? Curves.easeOut : null,
-      );
-    }
+    if (scrollController == null) return;
+
+    double distance = aim.toDouble();
+
+    // Apply scroll effect after layout.
+    assert(isRendererAttached, 'Overflow can only be added to a RenderBox.');
+    RendererBinding.instance.rootPipelineOwner.flushLayout();
+
+    scrollController.position.moveTo(
+      distance,
+      duration: withAnimation == true ? SCROLL_DURATION : null,
+      curve: withAnimation == true ? Curves.easeOut : null,
+    );
   }
 }

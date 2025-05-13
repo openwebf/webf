@@ -15,6 +15,7 @@ final MATHML_ELEMENT_URI = 'http://www.w3.org/1998/Math/MathML';
 
 final Map<String, ElementCreator> _htmlRegistry = {};
 final Map<String, ElementCreator> _widgetElements = {};
+final Map<String, ElementCreator> _overrideWidgetElements = {};
 
 final Map<String, ElementCreator> _svgRegistry = {};
 
@@ -24,9 +25,7 @@ class _UnknownHTMLElement extends Element {
   _UnknownHTMLElement([BindingContext? context]) : super(context);
 
   @override
-  Map<String, dynamic> get defaultStyle => {
-    'display': 'block'
-  };
+  Map<String, dynamic> get defaultStyle => {'display': 'block'};
 }
 
 class _UnknownNamespaceElement extends Element {
@@ -51,23 +50,30 @@ void defineWidgetElement(String name, ElementCreator creator) {
   _widgetElements[name] = creator;
 }
 
+void defineOverrideWidgetElement(String name, ElementCreator creator) {
+  if (_overrideWidgetElements.containsKey(name)) {
+    throw Exception('An element with name "$name" has already been defined.');
+  }
+  _overrideWidgetElements[name] = creator;
+}
+
 defineElementNS(String uri, String name, ElementCreator creator) {
   _registries[uri] ??= {};
   final registry = _registries[uri]!;
   if (registry.containsKey(name)) {
-    throw Exception(
-        'An element with uri "$uri" and name "$name" has already been defined.');
+    throw Exception('An element with uri "$uri" and name "$name" has already been defined.');
   }
 
   registry[name] = creator;
 }
 
 Element createElement(String name, [BindingContext? context]) {
-  ElementCreator? creator = _htmlRegistry[name] ?? _widgetElements[name];
+  ElementCreator? creator = _htmlRegistry[name] ?? _overrideWidgetElements[name] ?? _widgetElements[name];
   Element element;
   if (creator == null) {
-    print('Unexpected HTML element "$name"');
-
+    if (enableWebFCommandLog) {
+      print('Unexpected HTML element "$name"');
+    }
     element = _UnknownHTMLElement(context);
   } else {
     element = creator(context);
@@ -181,7 +187,6 @@ void defineBuiltInElements() {
   defineElement(LABEL, (context) => LabelElement(context));
   defineElement(BUTTON, (context) => ButtonElement(context));
   defineElement(INPUT, (context) => FlutterInputElement(context));
-  defineElement(FORM, (context) => FlutterFormElement(context));
   defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));
@@ -199,9 +204,12 @@ void defineBuiltInElements() {
   defineElement(BODY, (context) => BodyElement(context));
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
-  defineElement(LISTVIEW, (context) => FlutterListViewElement(context));
-  defineElement(WEBF_LISTVIEW, (context) => FlutterListViewElement(context));
+  defineWidgetElement(LISTVIEW, (context) => WebFListViewElement(context));
+  defineWidgetElement(WEBF_LISTVIEW, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
+
+  // Gesture Elements
+  defineElement(TOUCH_AREA, (context) => WebFTouchAreaElement(context));
 
   // Hybrid Routers
   defineElement(ROUTER_LINK, (context) => RouterLinkElement(context));

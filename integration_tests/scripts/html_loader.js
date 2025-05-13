@@ -162,7 +162,7 @@ const loader = function(source) {
 
 
   const { snapshotRoot, delayForSnapshot } = this.query.getSnapshotOption(filepath);
-  const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'null';
+  const snapshotTarget = snapshotRoot === 'body' ? 'document.body' : 'document.documentElement';
 
   return `
     describe('HTMLSpec/${testRelativePath}', () => {

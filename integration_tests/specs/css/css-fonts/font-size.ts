@@ -205,7 +205,7 @@ describe('FontSize', () => {
     await snapshot();
   });
 
-  it("computed", async () => {
+  it("computed", async (done) => {
     let target;
     let container;
     container = createElement(
@@ -241,40 +241,46 @@ describe('FontSize', () => {
       expect(firstResult).toBeLessThanOrEqual(secondResult);
     }
 
-    test_relative_size('xx-small', 'x-small');
-    test_relative_size('x-small', 'small');
-    test_relative_size('small', 'medium');
-    test_relative_size('medium', 'large');
-    test_relative_size('large', 'x-large');
-    test_relative_size('x-large', 'xx-large');
-    // Added in Fonts level 4: https://github.com/w3c/csswg-drafts/issues/3907
-    test_relative_size('xx-large', 'xxx-large');
+    container.addEventListener('onscreen', () => {
 
-    // <relative-size>
-    test_relative_size('inherit', 'larger');
-    test_relative_size('smaller', 'inherit');
+      test_relative_size('xx-small', 'x-small');
+      test_relative_size('x-small', 'small');
+      test_relative_size('small', 'medium');
+      test_relative_size('medium', 'large');
+      test_relative_size('large', 'x-large');
+      test_relative_size('x-large', 'xx-large');
+      // Added in Fonts level 4: https://github.com/w3c/csswg-drafts/issues/3907
+      test_relative_size('xx-large', 'xxx-large');
+  
+      // <relative-size>
+      test_relative_size('inherit', 'larger');
+      test_relative_size('smaller', 'inherit');
+  
+      // <length-percentage>
+      test_computed_value('font-size', '10px');
+      test_computed_value('font-size', '20%');
+      test_computed_value('font-size', 'calc(30% - 40px)', '-28px');
+      test_computed_value('font-size', 'calc(30% + 40px)', '52px');
+      test_computed_value('font-size', 'calc(10px - 0.5em)', '-10px');
+      test_computed_value('font-size', 'calc(10px + 0.5em)', '30px');
+  
+      // function test_font_size(attribute, keyword) {
+      //   const reference = document.getElementById('reference');
+      //   reference!.setAttribute('size', attribute);
+      //   const target = document.getElementById('target');
+      //   target!.style.fontSize = keyword;
+      //   expect(getComputedStyle(target!).fontSize).toBe(getComputedStyle(reference!).fontSize);
+      // }
+  
+      // test_font_size('2', 'small');
+      // test_font_size('3', 'medium');
+      // test_font_size('4', 'large');
+      // test_font_size('5', 'x-large');
+      // test_font_size('6', 'xx-large');
+      // test_font_size('7', 'xxx-large');
 
-    // <length-percentage>
-    test_computed_value('font-size', '10px');
-    test_computed_value('font-size', '20%');
-    test_computed_value('font-size', 'calc(30% - 40px)', '-28px');
-    test_computed_value('font-size', 'calc(30% + 40px)', '52px');
-    test_computed_value('font-size', 'calc(10px - 0.5em)', '-10px');
-    test_computed_value('font-size', 'calc(10px + 0.5em)', '30px');
+      done();
+    });
 
-    // function test_font_size(attribute, keyword) {
-    //   const reference = document.getElementById('reference');
-    //   reference!.setAttribute('size', attribute);
-    //   const target = document.getElementById('target');
-    //   target!.style.fontSize = keyword;
-    //   expect(getComputedStyle(target!).fontSize).toBe(getComputedStyle(reference!).fontSize);
-    // }
-
-    // test_font_size('2', 'small');
-    // test_font_size('3', 'medium');
-    // test_font_size('4', 'large');
-    // test_font_size('5', 'x-large');
-    // test_font_size('6', 'xx-large');
-    // test_font_size('7', 'xxx-large');
   })
 });

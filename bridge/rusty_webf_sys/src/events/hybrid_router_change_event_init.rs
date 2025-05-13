@@ -11,6 +11,6 @@ pub struct HybridRouterChangeEventInit {
   pub cancelable: i32,
   pub composed: i32,
   pub kind: AtomicStringRef,
-  pub name: AtomicStringRef,
+  pub path: AtomicStringRef,
   pub state: NativeValue,
 }

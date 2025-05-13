@@ -3,36 +3,81 @@
  */
 
 import 'dart:async';
+import 'dart:ffi' as ffi;
 
+import 'package:flutter/material.dart' as flutter;
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart' as flutter;
+import 'package:flutter/scheduler.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
+import 'package:webf/gesture.dart';
+import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
 mixin ElementAdapterMixin on ElementBase {
-  final List<Element> positionedElements = [];
+  final List<Element> _fixedPositionElements = [];
+
+  @flutter.immutable
+  List<Element> get fixedPositionElements => _fixedPositionElements;
+
+  void addFixedPositionedElement(Element newElement) {
+    assert(() {
+      if (_fixedPositionElements.contains(newElement)) {
+        throw FlutterError('Found repeat element in $_fixedPositionElements for $newElement');
+      }
+
+      return true;
+    }());
+    _fixedPositionElements.add(newElement);
+  }
+
+  Element? getFixedPositionedElementByIndex(int index) {
+    return (index >= 0 && index < _fixedPositionElements.length ? _fixedPositionElements[index] : null);
+  }
+
+  void removeFixedPositionedElement(Element element) {
+    _fixedPositionElements.remove(element);
+  }
+
+  void clearFixedPositionedElements() {
+    _fixedPositionElements.clear();
+  }
+
   // Rendering this element as an RenderPositionHolder
   Element? holderAttachedPositionedElement;
+  Element? holderAttachedContainingBlockElement;
+
+  flutter.ScrollController? _scrollControllerX;
+
+  flutter.ScrollController? get scrollControllerX => _scrollControllerX;
+
+  flutter.ScrollController? _scrollControllerY;
+
+  flutter.ScrollController? get scrollControllerY => _scrollControllerY;
+
+  final Set<flutter.RenderObjectElement> positionHolderElements = {};
+
   bool hasEvent = false;
+  bool hasScroll = false;
 
   @override
   flutter.Widget toWidget({Key? key}) {
-    return _WebFElementWidget(this as Element, key: flutter.UniqueKey());
+    return WebFElementWidget(this as Element, key: key ?? (this as Element).key);
   }
 }
 
-class _WebFElementWidget extends flutter.StatefulWidget {
+class WebFElementWidget extends flutter.StatefulWidget {
   final Element webFElement;
 
-  _WebFElementWidget(this.webFElement, {flutter.Key? key}) : super(key: key) {
+  WebFElementWidget(this.webFElement, {flutter.Key? key}) : super(key: key) {
     webFElement.managedByFlutterWidget = true;
   }
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
-    return _WebFElementWidgetState(webFElement);
+    return WebFElementWidgetState(webFElement);
   }
 
   @override
@@ -49,14 +94,14 @@ class _WebFElementWidget extends flutter.StatefulWidget {
   }
 }
 
-class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
-  final Element _webFElement;
+class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
+  final Element webFElement;
 
-  _WebFElementWidgetState(this._webFElement);
+  WebFElementWidgetState(this.webFElement) {
+    webFElement.addState(this);
+  }
 
-  Element get webFElement => _webFElement;
-
-  void requestForChildNodeUpdate(RenderObjectUpdateReason reason) {
+  void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     setState(() {});
   }
 
@@ -64,42 +109,157 @@ class _WebFElementWidgetState extends flutter.State<_WebFElementWidget> with flu
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
 
-    if (webFElement.renderStyle.effectiveDisplay == CSSDisplay.none) {
+    WebFState? webFState;
+    WebFRouterViewState? routerViewState;
+
+    if (this is WidgetElement || webFElement.renderStyle.display == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
 
-    List<flutter.Widget> children;
+    List<flutter.Widget> children = [];
     if (webFElement.childNodes.isEmpty) {
       children = [];
     } else {
-      children = (webFElement.childNodes as ChildNodeList).map((node) {
-        if (node is Element && node.renderStyle.position == CSSPositionType.absolute) {
-          return PositionPlaceHolder(node.holderAttachedPositionedElement!);
+      webFElement.childNodes.forEach((node) {
+        if (node is Element &&
+            (node.renderStyle.position == CSSPositionType.absolute || node.renderStyle.position == CSSPositionType.sticky)) {
+          if (node.holderAttachedPositionedElement != null) {
+            children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+          }
+
+          children.add(node.toWidget());
+          return;
+        } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
+          children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+        } else if (node is RouterLinkElement) {
+          webFState ??= context.findAncestorStateOfType<WebFState>();
+          String routerPath = node.path;
+          if (webFState != null && webFState?.widget.controller.initialRoute == routerPath) {
+            children.add(node.toWidget());
+            return;
+          }
+
+          routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
+          if (routerViewState != null) {
+            children.add(node.toWidget());
+            return;
+          }
+
+          children.add(flutter.SizedBox.shrink());
+          return;
         } else {
-          return node.toWidget();
+          children.add(node.toWidget());
         }
-      }).toList();
+      });
+      webFElement.fixedPositionElements.forEach((positionedElement) {
+        children.add(positionedElement.toWidget());
+      });
     }
 
-    children.addAll(webFElement.positionedElements.map((element) {
-      return element.toWidget();
-    }));
+    flutter.Widget widget;
 
-    flutter.Widget widget = WebFRenderLayoutWidgetAdaptor(
-      webFElement: _webFElement,
-      children: children,
-      key: flutter.Key(_webFElement.hashKey)
+    if (webFElement.hasScroll) {
+      CSSOverflowType overflowX = webFElement.renderStyle.overflowX;
+      CSSOverflowType overflowY = webFElement.renderStyle.overflowY;
+
+      flutter.Widget? scrollableX;
+      if (overflowX == CSSOverflowType.scroll ||
+          overflowX == CSSOverflowType.auto ||
+          overflowX == CSSOverflowType.hidden) {
+        webFElement._scrollControllerX ??= flutter.ScrollController();
+        scrollableX = LayoutBoxWrapper(
+            child: flutter.Scrollable(
+                controller: webFElement.scrollControllerX,
+                axisDirection: AxisDirection.right,
+                viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
+                  flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                    webFElement: webFElement,
+                    children: children,
+                    key: webFElement.key,
+                    scrollListener: webFElement.handleScroll,
+                    positionX: position,
+                  );
+
+                  return adapter;
+                }),
+            ownerElement: webFElement);
+      }
+
+      if (overflowY == CSSOverflowType.scroll ||
+          overflowY == CSSOverflowType.auto ||
+          overflowY == CSSOverflowType.hidden) {
+        webFElement._scrollControllerY ??= flutter.ScrollController();
+        widget = LayoutBoxWrapper(
+            child: flutter.Scrollable(
+                axisDirection: AxisDirection.down,
+                controller: webFElement.scrollControllerY,
+                viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
+                  if (scrollableX != null) {
+                    return flutter.Scrollable(
+                        controller: webFElement.scrollControllerX,
+                        axisDirection: AxisDirection.right,
+                        viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
+                          flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                            webFElement: webFElement,
+                            children: children,
+                            key: webFElement.key,
+                            scrollListener: webFElement.handleScroll,
+                            positionX: positionX,
+                            positionY: positionY,
+                          );
+
+                          return adapter;
+                        });
+                  }
+
+                  return WebFRenderLayoutWidgetAdaptor(
+                    webFElement: webFElement,
+                    children: children,
+                    key: webFElement.key,
+                    scrollListener: webFElement.handleScroll,
+                    positionY: positionY,
+                  );
+                }),
+            ownerElement: webFElement);
+      } else {
+        widget = scrollableX ??
+            WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
+      }
+    } else {
+      widget = WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, children: children, key: webFElement.key);
+    }
+
+    return WebFEventListener(
+      ownerElement: webFElement,
+      child: widget,
+      hasEvent: webFElement.hasEvent,
+      enableTouchEvent: webFElement is WebFTouchAreaElement
     );
+  }
 
-    if (webFElement.hasEvent) {
-      widget = Portal(ownerElement: _webFElement, child: widget);
-    }
+  @override
+  void deactivate() {
+    super.deactivate();
+    webFElement._scrollControllerY?.dispose();
+    webFElement._scrollControllerY = null;
+    webFElement._scrollControllerX?.dispose();
+    webFElement._scrollControllerX = null;
+    webFElement.removeState(this);
+  }
 
-    return widget;
+  @override
+  void activate() {
+    super.activate();
+    webFElement.addState(this);
   }
 
   @override
   void dispose() {
+    webFElement.removeState(this);
+    webFElement._scrollControllerY?.dispose();
+    webFElement._scrollControllerY = null;
+    webFElement._scrollControllerX?.dispose();
+    webFElement._scrollControllerX = null;
     super.dispose();
   }
 
@@ -122,6 +282,11 @@ class WebFReplacedElementWidget extends flutter.SingleChildRenderObjectWidget {
   flutter.SingleChildRenderObjectElement createElement() {
     return WebFRenderReplacedRenderObjectElement(this);
   }
+
+  @override
+  String toStringShort() {
+    return 'RenderObjectAdapter(${webFElement.tagName.toLowerCase()})';
+  }
 }
 
 class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObjectElement {
@@ -131,7 +296,7 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   WebFReplacedElementWidget get widget => super.widget as WebFReplacedElementWidget;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild(RenderObjectUpdateReason reason) {
+  void requestForBuild(AdapterUpdateReason reason) {
     if (reason is UpdateChildNodeUpdateReason) return;
 
     visitChildElements((flutter.Element childElement) {
@@ -140,6 +305,8 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
       }
     });
   }
+
+  flutter.RouteSettings? _currentRouteSettings;
 
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
@@ -150,12 +317,34 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
     webFElement.didAttachRenderer();
 
     webFElement.style.flushPendingProperties();
+
+    flutter.ModalRoute? route = flutter.ModalRoute.of(this);
+
+    _currentRouteSettings = route?.settings;
+
+    OnScreenEvent event = OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    // Should dispatch onscreen event after did build and layout
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      webFElement.dispatchEventUtilAdded(event);
+    });
+
+    if (webFElement is ImageElement && webFElement.shouldLazyLoading) {
+      (renderObject as RenderReplaced)
+        ..intersectPadding = Rect.fromLTRB(0, 0, webFElement.ownerDocument.viewport!.viewportSize.width,
+            webFElement.ownerDocument.viewport!.viewportSize.height)
+        ..addIntersectionChangeListener(webFElement.handleIntersectionChange);
+    }
   }
 
   @override
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = widget.webFElement;
+    OffScreenEvent event = OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      element.dispatchEvent(event);
+    });
+    _currentRouteSettings = null;
     element.willDetachRenderer(this);
     super.unmount();
     element.didDetachRenderer(this);
@@ -163,10 +352,19 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
 }
 
 class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget {
-  WebFRenderLayoutWidgetAdaptor({this.webFElement, flutter.Key? key, required List<flutter.Widget> children})
+  WebFRenderLayoutWidgetAdaptor(
+      {this.webFElement,
+      flutter.Key? key,
+      this.positionX,
+      this.positionY,
+      this.scrollListener,
+      required List<flutter.Widget> children})
       : super(key: key, children: children) {}
 
   final Element? webFElement;
+  final ViewportOffset? positionX;
+  final ViewportOffset? positionY;
+  final ScrollListener? scrollListener;
 
   @override
   WebRenderLayoutRenderObjectElement createElement() {
@@ -176,12 +374,33 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderLayoutParentData parentData = RenderLayoutParentData();
     RenderBoxModel renderBoxModel =
         webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
-    renderBoxModel.parentData = CSSPositionedLayout.getPositionParentData(renderBoxModel, parentData);
+
+    // Attach position holder to apply offsets based on original layout.
+    webFElement!.positionHolderElements.forEach((positionHolder) {
+      if (positionHolder.mounted) {
+        renderBoxModel.renderPositionPlaceholder = positionHolder.renderObject as RenderPositionPlaceholder;
+        (positionHolder.renderObject as RenderPositionPlaceholder).positioned = renderBoxModel;
+      }
+    });
+
+    if (scrollListener != null) {
+      renderBoxModel.scrollOffsetX = positionX;
+      renderBoxModel.scrollOffsetY = positionY;
+      renderBoxModel.scrollListener = scrollListener;
+    }
 
     return renderBoxModel;
+  }
+
+  @override
+  void updateRenderObject(flutter.BuildContext context, RenderBoxModel renderBoxModel) {
+    if (scrollListener != null) {
+      renderBoxModel.scrollOffsetX = positionX;
+      renderBoxModel.scrollOffsetY = positionY;
+      renderBoxModel.scrollListener = scrollListener;
+    }
   }
 
   @override
@@ -199,9 +418,10 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
   Element get webFElement;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild(RenderObjectUpdateReason reason) {
-    _WebFElementWidgetState state = findAncestorStateOfType<_WebFElementWidgetState>()!;
-    state.requestForChildNodeUpdate(reason);
+  void requestForBuild(AdapterUpdateReason reason) {
+    webFElement.forEachState((state) {
+      state.requestForChildNodeUpdate(reason);
+    });
   }
 
   @override
@@ -218,6 +438,7 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = webFElement;
     element.willDetachRenderer(this);
+
     super.unmount();
     element.didDetachRenderer(this);
   }
@@ -228,14 +449,44 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
 
   ExternalWebRenderLayoutWidgetElement(this._webfElement, WebFRenderLayoutWidgetAdaptor widget) : super(widget);
 
+  flutter.RouteSettings? _currentRouteSettings;
+
+  @override
+  void mount(flutter.Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+
+    flutter.ModalRoute? route = flutter.ModalRoute.of(this);
+
+    _currentRouteSettings = route?.settings;
+
+    OnScreenEvent event = OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    Element webfElement = webFElement;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      webfElement.dispatchEventUtilAdded(event);
+    });
+  }
+
+  @override
+  void unmount() {
+    Element element = webFElement;
+    OffScreenEvent event = OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      element.dispatchEvent(event);
+    });
+    _currentRouteSettings = null;
+
+    super.unmount();
+  }
+
   @override
   Element get webFElement => _webfElement;
 }
 
 class PositionPlaceHolder extends flutter.SingleChildRenderObjectWidget {
   final Element positionedElement;
+  final Element selfElement;
 
-  PositionPlaceHolder(this.positionedElement, {Key? key}) : super(key: key);
+  PositionPlaceHolder(this.positionedElement, this.selfElement, {Key? key}) : super(key: key);
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
@@ -257,12 +508,19 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
   @override
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    scheduleMicrotask(() {
-      RenderPositionPlaceholder renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
-      renderPositionPlaceholder.positioned = widget.positionedElement.renderStyle.attachedRenderBoxModel;
-      renderPositionPlaceholder.positioned!.renderPositionPlaceholder = renderPositionPlaceholder;
-      renderPositionPlaceholder.markNeedsLayout();
-      renderPositionPlaceholder.positioned!.markNeedsLayout();
-    });
+    widget.selfElement.positionHolderElements.add(this);
+  }
+
+  @override
+  void unmount() {
+    widget.selfElement.positionHolderElements.remove(this);
+
+    // Remove the reference for this in paired render box model.
+    RenderBoxModel? pairedRenderBoxModel = widget.positionedElement.renderStyle.attachedRenderBoxModel;
+    if (pairedRenderBoxModel?.renderPositionPlaceholder == renderObject) {
+      pairedRenderBoxModel?.renderPositionPlaceholder = null;
+    }
+
+    super.unmount();
   }
 }

@@ -11,7 +11,6 @@ import 'package:flutter/gestures.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/resize_observer.dart';
 
 enum AppearEventType { none, appear, disappear }
 
@@ -54,6 +53,8 @@ const String EVENT_ENDED = 'ended';
 const String EVENT_PAUSE = 'pause';
 const String EVENT_POP_STATE = 'popstate';
 const String EVENT_HYBRID_ROUTER_CHANGE = 'hybridrouterchange';
+const String EVENT_ON_SCREEN = 'onscreen';
+const String EVENT_OFF_SCREEN = 'offscreen';
 const String EVENT_HASH_CHANGE = 'hashchange';
 const String EVENT_PLAY = 'play';
 const String EVENT_SEEKED = 'seeked';
@@ -77,12 +78,6 @@ const String EVENT_STATE_END = 'end';
 const String EVENT_STATE_CANCEL = 'cancel';
 
 mixin ElementEventMixin on ElementBase {
-  AppearEventType _prevAppearState = AppearEventType.none;
-
-  void clearEventResponder(RenderEventListenerMixin? renderBox) {
-    renderBox?.getEventTarget = null;
-  }
-
   bool hasIntersectionObserverEvent() {
     return hasEventListener(EVENT_APPEAR) ||
         hasEventListener(EVENT_DISAPPEAR) ||
@@ -110,16 +105,10 @@ mixin ElementEventMixin on ElementBase {
   }
 
   void handleAppear() {
-    if (_prevAppearState == AppearEventType.appear) return;
-    _prevAppearState = AppearEventType.appear;
-
     dispatchEvent(AppearEvent());
   }
 
   void handleDisappear() {
-    if (_prevAppearState == AppearEventType.disappear) return;
-    _prevAppearState = AppearEventType.disappear;
-
     dispatchEvent(DisappearEvent());
   }
 
@@ -131,6 +120,7 @@ mixin ElementEventMixin on ElementBase {
       handleDisappear();
     }
   }
+
   void handleResizeChange(ResizeObserverEntry entry) {
     dispatchEvent(ResizeEvent(entry).toCustomEvent());
   }
@@ -243,16 +233,16 @@ class PopStateEvent extends Event {
 class HybridRouterChangeEvent extends Event {
   final dynamic state;
   final String kind;
-  final String name;
+  final String path;
 
-  HybridRouterChangeEvent({this.state, required this.kind, required this.name}) : super(EVENT_HYBRID_ROUTER_CHANGE);
+  HybridRouterChangeEvent({this.state, required this.kind, required this.path}) : super(EVENT_HYBRID_ROUTER_CHANGE);
 
   @override
   Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
     List<int> methods = [
       jsonEncode(state).toNativeUtf8().address,
       stringToNativeString(kind).address,
-      stringToNativeString(name).address
+      stringToNativeString(path).address
     ];
 
     Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
@@ -263,6 +253,37 @@ class HybridRouterChangeEvent extends Event {
 
     return rawEvent;
   }
+}
+
+class _ScreenEvent extends Event {
+  final dynamic state;
+  final String path;
+
+  _ScreenEvent({required String type, required this.state, required this.path}) : super(type);
+
+  @override
+  Pointer<NativeType> toRaw([int extraLength = 0, bool isCustomEvent = false]) {
+    List<int> methods = [
+      jsonEncode(state).toNativeUtf8().address,
+      stringToNativeString(path).address,
+    ];
+
+    Pointer<RawEvent> rawEvent = super.toRaw(methods.length).cast<RawEvent>();
+    int currentStructSize = rawEvent.ref.length + methods.length;
+    Uint64List bytes = rawEvent.ref.bytes.asTypedList(currentStructSize);
+    bytes.setAll(rawEvent.ref.length, methods);
+    rawEvent.ref.length = currentStructSize;
+
+    return rawEvent;
+  }
+}
+
+class OnScreenEvent extends _ScreenEvent {
+  OnScreenEvent({required super.state, required super.path}): super(type: EVENT_ON_SCREEN);
+}
+
+class OffScreenEvent extends _ScreenEvent {
+  OffScreenEvent({required super.state, required super.path}): super(type: EVENT_OFF_SCREEN);
 }
 
 class HashChangeEvent extends Event {
@@ -306,10 +327,8 @@ class UIEvent extends Event {
     this.detail = 0.0,
     this.view,
     this.which = 0.0,
-    super.bubbles,
-    super.cancelable,
     super.composed,
-  }) : super(type);
+  }) : super(type, bubbles: true, cancelable: true);
 
   @override
   Pointer toRaw([int extraLength = 0, bool isCustomEvent = false]) {
@@ -334,8 +353,6 @@ class FocusEvent extends UIEvent {
     super.detail,
     super.view,
     super.which,
-    super.bubbles,
-    super.cancelable,
     super.composed,
   }) : super(type);
 
@@ -362,8 +379,6 @@ class KeyboardEvent extends UIEvent {
     String type, {
     this.key = '',
     this.code = '',
-    super.bubbles = true,
-    super.cancelable = true,
     super.composed = true,
   }) : super(type);
 
@@ -400,7 +415,7 @@ class MouseEvent extends UIEvent {
     double detail = 0.0,
     EventTarget? view,
     double which = 0.0,
-  }) : super(type, detail: detail, view: view, which: which, bubbles: true, cancelable: true, composed: false);
+  }) : super(type, detail: detail, view: view, which: which, composed: false);
 
   static MouseEvent fromTapUp(Element ownerElement, TapUpDetails tapDetails) {
     Offset globalPosition = tapDetails.globalPosition;
@@ -540,8 +555,6 @@ class InputEvent extends UIEvent {
   InputEvent({
     this.inputType = '',
     this.data = '',
-    super.bubbles,
-    super.cancelable,
     super.composed,
   }) : super(EVENT_INPUT);
 }
@@ -701,7 +714,7 @@ class TouchEvent extends UIEvent {
   })  : touches = touches ?? TouchList(),
         targetTouches = targetTouches ?? TouchList(),
         changedTouches = changedTouches ?? TouchList(),
-        super(type, bubbles: true, cancelable: true, composed: true);
+        super(type, composed: true);
 
   TouchList touches;
   TouchList targetTouches;

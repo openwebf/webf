@@ -16,7 +16,7 @@ struct WebFHybridRouterChangeEventInit {
   int32_t cancelable;
   int32_t composed;
   const char* kind;
-  const char* name;
+  const char* path;
   NativeValue state;
 };
 }  // namespace webf

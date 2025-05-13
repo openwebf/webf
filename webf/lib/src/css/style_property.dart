@@ -292,12 +292,28 @@ class CSSStyleProperty {
     String? borderRightWidth;
     String? borderBottomWidth;
     String? borderLeftWidth;
+    String? borderInlineStartWidth;
+    String? borderInlineStartStyle;
+    String? borderInlineStartColor;
+    String? borderInlineEndWidth;
+    String? borderInlineEndStyle;
+    String? borderInlineEndColor;
+    String? borderBlockStartWidth;
+    String? borderBlockStartStyle;
+    String? borderBlockStartColor;
+    String? borderBlockEndWidth;
+    String? borderBlockEndStyle;
+    String? borderBlockEndColor;
 
     if (property == BORDER ||
         property == BORDER_TOP ||
         property == BORDER_RIGHT ||
         property == BORDER_BOTTOM ||
-        property == BORDER_LEFT) {
+        property == BORDER_LEFT ||
+        property == BORDER_INLINE_START ||
+        property == BORDER_INLINE_END ||
+        property == BORDER_BLOCK_START ||
+        property == BORDER_BLOCK_END) {
       List<String?>? values = CSSStyleProperty._getBorderValues(shorthandValue);
       if (values == null) return;
 
@@ -320,6 +336,27 @@ class CSSStyleProperty {
         borderLeftWidth = values[0];
         borderLeftStyle = values[1];
         borderLeftColor = values[2];
+      }
+      // Logical properties for LTR mode
+      if (property == BORDER_INLINE_START) {
+        borderInlineStartWidth = values[0];
+        borderInlineStartStyle = values[1];
+        borderInlineStartColor = values[2];
+      }
+      if (property == BORDER_INLINE_END) {
+        borderInlineEndWidth = values[0];
+        borderInlineEndStyle = values[1];
+        borderInlineEndColor = values[2];
+      }
+      if (property == BORDER_BLOCK_START) {
+        borderBlockStartWidth = values[0];
+        borderBlockStartStyle = values[1];
+        borderBlockStartColor = values[2];
+      }
+      if (property == BORDER_BLOCK_END) {
+        borderBlockEndWidth = values[0];
+        borderBlockEndStyle = values[1];
+        borderBlockEndColor = values[2];
       }
     } else if (property == BORDER_WIDTH) {
       List<String?>? values = getEdgeValues(shorthandValue);
@@ -361,6 +398,20 @@ class CSSStyleProperty {
     if (borderRightWidth != null) properties[BORDER_RIGHT_WIDTH] = borderRightWidth;
     if (borderBottomWidth != null) properties[BORDER_BOTTOM_WIDTH] = borderBottomWidth;
     if (borderLeftWidth != null) properties[BORDER_LEFT_WIDTH] = borderLeftWidth;
+    
+    // Logical properties
+    if (borderInlineStartWidth != null) properties[BORDER_INLINE_START_WIDTH] = borderInlineStartWidth;
+    if (borderInlineStartStyle != null) properties[BORDER_INLINE_START_STYLE] = borderInlineStartStyle;
+    if (borderInlineStartColor != null) properties[BORDER_INLINE_START_COLOR] = borderInlineStartColor;
+    if (borderInlineEndWidth != null) properties[BORDER_INLINE_END_WIDTH] = borderInlineEndWidth;
+    if (borderInlineEndStyle != null) properties[BORDER_INLINE_END_STYLE] = borderInlineEndStyle;
+    if (borderInlineEndColor != null) properties[BORDER_INLINE_END_COLOR] = borderInlineEndColor;
+    if (borderBlockStartWidth != null) properties[BORDER_BLOCK_START_WIDTH] = borderBlockStartWidth;
+    if (borderBlockStartStyle != null) properties[BORDER_BLOCK_START_STYLE] = borderBlockStartStyle;
+    if (borderBlockStartColor != null) properties[BORDER_BLOCK_START_COLOR] = borderBlockStartColor;
+    if (borderBlockEndWidth != null) properties[BORDER_BLOCK_END_WIDTH] = borderBlockEndWidth;
+    if (borderBlockEndStyle != null) properties[BORDER_BLOCK_END_STYLE] = borderBlockEndStyle;
+    if (borderBlockEndColor != null) properties[BORDER_BLOCK_END_COLOR] = borderBlockEndColor;
   }
 
   static void removeShorthandBorder(CSSStyleDeclaration style, String property, [bool? isImportant]) {
@@ -368,7 +419,11 @@ class CSSStyleProperty {
         property == BORDER_TOP ||
         property == BORDER_RIGHT ||
         property == BORDER_BOTTOM ||
-        property == BORDER_LEFT) {
+        property == BORDER_LEFT ||
+        property == BORDER_INLINE_START ||
+        property == BORDER_INLINE_END ||
+        property == BORDER_BLOCK_START ||
+        property == BORDER_BLOCK_END) {
       if (property == BORDER || property == BORDER_TOP) {
         if (style.contains(BORDER_TOP_COLOR)) style.removeProperty(BORDER_TOP_COLOR, isImportant);
         if (style.contains(BORDER_TOP_STYLE)) style.removeProperty(BORDER_TOP_STYLE, isImportant);
@@ -388,6 +443,26 @@ class CSSStyleProperty {
         if (style.contains(BORDER_LEFT_COLOR)) style.removeProperty(BORDER_LEFT_COLOR, isImportant);
         if (style.contains(BORDER_LEFT_STYLE)) style.removeProperty(BORDER_LEFT_STYLE, isImportant);
         if (style.contains(BORDER_LEFT_WIDTH)) style.removeProperty(BORDER_LEFT_WIDTH, isImportant);
+      }
+      if (property == BORDER_INLINE_START) {
+        if (style.contains(BORDER_INLINE_START_COLOR)) style.removeProperty(BORDER_INLINE_START_COLOR, isImportant);
+        if (style.contains(BORDER_INLINE_START_STYLE)) style.removeProperty(BORDER_INLINE_START_STYLE, isImportant);
+        if (style.contains(BORDER_INLINE_START_WIDTH)) style.removeProperty(BORDER_INLINE_START_WIDTH, isImportant);
+      }
+      if (property == BORDER_INLINE_END) {
+        if (style.contains(BORDER_INLINE_END_COLOR)) style.removeProperty(BORDER_INLINE_END_COLOR, isImportant);
+        if (style.contains(BORDER_INLINE_END_STYLE)) style.removeProperty(BORDER_INLINE_END_STYLE, isImportant);
+        if (style.contains(BORDER_INLINE_END_WIDTH)) style.removeProperty(BORDER_INLINE_END_WIDTH, isImportant);
+      }
+      if (property == BORDER_BLOCK_START) {
+        if (style.contains(BORDER_BLOCK_START_COLOR)) style.removeProperty(BORDER_BLOCK_START_COLOR, isImportant);
+        if (style.contains(BORDER_BLOCK_START_STYLE)) style.removeProperty(BORDER_BLOCK_START_STYLE, isImportant);
+        if (style.contains(BORDER_BLOCK_START_WIDTH)) style.removeProperty(BORDER_BLOCK_START_WIDTH, isImportant);
+      }
+      if (property == BORDER_BLOCK_END) {
+        if (style.contains(BORDER_BLOCK_END_COLOR)) style.removeProperty(BORDER_BLOCK_END_COLOR, isImportant);
+        if (style.contains(BORDER_BLOCK_END_STYLE)) style.removeProperty(BORDER_BLOCK_END_STYLE, isImportant);
+        if (style.contains(BORDER_BLOCK_END_WIDTH)) style.removeProperty(BORDER_BLOCK_END_WIDTH, isImportant);
       }
     } else {
       if (property == BORDER_WIDTH) {

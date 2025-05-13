@@ -80,7 +80,7 @@ void _failedToResolveBundle(String url) {
   throw FlutterError('Failed to resolve bundle for $url');
 }
 
-abstract class WebFBundle {
+abstract class WebFBundle with Diagnosticable {
   WebFBundle(this.url, { ContentType? contentType }): _contentType = contentType;
 
   // Unique resource locator.
@@ -108,6 +108,12 @@ abstract class WebFBundle {
     return HttpCacheController.getCacheKey(resolvedUri!).hashCode.toString();
   }
 
+  bool _wasLoadedFromCache = false;
+  bool get loadedFromCache => _wasLoadedFromCache;
+  void setLoadingFromCache() {
+    _wasLoadedFromCache = true;
+  }
+
   // Content type for data.
   // The default value is plain text.
   ContentType? _contentType;
@@ -115,7 +121,7 @@ abstract class WebFBundle {
 
   // Pre process the data before the data actual used.
   Future<void> preProcessing(double contextId) async {
-    if (isJavascript && data != null) {
+    if (isJavascript && data != null && isPageAlive(contextId)) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
 
       EvaluateOpItem? currentProfileOp;
@@ -154,13 +160,18 @@ abstract class WebFBundle {
     data = null;
   }
 
-  Future<void> invalidateCache() async {
+  static Future<void> invalidateCache(String url) async {
     Uri? uri = Uri.tryParse(url);
     if (uri == null) return;
     String origin = getOrigin(uri);
     HttpCacheController cacheController = HttpCacheController.instance(origin);
     HttpCacheObject cacheObject = await cacheController.getCacheObject(uri);
     await cacheObject.remove();
+  }
+
+  @override
+  String toStringShort() {
+    return '${describeIdentity(this)} (url: $url, contentType: $contentType, isLoaded: ${data != null}) ';
   }
 
   static WebFBundle fromUrl(String url, {Map<String, String>? additionalHttpHeaders, ContentType? contentType}) {
@@ -275,7 +286,9 @@ class NetworkBundle extends WebFBundle {
       WebFProfiler.instance.startTrackNetworkStep(currentProfileOp!, 'request.close()');
     }
 
+    (request as ProxyHttpClientRequest).ownerBundle = this;
     final HttpClientResponse response = await request.close();
+    (request).ownerBundle = null;
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackNetworkStep(currentProfileOp!);
@@ -313,7 +326,7 @@ class NetworkBundle extends WebFBundle {
     }
 
     if (bytes.isEmpty) {
-      await invalidateCache();
+      await WebFBundle.invalidateCache(url);
       if (enableWebFProfileTracking) {
         WebFProfiler.instance.finishTrackNetwork(currentProfileOp!);
       }

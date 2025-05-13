@@ -11,6 +11,7 @@
 #include "core/dom/events/event_target.h"
 #include "core/dom/text.h"
 #include "core/frame/window.h"
+#include "core/html/custom/webf_router_link_element.h"
 #include "core/html/custom/widget_element.h"
 #include "core/html/html_all_collection.h"
 #include "core/html/html_body_element.h"
@@ -18,6 +19,7 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "core/html/html_unknown_element.h"
+#include "core/html/touches/webf_touch_area_element.h"
 #include "core/svg/svg_element.h"
 #include "element_namespace_uris.h"
 #include "element_traversal.h"
@@ -26,6 +28,7 @@
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
+#include "webf_element_names.h"
 
 namespace webf {
 
@@ -54,11 +57,23 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
     return element;
   }
 
+  if (local_name == webf_element_names::kWebfToucharea) {
+    return MakeGarbageCollected<WebFTouchAreaElement>(*this);
+  }
+
+  if (local_name == webf_element_names::kWebfRouterLink) {
+    return MakeGarbageCollected<WebFRouterLinkElement>(*this);
+  }
+
   if (WidgetElement::IsValidName(local_name)) {
     return MakeGarbageCollected<WidgetElement>(local_name, this);
   }
 
-  return MakeGarbageCollected<HTMLUnknownElement>(local_name, this);
+  auto* html_unknown_element = MakeGarbageCollected<HTMLUnknownElement>(local_name, this);
+  // Additional patch for the quickjs object, avoid warning for unknown tag in React.js
+  JS_SetProperty(ctx(), html_unknown_element->ToQuickJSUnsafe(), JS_ATOM_Symbol_toStringTag,
+                 JS_NewString(ctx(), ("HTMLUnknownElement " + local_name.ToStdString(ctx())).c_str()));
+  return html_unknown_element;
 }
 
 Element* Document::createElement(const AtomicString& name,

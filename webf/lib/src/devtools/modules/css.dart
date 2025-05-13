@@ -29,6 +29,12 @@ class InspectCSSModule extends UIInspectorModule {
       case 'getMatchedStylesForNode':
         handleGetMatchedStylesForNode(id, params!);
         break;
+      case 'getAnimatedStylesForNode':
+        sendToFrontend(id, JSONEncodableMap({
+          'animationStyles': [],
+          'inherited': []
+        }));
+        break;
       case 'getComputedStyleForNode':
         handleGetComputedStyleForNode(id, params!);
         break;

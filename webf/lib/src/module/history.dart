@@ -163,7 +163,7 @@ class HistoryModule extends BaseModule {
   }
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  String invoke(String method, List<dynamic> params) {
     switch (method) {
       case 'length':
         return (_previousStack.length + _nextStack.length).toString();
@@ -186,7 +186,7 @@ class HistoryModule extends BaseModule {
         replaceState(params[0], title: params[1], url: params[2]);
         break;
       case 'go':
-        go(params);
+        go(params[0]);
         break;
     }
     return EMPTY_STRING;

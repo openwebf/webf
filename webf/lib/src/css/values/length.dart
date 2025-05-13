@@ -28,6 +28,7 @@ final _nonNegativeLengthRegExp = RegExp(r'^[+]?(\d+)?(\.\d+)?' + _unitRegStr + r
 enum CSSLengthType {
   // absolute units
   PX, // px
+  RPX,
   // relative units
   EM, // em,
   REM, // rem
@@ -149,6 +150,10 @@ class CSSLengthValue {
       case CSSLengthType.PX:
         _computedValue = value;
         break;
+      case CSSLengthType.RPX:
+        FlutterView window = renderStyle!.currentFlutterView;
+        _computedValue = value! / 750.0 * window.physicalSize.width / window.devicePixelRatio;
+        break;
       case CSSLengthType.EM:
         // Font size of the parent, in the case of typographical properties like font-size,
         // and font size of the element itself, in the case of other properties like width.
@@ -190,39 +195,59 @@ class CSSLengthValue {
       case CSSLengthType.PERCENTAGE:
         CSSPositionType positionType = renderStyle!.position;
         bool isPositioned = positionType == CSSPositionType.absolute || positionType == CSSPositionType.fixed;
-
         RenderStyle? currentRenderStyle = renderStyle;
-        RenderStyle? parentRenderStyle = currentRenderStyle?.getParentRenderStyle();
-        // RenderBoxModel? renderBoxModel = renderStyle!.renderBoxModel;
+
+        RenderStyle? parentRenderStyle = isPositioned
+            ? currentRenderStyle?.target.getContainingBlockElement()?.renderStyle
+            : currentRenderStyle?.getParentRenderStyle();
+
         // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
         // cause the element of renderStyle parent may not equal to containing block.
         // RenderObject? containerRenderBox = renderBoxModel?.parent;
         // CSSRenderStyle? parentRenderStyle;
         while (parentRenderStyle != null) {
           if (parentRenderStyle.isBoxModel() && (_isPercentageRelativeContainerRenderStyle(parentRenderStyle))) {
-            // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
-            // content box is only a fraction of the complete renderStyle.
-            parentRenderStyle = parentRenderStyle.isSelfScrollingContentBox()
-                ? parentRenderStyle.getParentRenderStyle()
-                : parentRenderStyle;
             break;
           }
           parentRenderStyle = parentRenderStyle.getParentRenderStyle();
         }
 
-        // Percentage relative width priority: logical width > renderer width
+        RenderWidgetElementChild? renderWidgetElementChild =
+            currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
+        bool shouldInheritRenderWidgetElementConstraintsWidth =
+            parentRenderStyle?.isSelfRenderWidget() == true && renderWidgetElementChild != null;
+        double? parentWidgetConstraintWidth = renderWidgetElementChild?.constraints.maxWidth;
+        bool shouldInheritRenderWidgetElementConstraintsHeight = parentRenderStyle?.isSelfRenderWidget() == true &&
+            renderWidgetElementChild != null &&
+            renderWidgetElementChild.constraints.maxHeight.isFinite &&
+            renderWidgetElementChild.constraints.maxHeight !=
+                currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
+        double? parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
+
+        // Percentage relative width priority: RenderWidgetChild's constraints > logical width > renderer width
         double? parentPaddingBoxWidth = parentRenderStyle?.paddingBoxLogicalWidth ?? parentRenderStyle?.paddingBoxWidth;
         double? parentContentBoxWidth = parentRenderStyle?.contentBoxLogicalWidth ?? parentRenderStyle?.contentBoxWidth;
+
+        // Override the contentBoxWidth
+        if (shouldInheritRenderWidgetElementConstraintsWidth) {
+          parentContentBoxWidth = parentWidgetConstraintWidth;
+        }
+
         // Percentage relative height priority: logical height > renderer height
         double? parentPaddingBoxHeight =
             parentRenderStyle?.paddingBoxLogicalHeight ?? parentRenderStyle?.paddingBoxHeight;
         double? parentContentBoxHeight =
             parentRenderStyle?.contentBoxLogicalHeight ?? parentRenderStyle?.contentBoxHeight;
+        double? parentContentBoxLogicalHeight = parentRenderStyle?.contentBoxLogicalHeight;
+
+        if (shouldInheritRenderWidgetElementConstraintsHeight) {
+          parentContentBoxHeight = parentWidgetConstraintHeight;
+          parentContentBoxLogicalHeight = parentWidgetConstraintHeight;
+        }
 
         // Positioned element is positioned relative to the padding box of its containing block
         // while the others relative to the content box.
         double? relativeParentWidth = isPositioned ? parentPaddingBoxWidth : parentContentBoxWidth;
-        double? relativeParentHeight = isPositioned ? parentPaddingBoxHeight : parentContentBoxHeight;
 
         switch (realPropertyName) {
           case FONT_SIZE:
@@ -265,6 +290,7 @@ class CSSLengthValue {
             // The percentage height of positioned element and flex item resolves against the rendered height
             // of parent, mark parent as needs relayout if rendered height is not ready yet.
             if (isPositioned || isGrandParentFlexLayout) {
+              double? relativeParentHeight = isPositioned ? parentPaddingBoxHeight : parentContentBoxHeight;
               if (relativeParentHeight != null) {
                 _computedValue = value! * relativeParentHeight;
               } else {
@@ -273,7 +299,7 @@ class CSSLengthValue {
                 _computedValue = double.infinity;
               }
             } else {
-              double? relativeParentHeight = parentRenderStyle?.contentBoxLogicalHeight;
+              double? relativeParentHeight = parentContentBoxLogicalHeight;
               if (relativeParentHeight != null) {
                 _computedValue = value! * relativeParentHeight;
               } else {
@@ -369,7 +395,8 @@ class CSSLengthValue {
             double? borderBoxWidth = renderStyle!.borderBoxWidth ?? renderStyle!.borderBoxLogicalWidth;
             if (isPercentage && borderBoxWidth != null) {
               final destinationWidth = renderStyle?.getRenderBoxValueByType(RenderObjectGetType.self,
-                  (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.width.toDouble()) ?? 0;
+                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.width.toDouble()) ??
+                  0;
               _computedValue = (borderBoxWidth - destinationWidth) * value!;
             } else {
               _computedValue = value!;
@@ -379,7 +406,8 @@ class CSSLengthValue {
             double? borderBoxHeight = renderStyle!.borderBoxHeight ?? renderStyle!.borderBoxLogicalHeight;
             if (isPercentage && borderBoxHeight != null) {
               final destinationHeight = renderStyle?.getRenderBoxValueByType(RenderObjectGetType.self,
-                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.height.toDouble()) ?? 0;
+                      (renderBox, _) => renderBox.boxPainter?.backgroundImageSize?.height.toDouble()) ??
+                  0;
               _computedValue = (borderBoxHeight - destinationHeight) * value!;
             } else {
               _computedValue = value!;
@@ -594,7 +622,6 @@ class CSSLength {
   }
 
   static CSSLengthValue parseLength(String text, RenderStyle? renderStyle, [String? propertyName, Axis? axisType]) {
-    FlutterView? window = renderStyle?.currentFlutterView;
     double? value;
     CSSLengthType unit = CSSLengthType.PX;
     if (text == ZERO) {
@@ -620,7 +647,7 @@ class CSSLength {
       unit = CSSLengthType.EM;
     } else if (text.endsWith(RPX)) {
       value = double.tryParse(text.split(RPX)[0]);
-      if (value != null && window != null) value = value / 750.0 * window.physicalSize.width / window.devicePixelRatio;
+      unit = CSSLengthType.RPX;
     } else if (text.endsWith(PX)) {
       value = double.tryParse(text.split(PX)[0]);
     } else if (text.endsWith(VW)) {
@@ -666,29 +693,6 @@ class CSSLength {
         CSSCalcValue? calcValue = CSSCalcValue.tryParse(renderStyle, propertyName ?? '', text);
         if (calcValue != null) {
           return CSSLengthValue.calc(calcValue, renderStyle, propertyName);
-        }
-      }
-
-      List<CSSFunctionalNotation> notations = CSSFunction.parseFunction(text);
-      // https://drafts.csswg.org/css-env/#env-function
-      // Using Environment Variables: the env() notation
-      if (notations.length == 1 && notations[0].name == ENV && notations[0].args.length == 1 && window != null) {
-        switch (notations[0].args.first) {
-          case SAFE_AREA_INSET_TOP:
-            value = window.viewPadding.top / window.devicePixelRatio;
-            break;
-          case SAFE_AREA_INSET_RIGHT:
-            value = window.viewPadding.right / window.devicePixelRatio;
-            break;
-          case SAFE_AREA_INSET_BOTTOM:
-            value = window.viewPadding.bottom / window.devicePixelRatio;
-            break;
-          case SAFE_AREA_INSET_LEFT:
-            value = window.viewPadding.left / window.devicePixelRatio;
-            break;
-          default:
-            // Using fallback value if not match user agent-defined environment variable: env(xxx, 50px).
-            return parseLength(notations[0].args[1], renderStyle, propertyName, axisType);
         }
       }
     } else {

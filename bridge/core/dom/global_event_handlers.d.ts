@@ -110,22 +110,22 @@ export interface GlobalEventHandlers {
      * @param ev The event.
      */
     onload: IDLEventHandler | null;
-    /**
-     * Occurs when media data is loaded at the current playback position.
-     * @param ev The event.
-     */
-    onloadeddata: IDLEventHandler | null;
-    /**
-     * Occurs when the duration and dimensions of the media have been determined.
-     * @param ev The event.
-     */
-    onloadedmetadata: IDLEventHandler | null;
-    /**
-     * Occurs when Internet Explorer begins looking for media data.
-     * @param ev The event.
-     */
-    onloadstart: IDLEventHandler | null;
-    onlostpointercapture: IDLEventHandler | null;
+    // /**
+    //  * Occurs when media data is loaded at the current playback position.
+    //  * @param ev The event.
+    //  */
+    // onloadeddata: IDLEventHandler | null;
+    // /**
+    //  * Occurs when the duration and dimensions of the media have been determined.
+    //  * @param ev The event.
+    //  */
+    // onloadedmetadata: IDLEventHandler | null;
+    // /**
+    //  * Occurs when Internet Explorer begins looking for media data.
+    //  * @param ev The event.
+    //  */
+    // onloadstart: IDLEventHandler | null;
+    // onlostpointercapture: IDLEventHandler | null;
     /**
      * Fires when the user clicks the object with either mouse button.
      * @param ev The mouse event.
@@ -241,4 +241,10 @@ export interface GlobalEventHandlers {
      */
     onwaiting: IDLEventHandler | null;
     onwheel: IDLEventHandler | null;
+
+    /**
+     * Occurs when the renderObject of this Element had been attached to detached from flutter tree
+     */
+    ononscreen: IDLEventHandler | null;
+    onoffscreen: IDLEventHandler | null;
 }

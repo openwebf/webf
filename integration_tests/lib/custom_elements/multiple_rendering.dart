@@ -5,13 +5,22 @@ class MultipleRenderElement extends WidgetElement {
   MultipleRenderElement(super.context);
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return MultipleRenderElementState(this);
+  }
+}
+
+class MultipleRenderElementState extends WebFWidgetElementState {
+  MultipleRenderElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return Flex(
       direction: Axis.vertical,
       children: [
-        childNodes.first.toWidget(key: Key('1')),
+        widgetElement.childNodes.first.toWidget(key: Key('1')),
         Text('----'),
-        childNodes.first.toWidget(key: Key('2')),
+        widgetElement.childNodes.first.toWidget(key: Key('2')),
       ],
     );
   }

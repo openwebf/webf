@@ -361,29 +361,13 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       print('$e\n$stack');
     }
   }
-
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.flushPendingStyleProperties');
-  }
   // For pending style properties, we needs to flush to render style.
-  if (!view.rootController.shouldBlockingFlushingResolvedStyleProperties) {
-    // For pending style properties, we needs to flush to render style.
-    for (int address in pendingStylePropertiesTargets.keys) {
-      try {
-        view.flushPendingStyleProperties(address);
-      } catch (e, stack) {
-        print('$e\n$stack');
-      }
+  for (int address in pendingStylePropertiesTargets.keys) {
+    try {
+      view.flushPendingStyleProperties(address);
+    } catch (e, stack) {
+      print('$e\n$stack');
     }
-    pendingStylePropertiesTargets.clear();
   }
-
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackUICommandStep();
-    WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.recalculateStyle');
-  }
-
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackUICommandStep();
-  }
+  pendingStylePropertiesTargets.clear();
 }

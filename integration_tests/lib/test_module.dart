@@ -9,51 +9,34 @@ class DemoModule extends BaseModule {
   String get name => "Demo";
 
   @override
-  dynamic invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, List<dynamic> params) {
     switch (method) {
       case 'noParams':
-        assert(params == null);
+        assert(params.isEmpty);
         return true;
       case 'callInt':
-        assert(params is int);
-        return params + params;
+        assert(params[0] is int);
+        return params[0] + params[0];
       case 'callDouble':
-        assert(params is double);
-        return (params as double) + params;
+        assert(params[0] is double);
+        return (params[0] as double) + params[0];
       case 'callString':
-        assert(params == 'helloworld');
-        return (params as String).toUpperCase();
+        assert(params[0] == 'helloworld');
+        return (params[0] as String).toUpperCase();
       case 'callArray':
-        assert(params is List);
-        return (params as List).reduce((e, i) => e + i);
+        assert(params[0] is List);
+        return (params[0] as List).reduce((e, i) => e + i);
       case 'callNull':
         return null;
       case 'callObject':
-        assert(params is Map);
-        return params['value'];
-      case 'callAsyncFn':
-        Timer(Duration(milliseconds: 100), () async {
-          dynamic returnValue = await callback(data: [
-            1,
-            '2',
-            null,
-            4.0,
-            {'value': 1}
-          ]);
-          assert(returnValue == 'success');
-        });
-        return params;
-      case 'callAsyncFnFail':
-        Timer(Duration(milliseconds: 100), () async {
-          dynamic returnValue = await callback(error: 'Must to fail');
-          assert(returnValue == 'fail');
-        });
-        return null;
+        assert(params[0] is Map);
+        return params[0]['value'];
       case 'callToDispatchEvent':
         CustomEvent customEvent = CustomEvent('click', detail: 'helloworld');
-        dynamic result =
-            dispatchEvent(event: customEvent, data: [1, 2, 3, 4, 5]);
-        assert(result == 'success');
+        dispatchEvent(event: customEvent, data: [1, 2, 3, 4, 5]).then((result) {
+          assert(result == 'success');
+        });
+        return '';
     }
   }
 

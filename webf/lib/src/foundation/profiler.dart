@@ -330,7 +330,6 @@ class WebFProfiler {
       arguments: {
         'ownerElement': ownerElement,
         'isRepaintBoundary': renderBox.isRepaintBoundary,
-        'isScrollingContentBox': renderBox is RenderBoxModel ? renderBox.isScrollingContentBox : false
       },
     );
 
@@ -380,7 +379,6 @@ class WebFProfiler {
       arguments: {
         'ownerElement': ownerElement,
         'isRepaintBoundary': targetRenderObject.isRepaintBoundary,
-        'isScrollingContentBox': targetRenderObject is RenderBoxModel ? targetRenderObject.isScrollingContentBox : false
       },
     );
 

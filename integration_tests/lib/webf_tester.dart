@@ -33,6 +33,17 @@ class _WebFTesterState extends State<WebFTester> {
   var width = 360.0;
   var height = 640.0;
 
+  WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
+
+  @override
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+
+    navigationDelegate.setDecisionHandler((WebFNavigationAction action) async {
+      return WebFNavigationActionPolicy.allow; // Allows for all
+    });
+  }
+
   _WebFTesterState() {
     javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
       switch (method) {
@@ -62,34 +73,23 @@ class _WebFTesterState extends State<WebFTester> {
 
   @override
   Widget build(BuildContext context) {
-    return WebF(
-      viewportWidth: width,
-      viewportHeight: height,
-      bundle: WebFBundle.fromUrl(
-          'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'),
-      disableViewportWidthAssertion: true,
-      disableViewportHeightAssertion: true,
-      javaScriptChannel: javaScriptChannel,
-      runningThread: FlutterUIThread(),
-      onControllerCreated: onControllerCreated,
-      onLoad: onLoad,
-      gestureListener: GestureListener(
-        onDrag: (GestureEvent gestureEvent) {
-          if (gestureEvent.state == EVENT_STATE_START) {
-            var event = CustomEvent('nativegesture', detail: 'nativegesture');
-            controller.view.document.documentElement?.dispatchEvent(event);
-          }
-        },
-      ),
-    );
-  }
-
-  onControllerCreated(WebFController controller) async {
-    this.controller = controller;
-    double contextId = controller.view.contextId;
-    testContext = initTestFramework(contextId);
-    registerDartTestMethodsToCpp(contextId);
-    await controller.view.evaluateJavaScripts(widget.preCode);
+    return WebF.fromControllerName(
+        controllerName: 'tester',
+        initialRoute: '/',
+        createController: () => WebFController(
+            navigationDelegate: navigationDelegate,
+            viewportWidth: width,
+            viewportHeight: height,
+            javaScriptChannel: javaScriptChannel,
+            onLoad: onLoad,
+            onControllerInit: (controller) async {
+              double contextId = controller.view.contextId;
+              testContext = initTestFramework(contextId);
+              registerDartTestMethodsToCpp(contextId);
+              await controller.view.evaluateJavaScripts(widget.preCode);
+            }),
+        bundle: WebFBundle.fromUrl(
+            'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'));
   }
 
   onLoad(WebFController controller) async {

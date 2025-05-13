@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:ffi';
+import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
 
 import 'dynamic_library.dart';
@@ -39,6 +40,7 @@ bool isJSRunningInDedicatedThread(double contextId) {
 FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) async {
   // Setup binding bridge.
   BindingBridge.setup();
+  defineBuiltInElements();
 
   dartContext ??= DartContext();
 

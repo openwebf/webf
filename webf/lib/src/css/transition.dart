@@ -138,10 +138,6 @@ Matrix4 _updateTransform(TransformAnimationValue begin, TransformAnimationValue 
   var beginMatrix = CSSMatrix.computeTransformMatrix(begin.value, renderStyle);
   var endMatrix = CSSMatrix.computeTransformMatrix(end.value, renderStyle);
 
-  if (!renderStyle.isRepaintBoundary()) {
-    renderStyle.target.updateOrCreateRenderBoxModel();
-  }
-
   if (beginMatrix != null && endMatrix != null) {
     Matrix4 newMatrix4 = CSSMatrix.lerpMatrix(beginMatrix, endMatrix, t);
     renderStyle.transformMatrix = newMatrix4;

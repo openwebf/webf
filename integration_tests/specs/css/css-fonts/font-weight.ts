@@ -98,7 +98,7 @@ describe('FontWeight', () => {
     });
   });
 
-  it("computed", async () => {
+  it("computed", async (done) => {
     let target;
     let container;
     container = createElement(
@@ -120,17 +120,22 @@ describe('FontWeight', () => {
     );
     BODY.appendChild(container);
 
-    test_computed_value('font-weight', 'normal', '400');
-    test_computed_value('font-weight', 'bold', '700');
-    test_computed_value('font-weight', '100');
-    test_computed_value('font-weight', '200');
-    test_computed_value('font-weight', '300');
-    test_computed_value('font-weight', '400');
-    test_computed_value('font-weight', '500');
-    test_computed_value('font-weight', '600');
-    test_computed_value('font-weight', '700');
-    test_computed_value('font-weight', '800');
-    test_computed_value('font-weight', '900');
+    container.addEventListener('onscreen', () => {
+
+      test_computed_value('font-weight', 'normal', '400');
+      test_computed_value('font-weight', 'bold', '700');
+      test_computed_value('font-weight', '100');
+      test_computed_value('font-weight', '200');
+      test_computed_value('font-weight', '300');
+      test_computed_value('font-weight', '400');
+      test_computed_value('font-weight', '500');
+      test_computed_value('font-weight', '600');
+      test_computed_value('font-weight', '700');
+      test_computed_value('font-weight', '800');
+      test_computed_value('font-weight', '900');
+      done();
+    });
+
 
     // function test_relative(specified, inherited, computed) {
     //     const container = document.getElementById('container');

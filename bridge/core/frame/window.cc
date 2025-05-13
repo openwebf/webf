@@ -12,6 +12,7 @@
 #include "core/dom/element.h"
 #include "core/events/message_event.h"
 #include "core/executing_context.h"
+#include "core/frame/window_idle_tasks.h"
 #include "event_type_names.h"
 #include "foundation/native_value_converter.h"
 
@@ -290,13 +291,13 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
   return getComputedStyle(element, exception_state);
 }
 
-double Window::requestAnimationFrame(const std::shared_ptr<Function>& callback, ExceptionState& exceptionState) {
+double Window::requestAnimationFrame(const std::shared_ptr<Function>& callback, ExceptionState& exception_state) {
   GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kStandard);
   auto frame_callback = FrameCallback::Create(GetExecutingContext(), callback);
-  uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exceptionState);
+  uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exception_state);
   // `-1` represents some error occurred.
   if (request_id == -1) {
-    exceptionState.ThrowException(
+    exception_state.ThrowException(
         ctx(), ErrorType::InternalError,
         "Failed to execute 'requestAnimationFrame': dart method (requestAnimationFrame) executed "
         "with unexpected error.");
@@ -305,8 +306,36 @@ double Window::requestAnimationFrame(const std::shared_ptr<Function>& callback, 
   return request_id;
 }
 
+double Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
+                                        webf::ExceptionState& exception_state) {
+  auto options = WindowIdleRequestOptions::Create();
+  return ___requestIdleCallback__(callback, options, exception_state);
+}
+
+int64_t Window::___requestIdleCallback__(const std::shared_ptr<QJSFunction>& callback,
+                                         const std::shared_ptr<WindowIdleRequestOptions>& options,
+                                         webf::ExceptionState& exception_state) {
+  auto idle_callback = IdleCallback::Create(GetExecutingContext(), callback);
+  int32_t request_id = WindowIdleTasks::requestIdleCallback(*this, idle_callback, options);
+
+  // `-1` represents some error occurred.
+  if (request_id == -1) {
+    exception_state.ThrowException(
+        ctx(), ErrorType::InternalError,
+        "Failed to execute 'requestIdleCallback': dart method (requestAnimationFrame) executed "
+        "with unexpected error.");
+    return 0;
+  }
+
+  return request_id;
+}
+
 void Window::cancelAnimationFrame(double request_id, ExceptionState& exception_state) {
   GetExecutingContext()->document()->CancelAnimationFrame(static_cast<uint32_t>(request_id), exception_state);
+}
+
+void Window::cancelIdleCallback(int64_t idle_id, webf::ExceptionState& exception_state) {
+  WindowIdleTasks::cancelIdleCallback(*this, idle_id);
 }
 
 void Window::OnLoadEventFired() {
@@ -319,6 +348,7 @@ bool Window::IsWindowOrWorkerGlobalScope() const {
 
 void Window::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(screen_);
+  scripted_idle_task_controller_.Trace(visitor);
   EventTargetWithInlineData::Trace(visitor);
 }
 

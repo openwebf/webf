@@ -17,9 +17,6 @@ abstract class CharacterData extends Node {
   }
 
   @override
-  RenderBox? get domRenderer => null;
-
-  @override
   RenderBox? get attachedRenderer => null;
 
   @override

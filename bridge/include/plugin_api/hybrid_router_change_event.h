@@ -18,16 +18,16 @@ typedef struct AtomicStringRef AtomicStringRef;
 class HybridRouterChangeEvent;
 using PublicHybridRouterChangeEventGetState = NativeValue (*)(HybridRouterChangeEvent*, SharedExceptionState* shared_exception_state);
 using PublicHybridRouterChangeEventGetKind = AtomicStringRef (*)(HybridRouterChangeEvent*);
-using PublicHybridRouterChangeEventGetName = AtomicStringRef (*)(HybridRouterChangeEvent*);
+using PublicHybridRouterChangeEventGetPath = AtomicStringRef (*)(HybridRouterChangeEvent*);
 struct HybridRouterChangeEventPublicMethods : public WebFPublicMethods {
   static NativeValue State(HybridRouterChangeEvent* hybrid_router_change_event, SharedExceptionState* shared_exception_state);
   static AtomicStringRef Kind(HybridRouterChangeEvent* hybrid_router_change_event);
-  static AtomicStringRef Name(HybridRouterChangeEvent* hybrid_router_change_event);
+  static AtomicStringRef Path(HybridRouterChangeEvent* hybrid_router_change_event);
   double version{1.0};
   EventPublicMethods event;
   PublicHybridRouterChangeEventGetState hybrid_router_change_event_get_state{State};
   PublicHybridRouterChangeEventGetKind hybrid_router_change_event_get_kind{Kind};
-  PublicHybridRouterChangeEventGetName hybrid_router_change_event_get_name{Name};
+  PublicHybridRouterChangeEventGetPath hybrid_router_change_event_get_path{Path};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_HYBRID_ROUTER_CHANGE_EVENT_H_

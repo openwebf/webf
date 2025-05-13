@@ -36,34 +36,38 @@ describe('Canvas context 2d async', () => {
     canvas.style.width = canvas.style.height = '200px';
     div.appendChild(canvas);
 
-    var context = canvas.getContext('2d');
+    // @ts-ignore
+    canvas.ononscreen = async () => {
+      var context = canvas.getContext('2d');
 
-    if (!context) {
-      throw new Error('canvas context is null');
-    }
-    // @ts-ignore
-    context.font_async = '24px AlibabaSans';
-    // @ts-ignore
-    context.fillStyle_async = 'green';
-    // @ts-ignore
-    await context.fillRect_async(10, 10, 50, 50);
-    // @ts-ignore
-    await context.clearRect_async(15, 15, 30, 30);
-    // @ts-ignore
-    context.strokeStyle_async = 'red';
-    // @ts-ignore
-    await context.strokeRect_async(40, 40, 100, 100);
-    // @ts-ignore
-    context.fillStyle_async = 'blue';
-    // @ts-ignore
-    await context.fillText_async('Hello World', 5.0, 5.0);
-    // @ts-ignore
-    await context.strokeText_async('Hello World', 5.0, 25.0);
+      if (!context) {
+        throw new Error('canvas context is null');
+      }
+
+      // @ts-ignore
+      context.font_async = '24px AlibabaSans';
+      // @ts-ignore
+      context.fillStyle_async = 'green';
+      // @ts-ignore
+      await context.fillRect_async(10, 10, 50, 50);
+      // @ts-ignore
+      await context.clearRect_async(15, 15, 30, 30);
+      // @ts-ignore
+      context.strokeStyle_async = 'red';
+      // @ts-ignore
+      await context.strokeRect_async(40, 40, 100, 100);
+      // @ts-ignore
+      context.fillStyle_async = 'blue';
+      // @ts-ignore
+      await context.fillText_async('Hello World', 5.0, 5.0);
+      // @ts-ignore
+      await context.strokeText_async('Hello World', 5.0, 25.0);
+      
+      await snapshot(canvas);
+      done();
+    };
 
     document.body.appendChild(div);
-
-    await snapshot(canvas);
-    done();
   });
 
   it('should work with lineWidth [async]', async (done) => {

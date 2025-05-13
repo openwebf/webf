@@ -12,6 +12,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/widget.dart';
 
 import 'canvas_context_2d.dart';
 import 'canvas_painter.dart';
@@ -41,8 +42,7 @@ class RenderCanvasPaint extends RenderCustomPaint {
         );
 
   Future<Image> toImage(Size size) {
-    return (layer as OffsetLayer).toImage(Rect.fromLTRB(0, 0, size.width, size.height),
-        pixelRatio: pixelRatio);
+    return (layer as OffsetLayer).toImage(Rect.fromLTRB(0, 0, size.width, size.height), pixelRatio: pixelRatio);
   }
 
   @override
@@ -61,11 +61,20 @@ class CanvasElement extends Element {
   /// The painter that paints before the children.
   late CanvasPainter painter;
 
+  flutter.UniqueKey canvasKey = flutter.UniqueKey();
+
   // The custom paint render object.
   RenderCanvasPaint? renderCustomPaint;
 
   CanvasElement([BindingContext? context]) : super(context) {
     painter = CanvasPainter(repaint: repaintNotifier);
+  }
+
+  @override
+  flutter.Widget toWidget({Key? key, bool positioned = false}) {
+    flutter.Widget child =
+        WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFCanvas(this, key: canvasKey));
+    return WebFEventListener(ownerElement: this, child: child, hasEvent: true);
   }
 
   @override
@@ -105,24 +114,15 @@ class CanvasElement extends Element {
 
   @override
   RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    super.willAttachRenderer();
-    renderCustomPaint = RenderCanvasPaint(
-      painter: painter,
-      preferredSize: size,
-      pixelRatio: ownerDocument.controller.ownerFlutterView.devicePixelRatio
-    );
-
-    addChildForDOMMode(renderCustomPaint!);
+    RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     style.addStyleChangeListener(_styleChangedListener);
-    return renderCustomPaint!;
+    return renderObject;
   }
 
   @override
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_styleChangedListener);
-    painter.dispose();
-    renderCustomPaint = null;
   }
 
   CanvasRenderingContext2D getContext(String type, {options}) {
@@ -189,37 +189,8 @@ class CanvasElement extends Element {
   }
 
   void resize() {
-    if (renderCustomPaint != null) {
-      // https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-set-bitmap-dimensions
-      final Size paintingBounding = size;
-      renderCustomPaint!.preferredSize = paintingBounding;
-
-      // The intrinsic dimensions of the canvas element when it represents embedded content are
-      // equal to the dimensions of the element’s bitmap.
-      // A canvas element can be sized arbitrarily by a style sheet, its bitmap is then subject
-      // to the object-fit CSS property.
-      // @TODO: CSS object-fit for canvas.
-      // To fill (default value of object-fit) the bitmap content, use scale to get the same performed.
-      double? styleWidth = renderStyle.width.isAuto ? null : renderStyle.width.computedValue;
-      double? styleHeight = renderStyle.height.isAuto ? null : renderStyle.height.computedValue;
-
-      double? scaleX;
-      double? scaleY;
-      if (styleWidth != null) {
-        scaleX = paintingBounding.width / width;
-      }
-      if (styleHeight != null) {
-        scaleY = paintingBounding.height / height;
-      }
-      if (painter.scaleX != scaleX || painter.scaleY != scaleY) {
-        painter
-          ..scaleX = scaleX
-          ..scaleY = scaleY;
-        if (painter.shouldRepaint(painter)) {
-          renderCustomPaint!.markNeedsPaint();
-        }
-      }
-    }
+    // https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-set-bitmap-dimensions
+    renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
   }
 
   /// Element property width.
@@ -315,6 +286,85 @@ class CanvasElement extends Element {
     // If not getContext and element is disposed that context is not existed.
     if (painter.context != null) {
       painter.context!.dispose();
+    }
+  }
+}
+
+class _WebFCanvasState extends flutter.State<WebFCanvas> {
+  @override
+  flutter.Widget build(flutter.BuildContext context) {
+    return WebFCanvasPaint(
+        canvasElement: widget.canvasElement,
+        painter: widget.canvasElement.painter,
+        preferredSize: widget.canvasElement.size,
+        pixelRatio: widget.canvasElement.ownerDocument.defaultView.devicePixelRatio);
+  }
+}
+
+class WebFCanvas extends flutter.StatefulWidget {
+  final CanvasElement canvasElement;
+
+  WebFCanvas(this.canvasElement, {flutter.Key? key}) : super(key: key);
+
+  @override
+  flutter.State<flutter.StatefulWidget> createState() {
+    return _WebFCanvasState();
+  }
+}
+
+class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
+  final Size preferredSize;
+  final CanvasPainter painter;
+  final double pixelRatio;
+  final CanvasElement canvasElement;
+
+  WebFCanvasPaint(
+      {flutter.Key? key,
+      required this.canvasElement,
+      required this.preferredSize,
+      required this.painter,
+      required this.pixelRatio})
+      : super(key: key);
+
+  @override
+  RenderObject createRenderObject(flutter.BuildContext context) {
+    RenderCanvasPaint canvasPaint = RenderCanvasPaint(painter: painter, preferredSize: preferredSize, pixelRatio: pixelRatio);
+    updateCanvasPainterSize(preferredSize, canvasPaint);
+    return canvasPaint;
+  }
+
+  @override
+  void updateRenderObject(flutter.BuildContext context, RenderCanvasPaint renderCanvas) {
+    super.updateRenderObject(context, renderCanvas);
+
+    renderCanvas.preferredSize = preferredSize;
+    updateCanvasPainterSize(preferredSize, renderCanvas);
+  }
+
+  void updateCanvasPainterSize(Size paintingBounding, RenderCanvasPaint renderCanvas) {
+    // The intrinsic dimensions of the canvas element when it represents embedded content are
+    // equal to the dimensions of the element’s bitmap.
+    // A canvas element can be sized arbitrarily by a style sheet, its bitmap is then subject
+    // to the object-fit CSS property.
+    // @TODO: CSS object-fit for canvas.
+    // To fill (default value of object-fit) the bitmap content, use scale to get the same performed.
+    double? styleWidth = canvasElement.renderStyle.width.isAuto ? null : canvasElement.renderStyle.width.computedValue;
+    double? styleHeight =
+        canvasElement.renderStyle.height.isAuto ? null : canvasElement.renderStyle.height.computedValue;
+
+    double? scaleX;
+    double? scaleY;
+    if (styleWidth != null) {
+      scaleX = paintingBounding.width / canvasElement.width;
+    }
+    if (styleHeight != null) {
+      scaleY = paintingBounding.height / canvasElement.height;
+    }
+    if (canvasElement.painter.scaleX != scaleX || canvasElement.painter.scaleY != scaleY) {
+      canvasElement.painter
+        ..scaleX = scaleX
+        ..scaleY = scaleY;
+      renderCanvas.markNeedsPaint();
     }
   }
 }

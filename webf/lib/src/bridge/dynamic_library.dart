@@ -27,8 +27,6 @@ abstract class WebFDynamicLibrary {
   static String get _nativeDynamicLibraryName {
     if (Platform.isMacOS) {
       return 'lib$libName.dylib';
-    } else if (Platform.isIOS) {
-      return 'webf_bridge.framework/webf_bridge';
     } else if (Platform.isWindows) {
       return '$libName.dll';
     } else if (Platform.isAndroid || Platform.isLinux) {
@@ -53,6 +51,12 @@ abstract class WebFDynamicLibrary {
   static DynamicLibrary? _ref;
   static DynamicLibrary get ref {
     DynamicLibrary? nativeDynamicLibrary = _ref;
+    if (Platform.isIOS) {
+      _ref = nativeDynamicLibrary ??= DynamicLibrary.executable();
+    } else {
+      _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryName));
+    }
+
     _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryName));
     return nativeDynamicLibrary;
   }

@@ -7,8 +7,8 @@ const chalk = require('chalk');
 
 // Run tasks
 series(
-  'compile-polyfill',
   'generate-bindings-code',
+  'compile-polyfill',
   'build-linux-webf-lib'
 )((err) => {
   if (err) {

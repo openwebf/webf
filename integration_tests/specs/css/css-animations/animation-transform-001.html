@@ -40,11 +40,11 @@
 <script>
     const test = document.getElementById('test');
     await sleep(0.1);
-    let snapshot = await test.toBlob(1);
+    let snapshot = await document.documentElement.toBlob(1);
     let buffer1 = await snapshot.arrayBuffer();
 
     await sleep(0.5);
-    let snapshot2 = await test.toBlob(1);
+    let snapshot2 = await document.documentElement.toBlob(1);
     let buffer2 = await snapshot2.arrayBuffer();
 
     let arr1 = Array.from(new Uint8Array(buffer1));

@@ -36,10 +36,11 @@ describe('custom widget element', () => {
       done();
     });
 
-    await sleep(1);
-
     document.body.appendChild(image);
-    await simulateClick(10, 10);
+
+    image.addEventListener('onscreen', async () => {
+      await simulateClick(10, 10);
+    });
   });
 
   it('should works with event listener inside of binded event widgetElement', async () => {

@@ -106,10 +106,10 @@ void printLog(ExecutingContext* context, std::stringstream& stream, std::string 
       WEBF_LOG(INFO) << stream.str();
       _log_level = MessageLevel::Info;
       break;
-    case 'd':
-      WEBF_LOG(DEBUG) << stream.str();
-      _log_level = MessageLevel::Debug;
-      break;
+      //    case 'd':
+      //      WEBF_LOG(DEBUG) << stream.str();
+      //      _log_level = MessageLevel::Debug;
+      //      break;
     case 'w':
       WEBF_LOG(WARN) << stream.str();
       _log_level = MessageLevel::Warning;

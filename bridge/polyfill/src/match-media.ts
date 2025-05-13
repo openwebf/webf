@@ -8,24 +8,24 @@ const RE_MEDIA_QUERY = /^(?:(only|not)?\s*([_a-z][_a-z0-9-]*)|(\([^\)]+\)))(?:\s
 const RE_MQ_EXPRESSION = /^\(\s*([_a-z-][_a-z0-9-]*)\s*(?:\:\s*([^\)]+))?\s*\)$/;
 const RE_MQ_FEATURE = /^(?:(min|max)-)?(.+)/;
 
-interface Expression {
+export interface Expression {
   modifier: string;
   feature: string;
   value: string;
 }
 
-interface Query {
+export interface Query {
   inverse: boolean;
   type: string;
   expressions: Array<Expression>;
 }
 
-interface MediaQueryListEvent {
+export interface MediaQueryListEvent {
   readonly matches: boolean;
   readonly media: string;
 }
 
-interface MediaQueryList {
+export interface MediaQueryList {
   readonly matches: boolean;
   readonly media: string;
   addListener(listener: ((ev: MediaQueryListEvent) => any) | null): void;
@@ -85,7 +85,9 @@ function parseQuery(query: string): Query {
   return parsed;
 }
 
-export function matchMedia(mediaQuery: string): MediaQueryList {
+export type MatchMedia = (mediaQuery: string) => MediaQueryList;
+
+export const matchMedia: MatchMedia = (mediaQuery: string): MediaQueryList => {
 
   let query = parseQuery(mediaQuery);
   // Not serialize the origin mediaquery
@@ -141,5 +143,4 @@ export function matchMedia(mediaQuery: string): MediaQueryList {
     }
   }
 }
-
 

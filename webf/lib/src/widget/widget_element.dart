@@ -4,7 +4,9 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
+import 'package:meta/meta.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
@@ -18,35 +20,28 @@ const Map<String, dynamic> _defaultStyle = {
 
 // WidgetElement is the base class for custom elements which rendering details are implemented by Flutter widgets.
 abstract class WidgetElement extends dom.Element {
-  // An state
-  _WidgetElementAdapter? _widget;
+  final Set<WebFWidgetElementState> _widgetElementStates = {};
 
-  _WidgetElementAdapter get widget {
-    _widget ??= _WidgetElementAdapter(this);
-    return _widget!;
+  void _addWidgetElementState(WebFWidgetElementState newState) {
+    _widgetElementStates.add(newState);
   }
 
-  final Set<_WebFWidgetElementState> _states = {};
+  void _removeWidgetElementState(WebFWidgetElementState oldState) {
+    _widgetElementStates.remove(oldState);
+  }
 
-  _WebFWidgetElementState? get state {
-    final stateFinder = _states.where((state) => state.mounted == true);
-    return stateFinder.isEmpty ? null : stateFinder.first;
+  WebFController get controller => ownerDocument.controller;
+
+  WebFWidgetElementState? get state {
+    final stateFinder = _widgetElementStates.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.last;
   }
-  set state(_WebFWidgetElementState? newState) {
-    if (newState == null) return;
-    _states.add(newState);
-  }
+
+  WebFWidgetElementState createState();
 
   @override
   dom.ChildNodeList get childNodes => super.childNodes as dom.ChildNodeList;
-
-  SharedRenderWidgetAdapter? attachedAdapter;
-
   bool isRouterLinkElement = false;
-
-  BuildContext get context {
-    return state!.context;
-  }
 
   WidgetElement(BindingContext? context) : super(context) {
     WidgetsFlutterBinding.ensureInitialized();
@@ -54,41 +49,23 @@ abstract class WidgetElement extends dom.Element {
 
   @override
   Widget toWidget({Key? key}) {
-    _WidgetElementAdapter widget = _WidgetElementAdapter(this);
-
-    List<Widget> children = [widget, ...positionedElements.map((element) => element.toWidget())];
-    Widget child = WebFRenderWidgetAdaptor(this, children: children, key: UniqueKey());
-
-    if (isRepaintBoundary) {
-      child = RepaintBoundary(child: child);
-    }
-
-    return child;
+    WidgetElementAdapter widget = WidgetElementAdapter(this, key: key ?? this.key);
+    return widget;
   }
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
-  // State methods, proxy called from _state
-  void initState() {}
-  void didChangeDependencies() {}
-  void mount() {}
-  void unmount() {}
-
-  bool get mounted => state?.mounted ?? false;
-
   // React to properties and attributes changes
   void attributeDidUpdate(String key, String value) {}
 
   bool shouldElementRebuild(String key, previousValue, nextValue) {
-    return previousValue == nextValue;
+    return previousValue != nextValue;
   }
 
   void propertyDidUpdate(String key, value) {}
 
   void styleDidUpdate(String property, String value) {}
-
-  Widget build(BuildContext context, dom.ChildNodeList childNodes);
 
   // The render object is inserted by Flutter framework when element is WidgetElement.
   @override
@@ -98,84 +75,33 @@ abstract class WidgetElement extends dom.Element {
   @override
   bool get isWidgetElement => true;
 
+  bool get isScrollingElement => false;
+
   @mustCallSuper
   @override
   void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
     super.didDetachRenderer(flutterWidgetElement);
-    detachWidget();
-  }
-
-  @nonVirtual
-  void setState(VoidCallback callback) {
-    if (state != null) {
-      state!.requestUpdateState(callback);
-    } else {
-      callback();
-    }
   }
 
   /// [willAttachRenderer] and [didAttachRenderer] on WidgetElement will be called when this WidgetElement's parent is
   /// standard WebF element.
-  /// If this WidgetElement's parent is another WidgetElement, [WebFWidgetElementElement.mount] and [WebFWidgetElementElement.unmount]
+  /// If this WidgetElement's parent is another WidgetElement, [WebFWidgetElementAdapterElement.mount] and [WebFWidgetElementAdapterElement.unmount]
   /// place the equivalence altitude to the [willAttachRenderer] and [didAttachRenderer].
   @mustCallSuper
   @override
   RenderObject willAttachRenderer([RenderObjectElement? flutterWidgetElement]) {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
-    if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
-      RenderObject hostedRenderObject = flutterWidgetElement != null
-          ? renderStyle.getWidgetPairedRenderBoxModel(flutterWidgetElement)!
-          : renderStyle.domRenderBoxModel!;
-      List<Widget> children = [widget, ...positionedElements.map((element) => element.toWidget())];
-      attachedAdapter =
-          SharedRenderWidgetAdapter(children: children, container: hostedRenderObject, widgetElement: this);
-    }
     return renderObject;
   }
 
   @mustCallSuper
   @override
-  void didAttachRenderer([Element? flutterWidgetElement]) {
-    // Children of WidgetElement should insert render object by Flutter Framework.
-    attachWidget(widget);
-  }
-
-  // Reconfigure renderObjects when already rendered pages reattached to flutter tree
-  void reactiveRenderer() {
-    if (renderStyle.display != CSSDisplay.none && !managedByFlutterWidget) {
-      // Generate a new adapter for this RenderWidget
-      willAttachRenderer();
-
-      // Reattach to Flutter
-      ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
-    }
-  }
-
-  void reattachWidgetInDOMMode() {
-    if (attachedRenderer == null) return;
-    assert(!managedByFlutterWidget);
-    // RenderWidget hostedRenderObject = renderStyle.attachedRenderBoxModel! as RenderWidget;
-    detachWidget();
-    willAttachRenderer();
-    didAttachRenderer();
-  }
-
-  @override
-  void connectedCallback() {
-    super.connectedCallback();
-    ownerDocument.aliveWidgetElements.add(this);
-  }
-
-  @override
-  void disconnectedCallback() {
-    super.disconnectedCallback();
-    ownerDocument.aliveWidgetElements.remove(this);
-  }
+  void didAttachRenderer([Element? flutterWidgetElement]) {}
 
   @override
   void setInlineStyle(String property, String value) {
-    super.setInlineStyle(property, value);
     bool shouldRebuild = shouldElementRebuild(property, style.getPropertyValue(property), value);
+    super.setInlineStyle(property, value);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
@@ -185,8 +111,8 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void removeAttribute(String key) {
-    super.removeAttribute(key);
     bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), null);
+    super.removeAttribute(key);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
@@ -196,8 +122,8 @@ abstract class WidgetElement extends dom.Element {
   @mustCallSuper
   @override
   void setAttribute(String key, value) {
-    super.setAttribute(key, value);
     bool shouldRebuild = shouldElementRebuild(key, getAttribute(key), value);
+    super.setAttribute(key, value);
     if (state != null && shouldRebuild) {
       state!.requestUpdateState();
     }
@@ -252,54 +178,26 @@ abstract class WidgetElement extends dom.Element {
 
     return child;
   }
-
-  void attachWidget(Widget widget) {
-    if (attachedAdapter == null || managedByFlutterWidget) return;
-
-    if (ownerDocument.controller.mode == WebFLoadingMode.standard ||
-        ownerDocument.controller.isPreLoadingOrPreRenderingComplete) {
-      ownerDocument.controller.onCustomElementAttached!(attachedAdapter!);
-    } else {
-      ownerDocument.controller.pendingWidgetElements.add(attachedAdapter!);
-    }
-  }
-
-  void detachWidget() {
-    if (attachedAdapter != null && !managedByFlutterWidget) {
-      ownerDocument.controller.onCustomElementDetached!(attachedAdapter!);
-      attachedAdapter = null;
-    }
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    _states.clear();
-    _widget = null;
-    ownerDocument.aliveWidgetElements.remove(this);
-  }
 }
 
-class _WidgetElementAdapter extends StatefulWidget {
-  final WidgetElement widgetElement;
+class WidgetElementAdapter extends dom.WebFElementWidget {
+  WidgetElement get widgetElement => super.webFElement as WidgetElement;
 
-  _WidgetElementAdapter(this.widgetElement, {Key? key}) : super(key: key);
+  WidgetElementAdapter(WidgetElement widgetElement, {Key? key}) : super(widgetElement, key: key);
 
   @override
   StatefulElement createElement() {
-    return WebFWidgetElementElement(this);
+    return WebFWidgetElementAdapterElement(this);
   }
 
   @override
   State<StatefulWidget> createState() {
-    _WebFWidgetElementState state = _WebFWidgetElementState(widgetElement);
-    widgetElement.state = state;
-    return state;
+    return WebFWidgetElementAdapterState(widgetElement);
   }
 
   @override
   String toStringShort() {
-    return '_WidgetElementAdapter(${widgetElement.tagName.toLowerCase()})';
+    return 'WidgetElementAdapter(${widgetElement.tagName.toLowerCase()})';
   }
 
   @override
@@ -308,47 +206,61 @@ class _WidgetElementAdapter extends StatefulWidget {
   }
 }
 
-class WebFWidgetElementElement extends StatefulElement {
-  WebFWidgetElementElement(super.widget);
+class WebFWidgetElementAdapterElement extends StatefulElement {
+  WebFWidgetElementAdapterElement(super.widget);
 
   @override
-  _WidgetElementAdapter get widget => super.widget as _WidgetElementAdapter;
+  WidgetElementAdapter get widget => super.widget as WidgetElementAdapter;
 
   @override
-  _WebFWidgetElementState get state => super.state as _WebFWidgetElementState;
+  WebFWidgetElementAdapterState get state => super.state as WebFWidgetElementAdapterState;
+}
+
+class WebFWidgetElement extends StatefulWidget {
+  final WidgetElement widgetElement;
+
+  WebFWidgetElement(this.widgetElement);
 
   @override
-  void mount(Element? parent, Object? newSlot) {
-    super.mount(parent, newSlot);
-    widget.widgetElement.mount();
-  }
-
-  @override
-  void unmount() {
-    WidgetElement widgetElement = widget.widgetElement;
-    super.unmount();
-    widgetElement.unmount();
+  State<StatefulWidget> createState() {
+    WebFWidgetElementState state = widgetElement.createState();
+    widgetElement._addWidgetElementState(state);
+    return state;
   }
 }
 
-class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
+abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
   final WidgetElement widgetElement;
 
-  _WebFWidgetElementState(this.widgetElement);
+  WebFWidgetElementState(this.widgetElement);
 
-  @override
-  void initState() {
-    super.initState();
-    widgetElement.initState();
+  void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
+    if (mounted) {
+      setState(() {
+        if (callback != null) {
+          callback();
+        }
+      });
+    }
+  }
+
+  String? getRenderObjectTree() {
+    return context.findRenderObject()?.toStringDeep();
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    widgetElement.didChangeDependencies();
+  void dispose() {
+    widgetElement._removeWidgetElementState(this);
+    super.dispose();
   }
+}
 
-  void requestUpdateState([VoidCallback? callback, RenderObjectUpdateReason? reason]) {
+class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
+  WebFWidgetElementAdapterState(WidgetElement widgetElement) : super(widgetElement);
+
+  WidgetElement get widgetElement => super.webFElement as WidgetElement;
+
+  void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
     if (mounted) {
       setState(() {
         if (callback != null) {
@@ -365,77 +277,22 @@ class _WebFWidgetElementState extends State<_WidgetElementAdapter> {
 
   @override
   Widget build(BuildContext context) {
-    Widget widget = widgetElement.build(context, widgetElement.childNodes);
-    if (widgetElement.hasEvent) {
-      widget = Portal(ownerElement: widgetElement, child: widget);
+    super.build(context);
+
+    if (widgetElement.renderStyle.display == CSSDisplay.none) {
+      return SizedBox.shrink();
     }
-    return widget;
-  }
 
-  @override
-  void dispose() {
-    widgetElement._widget = null;
-    widgetElement._states.remove(this);
-    super.dispose();
-  }
-}
+    Widget child = WebFEventListener(
+        ownerElement: widgetElement, child: WebFWidgetElement(widgetElement), hasEvent: widgetElement.hasEvent);
 
-class SharedRenderWidgetAdapter<T extends RenderObject> extends MultiChildRenderObjectWidget {
-  SharedRenderWidgetAdapter({
-    required List<Widget> children,
-    required this.container,
-    required this.widgetElement,
-    this.debugShortDescription,
-  }) : super(key: GlobalObjectKey(container), children: children);
+    List<Widget> children = [child];
 
-  /// The [RenderObject] that is the parent of the [Element] created by this widget.
-  final RenderObject container;
+    widgetElement.fixedPositionElements.forEach((element) {
+      children.add(element.toWidget());
+    });
 
-  final WidgetElement widgetElement;
-
-  /// A short description of this widget used by debugging aids.
-  final String? debugShortDescription;
-
-  @override
-  _SharedRenderWidgetElement<T> createElement() => _SharedRenderWidgetElement<T>(this);
-
-  @override
-  RenderObject createRenderObject(BuildContext context) => container;
-
-  @override
-  void updateRenderObject(BuildContext context, RenderObject renderObject) {}
-
-  @override
-  void didUnmountRenderObject(covariant RenderObject renderObject) {
-    // WidgetElement can be remounted to the DOM tree and trigger widget adapter updates.
-    // We need to check if the widgetElement is actually disconnected before unmounting the renderWidget.
-    if (!widgetElement.isConnected) {
-      widgetElement.unmountRenderObjectInDOMMode();
-    }
-  }
-
-  @override
-  String toStringShort() => '<${widgetElement.tagName.toLowerCase()} />';
-
-  @override
-  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty('renderStyle', widgetElement.renderStyle));
-    properties.add(DiagnosticsProperty('id', widgetElement.id));
-    properties.add(DiagnosticsProperty('className', widgetElement.className));
-  }
-}
-
-/// Sharing the RenderWidget renderObject beween Flutter element and WebF DOM Elements.
-class _SharedRenderWidgetElement<T extends RenderObject> extends MultiChildRenderObjectElement {
-  _SharedRenderWidgetElement(SharedRenderWidgetAdapter<T> widget) : super(widget);
-
-  @override
-  SharedRenderWidgetAdapter get widget => super.widget as SharedRenderWidgetAdapter<T>;
-
-  @override
-  void moveRenderObjectChild(RenderObject child, Object? oldSlot, Object? newSlot) {
-    assert(false);
+    return WebFRenderWidgetAdaptor(widgetElement, children: children, key: widgetElement.key);
   }
 }
 
@@ -466,24 +323,37 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
   WebFRenderWidgetAdaptor get widget => super.widget as WebFRenderWidgetAdaptor;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
-  void requestForBuild(RenderObjectUpdateReason reason) {
-    visitChildElements((element) {
-      if (element is WebFWidgetElementElement) {
-        element.state.requestUpdateState(null, reason);
-      }
+  void requestForBuild(AdapterUpdateReason reason) {
+    widget.widgetElement.forEachState((state) {
+      if (!state.mounted) return;
+      (state as WebFWidgetElementAdapterState).requestUpdateState(null, reason);
     });
   }
+
+  RouteSettings? _currentRouteSettings;
 
   @override
   void mount(Element? parent, Object? newSlot) {
     widget.widgetElement.willAttachRenderer(this);
     super.mount(parent, newSlot);
     widget.widgetElement.didAttachRenderer(this);
+
+    ModalRoute? route = ModalRoute.of(this);
+    _currentRouteSettings = route?.settings;
+    dom.OnScreenEvent event = dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '/');
+
+    WidgetElement widgetElement = widget.widgetElement;
+    widgetElement.dispatchEventUtilAdded(event);
   }
 
   @override
   void unmount() {
+    dom.OffScreenEvent event = dom.OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     dom.Element widgetElement = widget.widgetElement;
+    widgetElement.dispatchEventUtilAdded(event);
+
+    _currentRouteSettings = null;
+
     widgetElement.willDetachRenderer(this);
     super.unmount();
     widgetElement.didDetachRenderer(this);

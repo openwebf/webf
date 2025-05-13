@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter/rendering.dart' hide RenderBoxContainerDefaultsMixin;
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/svg.dart';
 

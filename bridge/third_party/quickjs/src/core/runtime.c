@@ -221,7 +221,7 @@ BOOL js_class_has_bytecode(JSClassID class_id) {
 
 /* JSClass support */
 
-JSClassID js_class_id_alloc = JS_CLASS_INIT_COUNT;
+_Thread_local JSClassID js_class_id_alloc = JS_CLASS_INIT_COUNT;
 /* a new class ID is allocated if *pclass_id != 0 */
 JSClassID JS_NewClassID(JSClassID* pclass_id) {
   JSClassID class_id;

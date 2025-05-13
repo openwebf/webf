@@ -14,12 +14,22 @@ dependencies:
   example_app:
     path: rust_builder
   webf: ^0.10.0
+  #  webf:
+  #    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+  #    version: ^0.20.0
   flutter_highlight: ^0.7.0
+  flutter_form_builder: ^9.7.0
+  form_builder_validators: ^11.1.2
   dropdown_button2: ^2.3.9
   dynamic_tabbar: ^1.0.9
   day_night_switcher: ^0.2.0+1
   adaptive_theme: ^3.3.0
   cupertino_icons: ^1.0.0
+  flutter_svg: ^2.0.17
+  share_plus: ^10.0.0
+  showcaseview: ^4.0.1
+  path_provider: ^2.1.5
+
 # When depending on this package from a real application,
 # you should remove the following overrides.
 # See https://dart.dev/tools/pub/dependencies#version-constraints
@@ -38,3 +48,27 @@ flutter:
     - vue_project/dist/js/
     - vue_project/dist/css/
     - vue_project/dist/img/
+    - news_miracleplus/dist/
+    - news_miracleplus/dist/js/
+    - news_miracleplus/dist/css/
+    - cupertino_gallery/dist/
+    - cupertino_gallery/dist/js/
+    - cupertino_gallery/dist/css/
+    - react_project/build/
+    - react_project/build/static/
+    - react_project/build/static/js/
+    - react_project/build/static/css/
+    - react_project/build/static/media/
+    - hybrid_router/build/
+    - hybrid_router/build/static/
+    - hybrid_router/build/static/js/
+    - hybrid_router/build/static/css/
+    - hybrid_router/build/static/media/
+    - use_cases/dist/
+    - use_cases/dist/js/
+    - use_cases/dist/css/
+    - tailwind_react/build/
+    - tailwind_react/build/static/
+    - tailwind_react/build/static/js/
+    - tailwind_react/build/static/css/
+    - tailwind_react/build/static/media/

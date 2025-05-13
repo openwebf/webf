@@ -4,6 +4,7 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 
 // CSS Box Sizing: https://drafts.csswg.org/css-sizing-3/
 
@@ -36,6 +37,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _width = value;
+    cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
     _markScrollContainerNeedsLayout();
   }
@@ -51,6 +53,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _height = value;
+    cleanContentBoxLogiclHeight();
     _markSelfAndParentNeedsLayout();
     _markScrollContainerNeedsLayout();
   }
@@ -76,6 +79,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _minWidth = value;
+    cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
     _markScrollContainerNeedsLayout();
   }
@@ -116,6 +120,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _maxWidth = value;
+    cleanContentBoxLogiclWidth();
     _markSelfAndParentNeedsLayout();
     _markScrollContainerNeedsLayout();
   }
@@ -138,6 +143,7 @@ mixin CSSSizingMixin on RenderStyle {
       return;
     }
     _maxHeight = value;
+    cleanContentBoxLogiclHeight();
     _markSelfAndParentNeedsLayout();
     _markScrollContainerNeedsLayout();
   }
@@ -185,11 +191,6 @@ mixin CSSSizingMixin on RenderStyle {
     _markSelfAndParentNeedsLayout();
   }
 
-  void _markScrollContainerNeedsLayout() {
-    if (!hasRenderBox()) return;
-    markScrollingContainerNeedsLayout();
-  }
-
   void _markSelfAndParentNeedsLayout() {
     if (!hasRenderBox()) return;
     markNeedsLayout();
@@ -232,5 +233,11 @@ mixin CSSSizingMixin on RenderStyle {
     if (isParentRenderViewportBox()) {
       markParentNeedsLayout();
     }
+  }
+
+  void _markScrollContainerNeedsLayout() {
+    RenderBoxModel? renderBoxModel = attachedRenderBoxModel;
+    RenderBoxModel? scrollContainer = renderBoxModel?.findScrollContainer();
+    scrollContainer?.markNeedsLayout();
   }
 }

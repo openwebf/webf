@@ -6,12 +6,35 @@
 // https://console.spec.whatwg.org/
 import { webfPrint, webfIsProxy } from './bridge';
 
+export interface Console {
+  log(...args: any[]): void;
+  inspect(...args: any[]): void;
+  info(...args: any[]): void;
+  warn(...args: any[]): void;
+  debug(...args: any[]): void;
+  error(...args: any[]): void;
+  dirxml(...args: any[]): void;
+  dir(...args: any[]): void;
+  table(data: Array<any>, filterColumns: Array<string>): void;
+  trace(...args: any[]): void;
+  count(label?: string): void;
+  countReset(label?: string): void;
+  assert(expression: boolean, ...args: Array<any>): void;
+  time(label?: string): void;
+  timeLog(label?: string, ...args: Array<any>): void;
+  timeEnd(label?: string): void;
+  group(...data: Array<any>): void;
+  groupCollapsed(...data: Array<any>): void;
+  groupEnd(): void;
+  clear(): void;
+}
+
 const SEPARATOR = ' ';
 const INTERPOLATE = /%[sdifoO]/g;
 const DIMENSIONS = 3;
 const INDENT = '  ';
-const times = {};
-const counts = {};
+const times: Record<string, number> = {};
+const counts: Record<string, number> = {};
 const INDEX = '(index)';
 const VALUE = '(value)';
 const PLACEHOLDER = ' '; // empty placeholder
@@ -213,7 +236,7 @@ function logger(allArgs: any) {
   return result.join(SEPARATOR);
 }
 
-export const console = {
+export const console: Console = {
   log(...args: any) {
     printer(logger(arguments));
   },

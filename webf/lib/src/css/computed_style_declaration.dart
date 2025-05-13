@@ -108,7 +108,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
     if (needUpdateStyle) {
       _element.ownerDocument.updateStyleIfNeeded();
     }
-    RenderStyle? style = _element.computedStyle(_pseudoElementName);
+    CSSRenderStyle? style = _element.computedStyle(_pseudoElementName);
 
     if (style == null) {
       return '';
@@ -377,7 +377,7 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
       case CSSPropertyID.AnimationPlayState:
         return style.animationPlayState.join(', ');
       case CSSPropertyID.Transform:
-        final matrix4 = style.effectiveTransformMatrix;
+        final matrix4 = style.transformMatrix;
         return matrix4?.cssText() ?? 'none';
 
       case CSSPropertyID.Stroke:

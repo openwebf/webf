@@ -9,6 +9,30 @@ import { URL } from './url';
 import { navigator } from './navigator';
 import { initPropertyHandlersForEventTargets } from './helpers';
 
+export interface XMLHttpRequestInterface extends EventTarget {
+  readonly UNSENT: number;
+  readonly OPENED: number;
+  readonly HEADERS_RECEIVED: number;
+  readonly LOADING: number;
+  readonly DONE: number;
+  
+  readyState: number;
+  onreadystatechange: ((this: XMLHttpRequest, ev: Event) => any) | null;
+  responseType: string;
+  responseText: string;
+  responseXML: any;
+  status: number;
+  statusText: string | null;
+  withCredentials: boolean;
+  
+  open(method: string, url: string, async?: boolean, user?: string, password?: string): void;
+  setRequestHeader(header: string, value: string): void;
+  getResponseHeader(header: string): string | null;
+  getAllResponseHeaders(): string;
+  send(data?: string): void;
+  abort(): void;
+}
+
 // XHR buildin events
 const builtInEvents = [
   'readystatechange',
@@ -37,7 +61,7 @@ const forbiddenRequestMethods = [
   "CONNECT"
 ];
 
-export class XMLHttpRequest extends EventTarget {
+export class XMLHttpRequest extends EventTarget implements XMLHttpRequestInterface {
   /**
    * XHR readyState
    */
@@ -223,7 +247,7 @@ export class XMLHttpRequest extends EventTarget {
     // Set the defaults if they haven't been set
     for (let name in defaultHeaders) {
       if (!this.headersCache[name.toLowerCase()]) {
-        this.headers[name] = defaultHeaders[name];
+        this.headers[name] = defaultHeaders[name as keyof typeof defaultHeaders];
       }
     }
 

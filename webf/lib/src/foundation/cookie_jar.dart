@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'dart:async';
 import 'dart:io';
 
@@ -8,23 +12,13 @@ import 'cookie_jar/persist_cookie_jar.dart';
 import 'cookie_jar/file_storage.dart';
 import 'cookie_jar/serializable_cookie.dart';
 
-class CookieJar {
-  final String url;
+class CookieManager {
   static PersistCookieJar? _cookieJar;
   static Future<PersistCookieJar>? _cookieJarFuture;
 
-  final List<Cookie>? initialCookies;
-  CookieJar(this.url, { this.initialCookies }) {
-    if (_cookieJar == null) {
-      _cookieJarFuture = initCookieFromStorage().then((cookieJar) {
-        return afterCookieJarLoaded(cookieJar, uri: Uri.parse(url), initialCookies: initialCookies);
-      });
-    } else {
-      afterCookieJarLoaded(_cookieJar!, uri: Uri.parse(url), initialCookies: initialCookies);
-    }
-  }
+  CookieManager();
 
-  static Future<PersistCookieJar> afterCookieJarLoaded(PersistCookieJar cookieJar, { Uri? uri, List<Cookie>? initialCookies }) async {
+  static Future<PersistCookieJar> afterCookieJarLoaded(PersistCookieJar cookieJar, {Uri? uri, List<Cookie>? initialCookies}) async {
     if (initialCookies != null && uri != null) {
       cookieJar.saveFromAPI(uri, initialCookies);
     }
@@ -38,16 +32,16 @@ class CookieJar {
     return PersistCookieJar(storage: FileStorage(path.join(appTemporaryPath, 'cookies')));
   }
 
-  void setCookieString(String value) {
-    if (value.isEmpty) {
+  /// Set cookie for a specific URL
+  void setCookie(String url, Cookie cookie) {
+    if (url.isEmpty) {
       return;
     }
-    Cookie cookie = Cookie.fromSetCookieValue(value);
     Uri uri = Uri.parse(url);
-    List<String> pathSegements = uri.pathSegments;
+    List<String> pathSegments = uri.pathSegments;
 
-    if (pathSegements.isNotEmpty) {
-      cookie.path ??= '/' + pathSegements.sublist(0, pathSegements.length - 1).join('/');
+    if (pathSegments.isNotEmpty) {
+      cookie.path ??= '/' + pathSegments.sublist(0, pathSegments.length - 1).join('/');
     }
 
     cookie.domain ??= uri.host;
@@ -57,27 +51,25 @@ class CookieJar {
     }
   }
 
-  void setCookie(List<Cookie> cookies, [Uri? uri]) {
+  /// Set cookie for a specific URL from a set-cookie string
+  void setCookieString(String url, String value) {
+    if (value.isEmpty) {
+      return;
+    }
+    Cookie cookie = Cookie.fromSetCookieValue(value);
+    setCookie(url, cookie);
+  }
+
+  /// Set multiple cookies for a URL
+  void setCookies(String url, List<Cookie> cookies) {
     if (_cookieJar != null) {
-      uri = uri ?? Uri.parse(url);
+      Uri uri = Uri.parse(url);
       _cookieJar!.saveFromAPI(uri, cookies);
     }
   }
 
-  void clearCookie() {
-    Uri uri = Uri.parse(url);
-    if (uri.host.isNotEmpty && _cookieJar != null) {
-      _cookieJar!.delete(uri, true);
-    }
-  }
-
-  void clearAllCookies() {
-    if (_cookieJar != null) {
-      _cookieJar!.deleteAllSync();
-    }
-  }
-
-  String cookie() {
+  /// Get all cookies as string for a URL
+  String getCookieString(String url) {
     final cookiePairs = <String>[];
     Uri uri = Uri.parse(url);
     String scheme = uri.scheme;
@@ -98,6 +90,41 @@ class CookieJar {
       }
     });
     return cookiePairs.join('; ');
+  }
+
+  /// Get all cookies for a URL
+  List<Cookie> getCookies(String url) {
+    Uri uri = Uri.parse(url);
+    return _cookieJar!.loadForCurrentURISync(uri);
+  }
+
+  /// Clear all cookies for a specific URL
+  void clearCookie(String url) {
+    Uri uri = Uri.parse(url);
+    if (uri.host.isNotEmpty && _cookieJar != null) {
+      _cookieJar!.delete(uri, true);
+    }
+  }
+
+  /// Clear all cookies in storage
+  void clearAllCookies() {
+    if (_cookieJar != null) {
+      _cookieJar!.deleteAllSync();
+    }
+  }
+
+  /// Initialize cookie jar with initial cookies if needed
+  Future<void> initialize({String? url, List<Cookie>? initialCookies}) async {
+    if (_cookieJar == null) {
+      _cookieJarFuture = initCookieFromStorage().then((cookieJar) {
+        return afterCookieJarLoaded(cookieJar,
+          uri: url != null ? Uri.parse(url) : null,
+          initialCookies: initialCookies);
+      });
+      await _cookieJarFuture;
+    } else if (url != null && initialCookies != null) {
+      afterCookieJarLoaded(_cookieJar!, uri: Uri.parse(url), initialCookies: initialCookies);
+    }
   }
 
   static Future<void> saveFromResponse(Uri uri, List<Cookie> cookies) async {

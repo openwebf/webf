@@ -1,0 +1,1 @@
+#include "../../../src/foundation/ui_command_strategy.cc"

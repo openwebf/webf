@@ -246,8 +246,8 @@ class PersistCookieJar extends DefaultCookieJar {
   }
 
   Future<void> _save(Uri uri, [bool withDomainSharedCookie = false]) async {
-    final host = uri.host;
-
+    bool isLocalPath = uri.isScheme('assets') || uri.isScheme('file');
+    final host = isLocalPath ? uri.scheme : uri.host;
     if (!_hostSet.contains(host)) {
       _hostSet.add(host);
       await storage.write(IndexKey, json.encode(_hostSet.toList()));
@@ -266,7 +266,8 @@ class PersistCookieJar extends DefaultCookieJar {
   }
 
   Future<void> _load(Uri uri) async {
-    final host = uri.host;
+    bool isLocalPath = uri.isScheme('assets') || uri.isScheme('file');
+    final host = isLocalPath ? uri.scheme : uri.host;
     if (_hostSet.contains(host) && hostCookies[host] == null) {
       var str = await storage.read(host);
 
@@ -291,7 +292,8 @@ class PersistCookieJar extends DefaultCookieJar {
   }
 
   void _loadSync(Uri uri) {
-    final host = uri.host;
+    bool isLocalPath = uri.isScheme('assets') || uri.isScheme('file');
+    final host = isLocalPath ? uri.scheme : uri.host;
     if (_hostSet.contains(host) && hostCookies[host] == null) {
       var str = storage.readSync(host);
 

@@ -2,6 +2,6 @@
 * Copyright (C) 2022-present The WebF authors. All rights reserved.
 */
 
-import {Storage, storageProxyHandler } from "./storage";
+import {Storage, StorageInterface, storageProxyHandler } from "./storage";
 
-export const sessionStorage = new Proxy(new Storage('SessionStorage'), storageProxyHandler);
+export const sessionStorage: StorageInterface = new Proxy(new Storage('SessionStorage'), storageProxyHandler);

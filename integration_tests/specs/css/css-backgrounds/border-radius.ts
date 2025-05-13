@@ -41,22 +41,22 @@ describe('border_radius', () => {
           overflow: 'hidden'
         },
       }, [
-        createElement('div', {
+      createElement('div', {
+        style: {
+          backgroundColor: 'red',
+        }
+      }, [
+        createElement('img', {
+          src: 'assets/100x100-green.png',
           style: {
-            backgroundColor: 'red',
+            width: '100px',
+            height: '250px',
+            borderRadius: '30px',
+            transform: 'translate(20px, 20px)'
           }
-        }, [
-          createElement('img', {
-            src: 'assets/100x100-green.png',
-            style: {
-                width: '100px',
-                height: '250px',
-                borderRadius: '30px',
-                transform: 'translate(20px, 20px)'
-            }
-          })
-        ])
-      ]
+        })
+      ])
+    ]
     );
 
     BODY.appendChild(div);
@@ -78,21 +78,21 @@ describe('border_radius', () => {
           overflow: 'hidden'
         },
       }, [
-        createElement('div', {
+      createElement('div', {
+        style: {
+          backgroundColor: 'red',
+        }
+      }, [
+        createElement('img', {
+          src: 'assets/100x100-green.png',
           style: {
-            backgroundColor: 'red',
+            width: '100px',
+            height: '250px',
+            borderRadius: '30px',
           }
-        }, [
-          createElement('img', {
-            src: 'assets/100x100-green.png',
-            style: {
-                width: '100px',
-                height: '250px',
-                borderRadius: '30px',
-            }
-          })
-        ])
-      ]
+        })
+      ])
+    ]
     );
     BODY.appendChild(div);
 
@@ -113,14 +113,14 @@ describe('border_radius', () => {
           overflow: 'hidden'
         },
       }, [
-          createElement('div', {
-              style: {
-                width: '100px',
-                height: '250px',
-                backgroundColor: 'yellow'
-              }
-          })
-      ]
+      createElement('div', {
+        style: {
+          width: '100px',
+          height: '250px',
+          backgroundColor: 'yellow'
+        }
+      })
+    ]
     );
 
     BODY.appendChild(div);
@@ -143,14 +143,14 @@ describe('border_radius', () => {
           overflow: 'hidden'
         },
       }, [
-          (item = createElement('div', {
-              style: {
-                width: '100px',
-                height: '250px',
-                backgroundColor: 'yellow',
-              }
-          }))
-      ]
+      (item = createElement('div', {
+        style: {
+          width: '100px',
+          height: '250px',
+          backgroundColor: 'yellow',
+        }
+      }))
+    ]
     );
 
     BODY.appendChild(div);
@@ -176,14 +176,14 @@ describe('border_radius', () => {
           overflow: 'clip'
         },
       }, [
-          createElement('div', {
-              style: {
-                width: '100px',
-                height: '250px',
-                backgroundColor: 'yellow'
-              }
-          })
-      ]
+      createElement('div', {
+        style: {
+          width: '100px',
+          height: '250px',
+          backgroundColor: 'yellow'
+        }
+      })
+    ]
     );
 
     BODY.appendChild(div);
@@ -507,13 +507,13 @@ describe('border_radius', () => {
     await snapshot();
 
     requestAnimationFrame(async () => {
-       div2.style.borderRadius = '100%';
-       await snapshot();
-       done();
+      div2.style.borderRadius = '100%';
+      await snapshot();
+      done();
     });
   });
 
-  it("computed", async () => {
+  it("computed", async (done) => {
     let target;
     target = createElement('div', {
       id: 'target',
@@ -524,46 +524,50 @@ describe('border_radius', () => {
     });
     BODY.appendChild(target);
 
-    test_computed_value('border-radius', '1px');
-    test_computed_value('border-radius', '1px 2% 3px 4%');
-    test_computed_value(
-      'border-radius',
-      '5em / 1px 2% 3px 4%',
-      '200px / 1px 2% 3px 4%'
-    );
-    test_computed_value(
-      'border-radius',
-      '1px 2% 3px 4% / 5em',
-      '1px 2% 3px 4% / 200px'
-    );
+    target.ononscreen = () => {
+      test_computed_value('border-radius', '1px');
+      test_computed_value('border-radius', '1px 2% 3px 4%');
+      test_computed_value(
+        'border-radius',
+        '5em / 1px 2% 3px 4%',
+        '200px / 1px 2% 3px 4%'
+      );
+      test_computed_value(
+        'border-radius',
+        '1px 2% 3px 4% / 5em',
+        '1px 2% 3px 4% / 200px'
+      );
 
-    test_computed_value(
-      'border-radius',
-      '1px 1px 1px 2% / 1px 2% 1px 2%',
-      '1px 1px 1px 2% / 1px 2%'
-    );
-    test_computed_value(
-      'border-radius',
-      '1px 1px 1px 1px / 1px 1px 2% 1px',
-      '1px / 1px 1px 2%'
-    );
-    test_computed_value('border-radius', '1px 1px 2% 2%');
-    test_computed_value('border-radius', '1px 2% 1px 1px');
-    test_computed_value(
-      'border-radius',
-      '1px 2% 2% 2% / 1px 2% 3px 2%',
-      '1px 2% 2% / 1px 2% 3px'
-    );
+      test_computed_value(
+        'border-radius',
+        '1px 1px 1px 2% / 1px 2% 1px 2%',
+        '1px 1px 1px 2% / 1px 2%'
+      );
+      test_computed_value(
+        'border-radius',
+        '1px 1px 1px 1px / 1px 1px 2% 1px',
+        '1px / 1px 1px 2%'
+      );
+      test_computed_value('border-radius', '1px 1px 2% 2%');
+      test_computed_value('border-radius', '1px 2% 1px 1px');
+      test_computed_value(
+        'border-radius',
+        '1px 2% 2% 2% / 1px 2% 3px 2%',
+        '1px 2% 2% / 1px 2% 3px'
+      );
 
-    test_computed_value('border-top-left-radius', 'calc(-0.5em + 20px)', '0px');
-    test_computed_value('border-top-right-radius', '20%');
-    test_computed_value(
-      'border-bottom-right-radius',
-      'calc(0.5em + 10px) 40%',
-      '30px 40%'
-    );
-    test_computed_value('border-bottom-left-radius', '50% 60px');
+      test_computed_value('border-top-left-radius', 'calc(-0.5em + 20px)', '0px');
+      test_computed_value('border-top-right-radius', '20%');
+      test_computed_value(
+        'border-bottom-right-radius',
+        'calc(0.5em + 10px) 40%',
+        '30px 40%'
+      );
+      test_computed_value('border-bottom-left-radius', '50% 60px');
 
-    test_computed_value('border-top-left-radius', '40px 0px', '40px 0px');
+      test_computed_value('border-top-left-radius', '40px 0px', '40px 0px');
+
+      done();
+    }
   })
 });

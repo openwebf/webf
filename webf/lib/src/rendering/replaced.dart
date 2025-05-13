@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/logic_box.dart';
 
@@ -42,12 +43,7 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
   @override
   void setupParentData(RenderBox child) {
-    if (child is RenderBoxModel) {
-      RenderLayoutParentData parentData = RenderLayoutParentData();
-      child.parentData = CSSPositionedLayout.getPositionParentData(child, parentData);
-    } else {
-      child.parentData = RenderLayoutParentData();
-    }
+    child.parentData = RenderLayoutParentData();
   }
 
   @override
@@ -55,17 +51,33 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     beforeLayout();
 
     if (child != null) {
-      // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
-      // the viewportSize, as same as the MaterialApp does.
-      Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
       BoxConstraints childConstraints = contentConstraints!;
-      if (renderStyle.target.renderObjectManagerType == RenderObjectManagerType.FLUTTER_ELEMENT) {
-        childConstraints = BoxConstraints(
-          minWidth: childConstraints.minWidth,
-          maxWidth: math.min(viewportSize.width, childConstraints.maxWidth),
-          minHeight: childConstraints.minHeight,
-          maxHeight: math.min(viewportSize.height, childConstraints.maxHeight)
-        );
+
+      double? width;
+      double? height;
+      if (renderStyle.width.isPrecise) {
+        width = renderStyle.width.computedValue;
+        if (renderStyle.height.isPrecise) {
+          height = renderStyle.height.computedValue;
+          childConstraints = childConstraints.tighten(
+              width: width, height: height);
+        } else {
+          childConstraints = childConstraints.tighten(
+              width: width, height: renderStyle.aspectRatio != null ? width * renderStyle.aspectRatio! : null);
+        }
+      }
+      if (renderStyle.height.isPrecise) {
+        height = renderStyle.height.computedValue;
+        if (renderStyle.width.isPrecise) {
+          width = renderStyle.width.computedValue;
+          childConstraints = childConstraints.tighten(
+            width: width, height: height
+          );
+        } else {
+          childConstraints = childConstraints.tighten(
+            width: renderStyle.aspectRatio != null ? height * renderStyle.aspectRatio! : null, height: height
+          );
+        }
       }
 
       child!.layout(childConstraints, parentUsesSize: true);

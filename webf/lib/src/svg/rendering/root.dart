@@ -49,6 +49,13 @@ class RenderSVGRoot extends RenderSVGContainer {
         _ratio = ratio ?? const SVGPreserveAspectRatio() {}
 
   @override
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    super.debugFillProperties(properties);
+    properties.add(DiagnosticsProperty('viewBox', viewBox));
+    properties.add(DiagnosticsProperty('ratio', ratio));
+  }
+
+  @override
   void performPaint(PaintingContext context, Offset offset) {
     _outerClipLayer.layer = context
         .pushClipRect(true, offset, Offset.zero & size, (context, offset) {
@@ -60,13 +67,7 @@ class RenderSVGRoot extends RenderSVGContainer {
           // Draw debug rect
           // context.canvas.drawRect(_renderViewBox, Paint()..color = Color.fromARGB(255, 255, 0, 0)..style = PaintingStyle.stroke);
           visitChildren((child) {
-            if (enableWebFProfileTracking) {
-              WebFProfiler.instance.pauseCurrentPaintOp();
-            }
             context.paintChild(child, offset);
-            if (enableWebFProfileTracking) {
-              WebFProfiler.instance.resumeCurrentPaintOp();
-            }
           });
         }, oldLayer: _innerClipLayer.layer);
       }, oldLayer: _transformLayer.layer);

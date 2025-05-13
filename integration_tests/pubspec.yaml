@@ -26,7 +26,6 @@ dependencies:
   flutter:
     sdk: flutter
   image: ^3.0.2
-  webf_websocket: ^1.1.0-beta.2
   waterfall_flow: ^3.0.1
   image_compare: ^1.1.2
   card_swiper: ^3.0.1

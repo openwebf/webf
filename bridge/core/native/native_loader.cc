@@ -24,6 +24,8 @@ static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
     JSValue exception_value = ExceptionState::CurrentException(context->ctx());
     native_library_load_context->promise_resolver->Reject(exception_value);
     JS_FreeValue(context->ctx(), exception_value);
+    native_library_load_context->context->UnRegisterActiveScriptPromise(
+        native_library_load_context->promise_resolver.get());
   } else {
     auto* meta_data = new NativeLibraryMetaData{lib_name, native_library_load_context};
     auto entry_data = WebFValue<ExecutingContext, ExecutingContextWebFMethods>{
@@ -61,6 +63,8 @@ ScriptPromise NativeLoader::loadNativeLibrary(const AtomicString& lib_name,
 
   p_native_library_load_context->context = context;
   p_native_library_load_context->promise_resolver = resolver;
+
+  context->RegisterActiveScriptPromise(resolver);
 
   context->dartMethodPtr()->loadNativeLibrary(context->isDedicated(), context->contextId(),
                                               lib_name.ToNativeString(ctx()).release(), p_native_library_load_context,

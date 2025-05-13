@@ -102,6 +102,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/task_queue.cc
   foundation/string_view.cc
   foundation/native_value.cc
+  foundation/native_byte_data.cc
   foundation/native_type.cc
   foundation/stop_watch.cc
   foundation/profiler.cc
@@ -109,7 +110,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/rust_readable.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
-  polyfill/dist/polyfill.cc
+  code_gen/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
@@ -132,7 +133,7 @@ list(APPEND GUMBO_PARSER
 
 list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/foundation
-  ${CMAKE_CURRENT_LIST_DIR}/out
+  ${CMAKE_CURRENT_LIST_DIR}/code_gen
   ${CMAKE_CURRENT_LIST_DIR}
   ${CMAKE_CURRENT_LIST_DIR}/include
   ${CMAKE_CURRENT_LIST_DIR}/polyfill/dist
@@ -325,7 +326,10 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/frame/module_callback.cc
     core/frame/module_context_coordinator.cc
     core/frame/window.cc
+    core/frame/window_idle_tasks.cc
+    core/frame/script_idle_task_controller.cc
     core/frame/screen.cc
+    core/frame/idle_deadline.cc
     core/frame/legacy/location.cc
     core/timing/performance.cc
     core/timing/performance_mark.cc
@@ -371,6 +375,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/child_list_mutation_scope.cc
     core/dom/container_node.cc
     core/html/custom/widget_element.cc
+    core/html/custom/webf_router_link_element.cc
     core/html/custom/widget_element_shape.cc
     core/events/error_event.cc
     core/events/message_event.cc
@@ -390,6 +395,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/events/intersection_change_event.cc
     core/events/keyboard_event.cc
     core/events/promise_rejection_event.cc
+    core/events/screen_event.cc
     core/html/parser/html_parser.cc
     core/html/html_element.cc
     core/html/html_div_element.cc
@@ -404,6 +410,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
+    core/html/html_br_element.cc
     core/html/image.cc
     core/html/html_collection.cc
     core/html/canvas/html_canvas_element.cc
@@ -421,6 +428,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+    core/html/touches/webf_touch_area_element.cc
 
     core/native/native_loader.cc
     core/native/script_value_ref.cc
@@ -451,197 +459,204 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 
   # Gen sources.
   list(APPEND BRIDGE_SOURCE
-    out/names_installer.cc
-    out/qjs_console.cc
-    out/qjs_module_manager.cc
-    out/qjs_window_or_worker_global_scope.cc
-    out/qjs_window.cc
-    out/qjs_location.cc
-    out/qjs_blob.cc
-    out/qjs_event.cc
-    out/qjs_add_event_listener_options.cc
-    out/qjs_event_listener_options.cc
-    out/qjs_error_event.cc
-    out/qjs_message_event.cc
-    out/qjs_message_event_init.cc
-    out/qjs_close_event.cc
-    out/qjs_close_event_init.cc
-    out/qjs_focus_event.cc
-    out/qjs_focus_event_init.cc
-    out/qjs_input_event.cc
-    out/qjs_input_event_init.cc
-    out/qjs_pop_state_event.cc
-    out/qjs_pop_state_event_init.cc
-    out/qjs_ui_event.cc
-    out/qjs_ui_event_init.cc
-    out/qjs_gesture_event.cc
-    out/qjs_hashchange_event.cc
-    out/qjs_hashchange_event_init.cc
-    out/qjs_gesture_event_init.cc
-    out/qjs_intersection_change_event.cc
-    out/qjs_intersection_change_event_init.cc
-    out/qjs_touch.cc
-    out/qjs_touch_init.cc
-    out/qjs_touch_list.cc
-    out/qjs_mutation_record.cc
-    out/qjs_mutation_observer.cc
-    out/qjs_mutation_observer_init.cc
-    out/qjs_mutation_observer_registration.cc
-    out/qjs_touch_event.cc
-    out/qjs_touch_event_init.cc
-    out/qjs_hybrid_router_change_event.cc
-    out/qjs_hybrid_router_change_event_init.cc
-    out/qjs_pointer_event.cc
-    out/qjs_pointer_event_init.cc
-    out/qjs_mouse_event.cc
-    out/qjs_mouse_event_init.cc
-    out/qjs_transition_event.cc
-    out/qjs_transition_event_init.cc
-    out/event_factory.cc
-    out/qjs_custom_event.cc
-    out/qjs_custom_event_init.cc
-    out/qjs_keyboard_event.cc
-    out/qjs_keyboard_event_init.cc
-    out/qjs_animation_event.cc
-    out/qjs_animation_event_init.cc
-    out/qjs_error_event_init.cc
-    out/qjs_event_init.cc
-    out/qjs_event_target.cc
-    out/qjs_node.cc
-    out/qjs_union_dom_stringnode.cc
-    out/qjs_document.cc
-    out/qjs_element.cc
-    out/qjs_dom_token_list.cc
-    out/qjs_dom_string_map.cc
-    out/qjs_element_attributes.cc
-    out/qjs_character_data.cc
-    out/qjs_comment.cc
-    out/qjs_document_fragment.cc
-    out/qjs_bounding_client_rect.cc
-    out/qjs_css_style_declaration.cc
-    out/qjs_inline_css_style_declaration.cc
-    out/qjs_computed_css_style_declaration.cc
-    out/qjs_native_loader.cc
-    out/qjs_text.cc
-    out/qjs_screen.cc
-    out/qjs_node_list.cc
-    out/event_type_names.cc
-    out/built_in_string.cc
-    out/mutation_record_types.cc
-    out/binding_call_methods.cc
-    out/qjs_scroll_options.cc
-    out/qjs_scroll_to_options.cc
-    out/qjs_html_element.cc
-    out/qjs_html_all_collection.cc
-    out/qjs_html_collection.cc
-    out/qjs_html_anchor_element.cc
-    out/qjs_html_div_element.cc
-    out/qjs_html_head_element.cc
-    out/qjs_html_body_element.cc
-    out/qjs_html_html_element.cc
-    out/qjs_html_image_element.cc
-    out/qjs_html_iframe_element.cc
-    out/qjs_html_canvas_element.cc
-    out/qjs_html_link_element.cc
-    out/qjs_image.cc
-    out/qjs_widget_element.cc
-    out/qjs_canvas_rendering_context_2d.cc
-    out/qjs_canvas_rendering_context.cc
-    out/qjs_canvas_gradient.cc
-    out/qjs_canvas_pattern.cc
-    out/qjs_path_2d.cc
-    out/qjs_text_metrics.cc
-    out/qjs_dom_matrix_init.cc
-    out/qjs_dom_matrix.cc
-    out/qjs_dom_matrix_read_only.cc
-    out/qjs_dom_point_init.cc
-    out/qjs_dom_point.cc
-    out/qjs_dom_point_read_only.cc
-    out/qjs_union_double_sequencedouble.cc
-    out/qjs_unionhtml_image_elementhtml_canvas_element.cc
-    out/qjs_union_dom_stringcanvas_gradient.cc
-    out/qjs_union_sequencedoubledom_matrix_init.cc
-    out/qjs_union_doubledom_point_init.cc
-    out/canvas_types.cc
-    out/qjs_html_button_element.cc
-    out/qjs_html_input_element.cc
-    out/qjs_html_form_element.cc
-    out/qjs_html_textarea_element.cc
-    out/qjs_html_script_element.cc
-    out/qjs_promise_rejection_event.cc
-    out/qjs_promise_rejection_event_init.cc
-    out/qjs_unionevent_listener_options_boolean.cc
-    out/qjs_unionadd_event_listener_options_boolean.cc
-    out/qjs_unionpath_2_d_dom_string.cc
-    out/qjs_html_template_element.cc
-    out/qjs_html_unknown_element.cc
-    out/qjs_performance.cc
-    out/qjs_performance_entry.cc
-    out/qjs_performance_mark.cc
-    out/qjs_performance_measure.cc
-    out/performance_entry_names.cc
-    out/qjs_performance_measure_options.cc
-    out/qjs_performance_mark_options.cc
-    out/performance_mark_constants.cc
-    out/html_element_factory.cc
-    out/html_names.cc
-    out/script_type_names.cc
-    out/defined_properties.cc
-    out/element_attribute_names.cc
-    out/element_namespace_uris.cc
+    code_gen/names_installer.cc
+    code_gen/qjs_console.cc
+    code_gen/qjs_module_manager.cc
+    code_gen/qjs_window_or_worker_global_scope.cc
+    code_gen/qjs_window.cc
+    code_gen/qjs_location.cc
+    code_gen/qjs_blob.cc
+    code_gen/qjs_event.cc
+    code_gen/qjs_add_event_listener_options.cc
+    code_gen/qjs_event_listener_options.cc
+    code_gen/qjs_error_event.cc
+    code_gen/qjs_message_event.cc
+    code_gen/qjs_message_event_init.cc
+    code_gen/qjs_close_event.cc
+    code_gen/qjs_close_event_init.cc
+    code_gen/qjs_focus_event.cc
+    code_gen/qjs_focus_event_init.cc
+    code_gen/qjs_input_event.cc
+    code_gen/qjs_input_event_init.cc
+    code_gen/qjs_pop_state_event.cc
+    code_gen/qjs_pop_state_event_init.cc
+    code_gen/qjs_ui_event.cc
+    code_gen/qjs_ui_event_init.cc
+    code_gen/qjs_gesture_event.cc
+    code_gen/qjs_hashchange_event.cc
+    code_gen/qjs_hashchange_event_init.cc
+    code_gen/qjs_gesture_event_init.cc
+    code_gen/qjs_intersection_change_event.cc
+    code_gen/qjs_intersection_change_event_init.cc
+    code_gen/qjs_touch.cc
+    code_gen/qjs_touch_init.cc
+    code_gen/qjs_touch_list.cc
+    code_gen/qjs_mutation_record.cc
+    code_gen/qjs_mutation_observer.cc
+    code_gen/qjs_mutation_observer_init.cc
+    code_gen/qjs_mutation_observer_registration.cc
+    code_gen/qjs_touch_event.cc
+    code_gen/qjs_touch_event_init.cc
+    code_gen/qjs_hybrid_router_change_event.cc
+    code_gen/qjs_hybrid_router_change_event_init.cc
+    code_gen/qjs_pointer_event.cc
+    code_gen/qjs_pointer_event_init.cc
+    code_gen/qjs_mouse_event.cc
+    code_gen/qjs_mouse_event_init.cc
+    code_gen/qjs_transition_event.cc
+    code_gen/qjs_transition_event_init.cc
+    code_gen/event_factory.cc
+    code_gen/qjs_custom_event.cc
+    code_gen/qjs_custom_event_init.cc
+    code_gen/qjs_keyboard_event.cc
+    code_gen/qjs_keyboard_event_init.cc
+    code_gen/qjs_animation_event.cc
+    code_gen/qjs_screen_event.cc
+    code_gen/qjs_animation_event_init.cc
+    code_gen/qjs_error_event_init.cc
+    code_gen/qjs_event_init.cc
+    code_gen/qjs_event_target.cc
+    code_gen/qjs_node.cc
+    code_gen/qjs_union_dom_stringnode.cc
+    code_gen/qjs_document.cc
+    code_gen/qjs_element.cc
+    code_gen/qjs_dom_token_list.cc
+    code_gen/qjs_dom_string_map.cc
+    code_gen/qjs_element_attributes.cc
+    code_gen/qjs_character_data.cc
+    code_gen/qjs_comment.cc
+    code_gen/qjs_document_fragment.cc
+    code_gen/qjs_bounding_client_rect.cc
+    code_gen/qjs_css_style_declaration.cc
+    code_gen/qjs_inline_css_style_declaration.cc
+    code_gen/qjs_computed_css_style_declaration.cc
+    code_gen/qjs_native_loader.cc
+    code_gen/qjs_text.cc
+    code_gen/qjs_screen.cc
+    code_gen/qjs_node_list.cc
+    code_gen/qjs_idle_deadline.cc
+    code_gen/event_type_names.cc
+    code_gen/built_in_string.cc
+    code_gen/mutation_record_types.cc
+    code_gen/binding_call_methods.cc
+    code_gen/qjs_scroll_options.cc
+    code_gen/qjs_scroll_to_options.cc
+    code_gen/qjs_html_element.cc
+    code_gen/qjs_html_all_collection.cc
+    code_gen/qjs_html_collection.cc
+    code_gen/qjs_html_anchor_element.cc
+    code_gen/qjs_html_div_element.cc
+    code_gen/qjs_html_head_element.cc
+    code_gen/qjs_html_body_element.cc
+    code_gen/qjs_html_html_element.cc
+    code_gen/qjs_html_image_element.cc
+    code_gen/qjs_html_iframe_element.cc
+    code_gen/qjs_html_canvas_element.cc
+    code_gen/qjs_html_br_element.cc
+    code_gen/qjs_html_link_element.cc
+    code_gen/qjs_image.cc
+    code_gen/qjs_widget_element.cc
+    code_gen/qjs_canvas_rendering_context_2d.cc
+    code_gen/qjs_canvas_rendering_context.cc
+    code_gen/qjs_canvas_gradient.cc
+    code_gen/qjs_canvas_pattern.cc
+    code_gen/qjs_path_2d.cc
+    code_gen/qjs_text_metrics.cc
+    code_gen/qjs_dom_matrix_init.cc
+    code_gen/qjs_dom_matrix.cc
+    code_gen/qjs_dom_matrix_read_only.cc
+    code_gen/qjs_dom_point_init.cc
+    code_gen/qjs_dom_point.cc
+    code_gen/qjs_dom_point_read_only.cc
+    code_gen/qjs_union_double_sequencedouble.cc
+    code_gen/qjs_unionhtml_image_elementhtml_canvas_element.cc
+    code_gen/qjs_union_dom_stringcanvas_gradient.cc
+    code_gen/qjs_union_sequencedoubledom_matrix_init.cc
+    code_gen/qjs_union_doubledom_point_init.cc
+    code_gen/canvas_types.cc
+    code_gen/qjs_html_button_element.cc
+    code_gen/qjs_html_input_element.cc
+    code_gen/qjs_html_form_element.cc
+    code_gen/qjs_html_textarea_element.cc
+    code_gen/qjs_html_script_element.cc
+    code_gen/qjs_promise_rejection_event.cc
+    code_gen/qjs_promise_rejection_event_init.cc
+    code_gen/qjs_unionevent_listener_options_boolean.cc
+    code_gen/qjs_unionadd_event_listener_options_boolean.cc
+    code_gen/qjs_unionpath_2_d_dom_string.cc
+    code_gen/qjs_html_template_element.cc
+    code_gen/qjs_html_unknown_element.cc
+    code_gen/qjs_webf_touch_area_element.cc
+    code_gen/qjs_webf_router_link_element.cc
+    code_gen/qjs_performance.cc
+    code_gen/qjs_performance_entry.cc
+    code_gen/qjs_performance_mark.cc
+    code_gen/qjs_performance_measure.cc
+    code_gen/performance_entry_names.cc
+    code_gen/qjs_performance_measure_options.cc
+    code_gen/qjs_performance_mark_options.cc
+    code_gen/performance_mark_constants.cc
+    code_gen/html_element_factory.cc
+    code_gen/html_names.cc
+    code_gen/webf_element_names.cc
+    code_gen/script_type_names.cc
+    code_gen/defined_properties.cc
+    code_gen/element_attribute_names.cc
+    code_gen/element_namespace_uris.cc
+    code_gen/qjs_window_idle_request_options.cc
 
     # SVG generated
-    out/svg_names.cc
-    out/svg_element_factory.cc
+    code_gen/svg_names.cc
+    code_gen/svg_element_factory.cc
 
     # SVG files
-    out/qjs_svg_element.cc
-    out/qjs_svg_graphics_element.cc
-    out/qjs_svg_geometry_element.cc
-    out/qjs_svg_text_content_element.cc
-    out/qjs_svg_text_positioning_element.cc
+    code_gen/qjs_svg_element.cc
+    code_gen/qjs_svg_graphics_element.cc
+    code_gen/qjs_svg_geometry_element.cc
+    code_gen/qjs_svg_text_content_element.cc
+    code_gen/qjs_svg_text_positioning_element.cc
 
-    out/qjs_svg_svg_element.cc
-    out/qjs_svg_path_element.cc
-    out/qjs_svg_rect_element.cc
-    out/qjs_svg_text_element.cc
-    out/qjs_svg_g_element.cc
-    out/qjs_svg_circle_element.cc
-    out/qjs_svg_ellipse_element.cc
-    out/qjs_svg_style_element.cc
-    out/qjs_svg_line_element.cc
+    code_gen/qjs_svg_svg_element.cc
+    code_gen/qjs_svg_path_element.cc
+    code_gen/qjs_svg_rect_element.cc
+    code_gen/qjs_svg_text_element.cc
+    code_gen/qjs_svg_g_element.cc
+    code_gen/qjs_svg_circle_element.cc
+    code_gen/qjs_svg_ellipse_element.cc
+    code_gen/qjs_svg_style_element.cc
+    code_gen/qjs_svg_line_element.cc
 
     # plugin api
-    out/plugin_api_animation_event.cc
-    out/plugin_api_bounding_client_rect.cc
-    out/plugin_api_close_event.cc
-    out/plugin_api_computed_css_style_declaration.cc
-    out/plugin_api_css_style_declaration.cc
-    out/plugin_api_custom_event.cc
-    out/plugin_api_dom_string_map.cc
-    out/plugin_api_element_attributes.cc
-    out/plugin_api_event.cc
-    out/plugin_api_error_event.cc
-    out/plugin_api_focus_event.cc
-    out/plugin_api_gesture_event.cc
-    out/plugin_api_hashchange_event.cc
-    out/plugin_api_hybrid_router_change_event.cc
-    out/plugin_api_inline_css_style_declaration.cc
-    out/plugin_api_input_event.cc
-    out/plugin_api_intersection_change_event.cc
-    out/plugin_api_pop_state_event.cc
-    out/plugin_api_message_event.cc
-    out/plugin_api_mouse_event.cc
-    out/plugin_api_mutation_observer_registration.cc
-    out/plugin_api_performance_entry.cc
-    out/plugin_api_performance.cc
-    out/plugin_api_performance_mark.cc
-    out/plugin_api_performance_measure.cc
-    out/plugin_api_pointer_event.cc
-    out/plugin_api_promise_rejection_event.cc
-    out/plugin_api_touch.cc
-    out/plugin_api_transition_event.cc
-    out/plugin_api_ui_event.cc
+    code_gen/plugin_api_animation_event.cc
+    code_gen/plugin_api_bounding_client_rect.cc
+    code_gen/plugin_api_close_event.cc
+    code_gen/plugin_api_computed_css_style_declaration.cc
+    code_gen/plugin_api_css_style_declaration.cc
+    code_gen/plugin_api_custom_event.cc
+    code_gen/plugin_api_dom_string_map.cc
+    code_gen/plugin_api_element_attributes.cc
+    code_gen/plugin_api_event.cc
+    code_gen/plugin_api_error_event.cc
+    code_gen/plugin_api_focus_event.cc
+    code_gen/plugin_api_gesture_event.cc
+    code_gen/plugin_api_hashchange_event.cc
+    code_gen/plugin_api_hybrid_router_change_event.cc
+    code_gen/plugin_api_inline_css_style_declaration.cc
+    code_gen/plugin_api_input_event.cc
+    code_gen/plugin_api_intersection_change_event.cc
+    code_gen/plugin_api_pop_state_event.cc
+    code_gen/plugin_api_message_event.cc
+    code_gen/plugin_api_mouse_event.cc
+    code_gen/plugin_api_mutation_observer_registration.cc
+    code_gen/plugin_api_performance_entry.cc
+    code_gen/plugin_api_performance.cc
+    code_gen/plugin_api_performance_mark.cc
+    code_gen/plugin_api_performance_measure.cc
+    code_gen/plugin_api_pointer_event.cc
+    code_gen/plugin_api_promise_rejection_event.cc
+    code_gen/plugin_api_touch.cc
+    code_gen/plugin_api_transition_event.cc
+    code_gen/plugin_api_ui_event.cc
   )
 
 

@@ -69,7 +69,7 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
 
     if (exception_state.HasException()) {
       context->HandleException(exception_state);
-      return nullptr;
+      return return_value;
     }
 
     return return_value;
@@ -123,8 +123,10 @@ static NativeValue* handleInvokeModuleTransientCallbackWrapper(void* ptr,
       [](ModuleContext* module_context, double context_id, const char* errmsg, NativeValue* extra_data,
          Dart_PersistentHandle persistent_handle, InvokeModuleResultCallback result_callback) {
         NativeValue* result = handleInvokeModuleTransientCallback(module_context, context_id, errmsg, extra_data);
-        module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
-            module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+        if (result != nullptr && result_callback != nullptr) {
+          module_context->context->dartIsolateContext()->dispatcher()->PostToDart(
+              module_context->context->isDedicated(), ReturnResultToDart, persistent_handle, result, result_callback);
+        }
       },
       moduleContext, context_id, errmsg, extra_data, persistent_handle, result_callback);
   return nullptr;
@@ -147,7 +149,7 @@ ScriptValue ModuleManager::__webf_invoke_module__(ExecutingContext* context,
                                                   const AtomicString& module_name,
                                                   const AtomicString& method,
                                                   ExceptionState& exception) {
-  ScriptValue empty = ScriptValue::Empty(context->ctx());
+  ScriptValue empty = ScriptValue::CreateJsonObject(context->ctx(), "[]", 2);
   return __webf_invoke_module__(context, module_name, method, empty, nullptr, exception);
 }
 
@@ -201,11 +203,18 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
                                                     context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
-                                                    handleInvokeModuleTransientCallbackWrapper);
+                                                    nullptr, handleInvokeModuleTransientCallbackWrapper);
   } else {
+    char errmsg[1024];
+    errmsg[0] = 0;
     result = context->dartMethodPtr()->invokeModule(
         context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
-        module_name_string.get(), method_name_string.get(), &params, handleInvokeModuleUnexpectedCallback);
+        module_name_string.get(), method_name_string.get(), &params, errmsg, nullptr);
+
+    if (errmsg[0] != 0) {
+      exception.ThrowException(context->ctx(), ErrorType::InternalError, errmsg);
+      return nullptr;
+    }
   }
 
   context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();

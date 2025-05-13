@@ -34,16 +34,10 @@ class CSSStyleSheet implements StyleSheet, Comparable {
   }
 
   /// Synchronously replaces the content of the stylesheet with the content passed into it.
-  replaceSync(String text, {required double windowWidth, required double windowHeight, required bool isDarkMode}) {
+  replaceSync(String text, {required double windowWidth, required double windowHeight, required bool? isDarkMode}) {
     cssRules.clear();
     List<CSSRule> rules = CSSParser(text).parseRules(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
     cssRules.addAll(rules);
-  }
-
-  Future replace(String text, {required double windowWidth, required double windowHeight, required bool isDarkMode}) async {
-    return Future(() {
-      replaceSync(text, windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: isDarkMode);
-    });
   }
 
   @override

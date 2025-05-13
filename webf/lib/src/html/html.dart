@@ -12,6 +12,7 @@ import 'package:webf/bridge.dart';
 const String HTML = 'HTML';
 const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
+  OVERFLOW: AUTO
 };
 
 class HTMLElement extends Element {
@@ -21,6 +22,12 @@ class HTMLElement extends Element {
       flutter.FocusManager.instance.primaryFocus?.unfocus();
     });
   }
+
+  @override
+  bool get managedByFlutterWidget => true;
+
+  @override
+  bool get isRepaintBoundary => true;
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
@@ -39,24 +46,41 @@ class HTMLElement extends Element {
   }
 
   @override
-  void ensureChildAttached([flutter.Element? flutterWidgetElement]) {
-    assert(!managedByFlutterWidget);
-    final box = domRenderer as RenderLayoutBox?;
-    if (box == null) return;
-    for (Node child in childNodes) {
-      if (!child.isRendererAttachedToSegmentTree) {
-        child.attachTo(this);
-        child.ensureChildAttached();
-      }
-    }
+  Node appendChild(Node child) {
+    Node node = super.appendChild(child);
+    return node;
+  }
+
+  @override
+  Node removeChild(Node child) {
+    Node node = super.removeChild(child);
+    return node;
+  }
+
+  @override
+  flutter.Widget toWidget({flutter.Key? key}) {
+    flutter.Widget child = super.toWidget(key: key);
+    return flutter.ScrollConfiguration(
+      behavior: flutter.ScrollBehavior().copyWith(scrollbars: false),
+      child: child
+    );
   }
 
   // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
   @override
-  bool get isRendererAttachedToSegmentTree => domRenderer != null;
+  bool get isRendererAttachedToSegmentTree => attachedRenderer != null;
+
+  void _markEntireRenderObjectTreeNeedsLayout() {
+    visitor(flutter.RenderObject child) {
+      child.markNeedsLayout();
+      child.visitChildren(visitor);
+    }
+
+    renderStyle.visitChildren(visitor);
+  }
 
   @override
-  void setRenderStyle(String property, String present, { String? baseHref }) {
+  void setRenderStyle(String property, String present, {String? baseHref}) {
     switch (property) {
       // Visible should be interpreted as auto and clip should be interpreted as hidden when overflow apply to html.
       // https://drafts.csswg.org/css-overflow-3/#overflow-propagation
@@ -68,6 +92,9 @@ class HTMLElement extends Element {
         } else if (present == CLIP) {
           present = HIDDEN;
         }
+        break;
+      case FONT_SIZE:
+        _markEntireRenderObjectTreeNeedsLayout();
         break;
     }
     super.setRenderStyle(property, present);

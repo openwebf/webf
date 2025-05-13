@@ -1,0 +1,72 @@
+<template>
+    <div class="share-link-preview-card" @click="viewDetail">
+      <div v-if="data.link" class="preview-box">
+        <smart-image 
+          v-if="data.logoUrl" 
+          class="logo" 
+          :src="data.logoUrl"
+        />
+        <div class="link" :numberOfLines="1">{{ data.title }}</div>
+      </div>
+      <div class="footer">
+        <share-link-count :viewsCount="data.viewsCount" :likesCount="data.likesCount" :commentsCount="data.commentsCount" />
+      </div>
+    </div>
+  </template>
+  
+  <script>
+  import SmartImage from '@/Components/SmartImage.vue';
+  import ShareLinkCount from '../ShareLinkCount.vue';
+  export default {
+    name: 'ShareLinkPreviewCard',
+    components: {
+        SmartImage,
+        ShareLinkCount,
+    },
+    props: {
+      data: {
+        type: Object,
+        required: true
+      }
+    },
+    methods: {
+      viewDetail() {
+        window.webf.hybridHistory.pushState({
+          id: this.data.id
+        }, '/share_link');
+      }
+    }
+  }
+  </script>
+  
+  <style scoped>
+  .share-link-preview-card {
+    padding: 16px;
+    background-color: var(--background-primary);
+    margin-top: 8px;
+    border-radius: 8px;
+
+    .preview-box {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      padding: 12px;
+      background-color: var(--background-secondary);
+      border-radius: 6px;
+      margin-bottom: 12px;
+
+      .logo {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        margin-right: 8px;
+      }
+
+      .link {
+        flex: 1;
+        font-size: 14px;
+        color: var(--font-color-secondary);
+      }
+    }
+  }
+  </style>

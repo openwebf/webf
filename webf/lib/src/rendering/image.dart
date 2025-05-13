@@ -4,6 +4,7 @@
  */
 import 'dart:ui' as ui show Image;
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 import 'package:webf/src/rendering/logic_box.dart';
 
 class WebFRenderImage extends RenderImage {
@@ -19,11 +20,33 @@ class WebFRenderImage extends RenderImage {
 
   @override
   void performLayout() {
+    super.performLayout();
     Size trySize = constraints.biggest;
-    size = trySize.isInfinite ? constraints.smallest : trySize;
+    size = trySize.isInfinite ? size : trySize;
   }
 
   LogicInlineBox createLogicInlineBox() {
     return LogicInlineBox(renderObject: this);
+  }
+}
+
+class WebFRawImage extends RawImage {
+  const WebFRawImage({
+    super.key,
+    super.image,
+    super.debugImageLabel,
+    super.width,
+    super.height,
+    super.scale = 1.0,
+    super.color,
+    super.opacity,
+    super.colorBlendMode,
+    super.fit,
+    super.alignment
+  });
+
+  @override
+  RenderImage createRenderObject(BuildContext context) {
+    return WebFRenderImage(image: image?.clone(), fit: fit);
   }
 }

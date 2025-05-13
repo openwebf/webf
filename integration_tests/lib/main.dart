@@ -15,6 +15,7 @@ import 'test_module.dart';
 import 'local_http_server.dart';
 import 'utils/mem_leak_detector.dart';
 import 'webf_tester.dart';
+import 'modules/array_buffer_module.dart';
 
 String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
@@ -22,14 +23,14 @@ String? err = (AnsiPen()..red())('[TEST FAILED]');
 final String __dirname = path.dirname(Platform.script.path);
 final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
-Future<int> findAvailablePort({int startPort = 4000, int endPort = 5000}) async {
+Future<int> findAvailablePort(
+    {int startPort = 4000, int endPort = 5000}) async {
   for (var port = startPort; port <= endPort; port++) {
     try {
       final server = await ServerSocket.bind(InternetAddress.anyIPv4, port);
 
       // Handle incoming connections
-      server.listen((Socket client) {
-      });
+      server.listen((Socket client) {});
       server.close();
       return port; // Exit once successfully bound to a port
     } catch (e) {}
@@ -48,7 +49,15 @@ List<List<int>> mems = [];
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
-  enableWebFProfileTracking = true;
+  // Initialize the controller manager
+  WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
+      maxAliveInstances: 1,
+      maxAttachedInstances: 1,
+      onControllerDisposed: (String name, WebFController controller) {
+        print('controller disposed: $name $controller');
+      }));
+
+  // enableWebFProfileTracking = true;
   // Overrides library name.
   WebFDynamicLibrary.testLibName = 'webf_test';
   defineWebFCustomElements();
@@ -56,6 +65,8 @@ void main() async {
   int mockServerPort = await findAvailablePort();
 
   ModuleManager.defineModule((moduleManager) => DemoModule(moduleManager));
+  ModuleManager.defineModule(
+      (moduleManager) => ArrayBufferModule(moduleManager));
   Process mockHttpServer = await startHttpMockServer(mockServerPort);
   sleep(Duration(seconds: 2));
 

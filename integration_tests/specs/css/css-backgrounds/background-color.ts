@@ -24,7 +24,7 @@ describe('Background-color', () => {
 
   // @TODO: window.onload will not be triggered in single test
   // cause all tests are placed in the same page.
-  xit('red with display when window.onload', async(done) => {
+  xit('red with display when window.onload', async (done) => {
     window.onload = async () => {
       div.style.display = 'none';
       await snapshot();
@@ -86,35 +86,36 @@ describe('Background-color', () => {
     });
   });
 
-it("computed", async () => {
-  let target;
-  target = createElement('div', {
-    id: 'target',
-    style: {
-      color: 'lime',
-      'box-sizing': 'border-box',
-    },
-  });
-  BODY.appendChild(target);
+  it("computed", async (done) => {
+    let target;
+    target = createElement('div', {
+      id: 'target',
+      style: {
+        color: 'lime',
+        'box-sizing': 'border-box',
+      },
+    });
+    BODY.appendChild(target);
 
-  test_computed_value('background-color', 'currentcolor', 'rgb(0, 255, 0)');
+    target.ononscreen = () => {
+      test_computed_value('background-color', 'currentcolor', 'rgb(0, 255, 0)');
 
-  test_computed_value('background-color', 'red', 'rgb(255, 0, 0)');
-  test_computed_value('background-color', '#00FF00', 'rgb(0, 255, 0)');
-  test_computed_value('background-color', 'rgb(0, 0, 255)');
-  test_computed_value(
-    'background-color',
-    'rgb(100%, 100%, 0%)',
-  'rgb(255, 255, 0)'
-  );
-  test_computed_value(
-    'background-color',
-    'hsl(120, 100%, 50%)',
-    'rgb(0, 255, 0)'
-  );
-  test_computed_value('background-color', 'transparent', 'rgba(0, 0, 0, 0)');
+      test_computed_value('background-color', 'red', 'rgb(255, 0, 0)');
+      test_computed_value('background-color', '#00FF00', 'rgb(0, 255, 0)');
+      test_computed_value('background-color', 'rgb(0, 0, 255)');
+      test_computed_value(
+        'background-color',
+        'rgb(100%, 100%, 0%)',
+        'rgb(255, 255, 0)'
+      );
+      test_computed_value(
+        'background-color',
+        'hsl(120, 100%, 50%)',
+        'rgb(0, 255, 0)'
+      );
+      test_computed_value('background-color', 'transparent', 'rgba(0, 0, 0, 0)');
+      done();
+    }
 
-
-
-})
+  })
 });

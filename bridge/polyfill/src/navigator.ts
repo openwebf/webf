@@ -5,7 +5,21 @@
 
 import { webf } from './webf';
 
-export const navigator = {
+export interface NavigatorInterface {
+  readonly userAgent: string;
+  readonly platform: string;
+  readonly language: string;
+  readonly languages: string[];
+  readonly appName: string;
+  readonly appVersion: string;
+  readonly hardwareConcurrency: number;
+  readonly clipboard: {
+    readText(): Promise<string>;
+    writeText(text: string): Promise<void>;
+  };
+}
+
+export const navigator: NavigatorInterface = {
   // UA is read-only.
   get userAgent() {
     return webf.invokeModule('Navigator', 'getUserAgent');
@@ -31,24 +45,10 @@ export const navigator = {
   },
   clipboard: {
     readText() {
-      return new Promise((resolve, reject) => {
-        webf.invokeModule('Clipboard', 'readText', null, (e, data) => {
-          if (e) {
-            return reject(e);
-          }
-          resolve(data);
-        });
-      });
+      return webf.invokeModuleAsync('Clipboard', 'readText', null);
     },
     writeText(text: string) {
-      return new Promise((resolve, reject) => {
-        webf.invokeModule('Clipboard', 'writeText', String(text), (e, data) => {
-          if (e) {
-            return reject(e);
-          }
-          resolve(data);
-        });
-      });
+      return webf.invokeModuleAsync('Clipboard', 'writeText', String(text));
     }
   }
 }

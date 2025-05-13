@@ -20,7 +20,7 @@ class NavigatorModule extends BaseModule {
   void dispose() {}
 
   @override
-  String invoke(String method, params, callback) {
+  String invoke(String method, params) {
     switch (method) {
       case 'getUserAgent':
         return getUserAgent();

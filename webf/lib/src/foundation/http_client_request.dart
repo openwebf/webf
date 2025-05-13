@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:webf/foundation.dart';
 
 import 'cookie_jar.dart';
 import 'http_cache.dart';
@@ -25,11 +26,14 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   final Uri _uri;
 
   HttpClientRequest? _backendRequest;
+  WebFBundle? ownerBundle;
 
   // Saving all the data before calling real `close` to [HttpClientRequest].
   final List<int> _data = [];
+
   // Saving cookies.
   final List<Cookie> _cookies = <Cookie>[];
+
   // Saving request headers.
   final HttpHeaders _httpHeaders = createHttpHeaders();
 
@@ -71,19 +75,19 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   }
 
   Future<HttpClientRequest?> _beforeRequest(
-      HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest) async {
+      String requestId, HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest) async {
     try {
-      return await _clientInterceptor.beforeRequest(_clientRequest);
+      return await _clientInterceptor.beforeRequest(requestId, _clientRequest);
     } catch (err, stack) {
       print('$err $stack');
     }
     return null;
   }
 
-  Future<HttpClientResponse?> _afterResponse(HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest,
-      HttpClientResponse _clientResponse) async {
+  Future<HttpClientResponse?> _afterResponse(String requestId, HttpClientInterceptor _clientInterceptor,
+      HttpClientRequest _clientRequest, HttpClientResponse _clientResponse) async {
     try {
-      return await _clientInterceptor.afterResponse(_clientRequest, _clientResponse);
+      return await _clientInterceptor.afterResponse(requestId, _clientRequest, _clientResponse);
     } catch (err, stack) {
       print('$err $stack');
     }
@@ -91,9 +95,9 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   }
 
   Future<HttpClientResponse?> _shouldInterceptRequest(
-      HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest) async {
+      String requestId, HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest) async {
     try {
-      return await _clientInterceptor.shouldInterceptRequest(_clientRequest);
+      return await _clientInterceptor.shouldInterceptRequest(requestId, _clientRequest);
     } catch (err, stack) {
       print('$err $stack');
     }
@@ -106,6 +110,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   Future<HttpClientResponse> close() async {
     double? contextId = WebFHttpOverrides.getContextHeader(headers);
     HttpClientRequest request = this;
+    String requestId = DateTime.now().millisecondsSinceEpoch.toString();
 
     if (contextId != null) {
       // Standard reference: https://datatracker.ietf.org/doc/html/rfc7231#section-5.5.2
@@ -136,9 +141,9 @@ class ProxyHttpClientRequest extends HttpClientRequest {
 
       // Step 1: Handle request.
       if (clientInterceptor != null) {
-        request = await _beforeRequest(clientInterceptor, request) ?? request;
+        request = await _beforeRequest(requestId, clientInterceptor, request) ?? request;
       }
-      await CookieJar.loadForRequest(_uri, request.cookies);
+      await CookieManager.loadForRequest(_uri, request.cookies);
 
       // Step 2: Handle cache-control and expires,
       //        if hit, no need to open request.
@@ -148,6 +153,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         cacheObject = await cacheController.getCacheObject(request.uri);
         if (cacheObject.hitLocalCache(request)) {
           HttpClientResponse? cacheResponse = await cacheObject.toHttpClientResponse(_nativeHttpClient);
+          ownerBundle?.setLoadingFromCache();
           if (cacheResponse != null) {
             return cacheResponse;
           }
@@ -176,7 +182,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
       // Step 4: Lifecycle of shouldInterceptRequest
       HttpClientResponse? response;
       if (clientInterceptor != null) {
-        response = await _shouldInterceptRequest(clientInterceptor, request);
+        response = await _shouldInterceptRequest(requestId, clientInterceptor, request);
       }
 
       bool hitInterceptorResponse = response != null;
@@ -194,19 +200,19 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         response = cacheObject == null
             ? rawResponse
             : await HttpCacheController.instance(origin)
-                .interceptResponse(request, rawResponse, cacheObject, _nativeHttpClient);
+                .interceptResponse(request, rawResponse, cacheObject, _nativeHttpClient, ownerBundle);
         hitNegotiateCache = rawResponse != response;
       }
 
       // Step 5: Lifecycle of afterResponse.
       if (clientInterceptor != null) {
-        final HttpClientResponse? interceptorResponse = await _afterResponse(clientInterceptor, request, response);
+        final HttpClientResponse? interceptorResponse = await _afterResponse(requestId, clientInterceptor, request, response);
         if (interceptorResponse != null) {
           hitInterceptorResponse = true;
           response = interceptorResponse;
         }
       }
-      await CookieJar.saveFromResponseRaw(uri, response.headers[HttpHeaders.setCookieHeader]);
+      await CookieManager.saveFromResponseRaw(uri, response.headers[HttpHeaders.setCookieHeader]);
 
       // Check match cache, and then return cache.
       if (hitInterceptorResponse || hitNegotiateCache) {
@@ -217,7 +223,7 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         // Step 6: Intercept response by cache controller (handle 304).
         // Note: No need to negotiate cache here, this is final response, hit or not hit.
         return HttpCacheController.instance(origin)
-            .interceptResponse(request, response, cacheObject, _nativeHttpClient);
+            .interceptResponse(request, response, cacheObject, _nativeHttpClient, ownerBundle);
       } else {
         return response;
       }

@@ -173,6 +173,7 @@ class Event : public ScriptWrappable {
   virtual bool IsIntersectionchangeEvent() const;
   virtual bool IsHashChangeEvent() const;
   virtual bool IsHybridRouterChangeEvent() const;
+  virtual bool IsScreenEvent() const;
 
   // Drag events are a subset of mouse events.
   virtual bool IsDragEvent() const;

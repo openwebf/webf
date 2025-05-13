@@ -378,6 +378,10 @@ bool Element::IsWidgetElement() const {
   return false;
 }
 
+bool Element::IsWebFTouchAreaElement() const {
+  return false;
+}
+
 void Element::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(attributes_);
   visitor->TraceMember(cssom_wrapper_);
@@ -467,6 +471,7 @@ void ElementSnapshotPromiseReader::Start() {
             reader->HandleSnapshot(bytes, length);
             dart_free(bytes);
           }
+          reader->context_->UnRegisterActiveScriptPromise(reader->resolver_.get());
           delete reader;
         },
         reader, error, bytes, length);
@@ -556,6 +561,7 @@ ScriptPromise Element::toBlob(ExceptionState& exception_state) {
 ScriptPromise Element::toBlob(double device_pixel_ratio, ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
   auto* context = GetExecutingContext();
+  context->RegisterActiveScriptPromise(resolver);
   context->DrawCanvasElementIfNeeded();
   new ElementSnapshotPromiseReader(GetExecutingContext(), this, resolver, device_pixel_ratio);
   return resolver->Promise();

@@ -46,15 +46,13 @@ class SVGSVGElement extends SVGGraphicsElement {
 
   @override
   RenderBoxModel createRenderSVG({RenderBoxModel? previous, bool isRepaintBoundary = false}) {
-    RenderSVGRoot root = RenderSVGRoot(renderStyle: renderStyle)..viewBox = viewBox..ratio = ratio;
+    return RenderSVGRoot(renderStyle: renderStyle)..viewBox = viewBox..ratio = ratio;
+  }
 
-    if (previous is RenderSVGRoot) {
-      List<RenderBox> children = previous.getChildren();
-      previous.removeAll();
-      root.addAll(children);
-    }
-
-    return root;
+  @override
+  flutter.Widget toWidget({flutter.Key? key}) {
+    List<flutter.Widget> children = childNodes.map((element) => element.toWidget()).toList();
+    return WebFRenderLayoutWidgetAdaptor(webFElement: this, children: children);
   }
 
   @override
@@ -81,8 +79,8 @@ class SVGSVGElement extends SVGGraphicsElement {
           setter: (val) {
             final nextViewBox = parseViewBox(val);
             _viewBox = nextViewBox;
-            if (nextViewBox != (renderStyle.domRenderBoxModel as RenderSVGRoot?)?.viewBox) {
-              (renderStyle.domRenderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
+            if (nextViewBox != (renderStyle.attachedRenderBoxModel as RenderSVGRoot?)?.viewBox) {
+              (renderStyle.attachedRenderBoxModel as RenderSVGRoot?)?.viewBox = nextViewBox;
             }
           }),
       'preserveAspectRatio': ElementAttributeProperty(setter: (val) {

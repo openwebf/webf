@@ -1,22 +1,23 @@
 use webf_sys::{AddEventListenerOptions, Event, EventTargetMethods, ExecutingContext};
 use webf_test_macros::{webf_test, webf_test_callback};
 use webf_test_utils::{callback_runner::TestDone, common::TestCaseMetadata};
+use webf_test_utils::safe_assert_eq;
 
 #[webf_test]
 pub fn test_location_should_update_when_push_state(_metadata: TestCaseMetadata, context: ExecutingContext) {
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_str = r#"{"name": 1}"#;
   history.push_state_with_url(json_str, "", "/sample", &exception_state);
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/sample");
+  safe_assert_eq!(pathname, "/sample".to_string());
   let state = history.state(&exception_state);
   let expected: serde_json::Value = serde_json::from_str(json_str).unwrap();
-  assert_eq!(state, expected);
+  safe_assert_eq!(state, expected);
 
   history.back(&exception_state);
 }
@@ -27,7 +28,7 @@ pub async fn test_pop_state_event_will_trigger_when_navigate_back(_metadata: Tes
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_str = r#"{"name": 2}"#;
@@ -38,11 +39,11 @@ pub async fn test_pop_state_event_will_trigger_when_navigate_back(_metadata: Tes
     let exception_state = context.create_exception_state();
     let event = event.as_pop_state_event().unwrap();
     let state = event.state(&exception_state);
-    assert_eq!(state.is_null(), true);
+    safe_assert_eq!(state.is_null(), true);
 
     let location = context.location();
     let pathname = location.pathname(&exception_state);
-    assert_eq!(pathname, "/public/core.build.js");
+    safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
     set_done();
   });
@@ -72,7 +73,7 @@ pub fn test_push_state_with_no_url_will_default_to_current_url(_metadata: TestCa
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_str = r#"{"name": 1}"#;
@@ -81,7 +82,7 @@ pub fn test_push_state_with_no_url_will_default_to_current_url(_metadata: TestCa
   assert_eq!(pathname, "/public/core.build.js");
   let state = history.state(&exception_state);
   let expected: serde_json::Value = serde_json::from_str(json_str).unwrap();
-  assert_eq!(state, expected);
+  safe_assert_eq!(state, expected);
 
   history.back(&exception_state);
 }
@@ -92,7 +93,7 @@ pub async fn test_replace_state_should_work(_metadata: TestCaseMetadata, context
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_state_1 = r#"{"name": 0}"#;
@@ -106,11 +107,11 @@ pub async fn test_replace_state_should_work(_metadata: TestCaseMetadata, context
     let event = event.as_pop_state_event().unwrap();
     let state = event.state(&exception_state);
     let expected: serde_json::Value = serde_json::from_str(json_state_1).unwrap();
-    assert_eq!(state.to_json(), expected);
+    safe_assert_eq!(state.to_json(), expected);
 
     let location = context.location();
     let pathname = location.pathname(&exception_state);
-    assert_eq!(pathname, "/public/core.build.js");
+    safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
     set_done();
   });
@@ -144,7 +145,7 @@ pub async fn test_go_back_should_work(_metadata: TestCaseMetadata, context: Exec
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_state_1 = r#"{"name": 0}"#;
@@ -158,11 +159,11 @@ pub async fn test_go_back_should_work(_metadata: TestCaseMetadata, context: Exec
     let event = event.as_pop_state_event().unwrap();
     let state = event.state(&exception_state);
     let expected: serde_json::Value = serde_json::from_str(json_state_1).unwrap();
-    assert_eq!(state.to_json(), expected);
+    safe_assert_eq!(state.to_json(), expected);
 
     let location = context.location();
     let pathname = location.pathname(&exception_state);
-    assert_eq!(pathname, "/public/core.build.js");
+    safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
     set_done();
   });
@@ -196,7 +197,7 @@ pub async fn test_hash_change_should_fire_when_history_back(_metadata: TestCaseM
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_state = r#"{"name": 2}"#;
@@ -208,11 +209,11 @@ pub async fn test_hash_change_should_fire_when_history_back(_metadata: TestCaseM
     let parser = url_parse::core::Parser::new(None);
     let old_url = event.old_url();
     let old_anchor = parser.parse(&old_url).unwrap().anchor.unwrap();
-    assert_eq!(old_anchor, "/page_1");
+    safe_assert_eq!(old_anchor, "/page_1".to_string());
 
     let new_url = event.new_url();
     let new_anchor = parser.parse(&new_url).unwrap().anchor.unwrap();
-    assert_eq!(new_anchor, "hash=hashValue");
+    safe_assert_eq!(new_anchor, "hash=hashValue".to_string());
 
     set_done();
   });
@@ -243,7 +244,7 @@ pub async fn test_hash_change_when_go_back_should_work(_metadata: TestCaseMetada
   let exception_state = context.create_exception_state();
   let location = context.location();
   let pathname = location.pathname(&exception_state);
-  assert_eq!(pathname, "/public/core.build.js");
+  safe_assert_eq!(pathname, "/public/core.build.js".to_string());
 
   let history = context.history();
   let json_state_1 = r#"{"name": 0}"#;
@@ -257,11 +258,11 @@ pub async fn test_hash_change_when_go_back_should_work(_metadata: TestCaseMetada
     let parser = url_parse::core::Parser::new(None);
     let old_url = event.old_url();
     let old_anchor = parser.parse(&old_url).unwrap().anchor.unwrap();
-    assert_eq!(old_anchor, "/page_1");
+    safe_assert_eq!(old_anchor, "/page_1".to_string());
 
     let new_url = event.new_url();
     let new_anchor = parser.parse(&new_url).unwrap().anchor.unwrap();
-    assert_eq!(new_anchor, "hash=hashValue");
+    safe_assert_eq!(new_anchor, "hash=hashValue".to_string());
 
     set_done();
   });

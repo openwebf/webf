@@ -5,6 +5,24 @@
 
 import {webf} from './webf';
 
+export interface WebSocketInterface extends EventTarget {
+  readonly CONNECTING: number;
+  readonly OPEN: number;
+  readonly CLOSING: number;
+  readonly CLOSED: number;
+  readonly extensions: string;
+  readonly protocol: string;
+  binaryType: string;
+  readonly url: string;
+  readonly readyState: number;
+  
+  addEventListener(type: string, callback: EventListener | EventListenerObject): void;
+  removeEventListener(type: string, callback: EventListener | EventListenerObject): void;
+  dispatchEvent(event: Event): boolean;
+  send(data: string | ArrayBufferLike | Blob | ArrayBufferView): void;
+  close(code?: number, reason?: string): void;
+}
+
 function validateUrl(url: string) {
   let protocol = url.substring(0, url.indexOf(':'));
   if (protocol !== 'ws' && protocol !== 'wss') {
@@ -49,7 +67,7 @@ var BinaryType = Object.create(null);
   BinaryType["arraybuffer"] = "arraybuffer";
 })(BinaryType || (BinaryType = {}));
 
-const wsClientMap = {};
+const wsClientMap: Record<string, WebSocket> = {};
 
 function dispatchWebSocketEvent(clientId: string, event: any) {
   let client = wsClientMap[clientId];
@@ -92,16 +110,16 @@ const builtInEvents$1 = [
   'open', 'close', 'message', 'error'
 ];
 
-export class WebSocket extends EventTarget {
-  CONNECTING: string;
-  OPEN: string;
-  CLOSING: string;
-  CLOSED: string;
+export class WebSocket extends EventTarget implements WebSocketInterface {
+  CONNECTING: number;
+  OPEN: number;
+  CLOSING: number;
+  CLOSED: number;
   extensions: string;
   protocol: string;
   binaryType: string;
   url: string;
-  readyState: string;
+  readyState: number;
   id: string;
 
   constructor(url: string, protocol: string) {
@@ -124,18 +142,18 @@ export class WebSocket extends EventTarget {
   }
 
   addEventListener(type: string, callback: EventListener | EventListenerObject) {
-    webf.invokeModule('WebSocket', 'addEvent', ([this.id, type]));
+    webf.invokeModule('WebSocket', 'addEvent', this.id, type);
     super.addEventListener(type, callback);
   }
 
   // TODO add blob arrayBuffer ArrayBufferView format support
   send(message: string) {
-    webf.invokeModule('WebSocket', 'send', ([this.id, message]));
+    webf.invokeModule('WebSocket', 'send', this.id, message);
   }
 
-  close(code: string, reason: string) {
+  close(code: number, reason: string) {
     this.readyState = ReadyState.CLOSING;
-    webf.invokeModule('WebSocket', 'close', ([this.id, code, reason]));
+    webf.invokeModule('WebSocket', 'close', this.id, code, reason);
   }
 }
 

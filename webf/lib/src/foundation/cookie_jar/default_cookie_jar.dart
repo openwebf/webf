@@ -48,7 +48,8 @@ class DefaultCookieJar implements CookieJar {
     final list = <Cookie>[];
     final urlPath = uri.path.isEmpty ? '/' : uri.path;
     // Load cookies without "domain" attribute, include port.
-    final hostname = uri.host;
+    bool isLocalPath = uri.isScheme('assets') || uri.isScheme('file');
+    final hostname = isLocalPath ? uri.scheme : uri.host;
     for (final domain in hostCookies.keys) {
       if (hostname == domain) {
         final cookies =
@@ -104,7 +105,8 @@ class DefaultCookieJar implements CookieJar {
         index = 1;
         // Save cookies without "domain" attribute
         path = cookie.path ?? (uri.path.isEmpty ? '/' : uri.path);
-        domain = uri.host;
+        bool isLocalPath = uri.isScheme('assets') || uri.isScheme('file');
+        domain = isLocalPath ? uri.scheme : uri.host;
       }
       var mapDomain =
           _cookies[index][domain] ?? <String, Map<String, dynamic>>{};
@@ -132,7 +134,8 @@ class DefaultCookieJar implements CookieJar {
   /// [withDomainSharedCookie] `true` will delete the domain-shared cookies.
   @override
   Future<void> delete(Uri uri, [bool withDomainSharedCookie = false]) async {
-    final host = uri.host;
+    bool isLocalPath = uri.isScheme('assets') || uri.isScheme('file');
+    final host = isLocalPath ? uri.scheme : uri.host;
     hostCookies.remove(host);
     if (withDomainSharedCookie) {
       domainCookies.removeWhere(

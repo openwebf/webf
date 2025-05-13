@@ -5,6 +5,21 @@
 
 import { URLSearchParams } from './url-search-params';
 
+export interface URLInterface {
+  href: string;
+  protocol: string;
+  host: string;
+  hostname: string;
+  port: string;
+  pathname: string;
+  search: string;
+  hash: string;
+  origin: string;
+  readonly searchParams: URLSearchParams;
+  
+  toString(): string;
+}
+
 // https://github.com/Polymer/URL
 var relative = Object.create(null);
 relative.ftp = 21;
@@ -59,7 +74,7 @@ const ALPHANUMERIC = /[a-zA-Z0-9\+\-\.]/;
 // Does not process domain names or IP addresses.
 // Does not handle encoding for the query parameter.
 
-export class URL {
+export class URL implements URLInterface {
   _url: string;
   _isInvalid: boolean;
   _isRelative: boolean;
@@ -89,14 +104,15 @@ export class URL {
 
     const searchParams = this._searchParams = new URLSearchParams(this.search);
 
-    ['append', 'delete', 'set'].forEach((methodName) => {
+    ['append', 'delete', 'set'].forEach((methodName: keyof URLSearchParams) => {
       var method = searchParams[methodName];
 
       searchParams[methodName] = (...args: any) => {
-        method.apply(searchParams, args);
+        const result = method.apply(searchParams, args);
         this._shouldUpdateSearchParams = false;
         this.search = searchParams.toString();
         this._shouldUpdateSearchParams = true;
+        return result;
       };
     });
   }

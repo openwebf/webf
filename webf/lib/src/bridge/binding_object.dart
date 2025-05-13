@@ -100,7 +100,7 @@ abstract class BindingObject<T> extends Iterable<T> with DiagnosticableTreeMixin
 
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
-    properties.add(DiagnosticsProperty('pointer', pointer));
+    properties.add(DiagnosticsProperty('pointer', pointer?.toString()));
     properties.add(DiagnosticsProperty('contextId', contextId));
   }
 }
@@ -352,7 +352,7 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, {Bind
   if (bindingObject is WidgetElement) {
     bool shouldElementRebuild = bindingObject.shouldElementRebuild(key, originalValue, value);
     if (shouldElementRebuild) {
-      bindingObject.setState(() {});
+      bindingObject.state?.requestUpdateState();
     }
     bindingObject.propertyDidUpdate(key, value);
   }
@@ -367,7 +367,7 @@ dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args, {Bind
 dynamic _callBindingObjectMethods(BindingObject bindingObject, String method, List<dynamic> args) {
   if (bindingObject is StaticDefinedBindingObject) {
     StaticDefinedSyncBindingObjectMethod? syncMethod = bindingObject.getStaticDefinedSyncMethod(method);
-    StaticDefinedAsyncBindingObjectMethod? asyncMethod = syncMethod != null ? bindingObject.getStaticDefinedAsyncMethod(method) : null;
+    StaticDefinedAsyncBindingObjectMethod? asyncMethod = bindingObject.getStaticDefinedAsyncMethod(method);
     if (syncMethod != null) {
       return syncMethod.call(bindingObject, args);
     }

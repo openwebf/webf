@@ -119,7 +119,7 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginTopWithFirstChild {
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? renderStyle = isSelfScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
+    RenderStyle? renderStyle = getSelfRenderStyle();
     if (renderStyle == null) return 0.0;
 
     double paddingTop = renderStyle.paddingTop.computedValue;
@@ -184,13 +184,13 @@ mixin CSSMarginMixin on RenderStyle {
     double marginTop = _collapsedMarginTopWithFirstChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle =
-        isParentScrollingContentBox() ? getParentRenderStyle()!.getParentRenderStyle() : getParentRenderStyle();
+    RenderStyle? parentRenderStyle = getParentRenderStyle();
 
     if (parentRenderStyle == null) return 0.0;
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentNotRenderWidget = !parentRenderStyle.isSelfRenderWidget();
 
     // Margin top of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.
@@ -199,8 +199,9 @@ mixin CSSMarginMixin on RenderStyle {
         parentRenderStyle.effectiveDisplay == CSSDisplay.block &&
         (isParentOverflowVisible || isParentOverflowClip) &&
         parentRenderStyle.paddingTop.computedValue == 0 &&
+        isParentNotRenderWidget &&
         parentRenderStyle.effectiveBorderTopWidth.computedValue == 0 &&
-        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout)) {
+        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
       return 0;
     }
     return marginTop;
@@ -276,7 +277,7 @@ mixin CSSMarginMixin on RenderStyle {
   double get _collapsedMarginBottomWithLastChild {
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? renderStyle = isSelfScrollingContentBox() ? getParentRenderStyle() : getSelfRenderStyle();
+    RenderStyle? renderStyle = getSelfRenderStyle();
     if (renderStyle == null) return 0.0;
     double paddingBottom = renderStyle.paddingBottom.computedValue;
     double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
@@ -342,23 +343,24 @@ mixin CSSMarginMixin on RenderStyle {
     double marginBottom = _collapsedMarginBottomWithLastChild;
     // Use parent renderStyle if renderBoxModel is scrollingContentBox cause its style is not
     // the same with its parent.
-    RenderStyle? parentRenderStyle = isParentScrollingContentBox()
-        ? getParentRenderStyle<CSSMarginMixin>()?.getParentRenderStyle<CSSMarginMixin>()
-        : getParentRenderStyle<CSSMarginMixin>();
+    RenderStyle? parentRenderStyle = getParentRenderStyle<CSSMarginMixin>();
 
     if (parentRenderStyle == null) return 0.0;
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
+    bool isParentNotRenderWidget = !parentRenderStyle.isSelfRenderWidget();
+
     // Margin bottom of first child with parent which is in flow layout collapse with parent
     // which makes the margin top of itself 0.
     // Margin collapse does not work on document root box.
     if (!isParentDocumentRootBox() &&
         parentRenderStyle.effectiveDisplay == CSSDisplay.block &&
         (isParentOverflowVisible || isParentOverflowClip) &&
+        isParentNotRenderWidget &&
         parentRenderStyle.paddingBottom.computedValue == 0 &&
         parentRenderStyle.effectiveBorderBottomWidth.computedValue == 0 &&
-        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout)) {
+        parentRenderStyle.isParentBoxModelMatch((renderBoxModel, _) => renderBoxModel is RenderFlowLayout || renderBoxModel is RenderLayoutBoxWrapper)) {
       return 0;
     }
     return marginBottom;

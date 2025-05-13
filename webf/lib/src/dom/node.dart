@@ -109,7 +109,6 @@ typedef NodeVisitor = void Function(Node node);
 /// [Node] or [Element]s, which wrap [RenderObject]s, which provide the actual
 /// rendering of the application.
 abstract class RenderObjectNode {
-  RenderBox? get domRenderer;
   RenderBox? get attachedRenderer;
 
   /// Creates an instance of the [RenderObject] class that this
@@ -118,7 +117,6 @@ abstract class RenderObjectNode {
   ///
   /// This method should not do anything with the children of the render object.
   /// That should instead be handled by the method that overrides
-  /// [Node.attachTo] in the object rendered by this object.
   RenderBox createRenderer();
 
   /// The renderObject will be / has been insert into parent. You can apply properties
@@ -178,17 +176,19 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     _managedByFlutterWidget = true;
 
     Node? first = firstChild;
-    while(first != null) {
+    while (first != null) {
       first.managedByFlutterWidget = true;
       first = first.nextSibling;
     }
   }
 
+  @pragma('vm:prefer-inline')
   /// The Node.parentNode read-only property returns the parent of the specified node in the DOM tree.
   ContainerNode? get parentNode => parentOrShadowHostNode;
 
   ContainerNode? _parentOrShadowHostNode;
 
+  @pragma('vm:prefer-inline')
   ContainerNode? get parentOrShadowHostNode => _parentOrShadowHostNode;
 
   set parentOrShadowHostNode(ContainerNode? value) {
@@ -269,11 +269,12 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   Node(this.nodeType, [BindingContext? context]) : super(context);
 
   bool _isConnected = false;
+
   set isConnected(bool value) {
     _isConnected = value;
 
     Node? first = firstChild;
-    while(first != null) {
+    while (first != null) {
       first.isConnected = value;
       first = first.nextSibling;
     }
@@ -288,11 +289,29 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
 
   Node? get previousSibling => _previous;
 
+  Node? get attachedRenderPreviousSibling {
+    Node? previousSibling = this.previousSibling;
+    do {
+      if (previousSibling?.attachedRenderer != null) return previousSibling;
+      previousSibling = previousSibling?.previousSibling;
+    } while (previousSibling != null);
+    return null;
+  }
+
   set previousSibling(Node? value) {
     _previous = value;
   }
 
   Node? get nextSibling => _next;
+
+  Node? get attachedRenderNextSibling {
+    Node? nextSibling = this.nextSibling;
+    do {
+      if (nextSibling?.attachedRenderer != null) return nextSibling;
+      nextSibling = nextSibling?.nextSibling;
+    } while (nextSibling != null);
+    return null;
+  }
 
   set nextSibling(Node? value) {
     _next = value;
@@ -308,8 +327,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   flutter.Widget toWidget({Key? key}) {
     throw FlutterError('UnKnown node types for widget conversion');
   }
-
-  String get hashKey;
 
   // Is child renderObject attached.
   bool get isRendererAttached;
@@ -334,12 +351,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     }
     return false;
   }
-
-  /// Attach a renderObject to parent.
-  void attachTo(Element parent, {RenderBox? after}) {}
-
-  /// Unmount referenced render object.
-  void unmountRenderObjectInDOMMode({bool keepFixedAlive = false}) {}
 
   /// Release any resources held by this node.
   @override
@@ -386,9 +397,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     return null;
   }
 
-  /// Ensure child and child's child render object is attached.
-  void ensureChildAttached() {}
-
   @override
   void connectedCallback() {
     for (var child in childNodes) {
@@ -409,6 +417,13 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     super.dispatchEvent(event);
   }
 
+  @override
+  Future<void> dispatchEventUtilAdded(Event event) async {
+    if (disposed) return;
+    super.dispatchEventUtilAdded(event);
+  }
+
+  @pragma('vm:prefer-inline')
   @override
   EventTarget? get parentEventTarget => parentNode;
 
@@ -483,48 +498,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
       }
     }
     return children;
-  }
-
-  static RenderBox? findMostClosedSiblings(Node? previousSibling) {
-    RenderBox? afterRenderObject = previousSibling?.domRenderer;
-
-    // Found the most closed
-    if (afterRenderObject == null) {
-      Node? ref = previousSibling?.previousSibling;
-      while (ref != null && afterRenderObject == null) {
-        afterRenderObject = ref.domRenderer;
-        ref = ref.previousSibling;
-      }
-    }
-
-    // Renderer of referenceNode may not moved to a difference place compared to its original place
-    // in the dom tree due to position absolute/fixed.
-    // Use the renderPositionPlaceholder to get the same place as dom tree in this case.
-    if (afterRenderObject is RenderBoxModel) {
-      RenderBox? renderPositionPlaceholder = afterRenderObject.renderPositionPlaceholder;
-      if (renderPositionPlaceholder != null) {
-        afterRenderObject = renderPositionPlaceholder;
-      }
-    }
-
-    return afterRenderObject;
-  }
-
-  static RenderBox? findParentLastRenderBox(Node currentNode) {
-    RenderBox? after;
-    RenderBox? box = currentNode.domRenderer;
-    if (box is RenderLayoutBox) {
-      RenderLayoutBox? scrollingContentBox = box.renderScrollingContent;
-      if (scrollingContentBox != null) {
-        after = scrollingContentBox.lastChild;
-      } else {
-        after = box.lastChild;
-      }
-    } else if (box is ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>) {
-      after = (box as ContainerRenderObjectMixin<RenderBox, ContainerParentDataMixin<RenderBox>>).lastChild;
-    }
-
-    return after;
   }
 
   DocumentPosition compareDocumentPosition(Node other) {

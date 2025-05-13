@@ -8,6 +8,8 @@ import 'package:webf/html.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/css.dart';
 
+import 'form/base_input.dart';
+
 const TEXTAREA = 'TEXTAREA';
 
 const Map<String, dynamic> _textAreaDefaultStyle = {
@@ -42,7 +44,16 @@ class FlutterTextAreaElement extends WidgetElement with BaseInputElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return FlutterTextAreaElementState(this);
+  }
+}
+
+class FlutterTextAreaElementState extends FlutterInputElementState {
+  FlutterTextAreaElementState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return createInput(context, minLines: 3, maxLines: 5);
   }
 }

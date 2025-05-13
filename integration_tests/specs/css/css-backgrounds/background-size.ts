@@ -1,5 +1,5 @@
 describe('Background-size', () => {
-  it('should works with contain', async () => {
+  it('should works with contain', async (done) => {
     let div1;
     let div = createElement(
      'div',
@@ -20,10 +20,14 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    div1.ononscreen = async () => {
+      await snapshot(0.5);
+      done();
+    }
+    
   });
 
-  it('should works with cover', async () => {
+  it('should works with cover', async (done) => {
     let div1;
     let div = createElement(
      'div',
@@ -44,7 +48,11 @@ describe('Background-size', () => {
      ]
     );
     append(BODY, div);
-    await snapshot(0.1);
+    // @ts-ignore
+    div.ononscreen = async () => {
+      await snapshot(0.1);
+      done();
+    }
   });
 
   it('should works with auto', async () => {
@@ -437,7 +445,7 @@ describe('Background-size', () => {
     });
   });
 
-  it("computed", async () => {
+  it("computed", async (done) => {
     let target;
     target = createElement('div', {
       id: 'target',
@@ -448,26 +456,29 @@ describe('Background-size', () => {
     });
     BODY.appendChild(target);
 
-    test_computed_value('background-size', '1px', '1px');
-    test_computed_value('background-size', '1px auto', '1px auto');
-    test_computed_value('background-size', '2% 3%');
-    test_computed_value('background-size', 'auto');
-    test_computed_value('background-size', 'auto auto', 'auto');
-    test_computed_value('background-size', 'auto 4%');
-    test_computed_value('background-size', 'contain');
-    test_computed_value('background-size', 'cover');
-    test_computed_value(
-      'background-size',
-      'calc(10px + 0.5em) calc(10px - 0.5em)',
-      '30px -10px'
-    );
-    test_computed_value(
-      'background-size',
-      'calc(10px - 0.5em) calc(10px + 0.5em)',
-      '-10px 30px'
-    );
+    target.ononscreen = () => {
+      test_computed_value('background-size', '1px', '1px');
+      test_computed_value('background-size', '1px auto', '1px auto');
+      test_computed_value('background-size', '2% 3%');
+      test_computed_value('background-size', 'auto');
+      test_computed_value('background-size', 'auto auto', 'auto');
+      test_computed_value('background-size', 'auto 4%');
+      test_computed_value('background-size', 'contain');
+      test_computed_value('background-size', 'cover');
+      test_computed_value(
+        'background-size',
+        'calc(10px + 0.5em) calc(10px - 0.5em)',
+        '30px -10px'
+      );
+      test_computed_value(
+        'background-size',
+        'calc(10px - 0.5em) calc(10px + 0.5em)',
+        '-10px 30px'
+      );
 
-    // See background-computed.html for a test with multiple background images.
-    test_computed_value('background-size', 'auto 1px', 'auto 1px');
+      // See background-computed.html for a test with multiple background images.
+      test_computed_value('background-size', 'auto 1px', 'auto 1px');
+      done();
+    }
   })
 });

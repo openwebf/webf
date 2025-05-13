@@ -5,19 +5,30 @@ import 'package:webf/dom.dart';
 class EventContainerUnpoped extends WidgetElement {
   EventContainerUnpoped(super.context);
 
+
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  WebFWidgetElementState createState() {
+    return EventContainerUnpopedState(this);
+  }
+}
+
+class EventContainerUnpopedState extends WebFWidgetElementState {
+  EventContainerUnpopedState(super.widgetElement);
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTapUp: (details) {
         // Normal event are not propagated.
-        dispatchEvent(Event('tapped'));
+        widgetElement.dispatchEvent(Event('tapped'));
       },
       child: Column(
         children: [
           Text('Flutter Text'),
-          ...childNodes.toWidgetList()
+          ...widgetElement.childNodes.toWidgetList()
         ],
       ),
     );
   }
+
 }

@@ -11,6 +11,7 @@
 #include "core/dom/events/event_target.h"
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
+#include "core/html/canvas/canvas_rendering_context_2d.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value_converter.h"
 #include "logging.h"
@@ -120,6 +121,10 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
   auto* context = GetExecutingContext();
   auto* profiler = context->dartIsolateContext()->profiler();
 
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
+
   profiler->StartTrackSteps("BindingObject::InvokeBindingMethod");
 
   std::vector<NativeBindingObject*> invoke_elements_deps;
@@ -150,7 +155,7 @@ NativeValue BindingObject::InvokeBindingMethod(const AtomicString& method,
 #endif
 
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-          WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
+          WEBF_LOG(VERBOSE) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
           return;
         }
         binding_object_->invoke_bindings_methods_from_native(contextId, profile_id, binding_object, return_value,
@@ -216,6 +221,10 @@ ScriptPromise BindingObject::InvokeBindingMethodAsyncInternal(NativeValue method
                                                               webf::ExceptionState& exception_state) const {
   auto* context = GetExecutingContext();
 
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
+
   NativeValue* dart_method_name = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy(dart_method_name, &method, sizeof(NativeValue));
 
@@ -277,6 +286,10 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
   auto* context = GetExecutingContext();
   auto* profiler = context->dartIsolateContext()->profiler();
 
+  if (auto* canvas_context = DynamicTo<CanvasRenderingContext2D>(this)) {
+    canvas_context->requestPaint();
+  }
+
   profiler->StartTrackSteps("BindingObject::InvokeBindingMethod");
 
   std::vector<NativeBindingObject*> invoke_elements_deps;
@@ -306,7 +319,7 @@ NativeValue BindingObject::InvokeBindingMethod(BindingMethodCallOperations bindi
 #endif
 
         if (binding_object_->invoke_bindings_methods_from_native == nullptr) {
-          WEBF_LOG(DEBUG) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
+          WEBF_LOG(VERBOSE) << "invoke_bindings_methods_from_native is nullptr" << std::endl;
           return;
         }
         binding_object_->invoke_bindings_methods_from_native(contextId, profile_id, binding_object, return_value,
@@ -413,6 +426,10 @@ bool BindingObject::IsComputedCssStyleDeclaration() const {
 }
 
 bool BindingObject::IsCanvasGradient() const {
+  return false;
+}
+
+bool BindingObject::IsCanvasRenderingContext2D() const {
   return false;
 }
 

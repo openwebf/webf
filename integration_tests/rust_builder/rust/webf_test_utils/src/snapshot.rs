@@ -1,4 +1,6 @@
 use webf_sys::{Element, ElementMethods, EventTargetMethods, ExecutingContext, WebFNativeFuture};
+use crate::safe_assert_eq;
+use crate::common::check_eq;
 
 pub fn snapshot_with_target_and_filename(context: ExecutingContext, target: &Element, filename: String) -> WebFNativeFuture<()> {
   context.__webf_sync_buffer__();
@@ -22,7 +24,7 @@ pub fn snapshot_with_target_and_filename(context: ExecutingContext, target: &Ele
       let html_blob = target.to_blob_with_device_pixel_ratio(1.0, &exception_state).await.unwrap().unwrap();
 
       let match_result = context_for_future.__webf_match_image_snapshot__(html_blob, &filename, &exception_state).await.unwrap().unwrap();
-      assert_eq!(match_result, true);
+      safe_assert_eq!(match_result, true);
 
       snapshot_future_in_callback.set_result(Ok(Some(())));
     });

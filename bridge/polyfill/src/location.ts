@@ -6,7 +6,24 @@
 import { webf } from './webf';
 import { webfLocationReload } from './bridge';
 
-class Location {
+export interface LocationInterface {
+  href: string;
+  origin: string;
+  protocol: string;
+  host: string;
+  hostname: string;
+  port: string;
+  pathname: string;
+  search: string;
+  hash: string;
+  
+  assign(url: string): void;
+  reload(): void;
+  replace(url: string): void;
+  toString(): string;
+}
+
+class Location implements LocationInterface {
   get href() {
     return webf.invokeModule('Location', 'href');
   }
@@ -54,7 +71,6 @@ class Location {
   get toString() {
     return () => location.href;
   }
-
 }
 
 export const location = new Location();

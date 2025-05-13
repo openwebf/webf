@@ -200,6 +200,7 @@ class Path2D extends DynamicBindingObject{
   }
 
   void addPath(Path2D path, {Float64List? matrix4}) {
+    if (path.isEmpty) return;
     _path.addPath(path._path, Offset.zero, matrix4: matrix4);
     _syncCurrentPoint();
   }

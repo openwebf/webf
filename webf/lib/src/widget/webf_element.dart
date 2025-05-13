@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
  */
 
 import 'package:flutter/widgets.dart';
@@ -56,7 +57,7 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
     if (parent == null) return null;
     dom.Element? target;
     parent.visitAncestorElements((Element element) {
-      if (element is WebFWidgetElementElement) {
+      if (element is WebFWidgetElementAdapterElement) {
         target = element.widget.widgetElement;
         return false;
       } else if (element is SelfOwnedWebRenderLayoutWidgetElement) {
@@ -85,26 +86,18 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
         BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
     element.parentOrShadowHostNode = widget.parentElement;
+    element.isConnected = true;
     element.isWidgetOwned = true;
+
     _webFElement = element;
 
-    super.mount(parent, newSlot);
-
-    dom.Element? parentElement = findClosestAncestorHTMLElement(this);
-
-    if (parentElement != null) {
-      if (widget.inlineStyle != null) {
-        fullFillInlineStyle(widget.inlineStyle!);
-      }
-
-      // htmlElement!.ensureChildAttached();
-      _webFElement!.applyStyle(_webFElement!.style);
-
-      if (_webFElement!.ownerDocument.controller.mode != WebFLoadingMode.preRendering) {
-        // Flush pending style before child attached.
-        _webFElement!.style.flushPendingProperties();
-      }
+    if (widget.inlineStyle != null) {
+      fullFillInlineStyle(widget.inlineStyle!);
     }
+    _webFElement!.applyStyle(_webFElement!.style);
+    element.style.flushDisplayProperties();
+
+    super.mount(parent, newSlot);
   }
 
   @override

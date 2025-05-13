@@ -22,7 +22,7 @@ CanvasRenderingContext2D::CanvasRenderingContext2D(ExecutingContext* context,
 }
 
 CanvasRenderingContext2D::~CanvasRenderingContext2D() {
-  if (GetExecutingContext()->IsContextValid()) {
+  if (isContextValid(contextId())) {
     GetExecutingContext()->RemoveCanvasContext2D(this);
   }
 }
@@ -234,8 +234,18 @@ void CanvasRenderingContext2D::roundRect(double x,
                       FlushUICommandReason::kDependentsOnElement, exception_state);
 }
 
+void CanvasRenderingContext2D::requestPaint() const {
+  _needsPaint = true;
+}
+
+bool CanvasRenderingContext2D::IsCanvasRenderingContext2D() const {
+  return true;
+}
+
 void CanvasRenderingContext2D::needsPaint() const {
   if (bindingObject()->invoke_bindings_methods_from_native == nullptr)
+    return;
+  if (!_needsPaint)
     return;
   InvokeBindingMethod(binding_call_methods::kneedsPaint, 0, nullptr, kDependentsOnElement, ASSERT_NO_EXCEPTION());
 }

@@ -12,6 +12,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     if (value == _borderTopLeftRadius) return;
     _borderTopLeftRadius = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   @override
@@ -22,6 +23,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     if (value == _borderTopRightRadius) return;
     _borderTopRightRadius = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   @override
@@ -32,6 +34,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     if (value == _borderBottomRightRadius) return;
     _borderBottomRightRadius = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   @override
@@ -42,6 +45,7 @@ mixin CSSBorderRadiusMixin on RenderStyle {
     if (value == _borderBottomLeftRadius) return;
     _borderBottomLeftRadius = value;
     markNeedsPaint();
+    resetBoxDecoration();
   }
 
   @override

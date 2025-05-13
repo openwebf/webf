@@ -71,6 +71,7 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kCreateSVGElement:
     case UICommand::kCreateElementNS:
     case UICommand::kRemoveNode:
+    case UICommand::kAddEvent:
     case UICommand::kCloneNode: {
       host_->waiting_buffer_->AddCommand(type, args_01, native_binding_object, native_ptr2, request_ui_update);
 
@@ -84,7 +85,6 @@ void UICommandSyncStrategy::RecordUICommand(UICommand type,
     case UICommand::kSetAttribute:
     case UICommand::kSetProperty:
     case UICommand::kRemoveEvent:
-    case UICommand::kAddEvent:
     case UICommand::kDisposeBindingObject: {
       host_->waiting_buffer_->AddCommand(type, args_01, native_binding_object, native_ptr2, request_ui_update);
       break;

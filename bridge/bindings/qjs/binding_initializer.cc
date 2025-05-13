@@ -39,6 +39,7 @@
 #include "qjs_html_all_collection.h"
 #include "qjs_html_anchor_element.h"
 #include "qjs_html_body_element.h"
+#include "qjs_html_br_element.h"
 #include "qjs_html_button_element.h"
 #include "qjs_html_canvas_element.h"
 #include "qjs_html_collection.h"
@@ -56,6 +57,7 @@
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
 #include "qjs_hybrid_router_change_event.h"
+#include "qjs_idle_deadline.h"
 #include "qjs_image.h"
 #include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
@@ -80,6 +82,7 @@
 #include "qjs_pop_state_event.h"
 #include "qjs_promise_rejection_event.h"
 #include "qjs_screen.h"
+#include "qjs_screen_event.h"
 #include "qjs_svg_circle_element.h"
 #include "qjs_svg_element.h"
 #include "qjs_svg_ellipse_element.h"
@@ -101,6 +104,8 @@
 #include "qjs_touch_list.h"
 #include "qjs_transition_event.h"
 #include "qjs_ui_event.h"
+#include "qjs_webf_router_link_element.h"
+#include "qjs_webf_touch_area_element.h"
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
@@ -124,6 +129,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSAnimationEvent::Install(context);
   QJSCloseEvent::Install(context);
   QJSHybridRouterChangeEvent::Install(context);
+  QJSScreenEvent::Install(context);
   QJSFocusEvent::Install(context);
   QJSGestureEvent::Install(context);
   QJSHashchangeEvent::Install(context);
@@ -155,6 +161,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
+  QJSHTMLBrElement::Install(context);
   QJSHTMLButtonElement::Install(context);
   QJSHTMLFormElement::Install(context);
   QJSImage::Install(context);
@@ -163,6 +170,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSHTMLCanvasElement::Install(context);
+  QJSWebFTouchAreaElement::Install(context);
+  QJSWebFRouterLinkElement::Install(context);
   QJSCanvasRenderingContext::Install(context);
   QJSCanvasRenderingContext2D::Install(context);
   QJSCanvasPattern::Install(context);
@@ -192,6 +201,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSPerformanceMeasure::Install(context);
   QJSHTMLCollection::Install(context);
   QJSHTMLAllCollection::Install(context);
+  QJSIdleDeadline::Install(context);
 
   // SVG
   QJSSVGElement::Install(context);

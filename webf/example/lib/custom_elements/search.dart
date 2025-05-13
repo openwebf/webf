@@ -1,8 +1,21 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 
 class FlutterSearch extends WidgetElement {
   FlutterSearch(super.context);
+
+  @override
+  WebFWidgetElementState createState() {
+    return FlutterSearchState(this);
+  }
+}
+
+class FlutterSearchState extends WebFWidgetElementState {
+  FlutterSearchState(super.widgetElement);
 
   final TextEditingController _controller = TextEditingController();
   bool _hasText = false;
@@ -10,6 +23,7 @@ class FlutterSearch extends WidgetElement {
   @override
   void initState() {
     super.initState();
+
     _controller.addListener(() {
       setState(() {
         _hasText = _controller.text.isNotEmpty;
@@ -18,7 +32,14 @@ class FlutterSearch extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
+  void dispose() {
+    super.dispose();
+    _controller.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final renderStyle = widgetElement.renderStyle;
     return Container(
       child: TextField(
         maxLines: 1,
@@ -44,7 +65,7 @@ class FlutterSearch extends WidgetElement {
                 topLeft: renderStyle.borderRadius![0],
                 topRight: renderStyle.borderRadius![1],
                 bottomRight: renderStyle.borderRadius![2],
-              bottomLeft: renderStyle.borderRadius![3]
+                bottomLeft: renderStyle.borderRadius![3]
             ) : BorderRadius.zero,
             borderSide: BorderSide.none, // No default border
           ),

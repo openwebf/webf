@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
@@ -90,13 +91,8 @@ enum VisibilityState { visible, hidden }
 class Document extends ContainerNode {
   final WebFController controller;
   final AnimationTimeline animationTimeline = AnimationTimeline();
-  GestureListener? gestureListener;
-
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
-
-  // Cache all the fixed children of renderBoxModel of root element.
-  Set<RenderBoxModel> fixedChildren = {};
 
   final List<AsyncCallback> pendingPreloadingScriptCallbacks = [];
 
@@ -117,8 +113,6 @@ class Document extends ContainerNode {
   StyleNodeManager get styleNodeManager => _styleNodeManager;
   late StyleNodeManager _styleNodeManager;
 
-  Set<WidgetElement> aliveWidgetElements = {};
-
   late RuleSet ruleSet;
 
   String? _domain;
@@ -130,12 +124,15 @@ class Document extends ContainerNode {
   @override
   bool get isConnected => true;
 
-  Document(BindingContext context, {required this.controller, this.gestureListener, List<Cookie>? initialCookies})
+  Document(BindingContext context, {required this.controller})
       : super(NodeType.DOCUMENT_NODE, context) {
-    cookie_ = CookieJar(controller.url, initialCookies: initialCookies);
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
+  }
+
+  void initializeCookieJarForUrl(String url) {
+    controller.cookieManager.initialize(url: url, initialCookies: controller.initialCookies);
   }
 
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/dom/Document.h#L1898
@@ -148,7 +145,7 @@ class Document extends ContainerNode {
   @override
   EventTarget? get parentEventTarget => defaultView;
 
-  RenderViewportBox? get viewport => controller.view.viewport;
+  RootRenderViewportBox? get viewport => controller.view.viewport;
 
   ui.Size? _preloadViewportSize;
 
@@ -160,12 +157,6 @@ class Document extends ContainerNode {
 
   @override
   Document get ownerDocument => this;
-
-  Element? focusedElement;
-
-  late CookieJar cookie_;
-
-  CookieJar get cookie => cookie_;
 
   // Returns the Window object of the active document.
   // https://html.spec.whatwg.org/multipage/window-object.html#dom-document-defaultview-dev
@@ -232,10 +223,20 @@ class Document extends ContainerNode {
     }
   }
 
+  String get cookie {
+    CookieManager cookieManager = controller.cookieManager;
+    return cookieManager.getCookieString(controller.url);
+  }
+  set cookie(Object? value) {
+    if (value is! String) return;
+    CookieManager cookieManager = controller.cookieManager;
+    cookieManager.setCookieString(controller.url, value);
+  }
+
   static final StaticDefinedBindingPropertyMap _documentProperties = {
     'cookie': StaticDefinedBindingProperty(
-        getter: (document) => castToType<Document>(document).cookie.cookie(),
-        setter: (document, value) => castToType<Document>(document).cookie.setCookieString(value)),
+        getter: (document) => castToType<Document>(document).cookie,
+        setter: (document, value) => castToType<Document>(document).cookie = value),
     'compatMode': StaticDefinedBindingProperty(getter: (document) => castToType<Document>(document).compatMode),
     'domain': StaticDefinedBindingProperty(
         getter: (document) => castToType<Document>(document).domain,
@@ -281,6 +282,7 @@ class Document extends ContainerNode {
     super.initializeMethods(methods);
     if (kDebugMode || kProfileMode) {
       methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
+      methods['___force_rebuild__'] = BindingObjectMethodSync(call: (args) => forceRebuild());
     }
   }
 
@@ -344,7 +346,7 @@ class Document extends ContainerNode {
   }
 
   dynamic debugClearCookies(List<dynamic> args) {
-    cookie.clearAllCookies();
+    controller.cookieManager.clearAllCookies();
   }
 
   dynamic querySelector(List<dynamic> args) {
@@ -353,6 +355,7 @@ class Document extends ContainerNode {
   }
 
   dynamic elementFromPoint(double x, double y) {
+    forceRebuild();
     documentElement?.flushLayout();
     return HitTestPoint(x, y);
   }
@@ -371,7 +374,7 @@ class Document extends ContainerNode {
   HitTestResult HitTestInDocument(double x, double y) {
     BoxHitTestResult boxHitTestResult = BoxHitTestResult();
     Offset offset = Offset(x, y);
-    documentElement?.domRenderer?.hitTest(boxHitTestResult, position: offset);
+    documentElement?.attachedRenderer?.hitTest(boxHitTestResult, position: offset);
     return boxHitTestResult;
   }
 
@@ -422,9 +425,8 @@ class Document extends ContainerNode {
     return elementsByName[args.first];
   }
 
-  Element? _documentElement;
-
-  Element? get documentElement => _documentElement;
+  HTMLElement? _documentElement;
+  HTMLElement? get documentElement => _documentElement;
 
   set documentElement(Element? element) {
     if (_documentElement == element) {
@@ -434,35 +436,10 @@ class Document extends ContainerNode {
     bool documentElementChanged = element != null && element != _documentElement;
     // When document is disposed, viewport is null.
     if (viewport != null) {
-      if (element != null) {
-        element.attachTo(this);
-        _visibilityState = VisibilityState.visible;
-      } else {
-        // Detach document element.
-        viewport!.removeAll();
-      }
+      _visibilityState = VisibilityState.visible;
     }
 
-    _documentElement = element;
-
-    if (viewport?.hasSize == true && documentElementChanged) {
-      initializeRootElementSize();
-    }
-  }
-
-  void initializeRootElementSize() {
-    assert(documentElement != null);
-    assert(viewport!.hasSize);
-    documentElement!.renderStyle.width = CSSLengthValue(viewport!.viewportSize.width, CSSLengthType.PX);
-    documentElement!.renderStyle.height = CSSLengthValue(viewport!.viewportSize.height, CSSLengthType.PX);
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-    documentElement!.setRenderStyleProperty(OVERFLOW_X, CSSOverflowType.scroll);
-    documentElement!.setRenderStyleProperty(OVERFLOW_Y, CSSOverflowType.scroll);
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
+    _documentElement = element as HTMLElement?;
   }
 
   @override
@@ -476,7 +453,7 @@ class Document extends ContainerNode {
   }
 
   @override
-  String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
+  String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
     return 'Document($hashCode)';
   }
 
@@ -499,6 +476,21 @@ class Document extends ContainerNode {
       styleSheets.clear();
     }
     return result;
+  }
+
+  void forceRebuild() {
+    flutter.WidgetsBinding.instance.buildOwner!.buildScope(flutter.WidgetsBinding.instance.rootElement!);
+  }
+
+  @override
+  void childrenChanged(ChildrenChange change) {
+    super.childrenChanged(change);
+
+    flutter.BuildContext? rootBuildContext = ownerView.rootController.rootBuildContext?.context;
+    if (rootBuildContext != null) {
+      WebFState state = (rootBuildContext as flutter.StatefulElement).state as WebFState;
+      state.requestForUpdate(DocumentElementChangedReason());
+    }
   }
 
   @override
@@ -604,12 +596,6 @@ class Document extends ContainerNode {
     }
   }
 
-  void reactiveWidgetElements() {
-    for (WidgetElement widgetElement in aliveWidgetElements) {
-      widgetElement.reactiveRenderer();
-    }
-  }
-
   void recalculateStyleImmediately() {
     var styleSheetNodes = styleNodeManager.styleSheetCandidateNodes;
     styleSheetNodes.forEach((element) {
@@ -623,14 +609,12 @@ class Document extends ContainerNode {
 
   @override
   Future<void> dispose() async {
-    gestureListener = null;
     styleSheets.clear();
     nthIndexCache.clearAll();
     adoptedStyleSheets.clear();
-    cookie.clearCookie();
     _styleDirtyElements.clear();
-    fixedChildren.clear();
     pendingPreloadingScriptCallbacks.clear();
+    _documentElement = null;
     super.dispose();
   }
 
@@ -639,7 +623,4 @@ class Document extends ContainerNode {
 
   @override
   bool get isRendererAttachedToSegmentTree => viewport?.parent != null;
-
-  @override
-  String get hashKey => '#document';
 }

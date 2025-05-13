@@ -19,7 +19,16 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart'
-    show AnimationController, BuildContext, ModalRoute, RouteInformation, RouteObserver, View, Widget, WidgetsBinding, WidgetsBindingObserver;
+    show
+        AnimationController,
+        BuildContext,
+        ModalRoute,
+        RouteInformation,
+        RouteObserver,
+        StatefulElement,
+        View,
+        WidgetsBinding,
+        WidgetsBindingObserver;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
@@ -29,100 +38,34 @@ import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
+
+/// A callback that is invoked when a WebFController is fully initialized but before the content is executed.
+///
+/// Use this to perform early configuration or setup of the WebF environment before any content is loaded.
+/// This provides a chance to interact with the controller when its native components are ready but before
+/// the JavaScript execution begins.
+///
+/// The callback must return a Future to allow for asynchronous setup operations.
+typedef OnControllerInit = Future<void> Function(WebFController controller);
 typedef LoadHandler = void Function(WebFController controller);
 typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef OnCustomElementAttached = void Function(SharedRenderWidgetAdapter newWidget);
-typedef OnCustomElementDetached = void Function(SharedRenderWidgetAdapter detachedWidget);
 
 typedef TraverseElementCallback = void Function(Element element);
 
-// Traverse DOM element.
-void traverseElement(Element element, TraverseElementCallback callback) {
-  callback(element);
-  for (Element el in element.children) {
-    traverseElement(el, callback);
-  }
-}
+class HybridRoutePageContext {
+  /// The route path for the hybrid router in WebF.
+  String path;
 
-// See http://github.com/flutter/flutter/wiki/Desktop-shells
-/// If the current platform is a desktop platform that isn't yet supported by
-/// TargetPlatform, override the default platform to one that is.
-/// Otherwise, do nothing.
-/// No need to handle macOS, as it has now been added to TargetPlatform.
-void setTargetPlatformForDesktop() {
-  if (Platform.isLinux || Platform.isWindows) {
-    debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
-  }
-}
+  /// The attached flutter buildContexts for this hybrid route page.
+  BuildContext context;
 
-abstract class DevToolsService {
-  /// Design prevDevTool for reload page,
-  /// do not use it in any other place.
-  /// More detail see [InspectPageModule.handleReloadPage].
-  static DevToolsService? prevDevTools;
-
-  static final Map<double, DevToolsService> _contextDevToolMap = {};
-  static DevToolsService? getDevToolOfContextId(double contextId) {
-    return _contextDevToolMap[contextId];
-  }
-
-  /// Used for debugger inspector.
-  UIInspector? _uiInspector;
-  UIInspector? get uiInspector => _uiInspector;
-
-  late Isolate _isolateServer;
-  Isolate get isolateServer => _isolateServer;
-  set isolateServer(Isolate isolate) {
-    _isolateServer = isolate;
-  }
-
-  SendPort? _isolateServerPort;
-  SendPort? get isolateServerPort => _isolateServerPort;
-  set isolateServerPort(SendPort? value) {
-    _isolateServerPort = value;
-  }
-
-  WebFController? _controller;
-  WebFController? get controller => _controller;
-
-  void init(WebFController controller) {
-    _contextDevToolMap[controller.view.contextId] = this;
-    _controller = controller;
-    spawnIsolateInspectorServer(this, controller);
-    _uiInspector = UIInspector(this);
-    controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
-  }
-
-  bool get isReloading => _reloading;
-  bool _reloading = false;
-
-  void willReload() {
-    _reloading = true;
-  }
-
-  void didReload() {
-    _reloading = false;
-    controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
-    _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
-  }
-
-  void dispose() {
-    _uiInspector?.dispose();
-    _contextDevToolMap.remove(controller!.view.contextId);
-    _controller = null;
-    _isolateServerPort = null;
-    _isolateServer.kill();
-  }
+  HybridRoutePageContext(this.path, this.context);
 }
 
 enum WebFLoadingMode {
-  /// The default loading mode.
-  /// All associated page resources begin loading once the WebF widget is mounted into the Flutter tree.
-  standard,
-
   /// This mode preloads remote resources into memory and begins execution when the WebF widget is mounted into the Flutter tree.
   /// If the entrypoint is an HTML file, the HTML will be parsed, and its elements will be organized into a DOM tree.
   /// CSS files loaded through `<style>` and `<link>` elements will be parsed and the calculated styles applied to the corresponding DOM elements.
@@ -147,743 +90,188 @@ enum PreloadingStatus {
   none,
   preloading,
   done,
+  fail,
 }
 
-enum PreRenderingStatus {
-  none,
-  preloading,
-  evaluate,
-  rendering,
-  done
-}
-
-// An View Controller designed for multiple view control.
-class WebFViewController implements WidgetsBindingObserver {
-  WebFController rootController;
-
-  // The methods of the WebFNavigationDelegate help you implement custom behaviors that are triggered
-  // during a view's process of loading, and completing a navigation request.
-  WebFNavigationDelegate? navigationDelegate;
-
-  GestureListener? gestureListener;
-
-  List<Cookie>? initialCookies;
-
-  final List<List<UICommand>> pendingUICommands = [];
-
-  Color? background;
-  WebFThread runningThread;
-
-  bool firstLoad = true;
-
-  WebFViewController(
-      {this.background,
-      this.enableDebug = false,
-      required this.rootController,
-      required this.runningThread,
-      this.navigationDelegate,
-      this.gestureListener,
-      this.initialCookies}) {
-  }
-
-  Future<void> initialize() async {
-    if (enableDebug) {
-      debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
-      debugPaintSizeEnabled = true;
-    }
-
-    _contextId = await initBridge(this, runningThread);
-
-    _setupObserver();
-
-    defineBuiltInElements();
-  }
-
-  bool _isAnimationTimelineStopped = false;
-  bool get isAnimationTimelineStopped => _isAnimationTimelineStopped;
-  final List<VoidCallback> _pendingAnimationTimesLines = [];
-
-  void stopAnimationsTimeLine() {
-    _isAnimationTimelineStopped = true;
-  }
-  void addPendingAnimationTimeline(VoidCallback callback) {
-    _pendingAnimationTimesLines.add(callback);
-  }
-  void resumeAnimationTimeline() {
-    _pendingAnimationTimesLines.forEach((callback) {
-      callback();
-    });
-    _pendingAnimationTimesLines.clear();
-    _isAnimationTimelineStopped = false;
-  }
-
-  bool _isFrameBindingAttached = false;
-
-  void flushPendingCommandsPerFrame() {
-    if (disposed && _isFrameBindingAttached) return;
-    _isFrameBindingAttached = true;
-    flushUICommand(this, window.pointer!);
-    SchedulerBinding.instance.addPostFrameCallback((_) => flushPendingCommandsPerFrame());
-  }
-
-  final Map<String, Widget> _hybridRouterViews = {};
-
-  void setHybridRouterView(String path, Widget root) {
-    _hybridRouterViews[path] = root;
-  }
-  Widget? getHybridRouterView(String path) {
-    return _hybridRouterViews[path];
-  }
-  void removeHybridRouterView(String path) {
-    _hybridRouterViews.remove(path);
-  }
-
-  RenderViewportBox? _activeRouterRoot;
-  RenderViewportBox? get activeRouterRoot => _activeRouterRoot;
-  set activeRouterRoot(RenderViewportBox? root) {
-    _activeRouterRoot = root;
-  }
-
-  final Map<int, BindingObject> _nativeObjects = {};
-
-  T? getBindingObject<T>(Pointer pointer) {
-    return _nativeObjects[pointer.address] as T?;
-  }
-
-  bool hasBindingObject(Pointer pointer) {
-    return _nativeObjects.containsKey(pointer.address);
-  }
-
-  void setBindingObject(Pointer pointer, BindingObject bindingObject) {
-    assert(!_nativeObjects.containsKey(pointer.address));
-    _nativeObjects[pointer.address] = bindingObject;
-  }
-
-  void removeBindingObject(Pointer pointer) {
-    _nativeObjects.remove(pointer.address);
-  }
-
-  // fix New version of chrome devTools castrating the last three digits of long targetId num strings and replacing them with 0
-  int _nodeIdCount = 0;
-  final Map<int, int> _targetIdToDevNodeIdMap = {};
-  Map<int, int> get targetIdToDevNodeIdMap => _targetIdToDevNodeIdMap;
-
-  int getTargetIdByNodeId(int? address) {
-    if (address == null) {
-      return 0;
-    }
-    int targetId = targetIdToDevNodeIdMap.keys.firstWhere((k) => targetIdToDevNodeIdMap[k] == address, orElse: () => 0);
-    return targetId;
-  }
-
-  void disposeTargetIdToDevNodeIdMap(BindingObject? object) {
-    _targetIdToDevNodeIdMap.remove(object?.pointer?.address);
-  }
-
-  int forDevtoolsNodeId(BindingObject object) {
-    int? nativeAddress = object.pointer?.address;
-    if (nativeAddress != null) {
-      if (targetIdToDevNodeIdMap[nativeAddress] != null) {
-        return targetIdToDevNodeIdMap[nativeAddress]!;
-      }
-      _nodeIdCount ++;
-      targetIdToDevNodeIdMap[nativeAddress] = _nodeIdCount;
-      return _nodeIdCount;
-    }
-    return 0;
-  }
-  // fix New version of chrome devTools end
-
-  // Index value which identify javascript runtime context.
-  late double _contextId;
-  double get contextId => _contextId;
-
-  // Enable print debug message when rendering.
-  bool enableDebug;
-
-  // have already disposed.
-  bool _disposed = false;
-
-  bool get disposed => _disposed;
-
-  RenderViewportBox? viewport;
-  late Document document;
-  late Window window;
-
-  void initDocument(view, Pointer<NativeBindingObject> pointer) {
-    document = Document(
-      BindingContext(view, _contextId, pointer),
-      controller: rootController,
-      gestureListener: gestureListener,
-      initialCookies: initialCookies,
-    );
-
-    // Listeners need to be registered to window in order to dispatch events on demand.
-    if (gestureListener != null) {
-      GestureListener listener = gestureListener!;
-      if (listener.onTouchStart != null) {
-        document.addEventListener(EVENT_TOUCH_START, (Event event) async => listener.onTouchStart!(event as TouchEvent));
-      }
-
-      if (listener.onTouchMove != null) {
-        document.addEventListener(EVENT_TOUCH_MOVE, (Event event) async => listener.onTouchMove!(event as TouchEvent));
-      }
-
-      if (listener.onTouchEnd != null) {
-        document.addEventListener(EVENT_TOUCH_END, (Event event) async => listener.onTouchEnd!(event as TouchEvent));
-      }
-
-      if (listener.onDrag != null) {
-        document.addEventListener(EVENT_DRAG, (Event event) async => listener.onDrag!(event as GestureEvent));
-      }
-    }
-
-    firstLoad = false;
-  }
-
-  void initWindow(WebFViewController view, Pointer<NativeBindingObject> pointer) {
-    window = Window(BindingContext(view, _contextId, pointer), document);
-    _registerPlatformBrightnessChange();
-
-    // 3 seconds should be enough for page loading, make sure the JavaScript GC was opened.
-    Timer(Duration(seconds: 3), () {
-      window.dispatchEvent(Event('gcopen'));
-    });
-
-    // Blur input element when new input focused.
-    window.addEventListener(EVENT_CLICK, (event) async {
-      if (event.target is Element) {
-        Element? focusedElement = document.focusedElement;
-        if (focusedElement != null && focusedElement != event.target) {
-          document.focusedElement!.blur();
-        }
-        (event.target as Element).focus();
-      }
-    });
-  }
-
-  void setCookie(List<Cookie> cookies, [Uri? uri]) {
-    document.cookie.setCookie(cookies, uri);
-  }
-
-  void clearCookie() {
-    document.cookie.clearCookie();
-  }
-
-  Future<void> evaluateJavaScripts(String code) async {
-    assert(!_disposed, 'WebF have already disposed');
-    List<int> data = utf8.encode(code);
-    await evaluateScripts(_contextId, Uint8List.fromList(data));
-  }
-
-  void _setupObserver() {
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  void _teardownObserver() {
-    WidgetsBinding.instance.removeObserver(this);
-  }
-
-  // Attach renderObject to an renderObject.
-  void attachTo(RenderObject parent, [RenderObject? previousSibling]) {
-    if (parent is ContainerRenderObjectMixin) {
-      parent.insert(document.domRenderer!, after: previousSibling);
-    } else if (parent is RenderObjectWithChildMixin) {
-      parent.child = document.domRenderer;
-    }
-  }
-
-  // Dispose controller and recycle all resources.
-  Future<void> dispose() async {
-    await waitingSyncTaskComplete(contextId);
-    _disposed = true;
-    debugDOMTreeChanged = null;
-
-    _teardownObserver();
-    _unregisterPlatformBrightnessChange();
-
-    // Should clear previous page cached ui commands
-    clearUICommand(_contextId);
-
-    await disposePage(runningThread is FlutterUIThread, _contextId);
-
-    clearCssLength();
-
-    _nativeObjects.forEach((key, object) {
-      object.dispose();
-    });
-    _nativeObjects.clear();
-
-    document.dispose();
-    window.dispose();
-
-    _targetIdToDevNodeIdMap.clear();
-  }
-
-  VoidCallback? _originalOnPlatformBrightnessChanged;
-
-  void _registerPlatformBrightnessChange() {
-    _originalOnPlatformBrightnessChanged =
-        rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged;
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged = onPlatformBrightnessChanged;
-  }
-
-  void _unregisterPlatformBrightnessChange() {
-    rootController.ownerFlutterView.platformDispatcher.onPlatformBrightnessChanged =
-        _originalOnPlatformBrightnessChanged;
-    _originalOnPlatformBrightnessChanged = null;
-  }
-
-  void onPlatformBrightnessChanged() {
-    if (_originalOnPlatformBrightnessChanged != null) {
-      _originalOnPlatformBrightnessChanged!();
-    }
-    window.dispatchEvent(ColorSchemeChangeEvent(window.colorScheme));
-  }
-
-  // export Uint8List bytes from rendered result.
-  Future<Uint8List> toImage(double devicePixelRatio, [Pointer<Void>? eventTargetPointer]) {
-    assert(!_disposed, 'WebF have already disposed');
-    Completer<Uint8List> completer = Completer();
-    try {
-      if (eventTargetPointer != null && !hasBindingObject(eventTargetPointer)) {
-        String msg = 'toImage: unknown node id: $eventTargetPointer';
-        completer.completeError(Exception(msg));
-        return completer.future;
-      }
-      var node = eventTargetPointer == null ? document.documentElement : getBindingObject(eventTargetPointer);
-      if (node is Element) {
-        if (!node.isRendererAttached) {
-          String msg = 'toImage: the element is not attached to document tree.';
-          completer.completeError(Exception(msg));
-          return completer.future;
-        }
-
-        node.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List bytes) {
-          completer.complete(bytes);
-        }).catchError((e, stack) {
-          String msg = 'toBlob: failed to export image data from element id: $eventTargetPointer. error: $e}.\n$stack';
-          completer.completeError(Exception(msg));
-        });
-      } else {
-        String msg = 'toBlob: node is not an element, id: $eventTargetPointer';
-        completer.completeError(Exception(msg));
-      }
-    } catch (e, stack) {
-      completer.completeError(e, stack);
-    }
-    return completer.future;
-  }
-
-  void createElement(Pointer<NativeBindingObject> nativePtr, String tagName) {
-    assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElement(tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
-  }
-
-  void createElementNS(Pointer<NativeBindingObject> nativePtr, String uri, String tagName) {
-    assert(!hasBindingObject(nativePtr), 'ERROR: Can not create element with same id "$nativePtr"');
-    document.createElementNS(
-        uri, tagName.toUpperCase(), BindingContext(document.controller.view, _contextId, nativePtr));
-  }
-
-  void createTextNode(Pointer<NativeBindingObject> nativePtr, String data) {
-    document.createTextNode(data, BindingContext(document.controller.view, _contextId, nativePtr));
-  }
-
-  void createComment(Pointer<NativeBindingObject> nativePtr) {
-    document.createComment(BindingContext(document.controller.view, _contextId, nativePtr));
-  }
-
-  void createDocumentFragment(Pointer<NativeBindingObject> nativePtr) {
-    document.createDocumentFragment(BindingContext(document.controller.view, _contextId, nativePtr));
-  }
-
-  void addEvent(Pointer<NativeBindingObject> nativePtr, String eventType,
-      {Pointer<AddEventListenerOptions>? addEventListenerOptions}) {
-    if (!hasBindingObject(nativePtr)) return;
-    EventTarget? target = getBindingObject<EventTarget>(nativePtr);
-    if (target != null) {
-      BindingBridge.listenEvent(target, eventType, addEventListenerOptions: addEventListenerOptions);
-    }
-  }
-
-  void removeEvent(Pointer<NativeBindingObject> nativePtr, String eventType, {bool isCapture = false}) {
-    if (!hasBindingObject(nativePtr)) return;
-    EventTarget? target = getBindingObject<EventTarget>(nativePtr);
-    if (target != null) {
-      BindingBridge.unlistenEvent(target, eventType, isCapture: isCapture);
-    }
-  }
-
-  void cloneNode(Pointer<NativeBindingObject> selfPtr, Pointer<NativeBindingObject> newPtr) {
-    assert(hasBindingObject(selfPtr));
-    assert(hasBindingObject(newPtr));
-
-    EventTarget? originalTarget = getBindingObject<EventTarget>(selfPtr);
-    EventTarget? newTarget = getBindingObject<EventTarget>(newPtr);
-
-    if (originalTarget == null || newTarget == null) return;
-
-
-    // Current only element clone will process in dart.
-    if (originalTarget is Element) {
-      Element newElement = newTarget as Element;
-      // Copy inline style.
-      originalTarget.inlineStyle.forEach((key, value) {
-        newElement.setInlineStyle(key, value);
-      });
-      // Copy element attributes.
-      originalTarget.attributes.forEach((key, value) {
-        newElement.setAttribute(key, value);
-      });
-      newElement.className = originalTarget.className;
-      newElement.id = originalTarget.id;
-    }
-  }
-
-  void removeNode(Pointer pointer) {
-    if (!hasBindingObject(pointer)) return;
-
-    Node? target = getBindingObject<Node>(pointer);
-    target?.parentNode?.removeChild(target);
-
-    _debugDOMTreeChanged();
-  }
-
-  /// <!-- beforebegin -->
-  /// <p>
-  ///   <!-- afterbegin -->
-  ///   foo
-  ///   <!-- beforeend -->
-  /// </p>
-  /// <!-- afterend -->
-  void insertAdjacentNode(
-      Pointer<NativeBindingObject> selfPointer, String position, Pointer<NativeBindingObject> newPointer) {
-    assert(hasBindingObject(selfPointer), 'targetId: $selfPointer position: $position newTargetId: $newPointer');
-    assert(hasBindingObject(newPointer), 'newTargetId: $newPointer position: $position');
-
-    Node? target = getBindingObject<Node>(selfPointer);
-    Node? newNode = getBindingObject<Node>(newPointer);
-
-    if (target == null || newNode == null) {
-      return;
-    }
-
-    Node? targetParentNode = target.parentNode;
-
-    switch (position) {
-      case 'beforebegin':
-        targetParentNode!.insertBefore(newNode, target);
-        break;
-      case 'afterbegin':
-        target.insertBefore(newNode, target.firstChild!);
-        break;
-      case 'beforeend':
-        target.appendChild(newNode);
-        break;
-      case 'afterend':
-        if (targetParentNode!.lastChild == target) {
-          targetParentNode.appendChild(newNode);
-        } else {
-          targetParentNode.insertBefore(newNode, target.nextSibling!);
-        }
-        break;
-    }
-
-    _debugDOMTreeChanged();
-  }
-
-  void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
-    assert(hasBindingObject(selfPtr), 'selfPtr: $selfPtr key: $key value: $value');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return;
-
-    if (target is Element) {
-      // Only element has properties.
-      target.setAttribute(key, value);
-    } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      target.data = value;
-    } else {
-      debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');
-    }
-  }
-
-  String? getAttribute(Pointer selfPtr, String key) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return null;
-
-    if (target is Element) {
-      // Only element has attributes.
-      return target.getAttribute(key);
-    } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      // @TODO: property is not attribute.
-      return target.data;
-    } else {
-      return null;
-    }
-  }
-
-  void removeAttribute(Pointer selfPtr, String key) {
-    assert(hasBindingObject(selfPtr), 'targetId: $selfPtr key: $key');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return;
-
-    if (target is Element) {
-      target.removeAttribute(key);
-    } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
-      // @TODO: property is not attribute.
-      target.data = '';
-    } else {
-      debugPrint('Only element has attributes, try removing $key from Node(#$selfPtr).');
-    }
-  }
-
-  void setInlineStyle(Pointer selfPtr, String key, String value) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr key: $key value: $value');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return;
-
-    if (target is Element) {
-      target.setInlineStyle(key, value);
-    }
-  }
-
-  void clearInlineStyle(Pointer selfPtr) {
-    assert(hasBindingObject(selfPtr), 'id: $selfPtr');
-    Node? target = getBindingObject<Node>(selfPtr);
-    if (target == null) return;
-
-    if (target is Element) {
-      target.clearInlineStyle();
-    }
-  }
-
-  void flushPendingStyleProperties(int address) {
-    if (!hasBindingObject(Pointer.fromAddress(address))) return;
-    Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
-    if (target == null) return;
-
-    if (target is Element && target.isConnected) {
-      target.style.flushPendingProperties();
-    }
-  }
-
-  // Hooks for DevTools.
-  VoidCallback? debugDOMTreeChanged;
-
-  void _debugDOMTreeChanged() {
-    VoidCallback? f = debugDOMTreeChanged;
-    if (f != null) {
-      f();
-    }
-  }
-
-  Future<void> handleNavigationAction(String? sourceUrl, String targetUrl, WebFNavigationType navigationType) async {
-    WebFNavigationAction action = WebFNavigationAction(sourceUrl, targetUrl, navigationType);
-
-    WebFNavigationDelegate _delegate = navigationDelegate!;
-
-    try {
-      WebFNavigationActionPolicy policy = await _delegate.dispatchDecisionHandler(action);
-      if (policy == WebFNavigationActionPolicy.cancel) return;
-
-      String targetPath = action.target;
-
-      if (!Uri.parse(targetPath).isAbsolute) {
-        String base = rootController.url;
-        targetPath = rootController.uriParser!.resolve(Uri.parse(base), Uri.parse(targetPath)).toString();
-      }
-
-      if (action.target.trim().startsWith('#')) {
-        String oldUrl = rootController.url;
-        HistoryModule historyModule = rootController.module.moduleManager.getModule('History')!;
-        historyModule.pushState(null, url: targetPath);
-        await window.dispatchEvent(HashChangeEvent(newUrl: targetPath, oldUrl: oldUrl));
-        return;
-      }
-
-      switch (action.navigationType) {
-        case WebFNavigationType.navigate:
-          await rootController.load(rootController.getPreloadBundleFromUrl(targetPath) ?? WebFBundle.fromUrl(targetPath));
-          break;
-        case WebFNavigationType.reload:
-          await rootController.reload();
-          break;
-        default:
-        // Navigate and other type, do nothing.
-      }
-    } catch (e, stack) {
-      if (_delegate.errorHandler != null) {
-        _delegate.errorHandler!(e, stack);
-      } else {
-        print('WebF navigation failed: $e\n$stack');
-      }
-    }
-  }
-
-  // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
-  static void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
-    BindingObject? bindingObject = view.getBindingObject(pointer);
-    bindingObject?.dispose();
-    view.removeBindingObject(pointer);
-    view.disposeTargetIdToDevNodeIdMap(bindingObject);
-    malloc.free(pointer);
-  }
-
-  RenderBox? getRootRenderObject() {
-    return document.documentElement?.domRenderer;
-  }
-
-  @override
-  void didChangeAccessibilityFeatures() {}
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (firstLoad) return;
-    switch (state) {
-      case AppLifecycleState.resumed:
-        document.visibilityChange(VisibilityState.visible);
-        rootController.resume();
-        break;
-      case AppLifecycleState.hidden:
-      case AppLifecycleState.paused:
-        document.visibilityChange(VisibilityState.hidden);
-        rootController.pause();
-        break;
-      case AppLifecycleState.inactive:
-        break;
-      case AppLifecycleState.detached:
-        rootController.pause();
-        break;
-    }
-  }
-
-  @override
-  void didChangeLocales(List<Locale>? locales) {}
-
-  static double FOCUS_VIEWINSET_BOTTOM_OVERALL = 32;
-
-  @override
-  void didChangeMetrics() {
-    final ownerView = rootController.ownerFlutterView;
-    final bool resizeToAvoidBottomInsets = rootController.resizeToAvoidBottomInsets;
-    final double bottomInsets;
-    if (resizeToAvoidBottomInsets) {
-      bottomInsets = ownerView.viewInsets.bottom / ownerView.devicePixelRatio;
-    } else {
-      bottomInsets = 0;
-    }
-
-    if (resizeToAvoidBottomInsets && viewport?.hasSize == true) {
-      bool shouldScrollByToCenter = false;
-      Element? focusedElement = document.focusedElement;
-      double scrollOffset = 0;
-      if (focusedElement != null) {
-        RenderBox? renderer = focusedElement.domRenderer;
-        if (renderer != null && renderer.attached && renderer.hasSize) {
-          Offset focusOffset = renderer.localToGlobal(Offset.zero);
-          // FOCUS_VIEWINSET_BOTTOM_OVERALL to meet border case.
-          if (focusOffset.dy > viewport!.size.height - bottomInsets - FOCUS_VIEWINSET_BOTTOM_OVERALL) {
-            shouldScrollByToCenter = true;
-            scrollOffset =
-                focusOffset.dy - (viewport!.size.height - bottomInsets) + renderer.size.height + FOCUS_VIEWINSET_BOTTOM_OVERALL;
-          }
-        }
-      }
-      // Show keyboard
-      if (shouldScrollByToCenter) {
-        window.scrollBy(0, scrollOffset, false);
-      }
-    }
-    window.resizeViewportRelatedElements();
-    viewport?.bottomInset = bottomInsets;
-  }
-
-  @override
-  void didChangePlatformBrightness() {
-    document.recalculateStyleImmediately();
-  }
-
-  @override
-  void didChangeTextScaleFactor() {}
-
-  @override
-  void didHaveMemoryPressure() {}
-
-  @override
-  Future<bool> didPopRoute() async {
-    return false;
-  }
-
-  @override
-  Future<bool> didPushRoute(String route) async {
-    return false;
-  }
-
-  @override
-  Future<bool> didPushRouteInformation(RouteInformation routeInformation) async {
-    return false;
-  }
-
-  @override
-  Future<ui.AppExitResponse> didRequestAppExit() async {
-    return ui.AppExitResponse.exit;
-  }
-
-  @override
-  void handleCancelBackGesture() {
-  }
-
-  @override
-  void handleCommitBackGesture() {
-  }
-
-  @override
-  bool handleStartBackGesture(backEvent) {
-    return true;
-  }
-
-  @override
-  void handleUpdateBackGestureProgress(backEvent) {
-  }
-
-  @override
-  void didChangeViewFocus(event) {}
-}
-
-// An controller designed to control functional modules.
-class WebFModuleController with TimerMixin, ScheduleFrameMixin {
-  late ModuleManager _moduleManager;
-
-  ModuleManager get moduleManager => _moduleManager;
-
-  WebFModuleController(WebFController controller, double contextId) {
-    _moduleManager = ModuleManager(controller, contextId);
-  }
-
-  bool _initialized = false;
-  Future<void> initialize() async {
-    if (_initialized) return;
-    await _moduleManager.initialize();
-    _initialized = true;
-  }
-
-  void dispose() {
-    disposeTimer();
-    disposeScheduleFrame();
-    _moduleManager.dispose();
-  }
-}
-
-class WebFController {
-  static final Map<double, WebFController?> _controllerMap = {};
-  static final Map<String, double> _nameIdMap = {};
-
+enum PreRenderingStatus { none, preloading, evaluate, rendering, done, fail }
+
+class WebFController with Diagnosticable {
+  /// The background color for viewport, default to transparent.
+  /// This determines the background color of the WebF widget content area.
+  final Color? background;
+
+  /// The width of WebF Widget.
+  /// Default: the value of max-width in constraints.
+  /// This allows you to explicitly set the width of the WebF rendering area regardless of parent constraints.
+  final double? viewportWidth;
+
+  /// The height of WebF Widget.
+  /// Default: the value of max-height in constraints.
+  /// This allows you to explicitly set the height of the WebF rendering area regardless of parent constraints.
+  final double? viewportHeight;
+
+  /// The methods of the webFNavigateDelegation help you implement custom behaviors that are triggered
+  /// during a webf view's process of loading, and completing a navigation request.
+  ///
+  /// Use this to intercept and handle navigation events such as page redirects or link clicks.
+  final WebFNavigationDelegate? navigationDelegate;
+
+  /// A method channel for receiving messages from JavaScript code and sending messages to JavaScript.
+  ///
+  /// This enables bidirectional communication between Dart and JavaScript, allowing you to expose
+  /// native functionality to web content or get data from the JavaScript environment.
+  final WebFMethodChannel? javaScriptChannel;
+
+  /// Specify the running thread for your JavaScript codes.
+  /// Default value: DedicatedThread();
+  ///
+  /// [DedicatedThread] : Executes your JavaScript code in a dedicated thread.
+  ///   Advantage: Ideal for developers building applications with hundreds of DOM elements in JavaScript,
+  ///     where common user interactions like scrolling and swiping do not heavily depend on the JavaScript.
+  ///   Disadvantages: Increase communicate overhead since the JavaScript is runs in a separate thread.
+  ///     Data exchanges between Dart and JavaScript requires mutex and synchronization.
+  ///
+  /// [DedicatedThreadGroup] : Executes multiple JavaScript contexts in a single thread.
+  ///     Rather than creating a new thread for each WebF instance, this option allows placing multiple WebF instances and their JavaScript contexts
+  ///     into one dedicated thread.
+  ///   Advantage: JavaScript contexts in the same group can share global class and string data, reducing initialization time
+  ///     for new WebF instances and their JavaScript contexts in this thread.
+  ///   Disadvantages: Since all group members run in the same thread, one can block the others, even if they are not strong related.
+  ///
+  /// [FlutterUIThread] : Executes your JavaScript code within the Flutter UI thread.
+  ///   Advantage: This is the best mode for minimizing communication time between Dart and JavaScript, especially when you have animations
+  ///     controlled by JavaScript and rendered by Flutter. If you're building animations influenced by user interactions, like figure gestures,
+  ///     setting the runningThread to [FlutterUIThread] is the optimal choice.
+  ///   Disadvantages: Any executing of JavaScript will block the executing of Dart codes.
+  ///     If a JavaScript function takes longer than a single frame, it could cause lag, as all Dart code executing will be blocked by your JavaScript.
+  ///     Be mindful of JavaScript executing times when using this mode.
+  ///
+  final WebFThread? runningThread;
+
+  /// Callback triggered when a network error occurs during loading.
+  ///
+  /// Use this to handle and possibly recover from network failures when loading resources.
+  LoadErrorHandler? onLoadError;
+
+  /// Callback triggered when the app is fully loaded, including DOM, CSS, JavaScript, and images.
+  ///
+  /// This is equivalent to the window.onload event in web browsers and indicates all resources
+  /// have been loaded and rendered.
+  LoadHandler? onLoad;
+
+  /// Callback triggered when the app's DOM and CSS have finished loading.
+  ///
+  /// This is equivalent to the DOMContentLoaded event in web browsers and fires when the initial
+  /// HTML document has been completely loaded and parsed, without waiting for stylesheets,
+  /// images, and subframes to finish loading.
+  /// See: https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
+  LoadHandler? onDOMContentLoaded;
+
+  /// Callback triggered after the controller is fully initialized but before content loading.
+  ///
+  /// This callback provides an opportunity to perform setup tasks after the WebF controller
+  /// has been initialized with all its core components, but before any content has been evaluated.
+  /// Use this for early controller configuration, such as setting up custom JavaScript APIs or
+  /// initializing features that need to be available when the page loads.
+  ///
+  /// Since this is executed during the controller's initialization phase, any asynchronous operations
+  /// performed here will block the controller initialization completion (controlledInitCompleter),
+  /// ensuring your setup is complete before any content begins loading.
+  ///
+  /// ```dart
+  /// WebFController(
+  ///   onControllerInit: (controller) async {
+  ///     // Perform early setup before any content loads
+  ///     await controller.methodChannel.invokeMethod('registerCustomAPI', {...});
+  ///   }
+  /// )
+  /// ```
+  OnControllerInit? onControllerInit;
+
+  /// Callback triggered when a JavaScript error occurs during loading.
+  ///
+  /// Use this to catch and handle JavaScript execution errors in the web content.
+  JSErrorHandler? onJSError;
+
+  /// Open a service to support Chrome DevTools for debugging.
+  ///
+  /// When enabled, allows you to connect Chrome DevTools to inspect rendered DOM elements,
+  /// debug JavaScript, monitor network requests, and analyze performance of the WebF content.
+  final DevToolsService? devToolsService;
+
+  /// Interceptor for HTTP client operations initiated by JavaScript code.
+  ///
+  /// This allows you to intercept, modify, redirect or mock network requests made from JavaScript,
+  /// giving you control over the network layer of the WebF environment.
+  final HttpClientInterceptor? httpClientInterceptor;
+
+  /// Parser for handling and potentially transforming URIs within WebF.
+  ///
+  /// This can be used to customize how URLs are resolved, redirected, or rewritten
+  /// before they are processed by the WebF engine.
   UriParser? uriParser;
-  WebFLoadingMode mode = WebFLoadingMode.standard;
 
-  bool get isPreLoadingOrPreRenderingComplete => preloadStatus == PreloadingStatus.done || preRenderingStatus == PreRenderingStatus.done;
+  /// Remote resources (HTML, CSS, JavaScript, Images, and other content loadable via WebFBundle)
+  /// that can be pre-loaded before WebF is mounted in Flutter.
+  ///
+  /// Use this property to reduce loading times when a WebF application attempts to load external
+  /// resources. Pre-loading can significantly improve startup performance, especially for frequently
+  /// accessed resources.
+  final List<WebFBundle>? preloadedBundles;
+
+  /// The initial cookies to set for the JavaScript environment.
+  ///
+  /// These cookies will be available to JavaScript and network requests from the start.
+  final List<Cookie>? initialCookies;
+
+  /// Cookie manager that provides methods to manipulate cookies.
+  ///
+  /// Allows developers to create, read, update, and delete cookies with full control.
+  late CookieManager cookieManager;
+
+  /// The default route path for the hybrid router in WebF.
+  ///
+  /// Sets the initial path that the router will navigate to when the application starts.
+  /// This is the entry point for the hybrid routing system in WebF.
+  String? initialRoute;
+
+  /// The default route state for the hybrid router in WebF.
+  ///
+  /// Users can read this value by webf.hybridRouter.state when loading by initialRoute path.
+  Map<String, dynamic>? initialState;
+
+  /// A Navigator observer that notifies RouteAwares of changes to the state of their route.
+  ///
+  /// The RouteObserver is essential for the hybrid routing system, enabling WebF to
+  /// subscribe to Flutter route changes and maintain synchronization between Flutter
+  /// navigation and WebF's routing system.
+  final RouteObserver<ModalRoute<void>>? routeObserver;
+
+  /// If true the content should size itself to avoid the onscreen keyboard
+  /// whose height is defined by the ambient [FlutterView]'s
+  /// [FlutterView.viewInsets] `bottom` property.
+  ///
+  /// For example, if there is an onscreen keyboard displayed above the widget,
+  /// the view can be resized to avoid overlapping the keyboard, which prevents
+  /// widgets inside the view from being obscured by the keyboard.
+  ///
+  /// Defaults to true.
+  final bool resizeToAvoidBottomInsets;
+
+  /// The routing table for the WebF hybrid router.
+  ///
+  /// Maps route paths to Flutter widgets, enabling the hybrid navigation system where
+  /// routes can be handled by either WebF content or native Flutter components.
+  /// This allows seamless integration between WebF-rendered content and Flutter widgets.
+  Map<String, SubViewBuilder>? routes;
+
+  static final Map<double, WebFController?> _controllerMap = {};
+
+  /// The loading mode for WebF content.
+  ///
+  /// Controls how resources are loaded and when execution occurs.
+  /// Default is standard mode where everything is loaded and executed when mounted.
+  WebFLoadingMode mode = WebFLoadingMode.preloading;
 
   static WebFController? getControllerOfJSContextId(double? contextId) {
     if (!_controllerMap.containsKey(contextId)) {
@@ -897,26 +285,41 @@ class WebFController {
     return _controllerMap;
   }
 
-  static WebFController? getControllerOfName(String name) {
-    if (!_nameIdMap.containsKey(name)) return null;
-    double? contextId = _nameIdMap[name];
-    return getControllerOfJSContextId(contextId);
+  /// Prints the render object tree for debugging purposes.
+  ///
+  /// @param routePath Optional path to a specific route whose render tree should be printed.
+  ///                 If null or matches initialRoute, prints the root render object tree.
+  ///                 Otherwise prints the render tree of the specified hybrid route view.
+  void printRenderObjectTree(String? routePath) {
+    if (routePath == null || routePath == initialRoute) {
+      debugPrint(view.getRootRenderObject()?.toStringDeep());
+    } else {
+      RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
+      String? renderObjectTree = routeLinkElement?.getRenderObjectTree();
+      debugPrint(renderObjectTree);
+    }
   }
 
-  GestureDispatcher gestureDispatcher = GestureDispatcher();
+  /// Prints the render object tree for debugging purposes.
+  ///
+  /// @param routePath Optional path to a specific route whose render tree should be printed.
+  ///                 If null or matches initialRoute, prints the root DOM tree.
+  ///                 Otherwise prints the render tree of the specified hybrid route view.
+  void printDOMTree(String? routePath) {
+    if (routePath == null || routePath == initialRoute) {
+      debugPrint(view.document.toStringDeep());
+    } else {
+      RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
+      String? domTree = routeLinkElement?.toStringDeep();
+      debugPrint(domTree);
+    }
+  }
 
-  LoadHandler? onLoad;
-  LoadHandler? onDOMContentLoaded;
+  /// Callback triggered when the title of the document changes.
+  ///
+  /// This is invoked when the document title is updated through JavaScript,
+  /// allowing the app to reflect title changes in the UI.
   TitleChangedHandler? onTitleChanged;
-
-  // Error handler when load bundle failed.
-  LoadErrorHandler? onLoadError;
-
-  // Error handler when got javascript error when evaluate javascript codes.
-  JSErrorHandler? onJSError;
-
-  final DevToolsService? devToolsService;
-  final HttpClientInterceptor? httpClientInterceptor;
 
   WebFMethodChannel? _methodChannel;
 
@@ -930,47 +333,91 @@ class WebFController {
     _onJSLog = jsLogHandler;
   }
 
-  // Internal usable. Notifications to WebF widget when custom element had changed.
-  OnCustomElementAttached? onCustomElementAttached;
-  OnCustomElementDetached? onCustomElementDetached;
+  ui.FlutterView? _ownerFlutterView;
 
-  final List<Cookie>? initialCookies;
+  ui.FlutterView? get ownerFlutterView => _ownerFlutterView;
 
-  final ui.FlutterView ownerFlutterView;
+  final List<HybridRoutePageContext> _buildContextStack = [];
 
-  List<BuildContext> buildContextStack = [];
-  bool resizeToAvoidBottomInsets;
-  final BuildContext buildContext;
+  /// Get current attached buildContexts.
+  /// Especially useful to detect how many hybrid route pages attached to the Flutter tree.
+  List<HybridRoutePageContext> get buildContextStack => _buildContextStack;
+
+  void pushNewBuildContext({required BuildContext context, required String routePath}) {
+    _buildContextStack.add(HybridRoutePageContext(routePath, context));
+  }
+
+  void popBuildContext({BuildContext? context, String? routePath}) {
+    if (_buildContextStack.isNotEmpty) {
+      if (context != null) {
+        assert(routePath != null);
+        _buildContextStack.removeWhere((context) => context.path == routePath);
+      } else {
+        _buildContextStack.removeLast();
+      }
+    }
+  }
+
+  final Set<WebFState> _rootState = {};
+
+  WebFState? get state {
+    final stateFinder = _rootState.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.last;
+  }
+
+  void attachWebFState(WebFState state) {
+    _rootState.add(state);
+  }
+
+  void removeWebFState(WebFState state) {
+    _rootState.remove(state);
+  }
+
+  UniqueKey key = UniqueKey();
+
+  HybridRoutePageContext? get currentBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.last : null;
+
+  HybridRoutePageContext? get rootBuildContext => _buildContextStack.isNotEmpty ? _buildContextStack.first : null;
 
   bool? _darkModeOverride;
+
+  // This ensures that when app developers manually toggle dark mode,
+  // both the DOM event is fired and styles are updated immediately
   set darkModeOverride(value) {
+    bool? previousDarkMode = _darkModeOverride;  // Store previous value
+
     _darkModeOverride = value;
-  }
-
-  bool get isDarkMode {
-    return _darkModeOverride ?? ownerFlutterView.platformDispatcher.platformBrightness != Brightness.light;
-  }
-
-  String? _name;
-
-  String? get name => _name;
-
-  set name(String? value) {
-    if (value == null) return;
-    if (_name != null) {
-      double? contextId = _nameIdMap[_name];
-      if (contextId == null) return;
-      _nameIdMap.remove(_name);
-      _nameIdMap[value] = contextId;
+    // Only dispatch event and recalculate if:
+    // 1. Controller is already evaluated (content is loaded)
+    // 2. Previous value existed and was different
+    // 3. New value is not null
+    if (evaluated && previousDarkMode != null && value != null && previousDarkMode != value) {
+      view.window.dispatchEvent(ColorSchemeChangeEvent(value ? 'dark' : 'light'));
+      view.document.recalculateStyleImmediately();
     }
-    _name = value;
   }
 
-  final GestureListener? _gestureListener;
+  get darkModeOverride => _darkModeOverride;
 
-  final List<WebFBundle>? preloadedBundles;
+  /// Whether the current UI mode is dark mode.
+  ///
+  /// Returns true if dark mode is explicitly overridden to true via darkModeOverride
+  /// or if the platform brightness is not light.
+  bool? get isDarkMode {
+    if (_darkModeOverride != null) {
+      return _darkModeOverride;
+    }
+    if (ownerFlutterView != null) {
+      return ownerFlutterView!.platformDispatcher.platformBrightness == Brightness.dark;
+    }
+    return null;  // Return null when we can't determine system brightness
+  }
+
   Map<String, WebFBundle>? _preloadBundleIndex;
 
+  /// Retrieves a preloaded bundle that matches the given URL.
+  ///
+  /// Returns the WebFBundle if it exists in the preloaded bundles list, or null if not found.
   WebFBundle? getPreloadBundleFromUrl(String url) {
     return _preloadBundleIndex?[url];
   }
@@ -983,57 +430,50 @@ class WebFController {
     });
   }
 
-  /// Register the RouteObserver to observer page navigation.
-  /// This is useful if you wants to pause webf timers and callbacks when webf widget are hidden by page route.
-  /// https://api.flutter.dev/flutter/widgets/RouteObserver-class.html
-  final RouteObserver<ModalRoute<void>>? routeObserver;
-
   // The view entrypoint bundle.
   WebFBundle? _entrypoint;
+
   WebFBundle? get entrypoint => _entrypoint;
   ui.Size? _viewportSize;
-  ui.Size? get viewportSize => _viewportSize;
 
-  final WebFThread runningThread;
+  ui.Size? get viewportSize => _viewportSize;
 
   Completer controlledInitCompleter = Completer();
   Completer controllerPreloadingCompleter = Completer();
   Completer controllerPreRenderingCompleter = Completer();
+  Completer controllerOnLoadCompleter = Completer();
+  Completer controllerOnDOMContentLoadedCompleter = Completer();
+  Completer viewportLayoutCompleter = Completer();
 
-  bool externalController;
-
-  WebFController(BuildContext context, {
-    String? name,
-    double? viewportWidth,
-    double? viewportHeight,
+  WebFController({
     bool enableDebug = false,
-    Color? background,
-    GestureListener? gestureListener,
-    WebFNavigationDelegate? navigationDelegate,
-    WebFMethodChannel? methodChannel,
     WebFBundle? bundle,
     WebFThread? runningThread,
-    this.onCustomElementAttached,
-    this.onCustomElementDetached,
+    this.background,
+    this.viewportWidth,
+    this.viewportHeight,
+    this.javaScriptChannel,
+    this.navigationDelegate,
     this.onLoad,
     this.onDOMContentLoaded,
     this.onLoadError,
+    this.onControllerInit,
     this.onJSError,
     this.httpClientInterceptor,
     this.devToolsService,
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
+    this.initialRoute,
+    this.initialState,
     this.routeObserver,
-    this.externalController = true,
-    this.resizeToAvoidBottomInsets = true
-  })  : buildContext = context,
-        _name = name,
-        _entrypoint = bundle,
-        _gestureListener = gestureListener,
+    this.routes,
+    this.resizeToAvoidBottomInsets = true,
+  })  : _entrypoint = bundle,
         runningThread = runningThread ?? DedicatedThread(),
-        ownerFlutterView = View.of(context) {
+        _methodChannel = javaScriptChannel {
     _initializePreloadBundle();
+    cookieManager = CookieManager();
     if (enableWebFProfileTracking) {
       WebFProfiler.initialize();
     }
@@ -1041,20 +481,16 @@ class WebFController {
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
 
-    PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
-
     _view = WebFViewController(
-      background: background,
-      enableDebug: enableDebug,
-      rootController: this,
-      runningThread: this.runningThread,
-      navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
-      gestureListener: _gestureListener,
-      initialCookies: initialCookies
-    );
+        background: background,
+        enableDebug: enableDebug,
+        rootController: this,
+        runningThread: this.runningThread!,
+        navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
+        initialCookies: initialCookies);
 
-    _view.initialize().then((_) {
-      final double contextId = _view.contextId;
+    _view!.initialize().then((_) async {
+      final double contextId = view.contextId;
 
       _module = WebFModuleController(this, contextId);
 
@@ -1065,10 +501,6 @@ class WebFController {
 
       assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
       _controllerMap[contextId] = this;
-      assert(!_nameIdMap.containsKey(name), 'found exist name of WebFController, name: $name');
-      if (name != null) {
-        _nameIdMap[name] = contextId;
-      }
 
       setupHttpOverrides(httpClientInterceptor, contextId: contextId);
 
@@ -1078,91 +510,109 @@ class WebFController {
         devToolsService!.init(this);
       }
 
-      controlledInitCompleter.complete();
-    }).then((_) {
-      if (externalController && _entrypoint != null) {
-        preload(_entrypoint!);
+      flushUICommand(view, nullptr);
+
+      if (onControllerInit != null) {
+        await onControllerInit!(this);
       }
+
+      controlledInitCompleter.complete();
     });
   }
 
-  late WebFViewController _view;
+  WebFViewController? _view;
 
+  /// The view controller that manages the visual rendering and DOM operations.
+  ///
+  /// Provides access to the document, window, viewport, and other rendering components.
   WebFViewController get view {
-    return _view;
+    return _view!;
   }
 
-  late WebFModuleController _module;
+  WebFModuleController? _module;
 
+  /// The module controller that manages JavaScript modules and features.
+  ///
+  /// Provides access to browser-like APIs such as history, timers, storage, and other modules.
   WebFModuleController get module {
-    return _module;
+    return _module!;
   }
 
+  /// Queue of previous history items for the standard Web History API implementation.
+  ///
+  /// Used for tracking and enabling backward navigation with window.history.back().
   final Queue<HistoryItem> previousHistoryStack = Queue();
+
+  /// Queue of next history items for the standard Web History API implementation.
+  ///
+  /// Used for tracking and enabling forward navigation with window.history.forward().
   final Queue<HistoryItem> nextHistoryStack = Queue();
 
+  /// Storage for session data that implements the standard Web Storage API's sessionStorage.
+  ///
+  /// This maintains key-value pairs accessible through JavaScript's window.sessionStorage,
+  /// which persists for the duration of the page session but is cleared when the page is closed.
   final Map<String, String> sessionStorage = {};
 
-  HistoryModule get history => _module.moduleManager.getModule('History')!;
-  HistoryModule get hybridHistory => _module.moduleManager.getModule('HybridHistory')!;
+  /// Access to the standard Web History API implementation.
+  ///
+  /// Provides methods like back(), forward(), pushState(), etc., following the web standard.
+  HistoryModule get history => module.moduleManager.getModule('History')!;
 
+  /// Access to WebF's hybrid history implementation that integrates with Flutter navigation.
+  ///
+  /// Enables synchronized navigation between WebF content and native Flutter routes.
+  HybridHistoryModule get hybridHistory => module.moduleManager.getModule('HybridHistory')!;
+
+  /// Creates a fallback URI for WebF bundle content.
+  ///
+  /// Generates a URI in the format `vm://bundle/[id]` that serves as a virtual origin
+  /// for WebF content that doesn't have a real URL. This is important for maintaining
+  /// same-origin security policies in the JavaScript environment.
+  ///
+  /// @param id Optional JavaScript context ID to make the URI unique per context
+  /// @return A URI object representing the virtual bundle location
   static Uri fallbackBundleUri([double? id]) {
     // The fallback origin uri, like `vm://bundle/0`
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
   }
 
+  /// Sets a navigation delegate to handle navigation events.
+  ///
+  /// The navigation delegate allows intercepting and controlling navigation actions
+  /// such as page loads and redirects within the WebF content.
+  ///
+  /// Example:
+  /// ```dart
+  /// controller.setNavigationDelegate(WebFNavigationDelegate(
+  ///   decidePolicyForNavigation: (request) {
+  ///     // Block navigation to external websites
+  ///     if (request.url.startsWith('https://external.com')) {
+  ///       return WebFNavigationDecision.prevent;
+  ///     }
+  ///     return WebFNavigationDecision.allow;
+  ///   }
+  /// ));
+  /// ```
   void setNavigationDelegate(WebFNavigationDelegate delegate) {
-    _view.navigationDelegate = delegate;
+    view.navigationDelegate = delegate;
   }
 
+  /// Flag indicating whether fonts are currently being loaded.
+  ///
+  /// When true, indicates that system fonts are in the process of loading,
+  /// which may affect text rendering in the WebF content.
   bool isFontsLoading = false;
+
+  /// Watches for font loading events and updates the isFontsLoading flag.
+  ///
+  /// This method is registered as a listener with the system fonts service to track
+  /// when fonts are being loaded, which can affect text layout and rendering.
   void _watchFontLoading() {
     isFontsLoading = true;
     SchedulerBinding.instance.scheduleFrameCallback((_) {
       isFontsLoading = false;
     });
-  }
-
-  Future<void> unload() async {
-    assert(!_view._disposed, 'WebF have already disposed');
-    // Should clear previous page cached ui commands
-    clearUICommand(_view.contextId);
-
-    await controlledInitCompleter.future;
-
-    // Wait for next microtask to make sure C++ native Elements are GC collected.
-    Completer completer = Completer();
-    Future.microtask(() async {
-      _module.dispose();
-      await _view.dispose();
-      // RenderViewportBox will not disposed when reload, just remove all children and clean all resources.
-      _view.viewport?.reload();
-
-      double oldId = _view.contextId;
-
-      _view = WebFViewController(
-          background: _view.background,
-          enableDebug: _view.enableDebug,
-          rootController: this,
-          navigationDelegate: _view.navigationDelegate,
-          gestureListener: _view.gestureListener,
-          runningThread: runningThread);
-
-      await _view.initialize();
-
-      _module = WebFModuleController(this, _view.contextId);
-
-      // Reconnect the new contextId to the Controller
-      _controllerMap.remove(oldId);
-      _controllerMap[_view.contextId] = this;
-      if (name != null) {
-        _nameIdMap[name!] = _view.contextId;
-      }
-
-      completer.complete();
-    });
-
-    return completer.future;
   }
 
   String? get _url {
@@ -1175,8 +625,15 @@ class WebFController {
     return historyModule.stackTop?.resolvedUri;
   }
 
+  /// The current URL of the WebF content.
+  ///
+  /// Returns the URL string from the current history item or an empty string if not available.
   String get url => _url ?? '';
 
+  /// The current URI of the WebF content as a Uri object.
+  ///
+  /// Returns the resolved Uri from the current history item or null if not available.
+  /// Useful for accessing and manipulating individual components of the current URL.
   Uri? get uri => _uri;
 
   _addHistory(WebFBundle bundle) {
@@ -1190,93 +647,47 @@ class WebFController {
     historyModule.add(bundle);
   }
 
-  Future<void> reload() async {
-    assert(!_view._disposed, 'WebF have already disposed');
+  /// Reloads the current WebF content.
+  ///
+  /// This performs a full reload of the current content, including disposing the old
+  /// environment and re-executing the entrypoint JavaScript/HTML.
+  Future<WebFController?> reload() async {
+    assert(!_view!.disposed, 'WebF have already disposed');
 
-    if (devToolsService != null) {
-      devToolsService!.willReload();
-    }
+    String? currentPageId = WebFControllerManager.instance.getControllerName(this);
 
-    await controlledInitCompleter.future;
+    if (currentPageId == null) return null;
 
-    _isComplete = false;
-
-    RenderViewportBox? rootRenderObject = view.viewport;
-    if (rootRenderObject == null) return;
-
-    await unload();
-
-    view.viewport = rootRenderObject;
-
-    // Initialize document, window and the documentElement.
-    flushUICommand(view, nullptr);
-
-    Completer completer = Completer();
-
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-
-      // Sync viewport size to the documentElement.
-      view.document.initializeRootElementSize();
-      // Starting to flush ui commands every frames.
-      view.flushPendingCommandsPerFrame();
-
-      await executeEntrypoint();
-
-      if (devToolsService != null) {
-        devToolsService!.didReload();
-      }
-
-      completer.complete();
-    });
-
-    return completer.future;
+    return WebFControllerManager.instance
+        .addOrUpdateControllerWithLoading(name: currentPageId, bundle: entrypoint!, forceReplace: true, mode: mode);
   }
 
-  Future<void> load(WebFBundle bundle) async {
-    assert(!_view._disposed, 'WebF have already disposed');
+  /// Loads content from the provided WebFBundle.
+  ///
+  /// Unloads any existing content, adds the bundle to history, and executes the new content.
+  /// This is the main method for loading new content into WebF.
+  Future<WebFController?> load(WebFBundle bundle) async {
+    assert(!_view!.disposed, 'WebF have already disposed');
 
-    if (devToolsService != null) {
-      devToolsService!.willReload();
-    }
+    String? currentPageId = WebFControllerManager.instance.getControllerName(this);
 
-    await controlledInitCompleter.future;
+    if (currentPageId == null) return null;
 
-    RenderViewportBox rootRenderObject = view.viewport!;
-
-    await unload();
-
-    view.viewport = rootRenderObject;
-
-    // Initialize document, window and the documentElement.
-    flushUICommand(view, nullptr);
-
-    // Update entrypoint.
-    _entrypoint = bundle;
-    _addHistory(bundle);
-
-    Completer completer = Completer();
-
-    SchedulerBinding.instance.addPostFrameCallback((timeStamp) async {
-
-      // Sync viewport size to the documentElement.
-      view.document.initializeRootElementSize();
-      // Starting to flush ui commands every frames.
-      view.flushPendingCommandsPerFrame();
-
-      await executeEntrypoint();
-
-      if (devToolsService != null) {
-        devToolsService!.didReload();
-      }
-
-      completer.complete();
-    });
-
-    return completer.future;
+    return WebFControllerManager.instance
+        .addOrUpdateControllerWithLoading(name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
   }
 
   PreloadingStatus _preloadStatus = PreloadingStatus.none;
+
   PreloadingStatus get preloadStatus => _preloadStatus;
+
+  /// Sets the preloading status
+  ///
+  /// This is used internally and by WebFControllerManager to control the preloading state
+  set preloadStatus(PreloadingStatus status) {
+    _preloadStatus = status;
+  }
+
   VoidCallback? _onPreloadingFinished;
   int unfinishedPreloadResources = 0;
 
@@ -1287,7 +698,7 @@ class WebFController {
   /// If the entrypoint is a JavaScript file, WebF only do loading until the WebF widget is mounted into the Flutter tree.
   /// Using this mode can save up to 50% of loading time, while maintaining a high level of compatibility with the standard mode.
   /// It's safe and recommended to use this mode for all types of pages.
-  Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize}) async {
+  Future<void> preload(WebFBundle bundle, {ui.Size? viewportSize, Duration? timeout}) async {
     if (_preloadStatus == PreloadingStatus.done) return;
     controllerPreloadingCompleter = Completer();
 
@@ -1300,6 +711,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
+    view.document.initializeCookieJarForUrl(url);
 
     mode = WebFLoadingMode.preloading;
 
@@ -1309,74 +721,102 @@ class WebFController {
     // Set the status value for preloading.
     _preloadStatus = PreloadingStatus.preloading;
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-
     view.document.preloadViewportSize = _viewportSize;
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
-    view.document.documentElement!.createRenderer();
-    view.document.documentElement!.ensureChildAttached();
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
+    run() async {
+      bool isTimeout = false;
+      try {
+        Timer(timeout ?? Duration(seconds: 10), () {
+          if (controllerPreloadingCompleter.isCompleted) return;
+          isTimeout = true;
+          _preloadStatus = PreloadingStatus.fail;
+          controllerPreloadingCompleter.completeError(FlutterError('Preloading failed with exceed timeout limits'));
+        });
 
-    await Future.wait([
-      _resolveEntrypoint(),
-      module.initialize()
-    ]);
+        await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
-    if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
-      // Convert the JavaScript code into bytecode.
-      if (_entrypoint!.isJavascript) {
-        await _entrypoint!.preProcessing(view.contextId);
-      }
-      _preloadStatus = PreloadingStatus.done;
-      controllerPreloadingCompleter.complete();
-    } else if (_entrypoint!.isHTML) {
-      EvaluateOpItem? evaluateOpItem;
-      if (enableWebFProfileTracking) {
-        evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
-      }
+        if (isTimeout) return;
 
-      // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-      await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
+        if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+          // Convert the JavaScript code into bytecode.
+          if (_entrypoint!.isJavascript) {
+            await _entrypoint!.preProcessing(view.contextId);
+          }
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
-      }
+          if (isTimeout) return;
 
-      // Initialize document, window and the documentElement.
-      flushUICommand(view, view.window.pointer!);
-
-      if (view.document.scriptRunner.hasPreloadScripts()) {
-        _onPreloadingFinished = () {
           _preloadStatus = PreloadingStatus.done;
           controllerPreloadingCompleter.complete();
-        };
-      } else {
-        _preloadStatus = PreloadingStatus.done;
-        controllerPreloadingCompleter.complete();
+        } else if (_entrypoint!.isHTML) {
+          EvaluateOpItem? evaluateOpItem;
+          if (enableWebFProfileTracking) {
+            evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
+          }
+
+          // Evaluate the HTML entry point, and loading the stylesheets and scripts.
+          await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
+
+          if (enableWebFProfileTracking) {
+            WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
+          }
+
+          if (isTimeout) return;
+
+          // Initialize document, window and the documentElement.
+          flushUICommand(view, view.window.pointer!);
+
+          if (view.document.scriptRunner.hasPreloadScripts()) {
+            _onPreloadingFinished = () {
+              if (isTimeout) return;
+
+              _preloadStatus = PreloadingStatus.done;
+              controllerPreloadingCompleter.complete();
+            };
+          } else {
+            _preloadStatus = PreloadingStatus.done;
+            controllerPreloadingCompleter.complete();
+          }
+        }
+      } catch (e, stack) {
+        if (isTimeout) return;
+
+        _preloadStatus = PreloadingStatus.fail;
+        _handlingLoadingError(e, stack);
+        controllerPreloadingCompleter.completeError(e, stack);
       }
     }
+
+    run();
 
     return controllerPreloadingCompleter.future;
   }
 
-  bool get shouldBlockingFlushingResolvedStyleProperties {
-    if (mode != WebFLoadingMode.preRendering) return false;
+  Object? _loadingError;
 
-    RenderBox? rootRenderObject = view.getRootRenderObject();
+  Object? get loadingError => _loadingError;
 
-    if (rootRenderObject == null || !rootRenderObject.attached) return true;
+  bool get hasLoadingError => _loadingError != null;
 
-    return preRenderingStatus.index < PreRenderingStatus.done.index;
+  void _handlingLoadingError(Object error, StackTrace stack) {
+    if (onLoadError != null) {
+      onLoadError!(FlutterError(error.toString()), stack);
+    }
+    _loadingError = error;
   }
 
   PreRenderingStatus _preRenderingStatus = PreRenderingStatus.none;
+
   PreRenderingStatus get preRenderingStatus => _preRenderingStatus;
+
+  /// Sets the prerendering status
+  ///
+  /// This is used internally and by WebFControllerManager to control the prerendering state
+  set preRenderingStatus(PreRenderingStatus status) {
+    _preRenderingStatus = status;
+  }
+
   /// The `aggressive` mode is a step further than `preloading`, cutting down up to 90% of loading time for optimal performance.
   /// This mode simulates the instantaneous response of native Flutter pages but may require modifications in the existing web codes for compatibility.
   /// In this mode, all remote resources are loaded and executed similarly to the standard mode, but with an offline-like behavior.
@@ -1385,7 +825,11 @@ class WebFController {
   /// If your application depends on viewModule properties, ensure that the related code is placed within the `load` and `DOMContentLoaded` or `prerendered` event callbacks of the window.
   /// These callbacks are triggered once the WebF widget is mounted into the Flutter tree.
   /// Apps optimized for this mode remain compatible with both `standard` and `preloading` modes.
-  Future<void> preRendering(WebFBundle bundle) async {
+  /// Aggressively preloads and prerenders content from the provided WebFBundle.
+  ///
+  /// This mode loads, parses, and executes content in a simulated environment before mounting.
+  /// Can improve loading performance by up to 90%, but requires special handling for dimension-dependent code.
+  Future<void> preRendering(WebFBundle bundle, {Duration? timeout}) async {
     if (_preRenderingStatus == PreRenderingStatus.done) return;
 
     controllerPreRenderingCompleter = Completer();
@@ -1398,6 +842,7 @@ class WebFController {
     // Update entrypoint.
     _entrypoint = bundle;
     _replaceCurrentHistory(bundle);
+    view.document.initializeCookieJarForUrl(url);
 
     mode = WebFLoadingMode.preRendering;
 
@@ -1413,48 +858,72 @@ class WebFController {
 
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
-    view.document.documentElement!.createRenderer();
-    view.document.documentElement!.ensureChildAttached();
 
     if (enableWebFProfileTracking) {
       WebFProfiler.instance.finishTrackUICommand();
     }
 
-    // Preparing the entrypoint
-    await Future.wait([
-      _resolveEntrypoint(),
-      module.initialize()
-    ]);
+    run() async {
+      bool isTimeout = false;
 
-    // Stop the animation frame
-    module.pauseAnimationFrame();
+      try {
+        Timer(timeout ?? Duration(seconds: 20), () {
+          if (controllerPreRenderingCompleter.isCompleted) return;
+          isTimeout = true;
+          _preRenderingStatus = PreRenderingStatus.fail;
+          controllerPreRenderingCompleter.completeError(FlutterError('Prerendering failed with exceed timeout limits'));
+        });
 
-    // Pause the animation timeline.
-    view.stopAnimationsTimeLine();
+        // Preparing the entrypoint
+        await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
-    view.window.addEventListener(EVENT_LOAD, (event) async {
-      _preRenderingStatus = PreRenderingStatus.done;
-    });
+        if (isTimeout) return;
 
-    if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
-      // Convert the JavaScript code into bytecode.
-      if (_entrypoint!.isJavascript) {
-        await _entrypoint!.preProcessing(view.contextId);
+        // Stop the animation frame
+        module.pauseAnimationFrame();
+
+        // Pause the animation timeline.
+        view.stopAnimationsTimeLine();
+
+        view.window.addEventListener(EVENT_LOAD, (event) async {
+          _preRenderingStatus = PreRenderingStatus.done;
+        });
+
+        if (_entrypoint!.isJavascript || _entrypoint!.isBytecode) {
+          // Convert the JavaScript code into bytecode.
+          if (_entrypoint!.isJavascript) {
+            await _entrypoint!.preProcessing(view.contextId);
+          }
+        }
+
+        if (isTimeout) return;
+
+        _preRenderingStatus = PreRenderingStatus.evaluate;
+
+        // Evaluate the entry point, and loading the stylesheets and scripts.
+        await evaluateEntrypoint();
+
+        if (isTimeout) return;
+
+        evaluated = true;
+
+        view.flushPendingCommandsPerFrame();
+      } catch (e, stack) {
+        if (isTimeout) return;
+        _preRenderingStatus = PreRenderingStatus.fail;
+        _handlingLoadingError(e, stack);
+        controllerPreRenderingCompleter.complete();
+        return;
+      }
+
+      // If there are no <script /> elements, finish this prerendering process.
+      if (!view.document.scriptRunner.hasPendingScripts()) {
+        controllerPreRenderingCompleter.complete();
+        return;
       }
     }
 
-    _preRenderingStatus = PreRenderingStatus.evaluate;
-
-    // Evaluate the entry point, and loading the stylesheets and scripts.
-    await evaluateEntrypoint();
-
-    view.flushPendingCommandsPerFrame();
-
-    // If there are no <script /> elements, finish this prerendering process.
-    if (!view.document.scriptRunner.hasPendingScripts()) {
-      controllerPreRenderingCompleter.complete();
-      return;
-    }
+    run();
 
     return controllerPreRenderingCompleter.future;
   }
@@ -1484,21 +953,13 @@ class WebFController {
     _pendingCallbacks.clear();
   }
 
-  final List<SharedRenderWidgetAdapter> pendingWidgetElements = [];
-
-  void flushPendingUnAttachedWidgetElements() {
-    assert(onCustomElementAttached != null);
-    for (int i = 0; i < pendingWidgetElements.length; i ++) {
-      onCustomElementAttached!(pendingWidgetElements[i]);
-    }
-    pendingWidgetElements.clear();
-  }
-
-  void reactiveWidgetElements() {
-
-  }
+  void reactiveWidgetElements() {}
 
   // Pause all timers and callbacks if page are invisible.
+  /// Pauses all timers, animations, and JavaScript execution.
+  ///
+  /// Useful when the WebF content is not visible or the app is in the background.
+  /// Reduces resource usage by suspending non-essential operations.
   void pause() {
     if (_paused) return;
     _paused = true;
@@ -1508,6 +969,10 @@ class WebFController {
   }
 
   // Resume all timers and callbacks if page now visible.
+  /// Resumes all timers, animations, and JavaScript execution that were paused.
+  ///
+  /// Call this when the WebF content becomes visible again or the app returns to the foreground.
+  /// Restores normal operation of the paused WebF environment.
   void resume() {
     if (!_paused) return;
 
@@ -1530,33 +995,48 @@ class WebFController {
   bool _disposed = false;
 
   bool get disposed => _disposed;
+
+  /// Disposes the WebF controller and all associated resources.
+  ///
+  /// Cleans up native resources, listeners, and cached data. Should be called when
+  /// the controller is no longer needed to prevent memory leaks.
   Future<void> dispose() async {
-    _module.dispose();
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
-    await _view.dispose();
-    _controllerMap[_view.contextId] = null;
-    _controllerMap.remove(_view.contextId);
-    _nameIdMap.remove(name);
+    removeHttpOverrides(contextId: _view!.contextId);
+    await _view?.dispose();
+    _module?.dispose();
+    if (_view?.inited == true) {
+      _controllerMap[_view!.contextId] = null;
+      _controllerMap.remove(_view!.contextId);
+    }
+
+    if (isFlutterAttached) {
+      BuildContext? rootBuildContext = this.rootBuildContext?.context;
+      if (rootBuildContext != null) {
+        WebFState state = (rootBuildContext as StatefulElement).state as WebFState;
+        state.requestForUpdate(ControllerDisposeChangeReason());
+      }
+    }
+
     // To release entrypoint bundle memory.
     _entrypoint?.dispose();
 
     devToolsService?.dispose();
+    routes = null;
+    _loadingError = null;
     _disposed = true;
   }
 
   String get origin {
     Uri uri = Uri.parse(url);
-    return '${uri.scheme}://${uri.host}:${uri.port}?query=${uri.query}';
+    return '${uri.scheme}://${uri.host}:${uri.port}';
   }
 
   Future<void> executeEntrypoint(
       {bool shouldResolve = true, bool shouldEvaluate = true, AnimationController? animationController}) async {
     if (_entrypoint != null && shouldResolve) {
       await controlledInitCompleter.future;
-      await Future.wait([
-        _resolveEntrypoint(),
-        _module.initialize()
-      ]);
+      await Future.wait([_resolveEntrypoint(), _module!.initialize()]);
       if (_entrypoint!.isResolved && shouldEvaluate) {
         await evaluateEntrypoint(animationController: animationController);
       } else {
@@ -1570,7 +1050,7 @@ class WebFController {
   // Resolve the entrypoint bundle.
   // In general you should use executeEntrypoint, which including resolving and evaluating.
   Future<void> _resolveEntrypoint() async {
-    assert(!_view._disposed, 'WebF have already disposed');
+    assert(!_view!.disposed, 'WebF have already disposed');
 
     WebFBundle? bundleToLoad = _entrypoint;
     if (bundleToLoad == null) {
@@ -1583,12 +1063,37 @@ class WebFController {
       await bundleToLoad.resolve(baseUrl: url, uriParser: uriParser);
       await bundleToLoad.obtainData(view.contextId);
     } catch (e, stack) {
-      if (onLoadError != null) {
-        onLoadError!(FlutterError(e.toString()), stack);
-      }
       // Not to dismiss this error.
       rethrow;
     }
+  }
+
+  bool _isFlutterAttached = false;
+
+  bool get isFlutterAttached => _isFlutterAttached;
+
+  /// Attaches the WebF controller to a Flutter BuildContext.
+  ///
+  /// This connects the WebF environment to the Flutter widget tree, enabling rendering
+  /// and interactions. Must be called before content can be displayed.
+  void attachToFlutter(BuildContext context) {
+    _ownerFlutterView = View.of(context);
+    view.attachToFlutter(context);
+    PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
+    _isFlutterAttached = true;
+    pushNewBuildContext(context: context, routePath: initialRoute ?? '/');
+  }
+
+  /// Detaches the WebF controller from the Flutter widget tree.
+  ///
+  /// Disconnects the WebF environment from Flutter, stopping rendering and interactions.
+  /// Should be called when the WebF content is no longer displayed or needed.
+  void detachFromFlutter(BuildContext? context) {
+    view.detachFromFlutter();
+    PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
+    _isFlutterAttached = false;
+    _ownerFlutterView = null;
+    popBuildContext(context: context, routePath: initialRoute ?? '/');
   }
 
   // Execute the content from entrypoint bundle.
@@ -1604,7 +1109,7 @@ class WebFController {
       return;
     }
 
-    assert(!_view._disposed, 'WebF have already disposed');
+    assert(!_view!.disposed, 'WebF have already disposed');
     if (_entrypoint != null) {
       EvaluateOpItem? evaluateOpItem;
       if (enableWebFProfileTracking) {
@@ -1612,17 +1117,21 @@ class WebFController {
       }
 
       WebFBundle entrypoint = _entrypoint!;
-      double contextId = _view.contextId;
+      double contextId = _view!.contextId;
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
 
       // entry point start parse.
-      _view.document.parsing = true;
+      _view!.document.parsing = true;
 
       Uint8List data = entrypoint.data!;
       if (entrypoint.isJavascript) {
         assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
         // Prefer sync decode in loading entrypoint.
-        await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
+        await evaluateScripts(contextId, data,
+            url: url,
+            cacheKey: entrypoint.cacheKey,
+            loadedFromCache: entrypoint.loadedFromCache,
+            profileOp: evaluateOpItem);
       } else if (entrypoint.isBytecode) {
         await evaluateQuickjsByteCode(contextId, data, profileOp: evaluateOpItem);
       } else if (entrypoint.isHTML) {
@@ -1632,7 +1141,11 @@ class WebFController {
         // Fallback treating text content as JavaScript.
         try {
           assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
-          await evaluateScripts(contextId, data, url: url, profileOp: evaluateOpItem);
+          await evaluateScripts(contextId, data,
+              loadedFromCache: entrypoint.loadedFromCache,
+              cacheKey: entrypoint.cacheKey,
+              url: url,
+              profileOp: evaluateOpItem);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;
@@ -1643,7 +1156,7 @@ class WebFController {
       }
 
       // entry point end parse.
-      _view.document.parsing = false;
+      _view!.document.parsing = false;
 
       // Should check completed when parse end.
       SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -1659,12 +1172,28 @@ class WebFController {
     }
   }
 
-  // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.h#L470
+  // window.onload
   bool _isComplete = false;
+
   bool get isComplete => _isComplete;
 
+  bool _isCanceled = false;
+
+  bool get isCanceled => _isCanceled;
+
+  set isCanceled(bool value) {
+    _isCanceled = value;
+  }
+
+  // window.onDOMContentLoaded
+  bool _isDOMComplete = false;
+
+  bool get isDOMComplete => _isDOMComplete;
+
   bool _evaluated = false;
+
   bool get evaluated => _evaluated;
+
   set evaluated(value) {
     _evaluated = value;
   }
@@ -1672,34 +1201,36 @@ class WebFController {
   // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/loader/FrameLoader.cpp#L840
   // Check whether the document has been loaded, such as html has parsed (main of JS has evaled) and images/scripts has loaded.
   void checkCompleted() {
-    if (_isComplete) return;
-
     // Are we still parsing?
-    if (_view.document.parsing) return;
+    if (_view!.document.parsing) return;
 
     // Are all script element complete?
-    if (_view.document.isDelayingDOMContentLoadedEvent) return;
+    if (_view!.document.isDelayingDOMContentLoadedEvent) return;
 
-    if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
-      _view.document.readyState = DocumentReadyState.interactive;
-      dispatchDOMContentLoadedEvent();
-    }
+    if (_isDOMComplete) return;
+
+    _view!.document.readyState = DocumentReadyState.interactive;
+    dispatchDOMContentLoadedEvent();
+    _isDOMComplete = true;
+
+    controllerOnDOMContentLoadedCompleter.complete();
 
     // Still waiting for images/scripts?
-    if (_view.document.hasPendingRequest) return;
+    if (_view!.document.hasPendingRequest) return;
 
     // Still waiting for elements that don't go through a FrameLoader?
-    if (_view.document.isDelayingLoadEvent) return;
+    if (_view!.document.isDelayingLoadEvent) return;
 
-    // Any frame that hasn't completed yet?
-    // TODO:
+    if (_isComplete) return;
 
+    // The page load was complete
     _isComplete = true;
+    controllerOnLoadCompleter.complete();
 
-    if (mode == WebFLoadingMode.standard || mode == WebFLoadingMode.preloading) {
-      dispatchWindowLoadEvent();
-      _view.document.readyState = DocumentReadyState.complete;
-    } else if (mode == WebFLoadingMode.preRendering) {
+    dispatchWindowLoadEvent();
+    _view!.document.readyState = DocumentReadyState.complete;
+
+    if (mode == WebFLoadingMode.preRendering) {
       if (!controllerPreRenderingCompleter.isCompleted) {
         controllerPreRenderingCompleter.complete();
       }
@@ -1714,16 +1245,25 @@ class WebFController {
   }
 
   bool _domContentLoadedEventDispatched = false;
+
+  /// Dispatches the DOMContentLoaded event to the document and window.
+  ///
+  /// This is equivalent to the standard Web DOMContentLoaded event, which fires when the
+  /// initial HTML document has been completely loaded and parsed, without waiting for
+  /// stylesheets, images, and other resources to finish loading.
+  ///
+  /// Also calls the onDOMContentLoaded callback if one is provided.
   void dispatchDOMContentLoadedEvent() {
     if (_domContentLoadedEventDispatched) return;
 
     _domContentLoadedEventDispatched = true;
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_view == null) return;
       Event event = Event(EVENT_DOM_CONTENT_LOADED);
       EventTarget window = view.window;
       window.dispatchEvent(event);
-      _view.document.dispatchEvent(event);
+      _view!.document.dispatchEvent(event);
       if (onDOMContentLoaded != null) {
         onDOMContentLoaded!(this);
       }
@@ -1732,13 +1272,20 @@ class WebFController {
   }
 
   bool _loadEventDispatched = false;
+
+  /// Dispatches the load event to the window.
+  ///
+  /// This is equivalent to the standard Web window.onload event, which fires when the
+  /// whole page has loaded, including all dependent resources such as stylesheets and images.
+  ///
+  /// Also calls the onLoad callback if one is provided.
   void dispatchWindowLoadEvent() {
     if (_loadEventDispatched) return;
     _loadEventDispatched = true;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       // DOM element are created at next frame, so we should trigger onload callback in the next frame.
       Event event = Event(EVENT_LOAD);
-      _view.window.dispatchEvent(event);
+      _view!.window.dispatchEvent(event);
 
       if (onLoad != null) {
         onLoad!(this);
@@ -1748,23 +1295,163 @@ class WebFController {
   }
 
   bool _preloadEventDispatched = false;
+
+  /// Dispatches the preloaded event to the window.
+  ///
+  /// This custom WebF event fires when content has been preloaded using the
+  /// preloading mode. JavaScript code can listen for this event to know
+  /// when preloading has completed.
   void dispatchWindowPreloadedEvent() {
     if (_preloadEventDispatched) return;
     _preloadEventDispatched = true;
     Event event = Event(EVENT_PRELOADED);
-    _view.window.dispatchEvent(event);
+    view.window.dispatchEvent(event);
   }
 
   bool _preRenderedEventDispatched = false;
+
+  /// Dispatches the prerendered event to the window.
+  ///
+  /// This custom WebF event fires when content has been prerendered using the
+  /// preRendering mode. JavaScript code can listen for this event to know
+  /// when prerendering has completed and perform any operations that depend
+  /// on accurate viewport dimensions.
   void dispatchWindowPreRenderedEvent() {
     if (_preRenderedEventDispatched) return;
     _preRenderedEventDispatched = true;
     Event event = Event(EVENT_PRERENDERED);
-    _view.window.dispatchEvent(event);
+    view.window.dispatchEvent(event);
   }
 
+  /// Dispatches the resize event to the window.
+  ///
+  /// This is equivalent to the standard Web window.onresize event, which fires when
+  /// the document view has been resized. In WebF, this occurs when the viewport size
+  /// changes due to device rotation, window resizing, or other layout changes.
+  ///
+  /// Returns a Future that completes when the event has been dispatched.
   Future<void> dispatchWindowResizeEvent() async {
     Event event = Event(EVENT_RESIZE);
-    await _view.window.dispatchEvent(event);
+    await view.window.dispatchEvent(event);
+  }
+
+  @override
+  String toStringShort() {
+    String status = mode == WebFLoadingMode.preloading ? _preloadStatus.toString() : _preRenderingStatus.toString();
+    return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, status: $status)';
+  }
+}
+
+/// Abstract base class for implementing DevTools debugging services for WebF content.
+///
+/// Provides the infrastructure needed to connect Chrome DevTools to a WebF instance,
+/// enabling inspection of DOM elements, JavaScript debugging, network monitoring,
+/// and other developer tools features.
+abstract class DevToolsService {
+  /// Previous instance of DevToolsService during a page reload.
+  ///
+  /// Design prevDevTool for reload page,
+  /// do not use it in any other place.
+  /// More detail see [InspectPageModule.handleReloadPage].
+  static DevToolsService? prevDevTools;
+
+  static final Map<double, DevToolsService> _contextDevToolMap = {};
+
+  /// Retrieves the DevTools service instance associated with a specific JavaScript context ID.
+  ///
+  /// @param contextId The unique identifier for a JavaScript context
+  /// @return The DevToolsService instance for the context, or null if none exists
+  static DevToolsService? getDevToolOfContextId(double contextId) {
+    return _contextDevToolMap[contextId];
+  }
+
+  /// Used for debugger inspector.
+  UIInspector? _uiInspector;
+
+  /// Provides access to the UI inspector for debugging DOM elements.
+  ///
+  /// The UI inspector enables visualization and inspection of the DOM structure
+  /// and rendered elements in DevTools.
+  UIInspector? get uiInspector => _uiInspector;
+
+  /// The Dart isolate running the DevTools server.
+  ///
+  /// DevTools runs in a separate isolate to avoid impacting the performance
+  /// of the main Flutter application.
+  Isolate? _isolateServer;
+
+  /// Access to the isolate running the DevTools server.
+  ///
+  /// This isolate handles communication with Chrome DevTools.
+  Isolate get isolateServer => _isolateServer!;
+
+  /// Sets the isolate for the DevTools server.
+  ///
+  /// @param isolate The Dart isolate instance handling DevTools communication
+  set isolateServer(Isolate isolate) {
+    _isolateServer = isolate;
+  }
+
+  SendPort? _isolateServerPort;
+
+  SendPort? get isolateServerPort => _isolateServerPort;
+
+  set isolateServerPort(SendPort? value) {
+    _isolateServerPort = value;
+  }
+
+  WebFController? _controller;
+
+  WebFController? get controller => _controller;
+
+  /// Initializes the DevTools service for a WebF controller.
+  ///
+  /// Sets up the inspector server and UI inspector, enabling Chrome DevTools
+  /// to connect to and debug the WebF content.
+  ///
+  /// @param controller The WebFController instance to enable debugging for
+  void init(WebFController controller) {
+    _contextDevToolMap[controller.view.contextId] = this;
+    _controller = controller;
+    spawnIsolateInspectorServer(this, controller);
+    _uiInspector = UIInspector(this);
+    controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
+  }
+
+  /// Indicates whether the WebF content is currently being reloaded.
+  ///
+  /// Used to manage DevTools state during page reloads.
+  bool get isReloading => _reloading;
+
+  /// Internal flag to track reload state.
+  bool _reloading = false;
+
+  /// Called before WebF content is reloaded to prepare DevTools.
+  ///
+  /// Sets the reloading flag to true to prevent DevTools operations during reload.
+  void willReload() {
+    _reloading = true;
+  }
+
+  /// Called after WebF content has been reloaded to reconnect DevTools.
+  ///
+  /// Updates the DOM tree change handlers and notifies the inspector server
+  /// about the reload completion.
+  void didReload() {
+    _reloading = false;
+    controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
+    _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
+  }
+
+  /// Disposes the DevTools service and releases all resources.
+  ///
+  /// Cleans up the UI inspector, removes context mappings, and terminates
+  /// the inspector isolate server.
+  void dispose() {
+    _uiInspector?.dispose();
+    _contextDevToolMap.remove(controller?.view.contextId);
+    _controller = null;
+    _isolateServerPort = null;
+    _isolateServer?.kill();
   }
 }

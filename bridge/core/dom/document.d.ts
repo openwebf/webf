@@ -11,13 +11,15 @@ import {HTMLAllCollection} from "../html/html_all_collection";
 import {IDLEventHandler} from "../frame/window_event_handlers";
 import {Window} from "../frame/window";
 import {ParentNode} from "./parent_node";
+import {GlobalEventHandlers} from "./global_event_handlers";
 
-interface Document extends Node, ParentNode {
+interface Document extends Node, ParentNode, GlobalEventHandlers {
   readonly all: HTMLAllCollection;
   title: SupportAsync<DartImpl<string>>;
   body: HTMLBodyElement | null;
   cookie: SupportAsync<DartImpl<string>>;
   __clear_cookies__(): DartImpl<void>;
+  __force_rebuild__(): DartImpl<void>;
   domain: SupportAsync<DartImpl<string>>;
   readonly head: HTMLHeadElement | null;
   readonly documentElement: HTMLHtmlElement | null;

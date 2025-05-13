@@ -165,6 +165,48 @@ describe('display', () => {
     document.body.appendChild(container);
   });
 
+  it('should work with listview', async (done) => {
+    let container = createElement('webf-listview', {
+      style: {
+        width: '100px',
+        height: '100px'
+      }
+    }, [
+      createElement('p', {}, [
+        createText(' 11111111111111111')
+      ]),
+      createElement('p', {}, [
+        createText(' 222222222222222222222222')
+      ]),
+      createElement('p', {}, [
+        createText(' 333333333333333333333333')
+      ]),
+      createElement('p', {}, [
+        createText(' 444444444444444444444444444444')
+      ]),
+      createElement('p', {}, [
+        createText(' 55555555555555555555555555555555555')
+      ]),
+      createElement('p', {}, [
+        createText(' 6666666666666666666666666')
+      ]),
+    ]);
+
+    requestAnimationFrame(async () => {
+      container.style.display = 'none';
+      await snapshot();
+      requestAnimationFrame(async () => {
+        container.style.display = 'block';
+        await snapshot();
+        await simulateSwipe(0, 0, 30, 30, 0.1);
+        await snapshot();
+        done();
+      });
+    });
+
+    document.body.appendChild(container);
+  });
+
   it('should work when previous sibiling is positioned element', async (done) => {
     let positioned = createElement('div', {
       style: {

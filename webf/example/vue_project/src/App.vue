@@ -1,8 +1,8 @@
 <template>
-  <webf-router-link path="/todomvc" @mount="handleRouterMount('todomvc')">
+  <webf-router-link title="TodoMVC" path="/todomvc" @onscreen="handleRouterMount('todomvc')">
     <todo-m-v-c v-if="enableTodoMVC"></todo-m-v-c>
   </webf-router-link>
-  <webf-router-link path="/positioned_layout" @mount="handleRouterMount('positioned')">
+  <webf-router-link title="CSS Positioned Layout" path="/positioned_layout" @onscreen="handleRouterMount('positioned')">
     <positioned-layout v-if="enablePositionedLayout"></positioned-layout>
   </webf-router-link>
   <home-page></home-page>

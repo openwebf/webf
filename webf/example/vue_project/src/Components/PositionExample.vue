@@ -7,24 +7,24 @@
       <div class="box">C</div>
     </div>
     <div class="control-panel">
-      <div>
+      <div class="panel-item">
         <span>Top: </span>
         <input type="checkbox" v-model="enableTop" />
       </div>
-      <div>
+      <div class="panel-item">
         <span>left: </span>
         <input type="checkbox" v-model="enableLeft" />
       </div>
-      <div>
+      <div class="panel-item">
         <span>right: </span>
         <input type="checkbox" v-model="enableRight" />
       </div>
-      <div>
+      <div class="panel-item">
         <span>bottom: </span>
         <input type="checkbox" v-model="enableBottom" />
       </div>
     </div>
-    <div class="control-buttons" v-if="style['position'] == 'absolute'">
+    <div class="control-buttons" v-if="style['position'] == 'absolute' || style['position'] == 'fixed'">
       <flutter-button @press="onMarginAutoButtonClick('horizontal')">Horizontal Center</flutter-button>
       <flutter-button @press="onMarginAutoButtonClick('vertical')">Vertical Center</flutter-button>
     </div>
@@ -56,13 +56,13 @@
     <div class="control-item">
       <div class="control-title">marginTop: </div>
       <flutter-slider class="control-slider" :val="marginTop" @change="onControlChange($event, 'marginTop')"></flutter-slider>
-      <div class="control-result">{{ marginTop }} {{ marginTopPercentage ? '%' : 'px' }}</div>
+      <div class="control-result">{{ marginBottomAuto ? 'auto': marginTop }} {{ marginTopAuto ? '' : (marginTopPercentage ? '%' : 'px') }}</div>
       <flutter-switch :selected="marginTopPercentage" @change="onSwitchChange($event, 'marginTop')"></flutter-switch>
     </div>
     <div class="control-item">
       <div class="control-title">marginLeft: </div>
       <flutter-slider class="control-slider" :val="marginLeft" @change="onControlChange($event, 'marginLeft')"></flutter-slider>
-      <div class="control-result">{{ marginLeft }} {{ marginLeftPercentage ? '%' : 'px' }}</div>
+      <div class="control-result">{{ marginLeftAuto ? 'auto' :  marginLeft }} {{ marginLeftAuto ? '' : (marginLeftPercentage ? '%' : 'px') }}</div>
       <flutter-switch :selected="marginLeftPercentage" @change="onSwitchChange($event, 'marginLeft')"></flutter-switch>
     </div>
   </webf-listview>
@@ -266,12 +266,14 @@ export default {
   justify-content: space-around;
 }
 
-.control-panel span {
-  line-height: 30px;
+.panel-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
 }
 
-.control-panel input {
-  border: 1px solid red;
+.control-panel span {
+  line-height: 30px;
 }
 
 .control-item {
@@ -279,7 +281,7 @@ export default {
 }
 
 .control-item .control-title {
-  flex: 1;
+  min-width: 70px;
   text-align: center;
   line-height: 50px;
 }

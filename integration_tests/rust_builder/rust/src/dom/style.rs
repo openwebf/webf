@@ -1,6 +1,7 @@
 use webf_sys::{ExecutingContext, NativeValue, NodeMethods};
 use webf_test_macros::webf_test_async;
 use webf_test_utils::{common::TestCaseMetadata, snapshot::snapshot_with_filename};
+use webf_test_utils::safe_assert_eq;
 
 #[webf_test_async]
 pub async fn test_should_work_with_set_property(metadata: TestCaseMetadata, context: ExecutingContext) {
@@ -13,8 +14,8 @@ pub async fn test_should_work_with_set_property(metadata: TestCaseMetadata, cont
   div_style.set_property("height", NativeValue::new_string("100px"), &exception_state).unwrap();
   div_style.set_property("background", NativeValue::new_string("red"), &exception_state).unwrap();
 
-  assert_eq!(div_style.get_property_value("width", &exception_state).unwrap(), "100px");
-  assert_eq!(div_style.get_property_value("height", &exception_state).unwrap(), "100px");
+  safe_assert_eq!(div_style.get_property_value("width", &exception_state).unwrap(), "100px".to_string());
+  safe_assert_eq!(div_style.get_property_value("height", &exception_state).unwrap(), "100px".to_string());
 
   let body = document.body();
   body.append_child(&div.as_node(), &exception_state).unwrap();
@@ -39,14 +40,14 @@ pub async fn test_should_work_with_remove_property(metadata: TestCaseMetadata, c
   let snapshot1 = metadata.snapshot_filename.clone() + "1";
   snapshot_with_filename(context.clone(), snapshot1).await.unwrap();
 
-  assert_eq!(div_style.get_property_value("width", &exception_state).unwrap(), "100px");
-  assert_eq!(div_style.get_property_value("height", &exception_state).unwrap(), "100px");
+  safe_assert_eq!(div_style.get_property_value("width", &exception_state).unwrap(), "100px".to_string());
+  safe_assert_eq!(div_style.get_property_value("height", &exception_state).unwrap(), "100px".to_string());
 
   div_style.remove_property("width", &exception_state).unwrap();
   div_style.remove_property("height", &exception_state).unwrap();
 
-  assert_eq!(div_style.get_property_value("width", &exception_state).unwrap(), "");
-  assert_eq!(div_style.get_property_value("height", &exception_state).unwrap(), "");
+  safe_assert_eq!(div_style.get_property_value("width", &exception_state).unwrap(), "".to_string());
+  safe_assert_eq!(div_style.get_property_value("height", &exception_state).unwrap(), "".to_string());
 
   let text_node = document.create_text_node("1234", &exception_state).unwrap();
   div.append_child(&text_node.as_node(), &exception_state).unwrap();

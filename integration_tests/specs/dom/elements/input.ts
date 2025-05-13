@@ -17,8 +17,8 @@ describe('Input line-height', () => {
       {
         value: '123',
         style: {
-            lineHeight: '50px',
-            fontSize: '30px',
+          lineHeight: '50px',
+          fontSize: '30px',
         },
       }
     );
@@ -27,20 +27,20 @@ describe('Input line-height', () => {
   });
 
   it('height set should work when the unit not px', async () => {
-      let div;
-      div = createElement(
-            'input',
-            {
-              value: '1234',
-              style: {
-                  height: '100%',
-                  fontSize: '30px',
-              },
-            }
-          );
-      BODY.appendChild(div);
-      await snapshot();
-    });
+    let div;
+    div = createElement(
+      'input',
+      {
+        value: '1234',
+        style: {
+          height: '100%',
+          fontSize: '30px',
+        },
+      }
+    );
+    BODY.appendChild(div);
+    await snapshot();
+  });
 
   it('height set and line-height set', async () => {
     let div;
@@ -49,9 +49,9 @@ describe('Input line-height', () => {
       {
         value: '1234',
         style: {
-            lineHeight: '50px',
-            height: '100px',
-            fontSize: '30px',
+          lineHeight: '50px',
+          height: '100px',
+          fontSize: '30px',
         },
       }
     );
@@ -66,9 +66,9 @@ describe('Input line-height', () => {
       {
         value: '12345',
         style: {
-            lineHeight: '100px',
-            height: '50px',
-            fontSize: '30px',
+          lineHeight: '100px',
+          height: '50px',
+          fontSize: '30px',
         },
       }
     );
@@ -83,8 +83,8 @@ describe('Input line-height', () => {
       {
         value: '123456',
         style: {
-            lineHeight: '10px',
-            fontSize: '30px'
+          lineHeight: '10px',
+          fontSize: '30px'
         },
       }
     );
@@ -99,8 +99,8 @@ describe('Input line-height', () => {
       {
         value: '1234567',
         style: {
-            lineHeight: '100px',
-            fontSize: '30px'
+          lineHeight: '100px',
+          fontSize: '30px'
         },
       }
     );
@@ -327,12 +327,12 @@ describe('Tags input', () => {
       done();
     });
 
-    requestAnimationFrame(() => {
+    input1.ononscreen = () => {
       input1.focus();
       requestAnimationFrame(() => {
         input2.focus();
       });
-    });
+    }
   });
 
 
@@ -570,7 +570,7 @@ describe('Tags input', () => {
 
   xit('support type=number with step', (done) => {
     const VALUE = '123456789.123';
-    const input = <input type="number" step="0.1" />;
+    const input = <input type="number" step = "0.1" />;
     input.addEventListener('input', function handler(event: InputEvent) {
       input.removeEventListener('input', handler);
       expect(input.value).toEqual(VALUE);
@@ -694,14 +694,19 @@ describe('Tags input', () => {
     simulateClick(10, 10);
   });
 
-  it('should return empty string when set value to null', () => {
+  it('should return empty string when set value to null', (done) => {
     const input = document.createElement('input');
     document.body.appendChild(input);
-    input.value = '1234';
-    expect(input.value).toBe('1234');
-    // @ts-ignore
-    input.value = null;
-    expect(input.value).toBe('');
+
+    input.addEventListener('onscreen', async () => {
+      input.value = '1234';
+      expect(input.value).toBe('1234');
+      // @ts-ignore
+      input.value = null;
+      expect(input.value).toBe('');
+
+      done();
+    });
   });
 
   xit('input attribute and property value priority', (done) => {
@@ -744,7 +749,7 @@ describe('Tags input', () => {
     document.body.appendChild(input);
     document.body.appendChild(createElement('span', {}, [createText('AAAAA')]))
 
-    requestAnimationFrame(async() => {
+    requestAnimationFrame(async () => {
       input.style.display = 'inline-block';
       requestAnimationFrame((() => {
 

@@ -1,5 +1,26 @@
-type BoxSize = {blockSize: number, inlineSize: number};
-export class ResizeObserver {
+/*
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
+
+export interface BoxSize {
+  blockSize: number;
+  inlineSize: number;
+}
+
+export interface ResizeObserverEntry {
+  readonly target: EventTarget;
+  readonly borderBoxSize: BoxSize;
+  readonly contentBoxSize: BoxSize;
+  readonly contentRect: { width: number, height: number };
+}
+
+export interface ResizeObserverInterface {
+  observe(target: HTMLElement): void;
+  unobserve(target: HTMLElement): void;
+  disconnect?(): void;
+}
+
+export class ResizeObserver implements ResizeObserverInterface {
   private resizeChangeListener:(entries:Array<ResizeObserverEntry>) => void;
   private targets:Array<HTMLElement> = [];
   private cacheEvents:Array<CustomEvent> = [];
@@ -34,7 +55,7 @@ export class ResizeObserver {
     if(this.cacheEvents.length > 0) {
       const entries = this.cacheEvents.map((item) => {
         const detail = JSON.parse(item.detail);
-        return new ResizeObserverEntry(item.target!, detail.borderBoxSize, detail.contentBoxSize, detail.contentRect);
+        return new ResizeObserverEntryImpl(item.target!, detail.borderBoxSize, detail.contentBoxSize, detail.contentRect);
       });
       this.resizeChangeListener(entries);
       this.cacheEvents = [];
@@ -45,8 +66,17 @@ export class ResizeObserver {
     target.removeEventListener('resize', this.handleResizeEvent);
     this.targets = this.targets.filter((item) => item !== target);
   }
+  
+  disconnect() {
+    this.targets.forEach((target) => {
+      target.removeEventListener('resize', this.handleResizeEvent);
+    });
+    this.targets = [];
+    this.cacheEvents = [];
+  }
 }
-class ResizeObserverEntry {
+
+class ResizeObserverEntryImpl implements ResizeObserverEntry {
   public target: EventTarget;
   public borderBoxSize: BoxSize;
   public contentBoxSize: BoxSize;

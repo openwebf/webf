@@ -4,11 +4,13 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
@@ -102,6 +104,7 @@ typedef NativeInvokeModule = Pointer<NativeValue> Function(
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
+    Pointer<Uint8> errmsg,
     Pointer<NativeFunction<NativeAsyncModuleCallback>>);
 
 class _InvokeModuleResultContext {
@@ -139,7 +142,7 @@ void _handleInvokeModuleResult(Object handle, Pointer<NativeValue> result) {
 }
 
 dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, String moduleName, String method, params,
-    DartAsyncModuleCallback callback,
+    Pointer<Uint8> errmsg, Pointer<NativeFunction<NativeAsyncModuleCallback>> callback,
     {BindingOpItem? profileOp}) {
   WebFViewController currentView = controller.view;
   dynamic result;
@@ -164,15 +167,25 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
           _InvokeModuleResultContext context = _InvokeModuleResultContext(
               completer, currentView, moduleName, method, params,
               errmsgPtr: errmsgPtr, stopwatch: stopwatch);
-          callback(callbackContext, currentView.contextId, errmsgPtr, nullptr, context, handleResult);
+          DartAsyncModuleCallback fn = callback.asFunction();
+
+          fn(callbackContext, currentView.contextId, errmsgPtr, nullptr, context, handleResult);
         } else {
           Pointer<NativeValue> dataPtr = malloc.allocate(sizeOf<NativeValue>());
           toNativeValue(dataPtr, data);
           _InvokeModuleResultContext context = _InvokeModuleResultContext(
               completer, currentView, moduleName, method, params,
               data: dataPtr, stopwatch: stopwatch);
-          callback(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
+          DartAsyncModuleCallback fn = callback.asFunction();
+          fn(callbackContext, currentView.contextId, nullptr, dataPtr, context, handleResult);
         }
+
+        // Add fallbacks for handing result was not returned.
+        Timer(Duration(seconds: 1), () {
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        });
       });
       return completer.future;
     }
@@ -191,8 +204,17 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
       print('Invoke module failed: $e\n$stack');
     }
     String error = '$e\n$stack';
-    if (callback == nullptr) return;
-    callback(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr, {}, nullptr);
+
+    if (callback == nullptr) {
+      final msgList = errmsg.asTypedList(1024);
+      Uint8List bytes = utf8.encode(error);
+      int max = bytes.length > 1020 ? 1020 : bytes.length;
+      msgList.setAll(0, bytes.sublist(0, max));
+      msgList[max + 1] = 0;
+    } else {
+      DartAsyncModuleCallback fn = callback.asFunction();
+      fn(callbackContext, currentView.contextId, error.toNativeUtf8(), nullptr, {}, nullptr);
+    }
   }
 
   if (enableWebFCommandLog) {
@@ -210,6 +232,7 @@ Pointer<NativeValue> _invokeModule(
     Pointer<NativeString> module,
     Pointer<NativeString> method,
     Pointer<NativeValue> params,
+    Pointer<Uint8> errmsg,
     Pointer<NativeFunction<NativeAsyncModuleCallback>> callback) {
   BindingOpItem? currentProfileOp;
   if (enableWebFProfileTracking) {
@@ -232,7 +255,7 @@ Pointer<NativeValue> _invokeModule(
   }
 
   dynamic result = invokeModule(
-      callbackContext, controller, moduleValue, methodValue, paramsValue, callback.asFunction(),
+      callbackContext, controller, moduleValue, methodValue, paramsValue, errmsg, callback,
       profileOp: currentProfileOp);
 
   if (enableWebFProfileTracking) {
@@ -272,6 +295,8 @@ typedef NativeAsyncCallback = Void Function(Pointer<Void> callbackContext, Doubl
 typedef DartAsyncCallback = void Function(Pointer<Void> callbackContext, double contextId, Pointer<Utf8> errmsg);
 typedef NativeRAFAsyncCallback = Void Function(
     Pointer<Void> callbackContext, Double contextId, Double data, Pointer<Utf8> errmsg);
+typedef NativeRequestIdleAsyncCallback = Void Function(Pointer<Void> callbackContext, Double contextId, Double timeout);
+typedef DartRequestIdleAsyncCallback = void Function(Pointer<Void> callbackContext, double contextId, double timeout);
 typedef DartRAFAsyncCallback = void Function(Pointer<Void>, double contextId, double data, Pointer<Utf8> errmsg);
 
 // Register requestBatchUpdate
@@ -403,6 +428,47 @@ void _cancelAnimationFrame(double contextId, int timerId) {
 final Pointer<NativeFunction<NativeCancelAnimationFrame>> _nativeCancelAnimationFrame =
     Pointer.fromFunction(_cancelAnimationFrame);
 
+typedef NativeRequestIdleCallback = Void Function(Int32 newIdleId, Pointer<Void> callbackContext, Double contextId,
+    Double timeout, Int32 uiCommandSize, Pointer<NativeFunction<NativeRequestIdleAsyncCallback>>);
+
+void _requestIdleCallback(int newIdleId, Pointer<Void> callbackContext, double contextId, double timeout,
+    int uiCommandSize, Pointer<NativeFunction<NativeRequestIdleAsyncCallback>> callback) {
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  Timer timer = Timer(Duration(milliseconds: timeout.toInt()), () {
+    controller.module.cancelIdleCallback(newIdleId);
+    SchedulerBinding.instance.addPostFrameCallback((timestamp) {
+      if (controller.disposed) return;
+      DartRequestIdleAsyncCallback f = callback.asFunction();
+      f(callbackContext, contextId, 0);
+    });
+    SchedulerBinding.instance.scheduleFrame();
+  });
+  try {
+    controller.module.requestIdleCallback(contextId, newIdleId, uiCommandSize, (double remainingTime) {
+      timer.cancel();
+      if (controller.disposed) return;
+      DartRequestIdleAsyncCallback f = callback.asFunction();
+      f(callbackContext, contextId, remainingTime);
+    });
+  } catch (e, stack) {
+    print('$e $stack');
+  }
+}
+
+final Pointer<NativeFunction<NativeRequestIdleCallback>> _nativeRequestIdleCallback =
+    Pointer.fromFunction(_requestIdleCallback);
+
+// Register cancelAnimationFrame
+typedef NativeCancelIdleCallback = Void Function(Double contextId, Int32 id);
+
+void _cancelIdleCallback(double contextId, int idleId) {
+  WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
+  controller.module.cancelAnimationFrame(idleId);
+}
+
+final Pointer<NativeFunction<NativeCancelIdleCallback>> _nativeCancelIdleCallback =
+    Pointer.fromFunction(_cancelIdleCallback);
+
 typedef NativeAsyncBlobCallback = Void Function(
     Pointer<Void> callbackContext, Double contextId, Pointer<Utf8>, Pointer<Uint8>, Int32);
 typedef DartAsyncBlobCallback = void Function(
@@ -458,11 +524,15 @@ typedef NativeLoadNativeLibrary = Void Function(
 typedef NativeLoadNativeLibraryCallback = Pointer<Void> Function(
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
     Pointer<NativeString> libName,
-    Pointer<Void> initializeData, Double contextId, Pointer<Void> exportData);
+    Pointer<Void> initializeData,
+    Double contextId,
+    Pointer<Void> exportData);
 typedef DartLoadNativeLibraryCallback = Pointer<Void> Function(
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> entryPoint,
     Pointer<NativeString> libName,
-    Pointer<Void> initializeData, double contextId, Pointer<Void> exportData);
+    Pointer<Void> initializeData,
+    double contextId,
+    Pointer<Void> exportData);
 
 typedef StandardWebFPluginExternalSymbol = Void Function();
 typedef DartStandardWebFPluginExternalSymbol = void Function();
@@ -488,7 +558,7 @@ void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, P
     final library = DynamicLibrary.open(join(_defaultLibraryPath, _getNativeLibraryName(libName)));
     String entrySymbol = Platform.environment['WEBF_ENABLE_TEST'] != null ? 'init_webf_test_app' : 'init_webf_app';
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction =
-      library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
+        library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);
 
     callback(nativeFunction, nativeLibName, initializeData, contextId, importData);
   } catch (e, stack) {
@@ -537,7 +607,9 @@ final List<int> _dartNativeMethods = [
   _nativeSetInterval.address,
   _nativeClearTimeout.address,
   _nativeRequestAnimationFrame.address,
+  _nativeRequestIdleCallback.address,
   _nativeCancelAnimationFrame.address,
+  _nativeCancelIdleCallback.address,
   _nativeToBlob.address,
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,

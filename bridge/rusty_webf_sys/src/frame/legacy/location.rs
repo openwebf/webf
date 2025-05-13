@@ -27,7 +27,9 @@ impl Location {
   }
 
   pub fn set_href(&self, href: &str, exception_state: &ExceptionState) {
-    let href_string_native_value = NativeValue::new_string(href);
+    let href_string_native_value = NativeValue::new_list(vec![
+      NativeValue::new_string(href)
+    ]);
     self.context().webf_invoke_module_with_params("Navigation", "goTo", &href_string_native_value, exception_state);
   }
 
@@ -72,7 +74,9 @@ impl Location {
   }
 
   pub fn assign(&self, url: &str, exception_state: &ExceptionState) {
-    let url_string_native_value = NativeValue::new_string(url);
+    let url_string_native_value = NativeValue::new_list(vec![
+      NativeValue::new_string(url)
+    ]);
     self.context().webf_invoke_module_with_params("Navigation", "goTo", &url_string_native_value, exception_state);
   }
 
@@ -81,7 +85,9 @@ impl Location {
   }
 
   pub fn replace(&self, url: &str, exception_state: &ExceptionState) {
-    let url_string_native_value = NativeValue::new_string(url);
+    let url_string_native_value = NativeValue::new_list(vec![
+      NativeValue::new_string(url)
+    ]);
     self.context().webf_invoke_module_with_params("Navigation", "goTo", &url_string_native_value, exception_state);
   }
 

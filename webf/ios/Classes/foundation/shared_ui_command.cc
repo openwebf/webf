@@ -1,0 +1,1 @@
+#include "../../../src/foundation/shared_ui_command.cc"

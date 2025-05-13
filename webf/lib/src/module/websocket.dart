@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'dart:io';
 
 import 'package:webf/dom.dart';
@@ -27,9 +31,9 @@ class WebSocketModule extends BaseModule {
   WebSocketModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
-  String invoke(String method, params, callback) {
+  String invoke(String method, List<dynamic> params) {
     if (method == 'init') {
-      return init(params, (String id, Event event) {
+      return init(params[0], (String id, Event event) {
         moduleManager!.emitModuleEvent(name, event: event, data: id);
       });
     } else if (method == 'addEvent') {
@@ -52,12 +56,12 @@ class WebSocketModule extends BaseModule {
     _stateMap.clear();
   }
 
-  String init(String url, WebSocketEventCallback callback,
-      {String? protocols}) {
+  String init(String url, WebSocketEventCallback callback, {String? protocols}) {
     var id = (_clientId++).toString();
-    WebSocket.connect(url,protocols: protocols != null ? [protocols] : null,
-        headers: {'origin': moduleManager!.controller.url})
-        .then((webSocket) {
+    WebSocket.connect(url,
+        protocols: protocols != null ? [protocols] : null,
+        headers: {'origin': moduleManager!.controller.url}).then((webSocket) {
+      if (moduleManager?.disposed == true) return;
       IOWebSocketChannel client = IOWebSocketChannel(webSocket);
       _WebSocketState? state = _stateMap[id];
       if (state != null && state.status == _ConnectionState.closed) {
@@ -132,10 +136,11 @@ class WebSocketModule extends BaseModule {
       Event event = Event(EVENT_ERROR);
       callback(id, event);
     }, onDone: () {
+      if (moduleManager?.disposed == true) return;
+
       if (_hasListener(id, EVENT_CLOSE)) {
         // CloseEvent https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent/CloseEvent
-        CloseEvent event =
-        CloseEvent(client.closeCode!, client.closeReason ?? '', false);
+        CloseEvent event = CloseEvent(client.closeCode!, client.closeReason ?? '', false);
         callback(id, event);
       }
       // Clear instance after close
@@ -146,6 +151,8 @@ class WebSocketModule extends BaseModule {
   }
 
   void addEvent(String? id, String? type) {
+    if (moduleManager?.disposed == true) return;
+
     if (!_listenMap.containsKey(id)) {
       // Init listener map
       _listenMap[id] = {};

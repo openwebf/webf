@@ -408,14 +408,29 @@ async function snapshot(target?: any, filename?: String, postfix?: boolean | str
   return new Promise<void>((resolve, reject) => {
     requestAnimationFrame(async () => {
       try {
-        if (target && target.toBlob) {
-          await expectAsync(target.toBlob(1.0)).toMatchSnapshot(filename, postfix);
-        } else {
-          if (typeof target == 'number') {
-            await sleep(target);
-          }
-          await expectAsync(document.documentElement.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        if (typeof target == 'number') {
+          await sleep(target);
+          target = null;
         }
+        const element = target || document.documentElement;
+        await expectAsync(element.toBlob(1.0)).toMatchSnapshot(filename, postfix);
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  });
+}
+
+async function snapshotBody(target?: any, filename?: String, postfix?: boolean | string) {
+  window['__webf_sync_buffer__']();
+  return new Promise<void>((resolve, reject) => {
+    requestAnimationFrame(async () => {
+      try {
+        if (typeof target == 'number') {
+          await sleep(target);
+        }
+        await expectAsync(document.body.toBlob(1.0)).toMatchSnapshot(filename, postfix);
         resolve();
       } catch (e) {
         reject(e);
@@ -489,6 +504,7 @@ Object.assign(global, {
   sleep,
   nextFrames,
   snapshot,
+  snapshotBody,
   test,
   ftest,
   xtest,

@@ -10,9 +10,10 @@ class UnresponsiveModule extends BaseModule {
   }
 
   @override
-  invoke(String method, params, InvokeModuleCallback callback) {
+  invoke(String method, params) {
+    Completer<void> completer = Completer();
     Timer(Duration(milliseconds: 800), () {
-      callback();
+      completer.complete();
     });
   }
 

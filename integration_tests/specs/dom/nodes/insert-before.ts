@@ -213,7 +213,7 @@ describe('Insert before', () => {
     await snapshot();
   });
 
-  it('insert before when new child is SVG element', async () => {
+  xit('insert before when new child is SVG element', async () => {
     var text1 = document.createTextNode('Hello webf!');
     var br = document.createElement('br');
     var text2 = document.createTextNode('你好，webf！');

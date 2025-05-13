@@ -14,7 +14,7 @@
  * - Element.prototype.scrollWidth
  */
 describe('Offset api', () => {
-  it('should work', async () => {
+  it('should work', async (done) => {
     const RECT_PROPERTIES = [
       'offsetTop',
       'offsetLeft',
@@ -38,17 +38,23 @@ describe('Offset api', () => {
     div.style.backgroundColor = 'red';
 
     document.body.appendChild(div);
-    let str = '';
-    RECT_PROPERTIES.forEach(key => {
-      str += `${key}: ${div[key]}px `;
-    });
 
-    document.body.appendChild(document.createTextNode(str));
+    // @ts-ignore
+    div.ononscreen = async () => {
+      let str = '';
+      RECT_PROPERTIES.forEach(key => {
+        str += `${key}: ${div[key]}px `;
+      });
 
-    await snapshot();
+      document.body.appendChild(document.createTextNode(str));
+
+      await snapshot();
+
+      done();
+    };
   });
 
-  it('offsetTop and offsetLeft works when positioned parent found', async () => {
+  it('offsetTop and offsetLeft works when positioned parent found', async (done) => {
     let item1;
     let div1 = createElement(
       'div',
@@ -84,11 +90,16 @@ describe('Offset api', () => {
     BODY.appendChild(div1);
     BODY.appendChild(div2);
 
-    expect(item1.offsetTop).toBe(0);
-    expect(item1.offsetLeft).toBe(0);
+    // @ts-ignore
+    div2.ononscreen = () => {
+      expect(item1.offsetTop).toBe(0);
+      expect(item1.offsetLeft).toBe(0);
+
+      done();
+    }
   });
 
-  it('offsetTop should be not affected by scroller', async () => {
+  it('offsetTop should be not affected by scroller', async (done) => {
     let box;
     let container = createElement('div', {
       style: {
@@ -124,10 +135,17 @@ describe('Offset api', () => {
     ]);
 
     document.body.appendChild(container);
-    expect(box.offsetTop).toBe(100);
 
-    container.scrollTo(0, 20);
-    expect(box.offsetTop).toBe(100);
+    // @ts-ignore
+    container.ononscreen = () => {
+      expect(box.offsetTop).toBe(100);
+
+      container.scrollTo(0, 20);
+      expect(box.offsetTop).toBe(100);
+      done();
+    }
+
+    
   });
     
   it('offsetTop and offsetLeft works when positioned parent not found', async () => {

@@ -366,7 +366,7 @@ describe('block-formatting', () => {
 
     await snapshot();
   });
-  it('contexts-008-ref', async () => {
+  it('contexts-008-ref', async (done) => {
     let p;
     let div;
     p = createElement(
@@ -377,6 +377,7 @@ describe('block-formatting', () => {
       },
       [createText(`Test passes if the upper-half of the square is blue.`)]
     );
+    let img;
     div = createElement(
       'div',
       {
@@ -388,7 +389,7 @@ describe('block-formatting', () => {
         },
       },
       [
-        createElement('img', {
+        img = createElement('img', {
           src: 'assets/200x200-green.png',
           width: '200',
           height: '100',
@@ -400,7 +401,10 @@ describe('block-formatting', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.2);
+    img.onload = async () => {
+      await snapshot(0.2);
+      done();
+    }
   });
   it('contexts-009', async () => {
     let p;

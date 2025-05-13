@@ -6,9 +6,11 @@
 import 'dart:async';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/src/module/module_manager.dart';
+
+Map<String, LazyBox<String>> _sharedSyncBox = {};
 
 class AsyncStorageModule extends BaseModule {
   @override
@@ -29,11 +31,17 @@ class AsyncStorageModule extends BaseModule {
     final key = getBoxKey(moduleManager!);
     final tmpPath = await getWebFTemporaryPath();
     final storagePath = path.join(tmpPath, 'AsyncStorage');
+
+    if (_sharedSyncBox.containsKey(key)) {
+      _lazyBox = _sharedSyncBox[key]!;
+      return;
+    }
+
     try {
-      _lazyBox = await Hive.openLazyBox(key, path: storagePath);
+      _lazyBox = _sharedSyncBox[key] = await Hive.openLazyBox(key, path: storagePath);
     } catch (e) {
       // Try again to avoid resources are temporarily unavailable.
-      _lazyBox = await Hive.openLazyBox(key, path: storagePath);
+      _lazyBox = _sharedSyncBox[key] = await Hive.openLazyBox(key, path: storagePath);
     }
   }
 
@@ -74,60 +82,64 @@ class AsyncStorageModule extends BaseModule {
   }
 
   @override
-  void dispose() {}
+  void dispose() {
+    final key = getBoxKey(moduleManager!);
+    _sharedSyncBox.remove(key);
+  }
 
   @override
-  String invoke(String method, params, InvokeModuleCallback callback) {
+  Future<dynamic> invoke(String method, List<dynamic> params) {
+    Completer<dynamic> completer = Completer();
     switch (method) {
       case 'getItem':
-        getItem(params).then((String? value) {
-          callback(data: value ?? '');
+        getItem(params[0]).then((String? value) {
+          completer.complete(value ?? '');
         }).catchError((e, stack) {
-          callback(error: '$e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'setItem':
         String key = params[0];
         String value = params[1];
         setItem(key, value).then((bool isSuccess) {
-          callback(data: isSuccess.toString());
+          completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'removeItem':
-        removeItem(params).then((bool isSuccess) {
-          callback(data: isSuccess.toString());
+        removeItem(params[0]).then((bool isSuccess) {
+          completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'getAllKeys':
         getAllKeys().then((Set<dynamic> set) {
           List<String> list = List.from(set);
-          callback(data: list);
+          completer.complete(list);
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'clear':
         clear().then((bool isSuccess) {
-          callback(data: isSuccess.toString());
+          completer.complete(isSuccess.toString());
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       case 'length':
         length().then((int length) {
-          callback(data: length);
+          completer.complete(length);
         }).catchError((e, stack) {
-          callback(error: 'Error: $e\n$stack');
+          completer.completeError(e, stack);
         });
         break;
       default:
         throw Exception('AsyncStorage: Unknown method $method');
     }
 
-    return '';
+    return completer.future;
   }
 }

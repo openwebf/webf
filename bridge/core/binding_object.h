@@ -138,6 +138,7 @@ class BindingObject : public ScriptWrappable {
   virtual bool IsTouchList() const;
   virtual bool IsComputedCssStyleDeclaration() const;
   virtual bool IsCanvasGradient() const;
+  virtual bool IsCanvasRenderingContext2D() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);

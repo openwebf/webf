@@ -5,7 +5,18 @@
 
 import { webf } from './webf';
 
-class History {
+export interface HistoryInterface {
+  readonly length: number;
+  readonly state: any;
+  
+  back(): void;
+  forward(): void;
+  go(delta?: number): void;
+  pushState(state: any, title: string, url?: string): void;
+  replaceState(state: any, title: string, url?: string): void;
+}
+
+class History implements HistoryInterface {
   constructor() {
   }
 
@@ -34,7 +45,7 @@ class History {
       throw TypeError("Failed to execute 'pushState' on 'History': 2 arguments required, but only " + arguments.length + " present");
     }
 
-    webf.invokeModule('History', 'pushState', [state, title, url]);
+    webf.invokeModule('History', 'pushState', state, title, url);
   }
 
   replaceState(state: any, title: string, url?: string) {
@@ -42,7 +53,7 @@ class History {
       throw TypeError("Failed to execute 'pushState' on 'History': 2 arguments required, but only " + arguments.length + " present");
     }
 
-    webf.invokeModule('History', 'replaceState', [state, title, url]);
+    webf.invokeModule('History', 'replaceState', state, title, url);
   }
 }
 

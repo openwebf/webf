@@ -14,6 +14,7 @@
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
+#include "foundation/native_byte_data.h"
 #include "foundation/native_value_converter.h"
 #include "html/canvas/canvas_rendering_context_2d.h"
 #include "html/custom/widget_element_shape.h"
@@ -136,13 +137,20 @@ ExecutingContext::~ExecutingContext() {
     assert_m(false, "Unhandled exception found when Dispose JSContext.");
   }
 
-  active_pending_promises_.clear();
-
   JS_FreeValue(script_state_.ctx(), global_object_);
 
   // Free active wrappers.
   for (auto& active_wrapper : active_wrappers_) {
     JS_FreeValue(ctx(), active_wrapper->ToQuickJSUnsafe());
+  }
+
+  for (auto& script_promise : active_pending_promises_) {
+    script_promise->Reset();
+  }
+  active_pending_promises_.clear();
+
+  for (auto& active_native_byte_data_context : active_native_byte_datas_) {
+    JS_FreeValue(ctx(), active_native_byte_data_context->value);
   }
 }
 
@@ -445,6 +453,7 @@ void ExecutingContext::RunRustFutureTasks() {
 
     if (meta_data->callbacks.empty() && meta_data->load_context != nullptr) {
       meta_data->load_context->promise_resolver->Resolve(JS_NULL);
+      meta_data->load_context->context->UnRegisterActiveScriptPromise(meta_data->load_context->promise_resolver.get());
       delete meta_data->load_context;
       meta_data->load_context = nullptr;
     } else {
@@ -751,7 +760,7 @@ void ExecutingContext::RemoveCanvasContext2D(CanvasRenderingContext2D* canvas_re
   active_canvas_rendering_context_2ds_.erase(canvas_rendering_context_2d);
 }
 
-void ExecutingContext::InActiveScriptWrappers(ScriptWrappable* script_wrappable) {
+void ExecutingContext::RemoveActiveScriptWrappers(ScriptWrappable* script_wrappable) {
   active_wrappers_.erase(script_wrappable);
 }
 
@@ -766,6 +775,22 @@ void ExecutingContext::UnRegisterActiveScriptPromise(const ScriptPromiseResolver
                          });
   if (it != active_pending_promises_.end()) {
     active_pending_promises_.erase(it);
+  }
+}
+
+void ExecutingContext::RegisterActiveNativeByteData(
+    NativeByteDataFinalizerContext* native_byte_data_finalizer_context) {
+  active_native_byte_datas_.emplace(native_byte_data_finalizer_context);
+}
+
+void ExecutingContext::UnRegisterActiveNativeByteData(
+    NativeByteDataFinalizerContext* native_byte_data_finalizer_context) {
+  auto it = std::find_if(active_native_byte_datas_.begin(), active_native_byte_datas_.end(),
+                         [native_byte_data_finalizer_context](NativeByteDataFinalizerContext* ptr) {
+                           return ptr == native_byte_data_finalizer_context;
+                         });
+  if (it != active_native_byte_datas_.end()) {
+    active_native_byte_datas_.erase(it);
   }
 }
 

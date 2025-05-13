@@ -19,7 +19,11 @@ class ScriptPromiseResolver {
   ScriptPromiseResolver(ExecutingContext* context);
   ~ScriptPromiseResolver();
 
-  FORCE_INLINE bool isAlive() const { return context_->IsContextValid() && context_->IsCtxValid(); }
+  void Reset();
+
+  FORCE_INLINE bool isAlive() const {
+    return context_ != nullptr && context_->IsContextValid() && context_->IsCtxValid();
+  }
   FORCE_INLINE ExecutingContext* context() const { return context_; }
 
   // Return a promise object and wait to be resolve or reject.
@@ -73,6 +77,7 @@ class ScriptPromiseResolver {
   void ResolveOrRejectImmediately(JSValue value);
 
   ResolutionState state_;
+  double context_id_;
   ExecutingContext* context_{nullptr};
   JSValue promise_{JS_NULL};
   JSValue resolve_func_{JS_NULL};

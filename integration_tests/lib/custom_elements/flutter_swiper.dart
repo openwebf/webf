@@ -7,8 +7,6 @@ import 'package:card_swiper/card_swiper.dart';
 class SwiperElement extends WidgetElement {
   SwiperElement(BindingContext? context) : super(context);
 
-  late SwiperController _swiperController;
-
   String get index => getAttribute('index') ?? '0';
 
   set index(value) {
@@ -38,14 +36,7 @@ class SwiperElement extends WidgetElement {
   set duration(value) {
     internalSetAttribute('duration', value?.toString() ?? '300');
   }
-  late ScrollController controller;
 
-
-  @override
-  void initState() {
-    controller = ScrollController();
-    _swiperController = SwiperController();
-  }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
@@ -70,27 +61,8 @@ class SwiperElement extends WidgetElement {
     });
   }
 
-  @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    print('SwiperElement build children: ${children.length}');
-    return Swiper.children(
-      children: childNodes.toWidgetList(),
-      scrollDirection: _getScrollDirection(),
-      axisDirection: _getAxisDirection(),
-      autoplayDelay: int.parse(interval),
-      loop: loop != 'false',
-      autoplay: false,
-      onIndexChanged: _onIndexChanged,
-      physics:
-          const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      duration: int.parse(duration),
-      controller: _swiperController,
-      index: int.parse(index),
-    );
-  }
-
   void _move(int index) {
-    _swiperController.move(index);
+    state?._swiperController.move(index);
   }
 
   _getScrollDirection() {
@@ -118,5 +90,57 @@ class SwiperElement extends WidgetElement {
   void _onIndexChanged(int index) {
     CustomEvent event = CustomEvent('indexChange', detail: index);
     dispatchEvent(event);
+  }
+
+  @override
+  SwiperElementState? get state => super.state as SwiperElementState?;
+
+  @override
+  WebFWidgetElementState createState() {
+    return SwiperElementState(this);
+  }
+}
+
+class SwiperElementState extends WebFWidgetElementState {
+  SwiperElementState(super.widgetElement);
+
+  late SwiperController _swiperController;
+  late ScrollController controller;
+
+
+  @override
+  void initState() {
+    super.initState();
+    controller = ScrollController();
+    _swiperController = SwiperController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    controller.dispose();
+    _swiperController.dispose();
+  }
+
+  @override
+  SwiperElement get widgetElement => super.widgetElement as SwiperElement;
+
+  @override
+  Widget build(BuildContext context) {
+    print('SwiperElement build children: ${widgetElement.children.length}');
+    return Swiper.children(
+      children: widgetElement.childNodes.toWidgetList(),
+      scrollDirection: widgetElement._getScrollDirection(),
+      axisDirection: widgetElement._getAxisDirection(),
+      autoplayDelay: int.parse(widgetElement.interval),
+      loop: widgetElement.loop != 'false',
+      autoplay: false,
+      onIndexChanged: widgetElement._onIndexChanged,
+      physics:
+      const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      duration: int.parse(widgetElement.duration),
+      controller: _swiperController,
+      index: int.parse(widgetElement.index),
+    );
   }
 }

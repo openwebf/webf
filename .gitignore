@@ -68,3 +68,5 @@ temp
 coverage
 pubspec.lock
 .fvm
+
+**/.claude/settings.local.json

@@ -693,9 +693,6 @@ class WebFRenderParagraph extends RenderBox
 
   @override
   void paint(PaintingContext context, Offset offset) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackPaint(this);
-    }
     assert(() {
       if (debugRepaintTextRainbowEnabled) {
         final Paint paint = Paint()..color = debugCurrentRepaintColor.toColor();
@@ -723,7 +720,7 @@ class WebFRenderParagraph extends RenderBox
         Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }
-    } else {
+    } else if (_lineRenders.length == 1) {
       Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop);
       _lineRenders[0].textPainter.paint(context.canvas, lineOffset);
     }
@@ -737,10 +734,6 @@ class WebFRenderParagraph extends RenderBox
         context.canvas.drawRect(Offset.zero & size, paint);
       }
       context.canvas.restore();
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackPaint(this);
     }
   }
 

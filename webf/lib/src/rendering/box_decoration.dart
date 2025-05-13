@@ -111,21 +111,4 @@ mixin RenderBoxDecorationMixin on RenderBoxModelBase {
 
     callback(context, offset);
   }
-
-  void debugBoxDecorationProperties(DiagnosticPropertiesBuilder properties) {
-    properties.add(DiagnosticsProperty('borderEdge', renderStyle.border));
-    if (renderStyle.backgroundClip != null)
-      properties.add(DiagnosticsProperty('backgroundClip', renderStyle.backgroundClip));
-    if (renderStyle.backgroundOrigin != null)
-      properties.add(DiagnosticsProperty('backgroundOrigin', renderStyle.backgroundOrigin));
-    CSSBoxDecoration? _decoration = renderStyle.decoration;
-    if (_decoration != null && _decoration.hasBorderRadius)
-      properties.add(DiagnosticsProperty('borderRadius', _decoration.borderRadius));
-    if (_decoration != null && _decoration.image != null)
-      properties.add(DiagnosticsProperty('backgroundImage', _decoration.image));
-    if (_decoration != null && _decoration.boxShadow != null)
-      properties.add(DiagnosticsProperty('boxShadow', _decoration.boxShadow));
-    if (_decoration != null && _decoration.gradient != null)
-      properties.add(DiagnosticsProperty('gradient', _decoration.gradient));
-  }
 }

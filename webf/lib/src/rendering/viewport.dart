@@ -10,11 +10,10 @@ import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart' hide RenderBoxContainerDefaultsMixin;
 
-class RenderViewportParentData extends ContainerBoxParentData<RenderViewportBox> {}
+class RenderViewportParentData extends ContainerBoxParentData<RenderBox> {}
 
 class RenderViewportBox extends RenderBox
     with
-        RenderEventListenerMixin,
         ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
         RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
   RenderViewportBox({required Size? viewportSize, this.background, required this.controller})
@@ -35,6 +34,7 @@ class RenderViewportBox extends RenderBox
 
   Size? _viewportSize;
   Size? _boxSize;
+  Size? get boxSize => _boxSize;
 
   Size get viewportSize {
     if (_viewportSize != null) return _viewportSize!;
@@ -66,12 +66,14 @@ class RenderViewportBox extends RenderBox
     _boxSize = value;
   }
 
+  Future<Image> toImage([double pixelRatio = 1.0]) {
+    assert(isRepaintBoundary);
+    final OffsetLayer offsetLayer = layer as OffsetLayer;
+    return offsetLayer.toImage(Offset.zero & size, pixelRatio: pixelRatio);
+  }
+
   @override
   void performLayout() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackLayout(this);
-    }
-
     if (_viewportSize != null) {
       double width = _viewportSize!.width;
       double height = _viewportSize!.height - _bottomInset;
@@ -84,7 +86,7 @@ class RenderViewportBox extends RenderBox
       if (constraints.biggest.isFinite) {
         size = constraints.biggest;
       } else {
-        FlutterView currentView = controller.ownerFlutterView;
+        FlutterView currentView = controller.ownerFlutterView!;
         Size preferredSize = Size(
             math.min(constraints.maxWidth, currentView.physicalSize.width / currentView.devicePixelRatio),
             math.min(constraints.maxHeight, currentView.physicalSize.height / currentView.devicePixelRatio));
@@ -93,50 +95,27 @@ class RenderViewportBox extends RenderBox
     }
 
     RenderObject? child = firstChild;
-    while (child != null) {
-      final ContainerBoxParentData<RenderObject> childParentData =
-          child.parentData as ContainerBoxParentData<RenderObject>;
 
-      RenderBoxModel rootRenderLayoutBox = child as RenderBoxModel;
+    if (child != null && child is! RenderBoxModel) {
+      child.layout(constraints);
+    } else {
+      while (child != null) {
+        final ContainerBoxParentData<RenderObject> childParentData =
+        child.parentData as ContainerBoxParentData<RenderObject>;
 
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.pauseCurrentLayoutOp();
+        RenderBoxModel rootRenderLayoutBox = child as RenderBoxModel;
+
+        child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
+
+        assert(child.parentData == childParentData);
+        child = childParentData.nextSibling;
       }
-
-      child.layout(rootRenderLayoutBox.getConstraints().tighten(width: size.width, height: size.height));
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.resumeCurrentLayoutOp();
-      }
-
-      assert(child.parentData == childParentData);
-      child = childParentData.nextSibling;
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackLayout(this);
     }
   }
-
-  @override
-  GestureDispatcher? get gestureDispatcher => controller.gestureDispatcher;
 
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     return defaultHitTestChildren(result, position: position);
-  }
-
-  @override
-  void handleEvent(PointerEvent event, HitTestEntry entry) {
-    super.handleEvent(event, entry as BoxHitTestEntry);
-
-    // Add pointer to gesture dispatcher.
-    controller.gestureDispatcher.handlePointerEvent(event);
-
-    if (event is PointerDownEvent) {
-      // Set event path at begin stage and reset it at end stage on viewport render box.
-      controller.gestureDispatcher.resetEventPath();
-    }
   }
 
   @override
@@ -167,4 +146,12 @@ class RenderViewportBox extends RenderBox
     removeAll();
     super.dispose();
   }
+}
+
+class RootRenderViewportBox extends RenderViewportBox {
+  RootRenderViewportBox({required super.viewportSize, required super.controller, super.background});
+}
+
+class RouterViewViewportBox extends RenderViewportBox {
+  RouterViewViewportBox({required super.viewportSize, required super.controller});
 }

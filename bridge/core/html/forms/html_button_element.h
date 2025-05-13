@@ -6,14 +6,16 @@
 #ifndef BRIDGE_CORE_HTML_FORMS_HTML_BUTTON_ELEMENT_H_
 #define BRIDGE_CORE_HTML_FORMS_HTML_BUTTON_ELEMENT_H_
 
+#include "core/html/custom/widget_element.h"
 #include "core/html/html_element.h"
 
 namespace webf {
 
-class HTMLButtonElement : public HTMLElement {
+class HTMLButtonElement : public WidgetElement {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
+  explicit HTMLButtonElement(Document&);
 };
 
 }  // namespace webf

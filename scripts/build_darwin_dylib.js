@@ -8,8 +8,8 @@ require('./tasks');
 
 // Run tasks
 series(
-  'compile-polyfill',
   'generate-bindings-code',
+  'compile-polyfill',
   'build-darwin-webf-lib',
 )((err) => {
   if (err) {

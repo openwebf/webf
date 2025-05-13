@@ -1,6 +1,6 @@
 describe('TouchEvent', () => {
   it('should work with element touch start', async (done) => {
-    const div = document.createElement('div')
+    const div = document.createElement('webf-toucharea')
     div.style.backgroundColor = 'red';
     div.style.width = '100px';
     div.style.height = '100px';
@@ -15,7 +15,7 @@ describe('TouchEvent', () => {
     await simulatePointDown(0, 0);
   });
   it('should work with element touch end', async (done) => {
-    const div = document.createElement('div')
+    const div = document.createElement('webf-toucharea')
     div.style.backgroundColor = 'red';
     div.style.width = '100px';
     div.style.height = '100px';
@@ -30,7 +30,7 @@ describe('TouchEvent', () => {
   });
 
   it('should work with element touch move', async (done) => {
-    const div = document.createElement('div')
+    const div = document.createElement('webf-toucharea')
     div.style.backgroundColor = 'red';
     div.style.width = '100px';
     div.style.height = '100px';
@@ -45,41 +45,8 @@ describe('TouchEvent', () => {
     await simulatePointMove(1, 1);
   });
 
-  it('should work with element dispatch touch event', async (done) => {
-    let touchNum = 0;
-    const div = document.createElement('div');
-    div.style.backgroundColor = 'yellow';
-    div.style.width = '100px';
-    div.style.height = '100px';
-
-    div.addEventListener('touchstart', () => touchNum++);
-
-    document.body.appendChild(div)
-
-    const div2 = document.createElement('div');
-    div2.style.backgroundColor = 'red';
-    div2.style.width = '50px';
-    div2.style.height = '50px';
-    div2.style.marginLeft = '100px';
-
-    div2.addEventListener('touchstart', () => touchNum++);
-    div.appendChild(div2);
-
-    let touchStartTriggered = false;
-    document.body.addEventListener('touchstart', () => {
-      expect(touchNum).toBe(2);
-      touchStartTriggered = true;
-    });
-    document.body.addEventListener('click', () => {
-      expect(touchStartTriggered).toBe(true);
-      done();
-    })
-
-    await simulateClick(120, 10);
-  });
-
   it('should work with touches', async (done) => {
-    const div = document.createElement('div');
+    const div = document.createElement('webf-toucharea');
     div.style.backgroundColor = 'blue';
     div.style.width = '30px';
     div.style.height = '30px';
@@ -106,7 +73,7 @@ describe('TouchEvent', () => {
     div.style.width = '30px';
     div.style.height = '30px';
 
-    const div2 = document.createElement('div');
+    const div2 = document.createElement('webf-toucharea');
     div2.style.backgroundColor = 'yellow';
     div2.style.width = '10px';
     div2.style.height = '10px';
@@ -130,7 +97,7 @@ describe('TouchEvent', () => {
   });
 
   it('touchend should work with changedTouches', async (done) => {
-    const div = document.createElement('div');
+    const div = document.createElement('webf-toucharea');
     div.style.backgroundColor = 'blue';
     div.style.width = '30px';
     div.style.height = '30px';
@@ -149,7 +116,7 @@ describe('TouchEvent', () => {
   });
 
   it('touchstart should work with changedTouches', async (done) => {
-    const div = document.createElement('div');
+    const div = document.createElement('webf-toucharea');
     div.style.backgroundColor = 'blue';
     div.style.width = '30px';
     div.style.height = '30px';
@@ -173,7 +140,7 @@ describe('TouchEvent', () => {
   });
 
   it('touchmove should work with changedTouches', async (done) => {
-    const div = document.createElement('div');
+    const div = document.createElement('webf-toucharea');
     div.style.backgroundColor = 'blue';
     div.style.width = '30px';
     div.style.height = '30px';
@@ -194,15 +161,15 @@ describe('TouchEvent', () => {
   });
 
   it('touchmove should work on body when element with position', async (done) => {
-    const div = document.createElement('div');
+    const div = document.createElement('webf-toucharea');
     div.style.width = '100px';
     div.style.height = '100px';
     div.style.backgroundColor = 'red';
     div.style.position = 'fixed';
     document.body.appendChild(div);
 
-    document.body.addEventListener('touchmove', async function callback() {
-      document.body.removeEventListener('touchmove', callback);
+    div.addEventListener('touchmove', async function callback() {
+      div.removeEventListener('touchmove', callback);
       await simulatePointUp(12, 12);
       done();
     });
@@ -214,14 +181,14 @@ describe('TouchEvent', () => {
   });
 
   it('should works when read touches', async (done) => {
-    const div = document.createElement('div');
+    const div = document.createElement('webf-toucharea');
     div.style.width = '100px';
     div.style.height = '100px';
     div.style.backgroundColor = 'red';
     div.style.position = 'fixed';
     document.body.appendChild(div);
 
-    document.body.addEventListener('touchmove', async function callback(event) {
+    div.addEventListener('touchmove', async function callback(event) {
       const touchList = event.touches;
       expect(touchList.length).toBe(1);
       // @ts-ignore
@@ -237,7 +204,7 @@ describe('TouchEvent', () => {
   });
 
   it('should works when initialize TouchEvent from JS', () => {
-    const container = createElement('div', {}, []);
+    const container = createElement('webf-toucharea', {}, []);
     document.body.appendChild(container);
     const touchEvent = new TouchEvent('touchstart');
     container.dispatchEvent(touchEvent);

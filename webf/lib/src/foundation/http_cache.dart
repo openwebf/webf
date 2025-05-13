@@ -111,12 +111,13 @@ class HttpCacheController {
   }
 
   Future<HttpClientResponse> interceptResponse(HttpClientRequest request, HttpClientResponse response,
-      HttpCacheObject cacheObject, HttpClient httpClient) async {
+      HttpCacheObject cacheObject, HttpClient httpClient, WebFBundle? ownerBundle) async {
     await cacheObject.updateIndex(response);
 
     // Negotiate cache with HTTP 304
     if (response.statusCode == HttpStatus.notModified) {
       HttpClientResponse? cachedResponse = await cacheObject.toHttpClientResponse(httpClient);
+      ownerBundle?.setLoadingFromCache();
       if (cachedResponse != null) {
         return cachedResponse;
       }

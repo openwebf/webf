@@ -24,7 +24,9 @@ impl AsyncStorage {
   }
 
   pub fn get_item(&self, key: &str, exception_state: &ExceptionState) -> WebFNativeFuture<String> {
-    let key_string = NativeValue::new_string(key);
+    let key_string = NativeValue::new_list(vec![
+      NativeValue::new_string(key)
+    ]);
     let future_for_return = WebFNativeFuture::<String>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
@@ -79,7 +81,9 @@ impl AsyncStorage {
   }
 
   pub fn remove_item(&self, key: &str, exception_state: &ExceptionState) -> WebFNativeFuture<bool> {
-    let key_string = NativeValue::new_string(key);
+    let key_string = NativeValue::new_list(vec![
+      NativeValue::new_string(key)
+    ]);
     let future_for_return = WebFNativeFuture::<bool>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
@@ -103,7 +107,7 @@ impl AsyncStorage {
   }
 
   pub fn clear(&self, exception_state: &ExceptionState) -> WebFNativeFuture<bool> {
-    let params = NativeValue::new_null();
+    let params = NativeValue::new_list(vec![]);
     let future_for_return = WebFNativeFuture::<bool>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
@@ -127,7 +131,7 @@ impl AsyncStorage {
   }
 
   pub fn get_all_keys(&self, exception_state: &ExceptionState) -> WebFNativeFuture<Vec<String>> {
-    let params = NativeValue::new_null();
+    let params = NativeValue::new_list(vec![]);
     let future_for_return = WebFNativeFuture::<Vec<String>>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {
@@ -151,7 +155,7 @@ impl AsyncStorage {
   }
 
   pub fn length(&self, exception_state: &ExceptionState) -> WebFNativeFuture<i64> {
-    let params = NativeValue::new_null();
+    let params = NativeValue::new_list(vec![]);
     let future_for_return = WebFNativeFuture::<i64>::new();
     let future_in_callback = future_for_return.clone();
     let general_callback: WebFNativeFunction = Box::new(move |argc, argv| {

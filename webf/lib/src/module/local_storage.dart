@@ -5,9 +5,11 @@
 import 'dart:async';
 import 'package:archive/archive.dart';
 import 'package:path/path.dart' as path;
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
+
+Map<String, Box> _sharedSyncBox = {};
 
 class LocalStorageModule extends BaseModule {
   @override
@@ -24,37 +26,49 @@ class LocalStorageModule extends BaseModule {
     final key = getBoxKey(moduleManager!);
     final tmpPath = await getWebFTemporaryPath();
     final storagePath = path.join(tmpPath, 'LocalStorage');
+
+    if (_sharedSyncBox.containsKey(key)) {
+      return;
+    }
+
     try {
-      await Hive.openBox(key, path: storagePath);
+      _sharedSyncBox[key] = await Hive.openBox(key, path: storagePath);
     } catch (e) {
       // Try again to avoid resources are temporarily unavailable.
-      await Hive.openBox(key, path: storagePath);
+      _sharedSyncBox[key] = await Hive.openBox(key, path: storagePath);
     }
   }
 
   LocalStorageModule(ModuleManager? moduleManager) : super(moduleManager);
 
   @override
-  void dispose() {}
+  void dispose() {
+    final key = getBoxKey(moduleManager!);
+    _sharedSyncBox.remove(key);
+  }
 
   @override
-  dynamic invoke(String method, params, InvokeModuleCallback callback) {
+  dynamic invoke(String method, List<dynamic> params) {
     Box box = Hive.box(getBoxKey(moduleManager!));
 
     switch (method) {
       case 'getItem':
-        return box.get(params);
+        return box.get(params[0]);
       case 'setItem':
         box.put(params[0], params[1]);
         break;
       case 'removeItem':
-        box.delete(params);
+        box.delete(params[0]);
         break;
       case '_getAllKeys':
         List<dynamic> keys = box.keys.toList();
         return keys;
       case 'key':
-        return box.keyAt(params);
+        try {
+          return box.keyAt(params[0]);
+        } catch (e) {
+          return null;
+        }
       case 'clear':
         box.keys.forEach((key) {
           box.delete(key);

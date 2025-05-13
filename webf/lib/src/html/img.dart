@@ -11,14 +11,15 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/src/scheduler/debounce.dart';
-import 'package:webf/src/widget/portal.dart';
 import 'package:webf/svg.dart';
 
 const String IMAGE = 'IMG';
@@ -36,9 +37,6 @@ const Map<String, dynamic> _defaultStyle = {
 
 // The HTMLImageElement.
 class ImageElement extends Element {
-  // The render box to draw image.
-  WebFRenderImage? _renderImage;
-
   BoxFitImage? _currentImageProvider;
   ImageConfiguration? _currentImageConfig;
 
@@ -54,6 +52,9 @@ class ImageElement extends Element {
   ui.Image? get image => _cachedImageInfo?.image;
 
   bool _isListeningStream = false;
+
+  bool _isSVGImage = false;
+  Uint8List? _svgBytes;
 
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
   // A boolean value which indicates whether or not the image has completely loaded.
@@ -75,13 +76,13 @@ class ImageElement extends Element {
   // until some conditions associated with the element are met, according to the attribute's
   // current state.
   // https://html.spec.whatwg.org/multipage/urls-and-fetching.html#lazy-loading-attributes
-  bool get _shouldLazyLoading => getAttribute(LOADING) == LAZY;
+  bool get shouldLazyLoading => getAttribute(LOADING) == LAZY;
 
   // Resize the rendering image to a fixed size if the original image is much larger than the display size.
   // This feature could save memory if the original image is much larger than it's actual display size.
   // Note that images with the same URL but different sizes could produce different resized images, and WebF will treat them
   // as different images. However, in most cases, using the same image with different sizes is much rarer than using images with different URL.
-  bool get _shouldScaling => true;
+  bool get _shouldScaling => getAttribute(SCALING) == SCALE;
 
   ImageStreamCompleterHandle? _completerHandle;
 
@@ -107,8 +108,8 @@ class ImageElement extends Element {
 
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
-    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? flutter.ObjectKey(this), child: WebFImage(this));
-    return Portal(ownerElement: this, child: child);
+    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
+    return WebFEventListener(ownerElement: this, child: child, hasEvent: true);
   }
 
   @override
@@ -152,8 +153,8 @@ class ImageElement extends Element {
     RenderObject renderObject = super.willAttachRenderer(flutterWidgetElement);
     style.addStyleChangeListener(_stylePropertyChanged);
     RenderReplaced? renderReplaced = renderObject as RenderReplaced;
-    if ((_didWatchAnimationImage || managedByFlutterWidget) && renderReplaced.hasIntersectionObserver() == false) {
-      renderReplaced.addIntersectionChangeListener(_handleIntersectionChange);
+    if ((!_didWatchAnimationImage) && (shouldLazyLoading) && renderReplaced.hasIntersectionObserver() == false) {
+      renderReplaced.addIntersectionChangeListener(handleIntersectionChange);
     }
 
     return renderObject;
@@ -162,21 +163,12 @@ class ImageElement extends Element {
   @override
   void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
     super.didAttachRenderer();
-    if (!managedByFlutterWidget) {
-      _reattachRenderObject();
-    }
   }
 
   @override
   void didDetachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) async {
     super.didDetachRenderer(flutterWidgetElement);
     style.removeStyleChangeListener(_stylePropertyChanged);
-
-    if (renderStyle.hasRenderBox() && !managedByFlutterWidget) {
-      // unlink render object and self render object
-      final replaced = renderStyle.domRenderBoxModel as RenderReplaced;
-      replaced.child = null;
-    }
   }
 
   String get scaling => getAttribute(SCALING) ?? '';
@@ -226,27 +218,6 @@ class ImageElement extends Element {
     }
   }
 
-  // Drop the current [RenderImage] off to render replaced.
-  void _dropChild() {
-    if (renderStyle.hasRenderBox()) {
-      if (managedByFlutterWidget) {
-      } else {
-        RenderReplaced renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced;
-        renderReplaced.child = null;
-        if (_renderImage != null) {
-          _renderImage!.image = null;
-
-          ownerDocument.inactiveRenderObjects.add(_renderImage);
-          _renderImage = null;
-        }
-        if (_svgRenderObject != null) {
-          ownerDocument.inactiveRenderObjects.add(_svgRenderObject!);
-          _svgRenderObject = null;
-        }
-      }
-    }
-  }
-
   ImageStreamListener? _imageStreamListener;
 
   ImageStreamListener get _listener =>
@@ -262,10 +233,10 @@ class ImageElement extends Element {
   bool _didWatchAnimationImage = false;
 
   void _watchAnimatedImageWhenVisible() {
-    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-    if (_isListeningStream && !_didWatchAnimationImage) {
+    RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
+    if (renderReplaced != null && _isListeningStream && !_didWatchAnimationImage) {
       _stopListeningStream(keepStreamAlive: true);
-      renderReplaced?.addIntersectionChangeListener(_handleIntersectionChange);
+      renderReplaced.addIntersectionChangeListener(handleIntersectionChange);
       _didWatchAnimationImage = true;
     }
   }
@@ -274,8 +245,8 @@ class ImageElement extends Element {
   void dispose() async {
     super.dispose();
 
-    RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-    renderReplaced?.removeIntersectionChangeListener(_handleIntersectionChange);
+    RenderReplaced? renderReplaced = renderStyle.attachedRenderBoxModel as RenderReplaced?;
+    renderReplaced?.removeIntersectionChangeListener(handleIntersectionChange);
 
     // Stop and remove image stream reference.
     _stopListeningStream();
@@ -287,15 +258,13 @@ class ImageElement extends Element {
     _currentImageProvider?.evict(configuration: _currentImageConfig ?? ImageConfiguration.empty);
     _currentImageConfig = null;
     _currentImageProvider = null;
-
-    // Dispose render object.
-    _dropChild();
+    _svgBytes = null;
   }
 
   // Width and height set through style declaration.
   double? get _styleWidth {
     String width = style.getPropertyValue(WIDTH);
-    if (width.isNotEmpty && isRendererAttachedToSegmentTree) {
+    if (width.isNotEmpty) {
       CSSLengthValue len = CSSLength.parseLength(width, renderStyle, WIDTH);
       return len.computedValue;
     }
@@ -304,7 +273,7 @@ class ImageElement extends Element {
 
   double? get _styleHeight {
     String height = style.getPropertyValue(HEIGHT);
-    if (height.isNotEmpty && isRendererAttachedToSegmentTree) {
+    if (height.isNotEmpty) {
       CSSLengthValue len = CSSLength.parseLength(height, renderStyle, HEIGHT);
       return len.computedValue;
     }
@@ -346,8 +315,6 @@ class ImageElement extends Element {
 
   bool get _isSVGMode => _resolvedUri?.path.endsWith('.svg') ?? false;
 
-  RenderBox? _svgRenderObject = null;
-
   // Read the original image width of loaded image.
   // The getter must be called after image had loaded, otherwise will return 0.
   int naturalWidth = 0;
@@ -356,7 +323,10 @@ class ImageElement extends Element {
   // The getter must be called after image had loaded, otherwise will return 0.
   int naturalHeight = 0;
 
-  void _handleIntersectionChange(IntersectionObserverEntry entry) async {
+  @override
+  void handleIntersectionChange(IntersectionObserverEntry entry) async {
+    super.handleIntersectionChange(entry);
+
     // When appear
     if (entry.isIntersecting) {
       _updateImageDataLazyCompleter?.complete();
@@ -377,9 +347,22 @@ class ImageElement extends Element {
     dispatchEvent(Event(EVENT_ERROR));
   }
 
-  void _onImageError(Object exception, StackTrace? stackTrace) {
+  bool hadTryReload = false;
+
+  void _onImageError(Object exception, StackTrace? stackTrace) async {
+    if (_resolvedUri != null) {
+      // Invalidate http cache for this failed image loads.
+      await WebFBundle.invalidateCache(_resolvedUri!.toString());
+      if (!hadTryReload) {
+        _reloadImage(forceUpdate: true);
+        hadTryReload = true;
+      }
+    }
+
     debugPrint('$exception\n$stackTrace');
     scheduleMicrotask(_dispatchErrorEvent);
+    // Decrement load event delay count after decode.
+    ownerDocument.decrementLoadEventDelayCount();
   }
 
   void _resizeImage() {
@@ -395,10 +378,6 @@ class ImageElement extends Element {
     renderStyle.intrinsicWidth = naturalWidth.toDouble();
     renderStyle.intrinsicHeight = naturalHeight.toDouble();
 
-    // Set naturalWidth and naturalHeight to renderImage to avoid relayout when size didn't changes.
-    _renderImage?.width = naturalWidth.toDouble();
-    _renderImage?.height = naturalHeight.toDouble();
-
     if (naturalWidth == 0.0 || naturalHeight == 0.0) {
       renderStyle.aspectRatio = null;
     } else {
@@ -406,59 +385,11 @@ class ImageElement extends Element {
     }
   }
 
-  WebFRenderImage _createRenderImageBox() {
-    return WebFRenderImage(
-      image: null,
-      fit: renderStyle.objectFit,
-      alignment: renderStyle.objectPosition,
-    );
-  }
-
   @override
   void removeAttribute(String key) {
     super.removeAttribute(key);
     if (key == 'loading') {
       _updateImageDataLazyCompleter?.complete();
-    }
-  }
-
-  void _reattachRenderObject() {
-    if (_isSVGMode) {
-      if (_svgRenderObject != null) {
-        addChildForDOMMode(_svgRenderObject!);
-      }
-    } else {
-      if (_renderImage != null) {
-        addChildForDOMMode(_renderImage!);
-      }
-    }
-  }
-
-  void _updateRenderObject({RenderBox? svg, Image? image}) {
-    if (svg != null) {
-      final oldSVG = _svgRenderObject;
-      _svgRenderObject = svg;
-      addChildForDOMMode(svg);
-      ownerDocument.inactiveRenderObjects.add(oldSVG);
-      if (_renderImage != null) {
-        _renderImage!.image = null;
-        ownerDocument.inactiveRenderObjects.add(_renderImage!);
-        _renderImage = null;
-      }
-    } else if (image != null) {
-      if (_renderImage == null) {
-        _renderImage = _createRenderImageBox();
-        addChildForDOMMode(_renderImage!);
-      }
-      if (_svgRenderObject != null) {
-        // dispose svg render object
-        ownerDocument.inactiveRenderObjects.add(_svgRenderObject!);
-        _svgRenderObject = null;
-      }
-      _renderImage?.image = image;
-      // _resizeCurrentImage();
-    } else {
-      assert(false); // wrong
     }
   }
 
@@ -517,13 +448,7 @@ class ImageElement extends Element {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
     }
 
-    if (!managedByFlutterWidget) {
-      _updateRenderObject(image: imageInfo.image);
-      _renderImage!.width = naturalWidth.toDouble();
-      _renderImage!.height = naturalHeight.toDouble();
-    } else {
-      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
-    }
+    renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
 
     // Fire the load event at first frame come.
     if (!_loaded) {
@@ -557,17 +482,9 @@ class ImageElement extends Element {
   }
 
   Future<void> _updateImageDataTask(int taskId) async {
-    if (_shouldLazyLoading) {
+    if (shouldLazyLoading) {
       final completer = Completer<bool?>();
       _updateImageDataLazyCompleter = completer;
-
-      if (!managedByFlutterWidget) {
-        RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-        renderReplaced
-          ?..isInLazyRendering = true
-        // When detach renderer, all listeners will be cleared.
-          ..addIntersectionChangeListener(_handleIntersectionChange);
-      }
 
       /// The method is foolproof to avoid IntersectionObserver not working
       Future.delayed(Duration(seconds: 3), () {
@@ -581,11 +498,6 @@ class ImageElement extends Element {
       }
       // Because the renderObject can changed between rendering, So we need to reassign the value;
       _updateImageDataLazyCompleter = null;
-
-      if (!managedByFlutterWidget) {
-        RenderReplaced? renderReplaced = renderStyle.domRenderBoxModel as RenderReplaced?;
-        renderReplaced?.isInLazyRendering = false;
-      }
     }
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -593,31 +505,47 @@ class ImageElement extends Element {
         return;
       }
 
-      if (_isSVGMode) {
-        _loadSVGImage();
+      _loadImg() {
+        // Increment load event delay count before decode.
+        ownerDocument.incrementLoadEventDelayCount();
+
+        if (_isSVGMode) {
+          _loadSVGImage();
+        } else {
+          _loadNormalImage();
+        }
+      }
+
+      if (!ownerDocument.controller.isFlutterAttached) {
+        ownerView.registerCallbackOnceForFlutterAttached(() {
+          _loadImg();
+        });
       } else {
-        _loadNormalImage();
+        _loadImg();
       }
     });
     SchedulerBinding.instance.scheduleFrame();
   }
 
-  void _loadSVGImage() {
-    final builder = SVGRenderBoxBuilder(obtainImage(this, _resolvedUri!), target: this);
-
-    builder.decode().then((renderObject) {
-      final size = builder.getIntrinsicSize();
-      naturalWidth = size.width.toInt();
-      naturalHeight = size.height.toInt();
+  void _loadSVGImage() async {
+    try {
+      ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
+      _svgBytes = response.bytes;
       _resizeImage();
-      _updateRenderObject(svg: renderObject);
+      _isSVGImage = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+      });
+      SchedulerBinding.instance.scheduleFrame();
+
       _dispatchLoadEvent();
-      // Decrement load event delay count after decode.
-      ownerDocument.decrementLoadEventDelayCount();
-    }, onError: (e, stack) {
+    } catch (e, stack) {
       print('$e\n$stack');
       _dispatchErrorEvent();
-    });
+    } finally {
+      // Decrement load event delay count after decode.
+      ownerDocument.decrementLoadEventDelayCount();
+    }
     return;
   }
 
@@ -627,6 +555,7 @@ class ImageElement extends Element {
   // The image will be encoded into a small size for better rasterization performance.
   void _loadNormalImage() {
     var provider = _currentImageProvider;
+    FlutterView? ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     if (provider == null || (provider.boxFit != renderStyle.objectFit || provider.url != _resolvedUri)) {
       // Image should be resized based on different ratio according to object-fit value.
       BoxFit objectFit = renderStyle.objectFit;
@@ -638,17 +567,16 @@ class ImageElement extends Element {
         loadImage: obtainImage,
         onImageLoad: _onImageLoad,
         controller: ownerDocument.controller,
-        devicePixelRatio: ownerDocument.defaultView.devicePixelRatio,
+        devicePixelRatio: ownerFlutterView?.devicePixelRatio ?? 2.0,
       );
     }
 
-    FlutterView ownerFlutterView = ownerDocument.controller.ownerFlutterView;
     // Try to make sure that this image can be encoded into a smaller size.
     int? cachedWidth = renderStyle.width.value != null && width > 0 && width.isFinite
-        ? (width * ownerFlutterView.devicePixelRatio).toInt()
+        ? (width * (ownerFlutterView?.devicePixelRatio ?? 2.0)).toInt()
         : null;
     int? cachedHeight = renderStyle.height.value != null && height > 0 && height.isFinite
-        ? (height * ownerFlutterView.devicePixelRatio).toInt()
+        ? (height * (ownerFlutterView?.devicePixelRatio ?? 2.0)).toInt()
         : null;
 
     if (cachedWidth != null && cachedHeight != null) {
@@ -690,12 +618,8 @@ class ImageElement extends Element {
 
   void _startLoadNewImage() {
     if (_resolvedUri == null) {
-      // TODO: should use empty image;
       return;
     }
-
-    // Increment load event delay count before decode.
-    ownerDocument.incrementLoadEventDelayCount();
 
     _debounce.run(() {
       _updateImageData();
@@ -704,7 +628,19 @@ class ImageElement extends Element {
 
   // Reload current image when width/height/boxFit changed.
   // If url is changed, please call [_startLoadNewImage] instead.
-  void _reloadImage() {
+  void _reloadImage({ bool forceUpdate = false }) {
+
+    // Clear the cache and previous loaded provider
+    if (forceUpdate) {
+      _currentImageProvider = null;
+      BoxFitImageKey previousUnSizedKey = BoxFitImageKey(
+        url: _resolvedUri!,
+        configuration: ImageConfiguration.empty,
+      );
+      PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
+    }
+
+
     if (_isSVGMode) {
       // In svg mode, we don't need to reload
     } else {
@@ -731,11 +667,10 @@ class ImageElement extends Element {
         _reloadImage();
       } else {
         _resizeImage();
+        renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
       }
-    } else if (property == OBJECT_FIT && _renderImage != null) {
-      _renderImage!.fit = renderStyle.objectFit;
-    } else if (property == OBJECT_POSITION && _renderImage != null) {
-      _renderImage!.alignment = renderStyle.objectPosition;
+    } else if (property == OBJECT_FIT || property == OBJECT_POSITION) {
+      renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
     }
   }
 }
@@ -743,7 +678,7 @@ class ImageElement extends Element {
 class WebFImage extends flutter.StatefulWidget {
   final ImageElement imageElement;
 
-  WebFImage(this.imageElement);
+  WebFImage(this.imageElement, {flutter.Key? key}) : super(key: key);
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
@@ -758,12 +693,21 @@ class _ImageState extends flutter.State<WebFImage> {
 
   @override
   flutter.Widget build(flutter.BuildContext context) {
-    flutter.RawImage rawImage = flutter.RawImage(
-        image: imageElement._cachedImageInfo?.image,
-        width: imageElement.naturalWidth.toDouble(),
-        height: imageElement.naturalHeight.toDouble());
+    flutter.Widget child;
+    if (!imageElement._isSVGImage) {
+      child = WebFRawImage(
+          image: imageElement._cachedImageInfo?.image,
+          width: imageElement.naturalWidth.toDouble(),
+          fit: imageElement.renderStyle.objectFit,
+          alignment: imageElement.renderStyle.objectPosition,
+          height: imageElement.naturalHeight.toDouble());
+    } else {
+      child = SvgPicture.memory(
+        imageElement._svgBytes!,
+      );
+    }
 
-    return rawImage;
+    return child;
   }
 }
 

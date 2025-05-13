@@ -7,6 +7,7 @@
       "es7",
       "dom"
     ],
+    "types": [],
     "allowJs": false,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": false,
@@ -14,12 +15,14 @@
     "noImplicitThis": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
-    "suppressImplicitAnyIndexErrors": true,
     "noUnusedLocals": false,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "declaration": false
+    "declaration": true,
+    "declarationDir": "dist",
+    "outDir": "dist",
+    "emitDeclarationOnly": true
   }
 }

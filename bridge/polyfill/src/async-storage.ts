@@ -5,53 +5,32 @@
 
 import { webf } from './webf';
 
-export const asyncStorage = {
+export interface AsyncStorage {
+  getItem(key: number | string): Promise<string>;
+  setItem(key: number | string, value: number | string): Promise<any>;
+  removeItem(key: number | string): Promise<any>;
+  clear(): Promise<any>;
+  getAllKeys(): Promise<string[]>;
+  length(): Promise<number>;
+}
+
+export const asyncStorage: AsyncStorage = {
   getItem(key: number | string) {
-    return new Promise((resolve, reject) => {
-      webf.invokeModule('AsyncStorage', 'getItem', String(key), (e, data) => {
-        if (e) return reject(e);
-        resolve(data == null ? '' : data);
-      });
-    });
+    return webf.invokeModuleAsync<string>('AsyncStorage', 'getItem', String(key));
   },
   setItem(key: number | string, value: number | string) {
-    return new Promise((resolve, reject) => {
-      webf.invokeModule('AsyncStorage', 'setItem', [String(key), String(value)], (e, data) => {
-        if (e) return reject(e);
-        resolve(data);
-      });
-    });
+    return webf.invokeModuleAsync('AsyncStorage', 'setItem', String(key), String(value));
   },
   removeItem(key: number | string) {
-    return new Promise((resolve, reject) => {
-      webf.invokeModule('AsyncStorage', 'removeItem', String(key), (e, data) => {
-        if (e) return reject(e);
-        resolve(data);
-      });
-    });
+    return webf.invokeModuleAsync('AsyncStorage', 'removeItem', String(key));
   },
   clear() {
-    return new Promise((resolve, reject) => {
-      webf.invokeModule('AsyncStorage', 'clear', '', (e, data) => {
-        if (e) return reject(e);
-        resolve(data);
-      });
-    });
+    return webf.invokeModuleAsync('AsyncStorage', 'clear', '');
   },
   getAllKeys() {
-    return new Promise((resolve, reject) => {
-      webf.invokeModule('AsyncStorage', 'getAllKeys', '', (e, data) => {
-        if (e) return reject(e);
-        resolve(data);
-      });
-    });
+    return webf.invokeModuleAsync('AsyncStorage', 'getAllKeys', '');
   },
   length(): Promise<number> {
-    return new Promise((resolve, reject) => {
-      webf.invokeModule('AsyncStorage', 'length', '', (e, data) => {
-        if (e) return reject(e);
-        resolve(data);
-      });
-    });
+    return webf.invokeModuleAsync('AsyncStorage', 'length', '');
   }
 }

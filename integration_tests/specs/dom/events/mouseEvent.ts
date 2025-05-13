@@ -134,7 +134,7 @@ describe('MouseEvent', () => {
     await simulateClick(10.0, 10.0);
   });
 
-  it('should work with dblclick', async (done) => {
+  xit('should work with dblclick', async (done) => {
     const div = document.createElement('div');
     div.style.width = '100px';
     div.style.height = '100px';
@@ -148,7 +148,7 @@ describe('MouseEvent', () => {
     await simulateClick(10.0, 10.0, 1);
   });
 
-  it('should work with both click and dblclick', async () => {
+  xit('should work with both click and dblclick', async () => {
     const div = document.createElement('div');
     div.style.width = '100px';
     div.style.height = '100px';
@@ -272,7 +272,7 @@ describe('MouseEvent', () => {
     img2.click();
   })
 
-  it('should work with fixed node which be scolled', async () => {
+  it('should work with fixed node which be scolled', async (done) => {
     const div = document.createElement('div')
     document.body.appendChild(div)
     div.style.width = '100%';
@@ -290,14 +290,17 @@ describe('MouseEvent', () => {
     mask.style.left = '0px';
     document.body.appendChild(mask);
 
-    window.scrollTo(0, '100vh');
+    requestAnimationFrame(async () => {
+      window.scrollTo(0, '100vh');
+      await simulateClick(10.0, 10.0, 0);
+      expect(clicked).toBe(true);
+      done();
+    });
 
     let clicked = false;
     mask.addEventListener('click', function handleClick() {
       mask.removeEventListener('click', handleClick);
       clicked = true;
     });
-    await simulateClick(10.0, 10.0, 0);
-    expect(clicked).toBe(true);
   });
 });

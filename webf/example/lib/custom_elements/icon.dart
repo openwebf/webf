@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
+ * Licensed under GNU AGPL with Enterprise exception.
+ */
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -16,8 +20,20 @@ class FlutterIcon extends WidgetElement {
   }
 
   @override
-  Widget build(BuildContext context, ChildNodeList childNodes) {
-    IconData? iconType = getIconType(getAttribute('type') ?? '');
+  WebFWidgetElementState createState() {
+    return FlutterIconState(this);
+  }
+}
+
+class FlutterIconState extends WebFWidgetElementState {
+  FlutterIconState(super.widgetElement);
+
+  @override
+  WidgetElement get widgetElement => super.widgetElement as FlutterIcon;
+
+  @override
+  Widget build(BuildContext context) {
+    IconData? iconType = FlutterIcon.getIconType(widgetElement.getAttribute('type') ?? '');
     if (iconType == null) return SizedBox.shrink();
 
     return Icon(

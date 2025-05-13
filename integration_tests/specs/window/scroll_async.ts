@@ -99,7 +99,9 @@ describe('window scroll API async', () => {
 
     window.addEventListener('scroll', scrollListener);
 
-    // @ts-ignore
-    await window.scrollTo_async(0, 100)
+    requestAnimationFrame(async () => {
+      // @ts-ignore
+      await window.scrollTo_async(0, 100)
+    });
   });
 });
