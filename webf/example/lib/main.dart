@@ -142,7 +142,8 @@ class WebFSubViewState extends State<WebFSubView> {
                   // sets theme mode to dark
                   !isDarkModeEnabled ? AdaptiveTheme.of(context).setLight() : AdaptiveTheme.of(context).setDark();
                   controller.darkModeOverride = isDarkModeEnabled;
-                  controller.view.onPlatformBrightnessChanged();
+                  // Removed call to view.onPlatformBrightnessChanged as it's no longer needed
+                  // The darkModeOverride setter now handles updating styles and dispatching events
                 },
               )),
         ],
@@ -448,7 +449,8 @@ class _WebFDemoState extends State<WebFDemo> {
                     WebFController? controller =
                         await WebFControllerManager.instance.getController(widget.webfPageName);
                     controller?.darkModeOverride = isDarkModeEnabled;
-                    controller?.view.didChangePlatformBrightness();
+                    // Removed call to view.didChangePlatformBrightness as it's no longer needed
+                    // The darkModeOverride setter now handles updating styles and dispatching events
                   },
                 )),
           ],

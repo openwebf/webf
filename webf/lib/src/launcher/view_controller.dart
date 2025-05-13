@@ -631,7 +631,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver  
 
   @override
   void didChangePlatformBrightness() {
-    document.recalculateStyleImmediately();
+    // If dark mode was override by the caller, watch the system platform changes to update platform brightness
+    if (rootController.darkModeOverride == null) {
+      document.recalculateStyleImmediately();
+    }
   }
 
   @override

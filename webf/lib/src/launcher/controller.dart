@@ -38,6 +38,7 @@ import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
+
 /// A callback that is invoked when a WebFController is fully initialized but before the content is executed.
 ///
 /// Use this to perform early configuration or setup of the WebF environment before any content is loaded.
@@ -380,16 +381,36 @@ class WebFController with Diagnosticable {
 
   bool? _darkModeOverride;
 
+  // This ensures that when app developers manually toggle dark mode,
+  // both the DOM event is fired and styles are updated immediately
   set darkModeOverride(value) {
+    bool? previousDarkMode = _darkModeOverride;  // Store previous value
+
     _darkModeOverride = value;
+    // Only dispatch event and recalculate if:
+    // 1. Controller is already evaluated (content is loaded)
+    // 2. Previous value existed and was different
+    // 3. New value is not null
+    if (evaluated && previousDarkMode != null && value != null && previousDarkMode != value) {
+      view.window.dispatchEvent(ColorSchemeChangeEvent(value ? 'dark' : 'light'));
+      view.document.recalculateStyleImmediately();
+    }
   }
+
+  get darkModeOverride => _darkModeOverride;
 
   /// Whether the current UI mode is dark mode.
   ///
   /// Returns true if dark mode is explicitly overridden to true via darkModeOverride
   /// or if the platform brightness is not light.
-  bool get isDarkMode {
-    return _darkModeOverride ?? ownerFlutterView?.platformDispatcher.platformBrightness != Brightness.light;
+  bool? get isDarkMode {
+    if (_darkModeOverride != null) {
+      return _darkModeOverride;
+    }
+    if (ownerFlutterView != null) {
+      return ownerFlutterView!.platformDispatcher.platformBrightness == Brightness.dark;
+    }
+    return null;  // Return null when we can't determine system brightness
   }
 
   Map<String, WebFBundle>? _preloadBundleIndex;
@@ -808,7 +829,7 @@ class WebFController with Diagnosticable {
   ///
   /// This mode loads, parses, and executes content in a simulated environment before mounting.
   /// Can improve loading performance by up to 90%, but requires special handling for dimension-dependent code.
-  Future<void> preRendering(WebFBundle bundle, { Duration? timeout }) async {
+  Future<void> preRendering(WebFBundle bundle, {Duration? timeout}) async {
     if (_preRenderingStatus == PreRenderingStatus.done) return;
 
     controllerPreRenderingCompleter = Completer();

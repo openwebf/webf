@@ -1274,7 +1274,6 @@ class CSSRenderStyle extends RenderStyle
     debugBoxDecorationProperties(properties);
     debugVisibilityProperties(properties);
     debugTransformProperties(properties);
-    debugCSSVariableProperties(properties);
   }
 
   void debugBoxDecorationProperties(DiagnosticPropertiesBuilder properties) {
