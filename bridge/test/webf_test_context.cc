@@ -6,6 +6,7 @@
 #include "webf_test_context.h"
 #include "bindings/qjs/member_installer.h"
 #include "bindings/qjs/qjs_interface_bridge.h"
+#include "code_gen/test_framework_polyfill.c"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
 #include "core/frame/window.h"
@@ -13,7 +14,6 @@
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "qjs_blob.h"
-#include "code_gen/test_framework_polyfill.c"
 
 namespace webf {
 
