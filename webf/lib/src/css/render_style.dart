@@ -618,7 +618,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isSelfScrollingContainer() {
-    return effectiveOverflowX != CSSOverflowType.visible || effectiveOverflowY != CSSOverflowType.visible;
+    return (overflowX == CSSOverflowType.scroll || overflowX == CSSOverflowType.auto) ||
+        (overflowY == CSSOverflowType.scroll || overflowY == CSSOverflowType.auto);
   }
 
   @pragma('vm:prefer-inline')
