@@ -18,7 +18,7 @@
 #include "foundation/native_value_converter.h"
 #include "html/canvas/canvas_rendering_context_2d.h"
 #include "html/custom/widget_element_shape.h"
-#include "polyfill.h"
+#include "code_gen/bridge_polyfill.c"
 #include "qjs_window.h"
 #include "script_forbidden_scope.h"
 #include "timing/performance.h"
@@ -98,7 +98,8 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
 
-  initWebFPolyFill(this);
+  // Init JavaScript Polyfill
+  EvaluateByteCode(bridge_polyfill, bridge_polyfill_size);
 
   dart_isolate_context->profiler()->FinishTrackSteps();
   dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
@@ -229,7 +230,7 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
   return success;
 }
 
-bool ExecutingContext::EvaluateByteCode(uint8_t* bytes, size_t byteLength) {
+bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength) {
   dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
 
   JSValue obj, val;

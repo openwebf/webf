@@ -122,7 +122,7 @@ task('build-darwin-webf-lib', done => {
     }
   });
 
-  let webfTargets = ['webf'];
+  let webfTargets = ['webf', 'qjsc'];
   if (targetJSEngine === 'quickjs') {
     webfTargets.push('webf_unit_test');
   }
@@ -571,6 +571,30 @@ task('generate-bindings-code', (done) => {
   if (compileResult.status !== 0) {
     return done(compileResult.status);
   }
+
+  const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
+  const polyfillTarget = path.join(paths.bridge, 'code_gen/bridge_polyfill.c');
+  const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
+  let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill',  '-o', polyfillTarget,  polyfillSource], {
+    cwd: qjscExecDir,
+    shell: true,
+    stdio: 'inherit'
+  });
+  if (polyfillCompileResult.status !== 0) {
+    return done(compileResult.status);
+  }
+
+  const testPpolyfillTarget = path.join(paths.bridge, 'code_gen/test_framework_polyfill.c');
+  const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
+  let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill',  '-o', testPpolyfillTarget,  testPolyfillSource], {
+    cwd: qjscExecDir,
+    shell: true,
+    stdio: 'inherit'
+  });
+  if (testPolyfillCompileResult.status !== 0) {
+    return done(compileResult.status);
+  }
+
 
   done();
 });

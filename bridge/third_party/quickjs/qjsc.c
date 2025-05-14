@@ -33,7 +33,7 @@
 #include <sys/wait.h>
 #endif
 
-#include "cutils.h"
+#include "quickjs/cutils.h"
 #include "quickjs-libc.h"
 
 typedef struct {
@@ -631,6 +631,7 @@ int main(int argc, char **argv)
     
     rt = JS_NewRuntime();
     ctx = JS_NewContext(rt);
+    printf("bignum ext: %d\n", bignum_ext);
 #ifdef CONFIG_BIGNUM
     if (bignum_ext) {
         JS_AddIntrinsicBigFloat(ctx);

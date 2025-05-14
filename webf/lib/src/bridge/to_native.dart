@@ -279,7 +279,7 @@ class _EvaluateScriptsContext {
 
 void handleEvaluateScriptsResult(Object handle, int result) {
   _EvaluateScriptsContext context = handle as _EvaluateScriptsContext;
-  if (context.bytecodes != null) {
+  if (context.bytecodes != null && result == 1) {
     Uint8List bytes = context.bytecodes!.value.asTypedList(context.bytecodeLen!.value);
     // Save to disk cache
     QuickJSByteCodeCache.putObject(context.originalCodeBytes, bytes, cacheKey: context.cacheKey).then((_) {
@@ -314,8 +314,9 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
     // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
     if (!result) {
       await cacheObject.remove();
+      // Fallback to normal script mode.
+      return evaluateScripts(contextId, codeBytes);
     }
-
     return result;
   } else {
     Pointer<Utf8> _url = url.toNativeUtf8();

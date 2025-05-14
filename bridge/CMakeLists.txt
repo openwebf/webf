@@ -110,7 +110,6 @@ list(APPEND BRIDGE_SOURCE
   foundation/rust_readable.cc
   foundation/ui_command_buffer.cc
   foundation/ui_command_strategy.cc
-  code_gen/polyfill.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
@@ -159,7 +158,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   list(APPEND QUICK_JS_SOURCE
-    # third_party/quickjs/src/libbf.c
+    third_party/quickjs/src/libbf.c
     third_party/quickjs/src/cutils.c
     third_party/quickjs/src/libregexp.c
     third_party/quickjs/src/libunicode.c
@@ -212,6 +211,11 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     add_library(quickjs SHARED ${QUICK_JS_SOURCE})
   endif()
 
+  add_executable(qjsc ${QUICK_JS_SOURCE}
+    ./third_party/quickjs/quickjs-libc.c
+    ./third_party/quickjs/qjsc.c
+  )
+
   # PThread compact
   if(MSVC)
     # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
@@ -251,9 +255,11 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
     target_link_libraries(quickjs mimalloc-static)
+    target_link_libraries(qjsc mimalloc-static)
   endif()
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
+  target_include_directories(qjsc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
   if (MSVC)
     target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
@@ -461,6 +467,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND BRIDGE_SOURCE
     code_gen/names_installer.cc
     code_gen/qjs_console.cc
+    code_gen/bridge_polyfill.c
     code_gen/qjs_module_manager.cc
     code_gen/qjs_window_or_worker_global_scope.cc
     code_gen/qjs_window.cc
@@ -665,7 +672,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
   add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
   endif()
-  target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"})
+  target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_BIGNUM=1)
+  target_compile_options(qjsc PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_BIGNUM=1)
 
 endif ()
 
@@ -745,6 +753,11 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
       PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+    )
+    set_target_properties(qjsc
+      PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
     if(MSVC)
       set_target_properties(pthreadVC3
