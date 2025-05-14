@@ -1207,9 +1207,9 @@ class RenderBoxModel extends RenderBox
       }
     }
 
-    scrollableViewportSize = Size(
+    scrollableViewportSize = constraints.constrain(Size(
         _contentSize!.width + renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue,
-        _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue);
+        _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue));
 
     setUpOverflowScroller(scrollableSize, scrollableViewportSize);
 
