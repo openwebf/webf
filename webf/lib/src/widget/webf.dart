@@ -202,6 +202,10 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
           setup: widget.setup,
           forceReplace: false);
 
+      // If the newController was null, it means there exist concurrency loading.
+      // Get the winner controller
+      newController ??= await WebFControllerManager.instance.getController(widget.controllerName);
+
       if (newController != null && widget.onControllerCreated != null) {
         widget.onControllerCreated!(newController);
       }
