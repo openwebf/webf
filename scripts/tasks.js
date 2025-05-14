@@ -572,29 +572,30 @@ task('generate-bindings-code', (done) => {
     return done(compileResult.status);
   }
 
-  const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
-  const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
-  const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
-  let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill',  '-o', polyfillTarget,  polyfillSource], {
-    cwd: qjscExecDir,
-    shell: true,
-    stdio: 'inherit'
-  });
-  if (polyfillCompileResult.status !== 0) {
-    return done(compileResult.status);
-  }
+  if (platform == 'darwin') {
+    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
+    const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
+    const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
+    let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill',  '-o', polyfillTarget,  polyfillSource], {
+      cwd: qjscExecDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+    if (polyfillCompileResult.status !== 0) {
+      return done(compileResult.status);
+    }
 
-  const testPpolyfillTarget = path.join(paths.bridge, 'code_gen/test_framework_polyfill.c');
-  const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
-  let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill',  '-o', testPpolyfillTarget,  testPolyfillSource], {
-    cwd: qjscExecDir,
-    shell: true,
-    stdio: 'inherit'
-  });
-  if (testPolyfillCompileResult.status !== 0) {
-    return done(compileResult.status);
+    const testPpolyfillTarget = path.join(paths.bridge, 'code_gen/test_framework_polyfill.c');
+    const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
+    let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill',  '-o', testPpolyfillTarget,  testPolyfillSource], {
+      cwd: qjscExecDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+    if (testPolyfillCompileResult.status !== 0) {
+      return done(compileResult.status);
+    }
   }
-
 
   done();
 });
@@ -902,13 +903,16 @@ task('generate-typings', (done) => {
       console.log(chalk.yellow('Installing polyfill dependencies...'));
       spawnSync(NPM, ['install'], {
         cwd: polyfillPath,
-        stdio: 'inherit'
+        stdio: 'inherit',
+        shell: true
       });
     }
     
-    const result = spawnSync(NPM, ['run', 'build:dts'], {
+
+    const result = spawnSync(NPM, ['run', platform == 'win32' ? 'build:dts:windows' : 'build:dts'], {
       cwd: polyfillPath,
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: true
     });
     
     if (result.error || result.status !== 0) {

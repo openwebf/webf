@@ -301,6 +301,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/script_state.cc
     core/page.cc
     core/dart_methods.cc
+    core/bridge_polyfill.c
     core/api/exception_state.cc
     core/api/event_target.cc
     core/api/node.cc
@@ -467,7 +468,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND BRIDGE_SOURCE
     code_gen/names_installer.cc
     code_gen/qjs_console.cc
-    code_gen/bridge_polyfill.c
     code_gen/qjs_module_manager.cc
     code_gen/qjs_window_or_worker_global_scope.cc
     code_gen/qjs_window.cc
