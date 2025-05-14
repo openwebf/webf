@@ -573,7 +573,7 @@ task('generate-bindings-code', (done) => {
   }
 
   const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
-  const polyfillTarget = path.join(paths.bridge, 'code_gen/bridge_polyfill.c');
+  const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
   const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
   let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill',  '-o', polyfillTarget,  polyfillSource], {
     cwd: qjscExecDir,
