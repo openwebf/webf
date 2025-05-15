@@ -1254,7 +1254,42 @@ class RenderBoxModel extends RenderBox
       return;
     }
 
+    // Paint layout error message if there was an exception during layout
+    if (layoutExceptions != null) {
+      _paintLayoutError(context, offset);
+      return;
+    }
+
     paintBoxModel(context, offset);
+  }
+
+  String? layoutExceptions;
+
+  // Paint error message when layout throws an exception
+  void _paintLayoutError(PaintingContext context, Offset offset) {
+    final Canvas canvas = context.canvas;
+
+    // Draw a red background to indicate error
+    final Paint errorPaint = Paint()
+      ..color = const Color(0xFFFF0000).withOpacity(0.7);
+    canvas.drawRect(offset & size, errorPaint);
+
+    // Draw error message text
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: 'LAYOUT ERROR\n${layoutExceptions!.split('\n').take(3).join('\n')}',
+        style: const TextStyle(
+          color: Color(0xFFFFFFFF),
+          fontSize: 14.0,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+      maxLines: 4,
+      ellipsis: '...',
+    );
+    textPainter.layout(maxWidth: size.width - 20);
+    textPainter.paint(canvas, offset + Offset(10, 10));
   }
 
   void debugPaintOverlay(PaintingContext context, Offset offset) {

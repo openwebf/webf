@@ -623,15 +623,21 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void performLayout() {
-    doingThisLayout = true;
+    try {
+      doingThisLayout = true;
 
-    _doPerformLayout();
-
-    if (needsRelayout) {
       _doPerformLayout();
-      needsRelayout = false;
+
+      if (needsRelayout) {
+        _doPerformLayout();
+        needsRelayout = false;
+      }
+      doingThisLayout = false;
+    } catch (e, stack) {
+      layoutExceptions = '$e\n$stack';
+      doingThisLayout = false;
+      rethrow;
     }
-    doingThisLayout = false;
   }
 
   void _doPerformLayout() {
