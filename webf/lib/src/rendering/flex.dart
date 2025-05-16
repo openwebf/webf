@@ -634,9 +634,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
       doingThisLayout = false;
     } catch (e, stack) {
-      layoutExceptions = '$e\n$stack';
+      if (!kReleaseMode) {
+        layoutExceptions = '$e\n$stack';
+        reportException('performLayout', e, stack);
+      }
       doingThisLayout = false;
-      reportException('performLayout', e, stack);
       rethrow;
     }
   }

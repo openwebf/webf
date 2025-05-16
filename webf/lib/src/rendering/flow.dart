@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
@@ -209,7 +210,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
       doingThisLayout = false;
     } catch (e, stack) {
-      layoutExceptions = '$e\n$stack';
+      if (!kReleaseMode) {
+        layoutExceptions = '$e\n$stack';
+        reportException('performLayout', e, stack);
+      }
       doingThisLayout = false;
       rethrow;
     }
