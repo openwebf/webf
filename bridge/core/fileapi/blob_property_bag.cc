@@ -11,7 +11,7 @@ std::shared_ptr<BlobPropertyBag> BlobPropertyBag::Create(JSContext* ctx,
                                                          ExceptionState& exceptionState) {
   auto bag = std::make_shared<BlobPropertyBag>();
   bag->FillMemberFromQuickjsObject(ctx, value, exceptionState);
-  return nullptr;
+  return bag;
 }
 
 void BlobPropertyBag::FillMemberFromQuickjsObject(JSContext* ctx, JSValue value, ExceptionState& exceptionState) {
