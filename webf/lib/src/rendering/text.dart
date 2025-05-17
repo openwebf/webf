@@ -522,7 +522,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   // Text node need hittest self to trigger scroll
   @override
   bool hitTest(BoxHitTestResult result, {Offset? position}) {
-    return hasSize && size.contains(position!);
+    // exclude position in TextPlaceholder
+    bool isInTextPlaceholder = false;
+    if(firstLineIndent > 0) {
+      LogicTextInlineBox firstTextInlineBox = lineBoxes.firstChild;
+      Size textPlaceholderSize = Size(firstLineIndent, firstTextInlineBox.logicRect.height);
+      isInTextPlaceholder = textPlaceholderSize.contains(position!);
+    }
+    return hasSize && size.contains(position!) && !isInTextPlaceholder;
   }
 
   void updateRenderTextLineOffset(int index, Offset offset) {
