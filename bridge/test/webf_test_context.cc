@@ -4,9 +4,9 @@
  */
 
 #include "webf_test_context.h"
+#include "./test_framework_polyfill.c"
 #include "bindings/qjs/member_installer.h"
 #include "bindings/qjs/qjs_interface_bridge.h"
-#include "./test_framework_polyfill.c"
 #include "core/dom/document.h"
 #include "core/fileapi/blob.h"
 #include "core/frame/window.h"

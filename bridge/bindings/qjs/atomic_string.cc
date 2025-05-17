@@ -204,11 +204,11 @@ StringView AtomicString::ToStringView() const {
   if (JS_IsAtomWideChar(runtime_, atom_)) {
     uint32_t plen;
     const uint16_t* bytes = JS_AtomRawCharacter16(runtime_, atom_, &plen);
-    return StringView((void*) bytes, plen, true);
+    return StringView((void*)bytes, plen, true);
   } else {
     uint32_t plen;
     const uint8_t* bytes = JS_AtomRawCharacter8(runtime_, atom_, &plen);
-    return StringView((void*) bytes, plen, false);
+    return StringView((void*)bytes, plen, false);
   }
 }
 
