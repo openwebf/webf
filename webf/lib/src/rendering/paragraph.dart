@@ -23,6 +23,7 @@ class WebFRenderTextLine {
   late Offset paintOffset = Offset.zero;
   late double fontHeight = 0;
   late double leading = 0;
+  late double lineAscentHeightOffset = 0;
 
   WebFRenderTextLine();
 
@@ -493,6 +494,7 @@ class WebFRenderParagraph extends RenderBox
       _lineRenders[i].leading = leading;
       _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight ?? lineMetric.height);
       _lineRenders[i].fontHeight = lineMetric.height;
+      _lineRenders[i].lineAscentHeightOffset = lineMetric.ascent + lineMetric.descent -  lineMetric.height;
     }
   }
 
@@ -717,11 +719,11 @@ class WebFRenderParagraph extends RenderBox
       // Adjust text paint offset of each line according to line-height.
       for (int i = 0; i < _lineRenders.length; i++) {
         WebFTextPainter _lineTextPainter = _lineRenders[i].textPainter;
-        Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop);
+        Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop - _lineRenders[i].lineAscentHeightOffset);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }
     } else if (_lineRenders.length == 1) {
-      Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop);
+      Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop - _lineRenders[0].lineAscentHeightOffset);
       _lineRenders[0].textPainter.paint(context.canvas, lineOffset);
     }
 
