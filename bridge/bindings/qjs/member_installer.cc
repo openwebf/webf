@@ -6,7 +6,6 @@
 #include "member_installer.h"
 #include <quickjs/quickjs.h>
 #include "core/executing_context.h"
-#include "qjs_engine_patch.h"
 
 namespace webf {
 

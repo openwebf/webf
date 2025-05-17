@@ -14,7 +14,6 @@
 #include "foundation/native_string.h"
 #include "foundation/string_view.h"
 #include "native_string_utils.h"
-#include "qjs_engine_patch.h"
 
 namespace webf {
 

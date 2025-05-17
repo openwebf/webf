@@ -4,7 +4,6 @@
  */
 
 #include "native_string_utils.h"
-#include "bindings/qjs/qjs_engine_patch.h"
 
 namespace webf {
 

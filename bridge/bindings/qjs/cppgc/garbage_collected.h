@@ -8,7 +8,6 @@
 #include <quickjs/quickjs.h>
 #include <memory>
 
-#include "bindings/qjs/qjs_engine_patch.h"
 #include "foundation/casting.h"
 #include "foundation/macros.h"
 #include "local_handle.h"

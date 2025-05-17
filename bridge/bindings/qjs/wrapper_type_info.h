@@ -7,7 +7,6 @@
 
 #include <quickjs/quickjs.h>
 #include <cassert>
-#include "bindings/qjs/qjs_engine_patch.h"
 
 namespace webf {
 

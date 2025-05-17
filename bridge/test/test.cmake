@@ -18,7 +18,6 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./test/webf_test_env.h
   ./bindings/qjs/atomic_string_test.cc
   ./bindings/qjs/script_value_test.cc
-  ./bindings/qjs/qjs_engine_patch_test.cc
   ./core/dom/events/custom_event_test.cc
   ./core/executing_context_test.cc
   ./core/frame/console_test.cc

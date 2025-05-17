@@ -7,7 +7,6 @@
 #define BRIDGE_BINDINGS_QJS_CPPGC_MEMBER_H_
 
 #include <type_traits>
-#include "bindings/qjs/qjs_engine_patch.h"
 #include "bindings/qjs/script_value.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/executing_context.h"

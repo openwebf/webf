@@ -244,7 +244,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     bindings/qjs/cppgc/mutation_scope.cc
     bindings/qjs/script_wrappable.cc
     bindings/qjs/native_string_utils.cc
-    bindings/qjs/qjs_engine_patch.cc
     bindings/qjs/qjs_function.cc
     bindings/qjs/script_value.cc
     bindings/qjs/script_promise.cc

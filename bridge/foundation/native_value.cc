@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "native_value.h"
-#include "bindings/qjs/qjs_engine_patch.h"
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
 
