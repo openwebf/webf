@@ -47,20 +47,6 @@ describe('script element async', () => {
     };
   });
 
-  it('could loading the kbc files', async (done) => {
-    const script = document.createElement('script');
-    // @ts-ignore
-    script.src_async = 'assets:///assets/bundle.kbc1';
-    // @ts-ignore
-    script.type_async = 'application/vnd.webf.bc1';
-    document.body.appendChild(script);
-
-    script.onload = async () => {
-      await snapshot();
-      done();
-    }
-  });
-
   function waitForLoad(script) {
     return new Promise((resolve) => {
       script.onload = () => {

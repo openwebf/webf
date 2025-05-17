@@ -211,7 +211,7 @@ class ExecutingContext {
   static void promiseRejectTracker(JSContext* ctx,
                                    JSValueConst promise,
                                    JSValueConst reason,
-                                   JS_BOOL is_handled,
+                                   int is_handled,
                                    void* opaque);
   // Warning: Don't change the orders of members in ExecutingContext if you really know what are you doing.
   // From C++ standard, https://isocpp.org/wiki/faq/dtors#order-dtors-for-members

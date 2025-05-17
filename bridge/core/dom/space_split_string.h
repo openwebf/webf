@@ -13,7 +13,7 @@
 namespace webf {
 
 template <typename CharType>
-inline bool IsHTMLSpace(CharType character) {
+inline int IsHTMLSpace(CharType character) {
   // Histogram from Apple's page load test combined with some ad hoc browsing
   // some other test suites.
   //

@@ -1,7 +1,7 @@
 list(APPEND WEBF_TEST_SOURCE
   include/webf_bridge_test.h
   webf_bridge_test.cc
-  code_gen/test_framework_polyfill.c
+  ./test/test_framework_polyfill.c
 )
 
 set(gtest_disable_pthreads ON)
@@ -48,6 +48,7 @@ target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/google
 target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS})
 
 target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
+target_compile_definitions(quickjs PUBLIC DUMP_LEAKS=1)
 target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)
 
 target_compile_definitions(webf_unit_test PUBLIC -DFLUTTER_BACKEND=0)

@@ -44,7 +44,7 @@ multi_threading::Dispatcher* ScriptWrappable::GetDispatcher() const {
 /// Users of this class should override `void TraceMember(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func)` to
 /// tell GC which member of their class should be collected by GC.
 static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* mark_func) {
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JS_GetClassID(val)));
   GCVisitor visitor{rt, mark_func};
   object->Trace(&visitor);
 }
@@ -53,7 +53,7 @@ static void HandleJSObjectGCMark(JSRuntime* rt, JSValueConst val, JS_MarkFunc* m
 /// The deconstruct method of this class will be called and all memory about this class will be freed when finalize
 /// completed.
 static void HandleJSObjectFinalized(JSRuntime* rt, JSValue val) {
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JSValueGetClassId(val)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(val, JS_GetClassID(val)));
   // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
   // accessible.
   if (isContextValid(object->contextId())) {
@@ -70,7 +70,7 @@ static void HandleJSObjectFinalized(JSRuntime* rt, JSValue val) {
 /// When exec `obj['hello']`, it will call string_property_getter_handler_ defined in WrapperTypeInfo.
 static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, JSAtom atom, JSValueConst receiver) {
   ExecutingContext* context = ExecutingContext::From(ctx);
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JS_GetClassID(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
   JSValue getterValue = JS_UNDEFINED;
@@ -85,7 +85,7 @@ static JSValue HandleJSPropertyGetterCallback(JSContext* ctx, JSValueConst obj, 
   }
 
   JSValue prototypeObject = context->contextData()->prototypeForType(wrapper_type_info);
-  return JS_GetPropertyInternal(ctx, prototypeObject, atom, obj, NULL, 0);
+  return JS_GetPropertyWithThisObj(ctx, prototypeObject, atom, obj, false);
 }
 
 /// This callback will be called when JS code set property on this object using [] or `.` operator.
@@ -96,7 +96,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
                                           JSValueConst value,
                                           JSValueConst receiver,
                                           int flags) {
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JS_GetClassID(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
   bool is_success = false;
@@ -158,7 +158,7 @@ static int HandleJSPropertySetterCallback(JSContext* ctx,
 /// This callback will be called when JS code check property exit on this object using `in` operator.
 /// Wehn exec `'prop' in obj`, it will call.
 static int HandleJSPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom atom) {
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JS_GetClassID(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
   return wrapper_type_info->property_checker_handler_(ctx, obj, atom);
@@ -167,7 +167,7 @@ static int HandleJSPropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSA
 /// This callback will be called when JS code enumerate all own properties on this object.
 /// Exp: Object.keys(obj);
 static int HandleJSPropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValueConst obj) {
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JS_GetClassID(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
   return wrapper_type_info->property_enumerate_handler_(ctx, ptab, plen, obj);
@@ -176,7 +176,7 @@ static int HandleJSPropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** pt
 /// This callback will be called when JS code delete properties on this object.
 /// Exp: delete obj['name']
 static int HandleJSPropertyDelete(JSContext* ctx, JSValueConst obj, JSAtom prop) {
-  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+  auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JS_GetClassID(obj)));
   auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
   return wrapper_type_info->property_delete_handler_(ctx, obj, prop);
@@ -237,7 +237,7 @@ void ScriptWrappable::InitializeQuickJSObject() {
       exotic_methods->get_own_property_names = HandleJSPropertyEnumerateCallback;
       exotic_methods->get_own_property = [](JSContext* ctx, JSPropertyDescriptor* desc, JSValueConst obj,
                                             JSAtom prop) -> int {
-        auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JSValueGetClassId(obj)));
+        auto* object = static_cast<ScriptWrappable*>(JS_GetOpaque(obj, JS_GetClassID(obj)));
         auto* wrapper_type_info = object->GetWrapperTypeInfo();
 
         if (wrapper_type_info->string_property_getter_handler_ != nullptr) {

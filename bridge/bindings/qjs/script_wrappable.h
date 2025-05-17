@@ -94,7 +94,7 @@ inline ScriptWrappable* toScriptWrappable(JSValue object) {
   if (JS_IsProxy(object)) {
     object = JS_GetProxyTarget(object);
   }
-  return static_cast<ScriptWrappable*>(JS_GetOpaque(object, JSValueGetClassId(object)));
+  return static_cast<ScriptWrappable*>(JS_GetOpaque(object, JS_GetClassID(object)));
 }
 
 template <typename T>

@@ -229,21 +229,29 @@ function patchIOSPodspec(webfDir) {
   console.log('Patching iOS podspec file...');
   
   const gitHead = exec('git rev-parse --short HEAD').toString().trim();
-  const appVer = exec('node bridge/scripts/get_app_ver.js', {
+  
+  // Get full version string with QuickJS info
+  const fullAppVer = exec('node bridge/scripts/get_app_ver.js', {
     cwd: PATH.join(__dirname, '../')
   }).toString().trim();
+  
+  // Extract just the app version and QuickJS version
+  const appVerMatch = fullAppVer.match(/^([\w\.\+\-]+)\/QuickJS: (.+)$/);
+  const appVer = appVerMatch ? appVerMatch[1] : fullAppVer;
+  const quickjsVer = appVerMatch ? appVerMatch[2].trim() : '2025-04-26'; // Default if not found
   
   const podspecPath = PATH.join(webfDir, 'ios/webf.podspec');
   
   if (fs.existsSync(podspecPath)) {
     let txt = fs.readFileSync(podspecPath, { encoding: 'utf-8' });
     
-    // Replace APP_REV and APP_VERSION in podspec
+    // Replace APP_REV, APP_VERSION, and CONFIG_VERSION in podspec
     txt = txt.replace(/APP_REV=\\\\"[^\\]*\\\\"/, `APP_REV=\\\\"${gitHead}\\\\"`);
     txt = txt.replace(/APP_VERSION=\\\\"[^\\]*\\\\"/, `APP_VERSION=\\\\"${appVer}\\\\"`);
+    txt = txt.replace(/CONFIG_VERSION=\\\\"[^\\]*\\\\"/, `CONFIG_VERSION=\\\\"${quickjsVer}\\\\"`);
    
     fs.writeFileSync(podspecPath, txt);
-    console.log(`iOS podspec patched with Revision: ${gitHead} and Version: ${appVer}`);
+    console.log(`iOS podspec patched with Revision: ${gitHead}, Version: ${appVer}, and QuickJS: ${quickjsVer}`);
   } else {
     console.error(`Error: iOS podspec not found at ${podspecPath}`);
   }

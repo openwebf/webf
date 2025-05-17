@@ -8,7 +8,7 @@
 #include "bindings/qjs/converter_impl.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
-#include "code_gen/bridge_polyfill.c"
+#include "core/bridge_polyfill.c"
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
@@ -746,7 +746,7 @@ void ExecutingContext::InstallGlobal() {
   MemberMutationScope mutation_scope{this};
   window_ = MakeGarbageCollected<Window>(this);
   JS_SetPrototype(ctx(), Global(), window_->ToQuickJSUnsafe());
-  JS_SetOpaque(Global(), window_);
+  JS_SetGlobalObjectOpaque(ctx(), window_);
 }
 
 void ExecutingContext::RegisterActiveScriptWrappers(ScriptWrappable* script_wrappable) {

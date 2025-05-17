@@ -113,7 +113,7 @@ list(APPEND BRIDGE_SOURCE
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c
-  )
+)
 
 list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/attribute.c
@@ -128,7 +128,7 @@ list(APPEND GUMBO_PARSER
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/utf8.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/util.c
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/vector.c
-  )
+)
 
 list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/foundation
@@ -139,7 +139,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/core_rs/include
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${ADDITIONAL_INCLUDE_DIRS}
-  )
+)
 
 if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
@@ -153,52 +153,12 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     third_party/modp_b64/modp_b64.cc
   )
 
-  if (NOT MSVC)
-    list(APPEND QUICK_JS_SOURCE third_party/quickjs/src/libbf.c)
-  endif()
-
   list(APPEND QUICK_JS_SOURCE
-    third_party/quickjs/src/libbf.c
-    third_party/quickjs/src/cutils.c
-    third_party/quickjs/src/libregexp.c
-    third_party/quickjs/src/libunicode.c
-    third_party/quickjs/src/core/string.c
-    third_party/quickjs/src/core/function.c
-    third_party/quickjs/src/core/memory.c
-    third_party/quickjs/src/core/bytecode.c
-    third_party/quickjs/src/core/object.c
-    third_party/quickjs/src/core/exception.c
-    third_party/quickjs/src/core/gc.c
-    third_party/quickjs/src/core/malloc.c
-    third_party/quickjs/src/core/shape.c
-    third_party/quickjs/src/core/parser.c
-    third_party/quickjs/src/core/convertion.c
-    third_party/quickjs/src/core/runtime.c
-    third_party/quickjs/src/core/module.c
-    third_party/quickjs/src/core/ic.c
-    third_party/quickjs/src/core/builtins/js-array.c
-    third_party/quickjs/src/core/builtins/js-async-function.c
-    third_party/quickjs/src/core/builtins/js-async-generator.c
-    third_party/quickjs/src/core/builtins/js-atomics.c
-    third_party/quickjs/src/core/builtins/js-big-num.c
-    third_party/quickjs/src/core/builtins/js-boolean.c
-    third_party/quickjs/src/core/builtins/js-date.c
-    third_party/quickjs/src/core/builtins/js-function.c
-    third_party/quickjs/src/core/builtins/js-generator.c
-    third_party/quickjs/src/core/builtins/js-json.c
-    third_party/quickjs/src/core/builtins/js-map.c
-    third_party/quickjs/src/core/builtins/js-math.c
-    third_party/quickjs/src/core/builtins/js-number.c
-    third_party/quickjs/src/core/builtins/js-object.c
-    third_party/quickjs/src/core/builtins/js-closures.c
-    third_party/quickjs/src/core/builtins/js-operator.c
-    third_party/quickjs/src/core/builtins/js-promise.c
-    third_party/quickjs/src/core/builtins/js-proxy.c
-    third_party/quickjs/src/core/builtins/js-reflect.c
-    third_party/quickjs/src/core/builtins/js-regexp.c
-    third_party/quickjs/src/core/builtins/js-string.c
-    third_party/quickjs/src/core/builtins/js-symbol.c
-    third_party/quickjs/src/core/builtins/js-typed-array.c
+    third_party/quickjs/cutils.c
+    third_party/quickjs/dtoa.c
+    third_party/quickjs/libregexp.c
+    third_party/quickjs/libunicode.c
+    third_party/quickjs/quickjs.c
   )
 
   if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -250,21 +210,21 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
   endif()
 
   set(MI_OVERRIDE OFF)
-  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
-    add_compile_definitions(ENABLE_MI_MALLOC=1)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
-    target_link_libraries(quickjs mimalloc-static)
-    target_link_libraries(qjsc mimalloc-static)
-  endif()
+#  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
+#    add_compile_definitions(ENABLE_MI_MALLOC=1)
+#    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc)
+#    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/vendor/mimalloc/include)
+#    target_link_libraries(quickjs mimalloc-static)
+#    target_link_libraries(qjsc mimalloc-static)
+#  endif()
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
   target_include_directories(qjsc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
 
-  if (MSVC)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
-  endif()
+#  if (MSVC)
+#    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
+#    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
+#  endif()
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
@@ -462,10 +422,10 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/legacy/bounding_client_rect.cc
     core/input/touch.cc
     core/input/touch_list.cc
-    )
+)
 
-  # Gen sources.
-  list(APPEND BRIDGE_SOURCE
+# Gen sources.
+list(APPEND BRIDGE_SOURCE
     code_gen/names_installer.cc
     code_gen/qjs_console.cc
     code_gen/qjs_module_manager.cc
@@ -668,13 +628,12 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 
 
   if (NOT MSVC)
-  # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
-  # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
-  add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
+    # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
+    # https://stackoverflow.com/questions/14735010/how-do-you-get-gccs-builtin-frame-address-to-work-with-o2
+    add_compile_options(-fno-optimize-sibling-calls -fno-omit-frame-pointer)
   endif()
   target_compile_options(quickjs PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_BIGNUM=1)
   target_compile_options(qjsc PUBLIC -DCONFIG_VERSION=${\"QUICKJS_VERSION\"} -DCONFIG_BIGNUM=1)
-
 endif ()
 
 list(APPEND PUBLIC_HEADER
@@ -751,8 +710,8 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
   if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
     set_target_properties(quickjs
       PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
     set_target_properties(qjsc
       PROPERTIES
@@ -762,8 +721,8 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     if(MSVC)
       set_target_properties(pthreadVC3
         PROPERTIES
-          LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-          RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
       )
     endif()
   endif ()
@@ -783,7 +742,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
     MACOSX_FRAMEWORK_BUNDLE_VERSION 1.0
     MACOSX_FRAMEWORK_SHORT_VERSION_STRING 1.0
     PUBLIC_HEADER ${WEBF_PUBLIC_HEADERS}
-    )
+  )
 
   # If quickjs is static, there will be no quickjs.framework any more.
   if(NOT DEFINED STATIC_QUICKJS)
@@ -795,6 +754,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
       MACOSX_FRAMEWORK_BUNDLE_VERSION 1.0
       MACOSX_FRAMEWORK_SHORT_VERSION_STRING 1.0
       PUBLIC_HEADER ${QUICKJS_PUBLIC_HEADERS}
-      )
+    )
   endif()
 endif ()
