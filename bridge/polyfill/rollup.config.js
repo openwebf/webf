@@ -17,7 +17,7 @@ const uglifyOptions = {
   compress: {
     loops: false,
     keep_fargs: false,
-    unsafe: true,
+    unsafe: false,
     pure_getters: true
   },
 };

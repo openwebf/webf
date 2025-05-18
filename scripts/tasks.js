@@ -83,6 +83,30 @@ task('clean', () => {
 
 const libOutputPath = join(TARGET_PATH, platform, 'lib');
 
+task('compile-build-tools', done => {
+  let buildType = 'Debug';
+
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-x86_64 -S ${paths.bridge}`, {
+    cwd: paths.bridge,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      WEBF_JS_ENGINE: targetJSEngine,
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/x86_64')
+    }
+  });
+
+  let webfTargets = ['qjsc'];
+
+  let cpus = os.cpus();
+  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
+    stdio: 'inherit'
+  });
+
+  done();
+});
+
 task('build-darwin-webf-lib', done => {
   let externCmakeArgs = [];
   let buildType = 'Debug';
@@ -542,7 +566,7 @@ task('generate-bindings-code', (done) => {
   if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
     spawnSync(NPM, ['install'], {
       cwd: paths.codeGen,
-      stdio: 'inherit'  
+      stdio: 'inherit'
     });
   }
 
@@ -581,7 +605,6 @@ task('generate-bindings-code', (done) => {
       shell: true,
       stdio: 'inherit'
     });
-    console.log(polyfillCompileResult);
     if (polyfillCompileResult.status !== 0) {
       return done(compileResult.status);
     }
@@ -879,7 +902,7 @@ task('update-typings-version', (done) => {
     // Update version in bridge/typings/package.json
     const typingsPackageJsonPath = join(WEBF_ROOT, 'bridge/typings/package.json');
     const typingsPackageContent = readFileSync(typingsPackageJsonPath, 'utf-8');
-    
+
     try {
       const typingsPackageJson = JSON.parse(typingsPackageContent);
       typingsPackageJson.version = webfVersion;
@@ -888,7 +911,7 @@ task('update-typings-version', (done) => {
     } catch (e) {
       console.error(chalk.red('Parse package.json failed:'), e);
     }
-    
+
     done();
   } catch (err) {
     done(err);
@@ -900,7 +923,7 @@ task('generate-typings', (done) => {
   try {
     console.log(chalk.blue('Generating type definitions file...'));
     const polyfillPath = join(WEBF_ROOT, 'bridge/polyfill');
-    
+
     // Ensure node_modules is installed
     if (!fs.existsSync(path.join(polyfillPath, 'node_modules'))) {
       console.log(chalk.yellow('Installing polyfill dependencies...'));
@@ -910,14 +933,14 @@ task('generate-typings', (done) => {
         shell: true
       });
     }
-    
+
 
     const result = spawnSync(NPM, ['run', platform == 'win32' ? 'build:dts:windows' : 'build:dts'], {
       cwd: polyfillPath,
       stdio: 'inherit',
       shell: true
     });
-    
+
     if (result.error || result.status !== 0) {
       console.error(chalk.red('Failed to generate type definitions file'));
       if (result.error) console.error(result.error);
