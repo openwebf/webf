@@ -1287,6 +1287,20 @@ class RenderFlowLayout extends RenderLayoutBox {
     return child.renderStyle.collapsedMarginBottom;
   }
 
+  @override bool hitTestSelf(Offset position) {
+    bool isHit = size.contains(position);
+    if(isHit) {
+      LogicLineBox? firstLineBox = lineBoxes.first;
+      if (firstLineBox != null && firstLineBox.firstLineLeftExtent > 0) {
+        Rect leftExtentRect = Rect.fromLTWH(0, 0, firstLineBox.firstLineLeftExtent, firstLineBox.crossAxisExtent);
+        if (leftExtentRect.contains(position)) {
+          isHit = false;
+        }
+      }
+    }
+    return isHit;
+  }
+
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     return defaultHitTestChildren(result, position: position);
