@@ -74,10 +74,7 @@ class GestureDispatcher {
     if (target is dom.Element) {
       BoxHitTestResult boxHitTestResult = BoxHitTestResult();
       Offset offset = Offset(localPosition.dx, localPosition.dy);
-      bool isHit = target.attachedRenderer!.hitTest(boxHitTestResult, position: offset);
-      if(!isHit) {
-        return;
-      }
+      target.attachedRenderer!.hitTest(boxHitTestResult, position: offset);
 
       // Find the first top RenderBoxModel
       RenderBoxModel? targetBoxModel;
