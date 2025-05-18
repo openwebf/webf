@@ -9,7 +9,6 @@
 #include <string>
 #include "core/fileapi/array_buffer_data.h"
 #include "native_string_utils.h"
-#include "qjs_engine_patch.h"
 #include "script_wrappable.h"
 
 namespace webf {

@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf-enterprise-typings",
-  "version": "0.21.0-beta.5+3",
+  "version": "0.21.0-beta.7",
   "main": "",
   "types": "index.d.ts",
   "files": [

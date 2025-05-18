@@ -121,6 +121,7 @@ class WebF extends StatefulWidget {
       ControllerFactory? createController,
       Map<String, SubViewBuilder>? routes,
       VoidCallback? onDispose,
+      OnControllerCreated? onControllerCreated,
       ControllerSetup? setup}) {
     return AutoManagedWebF(
         controllerName: controllerName,
@@ -130,6 +131,7 @@ class WebF extends StatefulWidget {
         initialState: initialState,
         bundle: bundle,
         onDispose: onDispose,
+        onControllerCreated: onControllerCreated,
         createController: createController,
         routes: routes,
         key: key,

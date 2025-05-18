@@ -4,6 +4,7 @@
  */
 
 #include "webf_test_context.h"
+#include "./test_framework_polyfill.c"
 #include "bindings/qjs/member_installer.h"
 #include "bindings/qjs/qjs_interface_bridge.h"
 #include "core/dom/document.h"
@@ -13,7 +14,6 @@
 #include "core/html/html_html_element.h"
 #include "core/html/parser/html_parser.h"
 #include "qjs_blob.h"
-#include "testframework.h"
 
 namespace webf {
 
@@ -383,7 +383,7 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
   };
 
   MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
-  initWebFTestFramework(context);
+  context->EvaluateByteCode(test_framework_polyfill, test_framework_polyfill_size);
 
   context->dartIsolateContext()->profiler()->FinishTrackInitialize();
 }

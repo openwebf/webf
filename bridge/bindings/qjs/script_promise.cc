@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "script_promise.h"
-#include "qjs_engine_patch.h"
 
 namespace webf {
 

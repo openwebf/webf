@@ -117,6 +117,8 @@ class QuickJSByteCodeCache {
   static final LinkedLruHashMap<String, QuickJSByteCodeCacheObject> _caches =
       LinkedLruHashMap(maximumSize: 25);
 
+  static int bytecodeVersion = 2;
+
   static Directory? _cacheDirectory;
   static Future<Directory> getCacheDirectory() async {
     if (_cacheDirectory != null) {
@@ -125,7 +127,7 @@ class QuickJSByteCodeCache {
 
     final String appTemporaryPath = await getWebFTemporaryPath();
     final Directory cacheDirectory =
-        Directory(path.join(appTemporaryPath, 'ByteCodeCaches'));
+        Directory(path.join(appTemporaryPath, 'ByteCodeCaches_$bytecodeVersion'));
     bool isThere = await cacheDirectory.exists();
     if (!isThere) {
       await cacheDirectory.create(recursive: true);

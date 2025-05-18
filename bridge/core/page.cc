@@ -17,7 +17,6 @@
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 #include "page.h"
-#include "polyfill.h"
 
 namespace webf {
 

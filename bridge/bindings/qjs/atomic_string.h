@@ -14,7 +14,6 @@
 #include "foundation/native_string.h"
 #include "foundation/string_view.h"
 #include "native_string_utils.h"
-#include "qjs_engine_patch.h"
 
 namespace webf {
 
@@ -67,8 +66,8 @@ class AtomicString {
   const uint8_t* Character8() const;
   const uint16_t* Character16() const;
 
-  int Find(bool (*CharacterMatchFunction)(char)) const;
-  int Find(bool (*CharacterMatchFunction)(uint16_t)) const;
+  int Find(int (*CharacterMatchFunction)(char)) const;
+  int Find(int (*CharacterMatchFunction)(uint16_t)) const;
 
   [[nodiscard]] std::string ToStdString(JSContext* ctx) const;
   [[nodiscard]] std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;

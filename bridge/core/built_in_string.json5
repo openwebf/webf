@@ -60,8 +60,6 @@
     "await",
     "empty_string",
     "length",
-    "fileName",
-    "lineNumber",
     "message",
     "errors",
     "stack",

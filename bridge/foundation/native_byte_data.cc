@@ -5,7 +5,6 @@
 
 #include "native_byte_data.h"
 #include <cstdio>  // For printf
-#include "bindings/qjs/qjs_engine_patch.h"
 
 namespace webf {
 

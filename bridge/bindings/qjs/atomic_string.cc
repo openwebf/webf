@@ -8,7 +8,6 @@
 #include <vector>
 #include "built_in_string.h"
 #include "foundation/native_string.h"
-#include "qjs_engine_patch.h"
 
 namespace webf {
 
@@ -48,13 +47,14 @@ AtomicString::StringKind GetStringKind(const std::string& string, size_t length)
 }
 
 AtomicString::StringKind GetStringKind(JSValue stringValue) {
-  JSString* p = JS_VALUE_GET_STRING(stringValue);
-
-  if (p->is_wide_char) {
+  if (JS_IsStringWideChar(stringValue)) {
     return AtomicString::StringKind::kIsMixed;
   }
 
-  return GetStringKind(reinterpret_cast<const char*>(p->u.str8), p->len);
+  uint32_t len;
+  const uint8_t* p = JS_ValueRawCharacter8(stringValue, &len);
+
+  return GetStringKind(reinterpret_cast<const char*>(p), len);
 }
 
 AtomicString::StringKind GetStringKind(const SharedNativeString* native_string) {
@@ -109,7 +109,7 @@ AtomicString::AtomicString(JSContext* ctx, JSValue value)
     : runtime_(JS_GetRuntime(ctx)), atom_(JS_ValueToAtom(ctx, value)) {
   if (JS_IsString(value)) {
     kind_ = GetStringKind(value);
-    length_ = JS_VALUE_GET_STRING(value)->len;
+    length_ = JS_ValueGetStringLen(value);
   } else {
     initFromAtom(ctx);
   }
@@ -123,7 +123,7 @@ void AtomicString::initFromAtom(JSContext* ctx) {
   if (atom_ != JS_ATOM_NULL) {
     auto atom_str = JS_AtomToValue(ctx, atom_);
     kind_ = GetStringKind(atom_str);
-    length_ = JS_VALUE_GET_STRING(atom_str)->len;
+    length_ = JS_ValueGetStringLen(atom_str);
     JS_FreeValue(ctx, atom_str);
   } else {
     kind_ = StringKind::kIsMixed;
@@ -146,18 +146,20 @@ bool AtomicString::Is8Bit() const {
 }
 
 const uint8_t* AtomicString::Character8() const {
-  return JS_AtomRawCharacter8(runtime_, atom_);
+  uint32_t plen;
+  return JS_AtomRawCharacter8(runtime_, atom_, &plen);
 }
 
 const uint16_t* AtomicString::Character16() const {
-  return JS_AtomRawCharacter16(runtime_, atom_);
+  uint32_t plen;
+  return JS_AtomRawCharacter16(runtime_, atom_, &plen);
 }
 
-int AtomicString::Find(bool (*CharacterMatchFunction)(char)) const {
+int AtomicString::Find(int (*CharacterMatchFunction)(char)) const {
   return JS_FindCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
 }
 
-int AtomicString::Find(bool (*CharacterMatchFunction)(uint16_t)) const {
+int AtomicString::Find(int (*CharacterMatchFunction)(uint16_t)) const {
   return JS_FindWCharacterInAtom(runtime_, atom_, CharacterMatchFunction);
 }
 
@@ -182,6 +184,13 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString(JSContext* ctx)
     return built_in_string::kempty_string.ToNativeString(ctx);
   }
   JSValue stringValue = JS_AtomToValue(ctx, atom_);
+
+  if (JS_ValueGetStringLen(stringValue) == 0) {
+    JS_FreeValue(ctx, stringValue);
+    uint16_t tmp[] = {0};
+    return SharedNativeString::FromTemporaryString(tmp, 0);
+  }
+
   uint32_t length;
   uint16_t* bytes = JS_ToUnicode(ctx, stringValue, &length);
   JS_FreeValue(ctx, stringValue);
@@ -192,7 +201,15 @@ StringView AtomicString::ToStringView() const {
   if (IsNull()) {
     return built_in_string::kempty_string.ToStringView();
   }
-  return JSAtomToStringView(runtime_, atom_);
+  if (JS_IsAtomWideChar(runtime_, atom_)) {
+    uint32_t plen;
+    const uint16_t* bytes = JS_AtomRawCharacter16(runtime_, atom_, &plen);
+    return StringView((void*)bytes, plen, true);
+  } else {
+    uint32_t plen;
+    const uint8_t* bytes = JS_AtomRawCharacter8(runtime_, atom_, &plen);
+    return StringView((void*)bytes, plen, false);
+  }
 }
 
 AtomicString::AtomicString(const AtomicString& value) {

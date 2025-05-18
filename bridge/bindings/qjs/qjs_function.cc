@@ -40,8 +40,7 @@ static JSValue HandleQJSFunctionCallback(JSContext* ctx,
                                          int argc,
                                          JSValueConst* argv,
                                          int flags) {
-  auto* callback_context =
-      static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(func_obj, JSValueGetClassId(func_obj)));
+  auto* callback_context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(func_obj, JS_GetClassID(func_obj)));
   std::vector<ScriptValue> arguments;
   arguments.reserve(argc);
   for (int i = 0; i < argc; i++) {

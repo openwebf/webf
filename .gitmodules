@@ -1,7 +1,4 @@
-[submodule "bridge/third_party/quickjs/vendor/mimalloc"]
-	path = bridge/third_party/quickjs/vendor/mimalloc
-	url = https://github.com/microsoft/mimalloc
-	tag = v1.7.9
-[submodule "bridge/third_party/quickjs/compat/win32/pthread-win32"]
-	path = bridge/third_party/quickjs/compat/win32/pthread-win32
-	url = git@github.com:GerHobbelt/pthread-win32.git
+[submodule "bridge/third_party/quickjs"]
+	path = bridge/third_party/quickjs
+	url = git@github.com:openwebf/quickjs.git
+    branch = feat/official_version

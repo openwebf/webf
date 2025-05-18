@@ -6,7 +6,6 @@
 
 #include <utility>
 #include "bindings/qjs/cppgc/garbage_collected.h"
-#include "bindings/qjs/qjs_engine_patch.h"
 #include "core/executing_context.h"
 
 #if UNIT_TEST

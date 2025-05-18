@@ -122,7 +122,7 @@ task('build-darwin-webf-lib', done => {
     }
   });
 
-  let webfTargets = ['webf'];
+  let webfTargets = ['webf', 'qjsc'];
   if (targetJSEngine === 'quickjs') {
     webfTargets.push('webf_unit_test');
   }
@@ -572,6 +572,32 @@ task('generate-bindings-code', (done) => {
     return done(compileResult.status);
   }
 
+  if (platform == 'darwin') {
+    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
+    const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
+    const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
+    let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill',  '-o', polyfillTarget,  polyfillSource], {
+      cwd: qjscExecDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+    console.log(polyfillCompileResult);
+    if (polyfillCompileResult.status !== 0) {
+      return done(compileResult.status);
+    }
+
+    const testPpolyfillTarget = path.join(paths.bridge, 'test/test_framework_polyfill.c');
+    const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
+    let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill',  '-o', testPpolyfillTarget,  testPolyfillSource], {
+      cwd: qjscExecDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+    if (testPolyfillCompileResult.status !== 0) {
+      return done(compileResult.status);
+    }
+  }
+
   done();
 });
 
@@ -588,7 +614,7 @@ task('build-window-webf-lib', (done) => {
     externCmakeArgs.push('-DENABLE_LOG=true');
   }
 
-  const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`);
+  const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`).replaceAll(path.sep, path.posix.sep);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
@@ -598,7 +624,8 @@ task('build-window-webf-lib', (done) => {
       env: {
         ...process.env,
         WEBF_JS_ENGINE: targetJSEngine,
-        LIBRARY_OUTPUT_DIR: soBinaryDirectory
+        LIBRARY_OUTPUT_DIR: soBinaryDirectory,
+        MSYSTEM_PREFIX: 'C:/msys64/mingw64'
       }
     });
 
@@ -609,9 +636,10 @@ task('build-window-webf-lib', (done) => {
     stdio: 'inherit'
   });
 
-  // Fix the output path
-  const outputDir = path.join(paths.bridge, `build/windows/lib/${buildMode === 'Release' ? 'RelWithDebInfo' : 'Debug'}`);
-  execSync(`copy ${outputDir}\\*.dll ${outputDir}\\..\\`);
+  execSync(`cmake --install ./`, {
+    stdio: 'inherit',
+    cwd: path.join(paths.bridge, 'cmake-build-windows')
+  });
 
   done();
 });
@@ -878,13 +906,16 @@ task('generate-typings', (done) => {
       console.log(chalk.yellow('Installing polyfill dependencies...'));
       spawnSync(NPM, ['install'], {
         cwd: polyfillPath,
-        stdio: 'inherit'
+        stdio: 'inherit',
+        shell: true
       });
     }
     
-    const result = spawnSync(NPM, ['run', 'build:dts'], {
+
+    const result = spawnSync(NPM, ['run', platform == 'win32' ? 'build:dts:windows' : 'build:dts'], {
       cwd: polyfillPath,
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: true
     });
     
     if (result.error || result.status !== 0) {

@@ -30,12 +30,14 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE flutter flutter_wrapper_plugin)
 
 # Invoke the build for native code shared with the other target platforms.
 # This can be changed to accommodate different builds.
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../win_src" "${CMAKE_CURRENT_BINARY_DIR}/shared")
+# add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../win_src" "${CMAKE_CURRENT_BINARY_DIR}/shared")
 
 # List of absolute paths to libraries that should be bundled with the plugin
 set(webf_bundled_libraries
-    $<TARGET_FILE:webf>
-    $<TARGET_FILE:quickjs>
-    $<TARGET_FILE:pthreadVC3>
+    ${CMAKE_CURRENT_SOURCE_DIR}/libgcc_s_seh-1.dll
+    ${CMAKE_CURRENT_SOURCE_DIR}/libstdc++-6.dll
+    ${CMAKE_CURRENT_SOURCE_DIR}/libwinpthread-1.dll
+    ${CMAKE_CURRENT_SOURCE_DIR}/libquickjs.dll
+    ${CMAKE_CURRENT_SOURCE_DIR}/libwebf.dll
     PARENT_SCOPE
   )

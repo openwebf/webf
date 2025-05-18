@@ -19,7 +19,6 @@
 #include "foundation/native_value_converter.h"
 #include "native_string_utils.h"
 #include "qjs_bounding_client_rect.h"
-#include "qjs_engine_patch.h"
 #include "qjs_event_target.h"
 
 #if defined(_WIN32)

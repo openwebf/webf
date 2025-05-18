@@ -219,8 +219,8 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementS
   double pageContextId = contextId -= 1;
   auto* page = allocateNewPageSync(pageContextId, dart_isolate_context, shape, shape_len);
   void* testContext = initTestFramework(page);
-  test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
+  test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
   JS_TurnOnGC(static_cast<DartIsolateContext*>(dart_isolate_context)->runtime());
   JSThreadState* th = new JSThreadState();
   JS_SetRuntimeOpaque(

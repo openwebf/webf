@@ -283,7 +283,7 @@ ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name
 void WidgetElement::HandleJSCallbackGCMark(JSRuntime* rt, JSValue val, JS_MarkFunc* mark_func) {}
 
 void WidgetElement::HandleJSFinalizer(JSRuntime* rt, JSValue val) {
-  auto* callback_context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(val, JSValueGetClassId(val)));
+  auto* callback_context = static_cast<QJSFunctionCallbackContext*>(JS_GetOpaque(val, JS_GetClassID(val)));
   delete static_cast<FunctionData*>(callback_context->private_data);
   delete callback_context;
 }

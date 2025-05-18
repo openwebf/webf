@@ -4,7 +4,6 @@
  */
 
 #include "native_string_utils.h"
-#include "bindings/qjs/qjs_engine_patch.h"
 
 namespace webf {
 
@@ -18,9 +17,15 @@ std::unique_ptr<SharedNativeString> jsValueToNativeString(JSContext* ctx, JSValu
     isValueString = false;
   }
 
-  uint32_t length;
-  uint16_t* buffer = JS_ToUnicode(ctx, value, &length);
-  std::unique_ptr<SharedNativeString> ptr = std::make_unique<SharedNativeString>(buffer, length);
+  std::unique_ptr<SharedNativeString> ptr;
+  if (JS_ValueGetStringLen(value) == 0) {
+    uint16_t tmp[] = {0};
+    ptr = SharedNativeString::FromTemporaryString(tmp, 0);
+  } else {
+    uint32_t length;
+    uint16_t* buffer = JS_ToUnicode(ctx, value, &length);
+    ptr = std::make_unique<SharedNativeString>(buffer, length);
+  }
 
   if (!isValueString) {
     JS_FreeValue(ctx, value);

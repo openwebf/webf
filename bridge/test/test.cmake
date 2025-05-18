@@ -1,7 +1,7 @@
 list(APPEND WEBF_TEST_SOURCE
   include/webf_bridge_test.h
   webf_bridge_test.cc
-  code_gen/testframework.cc
+  ./test/test_framework_polyfill.c
 )
 
 set(gtest_disable_pthreads ON)
@@ -18,7 +18,6 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./test/webf_test_env.h
   ./bindings/qjs/atomic_string_test.cc
   ./bindings/qjs/script_value_test.cc
-  ./bindings/qjs/qjs_engine_patch_test.cc
   ./core/dom/events/custom_event_test.cc
   ./core/executing_context_test.cc
   ./core/frame/console_test.cc
@@ -48,6 +47,7 @@ target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/google
 target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS})
 
 target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
+target_compile_definitions(quickjs PUBLIC DUMP_LEAKS=1)
 target_compile_options(webf PUBLIC -DDUMP_LEAKS=1)
 
 target_compile_definitions(webf_unit_test PUBLIC -DFLUTTER_BACKEND=0)
