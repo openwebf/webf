@@ -1,3 +1,74 @@
+## 0.21.1
+
+New Features
+
+- Upgraded to official QuickJS version 2025-04-26
+- Added visual error handling for layout errors showing on-screen exceptions
+- Generate polyfill bytecode in production mode for better performance
+
+Bug Fixes
+
+- Fixed crash when passing parameters to new Blob constructor
+- Fixed scrollableViewportSize to correctly constrain box layout
+- Fixed renderStyle.isScrollingContainer implementation
+- Only show layout errors in debug/profile mode (hidden in release mode)
+- Fixed WebF.fromControllerName in concurrent conditions
+- Fixed passing parameter to new Blob constructor
+- Fixed gesture event hitTest functionality
+- Fixed inline text placeholder hitTest
+- Added lineAscentHeightOffset to text layout lineOffset
+- Fixed various Windows compilation issues
+
+Infrastructure & Building
+
+- Added support for compiling with MSYS2
+- Removed legacy QuickJS engine and bytecode generator
+
+QuickJS Release Logs between the previous used version:
+
+2025-04-26:
+
+- removed the bignum extensions and qjscalc
+- new BigInt implementation optimized for small numbers
+- added WeakRef, FinalizationRegistry and symbols as weakrefs
+- added builtin float64 printing and parsing functions for more correctness
+- faster repeated string concatenation
+- qjs: promise unhandled rejections are fatal errors by default
+- added column number in debug information
+- removed the "use strip" extension
+- qjs: added -s and --strip-source options
+- qjsc: added -s and --keep-source options
+- added JS_GetAnyOpaque()
+- added more callbacks for exotic objects in JSClassExoticMethods
+- misc bug fixes
+
+2024-01-13:
+
+- top-level-await support in modules
+- allow 'await' in the REPL
+- added Array.prototype.{with,toReversed,toSpliced,toSorted} and
+  TypedArray.prototype.{with,toReversed,toSorted}
+- added String.prototype.isWellFormed and String.prototype.toWellFormed
+- added Object.groupBy and Map.groupBy
+- added Promise.withResolvers
+- class static block
+- 'in' operator support for private fields
+- optional chaining fixes
+- added RegExp 'd' flag
+- fixed RegExp zero length match logic
+- fixed RegExp case insensitive flag
+- added os.sleepAsync(), os.getpid() and os.now()
+- added cosmopolitan build
+- misc bug fixes
+
+2023-12-09:
+
+- added Object.hasOwn, {String|Array|TypedArray}.prototype.at,
+  {Array|TypedArray}.prototype.findLast{Index}
+- BigInt support is enabled even if CONFIG_BIGNUM disabled
+- updated to Unicode 15.0.0
+- misc bug fixes
+
 ## 0.21.0-beta.7
 
 **Bug Fixes**
