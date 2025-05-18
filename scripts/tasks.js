@@ -581,11 +581,12 @@ task('generate-bindings-code', (done) => {
       shell: true,
       stdio: 'inherit'
     });
+    console.log(polyfillCompileResult);
     if (polyfillCompileResult.status !== 0) {
       return done(compileResult.status);
     }
 
-    const testPpolyfillTarget = path.join(paths.bridge, 'code_gen/test_framework_polyfill.c');
+    const testPpolyfillTarget = path.join(paths.bridge, 'test/test_framework_polyfill.c');
     const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
     let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill',  '-o', testPpolyfillTarget,  testPolyfillSource], {
       cwd: qjscExecDir,
