@@ -28,7 +28,7 @@ abstract class WebFDynamicLibrary {
     if (Platform.isMacOS) {
       return 'lib$libName.dylib';
     } else if (Platform.isWindows) {
-      return '$libName.dll';
+      return 'lib$libName.dll';
     } else if (Platform.isAndroid || Platform.isLinux) {
       return 'lib$libName.so';
     } else {
