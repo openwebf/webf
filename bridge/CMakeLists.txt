@@ -3,19 +3,31 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.11)
-# MSBuild are slower than Clang/GCC to support new CXX standards.
-if(MSVC)
-  set(CMAKE_CXX_STANDARD 20)
-else()
-  set(CMAKE_CXX_STANDARD 17)
-endif()
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(MSVC)
-  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
-  set(BUILD_SHARED_LIBS TRUE)
+if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
+  message("Running in an MSYS2 environment (MSYS or MinGW)")
+
+  if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
+    set(CMAKE_INSTALL_PREFIX $ENV{LIBRARY_OUTPUT_DIR})
+  endif()
+
+  # MSYS2 environments set the MSYSTEM_PREFIX environment variable
+  # which points to the root of the specific environment (e.g., /mingw64, /ucrt64, /mingw32)
+  set(LIBPTHREAD_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libwinpthread-1.dll")
+  set(LIBGCC_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libgcc_s_seh-1.dll")
+  set(LIBSTDCXX_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libstdc++-6.dll")
+
+
+  # Install the DLL to the runtime binary directory
+  # 'bin' is the standard destination for runtime executables and required DLLs
+  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION bin)
+  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION bin)
+  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION bin)
 endif()
+
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
@@ -27,10 +39,6 @@ if(NOT WEBF_JS_ENGINE)
 endif()
 
 find_package(Threads REQUIRED)
-
-if(MSVC)
-  add_compile_options(/MP)
-endif()
 
 if (${ENABLE_PROFILE})
   add_definitions(-DENABLE_PROFILE=1)
@@ -176,38 +184,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     ./third_party/quickjs/qjsc.c
   )
 
-  # PThread compact
-  if(MSVC)
-    # Using `add_subdirectory` will failed at cmake install starge due to unknown issues:
-    # https://github.com/flutter/flutter/issues/95530
-    set(PTHREADS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32")
-    add_library(pthreadVC3 SHARED ${PTHREADS_ROOT}/pthread-JMP.c ${PTHREADS_ROOT}/version.rc)
-    target_compile_definitions(pthreadVC3
-      PRIVATE
-      _UNICODE
-      UNICODE
-      WIN32
-      _WINDOWS
-      _WINDLL
-      PTW32_CLEANUP_C
-      UNICODE
-      _UNICODE
-      ENABLE_LOG=0
-      PTW32_ARCHAMD64
-      PTW32_BUILD_INLINED
-      HAVE_CONFIG_H
-      PTW32_RC_MSC
-    )
-    target_include_directories(pthreadVC3 PUBLIC ${PTHREADS_ROOT})
-  endif()
-
-  if(WIN32)
-    target_link_libraries(quickjs pthreadVC3)
-    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
-    target_compile_definitions(quickjs PUBLIC HAVE_STRUCT_TIMESPEC=1 _HAS_EXCEPTIONS=1)
-  else()
-    target_link_libraries(quickjs Threads::Threads)
-  endif()
+  target_link_libraries(quickjs PRIVATE Threads::Threads)
 
   set(MI_OVERRIDE OFF)
 #  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
@@ -220,11 +197,6 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
 
   target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
   target_include_directories(qjsc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/include)
-
-#  if (MSVC)
-#    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/pthread-win32)
-#    target_include_directories(quickjs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/compat/win32/atomic)
-#  endif()
 
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
@@ -641,10 +613,6 @@ list(APPEND PUBLIC_HEADER
 
 add_library(webf SHARED ${BRIDGE_SOURCE})
 
-if(MSVC)
-  target_compile_options(webf PRIVATE /JMC)
-endif()
-
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
@@ -700,34 +668,40 @@ if (${ENABLE_TEST})
   include(./test/test.cmake)
 endif ()
 
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
-  set_target_properties(webf
-    PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-    RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-  )
-  if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
-    set_target_properties(quickjs
+if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
+  install(TARGETS quickjs
+          LIBRARY DESTINATION lib     # For Unix-like OSes
+          ARCHIVE DESTINATION lib     # For static libs, if built
+          RUNTIME DESTINATION bin     # For Windows DLLs
+          INCLUDES DESTINATION include)
+  install(TARGETS webf
+          LIBRARY DESTINATION lib     # For Unix-like OSes
+          ARCHIVE DESTINATION lib     # For static libs, if built
+          RUNTIME DESTINATION bin     # For Windows DLLs
+          INCLUDES DESTINATION include)
+else()
+  if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
+    set_target_properties(webf
       PROPERTIES
       LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
       RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
     )
-    set_target_properties(qjsc
-      PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-      RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-    )
-    if(MSVC)
-      set_target_properties(pthreadVC3
+    if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs")
+      set_target_properties(quickjs
         PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
       )
-    endif()
+      set_target_properties(qjsc
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+      )
+    endif ()
+  elseif (IS_ANDROID)
+    # android do nothing
   endif ()
-elseif (IS_ANDROID)
-  # android do nothing
-endif ()
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")

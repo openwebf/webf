@@ -88,6 +88,7 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
     case ModpDecodePolicy::kStrict:
       return false;
   }
+  return false;
 }
 
 AtomicString Window::atob(const AtomicString& source, ExceptionState& exception_state) {
