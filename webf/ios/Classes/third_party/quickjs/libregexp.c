@@ -1,1 +1,1 @@
-#include "../../../../src/third_party/quickjs/src/libregexp.c"
+#include "../../../../src/third_party/quickjs/libregexp.c"
