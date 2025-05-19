@@ -200,7 +200,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
           bundle: widget.bundle!,
           routes: widget.routes,
           setup: widget.setup,
-          forceReplace: false);
+          forceReplace: true);
 
       // If the newController was null, it means there exist concurrency loading.
       // Get the winner controller
