@@ -17,9 +17,9 @@ const os = require('os');
 const uploader = require('./utils/uploader');
 
 program
-.option('--static-quickjs', 'Build quickjs as static library and bundled into webf library.', false)
-.option('--enable-log', 'Enable log printing')
-.parse(process.argv);
+  .option('--static-quickjs', 'Build quickjs as static library and bundled into webf library.', false)
+  .option('--enable-log', 'Enable log printing')
+  .parse(process.argv);
 
 const SUPPORTED_JS_ENGINES = ['jsc', 'quickjs'];
 const targetJSEngine = process.env.WEBF_JS_ENGINE || 'quickjs';
@@ -171,13 +171,13 @@ task('build-darwin-webf-lib', done => {
 
 task('run-bridge-unit-test', done => {
   if (platform === 'darwin') {
-    execSync(`${path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test')}`, {stdio: 'inherit'});
+    execSync(`${path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform === 'linux') {
-    execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, {stdio: 'inherit'});
+    execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform == 'win32') {
-    execSync(`${path.join(paths.bridge, 'build/windows/lib/webf_unit_test.exe')}`, {stdio: 'inherit'});
+    execSync(`${path.join(paths.bridge, 'build/windows/lib/webf_unit_test.exe')}`, { stdio: 'inherit' });
   }
-   done();
+  done();
 });
 
 task('compile-polyfill', (done) => {
@@ -354,7 +354,7 @@ function insertStringSlice(code, position, slice) {
 
 function patchiOSFrameworkPList(frameworkPath) {
   const pListPath = path.join(frameworkPath, 'Info.plist');
-  let pListString = fs.readFileSync(pListPath, {encoding: 'utf-8'});
+  let pListString = fs.readFileSync(pListPath, { encoding: 'utf-8' });
   let versionIndex = pListString.indexOf('CFBundleVersion');
   if (versionIndex != -1) {
     let versionStringLast = pListString.indexOf('</string>', versionIndex) + '</string>'.length;
@@ -367,7 +367,7 @@ function patchiOSFrameworkPList(frameworkPath) {
 }
 
 task(`build-ios-webf-lib`, (done) => {
-  const buildType = (buildMode == 'Release' || buildMode === 'RelWithDebInfo')  ? 'RelWithDebInfo' : 'Debug';
+  const buildType = (buildMode == 'Release' || buildMode === 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
 
   if (process.env.ENABLE_ASAN === 'true') {
@@ -562,6 +562,33 @@ task('build-linux-webf-lib', (done) => {
   done();
 });
 
+task('generate-polyfill-bytecode', (done) => {
+  if (platform == 'darwin') {
+    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
+    const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
+    const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
+    let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill', '-o', polyfillTarget, polyfillSource], {
+      cwd: qjscExecDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+    if (polyfillCompileResult.status !== 0) {
+      return done(compileResult.status);
+    }
+
+    const testPpolyfillTarget = path.join(paths.bridge, 'test/test_framework_polyfill.c');
+    const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
+    let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill', '-o', testPpolyfillTarget, testPolyfillSource], {
+      cwd: qjscExecDir,
+      shell: true,
+      stdio: 'inherit'
+    });
+    if (testPolyfillCompileResult.status !== 0) {
+      return done(compileResult.status);
+    }
+  }
+});
+
 task('generate-bindings-code', (done) => {
   if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
     spawnSync(NPM, ['install'], {
@@ -594,31 +621,6 @@ task('generate-bindings-code', (done) => {
 
   if (compileResult.status !== 0) {
     return done(compileResult.status);
-  }
-
-  if (platform == 'darwin') {
-    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
-    const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
-    const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
-    let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill',  '-o', polyfillTarget,  polyfillSource], {
-      cwd: qjscExecDir,
-      shell: true,
-      stdio: 'inherit'
-    });
-    if (polyfillCompileResult.status !== 0) {
-      return done(compileResult.status);
-    }
-
-    const testPpolyfillTarget = path.join(paths.bridge, 'test/test_framework_polyfill.c');
-    const testPolyfillSource = path.join(paths.polyfill, 'dist/test.js');
-    let testPolyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'test_framework_polyfill',  '-o', testPpolyfillTarget,  testPolyfillSource], {
-      cwd: qjscExecDir,
-      shell: true,
-      stdio: 'inherit'
-    });
-    if (testPolyfillCompileResult.status !== 0) {
-      return done(compileResult.status);
-    }
   }
 
   done();
@@ -881,7 +883,7 @@ task('run-benchmark', async (done) => {
 });
 
 function getDevicesInfo() {
-  let output = JSON.parse(execSync('flutter devices --machine', {stdio: 'pipe', encoding: 'utf-8'}));
+  let output = JSON.parse(execSync('flutter devices --machine', { stdio: 'pipe', encoding: 'utf-8' }));
   let androidDevices = output.filter(device => {
     return device.sdk.indexOf('Android') >= 0;
   });
