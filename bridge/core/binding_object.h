@@ -74,6 +74,7 @@ enum CreateBindingObjectType {
   kCreateDOMMatrix = 0,
   kCreatePath2D = 1,
   kCreateDOMPoint = 2,
+  kCreateFormData = 3
 };
 
 struct BindingObjectPromiseContext : public DartReadable {
@@ -139,6 +140,7 @@ class BindingObject : public ScriptWrappable {
   virtual bool IsComputedCssStyleDeclaration() const;
   virtual bool IsCanvasGradient() const;
   virtual bool IsCanvasRenderingContext2D() const;
+  virtual bool IsFormData() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);

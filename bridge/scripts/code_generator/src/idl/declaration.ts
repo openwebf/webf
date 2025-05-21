@@ -38,6 +38,7 @@ export class ParameterMode {
   supportAsyncManual?: boolean;
   supportAsyncArrayValue?: boolean;
   staticMethod?: boolean;
+  secondaryName?: string;
 }
 
 export class PropsDeclaration {

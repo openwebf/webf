@@ -366,6 +366,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+    core/html/forms/form_data.cc
     core/html/touches/webf_touch_area_element.cc
 
     core/native/native_loader.cc
@@ -421,6 +422,7 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_ui_event.cc
     code_gen/qjs_ui_event_init.cc
     code_gen/qjs_gesture_event.cc
+    code_gen/qjs_form_data.cc
     code_gen/qjs_hashchange_event.cc
     code_gen/qjs_hashchange_event_init.cc
     code_gen/qjs_gesture_event_init.cc
@@ -456,6 +458,7 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_event_target.cc
     code_gen/qjs_node.cc
     code_gen/qjs_union_dom_stringnode.cc
+    code_gen/qjs_union_dom_stringblob.cc
     code_gen/qjs_document.cc
     code_gen/qjs_element.cc
     code_gen/qjs_dom_token_list.cc

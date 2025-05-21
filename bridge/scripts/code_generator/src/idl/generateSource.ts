@@ -559,6 +559,9 @@ function generateReturnValueInit(blob: IDLBlob, declare: FunctionDeclaration, op
   if (options.isConstructor) {
     return `${getClassName(blob)}* return_value = nullptr;`
   }
+  if (isUnionType(type) && Array.isArray(type.value)) {
+    return `std::shared_ptr<${generateUnionTypeClassName(type.value)}> return_value = nullptr;`;
+  }
 
   if (isPointerType(type)) {
     if (getPointerType(type) === 'Promise') {
@@ -662,12 +665,12 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           } else {
             overloadMethods[method.name] = [method];
             filtedMethods.push(method);
-            options.classPropsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`)
+            options.classPropsInstallList.push(`{"${method.name}", qjs_${method.name}, ${method.args.length}}`)
           }
         }
 
         function addObjectStaticMethods(method: FunctionDeclaration, i: number) {
-          options.staticMethodsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`);
+          options.staticMethodsInstallList.push(`{"${method.name}", qjs_${method.name}, ${method.args.length}}`);
         }
 
         object.props.forEach(addObjectProps);
@@ -800,6 +803,7 @@ export function generateUnionTypeSource(unionType: ParameterType): string {
     generateUnionConstructorImpl,
     generateUnionTypeSetter,
     getUnionTypeName,
+    isPointerType,
     isTypeHaveNull,
     isTypeHaveString
   }).split('\n').filter(str => {

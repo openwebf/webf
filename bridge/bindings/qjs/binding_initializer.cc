@@ -109,6 +109,7 @@
 #include "qjs_widget_element.h"
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
+#include "qjs_form_data.h"
 
 namespace webf {
 
@@ -188,6 +189,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
   QJSBlob::Install(context);
+  QJSFormData::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);
   QJSDOMStringMap::Install(context);

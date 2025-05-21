@@ -433,4 +433,8 @@ bool BindingObject::IsCanvasRenderingContext2D() const {
   return false;
 }
 
+bool BindingObject::IsFormData() const {
+  return false;
+}
+
 }  // namespace webf
