@@ -110,7 +110,7 @@ class FetchModule extends BaseModule {
 
     final body = params[0];
     final headers = params[1];
-    final requestMethod = params[2];
+    final requestMethod = params[2] ?? 'GET';
 
     dynamic requestBody;
 
@@ -123,8 +123,6 @@ class FetchModule extends BaseModule {
     } else if (body is String) {
       requestBody = body;
     }
-
-    assert(requestBody != null);
 
     _handleError(Object error, StackTrace? stackTrace) {
       completer.completeError(error, stackTrace);
