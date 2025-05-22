@@ -400,9 +400,7 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
 
               f.returnTypeMode = mode;
 
-              if (mode.secondaryName) {
-                f.name = mode.secondaryName;
-              } else if (f.returnTypeMode.staticMethod) {
+              if (f.returnTypeMode.staticMethod) {
                 obj.staticMethods.push(f);
               }
             }
