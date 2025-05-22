@@ -12,7 +12,7 @@
 #include "bindings/qjs/script_promise.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "blob_part.h"
-#include "blob_property_bag.h"
+#include "qjs_blob_options.h"
 
 namespace webf {
 
@@ -28,7 +28,7 @@ class Blob : public ScriptWrappable {
                       ExceptionState& exception_state);
   static Blob* Create(ExecutingContext* context,
                       std::vector<std::shared_ptr<BlobPart>>& data,
-                      std::shared_ptr<BlobPropertyBag> property,
+                      std::shared_ptr<BlobOptions> property,
                       ExceptionState& exception_state);
 
   Blob() = delete;
@@ -36,21 +36,22 @@ class Blob : public ScriptWrappable {
   explicit Blob(JSContext* ctx, const std::vector<std::shared_ptr<BlobPart>>& data) : ScriptWrappable(ctx) {
     PopulateBlobData(data);
   };
-  explicit Blob(JSContext* ctx,
-                std::vector<std::shared_ptr<BlobPart>>& data,
-                std::shared_ptr<BlobPropertyBag>& property)
-      : mime_type_(property->type()), ScriptWrappable(ctx) {
+  explicit Blob(JSContext* ctx, std::vector<std::shared_ptr<BlobPart>>& data, const std::shared_ptr<BlobOptions>& property)
+      : mime_type_((property != nullptr && property->hasType()) ? property->type() : AtomicString::Empty()),
+        ScriptWrappable(ctx) {
     PopulateBlobData(data);
   };
 
   void AppendText(const std::string& string);
   void AppendBytes(uint8_t* buffer, uint32_t length);
 
+  virtual bool IsFile() const;
+
   /// get an pointer of bytes data from JSBlob
   uint8_t* bytes();
   /// get bytes data's length
   int32_t size();
-  std::string type();
+  AtomicString type();
   void SetMineType(const std::string& mine_type);
 
   ScriptPromise arrayBuffer(ExceptionState& exception_state);
@@ -72,7 +73,7 @@ class Blob : public ScriptWrappable {
   void PopulateBlobData(const std::vector<std::shared_ptr<BlobPart>>& data);
 
  private:
-  std::string mime_type_;
+  AtomicString mime_type_;
   std::vector<uint8_t> _data;
 };
 

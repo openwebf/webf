@@ -337,8 +337,11 @@ if (UNLIKELY(exception_state.HasException())) {
 }`;
 }
 
-function generateCallMethodName(name: string) {
+function generateCallMethodName(name: string, mode?: ParameterMode) {
   if (name === 'constructor') return 'Create';
+  if (mode?.secondaryName) {
+    return mode.secondaryName;
+  }
   return name;
 }
 
@@ -422,9 +425,9 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
     call = generateReturnPromiseCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
-  ${returnValueAssignment} self->${generateCallMethodName(declare.name)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
+  ${returnValueAssignment} self->${generateCallMethodName(declare.name, declare.returnTypeMode)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
-    call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
+    call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name, declare.returnTypeMode)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
   }
 
 
@@ -491,9 +494,9 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
     call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
   } else if (options.isInstanceMethod) {
     call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
-${returnValueAssignment} self->${generateCallMethodName(declaration.name)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;
+${returnValueAssignment} self->${generateCallMethodName(declaration.name, declaration.returnTypeMode)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;
   } else {
-    call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name)}(context, ${requiredArguments.join(',')});`;
+    call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name, declaration.returnTypeMode)}(context, ${requiredArguments.join(',')});`;
   }
 
   let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args.some(v => v.isDotDotDot))) ? call : `if (argc <= ${minimalRequiredArgc}) {
@@ -558,6 +561,9 @@ function generateReturnValueInit(blob: IDLBlob, declare: FunctionDeclaration, op
 
   if (options.isConstructor) {
     return `${getClassName(blob)}* return_value = nullptr;`
+  }
+  if (isUnionType(type) && Array.isArray(type.value)) {
+    return `std::shared_ptr<${generateUnionTypeClassName(type.value)}> return_value = nullptr;`;
   }
 
   if (isPointerType(type)) {
@@ -662,12 +668,12 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           } else {
             overloadMethods[method.name] = [method];
             filtedMethods.push(method);
-            options.classPropsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`)
+            options.classPropsInstallList.push(`{"${method.name}", qjs_${method.name}, ${method.args.length}}`)
           }
         }
 
         function addObjectStaticMethods(method: FunctionDeclaration, i: number) {
-          options.staticMethodsInstallList.push(`{"${method.name}", ${method.name}, ${method.args.length}}`);
+          options.staticMethodsInstallList.push(`{"${method.name}", qjs_${method.name}, ${method.args.length}}`);
         }
 
         object.props.forEach(addObjectProps);
@@ -800,6 +806,7 @@ export function generateUnionTypeSource(unionType: ParameterType): string {
     generateUnionConstructorImpl,
     generateUnionTypeSetter,
     getUnionTypeName,
+    isPointerType,
     isTypeHaveNull,
     isTypeHaveString
   }).split('\n').filter(str => {

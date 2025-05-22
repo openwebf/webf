@@ -9,6 +9,8 @@
 #include "core/binding_object.h"
 #include "native_type.h"
 #include "native_value.h"
+#include "native_byte_data.h"
+#include "core/executing_context.h"
 
 namespace webf {
 
@@ -185,6 +187,27 @@ struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_base_
     assert(value.tag == NativeTag::TAG_POINTER);
     assert(value.uint32 == static_cast<int32_t>(JSPointerType::NativeBindingObject));
     return DynamicTo<T>(BindingObject::From(static_cast<NativeBindingObject*>(value.u.ptr)));
+  }
+};
+
+template <typename T>
+struct NativeValueConverter<NativeTypePointer<T>, std::enable_if_t<std::is_same_v<T, std::uint8_t>>>
+    : public NativeValueConverterBase<NativeTypePointer<T>> {
+  static NativeValue ToNativeValue(JSContext* ctx, JSValue reference_value, T* bytes, size_t byte_len) {
+    auto* context = ExecutingContext::From(ctx);
+    auto* finalizer_context = new NativeByteDataFinalizerContext();
+    finalizer_context->dart_isolate_context = context->dartIsolateContext();
+    finalizer_context->context = context;
+    // Keep a reference for JSValue to protect the bytes from JavaScript GC.
+    finalizer_context->value = JS_DupValue(ctx, reference_value);
+
+    auto* native_byte_data = NativeByteData::Create(
+        bytes, byte_len,
+        NativeByteData::HandleNativeByteDataFinalizer,
+        finalizer_context);
+
+    context->RegisterActiveNativeByteData(finalizer_context);
+    return Native_NewPtr(JSPointerType::NativeByteData, native_byte_data);
   }
 };
 

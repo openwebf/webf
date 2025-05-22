@@ -26,6 +26,8 @@ struct NativeByteData : public DartReadable {
                                 int32_t length,
                                 FreeNativeByteData on_free,
                                 NativeByteDataFinalizerContext* context);
+
+  static void HandleNativeByteDataFinalizer(void* ptr);
   uint8_t* bytes;
   int32_t length;
   FreeNativeByteData free_native_byte_data_;

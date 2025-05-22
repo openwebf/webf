@@ -48,6 +48,8 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
   // Returns the WrapperTypeInfo of the instance.
   virtual const WrapperTypeInfo* GetWrapperTypeInfo() const = 0;
 
+  virtual bool IsBindingObject() const;
+
   void Trace(GCVisitor* visitor) const override{};
 
   virtual JSValue ToQuickJS() const;
