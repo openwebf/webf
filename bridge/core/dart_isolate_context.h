@@ -43,6 +43,7 @@ void InitializeBuiltInStrings(JSContext* ctx);
 void WatchDartWire(DartWireContext* wire);
 bool IsDartWireAlive(DartWireContext* wire);
 void DeleteDartWire(DartWireContext* wire);
+bool IsWebFDefinedClass(JSClassID class_id);
 
 // DartIsolateContext has a 1:1 correspondence with a dart isolates.
 class DartIsolateContext {

@@ -267,14 +267,16 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
           auto* event_target = toScriptWrappable<EventTarget>(value_);
           return Native_NewPtr(JSPointerType::NativeBindingObject, event_target->bindingObject());
         }
-        auto* raw_binding_object = toScriptWrappable<ScriptWrappable>(value_);
-        if (raw_binding_object != nullptr && raw_binding_object->IsBindingObject()) {
-          auto* binding_object = static_cast<BindingObject*>(raw_binding_object);
-          return Native_NewPtr(JSPointerType::NativeBindingObject, binding_object->bindingObject());
-        }
 
         if (shared_js_value) {
           return Native_NewPtr(JSPointerType::Others, JS_VALUE_GET_PTR(value_));
+        }
+
+        JSClassID class_id = JS_GetClassID(value_);
+        auto* raw_binding_object = toScriptWrappable<ScriptWrappable>(value_);
+        if (IsWebFDefinedClass(class_id) && raw_binding_object != nullptr && raw_binding_object->IsBindingObject()) {
+          auto* binding_object = static_cast<BindingObject*>(raw_binding_object);
+          return Native_NewPtr(JSPointerType::NativeBindingObject, binding_object->bindingObject());
         }
 
         return NativeValueConverter<NativeTypeJSON>::ToNativeValue(ctx, *this, exception_state);

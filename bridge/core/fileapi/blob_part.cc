@@ -45,7 +45,10 @@ std::shared_ptr<BlobPart> BlobPart::Create(JSContext* ctx, JSValue value, Except
     return blob_part;
   }
 
-  return nullptr;
+  const char* buffer = JS_ToCString(ctx, value);
+  auto result = std::make_shared<BlobPart>(ctx, buffer);
+  JS_FreeCString(ctx, buffer);
+  return result;
 }
 
 JSValue BlobPart::ToQuickJS(JSContext* ctx) const {

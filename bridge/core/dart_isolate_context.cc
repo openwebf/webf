@@ -66,6 +66,10 @@ void InitializeBuiltInStrings(JSContext* ctx) {
   }
 }
 
+bool IsWebFDefinedClass(JSClassID class_id) {
+  return class_id > JS_CLASS_GC_TRACKER && class_id < JS_CLASS_CUSTOM_CLASS_INIT_COUNT;
+}
+
 void DartIsolateContext::InitializeJSRuntime() {
   if (runtime_ != nullptr)
     return;
