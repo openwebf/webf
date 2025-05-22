@@ -4,7 +4,12 @@
  */
 
 #include "form_data.h"
+
+#include <utility>
+#include "binding_call_methods.h"
 #include "core/executing_context.h"
+#include "core/fileapi/file.h"
+#include "foundation/native_value_converter.h"
 
 namespace webf {
 
@@ -25,7 +30,7 @@ bool FormData::IsFormData() const {
 void FormData::append(const webf::AtomicString& name,
                       const std::shared_ptr<QJSUnionDomStringBlob>& value,
                       webf::ExceptionState& exception_state) {
-  append(name, value, AtomicString::Empty(), exception_state);
+  append(name, value, AtomicString::Null(), exception_state);
 }
 
 void FormData::append(const AtomicString& name,
@@ -33,9 +38,9 @@ void FormData::append(const AtomicString& name,
                       const AtomicString& file_name,
                       ExceptionState& exception_state) {
   if (value->IsDomString()) {
-    append(name, value->GetAsDomString());
+    append(name, value->GetAsDomString(), exception_state);
   } else if (value->IsBlob()) {
-    append(name, value->GetAsBlob(), file_name);
+    append(name, value->GetAsBlob(), file_name, exception_state);
   }
 }
 
@@ -46,6 +51,8 @@ void FormData::deleteEntry(const AtomicString& name, ExceptionState& exception_s
                                   return entry->name() == name;  // or any other condition
                                 }),
                  entries_.end());
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), name)};
+  InvokeBindingMethod(binding_call_methods::kremove, 1, arguments, FlushUICommandReason::kStandard, exception_state);
 }
 
 std::shared_ptr<QJSUnionDomStringBlob> FormData::get(const AtomicString& name, ExceptionState& exception_state) {
@@ -54,7 +61,7 @@ std::shared_ptr<QJSUnionDomStringBlob> FormData::get(const AtomicString& name, E
       if (entry->IsString()) {
         return std::make_shared<QJSUnionDomStringBlob>(entry->Value());
       } else {
-        assert(entry->isFile());
+        assert(entry->IsFile());
         return std::make_shared<QJSUnionDomStringBlob>(entry->GetBlob());
       }
     }
@@ -73,7 +80,7 @@ std::vector<std::shared_ptr<QJSUnionDomStringBlob>> FormData::getAll(const Atomi
     if (entry->IsString()) {
       value = std::make_shared<QJSUnionDomStringBlob>(entry->Value());
     } else {
-      assert(entry->isFile());
+      assert(entry->IsFile());
       value = std::make_shared<QJSUnionDomStringBlob>(entry->GetBlob());
     }
     results.emplace_back(value);
@@ -93,9 +100,9 @@ void FormData::set(const AtomicString& name,
                    const std::shared_ptr<QJSUnionDomStringBlob>& blob_part,
                    ExceptionState& exception_state) {
   if (blob_part->IsBlob()) {
-    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsBlob(), AtomicString::Empty()));
+    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsBlob(), AtomicString::Empty()), exception_state);
   } else if (blob_part->IsDomString()) {
-    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsDomString()));
+    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsDomString()), exception_state);
   }
 }
 
@@ -104,13 +111,13 @@ void FormData::set(const AtomicString& name,
                    const AtomicString& file_name,
                    ExceptionState& exception_state) {
   if (blob_part->IsBlob()) {
-    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsBlob(), file_name));
+    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsBlob(), file_name), exception_state);
   } else if (blob_part->IsDomString()) {
-    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsDomString()));
+    SetEntry(std::make_shared<Entry>(name, blob_part->GetAsDomString()), exception_state);
   }
 }
 
-void FormData::SetEntry(std::shared_ptr<Entry> entry) {
+void FormData::SetEntry(std::shared_ptr<Entry> entry, ExceptionState& exception_state) {
   assert(entry);
   bool found = false;
   size_t i = 0;
@@ -127,6 +134,33 @@ void FormData::SetEntry(std::shared_ptr<Entry> entry) {
   }
   if (!found)
     entries_.emplace_back(entry);
+
+  if (entry->IsString()) {
+    NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), entry->name()),
+                               NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), entry->Value())};
+    InvokeBindingMethod(binding_call_methods::kset_string, 2, arguments, FlushUICommandReason::kStandard,
+                        exception_state);
+  } else if (entry->IsFile()) {
+    auto* blob = entry->GetBlob();
+
+    NativeValue file_name_value;
+    if (!entry->Filename().IsNull()) {
+      file_name_value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), entry->Filename());
+    } else {
+      if (auto* file = DynamicTo<File>(blob)) {
+        file_name_value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), file->name());
+      } else {
+        file_name_value = NativeValueConverter<NativeTypeString>::ToNativeValue("blob");
+      }
+    }
+    NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), entry->name()),
+                               NativeValueConverter<NativeTypePointer<uint8_t>>::ToNativeValue(
+                                   ctx(), blob->ToQuickJSUnsafe(), blob->bytes(), blob->size()),
+                               NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), blob->type()),
+                               file_name_value};
+    InvokeBindingMethod(binding_call_methods::kset_blob, 4, arguments, FlushUICommandReason::kStandard,
+                        exception_state);
+  }
 }
 
 void FormData::Trace(webf::GCVisitor* visitor) const {
@@ -135,20 +169,48 @@ void FormData::Trace(webf::GCVisitor* visitor) const {
   }
 }
 
-void FormData::append(const webf::AtomicString& name, const webf::AtomicString& value) {
+void FormData::append(const webf::AtomicString& name,
+                      const webf::AtomicString& value,
+                      ExceptionState& exception_state) {
   entries_.emplace_back(std::make_shared<Entry>(name, value));
+
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), name),
+                             NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value)};
+  InvokeBindingMethod(binding_call_methods::kset_string, 2, arguments, FlushUICommandReason::kStandard,
+                      exception_state);
 }
 
-void FormData::append(const webf::AtomicString& name, webf::Blob* blob, const AtomicString& file_name) {
+void FormData::append(const webf::AtomicString& name,
+                      webf::Blob* blob,
+                      const AtomicString& file_name,
+                      ExceptionState& exception_state) {
   entries_.emplace_back(std::make_shared<Entry>(name, blob, file_name));
+
+  NativeValue file_name_value;
+
+  if (!file_name.IsNull()) {
+    file_name_value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), file_name);
+  } else {
+    if (auto* file = DynamicTo<File>(blob)) {
+      file_name_value = NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), file->name());
+    } else {
+      file_name_value = NativeValueConverter<NativeTypeString>::ToNativeValue("blob");
+    }
+  }
+
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), name),
+                             NativeValueConverter<NativeTypePointer<uint8_t>>::ToNativeValue(
+                                 ctx(), blob->ToQuickJSUnsafe(), blob->bytes(), blob->size()),
+                             NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), blob->type()),
+                             file_name_value};
+  InvokeBindingMethod(binding_call_methods::kset_blob, 4, arguments, FlushUICommandReason::kStandard, exception_state);
 }
 
 // ----------------------------------------------------------------
+FormData::Entry::Entry(AtomicString name, AtomicString value) : name_(std::move(name)), value_(std::move(value)) {}
 
-FormData::Entry::Entry(const AtomicString& name, const AtomicString& value) : name_(name), value_(value) {}
-
-FormData::Entry::Entry(const AtomicString& name, Blob* blob, const AtomicString& filename)
-    : name_(name), blob_(blob), filename_(filename) {}
+FormData::Entry::Entry(AtomicString name, Blob* blob, AtomicString filename)
+    : name_(std::move(name)), blob_(blob), filename_(std::move(filename)) {}
 
 void FormData::Entry::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(blob_);

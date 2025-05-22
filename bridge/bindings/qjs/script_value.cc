@@ -254,44 +254,7 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
         size_t byte_len;
         uint8_t* bytes = JS_GetArrayBuffer(ctx, &byte_len, value_);
 
-        auto* context = ExecutingContext::From(ctx);
-        auto* finalizer_context = new NativeByteDataFinalizerContext();
-        finalizer_context->dart_isolate_context = context->dartIsolateContext();
-        finalizer_context->context = context;
-        // Keep a reference for JSValue to protect the bytes from JavaScript GC.
-        finalizer_context->value = JS_DupValue(ctx, value_);
-
-        auto* native_byte_data = NativeByteData::Create(
-            bytes, byte_len,
-            [](void* raw_finalizer_ptr) {
-              auto* finalizer_context = static_cast<NativeByteDataFinalizerContext*>(raw_finalizer_ptr);
-
-              // Check if the JS context is alive.
-              if (!finalizer_context->context->IsContextValid() || !finalizer_context->context->IsCtxValid()) {
-                return;
-              }
-
-              auto* context = finalizer_context->context;
-              bool is_dedicated = context->isDedicated();
-              finalizer_context->dart_isolate_context->dispatcher()->PostToJs(
-                  is_dedicated, context->contextId(),
-                  [](NativeByteDataFinalizerContext* finalizer_context) {
-                    // The context or ctx may be finalized during the thread switch
-                    if (!finalizer_context->context->IsContextValid() || !finalizer_context->context->IsCtxValid()) {
-                      return;
-                    }
-
-                    // Free the JSValue reference when the JS heap and context is alive.
-                    JS_FreeValue(finalizer_context->context->ctx(), finalizer_context->value);
-                    finalizer_context->context->UnRegisterActiveNativeByteData(finalizer_context);
-                  },
-                  finalizer_context);
-            },
-            finalizer_context);
-
-        context->RegisterActiveNativeByteData(finalizer_context);
-        return Native_NewPtr(JSPointerType::NativeByteData, native_byte_data);
-
+        return NativeValueConverter<NativeTypePointer<uint8_t>>::ToNativeValue(ctx, value_, bytes, byte_len);
       } else if (JS_IsArray(ctx, value_)) {
         std::vector<ScriptValue> values = Converter<IDLSequence<IDLAny>>::FromValue(ctx, value_, ASSERT_NO_EXCEPTION());
         auto* result = new NativeValue[values.size()];
@@ -303,6 +266,11 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
         if (QJSEventTarget::HasInstance(ExecutingContext::From(ctx), value_)) {
           auto* event_target = toScriptWrappable<EventTarget>(value_);
           return Native_NewPtr(JSPointerType::NativeBindingObject, event_target->bindingObject());
+        }
+        auto* raw_binding_object = toScriptWrappable<ScriptWrappable>(value_);
+        if (raw_binding_object != nullptr && raw_binding_object->IsBindingObject()) {
+          auto* binding_object = static_cast<BindingObject*>(raw_binding_object);
+          return Native_NewPtr(JSPointerType::NativeBindingObject, binding_object->bindingObject());
         }
 
         if (shared_js_value) {

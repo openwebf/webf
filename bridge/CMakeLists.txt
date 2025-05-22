@@ -253,7 +253,7 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/executing_context_data.cc
     core/fileapi/blob.cc
     core/fileapi/blob_part.cc
-    core/fileapi/blob_property_bag.cc
+    core/fileapi/file.cc
     core/frame/console.cc
     core/frame/dom_timer.cc
     core/frame/dom_timer_coordinator.cc
@@ -405,6 +405,9 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_window.cc
     code_gen/qjs_location.cc
     code_gen/qjs_blob.cc
+    code_gen/qjs_blob_options.cc
+    code_gen/qjs_file.cc
+    code_gen/qjs_file_options.cc
     code_gen/qjs_event.cc
     code_gen/qjs_add_event_listener_options.cc
     code_gen/qjs_event_listener_options.cc

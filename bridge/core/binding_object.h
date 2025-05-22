@@ -124,9 +124,11 @@ class BindingObject : public ScriptWrappable {
 
   void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
 
+  bool IsBindingObject() const override;
+
   FORCE_INLINE NativeBindingObject* bindingObject() const { return binding_object_; }
 
-  void Trace(GCVisitor* visitor) const;
+  void Trace(GCVisitor* visitor) const override;
 
   inline static BindingObject* From(NativeBindingObject* native_binding_object) {
     if (native_binding_object == nullptr)

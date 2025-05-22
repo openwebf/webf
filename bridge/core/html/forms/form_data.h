@@ -42,14 +42,14 @@ class FormData : public BindingObject {
            const std::shared_ptr<QJSUnionDomStringBlob>& blob_part,
            const AtomicString& file_name,
            ExceptionState& exception_state);
-  void SetEntry(std::shared_ptr<Entry> entry);
+  void SetEntry(std::shared_ptr<Entry> entry, ExceptionState& exception_state);
   const std::vector<std::shared_ptr<const Entry>>& Entries() const { return entries_; }
 
   void Trace(webf::GCVisitor* visitor) const override;
 
  private:
-  void append(const AtomicString& name, const AtomicString& value);
-  void append(const AtomicString& name, Blob* blob, const AtomicString& file_name);
+  void append(const AtomicString& name, const AtomicString& value, ExceptionState& exception_state);
+  void append(const AtomicString& name, Blob* blob, const AtomicString& file_name, ExceptionState& exception_state);
 
   std::vector<std::shared_ptr<const Entry>> entries_;
 };
@@ -59,12 +59,12 @@ class FormData : public BindingObject {
 // Entry objects are immutable.
 class FormData::Entry final {
  public:
-  Entry(const AtomicString& name, const AtomicString& value);
-  Entry(const AtomicString& name, Blob* blob, const AtomicString& filename);
+  Entry(AtomicString  name, AtomicString  value);
+  Entry(AtomicString  name, Blob* blob, AtomicString  filename);
   void Trace(GCVisitor*) const;
 
   bool IsString() const { return !blob_; }
-  bool isFile() const { return blob_ != nullptr; }
+  bool IsFile() const { return blob_ != nullptr; }
   const AtomicString& name() const { return name_; }
   const AtomicString& Value() const { return value_; }
   Blob* GetBlob() const { return blob_.Get(); }

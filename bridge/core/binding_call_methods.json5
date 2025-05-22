@@ -206,6 +206,9 @@
     "__test_global_to_local__",
     "___force_rebuild__",
     "needsPaint",
-    "addEvent"
+    "addEvent",
+    "remove",
+    "set_string",
+    "set_blob"
   ]
 }

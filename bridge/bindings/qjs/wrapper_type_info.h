@@ -125,6 +125,7 @@ enum {
   JS_CLASS_SVG_ANIMATED_LENGTH,
 
   JS_CLASS_FORM_DATA,
+  JS_CLASS_FILE,
 
   JS_CLASS_CUSTOM_CLASS_INIT_COUNT /* last entry for predefined classes */
 };
