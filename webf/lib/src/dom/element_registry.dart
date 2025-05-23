@@ -33,7 +33,10 @@ class _UnknownNamespaceElement extends Element {
 }
 
 Map<String, ElementCreator> getAllWidgetElements() {
-  return _widgetElements;
+  Map<String, ElementCreator> map = {};
+  map.addAll(_widgetElements);
+  map.addAll(_overrideWidgetElements);
+  return map;
 }
 
 void defineElement(String name, ElementCreator creator) {

@@ -256,25 +256,30 @@ export default {
     },
 
     // 下拉刷新热门列表
-    async onRefreshHot() {
+    async onRefreshHot(e) {
+      const listView = e.target;
       try {
         await this.loadHotList(1, true);
-        this.showToast('刷新成功', 'success');
-      } catch (error) {
-        this.showToast('刷新失败，请重试', 'error');
+        listView.finishRefresh('success');
+      } catch (e) {
+        listView.finishRefresh('error');
       }
     },
 
     // 上拉加载更多热门列表
-    async onLoadMoreHot() {
-      if (!this.hotHasMore || this.loadingStates.hot || this.currentTab !== 'hot') return;
+    async onLoadMoreHot(e) {
+      const listView = e.target;
+      if (!this.hotHasMore || this.loadingStates.hot || this.currentTab !== 'hot') {
+        listView.finishLoad('noMore');        
+        return;
+      };
 
       try {
         const nextPage = this.hotPage + 1;
         await this.loadHotList(nextPage);
+        listView.finishLoad('success');
       } catch (error) {
-        console.error('加载更多热门内容失败:', error);
-        this.showToast('加载更多失败', 'error');
+        listView.finishLoad('error');
       }
     },
 

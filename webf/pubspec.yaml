@@ -24,6 +24,7 @@ dependencies:
   archive: ^3.3.7 # Pure dart module.
   web_socket_channel: ^3.0.1
   flutter_svg: ^2.0.17
+  easy_refresh: ^3.4.0
 
 dev_dependencies:
   flutter_test:

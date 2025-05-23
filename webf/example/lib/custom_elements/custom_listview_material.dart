@@ -4,6 +4,7 @@
  */
 import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 
 class CustomWebFListViewWithMeterialRefreshIndicator extends WebFListViewElement {
   CustomWebFListViewWithMeterialRefreshIndicator(super.context);
@@ -18,5 +19,12 @@ class CustomListViewStateWithMeterialRefreshIndicator extends WebFListViewState 
   CustomListViewStateWithMeterialRefreshIndicator(super.widgetElement);
 
   @override
-  RefreshControlStyle get refreshControlStyle => RefreshControlStyle.material;
+  Header? buildEasyRefreshHeader() {
+    return MaterialHeader();
+  }
+
+  @override
+  Footer? buildEasyRefreshFooter() {
+    return MaterialFooter();
+  }
 }
