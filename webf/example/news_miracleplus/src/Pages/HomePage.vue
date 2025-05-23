@@ -272,7 +272,7 @@ export default {
       if (!this.hotHasMore || this.loadingStates.hot || this.currentTab !== 'hot') {
         listView.finishLoad('noMore');        
         return;
-      };
+      }
 
       try {
         const nextPage = this.hotPage + 1;
