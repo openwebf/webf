@@ -164,8 +164,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
       flutter.Widget? scrollableX;
       if (overflowX == CSSOverflowType.scroll ||
-          overflowX == CSSOverflowType.auto ||
-          overflowX == CSSOverflowType.hidden) {
+          overflowX == CSSOverflowType.auto) {
         webFElement._scrollControllerX ??= flutter.ScrollController();
         scrollableX = LayoutBoxWrapper(
             child: flutter.Scrollable(
@@ -186,8 +185,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       }
 
       if (overflowY == CSSOverflowType.scroll ||
-          overflowY == CSSOverflowType.auto ||
-          overflowY == CSSOverflowType.hidden) {
+          overflowY == CSSOverflowType.auto) {
         webFElement._scrollControllerY ??= flutter.ScrollController();
         widget = LayoutBoxWrapper(
             child: flutter.Scrollable(
