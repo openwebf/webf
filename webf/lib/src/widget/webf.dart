@@ -605,6 +605,13 @@ class WebFStateElement extends StatefulElement {
         await _loadingInPreRenderingMode();
       }
 
+      bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;
+      String initialRoute = widget.initialRoute ?? widget.controller.initialRoute ?? '/';
+
+      if (hasInitialRoute && initialRoute != '/') {
+        await widget.controller.view.awaitForHybridRouteLoaded(initialRoute);
+      }
+
       controller.evaluated = true;
     });
     SchedulerBinding.instance.scheduleFrame();
