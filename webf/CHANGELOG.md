@@ -1,3 +1,41 @@
+## 0.21.2
+
+New Features
+
+FormData Support
+
+- Added FormData/File API support for web-compatible file uploads
+- Implemented native FormData interface with proper multipart handling
+- Extended fetch module to work with FormData objects
+
+Pull-to-Refresh Improvements
+
+- Integrated easy_refresh package for better pull refresh and load more functionality
+- Simplified custom ListView implementation with native refresh capabilities
+
+Bug Fixes
+
+Layout Improvements
+
+- Fixed position layout handling for elements not connected to DOM
+- Made flushPendingProperties synchronous for more predictable layout behavior
+- Fixed viewport metrics changes by properly dispatching relayout for affected render objects
+- Disabled scrolling when overflow is set to hidden
+- Fixed line-height computation when inheriting from parent elements
+
+Crash Fixes
+
+- Fixed issue where _hostSet was not properly initialized
+
+Build System
+
+- Made bytecode generator into a standalone script for better maintainability
+- Fixed Android NDK limits for better cross-platform compatibility
+
+Framework Improvements
+
+- Fixed forceUpdate on WebF controller when created by AutoManagedWebF widget
+
 ## 0.21.1
 
 New Features
