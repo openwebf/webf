@@ -542,7 +542,6 @@ class RenderLayoutBox extends RenderBoxModel
 
 mixin RenderBoxModelBase on RenderBox {
   late CSSRenderStyle renderStyle;
-  Size? boxSize;
 }
 
 class RenderBoxModel extends RenderBox
@@ -725,6 +724,9 @@ class RenderBoxModel extends RenderBox
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
+  }
+  void markNeedsRelayout() {
+    needsRelayout = true;
   }
 
   // Mirror debugDoingThisLayout flag in flutter.
@@ -1595,7 +1597,6 @@ class RenderBoxModel extends RenderBox
         'additionalPaintOffset', Offset(additionalPaintOffsetX ?? 0.0, additionalPaintOffsetY ?? 0.0)));
     if (renderPositionPlaceholder != null)
       properties.add(DiagnosticsProperty('renderPositionHolder', renderPositionPlaceholder));
-    renderStyle.debugFillProperties(properties);
     debugOverflowProperties(properties);
     debugOpacityProperties(properties);
   }

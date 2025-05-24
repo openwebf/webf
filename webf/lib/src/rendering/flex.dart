@@ -1463,7 +1463,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
         }
 
-        bool isChildNeedsLayout = childMainSizeChanged || childCrossSizeChanged;
+        bool isChildNeedsLayout = childMainSizeChanged || childCrossSizeChanged || (child.needsRelayout);
 
         if (!isChildNeedsLayout) {
           mainAxisExtent += childMainAxisExtent;

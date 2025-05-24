@@ -5,6 +5,7 @@
 import 'dart:ui';
 
 import 'package:path/path.dart';
+import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
@@ -110,6 +111,15 @@ class Window extends EventTarget {
   void resizeViewportRelatedElements() {
     _watchedViewportElements.forEach((element) {
       element.renderStyle.markNeedsLayout();
+      element.renderStyle.markNeedsRelayout();
+
+      visitor(RenderObject renderObject) {
+        if (renderObject is RenderBoxModel) {
+          renderObject.markNeedsRelayout();
+        }
+        renderObject.visitChildren(visitor);
+      }
+      element.renderStyle.visitChildren(visitor);
     });
   }
 

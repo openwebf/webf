@@ -686,6 +686,11 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfNeedsRelayout() {
+    return someRenderBoxSatisfy((renderObject) => renderObject.needsRelayout);
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfBoxModelMatch(RenderBoxModelMatcher matcher) {
     if (attachedRenderBoxModel != null) {
       return matcher(attachedRenderBoxModel!, attachedRenderBoxModel!.renderStyle);
@@ -873,6 +878,14 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   void markNeedsLayout() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
       renderObject?.markNeedsLayout();
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markNeedsRelayout() {
+    everyRenderBox((element, renderObject) {
+      renderObject.markNeedsRelayout();
       return true;
     });
   }
