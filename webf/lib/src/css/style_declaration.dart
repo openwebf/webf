@@ -488,7 +488,7 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
       _emitPropertyChanged(DISPLAY, prevValue?.value, currentValue.value, baseHref: currentValue.baseHref);
     }
 
-    if (_pendingProperties.isEmpty || (!_target.managedByFlutterWidget && !_target.renderStyle.hasRenderBox())) {
+    if (_pendingProperties.isEmpty) {
       return;
     }
 

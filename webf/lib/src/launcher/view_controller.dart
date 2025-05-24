@@ -523,7 +523,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver  
     Node? target = getBindingObject<Node>(Pointer.fromAddress(address));
     if (target == null) return;
 
-    if (target is Element && target.isConnected) {
+    if (target is Element) {
       target.style.flushPendingProperties();
     }
   }
