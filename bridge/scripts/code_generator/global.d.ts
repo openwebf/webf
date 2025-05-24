@@ -2,6 +2,7 @@ declare type int64 = number;
 declare type double = number;
 declare type JSArrayProtoMethod = void;
 
+
 declare interface Dictionary {}
 
 declare interface BlobPart {}
@@ -17,6 +18,6 @@ type StaticMember<T> = T;
 type StaticMethod<T> = T;
 type SupportAsync<T> = T;
 type SupportAsyncManual<T> = T;
-
+type ImplementedAs<T, S> = T;
 
 type DependentsOnLayout<T> = T;

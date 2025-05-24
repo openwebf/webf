@@ -721,6 +721,7 @@ abstract class Element extends ContainerNode
     _states.clear();
     style.dispose();
     attributes.clear();
+    _connectedCompleter = null;
     _attributeProperties.clear();
     ownerDocument.clearElementStyleDirty(this);
     holderAttachedPositionedElement = null;
@@ -864,11 +865,22 @@ abstract class Element extends ContainerNode
     }
   }
 
+  Completer<void>? _connectedCompleter;
+  Future<void> whenConnected() async {
+    if (isConnected) return;
+
+    _connectedCompleter ??= Completer();
+    return _connectedCompleter!.future;
+  }
+
   @override
   void connectedCallback() {
     if (managedByFlutterWidget) {
       applyStyle(style);
       style.flushPendingProperties();
+      if (_connectedCompleter != null) {
+        _connectedCompleter!.complete();
+      }
     }
 
     super.connectedCallback();
@@ -885,6 +897,7 @@ abstract class Element extends ContainerNode
       holderAttachedContainingBlockElement?.removeFixedPositionedElement(this);
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
+    _connectedCompleter = null;
   }
 
   RenderViewportBox? getRootViewport() {
@@ -1052,7 +1065,9 @@ abstract class Element extends ContainerNode
         break;
       case POSITION:
         assert(oldValue != null);
-        _updateHostingWidgetWithPosition(oldValue);
+        whenConnected().then((_) {
+          _updateHostingWidgetWithPosition(oldValue);
+        });
         break;
       case COLOR:
         _updateColorRelativePropertyWithColor(this);
@@ -1269,9 +1284,7 @@ abstract class Element extends ContainerNode
       var hasInheritedPendingProperty = false;
       if (style.merge(newStyle)) {
         hasInheritedPendingProperty = style.hasInheritedPendingProperty;
-        if (isConnected) {
-          style.flushPendingProperties();
-        }
+        style.flushPendingProperties();
       }
 
       if (rebuildNested || hasInheritedPendingProperty) {

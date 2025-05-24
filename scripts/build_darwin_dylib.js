@@ -9,9 +9,6 @@ require('./tasks');
 // Run tasks
 series(
   'generate-bindings-code',
-  'compile-build-tools',
-  'compile-polyfill',
-  'generate-bindings-code',
   'build-darwin-webf-lib',
 )((err) => {
   if (err) {

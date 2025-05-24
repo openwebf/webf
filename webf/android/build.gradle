@@ -44,9 +44,6 @@ android {
         }
     }
 
-    // Use the NDK version
-    ndkVersion = "22.1.7171670"
-
     // Invoke the shared CMake build with the Android Gradle Plugin.
     externalNativeBuild {
         cmake {

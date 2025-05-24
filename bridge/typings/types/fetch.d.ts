@@ -26,7 +26,7 @@ export declare class Headers implements Headers {
 }
 declare class Body {
     _bodyInit: any;
-    body: string | null | Blob;
+    body: string | null | Blob | FormData;
     bodyUsed: boolean;
     headers: Headers;
     constructor();

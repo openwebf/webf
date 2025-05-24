@@ -13,6 +13,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_path_2d.dart';
@@ -157,6 +158,7 @@ enum CreateBindingObjectType {
   createDOMMatrix,
   createPath2D,
   createDOMPoint,
+  createFormData,
 }
 
 abstract class BindingBridge {
@@ -190,6 +192,9 @@ abstract class BindingBridge {
         DOMPoint(BindingContext(controller.view, contextId, pointer), arguments);
         break;
       }
+      case CreateBindingObjectType.createFormData:
+        FormDataBindings(BindingContext(controller.view, contextId, pointer));
+        break;
     }
     if (enableWebFCommandLog) {
       print('CreateBindingObject: $pointer $type arg: $arguments, time: ${stopwatch!.elapsedMicroseconds}us');

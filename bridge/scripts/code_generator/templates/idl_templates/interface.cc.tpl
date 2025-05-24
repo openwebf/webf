@@ -147,15 +147,15 @@ static JSValue <%= overloadMethod.name %>_overload_<%= index %>(JSContext* ctx, 
         <%= generateFunctionBody(blob, overloadMethod, {isInstanceMethod: true}) %>
       }
     <% }); %>
-    static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+    static JSValue qjs_<%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
       <%= generateOverLoadSwitchBody(overloadMethods[method.name]) %>
     }
   <% } else if (method.returnTypeMode && method.returnTypeMode.staticMethod) { %>
-  static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  static JSValue qjs_<%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
     <%= generateFunctionBody(blob, method, {isInstanceMethod: false}) %>
   }
   <% } else { %>
-  static JSValue <%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  static JSValue qjs_<%= method.name %>(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
     <%= generateFunctionBody(blob, method, {isInstanceMethod: true}) %>
   }
   <% } %>

@@ -6,6 +6,7 @@
       "specs/blob/**/*.{js,jsx,ts,tsx,html}",
       "specs/cookie/**/*.{js,jsx,ts,tsx,html}",
       "specs/fetch/**/*.{js,jsx,ts,tsx,html}",
+      "specs/form-data/**/*.{js,jsx,ts,tsx,html}",
       "specs/modules/**/*.{js,jsx,ts,tsx,html}",
       "specs/url/**/*.{js,jsx,ts,tsx,html}",
       "specs/navigator/**/*.{js,jsx,ts,tsx,html}",

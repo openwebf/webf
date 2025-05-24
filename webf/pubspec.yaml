@@ -1,6 +1,6 @@
 name: webf
 description: W3C standards-compliant web rendering engine based on Flutter, allowing web applications to run natively on Flutter.
-version: 0.21.1
+version: 0.21.2
 homepage: https://openwebf.com
 publish_to: https://dart.cloudsmith.io/openwebf/webf-enterprise/
 environment:
@@ -24,6 +24,8 @@ dependencies:
   archive: ^3.3.7 # Pure dart module.
   web_socket_channel: ^3.0.1
   flutter_svg: ^2.0.17
+  easy_refresh: ^3.4.0
+  http_parser: ^4.1.2
 
 dev_dependencies:
   flutter_test:

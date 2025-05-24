@@ -8,7 +8,6 @@
  // Run tasks
  series(
    'generate-bindings-code',
-   'compile-polyfill',
    'build-window-webf-lib'
  )((err) => {
    if (err) {

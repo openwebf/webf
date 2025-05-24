@@ -104,10 +104,19 @@ export class Headers implements Headers {
   }
 }
 
+
+function isArrayBuffer(obj: any) {
+  return Object.prototype.toString.call(obj) == '[object ArrayBuffer]'
+}
+
+function isFormData(obj: any) {
+  return FormData.prototype.isPrototypeOf(obj);
+}
+
 class Body {
   // TODO support readableStream
   _bodyInit: any;
-  body: string | null | Blob;
+  body: string | null | Blob | FormData;
   bodyUsed: boolean;
   headers: Headers;
 
@@ -122,8 +131,10 @@ class Body {
       this.body = '';
     } else if (typeof body === 'string') {
       this.body = body;
-    } else if (Object.prototype.toString.call(body) == '[object ArrayBuffer]') {
+    } else if (isArrayBuffer(body)) {
       this.body = new Blob([body as ArrayBuffer]);
+    } else if (isFormData(body)) {
+      this.body = body as FormData;
     } else {
       this.body = body = Object.prototype.toString.call(body);
     }
@@ -135,13 +146,29 @@ class Body {
     }
   }
 
-  arrayBuffer(): Promise<ArrayBuffer> {
+  async arrayBuffer(): Promise<ArrayBuffer> {
     if (!this.body) return Promise.resolve(new ArrayBuffer(0));
 
     if (typeof this.body === 'string') {
       return new Blob([this.body]).arrayBuffer();
+    } else if (isArrayBuffer(this.body)) {
+      const isConsumed = consumed(this);
+      if (isConsumed) {
+        return isConsumed
+      } else if (ArrayBuffer.isView(this.body)) {
+        return Promise.resolve(
+          this.body.buffer.slice(
+            this.body.byteOffset,
+            this.body.byteOffset + this.body.byteLength
+          )
+        )
+      } else {
+        return Promise.resolve(this.body as unknown as ArrayBuffer);
+      }
+    } else {
+      const blob = await this.blob();
+      return await blob.arrayBuffer();
     }
-    return this.body.arrayBuffer();
   }
 
   async blob(): Promise<Blob> {
@@ -149,6 +176,8 @@ class Body {
 
     if (typeof this.body === 'string') {
       return new Blob([this.body]);
+    } else if (isFormData(this.body as any)) {
+      throw new Error('could not read FormData body as blob')
     }
     return this.body as Blob;
   }
@@ -166,9 +195,11 @@ class Body {
 
     if (typeof this.body === 'string') {
       return JSON.parse(this.body);
+    } else if (isFormData(this.body)) {
+      throw new Error('could not read FormData body as text');
     }
 
-    const txt = await this.body.text();
+    const txt = await (this.body as Blob).text();
     return JSON.parse(txt);
   }
 
@@ -183,9 +214,11 @@ class Body {
 
     if (typeof this.body === 'string') {
       return this.body || '';
+    } else if (FormData.prototype.isPrototypeOf(this.body as any)) {
+      throw new Error('could not read FormData body as text')
     }
 
-    return this.body.text();
+    return (this.body as Blob).text();
   }
 }
 
@@ -337,10 +370,13 @@ export const fetch: Fetch = (input: Request | string, init?: RequestInit): Promi
       webf.invokeModule('Fetch', 'abortRequest');
     }
 
-    webf.invokeModuleAsync('Fetch', request.url, ({
-      ...init,
-      headers: (headers as Headers).map
-    })).then((data: any) => {
+    const params = [
+      init?.body,
+      (headers as Headers).map,
+      init?.method
+    ];
+
+    webf.invokeModuleAsync('Fetch', request.url, ...params).then((data: any) => {
       request.signal.removeEventListener('abort', abortRequest);
       let [err, statusCode, body] = data;
       // network error didn't have statusCode

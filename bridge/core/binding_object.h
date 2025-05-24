@@ -74,6 +74,7 @@ enum CreateBindingObjectType {
   kCreateDOMMatrix = 0,
   kCreatePath2D = 1,
   kCreateDOMPoint = 2,
+  kCreateFormData = 3
 };
 
 struct BindingObjectPromiseContext : public DartReadable {
@@ -123,9 +124,11 @@ class BindingObject : public ScriptWrappable {
 
   void CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& deps, size_t argc, const NativeValue* args) const;
 
+  bool IsBindingObject() const override;
+
   FORCE_INLINE NativeBindingObject* bindingObject() const { return binding_object_; }
 
-  void Trace(GCVisitor* visitor) const;
+  void Trace(GCVisitor* visitor) const override;
 
   inline static BindingObject* From(NativeBindingObject* native_binding_object) {
     if (native_binding_object == nullptr)
@@ -139,6 +142,7 @@ class BindingObject : public ScriptWrappable {
   virtual bool IsComputedCssStyleDeclaration() const;
   virtual bool IsCanvasGradient() const;
   virtual bool IsCanvasRenderingContext2D() const;
+  virtual bool IsFormData() const;
 
  protected:
   void TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context);

@@ -16,7 +16,6 @@ process.env.PATCH_PROMISE_POLYFILL = 'true';
 series(
   'ios-framework-clean',
   'generate-bindings-code',
-  'compile-polyfill',
   'build-ios-webf-lib'
 )((err) => {
   if (err) {

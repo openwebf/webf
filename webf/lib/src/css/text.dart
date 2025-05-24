@@ -61,7 +61,9 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   TextDecoration? _textDecorationLine;
+
   TextDecoration get textDecorationLine => _textDecorationLine ?? TextDecoration.none;
+
   set textDecorationLine(TextDecoration? value) {
     if (_textDecorationLine == value) return;
     _textDecorationLine = value;
@@ -70,6 +72,7 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   CSSColor? _textDecorationColor;
+
   CSSColor? get textDecorationColor {
     return _textDecorationColor;
   }
@@ -82,6 +85,7 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   TextDecorationStyle? _textDecorationStyle;
+
   TextDecorationStyle? get textDecorationStyle {
     return _textDecorationStyle;
   }
@@ -94,6 +98,7 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   FontWeight? _fontWeight;
+
   @override
   FontWeight get fontWeight {
     // Get style from self or closest parent if specified style property is not set
@@ -213,7 +218,9 @@ mixin CSSTextMixin on RenderStyle {
   @override
   CSSLengthValue get lineHeight {
     if (_lineHeight == null && getParentRenderStyle() != null) {
-      return getParentRenderStyle()!.lineHeight;
+      CSSLengthValue parentLengthValue = getParentRenderStyle()!.lineHeight;
+      return CSSLengthValue(parentLengthValue.value, parentLengthValue.type, this, parentLengthValue.propertyName,
+          parentLengthValue.axisType);
     }
 
     return _lineHeight ?? CSSText.DEFAULT_LINE_HEIGHT;
@@ -381,6 +388,7 @@ mixin CSSTextMixin on RenderStyle {
           child.visitChildren(visitor);
         }
       }
+
       renderStyle.visitChildren(visitor);
     }
   }
@@ -421,6 +429,7 @@ mixin CSSTextMixin on RenderStyle {
         child.visitChildren(visitor);
       }
     }
+
     visitChildren(visitor);
   }
 
@@ -439,6 +448,7 @@ mixin CSSTextMixin on RenderStyle {
         child.visitChildren(visitor);
       }
     }
+
     renderStyle.target.visitChildren(visitor);
   }
 
@@ -507,7 +517,7 @@ mixin CSSTextMixin on RenderStyle {
         background: CSSText.getBackground(),
         foreground: CSSText.getForeground(),
         height: height);
-    if(oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
+    if (oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
       return oldTextSpan;
     }
     return WebFTextSpan(text: text, style: textStyle, children: []);
@@ -558,6 +568,7 @@ class CSSText {
   }
 
   static CSSLengthValue DEFAULT_LINE_HEIGHT = CSSLengthValue.normal;
+
   static CSSLengthValue? resolveLineHeight(String value, RenderStyle renderStyle, String propertyName) {
     if (value.isNotEmpty) {
       if (CSSLength.isNonNegativeLength(value) || CSSPercentage.isNonNegativePercentage(value)) {
@@ -743,6 +754,7 @@ class CSSText {
   }
 
   static String? BUILTIN_FONT_PACKAGE;
+
   static String? getFontPackage() {
     return BUILTIN_FONT_PACKAGE;
   }

@@ -64,7 +64,7 @@ Blob* Blob::Create(ExecutingContext* context,
 
 Blob* Blob::Create(ExecutingContext* context,
                    std::vector<std::shared_ptr<BlobPart>>& data,
-                   std::shared_ptr<BlobPropertyBag> property,
+                   std::shared_ptr<BlobOptions> property,
                    ExceptionState& exception_state) {
   return MakeGarbageCollected<Blob>(context->ctx(), data, property);
 }
@@ -94,7 +94,7 @@ Blob* Blob::slice(int64_t start, int64_t end, const AtomicString& content_type, 
   newData.reserve(_data.size() - (end - start));
   newData.insert(newData.begin(), _data.begin() + start, _data.end() - (_data.size() - end));
   newBlob->_data = newData;
-  newBlob->mime_type_ = content_type != built_in_string::kempty_string ? content_type.ToStdString(ctx()) : mime_type_;
+  newBlob->mime_type_ = mime_type_;
   return newBlob;
 }
 
@@ -111,19 +111,19 @@ std::string Blob::Base64Result() {
       modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()), reinterpret_cast<const char*>(bytes()), size());
   assert(output_size == encode_len);
 
-  return "data:" + mime_type_ + ";base64," + buffer;
+  return "data:" + mime_type_.ToStdString(ctx()) + ";base64," + buffer;
 }
 
 ArrayBufferData Blob::ArrayBufferResult() {
   return ArrayBufferData{bytes(), size()};
 }
 
-std::string Blob::type() {
+AtomicString Blob::type() {
   return mime_type_;
 }
 
 void Blob::SetMineType(const std::string& mine_type) {
-  mime_type_ = mine_type;
+  mime_type_ = AtomicString(ctx(), mine_type);
 }
 
 ScriptPromise Blob::arrayBuffer(ExceptionState& exception_state) {
@@ -170,6 +170,10 @@ void Blob::AppendText(const std::string& string) {
   std::vector<uint8_t> strArr(string.begin(), string.end());
   _data.reserve(_data.size() + strArr.size());
   _data.insert(_data.end(), strArr.begin(), strArr.end());
+}
+
+bool Blob::IsFile() const {
+  return false;
 }
 
 void Blob::AppendBytes(uint8_t* buffer, uint32_t length) {

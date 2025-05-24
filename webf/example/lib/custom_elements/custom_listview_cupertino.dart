@@ -4,6 +4,7 @@
  */
 import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
+import 'package:easy_refresh/easy_refresh.dart';
 
 class CustomWebFListViewWithCupertinoRefreshIndicator extends WebFListViewElement {
   CustomWebFListViewWithCupertinoRefreshIndicator(super.context);
@@ -18,5 +19,12 @@ class CustomListViewStateWithCupertinoRefreshIndicator extends WebFListViewState
   CustomListViewStateWithCupertinoRefreshIndicator(super.widgetElement);
 
   @override
-  RefreshControlStyle get refreshControlStyle => RefreshControlStyle.cupertino;
+  Header? buildEasyRefreshHeader() {
+    return CupertinoHeader();
+  }
+
+  @override
+  Footer? buildEasyRefreshFooter() {
+    return CupertinoFooter();
+  }
 }

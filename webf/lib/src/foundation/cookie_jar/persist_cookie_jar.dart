@@ -38,7 +38,7 @@ class PersistCookieJar extends DefaultCookieJar {
 
   late Storage storage;
 
-  late Set<String> _hostSet;
+  Set<String> _hostSet = {};
   bool _initialized = false;
 
   Future<void> forceInit() {

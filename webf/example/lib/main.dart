@@ -42,9 +42,6 @@ import 'modules/share.dart';
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 void main() async {
-  debugProfileLayoutsEnabled = true;
-  debugTracePostFrameCallbacks = true;
-  debugProfileBuildsEnabled = true;
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 

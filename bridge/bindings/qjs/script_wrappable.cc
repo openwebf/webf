@@ -24,6 +24,10 @@ ScriptWrappable::~ScriptWrappable() {
   }
 }
 
+bool ScriptWrappable::IsBindingObject() const {
+  return false;
+}
+
 JSValue ScriptWrappable::ToQuickJS() const {
   return JS_DupValue(ctx_, jsObject_);
 }

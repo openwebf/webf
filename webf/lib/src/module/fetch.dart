@@ -9,7 +9,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/html.dart';
 import 'package:webf/module.dart';
 
 String EMPTY_STRING = '';
@@ -75,7 +77,9 @@ class FetchModule extends BaseModule {
         request.headers.set(HttpHeaderContext, moduleManager!.contextId.toString());
       }
 
-      if (data is List<int>) {
+      if (data is Stream<List<int>>) {
+        request.addStream(data);
+      } else if (data is List<int>) {
         request.add(data);
       } else if (data != null) {
         // Treat as string as default.
@@ -103,7 +107,22 @@ class FetchModule extends BaseModule {
     Completer<dynamic> completer = Completer();
 
     Uri uri = _resolveUri(method);
-    Map<String, dynamic> options = params[0];
+
+    final body = params[0];
+    final headers = params[1];
+    final requestMethod = params[2] ?? 'GET';
+
+    dynamic requestBody;
+
+    if (body is FormDataBindings) {
+      FormData formData = FormData.fromMap(body.storage);
+      requestBody = formData.finalize();
+      headers['content-type'] = 'multipart/form-data; boundary=${formData.boundary}';
+    } else if (body is NativeByteData) {
+      requestBody = body.bytes;
+    } else if (body is String) {
+      requestBody = body;
+    }
 
     _handleError(Object error, StackTrace? stackTrace) {
       completer.completeError(error, stackTrace);
@@ -119,7 +138,7 @@ class FetchModule extends BaseModule {
         currentNetworkOp = WebFProfiler.instance.startTrackNetwork(uri.toString());
       }
 
-      getRequest(uri, options['method'], options['headers'], options['body']).then((HttpClientRequest request) {
+      getRequest(uri, requestMethod, headers, requestBody).then((HttpClientRequest request) {
         if (_disposed) return Future.value(null);
         _currentRequest = request;
         return request.close();

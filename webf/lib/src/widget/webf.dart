@@ -200,7 +200,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
           bundle: widget.bundle!,
           routes: widget.routes,
           setup: widget.setup,
-          forceReplace: false);
+          forceReplace: true);
 
       // If the newController was null, it means there exist concurrency loading.
       // Get the winner controller
@@ -603,6 +603,13 @@ class WebFStateElement extends StatefulElement {
         await _loadingInPreloadMode();
       } else if (controller.mode == WebFLoadingMode.preRendering) {
         await _loadingInPreRenderingMode();
+      }
+
+      bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;
+      String initialRoute = widget.initialRoute ?? widget.controller.initialRoute ?? '/';
+
+      if (hasInitialRoute && initialRoute != '/') {
+        await widget.controller.view.awaitForHybridRouteLoaded(initialRoute);
       }
 
       controller.evaluated = true;

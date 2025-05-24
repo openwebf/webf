@@ -234,10 +234,11 @@ class CSSLengthValue {
         }
 
         // Percentage relative height priority: logical height > renderer height
-        double? parentPaddingBoxHeight =
-            parentRenderStyle?.paddingBoxLogicalHeight ?? parentRenderStyle?.paddingBoxHeight;
-        double? parentContentBoxHeight =
-            parentRenderStyle?.contentBoxLogicalHeight ?? parentRenderStyle?.contentBoxHeight;
+        double? parentPaddingBoxHeight = parentRenderStyle?.paddingBoxLogicalHeight ??
+            // Only use the previous layout size if there
+            (parentRenderStyle?.isSelfNeedsRelayout() == true ? null : parentRenderStyle?.paddingBoxHeight);
+        double? parentContentBoxHeight = parentRenderStyle?.contentBoxLogicalHeight ??
+            (parentRenderStyle?.isSelfNeedsRelayout() == true ? null : parentRenderStyle?.contentBoxHeight);
         double? parentContentBoxLogicalHeight = parentRenderStyle?.contentBoxLogicalHeight;
 
         if (shouldInheritRenderWidgetElementConstraintsHeight) {

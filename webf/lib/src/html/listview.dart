@@ -3,13 +3,13 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show RefreshIndicator;
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:meta/meta.dart';
+import 'package:webf/css.dart';
 import 'package:webf/src/css/position.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:easy_refresh/easy_refresh.dart';
 
 /// Tag name for the ListView element in HTML
 const LISTVIEW = 'LISTVIEW';
@@ -69,6 +69,72 @@ class WebFListViewElement extends WidgetElement {
   WebFWidgetElementState createState() {
     return WebFListViewState(this);
   }
+
+  /// Parses a string indicator result to the corresponding EasyRefresh IndicatorResult enum
+  /// 
+  /// @param result The result string, can be 'success', 'fail', 'noMore' or any other value
+  /// @return The corresponding IndicatorResult enum value
+  ///   - IndicatorResult.success for 'success'
+  ///   - IndicatorResult.fail for 'fail'
+  ///   - IndicatorResult.noMore for 'noMore'
+  ///   - IndicatorResult.none for any other value
+  IndicatorResult _parseIndicatorResult(String result) {
+    IndicatorResult indicatorResult;
+    switch (result) {
+      case 'success':
+        indicatorResult = IndicatorResult.success;
+        break;
+      case 'fail':
+        indicatorResult = IndicatorResult.fail;
+        break;
+      case 'noMore':
+        indicatorResult = IndicatorResult.noMore;
+        break;
+      default:
+        indicatorResult = IndicatorResult.none;
+    }
+    return indicatorResult;
+  }
+
+  /// Completes a refresh operation with the specified result
+  /// 
+  /// This method finishes the current pull-to-refresh operation and displays
+  /// the appropriate indicator based on the result parameter.
+  /// 
+  /// @param result The result of the refresh operation, can be:
+  ///   - 'success': The refresh was successful (default)
+  ///   - 'fail': The refresh operation failed
+  ///   - 'noMore': There is no more data to refresh
+  ///   - Any other value: No specific result indicator is shown
+  void finishRefresh(String result) {
+    state?.refreshController.finishRefresh(_parseIndicatorResult(result));
+  }
+
+  /// Completes a load-more operation with the specified result
+  /// 
+  /// This method finishes the current load-more operation and displays
+  /// the appropriate indicator based on the result parameter.
+  /// 
+  /// @param result The result of the load-more operation, can be:
+  ///   - 'success': The load operation was successful (default)
+  ///   - 'fail': The load operation failed
+  ///   - 'noMore': There is no more data to load
+  ///   - Any other value: No specific result indicator is shown
+  void finishLoad(String result) {
+    state?.refreshController.finishLoad(_parseIndicatorResult(result));
+  }
+
+  static StaticDefinedSyncBindingObjectMethodMap listViewMethods = {
+    'finishRefresh': StaticDefinedSyncBindingObjectMethod(
+        call: (bindingObject, args) =>
+            castToType<WebFListViewElement>(bindingObject).finishRefresh(args.isNotEmpty ? args[0] : 'success')),
+    'finishLoad': StaticDefinedSyncBindingObjectMethod(
+        call: (bindingObject, args) =>
+            castToType<WebFListViewElement>(bindingObject).finishLoad(args.isNotEmpty ? args[0] : 'success'))
+  };
+
+  @override
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, listViewMethods];
 }
 
 /// State class for the FlutterListViewElement
@@ -91,6 +157,15 @@ class WebFListViewState extends WebFWidgetElementState {
   /// scrolling, and allows listening to scroll events.
   final ScrollController? scrollController = ScrollController();
 
+  /// Controller for the EasyRefresh widget that manages refresh and loading states
+  ///
+  /// This controller provides programmatic control over refresh and load operations,
+  /// including the ability to manually trigger or finish these operations from code.
+  /// The controlFinishLoad and controlFinishRefresh flags are set to true to enable
+  /// manual control over when refresh and load operations complete.
+  final EasyRefreshController refreshController =
+      EasyRefreshController(controlFinishLoad: true, controlFinishRefresh: true);
+
   /// Returns the widget element as a FlutterListViewElement
   ///
   /// This provides type-safe access to the parent element properties and methods.
@@ -108,6 +183,7 @@ class WebFListViewState extends WebFWidgetElementState {
     super.dispose();
     scrollController?.removeListener(_scrollListener);
     scrollController?.dispose();
+    refreshController.dispose();
   }
 
   /// Sets up dependencies when the state is initialized or dependencies change
@@ -120,15 +196,6 @@ class WebFListViewState extends WebFWidgetElementState {
     super.didChangeDependencies();
     scrollController?.addListener(_scrollListener);
   }
-
-  /// Tracks whether the list is currently loading more items
-  ///
-  /// When true, the loading indicator is shown at the bottom of the list and
-  /// additional 'loadmore' events are prevented until loading completes.
-  bool _isLoadingMore = false;
-
-  /// Returns whether the list is currently loading more items
-  bool get isLoadingMore => _isLoadingMore;
 
   /// Listens to scroll events from the ScrollController
   ///
@@ -148,104 +215,22 @@ class WebFListViewState extends WebFWidgetElementState {
       // Handle load more
       final position = scrollController!.position;
       widgetElement.handleScroll(position.pixels, position.axisDirection);
-      handleScroll();
     } catch (e) {
       return;
     }
   }
 
-  /// The style of refresh control to use
+  /// Flag that tracks whether a refresh operation is currently in progress
   ///
-  /// - [RefreshControlStyle.platform]: Use platform default style
-  /// - [RefreshControlStyle.material]: Force Material style
-  /// - [RefreshControlStyle.cupertino]: Force Cupertino style
+  /// This is used to implement an automatic timeout for refresh operations
+  /// that aren't explicitly completed by calling finishRefresh()
+  bool _isRefreshing = false;
+  
+  /// Flag that tracks whether a load-more operation is currently in progress
   ///
-  /// This property can be overridden by subclasses to customize the refresh control style.
-  @protected
-  RefreshControlStyle get refreshControlStyle => RefreshControlStyle.platform;
-
-  /// Builds the refresh indicator widget
-  ///
-  /// Override this method to provide custom refresh indicator UI.
-  /// The default implementation returns null, which means using platform default.
-  ///
-  /// Example:
-  /// ```dart
-  /// @override
-  /// Widget? buildRefreshIndicator() {
-  ///   return CupertinoSliverRefreshControl(
-  ///     builder: (context, refreshState, pulledExtent, refreshTriggerPullDistance, refreshIndicatorExtent) {
-  ///       return Container(
-  ///         height: refreshIndicatorExtent,
-  ///         alignment: Alignment.center,
-  ///         child: Image.asset('assets/logo.png'),
-  ///       );
-  ///     },
-  ///     onRefresh: () async {
-  ///       if (widgetElement.hasEventListener('refresh')) {
-  ///         widgetElement.dispatchEvent(dom.Event('refresh'));
-  ///         await Future.delayed(const Duration(seconds: 2));
-  ///       }
-  ///     },
-  ///   );
-  /// }
-  /// ```
-  @protected
-  Widget? buildRefreshIndicator() {
-    return null;
-  }
-
-  /// Builds the loading indicator widget for load more functionality
-  ///
-  /// Override this method to customize the loading indicator UI.
-  /// The default implementation shows a CupertinoActivityIndicator.
-  ///
-  /// Example:
-  /// ```dart
-  /// @override
-  /// Widget buildLoadMoreIndicator() {
-  ///   return Image.asset('assets/logo.png');
-  /// }
-  /// ```
-  @protected
-  Widget buildLoadMoreIndicator() {
-    return const CupertinoActivityIndicator();
-  }
-
-  /// Builds a widget that displays a loading indicator when loading more items
-  ///
-  /// This method handles the event listener check and delegates the actual loading indicator
-  /// building to buildLoadMoreIndicator().
-  ///
-  /// This method is internal and should not be overridden by subclasses.
-  /// To customize the loading indicator, override buildLoadMoreIndicator() instead.
-  @nonVirtual
-  @protected
-  Widget buildLoadMore() {
-    return widgetElement.hasEventListener('loadmore') ? Container(
-      height: 50,
-      alignment: Alignment.center,
-      child: isLoadingMore ? buildLoadMoreIndicator() : const SizedBox.shrink(),
-    ) : const SizedBox.shrink();
-  }
-
-  /// Handles scroll events from the list view
-  @nonVirtual
-  @protected
-  void handleScroll() {
-    final position = scrollController!.position;
-    if (position.extentAfter < 100 && !isLoadingMore && widgetElement.hasEventListener('loadmore')) {
-      _isLoadingMore = true;
-      widgetElement.dispatchEvent(dom.Event('loadmore'));
-      setState(() {});
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (mounted) {
-          _isLoadingMore = false;
-          setState(() {});
-        }
-      });
-    }
-  }
+  /// This is used to implement an automatic timeout for load operations
+  /// that aren't explicitly completed by calling finishLoad()
+  bool _isLoading = false;
 
   /// Builds a widget for a specific index in the list view
   ///
@@ -259,10 +244,6 @@ class WebFListViewState extends WebFWidgetElementState {
   @nonVirtual
   @protected
   Widget buildListViewItemByIndex(int index) {
-    if (index == widgetElement.childNodes.length) {
-      return buildLoadMore();
-    }
-
     Node? node = widgetElement.childNodes.elementAt(index);
     if (node is dom.Element) {
       CSSPositionType positionType = node.renderStyle.position;
@@ -275,120 +256,70 @@ class WebFListViewState extends WebFWidgetElementState {
     return node.toWidget();
   }
 
+  /// Builds the header widget for pull-to-refresh functionality
+  ///
+  /// This method can be overridden by subclasses to customize the pull-to-refresh header.
+  /// By default, it returns null, which causes EasyRefresh to use its default header.
+  ///
+  /// @return A custom Header widget, or null to use the default
+  Header? buildEasyRefreshHeader() {
+    return null;
+  }
+
+  /// Builds the footer widget for load-more functionality
+  ///
+  /// This method can be overridden by subclasses to customize the load-more footer.
+  /// By default, it returns null, which causes EasyRefresh to use its default footer.
+  ///
+  /// @return A custom Footer widget, or null to use the default
+  Footer? buildEasyRefreshFooter() {
+    return null;
+  }
+
   /// Builds the list view widget
   ///
-  /// This method creates a CustomScrollView with the following components:
-  /// - A scroll controller for managing scroll position and listening to scroll events
-  /// - The scroll physics configured for the list
-  /// - The configured scroll direction (vertical or horizontal)
-  /// - A sliver list containing all child nodes plus the load-more indicator
-  /// - A refresh control for pull-to-refresh functionality
+  /// This method creates an EasyRefresh widget with the following components:
+  /// - Custom header and footer components (if provided by buildEasyRefreshHeader/Footer)
+  /// - Event handlers for refresh and load-more operations
+  /// - Automatic timeout handling for refresh and load operations
+  /// - A ListView.builder as the main content with:
+  ///   - A scroll controller for managing scroll position and listening to scroll events
+  ///   - The configured scroll direction (vertical or horizontal)
+  ///   - Dynamic item building based on child nodes
   ///
-  /// The resulting scroll view is wrapped in a WebFChildNodeSize widget to properly
-  /// size it according to the parent element, and conditionally wrapped in a
-  /// platform-specific refresh indicator based on the hasRefreshIndicator() result.
+  /// The EasyRefresh widget provides pull-to-refresh and load-more functionality with
+  /// customizable indicators and behavior. It dispatches 'refresh' and 'loadmore' events
+  /// that can be handled in JavaScript.
   @override
   Widget build(BuildContext context) {
-    Widget scrollView = CustomScrollView(
-      controller: scrollController,
-      physics: scrollPhysics,
-      scrollDirection: widgetElement.scrollDirection,
-      slivers: [
-        _buildRefreshControl(),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (BuildContext context, int index) {
-              return buildListViewItemByIndex(index);
-            },
-            childCount: widgetElement.childNodes.length + 1,
-          ),
-        ),
-      ],
-    );
-
-    // If custom refresh indicator is provided, use it
-    final customIndicator = buildRefreshIndicator();
-    if (customIndicator != null) {
-      return WebFChildNodeSize(
-        ownerElement: widgetElement,
-        child: scrollView,
-      );
-    }
-
-    final isCupertinoStyle = refreshControlStyle == RefreshControlStyle.cupertino ||
-        (refreshControlStyle == RefreshControlStyle.platform &&
-            (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS));
-
-    if (isCupertinoStyle) {
-      return WebFChildNodeSize(
-        ownerElement: widgetElement,
-        child: scrollView,
-      );
-    } else {
-      // Material style
-      return WebFChildNodeSize(
-        ownerElement: widgetElement,
-        child: RefreshIndicator(
-          onRefresh: () async {
-            if (widgetElement.hasEventListener('refresh')) {
-              widgetElement.dispatchEvent(dom.Event('refresh'));
-              await Future.delayed(const Duration(seconds: 2));
-            }
-          },
-          child: scrollView,
-        ),
-      );
-    }
-  }
-
-  Widget _buildRefreshControl() {
-    // If custom refresh indicator is provided, use it
-    final customIndicator = buildRefreshIndicator();
-    if (customIndicator != null) {
-      return customIndicator;
-    }
-
-    final isCupertinoStyle = refreshControlStyle == RefreshControlStyle.cupertino ||
-        (refreshControlStyle == RefreshControlStyle.platform &&
-            (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS));
-
-    if (isCupertinoStyle) {
-      return CupertinoSliverRefreshControl(
-        onRefresh: () async {
-          if (widgetElement.hasEventListener('refresh')) {
-            widgetElement.dispatchEvent(dom.Event('refresh'));
-            await Future.delayed(const Duration(seconds: 2));
+    return EasyRefresh(
+        header: buildEasyRefreshHeader(),
+        footer: buildEasyRefreshFooter(),
+        onLoad: () async {
+          await widgetElement.dispatchEvent(Event('loadmore'));
+          _isLoading = true;
+          await Future.delayed(Duration(seconds: 4));
+          if (_isLoading) {
+            refreshController.finishLoad();
+            _isLoading = false;
           }
         },
-      );
-    } else {
-      // Material style doesn't need a sliver refresh control
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
-    }
+        onRefresh: () async {
+          await widgetElement.dispatchEvent(Event('refresh'));
+          _isRefreshing = true;
+          await Future.delayed(Duration(seconds: 4));
+          if (_isRefreshing) {
+            refreshController.finishRefresh();
+            _isRefreshing = false;
+          }
+        },
+        controller: refreshController,
+        child: ListView.builder(
+            controller: scrollController,
+            scrollDirection: widgetElement.scrollDirection,
+            itemCount: widgetElement.childNodes.length,
+            itemBuilder: (context, index) {
+              return buildListViewItemByIndex(index);
+            }));
   }
-
-  /// Defines the scroll physics to use for the list view
-  ///
-  /// Returns a BouncingScrollPhysics with AlwaysScrollableScrollPhysics as parent,
-  /// which provides iOS-style bouncing overscroll effect and ensures the list view
-  /// is always scrollable even when content fits within the viewport.
-  ///
-  /// The bounce effect provides visual feedback to users when they reach the edges of
-  /// the content and enhances the pull-to-refresh experience.
-  ScrollPhysics get scrollPhysics =>
-      const BouncingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      );
-}
-
-/// The style of refresh control to use
-enum RefreshControlStyle {
-  /// Use platform default style (Material on Android, Cupertino on iOS/macOS)
-  platform,
-
-  /// Force Material style
-  material,
-
-  /// Force Cupertino style
-  cupertino,
 }

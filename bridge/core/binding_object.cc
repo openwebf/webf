@@ -407,6 +407,10 @@ void BindingObject::CollectElementDepsOnArgs(std::vector<NativeBindingObject*>& 
   }
 }
 
+bool BindingObject::IsBindingObject() const {
+  return true;
+}
+
 void BindingObject::Trace(GCVisitor* visitor) const {
   for (auto&& promise_context : pending_promise_contexts_) {
     promise_context->promise_resolver->Trace(visitor);
@@ -430,6 +434,10 @@ bool BindingObject::IsCanvasGradient() const {
 }
 
 bool BindingObject::IsCanvasRenderingContext2D() const {
+  return false;
+}
+
+bool BindingObject::IsFormData() const {
   return false;
 }
 
