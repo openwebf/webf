@@ -13,7 +13,7 @@
           <!-- Two-way Binding -->
           <div class="component-item">
             <div class="item-label">Two-way Binding</div>
-            <flutter-cupertino-textarea 
+            <flutter-cupertino-textarea
               :val="textareaContent"
               placeholder="Enter content"
               @input="onTextareaChange"
@@ -27,12 +27,12 @@
           <div class="component-item">
             <div class="item-label">Rows Control</div>
             <div class="textarea-row">
-              <flutter-cupertino-textarea 
-                placeholder="2 rows (default)" 
+              <flutter-cupertino-textarea
+                placeholder="2 rows (default)"
                 :rows="2"
               />
-              <flutter-cupertino-textarea 
-                placeholder="4 rows" 
+              <flutter-cupertino-textarea
+                placeholder="4 rows"
                 :rows="4"
               />
             </div>
@@ -41,18 +41,18 @@
           <!-- Auto Size -->
           <div class="component-item">
             <div class="item-label">Auto Size</div>
-            <flutter-cupertino-textarea 
-              placeholder="Auto size textarea" 
-              autoSize
+            <flutter-cupertino-textarea
+              placeholder="Auto size textarea"
+              auto-size
             />
           </div>
 
           <!-- Maximum Length -->
           <div class="component-item">
             <div class="item-label">Maximum Length with Counter</div>
-            <flutter-cupertino-textarea 
-              placeholder="Maximum 100 characters" 
-              :maxLength="100"
+            <flutter-cupertino-textarea
+              placeholder="Maximum 100 characters"
+              :max-length="100"
               show-count
             />
           </div>
@@ -61,13 +61,13 @@
           <div class="component-item">
             <div class="item-label">Disabled State</div>
             <div class="textarea-row">
-              <flutter-cupertino-textarea 
-                val="This textarea is disabled" 
-                disabled 
+              <flutter-cupertino-textarea
+                val="This textarea is disabled"
+                disabled
               />
-              <flutter-cupertino-textarea 
-                val="This textarea is read-only" 
-                readonly 
+              <flutter-cupertino-textarea
+                val="This textarea is read-only"
+                readonly
               />
             </div>
           </div>
@@ -76,12 +76,12 @@
           <div class="component-item">
             <div class="item-label">Custom Styles</div>
             <div class="textarea-row">
-              <flutter-cupertino-textarea 
-                placeholder="Transparent background" 
+              <flutter-cupertino-textarea
+                placeholder="Transparent background"
                 transparent
               />
-              <flutter-cupertino-textarea 
-                placeholder="Custom border radius" 
+              <flutter-cupertino-textarea
+                placeholder="Custom border radius"
                 class="custom-radius"
               />
             </div>
@@ -167,4 +167,4 @@ export default {
   font-size: 14px;
   color: var(--font-color-secondary);
 }
-</style> 
+</style>

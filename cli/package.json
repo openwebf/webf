@@ -1,0 +1,25 @@
+{
+  "name": "@openwebf/webf",
+  "version": "0.0.1",
+  "description": "Command line tools for WebF",
+  "main": "index.js",
+  "bin": {
+    "webf": "./bin/webf.js"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/lodash": "^4.17.17",
+    "@types/node": "^22.15.21"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "lodash": "^4.17.21",
+    "typescript": "^5.8.3"
+  }
+}

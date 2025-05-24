@@ -4,23 +4,61 @@
  */
 import 'package:flutter/cupertino.dart';
 
-// import 'package:flutter/material.dart'; // No longer needed
 import 'package:webf/webf.dart';
+import 'radio_bindings_generated.dart';
 
-class FlutterCupertinoRadio extends WidgetElement {
+class FlutterCupertinoRadio extends FlutterCupertinoRadioBindings {
   FlutterCupertinoRadio(super.context);
 
-  // Internal state - values are stored as strings from attributes
-  String? _value;
+  String? _val;
   String? _groupValue;
   bool _useCheckmarkStyle = false;
   bool _disabled = false;
-  Color? _activeColor;
-  Color? _focusColor;
+  String? _activeColor;
+  String? _focusColor;
 
-  // Color? _fillColorSelected; // Removed
+  @override
+  String? get val => _val;
+  @override
+  set val(value) {
+    _val = value;
+  }
 
-  // Helper to parse color string
+  @override
+  String? get groupValue => _groupValue;
+  @override
+  set groupValue(value) {
+    _groupValue = value;
+  }
+
+  @override
+  bool get useCheckmarkStyle => _useCheckmarkStyle;
+  @override
+  set useCheckmarkStyle(value) {
+    _useCheckmarkStyle = value != 'false';
+  }
+
+  @override
+  bool get disabled => _disabled;
+  @override
+  set disabled(value) {
+    _disabled = value != 'false';
+  }
+
+  @override
+  String? get activeColor => _activeColor;
+  @override
+  set activeColor(value) {
+    _activeColor = value;
+  }
+
+  @override
+  String? get focusColor => _focusColor;
+  @override
+  set focusColor(value) {
+    _focusColor = value;
+  }
+
   Color? _parseColor(String? colorString) {
     if (colorString == null || colorString.isEmpty) return null;
     if (colorString.startsWith('#')) {
@@ -40,77 +78,6 @@ class FlutterCupertinoRadio extends WidgetElement {
   }
 
   @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    // The value this radio represents
-    attributes['val'] = ElementAttributeProperty(
-        getter: () => _value ?? '',
-        setter: (val) {
-          if (val != _value) {
-            _value = val;
-            state?.requestUpdateState();
-          }
-        });
-
-    // The currently selected value in the group
-    attributes['group-value'] = ElementAttributeProperty(
-        getter: () => _groupValue ?? '',
-        setter: (val) {
-          if (val != _groupValue) {
-            _groupValue = val;
-            state?.requestUpdateState();
-          }
-        });
-
-    // Use checkmark style
-    attributes['use-checkmark-style'] = ElementAttributeProperty(
-        getter: () => _useCheckmarkStyle.toString(),
-        setter: (val) {
-          bool newValue = (val != 'false');
-          if (newValue != _useCheckmarkStyle) {
-            _useCheckmarkStyle = newValue;
-            state?.requestUpdateState();
-          }
-        });
-
-    // Disabled state
-    attributes['disabled'] = ElementAttributeProperty(
-        getter: () => _disabled.toString(),
-        setter: (val) {
-          bool newValue = (val != 'false');
-          if (newValue != _disabled) {
-            _disabled = newValue;
-            state?.requestUpdateState();
-          }
-        });
-
-    // Active color (Color when selected)
-    attributes['active-color'] = ElementAttributeProperty(
-        getter: () => _activeColor?.value.toRadixString(16),
-        setter: (val) {
-          Color? newColor = _parseColor(val);
-          if (newColor != _activeColor) {
-            _activeColor = newColor;
-            state?.requestUpdateState();
-          }
-        });
-
-    // Focus color
-    attributes['focus-color'] = ElementAttributeProperty(
-        getter: () => _focusColor?.value.toRadixString(16),
-        setter: (val) {
-          Color? newColor = _parseColor(val);
-          if (newColor != _focusColor) {
-            _focusColor = newColor;
-            state?.requestUpdateState();
-          }
-        });
-
-    // Removed fill-color-selected attribute
-  }
-
-  @override
   WebFWidgetElementState createState() {
     return FlutterCupertinoRadioState(this);
   }
@@ -125,22 +92,22 @@ class FlutterCupertinoRadioState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     return IgnorePointer(
-        ignoring: widgetElement._disabled,
-        child: Opacity(
-          opacity: widgetElement._disabled ? 0.5 : 1.0,
-          child: CupertinoRadio<String>(
-            value: widgetElement._value ?? '',
-            groupValue: widgetElement._groupValue,
-            useCheckmarkStyle: widgetElement._useCheckmarkStyle,
-            activeColor: widgetElement._activeColor,
-            // Directly use the active color
-            focusColor: widgetElement._focusColor,
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                widgetElement.dispatchEvent(CustomEvent('change', detail: newValue));
-              }
-            },
-          ),
-        ));
+      ignoring: widgetElement.disabled,
+      child: Opacity(
+        opacity: widgetElement.disabled ? 0.5 : 1.0,
+        child: CupertinoRadio<String>(
+          value: widgetElement.val ?? '',
+          groupValue: widgetElement.groupValue,
+          useCheckmarkStyle: widgetElement.useCheckmarkStyle,
+          activeColor: widgetElement._parseColor(widgetElement.activeColor),
+          focusColor: widgetElement._parseColor(widgetElement.focusColor),
+          onChanged: (String? newValue) {
+            if (newValue != null) {
+              widgetElement.dispatchEvent(CustomEvent('change', detail: newValue));
+            }
+          },
+        ),
+      )
+    );
   }
 }

@@ -5,9 +5,30 @@
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
+import 'picker_bindings_generated.dart';
 
-class FlutterCupertinoPicker extends WidgetElement {
+class FlutterCupertinoPicker extends FlutterCupertinoPickerBindings {
   FlutterCupertinoPicker(super.context);
+
+  int? _height;
+  int? _itemHeight;
+
+  @override
+  int? get height => _height;
+  @override
+  set height(value) {
+    _height = int.tryParse(value.toString());
+  }
+
+  @override
+  int? get itemHeight => _itemHeight;
+  @override
+  set itemHeight(value) {
+    _itemHeight = int.tryParse(value.toString());
+  }
+
+  @override
+  FlutterCupertinoPickerState? get state => super.state as FlutterCupertinoPickerState?;
 
   @override
   WebFWidgetElementState createState() {
@@ -37,9 +58,9 @@ class FlutterCupertinoPickerState extends WebFWidgetElementState {
     }
 
     return SizedBox(
-      height: double.tryParse(widgetElement.getAttribute('height') ?? '') ?? 200,
+      height: widgetElement.height?.toDouble() ?? 200,
       child: CupertinoPicker(
-        itemExtent: double.tryParse(widgetElement.getAttribute('item-height') ?? '') ?? 32,
+        itemExtent: widgetElement.itemHeight?.toDouble() ?? 32,
         onSelectedItemChanged: (index) {
           final selectedElement = widgetElement.childNodes.whereType<dom.Element>().elementAt(index);
           final value = selectedElement.getAttribute('val') ?? selectedElement.getAttribute('label') ?? '';

@@ -6,51 +6,43 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/css.dart';
+import 'button_bindings_generated.dart';
 
-class FlutterCupertinoButton extends WidgetElement {
+class FlutterCupertinoButton extends FlutterCupertinoButtonBindings {
   FlutterCupertinoButton(super.context);
-
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    // Button variant: filled | tinted | plain
-    attributes['variant'] = ElementAttributeProperty(
-      getter: () => _variant,
-      setter: (value) {
-        _variant = value;
-      }
-    );
-
-    // Button size: small | large
-    attributes['size'] = ElementAttributeProperty(
-      getter: () => _sizeStyle,
-      setter: (value) {
-        _sizeStyle = value;
-      }
-    );
-
-    // Whether the button is disabled
-    attributes['disabled'] = ElementAttributeProperty(
-      getter: () => _disabled.toString(),
-      setter: (value) {
-        _disabled = value != 'false';
-      }
-    );
-
-    // The opacity when the button is pressed
-    attributes['pressed-opacity'] = ElementAttributeProperty(
-      getter: () => _pressedOpacity.toString(),
-      setter: (value) {
-        _pressedOpacity = double.tryParse(value) ?? 0.4;
-      }
-    );
-  }
 
   String _variant = 'plain';  // plain | filled | tinted
   String _sizeStyle = 'small';   // small | large
   bool _disabled = false;
   double _pressedOpacity = 0.4;
+
+  @override
+  String get variant => _variant;
+  @override
+  set variant(value) {
+    _variant = value;
+  }
+
+  @override
+  String get size => _sizeStyle;
+  @override
+  set size(value) {
+    _sizeStyle = value;
+  }
+
+  @override
+  bool get disabled => _disabled;
+  @override
+  set disabled(value) {
+    _disabled = value != 'false';
+  }
+
+  @override
+  String get pressedOpacity => _pressedOpacity.toString();
+  @override
+  set pressedOpacity(value) {
+    _pressedOpacity = double.tryParse(value) ?? 0.4;
+  }
 
   double getDefaultMinSize() {
     return _sizeStyle == 'small' ? 32.0 : 44.0;
@@ -214,5 +206,4 @@ class FlutterCupertinoButtonState extends WebFWidgetElementState {
       child: button,
     );
   }
-
 }

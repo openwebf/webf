@@ -6,9 +6,29 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:webf/webf.dart';
+import 'icon_bindings_generated.dart';
 
-class FlutterCupertinoIcon extends WidgetElement {
+class FlutterCupertinoIcon extends FlutterCupertinoIconBindings {
   FlutterCupertinoIcon(super.context);
+
+  String? _type;
+  String? _label;
+
+  @override
+  String? get type => _type;
+
+  @override
+  set type(dynamic value) {
+    _type = value?.toString();
+  }
+
+  @override
+  String? get label => _label;
+
+  @override
+  set label(dynamic value) {
+    _label = value?.toString();
+  }
 
   static final Map<String, IconData> _iconMap = {
     'add': CupertinoIcons.add,
@@ -154,14 +174,14 @@ class FlutterCupertinoIconState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
-    IconData? iconType = FlutterCupertinoIcon.getIconType(widgetElement.getAttribute('type') ?? '');
+    IconData? iconType = FlutterCupertinoIcon.getIconType(widgetElement.type ?? '');
     if (iconType == null) return SizedBox.shrink();
 
     return Icon(
       iconType,
       color: widgetElement.renderStyle.color.value,
       size: widgetElement.renderStyle.fontSize.value,
-      semanticLabel: widgetElement.getAttribute('label') ?? 'Text to announce in accessibility modes',
+      semanticLabel: widgetElement.label ?? 'Text to announce in accessibility modes',
     );
   }
 }

@@ -5,14 +5,43 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:webf/webf.dart';
+import 'switch_bindings_generated.dart';
 
-class FlutterCupertinoSwitch extends WidgetElement {
+class FlutterCupertinoSwitch extends FlutterCupertinoSwitchBindings {
   FlutterCupertinoSwitch(super.context);
 
   bool _checked = false;
   bool _disabled = false;
-  Color? _activeColor;
-  Color? _inactiveColor;
+  String? _activeColor;
+  String? _inactiveColor;
+
+  @override
+  bool get checked => _checked;
+  @override
+  set checked(value) {
+    _checked = value == 'true';
+  }
+
+  @override
+  bool get disabled => _disabled;
+  @override
+  set disabled(value) {
+    _disabled = value != 'false';
+  }
+
+  @override
+  String? get activeColor => _activeColor;
+  @override
+  set activeColor(value) {
+    _activeColor = value;
+  }
+
+  @override
+  String? get inactiveColor => _inactiveColor;
+  @override
+  set inactiveColor(value) {
+    _inactiveColor = value;
+  }
 
   Color? _parseColor(String? colorString) {
     if (colorString == null) return null;
@@ -25,43 +54,6 @@ class FlutterCupertinoSwitch extends WidgetElement {
       return Color(int.parse(hex, radix: 16));
     }
     return null;
-  }
-
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    // Switch value
-    attributes['checked'] = ElementAttributeProperty(
-      getter: () => _checked.toString(),
-      setter: (value) {
-        _checked = value == 'true';
-      }
-    );
-
-    // Whether the switch is disabled
-    attributes['disabled'] = ElementAttributeProperty(
-      getter: () => _disabled.toString(),
-      setter: (value) {
-        _disabled = value != 'false';
-      }
-    );
-
-    // The color of the active state
-    attributes['active-color'] = ElementAttributeProperty(
-      getter: () => _activeColor?.toString(),
-      setter: (value) {
-        _activeColor = _parseColor(value);
-      }
-    );
-
-    // The color of the inactive state
-    attributes['inactive-color'] = ElementAttributeProperty(
-      getter: () => _inactiveColor?.toString(),
-      setter: (value) {
-        _inactiveColor = _parseColor(value);
-      }
-    );
   }
 
   @override
@@ -79,20 +71,20 @@ class FlutterCupertinoSwitchState extends WebFWidgetElementState {
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: widgetElement._disabled ? 0.5 : 1.0,
+      opacity: widgetElement.disabled ? 0.5 : 1.0,
       child: CupertinoSwitch(
         // Basic properties
-        value: widgetElement._checked,
-        onChanged: widgetElement._disabled ? null : (bool value) {
-          widgetElement._checked = value;
+        value: widgetElement.checked,
+        onChanged: widgetElement.disabled ? null : (bool value) {
+          widgetElement.checked = value.toString();
           setState(() {
             widgetElement.dispatchEvent(CustomEvent('change', detail: value));
           });
         },
 
         // Track color
-        activeTrackColor: widgetElement._activeColor ?? CupertinoColors.systemBlue,
-        inactiveTrackColor: widgetElement._inactiveColor,
+        activeTrackColor: widgetElement._parseColor(widgetElement.activeColor) ?? CupertinoColors.systemBlue,
+        inactiveTrackColor: widgetElement._parseColor(widgetElement.inactiveColor),
 
         dragStartBehavior: DragStartBehavior.start,
       ),

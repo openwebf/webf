@@ -5,80 +5,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Colors;
 import 'package:webf/webf.dart';
+import 'textarea_bindings_generated.dart';
 
-class FlutterCupertinoTextArea extends WidgetElement {
+class FlutterCupertinoTextArea extends FlutterCupertinoTextareaBindings {
   FlutterCupertinoTextArea(super.context);
 
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    attributes['val'] = ElementAttributeProperty(
-      getter: () => state?._controller.text,
-      setter: (value) {
-        if (value != state?._controller.text) {
-          state?._controller.text = value;
-        }
-      }
-    );
-
-    attributes['placeholder'] = ElementAttributeProperty(
-      getter: () => _placeholder,
-      setter: (value) {
-        _placeholder = value;
-      }
-    );
-
-    attributes['disabled'] = ElementAttributeProperty(
-      getter: () => _disabled.toString(),
-      setter: (value) {
-        _disabled = value != 'false';
-      }
-    );
-
-    attributes['readonly'] = ElementAttributeProperty(
-      getter: () => _readOnly.toString(),
-      setter: (value) {
-        _readOnly = value != 'false';
-      }
-    );
-
-    attributes['maxLength'] = ElementAttributeProperty(
-      getter: () => _maxLength?.toString() ?? '',
-      setter: (value) {
-        _maxLength = int.tryParse(value);
-      }
-    );
-
-    attributes['rows'] = ElementAttributeProperty(
-      getter: () => _rows.toString(),
-      setter: (value) {
-        _rows = int.tryParse(value) ?? 2;
-      }
-    );
-
-    attributes['showCount'] = ElementAttributeProperty(
-      getter: () => _showCount.toString(),
-      setter: (value) {
-        _showCount = value != 'false';
-      }
-    );
-
-    attributes['autoSize'] = ElementAttributeProperty(
-      getter: () => _autoSize.toString(),
-      setter: (value) {
-        _autoSize = value != 'false';
-      }
-    );
-
-    attributes['transparent'] = ElementAttributeProperty(
-      getter: () => _transparent.toString(),
-      setter: (value) {
-        _transparent = value != 'false';
-      }
-    );
-  }
-
+  String _val = '';
   String _placeholder = '';
   bool _disabled = false;
   bool _readOnly = false;
@@ -88,37 +20,89 @@ class FlutterCupertinoTextArea extends WidgetElement {
   bool _autoSize = false;
   bool _transparent = false;
 
-  // Define static method map
-  static StaticDefinedSyncBindingObjectMethodMap textareaSyncMethods = {
-    'focus': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final textarea = castToType<FlutterCupertinoTextArea>(element);
-        textarea.state?._focusNode.requestFocus();
-      },
-    ),
-    'blur': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final textarea = castToType<FlutterCupertinoTextArea>(element);
-        textarea.state?._focusNode.unfocus();
-      },
-    ),
-    'clear': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final textarea = castToType<FlutterCupertinoTextArea>(element);
-        textarea.state?._controller.clear();
-        textarea.state?.requestUpdateState();
-      },
-    ),
-  };
+  @override
+  String? get val => state?._controller.text;
+  @override
+  set val(value) {
+    if (value != state?._controller.text) {
+      state?._controller.text = value ?? '';
+    }
+  }
 
   @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    textareaSyncMethods,
-  ];
+  String? get placeholder => _placeholder;
+  @override
+  set placeholder(value) {
+    _placeholder = value ?? '';
+  }
+
+  @override
+  bool? get disabled => _disabled;
+  @override
+  set disabled(value) {
+    _disabled = value != 'false';
+  }
+
+  @override
+  bool? get readonly => _readOnly;
+  @override
+  set readonly(value) {
+    _readOnly = value != 'false';
+  }
+
+  @override
+  int? get maxLength => _maxLength;
+  @override
+  set maxLength(value) {
+    _maxLength = int.tryParse(value.toString());
+  }
+
+  @override
+  int? get rows => _rows;
+  @override
+  set rows(value) {
+    _rows = int.tryParse(value.toString()) ?? 2;
+  }
+
+  @override
+  bool? get showCount => _showCount;
+  @override
+  set showCount(value) {
+    _showCount = value != 'false';
+  }
+
+  @override
+  bool? get autoSize => _autoSize;
+  @override
+  set autoSize(value) {
+    _autoSize = value != 'false';
+  }
+
+  @override
+  bool? get transparent => _transparent;
+  @override
+  set transparent(value) {
+    _transparent = value != 'false';
+  }
 
   @override
   FlutterCupertinoTextAreaState? get state => super.state as FlutterCupertinoTextAreaState?;
+
+  @override
+  void focus(List<dynamic> args) {
+    state?._focusNode.requestFocus();
+  }
+
+  @override
+  void blur(List<dynamic> args) {
+    state?._focusNode.unfocus();
+  }
+
+  @override
+  void clear(List<dynamic> args) {
+    state?._controller.clear();
+    state?.requestUpdateState();
+  }
 
   @override
   WebFWidgetElementState createState() {
@@ -142,7 +126,7 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
   }
 
   void _handleTextChange() {
-    if (widgetElement._showCount && widgetElement._maxLength != null) {
+    if (widgetElement.showCount! && widgetElement.maxLength != null) {
       setState(() {});
     }
   }
@@ -162,9 +146,9 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
     final isDark = theme.brightness == Brightness.dark;
 
     // Define colors based on theme
-    final backgroundColor = widgetElement._transparent
+    final backgroundColor = widgetElement.transparent!
         ? Colors.transparent
-        : widgetElement._disabled
+        : widgetElement.disabled!
         ? (isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.systemGrey6)
         : (isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.white);
 
@@ -176,10 +160,12 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
         ? CupertinoColors.systemGrey.darkColor
         : CupertinoColors.systemGrey;
 
+    final bottomPadding = widgetElement.showCount! ? 12 : 0;
+
     return ConstrainedBox(
       constraints: BoxConstraints(
         minHeight: 0,
-        maxHeight: widgetElement._autoSize ? double.infinity : (widgetElement._rows * 24.0 + 16),
+        maxHeight: widgetElement.autoSize! ? double.infinity : (widgetElement.rows! * 24.0 + 16 + bottomPadding),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -188,12 +174,12 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
           CupertinoTextField(
             controller: _controller,
             focusNode: _focusNode,
-            enabled: !widgetElement._disabled,
-            readOnly: widgetElement._readOnly,
-            maxLines: widgetElement._autoSize ? null : widgetElement._rows,
-            minLines: widgetElement._rows,
-            maxLength: widgetElement._showCount ? null : widgetElement._maxLength,
-            keyboardType: widgetElement._autoSize ? TextInputType.multiline : TextInputType.text,
+            enabled: !widgetElement.disabled!,
+            readOnly: widgetElement.readonly!,
+            maxLines: widgetElement.autoSize! ? null : widgetElement.rows,
+            minLines: widgetElement.rows,
+            maxLength: widgetElement.maxLength,
+            keyboardType: widgetElement.autoSize! ? TextInputType.multiline : TextInputType.text,
             textAlign: widgetElement.renderStyle.textAlign,
             textAlignVertical: TextAlignVertical.top,
             style: TextStyle(
@@ -202,7 +188,7 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
               fontWeight: widgetElement.renderStyle.fontWeight,
               height: 1.2,
             ),
-            placeholder: widgetElement._placeholder,
+            placeholder: widgetElement.placeholder,
             placeholderStyle: TextStyle(
               color: placeholderColor,
               fontSize: widgetElement.renderStyle.fontSize.value,
@@ -210,8 +196,8 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
             ),
             decoration: BoxDecoration(
               color: backgroundColor,
-              borderRadius: widgetElement._transparent ? null : BorderRadius.circular(8),
-              border: widgetElement._transparent ? null : Border.all(
+              borderRadius: widgetElement.transparent! ? null : BorderRadius.circular(8),
+              border: widgetElement.transparent! ? null : Border.all(
                 color: isDark ? CupertinoColors.systemGrey.darkColor : CupertinoColors.systemGrey4,
                 width: 0.5,
               ),
@@ -224,13 +210,13 @@ class FlutterCupertinoTextAreaState extends WebFWidgetElementState {
               widgetElement.dispatchEvent(Event('complete'));
             },
           ),
-          if (widgetElement._showCount && widgetElement._maxLength != null)
+          if (widgetElement.showCount! && widgetElement.maxLength != null)
             Padding(
               padding: const EdgeInsets.only(top: 4, right: 12),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Text(
-                  '${_controller.text.length}/${widgetElement._maxLength}',
+                  '${_controller.text.length}/${widgetElement.maxLength}',
                   style: TextStyle(
                     color: countTextColor,
                     fontSize: 12,

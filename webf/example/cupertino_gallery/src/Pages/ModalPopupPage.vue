@@ -47,8 +47,8 @@
       </div>
 
       <!-- Basic Popup -->
-      <flutter-cupertino-modal-popup 
-        ref="basicPopup" 
+      <flutter-cupertino-modal-popup
+        ref="basicPopup"
         height="200"
         @close="onPopupClose"
       >
@@ -59,8 +59,8 @@
       </flutter-cupertino-modal-popup>
 
       <!-- Custom Popup -->
-      <flutter-cupertino-modal-popup 
-        ref="customPopup" 
+      <flutter-cupertino-modal-popup
+        ref="customPopup"
         height="300"
         @close="onPopupClose"
       >
@@ -75,7 +75,7 @@
       </flutter-cupertino-modal-popup>
 
       <!-- Height Popup -->
-      <flutter-cupertino-modal-popup 
+      <flutter-cupertino-modal-popup
         ref="heightPopup"
         height="400"
         @close="onPopupClose"
@@ -87,11 +87,11 @@
       </flutter-cupertino-modal-popup>
 
       <!-- No Mask Close Popup -->
-      <flutter-cupertino-modal-popup 
+      <flutter-cupertino-modal-popup
         ref="noMaskClosePopup"
         height="250"
-        maskClosable="false"
-        backgroundOpacity="0.6"
+        mask-closable="false"
+        background-opacity="0.6"
         @close="onPopupClose"
       >
         <div class="popup-content">
@@ -108,11 +108,11 @@
       </flutter-cupertino-modal-popup>
 
       <!-- Custom Style Popup -->
-      <flutter-cupertino-modal-popup 
+      <flutter-cupertino-modal-popup
         ref="customStylePopup"
         height="250"
-        surfacePainted="false"
-        backgroundOpacity="0.2"
+        surface-painted="false"
+        background-opacity="0.2"
         @close="onPopupClose"
       >
         <div class="popup-content custom-style">
@@ -252,4 +252,4 @@ export default {
   border-radius: 12px;
   margin: 0 16px;
 }
-</style> 
+</style>

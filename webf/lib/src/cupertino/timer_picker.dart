@@ -4,9 +4,62 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
+import 'timer_picker_bindings_generated.dart';
 
-class FlutterCupertinoTimerPicker extends WidgetElement {
+class FlutterCupertinoTimerPicker extends FlutterCupertinoTimerPickerBindings {
   FlutterCupertinoTimerPicker(super.context);
+
+  String _mode = 'hms';
+  int? _initialTimerDuration;
+  int? _minuteInterval;
+  int? _secondInterval;
+  String? _backgroundColor;
+  double? _height;
+
+  @override
+  String? get mode => _mode;
+  @override
+  set mode(value) {
+    _mode = value ?? 'hms';
+  }
+
+  @override
+  int? get initialTimerDuration => _initialTimerDuration;
+  @override
+  set initialTimerDuration(value) {
+    _initialTimerDuration = int.tryParse(value.toString());
+  }
+
+  @override
+  int? get minuteInterval => _minuteInterval;
+  @override
+  set minuteInterval(value) {
+    _minuteInterval = int.tryParse(value.toString());
+  }
+
+  @override
+  int? get secondInterval => _secondInterval;
+  @override
+  set secondInterval(value) {
+    _secondInterval = int.tryParse(value.toString());
+  }
+
+  @override
+  String? get backgroundColor => _backgroundColor;
+  @override
+  set backgroundColor(value) {
+    _backgroundColor = value;
+  }
+
+  @override
+  double? get height => _height;
+  @override
+  set height(value) {
+    _height = double.tryParse(value.toString());
+  }
+
+  @override
+  FlutterCupertinoTimerPickerState? get state => super.state as FlutterCupertinoTimerPickerState?;
 
   // Helper to parse duration string (e.g., "HH:MM:SS" or seconds) into Duration
   Duration _parseDuration(String? durationString) {
@@ -85,12 +138,12 @@ class FlutterCupertinoTimerPickerState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
-    final mode = widgetElement._getTimerPickerMode(widgetElement.getAttribute('mode'));
-    final rawInitialDuration = widgetElement._parseDuration(widgetElement.getAttribute('initial-timer-duration'));
-    final minuteInterval = int.tryParse(widgetElement.getAttribute('minute-interval') ?? '1') ?? 1;
-    final secondInterval = int.tryParse(widgetElement.getAttribute('second-interval') ?? '1') ?? 1;
-    final backgroundColor = widgetElement._parseColor(widgetElement.getAttribute('background-color'));
-    final height = double.tryParse(widgetElement.getAttribute('height') ?? '') ?? 216.0;
+    final mode = widgetElement._getTimerPickerMode(widgetElement.mode);
+    final rawInitialDuration = widgetElement._parseDuration(widgetElement.initialTimerDuration?.toString());
+    final minuteInterval = widgetElement.minuteInterval ?? 1;
+    final secondInterval = widgetElement.secondInterval ?? 1;
+    final backgroundColor = widgetElement._parseColor(widgetElement.backgroundColor);
+    final height = widgetElement.height ?? 216.0;
 
     // Ensure intervals are valid factors of 60
     final validMinuteInterval = (minuteInterval > 0 && 60 % minuteInterval == 0) ? minuteInterval : 1;

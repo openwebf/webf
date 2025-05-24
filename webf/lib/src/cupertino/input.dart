@@ -7,81 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:webf/webf.dart';
 import 'package:collection/collection.dart';
 import 'package:webf/dom.dart' as dom;
+import 'input_bindings_generated.dart';
 
-class FlutterCupertinoInput extends WidgetElement {
+class FlutterCupertinoInput extends FlutterCupertinoInputBindings {
   FlutterCupertinoInput(super.context);
 
-  @override
-  void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    super.initializeAttributes(attributes);
-
-    // Input value
-    attributes['val'] = ElementAttributeProperty(
-      getter: () => state?._controller.text,
-      setter: (val) {
-        if (val != state?._controller.text) {
-          state?._controller.text = val;
-        }
-      }
-    );
-
-    // Placeholder text
-    attributes['placeholder'] = ElementAttributeProperty(
-      getter: () => _placeholder,
-      setter: (value) {
-        _placeholder = value;
-      }
-    );
-
-    // Input type
-    attributes['type'] = ElementAttributeProperty(
-      getter: () => _type,
-      setter: (value) {
-        _type = value;
-      }
-    );
-
-    // Whether the input is disabled
-    attributes['disabled'] = ElementAttributeProperty(
-      getter: () => _disabled.toString(),
-      setter: (value) {
-        _disabled = value != 'false';
-      }
-    );
-
-    // Whether the input is autofocused
-    attributes['autofocus'] = ElementAttributeProperty(
-      getter: () => _autofocus.toString(),
-      setter: (value) {
-        _autofocus = value != 'false';
-      }
-    );
-
-    // Whether to show the clear button
-    attributes['clearable'] = ElementAttributeProperty(
-      getter: () => _clearable.toString(),
-      setter: (value) {
-        _clearable = value != 'false';
-      }
-    );
-
-    // Maximum length
-    attributes['maxlength'] = ElementAttributeProperty(
-      getter: () => _maxLength?.toString() ?? '',
-      setter: (value) {
-        _maxLength = int.tryParse(value);
-      }
-    );
-
-    // Read-only mode
-    attributes['readonly'] = ElementAttributeProperty(
-      getter: () => _readOnly.toString(),
-      setter: (value) {
-        _readOnly = value != 'false';
-      }
-    );
-  }
-
+  String _val = '';
   String _placeholder = '';
   String _type = 'text';
   bool _disabled = false;
@@ -91,17 +22,65 @@ class FlutterCupertinoInput extends WidgetElement {
   bool _readOnly = false;
 
   @override
-  FlutterCupertinoInputState? get state => super.state as FlutterCupertinoInputState?;
-
-  static TextInputFormatter? _getInputFormatter(String? type) {
-    switch (type) {
-      case 'number':
-      case 'tel':
-        return FilteringTextInputFormatter.digitsOnly;
-      default:
-        return null;
+  String? get val => state?._controller.text;
+  @override
+  set val(value) {
+    if (value != state?._controller.text) {
+      state?._controller.text = value ?? '';
     }
   }
+
+  @override
+  String? get placeholder => _placeholder;
+  @override
+  set placeholder(value) {
+    _placeholder = value ?? '';
+  }
+
+  @override
+  String? get type => _type;
+  @override
+  set type(value) {
+    _type = value ?? 'text';
+  }
+
+  @override
+  bool? get disabled => _disabled;
+  @override
+  set disabled(value) {
+    _disabled = value != 'false';
+  }
+
+  @override
+  bool get autofocus => _autofocus;
+  @override
+  set autofocus(value) {
+    _autofocus = value != 'false';
+  }
+
+  @override
+  bool? get clearable => _clearable;
+  @override
+  set clearable(value) {
+    _clearable = value != 'false';
+  }
+
+  @override
+  int? get maxlength => _maxLength;
+  @override
+  set maxlength(value) {
+    _maxLength = int.tryParse(value.toString());
+  }
+
+  @override
+  bool? get readonly => _readOnly;
+  @override
+  set readonly(value) {
+    _readOnly = value != 'false';
+  }
+
+  @override
+  FlutterCupertinoInputState? get state => super.state as FlutterCupertinoInputState?;
 
   static TextInputType _getKeyboardType(String type) {
     switch (type) {
@@ -141,44 +120,27 @@ class FlutterCupertinoInput extends WidgetElement {
     return formatters.isEmpty ? null : formatters;
   }
 
-  // Define static method map
-  static StaticDefinedSyncBindingObjectMethodMap inputSyncMethods = {
-    'getValue': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final input = castToType<FlutterCupertinoInput>(element);
-        return input.state?._controller.text;
-      },
-    ),
-    'setValue': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final input = castToType<FlutterCupertinoInput>(element);
-        if (args.isNotEmpty) {
-          input.state?._controller.text = args[0].toString();
-        }
-        return null;
-      },
-    ),
-    'focus': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final input = castToType<FlutterCupertinoInput>(element);
-        input.state?._focusNode.requestFocus();
-        return null;
-      },
-    ),
-    'blur': StaticDefinedSyncBindingObjectMethod(
-      call: (element, args) {
-        final input = castToType<FlutterCupertinoInput>(element);
-        input.state?._focusNode.unfocus();
-        return null;
-      },
-    ),
-  };
+  @override
+  String getValue(List<dynamic> args) {
+    return state?._controller.text ?? '';
+  }
 
   @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [
-    ...super.methods,
-    inputSyncMethods,
-  ];
+  void setValue(List<dynamic> args) {
+    if (args.isNotEmpty) {
+      state?._controller.text = args[0].toString();
+    }
+  }
+
+  @override
+  void focus(List<dynamic> args) {
+    state?._focusNode.requestFocus();
+  }
+
+  @override
+  void blur(List<dynamic> args) {
+    state?._focusNode.unfocus();
+  }
 
   @override
   WebFWidgetElementState createState() {
@@ -242,14 +204,14 @@ class FlutterCupertinoInputState extends WebFWidgetElementState {
       child: CupertinoTextField(
         controller: _controller,
         focusNode: _focusNode,
-        placeholder: widgetElement._placeholder,
-        enabled: !widgetElement._disabled,
-        readOnly: widgetElement._readOnly,
-        autofocus: widgetElement._autofocus,
-        obscureText: widgetElement._type == 'password',
-        keyboardType: FlutterCupertinoInput._getKeyboardType(widgetElement._type),
+        placeholder: widgetElement.placeholder,
+        enabled: !widgetElement.disabled!,
+        readOnly: widgetElement.readonly!,
+        autofocus: widgetElement.autofocus!,
+        obscureText: widgetElement.type == 'password',
+        keyboardType: FlutterCupertinoInput._getKeyboardType(widgetElement.type!),
         textAlign: textAlign,
-        inputFormatters: widgetElement._getInputFormatters(widgetElement._type),
+        inputFormatters: widgetElement._getInputFormatters(widgetElement.type!),
         onChanged: (value) {
           widgetElement.dispatchEvent(CustomEvent('input', detail: value));
         },
@@ -258,7 +220,7 @@ class FlutterCupertinoInputState extends WebFWidgetElementState {
         },
         prefix: prefixWidget,
         suffix: suffixWidget,
-        clearButtonMode: widgetElement._clearable ? OverlayVisibilityMode.editing : OverlayVisibilityMode.never,
+        clearButtonMode: widgetElement.clearable! ? OverlayVisibilityMode.editing : OverlayVisibilityMode.never,
         decoration: BoxDecoration(
           color: isDark ? CupertinoColors.systemGrey6.darkColor : CupertinoColors.white,
           borderRadius: hasBorderRadius

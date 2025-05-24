@@ -104,7 +104,7 @@ export default function ModalPopupDemo() {
         {/* Basic Popup */}
         <FlutterCupertinoModalPopup
           ref={basicPopupRef}
-          height="200"
+          height={200}
           onClose={onPopupClose}
         >
           <div className="popup-content" onClick={() => console.log('clicked')}>
@@ -116,7 +116,7 @@ export default function ModalPopupDemo() {
         {/* Custom Popup */}
         <FlutterCupertinoModalPopup
           ref={customPopupRef}
-          height="300"
+          height={300}
           onClose={onPopupClose}
         >
           <div className="popup-content">
@@ -134,7 +134,7 @@ export default function ModalPopupDemo() {
         {/* Height Popup */}
         <FlutterCupertinoModalPopup
           ref={heightPopupRef}
-          height="400"
+          height={400}
           onClose={onPopupClose}
         >
           <div className="popup-content">
@@ -146,9 +146,9 @@ export default function ModalPopupDemo() {
         {/* No Mask Close Popup */}
         <FlutterCupertinoModalPopup
           ref={noMaskClosePopupRef}
-          height="250"
-          maskClosable="false"
-          backgroundOpacity="0.6"
+          height={250}
+          maskClosable={false}
+          backgroundOpacity={0.6}
           onClose={onPopupClose}
         >
           <div className="popup-content">
@@ -167,9 +167,9 @@ export default function ModalPopupDemo() {
         {/* Custom Style Popup */}
         <FlutterCupertinoModalPopup
           ref={customStylePopupRef}
-          height="250"
-          surfacePainted="false"
-          backgroundOpacity="0.2"
+          height={250}
+          surfacePainted={false}
+          backgroundOpacity={0.2}
           onClose={onPopupClose}
         >
           <div className="popup-content custom-style">

@@ -4,9 +4,102 @@
  */
 import 'package:flutter/cupertino.dart';
 import 'package:webf/webf.dart';
+import 'date_picker_bindings_generated.dart';
 
-class FlutterCupertinoDatePicker extends WidgetElement {
+class FlutterCupertinoDatePicker extends FlutterCupertinoDatePickerBindings {
   FlutterCupertinoDatePicker(super.context);
+
+  String _mode = 'date';
+  String? _minimumDate;
+  String? _maximumDate;
+  String? _minuteInterval;
+  String? _value;
+  String? _minimumYear;
+  String? _maximumYear;
+  String? _showDayOfWeek;
+  String? _dateOrder;
+  String? _height;
+  bool _use24H = false;
+
+  @override
+  String? get mode => _mode;
+  @override
+  set mode(value) {
+    _mode = value ?? 'date';
+  }
+
+  @override
+  String? get minimumDate => _minimumDate;
+  @override
+  set minimumDate(value) {
+    _minimumDate = value;
+  }
+
+  @override
+  String? get maximumDate => _maximumDate;
+  @override
+  set maximumDate(value) {
+    _maximumDate = value;
+  }
+
+  @override
+  String? get minuteInterval => _minuteInterval;
+  @override
+  set minuteInterval(value) {
+    _minuteInterval = value;
+  }
+
+  @override
+  String? get value => _value;
+  @override
+  set value(value) {
+    _value = value;
+  }
+
+  @override
+  String? get minimumYear => _minimumYear;
+  @override
+  set minimumYear(value) {
+    _minimumYear = value;
+  }
+
+  @override
+  String? get maximumYear => _maximumYear;
+  @override
+  set maximumYear(value) {
+    _maximumYear = value;
+  }
+
+  @override
+  String? get showDayOfWeek => _showDayOfWeek;
+  @override
+  set showDayOfWeek(value) {
+    _showDayOfWeek = value;
+  }
+
+  @override
+  String? get dateOrder => _dateOrder;
+  @override
+  set dateOrder(value) {
+    _dateOrder = value;
+  }
+
+  @override
+  String? get height => _height;
+  @override
+  set height(value) {
+    _height = value;
+  }
+
+  @override
+  bool? get use24H => _use24H;
+  @override
+  set use24H(value) {
+    _use24H = value != 'false';
+  }
+
+  @override
+  FlutterCupertinoDatePickerState? get state => super.state as FlutterCupertinoDatePickerState?;
 
   @override
   WebFWidgetElementState createState() {
@@ -77,31 +170,29 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    final mode = widgetElement.getAttribute('mode') ?? 'date';
-    final minimumDate = _parseDateTime(widgetElement.getAttribute('minimum-date'));
-    final maximumDate = _parseDateTime(widgetElement.getAttribute('maximum-date'));
-    final minuteInterval = int.tryParse(widgetElement.getAttribute('minute-interval') ?? '') ?? 1;
+    final minimumDate = _parseDateTime(widgetElement.minimumDate);
+    final maximumDate = _parseDateTime(widgetElement.maximumDate);
+    final minuteInterval = int.tryParse(widgetElement.minuteInterval ?? '') ?? 1;
 
     // validate and adjust the initial date time
     final initialDateTime = _validateDateTime(
-        _parseDateTime(widgetElement.getAttribute('value')),
+        _parseDateTime(widgetElement.value),
         minimumDate,
         maximumDate,
         minuteInterval
     );
 
-    final minimumYear = int.tryParse(widgetElement.getAttribute('minimum-year') ?? '') ?? 1;
-    final maximumYear = int.tryParse(widgetElement.getAttribute('maximum-year') ?? '');
-    final showDayOfWeek = widgetElement.getAttribute('show-day-of-week') == 'true';
-    final dateOrder = _getDateOrder(widgetElement.getAttribute('date-order'));
+    final minimumYear = int.tryParse(widgetElement.minimumYear ?? '') ?? 1;
+    final maximumYear = int.tryParse(widgetElement.maximumYear ?? '');
+    final showDayOfWeek = widgetElement.showDayOfWeek == 'true';
+    final dateOrder = _getDateOrder(widgetElement.dateOrder);
 
     return SizedBox(
-      height: double.tryParse(widgetElement.getAttribute('height') ?? '') ?? 200,
+      height: double.tryParse(widgetElement.height ?? '') ?? 200,
       child: CupertinoDatePicker(
-        mode: _getDatePickerMode(mode),
+        mode: _getDatePickerMode(widgetElement.mode!),
         initialDateTime: initialDateTime,
         minimumDate: minimumDate,
         maximumDate: maximumDate,
@@ -112,7 +203,7 @@ class FlutterCupertinoDatePickerState extends WebFWidgetElementState {
         onDateTimeChanged: (DateTime dateTime) {
           widgetElement.dispatchEvent(CustomEvent('change', detail: dateTime.toIso8601String()));
         },
-        use24hFormat: widgetElement.getAttribute('use-24h') == 'true',
+        use24hFormat: widgetElement.use24H!,
         minuteInterval: minuteInterval,
       ),
     );
