@@ -71,10 +71,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       Size scrollableSize = renderBoxModel.scrollableSize;
       Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
       // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.height > scrollableViewportSize.height
-          || borderRadius != null
-          || (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.top < 0)
-      ) {
+      if (scrollableSize.height > scrollableViewportSize.height ||
+          borderRadius != null ||
+          (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.top < 0)) {
         return true;
       }
     }
@@ -86,6 +85,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
   ViewportOffset? get scrollOffsetX => _scrollOffsetX;
   ViewportOffset? _scrollOffsetX;
+
   set scrollOffsetX(ViewportOffset? value) {
     if (value == _scrollOffsetX) return;
     _scrollOffsetX?.removeListener(scrollXListener);
@@ -96,6 +96,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
   ViewportOffset? get scrollOffsetY => _scrollOffsetY;
   ViewportOffset? _scrollOffsetY;
+
   set scrollOffsetY(ViewportOffset? value) {
     if (value == _scrollOffsetY) return;
     _scrollOffsetY?.removeListener(scrollYListener);
@@ -122,13 +123,17 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   void _setUpScrollX() {
-    _scrollOffsetX!.applyViewportDimension(_viewportSize!.width);
-    _scrollOffsetX!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.width - _viewportSize!.width));
+    if (renderStyle.overflowX == CSSOverflowType.scroll || renderStyle.overflowX == CSSOverflowType.auto) {
+      _scrollOffsetX!.applyViewportDimension(_viewportSize!.width);
+      _scrollOffsetX!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.width - _viewportSize!.width));
+    }
   }
 
   void _setUpScrollY() {
-    _scrollOffsetY!.applyViewportDimension(_viewportSize!.height);
-    _scrollOffsetY!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.height - _viewportSize!.height));
+    if (renderStyle.overflowY == CSSOverflowType.scroll || renderStyle.overflowY == CSSOverflowType.auto) {
+      _scrollOffsetY!.applyViewportDimension(_viewportSize!.height);
+      _scrollOffsetY!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.height - _viewportSize!.height));
+    }
   }
 
   void setUpOverflowScroller(Size scrollableSize, Size viewportSize) {
@@ -237,7 +242,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     }
     return result;
   }
-
 
   // For position fixed render box, should reduce the outer scroll offsets.
   void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
