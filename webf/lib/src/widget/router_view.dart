@@ -91,16 +91,17 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? '';
 
-    // Make sure the router push event was fired after the onscreen event dispatched.
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
+    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
 
-      widget.controller.view.document.dispatchEvent(event);
+    widget.controller.view.document.dispatchEvent(event);
 
-      RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-      routerLinkElement.dispatchEventUtilAdded(event);
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
+
+    if (routerLinkElement?.attachedRenderer != null) {
+      routerLinkElement?.dispatchEventUtilAdded(event);
+    } else {
+      routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    }
   }
 
   @override
@@ -109,16 +110,17 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
     var state = route.settings.arguments;
     String path = route.settings.name ?? '';
 
-    // Make sure the router push event was fired after the onscreen event dispatched.
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
+    dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
 
-      widget.controller.view.document.dispatchEvent(event);
+    widget.controller.view.document.dispatchEvent(event);
 
-      RouterLinkElement routerLinkElement = widget.controller.view.getHybridRouterView(widget.path)!;
-      routerLinkElement.dispatchEventUtilAdded(event);
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
+
+    if (routerLinkElement?.attachedRenderer != null) {
+      routerLinkElement?.dispatchEventUtilAdded(event);
+    } else {
+      routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    }
   }
 }
 
