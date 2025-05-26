@@ -71,7 +71,7 @@ class WebFListViewElement extends WidgetElement {
   }
 
   /// Parses a string indicator result to the corresponding EasyRefresh IndicatorResult enum
-  /// 
+  ///
   /// @param result The result string, can be 'success', 'fail', 'noMore' or any other value
   /// @return The corresponding IndicatorResult enum value
   ///   - IndicatorResult.success for 'success'
@@ -97,10 +97,10 @@ class WebFListViewElement extends WidgetElement {
   }
 
   /// Completes a refresh operation with the specified result
-  /// 
+  ///
   /// This method finishes the current pull-to-refresh operation and displays
   /// the appropriate indicator based on the result parameter.
-  /// 
+  ///
   /// @param result The result of the refresh operation, can be:
   ///   - 'success': The refresh was successful (default)
   ///   - 'fail': The refresh operation failed
@@ -111,10 +111,10 @@ class WebFListViewElement extends WidgetElement {
   }
 
   /// Completes a load-more operation with the specified result
-  /// 
+  ///
   /// This method finishes the current load-more operation and displays
   /// the appropriate indicator based on the result parameter.
-  /// 
+  ///
   /// @param result The result of the load-more operation, can be:
   ///   - 'success': The load operation was successful (default)
   ///   - 'fail': The load operation failed
@@ -225,7 +225,7 @@ class WebFListViewState extends WebFWidgetElementState {
   /// This is used to implement an automatic timeout for refresh operations
   /// that aren't explicitly completed by calling finishRefresh()
   bool _isRefreshing = false;
-  
+
   /// Flag that tracks whether a load-more operation is currently in progress
   ///
   /// This is used to implement an automatic timeout for load operations
@@ -276,6 +276,26 @@ class WebFListViewState extends WebFWidgetElementState {
     return null;
   }
 
+  onLoad() async {
+    await widgetElement.dispatchEvent(Event('loadmore'));
+    _isLoading = true;
+    await Future.delayed(Duration(seconds: 4));
+    if (_isLoading) {
+      refreshController.finishLoad();
+      _isLoading = false;
+    }
+  }
+
+  onRefresh() async {
+    await widgetElement.dispatchEvent(Event('refresh'));
+    _isRefreshing = true;
+    await Future.delayed(Duration(seconds: 4));
+    if (_isRefreshing) {
+      refreshController.finishRefresh();
+      _isRefreshing = false;
+    }
+  }
+
   /// Builds the list view widget
   ///
   /// This method creates an EasyRefresh widget with the following components:
@@ -295,26 +315,11 @@ class WebFListViewState extends WebFWidgetElementState {
     return EasyRefresh(
         header: buildEasyRefreshHeader(),
         footer: buildEasyRefreshFooter(),
-        onLoad: () async {
-          await widgetElement.dispatchEvent(Event('loadmore'));
-          _isLoading = true;
-          await Future.delayed(Duration(seconds: 4));
-          if (_isLoading) {
-            refreshController.finishLoad();
-            _isLoading = false;
-          }
-        },
-        onRefresh: () async {
-          await widgetElement.dispatchEvent(Event('refresh'));
-          _isRefreshing = true;
-          await Future.delayed(Duration(seconds: 4));
-          if (_isRefreshing) {
-            refreshController.finishRefresh();
-            _isRefreshing = false;
-          }
-        },
+        onLoad: widgetElement.hasEventListener('loadmore') ? onLoad : null,
+        onRefresh: widgetElement.hasEventListener('refresh') ? onRefresh : null,
         controller: refreshController,
         child: ListView.builder(
+            shrinkWrap: true,
             controller: scrollController,
             scrollDirection: widgetElement.scrollDirection,
             itemCount: widgetElement.childNodes.length,
