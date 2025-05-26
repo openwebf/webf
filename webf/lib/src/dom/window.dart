@@ -111,15 +111,6 @@ class Window extends EventTarget {
   void resizeViewportRelatedElements() {
     _watchedViewportElements.forEach((element) {
       element.renderStyle.markNeedsLayout();
-      element.renderStyle.markNeedsRelayout();
-
-      visitor(RenderObject renderObject) {
-        if (renderObject is RenderBoxModel) {
-          renderObject.markNeedsRelayout();
-        }
-        renderObject.visitChildren(visitor);
-      }
-      element.renderStyle.visitChildren(visitor);
     });
   }
 

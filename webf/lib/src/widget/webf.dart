@@ -383,12 +383,14 @@ class WebFState extends State<WebF> with RouteAware {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
 
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      RouterLinkElement? routerLinkElement =
-      widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+    RouterLinkElement? routerLinkElement =
+        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+
+    if (routerLinkElement?.attachedRenderer != null) {
       routerLinkElement?.dispatchEventUtilAdded(event);
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    } else {
+      routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    }
   }
 
   @override
@@ -407,12 +409,14 @@ class WebFState extends State<WebF> with RouteAware {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
     }
 
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      RouterLinkElement? routerLinkElement =
-      widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+    RouterLinkElement? routerLinkElement =
+        widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
+
+    if (routerLinkElement?.attachedRenderer != null) {
       routerLinkElement?.dispatchEventUtilAdded(event);
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    } else {
+      routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    }
   }
 
   void requestForUpdate(AdapterUpdateReason reason) {

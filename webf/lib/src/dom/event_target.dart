@@ -31,6 +31,8 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
 
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
+  final Map<String, List<Event>> _eventDeps = {};
+
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
 
   static final StaticDefinedSyncBindingObjectMethodMap _eventTargetSyncMethods = {
@@ -112,6 +114,13 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
   }
 
+  Future<void> dispatchEventByDeps(Event event, String dep) async {
+    if (!_eventDeps.containsKey(dep)) {
+      _eventDeps[dep] = [];
+    }
+    _eventDeps[dep]!.add(event);
+  }
+
   @mustCallSuper
   Future<void> dispatchEvent(Event event) async {
     if (_disposed) return;
@@ -123,6 +132,13 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
 
     await _handlerCaptureEvent(event);
     await _dispatchEventInDOM(event);
+
+    if (_eventDeps.containsKey(event.type)) {
+      _eventDeps[event.type]!.forEach((e) {
+        dispatchEventUtilAdded(e);
+      });
+      _eventDeps.clear();
+    }
   }
   Future<void> _handlerCaptureEvent(Event event) async {
     // Avoid dispatch event to JS when the node was created by Flutter widgets.
@@ -183,6 +199,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     _disposed = true;
     _eventHandlers.clear();
     _eventWaitingCompleter.clear();
+    _eventDeps.clear();
     super.dispose();
   }
 

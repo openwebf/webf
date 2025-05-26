@@ -1,3 +1,32 @@
+## 0.21.2+1
+
+New Features
+
+### Added `<text />` Layout Element
+
+- New text component that provides more precise text layout control
+- Supports proper whitespace handling, including collapsing and trimming
+- Configurable with CSS properties like font-family, line-height, text-align
+
+### Enhanced ListView Pull-to-Refresh and Load More
+- Added automatic event dispatch for pull-to-refresh and load-more actions
+
+### Improved Router Link Event Handling
+- Fixed event firing order for router navigation events
+- Events now fire correctly after the onscreen event when navigating
+- Added `dispatchEventByDeps` method to ensure proper event sequencing
+- Enhanced event dependency tracking to handle timing-sensitive events
+
+### Android Build Improvements
+- Added pre-compile scripts for Android to streamline the build process:
+  - `build_android_jnilibs.js`: Copies JNI libraries from bridge/build to webf/android/jniLibs
+  - `build_android_package.js`: Orchestrates the entire Android package build process
+  - `patch_android_build_gradle.js`: Updates Android build.gradle for pre-compiled libraries
+
+## Bug Fixes
+- Fixed iOS build issues
+- Revert the changes for resizeViewportRelatedElements.
+
 ## 0.21.2
 
 New Features

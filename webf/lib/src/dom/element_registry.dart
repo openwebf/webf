@@ -5,6 +5,7 @@
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/src/html/text.dart';
 import 'package:webf/svg.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -208,6 +209,7 @@ void defineBuiltInElements() {
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
   defineWidgetElement(LISTVIEW, (context) => WebFListViewElement(context));
+  defineWidgetElement(TEXT, (context) => WebFTextElement(context));
   defineWidgetElement(WEBF_LISTVIEW, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
 
