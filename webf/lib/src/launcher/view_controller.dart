@@ -20,7 +20,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
-class WebFViewController with Diagnosticable implements WidgetsBindingObserver  {
+class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFController rootController;
 
   // The methods of the WebFNavigationDelegate help you implement custom behaviors that are triggered
@@ -100,7 +100,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver  
       _hybridRouteLoadCompleter[routePath] = Completer<void>();
 
       // Add timeout fallback for route load.
-      Timer(Duration(seconds: 3), () {
+      Timer(Duration(seconds: 5), () {
         if (_hybridRouteLoadCompleter[routePath]?.isCompleted == false) {
           _hybridRouteLoadCompleter[routePath]!.complete();
         }
