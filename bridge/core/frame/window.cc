@@ -340,7 +340,6 @@ void Window::cancelIdleCallback(int64_t idle_id, webf::ExceptionState& exception
 }
 
 void Window::OnLoadEventFired() {
-  GetExecutingContext()->TurnOnJavaScriptGC();
 }
 
 bool Window::IsWindowOrWorkerGlobalScope() const {

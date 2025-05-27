@@ -180,9 +180,6 @@ class ExecutingContext {
   // Sync pending ui commands and make it accessible to Dart
   bool SyncUICommandBuffer(const BindingObject* self, uint32_t reason, std::vector<NativeBindingObject*>& deps);
 
-  void TurnOnJavaScriptGC();
-  void TurnOffJavaScriptGC();
-
   void DispatchErrorEvent(ErrorEvent* error_event);
   void DispatchErrorEventInterval(ErrorEvent* error_event);
   void ReportErrorEvent(ErrorEvent* error_event);
