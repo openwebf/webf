@@ -123,17 +123,13 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
 
   void _setUpScrollX() {
-    if (renderStyle.overflowX == CSSOverflowType.scroll || renderStyle.overflowX == CSSOverflowType.auto) {
-      _scrollOffsetX!.applyViewportDimension(_viewportSize!.width);
-      _scrollOffsetX!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.width - _viewportSize!.width));
-    }
+    _scrollOffsetX!.applyViewportDimension(_viewportSize!.width);
+    _scrollOffsetX!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.width - _viewportSize!.width));
   }
 
   void _setUpScrollY() {
-    if (renderStyle.overflowY == CSSOverflowType.scroll || renderStyle.overflowY == CSSOverflowType.auto) {
-      _scrollOffsetY!.applyViewportDimension(_viewportSize!.height);
-      _scrollOffsetY!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.height - _viewportSize!.height));
-    }
+    _scrollOffsetY!.applyViewportDimension(_viewportSize!.height);
+    _scrollOffsetY!.applyContentDimensions(0.0, math.max(0.0, _scrollableSize!.height - _viewportSize!.height));
   }
 
   void setUpOverflowScroller(Size scrollableSize, Size viewportSize) {
