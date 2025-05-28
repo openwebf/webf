@@ -430,6 +430,17 @@ class WebFController with Diagnosticable {
     });
   }
 
+  /// Adds preloaded bundles to the controller.
+  ///
+  /// This method allows manually adding WebFBundles to the preloaded bundles list.
+  /// Useful for programmatically preloading resources after controller initialization.
+  ///
+  /// @param bundles A list of WebFBundle objects to add as preloaded resources
+  void addPreloadedBundle(WebFBundle bundle) {
+    _preloadBundleIndex ??= {};
+    _preloadBundleIndex![bundle.url] = bundle;
+  }
+
   // The view entrypoint bundle.
   WebFBundle? _entrypoint;
 
