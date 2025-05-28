@@ -27,7 +27,7 @@ static void ReturnEventResultToDart(Dart_Handle persistent_handle,
 }
 
 static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
-                                          int64_t profile_id,
+                                          double context_id,
                                           NativeValue* method,
                                           int32_t argc,
                                           NativeValue* argv,
@@ -39,11 +39,10 @@ static void HandleCallFromDartSideWrapper(NativeBindingObject* binding_object,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_object);
   auto dart_isolate = binding_object->binding_target_->GetExecutingContext()->dartIsolateContext();
   auto is_dedicated = binding_object->binding_target_->GetExecutingContext()->isDedicated();
-  auto context_id = binding_object->binding_target_->contextId();
 
   dart_isolate->dispatcher()->PostToJs(is_dedicated, static_cast<int32_t>(context_id),
                                        NativeBindingObject::HandleCallFromDartSide, dart_isolate, binding_object,
-                                       profile_id, method, argc, argv, persistent_handle, result_callback);
+                                       context_id, method, argc, argv, persistent_handle, result_callback);
 }
 
 NativeBindingObject::NativeBindingObject(BindingObject* target)
@@ -51,16 +50,17 @@ NativeBindingObject::NativeBindingObject(BindingObject* target)
 
 void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_isolate_context,
                                                  const NativeBindingObject* binding_object,
-                                                 int64_t profile_id,
+                                                 double context_id,
                                                  const NativeValue* native_method,
                                                  int32_t argc,
                                                  const NativeValue* argv,
                                                  Dart_PersistentHandle dart_object,
                                                  DartInvokeResultCallback result_callback) {
+  if (!isContextValid(context_id)) {
+    return;
+  }
   if (binding_object->disposed_)
     return;
-
-  dart_isolate_context->profiler()->StartTrackEvaluation(profile_id);
 
   const AtomicString method =
       AtomicString(binding_object->binding_target_->ctx(),
@@ -70,7 +70,6 @@ void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_
   auto* return_value = new NativeValue();
   std::memcpy(return_value, &result, sizeof(NativeValue));
 
-  dart_isolate_context->profiler()->FinishTrackEvaluation(profile_id);
 
   dart_isolate_context->dispatcher()->PostToDart(binding_object->binding_target_->GetExecutingContext()->isDedicated(),
                                                  ReturnEventResultToDart, dart_object, return_value, result_callback);

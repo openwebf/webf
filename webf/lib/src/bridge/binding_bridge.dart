@@ -147,7 +147,7 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
     Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDispatchResult);
 
     Future.microtask(() {
-      f(pointer, currentProfileOp?.hashCode ?? 0, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
+      f(pointer, contextId, method, dispatchEventArguments.length, allocatedNativeArguments, context, resultCallback);
     });
 
     return completer.future;

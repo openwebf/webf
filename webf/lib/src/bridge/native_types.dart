@@ -124,7 +124,7 @@ typedef NativeInvokeResultCallback = Void Function(Handle object, Pointer<Native
 
 typedef InvokeBindingMethodsFromDart = Void Function(
     Pointer<NativeBindingObject> binding_object,
-    Int64 profileId,
+    Double contextId,
     Pointer<NativeValue> method,
     Int32 argc,
     Pointer<NativeValue> argv,
@@ -132,7 +132,7 @@ typedef InvokeBindingMethodsFromDart = Void Function(
     Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
 typedef DartInvokeBindingMethodsFromDart = void Function(
     Pointer<NativeBindingObject> binding_object,
-    int profileId,
+    double contextId,
     Pointer<NativeValue> method,
     int argc,
     Pointer<NativeValue> argv,
