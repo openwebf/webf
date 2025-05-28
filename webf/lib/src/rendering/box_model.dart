@@ -839,7 +839,7 @@ class RenderBoxModel extends RenderBox
         renderStyle.paddingRight.computedValue;
 
     double? parentBoxContentConstraintsWidth;
-    if (parent is RenderBoxModel && this is RenderLayoutBox) {
+    if (renderStyle.isParentRenderBoxModel() && (this is RenderLayoutBox || this is RenderWidget)) {
       RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
       parentBoxContentConstraintsWidth =
           parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;

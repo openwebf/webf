@@ -11,6 +11,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/html/text.dart';
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
@@ -757,7 +758,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       developer.Timeline.finishSync();
     }
 
-
     didLayout();
   }
 
@@ -774,9 +774,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     if (!kReleaseMode) {
-      developer.Timeline.startSync('RenderFlex.layoutFlexItems.computeRunMetrics', arguments: {
-        'renderObject': describeIdentity(this)
-      });
+      developer.Timeline.startSync('RenderFlex.layoutFlexItems.computeRunMetrics',
+          arguments: {'renderObject': describeIdentity(this)});
     }
 
     // Layout children to compute metrics of flex lines.
@@ -1571,7 +1570,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
-    if (child is RenderReplaced && child.renderStyle.aspectRatio != null) {
+    if (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.aspectRatio != null) {
       _overrideReplacedChildLength(child, childFlexedMainSize, childStretchedCrossSize);
     }
 
@@ -1589,6 +1588,29 @@ class RenderFlexLayout extends RenderLayoutBox {
     double minConstraintHeight = child.hasOverrideContentLogicalHeight
         ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
         : (oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight);
+
+    // For <text /> elements or any inline-level elements in horizontal flex layout,
+    // avoid tight height constraints during secondary layout passes.
+    // This allows text to properly reflow and adjust its height when width changes.
+    bool isTextElement = child.renderStyle.isSelfRenderWidget() && child.renderStyle.target is WebFTextElement;
+    bool isInlineElementWithText = (child.renderStyle.display == CSSDisplay.inline ||
+            child.renderStyle.display == CSSDisplay.inlineBlock ||
+            child.renderStyle.display == CSSDisplay.inlineFlex) &&
+        (child.renderStyle.isSelfRenderFlowLayout() || child.renderStyle.isSelfRenderFlexLayout());
+    bool isSecondaryLayoutPass = child.hasSize;
+
+    // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
+    bool allowDynamicHeight = _isHorizontalFlexDirection &&
+        isSecondaryLayoutPass &&
+        (isTextElement || isInlineElementWithText) &&
+        childFlexedMainSize != null &&
+        child.renderStyle.height.isAuto;
+
+    if (allowDynamicHeight) {
+      // Remove tight height constraints to allow text to reflow properly
+      minConstraintHeight = 0;
+      maxConstraintHeight = double.infinity;
+    }
 
     BoxConstraints childConstraints = BoxConstraints(
       minWidth: minConstraintWidth,
@@ -2582,7 +2604,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         return false;
     }
   }
-
 
   @override
   LogicInlineBox createLogicInlineBox() {

@@ -2385,8 +2385,6 @@ class CSSRenderStyle extends RenderStyle
             renderStyle.right.computedValue -
             renderStyle.marginLeft.computedValue -
             renderStyle.marginRight.computedValue;
-      } else if (renderStyle.isBoxModelHaveSize() && renderStyle.constraints().hasTightWidth) {
-        logicalWidth = renderStyle.constraints().maxWidth;
       }
     }
 
