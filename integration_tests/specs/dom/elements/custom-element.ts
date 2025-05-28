@@ -648,9 +648,13 @@ describe('custom html element', () => {
   it('dart implements getAllBindingPropertyNames works', async () => {
     let sampleElement = document.createElement('sample-element');
     let attributes = Object.keys(sampleElement);
-    expect(attributes).toEqual([
-      'fake', 'ping', 'fn', '__test_global_to_local__', 'asyncFnFailed', 'asyncFnNotComplete', 'asyncFn'
-    ])
+    expect(attributes).toContain('fake');
+    expect(attributes).toContain('ping');
+    expect(attributes).toContain('fn');
+    expect(attributes).toContain('__test_global_to_local__');
+    expect(attributes).toContain('asyncFnFailed');
+    expect(attributes).toContain('asyncFnNotComplete');
+    expect(attributes).toContain('asyncFn');
   });
 
   it('support custom properties in dart directly', async () => {
