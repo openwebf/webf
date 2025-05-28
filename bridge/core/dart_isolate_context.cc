@@ -100,10 +100,9 @@ void DartIsolateContext::FinalizeJSRuntime() {
   is_name_installed_ = false;
 }
 
-DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length, bool profile_enabled)
+DartIsolateContext::DartIsolateContext(const uint64_t* dart_methods, int32_t dart_methods_length)
     : is_valid_(true),
       running_thread_(std::this_thread::get_id()),
-      profiler_(std::make_unique<WebFProfiler>(profile_enabled)),
       dart_method_ptr_(std::make_unique<DartMethodPointer>(this, dart_methods, dart_methods_length)) {
   is_valid_ = true;
   running_dart_isolates++;
@@ -134,12 +133,9 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      int32_t shape_len,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
-  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, native_widget_element_shapes,
                             shape_len, nullptr);
-
-  dart_isolate_context->profiler()->FinishTrackInitialize();
 
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
                                                 page);
@@ -197,12 +193,10 @@ std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateC
                                                                     double page_context_id,
                                                                     void* native_widget_element_shapes,
                                                                     int32_t shape_len) {
-  dart_isolate_context->profiler()->StartTrackInitialize();
   DartIsolateContext::InitializeJSRuntime();
   auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id,
                                          reinterpret_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
                                          shape_len, nullptr);
-  dart_isolate_context->profiler()->FinishTrackInitialize();
 
   return page;
 }

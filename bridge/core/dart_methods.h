@@ -50,7 +50,6 @@ using AsyncBlobCallback =
     void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      double context_id,
-                                     int64_t profile_link_id,
                                      SharedNativeString* moduleName,
                                      SharedNativeString* method,
                                      NativeValue* params,
@@ -166,7 +165,6 @@ class DartMethodPointer {
   NativeValue* invokeModule(bool is_dedicated,
                             void* callback_context,
                             double context_id,
-                            int64_t profile_link_id,
                             SharedNativeString* moduleName,
                             SharedNativeString* method,
                             NativeValue* params,

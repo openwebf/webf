@@ -28,9 +28,6 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
     return;
   }
 
-  context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-  context->dartIsolateContext()->profiler()->StartTrackSteps("handleRAFTransientCallback");
-
   assert(frame_callback->status() == FrameCallback::FrameStatus::kPending);
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kExecuting);
@@ -40,9 +37,6 @@ static void handleRAFTransientCallback(void* ptr, double contextId, double highR
   frame_callback->SetStatus(FrameCallback::FrameStatus::kFinished);
 
   context->document()->script_animations()->callbackCollection()->RemoveFrameCallback(frame_callback->frameId());
-
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
-  context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 }
 
 static void handleRAFTransientCallbackWrapper(void* ptr, double contextId, double highResTimeStamp, char* errmsg) {

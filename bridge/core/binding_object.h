@@ -26,7 +26,6 @@ class ScriptPromiseResolver;
 class DartIsolateContext;
 
 using InvokeBindingsMethodsFromNative = void (*)(double contextId,
-                                                 int64_t profile_id,
                                                  const NativeBindingObject* binding_object,
                                                  NativeValue* return_value,
                                                  NativeValue* method,

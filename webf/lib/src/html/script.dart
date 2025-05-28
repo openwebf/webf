@@ -41,17 +41,17 @@ class ScriptRunner {
   int _resolvingCount = 0;
 
   static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle,
-      {bool async = false, EvaluateOpItem? profileOp}) async {
+      {bool async = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
       bool result = await evaluateScripts(contextId, bundle.data!,
-          url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache, profileOp: profileOp);
+          url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
     } else if (bundle.isBytecode) {
-      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!, profileOp: profileOp);
+      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!);
       if (!result) {
         throw FlutterError('Bytecode are not valid to execute.');
       }
@@ -108,13 +108,8 @@ class ScriptRunner {
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
-      EvaluateOpItem? evaluateOpItem;
-      if (enableWebFProfileTracking) {
-        evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('ScriptRunner._evaluateScriptBundle');
-      }
-
       try {
-        await _evaluateScriptBundle(_contextId, bundle, async: async, profileOp: evaluateOpItem);
+        await _evaluateScriptBundle(_contextId, bundle, async: async);
       } catch (err, stack) {
         debugPrint('$err\n$stack');
         _document.decrementDOMContentLoadedEventDelayCount();
@@ -131,10 +126,6 @@ class ScriptRunner {
         // Decrement load event delay count after eval.
         _document.decrementDOMContentLoadedEventDelayCount();
       });
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
-      }
     }
 
     // @TODO: Differ async and defer.

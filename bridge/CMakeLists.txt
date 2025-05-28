@@ -113,7 +113,6 @@ list(APPEND BRIDGE_SOURCE
   foundation/native_byte_data.cc
   foundation/native_type.cc
   foundation/stop_watch.cc
-  foundation/profiler.cc
   foundation/dart_readable.cc
   foundation/rust_readable.cc
   foundation/ui_command_buffer.cc

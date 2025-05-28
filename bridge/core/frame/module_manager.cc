@@ -37,9 +37,6 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
   auto callback_value = moduleContext->callback->value();
 
   if (auto* callback = DynamicTo<QJSFunction>(callback_value.get())) {
-    context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-    context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
-
     ExceptionState exception_state;
 
     NativeValue* return_value = nullptr;
@@ -64,9 +61,6 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
       memcpy(return_value, &native_result, sizeof(NativeValue));
     }
 
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
-    context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
-
     if (exception_state.HasException()) {
       context->HandleException(exception_state);
       return return_value;
@@ -74,9 +68,6 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
 
     return return_value;
   } else if (auto* callback = DynamicTo<WebFNativeFunction>(callback_value.get())) {
-    context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-    context->dartIsolateContext()->profiler()->StartTrackSteps("handleInvokeModuleTransientCallback");
-
     NativeValue* return_value = nullptr;
     if (errmsg != nullptr) {
       NativeValue error_object = Native_NewCString(errmsg);
@@ -91,8 +82,6 @@ NativeValue* handleInvokeModuleTransientCallback(void* ptr,
       return_value = static_cast<NativeValue*>(dart_malloc(sizeof(NativeValue)));
       memcpy(return_value, &native_result, sizeof(NativeValue));
     }
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
-    context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
     context->RunRustFutureTasks();
     return return_value;
   }
@@ -194,30 +183,25 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   auto module_name_string = module_name.ToNativeString(context->ctx());
   auto method_name_string = method.ToNativeString(context->ctx());
 
-  context->dartIsolateContext()->profiler()->StartTrackLinkSteps("Call To Dart");
-
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);
     auto module_context = std::make_shared<ModuleContext>(context, module_callback);
     context->ModuleContexts()->AddModuleContext(module_context);
     result = context->dartMethodPtr()->invokeModule(context->isDedicated(), module_context.get(), context->contextId(),
-                                                    context->dartIsolateContext()->profiler()->link_id(),
                                                     module_name_string.get(), method_name_string.get(), &params,
                                                     nullptr, handleInvokeModuleTransientCallbackWrapper);
   } else {
     char errmsg[1024];
     errmsg[0] = 0;
-    result = context->dartMethodPtr()->invokeModule(
-        context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
-        module_name_string.get(), method_name_string.get(), &params, errmsg, nullptr);
+    result = context->dartMethodPtr()->invokeModule(context->isDedicated(), nullptr, context->contextId(),
+                                                    module_name_string.get(), method_name_string.get(), &params, errmsg,
+                                                    nullptr);
 
     if (errmsg[0] != 0) {
       exception.ThrowException(context->ctx(), ErrorType::InternalError, errmsg);
       return nullptr;
     }
   }
-
-  context->dartIsolateContext()->profiler()->FinishTrackLinkSteps();
 
   if (result == nullptr) {
     return nullptr;

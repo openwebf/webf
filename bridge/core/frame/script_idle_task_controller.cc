@@ -75,9 +75,6 @@ static void handleRequestIdleCallback(void* ptr, double contextId, double remain
     return;
   }
 
-  context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-  context->dartIsolateContext()->profiler()->StartTrackSteps("handleRAFTransientCallback");
-
   assert(frame_callback->status() == IdleCallback::IdleStatus::kPending);
 
   frame_callback->SetStatus(IdleCallback::IdleStatus::kExecuting);
@@ -87,9 +84,6 @@ static void handleRequestIdleCallback(void* ptr, double contextId, double remain
   frame_callback->SetStatus(IdleCallback::IdleStatus::kFinished);
 
   context->window()->script_idle_task()->callbackCollection()->RemoveIdleCallback(frame_callback->frameId());
-
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
-  context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 }
 
 static void handleRequestIdleCallbackWrapper(void* ptr, double contextId, double remaining_time) {

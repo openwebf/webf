@@ -114,7 +114,6 @@ class NativeTouch extends Struct {
 
 typedef InvokeBindingsMethodsFromNative = Void Function(
     Double contextId,
-    Int64 profileId,
     Pointer<NativeBindingObject> binding_object,
     Pointer<NativeValue> return_value,
     Pointer<NativeValue> method,

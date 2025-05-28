@@ -10,13 +10,11 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return false;
-    context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::PropertyCheckerCallback");
     auto* wrapper_type_info = DOMTokenList::GetStaticWrapperTypeInfo();
     MemberMutationScope scope{context};
     JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
     if (JS_HasProperty(ctx, prototype, key)) return true;
     bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
@@ -28,7 +26,6 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return 0;
     MemberMutationScope scope{context};
-    context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::PropertyEnumerateCallback");
     std::vector<AtomicString> props;
     self->NamedPropertyEnumerator(props, exception_state);
     auto size = props.size() == 0 ? 1 : props.size();
@@ -40,7 +37,6 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
 
     *plen = props.size();
     *ptab = tabs;
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     return 0;
   }
 
@@ -54,9 +50,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     if (index >= self->length()) {
       return JS_UNDEFINED;
     }
-    context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::IndexedPropertyGetterCallback");
     <%= generateCoreTypeValue(object.indexedProp.type) %> result = self->item(index, exception_state);
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();
     }
@@ -69,10 +63,8 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return JS_NULL;
-    context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::StringPropertyGetterCallback");
     MemberMutationScope scope{context};
     ${generateCoreTypeValue(object.indexedProp.type)} result = self->item(AtomicString(ctx, key), exception_state);
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();
     }
@@ -91,9 +83,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
-    context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::IndexedPropertySetterCallback");
     bool success = self->SetItem(index, v, exception_state);
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
@@ -110,9 +100,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
-    context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::StringPropertySetterCallback");
     bool success = self->SetItem(AtomicString(ctx, key), v, exception_state);
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     if (UNLIKELY(exception_state.HasException())) {
       return false;
     }
@@ -128,9 +116,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
       if (UNLIKELY(exception_state.HasException())) {
         return false;
       }
-      context->dartIsolateContext()->profiler()->StartTrackSteps("QJS<%= className %>::StringPropertyDeleterCallback");
       bool success = self->DeleteItem(AtomicString(ctx, key), exception_state);
-      context->dartIsolateContext()->profiler()->FinishTrackSteps();
       if (UNLIKELY(exception_state.HasException())) {
         return false;
       }
@@ -183,7 +169,6 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
   MemberMutationScope scope{context};
-  context->dartIsolateContext()->profiler()->StartTrackSteps("<%= className %>::<%= prop.name %>");
 
   <% if (prop.typeMode && prop.typeMode.dartImpl && prop.typeMode.supportAsync) { %>
   ExceptionState exception_state;
@@ -202,26 +187,21 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   typename <%= generateNativeValueTypeConverter(prop.type) %>::ImplType v = NativeValueConverter<<%= generateNativeValueTypeConverter(prop.type) %>>::FromNativeValue(<%= blob.filename %>->GetBindingProperty(binding_call_methods::k<%= prop.name %>, FlushUICommandReason::kDependentsOnElement  <%= prop.typeMode.layoutDependent ? '| FlushUICommandReason::kDependentsOnLayout' : '' %>, exception_state));
   <% } %>
   if (UNLIKELY(exception_state.HasException())) {
-    context->dartIsolateContext()->profiler()->FinishTrackSteps();
     return exception_state.ToQuickJS();
   }
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, v);
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } else if (prop.typeMode && prop.typeMode.static) { %>
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>);
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } else if (prop.typeMode && prop.typeMode.staticMethod) { %>
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>());
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } else { %>
   <% if(prop.async_type) { %>
   ExceptionState exception_state;
   <% } %>
   auto result = Converter<<%= generateIDLTypeConverter(prop.async_type ? prop.async_type : prop.type, prop.optional) %>>::ToValue(ctx, <%= blob.filename %>-><%= prop.name %>(<%= prop.async_type ? 'exception_state' : '' %>));
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
   return result;
   <% } %>
   <% if(prop.async_type) { %>

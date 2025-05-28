@@ -22,11 +22,20 @@ ScriptPromise HTMLImageElement::decode(ExceptionState& exception_state) const {
 }
 
 AtomicString HTMLImageElement::src() const {
-  return getAttribute(binding_call_methods::ksrc, ASSERT_NO_EXCEPTION());
+  ExceptionState exception_state;
+  NativeValue native_value =
+      GetBindingProperty(binding_call_methods::ksrc, FlushUICommandReason::kDependentsOnElement, exception_state);
+  typename NativeTypeString::ImplType v =
+      NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_value));
+  if (UNLIKELY(exception_state.HasException())) {
+    return AtomicString::Empty();
+  }
+  return v;
 }
 
 void HTMLImageElement::setSrc(const AtomicString& value, ExceptionState& exception_state) {
-  setAttribute(binding_call_methods::ksrc, value);
+  SetBindingProperty(binding_call_methods::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
+                     exception_state);
   if (!value.IsEmpty() && !keep_alive) {
     KeepAlive();
     keep_alive = true;

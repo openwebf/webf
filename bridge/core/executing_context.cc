@@ -69,38 +69,21 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   JS_SetContextOpaque(ctx, this);
   JS_SetHostPromiseRejectionTracker(script_state_.runtime(), promiseRejectTracker, nullptr);
 
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallBindings");
-
   // Register all built-in native bindings.
   InstallBindings(this);
-
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallDocument");
 
   // Install document.
   InstallDocument();
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallGlobal");
-
   // Binding global object and window.
   InstallGlobal();
-
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InstallPerformance");
 
   // Install performance
   InstallPerformance();
   InstallNativeLoader();
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::initWebFPolyFill");
-
   // Init JavaScript Polyfill
   EvaluateByteCode(bridge_polyfill, bridge_polyfill_size);
-
-  dart_isolate_context->profiler()->FinishTrackSteps();
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializePlugin");
 
   for (auto& p : plugin_byte_code) {
     EvaluateByteCode(p.second.bytes, p.second.length);
@@ -110,13 +93,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
     EvaluateJavaScript(p.second.c_str(), p.second.size(), p.first.c_str(), 0);
   }
 
-  dart_isolate_context->profiler()->FinishTrackSteps();
-
-  dart_isolate_context->profiler()->StartTrackSteps("ExecutingContext::InitializeWidgetShape");
-
   SetWidgetElementShape(native_widget_element_shape, shape_len);
-
-  dart_isolate_context->profiler()->FinishTrackSteps();
 
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
@@ -166,47 +143,28 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
-  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateJavaScript");
-
   JSValue result;
   if (parsed_bytecodes == nullptr) {
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
-
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
-
-    dart_isolate_context_->profiler()->FinishTrackSteps();
   } else {
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
-
     JSValue byte_object =
         JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
 
-    dart_isolate_context_->profiler()->FinishTrackSteps();
-
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
-      dart_isolate_context_->profiler()->FinishTrackSteps();
       return false;
     }
 
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
     size_t len;
     *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
     *bytecode_len = len;
 
-    dart_isolate_context_->profiler()->FinishTrackSteps();
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
-
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
-
-    dart_isolate_context_->profiler()->FinishTrackSteps();
   }
 
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
-
-  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   return success;
 }
@@ -229,34 +187,20 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 }
 
 bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength) {
-  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::EvaluateByteCode");
-
   JSValue obj, val;
-
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
-
   obj = JS_ReadObject(script_state_.ctx(), bytes, byteLength, JS_READ_OBJ_BYTECODE);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
-
   if (!HandleException(&obj)) {
-    dart_isolate_context_->profiler()->FinishTrackSteps();
     return false;
   }
-
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_EvalFunction");
 
   val = JS_EvalFunction(script_state_.ctx(), obj);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
-
   DrainMicrotasks();
   if (!HandleException(&val)) {
-    dart_isolate_context_->profiler()->FinishTrackSteps();
     return false;
   }
   JS_FreeValue(script_state_.ctx(), val);
-  dart_isolate_context_->profiler()->FinishTrackSteps();
   return true;
 }
 
@@ -374,11 +318,7 @@ void ExecutingContext::ReportError(JSValueConst error, char** rust_errmsg, uint3
 }
 
 void ExecutingContext::DrainMicrotasks() {
-  dart_isolate_context_->profiler()->StartTrackSteps("ExecutingContext::DrainMicrotasks");
-
   DrainPendingPromiseJobs();
-
-  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   DrawCanvasElementIfNeeded();
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
@@ -431,9 +371,7 @@ void ExecutingContext::RemoveRustFutureTask(int32_t callback_id, NativeLibraryMe
 void ExecutingContext::RunRustFutureTasks() {
   for (auto& meta_data : native_library_meta_data_contaner_) {
     for (auto& callback : meta_data->callbacks) {
-      dart_isolate_context_->profiler()->StartTrackAsyncEvaluation();
       callback.callback->Invoke(this, 0, nullptr);
-      dart_isolate_context_->profiler()->FinishTrackAsyncEvaluation();
     }
 
     if (meta_data->removed_callbacks.size() == 0) {
@@ -469,16 +407,10 @@ void ExecutingContext::DrainPendingPromiseJobs() {
   // should executing pending promise jobs.
   JSContext* pctx;
 
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
-
   int finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
 
-  dart_isolate_context_->profiler()->FinishTrackSteps();
-
   while (finished != 0) {
-    dart_isolate_context_->profiler()->StartTrackSteps("JS_ExecutePendingJob");
     finished = JS_ExecutePendingJob(script_state_.runtime(), &pctx);
-    dart_isolate_context_->profiler()->FinishTrackSteps();
     if (finished == -1) {
       break;
     }
@@ -502,25 +434,17 @@ uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
                                         uint64_t* bytecodeLength) {
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_Eval");
-
   JSValue object =
       JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
-
-  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   bool success = HandleException(&object);
   if (!success)
     return nullptr;
 
-  dart_isolate_context_->profiler()->StartTrackSteps("JS_WriteObject");
-
   size_t len;
   uint8_t* bytes = JS_WriteObject(script_state_.ctx(), &len, object, JS_WRITE_OBJ_BYTECODE);
   *bytecodeLength = len;
   JS_FreeValue(script_state_.ctx(), object);
-
-  dart_isolate_context_->profiler()->FinishTrackSteps();
 
   return bytes;
 }

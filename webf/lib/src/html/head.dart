@@ -276,26 +276,13 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.startTrackUICommand();
-          WebFProfiler.instance.startTrackUICommandStep('Style.parseCSS');
-        }
-
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackUICommandStep();
-        }
-
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
-
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackUICommand();
-        }
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -477,9 +464,6 @@ mixin StyleElementMixin on Element {
   }
 
   void _recalculateStyle() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.parseInlineStyle');
-    }
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
@@ -494,10 +478,6 @@ mixin StyleElementMixin on Element {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 

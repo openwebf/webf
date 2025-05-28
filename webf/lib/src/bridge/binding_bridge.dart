@@ -29,7 +29,7 @@ typedef NativeAsyncAnonymousFunctionCallback = Void Function(
 typedef DartAsyncAnonymousFunctionCallback = void Function(
     Pointer<Void> callbackContext, Pointer<NativeValue> nativeValue, double contextId, Pointer<Utf8> errmsg);
 
-typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args, { BindingOpItem? profileOp });
+typedef BindingCallFunc = dynamic Function(BindingObject bindingObject, List<dynamic> args);
 
 List<BindingCallFunc> bindingCallMethodDispatchTable = [
   getterBindingCall,
@@ -66,10 +66,6 @@ void _handleDispatchResult(Object contextHandle, Pointer<NativeValue> returnValu
   malloc.free(dispatchResult);
   malloc.free(returnValue);
 
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackEvaluate(context.profileOp!);
-  }
-
   context.completer.complete();
 }
 
@@ -82,7 +78,6 @@ class _DispatchEventResultContext {
   Pointer<RawEvent> rawEvent;
   List<dynamic> dispatchEventArguments;
   WebFController controller;
-  EvaluateOpItem? profileOp;
   _DispatchEventResultContext(
     this.completer,
     this.event,
@@ -92,7 +87,6 @@ class _DispatchEventResultContext {
     this.controller,
     this.dispatchEventArguments,
     this.stopwatch,
-    this.profileOp,
   );
 }
 
@@ -110,11 +104,6 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
       !isBindingObjectDisposed(event.currentTarget?.pointer)
   ) {
     Completer completer = Completer();
-
-    EvaluateOpItem? currentProfileOp;
-    if (enableWebFProfileTracking) {
-      currentProfileOp = WebFProfiler.instance.startTrackEvaluate('_dispatchEventToNative');
-    }
 
     BindingObject bindingObject = controller.view.getBindingObject(pointer);
     // Call methods implements at C++ side.
@@ -141,7 +130,6 @@ Future<void> _dispatchEventToNative(Event event, bool isCapture) async {
       controller,
       dispatchEventArguments,
       stopwatch,
-      currentProfileOp
     );
 
     Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback = Pointer.fromFunction(_handleDispatchResult);
