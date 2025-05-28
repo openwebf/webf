@@ -461,7 +461,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Further clamped by the max main size property if that is definite.
     if (maxMainLength.isNotNone) {
-      contentSize = math.max(contentSize, maxMainLength.computedValue);
+      contentSize = math.min(contentSize, maxMainLength.computedValue);
     }
 
     // Automatic Minimum Size of Flex Items.
