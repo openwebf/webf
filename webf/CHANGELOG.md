@@ -1,3 +1,52 @@
+## 0.21.3
+
+🚀 New Features
+
+Memory Management
+
+- Batch cleanup system for native binding objects - Implemented efficient memory cleanup with
+  batchFreeNativeBindingObjects C++ function and IdleCleanupManager to schedule cleanup operations
+  during idle time, reducing memory
+  fragmentation and preventing main thread blocking
+
+ListView Enhancements
+
+- resetHeader and resetFooter API - Added new APIs for ListView element to programmatically reset
+  header and footer components
+
+HTML & Preloading
+
+- HTML link preloading - Added support for <link rel="preload"> with 'as' attribute for resource
+  preloading
+- Programmatic preloading - Added addPreloadedBundle method to WebFController
+
+Text & Layout
+
+- Text reflow in flex containers - Improved dynamic height adjustment of text and inline elements
+  within flex containers with proper text reflow when container width changes
+- Text overflow and line clamp - Added support for setting text overflow and line clamp properties
+  on text elements
+
+🐛 Bug Fixes
+
+Layout & Rendering
+
+- Flex content size calculation - Fixed incorrect maxHeight clamping in flex content size
+  calculation and removed maxHeight constraint from content size calculation
+- Scrollable overflow - Fixed scrollable exception with overflow hidden
+- Route link activation - Fixed route link path activation to only occur after router link is
+  connected
+
+Runtime & Memory
+
+- Context validation - Added context valid checks for handleBindingCall from Dart
+- QuickJS garbage collection - Always turn on QuickJS GC for better memory management
+- iOS compilation - Fixed iOS compile options in release mode
+
+🧹 Maintenance
+
+- Legacy API removal - Removed legacy profile AP
+
 ## 0.21.2+1
 
 New Features
@@ -9,21 +58,25 @@ New Features
 - Configurable with CSS properties like font-family, line-height, text-align
 
 ### Enhanced ListView Pull-to-Refresh and Load More
+
 - Added automatic event dispatch for pull-to-refresh and load-more actions
 
 ### Improved Router Link Event Handling
+
 - Fixed event firing order for router navigation events
 - Events now fire correctly after the onscreen event when navigating
 - Added `dispatchEventByDeps` method to ensure proper event sequencing
 - Enhanced event dependency tracking to handle timing-sensitive events
 
 ### Android Build Improvements
+
 - Added pre-compile scripts for Android to streamline the build process:
   - `build_android_jnilibs.js`: Copies JNI libraries from bridge/build to webf/android/jniLibs
   - `build_android_package.js`: Orchestrates the entire Android package build process
   - `patch_android_build_gradle.js`: Updates Android build.gradle for pre-compiled libraries
 
 ## Bug Fixes
+
 - Fixed iOS build issues
 - Revert the changes for resizeViewportRelatedElements.
 
@@ -142,7 +195,8 @@ QuickJS Release Logs between the previous used version:
 
 Dark Mode Improvements
 
-- Enhanced darkModeOverride: Improved dark mode handling in widget mode with a more robust implementation [d6908531c]
+- Enhanced darkModeOverride: Improved dark mode handling in widget mode with a more robust
+  implementation [d6908531c]
   - Added proper change detection to prevent unnecessary style recalculations
   - Ensured events and style updates occur only when actual changes happen
   - Simplified API by eliminating need for manual platform brightness change calls
@@ -150,40 +204,47 @@ Dark Mode Improvements
 
 QuickJS Runtime Fixes
 
-- JSClassID Overflow Fix: Fixed critical crash that occurred when total created controller instances exceeded 200. [89c1887ef]
-- Bundle Preprocessing: Added checks to ensure page is alive when preprocessing JavaScript bundles, preventing potential crashes.
+- JSClassID Overflow Fix: Fixed critical crash that occurred when total created controller instances
+  exceeded 200. [89c1887ef]
+- Bundle Preprocessing: Added checks to ensure page is alive when preprocessing JavaScript bundles,
+  preventing potential crashes.
   [2dd2b7d91]
 
 CSS & Styling Fixes
 
-- CSS Variables: Fixed issues when overriding CSS variable properties with normal CSS values, improving CSS variable reliability.
+- CSS Variables: Fixed issues when overriding CSS variable properties with normal CSS values,
+  improving CSS variable reliability.
   [936562108]
-- Head Element Style Reload: Fixed null exception that occurred when reloading styles in head elements. [907804f4d]
+- Head Element Style Reload: Fixed null exception that occurred when reloading styles in head
+  elements. [907804f4d]
 
 Layout Engine Improvements
 
-- Flexbox Container Sizing: Significantly improved flexbox margin handling with proper container dimension recalculation
+- Flexbox Container Sizing: Significantly improved flexbox margin handling with proper container
+  dimension recalculation
   - Added container size recalculation after child sizing adjustments
   - Added cross-axis extent recalculation after child relayout
   - Enhanced flexbox margin behavior with comprehensive test cases [99b08a88c]
 
 **New Features**
 
-- Controller Creation Callbacks: Added callbacks to notify when a controller is created by WebF widget, improving lifecycle
+- Controller Creation Callbacks: Added callbacks to notify when a controller is created by WebF
+  widget, improving lifecycle
   management. [cc53ddf23]
 
 Storage Enhancements
 
-- Shared Storage Cache: Implemented shared storage box cache for AsyncStorage and LocalStorage [30d2b6339]
+- Shared Storage Cache: Implemented shared storage box cache for AsyncStorage and
+  LocalStorage [30d2b6339]
   - Added Maps to cache box instances across the application
   - Maintained shared instances between modules
   - Improved cleanup in dispose methods
 
 **Other Changes**
 
-- Test Coverage: Added extensive CSS variable test specifications, improving test coverage. [a4d2de1dd]
+- Test Coverage: Added extensive CSS variable test specifications, improving test
+  coverage. [a4d2de1dd]
 - Documentation: Fixed changelog formatting. [cbe51803c]
-
 
 ## 0.21.0-beta.6
 
@@ -592,7 +653,7 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
     // This element itself doesn't render anything visible
     return const SizedBox();
   }
-  // ..
+// ..
 }
 ```
 
@@ -601,66 +662,69 @@ class FlutterCupertinoActionSheetState extends WebFWidgetElementState {
 ### How to Customize `<webf-listview />`
 
 ```dart
-WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
+WebF.overrideCustomElement
+('webf-listview
+'
+, (context) => CustomWebFListView(context));
 
 class CustomWebFListView extends WebFListViewElement {
-  CustomWebFListView(super.context);
+CustomWebFListView(super.context);
 
-  @override
-  WebFWidgetElementState createState() {
-    return CustomListViewState(this);
-  }
+@override
+WebFWidgetElementState createState() {
+return CustomListViewState(this);
+}
 }
 
 class CustomListViewState extends WebFListViewState {
-  CustomListViewState(super.widgetElement);
+CustomListViewState(super.widgetElement);
 
-  @override
-  Widget buildLoadMore() {
-    return widgetElement.hasEventListener('loadmore')
-        ? Container(
-            height: 50,
-            alignment: Alignment.center,
-            child: isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
-          )
-        : const SizedBox.shrink();
-  }
+@override
+Widget buildLoadMore() {
+return widgetElement.hasEventListener('loadmore')
+? Container(
+height: 50,
+alignment: Alignment.center,
+child: isLoadingMore ? const CupertinoActivityIndicator() : const SizedBox.shrink(),
+)
+  : const SizedBox.shrink();
+}
 
-  @override
-  Widget buildRefreshControl() {
-    return CupertinoSliverRefreshControl(
-      onRefresh: () async {
-        if (widgetElement.hasEventListener('refresh')) {
-          widgetElement.dispatchEvent(dom.Event('refresh'));
-          await Future.delayed(const Duration(seconds: 2));
-        }
-      },
-    );
-  }
+@override
+Widget buildRefreshControl() {
+return CupertinoSliverRefreshControl(
+onRefresh: () async {
+if (widgetElement.hasEventListener('refresh')) {
+widgetElement.dispatchEvent(dom.Event('refresh'));
+await Future.delayed(const Duration(seconds: 2));
+}
+},
+);
+}
 
-  @override
-  Widget buildRefreshIndicator(Widget scrollView) {
-    return RefreshIndicator(
-      onRefresh: () async {
-        if (widgetElement.hasEventListener('refresh')) {
-          widgetElement.dispatchEvent(dom.Event('refresh'));
-          await Future.delayed(const Duration(seconds: 2));
-        }
-      },
-      child: scrollView,
-    );
-  }
+@override
+Widget buildRefreshIndicator(Widget scrollView) {
+return RefreshIndicator(
+onRefresh: () async {
+if (widgetElement.hasEventListener('refresh')) {
+widgetElement.dispatchEvent(dom.Event('refresh'));
+await Future.delayed(const Duration(seconds: 2));
+}
+},
+child: scrollView,
+);
+}
 
-  @override
-  void handleScroll() {
-    double scrollPixels = scrollController?.position.pixels ?? 0;
-    print('Scrolling... $scrollPixels');
-  }
+@override
+void handleScroll() {
+double scrollPixels = scrollController?.position.pixels ?? 0;
+print('Scrolling... $scrollPixels');
+}
 
-  @override
-  bool hasRefreshIndicator() {
-    return true;
-  }
+@override
+bool hasRefreshIndicator() {
+return true;
+}
 }
 ```
 
@@ -840,12 +904,12 @@ class CustomListViewState extends WebFListViewState {
 **Bug Fixes**
 
 1. Fixed known issues during the Rendering Architecture Migration:
-  1. Fixed `WebF.methodChannel` not being initialized.
-  2. Reworked CSS overflow.
-  3. Reworked CSS positioned layout.
-  4. Reworked CSSOM API (`Element.offsetTop`, `Element.scrollTo`, etc.).
-  5. Fixed margin collapse in various combination cases.
-  6. Supported CSSOM API for `<webf-listview />`.
+1. Fixed `WebF.methodChannel` not being initialized.
+2. Reworked CSS overflow.
+3. Reworked CSS positioned layout.
+4. Reworked CSSOM API (`Element.offsetTop`, `Element.scrollTo`, etc.).
+5. Fixed margin collapse in various combination cases.
+6. Supported CSSOM API for `<webf-listview />`.
 2. Fixed CSS style inspection through Chrome DevTools.
 
 **Features**
@@ -963,9 +1027,16 @@ For users who want to keep the single-threading mode the same as in the previous
 following configuration:
 
 ```dart
-WebFController(
-  context,
-  runningThread: FlutterUIThread(),
+WebFController
+(
+context
+,
+runningThread
+:
+FlutterUIThread
+(
+)
+,
 );
 ```
 
@@ -1384,12 +1455,12 @@ The biggest update since the `webf/kraken` release.
 
 1. The DOM API and C++ bindings had been redesigned and
    refactored.  https://github.com/openwebf/webf/pull/18
-  1. DOM node operations methods such as `Node.appendChild` and `Node.insertBefore` are 2x - 5x
-     faster than 0.12.0.
-  2. The new C++ bindings system can keep the bridge code safer to avoid crashes.
+1. DOM node operations methods such as `Node.appendChild` and `Node.insertBefore` are 2x - 5x
+   faster than 0.12.0.
+2. The new C++ bindings system can keep the bridge code safer to avoid crashes.
 2. Add CSS StyleSheets support.  https://github.com/openwebf/webf/pull/11
-  1. Support load CSS with  `<link />` element.
-  2. Support load CSS with `<style />` element.
+1. Support load CSS with  `<link />` element.
+2. Support load CSS with `<style />` element.
 4. Flutter Widgets System had been redesigned and refactored, now all flutter widgets can be used to
    define your HTMLElements, including from Flutter material design, pub.dev, and
    yours. https://github.com/openwebf/webf/pull/58
