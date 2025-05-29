@@ -124,13 +124,39 @@ class WebFListViewElement extends WidgetElement {
     state?.refreshController.finishLoad(_parseIndicatorResult(result));
   }
 
+  /// Resets the refresh header to its initial state
+  ///
+  /// This method programmatically resets the pull-to-refresh header to its
+  /// initial state, canceling any ongoing refresh operation and hiding any
+  /// refresh indicators. This is useful when you need to abort a refresh
+  /// operation without completing it.
+  void resetHeader() {
+    state?.refreshController.resetHeader();
+  }
+
+  /// Resets the load-more footer to its initial state
+  ///
+  /// This method programmatically resets the load-more footer to its
+  /// initial state, canceling any ongoing load operation and hiding any
+  /// load indicators. This is useful when you need to abort a load-more
+  /// operation without completing it.
+  void resetFooter() {
+    state?.refreshController.resetFooter();
+  }
+
   static StaticDefinedSyncBindingObjectMethodMap listViewMethods = {
     'finishRefresh': StaticDefinedSyncBindingObjectMethod(
         call: (bindingObject, args) =>
             castToType<WebFListViewElement>(bindingObject).finishRefresh(args.isNotEmpty ? args[0] : 'success')),
     'finishLoad': StaticDefinedSyncBindingObjectMethod(
         call: (bindingObject, args) =>
-            castToType<WebFListViewElement>(bindingObject).finishLoad(args.isNotEmpty ? args[0] : 'success'))
+            castToType<WebFListViewElement>(bindingObject).finishLoad(args.isNotEmpty ? args[0] : 'success')),
+    'resetHeader': StaticDefinedSyncBindingObjectMethod(
+      call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetHeader()
+    ),
+    'resetFooter': StaticDefinedSyncBindingObjectMethod(
+      call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetFooter()
+    )
   };
 
   @override
