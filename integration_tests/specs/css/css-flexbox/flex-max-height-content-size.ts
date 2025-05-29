@@ -1,4 +1,4 @@
-fdescribe('flex-max-height-content-size-calculation', () => {
+describe('flex-max-height-content-size-calculation', () => {
   it('should correctly constrain flex item height with maxHeight calc expression', async () => {
     let container;
     let listView;

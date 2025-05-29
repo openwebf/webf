@@ -1,4 +1,4 @@
-fdescribe('flex-max-height-calc', () => {
+describe('flex-max-height-calc', () => {
   it('should correctly calculate content size with maxHeight in flex column layout', async () => {
     let container;
     let listView;
