@@ -255,8 +255,20 @@ bool isNativeBindingObjectDisposed(void* native_binding_object) {
   return webf::NativeBindingObject::IsDisposed(static_cast<webf::NativeBindingObject*>(native_binding_object));
 }
 
+void batchFreeNativeBindingObjects(void** pointers, int32_t count) {
+  if (pointers == nullptr || count <= 0) {
+    return;
+  }
+  
+  // Batch free all the native binding object pointers
+  for (int32_t i = 0; i < count; i++) {
+    if (pointers[i] != nullptr) {
+      delete static_cast<webf::NativeBindingObject*>(pointers[i]);
+    }
+  }
+}
+
 void dispatchUITask(void* page_, void* context, void* callback) {
-  auto page = reinterpret_cast<webf::WebFPage*>(page_);
   reinterpret_cast<void (*)(void*)>(callback)(context);
 }
 

@@ -126,6 +126,9 @@ WEBF_EXPORT_C
 bool isNativeBindingObjectDisposed(void* native_binding_object);
 
 WEBF_EXPORT_C
+void batchFreeNativeBindingObjects(void** pointers, int32_t count);
+
+WEBF_EXPORT_C
 WebFInfo* getWebFInfo();
 WEBF_EXPORT_C
 void dispatchUITask(void* page, void* context, void* callback);

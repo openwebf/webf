@@ -32,8 +32,23 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
   final Map<String, List<Event>> _eventDeps = {};
+  
+  // Track pending dispatchEvent futures to ensure safe disposal
+  final List<Future<void>> _pendingDispatchEvents = [];
 
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
+  
+  /// Wait for all pending dispatchEvent operations to complete
+  Future<void> waitForPendingEvents() async {
+    if (_pendingDispatchEvents.isEmpty) return;
+    
+    // Create a copy of current pending events to avoid concurrent modification
+    List<Future<void>> currentPending = List.from(_pendingDispatchEvents);
+    await Future.wait(currentPending);
+  }
+  
+  /// Check if there are any pending dispatchEvent operations
+  bool hasPendingEvents() => _pendingDispatchEvents.isNotEmpty;
 
   static final StaticDefinedSyncBindingObjectMethodMap _eventTargetSyncMethods = {
     'addEvent':
@@ -130,6 +145,19 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
       event.target = this;
     }
 
+    // Track this dispatch operation
+    Future<void> dispatchFuture = _executeDispatchEvent(event);
+    _pendingDispatchEvents.add(dispatchFuture);
+    
+    // Wait for completion and clean up
+    try {
+      await dispatchFuture;
+    } finally {
+      _pendingDispatchEvents.remove(dispatchFuture);
+    }
+  }
+  
+  Future<void> _executeDispatchEvent(Event event) async {
     await _handlerCaptureEvent(event);
     await _dispatchEventInDOM(event);
 
@@ -200,6 +228,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     _eventHandlers.clear();
     _eventWaitingCompleter.clear();
     _eventDeps.clear();
+    _pendingDispatchEvents.clear(); // Clear pending events tracking
     super.dispose();
   }
 
