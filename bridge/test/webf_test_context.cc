@@ -73,8 +73,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         [](ImageSnapShotContext* callback_context, int8_t result, char* errmsg) {
           JSContext* ctx = callback_context->context->ctx();
 
-          callback_context->context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-
           if (errmsg == nullptr) {
             JSValue arguments[] = {JS_NewBool(ctx, result != 0), JS_NULL};
             JSValue returnValue =
@@ -92,8 +90,6 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
           callback_context->context->DrainMicrotasks();
           JS_FreeValue(callback_context->context->ctx(), callback_context->callback);
-
-          callback_context->context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
 
           delete callback_context;
         },
@@ -136,14 +132,11 @@ static void handleSimulatePointerCallback(void* p, double contextId, char* errms
   context->dartIsolateContext()->dispatcher()->PostToJs(
       context->isDedicated(), context->contextId(),
       [](SimulatePointerCallbackContext* simulate_context, double contextId, char* errmsg) {
-        simulate_context->context->dartIsolateContext()->profiler()->StartTrackAsyncEvaluation();
-
         JSValue return_value =
             JS_Call(simulate_context->context->ctx(), simulate_context->callbackValue, JS_NULL, 0, nullptr);
         JS_FreeValue(simulate_context->context->ctx(), return_value);
         JS_FreeValue(simulate_context->context->ctx(), simulate_context->callbackValue);
         simulate_context->context->DrainMicrotasks();
-        simulate_context->context->dartIsolateContext()->profiler()->FinishTrackAsyncEvaluation();
         delete simulate_context;
       },
       simulate_context, contextId, errmsg);
@@ -365,8 +358,6 @@ void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle,
 
 WebFTestContext::WebFTestContext(ExecutingContext* context)
     : context_(context), page_(static_cast<WebFPage*>(context->owner())) {
-  context->dartIsolateContext()->profiler()->StartTrackInitialize();
-
   page_->owner = this;
   page_->disposeCallback = [](WebFPage* bridge) { delete static_cast<WebFTestContext*>(bridge->owner); };
 
@@ -384,8 +375,6 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 
   MemberInstaller::InstallFunctions(context, context->Global(), functionConfig);
   context->EvaluateByteCode(test_framework_polyfill, test_framework_polyfill_size);
-
-  context->dartIsolateContext()->profiler()->FinishTrackInitialize();
 }
 
 WebFTestContext::~WebFTestContext() {

@@ -120,6 +120,12 @@
       "specs/css/css-selectors/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
+  {
+    "name": "Rendering",
+    "specs": [
+      "specs/rendering/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
   // {
   //   "name": "SVG",
   //   "specs": [

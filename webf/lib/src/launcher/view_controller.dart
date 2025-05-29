@@ -9,18 +9,16 @@ import 'dart:ffi';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' hide Element;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 
-class WebFViewController with Diagnosticable implements WidgetsBindingObserver  {
+class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFController rootController;
 
   // The methods of the WebFNavigationDelegate help you implement custom behaviors that are triggered
@@ -100,7 +98,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver  
       _hybridRouteLoadCompleter[routePath] = Completer<void>();
 
       // Add timeout fallback for route load.
-      Timer(Duration(seconds: 3), () {
+      Timer(Duration(seconds: 5), () {
         if (_hybridRouteLoadCompleter[routePath]?.isCompleted == false) {
           _hybridRouteLoadCompleter[routePath]!.complete();
         }
@@ -585,10 +583,26 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver  
   // Call from JS Bridge when the BindingObject class on the JS side had been Garbage collected.
   static void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = view.getBindingObject(pointer);
+
+    // If this is an EventTarget, wait for any pending dispatchEvent operations to complete
+    if (bindingObject is EventTarget && bindingObject.hasPendingEvents()) {
+      try {
+        // Wait for all pending events to complete before disposal
+        await bindingObject.waitForPendingEvents();
+      } catch (e) {
+        // Log error but continue with disposal to avoid memory leaks
+        if (kDebugMode) {
+          debugPrint('Error waiting for pending events during disposal: $e');
+        }
+      }
+    }
+
     bindingObject?.dispose();
     view.removeBindingObject(pointer);
     view.disposeTargetIdToDevNodeIdMap(bindingObject);
-    malloc.free(pointer);
+
+    // Schedule pointer to be batch freed during idle time or when threshold is reached
+    IdleCleanupManager.schedulePointerCleanup(pointer);
   }
 
   RenderBox? getRootRenderObject() {

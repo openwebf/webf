@@ -28,9 +28,6 @@ class WebFTextElement extends WidgetElement {
   WebFTextElement(super.context);
 
   @override
-  Map<String, dynamic> get defaultStyle => {'border': '1px solid #000'};
-
-  @override
   WebFWidgetElementState createState() {
     return WebFTextState(this);
   }
@@ -113,10 +110,11 @@ class WebFTextState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     double lineHeight =
         widgetElement.renderStyle.lineHeight.computedValue / widgetElement.renderStyle.fontSize.computedValue;
-    print('fontSize: ${widgetElement.renderStyle.fontSize.computedValue} lineHeight: ${lineHeight}');
     return RichText(
         text: widgetElement.createTextSpan(widgetElement.childNodes),
         textAlign: widgetElement.renderStyle.textAlign,
+        overflow: widgetElement.renderStyle.textOverflow,
+        maxLines: widgetElement.renderStyle.lineClamp,
         strutStyle: StrutStyle(
             // fontSize: widgetElement.renderStyle.fontSize.computedValue,
             height: lineHeight,

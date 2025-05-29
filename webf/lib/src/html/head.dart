@@ -31,6 +31,7 @@ class HeadElement extends Element {
 
 const String REL_STYLESHEET = 'stylesheet';
 const String DNS_PREFETCH = 'dns-prefetch';
+const String REL_PRELOAD = 'preload';
 
 // https://www.w3.org/TR/2011/WD-html5-author-20110809/the-link-element.html#the-link-element
 class LinkElement extends Element {
@@ -58,6 +59,7 @@ class LinkElement extends Element {
     attributes['href'] = ElementAttributeProperty(setter: (value) => href = attributeToProperty<String>(value));
     attributes['type'] = ElementAttributeProperty(setter: (value) => type = attributeToProperty<String>(value));
     attributes['media'] = ElementAttributeProperty(setter: (value) => media = attributeToProperty<String>(value));
+    attributes['as'] = ElementAttributeProperty(setter: (value) => as = attributeToProperty<String>(value));
   }
 
   static final StaticDefinedBindingPropertyMap _linkElementProperties = {
@@ -75,7 +77,10 @@ class LinkElement extends Element {
         setter: (element, value) => castToType<LinkElement>(element).type = castToType<String>(value)),
     'media': StaticDefinedBindingProperty(
         getter: (element) => castToType<LinkElement>(element).media,
-        setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value))
+        setter: (element, value) => castToType<LinkElement>(element).media = castToType<String>(value)),
+    'as': StaticDefinedBindingProperty(
+        getter: (element) => castToType<LinkElement>(element).as,
+        setter: (element, value) => castToType<LinkElement>(element).as = castToType<String>(value))
   };
 
   @override
@@ -108,7 +113,11 @@ class LinkElement extends Element {
 
   set rel(String value) {
     internalSetAttribute('rel', value);
-    _process();
+    if (value == REL_PRELOAD) {
+      _handlePreload();
+    } else {
+      _process();
+    }
   }
 
   String get type => getAttribute('type') ?? '';
@@ -121,6 +130,15 @@ class LinkElement extends Element {
 
   set media(String value) {
     internalSetAttribute('media', value);
+  }
+
+  String get as => getAttribute('as') ?? 'image';
+
+  set as(String value) {
+    internalSetAttribute('as', value);
+    if (rel == REL_PRELOAD) {
+      _handlePreload();
+    }
   }
 
   void fetchAndApplyCSSStyle() {
@@ -183,6 +201,47 @@ class LinkElement extends Element {
     fetchAndApplyCSSStyle();
   }
 
+  void _handlePreload() async {
+    if (_resolvedHyperlink == null) {
+      await _resolveHyperlink();
+    }
+
+    if (_resolvedHyperlink == null || !isConnected) {
+      return;
+    }
+
+    String url = _resolvedHyperlink.toString();
+    String asType = as.toLowerCase();
+
+    // Only handle image preloading for now
+    if (asType != 'image') {
+      return;
+    }
+
+    // Don't preload if already preloaded
+    if (ownerDocument.controller.getPreloadBundleFromUrl(url) != null) {
+      return;
+    }
+
+    try {
+      // Increment count when request
+      ownerDocument.incrementRequestCount();
+
+      // Create a WebFBundle for the resource
+      WebFBundle bundle = WebFBundle.fromUrl(url);
+
+      await bundle.resolve(baseUrl: ownerDocument.controller.url, uriParser: ownerDocument.controller.uriParser);
+      await bundle.obtainData(ownerView.contextId);
+
+      // Add the preloaded bundle to the controller
+      _addBundleToPreloadedBundles(bundle);
+
+      // Decrement count when response
+      ownerDocument.decrementRequestCount();
+    } catch (e) {
+    }
+  }
+
   bool isCSSStyleSheetLoaded() {
     return _stylesheetLoaded.containsKey(_resolvedHyperlink.toString());
   }
@@ -217,26 +276,13 @@ class LinkElement extends Element {
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.startTrackUICommand();
-          WebFProfiler.instance.startTrackUICommandStep('Style.parseCSS');
-        }
-
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
 
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackUICommandStep();
-        }
-
         ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
-
-        if (enableWebFProfileTracking) {
-          WebFProfiler.instance.finishTrackUICommand();
-        }
 
         // Successful load.
         SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -271,8 +317,13 @@ class LinkElement extends Element {
   void connectedCallback() {
     super.connectedCallback();
     ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
+
     if (_resolvedHyperlink != null) {
-      _fetchAndApplyCSSStyle();
+      if (rel == REL_PRELOAD) {
+        _handlePreload();
+      } else if (rel == REL_STYLESHEET) {
+        _fetchAndApplyCSSStyle();
+      }
     }
   }
 
@@ -345,6 +396,11 @@ class LinkElement extends Element {
     return isValid;
   }
 
+  void _addBundleToPreloadedBundles(WebFBundle bundle) {
+    WebFController controller = ownerDocument.controller;
+    controller.addPreloadedBundle(bundle);
+  }
+
   @override
   void dispose() {
     super.dispose();
@@ -408,9 +464,6 @@ mixin StyleElementMixin on Element {
   }
 
   void _recalculateStyle() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.parseInlineStyle');
-    }
     String? text = collectElementChildText();
     if (text != null) {
       if (_styleSheet != null) {
@@ -425,10 +478,6 @@ mixin StyleElementMixin on Element {
         ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
         ownerDocument.updateStyleIfNeeded();
       }
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
   }
 

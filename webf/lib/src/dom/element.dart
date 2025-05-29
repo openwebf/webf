@@ -468,17 +468,10 @@ abstract class Element extends ContainerNode
 
   @override
   void didAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.didAttachRenderer');
-    }
     super.didAttachRenderer(flutterWidgetElement);
 
     // The node attach may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
     // renderStyle.markAdjacentRenderParagraphNeedsLayout();
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
   }
 
   @override
@@ -674,9 +667,6 @@ abstract class Element extends ContainerNode
   }
 
   void _updateBeforePseudoElement() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
     // Add pseudo elements
     String? beforeContent = style.pseudoBeforeStyle?.getPropertyValue('content');
     if (beforeContent != null && beforeContent.isNotEmpty) {
@@ -685,9 +675,6 @@ abstract class Element extends ContainerNode
       removeChild(_beforeElement!);
     }
     _shouldBeforePseudoElementNeedsUpdate = false;
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
   }
 
   bool _shouldAfterPseudoElementNeedsUpdate = false;
@@ -699,9 +686,6 @@ abstract class Element extends ContainerNode
   }
 
   void _updateAfterPseudoElement() {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
     String? afterContent = style.pseudoAfterStyle?.getPropertyValue('content');
     if (afterContent != null && afterContent.isNotEmpty) {
       _afterElement = _createOrUpdatePseudoElement(afterContent, PseudoKind.kPseudoAfter, _afterElement);
@@ -709,9 +693,6 @@ abstract class Element extends ContainerNode
       removeChild(_afterElement!);
     }
     _shouldAfterPseudoElementNeedsUpdate = false;
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
   }
 
   @override
@@ -758,37 +739,22 @@ abstract class Element extends ContainerNode
   @override
   @mustCallSuper
   Node appendChild(Node child) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('Element.appendChild');
-    }
-
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
     }
 
     super.appendChild(child);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
     return child;
   }
 
   @override
   @mustCallSuper
   Node removeChild(Node child) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('Element.removeChild');
-    }
     super.removeChild(child);
 
     // Update renderStyle tree.
     if (child is Element) {
       child.renderStyle.detach();
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
 
     return child;
@@ -797,9 +763,6 @@ abstract class Element extends ContainerNode
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('Element.insertBefore');
-    }
 
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
@@ -807,26 +770,14 @@ abstract class Element extends ContainerNode
 
     Node? previousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
-
     return node;
   }
 
   @override
   @mustCallSuper
   Node? replaceChild(Node newNode, Node oldNode) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('Element.replaceChild');
-    }
     if (managedByFlutterWidget || this is WidgetElement) {
       newNode.managedByFlutterWidget = true;
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
     }
     return super.replaceChild(newNode, oldNode);
   }
@@ -1026,15 +977,6 @@ abstract class Element extends ContainerNode
   void setRenderStyleProperty(String name, value) {
     if (renderStyle.target.disposed) return;
 
-    bool uiCommandTracked = false;
-    if (enableWebFProfileTracking) {
-      if (!WebFProfiler.instance.currentPipeline.containsActiveUICommand()) {
-        WebFProfiler.instance.startTrackUICommand();
-        uiCommandTracked = true;
-      }
-      WebFProfiler.instance.startTrackUICommandStep('$this.setRenderStyleProperty[$name]');
-    }
-
     dynamic oldValue;
 
     switch (name) {
@@ -1078,13 +1020,6 @@ abstract class Element extends ContainerNode
       case TRANSFORM:
         _updateHostingWidgetWithTransform();
         break;
-    }
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-      if (uiCommandTracked) {
-        WebFProfiler.instance.finishTrackUICommand();
-      }
     }
   }
 
@@ -1135,9 +1070,6 @@ abstract class Element extends ContainerNode
   }
 
   void _applyDefaultStyle(CSSStyleDeclaration style) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this._applyDefaultStyle');
-    }
     if (defaultStyle.isNotEmpty) {
       defaultStyle.forEach((propertyName, value) {
         if (style.contains(propertyName) == false) {
@@ -1145,35 +1077,20 @@ abstract class Element extends ContainerNode
         }
       });
     }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
   }
 
   void _applyInlineStyle(CSSStyleDeclaration style) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this._applyInlineStyle');
-    }
     if (inlineStyle.isNotEmpty) {
       inlineStyle.forEach((propertyName, value) {
         // Force inline style to be applied as important priority.
         style.setProperty(propertyName, value, isImportant: true);
       });
     }
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
   }
 
   void _applySheetStyle(CSSStyleDeclaration style) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this._applySheetStyle');
-    }
     CSSStyleDeclaration matchRule = _elementRuleCollector.collectionFromRuleSet(ownerDocument.ruleSet, this);
     style.union(matchRule);
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
   }
 
   bool _scheduledRunTransitions = false;
@@ -1236,22 +1153,11 @@ abstract class Element extends ContainerNode
   }
 
   void _applyPseudoStyle(CSSStyleDeclaration style) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this._applyPseudoStyle');
-    }
-
     List<CSSStyleRule> pseudoRules = _elementRuleCollector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
   }
 
   void applyStyle(CSSStyleDeclaration style) {
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommandStep('$this.applyStyle');
-    }
     // Apply default style.
     _applyDefaultStyle(style);
     // Init display from style directly cause renderStyle is not flushed yet.
@@ -1261,10 +1167,6 @@ abstract class Element extends ContainerNode
     _applyInlineStyle(style);
     _applySheetStyle(style);
     _applyPseudoStyle(style);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommandStep();
-    }
   }
 
   void applyAttributeStyle(CSSStyleDeclaration style) {
@@ -1275,9 +1177,6 @@ abstract class Element extends ContainerNode
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     if (forceRecalculate || renderStyle.display != CSSDisplay.none) {
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.startTrackUICommandStep('$this.recalculateStyle');
-      }
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1292,9 +1191,6 @@ abstract class Element extends ContainerNode
         children.forEach((Element child) {
           child.recalculateStyle(rebuildNested: rebuildNested);
         });
-      }
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackUICommandStep();
       }
     }
   }
@@ -1426,7 +1322,7 @@ abstract class Element extends ContainerNode
     dispatchEvent(clickEvent);
   }
 
-  Future<Uint8List> toBlob({double? devicePixelRatio, BindingOpItem? currentProfileOp}) {
+  Future<Uint8List> toBlob({double? devicePixelRatio}) {
     forceToRepaintBoundary = true;
 
     Completer<Uint8List> completer = Completer();

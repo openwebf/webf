@@ -15,7 +15,6 @@ TEST(Context, isValid) {
     auto env = TEST_init();
     EXPECT_EQ(env->page()->executingContext()->IsContextValid(), true);
     EXPECT_EQ(env->page()->executingContext()->IsCtxValid(), true);
-    WEBF_LOG(VERBOSE) << env->page()->dartIsolateContext()->profiler()->ToJSON();
   }
   //  {
   //    auto env = TEST_init();
@@ -275,7 +274,7 @@ TEST(Context, unrejectPromiseErrorWithMultipleContext) {
 
 TEST(Context, disposeContext) {
   auto mockedDartMethods = TEST_getMockDartMethods(nullptr);
-  void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size(), true);
+  void* dart_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
   double contextId = 0;
   auto* page = reinterpret_cast<webf::WebFPage*>(allocateNewPageSync(0.0, dart_context, nullptr, 0));
   static bool disposed = false;

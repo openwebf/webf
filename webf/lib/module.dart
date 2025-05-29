@@ -16,3 +16,4 @@ export 'src/module/hybrid_history.dart';
 export 'src/module/navigation.dart';
 export 'src/module/navigator.dart';
 export 'src/module/dom_matrix.dart';
+export 'src/module/idle_cleanup_manager.dart';

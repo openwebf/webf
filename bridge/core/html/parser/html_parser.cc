@@ -151,18 +151,11 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
       }
 
       if (!trim(html).empty()) {
-        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::parse");
-
         GumboOutput* htmlTree = parse(html, isHTMLFragment);
-
-        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
-        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("HTMLParser::traverseHTML");
 
         traverseHTML(root_container_node, htmlTree->root);
         // Free gumbo parse nodes.
         gumbo_destroy_output(&kGumboDefaultOptions, htmlTree);
-
-        root_node->GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
       }
     }
   } else {

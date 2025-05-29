@@ -36,9 +36,8 @@ DOMMatrix* DOMMatrixReadOnly::fromMatrix(ExecutingContext* context,
   errmsg[0] = 0;
 
   NativeValue* dart_result = context->dartMethodPtr()->invokeModule(
-      context->isDedicated(), nullptr, context->contextId(), context->dartIsolateContext()->profiler()->link_id(),
-      module_name.ToNativeString(context->ctx()).release(), method_name.ToNativeString(context->ctx()).release(),
-      arguments, errmsg, nullptr);
+      context->isDedicated(), nullptr, context->contextId(), module_name.ToNativeString(context->ctx()).release(),
+      method_name.ToNativeString(context->ctx()).release(), arguments, errmsg, nullptr);
 
   if (errmsg[0] != 0) {
     exception_state.ThrowException(context->ctx(), ErrorType::InternalError, errmsg);

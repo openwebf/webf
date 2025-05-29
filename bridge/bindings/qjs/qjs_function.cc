@@ -78,11 +78,8 @@ ScriptValue QJSFunction::Invoke(JSContext* ctx, const ScriptValue& this_val, int
   }
 
   ExecutingContext* context = ExecutingContext::From(ctx);
-  context->dartIsolateContext()->profiler()->StartTrackSteps("JS_Call");
 
   JSValue returnValue = JS_Call(ctx, function_, JS_IsNull(this_val_) ? this_val.QJSValue() : this_val_, argc, argv);
-
-  context->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   context->DrainMicrotasks();
 

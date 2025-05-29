@@ -121,128 +121,44 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     try {
       switch (commandType) {
         case UICommandType.createElement:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createElement');
-          }
-
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
 
           break;
         case UICommandType.createDocument:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createDocument');
-          }
-
           view.initDocument(view, nativePtr.cast<NativeBindingObject>());
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createWindow:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
-          }
-
           view.initWindow(view, nativePtr.cast<NativeBindingObject>());
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createTextNode:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
-          }
-
           view.createTextNode(nativePtr.cast<NativeBindingObject>(), command.args);
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createComment:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
-          }
-
           view.createComment(nativePtr.cast<NativeBindingObject>());
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.disposeBindingObject:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createWindow');
-          }
-
           WebFViewController.disposeBindingObject(view, nativePtr.cast<NativeBindingObject>());
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.addEvent:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.addEvent');
-          }
-
           Pointer<AddEventListenerOptions> eventListenerOptions = command.nativePtr2.cast<AddEventListenerOptions>();
           view.addEvent(nativePtr.cast<NativeBindingObject>(), command.args,
               addEventListenerOptions: eventListenerOptions);
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
-
           break;
         case UICommandType.removeEvent:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeEvent');
-          }
           bool isCapture = command.nativePtr2.address == 1;
           view.removeEvent(nativePtr.cast<NativeBindingObject>(), command.args, isCapture: isCapture);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.insertAdjacentNode:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.insertAdjacentNode');
-          }
           view.insertAdjacentNode(
               nativePtr.cast<NativeBindingObject>(), command.args, command.nativePtr2.cast<NativeBindingObject>());
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.removeNode:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeNode');
-          }
           view.removeNode(nativePtr.cast<NativeBindingObject>());
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.cloneNode:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.cloneNode');
-          }
           view.cloneNode(nativePtr.cast<NativeBindingObject>(), command.nativePtr2.cast<NativeBindingObject>());
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.setStyle:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.cloneNode');
-          }
           String value;
           if (command.nativePtr2 != nullptr) {
             Pointer<NativeString> nativeValue = command.nativePtr2.cast<NativeString>();
@@ -253,37 +169,18 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           }
           view.setInlineStyle(nativePtr, command.args, value);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.clearStyle:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.clearStyle');
-          }
           view.clearInlineStyle(nativePtr);
           pendingStylePropertiesTargets[nativePtr.address] = true;
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.setAttribute:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setAttribute');
-          }
           Pointer<NativeString> nativeKey = command.nativePtr2.cast<NativeString>();
           String key = nativeStringToString(nativeKey);
           freeNativeString(nativeKey);
           view.setAttribute(nativePtr.cast<NativeBindingObject>(), key, command.args);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.setProperty:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.setProperty');
-          }
-
           BindingObject? target = view.getBindingObject<BindingObject>(nativePtr.cast<NativeBindingObject>());
           if (target == null) {
             break;
@@ -291,57 +188,25 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
           List<dynamic> args = [command.args, fromNativeValue(view, command.nativePtr2.cast<NativeValue>())];
           setterBindingCall(target, args);
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.removeAttribute:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.removeAttribute');
-          }
           String key = command.args;
           view.removeAttribute(nativePtr, key);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createDocumentFragment:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createDocumentFragment');
-          }
           view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createSVGElement:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createSVGElement');
-          }
           view.createElementNS(nativePtr.cast<NativeBindingObject>(), SVG_ELEMENT_URI, command.args);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.createElementNS:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.createElementNS');
-          }
           Pointer<NativeString> nativeNameSpaceUri = command.nativePtr2.cast<NativeString>();
           String namespaceUri = nativeStringToString(nativeNameSpaceUri);
           freeNativeString(nativeNameSpaceUri);
 
           view.createElementNS(nativePtr.cast<NativeBindingObject>(), namespaceUri, command.args);
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         case UICommandType.asyncCaller:
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.startTrackUICommandStep('FlushUICommand.asyncCaller');
-          }
-
           Pointer<BindingObjectAsyncCallContext> asyncCallContext =
               command.nativePtr2.cast<BindingObjectAsyncCallContext>();
 
@@ -349,10 +214,6 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
             view, asyncCallContext,
             command.nativePtr.cast<NativeBindingObject>(),
           );
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackUICommandStep();
-          }
           break;
         default:
           break;

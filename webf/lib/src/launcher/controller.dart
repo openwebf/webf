@@ -430,6 +430,17 @@ class WebFController with Diagnosticable {
     });
   }
 
+  /// Adds preloaded bundles to the controller.
+  ///
+  /// This method allows manually adding WebFBundles to the preloaded bundles list.
+  /// Useful for programmatically preloading resources after controller initialization.
+  ///
+  /// @param bundles A list of WebFBundle objects to add as preloaded resources
+  void addPreloadedBundle(WebFBundle bundle) {
+    _preloadBundleIndex ??= {};
+    _preloadBundleIndex![bundle.url] = bundle;
+  }
+
   // The view entrypoint bundle.
   WebFBundle? _entrypoint;
 
@@ -474,10 +485,6 @@ class WebFController with Diagnosticable {
         _methodChannel = javaScriptChannel {
     _initializePreloadBundle();
     cookieManager = CookieManager();
-    if (enableWebFProfileTracking) {
-      WebFProfiler.initialize();
-    }
-
     _methodChannel = methodChannel;
     WebFMethodChannel.setJSMethodCallCallback(this);
 
@@ -750,17 +757,8 @@ class WebFController with Diagnosticable {
           _preloadStatus = PreloadingStatus.done;
           controllerPreloadingCompleter.complete();
         } else if (_entrypoint!.isHTML) {
-          EvaluateOpItem? evaluateOpItem;
-          if (enableWebFProfileTracking) {
-            evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('parseHTML');
-          }
-
           // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-          await parseHTML(view.contextId, _entrypoint!.data!, profileOp: evaluateOpItem);
-
-          if (enableWebFProfileTracking) {
-            WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
-          }
+          await parseHTML(view.contextId, _entrypoint!.data!);
 
           if (isTimeout) return;
 
@@ -852,16 +850,8 @@ class WebFController with Diagnosticable {
     // Set the status value for preloading.
     _preRenderingStatus = PreRenderingStatus.preloading;
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-
     // Manually initialize the root element and create renderObjects for each elements.
     view.document.documentElement!.applyStyle(view.document.documentElement!.style);
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
 
     run() async {
       bool isTimeout = false;
@@ -976,20 +966,12 @@ class WebFController with Diagnosticable {
   void resume() {
     if (!_paused) return;
 
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.startTrackUICommand();
-    }
-
     _paused = false;
     flushPendingCallbacks();
     module.resumeTimer();
     module.resumeAnimationFrame();
     view.resumeAnimationTimeline();
     SchedulerBinding.instance.scheduleFrame();
-
-    if (enableWebFProfileTracking) {
-      WebFProfiler.instance.finishTrackUICommand();
-    }
   }
 
   bool _disposed = false;
@@ -1111,10 +1093,6 @@ class WebFController with Diagnosticable {
 
     assert(!_view!.disposed, 'WebF have already disposed');
     if (_entrypoint != null) {
-      EvaluateOpItem? evaluateOpItem;
-      if (enableWebFProfileTracking) {
-        evaluateOpItem = WebFProfiler.instance.startTrackEvaluate('WebFController.evaluateEntrypoint');
-      }
 
       WebFBundle entrypoint = _entrypoint!;
       double contextId = _view!.contextId;
@@ -1130,13 +1108,12 @@ class WebFController with Diagnosticable {
         await evaluateScripts(contextId, data,
             url: url,
             cacheKey: entrypoint.cacheKey,
-            loadedFromCache: entrypoint.loadedFromCache,
-            profileOp: evaluateOpItem);
+            loadedFromCache: entrypoint.loadedFromCache);
       } else if (entrypoint.isBytecode) {
-        await evaluateQuickjsByteCode(contextId, data, profileOp: evaluateOpItem);
+        await evaluateQuickjsByteCode(contextId, data);
       } else if (entrypoint.isHTML) {
         assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
-        await parseHTML(contextId, data, profileOp: evaluateOpItem);
+        await parseHTML(contextId, data);
       } else if (entrypoint.contentType.primaryType == 'text') {
         // Fallback treating text content as JavaScript.
         try {
@@ -1144,8 +1121,7 @@ class WebFController with Diagnosticable {
           await evaluateScripts(contextId, data,
               loadedFromCache: entrypoint.loadedFromCache,
               cacheKey: entrypoint.cacheKey,
-              url: url,
-              profileOp: evaluateOpItem);
+              url: url);
         } catch (error) {
           print('Fallback to execute JavaScript content of $url');
           rethrow;
@@ -1165,10 +1141,6 @@ class WebFController with Diagnosticable {
         checkCompleted();
       });
       SchedulerBinding.instance.scheduleFrame();
-
-      if (enableWebFProfileTracking) {
-        WebFProfiler.instance.finishTrackEvaluate(evaluateOpItem!);
-      }
     }
   }
 

@@ -50,9 +50,18 @@ android {
 
     defaultConfig {
         minSdk = 21
+        // externalNativeBuild {
+        //     cmake {
+        //         arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE"
+        //     }
+        // }
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a'
+        }
+
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE"
+                abiFilters 'armeabi-v7a', 'arm64-v8a'
             }
         }
     }

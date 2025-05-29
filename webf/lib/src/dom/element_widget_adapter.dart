@@ -122,7 +122,8 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     } else {
       webFElement.childNodes.forEach((node) {
         if (node is Element &&
-            (node.renderStyle.position == CSSPositionType.absolute || node.renderStyle.position == CSSPositionType.sticky)) {
+            (node.renderStyle.position == CSSPositionType.absolute ||
+                node.renderStyle.position == CSSPositionType.sticky)) {
           if (node.holderAttachedPositionedElement != null) {
             children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
           }
@@ -171,6 +172,9 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
             child: flutter.Scrollable(
                 controller: webFElement.scrollControllerX,
                 axisDirection: AxisDirection.right,
+                physics: overflowX == CSSOverflowType.hidden
+                    ? flutter.NeverScrollableScrollPhysics()
+                    : null,
                 viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                     webFElement: webFElement,
@@ -192,6 +196,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         widget = LayoutBoxWrapper(
             child: flutter.Scrollable(
                 axisDirection: AxisDirection.down,
+                physics:  overflowY == CSSOverflowType.hidden ? flutter.NeverScrollableScrollPhysics() : null,
                 controller: webFElement.scrollControllerY,
                 viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
                   if (scrollableX != null) {
@@ -230,11 +235,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     }
 
     return WebFEventListener(
-      ownerElement: webFElement,
-      child: widget,
-      hasEvent: webFElement.hasEvent,
-      enableTouchEvent: webFElement is WebFTouchAreaElement
-    );
+        ownerElement: webFElement,
+        child: widget,
+        hasEvent: webFElement.hasEvent,
+        enableTouchEvent: webFElement is WebFTouchAreaElement);
   }
 
   @override
@@ -322,7 +326,8 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
 
     _currentRouteSettings = route?.settings;
 
-    OnScreenEvent event = OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    OnScreenEvent event =
+        OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     // Should dispatch onscreen event after did build and layout
     SchedulerBinding.instance.addPostFrameCallback((_) async {
       webFElement.dispatchEventUtilAdded(event);
@@ -340,7 +345,8 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = widget.webFElement;
-    OffScreenEvent event = OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    OffScreenEvent event =
+        OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     SchedulerBinding.instance.addPostFrameCallback((_) {
       element.dispatchEvent(event);
     });
@@ -459,7 +465,8 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
 
     _currentRouteSettings = route?.settings;
 
-    OnScreenEvent event = OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    OnScreenEvent event =
+        OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     Element webfElement = webFElement;
     SchedulerBinding.instance.addPostFrameCallback((_) {
       webfElement.dispatchEventUtilAdded(event);
@@ -469,7 +476,8 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
   @override
   void unmount() {
     Element element = webFElement;
-    OffScreenEvent event = OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    OffScreenEvent event =
+        OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     SchedulerBinding.instance.addPostFrameCallback((_) {
       element.dispatchEvent(event);
     });

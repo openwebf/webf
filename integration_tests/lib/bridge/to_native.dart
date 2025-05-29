@@ -43,9 +43,9 @@ void evaluateTestScripts(double contextId, String code, {String url = 'test://',
 
 typedef ExecuteCallbackResultCallback = Void Function(Handle context, Pointer<NativeString> result);
 typedef DartExecuteCallback = void Function(double);
-typedef NativeExecuteTest = Void Function(Pointer<Void>, Int64 profileId, Handle context,
+typedef NativeExecuteTest = Void Function(Pointer<Void>, Handle context,
     Pointer<NativeFunction<ExecuteCallbackResultCallback>> resultCallback);
-typedef DartExecuteTest = void Function(Pointer<Void>, int profileId, Object context,
+typedef DartExecuteTest = void Function(Pointer<Void>, Object context,
     Pointer<NativeFunction<ExecuteCallbackResultCallback>> resultCallback);
 
 final DartExecuteTest _executeTest =
@@ -53,30 +53,19 @@ final DartExecuteTest _executeTest =
 
 class _ExecuteTestContext {
   Completer<String> completer;
-  EvaluateOpItem? profileOp;
-  _ExecuteTestContext(this.completer, this.profileOp);
+  _ExecuteTestContext(this.completer);
 }
 
 void _handleExecuteTestResult(Object handle, Pointer<NativeString> resultData) {
   _ExecuteTestContext context = handle as _ExecuteTestContext;
   String status = nativeStringToString(resultData);
   context.completer.complete(status);
-
-  if (enableWebFProfileTracking) {
-    WebFProfiler.instance.finishTrackEvaluate(context.profileOp!);
-  }
 }
 
 Future<String> executeTest(Pointer<Void> testContext, double contextId) async {
   Completer<String> completer = Completer();
-
-  EvaluateOpItem? currentProfileOp;
-  if (enableWebFProfileTracking) {
-    currentProfileOp = WebFProfiler.instance.startTrackEvaluate('executeTest');
-  }
-
-  _ExecuteTestContext context = _ExecuteTestContext(completer, currentProfileOp);
+  _ExecuteTestContext context = _ExecuteTestContext(completer);
   Pointer<NativeFunction<ExecuteCallbackResultCallback>> callback = Pointer.fromFunction(_handleExecuteTestResult);
-  _executeTest(testContext, currentProfileOp?.hashCode ?? 0, context, callback);
+  _executeTest(testContext, context, callback);
   return completer.future;
 }

@@ -393,8 +393,6 @@ NativeValue EventTarget::HandleCallFromDartSide(const AtomicString& method,
 }
 
 NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeValue* argv, Dart_Handle dart_object) {
-  GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps("EventTarget::HandleDispatchEventFromDart");
-
   assert(argc >= 2);
   NativeValue native_event_type = argv[0];
   NativeValue native_is_capture = argv[2];
@@ -455,8 +453,6 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
     GetExecutingContext()->ReportError(error);
     JS_FreeValue(ctx(), error);
   }
-
-  GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   auto* result = new EventDispatchResult{.canceled = dispatch_result == DispatchEventResult::kCanceledByEventHandler,
                                          .propagationStopped = event->propagationStopped(),

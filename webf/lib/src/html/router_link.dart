@@ -22,7 +22,6 @@ class RouterLinkElement extends WidgetElement {
   String get path => _path;
   set path(String value) {
     _path = value;
-    ownerView.setHybridRouterView(_path, this);
   }
 
   @override
@@ -56,6 +55,10 @@ class RouterLinkElement extends WidgetElement {
   @override
   void connectedCallback() {
     super.connectedCallback();
+    if (_path.isNotEmpty) {
+      ownerView.setHybridRouterView(_path, this);
+    }
+
     if (path == ownerDocument.controller.initialRoute) {
       dispatchEvent(Event('pode'));
     }
