@@ -457,13 +457,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       contentSize = transferredSize;
     }
 
-    CSSLengthValue maxMainLength = _isHorizontalFlexDirection ? childRenderStyle.maxWidth : childRenderStyle.maxHeight;
-
-    // Further clamped by the max main size property if that is definite.
-    if (maxMainLength.isNotNone) {
-      contentSize = math.max(contentSize, maxMainLength.computedValue);
-    }
-
     // Automatic Minimum Size of Flex Items.
     // https://www.w3.org/TR/css-flexbox-1/#min-size-auto
     double autoMinSize;
