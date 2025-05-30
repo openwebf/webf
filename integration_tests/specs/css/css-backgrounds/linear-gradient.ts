@@ -250,4 +250,232 @@ describe('Background linear-gradient', () => {
       done();
     });
   });
+
+  it("linear-gradient color update", async (done) => {
+    // Test for the gradient color update issue fix
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'linear-gradient(0.25turn, #DADADA00, #DADADA, #DADADA00)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Update the gradient colors - this should trigger the fixed cache invalidation
+      div.style.background = 'linear-gradient(0.25turn, #6E758300, #4A4B4B, #6E758300)';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it("linear-gradient direction update", async (done) => {
+    // Test gradient direction change with cache invalidation
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'linear-gradient(to right, red, blue)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Change gradient direction - should invalidate cache
+      div.style.background = 'linear-gradient(to bottom, red, blue)';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it("linear-gradient stops update", async (done) => {
+    // Test gradient color stops change with cache invalidation
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'linear-gradient(45deg, red 0%, blue 100%)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Change gradient stops - should invalidate cache
+      div.style.background = 'linear-gradient(45deg, red 0%, green 50%, blue 100%)';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it("linear-gradient size change with same gradient", async (done) => {
+    // Test element size change with same gradient (rect change)
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'linear-gradient(45deg, red, blue)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Change element size - should invalidate cache due to rect change
+      div.style.width = '150px';
+      div.style.height = '150px';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it("linear-gradient multiple rapid updates", async (done) => {
+    // Test rapid gradient changes to ensure cache works correctly
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'linear-gradient(to right, red, blue)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // First update
+      div.style.background = 'linear-gradient(to right, green, yellow)';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+
+        requestAnimationFrame(async () => {
+          // Second rapid update
+          div.style.background = 'linear-gradient(to right, purple, orange)';
+
+          requestAnimationFrame(async () => {
+            await snapshot();
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it("linear-gradient with background color change", async (done) => {
+    // Test gradient with background color fallback
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          backgroundColor: 'red',
+          background: 'linear-gradient(45deg, rgba(0,0,255,0.5), rgba(0,255,0,0.5))'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Change both background color and gradient
+      div.style.backgroundColor = 'yellow';
+      div.style.background = 'linear-gradient(45deg, rgba(255,0,0,0.5), rgba(0,0,255,0.5))';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it("radial-gradient color update", async (done) => {
+    // Test radial gradient color updates (same cache logic applies)
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'radial-gradient(circle, red, blue)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Update radial gradient colors
+      div.style.background = 'radial-gradient(circle, green, yellow)';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
+
+  it("conic-gradient color update", async (done) => {
+    // Test conic gradient color updates
+    let div = createElement(
+      'div',
+      {
+        style: {
+          width: '100px',
+          height: '100px',
+          background: 'conic-gradient(from 0deg, red, blue, red)'
+        }
+      }
+    );
+    BODY.appendChild(div);
+
+    await snapshot();
+
+    requestAnimationFrame(async () => {
+      // Update conic gradient colors
+      div.style.background = 'conic-gradient(from 0deg, green, yellow, green)';
+
+      requestAnimationFrame(async () => {
+        await snapshot();
+        done();
+      });
+    });
+  });
 });
