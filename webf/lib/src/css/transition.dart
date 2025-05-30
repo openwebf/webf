@@ -19,8 +19,10 @@ String _stringifyColor(Color color) {
   return CSSColor(color).cssText();
 }
 
-Color _updateColor(Color oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
-  Color? result = Color.lerp(oldColor, newColor, progress);
+Color _updateColor(Color? oldColor, Color newColor, double progress, String property, RenderStyle renderStyle) {
+  // If oldColor is null, start transition from transparent or newColor at progress 0
+  Color startColor = oldColor ?? const Color(0x00000000); // Transparent if no old color
+  Color? result = Color.lerp(startColor, newColor, progress);
   renderStyle.target.setRenderStyleProperty(property, CSSColor(result!));
   return result;
 }
@@ -371,13 +373,17 @@ mixin CSSTransitionMixin on RenderStyle {
       Animation animation = _propertyRunningTransition[propertyName]!;
       if (CSSTransitionHandlers.containsKey(propertyName) && animation.effect is KeyframeEffect) {
         KeyframeEffect effect = animation.effect as KeyframeEffect;
-        var interpolation = effect.interpolations.firstWhere((interpolation) => interpolation.property == propertyName);
-        var stringifyFunc = CSSTransitionHandlers[propertyName]![2];
-        // Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle
-        begin = stringifyFunc(interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
+        try {
+          var interpolation = effect.interpolations.firstWhere((interpolation) => interpolation.property == propertyName);
+          var stringifyFunc = CSSTransitionHandlers[propertyName]![2];
+          // Matrix4 begin, Matrix4 end, double t, String property, CSSRenderStyle renderStyle
+          begin = stringifyFunc(interpolation.lerp(interpolation.begin, interpolation.end, animation.progress, propertyName, this));
+        } catch (e, stack) {
+          // If no interpolation is found for this property, skip and use the original begin value
+          // This can happen when CSS variables are updated during transitions
+          debugPrint('$e\n$stack');
+        }
       }
-
-      CSSTransitionHandlers[propertyName];
 
       animation.cancel();
       // An Event fired when a CSS transition has been cancelled.
