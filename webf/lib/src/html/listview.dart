@@ -345,7 +345,6 @@ class WebFListViewState extends WebFWidgetElementState {
         onRefresh: widgetElement.hasEventListener('refresh') ? onRefresh : null,
         controller: refreshController,
         child: ListView.builder(
-            shrinkWrap: true,
             controller: scrollController,
             scrollDirection: widgetElement.scrollDirection,
             itemCount: widgetElement.childNodes.length,
