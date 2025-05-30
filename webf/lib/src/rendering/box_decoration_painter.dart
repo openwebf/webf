@@ -47,19 +47,22 @@ class BoxDecorationPainter extends BoxPainter {
 
   Paint? _cachedBackgroundPaint;
   Rect? _rectForCachedBackgroundPaint;
+  Gradient? _cachedGradient;
 
   Paint? _getBackgroundPaint(Rect rect, TextDirection? textDirection) {
     assert(_decoration.gradient != null || _rectForCachedBackgroundPaint == null);
 
     if (_cachedBackgroundPaint == null ||
         _decoration.color != null ||
-        (_decoration.gradient != null && _rectForCachedBackgroundPaint != rect)) {
+        (_decoration.gradient != null &&
+            (_rectForCachedBackgroundPaint != rect || _cachedGradient != _decoration.gradient))) {
       final Paint paint = Paint();
       if (_decoration.backgroundBlendMode != null) paint.blendMode = _decoration.backgroundBlendMode!;
       if (_decoration.color != null) paint.color = _decoration.color!;
       if (_decoration.gradient != null) {
         paint.shader = _decoration.gradient!.createShader(rect, textDirection: textDirection);
         _rectForCachedBackgroundPaint = rect;
+        _cachedGradient = _decoration.gradient;
       }
       _cachedBackgroundPaint = paint;
     }
@@ -146,25 +149,24 @@ class BoxDecorationPainter extends BoxPainter {
     } else {
       // Handle non-uniform borders - draw each side individually if it's dashed
       // Check which sides have dashed borders
-      bool hasTopDashedBorder = border.top is ExtendedBorderSide && 
+      bool hasTopDashedBorder = border.top is ExtendedBorderSide &&
           (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
           border.top.width > 0;
-          
-      bool hasRightDashedBorder = border.right is ExtendedBorderSide && 
+
+      bool hasRightDashedBorder = border.right is ExtendedBorderSide &&
           (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
           border.right.width > 0;
-          
-      bool hasBottomDashedBorder = border.bottom is ExtendedBorderSide && 
+
+      bool hasBottomDashedBorder = border.bottom is ExtendedBorderSide &&
           (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
           border.bottom.width > 0;
-          
-      bool hasLeftDashedBorder = border.left is ExtendedBorderSide && 
+
+      bool hasLeftDashedBorder = border.left is ExtendedBorderSide &&
           (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed &&
           border.left.width > 0;
-      
+
       // Return early if no dashed borders
-      if (!hasTopDashedBorder && !hasRightDashedBorder && 
-          !hasBottomDashedBorder && !hasLeftDashedBorder) return;
+      if (!hasTopDashedBorder && !hasRightDashedBorder && !hasBottomDashedBorder && !hasLeftDashedBorder) return;
 
       // Handle border radius
       RRect? rrect;
@@ -176,62 +178,59 @@ class BoxDecorationPainter extends BoxPainter {
       if (hasTopDashedBorder) {
         _paintDashedBorderSide(canvas, rect, rrect, border.top as ExtendedBorderSide, _BorderDirection.top);
       }
-      
+
       if (hasRightDashedBorder) {
         _paintDashedBorderSide(canvas, rect, rrect, border.right as ExtendedBorderSide, _BorderDirection.right);
       }
-      
+
       if (hasBottomDashedBorder) {
         _paintDashedBorderSide(canvas, rect, rrect, border.bottom as ExtendedBorderSide, _BorderDirection.bottom);
       }
-      
+
       if (hasLeftDashedBorder) {
         _paintDashedBorderSide(canvas, rect, rrect, border.left as ExtendedBorderSide, _BorderDirection.left);
       }
     }
   }
-  
+
   // Check if all four borders have the same style, width, and color
   bool _isUniformDashedBorder(Border border) {
     // Check if all sides are ExtendedBorderSide
-    if (border.top is! ExtendedBorderSide || 
-        border.right is! ExtendedBorderSide || 
-        border.bottom is! ExtendedBorderSide || 
+    if (border.top is! ExtendedBorderSide ||
+        border.right is! ExtendedBorderSide ||
+        border.bottom is! ExtendedBorderSide ||
         border.left is! ExtendedBorderSide) {
       return false;
     }
-    
+
     ExtendedBorderSide topSide = border.top as ExtendedBorderSide;
     ExtendedBorderSide rightSide = border.right as ExtendedBorderSide;
     ExtendedBorderSide bottomSide = border.bottom as ExtendedBorderSide;
     ExtendedBorderSide leftSide = border.left as ExtendedBorderSide;
-    
+
     // Check if all sides have the same style
     if (topSide.extendBorderStyle != rightSide.extendBorderStyle ||
         topSide.extendBorderStyle != bottomSide.extendBorderStyle ||
         topSide.extendBorderStyle != leftSide.extendBorderStyle) {
       return false;
     }
-    
+
     // Check if all sides have the same width
-    if (topSide.width != rightSide.width ||
-        topSide.width != bottomSide.width ||
-        topSide.width != leftSide.width) {
+    if (topSide.width != rightSide.width || topSide.width != bottomSide.width || topSide.width != leftSide.width) {
       return false;
     }
-    
+
     // Check if all sides have the same color
-    if (topSide.color != rightSide.color ||
-        topSide.color != bottomSide.color ||
-        topSide.color != leftSide.color) {
+    if (topSide.color != rightSide.color || topSide.color != bottomSide.color || topSide.color != leftSide.color) {
       return false;
     }
-    
+
     return true;
   }
-  
+
   // Helper method to paint a dashed border on a specific side
-  void _paintDashedBorderSide(Canvas canvas, Rect rect, RRect? rrect, ExtendedBorderSide side, _BorderDirection direction) {
+  void _paintDashedBorderSide(
+      Canvas canvas, Rect rect, RRect? rrect, ExtendedBorderSide side, _BorderDirection direction) {
     // Create a paint object for the border
     final Paint paint = Paint()
       ..color = side.color
@@ -246,7 +245,7 @@ class BoxDecorationPainter extends BoxPainter {
 
     // Create the path for just this side
     Path borderPath = Path();
-    
+
     if (rrect != null) {
       // Handle rounded corners
       switch (direction) {
@@ -313,7 +312,7 @@ class BoxDecorationPainter extends BoxPainter {
           break;
       }
     }
-    
+
     // Draw the dashed border for this side
     canvas.drawPath(
       dashPath(
@@ -516,12 +515,8 @@ class BoxDecorationPainter extends BoxPainter {
 
   void _paintBackgroundImage(Canvas canvas, Rect rect, ImageConfiguration configuration) {
     if (_decoration.image == null) return;
-    if(_imagePainter == null) {
-      _imagePainter = BoxDecorationImagePainter._(
-          _decoration.image!,
-          renderStyle,
-          onChanged!
-      );
+    if (_imagePainter == null) {
+      _imagePainter = BoxDecorationImagePainter._(_decoration.image!, renderStyle, onChanged!);
     } else {
       _imagePainter!.image = _decoration.image!;
     }
@@ -667,7 +662,7 @@ class BoxDecorationPainter extends BoxPainter {
 
       // Check if top border is dashed - assuming uniform border
       hasDashedBorder = border.top is ExtendedBorderSide &&
-                       (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+          (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
     }
 
     // If we have a dashed border, use our custom painter
@@ -690,6 +685,7 @@ class BoxDecorationPainter extends BoxPainter {
   @override
   String toString() => 'BoxPainter for $_decoration';
 }
+
 /// Forked from flutter of [DecorationImagePainter] Class.
 /// https://github.com/flutter/flutter/blob/master/packages/flutter/lib/src/painting/decoration_image.dart#L208
 class BoxDecorationImagePainter {
@@ -698,9 +694,10 @@ class BoxDecorationImagePainter {
   final CSSRenderStyle _renderStyle;
   DecorationImage _details;
 
-  set image(DecorationImage detail){
+  set image(DecorationImage detail) {
     _details = detail;
   }
+
   CSSBackgroundPosition get _backgroundPositionX {
     return _renderStyle.backgroundPositionX;
   }
