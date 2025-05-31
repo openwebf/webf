@@ -5,6 +5,7 @@ import { ElementAttributes } from './legacy/element_attributes';
 import {CSSStyleDeclaration} from "../css/css_style_declaration";
 import {ParentNode} from "./parent_node";
 import {ChildNode} from "./child_node";
+import {Blob} from "../fileapi/blob";
 
 interface Element extends Node, ParentNode, ChildNode {
   id: string;
@@ -74,7 +75,7 @@ interface Element extends Node, ParentNode, ChildNode {
 
   // Export the target element's rendering content to PNG.
   // WebF special API.
-  toBlob(devicePixelRatioValue?: double): Promise<ArrayBuffer>;
+  toBlob(devicePixelRatioValue?: double): Promise<Blob>;
 
   __testGlobalToLocal__(x: number, y: number): any;
 

@@ -21,7 +21,6 @@
     "build:bridge:all": "node scripts/prepare_webf_release_binary",
     "build:bridge:all:release": "WEBF_BUILD=Release node scripts/prepare_webf_release_binary",
     "build_bridge:all:profile": "ENABLE_PROFILE=true npm run build:bridge:all:release",
-    "generate_binding_code": "node scripts/generate_binding_code",
     "build:clean": "node scripts/clean.js",
     "pretest": "npm install && node scripts/build_darwin_dylib",
     "posttest": "npm run lint",

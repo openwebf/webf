@@ -31,8 +31,8 @@ interface Document extends Node, ParentNode, GlobalEventHandlers {
   readonly hidden: SupportAsync<DartImpl<boolean>>;
   readonly defaultView: Window;
 
-  createElement(tagName: string, options?: any): Element;
-  createElementNS(uri: string | null, tagName: string, options?: any): Element;
+  createElement(tagName: string): Element;
+  createElementNS(uri: string | null, tagName: string): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
   createComment(data: string): Comment;

@@ -8,10 +8,13 @@ require('./tasks');
 
 // Run tasks
 series(
+  'merge-bridge-typings',
   'update-typings-version',
-  'generate-typings',
   'generate-bindings-code',
   'compile-polyfill',
+  'generate-typings',
+  'merge-webf-and-polyfill-typings',
+  'merge-all-typings',
 )((err) => {
   if (err) {
     console.log(err);

@@ -4,7 +4,7 @@
 */
 
 import './dom';
-import { console } from './console';
+import { console, Console } from './console';
 import { fetch, Request, Response, Headers } from './fetch';
 import { matchMedia } from './match-media';
 import { location } from './location';
@@ -45,6 +45,29 @@ defineGlobalProperty('WebSocket', WebSocket);
 defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
+
+export {
+  console,
+  Console,
+  Request,
+  Response,
+  Headers,
+  fetch,
+  matchMedia,
+  location,
+  history,
+  navigator,
+  XMLHttpRequest,
+  asyncStorage,
+  localStorage,
+  URLSearchParams,
+  sessionStorage,
+  DOMException,
+  URL,
+  webf,
+  WebSocket,
+  ResizeObserver
+}
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
   Object.defineProperty(globalThis, key, {

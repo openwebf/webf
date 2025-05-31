@@ -42,7 +42,9 @@ export type Webf = {
   removeWebfModuleListener: RemoveWebfModuleListener;
   /** Schedule a callback to be executed during idle periods */
   requestIdleCallback: RequestIdleCallback;
-}
+  document: Document;
+  window: Window & typeof globalThis;
+};
 
 const MAGIC_RESULT_FOR_ASYNC = 0x01fa2f << 4;
 
@@ -92,11 +94,16 @@ but was invoked synchronously. Please use webf.invokeModuleAsync instead`);
   return result;
 }
 
+declare var window: Window & typeof globalThis;
+declare var document: Document;
+
 /**
  * Global WebF instance providing access to all WebF functionality
  */
 export const webf: Webf = {
   methodChannel,
+  document: document,
+  window: window,
   invokeModule: invokeModuleSync,
   invokeModuleAsync: invokeModuleAsync,
   hybridHistory: hybridHistory,
