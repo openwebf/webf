@@ -1150,6 +1150,86 @@ function generateAsyncVariants(content) {
                     hasChanges = true;
                   }
                 }
+              }
+              // Check if the type is JSArrayProtoMethod
+              else if (typeNode && ts.isTypeReferenceNode(typeNode) && 
+                  ts.isIdentifier(typeNode.typeName) && 
+                  typeNode.typeName.text === 'JSArrayProtoMethod') {
+                
+                const memberName = member.name;
+                if ((ts.isIdentifier(memberName) || ts.isComputedPropertyName(memberName)) && ts.isPropertySignature(member)) {
+                  // Create Array prototype methods based on property name
+                  let methodName;
+                  if (ts.isIdentifier(memberName)) {
+                    methodName = memberName.text;
+                  } else if (ts.isComputedPropertyName(memberName)) {
+                    // Handle [Symbol.iterator] case
+                    const expression = memberName.expression;
+                    if (ts.isPropertyAccessExpression(expression) && 
+                        ts.isIdentifier(expression.expression) && 
+                        expression.expression.text === 'Symbol' &&
+                        ts.isIdentifier(expression.name) && 
+                        expression.name.text === 'iterator') {
+                      methodName = 'Symbol.iterator';
+                    } else {
+                      methodName = 'unknown';
+                    }
+                  } else {
+                    methodName = 'unknown';
+                  }
+                  let arrayMethodSignature = null;
+                  
+                  // Define common Array prototype methods with their signatures
+                  switch (methodName) {
+                    case 'forEach':
+                      arrayMethodSignature = '(callbackfn: (value: any, index: number, array: any[]) => void, thisArg?: any) => void';
+                      break;
+                    case 'keys':
+                      arrayMethodSignature = '() => IterableIterator<number>';
+                      break;
+                    case 'entries':
+                      arrayMethodSignature = '() => IterableIterator<[number, any]>';
+                      break;
+                    case 'values':
+                      arrayMethodSignature = '() => IterableIterator<any>';
+                      break;
+                    case 'Symbol.iterator':
+                      arrayMethodSignature = '() => IterableIterator<any>';
+                      break;
+                    default:
+                      // For unknown methods, use a generic function signature
+                      arrayMethodSignature = '(...args: any[]) => any';
+                  }
+                  
+                  if (arrayMethodSignature) {
+                    // Parse the signature string into TypeScript AST nodes
+                    const tempPropertyName = methodName === 'Symbol.iterator' ? '[Symbol.iterator]' : methodName;
+                    const tempSource = `interface Temp { ${tempPropertyName}: ${arrayMethodSignature}; }`;
+                    const tempSourceFile = ts.createSourceFile(
+                      'temp.ts',
+                      tempSource,
+                      ts.ScriptTarget.Latest,
+                      true,
+                      ts.ScriptKind.TS
+                    );
+                    
+                    // Extract the type from the temporary interface
+                    const tempInterface = tempSourceFile.statements[0];
+                    if (ts.isInterfaceDeclaration(tempInterface) && tempInterface.members.length > 0) {
+                      const tempMember = tempInterface.members[0];
+                      if (ts.isPropertySignature(tempMember) && tempMember.type) {
+                        const arrayMethodMember = ts.factory.createPropertySignature(
+                          member.modifiers, // Copy readonly, etc.
+                          memberName, // Use original member name (preserves computed property syntax)
+                          member.questionToken,
+                          tempMember.type
+                        );
+                        newMembers.push(arrayMethodMember);
+                        hasChanges = true;
+                      }
+                    }
+                  }
+                }
               } else {
                 // Add non-SupportAsync members as-is
                 newMembers.push(member);
@@ -1231,7 +1311,6 @@ type DependentsOnLayout<T> = T;
 
 // WebF-specific types
 type EventListener = ((event: Event) => void) | null;
-type JSArrayProtoMethod = (() => any);
 type LegacyNullToEmptyString = string;
 type BlobPart = string | ArrayBuffer | ArrayBufferView | Blob;
 
@@ -1287,9 +1366,12 @@ type BlobPart = string | ArrayBuffer | ArrayBufferView | Blob;
     processedContent = processedContent.replace(/\bJSEventListener\b/g, 'EventListener');
     
     // Replace other WebF-specific types that might not be defined
-    processedContent = processedContent.replace(/\bJSArrayProtoMethod\b/g, 'JSArrayProtoMethod');
     processedContent = processedContent.replace(/\bLegacyNullToEmptyString\b/g, 'LegacyNullToEmptyString');
     processedContent = processedContent.replace(/\bBlobPart\b/g, 'BlobPart');
+    
+    // Unwrap standalone DartImpl<T> and DependentsOnLayout<T> wrapper types
+    processedContent = processedContent.replace(/\bDartImpl<([^>]+)>/g, '$1');
+    processedContent = processedContent.replace(/\bDependentsOnLayout<([^>]+)>/g, '$1');
     
     processedContent = generateAsyncVariants(processedContent);
     

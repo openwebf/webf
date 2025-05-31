@@ -31,6 +31,7 @@
     "plugin_test": "node scripts/run_plugin_test.js",
     "lint": "cd webf && flutter pub get && flutter analyze",
     "format": "cd webf && flutter format . --line-length=120",
+    "merge-bridge-typings": "node scripts/merge_bridge_typings.js",
     "ci": "npm install && npm run lint",
     "test:unit:report": "lcov-summary webf/coverage/lcov.info"
   },
@@ -52,6 +53,7 @@
   },
   "dependencies": {
     "json5": "^2.2.3",
-    "prepend-file": "^2.0.1"
+    "prepend-file": "^2.0.1",
+    "typescript": "^5.8.3"
   }
 }
