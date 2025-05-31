@@ -920,6 +920,475 @@ task('update-typings-version', (done) => {
   }
 });
 
+// Helper function to recursively unwrap DartImpl<T> and DependentsOnLayout<T> types
+function unwrapWrapperTypes(typeNode, ts) {
+  if (!typeNode) return typeNode;
+  
+  // If it's a type reference like DartImpl<T> or DependentsOnLayout<T>
+  if (ts.isTypeReferenceNode(typeNode) && ts.isIdentifier(typeNode.typeName)) {
+    const typeName = typeNode.typeName.text;
+    if (typeName === 'DartImpl' || typeName === 'DependentsOnLayout') {
+      // Get the inner type T and recursively unwrap it
+      const innerType = typeNode.typeArguments?.[0];
+      if (innerType) {
+        return unwrapWrapperTypes(innerType, ts);
+      }
+    }
+  }
+  
+  // If it's a union type, unwrap each member
+  if (ts.isUnionTypeNode(typeNode)) {
+    const unwrappedTypes = typeNode.types.map(t => unwrapWrapperTypes(t, ts));
+    return ts.factory.createUnionTypeNode(unwrappedTypes);
+  }
+  
+  // If it's an intersection type, unwrap each member
+  if (ts.isIntersectionTypeNode(typeNode)) {
+    const unwrappedTypes = typeNode.types.map(t => unwrapWrapperTypes(t, ts));
+    return ts.factory.createIntersectionTypeNode(unwrappedTypes);
+  }
+  
+  // For other types, return as-is
+  return typeNode;
+}
+
+// Function to extract static members from interfaces
+function extractStaticMembers(content) {
+  const staticMembersByInterface = {};
+  const ts = require('typescript');
+  
+  // Parse the TypeScript content into an AST
+  const sourceFile = ts.createSourceFile(
+    'temp.d.ts',
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  
+  // Visit each interface and extract StaticMember/StaticMethod types
+  function visit(node) {
+    if (ts.isInterfaceDeclaration(node)) {
+      const interfaceName = node.name.text;
+      const staticMembers = [];
+      
+      for (const member of node.members) {
+        if ((ts.isPropertySignature(member) || ts.isMethodSignature(member)) && member.type) {
+          const typeNode = member.type;
+          
+          // Check if this is a StaticMember<T> or StaticMethod<T>
+          if (ts.isTypeReferenceNode(typeNode) && 
+              ts.isIdentifier(typeNode.typeName) && 
+              (typeNode.typeName.text === 'StaticMember' || typeNode.typeName.text === 'StaticMethod')) {
+            
+            const memberName = member.name;
+            if (ts.isIdentifier(memberName)) {
+              const innerType = typeNode.typeArguments?.[0];
+              if (innerType) {
+                const unwrappedType = unwrapWrapperTypes(innerType, ts);
+                const printer = ts.createPrinter({ newLine: ts.NewLineKind.LineFeed });
+                const typeText = printer.printNode(ts.EmitHint.Unspecified, unwrappedType, sourceFile);
+                
+                if (ts.isPropertySignature(member)) {
+                  const readonly = member.modifiers?.some(mod => mod.kind === ts.SyntaxKind.ReadonlyKeyword) ? 'const ' : 'let ';
+                  staticMembers.push(`${readonly}${memberName.text}: ${typeText}`);
+                } else if (ts.isMethodSignature(member)) {
+                  const params = member.parameters.map(param => {
+                    const paramName = ts.isIdentifier(param.name) ? param.name.text : 'param';
+                    const paramType = param.type ? printer.printNode(ts.EmitHint.Unspecified, param.type, sourceFile) : 'any';
+                    const optional = param.questionToken ? '?' : '';
+                    return `${paramName}${optional}: ${paramType}`;
+                  }).join(', ');
+                  staticMembers.push(`function ${memberName.text}(${params}): ${typeText}`);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      if (staticMembers.length > 0) {
+        staticMembersByInterface[interfaceName] = staticMembers;
+      }
+    }
+    
+    ts.forEachChild(node, visit);
+  }
+  
+  visit(sourceFile);
+  return staticMembersByInterface;
+}
+
+// Function to generate async variants for SupportAsync members using TypeScript AST
+function generateAsyncVariants(content) {
+  const ts = require('typescript');
+  
+  // Parse the TypeScript content into an AST
+  const sourceFile = ts.createSourceFile(
+    'temp.d.ts',
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+  
+  const printer = ts.createPrinter({
+    newLine: ts.NewLineKind.LineFeed,
+    removeComments: false,
+  });
+  
+  // Transform function to add async variants
+  const transformer = (context) => {
+    return (rootNode) => {
+      function visit(node) {
+        // Process interface declarations
+        if (ts.isInterfaceDeclaration(node)) {
+          const newMembers = [];
+          let hasChanges = false;
+          
+          // Process each member and add async variants for SupportAsync members
+          for (const member of node.members) {
+            // Check if this member has a name starting with __ (double underscore) and skip it
+            const memberName = member.name;
+            if (memberName && ts.isIdentifier(memberName) && memberName.text.startsWith('__')) {
+              // Skip members with __ prefix
+              hasChanges = true;
+              continue;
+            }
+            
+            // Check if this member has SupportAsync type or StaticMember type
+            if (ts.isPropertySignature(member) || ts.isMethodSignature(member)) {
+              const typeNode = member.type;
+              
+              // Check if the type is StaticMember<T> or StaticMethod<T>
+              if (typeNode && ts.isTypeReferenceNode(typeNode) && 
+                  ts.isIdentifier(typeNode.typeName) && 
+                  (typeNode.typeName.text === 'StaticMember' || typeNode.typeName.text === 'StaticMethod')) {
+                
+                const memberName = member.name;
+                if (ts.isIdentifier(memberName)) {
+                  // Get the inner type from StaticMember<T>
+                  const innerType = typeNode.typeArguments?.[0];
+                  if (innerType) {
+                    // Unwrap DartImpl<T> and DependentsOnLayout<T> from the inner type
+                    const fullyUnwrappedType = unwrapWrapperTypes(innerType, ts);
+                    
+                    // Skip adding static members to interfaces - we'll handle them separately
+                    // Just mark as changed and skip this member
+                    hasChanges = true;
+                  }
+                }
+              }
+              // Check if the type is SupportAsync<T> or SupportAsyncManual<T>
+              else if (typeNode && ts.isTypeReferenceNode(typeNode) && 
+                  ts.isIdentifier(typeNode.typeName) && 
+                  (typeNode.typeName.text === 'SupportAsync' || typeNode.typeName.text === 'SupportAsyncManual')) {
+                
+                const memberName = member.name;
+                if (ts.isIdentifier(memberName)) {
+                  // Get the inner type from SupportAsync<T>
+                  const innerType = typeNode.typeArguments?.[0];
+                  if (innerType) {
+                    // Unwrap DartImpl<T> and DependentsOnLayout<T> from the inner type
+                    const fullyUnwrappedType = unwrapWrapperTypes(innerType, ts);
+                    
+                    // Create the original member with unwrapped type T (instead of SupportAsync<T>)
+                    if (ts.isPropertySignature(member)) {
+                      // For properties: memberName: T;
+                      const unwrappedMember = ts.factory.createPropertySignature(
+                        member.modifiers, // Copy readonly, etc.
+                        memberName,
+                        member.questionToken,
+                        fullyUnwrappedType // Use the fully unwrapped type instead of SupportAsync<T>
+                      );
+                      newMembers.push(unwrappedMember);
+                    } else if (ts.isMethodSignature(member)) {
+                      // For methods: methodName(...args): T;
+                      const unwrappedMember = ts.factory.createMethodSignature(
+                        member.modifiers,
+                        memberName,
+                        member.questionToken,
+                        member.typeParameters,
+                        member.parameters,
+                        fullyUnwrappedType // Use the fully unwrapped type instead of SupportAsync<T>
+                      );
+                      newMembers.push(unwrappedMember);
+                    }
+                    
+                    // Create async variant member name
+                    const asyncMemberName = ts.factory.createIdentifier(memberName.text + '_async');
+                    
+                    // Create Promise<T> type with unwrapped inner type
+                    const promiseType = ts.factory.createTypeReferenceNode(
+                      ts.factory.createIdentifier('Promise'),
+                      [fullyUnwrappedType]
+                    );
+                    
+                    // Create the async member (property or method)
+                    if (ts.isPropertySignature(member)) {
+                      // For properties: memberName_async: Promise<T>;
+                      const asyncMember = ts.factory.createPropertySignature(
+                        member.modifiers, // Copy readonly, etc.
+                        asyncMemberName,
+                        member.questionToken,
+                        promiseType
+                      );
+                      newMembers.push(asyncMember);
+                    } else if (ts.isMethodSignature(member)) {
+                      // For methods: methodName_async(...args): Promise<T>;
+                      const asyncMember = ts.factory.createMethodSignature(
+                        member.modifiers,
+                        asyncMemberName,
+                        member.questionToken,
+                        member.typeParameters,
+                        member.parameters,
+                        promiseType
+                      );
+                      newMembers.push(asyncMember);
+                    }
+                    
+                    hasChanges = true;
+                  }
+                }
+              } else {
+                // Add non-SupportAsync members as-is
+                newMembers.push(member);
+              }
+            } else {
+              // Add non-property/method members as-is
+              newMembers.push(member);
+            }
+          }
+          
+          // If we modified any members (replaced SupportAsync with async variants), update the interface
+          if (hasChanges) {
+            return ts.factory.updateInterfaceDeclaration(
+              node,
+              node.modifiers,
+              node.name,
+              node.typeParameters,
+              node.heritageClauses,
+              newMembers
+            );
+          }
+        }
+        
+        return ts.visitEachChild(node, visit, context);
+      }
+      
+      return ts.visitNode(rootNode, visit);
+    };
+  };
+  
+  // Apply the transformation
+  const result = ts.transform(sourceFile, [transformer]);
+  
+  // Convert back to string
+  const transformedSourceFile = result.transformed[0];
+  const output = printer.printFile(transformedSourceFile);
+  
+  // Clean up
+  result.dispose();
+  
+  return output;
+}
+
+// Generate merged webf.d.ts from bridge/core .d.ts files
+task('merge-bridge-typings', (done) => {
+  try {
+    console.log(chalk.blue('Merging bridge/core TypeScript definitions...'));
+    
+    const glob = require('glob');
+    const bridgeCorePath = join(WEBF_ROOT, 'bridge/core');
+    const typingsPath = join(WEBF_ROOT, 'bridge/typings');
+    const webfDtsPath = join(typingsPath, 'webf.d.ts');
+    const indexDtsPath = join(typingsPath, 'index.d.ts');
+    
+    // Find all .d.ts files in bridge/core
+    const dtsFiles = glob.sync('**/*.d.ts', { 
+      cwd: bridgeCorePath,
+      absolute: true 
+    });
+    
+    console.log(chalk.yellow(`Found ${dtsFiles.length} .d.ts files in bridge/core`));
+    
+    let mergedContent = `/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ * Use of this source code is governed by a AGPL-3.0 license that can be
+ * found in the LICENSE file.
+ */
+
+// Auto-generated merged WebF type definitions
+// DO NOT EDIT MANUALLY - Generated from bridge/core/**/*.d.ts files
+
+// WebF type aliases
+type DartImpl<T> = T;
+type StaticMember<T> = T;
+type StaticMethod<T> = T;
+type SupportAsync<T> = T;
+type SupportAsyncManual<T> = T;
+type DependentsOnLayout<T> = T;
+
+// WebF-specific types
+type EventListener = ((event: Event) => void) | null;
+type JSArrayProtoMethod = (() => any);
+type LegacyNullToEmptyString = string;
+type BlobPart = string | ArrayBuffer | ArrayBufferView | Blob;
+
+`;
+
+    const typeDefinitions = [];
+    const namespaceMembers = [];
+    
+    // Process each .d.ts file
+    dtsFiles.forEach(filePath => {
+      console.log(chalk.gray(`Processing: ${path.relative(bridgeCorePath, filePath)}`));
+      
+      const content = readFileSync(filePath, 'utf-8');
+      
+      // Remove imports and exports
+      let processedContent = content
+        .replace(/^\/\*[\s\S]*?\*\/\s*/gm, '') // Remove copyright blocks (/* ... */)
+        .replace(/^\/\/.*Copyright.*$/gm, '') // Remove single-line copyright comments
+        .replace(/^import\s+.*?;?\s*$/gm, '') // Remove import statements
+        .replace(/^export\s*{\s*};\s*$/gm, '') // Remove empty export statements
+        .replace(/^export\s+/gm, '') // Remove export keywords
+        .replace(/@\w+\([^)]*\)\s*/g, '') // Remove decorations like @Directory()
+        .replace(/\/\/\s*@ts-ignore\s*$/gm, '') // Remove @ts-ignore comments
+        .replace(/ImplementedAs<([^,>]+),\s*[^>]+>/g, '$1') // Replace ImplementedAs<T, S> with T
+        .replace(/^\s*[\r\n]/gm, '') // Remove empty lines
+        .trim();
+      
+      if (processedContent) {
+        // Extract interface/class/type names for namespace exposure
+        const interfaceMatches = processedContent.match(/(?:interface|class|type|enum)\s+(\w+)/g);
+        if (interfaceMatches) {
+          interfaceMatches.forEach(match => {
+            const name = match.replace(/(?:interface|class|type|enum)\s+/, '');
+            if (name && !namespaceMembers.includes(name)) {
+              namespaceMembers.push(name);
+            }
+          });
+        }
+        
+        typeDefinitions.push(processedContent);
+      }
+    });
+    
+    // Process all interfaces to add async variants for SupportAsync members
+    let processedContent = typeDefinitions.join('\n\n');
+    
+    // Remove problematic commented lines that contain StaticMethod to avoid AST confusion
+    processedContent = processedContent.replace(/\/\/ .*StaticMethod.*\n/g, '');
+    
+    // Replace WebF-specific types with standard TypeScript types
+    processedContent = processedContent.replace(/\bint64\b/g, 'number');
+    processedContent = processedContent.replace(/\bdouble\b/g, 'number');
+    processedContent = processedContent.replace(/\bJSEventListener\b/g, 'EventListener');
+    
+    // Replace other WebF-specific types that might not be defined
+    processedContent = processedContent.replace(/\bJSArrayProtoMethod\b/g, 'JSArrayProtoMethod');
+    processedContent = processedContent.replace(/\bLegacyNullToEmptyString\b/g, 'LegacyNullToEmptyString');
+    processedContent = processedContent.replace(/\bBlobPart\b/g, 'BlobPart');
+    
+    processedContent = generateAsyncVariants(processedContent);
+    
+    // Extract and create namespace declarations for static members
+    const staticMembersByInterface = extractStaticMembers(typeDefinitions.join('\n\n'));
+    let staticNamespaces = '\n// Namespace declarations for static members\n';
+    
+    for (const [interfaceName, members] of Object.entries(staticMembersByInterface)) {
+      if (members.length > 0) {
+        staticNamespaces += `declare namespace ${interfaceName} {\n`;
+        members.forEach(member => {
+          staticNamespaces += `    ${member};\n`;
+        });
+        staticNamespaces += '}\n\n';
+      }
+    }
+    
+    processedContent = processedContent + staticNamespaces;
+    
+    // Combine all processed content
+    mergedContent += processedContent;
+    
+    // Add webf namespace with all types
+    if (namespaceMembers.length > 0) {
+      mergedContent += `\n\n// WebF namespace containing all bridge types
+declare namespace webf {
+`;
+      namespaceMembers.forEach(member => {
+        mergedContent += `  export type ${member} = globalThis.${member};\n`;
+      });
+      mergedContent += '}\n';
+    }
+    
+    // Write merged webf.d.ts
+    writeFileSync(webfDtsPath, mergedContent);
+    console.log(chalk.green(`Generated webf.d.ts with ${namespaceMembers.length} type definitions`));
+    
+    // Update index.d.ts to include webf.d.ts
+    let indexContent = readFileSync(indexDtsPath, 'utf-8');
+    
+    // Add import for webf.d.ts if not already present
+    if (!indexContent.includes("import './webf'")) {
+      // Find a good place to insert the import (after other imports)
+      const lastImportMatch = indexContent.match(/import\s+type\s+.*?from\s+.*?;/g);
+      if (lastImportMatch) {
+        const lastImport = lastImportMatch[lastImportMatch.length - 1];
+        const insertPos = indexContent.indexOf(lastImport) + lastImport.length;
+        indexContent = indexContent.slice(0, insertPos) + 
+          "\nimport './webf';" + 
+          indexContent.slice(insertPos);
+      } else {
+        // If no imports found, add at the beginning
+        indexContent = "import './webf';\n" + indexContent;
+      }
+    }
+    
+    // Add webf namespace to global window interface if not present
+    if (!indexContent.includes('webf: typeof webf')) {
+      const windowInterfaceMatch = indexContent.match(/interface\s+Window\s*{([^}]*)}/s);
+      if (windowInterfaceMatch) {
+        const windowContent = windowInterfaceMatch[1];
+        if (!windowContent.includes('webf:')) {
+          const newWindowContent = windowContent.trimEnd() + '\n\n        // WebF bridge types\n        webf: typeof webf;\n    ';
+          indexContent = indexContent.replace(windowInterfaceMatch[0], 
+            `interface Window {${newWindowContent}}`);
+        }
+      }
+    }
+    
+    // Add global webf constant if not present
+    if (!indexContent.includes('const webf:')) {
+      const globalConstantsSection = indexContent.indexOf('// WebF\n    const webf: Webf;');
+      if (globalConstantsSection !== -1) {
+        // Replace existing webf declaration
+        indexContent = indexContent.replace(
+          '// WebF\n    const webf: Webf;',
+          '// WebF\n    const webf: Webf & typeof webf;'
+        );
+      } else {
+        // Add before the closing of global declaration
+        const globalClosing = indexContent.lastIndexOf('}\n\nexport { };');
+        if (globalClosing !== -1) {
+          indexContent = indexContent.slice(0, globalClosing) + 
+            '\n    // WebF bridge types\n    const webf: typeof webf;\n' +
+            indexContent.slice(globalClosing);
+        }
+      }
+    }
+    
+    writeFileSync(indexDtsPath, indexContent);
+    console.log(chalk.green('Updated index.d.ts to include WebF bridge types'));
+    
+    done();
+  } catch (err) {
+    console.error(chalk.red('Error merging bridge typings:'), err);
+    done(err);
+  }
+});
+
 // Generate type definitions file
 task('generate-typings', (done) => {
   try {

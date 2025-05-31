@@ -22,6 +22,7 @@ import type { WebSocketInterface } from './types/websocket';
 import type { ResizeObserverInterface } from './types/resize-observer';
 import type { AbortSignalInterface, AbortControllerInterface } from './types/abort-signal';
 import type { Webf } from './types/webf';
+import './webf';
 
 
 declare global {
@@ -35,7 +36,10 @@ declare global {
         Headers: {
             new(init?: HeadersInit): HeaderClass;
             prototype: HeaderClass;
-        };
+
+        // WebF bridge types
+        webf: typeof webf;
+    };
         Request: {
             new(input: RequestClass | string, init?: RequestInit): RequestClass;
             prototype: RequestClass;
