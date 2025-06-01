@@ -169,9 +169,7 @@ abstract class Element extends ContainerNode
     if (classList.isNotEmpty) {
       _classList.addAll(classList);
     }
-    // Force recalculation because className changes can affect display property
-    // and elements with display:none need to recalculate when becoming visible
-    recalculateStyle(rebuildNested: isNeedRecalculate, forceRecalculate: true);
+    recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
   String get className => _classList.join(_ONE_SPACE);
@@ -618,7 +616,7 @@ abstract class Element extends ContainerNode
     var pseudoValue = CSSPseudo.resolveContent(contentValue);
 
     bool shouldMutateBeforeElement =
-        previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode?)?.data == pseudoValue);
+        previousPseudoElement == null || ((previousPseudoElement.firstChild as TextNode).data == pseudoValue);
 
     previousPseudoElement ??= PseudoElement(
         kind, this, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
@@ -647,7 +645,7 @@ abstract class Element extends ContainerNode
     // We plan to support content values only with quoted strings.
     if (pseudoValue is QuoteStringContentValue) {
       if (previousPseudoElement.firstChild != null) {
-        (previousPseudoElement.firstChild as TextNode?)?.data = pseudoValue.value;
+        (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
       } else {
         final textNode = ownerDocument.createTextNode(
             pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
@@ -997,10 +995,6 @@ abstract class Element extends ContainerNode
         assert(oldValue != null);
         if (value != oldValue) {
           _updateHostingWidgetWithDisplay(oldValue);
-          // If transitioning from display:none to visible, force re-evaluation of CSS variables
-          if (oldValue == CSSDisplay.none && value != CSSDisplay.none) {
-            renderStyle.forceReevaluateAllCSSVariables();
-          }
         }
         break;
       case OVERFLOW_X:
