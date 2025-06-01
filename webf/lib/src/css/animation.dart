@@ -116,10 +116,6 @@ class AnimationTimeline {
     if (!_animations.contains(animation)) {
       _animations.add(animation);
     }
-
-    if (!_ticker.isActive) {
-      _ticker.start();
-    }
   }
 
   void _removeAnimation(Animation animation) {
@@ -128,6 +124,36 @@ class AnimationTimeline {
     if (_animations.isEmpty) {
       _ticker.stop();
     }
+  }
+
+  void pause() {
+    // Stop the ticker if it's active (temporary pause)
+    if (_ticker.isActive) {
+      _ticker.stop();
+    }
+  }
+
+  void resume() {
+    // Resume the ticker if there are active animations
+    if (_animations.isNotEmpty && !_ticker.isActive) {
+      _ticker.start();
+    }
+  }
+
+  void dispose() {
+    // Stop the ticker if it's active
+    if (_ticker.isActive) {
+      _ticker.stop();
+    }
+
+    // Dispose all animations
+    for (Animation animation in [..._animations]) {
+      animation.dispose();
+    }
+    _animations.clear();
+
+    // Dispose the ticker to release resources
+    _ticker.dispose();
   }
 }
 

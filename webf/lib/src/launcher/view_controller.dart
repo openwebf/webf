@@ -206,6 +206,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void attachToFlutter(BuildContext context) {
     _registerPlatformBrightnessChange();
+    // Resume animation timeline when attached back to Flutter
+    document.animationTimeline.resume();
     for (int i = 0; i < _onFlutterAttached.length; i++) {
       _onFlutterAttached[i]();
     }
@@ -214,6 +216,8 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   void detachFromFlutter() {
     _unregisterPlatformBrightnessChange();
+    // Pause animation timeline to prevent ticker from running when detached
+    document.animationTimeline.pause();
     viewport = null;
   }
 
@@ -585,17 +589,17 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     BindingObject? bindingObject = view.getBindingObject(pointer);
 
     // If this is an EventTarget, wait for any pending dispatchEvent operations to complete
-    if (bindingObject is EventTarget && bindingObject.hasPendingEvents()) {
-      try {
-        // Wait for all pending events to complete before disposal
-        await bindingObject.waitForPendingEvents();
-      } catch (e) {
-        // Log error but continue with disposal to avoid memory leaks
-        if (kDebugMode) {
-          debugPrint('Error waiting for pending events during disposal: $e');
-        }
-      }
-    }
+    // if (bindingObject is EventTarget && bindingObject.hasPendingEvents()) {
+    //   try {
+    //     // Wait for all pending events to complete before disposal
+    //     await bindingObject.waitForPendingEvents();
+    //   } catch (e) {
+    //     // Log error but continue with disposal to avoid memory leaks
+    //     if (kDebugMode) {
+    //       debugPrint('Error waiting for pending events during disposal: $e');
+    //     }
+    //   }
+    // }
 
     bindingObject?.dispose();
     view.removeBindingObject(pointer);

@@ -603,6 +603,8 @@ class Document extends ContainerNode {
     _styleDirtyElements.clear();
     pendingPreloadingScriptCallbacks.clear();
     _documentElement = null;
+    // Dispose animation timeline to stop ticker and prevent memory leaks
+    animationTimeline.dispose();
     super.dispose();
   }
 
