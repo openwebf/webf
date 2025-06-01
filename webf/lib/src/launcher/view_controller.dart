@@ -17,6 +17,7 @@ import 'package:ffi/ffi.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
 
 // FFI binding for the C++ batch free function
@@ -479,6 +480,10 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       target.setAttribute(key, value);
     } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
       target.data = value;
+
+      if (target.parentNode is WebFTextElement) {
+        (target.parentNode as WebFTextElement).state?.requestUpdateState();
+      }
     } else {
       debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');
     }

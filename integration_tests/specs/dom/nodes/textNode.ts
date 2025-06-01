@@ -262,4 +262,164 @@ describe('TextNode', () => {
 
     await snapshot();
   });
+
+  it('should update text data multiple times consecutively', async () => {
+    const div = document.createElement('div');
+    const text = document.createTextNode('Initial');
+    div.appendChild(text);
+    document.body.appendChild(div);
+
+    await snapshot();
+
+    // Multiple consecutive updates
+    text.data = 'First update';
+    text.data = 'Second update';
+    text.data = 'Third update';
+    text.data = 'Final update';
+
+    await snapshot();
+  });
+
+  it('should handle special characters in data update', async () => {
+    const div = document.createElement('div');
+    const text = document.createTextNode('Normal text');
+    div.appendChild(text);
+    document.body.appendChild(div);
+
+    await snapshot();
+
+    // Update with special characters
+    text.data = 'Text with <special> & "characters" \'quotes\'';
+
+    await snapshot();
+
+    // Update with unicode
+    text.data = 'Unicode: 你好世界 🌍 😊';
+
+    await snapshot();
+  });
+
+  it('should update text in deeply nested elements', async () => {
+    const outer = document.createElement('div');
+    const middle = document.createElement('span');
+    const inner = document.createElement('b');
+    const text = document.createTextNode('Deep nested text');
+
+    outer.style.padding = '10px';
+    outer.style.backgroundColor = '#f0f0f0';
+    middle.style.color = 'blue';
+    inner.style.fontSize = '20px';
+
+    inner.appendChild(text);
+    middle.appendChild(inner);
+    outer.appendChild(middle);
+    document.body.appendChild(outer);
+
+    await snapshot();
+
+    // Update deeply nested text
+    text.data = 'Updated deep text';
+
+    await snapshot();
+  });
+
+  it('should handle rapid data updates without memory leaks', async () => {
+    const div = document.createElement('div');
+    const text = document.createTextNode('Start');
+    div.appendChild(text);
+    document.body.appendChild(div);
+
+    // Rapid updates
+    for (let i = 0; i < 100; i++) {
+      text.data = `Update ${i}`;
+    }
+
+    await snapshot();
+    expect(text.data).toBe('Update 99');
+  });
+
+  it('should update text data when parent element is detached and reattached', async () => {
+    const div = document.createElement('div');
+    const text = document.createTextNode('Original text');
+    div.appendChild(text);
+    document.body.appendChild(div);
+
+    await snapshot();
+
+    // Detach from DOM
+    document.body.removeChild(div);
+
+    // Update while detached
+    text.data = 'Updated while detached';
+
+    // Reattach to DOM
+    document.body.appendChild(div);
+
+    await snapshot();
+  });
+
+  it('should handle text data update with whitespace preservation', async () => {
+    const pre = document.createElement('pre');
+    const text = document.createTextNode('Line 1\n  Line 2\n    Line 3');
+    pre.appendChild(text);
+    document.body.appendChild(pre);
+
+    await snapshot();
+
+    // Update with different whitespace
+    text.data = 'Updated\n\tWith\n\t\tTabs';
+
+    await snapshot();
+  });
+
+  it('should update text data in flex container', async () => {
+    const flex = document.createElement('div');
+    flex.style.display = 'flex';
+    flex.style.gap = '10px';
+    flex.style.alignItems = 'center';
+
+    const box1 = document.createElement('div');
+    box1.style.width = '50px';
+    box1.style.height = '50px';
+    box1.style.backgroundColor = 'red';
+
+    const text = document.createTextNode('Flex Text');
+
+    const box2 = document.createElement('div');
+    box2.style.width = '50px';
+    box2.style.height = '50px';
+    box2.style.backgroundColor = 'blue';
+
+    flex.appendChild(box1);
+    flex.appendChild(text);
+    flex.appendChild(box2);
+    document.body.appendChild(flex);
+
+    await snapshot();
+
+    // Update text in flex context
+    text.data = 'Updated Flex';
+
+    await snapshot();
+  });
+
+  xit('should handle text data update with CSS text-transform', async () => {
+    const div = document.createElement('div');
+    div.style.textTransform = 'uppercase';
+    const text = document.createTextNode('lowercase text');
+    div.appendChild(text);
+    document.body.appendChild(div);
+
+    await snapshot();
+
+    // Update text
+    text.data = 'new lowercase text';
+
+    await snapshot();
+
+    // Change text-transform
+    div.style.textTransform = 'capitalize';
+
+    await snapshot();
+  });
 });
