@@ -259,7 +259,7 @@ void batchFreeNativeBindingObjects(void** pointers, int32_t count) {
   if (pointers == nullptr || count <= 0) {
     return;
   }
-  
+
   // Batch free all the native binding object pointers
   for (int32_t i = 0; i < count; i++) {
     if (pointers[i] != nullptr) {

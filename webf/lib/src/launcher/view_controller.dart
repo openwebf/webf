@@ -13,10 +13,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' hide Element;
+import 'package:ffi/ffi.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
+
+// FFI binding for the C++ batch free function
+typedef NativeBatchFreeFunction = Void Function(Pointer<Void> pointers, Int32 count);
+typedef DartBatchFreeFunction = void Function(Pointer<Void> pointers, int count);
+
+late final DartBatchFreeFunction _batchFreeNativeBindingObjects =
+    WebFDynamicLibrary.ref.lookupFunction<NativeBatchFreeFunction, DartBatchFreeFunction>(
+        'batchFreeNativeBindingObjects');
 
 class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFController rootController;
@@ -33,6 +42,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFThread runningThread;
 
   bool firstLoad = true;
+
+  // Idle cleanup state
+  static final List<Pointer> _pendingPointers = [];
+  static bool _cleanupScheduled = false;
+  static const int _batchThreshold = 500;
+  static const int _maxPointersPerIdle = 100;
 
   WebFViewController(
       {this.background,
@@ -605,8 +620,104 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     view.removeBindingObject(pointer);
     view.disposeTargetIdToDevNodeIdMap(bindingObject);
 
-    // Schedule pointer to be batch freed during idle time or when threshold is reached
-    IdleCleanupManager.schedulePointerCleanup(pointer);
+    // Schedule pointer to be batch freed during idle time
+    _schedulePointerCleanup(pointer);
+  }
+
+  /// Schedule a pointer to be freed in batch during idle time
+  static void _schedulePointerCleanup(Pointer pointer) {
+    _pendingPointers.add(pointer);
+
+    // If we hit the threshold, trigger immediate batch free
+    if (_pendingPointers.length >= _batchThreshold) {
+      _batchFreePointers();
+    } else if (!_cleanupScheduled) {
+      _scheduleIdleCleanup();
+    }
+  }
+
+  /// Schedule the cleanup to run during the next idle period
+  static void _scheduleIdleCleanup() {
+    if (_cleanupScheduled) return;
+    _cleanupScheduled = true;
+
+    // Schedule cleanup to run when frame is idle
+    SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
+      _processIdleCleanup();
+      _cleanupScheduled = false;
+
+      // If there are more pointers, schedule another idle callback
+      if (_pendingPointers.isNotEmpty) {
+        _scheduleIdleCleanup();
+      }
+    });
+
+    SchedulerBinding.instance.scheduleFrame();
+  }
+
+  /// Process cleanup during idle time
+  static void _processIdleCleanup() {
+    if (_pendingPointers.isEmpty) return;
+
+    // Calculate remaining time based on display refresh rate
+    ui.Display display = WidgetsBinding.instance.platformDispatcher.views.first.display;
+    double maxFrameTime = 1000 / display.refreshRate;
+
+    // Reserve some time for system operations (2ms minimum)
+    double timeForCleanup = maxFrameTime - 2.0;
+    if (timeForCleanup <= 0) return;
+
+    // Process pointers in batches
+    int pointersToProcess = _pendingPointers.length > _maxPointersPerIdle
+        ? _maxPointersPerIdle
+        : _pendingPointers.length;
+
+    List<Pointer> batch = _pendingPointers.take(pointersToProcess).toList();
+    _pendingPointers.removeRange(0, pointersToProcess);
+
+    try {
+      _batchFreePointersArray(batch);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error in batch pointer cleanup: $e');
+      }
+    }
+  }
+
+  /// Batch free all pending pointers immediately
+  static void _batchFreePointers() {
+    if (_pendingPointers.isEmpty) return;
+
+    List<Pointer> pointersToFree = List.from(_pendingPointers);
+    _pendingPointers.clear();
+
+    try {
+      _batchFreePointersArray(pointersToFree);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error in immediate batch pointer cleanup: $e');
+      }
+    }
+  }
+
+  /// Call the C++ batch free function with an array of pointers
+  static void _batchFreePointersArray(List<Pointer> pointers) {
+    if (pointers.isEmpty) return;
+
+    // Convert Dart List<Pointer> to C array
+    Pointer<Pointer<Void>> pointersArray = malloc<Pointer<Void>>(pointers.length);
+
+    for (int i = 0; i < pointers.length; i++) {
+      pointersArray[i] = pointers[i].cast<Void>();
+    }
+
+    try {
+      // Call the C++ batch free function
+      _batchFreeNativeBindingObjects(pointersArray.cast<Void>(), pointers.length);
+    } finally {
+      // Always free the temporary array
+      malloc.free(pointersArray);
+    }
   }
 
   RenderBox? getRootRenderObject() {
