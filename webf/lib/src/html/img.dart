@@ -560,7 +560,7 @@ class ImageElement extends Element {
         targetElementPtr: pointer!,
         loadImage: obtainImage,
         onImageLoad: _onImageLoad,
-        controller: ownerDocument.controller,
+        contextId: contextId!,
         devicePixelRatio: ownerFlutterView?.devicePixelRatio ?? 2.0,
       );
     }

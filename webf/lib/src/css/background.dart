@@ -309,7 +309,7 @@ class CSSBackgroundImage {
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
-            controller: controller,
+            contextId: controller.view.contextId,
             targetElementPtr: renderStyle.target.pointer!,
             loadImage: _obtainImage,
             onImageLoad: _handleBitFitImageLoad,

@@ -51,7 +51,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
     required this.url,
     required this.boxFit,
     required this.devicePixelRatio,
-    required this.controller,
+    required this.contextId,
     required this.targetElementPtr,
     this.onImageLoad,
   }) : _loadImage = loadImage;
@@ -61,7 +61,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   final BoxFit boxFit;
   final OnImageLoad? onImageLoad;
   final double devicePixelRatio;
-  final WebFController controller;
+  final double contextId;
   final Pointer<NativeBindingObject> targetElementPtr;
 
   @override
@@ -74,7 +74,11 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
     ImageLoadResponse response;
+    WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
     try {
+      if (controller == null) {
+        throw StateError('Could not load the image, controller: $contextId were not exist');
+      }
       response = await _loadImage(controller.view.getBindingObject<Element>(targetElementPtr)!, url);
     } on FlutterError {
       // Depending on where the exception was thrown, the image cache may not
@@ -111,7 +115,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 
     // Fire image on load after codec created.
     scheduleMicrotask(() {
-      if (onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
+      if (!controller.disposed && onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
         onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
             codec.frameCount);
       }
@@ -157,8 +161,11 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         completer is DimensionedMultiFrameImageStreamCompleter &&
         onImageLoad != null) {
       completer.dimension.then((Dimension dimension) {
-        onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, dimension.width, dimension.height,
-            dimension.frameCount);
+        WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+        if (controller != null) {
+          onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, dimension.width, dimension.height,
+              dimension.frameCount);
+        }
       });
     }
     if (completer != null) {
