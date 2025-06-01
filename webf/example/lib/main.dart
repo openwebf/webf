@@ -51,6 +51,9 @@ void main() async {
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
+      },
+      onControllerDetached: (String name, WebFController controller) {
+        print('controller detached: $name $controller');
       }));
   WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
   WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
@@ -79,31 +82,31 @@ void main() async {
   installWebFCupertino();
 
   // Add home controller with preloading
-  WebFControllerManager.instance.addWithPreload(
-      name: 'html/css',
-      createController: () => WebFController(
-            routeObserver: routeObserver,
-            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-          ),
-      bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPrerendering(
-      name: 'miracle_plus',
-      createController: () => WebFController(
-            initialRoute: '/home',
-            routeObserver: routeObserver,
-            devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-          ),
-      bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
+  // WebFControllerManager.instance.addWithPreload(
+  //     name: 'html/css',
+  //     createController: () => WebFController(
+  //           routeObserver: routeObserver,
+  //           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+  //         ),
+  //     bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //     });
+  //
+  // // Add vue controller with preloading
+  // WebFControllerManager.instance.addWithPrerendering(
+  //     name: 'miracle_plus',
+  //     createController: () => WebFController(
+  //           initialRoute: '/home',
+  //           routeObserver: routeObserver,
+  //           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+  //         ),
+  //     bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //     });
 
   WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
 
@@ -145,10 +148,12 @@ class WebFSubViewState extends State<WebFSubView> {
               )),
         ],
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        controller.cookieManager.clearAllCookies();
-      }),
-      body: WebFRouterView(controller: controller, path: widget.path),
+      body: Stack(
+        children: [
+          WebFRouterView(controller: controller, path: widget.path),
+          WebFInspectorFloatingPanel(),
+        ],
+      ),
     );
   }
 }
@@ -259,7 +264,9 @@ class FirstPageState extends State<FirstPage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ListView(children: [
+      body: Stack(
+        children: [
+          ListView(children: [
         ElevatedButton(
             onPressed: () {
               widget.webfPageName.value = 'html/css';
@@ -387,7 +394,11 @@ class FirstPageState extends State<FirstPage> {
               }));
             },
             child: Text('Open Use Cases')),
-      ]));
+          ]),
+          WebFInspectorFloatingPanel(),
+        ],
+      ),
+    );
   }
 }
 
@@ -452,11 +463,6 @@ class _WebFDemoState extends State<WebFDemo> {
                 )),
           ],
         ),
-        floatingActionButton: FloatingActionButton(onPressed: () async {
-          WebFController? controller =
-          await WebFControllerManager.instance.getController(widget.webfPageName);
-          controller?.printRenderObjectTree(null);
-        }),
         body: Stack(
           children: [
             WebF.fromControllerName(
@@ -474,7 +480,8 @@ class _WebFDemoState extends State<WebFDemo> {
                 controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
                 controller.darkModeOverride = darkModeOverride;
               }
-            )
+            ),
+            WebFInspectorFloatingPanel(),
           ],
         ));
   }

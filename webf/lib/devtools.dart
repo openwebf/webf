@@ -8,6 +8,7 @@ export 'src/devtools/service.dart';
 export 'src/devtools/module.dart';
 export 'src/devtools/overlay.dart';
 export 'src/devtools/inspector.dart';
+export 'src/devtools/inspector_panel.dart';
 
 // DevTools Modules
 export 'src/devtools/modules/css.dart';
