@@ -12,8 +12,10 @@ typedef MethodCallCallback = Future<dynamic> Function(String method, dynamic arg
 const String METHOD_CHANNEL_NOT_INITIALIZED = 'MethodChannel not initialized.';
 const String CONTROLLER_NOT_INITIALIZED = 'WebF controller not initialized.';
 const String METHOD_CHANNEL_NAME = 'MethodChannel';
+const String METHOD_CALL_TIMEOUT = 'Method call timed out.';
+const Duration DEFAULT_METHOD_CALL_TIMEOUT = Duration(seconds: 30);
 
-class MethodChannelModule extends BaseModule {
+class MethodChannelModule extends WebFBaseModule {
   @override
   String get name => METHOD_CHANNEL_NAME;
   MethodChannelModule(ModuleManager? moduleManager) : super(moduleManager);
@@ -58,10 +60,21 @@ abstract class WebFMethodChannel {
 }
 
 class WebFJavaScriptChannel extends WebFMethodChannel {
+  Duration _methodCallTimeout = DEFAULT_METHOD_CALL_TIMEOUT;
+  
+  Duration get methodCallTimeout => _methodCallTimeout;
+  
+  set methodCallTimeout(Duration duration) {
+    _methodCallTimeout = duration;
+  }
+  
   Future<dynamic> invokeMethod(String method, arguments) async {
     MethodCallCallback? jsMethodCallCallback = _onJSMethodCallCallback;
     if (jsMethodCallCallback != null) {
-      return jsMethodCallCallback(method, arguments);
+      return jsMethodCallCallback(method, arguments)
+          .timeout(_methodCallTimeout, onTimeout: () {
+        throw TimeoutException(METHOD_CALL_TIMEOUT, _methodCallTimeout);
+      });
     } else {
       return null;
     }
@@ -80,7 +93,10 @@ class WebFJavaScriptChannel extends WebFMethodChannel {
   Future<dynamic> invokeMethodFromJavaScript(String method, List arguments) {
     MethodCallCallback? methodCallCallback = _methodCallCallback;
     if (methodCallCallback != null) {
-      return _methodCallCallback!(method, arguments);
+      return _methodCallCallback!(method, arguments)
+          .timeout(_methodCallTimeout, onTimeout: () {
+        throw TimeoutException(METHOD_CALL_TIMEOUT, _methodCallTimeout);
+      });
     } else {
       return Future.value(null);
     }
