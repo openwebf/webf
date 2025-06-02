@@ -27,6 +27,7 @@ import 'src/foundation/mock_bundle_test.dart' as mock_bundle_test;
 import 'src/foundation/uri_parser.dart' as uri_parser;
 import 'src/launcher/controller_manager.dart' as controller_manager;
 import 'src/module/fetch.dart' as fetch;
+import 'src/html/link_preload_test.dart' as link_preload;
 
 final String __dirname = path.dirname(Platform.script.path);
 
@@ -80,6 +81,10 @@ void main() {
 
   group('launcher', () {
     controller_manager.main();
+  });
+
+  group('html', () {
+    link_preload.main();
   });
 
   group('module', () {

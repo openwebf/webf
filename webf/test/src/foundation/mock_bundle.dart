@@ -171,3 +171,37 @@ class MockTimedBundle extends WebFBundle {
     );
   }
 }
+
+/// A simple mock WebFBundle for testing preload functionality
+class MockWebFBundle extends WebFBundle {
+  MockWebFBundle.fromUrl(String url, {ContentType? contentType}) 
+      : super(url, contentType: contentType ?? ContentType('image', 'svg+xml'));
+
+  bool _isDisposed = false;
+  int _obtainDataCallCount = 0;
+
+  bool get isDisposed => _isDisposed;
+  int get obtainDataCallCount => _obtainDataCallCount;
+
+  @override
+  Future<void> resolve({String? baseUrl, UriParser? uriParser}) async {
+    await super.resolve(baseUrl: baseUrl, uriParser: uriParser);
+  }
+
+  @override
+  Future<void> obtainData([double contextId = 0]) async {
+    _obtainDataCallCount++;
+    // Simulate SVG data
+    data = Uint8List.fromList(utf8.encode('''
+      <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <circle cx="50" cy="50" r="40" fill="green"/>
+      </svg>
+    '''));
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
+}

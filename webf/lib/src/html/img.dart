@@ -746,8 +746,8 @@ class ImageRequest {
       state == _ImageRequestState.completelyAvailable || state == _ImageRequestState.partiallyAvailable;
 
   Future<ImageLoadResponse> obtainImage(WebFController controller) async {
-    final WebFBundle bundle =
-        controller.getPreloadBundleFromUrl(currentUri.toString()) ?? WebFBundle.fromUrl(currentUri.toString());
+    final WebFBundle? preloadedBundle = controller.getPreloadBundleFromUrl(currentUri.toString());
+    final WebFBundle bundle = preloadedBundle ?? WebFBundle.fromUrl(currentUri.toString());
     await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
     await bundle.obtainData(controller.view.contextId);
 
@@ -757,8 +757,11 @@ class ImageRequest {
 
     Uint8List data = bundle.data!;
 
-    // Free the bundle memory.
-    bundle.dispose();
+    // Only dispose if it's not a preloaded bundle
+    // Preloaded bundles should be reused for multiple requests
+    if (preloadedBundle == null) {
+      bundle.dispose();
+    }
 
     return ImageLoadResponse(data, mime: bundle.contentType.toString());
   }

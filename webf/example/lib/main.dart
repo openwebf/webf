@@ -406,7 +406,7 @@ class FirstPageState extends State<FirstPage> {
 WebFBundle? _getBundleForControllerName(String controllerName) {
   switch (controllerName) {
     case 'html/css':
-      return WebFBundle.fromUrl('assets:///assets/bundle.html');
+      return WebFBundle.fromUrl('assets:///assets/bundle2.html');
     case 'vuejs':
       return WebFBundle.fromUrl('assets:///vue_project/dist/index.html');
     case 'reactjs':
@@ -416,7 +416,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'hybrid_router':
       return WebFBundle.fromUrl('assets:///hybrid_router/build/index.html');
     case 'tailwind_react':
-      return WebFBundle.fromUrl('assets:///tailwind_react/build/index.html');
+      return WebFBundle.fromUrl('http://192.168.50.228:3000/tailwind_react/build');
     case 'cupertino_gallery':
       return WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html');
     case 'use_cases':

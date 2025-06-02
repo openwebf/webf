@@ -45,3 +45,36 @@
 
 - [HTTP Cache Invalidation Fix](./claude_memory/http_cache_invalidation.md) - Cache invalidation mechanism for handling corrupt image cache files
 
+## Testing Guidelines
+
+### Unit Tests (webf/test)
+- Always call `setupTest()` in the `setUp()` method, not directly in `main()`
+- When testing with WebFController, wait for initialization: `await controller.controlledInitCompleter.future;`
+- Import tests in `webf_test.dart` and add them to the appropriate test group
+- Use mock bundles from `test/src/foundation/mock_bundle.dart` for testing
+
+### Integration Tests (integration_tests/specs)
+- Place tests in appropriate directories under `specs/`
+- Use TypeScript (.ts extension)
+- Use `done()` callback for async tests
+- Use `snapshot()` for visual regression tests
+- Test assets should reference files in `assets/` directory
+- Use `fdescribe()` instead of `describe()` to run only specific test specs (Jasmine feature)
+- Use `fit()` instead of `it()` to run only specific test cases
+
+### Common Testing Patterns
+```dart
+// Unit test setup
+setUp(() {
+  setupTest();
+});
+
+// Controller initialization
+final controller = WebFController(
+  viewportWidth: 360,
+  viewportHeight: 640,
+  bundle: WebFBundle.fromContent('<html></html>', contentType: ContentType.html),
+);
+await controller.controlledInitCompleter.future;
+```
+
