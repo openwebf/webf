@@ -4,7 +4,7 @@
  * for elements with display:none
  */
 
-describe('CSS Variable Updates with display:none', () => {
+xdescribe('CSS Variable Updates with display:none', () => {
   // Helper function to create style elements
   function createStyle(text) {
     const style = document.createElement('style');

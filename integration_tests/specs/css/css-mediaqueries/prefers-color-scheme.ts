@@ -389,6 +389,123 @@ describe('MediaQuery prefers-color-scheme', () => {
   });
 
 
+  it('should update CSS variable with initial value and media queries', async () => {
+    const cssText = `
+    :root {
+      --bg-fill-table-accent: red;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-fill-table-accent: blue;
+      }
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-fill-table-accent: green;
+      }
+    }
+
+    .bg-fill-table-accent {
+      background-color: var(--bg-fill-table-accent);
+      width: 100px;
+      height: 100px;
+    }
+    `;
+    const style = document.createElement('style');
+    style.innerHTML = cssText;
+    document.head.append(style);
+
+    const container = createElement('div', {
+      className: 'bg-fill-table-accent'
+    });
+
+    BODY.appendChild(container);
+
+    // Start with light mode
+    simulateChangeDarkMode(false);
+
+    await snapshot();
+
+    // Log initial computed style
+    const computedStyle1 = getComputedStyle(container);
+    console.log('Light mode background:', computedStyle1.backgroundColor);
+
+    // Switch to dark mode
+    simulateChangeDarkMode(true);
+
+    await snapshot();
+
+    // Log updated computed style
+    const computedStyle2 = getComputedStyle(container);
+    console.log('Dark mode background:', computedStyle2.backgroundColor);
+  });
+
+  it('should update CSS variables for elements with display:none', async () => {
+    const cssText = `
+    :root {
+      --bg-fill-table-accent: red;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-fill-table-accent: blue;
+      }
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-fill-table-accent: green;
+      }
+    }
+
+    .bg-fill-table-accent {
+      background-color: var(--bg-fill-table-accent);
+      width: 100px;
+      height: 100px;
+    }
+    `;
+    const style = document.createElement('style');
+    style.innerHTML = cssText;
+    document.head.append(style);
+
+    const container = createElement('div', {
+      className: 'bg-fill-table-accent',
+      style: {
+        display: 'none'
+      }
+    });
+
+    BODY.appendChild(container);
+
+    // Start with light mode
+    simulateChangeDarkMode(false);
+
+    // Log initial computed style while display:none
+    const computedStyle1 = getComputedStyle(container);
+    console.log('Light mode background (display:none):', computedStyle1.backgroundColor);
+
+    // Switch to dark mode
+    simulateChangeDarkMode(true);
+
+    // Log updated computed style while still display:none
+    const computedStyle2 = getComputedStyle(container);
+    console.log('Dark mode background (display:none):', computedStyle2.backgroundColor);
+
+    // Now show the element
+    container.style.display = 'block';
+
+    await snapshot();
+
+    // Check the computed style after showing
+    const computedStyle3 = getComputedStyle(container);
+    console.log('Dark mode background (display:block):', computedStyle3.backgroundColor);
+
+    // The background should be blue (dark mode color)
+    expect(computedStyle3.backgroundColor).toBe('rgb(0, 0, 255)');
+  });
+
   it('should works with css color with camelCase varaibles', async () => {
     const cssText = `
     div.example {

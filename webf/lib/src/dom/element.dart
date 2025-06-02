@@ -1176,7 +1176,10 @@ abstract class Element extends ContainerNode
   }
 
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
-    if (forceRecalculate || renderStyle.display != CSSDisplay.none) {
+    // Always update CSS variables even for display:none elements when rebuilding nested
+    bool shouldUpdateCSSVariables = rebuildNested && renderStyle.display == CSSDisplay.none;
+    
+    if (forceRecalculate || renderStyle.display != CSSDisplay.none || shouldUpdateCSSVariables) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();
       applyStyle(newStyle);
@@ -1189,11 +1192,12 @@ abstract class Element extends ContainerNode
       if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
         children.forEach((Element child) {
-          child.recalculateStyle(rebuildNested: rebuildNested);
+          child.recalculateStyle(rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
         });
       }
     }
   }
+
 
   void _removeInlineStyle() {
     inlineStyle.forEach((String property, _) {

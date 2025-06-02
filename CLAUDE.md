@@ -17,7 +17,7 @@
 - Run bridge unit tests: `node scripts/run_bridge_unit_test.js`
 - Run Flutter dart tests: `cd webf && flutter test`
 - Run a single Flutter test: `cd webf && flutter test test/path/to/test_file.dart`
-- Run integration tests: `cd integration_tests && npm run integration_test`
+- Run integration tests: `cd integration_tests && npm run integration`
 
 ## Lint Commands
 
