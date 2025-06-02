@@ -43,10 +43,17 @@ class WebFTextSpan extends TextSpan {
       }
     }
 
-    if (start > prePlaceHolderLength || end > prePlaceHolderLength) {
+    if ((start > prePlaceHolderLength || end > prePlaceHolderLength) && text != null && text!.isNotEmpty) {
       int subStart = start - prePlaceHolderLength >= 0 ? (start - prePlaceHolderLength) : 0;
       int subEnd = end - prePlaceHolderLength;
-      content.add(text!.substring(subStart, subEnd));
+      
+      // Ensure subEnd doesn't exceed text length
+      subEnd = subEnd.clamp(0, text!.length);
+      
+      // Only add substring if subStart is less than subEnd
+      if (subStart < subEnd) {
+        content.add(text!.substring(subStart, subEnd));
+      }
     }
     return content;
   }
