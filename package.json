@@ -15,6 +15,8 @@
     "build:bridge:ios": "node scripts/build_ios_framework",
     "build:bridge:ios:release": "WEBF_BUILD=Release node scripts/build_ios_framework",
     "build:bridge:ios:profile": "ENABLE_PROFILE=true npm run build:bridge:ios:release",
+    "ios:use-prebuilt": "node scripts/convert_to_prebuilt_frameworks.js",
+    "ios:use-source": "node scripts/revert_to_source_compilation.js",
     "build:bridge:all": "node scripts/prepare_webf_release_binary",
     "build:bridge:all:release": "WEBF_BUILD=Release node scripts/prepare_webf_release_binary",
     "build_bridge:all:profile": "ENABLE_PROFILE=true npm run build:bridge:all:release",
