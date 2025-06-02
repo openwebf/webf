@@ -482,7 +482,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       target.data = value;
 
       if (target.parentNode is WebFTextElement) {
-        (target.parentNode as WebFTextElement).state?.requestUpdateState();
+        (target.parentNode as WebFTextElement).notifyRootTextElement();
       }
     } else {
       debugPrint('Only element has properties, try setting $key to Node(#$selfPtr).');

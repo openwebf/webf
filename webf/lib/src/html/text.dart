@@ -32,6 +32,31 @@ class WebFTextElement extends WidgetElement {
     return WebFTextState(this);
   }
 
+  void notifyRootTextElement() {
+    if (state == null) {
+      // When a TextNode changes, we need to update all ancestor WebFTextElement elements
+      // because they may include this text in their nested TextSpan structure
+      dom.Node? currentNode = parentNode;
+      while (currentNode != null) {
+        if (currentNode is WebFTextElement) {
+          // If state is not available yet, we need to ensure the update happens when it becomes available
+          if (currentNode.state != null) {
+            currentNode.state!.requestUpdateState();
+          }
+        }
+        currentNode = currentNode.parentNode;
+      }
+    } else {
+      state!.requestUpdateState();
+    }
+  }
+
+  @override
+  void childrenChanged(dom.ChildrenChange change) {
+    super.childrenChanged(change);
+    notifyRootTextElement();
+  }
+
   // '  a b  c   \n' => ' a b c '
   static String _collapseWhitespace(String string) {
     return string.replaceAll(_collapseWhiteSpaceReg, WHITE_SPACE_CHAR);
