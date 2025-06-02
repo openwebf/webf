@@ -73,8 +73,9 @@ class AnimationTimeline {
   List<Animation> _animations = [];
   double? _currentTime;
   late Ticker _ticker;
+  final Document ownerDocument;
 
-  AnimationTimeline() {
+  AnimationTimeline(this.ownerDocument) {
     _ticker = Ticker(_onTick);
   }
 
@@ -115,6 +116,10 @@ class AnimationTimeline {
   void _addAnimation(Animation animation) {
     if (!_animations.contains(animation)) {
       _animations.add(animation);
+    }
+
+    if (!_ticker.isActive && ownerDocument.controller.isFlutterAttached) {
+      _ticker.start();
     }
   }
 

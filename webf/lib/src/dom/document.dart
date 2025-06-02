@@ -90,7 +90,7 @@ enum VisibilityState { visible, hidden }
 
 class Document extends ContainerNode {
   final WebFController controller;
-  final AnimationTimeline animationTimeline = AnimationTimeline();
+  late AnimationTimeline animationTimeline;
   Map<String, List<Element>> elementsByID = {};
   Map<String, List<Element>> elementsByName = {};
 
@@ -129,6 +129,7 @@ class Document extends ContainerNode {
     _styleNodeManager = StyleNodeManager(this);
     _scriptRunner = ScriptRunner(this, context.contextId);
     ruleSet = RuleSet(this);
+    animationTimeline = AnimationTimeline(this);
   }
 
   void initializeCookieJarForUrl(String url) {
