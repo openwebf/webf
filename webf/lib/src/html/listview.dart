@@ -345,7 +345,7 @@ class WebFListViewState extends WebFWidgetElementState {
         child: ListView.builder(
             controller: scrollController,
             scrollDirection: widgetElement.scrollDirection,
-            shrinkWrap: true,
+            shrinkWrap: widgetElement.getAttribute('shrink-wrap') == 'false' ? false : true,
             itemCount: widgetElement.childNodes.length,
             itemBuilder: (context, index) {
               return buildListViewItemByIndex(index);
