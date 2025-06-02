@@ -1,3 +1,47 @@
+## v0.21.4
+
+### 🚀 New Features
+
+#### Developer Tools
+
+- **WebF Inspector**: Added a floating inspector panel for real-time WebF controller management and debugging
+  - View active, detached, and disposed controller counts
+  - Monitor controller states and configurations
+  - Bulk disposal of controllers for testing
+  - Visual debugging interface for development
+
+#### Performance & Memory Management
+
+- **Idle Scheduling for Memory Cleanup**: Implemented batch freeing of native binding objects during idle time
+  - Processes up to 100 pointers per idle frame to avoid UI blocking
+  - Automatic batch cleanup when threshold (500 pointers) is reached
+  - Improved memory management and reduced overhead
+
+#### Build System
+
+- **iOS Prebuilt Framework Support**: Added scripts to use prebuilt frameworks instead of source compilation
+  - `npm run ios:use-prebuilt`: Switch to xcframework usage
+  - `npm run ios:use-source`: Revert to source compilation
+  - Significantly reduces pod install time for iOS builds
+
+#### Platform Features
+- **Method Channel Timeout**: Added configurable timeout limits for WebF method channel calls to prevent hanging
+
+### 🐛 Bug Fixes
+
+#### CSS & Styling
+- **CSS Variables with display:none**: Fixed CSS variables not updating correctly for elements with `display: none`
+- **Gradient Cache**: Improved gradient cache invalidation with comprehensive test coverage
+- **Flexbox Constraints**: Fixed maxHeight constraints not being properly applied to flex items
+- **Transition Animations**: Fixed transitions not triggering when elements are mounted
+
+#### Memory & Resource Management
+- **Image Memory Leak**: Fixed BoxFitImage holding controller instances causing memory leaks
+- **Animation Parsing**: Fixed CSS animation parsing issues when controller is detached or disposed
+
+#### Platform-Specific
+- **iOS Compilation**: Fixed iOS compilation issues
+
 ## 0.21.3
 
 🚀 New Features
