@@ -865,6 +865,11 @@ class RenderBoxModel extends RenderBox
         renderStyle.paddingBottom.computedValue;
     double maxConstraintHeight = renderStyle.borderBoxLogicalHeight ?? double.infinity;
 
+    // // Apply maxHeight constraint if specified
+    // if (maxHeight != null && maxHeight < maxConstraintHeight) {
+    //   maxConstraintHeight = maxHeight;
+    // }
+
     if (parent is RenderFlexLayout) {
       double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto ? null : renderStyle.flexBasis?.computedValue;
       RenderBoxModel? parentRenderBoxModel = parent as RenderBoxModel?;

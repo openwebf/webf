@@ -152,11 +152,9 @@ class WebFListViewElement extends WidgetElement {
         call: (bindingObject, args) =>
             castToType<WebFListViewElement>(bindingObject).finishLoad(args.isNotEmpty ? args[0] : 'success')),
     'resetHeader': StaticDefinedSyncBindingObjectMethod(
-      call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetHeader()
-    ),
+        call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetHeader()),
     'resetFooter': StaticDefinedSyncBindingObjectMethod(
-      call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetFooter()
-    )
+        call: (bindingObject, args) => castToType<WebFListViewElement>(bindingObject).resetFooter())
   };
 
   @override
@@ -347,6 +345,7 @@ class WebFListViewState extends WebFWidgetElementState {
         child: ListView.builder(
             controller: scrollController,
             scrollDirection: widgetElement.scrollDirection,
+            shrinkWrap: true,
             itemCount: widgetElement.childNodes.length,
             itemBuilder: (context, index) {
               return buildListViewItemByIndex(index);

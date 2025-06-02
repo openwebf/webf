@@ -159,7 +159,6 @@ describe('flex-max-height-content-size-calculation', () => {
           display: 'flex',
           flexDirection: 'column',
           maxHeight: '120px',
-          border: '2px solid purple',
           width: '200px',
           'box-sizing': 'border-box',
         },
