@@ -1,3 +1,29 @@
+## 0.21.4+1
+
+🐛 Bug Fixes
+
+- Fixed WebFTextElement not updating when React.js changes TextNode data (https://github.com/openwebf/webf/commit/70fd51128)
+  - Added proper update mechanism for text elements when React.js modifies TextNode data directly
+  - Resolved issue where React text updates weren't reflected in the UI
+  - Implemented notifyRootTextElement() method to update ancestor WebFTextElement nodes
+  - Added comprehensive test coverage for text element updates
+- Fixed preloaded bundle disposal issue for SVG images (https://github.com/openwebf/webf/commit/2b6e8a4da)
+  - Prevented disposal of preloaded bundles after first use
+  - Ensured preloaded SVG images can be efficiently reused across multiple img elements
+  - Added proper bundle lifecycle management for preloaded resources
+- Fixed text span edge case (https://github.com/openwebf/webf/commit/77090f40e)
+  - Added proper bounds checking in WebFTextSpan to prevent substring index out of bounds errors
+  - Improved text content extraction safety
+
+✨ Features
+
+- Added ListView properties support (https://github.com/openwebf/webf/commit/574c0d867)
+  - Added support for shrinkWrap: false in ListView components
+
+🔧 Chores
+
+- Added android:use-prebuilt npm script for Android package building (https://github.com/openwebf/webf/commit/77090f40e)
+
 ## v0.21.4
 
 ### 🚀 New Features
