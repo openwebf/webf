@@ -46,8 +46,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   // Idle cleanup state
   static final List<Pointer> _pendingPointers = [];
+  static final List<Pointer> _pendingPointersWithEvents = [];
   static bool _cleanupScheduled = false;
-  static const int _batchThreshold = 500;
+  static const int _batchThreshold = 2000;
   static const int _maxPointersPerIdle = 100;
 
   WebFViewController(
@@ -296,6 +297,12 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     window.dispose();
 
     _targetIdToDevNodeIdMap.clear();
+
+    // Force batch free all pending pointers when controller is disposed
+    _batchFreePointers();
+
+    // Also free pointers with pending events since controller is being disposed
+    _batchFreePointersWithEvents();
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;
@@ -608,84 +615,35 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   static void disposeBindingObject(WebFViewController view, Pointer<NativeBindingObject> pointer) async {
     BindingObject? bindingObject = view.getBindingObject(pointer);
 
-    // If this is an EventTarget, wait for any pending dispatchEvent operations to complete
-    // if (bindingObject is EventTarget && bindingObject.hasPendingEvents()) {
-    //   try {
-    //     // Wait for all pending events to complete before disposal
-    //     await bindingObject.waitForPendingEvents();
-    //   } catch (e) {
-    //     // Log error but continue with disposal to avoid memory leaks
-    //     if (kDebugMode) {
-    //       debugPrint('Error waiting for pending events during disposal: $e');
-    //     }
-    //   }
-    // }
+    // Check if this is an EventTarget with pending events
+    bool hasPendingEvents = false;
+    if (bindingObject is EventTarget && bindingObject.hasPendingEvents()) {
+      hasPendingEvents = true;
+    }
 
     bindingObject?.dispose();
     view.removeBindingObject(pointer);
     view.disposeTargetIdToDevNodeIdMap(bindingObject);
 
-    // Schedule pointer to be batch freed during idle time
-    _schedulePointerCleanup(pointer);
+    // Schedule pointer to be batch freed
+    if (hasPendingEvents) {
+      // Add to special list for pointers with pending events
+      // These will only be freed when the controller is disposed
+      _pendingPointersWithEvents.add(pointer);
+    } else {
+      // Regular cleanup for pointers without pending events
+      _schedulePointerCleanup(pointer);
+    }
   }
 
   /// Schedule a pointer to be freed in batch during idle time
   static void _schedulePointerCleanup(Pointer pointer) {
     _pendingPointers.add(pointer);
 
-    // If we hit the threshold, trigger immediate batch free
+    // Only trigger immediate batch free when we hit the threshold
+    // Do not schedule idle cleanup - pointers will be freed when controller is disposed or threshold is hit
     if (_pendingPointers.length >= _batchThreshold) {
       _batchFreePointers();
-    } else if (!_cleanupScheduled) {
-      _scheduleIdleCleanup();
-    }
-  }
-
-  /// Schedule the cleanup to run during the next idle period
-  static void _scheduleIdleCleanup() {
-    if (_cleanupScheduled) return;
-    _cleanupScheduled = true;
-
-    // Schedule cleanup to run when frame is idle
-    SchedulerBinding.instance.addPostFrameCallback((Duration timeStamp) {
-      _processIdleCleanup();
-      _cleanupScheduled = false;
-
-      // If there are more pointers, schedule another idle callback
-      if (_pendingPointers.isNotEmpty) {
-        _scheduleIdleCleanup();
-      }
-    });
-
-    SchedulerBinding.instance.scheduleFrame();
-  }
-
-  /// Process cleanup during idle time
-  static void _processIdleCleanup() {
-    if (_pendingPointers.isEmpty) return;
-
-    // Calculate remaining time based on display refresh rate
-    ui.Display display = WidgetsBinding.instance.platformDispatcher.views.first.display;
-    double maxFrameTime = 1000 / display.refreshRate;
-
-    // Reserve some time for system operations (2ms minimum)
-    double timeForCleanup = maxFrameTime - 2.0;
-    if (timeForCleanup <= 0) return;
-
-    // Process pointers in batches
-    int pointersToProcess = _pendingPointers.length > _maxPointersPerIdle
-        ? _maxPointersPerIdle
-        : _pendingPointers.length;
-
-    List<Pointer> batch = _pendingPointers.take(pointersToProcess).toList();
-    _pendingPointers.removeRange(0, pointersToProcess);
-
-    try {
-      _batchFreePointersArray(batch);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Error in batch pointer cleanup: $e');
-      }
     }
   }
 
@@ -701,6 +659,22 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     } catch (e) {
       if (kDebugMode) {
         debugPrint('Error in immediate batch pointer cleanup: $e');
+      }
+    }
+  }
+
+  /// Batch free all pending pointers with events
+  static void _batchFreePointersWithEvents() {
+    if (_pendingPointersWithEvents.isEmpty) return;
+
+    List<Pointer> pointersToFree = List.from(_pendingPointersWithEvents);
+    _pendingPointersWithEvents.clear();
+
+    try {
+      _batchFreePointersArray(pointersToFree);
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Error in batch pointer cleanup for pointers with events: $e');
       }
     }
   }
