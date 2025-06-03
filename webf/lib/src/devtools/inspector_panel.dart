@@ -487,6 +487,75 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> {
                   ),
                 ),
               ),
+              if (controller != null && state == ControllerState.detached) ...[
+                SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(Icons.refresh, size: 18),
+                  color: Colors.white70,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: () async {
+                    // Show loading indicator
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (context) => Center(
+                        child: Container(
+                          padding: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              CircularProgressIndicator(color: Colors.white),
+                              SizedBox(height: 16),
+                              Text(
+                                'Reloading...',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+
+                    try {
+                      // Reload the controller
+                      await controller.reload();
+
+                      // Close loading dialog
+                      Navigator.of(context).pop();
+
+                      // Show success message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Controller reloaded successfully'),
+                          duration: Duration(seconds: 2),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      // Close loading dialog
+                      Navigator.of(context).pop();
+
+                      // Show error message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to reload: ${e.toString()}'),
+                          duration: Duration(seconds: 3),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                  tooltip: 'Reload Controller',
+                ),
+              ],
             ],
           ),
         );
