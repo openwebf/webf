@@ -59,32 +59,32 @@ android {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
 
-        externalNativeBuild {
-            cmake {
-                abiFilters 'armeabi-v7a', 'arm64-v8a'
-            }
-        }
+        // externalNativeBuild {
+        //     cmake {
+        //         abiFilters 'armeabi-v7a', 'arm64-v8a'
+        //     }
+        // }
     }
 
     // Invoke the shared CMake build with the Android Gradle Plugin.
-//    externalNativeBuild {
-//        cmake {
-//            path = "../src/CMakeLists.txt"
-//            // The default CMake version for the Android Gradle Plugin is 3.10.2.
-//            // https://developer.android.com/studio/projects/install-ndk#vanilla_cmake
-//            //
-//            // The Flutter tooling requires that developers have CMake 3.10 or later
-//            // installed. You should not increase this version, as doing so will cause
-//            // the plugin to fail to compile for some customers of the plugin.
-//            // version "3.10.2"
-//        }
-//    }
+    //    externalNativeBuild {
+    //        cmake {
+    //            path = "../src/CMakeLists.txt"
+    //            // The default CMake version for the Android Gradle Plugin is 3.10.2.
+    //            // https://developer.android.com/studio/projects/install-ndk#vanilla_cmake
+    //            //
+    //            // The Flutter tooling requires that developers have CMake 3.10 or later
+    //            // installed. You should not increase this version, as doing so will cause
+    //            // the plugin to fail to compile for some customers of the plugin.
+    //            // version "3.10.2"
+    //        }
+    //    }
 
-    externalNativeBuild {
-        cmake {
-            abiFilters 'armeabi-v7a', 'arm64-v8a'
-        }
-    }
+    // externalNativeBuild {
+    //     cmake {
+    //         abiFilters 'armeabi-v7a', 'arm64-v8a'
+    //     }
+    // }
 
     sourceSets {
         main {

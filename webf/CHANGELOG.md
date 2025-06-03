@@ -1,3 +1,13 @@
+## 0.21.4+2
+
+🐛 Bug Fixes
+
+- Fixed race condition in EventTarget disposal (https://github.com/openwebf/webf/commit/4ece049c5)
+  - Defers freeing of pointers with pending events until controller disposal
+  - Prevents potential crashes when EventTarget objects are garbage collected while still dispatching events
+  - Adds separate tracking for pointers with pending events using _pendingPointersWithEvents list
+  - Increases batch threshold from 500 to 2000 for better performance
+
 ## 0.21.4+1
 
 🐛 Bug Fixes
