@@ -490,6 +490,10 @@ class WebFState extends State<WebF> with RouteAware {
     if (initialRoute != '/') {
       RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
       if (child == null) {
+        debugPrint('WebF Loading Error: the route path for $initialRoute was not found');
+        if (widget.errorBuilder != null) {
+          return widget.errorBuilder!(context, widget.controller.loadingError!);
+        }
         return WebFHTMLElement(
             tagName: 'DIV',
             controller: widget.controller,
@@ -501,12 +505,20 @@ class WebFState extends State<WebF> with RouteAware {
     }
 
     if (widget.controller.disposed) {
+      debugPrint('WebF Loading Error: ${widget.controller} was disposed');
+      if (widget.errorBuilder != null) {
+        return widget.errorBuilder!(context, widget.controller.loadingError!);
+      }
       return Center(
         child: Text('${widget.controller} was disposed'),
       );
     }
 
     if (widget.controller.view.document.documentElement == null) {
+      debugPrint('WebF Loading Error: the documentElement is Null ');
+      if (widget.errorBuilder != null) {
+        return widget.errorBuilder!(context, widget.controller.loadingError!);
+      }
       return WebFHTMLElement(
           tagName: 'DIV',
           controller: widget.controller,
