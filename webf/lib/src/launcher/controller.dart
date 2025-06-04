@@ -388,10 +388,9 @@ class WebFController with Diagnosticable {
 
     _darkModeOverride = value;
     // Only dispatch event and recalculate if:
-    // 1. Controller is already evaluated (content is loaded)
-    // 2. Previous value existed and was different
-    // 3. New value is not null
-    if (evaluated && previousDarkMode != null && value != null && previousDarkMode != value) {
+    // 1. Previous value existed and was different
+    // 2. New value is not null
+    if (previousDarkMode != null && value != null && previousDarkMode != value) {
       view.window.dispatchEvent(ColorSchemeChangeEvent(value ? 'dark' : 'light'));
       view.document.recalculateStyleImmediately();
     }
