@@ -108,6 +108,7 @@ class WebFListViewElement extends WidgetElement {
   ///   - Any other value: No specific result indicator is shown
   void finishRefresh(String result) {
     state?.refreshController.finishRefresh(_parseIndicatorResult(result));
+    state?._isRefreshing = false;
   }
 
   /// Completes a load-more operation with the specified result
@@ -122,6 +123,7 @@ class WebFListViewElement extends WidgetElement {
   ///   - Any other value: No specific result indicator is shown
   void finishLoad(String result) {
     state?.refreshController.finishLoad(_parseIndicatorResult(result));
+    state?._isLoading = false;
   }
 
   /// Resets the refresh header to its initial state
@@ -132,6 +134,7 @@ class WebFListViewElement extends WidgetElement {
   /// operation without completing it.
   void resetHeader() {
     state?.refreshController.resetHeader();
+    state?._isRefreshing = false;
   }
 
   /// Resets the load-more footer to its initial state
@@ -142,6 +145,7 @@ class WebFListViewElement extends WidgetElement {
   /// operation without completing it.
   void resetFooter() {
     state?.refreshController.resetFooter();
+    state?._isLoading = false;
   }
 
   static StaticDefinedSyncBindingObjectMethodMap listViewMethods = {
