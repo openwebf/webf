@@ -3,7 +3,7 @@ import { FunctionArgumentType } from './declaration';
 import {IDLBlob} from './IDLBlob';
 import {camelCase, snakeCase} from 'lodash';
 
-export function addIndent(str: String, space: number) {
+export function addIndent(str: string, space: number) {
   let lines = str.split('\n');
   lines = lines.map(l => {
     for (let i = 0; i < space; i ++) {

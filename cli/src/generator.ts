@@ -10,7 +10,7 @@ import { generateDartClass } from './dart';
 import { generateReactComponent, generateReactIndex } from './react';
 import { generateVueTypings } from './vue';
 
-function wirteFileIfChanged(filePath: string, content: string) {
+function writeFileIfChanged(filePath: string, content: string) {
   if (fs.existsSync(filePath)) {
     const oldContent = fs.readFileSync(filePath, 'utf-8')
     if (oldContent === content) {
@@ -81,7 +81,7 @@ export function dartGen({ source, target, command }: GenerateOptions) {
 
     let genFilePath = path.join(b.dist, _.snakeCase(b.filename));
 
-    wirteFileIfChanged(genFilePath + '_bindings_generated.dart', result);
+    writeFileIfChanged(genFilePath + '_bindings_generated.dart', result);
   }
 
   console.log('Dart code generation completed. See ' + target + ' for generated files.');
@@ -126,7 +126,7 @@ export function reactGen({ source, target }: GenerateOptions) {
     let result = generateReactComponent(b);
     let genFilePath = path.join(b.dist, 'src', b.filename);
 
-    wirteFileIfChanged(genFilePath + '.tsx', result);
+    writeFileIfChanged(genFilePath + '.tsx', result);
   }
 
   const indexContent = generateReactIndex(blobs);

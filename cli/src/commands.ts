@@ -91,19 +91,19 @@ function createCommand(target: string, options: CreateOptions): void {
     const packageJsonContent = _.template(reactPackageJson)({
       packageName,
     });
-    wirteFileIfChanged(packageJsonPath, packageJsonContent);
+    writeFileIfChanged(packageJsonPath, packageJsonContent);
 
     const tsConfigPath = path.join(target, 'tsconfig.json');
     const tsConfigContent = _.template(reactTsConfig)({});
-    wirteFileIfChanged(tsConfigPath, tsConfigContent);
+    writeFileIfChanged(tsConfigPath, tsConfigContent);
 
     const tsupConfigPath = path.join(target, 'tsup.config.ts');
     const tsupConfigContent = _.template(reactTsUpConfig)({});
-    wirteFileIfChanged(tsupConfigPath, tsupConfigContent);
+    writeFileIfChanged(tsupConfigPath, tsupConfigContent);
 
     const gitignorePath = path.join(target, '.gitignore');
     const gitignoreContent = _.template(gitignore)({});
-    wirteFileIfChanged(gitignorePath, gitignoreContent);
+    writeFileIfChanged(gitignorePath, gitignoreContent);
 
     const srcDir = path.join(target, 'src');
     if (!fs.existsSync(srcDir)) {
@@ -114,7 +114,7 @@ function createCommand(target: string, options: CreateOptions): void {
     const indexContent = _.template(reactIndexTpl)({
       components: [],
     });
-    wirteFileIfChanged(indexFilePath, indexContent);
+    writeFileIfChanged(indexFilePath, indexContent);
 
     const utilsDir = path.join(srcDir, 'utils');
     if (!fs.existsSync(utilsDir)) {
@@ -123,7 +123,7 @@ function createCommand(target: string, options: CreateOptions): void {
 
     const createComponentPath = path.join(utilsDir, 'createComponent.ts');
     const createComponentContent = _.template(createComponentTpl)({});
-    wirteFileIfChanged(createComponentPath, createComponentContent);
+    writeFileIfChanged(createComponentPath, createComponentContent);
 
     spawnSync(NPM, ['install', '--omit=peer'], {
       cwd: target,
@@ -135,15 +135,15 @@ function createCommand(target: string, options: CreateOptions): void {
     const packageJsonContent = _.template(vuePackageJson)({
       packageName,
     });
-    wirteFileIfChanged(packageJsonPath, packageJsonContent);
+    writeFileIfChanged(packageJsonPath, packageJsonContent);
 
     const tsConfigPath = path.join(target, 'tsconfig.json');
     const tsConfigContent = _.template(vueTsConfig)({});
-    wirteFileIfChanged(tsConfigPath, tsConfigContent);
+    writeFileIfChanged(tsConfigPath, tsConfigContent);
 
     const gitignorePath = path.join(target, '.gitignore');
     const gitignoreContent = _.template(gitignore)({});
-    wirteFileIfChanged(gitignorePath, gitignoreContent);
+    writeFileIfChanged(gitignorePath, gitignoreContent);
 
     spawnSync(NPM, ['install', '@openwebf/webf-enterprise-typings'], {
       cwd: target,
@@ -191,7 +191,7 @@ function generateCommand(distPath: string, options: GenerateOptions): void {
   }
 }
 
-function wirteFileIfChanged(filePath: string, content: string) {
+function writeFileIfChanged(filePath: string, content: string) {
   if (fs.existsSync(filePath)) {
     const oldContent = fs.readFileSync(filePath, 'utf-8')
     if (oldContent === content) {
