@@ -1,3 +1,50 @@
+## 0.21.5+1
+
+### 🎯 Simplified JavaScript Channel Integration
+- **Automatic WebFJavaScriptChannel Creation**: The `WebFJavaScriptChannel` is now automatically available through `controller.javascriptChannel` getter
+- **Removed Manual Initialization**: No longer need to manually create and pass `WebFJavaScriptChannel` instances to controllers
+- **Seamless Integration**: Works automatically with all `WebFController` instances, including those managed by `WebFControllerManager`
+
+### 🔧 Enhanced Navigation Delegate Configuration
+- **Flexible Configuration**: `navigationDelegate` is now a mutable property that can be set via the `setup()` callback
+- **Consistent API Pattern**: Aligns with other controller configuration patterns for better consistency
+- **Removed Deprecated Methods**: The deprecated `setNavigationDelegate()` method has been removed
+
+## Breaking Changes
+
+### WebFController Constructor Changes
+- **Removed Parameters**:
+  - `javaScriptChannel` parameter removed from constructor
+  - `navigationDelegate` parameter removed from constructor
+
+### Migration Guide
+
+**Before (0.21.5):**
+```dart
+final jsChannel = WebFJavaScriptChannel();
+final controller = WebFController(
+  viewportWidth: 360,
+  viewportHeight: 640,
+  javaScriptChannel: jsChannel,
+  navigationDelegate: myNavigationDelegate,
+);
+```
+
+**After (0.21.5+1):**
+```dart
+final controller = WebFController(
+  viewportWidth: 360,
+  viewportHeight: 640,
+  setup: (controller) {
+    controller.navigationDelegate = myNavigationDelegate;
+  },
+);
+
+// JavaScript channel is now automatically available
+controller.javascriptChannel.invokeMethod('method', 'Hello');
+```
+
+
 ## 0.21.5
 
 🐛 Bug Fixes
