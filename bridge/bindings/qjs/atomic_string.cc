@@ -21,17 +21,21 @@ AtomicString AtomicString::Null() {
 
 namespace {
 
-AtomicString::StringKind GetStringKind(const std::string& string, size_t length) {
-  char first_char = string[0];
+AtomicString::StringKind GetStringKind(const char* str, size_t length) {
+  if (length == 0) {
+    return AtomicString::StringKind::kIsMixed;
+  }
+  
+  char first_char = str[0];
 
   if (first_char < 0 || first_char > 255) {
     return AtomicString::StringKind::kUnknown;
   }
 
   AtomicString::StringKind predictKind =
-      std::islower(string[0]) ? AtomicString::StringKind::kIsLowerCase : AtomicString::StringKind::kIsUpperCase;
-  for (int i = 0; i < length; i++) {
-    char c = string[i];
+      std::islower(str[0]) ? AtomicString::StringKind::kIsLowerCase : AtomicString::StringKind::kIsUpperCase;
+  for (size_t i = 0; i < length; i++) {
+    char c = str[i];
 
     if (c < 0 || c > 255) {
       return AtomicString::StringKind::kUnknown;
@@ -44,6 +48,10 @@ AtomicString::StringKind GetStringKind(const std::string& string, size_t length)
     }
   }
   return predictKind;
+}
+
+AtomicString::StringKind GetStringKind(const std::string& string, size_t length) {
+  return GetStringKind(string.c_str(), length);
 }
 
 AtomicString::StringKind GetStringKind(JSValue stringValue) {
@@ -309,7 +317,7 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
   if (from == fromend)
     return self;
 
-  auto* to = (CharType*)js_malloc(ctx, len);
+  auto* to = (CharType*)js_malloc(ctx, len * sizeof(CharType));
   size_t outc = static_cast<size_t>(from - characters);
 
   if (outc)
@@ -330,8 +338,9 @@ inline AtomicString RemoveCharactersInternal(JSContext* ctx,
     return AtomicString::Empty();
   }
 
-  auto data = (CharType*)js_malloc(ctx, outc);
-  memcpy(data, to, outc);
+  auto data = (CharType*)js_malloc(ctx, (outc + 1) * sizeof(CharType)); // Allocate extra element for null terminator
+  memcpy(data, to, outc * sizeof(CharType));
+  data[outc] = 0;  // Null terminate the string
   js_free(ctx, to);
   if (self.Is8Bit()) {
     str = AtomicString(ctx, reinterpret_cast<const char*>(data), outc);

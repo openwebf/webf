@@ -53,7 +53,6 @@ static void unlink_callback(JSThreadState* ts, JSFrameCallback* th) {
 
 NativeValue* TEST_invokeModule(void* callback_context,
                                double context_id,
-                               int64_t profile_link_id,
                                SharedNativeString* moduleName,
                                SharedNativeString* method,
                                NativeValue* params,
