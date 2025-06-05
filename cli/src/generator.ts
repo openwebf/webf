@@ -131,7 +131,7 @@ export function reactGen({ source, target }: GenerateOptions) {
 
   const indexContent = generateReactIndex(blobs);
   const indexFilePath = path.join(target, 'src', 'index.ts');
-  wirteFileIfChanged(indexFilePath, indexContent);
+  writeFileIfChanged(indexFilePath, indexContent);
   console.log('React code generation completed. See ' + target + ' for generated files.');
   console.log('You can now import these components in your React project.');
 };
@@ -171,7 +171,7 @@ export function vueGen({ source, target }: GenerateOptions) {
 
   const typingsContent = generateVueTypings(blobs);
   const typingsFilePath = path.join(target, 'index.d.ts');
-  wirteFileIfChanged(typingsFilePath, typingsContent);
+  writeFileIfChanged(typingsFilePath, typingsContent);
   console.log('Vue typings generation completed. See ' + target + ' for generated files.');
   console.log('You can now import these types in your Vue project.');
 }
