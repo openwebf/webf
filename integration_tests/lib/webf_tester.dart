@@ -32,24 +32,12 @@ class _WebFTesterState extends State<WebFTester> {
   var width = 360.0;
   var height = 640.0;
 
-  WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
-
-  @override
-  void didChangeDependencies() async {
-    super.didChangeDependencies();
-
-    navigationDelegate.setDecisionHandler((WebFNavigationAction action) async {
-      return WebFNavigationActionPolicy.allow; // Allows for all
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return WebF.fromControllerName(
         controllerName: 'tester',
         initialRoute: '/',
         createController: () => WebFController(
-            navigationDelegate: navigationDelegate,
             viewportWidth: width,
             viewportHeight: height,
             onLoad: onLoad,
@@ -60,6 +48,12 @@ class _WebFTesterState extends State<WebFTester> {
               await controller.view.evaluateJavaScripts(widget.preCode);
             }),
         setup: (controller) {
+          WebFNavigationDelegate navigationDelegate = WebFNavigationDelegate();
+          navigationDelegate
+              .setDecisionHandler((WebFNavigationAction action) async {
+            return WebFNavigationActionPolicy.allow; // Allows for all
+          });
+          controller.navigationDelegate = navigationDelegate;
           controller.javascriptChannel.onMethodCall =
               (String method, dynamic arguments) async {
             switch (method) {

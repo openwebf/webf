@@ -114,7 +114,19 @@ class WebFController with Diagnosticable {
   /// during a webf view's process of loading, and completing a navigation request.
   ///
   /// Use this to intercept and handle navigation events such as page redirects or link clicks.
-  final WebFNavigationDelegate? navigationDelegate;
+  /// 
+  /// Can be set via the setup() callback when using WebFControllerManager or directly on the controller.
+  WebFNavigationDelegate? _navigationDelegate;
+  
+  WebFNavigationDelegate get navigationDelegate => _navigationDelegate ?? WebFNavigationDelegate();
+  
+  set navigationDelegate(WebFNavigationDelegate? delegate) {
+    _navigationDelegate = delegate;
+    // Update the view's navigation delegate if view is already initialized
+    if (_view != null) {
+      _view!.navigationDelegate = delegate;
+    }
+  }
 
 
   /// Specify the running thread for your JavaScript codes.
@@ -481,7 +493,6 @@ class WebFController with Diagnosticable {
     this.background,
     this.viewportWidth,
     this.viewportHeight,
-    this.navigationDelegate,
     this.onLoad,
     this.onDOMContentLoaded,
     this.onLoadError,
@@ -507,7 +518,7 @@ class WebFController with Diagnosticable {
         enableDebug: enableDebug,
         rootController: this,
         runningThread: this.runningThread!,
-        navigationDelegate: navigationDelegate ?? WebFNavigationDelegate(),
+        navigationDelegate: navigationDelegate,
         initialCookies: initialCookies);
 
     _view!.initialize().then((_) async {
@@ -598,26 +609,6 @@ class WebFController with Diagnosticable {
     return Uri(scheme: 'vm', host: 'bundle', path: id != null ? '$id' : null);
   }
 
-  /// Sets a navigation delegate to handle navigation events.
-  ///
-  /// The navigation delegate allows intercepting and controlling navigation actions
-  /// such as page loads and redirects within the WebF content.
-  ///
-  /// Example:
-  /// ```dart
-  /// controller.setNavigationDelegate(WebFNavigationDelegate(
-  ///   decidePolicyForNavigation: (request) {
-  ///     // Block navigation to external websites
-  ///     if (request.url.startsWith('https://external.com')) {
-  ///       return WebFNavigationDecision.prevent;
-  ///     }
-  ///     return WebFNavigationDecision.allow;
-  ///   }
-  /// ));
-  /// ```
-  void setNavigationDelegate(WebFNavigationDelegate delegate) {
-    view.navigationDelegate = delegate;
-  }
 
   /// Flag indicating whether fonts are currently being loaded.
   ///
