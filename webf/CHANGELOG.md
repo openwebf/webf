@@ -1,3 +1,30 @@
+## 0.21.5
+
+🐛 Bug Fixes
+
+- Fixed ListView header and footer state management (https://github.com/openwebf/webf/commit/19f144340)
+  - Reset internal refresh/loading states when calling finishRefresh, finishLoad, resetHeader, and resetFooter APIs
+  - Prevents state inconsistencies that could cause refresh/load indicators to get stuck
+  - Ensures proper state synchronization between internal flags and refresh controller
+
+- Fixed dark mode not updating when controller was not evaluated (https://github.com/openwebf/webf/commit/d0013123c)
+  - Dark mode changes now apply immediately regardless of controller evaluation state
+  - Removed unnecessary check that prevented dark mode updates before content was loaded
+  - Ensures consistent dark mode behavior throughout the controller lifecycle
+
+🔧 Improvements
+
+- Enhanced error handling with error builder support (https://github.com/openwebf/webf/commit/0c18d2a14)
+  - Show error builder widget when encountering unexpected errors during WebF build
+  - Added debug print statements for better error diagnostics
+  - Handles cases where route is not found, controller is disposed, or documentElement is null
+  - Provides better developer experience with clear error messages
+
+- Made NetworkBundle's HTTP client public (https://github.com/openwebf/webf/commit/e053f1698)
+  - Changed `_sharedHttpClient` to `sharedHttpClient` to allow external access
+  - Enables developers to configure the shared HTTP client used by NetworkBundle
+  - Useful for setting custom headers, timeouts, or other HTTP client configurations
+
 ## 0.21.4+2
 
 🐛 Bug Fixes
