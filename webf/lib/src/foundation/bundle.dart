@@ -244,7 +244,7 @@ class DataBundle extends WebFBundle {
 // The bundle that source from http or https.
 class NetworkBundle extends WebFBundle {
   // Do not access this field directly; use [_httpClient] instead.
-  static final HttpClient _sharedHttpClient = HttpClient()
+  static final HttpClient sharedHttpClient = HttpClient()
     ..userAgent = NavigatorModule.getUserAgent();
 
   NetworkBundle(String url, {this.additionalHttpHeaders, ContentType? contentType}) : super(url, contentType: contentType);
@@ -254,7 +254,7 @@ class NetworkBundle extends WebFBundle {
   @override
   Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
-    final HttpClientRequest request = await _sharedHttpClient.getUrl(_uri!);
+    final HttpClientRequest request = await sharedHttpClient.getUrl(_uri!);
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
