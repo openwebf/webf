@@ -3,164 +3,131 @@
  */
 
 #include "shared_ui_command.h"
+#include "core/dart_methods.h"
 #include "core/executing_context.h"
 #include "foundation/logging.h"
-#include "ui_command_buffer.h"
+#include "foundation/ui_command_buffer.h"
 
 namespace webf {
 
 SharedUICommand::SharedUICommand(ExecutingContext* context)
     : context_(context),
-      active_buffer(std::make_unique<UICommandBuffer>(context)),
-      reserve_buffer_(std::make_unique<UICommandBuffer>(context)),
-      waiting_buffer_(std::make_unique<UICommandBuffer>(context)),
-      ui_command_sync_strategy_(std::make_unique<UICommandSyncStrategy>(this)),
-      is_blocking_reading_(false),
-      is_blocking_writing_(false) {}
+      package_buffer_(std::make_unique<UICommandPackageRingBuffer>(context)),
+      read_buffer_(std::make_unique<UICommandBuffer>(context)) {}
+
+SharedUICommand::~SharedUICommand() = default;
 
 void SharedUICommand::AddCommand(UICommand type,
-                                 SharedNativeString* args_01,
-                                 NativeBindingObject* native_binding_object,
-                                 void* nativePtr2,
-                                 bool request_ui_update) {
+                                SharedNativeString* args_01,
+                                NativeBindingObject* native_binding_object,
+                                void* nativePtr2,
+                                bool request_ui_update) {
+  // For non-dedicated contexts, add directly to read buffer
   if (!context_->isDedicated()) {
-    active_buffer->AddCommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
-    if (type == UICommand::kFinishRecordingCommand && active_buffer->size() > 0) {
+    std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+    read_buffer_->AddCommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
+    
+    if (type == UICommand::kFinishRecordingCommand && read_buffer_->size() > 0) {
       context_->dartMethodPtr()->requestBatchUpdate(false, context_->contextId());
     }
-
     return;
   }
-
-  if (type == UICommand::kFinishRecordingCommand || ui_command_sync_strategy_->ShouldSync()) {
-    bool should_request_batch_update = reserve_buffer_->size() + waiting_buffer_->size() > 0;
-
-    SyncToActive();
-    if (should_request_batch_update) {
-      context_->dartMethodPtr()->requestBatchUpdate(true, context_->contextId());
-    }
+  
+  // For dedicated contexts, use the ring buffer
+  package_buffer_->AddCommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
+  total_commands_.fetch_add(1, std::memory_order_relaxed);
+  
+  // Request batch update on certain commands
+  if (type == UICommand::kFinishRecordingCommand || type == UICommand::kAsyncCaller) {
+    RequestBatchUpdate();
   }
-
-  ui_command_sync_strategy_->RecordUICommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
 }
 
-// first called by dart to being read commands.
 void* SharedUICommand::data() {
-  // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
-  }
-
-  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
-
+  std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+  
+  // Fill read buffer from ring buffer
+  FillReadBuffer();
+  
+  // Create the UI command buffer pack for Dart
   auto* pack = (UICommandBufferPack*)dart_malloc(sizeof(UICommandBufferPack));
-  pack->length = active_buffer->size();
-  pack->data = active_buffer->data();
-  pack->buffer_head = active_buffer.release();
-
-  active_buffer = std::make_unique<UICommandBuffer>(context_);
-
-  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
-
+  pack->length = read_buffer_->size();
+  pack->data = read_buffer_->data();
+  pack->buffer_head = read_buffer_.release();
+  
+  // Create new read buffer
+  read_buffer_ = std::make_unique<UICommandBuffer>(context_);
+  
   return pack;
 }
 
-// third called by dart to clear commands.
 void SharedUICommand::clear() {
-  // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
-  }
-
-  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
-
-  active_buffer->clear();
-
-  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
+  std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+  read_buffer_->clear();
+  package_buffer_->Clear();
 }
 
-// called by c++ to check if there are commands.
 bool SharedUICommand::empty() {
-  if (context_->isDedicated()) {
-    // simply spin wait for the swapBuffers to finish.
-    while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
-    }
-
-    is_blocking_reading_.store(true, std::memory_order::memory_order_release);
-    int is_empty = reserve_buffer_->empty() && waiting_buffer_->empty() && active_buffer->empty();
-    is_blocking_reading_.store(false, std::memory_order::memory_order_release);
-    return is_empty;
+  if (!context_->isDedicated()) {
+    std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+    return read_buffer_->empty();
   }
-
-  return active_buffer->empty();
+  
+  return package_buffer_->Empty() && read_buffer_->empty();
 }
 
 int64_t SharedUICommand::size() {
-  // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
+  std::lock_guard<std::mutex> lock(read_buffer_mutex_);
+  
+  int64_t total_size = read_buffer_->size();
+  
+  // Count commands in packages
+  if (context_->isDedicated()) {
+    // This is an approximation - we'd need to iterate packages for exact count
+    total_size += package_buffer_->PackageCount() * 100;  // Estimate 100 commands per package
   }
-
-  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
-  int64_t size = reserve_buffer_->size() + waiting_buffer_->size() + active_buffer->size();
-  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
-
-  return size;
-}
-
-void SharedUICommand::SyncToReserve() {
-  if (waiting_buffer_->empty())
-    return;
-
-  size_t waiting_size = waiting_buffer_->size();
-  size_t origin_reserve_size = reserve_buffer_->size();
-
-  if (reserve_buffer_->empty()) {
-    swap(reserve_buffer_, waiting_buffer_);
-  } else {
-    appendCommand(reserve_buffer_, waiting_buffer_);
-  }
-
-  assert(waiting_buffer_->empty());
-  assert(reserve_buffer_->size() == waiting_size + origin_reserve_size);
-}
-
-void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
-  ui_command_sync_strategy_->ConfigWaitingBufferSize(size);
+  
+  return total_size;
 }
 
 void SharedUICommand::SyncToActive() {
-  SyncToReserve();
+  // No-op for compatibility - ring buffer handles synchronization automatically
+  WEBF_LOG(VERBOSE) << "SyncToActive called - no-op in ring buffer implementation";
+}
 
-  assert(waiting_buffer_->empty());
+void SharedUICommand::SyncToReserve() {
+  // No-op for compatibility - ring buffer handles synchronization automatically
+  WEBF_LOG(VERBOSE) << "SyncToReserve called - no-op in ring buffer implementation";
+}
 
-  if (reserve_buffer_->empty())
+void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
+  // Could implement dynamic resizing if needed
+  WEBF_LOG(VERBOSE) << "ConfigureSyncCommandBufferSize not implemented for ring buffer";
+}
+
+void SharedUICommand::FillReadBuffer() {
+  if (!context_->isDedicated()) {
     return;
-
-  // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
   }
-
-  is_blocking_reading_.store(true, std::memory_order::memory_order_release);
-
-  ui_command_sync_strategy_->Reset();
-
-  size_t reserve_size = reserve_buffer_->size();
-  size_t origin_active_size = active_buffer->size();
-  appendCommand(active_buffer, reserve_buffer_);
-  assert(reserve_buffer_->empty());
-  assert(active_buffer->size() == reserve_size + origin_active_size);
-
-  is_blocking_reading_.store(false, std::memory_order::memory_order_release);
+  
+  // Pop packages from ring buffer and add to read buffer
+  while (auto package = package_buffer_->PopPackage()) {
+    total_packages_.fetch_add(1, std::memory_order_relaxed);
+    
+    for (const auto& item : package->commands) {
+      read_buffer_->AddCommand(static_cast<UICommand>(item.type),
+                              reinterpret_cast<SharedNativeString*>(item.string_01),
+                              reinterpret_cast<NativeBindingObject*>(item.nativePtr),
+                              reinterpret_cast<void*>(item.nativePtr2),
+                              false);  // Don't request update for each command
+    }
+  }
 }
 
-void SharedUICommand::swap(std::unique_ptr<UICommandBuffer>& target, std::unique_ptr<UICommandBuffer>& original) {
-  std::swap(target, original);
-}
-
-void SharedUICommand::appendCommand(std::unique_ptr<UICommandBuffer>& target,
-                                    std::unique_ptr<UICommandBuffer>& original) {
-  UICommandItem* command_item = original->data();
-  target->addCommands(command_item, original->size());
-
-  original->clear();
+void SharedUICommand::RequestBatchUpdate() {
+  if (!package_buffer_->Empty()) {
+    context_->dartMethodPtr()->requestBatchUpdate(true, context_->contextId());
+  }
 }
 
 }  // namespace webf

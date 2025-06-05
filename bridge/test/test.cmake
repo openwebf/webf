@@ -34,6 +34,8 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/html/html_element_test.cc
   ./core/html/custom/widget_element_test.cc
   ./core/timing/performance_test.cc
+  ./foundation/shared_ui_command_test.cc
+  ./foundation/ui_command_ring_buffer_test.cc
 )
 
 ### webf_unit_test executable

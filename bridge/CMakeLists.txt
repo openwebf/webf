@@ -116,7 +116,7 @@ list(APPEND BRIDGE_SOURCE
   foundation/dart_readable.cc
   foundation/rust_readable.cc
   foundation/ui_command_buffer.cc
-  foundation/ui_command_strategy.cc
+  foundation/ui_command_ring_buffer.cc
   multiple_threading/dispatcher.cc
   multiple_threading/looper.cc
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart/include/dart_api_dl.c

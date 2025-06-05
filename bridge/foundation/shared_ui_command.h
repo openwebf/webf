@@ -7,9 +7,10 @@
 
 #include <atomic>
 #include <memory>
+#include <mutex>
 #include "foundation/native_type.h"
 #include "foundation/ui_command_buffer.h"
-#include "foundation/ui_command_strategy.h"
+#include "foundation/ui_command_ring_buffer.h"
 
 namespace webf {
 
@@ -24,6 +25,7 @@ struct UICommandBufferPack {
 class SharedUICommand : public DartReadable {
  public:
   SharedUICommand(ExecutingContext* context);
+  ~SharedUICommand();
 
   void AddCommand(UICommand type,
                   SharedNativeString* args_01,
@@ -35,24 +37,28 @@ class SharedUICommand : public DartReadable {
   void clear();
   bool empty();
   int64_t size();
-  void SyncToActive();
-  void SyncToReserve();
+  void SyncToActive();  // No-op for compatibility
+  void SyncToReserve(); // No-op for compatibility
 
   void ConfigureSyncCommandBufferSize(size_t size);
 
  private:
-  void swap(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
-  void appendCommand(std::unique_ptr<UICommandBuffer>& original, std::unique_ptr<UICommandBuffer>& target);
-  std::unique_ptr<UICommandBuffer> active_buffer = nullptr;    // The ui commands which accessible from Dart side
-  std::unique_ptr<UICommandBuffer> reserve_buffer_ = nullptr;  // The ui commands which are ready to swap to active.
-  std::unique_ptr<UICommandBuffer> waiting_buffer_ =
-      nullptr;  // The ui commands which recorded from JS operations and sync to reserve_buffer by once.
-  std::atomic<bool> is_blocking_reading_ = false;
-  std::atomic<bool> is_blocking_writing_ = false;
   ExecutingContext* context_;
-  std::unique_ptr<UICommandSyncStrategy> ui_command_sync_strategy_ = nullptr;
-  friend class UICommandBuffer;
-  friend class UICommandSyncStrategy;
+  
+  // Ring buffer implementation
+  std::unique_ptr<UICommandPackageRingBuffer> package_buffer_;
+  
+  // Buffer for dart-side reading
+  std::unique_ptr<UICommandBuffer> read_buffer_;
+  std::mutex read_buffer_mutex_;
+  
+  // Statistics
+  std::atomic<uint64_t> total_commands_{0};
+  std::atomic<uint64_t> total_packages_{0};
+  
+  // Helper methods
+  void FillReadBuffer();
+  void RequestBatchUpdate();
 };
 
 }  // namespace webf
