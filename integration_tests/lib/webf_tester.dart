@@ -27,7 +27,6 @@ class WebFTester extends StatefulWidget {
 }
 
 class _WebFTesterState extends State<WebFTester> {
-  final WebFJavaScriptChannel javaScriptChannel = WebFJavaScriptChannel();
   Pointer<Void>? testContext;
   late WebFController controller;
   var width = 360.0;
@@ -44,33 +43,6 @@ class _WebFTesterState extends State<WebFTester> {
     });
   }
 
-  _WebFTesterState() {
-    javaScriptChannel.onMethodCall = (String method, dynamic arguments) async {
-      switch (method) {
-        case 'helloInt64':
-          return Future.value(1111111111111111);
-        case 'resizeViewport':
-          double newWidth = arguments[0] == -1
-              ? 360
-              : double.tryParse(arguments[0].toString())!;
-          double newHeight = arguments[1] == -1
-              ? 640
-              : double.tryParse(arguments[1].toString())!;
-          if (newWidth != width || newHeight != height) {
-            setState(() {
-              width = newWidth;
-              height = newHeight;
-            });
-          }
-          return Future.value(null);
-        default:
-          dynamic returnedValue =
-              await javaScriptChannel.invokeMethod(method, arguments);
-          return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
-      }
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     return WebF.fromControllerName(
@@ -80,7 +52,6 @@ class _WebFTesterState extends State<WebFTester> {
             navigationDelegate: navigationDelegate,
             viewportWidth: width,
             viewportHeight: height,
-            javaScriptChannel: javaScriptChannel,
             onLoad: onLoad,
             onControllerInit: (controller) async {
               double contextId = controller.view.contextId;
@@ -88,6 +59,33 @@ class _WebFTesterState extends State<WebFTester> {
               registerDartTestMethodsToCpp(contextId);
               await controller.view.evaluateJavaScripts(widget.preCode);
             }),
+        setup: (controller) {
+          controller.javascriptChannel.onMethodCall =
+              (String method, dynamic arguments) async {
+            switch (method) {
+              case 'helloInt64':
+                return Future.value(1111111111111111);
+              case 'resizeViewport':
+                double newWidth = arguments[0] == -1
+                    ? 360
+                    : double.tryParse(arguments[0].toString())!;
+                double newHeight = arguments[1] == -1
+                    ? 640
+                    : double.tryParse(arguments[1].toString())!;
+                if (newWidth != width || newHeight != height) {
+                  setState(() {
+                    width = newWidth;
+                    height = newHeight;
+                  });
+                }
+                return Future.value(null);
+              default:
+                dynamic returnedValue = await controller.javascriptChannel
+                    .invokeMethod(method, arguments);
+                return 'method: $method, return_type: ${returnedValue.runtimeType.toString()}, return_value: ${returnedValue.toString()}';
+            }
+          };
+        },
         bundle: WebFBundle.fromUrl(
             'http://localhost:${widget.mockServerPort}/public/core.build.js?search=1234#hash=hashValue'));
   }

@@ -49,7 +49,7 @@ abstract class WebFMethodChannel {
   Future<dynamic> invokeMethodFromJavaScript(String method, List arguments);
 
   static void setJSMethodCallCallback(WebFController controller) {
-    controller.methodChannel?._onJSMethodCall = (String method, arguments) async {
+    controller.javascriptChannel._onJSMethodCall = (String method, arguments) async {
       try {
         return controller.module.moduleManager.emitModuleEvent(METHOD_CHANNEL_NAME, data: [method, arguments]);
       } catch (e, stack) {
@@ -61,13 +61,13 @@ abstract class WebFMethodChannel {
 
 class WebFJavaScriptChannel extends WebFMethodChannel {
   Duration _methodCallTimeout = DEFAULT_METHOD_CALL_TIMEOUT;
-  
+
   Duration get methodCallTimeout => _methodCallTimeout;
-  
+
   set methodCallTimeout(Duration duration) {
     _methodCallTimeout = duration;
   }
-  
+
   Future<dynamic> invokeMethod(String method, arguments) async {
     MethodCallCallback? jsMethodCallCallback = _onJSMethodCallCallback;
     if (jsMethodCallCallback != null) {
@@ -104,7 +104,7 @@ class WebFJavaScriptChannel extends WebFMethodChannel {
 }
 
 Future<dynamic> _invokeMethodFromJavaScript(WebFController? controller, String method, List args) {
-  WebFMethodChannel? webFMethodChannel = controller?.methodChannel;
+  WebFMethodChannel? webFMethodChannel = controller?.javascriptChannel;
   if (webFMethodChannel != null) {
     return webFMethodChannel.invokeMethodFromJavaScript(method, args);
   } else {

@@ -116,11 +116,6 @@ class WebFController with Diagnosticable {
   /// Use this to intercept and handle navigation events such as page redirects or link clicks.
   final WebFNavigationDelegate? navigationDelegate;
 
-  /// A method channel for receiving messages from JavaScript code and sending messages to JavaScript.
-  ///
-  /// This enables bidirectional communication between Dart and JavaScript, allowing you to expose
-  /// native functionality to web content or get data from the JavaScript environment.
-  final WebFMethodChannel? javaScriptChannel;
 
   /// Specify the running thread for your JavaScript codes.
   /// Default value: DedicatedThread();
@@ -322,8 +317,32 @@ class WebFController with Diagnosticable {
   TitleChangedHandler? onTitleChanged;
 
   WebFMethodChannel? _methodChannel;
-
-  WebFMethodChannel? get methodChannel => _methodChannel;
+  /// Gets the JavaScript channel for this controller.
+  ///
+  /// This property provides access to the JavaScript channel that enables
+  /// bidirectional communication between Dart and JavaScript. The channel
+  /// is automatically created and initialized when first accessed.
+  ///
+  /// Usage:
+  /// ```dart
+  /// // Set up a method call handler
+  /// controller.javascriptChannel.onMethodCall = (String method, dynamic args) async {
+  ///   if (method == 'getData') {
+  ///     return {'result': 'some data'};
+  ///   }
+  ///   return null;
+  /// };
+  ///
+  /// // Invoke a method in JavaScript
+  /// await controller.javascriptChannel.invokeMethod('updateUI', {'theme': 'dark'});
+  /// ```
+  WebFJavaScriptChannel get javascriptChannel {
+    if (_methodChannel == null || _methodChannel is! WebFJavaScriptChannel) {
+      _methodChannel = WebFJavaScriptChannel();
+      WebFMethodChannel.setJSMethodCallCallback(this);
+    }
+    return _methodChannel as WebFJavaScriptChannel;
+  }
 
   JSLogHandler? _onJSLog;
 
@@ -462,7 +481,6 @@ class WebFController with Diagnosticable {
     this.background,
     this.viewportWidth,
     this.viewportHeight,
-    this.javaScriptChannel,
     this.navigationDelegate,
     this.onLoad,
     this.onDOMContentLoaded,
@@ -480,12 +498,9 @@ class WebFController with Diagnosticable {
     this.routes,
     this.resizeToAvoidBottomInsets = true,
   })  : _entrypoint = bundle,
-        runningThread = runningThread ?? DedicatedThread(),
-        _methodChannel = javaScriptChannel {
+        runningThread = runningThread ?? DedicatedThread() {
     _initializePreloadBundle();
     cookieManager = CookieManager();
-    _methodChannel = methodChannel;
-    WebFMethodChannel.setJSMethodCallCallback(this);
 
     _view = WebFViewController(
         background: background,
