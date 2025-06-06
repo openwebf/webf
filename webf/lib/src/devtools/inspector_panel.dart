@@ -4,9 +4,12 @@
  */
 
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/network_store.dart';
+import 'package:webf/src/foundation/http_cache.dart';
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -173,26 +176,31 @@ class _WebFInspectorBottomSheet extends StatefulWidget {
 class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> with SingleTickerProviderStateMixin {
   Timer? _refreshTimer;
   late TabController _tabController;
-  
+
   // Static variable to remember the last selected tab
   static int _lastSelectedTabIndex = 0;
   
+  // Track the original cache mode to restore it when unchecked
+  final HttpCacheMode _originalCacheMode = HttpCacheController.mode;
+  // Track whether cache is disabled
+  bool _isCacheDisabled = HttpCacheController.mode == HttpCacheMode.NO_CACHE;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2, 
+      length: 3,
       vsync: this,
       initialIndex: _lastSelectedTabIndex,
     );
-    
+
     // Listen to tab changes to save the selected index
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         _lastSelectedTabIndex = _tabController.index;
       }
     });
-    
+
     // Refresh the panel every second to show real-time updates
     _refreshTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (mounted) {
@@ -261,6 +269,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               tabs: [
                 Tab(text: 'Controllers'),
                 Tab(text: 'Routes'),
+                Tab(text: 'Network'),
               ],
             ),
           ),
@@ -271,6 +280,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               children: [
                 _buildControllersTab(),
                 _buildRoutesTab(),
+                _buildNetworkTab(),
               ],
             ),
           ),
@@ -321,19 +331,19 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildStatChip(String label, int count, Color color) {
+  Widget _buildStatChip(String label, dynamic value, Color color) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
-        '$label: $count',
+        '$label: $value',
         style: TextStyle(
           color: color,
-          fontSize: 14,
+          fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -628,7 +638,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildRoutesTab() {
     final manager = WebFControllerManager.instance;
-    
+
     return Container(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -646,7 +656,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   Widget _buildRoutesList() {
     final manager = WebFControllerManager.instance;
     final controllerNames = manager.controllerNames;
-    
+
     if (controllerNames.isEmpty) {
       return Center(
         child: Text(
@@ -655,18 +665,18 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ),
       );
     }
-    
+
     return ListView.builder(
       itemCount: controllerNames.length,
       itemBuilder: (context, index) {
         final name = controllerNames[index];
         final controller = manager.getControllerSync(name);
         final state = manager.getControllerState(name);
-        
+
         if (controller == null || controller.buildContextStack.isEmpty) {
           return SizedBox.shrink();
         }
-        
+
         return Container(
           margin: EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -741,14 +751,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildRouteStack(WebFController controller) {
     final stack = controller.buildContextStack;
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       child: Column(
         children: List.generate(stack.length, (index) {
           final routeContext = stack[index];
           final isCurrentRoute = index == stack.length - 1;
-          
+
           return Container(
             margin: EdgeInsets.only(bottom: index < stack.length - 1 ? 8 : 0),
             child: Row(
@@ -889,5 +899,483 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         }),
       ),
     );
+  }
+
+  Widget _buildNetworkTab() {
+    // Get the current active controller
+    final manager = WebFControllerManager.instance;
+
+    // Try to get the first attached controller for network data
+    WebFController? activeController;
+    for (final name in manager.controllerNames) {
+      final controller = manager.getControllerSync(name);
+      final state = manager.getControllerState(name);
+      if (controller != null && state == ControllerState.attached) {
+        activeController = controller;
+        break;
+      }
+    }
+
+    if (activeController == null) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: Text(
+            'No active controller available',
+            style: TextStyle(color: Colors.white54),
+          ),
+        ),
+      );
+    }
+
+    // Get network requests for the active controller
+    final contextId = activeController.view.contextId.toInt();
+    final requests = NetworkStore().getRequestsForContext(contextId);
+
+    return Column(
+      children: [
+        // Main content area
+        Expanded(
+          child: Container(
+            padding: EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Clear button and cache toggle
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: requests.isNotEmpty
+                              ? () {
+                                  setState(() {
+                                    NetworkStore().clearContext(contextId);
+                                  });
+                                }
+                              : null,
+                          icon: Icon(Icons.clear_all, size: 16),
+                          tooltip: 'Clear all requests',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.orange.withOpacity(0.2),
+                            foregroundColor: Colors.orange,
+                            padding: EdgeInsets.all(6),
+                            minimumSize: Size(32, 32),
+                          ),
+                          constraints: BoxConstraints(
+                            maxWidth: 32,
+                            maxHeight: 32,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'Disable cache',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch(
+                            value: _isCacheDisabled,
+                            onChanged: (value) {
+                              setState(() {
+                                _isCacheDisabled = value;
+                                if (value) {
+                                  HttpCacheController.mode = HttpCacheMode.NO_CACHE;
+                                } else {
+                                  HttpCacheController.mode = _originalCacheMode;
+                                }
+                              });
+                            },
+                            activeColor: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                // Network requests list
+                Expanded(
+                  child: requests.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No network requests captured',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: requests.length,
+                          itemBuilder: (context, index) {
+                            final request = requests[requests.length - 1 - index]; // Show newest first
+                            return _buildNetworkRequestItem(request);
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        // Fixed bottom stats bar
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3),
+            border: Border(
+              top: BorderSide(color: Colors.white10, width: 1),
+            ),
+          ),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: _buildNetworkStats(requests),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNetworkStats(List<NetworkRequest> requests) {
+    int successCount = 0;
+    int errorCount = 0;
+    int pendingCount = 0;
+    int totalSize = 0;
+
+    for (final request in requests) {
+      if (!request.isComplete) {
+        pendingCount++;
+      } else if (request.statusCode != null) {
+        if (request.statusCode! >= 200 && request.statusCode! < 300) {
+          successCount++;
+        } else if (request.statusCode! >= 400) {
+          errorCount++;
+        }
+        totalSize += request.responseSize;
+      }
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.center,
+      children: [
+        _buildStatChip('Total', requests.length, Colors.blue),
+        _buildStatChip('Success', successCount, Colors.green),
+        _buildStatChip('Error', errorCount, Colors.red),
+        _buildStatChip('Pending', pendingCount, Colors.orange),
+        _buildStatChip('Size', _formatBytes(totalSize), Colors.purple),
+      ],
+    );
+  }
+
+  Widget _buildNetworkRequestItem(NetworkRequest request) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: request.statusColor.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        childrenPadding: EdgeInsets.all(12),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: request.statusColor.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Icon(
+              _getRequestIcon(request.method),
+              color: request.statusColor,
+              size: 18,
+            ),
+          ),
+        ),
+        title: Text(
+          _formatUrl(request.url),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Row(
+          children: [
+            Text(
+              request.method,
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 8),
+            if (request.statusCode != null) ...[
+              Text(
+                '${request.statusCode}',
+                style: TextStyle(
+                  color: request.statusColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(width: 8),
+            ],
+            if (request.duration != null) ...[
+              Icon(Icons.timer, size: 12, color: Colors.white54),
+              SizedBox(width: 4),
+              Text(
+                _formatDuration(request.duration!),
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 11,
+                ),
+              ),
+              SizedBox(width: 8),
+            ],
+            if (request.responseSize > 0) ...[
+              Icon(Icons.download, size: 12, color: Colors.white54),
+              SizedBox(width: 4),
+              Text(
+                _formatBytes(request.responseSize),
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ],
+        ),
+        trailing: request.isComplete
+            ? Icon(
+                Icons.check_circle,
+                color: request.statusColor,
+                size: 16,
+              )
+            : SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                ),
+              ),
+        children: [
+          _buildRequestDetails(request),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequestDetails(NetworkRequest request) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Full URL
+        _buildDetailSection(
+          'URL',
+          request.url,
+          Icons.link,
+        ),
+        SizedBox(height: 12),
+        // Request headers
+        if (request.requestHeaders.isNotEmpty) ...[
+          _buildHeadersSection('Request Headers', request.requestHeaders),
+          SizedBox(height: 12),
+        ],
+        // Request body
+        if (request.requestData.isNotEmpty) ...[
+          _buildDetailSection(
+            'Request Body',
+            String.fromCharCodes(request.requestData),
+            Icons.upload,
+          ),
+          SizedBox(height: 12),
+        ],
+        // Response headers
+        if (request.responseHeaders != null && request.responseHeaders!.isNotEmpty) ...[
+          _buildHeadersSection('Response Headers', request.responseHeaders!),
+          SizedBox(height: 12),
+        ],
+        // Response body preview
+        if (request.responseBody != null && request.responseBody!.isNotEmpty) ...[
+          _buildDetailSection(
+            'Response Body (${_formatBytes(request.responseBody!.length)})',
+            _getResponsePreview(request),
+            Icons.download,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildDetailSection(String title, String content, IconData icon) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.white54),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text(
+            content,
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
+            maxLines: 5,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeadersSection(String title, Map<String, List<String>> headers) {
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.list, size: 16, color: Colors.white54),
+              SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          ...headers.entries.map((entry) => Padding(
+                padding: EdgeInsets.only(bottom: 4),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${entry.key}: ',
+                      style: TextStyle(
+                        color: Colors.blue.shade300,
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        entry.value.join(', '),
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+
+  IconData _getRequestIcon(String method) {
+    switch (method.toUpperCase()) {
+      case 'GET':
+        return Icons.download_outlined;
+      case 'POST':
+        return Icons.upload_outlined;
+      case 'PUT':
+        return Icons.edit_outlined;
+      case 'DELETE':
+        return Icons.delete_outline;
+      case 'PATCH':
+        return Icons.build_outlined;
+      default:
+        return Icons.http;
+    }
+  }
+
+  String _formatUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      return '${uri.host}${uri.path}${uri.query.isNotEmpty ? '?...' : ''}';
+    } catch (_) {
+      return url;
+    }
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inSeconds > 0) {
+      return '${duration.inSeconds}s';
+    } else {
+      return '${duration.inMilliseconds}ms';
+    }
+  }
+
+  String _formatBytes(int bytes) {
+    if (bytes < 1024) {
+      return '$bytes B';
+    } else if (bytes < 1024 * 1024) {
+      return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    } else {
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    }
+  }
+
+  String _getResponsePreview(NetworkRequest request) {
+    if (request.responseBody == null) return 'No response body';
+
+    try {
+      final decoded = utf8.decode(request.responseBody!, allowMalformed: true);
+      // Try to pretty print JSON
+      if (request.mimeType?.contains('json') ?? false) {
+        try {
+          final json = jsonDecode(decoded);
+          return const JsonEncoder.withIndent('  ').convert(json);
+        } catch (_) {
+          // Not valid JSON, show as is
+        }
+      }
+      return decoded;
+    } catch (_) {
+      return 'Binary data (${_formatBytes(request.responseBody!.length)})';
+    }
   }
 }

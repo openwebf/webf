@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/network_store.dart';
 
 class InspectNetworkModule extends UIInspectorModule implements HttpClientInterceptor {
   InspectNetworkModule(DevToolsService devtoolsService) : super(devtoolsService) {
@@ -69,6 +70,18 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
   @override
   Future<HttpClientRequest?> beforeRequest(String requestId, HttpClientRequest request) {
     List<int> data = List<int>.from((request as ProxyHttpClientRequest).data);
+    
+    // Store request in NetworkStore
+    final contextId = devtoolsService.controller!.view.contextId;
+    final networkRequest = NetworkRequest(
+      requestId: requestId,
+      url: request.uri.toString(),
+      method: request.method,
+      requestHeaders: _getHttpHeaders(request.headers),
+      requestData: data,
+      startTime: DateTime.now(),
+    );
+    NetworkStore().addRequest(contextId.toInt(), networkRequest);
 
     sendEventToFrontend(NetworkRequestWillBeSentEvent(
       requestId: requestId,
@@ -140,6 +153,21 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
     ));
     Uint8List data = await consolidateHttpClientResponseBytes(response);
     _responseBuffers[requestId] = data;
+    
+    // Update response data in NetworkStore
+    NetworkStore().updateRequest(
+      requestId,
+      responseHeaders: _getHttpHeaders(response.headers),
+      statusCode: response.statusCode,
+      statusText: response.reasonPhrase,
+      mimeType: response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain',
+      responseBody: data,
+      endTime: DateTime.now(),
+      contentLength: response.contentLength,
+      fromCache: response is HttpClientStreamResponse,
+      remoteIPAddress: response.connectionInfo?.remoteAddress.address,
+      remotePort: response.connectionInfo?.remotePort,
+    );
 
     HttpClientStreamResponse proxyResponse = HttpClientStreamResponse(Stream.value(data),
         statusCode: response.statusCode,
