@@ -59,10 +59,13 @@ class HybridRoutePageContext {
   /// The route path for the hybrid router in WebF.
   String path;
 
+  /// The route state for the hybrid router in WebF.
+  dynamic state;
+
   /// The attached flutter buildContexts for this hybrid route page.
   BuildContext context;
 
-  HybridRoutePageContext(this.path, this.context);
+  HybridRoutePageContext(this.path, this.context, this.state);
 }
 
 enum WebFLoadingMode {
@@ -374,8 +377,8 @@ class WebFController with Diagnosticable {
   /// Especially useful to detect how many hybrid route pages attached to the Flutter tree.
   List<HybridRoutePageContext> get buildContextStack => _buildContextStack;
 
-  void pushNewBuildContext({required BuildContext context, required String routePath}) {
-    _buildContextStack.add(HybridRoutePageContext(routePath, context));
+  void pushNewBuildContext({required BuildContext context, required String routePath, required Object? state}) {
+    _buildContextStack.add(HybridRoutePageContext(routePath, context, state));
   }
 
   void popBuildContext({BuildContext? context, String? routePath}) {
@@ -1072,7 +1075,7 @@ class WebFController with Diagnosticable {
     view.attachToFlutter(context);
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
-    pushNewBuildContext(context: context, routePath: initialRoute ?? '/');
+    pushNewBuildContext(context: context, routePath: initialRoute ?? '/', state: initialState);
   }
 
   /// Detaches the WebF controller from the Flutter widget tree.

@@ -169,7 +169,11 @@ class _WebFRouterViewElement extends StatefulElement {
   @override
   void mount(Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
-    widget.controller.pushNewBuildContext(context: this, routePath: widget.path);
+
+    ModalRoute? route = ModalRoute.of(this);
+    var state = route?.settings.arguments;
+
+    widget.controller.pushNewBuildContext(context: this, routePath: widget.path, state: state);
   }
 
   @override

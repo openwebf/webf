@@ -12,6 +12,7 @@ import 'package:webf/launcher.dart';
 ///
 /// This panel currently includes:
 /// - Controller management and monitoring
+/// - Hybrid router stack visualization
 ///
 /// By default, this panel is only visible in debug mode. You can override this
 /// behavior by setting the [visible] parameter.
@@ -169,12 +170,29 @@ class _WebFInspectorBottomSheet extends StatefulWidget {
   State<_WebFInspectorBottomSheet> createState() => _WebFInspectorBottomSheetState();
 }
 
-class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> {
+class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> with SingleTickerProviderStateMixin {
   Timer? _refreshTimer;
-
+  late TabController _tabController;
+  
+  // Static variable to remember the last selected tab
+  static int _lastSelectedTabIndex = 0;
+  
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(
+      length: 2, 
+      vsync: this,
+      initialIndex: _lastSelectedTabIndex,
+    );
+    
+    // Listen to tab changes to save the selected index
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        _lastSelectedTabIndex = _tabController.index;
+      }
+    });
+    
     // Refresh the panel every second to show real-time updates
     _refreshTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (mounted) {
@@ -186,6 +204,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -224,9 +243,36 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> {
               ),
             ),
           ),
-          // Controllers content only
+          // Tab Bar
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: Colors.blue.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white54,
+              tabs: [
+                Tab(text: 'Controllers'),
+                Tab(text: 'Routes'),
+              ],
+            ),
+          ),
+          // Tab Views
           Expanded(
-            child: _buildControllersTab(),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildControllersTab(),
+                _buildRoutesTab(),
+              ],
+            ),
           ),
         ],
       ),
@@ -242,15 +288,6 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Controllers',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 16),
           _buildQuickStats(),
           SizedBox(height: 16),
           _buildConfigInfo(config),
@@ -587,5 +624,270 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> {
       default:
         return 'UNKNOWN';
     }
+  }
+
+  Widget _buildRoutesTab() {
+    final manager = WebFControllerManager.instance;
+    
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: _buildRoutesList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildRoutesList() {
+    final manager = WebFControllerManager.instance;
+    final controllerNames = manager.controllerNames;
+    
+    if (controllerNames.isEmpty) {
+      return Center(
+        child: Text(
+          'No controllers with routes',
+          style: TextStyle(color: Colors.white54),
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      itemCount: controllerNames.length,
+      itemBuilder: (context, index) {
+        final name = controllerNames[index];
+        final controller = manager.getControllerSync(name);
+        final state = manager.getControllerState(name);
+        
+        if (controller == null || controller.buildContextStack.isEmpty) {
+          return SizedBox.shrink();
+        }
+        
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white10,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: _getStateColor(state).withOpacity(0.5),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    topRight: Radius.circular(8),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Controller: $name',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Stack Size: ${controller.buildContextStack.length}',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStateColor(state).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _getStateText(state),
+                        style: TextStyle(
+                          color: _getStateColor(state),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _buildRouteStack(controller),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRouteStack(WebFController controller) {
+    final stack = controller.buildContextStack;
+    
+    return Container(
+      padding: EdgeInsets.all(12),
+      child: Column(
+        children: List.generate(stack.length, (index) {
+          final routeContext = stack[index];
+          final isCurrentRoute = index == stack.length - 1;
+          
+          return Container(
+            margin: EdgeInsets.only(bottom: index < stack.length - 1 ? 8 : 0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Stack indicator
+                Column(
+                  children: [
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isCurrentRoute ? Colors.green : Colors.blue,
+                        border: Border.all(
+                          color: isCurrentRoute ? Colors.green.shade300 : Colors.blue.shade300,
+                          width: 2,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (index < stack.length - 1)
+                      Container(
+                        width: 2,
+                        height: 24,
+                        color: Colors.white24,
+                      ),
+                  ],
+                ),
+                SizedBox(width: 12),
+                // Route info
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isCurrentRoute ? Colors.green.withOpacity(0.1) : Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: isCurrentRoute ? Colors.green.withOpacity(0.3) : Colors.white10,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.route,
+                              size: 16,
+                              color: isCurrentRoute ? Colors.green : Colors.white54,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                routeContext.path,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (isCurrentRoute)
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'CURRENT',
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Widget: ${routeContext.context.widget.runtimeType}',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11,
+                          ),
+                        ),
+                        if (routeContext.state != null) ...[
+                          SizedBox(height: 4),
+                          Text(
+                            'State: ${routeContext.state}',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        if (index == 0) ...[
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.foundation,
+                                size: 12,
+                                color: Colors.orange,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'ROOT',
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
   }
 }
