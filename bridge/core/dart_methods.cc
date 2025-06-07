@@ -35,6 +35,7 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   flush_ui_command_ = reinterpret_cast<FlushUICommand>(dart_methods[i++]);
   create_binding_object_ = reinterpret_cast<CreateBindingObject>(dart_methods[i++]);
   load_native_library_ = reinterpret_cast<LoadNativeLibrary>(dart_methods[i++]);
+  fetch_javascript_esm_module_ = reinterpret_cast<FetchJavaScriptESMModule>(dart_methods[i++]);
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
   on_js_log_structured_ = reinterpret_cast<OnJSLogStructured>(dart_methods[i++]);
@@ -265,6 +266,23 @@ void DartMethodPointer::loadNativeLibrary(bool is_dedicated,
 
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call END";
+#endif
+}
+
+void DartMethodPointer::fetchJavaScriptESMModule(bool is_dedicated,
+                                                 void* callback_context,
+                                                 double context_id,
+                                                 webf::SharedNativeString* module_url,
+                                                 FetchJavaScriptESMModuleCallback callback) {
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call START";
+#endif
+
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, fetch_javascript_esm_module_, callback_context,
+                                                  context_id, module_url, callback);
+
+#if ENABLE_LOG
+  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call END";
 #endif
 }
 

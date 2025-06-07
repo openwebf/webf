@@ -150,12 +150,33 @@ void evaluateScripts(void* page_,
       result_callback);
 }
 
+void evaluateModule(void* page_,
+                    const char* code,
+                    uint64_t code_len,
+                    uint8_t** parsed_bytecodes,
+                    uint64_t* bytecode_len,
+                    const char* bundleFilename,
+                    int32_t start_line,
+                    Dart_Handle dart_handle,
+                    EvaluateScriptsCallback result_callback) {
+#if ENABLE_LOG
+  WEBF_LOG(VERBOSE) << "[Dart] evaluateModule call" << std::endl;
+#endif
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
+  page->executingContext()->dartIsolateContext()->dispatcher()->PostToJs(
+      page->isDedicated(), static_cast<int32_t>(page->contextId()), webf::WebFPage::EvaluateModuleInternal, page_,
+      code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, start_line, persistent_handle,
+      result_callback);
+}
+
 void dumpQuickjsByteCode(void* page_,
                          const char* code,
                          int32_t code_len,
                          uint8_t** parsed_bytecodes,
                          uint64_t* bytecode_len,
                          const char* url,
+                         bool is_module,
                          Dart_Handle dart_handle,
                          DumpQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
@@ -166,7 +187,7 @@ void dumpQuickjsByteCode(void* page_,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(
       page->isDedicated(), static_cast<int32_t>(page->contextId()), webf::WebFPage::DumpQuickJsByteCodeInternal, page,
-      code, code_len, parsed_bytecodes, bytecode_len, url, persistent_handle, result_callback);
+      code, code_len, parsed_bytecodes, bytecode_len, url, is_module, persistent_handle, result_callback);
 }
 
 void evaluateQuickjsByteCode(void* page_,

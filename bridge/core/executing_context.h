@@ -93,6 +93,12 @@ class ExecutingContext {
   bool EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine);
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(const uint8_t* bytes, size_t byteLength);
+  bool EvaluateModule(const char* code,
+                      size_t code_len,
+                      uint8_t** parsed_bytecodes,
+                      uint64_t* bytecode_len,
+                      const char* sourceURL,
+                      int startLine);
   bool IsContextValid() const;
   void SetContextInValid();
   bool IsCtxValid() const;
@@ -116,7 +122,7 @@ class ExecutingContext {
   void RegisterNativeLibraryMetaData(NativeLibraryMetaData* meta_data);
   void DefineGlobalProperty(const char* prop, JSValueConst value);
   ExecutionContextData* contextData();
-  uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, uint64_t* bytecodeLength);
+  uint8_t* DumpByteCode(const char* code, uint32_t codeLength, const char* sourceURL, bool is_module, uint64_t* bytecodeLength);
 
   // Make global object inherit from WindowProperties.
   void InstallGlobal();
@@ -193,6 +199,10 @@ class ExecutingContext {
                                                     JSValueConst error);
   static void DispatchGlobalRejectionHandledEvent(ExecutingContext* context, JSValueConst promise, JSValueConst error);
   static void DispatchGlobalErrorEvent(ExecutingContext* context, JSValueConst error);
+
+  // ES Module loader functions
+  static char* ModuleNormalizeName(JSContext* ctx, const char* module_base_name, const char* module_name, void* opaque);
+  static JSModuleDef* ModuleLoader(JSContext* ctx, const char* module_name, void* opaque);
 
   // Bytecodes which registered by webf plugins.
   static std::unordered_map<std::string, NativeByteCode> plugin_byte_code;

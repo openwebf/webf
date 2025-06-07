@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ES Module Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .demo-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #666;
+            margin-top: 0;
+        }
+        .output {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .module-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        .module-status.loaded {
+            background: #28a745;
+            color: white;
+        }
+        .module-status.error {
+            background: #dc3545;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>ES Module Demo</h1>
+
+    <div class="demo-section">
+        <h2>Basic Module Script</h2>
+        <p>This demonstrates a basic module script with module-scoped variables.</p>
+        <div id="basic-output" class="output">Loading...</div>
+        <span id="basic-status" class="module-status">Loading</span>
+    </div>
+
+    <div class="demo-section">
+        <h2>Module Scope Test</h2>
+        <p>In module scripts, 'this' is undefined and variables are module-scoped.</p>
+        <button id="check-scope-btn">Check Module Scope</button>
+        <div id="scope-output" class="output">Click button to check</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Local Module Imports</h2>
+        <p>Import and use functions from local ES modules.</p>
+        <button id="test-math-btn">Test Math Module</button>
+        <button id="test-utils-btn">Test Utils Module</button>
+        <div id="import-output" class="output">Click buttons to test imports</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>External Module from CDN</h2>
+        <p>Import ES modules from external CDN sources.</p>
+        <button id="test-external-btn">Test Lodash Module</button>
+        <button id="test-date-btn">Test Date Module</button>
+        <div id="external-output" class="output">Click buttons to test external imports</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Dynamic Imports</h2>
+        <p>Load modules dynamically at runtime using import().</p>
+        <button id="dynamic-import-btn">Load Module Dynamically</button>
+        <div id="dynamic-output" class="output">Click button to load module dynamically</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>Classic vs Module Script Comparison</h2>
+        <button id="run-classic-btn">Run Classic Script</button>
+        <button id="run-module-btn">Run Module Script</button>
+        <div id="comparison-output" class="output">Click buttons to compare</div>
+    </div>
+
+    <!-- Basic module script -->
+    <script type="module" id="basic-module">
+        // Module-scoped variable
+        const moduleMessage = 'Hello from ES Module!';
+        const moduleTimestamp = new Date().toISOString();
+
+        // Update the basic output
+        document.getElementById('basic-output').textContent = `${moduleMessage} (Loaded at: ${moduleTimestamp})`;
+        document.getElementById('basic-status').textContent = 'Loaded';
+        document.getElementById('basic-status').classList.add('loaded');
+
+        // Export to window for testing
+        window.moduleData = {
+            message: moduleMessage,
+            timestamp: moduleTimestamp,
+            thisValue: this  // should be undefined in module
+        };
+    </script>
+
+    <!-- Module scope test -->
+    <script type="module">
+        // Module scope: 'this' is undefined
+        window.moduleThisValue = this;
+
+        // Module scope: top-level variables are not global
+        let modulePrivateVar = 'This is module-private';
+
+        // Export function to window for testing
+        window.getModulePrivateVar = () => modulePrivateVar;
+    </script>
+
+    <!-- Import from local modules -->
+    <script type="module">
+        import calculate, { add, multiply, PI } from './modules/math.js';
+        import { formatDate, capitalize, Logger } from './modules/utils.js';
+
+        // Make imported functions available for testing
+        window.testMathModule = () => {
+            const results = [];
+            results.push(`add(5, 3) = ${add(5, 3)}`);
+            results.push(`multiply(4, 7) = ${multiply(4, 7)}`);
+            results.push(`PI = ${PI}`);
+            results.push(`calculate('add', 10, 20) = ${calculate('add', 10, 20)}`);
+            return results.join('<br>');
+        };
+
+        window.testUtilsModule = () => {
+            const results = [];
+            const now = new Date();
+            results.push(`formatDate(now) = ${formatDate(now)}`);
+            results.push(`capitalize('hello world') = ${capitalize('hello world')}`);
+
+            const logger = new Logger('Demo');
+            // Capture console output
+            const originalLog = console.log;
+            let logOutput = '';
+            console.log = (msg) => { logOutput = msg; };
+            logger.log('Test message');
+            console.log = originalLog;
+            results.push(`Logger output: ${logOutput}`);
+
+            return results.join('<br>');
+        };
+    </script>
+
+    <!-- Import from external CDN -->
+    <script type="module">
+        // Import a popular library from CDN (using lodash-es as example)
+        import { debounce, chunk, shuffle } from 'https://cdn.skypack.dev/lodash-es@4.17.21';
+
+        window.testExternalModule = () => {
+            const results = [];
+
+            // Test chunk function
+            const array = [1, 2, 3, 4, 5, 6, 7, 8];
+            results.push(`chunk([1,2,3,4,5,6,7,8], 3) = ${JSON.stringify(chunk(array, 3))}`);
+
+            // Test shuffle function
+            const shuffled = shuffle([1, 2, 3, 4, 5]);
+            results.push(`shuffle([1,2,3,4,5]) = [${shuffled.join(', ')}]`);
+
+            // Test debounce
+            let callCount = 0;
+            const debouncedFn = debounce(() => callCount++, 100);
+
+            // Call multiple times quickly
+            for (let i = 0; i < 5; i++) {
+                debouncedFn();
+            }
+
+            // Wait and check result
+            setTimeout(() => {
+                results.push(`Debounced function called ${callCount} time(s) after 5 rapid calls`);
+                document.getElementById('external-output').innerHTML = results.join('<br>');
+            }, 200);
+
+            return results.slice(0, 2).join('<br>') + '<br>Testing debounce...';
+        };
+    </script>
+
+    <!-- Another external module example using a date library -->
+<!--    <script type="module">-->
+<!--        // Import date-fns from CDN-->
+<!--        import { format, addDays, differenceInDays } from 'https://cdn.skypack.dev/date-fns@2.29.3';-->
+<!--        -->
+<!--        window.testDateModule = () => {-->
+<!--            const now = new Date();-->
+<!--            const futureDate = addDays(now, 7);-->
+<!--            -->
+<!--            return [-->
+<!--                `Today: ${format(now, 'yyyy-MM-dd')}`,-->
+<!--                `Next week: ${format(futureDate, 'yyyy-MM-dd')}`,-->
+<!--                `Difference: ${differenceInDays(futureDate, now)} days`-->
+<!--            ].join('<br>');-->
+<!--        };-->
+<!--    </script>-->
+
+    <!-- Dynamic import example -->
+<!--    <script type="module">-->
+<!--        window.testDynamicImport = async () => {-->
+<!--            const output = document.getElementById('dynamic-output');-->
+<!--            output.innerHTML = 'Loading module...';-->
+<!--            -->
+<!--            try {-->
+<!--                // Dynamically import the math module-->
+<!--                const mathModule = await import('./modules/math.js');-->
+<!--                -->
+<!--                // Use the imported functions-->
+<!--                const results = [];-->
+<!--                results.push('Module loaded successfully!');-->
+<!--                results.push(`Using default export: calculate('multiply', 3, 4) = ${mathModule.default('multiply', 3, 4)}`);-->
+<!--                results.push(`Using named export: add(15, 25) = ${mathModule.add(15, 25)}`);-->
+<!--                results.push(`Accessing constant: PI = ${mathModule.PI}`);-->
+<!--                -->
+<!--                // Dynamically import an external module-->
+<!--                results.push('<br>Loading external module dynamically...');-->
+<!--                const { random, round } = await import('https://cdn.skypack.dev/lodash-es@4.17.21');-->
+<!--                results.push(`random(1, 100) = ${random(1, 100)}`);-->
+<!--                results.push(`round(4.567, 2) = ${round(4.567, 2)}`);-->
+<!--                -->
+<!--                output.innerHTML = results.join('<br>');-->
+<!--            } catch (error) {-->
+<!--                output.innerHTML = `Error loading module: ${error.message}`;-->
+<!--            }-->
+<!--        };-->
+<!--    </script>-->
+
+    <!-- Classic script for comparison -->
+    <script>
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add event listeners
+            document.getElementById('check-scope-btn').addEventListener('click', checkModuleScope);
+            document.getElementById('run-classic-btn').addEventListener('click', runClassicScript);
+            document.getElementById('run-module-btn').addEventListener('click', runModuleScript);
+
+            // Add event listeners for module import tests
+            document.getElementById('test-math-btn').addEventListener('click', function() {
+                if (window.testMathModule) {
+                    document.getElementById('import-output').innerHTML = window.testMathModule();
+                } else {
+                    document.getElementById('import-output').textContent = 'Math module not loaded yet';
+                }
+            });
+
+            document.getElementById('test-utils-btn').addEventListener('click', function() {
+                if (window.testUtilsModule) {
+                    document.getElementById('import-output').innerHTML = window.testUtilsModule();
+                } else {
+                    document.getElementById('import-output').textContent = 'Utils module not loaded yet';
+                }
+            });
+
+            document.getElementById('test-external-btn').addEventListener('click', function() {
+                if (window.testExternalModule) {
+                    document.getElementById('external-output').innerHTML = window.testExternalModule();
+                } else {
+                    document.getElementById('external-output').textContent = 'External module not loaded yet';
+                }
+            });
+
+            document.getElementById('test-date-btn').addEventListener('click', function() {
+                if (window.testDateModule) {
+                    document.getElementById('external-output').innerHTML = window.testDateModule();
+                } else {
+                    document.getElementById('external-output').textContent = 'Date module not loaded yet';
+                }
+            });
+
+            document.getElementById('dynamic-import-btn').addEventListener('click', function() {
+                if (window.testDynamicImport) {
+                    window.testDynamicImport();
+                } else {
+                    document.getElementById('dynamic-output').textContent = 'Dynamic import function not available';
+                }
+            });
+        });
+
+        // Global functions for testing
+        function checkModuleScope() {
+            const output = document.getElementById('scope-output');
+            let results = [];
+
+            // Check 'this' value
+            results.push(`Module 'this' value: ${window.moduleThisValue}`);
+            results.push(`Classic script 'this' value: ${this === window ? 'window' : this}`);
+
+            // Check variable scope
+            results.push(`Can access modulePrivateVar directly: ${typeof modulePrivateVar !== 'undefined'}`);
+            results.push(`Can access via exported function: ${window.getModulePrivateVar ? window.getModulePrivateVar() : 'N/A'}`);
+
+            output.innerHTML = results.join('<br>');
+        }
+
+        function runClassicScript() {
+            // Classic script - variables become global
+            var classicGlobalVar = 'I am global from classic script';
+            window.classicResult = `Classic script executed. this = ${this === window ? 'window' : 'other'}`;
+            updateComparison();
+        }
+
+        function runModuleScript() {
+            // Create and append a module script dynamically
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.textContent = `
+                var moduleVar = 'I am module-scoped';
+                window.moduleResult = 'Module script executed. this = ' + (this === undefined ? 'undefined' : 'other');
+                window.updateComparison();
+            `;
+            document.body.appendChild(script);
+        }
+
+        function updateComparison() {
+            const output = document.getElementById('comparison-output');
+            let results = [];
+
+            if (window.classicResult) {
+                results.push(`Classic: ${window.classicResult}`);
+            }
+            if (window.moduleResult) {
+                results.push(`Module: ${window.moduleResult}`);
+            }
+
+            if (results.length > 0) {
+                results.push('');
+                results.push(`Classic global var exists: ${typeof classicGlobalVar !== 'undefined'}`);
+                results.push(`Module var exists globally: ${typeof moduleVar !== 'undefined'}`);
+            }
+
+            output.innerHTML = results.join('<br>');
+        }
+
+        // Make updateComparison available globally
+        window.updateComparison = updateComparison;
+    </script>
+</body>
+</html>

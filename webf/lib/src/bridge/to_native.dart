@@ -241,6 +241,22 @@ typedef DartParseHTML = void Function(Pointer<Void>, Pointer<Uint8> code, int le
 final DartEvaluateScripts _evaluateScripts =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateScripts>>('evaluateScripts').asFunction();
 
+
+// Register evaluateScripts
+typedef NativeEvaluateModule = Void Function(
+    Pointer<Void>,
+    Pointer<Uint8> code,
+    Uint64 code_len,
+    Pointer<Pointer<Uint8>> parsedBytecodes,
+    Pointer<Uint64> bytecodeLen,
+    Pointer<Utf8> url,
+    Int32 startLine,
+    Handle object,
+    Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
+
+final DartEvaluateScripts _evaluateModule =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluateModule>>('evaluateModule').asFunction();
+
 final DartParseHTML _parseHTML =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeParseHTML>>('parseHTML').asFunction();
 
@@ -405,6 +421,54 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
   return completer.future;
 }
 
+Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
+    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0}) async {
+  if (WebFController.getControllerOfJSContextId(contextId) == null) {
+    return false;
+  }
+  // Assign `vm://$id` for no url (anonymous scripts).
+  if (url == null) {
+    url = 'vm://module/$_anonymousScriptEvaluationId';
+    _anonymousScriptEvaluationId++;
+  }
+
+  // TODO: Implement module-specific bytecode caching
+  // For now, always evaluate modules directly without bytecode caching
+  // because the current cache doesn't distinguish between module and non-module bytecode
+  {
+    Pointer<Utf8> _url = url.toNativeUtf8();
+    Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
+    Completer<bool> completer = Completer();
+
+    _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, _url, cacheKey);
+    Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
+        Pointer.fromFunction(handleEvaluateScriptsResult);
+
+    try {
+      assert(_allocatedPages.containsKey(contextId));
+      if (QuickJSByteCodeCache.isCodeNeedCache(codeBytes)) {
+        // Export the bytecode from scripts
+        Pointer<Pointer<Uint8>> bytecodes = malloc.allocate(sizeOf<Pointer<Uint8>>());
+        Pointer<Uint64> bytecodeLen = malloc.allocate(sizeOf<Uint64>());
+
+        context.bytecodes = bytecodes;
+        context.bytecodeLen = bytecodeLen;
+
+        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, _url, line,
+            context, resultCallback);
+      } else {
+        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, _url, line, context,
+            resultCallback);
+      }
+      return completer.future;
+    } catch (e, stack) {
+      print('$e\n$stack');
+    }
+
+    return completer.future;
+  }
+}
+
 void _handleParseHTMLContextResult(Object handle) {
   _ParseHTMLContext context = handle as _ParseHTMLContext;
   context.completer.complete();
@@ -477,6 +541,7 @@ typedef NativeDumpQuickjsByteCode = Void Function(
     Pointer<Pointer<Uint8>> parsedBytecodes,
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
+    Bool is_module,
     Handle context,
     Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
 typedef DartDumpQuickjsByteCode = void Function(
@@ -486,6 +551,7 @@ typedef DartDumpQuickjsByteCode = void Function(
     Pointer<Pointer<Uint8>> parsedBytecodes,
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
+    bool is_module,
     Object context,
     Pointer<NativeFunction<NativeDumpQuickjsByteCodeResultCallback>> resultCallback);
 
@@ -507,7 +573,7 @@ void _handleQuickjsByteCodeResults(Object handle) {
 }
 
 Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code,
-    {String? url}) async {
+    {String? url, bool isModule = false}) async {
   Completer<Uint8List> completer = Completer();
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
@@ -527,7 +593,7 @@ Future<Uint8List> dumpQuickjsByteCode(double contextId, Uint8List code,
       Pointer.fromFunction(_handleQuickjsByteCodeResults);
 
   _dumpQuickjsByteCode(_allocatedPages[contextId]!, codePtr, code.length, bytecodes,
-      bytecodeLen, _url, context, resultCallback);
+      bytecodeLen, _url, isModule, context, resultCallback);
 
   // return bytes;
   return completer.future;

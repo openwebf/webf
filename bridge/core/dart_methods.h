@@ -48,6 +48,8 @@ using LoadNativeLibraryCallback = void (*)(PluginLibraryEntryPoint entry_point,
 
 using AsyncBlobCallback =
     void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
+using FetchJavaScriptESMModuleCallback =
+    void (*)(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length);
 typedef NativeValue* (*InvokeModule)(void* callback_context,
                                      double context_id,
                                      SharedNativeString* moduleName,
@@ -99,6 +101,10 @@ typedef void (*LoadNativeLibrary)(double context_id,
                                   void* initialize_data,
                                   void* import_data,
                                   LoadNativeLibraryCallback callback);
+typedef void (*FetchJavaScriptESMModule)(void* callback_context,
+                                         double context_id,
+                                         SharedNativeString* module_url,
+                                         FetchJavaScriptESMModuleCallback callback);
 
 using MatchImageSnapshotCallback = void (*)(void* callback_context, double context_id, int8_t, char* errmsg);
 using MatchImageSnapshot = void (*)(void* callback_context,
@@ -220,6 +226,12 @@ class DartMethodPointer {
                          void* import_data,
                          LoadNativeLibraryCallback callback);
 
+  void fetchJavaScriptESMModule(bool is_dedicated,
+                                void* callback_context,
+                                double context_id,
+                                SharedNativeString* module_url,
+                                FetchJavaScriptESMModuleCallback callback);
+
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
   void onJSLogStructured(bool is_dedicated, double context_id, int32_t level, int32_t argc, NativeValue* argv);
@@ -274,6 +286,7 @@ class DartMethodPointer {
   FlushUICommand flush_ui_command_{nullptr};
   CreateBindingObject create_binding_object_{nullptr};
   LoadNativeLibrary load_native_library_{nullptr};
+  FetchJavaScriptESMModule fetch_javascript_esm_module_{nullptr};
   OnJSError on_js_error_{nullptr};
   OnJSLog on_js_log_{nullptr};
   OnJSLogStructured on_js_log_structured_{nullptr};

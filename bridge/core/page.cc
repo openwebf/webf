@@ -146,10 +146,21 @@ void WebFPage::evaluateScript(const char* script, size_t length, const char* url
   context_->EvaluateJavaScript(script, length, url, startLine);
 }
 
-uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength) {
+bool WebFPage::evaluateModule(const char* script,
+                              uint64_t script_len,
+                              uint8_t** parsed_bytecodes,
+                              uint64_t* bytecode_len,
+                              const char* url,
+                              int startLine) {
+  if (!context_->IsContextValid())
+    return false;
+  return context_->EvaluateModule(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
+}
+
+uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, bool is_module, uint64_t* byteLength) {
   if (!context_->IsContextValid())
     return nullptr;
-  return context_->DumpByteCode(script, static_cast<uint32_t>(length), url, byteLength);
+  return context_->DumpByteCode(script, static_cast<uint32_t>(length), url, is_module, byteLength);
 }
 
 bool WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
@@ -196,6 +207,24 @@ void WebFPage::EvaluateScriptsInternal(void* page_,
   assert(std::this_thread::get_id() == page->currentThread());
 
   bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+
+  page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
+                                                       persistent_handle, result_callback, is_success);
+}
+
+void WebFPage::EvaluateModuleInternal(void* page_,
+                                      const char* code,
+                                      uint64_t code_len,
+                                      uint8_t** parsed_bytecodes,
+                                      uint64_t* bytecode_len,
+                                      const char* bundleFilename,
+                                      int32_t startLine,
+                                      Dart_Handle persistent_handle,
+                                      EvaluateScriptsCallback result_callback) {
+  auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  assert(std::this_thread::get_id() == page->currentThread());
+
+  bool is_success = page->evaluateModule(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
                                                        persistent_handle, result_callback, is_success);
@@ -282,13 +311,14 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
                                            uint8_t** parsed_bytecodes,
                                            uint64_t* bytecode_len,
                                            const char* url,
+                                           bool is_module,
                                            Dart_PersistentHandle persistent_handle,
                                            DumpQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto dart_isolate_context = page->executingContext()->dartIsolateContext();
 
   assert(std::this_thread::get_id() == page->currentThread());
-  uint8_t* bytes = page->dumpByteCode(code, code_len, url, bytecode_len);
+  uint8_t* bytes = page->dumpByteCode(code, code_len, url, is_module, bytecode_len);
   *parsed_bytecodes = bytes;
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
