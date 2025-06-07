@@ -19,6 +19,9 @@ import 'queue.dart';
 
 final _requestQueue = Queue(parallel: 10);
 
+// Global counter for unique request IDs
+int _requestIdCounter = 0;
+
 class ProxyHttpClientRequest extends HttpClientRequest {
   final WebFHttpOverrides _httpOverrides;
   final HttpClient _nativeHttpClient;
@@ -110,7 +113,9 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   Future<HttpClientResponse> close() async {
     double? contextId = WebFHttpOverrides.getContextHeader(headers);
     HttpClientRequest request = this;
-    String requestId = DateTime.now().millisecondsSinceEpoch.toString();
+    // Use a more unique request ID with counter and microseconds
+    _requestIdCounter++;
+    String requestId = '${_requestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
 
     if (contextId != null) {
       // Standard reference: https://datatracker.ietf.org/doc/html/rfc7231#section-5.5.2
@@ -155,6 +160,13 @@ class ProxyHttpClientRequest extends HttpClientRequest {
           HttpClientResponse? cacheResponse = await cacheObject.toHttpClientResponse(_nativeHttpClient);
           ownerBundle?.setLoadingFromCache();
           if (cacheResponse != null) {
+            // Step 5: Lifecycle of afterResponse for cached responses.
+            if (clientInterceptor != null) {
+              final HttpClientResponse? interceptorResponse = await _afterResponse(requestId, clientInterceptor, request, cacheResponse);
+              if (interceptorResponse != null) {
+                return interceptorResponse;
+              }
+            }
             return cacheResponse;
           }
         }

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/foundation/http_cache.dart';
@@ -179,7 +180,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   // Static variable to remember the last selected tab
   static int _lastSelectedTabIndex = 0;
-  
+
   // Track the original cache mode to restore it when unchecked
   final HttpCacheMode _originalCacheMode = HttpCacheController.mode;
   // Track whether cache is disabled
@@ -1105,9 +1106,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           style: TextStyle(
             color: Colors.white,
             fontSize: 13,
+            decoration: TextDecoration.underline,
+            decorationStyle: TextDecorationStyle.dotted,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          softWrap: true,
         ),
         subtitle: Row(
           children: [
@@ -1186,6 +1188,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           'URL',
           request.url,
           Icons.link,
+          isUrl: true,
         ),
         SizedBox(height: 12),
         // Request headers
@@ -1219,7 +1222,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildDetailSection(String title, String content, IconData icon) {
+  Widget _buildDetailSection(String title, String content, IconData icon, {bool isUrl = false}) {
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1241,19 +1244,70 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              if (isUrl) ...[
+                Spacer(),
+                IconButton(
+                  icon: Icon(Icons.copy, size: 16),
+                  color: Colors.white54,
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: content));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('URL copied to clipboard'),
+                        duration: Duration(seconds: 2),
+                        backgroundColor: Colors.green.withOpacity(0.8),
+                      ),
+                    );
+                  },
+                  tooltip: 'Copy URL',
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                ),
+              ],
             ],
           ),
           SizedBox(height: 8),
-          Text(
-            content,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              fontFamily: 'monospace',
-            ),
-            maxLines: 5,
-            overflow: TextOverflow.ellipsis,
-          ),
+          isUrl
+              ? GestureDetector(
+                  onTap: () async {
+                    await Clipboard.setData(ClipboardData(text: content));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('URL copied to clipboard'),
+                        duration: Duration(seconds: 2),
+                        backgroundColor: Colors.green.withOpacity(0.8),
+                      ),
+                    );
+                  },
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Text(
+                      content,
+                      style: TextStyle(
+                        color: Colors.blue.shade300,
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        decoration: TextDecoration.underline,
+                        decorationStyle: TextDecorationStyle.dotted,
+                      ),
+                      maxLines: 5,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+              : Text(
+                  content,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                  maxLines: 5,
+                  overflow: TextOverflow.ellipsis,
+                ),
         ],
       ),
     );
@@ -1273,12 +1327,38 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             children: [
               Icon(Icons.list, size: 16, color: Colors.white54),
               SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // Copy all headers button
+              IconButton(
+                icon: Icon(Icons.copy_all, size: 16),
+                color: Colors.white54,
+                onPressed: () async {
+                  final allHeaders = headers.entries
+                      .map((e) => '${e.key}: ${e.value.join(', ')}')
+                      .join('\n');
+                  await Clipboard.setData(ClipboardData(text: allHeaders));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('All headers copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Colors.green.withOpacity(0.8),
+                    ),
+                  );
+                },
+                tooltip: 'Copy all headers',
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
                 ),
               ),
             ],
@@ -1286,28 +1366,60 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           SizedBox(height: 8),
           ...headers.entries.map((entry) => Padding(
                 padding: EdgeInsets.only(bottom: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${entry.key}: ',
-                      style: TextStyle(
-                        color: Colors.blue.shade300,
-                        fontSize: 11,
-                        fontFamily: 'monospace',
+                child: GestureDetector(
+                  onTap: () async {
+                    final headerText = '${entry.key}: ${entry.value.join(', ')}';
+                    await Clipboard.setData(ClipboardData(text: headerText));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Header copied to clipboard'),
+                        duration: Duration(seconds: 2),
+                        backgroundColor: Colors.green.withOpacity(0.8),
+                      ),
+                    );
+                  },
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${entry.key}: ',
+                            style: TextStyle(
+                              color: Colors.blue.shade300,
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              entry.value.join(', '),
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                decoration: TextDecoration.underline,
+                                decorationStyle: TextDecorationStyle.dotted,
+                                decorationColor: Colors.white30,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.copy,
+                            size: 12,
+                            color: Colors.white30,
+                          ),
+                        ],
                       ),
                     ),
-                    Expanded(
-                      child: Text(
-                        entry.value.join(', '),
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               )),
         ],

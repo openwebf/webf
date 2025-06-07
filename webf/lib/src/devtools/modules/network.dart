@@ -494,7 +494,8 @@ String _getRequestType(HttpClientRequest request) {
   } else if (urlPath.endsWith('.jpg') ||
       urlPath.endsWith('.png') ||
       urlPath.endsWith('.gif') ||
-      urlPath.endsWith('.webp')) {
+      urlPath.endsWith('.webp') ||
+      urlPath.endsWith('.svg')) {
     return 'Image';
   } else if (urlPath.endsWith('.html') || urlPath.endsWith('.htm')) {
     return 'Document';
