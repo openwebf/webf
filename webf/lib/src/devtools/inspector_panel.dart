@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/foundation/http_cache.dart';
@@ -1021,7 +1022,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                       : ListView.builder(
                           itemCount: requests.length,
                           itemBuilder: (context, index) {
-                            final request = requests[requests.length - 1 - index]; // Show newest first
+                            final request = requests[index]; // Show chronological order
                             return _buildNetworkRequestItem(request);
                           },
                         ),
@@ -1715,7 +1716,27 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     return false;
   }
   
+  bool _isSvgData(Uint8List data) {
+    if (data.isEmpty) return false;
+    
+    try {
+      final str = utf8.decode(data, allowMalformed: true).toLowerCase().trim();
+      // Check if it starts with common SVG patterns
+      if (str.startsWith('<svg') || 
+          str.startsWith('<?xml') && str.contains('<svg') ||
+          str.contains('xmlns="http://www.w3.org/2000/svg"')) {
+        return true;
+      }
+    } catch (_) {
+      // Not text, definitely not SVG
+    }
+    
+    return false;
+  }
+  
   Widget _buildImagePreview(NetworkRequest request, bool isExpanded) {
+    final isSvg = _isSvgData(request.responseBody!);
+    
     return Column(
       children: [
         Container(
@@ -1725,36 +1746,38 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: Image.memory(
-              request.responseBody!,
-              fit: isExpanded ? BoxFit.contain : BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 100,
-                  color: Colors.grey.withOpacity(0.3),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.broken_image,
-                          color: Colors.red.withOpacity(0.5),
-                          size: 48,
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Failed to load image',
-                          style: TextStyle(
-                            color: Colors.white54,
-                            fontSize: 12,
+            child: isSvg
+                ? _buildSvgPreview(request.responseBody!, isExpanded)
+                : Image.memory(
+                    request.responseBody!,
+                    fit: isExpanded ? BoxFit.contain : BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 100,
+                        color: Colors.grey.withOpacity(0.3),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.broken_image,
+                                color: Colors.red.withOpacity(0.5),
+                                size: 48,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                'Failed to load image',
+                                style: TextStyle(
+                                  color: Colors.white54,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ),
         if (!isExpanded) ...[
@@ -1770,6 +1793,61 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ],
       ],
     );
+  }
+  
+  Widget _buildSvgPreview(Uint8List svgData, bool isExpanded) {
+    try {
+      final svgString = utf8.decode(svgData);
+      return SvgPicture.string(
+        svgString,
+        fit: isExpanded ? BoxFit.contain : BoxFit.cover,
+        placeholderBuilder: (context) => Container(
+          color: Colors.grey.withOpacity(0.3),
+          child: Center(
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      return Container(
+        height: 100,
+        color: Colors.grey.withOpacity(0.3),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.broken_image,
+                color: Colors.red.withOpacity(0.5),
+                size: 48,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Failed to load SVG',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Error: ${e.toString()}',
+                style: TextStyle(
+                  color: Colors.red.shade300,
+                  fontSize: 10,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
   }
   
   Widget _buildJsonViewer(dynamic jsonData, bool isExpanded) {
