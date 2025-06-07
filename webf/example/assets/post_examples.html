@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>FormData POST Example - WebF</title>
+    <title>FormData & JSON POST Examples - WebF</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -92,8 +92,8 @@
     </style>
 </head>
 <body>
-    <h1>FormData POST Request Examples for WebF</h1>
-    <p>These examples demonstrate how to manually create FormData and send POST requests using the Fetch API in WebF.</p>
+    <h1>FormData & JSON POST Request Examples for WebF</h1>
+    <p>These examples demonstrate how to send POST requests using both FormData and JSON payloads with the Fetch API in WebF.</p>
 
     <!-- Example 1: Basic FormData Creation -->
     <div class="example-section">
@@ -177,6 +177,48 @@
             </div>
             <button id="submitComplex">Submit Product</button>
             <div id="complexResponse"></div>
+        </div>
+    </div>
+
+    <!-- Example 5: JSON POST Request -->
+    <div class="example-section">
+        <h2>Example 5: JSON POST Request</h2>
+        <div class="container">
+            <div class="form-group">
+                <label for="jsonName">Name:</label>
+                <input type="text" id="jsonName" placeholder="Enter name">
+            </div>
+            <div class="form-group">
+                <label for="jsonAge">Age:</label>
+                <input type="number" id="jsonAge" placeholder="Enter age">
+            </div>
+            <div class="form-group">
+                <label for="jsonSkills">Skills (comma separated):</label>
+                <input type="text" id="jsonSkills" placeholder="JavaScript, HTML, CSS">
+            </div>
+            <button id="submitJson">Send JSON</button>
+            <div id="jsonResponse"></div>
+        </div>
+    </div>
+
+    <!-- Example 6: Complex Nested JSON -->
+    <div class="example-section">
+        <h2>Example 6: Complex Nested JSON Request</h2>
+        <div class="container">
+            <div class="form-group">
+                <label for="companyName">Company Name:</label>
+                <input type="text" id="companyName" placeholder="Enter company name">
+            </div>
+            <div class="form-group">
+                <label for="employeeCount">Employee Count:</label>
+                <input type="number" id="employeeCount" placeholder="Enter employee count">
+            </div>
+            <div class="form-group">
+                <label for="departments">Departments (comma separated):</label>
+                <input type="text" id="departments" placeholder="Engineering, Sales, Marketing">
+            </div>
+            <button id="submitComplexJson">Send Complex JSON</button>
+            <div id="complexJsonResponse"></div>
         </div>
     </div>
 
@@ -396,6 +438,134 @@
             }
         }
 
+        // Example 5: JSON POST Request
+        async function submitJsonForm() {
+            showLoading('jsonResponse');
+
+            try {
+                // Get form values
+                const name = document.getElementById('jsonName').value;
+                const age = document.getElementById('jsonAge').value;
+                const skillsInput = document.getElementById('jsonSkills').value;
+                const skills = skillsInput.split(',').map(s => s.trim()).filter(s => s);
+
+                // Create JSON object
+                const jsonData = {
+                    name: name,
+                    age: parseInt(age) || 0,
+                    skills: skills,
+                    timestamp: new Date().toISOString(),
+                    metadata: {
+                        source: 'WebF Example',
+                        version: '1.0'
+                    }
+                };
+
+                console.log('Sending JSON:', jsonData);
+
+                // Send POST request with JSON
+                const response = await fetch('https://httpbin.org/post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Custom-Header': 'WebF-JSON-Example'
+                    },
+                    body: JSON.stringify(jsonData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResponse('jsonResponse', JSON.stringify(data, null, 2));
+            } catch (error) {
+                displayResponse('jsonResponse', `Error: ${error.message}`, true);
+            }
+        }
+
+        // Example 6: Complex Nested JSON Request
+        async function submitComplexJsonForm() {
+            showLoading('complexJsonResponse');
+
+            try {
+                // Get form values
+                const companyName = document.getElementById('companyName').value;
+                const employeeCount = document.getElementById('employeeCount').value;
+                const departmentsInput = document.getElementById('departments').value;
+                const departments = departmentsInput.split(',').map(d => d.trim()).filter(d => d);
+
+                // Create complex nested JSON object
+                const complexData = {
+                    company: {
+                        name: companyName,
+                        founded: 2024,
+                        location: {
+                            city: 'San Francisco',
+                            country: 'USA',
+                            coordinates: {
+                                latitude: 37.7749,
+                                longitude: -122.4194
+                            }
+                        }
+                    },
+                    statistics: {
+                        employeeCount: parseInt(employeeCount) || 0,
+                        departments: departments.map((dept, index) => ({
+                            id: index + 1,
+                            name: dept,
+                            employees: Math.floor(Math.random() * 50) + 10
+                        })),
+                        growth: {
+                            yearly: '15%',
+                            quarterly: '3.5%'
+                        }
+                    },
+                    services: [
+                        { name: 'Web Development', active: true },
+                        { name: 'Mobile Apps', active: true },
+                        { name: 'Consulting', active: false }
+                    ],
+                    contact: {
+                        email: 'info@example.com',
+                        phone: '+1-555-0123',
+                        social: {
+                            twitter: '@example',
+                            linkedin: 'company/example'
+                        }
+                    },
+                    timestamp: new Date().toISOString(),
+                    _meta: {
+                        apiVersion: '2.0',
+                        format: 'nested-json'
+                    }
+                };
+
+                console.log('Sending complex JSON:', complexData);
+
+                // Send POST request with complex JSON
+                const response = await fetch('https://httpbin.org/post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'Accept': 'application/json',
+                        'Authorization': 'Bearer example-token-123'
+                    },
+                    body: JSON.stringify(complexData, null, 2) // Pretty print the JSON
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResponse('complexJsonResponse', JSON.stringify(data, null, 2));
+            } catch (error) {
+                displayResponse('complexJsonResponse', `Error: ${error.message}`, true);
+            }
+        }
+
         // Additional example: Creating a File from Blob
         function createFileFromBlob() {
             // Create a Blob
@@ -483,6 +653,18 @@
             const submitComplexBtn = document.getElementById('submitComplex');
             if (submitComplexBtn) {
                 submitComplexBtn.addEventListener('click', submitComplexForm);
+            }
+
+            // JSON form submit
+            const submitJsonBtn = document.getElementById('submitJson');
+            if (submitJsonBtn) {
+                submitJsonBtn.addEventListener('click', submitJsonForm);
+            }
+
+            // Complex JSON form submit
+            const submitComplexJsonBtn = document.getElementById('submitComplexJson');
+            if (submitComplexJsonBtn) {
+                submitComplexJsonBtn.addEventListener('click', submitComplexJsonForm);
             }
         });
     </script>

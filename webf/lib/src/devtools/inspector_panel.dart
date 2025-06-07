@@ -1669,33 +1669,42 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             children: [
               Icon(Icons.upload, size: 16, color: Colors.white54),
               SizedBox(width: 8),
-              Text(
-                'Request Body (${_formatBytes(request.requestData.length)})',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      'Request Body (${_formatBytes(request.requestData.length)})',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (contentType.isNotEmpty) ...[
+                      SizedBox(width: 8),
+                      Flexible(
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                          child: Text(
+                            contentType.split(';').first,
+                            style: TextStyle(
+                              color: Colors.blue.shade300,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (contentType.isNotEmpty) ...[
-                SizedBox(width: 8),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                  child: Text(
-                    contentType.split(';').first,
-                    style: TextStyle(
-                      color: Colors.blue.shade300,
-                      fontSize: 10,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ),
-              ],
-              Spacer(),
               // Copy button
               IconButton(
                 icon: Icon(Icons.copy, size: 16),
