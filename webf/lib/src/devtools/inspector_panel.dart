@@ -188,6 +188,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   
   // Track which response bodies are expanded
   final Set<String> _expandedResponseBodies = {};
+  
+  // Track which headers sections are expanded
+  final Set<String> _expandedHeaders = {};
 
   @override
   void initState() {
@@ -1196,7 +1199,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         SizedBox(height: 12),
         // Request headers
         if (request.requestHeaders.isNotEmpty) ...[
-          _buildHeadersSection('Request Headers', request.requestHeaders),
+          _buildHeadersSection('Request Headers', request.requestHeaders, '${request.requestId}_request'),
           SizedBox(height: 12),
         ],
         // Request body
@@ -1210,7 +1213,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ],
         // Response headers
         if (request.responseHeaders != null && request.responseHeaders!.isNotEmpty) ...[
-          _buildHeadersSection('Response Headers', request.responseHeaders!),
+          _buildHeadersSection('Response Headers', request.responseHeaders!, '${request.requestId}_response'),
           SizedBox(height: 12),
         ],
         // Response body preview
@@ -1312,7 +1315,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildHeadersSection(String title, Map<String, List<String>> headers) {
+  Widget _buildHeadersSection(String title, Map<String, List<String>> headers, String sectionId) {
+    final isExpanded = _expandedHeaders.contains(sectionId);
+    final showAllHeaders = isExpanded || headers.length <= 3; // Show first 3 headers when collapsed
+    
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1360,10 +1366,36 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   minHeight: 24,
                 ),
               ),
+              // Expand/collapse button (only show if more than 3 headers)
+              if (headers.length > 3) ...[
+                SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  color: Colors.white54,
+                  onPressed: () {
+                    setState(() {
+                      if (isExpanded) {
+                        _expandedHeaders.remove(sectionId);
+                      } else {
+                        _expandedHeaders.add(sectionId);
+                      }
+                    });
+                  },
+                  tooltip: isExpanded ? 'Collapse' : 'Expand',
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                ),
+              ],
             ],
           ),
           SizedBox(height: 8),
-          ...headers.entries.map((entry) => Padding(
+          ...(showAllHeaders ? headers.entries : headers.entries.take(3)).map((entry) => Padding(
                 padding: EdgeInsets.only(bottom: 4),
                 child: GestureDetector(
                   onTap: () async {
@@ -1421,6 +1453,18 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   ),
                 ),
               )),
+          // Show count of hidden headers when collapsed
+          if (!isExpanded && headers.length > 3) ...[
+            SizedBox(height: 4),
+            Text(
+              '... and ${headers.length - 3} more',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1433,15 +1477,18 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     final isImage = _isImageData(request.responseBody!);
     
     String? responseString;
+    dynamic jsonData;
+    bool isJson = false;
+    
     if (!isImage) {
       try {
         responseString = utf8.decode(request.responseBody!, allowMalformed: true);
         
-        // Try to pretty print JSON
-        if (request.mimeType?.contains('json') ?? false) {
+        // Try to parse JSON
+        if (request.mimeType?.contains('json') ?? false || responseString.trimLeft().startsWith('{') || responseString.trimLeft().startsWith('[')) {
           try {
-            final json = jsonDecode(responseString);
-            responseString = const JsonEncoder.withIndent('  ').convert(json);
+            jsonData = jsonDecode(responseString);
+            isJson = true;
           } catch (_) {
             // Not valid JSON, show as is
           }
@@ -1452,7 +1499,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       }
     }
     
-    final isLongResponse = !isImage && responseString != null && responseString.length > 500;
+    final isLongResponse = !isImage && !isJson && responseString != null && responseString.length > 500;
     
     return Container(
       padding: EdgeInsets.all(12),
@@ -1499,8 +1546,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   ),
                 ),
               ],
-              // Expand/collapse button (show for long responses or images)
-              if (isLongResponse || isImage) ...[
+              // Expand/collapse button (show for long responses, images, or JSON)
+              if (isLongResponse || isImage || isJson) ...[
                 SizedBox(width: 8),
                 IconButton(
                   icon: Icon(
@@ -1542,15 +1589,17 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             ),
             child: isImage
                 ? _buildImagePreview(request, isExpanded)
-                : SelectableText(
-                    responseString ?? '',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                    ),
-                    maxLines: isExpanded ? null : 10,
-                  ),
+                : isJson
+                    ? _buildJsonViewer(jsonData, isExpanded)
+                    : SelectableText(
+                        responseString ?? '',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: isExpanded ? null : 10,
+                      ),
           ),
           // Show preview info if collapsed and response is long
           if (!isExpanded && isLongResponse) ...[
@@ -1721,5 +1770,298 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ],
       ],
     );
+  }
+  
+  Widget _buildJsonViewer(dynamic jsonData, bool isExpanded) {
+    if (!isExpanded) {
+      // Show a preview when collapsed
+      String preview;
+      if (jsonData is Map) {
+        preview = '{...} ${jsonData.length} properties';
+      } else if (jsonData is List) {
+        preview = '[...] ${jsonData.length} items';
+      } else {
+        preview = jsonData.toString();
+      }
+      
+      return Padding(
+        padding: EdgeInsets.all(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              preview,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontFamily: 'monospace',
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Click expand to explore JSON structure',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Show interactive JSON tree when expanded
+    return _JsonTreeView(data: jsonData);
+  }
+}
+
+// Interactive JSON Tree View Widget
+class _JsonTreeView extends StatefulWidget {
+  final dynamic data;
+  final int depth;
+  
+  const _JsonTreeView({
+    Key? key,
+    required this.data,
+    this.depth = 0,
+  }) : super(key: key);
+  
+  @override
+  _JsonTreeViewState createState() => _JsonTreeViewState();
+}
+
+class _JsonTreeViewState extends State<_JsonTreeView> {
+  final Set<String> _expandedKeys = {};
+  
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: _buildJsonTree(widget.data, '', widget.depth),
+    );
+  }
+  
+  Widget _buildJsonTree(dynamic data, String path, int depth) {
+    final indent = depth * 16.0;
+    
+    if (data is Map) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (depth > 0) 
+            Padding(
+              padding: EdgeInsets.only(left: indent - 16),
+              child: Text('{', style: _getTextStyle(depth)),
+            ),
+          ...data.entries.map((entry) {
+            final key = entry.key.toString();
+            final currentPath = path.isEmpty ? key : '$path.$key';
+            final isExpanded = _expandedKeys.contains(currentPath);
+            final value = entry.value;
+            final isExpandable = value is Map || value is List;
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(left: indent),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isExpandable) ...[
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (isExpanded) {
+                                  _expandedKeys.remove(currentPath);
+                                } else {
+                                  _expandedKeys.add(currentPath);
+                                }
+                              });
+                            },
+                            child: Icon(
+                              isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                              size: 16,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        ] else ...[
+                          SizedBox(width: 16),
+                        ],
+                        SelectableText(
+                          '"$key": ',
+                          style: TextStyle(
+                            color: Colors.blue.shade300,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        if (!isExpandable) ...[
+                          Expanded(
+                            child: SelectableText(
+                              _formatJsonValue(value),
+                              style: _getValueStyle(value),
+                            ),
+                          ),
+                        ] else if (!isExpanded) ...[
+                          Text(
+                            value is Map ? '{...}' : '[...]',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (isExpandable && isExpanded) ...[
+                  _buildJsonTree(value, currentPath, depth + 1),
+                ],
+              ],
+            );
+          }).toList(),
+          if (depth > 0) 
+            Padding(
+              padding: EdgeInsets.only(left: indent - 16),
+              child: Text('}', style: _getTextStyle(depth)),
+            ),
+        ],
+      );
+    } else if (data is List) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (depth > 0) 
+            Padding(
+              padding: EdgeInsets.only(left: indent - 16),
+              child: Text('[', style: _getTextStyle(depth)),
+            ),
+          ...data.asMap().entries.map((entry) {
+            final index = entry.key;
+            final currentPath = '$path[$index]';
+            final isExpanded = _expandedKeys.contains(currentPath);
+            final value = entry.value;
+            final isExpandable = value is Map || value is List;
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(left: indent),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isExpandable) ...[
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (isExpanded) {
+                                  _expandedKeys.remove(currentPath);
+                                } else {
+                                  _expandedKeys.add(currentPath);
+                                }
+                              });
+                            },
+                            child: Icon(
+                              isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                              size: 16,
+                              color: Colors.white54,
+                            ),
+                          ),
+                        ] else ...[
+                          SizedBox(width: 16),
+                        ],
+                        Text(
+                          '[$index]: ',
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                        if (!isExpandable) ...[
+                          Expanded(
+                            child: SelectableText(
+                              _formatJsonValue(value),
+                              style: _getValueStyle(value),
+                            ),
+                          ),
+                        ] else if (!isExpanded) ...[
+                          Text(
+                            value is Map ? '{...}' : '[...]',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                if (isExpandable && isExpanded) ...[
+                  _buildJsonTree(value, currentPath, depth + 1),
+                ],
+              ],
+            );
+          }).toList(),
+          if (depth > 0) 
+            Padding(
+              padding: EdgeInsets.only(left: indent - 16),
+              child: Text(']', style: _getTextStyle(depth)),
+            ),
+        ],
+      );
+    } else {
+      return SelectableText(
+        _formatJsonValue(data),
+        style: _getValueStyle(data),
+      );
+    }
+  }
+  
+  TextStyle _getTextStyle(int depth) {
+    return TextStyle(
+      color: Colors.white54,
+      fontSize: 11,
+      fontFamily: 'monospace',
+    );
+  }
+  
+  TextStyle _getValueStyle(dynamic value) {
+    Color color;
+    if (value == null) {
+      color = Colors.grey;
+    } else if (value is String) {
+      color = Colors.green.shade300;
+    } else if (value is num) {
+      color = Colors.orange.shade300;
+    } else if (value is bool) {
+      color = Colors.purple.shade300;
+    } else {
+      color = Colors.white70;
+    }
+    
+    return TextStyle(
+      color: color,
+      fontSize: 11,
+      fontFamily: 'monospace',
+    );
+  }
+  
+  String _formatJsonValue(dynamic value) {
+    if (value == null) {
+      return 'null';
+    } else if (value is String) {
+      return '"$value"';
+    } else {
+      return value.toString();
+    }
   }
 }
