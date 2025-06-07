@@ -185,6 +185,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   final HttpCacheMode _originalCacheMode = HttpCacheController.mode;
   // Track whether cache is disabled
   bool _isCacheDisabled = HttpCacheController.mode == HttpCacheMode.NO_CACHE;
+  
+  // Track which response bodies are expanded
+  final Set<String> _expandedResponseBodies = {};
 
   @override
   void initState() {
@@ -1212,11 +1215,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ],
         // Response body preview
         if (request.responseBody != null && request.responseBody!.isNotEmpty) ...[
-          _buildDetailSection(
-            'Response Body (${_formatBytes(request.responseBody!.length)})',
-            _getResponsePreview(request),
-            Icons.download,
-          ),
+          _buildExpandableResponseBody(request),
         ],
       ],
     );
@@ -1427,6 +1426,149 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
+  Widget _buildExpandableResponseBody(NetworkRequest request) {
+    final isExpanded = _expandedResponseBodies.contains(request.requestId);
+    
+    // Try to detect if it's an image by checking the actual content
+    final isImage = _isImageData(request.responseBody!);
+    
+    String? responseString;
+    if (!isImage) {
+      try {
+        responseString = utf8.decode(request.responseBody!, allowMalformed: true);
+        
+        // Try to pretty print JSON
+        if (request.mimeType?.contains('json') ?? false) {
+          try {
+            final json = jsonDecode(responseString);
+            responseString = const JsonEncoder.withIndent('  ').convert(json);
+          } catch (_) {
+            // Not valid JSON, show as is
+          }
+        }
+      } catch (_) {
+        // If decoding fails, show as binary data
+        responseString = 'Binary data (cannot display)';
+      }
+    }
+    
+    final isLongResponse = !isImage && responseString != null && responseString.length > 500;
+    
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.download, size: 16, color: Colors.white54),
+              SizedBox(width: 8),
+              Text(
+                'Response Body (${_formatBytes(request.responseBody!.length)})',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Spacer(),
+              // Copy button (only for non-image content)
+              if (!isImage) ...[
+                IconButton(
+                  icon: Icon(Icons.copy, size: 16),
+                  color: Colors.white54,
+                  onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: responseString!));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Response body copied to clipboard'),
+                        duration: Duration(seconds: 2),
+                        backgroundColor: Colors.green.withOpacity(0.8),
+                      ),
+                    );
+                  },
+                  tooltip: 'Copy response body',
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                ),
+              ],
+              // Expand/collapse button (show for long responses or images)
+              if (isLongResponse || isImage) ...[
+                SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  color: Colors.white54,
+                  onPressed: () {
+                    setState(() {
+                      if (isExpanded) {
+                        _expandedResponseBodies.remove(request.requestId);
+                      } else {
+                        _expandedResponseBodies.add(request.requestId);
+                      }
+                    });
+                  },
+                  tooltip: isExpanded ? 'Collapse' : 'Expand',
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          SizedBox(height: 8),
+          // Response content
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: isImage
+                ? _buildImagePreview(request, isExpanded)
+                : SelectableText(
+                    responseString ?? '',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    ),
+                    maxLines: isExpanded ? null : 10,
+                  ),
+          ),
+          // Show preview info if collapsed and response is long
+          if (!isExpanded && isLongResponse) ...[
+            SizedBox(height: 4),
+            Text(
+              'Click expand to see full response',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   IconData _getRequestIcon(String method) {
     switch (method.toUpperCase()) {
       case 'GET':
@@ -1470,24 +1612,114 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
   }
-
-  String _getResponsePreview(NetworkRequest request) {
-    if (request.responseBody == null) return 'No response body';
-
-    try {
-      final decoded = utf8.decode(request.responseBody!, allowMalformed: true);
-      // Try to pretty print JSON
-      if (request.mimeType?.contains('json') ?? false) {
-        try {
-          final json = jsonDecode(decoded);
-          return const JsonEncoder.withIndent('  ').convert(json);
-        } catch (_) {
-          // Not valid JSON, show as is
-        }
-      }
-      return decoded;
-    } catch (_) {
-      return 'Binary data (${_formatBytes(request.responseBody!.length)})';
+  
+  bool _isImageData(Uint8List data) {
+    if (data.isEmpty) return false;
+    
+    // Check for common image file signatures (magic numbers)
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    if (data.length >= 8 && 
+        data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
+        data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A) {
+      return true;
     }
+    
+    // JPEG signature: FF D8 FF
+    if (data.length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF) {
+      return true;
+    }
+    
+    // GIF signature: 47 49 46 38 (GIF87a or GIF89a)
+    if (data.length >= 6 && 
+        data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x38) {
+      return true;
+    }
+    
+    // WebP signature: 52 49 46 46 ?? ?? ?? ?? 57 45 42 50 (RIFF....WEBP)
+    if (data.length >= 12 && 
+        data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
+        data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50) {
+      return true;
+    }
+    
+    // BMP signature: 42 4D (BM)
+    if (data.length >= 2 && data[0] == 0x42 && data[1] == 0x4D) {
+      return true;
+    }
+    
+    // ICO signature: 00 00 01 00
+    if (data.length >= 4 && 
+        data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0x00) {
+      return true;
+    }
+    
+    // SVG detection - check if it starts with XML or SVG tags
+    try {
+      final str = utf8.decode(data.take(1000).toList(), allowMalformed: true).toLowerCase();
+      if (str.contains('<svg') || (str.contains('<?xml') && str.contains('svg'))) {
+        return true;
+      }
+    } catch (_) {
+      // Not text, continue checking
+    }
+    
+    return false;
+  }
+  
+  Widget _buildImagePreview(NetworkRequest request, bool isExpanded) {
+    return Column(
+      children: [
+        Container(
+          constraints: BoxConstraints(
+            maxHeight: isExpanded ? double.infinity : 200,
+            maxWidth: double.infinity,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: Image.memory(
+              request.responseBody!,
+              fit: isExpanded ? BoxFit.contain : BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  height: 100,
+                  color: Colors.grey.withOpacity(0.3),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.broken_image,
+                          color: Colors.red.withOpacity(0.5),
+                          size: 48,
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Failed to load image',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        if (!isExpanded) ...[
+          SizedBox(height: 8),
+          Text(
+            'Click expand to see full image',
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
