@@ -3,9 +3,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "executing_context.h"
+#include <sstream>
+#include <vector>
+#include <condition_variable>
+#include <mutex>
 
 #include <utility>
 #include "bindings/qjs/converter_impl.h"
+#include "bindings/qjs/native_string_utils.h"
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
 #include "core/bridge_polyfill.c"
@@ -84,6 +89,9 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   // Install performance
   InstallPerformance();
   InstallNativeLoader();
+
+  // Set up ES module loader
+  JS_SetModuleLoaderFunc(script_state_.runtime(), ModuleNormalizeName, ModuleLoader, this);
 
   // Init JavaScript Polyfill
   EvaluateByteCode(bridge_polyfill, bridge_polyfill_size);
@@ -205,6 +213,41 @@ bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, c
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
+  return success;
+}
+
+bool ExecutingContext::EvaluateModule(const char* code,
+                                      size_t code_len,
+                                      uint8_t** parsed_bytecodes,
+                                      uint64_t* bytecode_len,
+                                      const char* sourceURL,
+                                      int startLine) {
+  if (ScriptForbiddenScope::IsScriptForbidden()) {
+    return false;
+  }
+  JSValue result;
+  if (parsed_bytecodes == nullptr) {
+    result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_MODULE);
+  } else {
+    JSValue byte_object =
+        JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+
+    if (JS_IsException(byte_object)) {
+      HandleException(&byte_object);
+      return false;
+    }
+
+    size_t len;
+    *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
+    *bytecode_len = len;
+
+    result = JS_EvalFunction(script_state_.ctx(), byte_object);
+  }
+
+  DrainMicrotasks();
+  bool success = HandleException(&result);
+  JS_FreeValue(script_state_.ctx(), result);
+
   return success;
 }
 
@@ -476,9 +519,10 @@ ExecutionContextData* ExecutingContext::contextData() {
 uint8_t* ExecutingContext::DumpByteCode(const char* code,
                                         uint32_t codeLength,
                                         const char* sourceURL,
+                                        bool is_module,
                                         uint64_t* bytecodeLength) {
-  JSValue object =
-      JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL | JS_EVAL_FLAG_COMPILE_ONLY);
+  int eval_flags = JS_EVAL_FLAG_COMPILE_ONLY | (is_module ? JS_EVAL_TYPE_MODULE : JS_EVAL_TYPE_GLOBAL);
+  JSValue object = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, eval_flags);
 
   bool success = HandleException(&object);
   if (!success)
@@ -772,6 +816,194 @@ bool isContextValid(double contextId) {
   if (valid_contexts.count(contextId) == 0)
     return false;
   return valid_contexts[contextId];
+}
+
+char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_base_name, const char* module_name, void* opaque) {
+  ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
+  
+  // Check if it's already an absolute URL
+  if (strstr(module_name, "://") != nullptr) {
+    return js_strdup(ctx, module_name);
+  }
+  
+  // Handle absolute paths (starting with /)
+  if (module_name[0] == '/') {
+    // If we have a base URL, extract the origin
+    if (module_base_name && strstr(module_base_name, "://") != nullptr) {
+      std::string base_url(module_base_name);
+      
+      // Find the origin (protocol + host)
+      size_t protocol_end = base_url.find("://");
+      if (protocol_end != std::string::npos) {
+        size_t path_start = base_url.find('/', protocol_end + 3);
+        std::string origin;
+        if (path_start != std::string::npos) {
+          origin = base_url.substr(0, path_start);
+        } else {
+          origin = base_url;
+        }
+        
+        // Combine origin with the absolute path
+        std::string resolved = origin + module_name;
+        return js_strdup(ctx, resolved.c_str());
+      }
+    }
+    // If no base or not a URL, return as-is
+    return js_strdup(ctx, module_name);
+  }
+  
+  // Handle relative imports (starting with ./ or ../)
+  if (module_name[0] == '.' && (module_name[1] == '/' || (module_name[1] == '.' && module_name[2] == '/'))) {
+    char* normalized_name = nullptr;
+    
+    if (module_base_name) {
+      // Calculate the base path from module_base_name
+      std::string base_path(module_base_name);
+      size_t last_slash = base_path.rfind('/');
+      if (last_slash != std::string::npos) {
+        base_path = base_path.substr(0, last_slash + 1);
+      } else {
+        base_path = "";
+      }
+      
+      // Resolve relative path
+      std::string resolved_path = base_path + module_name;
+      
+      // Normalize path (remove ./ and ../)
+      std::vector<std::string> parts;
+      std::istringstream iss(resolved_path);
+      std::string part;
+      
+      while (std::getline(iss, part, '/')) {
+        if (part == "..") {
+          if (!parts.empty()) {
+            parts.pop_back();
+          }
+        } else if (part != "." && !part.empty()) {
+          parts.push_back(part);
+        }
+      }
+      
+      // Reconstruct the path
+      std::string normalized;
+      for (size_t i = 0; i < parts.size(); ++i) {
+        if (i > 0) normalized += "/";
+        normalized += parts[i];
+      }
+      
+      normalized_name = js_strdup(ctx, normalized.c_str());
+    }
+    
+    return normalized_name;
+  }
+  
+  // For relative paths without ./, resolve against base
+  if (module_base_name) {
+    std::string base_path(module_base_name);
+    size_t last_slash = base_path.rfind('/');
+    if (last_slash != std::string::npos) {
+      base_path = base_path.substr(0, last_slash + 1);
+    } else {
+      base_path = "";
+    }
+    std::string resolved = base_path + module_name;
+    return js_strdup(ctx, resolved.c_str());
+  }
+  
+  // Default: return as-is
+  return js_strdup(ctx, module_name);
+}
+
+// Context structure for module loading
+struct ModuleLoadContext {
+  ExecutingContext* executing_context;
+  JSContext* ctx;
+  std::string module_name;
+  bool completed;
+  JSModuleDef* module_def;
+  char* error;
+  uint8_t* bytes;
+  int32_t length;
+  std::condition_variable cv;
+  std::mutex mutex;
+};
+
+// Callback function called from Dart when module content is fetched
+static void HandleFetchModuleResult(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length) {
+  ModuleLoadContext* load_context = static_cast<ModuleLoadContext*>(callback_context);
+  
+  std::unique_lock<std::mutex> lock(load_context->mutex);
+  
+  load_context->error = error;
+  load_context->bytes = bytes;
+  load_context->length = length;
+  load_context->completed = true;
+  
+  load_context->cv.notify_one();
+}
+
+JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_name, void* opaque) {
+  ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
+  
+  // Create the context for module loading
+  ModuleLoadContext load_context;
+  load_context.executing_context = context;
+  load_context.ctx = ctx;
+  load_context.module_name = module_name;
+  load_context.completed = false;
+  load_context.module_def = nullptr;
+  load_context.error = nullptr;
+  load_context.bytes = nullptr;
+  load_context.length = 0;
+  
+  // Create native string for module URL
+  std::u16string module_name_u16;
+  fromUTF8(std::string(module_name), module_name_u16);
+  SharedNativeString module_url(reinterpret_cast<const uint16_t*>(module_name_u16.c_str()), module_name_u16.length());
+  
+  // Call Dart to fetch the module - this posts to Dart thread
+  context->dart_isolate_context_->dartMethodPtr()->fetchJavaScriptESMModule(
+      context->isDedicated(),
+      &load_context,
+      context->contextId(),
+      &module_url,
+      HandleFetchModuleResult
+  );
+  
+  // Block the JS thread until module is loaded
+  {
+    std::unique_lock<std::mutex> lock(load_context.mutex);
+    load_context.cv.wait(lock, [&load_context] { return load_context.completed; });
+  }
+  
+  // Process the result
+  JSModuleDef* result = nullptr;
+  
+  if (load_context.error != nullptr) {
+    // Error occurred during fetch
+    JS_ThrowReferenceError(ctx, "Failed to load module '%s': %s", module_name, load_context.error);
+    dart_free(load_context.error);
+  } else if (load_context.bytes != nullptr && load_context.length > 0) {
+    // Module content fetched successfully
+    // Compile the module
+    JSValue compiled = JS_Eval(ctx, reinterpret_cast<const char*>(load_context.bytes), load_context.length,
+                              module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    
+    if (JS_IsException(compiled)) {
+      // Compilation failed - exception is already set
+      result = nullptr;
+    } else {
+      // Get the module definition
+      result = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(compiled));
+    }
+    
+    // Free the bytes
+    dart_free(load_context.bytes);
+  } else {
+    JS_ThrowReferenceError(ctx, "Empty module content for '%s'", module_name);
+  }
+  
+  return result;
 }
 
 }  // namespace webf

@@ -41,12 +41,18 @@ class ScriptRunner {
   int _resolvingCount = 0;
 
   static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle,
-      {bool async = false}) async {
+      {bool async = false, bool isModule = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
       assert(isValidUTF8String(bundle.data!), 'The JavaScript codes should be in UTF-8 encoding format');
-      bool result = await evaluateScripts(contextId, bundle.data!,
-          url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+      bool result;
+      if (isModule) {
+        result = await evaluateModule(contextId, bundle.data!,
+            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+      } else {
+        result = await evaluateScripts(contextId, bundle.data!,
+            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+      }
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
@@ -107,6 +113,9 @@ class ScriptRunner {
       bundle = _document.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
     }
 
+    // Check if this is an ES module
+    bool isModule = element.type == _JAVASCRIPT_MODULE;
+
     element.readyState = ScriptReadyState.interactive;
     // The bundle execution task.
     Future<void> task(bool async) async {
@@ -114,7 +123,7 @@ class ScriptRunner {
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
       try {
-        await _evaluateScriptBundle(_contextId, bundle, async: async);
+        await _evaluateScriptBundle(_contextId, bundle, async: async, isModule: isModule);
       } catch (err, stack) {
         debugPrint('$err\n$stack');
         _document.decrementDOMContentLoadedEventDelayCount();
@@ -195,7 +204,10 @@ class ScriptRunner {
         });
       }
     } else {
-      await bundle.preProcessing(_contextId);
+      if (!isModule) {
+        await bundle.preProcessing(_contextId);
+      }
+
       _document.pendingPreloadingScriptCallbacks.add(() async => await task(shouldAsync));
 
       if (_document.controller.preloadStatus != PreloadingStatus.done) {

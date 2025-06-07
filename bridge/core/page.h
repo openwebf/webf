@@ -53,6 +53,16 @@ class WebFPage final {
                                       int32_t startLine,
                                       Dart_Handle dart_handle,
                                       EvaluateScriptsCallback result_callback);
+  
+  static void EvaluateModuleInternal(void* page_,
+                                     const char* code,
+                                     uint64_t code_len,
+                                     uint8_t** parsed_bytecodes,
+                                     uint64_t* bytecode_len,
+                                     const char* bundleFilename,
+                                     int32_t startLine,
+                                     Dart_Handle dart_handle,
+                                     EvaluateScriptsCallback result_callback);
 
   static void EvaluateQuickjsByteCodeInternal(void* page_,
                                               uint8_t* bytes,
@@ -79,6 +89,7 @@ class WebFPage final {
                                           uint8_t** parsed_bytecodes,
                                           uint64_t* bytecode_len,
                                           const char* url,
+                                          bool is_module,
                                           Dart_PersistentHandle persistent_handle,
                                           DumpQuickjsByteCodeCallback result_callback);
 
@@ -89,9 +100,16 @@ class WebFPage final {
                       uint64_t* bytecode_len,
                       const char* url,
                       int startLine);
+  // evaluate JavaScript source codes as ES module.
+  bool evaluateModule(const char* script,
+                      uint64_t script_len,
+                      uint8_t** parsed_bytecodes,
+                      uint64_t* bytecode_len,
+                      const char* url,
+                      int startLine);
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
-  uint8_t* dumpByteCode(const char* script, size_t length, const char* url, uint64_t* byteLength);
+  uint8_t* dumpByteCode(const char* script, size_t length, const char* url, bool is_module, uint64_t* byteLength);
   bool evaluateByteCode(uint8_t* bytes, size_t byteLength);
 
   std::thread::id currentThread() const;

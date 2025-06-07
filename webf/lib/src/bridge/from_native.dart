@@ -536,6 +536,121 @@ void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, P
 
 final Pointer<NativeFunction<NativeLoadNativeLibrary>> _nativeLoadLibrary = Pointer.fromFunction(_loadNativeLibrary);
 
+// Typedefs for FetchJavaScriptESMModule
+typedef NativeFetchJavaScriptESMModuleCallback = Void Function(
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<Utf8> error,
+    Pointer<Uint8> bytes,
+    Int32 length);
+typedef DartFetchJavaScriptESMModuleCallback = void Function(
+    Pointer<Void> callbackContext,
+    double contextId,
+    Pointer<Utf8> error,
+    Pointer<Uint8> bytes,
+    int length);
+
+typedef NativeFetchJavaScriptESMModule = Void Function(
+    Pointer<Void> callbackContext,
+    Double contextId,
+    Pointer<NativeString> moduleUrl,
+    Pointer<NativeFunction<NativeFetchJavaScriptESMModuleCallback>> callback);
+
+void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, Pointer<NativeString> nativeModuleUrl,
+    Pointer<NativeFunction<NativeFetchJavaScriptESMModuleCallback>> nativeCallback) async {
+  String moduleUrl = nativeStringToString(nativeModuleUrl);
+  DartFetchJavaScriptESMModuleCallback callback = nativeCallback.asFunction(isLeaf: true);
+
+  try {
+    WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+    if (controller == null) {
+      callback(callbackContext, contextId, 'No controller found for context $contextId'.toNativeUtf8(), nullptr, 0);
+      return;
+    }
+
+    // Resolve the module URL relative to the base URL
+    String? baseUrl = controller.url;
+    Uri? resolvedUri;
+
+    // Check if it's already an absolute URL
+    if (moduleUrl.startsWith('http://') || moduleUrl.startsWith('https://')) {
+      // HTTP/HTTPS URLs should be used as-is
+      resolvedUri = Uri.tryParse(moduleUrl);
+    } else if (moduleUrl.startsWith('file://') || moduleUrl.startsWith('assets:')) {
+      // File and asset URLs are also absolute
+      resolvedUri = Uri.tryParse(moduleUrl);
+    } else if (moduleUrl.startsWith('//')) {
+      // Protocol-relative URL (e.g., //cdn.example.com/module.js)
+      // Use https by default
+      resolvedUri = Uri.tryParse('https:' + moduleUrl);
+    } else if (moduleUrl.startsWith('/')) {
+      // Absolute path - this is tricky when base is assets://
+      // For HTTP imports from assets, we need to handle this specially
+      if (baseUrl != null && baseUrl.startsWith('assets:')) {
+        // Can't resolve absolute paths against assets, treat as error
+        callback(callbackContext, contextId, 'Cannot resolve absolute path "$moduleUrl" from assets URL'.toNativeUtf8(), nullptr, 0);
+        return;
+      } else if (baseUrl != null) {
+        Uri? baseUri = Uri.tryParse(baseUrl);
+        if (baseUri != null) {
+          resolvedUri = baseUri.resolve(moduleUrl);
+        }
+      }
+    } else if (baseUrl != null) {
+      // Relative URL - resolve against base URL
+      Uri? baseUri = Uri.tryParse(baseUrl);
+      if (baseUri != null) {
+        // Special handling for assets URLs
+        if (baseUrl.startsWith('assets:')) {
+          // For assets, we need to handle the path resolution manually
+          // Example: base = "assets:///assets/esm_demo.html", module = "modules/math.js"
+          // Result should be "assets:///assets/modules/math.js"
+          String basePath = baseUrl.substring('assets:///'.length);
+          int lastSlash = basePath.lastIndexOf('/');
+          if (lastSlash != -1) {
+            basePath = basePath.substring(0, lastSlash + 1);
+          } else {
+            basePath = '';
+          }
+          String resolvedPath = basePath + moduleUrl;
+          resolvedUri = Uri.parse('assets:///' + resolvedPath);
+        } else {
+          resolvedUri = baseUri.resolve(moduleUrl);
+        }
+      }
+    }
+
+    if (resolvedUri == null) {
+      callback(callbackContext, contextId, 'Failed to resolve module URL: $moduleUrl'.toNativeUtf8(), nullptr, 0);
+      return;
+    }
+
+    print('Resolved URI: $resolvedUri');
+    // Use WebFBundle to fetch the module content
+    WebFBundle bundle = WebFBundle.fromUrl(resolvedUri.toString());
+    await bundle.resolve();
+    print('Bundle Resolve URI: ${bundle.url}');
+    await bundle.obtainData(contextId);
+
+    if (bundle.data == null) {
+      callback(callbackContext, contextId, 'Failed to fetch module: ${resolvedUri.toString()}'.toNativeUtf8(), nullptr, 0);
+    } else {
+      // Pass the module content to C++
+      Pointer<Uint8> bytesPtr = malloc.allocate<Uint8>(bundle.data!.length);
+      bytesPtr.asTypedList(bundle.data!.length).setAll(0, bundle.data!);
+      callback(callbackContext, contextId, nullptr, bytesPtr, bundle.data!.length);
+    }
+
+    bundle.dispose();
+  } catch (e, stack) {
+    String errmsg = '$e\n$stack';
+    callback(callbackContext, contextId, errmsg.toNativeUtf8(), nullptr, 0);
+  }
+}
+
+final Pointer<NativeFunction<NativeFetchJavaScriptESMModule>> _nativeFetchJavaScriptESMModule =
+    Pointer.fromFunction(_fetchJavaScriptESMModule);
+
 typedef NativeJSError = Void Function(Double contextId, Pointer<Utf8>);
 
 void _onJSError(double contextId, Pointer<Utf8> charStr) {
@@ -660,6 +775,7 @@ final List<int> _dartNativeMethods = [
   _nativeFlushUICommand.address,
   _nativeCreateBindingObject.address,
   _nativeLoadLibrary.address,
+  _nativeFetchJavaScriptESMModule.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,
   _nativeOnJSLogStructured.address

@@ -304,6 +304,18 @@ class FirstPageState extends State<FirstPage> {
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'esm_demo';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'esm_demo',
+                  initialRoute: '/',
+                );
+              }));
+            },
+            child: Text('Open ES Module Demo')),
+        SizedBox(height: 18),
+        ElevatedButton(
+            onPressed: () {
               widget.webfPageName.value = 'vuejs';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(webfPageName: 'vuejs');
@@ -439,6 +451,8 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
   switch (controllerName) {
     case 'html/css':
       return WebFBundle.fromUrl('assets:///assets/bundle.html');
+    case 'esm_demo':
+      return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
     case 'vuejs':
       return WebFBundle.fromUrl('assets:///vue_project/dist/index.html');
     case 'reactjs':

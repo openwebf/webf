@@ -82,7 +82,19 @@ void evaluateScripts(void* page,
                      const char* bundleFilename,
                      int32_t start_line,
                      Dart_Handle dart_handle,
-                     EvaluateQuickjsByteCodeCallback result_callback);
+                     EvaluateScriptsCallback result_callback);
+
+WEBF_EXPORT_C
+void evaluateModule(void* page,
+                    const char* code,
+                    uint64_t code_len,
+                    uint8_t** parsed_bytecodes,
+                    uint64_t* bytecode_len,
+                    const char* bundleFilename,
+                    int32_t start_line,
+                    Dart_Handle dart_handle,
+                    EvaluateScriptsCallback result_callback);
+
 WEBF_EXPORT_C
 void evaluateQuickjsByteCode(void* page,
                              uint8_t* bytes,
@@ -97,6 +109,7 @@ void dumpQuickjsByteCode(void* page,
                          uint8_t** parsed_bytecodes,
                          uint64_t* bytecode_len,
                          const char* url,
+                         bool is_module,
                          Dart_Handle dart_handle,
                          DumpQuickjsByteCodeCallback result_callback);
 

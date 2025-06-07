@@ -120,11 +120,11 @@ abstract class WebFBundle with Diagnosticable {
   ContentType get contentType => _contentType ?? _resolveContentType(_uri);
 
   // Pre process the data before the data actual used.
-  Future<void> preProcessing(double contextId) async {
+  Future<void> preProcessing(double contextId, {bool isModule = false}) async {
     if (isJavascript && data != null && isPageAlive(contextId)) {
       assert(isValidUTF8String(data!), 'JavaScript code is not UTF-8 encoded.');
 
-      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString());
+      data = await dumpQuickjsByteCode(contextId, data!, url: _uri.toString(), isModule: isModule);
 
       _contentType = webfBc1ContentType;
     }

@@ -335,7 +335,7 @@ TEST(Context, evaluateByteCode) {
   auto env = TEST_init(errorHandler);
   const char* code = "function f() { console.log(arguments)} f(1,2,3,4);";
   uint64_t byteLen;
-  uint8_t* bytes = env->page()->dumpByteCode(code, strlen(code), "vm://", &byteLen);
+  uint8_t* bytes = env->page()->dumpByteCode(code, strlen(code), "vm://", false, &byteLen);
   env->page()->evaluateByteCode(bytes, byteLen);
 
   EXPECT_EQ(errorHandlerExecuted, false);

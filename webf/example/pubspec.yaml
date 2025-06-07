@@ -54,6 +54,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - assets/modules/
     - vue_project/dist/
     - vue_project/dist/js/
     - vue_project/dist/css/

@@ -929,12 +929,12 @@ class WebFController with Diagnosticable {
     run() async {
       bool isTimeout = false;
       try {
-        Timer(timeout ?? Duration(seconds: 10), () {
-          if (controllerPreloadingCompleter.isCompleted) return;
-          isTimeout = true;
-          _preloadStatus = PreloadingStatus.fail;
-          controllerPreloadingCompleter.completeError(FlutterError('Preloading failed with exceed timeout limits'));
-        });
+        // Timer(timeout ?? Duration(seconds: 10), () {
+        //   if (controllerPreloadingCompleter.isCompleted) return;
+        //   isTimeout = true;
+        //   _preloadStatus = PreloadingStatus.fail;
+        //   controllerPreloadingCompleter.completeError(FlutterError('Preloading failed with exceed timeout limits'));
+        // });
 
         await Future.wait([_resolveEntrypoint(), module.initialize()]);
 
