@@ -9,24 +9,24 @@
             max-width: 800px;
             margin: 0 auto;
         }
-        
+
         .container {
             background-color: #f5f5f5;
             padding: 20px;
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        
+
         .form-group {
             margin-bottom: 15px;
         }
-        
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
-        
+
         input[type="text"],
         input[type="email"],
         input[type="file"],
@@ -38,7 +38,7 @@
             border-radius: 4px;
             box-sizing: border-box;
         }
-        
+
         button {
             background-color: #4CAF50;
             color: white;
@@ -48,11 +48,11 @@
             cursor: pointer;
             font-size: 16px;
         }
-        
+
         button:hover {
             background-color: #45a049;
         }
-        
+
         .response {
             background-color: #e8f5e9;
             border: 1px solid #4CAF50;
@@ -62,27 +62,27 @@
             white-space: pre-wrap;
             overflow-x: auto;
         }
-        
+
         .error {
             background-color: #ffebee;
             border: 1px solid #f44336;
             color: #d32f2f;
         }
-        
+
         .loading {
             color: #666;
             font-style: italic;
         }
-        
+
         h2 {
             color: #333;
             margin-bottom: 20px;
         }
-        
+
         .example-section {
             margin-bottom: 40px;
         }
-        
+
         code {
             background-color: #f5f5f5;
             padding: 2px 4px;
@@ -94,7 +94,7 @@
 <body>
     <h1>FormData POST Request Examples for WebF</h1>
     <p>These examples demonstrate how to manually create FormData and send POST requests using the Fetch API in WebF.</p>
-    
+
     <!-- Example 1: Basic FormData Creation -->
     <div class="example-section">
         <h2>Example 1: Basic FormData Creation</h2>
@@ -111,11 +111,11 @@
                 <label for="message">Message:</label>
                 <textarea id="message" rows="4" placeholder="Enter your message"></textarea>
             </div>
-            <button onclick="submitBasicForm()">Submit Form</button>
+            <button id="submitBasic">Submit Form</button>
             <div id="basicResponse"></div>
         </div>
     </div>
-    
+
     <!-- Example 2: File Upload with File API -->
     <div class="example-section">
         <h2>Example 2: File Upload with File API</h2>
@@ -128,11 +128,11 @@
                 <label for="fileInput">Choose File:</label>
                 <input type="file" id="fileInput" accept="image/*">
             </div>
-            <button onclick="uploadSingleFile()">Upload File</button>
+            <button id="uploadSingle">Upload File</button>
             <div id="fileResponse"></div>
         </div>
     </div>
-    
+
     <!-- Example 3: Multiple Files Upload -->
     <div class="example-section">
         <h2>Example 3: Multiple Files Upload</h2>
@@ -145,11 +145,11 @@
                 <label for="multipleFiles">Choose Multiple Files:</label>
                 <input type="file" id="multipleFiles" multiple accept="image/*">
             </div>
-            <button onclick="uploadMultipleFiles()">Upload Multiple Files</button>
+            <button id="uploadMultiple">Upload Multiple Files</button>
             <div id="multipleResponse"></div>
         </div>
     </div>
-    
+
     <!-- Example 4: Complex FormData with Different Data Types -->
     <div class="example-section">
         <h2>Example 4: Complex FormData Example</h2>
@@ -175,7 +175,7 @@
                 <label for="productImage">Product Image:</label>
                 <input type="file" id="productImage" accept="image/*">
             </div>
-            <button onclick="submitComplexForm()">Submit Product</button>
+            <button id="submitComplex">Submit Product</button>
             <div id="complexResponse"></div>
         </div>
     </div>
@@ -195,39 +195,36 @@
         // Example 1: Basic FormData Creation
         async function submitBasicForm() {
             showLoading('basicResponse');
-            
+
             try {
                 // Create FormData manually
                 const formData = new FormData();
-                
+
                 // Get values from inputs
                 const username = document.getElementById('username').value;
                 const email = document.getElementById('email').value;
                 const message = document.getElementById('message').value;
-                
+
                 // Append data to FormData
                 formData.append('username', username);
                 formData.append('email', email);
                 formData.append('message', message);
                 formData.append('timestamp', new Date().toISOString());
-                
+
                 // Log FormData contents
                 console.log('Sending FormData with:');
-                for (const [key, value] of formData.entries()) {
-                    console.log(`${key}: ${value}`);
-                }
-                
+
                 // Send POST request
                 const response = await fetch('https://httpbin.org/post', {
                     method: 'POST',
                     body: formData
                     // Note: Don't set Content-Type header, browser will set it with boundary
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 displayResponse('basicResponse', JSON.stringify(data, null, 2));
             } catch (error) {
@@ -238,43 +235,43 @@
         // Example 2: File Upload with File API
         async function uploadSingleFile() {
             showLoading('fileResponse');
-            
+
             try {
                 const formData = new FormData();
-                
+
                 // Get title
                 const title = document.getElementById('title').value;
                 formData.append('title', title);
-                
+
                 // Get file from input
                 const fileInput = document.getElementById('fileInput');
                 if (fileInput.files && fileInput.files.length > 0) {
                     const file = fileInput.files[0];
-                    
+
                     // Append file to FormData
                     formData.append('file', file);
-                    
+
                     // Also append file metadata
                     formData.append('filename', file.name);
                     formData.append('filesize', file.size.toString());
                     formData.append('filetype', file.type);
                     formData.append('lastModified', file.lastModified.toString());
-                    
+
                     console.log(`Uploading file: ${file.name} (${file.size} bytes, type: ${file.type})`);
                 } else {
                     throw new Error('No file selected');
                 }
-                
+
                 // Send request
                 const response = await fetch('https://httpbin.org/post', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 displayResponse('fileResponse', JSON.stringify(data, null, 2));
             } catch (error) {
@@ -285,46 +282,46 @@
         // Example 3: Multiple Files Upload
         async function uploadMultipleFiles() {
             showLoading('multipleResponse');
-            
+
             try {
                 const formData = new FormData();
-                
+
                 // Get album name
                 const albumName = document.getElementById('albumName').value;
                 formData.append('album_name', albumName);
-                
+
                 // Get files from input
                 const filesInput = document.getElementById('multipleFiles');
                 if (filesInput.files && filesInput.files.length > 0) {
                     console.log(`Uploading ${filesInput.files.length} files`);
-                    
+
                     // Append each file
                     for (let i = 0; i < filesInput.files.length; i++) {
                         const file = filesInput.files[i];
                         // Use array notation for multiple files
                         formData.append('files[]', file);
-                        
+
                         // Optional: append individual file metadata
                         formData.append(`file_${i}_name`, file.name);
                         formData.append(`file_${i}_size`, file.size.toString());
                     }
-                    
+
                     // Add total count
                     formData.append('total_files', filesInput.files.length.toString());
                 } else {
                     throw new Error('No files selected');
                 }
-                
+
                 // Send request
                 const response = await fetch('https://httpbin.org/post', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 displayResponse('multipleResponse', JSON.stringify(data, null, 2));
             } catch (error) {
@@ -335,25 +332,25 @@
         // Example 4: Complex FormData with Different Data Types
         async function submitComplexForm() {
             showLoading('complexResponse');
-            
+
             try {
                 const formData = new FormData();
-                
+
                 // Get form values
                 const productName = document.getElementById('productName').value;
                 const price = document.getElementById('price').value;
                 const category = document.getElementById('category').value;
-                
+
                 // Basic fields
                 formData.append('product_name', productName);
                 formData.append('price', price);
                 formData.append('category', category);
-                
+
                 // Add arrays (multiple values with same key)
                 formData.append('tags[]', 'new');
                 formData.append('tags[]', 'featured');
                 formData.append('tags[]', 'sale');
-                
+
                 // Add JSON data as string
                 const metadata = {
                     created_at: new Date().toISOString(),
@@ -361,22 +358,22 @@
                     version: '1.0'
                 };
                 formData.append('metadata', JSON.stringify(metadata));
-                
+
                 // Add file if selected
                 const imageInput = document.getElementById('productImage');
                 if (imageInput.files && imageInput.files.length > 0) {
                     const imageFile = imageInput.files[0];
                     formData.append('product_image', imageFile);
-                    
+
                     // Create a Blob from string data
                     const textBlob = new Blob(['Product description text'], { type: 'text/plain' });
                     formData.append('description_file', textBlob, 'description.txt');
                 }
-                
+
                 // Add boolean and number values (will be converted to strings)
                 formData.append('is_active', 'true');
                 formData.append('stock_quantity', '100');
-                
+
                 // Send request with custom headers
                 const response = await fetch('https://httpbin.org/post', {
                     method: 'POST',
@@ -387,11 +384,11 @@
                         'X-Client-Version': '1.0'
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
                 displayResponse('complexResponse', JSON.stringify(data, null, 2));
             } catch (error) {
@@ -404,17 +401,17 @@
             // Create a Blob
             const content = 'Hello, this is file content!';
             const blob = new Blob([content], { type: 'text/plain' });
-            
+
             // Convert Blob to File
             const file = new File([blob], 'example.txt', {
                 type: 'text/plain',
                 lastModified: Date.now()
             });
-            
+
             // Use the file in FormData
             const formData = new FormData();
             formData.append('file', file);
-            
+
             console.log('Created file:', file.name, file.size, 'bytes');
             return formData;
         }
@@ -422,11 +419,11 @@
         // Example: Creating FormData from JSON object
         function createFormDataFromObject(obj) {
             const formData = new FormData();
-            
+
             for (const key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     const value = obj[key];
-                    
+
                     if (Array.isArray(value)) {
                         // Handle arrays
                         value.forEach(item => {
@@ -444,7 +441,7 @@
                     }
                 }
             }
-            
+
             return formData;
         }
 
@@ -461,6 +458,33 @@
                 }
             }
         }
+
+        // Add event listeners when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Basic form submit
+            const submitBasicBtn = document.getElementById('submitBasic');
+            if (submitBasicBtn) {
+                submitBasicBtn.addEventListener('click', submitBasicForm);
+            }
+
+            // Single file upload
+            const uploadSingleBtn = document.getElementById('uploadSingle');
+            if (uploadSingleBtn) {
+                uploadSingleBtn.addEventListener('click', uploadSingleFile);
+            }
+
+            // Multiple files upload
+            const uploadMultipleBtn = document.getElementById('uploadMultiple');
+            if (uploadMultipleBtn) {
+                uploadMultipleBtn.addEventListener('click', uploadMultipleFiles);
+            }
+
+            // Complex form submit
+            const submitComplexBtn = document.getElementById('submitComplex');
+            if (submitComplexBtn) {
+                submitComplexBtn.addEventListener('click', submitComplexForm);
+            }
+        });
     </script>
 </body>
 </html>

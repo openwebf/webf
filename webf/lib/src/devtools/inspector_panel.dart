@@ -189,6 +189,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   
   // Track which response bodies are expanded
   final Set<String> _expandedResponseBodies = {};
+  final Set<String> _expandedRequestBodies = {};
   
   // Track which headers sections are expanded
   final Set<String> _expandedHeaders = {};
@@ -1205,11 +1206,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ],
         // Request body
         if (request.requestData.isNotEmpty) ...[
-          _buildDetailSection(
-            'Request Body',
-            String.fromCharCodes(request.requestData),
-            Icons.upload,
-          ),
+          _buildExpandableRequestBody(request),
           SizedBox(height: 12),
         ],
         // Response headers
@@ -1616,6 +1613,233 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildExpandableRequestBody(NetworkRequest request) {
+    final isExpanded = _expandedRequestBodies.contains(request.requestId);
+    bool isJson = false;
+    bool isFormData = false;
+    String? requestString;
+    dynamic jsonData;
+    Map<String, String>? formDataFields;
+    
+    // Check content type from request headers
+    final contentType = request.requestHeaders['content-type']?.first ?? '';
+    
+    try {
+      requestString = utf8.decode(request.requestData, allowMalformed: true);
+      
+      // Try to parse JSON
+      if (contentType.contains('json') || requestString.trimLeft().startsWith('{') || requestString.trimLeft().startsWith('[')) {
+        try {
+          jsonData = jsonDecode(requestString);
+          isJson = true;
+        } catch (_) {
+          // Not valid JSON
+        }
+      }
+      
+      // Check if it's form data
+      if (contentType.contains('application/x-www-form-urlencoded')) {
+        isFormData = true;
+        formDataFields = Uri.splitQueryString(requestString);
+      } else if (contentType.contains('multipart/form-data')) {
+        isFormData = true;
+        // For multipart, just show the raw data for now
+        // TODO: Parse multipart form data properly
+      }
+    } catch (_) {
+      // If decoding fails, show as binary data
+      requestString = 'Binary data (cannot display)';
+    }
+    
+    final isLongRequest = !isJson && !isFormData && requestString != null && requestString.length > 500;
+    
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.upload, size: 16, color: Colors.white54),
+              SizedBox(width: 8),
+              Text(
+                'Request Body (${_formatBytes(request.requestData.length)})',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (contentType.isNotEmpty) ...[
+                SizedBox(width: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    contentType.split(';').first,
+                    style: TextStyle(
+                      color: Colors.blue.shade300,
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+              ],
+              Spacer(),
+              // Copy button
+              IconButton(
+                icon: Icon(Icons.copy, size: 16),
+                color: Colors.white54,
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: requestString ?? ''));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Request body copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Colors.green.withOpacity(0.8),
+                    ),
+                  );
+                },
+                tooltip: 'Copy request body',
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+              ),
+              // Expand/collapse button
+              if (isLongRequest || isJson || isFormData) ...[
+                SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(
+                    isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                  color: Colors.white54,
+                  onPressed: () {
+                    setState(() {
+                      if (isExpanded) {
+                        _expandedRequestBodies.remove(request.requestId);
+                      } else {
+                        _expandedRequestBodies.add(request.requestId);
+                      }
+                    });
+                  },
+                  tooltip: isExpanded ? 'Collapse' : 'Expand',
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 24,
+                    minHeight: 24,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          SizedBox(height: 8),
+          // Request content
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: isJson
+                ? _buildJsonViewer(jsonData, isExpanded)
+                : isFormData && formDataFields != null
+                    ? _buildFormDataViewer(formDataFields, isExpanded)
+                    : SelectableText(
+                        requestString ?? '',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                        ),
+                        maxLines: isExpanded ? null : 10,
+                      ),
+          ),
+          // Show preview info if collapsed and request is long
+          if (!isExpanded && isLongRequest) ...[
+            SizedBox(height: 4),
+            Text(
+              'Click expand to see full request',
+              style: TextStyle(
+                color: Colors.white38,
+                fontSize: 10,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormDataViewer(Map<String, String> formData, bool isExpanded) {
+    final entries = formData.entries.toList();
+    final displayCount = isExpanded ? entries.length : 5.clamp(0, entries.length);
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int i = 0; i < displayCount; i++) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: SelectableText(
+                  '${entries[i].key}:',
+                  style: TextStyle(
+                    color: Colors.lightBlue.shade300,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: SelectableText(
+                  entries[i].value,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (i < displayCount - 1) SizedBox(height: 4),
+        ],
+        if (!isExpanded && entries.length > 5) ...[
+          SizedBox(height: 4),
+          Text(
+            '... and ${entries.length - 5} more fields',
+            style: TextStyle(
+              color: Colors.white38,
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
