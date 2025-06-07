@@ -2148,7 +2148,32 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: _buildJsonTree(widget.data, '', widget.depth),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.depth == 0) ...[
+            Text(
+              widget.data is Map ? '{' : widget.data is List ? '[' : '',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+          _buildJsonTree(widget.data, '', widget.depth),
+          if (widget.depth == 0) ...[
+            Text(
+              widget.data is Map ? '}' : widget.data is List ? ']' : '',
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 11,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
   
@@ -2159,11 +2184,6 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (depth > 0) 
-            Padding(
-              padding: EdgeInsets.only(left: indent - 16),
-              child: Text('{', style: _getTextStyle(depth)),
-            ),
           ...data.entries.map((entry) {
             final key = entry.key.toString();
             final currentPath = path.isEmpty ? key : '$path.$key';
@@ -2224,33 +2244,48 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                               fontFamily: 'monospace',
                             ),
                           ),
+                        ] else ...[
+                          Text(
+                            value is Map ? '{' : '[',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
                         ],
                       ],
                     ),
                   ),
                 ),
                 if (isExpandable && isExpanded) ...[
-                  _buildJsonTree(value, currentPath, depth + 1),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildJsonTree(value, currentPath, depth + 1),
+                      Padding(
+                        padding: EdgeInsets.only(left: indent),
+                        child: Text(
+                          value is Map ? '}' : ']',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             );
           }).toList(),
-          if (depth > 0) 
-            Padding(
-              padding: EdgeInsets.only(left: indent - 16),
-              child: Text('}', style: _getTextStyle(depth)),
-            ),
         ],
       );
     } else if (data is List) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (depth > 0) 
-            Padding(
-              padding: EdgeInsets.only(left: indent - 16),
-              child: Text('[', style: _getTextStyle(depth)),
-            ),
           ...data.asMap().entries.map((entry) {
             final index = entry.key;
             final currentPath = '$path[$index]';
@@ -2311,22 +2346,42 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                               fontFamily: 'monospace',
                             ),
                           ),
+                        ] else ...[
+                          Text(
+                            value is Map ? '{' : '[',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
                         ],
                       ],
                     ),
                   ),
                 ),
                 if (isExpandable && isExpanded) ...[
-                  _buildJsonTree(value, currentPath, depth + 1),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildJsonTree(value, currentPath, depth + 1),
+                      Padding(
+                        padding: EdgeInsets.only(left: indent),
+                        child: Text(
+                          value is Map ? '}' : ']',
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ],
             );
           }).toList(),
-          if (depth > 0) 
-            Padding(
-              padding: EdgeInsets.only(left: indent - 16),
-              child: Text(']', style: _getTextStyle(depth)),
-            ),
         ],
       );
     } else {
@@ -2335,14 +2390,6 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
         style: _getValueStyle(data),
       );
     }
-  }
-  
-  TextStyle _getTextStyle(int depth) {
-    return TextStyle(
-      color: Colors.white54,
-      fontSize: 11,
-      fontFamily: 'monospace',
-    );
   }
   
   TextStyle _getValueStyle(dynamic value) {
