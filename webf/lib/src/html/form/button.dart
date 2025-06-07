@@ -12,6 +12,8 @@ import 'package:webf/webf.dart';
 mixin BaseButtonElement on WidgetElement {
   bool checked = false;
   String _value = '';
+  
+  String get value => _value;
 
   @override
   void propertyDidUpdate(String key, value) {
@@ -37,21 +39,20 @@ mixin BaseButtonElement on WidgetElement {
 }
 
 mixin ButtonElementState on WebFWidgetElementState {
-  @override
-  FlutterInputElement get widgetElement => super.widgetElement as FlutterInputElement;
+  BaseButtonElement get _buttonElement => widgetElement as BaseButtonElement;
 
   TextStyle get _buttonStyle => TextStyle(
-        color: widgetElement.renderStyle.color.value,
-        fontSize: widgetElement.renderStyle.fontSize.computedValue,
-        fontWeight: widgetElement.renderStyle.fontWeight,
-        fontFamily: widgetElement.renderStyle.fontFamily?.join(' '),
+        color: _buttonElement.renderStyle.color.value,
+        fontSize: _buttonElement.renderStyle.fontSize.computedValue,
+        fontWeight: _buttonElement.renderStyle.fontWeight,
+        fontFamily: _buttonElement.renderStyle.fontFamily?.join(' '),
       );
 
   Widget createButton(BuildContext context) {
     return TextButton(
         style: ButtonStyle(
           backgroundColor:
-              MaterialStateProperty.resolveWith<Color?>((states) => widgetElement.renderStyle.backgroundColor?.value),
+              MaterialStateProperty.resolveWith<Color?>((states) => _buttonElement.renderStyle.backgroundColor?.value),
         ),
         onPressed: () {
           var box = context.findRenderObject() as RenderBox;
@@ -59,9 +60,9 @@ mixin ButtonElementState on WebFWidgetElementState {
           double clientX = globalOffset.dx;
           double clientY = globalOffset.dy;
           Event event = MouseEvent(EVENT_CLICK,
-              clientX: clientX, clientY: clientY, view: widgetElement.ownerDocument.defaultView);
-          widgetElement.dispatchEvent(event);
+              clientX: clientX, clientY: clientY, view: _buttonElement.ownerDocument.defaultView);
+          _buttonElement.dispatchEvent(event);
         },
-        child: Text(widgetElement.value, style: _buttonStyle));
+        child: Text(_buttonElement.value, style: _buttonStyle));
   }
 }

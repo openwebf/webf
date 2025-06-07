@@ -79,25 +79,24 @@ mixin BaseCheckedElement on BaseInputElement {
 }
 
 mixin CheckboxElementState on WebFWidgetElementState {
-  @override
-  FlutterInputElement get widgetElement => super.widgetElement as FlutterInputElement;
+  BaseCheckedElement get _checkedElement => widgetElement as BaseCheckedElement;
 
   Widget createCheckBox(BuildContext context) {
     return Transform.scale(
       child: Checkbox(
-        value: widgetElement.getChecked(),
+        value: _checkedElement.getChecked(),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-        onChanged: widgetElement.disabled
+        onChanged: _checkedElement.disabled
             ? null
             : (bool? newValue) {
                 setState(() {
-                  widgetElement.setChecked(newValue!);
-                  widgetElement.dispatchEvent(Event('change'));
+                  _checkedElement.setChecked(newValue!);
+                  _checkedElement.dispatchEvent(Event('change'));
                 });
               },
       ),
-      scale: widgetElement.getCheckboxSize(),
+      scale: _checkedElement.getCheckboxSize(),
     );
   }
 }

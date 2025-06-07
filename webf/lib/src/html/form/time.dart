@@ -10,13 +10,12 @@ import 'package:intl/intl.dart';
 import 'package:webf/src/widget/widget_element.dart';
 
 import 'base_input.dart';
-import 'input.dart';
 
 mixin TimeElementState on WebFWidgetElementState {
   bool checked = false;
 
   @override
-  FlutterInputElement get widgetElement => super.widgetElement as FlutterInputElement;
+  BaseInputElement get widgetElement => super.widgetElement as BaseInputElement;
 
   Future<String?> _showPicker(BuildContext context) async {
     switch (widgetElement.type) {
@@ -97,7 +96,9 @@ mixin TimeElementState on WebFWidgetElementState {
             widgetElement.value = time;
           });
       },
-      child: AbsorbPointer(child: (this as FlutterInputElementState).createInput(context)),
+      child: AbsorbPointer(child: _createTimeInput(context)),
     );
   }
+  
+  Widget _createTimeInput(BuildContext context);
 }

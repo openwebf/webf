@@ -125,7 +125,7 @@ class FlutterInputElement extends WidgetElement
 
     attributes['value'] = dom.ElementAttributeProperty(getter: () => value, setter: (value) => this.value = value);
     attributes['disabled'] =
-        dom.ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => disabled = value);
+        dom.ElementAttributeProperty(getter: () => disabled.toString(), setter: (value) => (this as dynamic).disabled = value);
     attributes['checked'] = dom.ElementAttributeProperty(
         getter: () => getChecked().toString(), setter: (value) => setChecked(value == 'true'));
     attributes['name'] = dom.ElementAttributeProperty(getter: () => name, setter: (value) => name = value);
@@ -140,6 +140,12 @@ class FlutterInputElement extends WidgetElement
 class FlutterInputElementState extends WebFWidgetElementState
     with BaseInputState, RadioElementState, CheckboxElementState, ButtonElementState, TimeElementState {
   FlutterInputElementState(super.widgetElement);
+  
+  // Implementation for TimeElementState
+  @override
+  Widget _createTimeInput(BuildContext context) {
+    return createInput(context);
+  }
 
   @override
   void initState() {

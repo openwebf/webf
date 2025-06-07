@@ -12,6 +12,8 @@ import 'package:webf/dom.dart' as dom;
 import 'package:webf/html.dart';
 import 'package:webf/widget.dart';
 
+import 'form_element_base.dart';
+
 const Map<String, dynamic> _inputDefaultStyle = {
   BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
@@ -30,7 +32,7 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
 };
 
 /// create a base input widget containing input and textarea
-mixin BaseInputElement on WidgetElement {
+mixin BaseInputElement on WidgetElement implements FormElementBase {
   String? oldValue;
 
   @override
@@ -302,7 +304,7 @@ mixin BaseInputState on WebFWidgetElementState {
   FocusNode? _focusNode;
 
   @override
-  FlutterInputElement get widgetElement => super.widgetElement as FlutterInputElement;
+  BaseInputElement get widgetElement => super.widgetElement as BaseInputElement;
 
   bool get _isFocus => _focusNode?.hasFocus ?? false;
 

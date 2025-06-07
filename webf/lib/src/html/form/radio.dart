@@ -45,37 +45,36 @@ mixin RadioElementState on WebFWidgetElementState {
       StreamController<Map<String, String>>.broadcast();
 
   StreamController<Map<String, String>> get streamController => _streamController;
+  
+  BaseRadioElement get _radioElement => widgetElement as BaseRadioElement;
 
-  String get groupValue => _groupValues[widgetElement.name] ?? widgetElement.name;
+  String get groupValue => _groupValues[_radioElement.name] ?? _radioElement.name;
 
   set groupValue(String? gv) {
-    widgetElement.internalSetAttribute('groupValue', gv ?? widgetElement.name);
-    _groupValues[widgetElement.name] = gv ?? widgetElement.name;
+    _radioElement.internalSetAttribute('groupValue', gv ?? _radioElement.name);
+    _groupValues[_radioElement.name] = gv ?? _radioElement.name;
   }
-
-  @override
-  FlutterInputElement get widgetElement => super.widgetElement as FlutterInputElement;
 
   void initRadioState() {
     _subscription = _streamController.stream.listen((message) {
       setState(() {
         for (var entry in message.entries) {
-          if (entry.key == widgetElement.name) {
+          if (entry.key == _radioElement.name) {
             _groupValues[entry.key] = entry.value;
           }
         }
       });
     });
 
-    if (_groupValues.containsKey(widgetElement.name)) {
+    if (_groupValues.containsKey(_radioElement.name)) {
       setState(() {});
     }
   }
 
   void disposeRadio() {
     _subscription?.cancel();
-    if (_groupValues.containsKey(widgetElement.name)) {
-      _groupValues.remove(widgetElement.name);
+    if (_groupValues.containsKey(_radioElement.name)) {
+      _groupValues.remove(_radioElement.name);
     }
     if (_groupValues.isEmpty) {
       _streamController.close();
@@ -83,27 +82,27 @@ mixin RadioElementState on WebFWidgetElementState {
   }
 
   Widget createRadio(BuildContext context) {
-    String singleRadioValue = '${widgetElement.name}-${widgetElement.getAttribute('value')}';
+    String singleRadioValue = '${_radioElement.name}-${_radioElement.getAttribute('value')}';
     return Transform.scale(
       child: Radio<String>(
           value: singleRadioValue,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-          onChanged: widgetElement.disabled
+          onChanged: _radioElement.disabled
               ? null
               : (String? newValue) {
                   if (newValue != null) {
                     setState(() {
                       Map<String, String> map = <String, String>{};
-                      map[widgetElement.name] = newValue;
+                      map[_radioElement.name] = newValue;
                       _streamController.sink.add(map);
-                      widgetElement.dispatchEvent(dom.InputEvent(inputType: 'radio', data: newValue));
-                      widgetElement.dispatchEvent(dom.Event('change'));
+                      _radioElement.dispatchEvent(dom.InputEvent(inputType: 'radio', data: newValue));
+                      _radioElement.dispatchEvent(dom.Event('change'));
                     });
                   }
                 },
           groupValue: groupValue),
-      scale: widgetElement.getRadioSize(),
+      scale: _radioElement.getRadioSize(),
     );
   }
 }
