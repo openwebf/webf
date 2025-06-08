@@ -312,7 +312,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
     //                          ASSERT_NO_EXCEPTION());
     //    } else {
     GetExecutingContext()->uiCommandBuffer()->AddCommand(
-        UICommand::kAddEvent, event_type.ToNativeString(ctx()).release(), bindingObject(), listener_options);
+        UICommand::kAddEvent, event_type.ToNativeString(ctx()), bindingObject(), listener_options);
     //    }
   }
 
@@ -361,7 +361,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
     bool has_capture = options->hasCapture() && options->capture();
 
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveEvent,
-                                                         event_type.ToNativeString(ctx()).release(), bindingObject(),
+                                                         event_type.ToNativeString(ctx()), bindingObject(),
                                                          has_capture ? (void*)0x01 : nullptr);
   }
 

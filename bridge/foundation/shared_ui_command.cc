@@ -18,14 +18,14 @@ SharedUICommand::SharedUICommand(ExecutingContext* context)
 SharedUICommand::~SharedUICommand() = default;
 
 void SharedUICommand::AddCommand(UICommand type,
-                                 SharedNativeString* args_01,
+                                 std::unique_ptr<SharedNativeString>&& args_01,
                                  NativeBindingObject* native_binding_object,
                                  void* nativePtr2,
                                  bool request_ui_update) {
   // For non-dedicated contexts, add directly to read buffer
   if (!context_->isDedicated()) {
     std::lock_guard<std::mutex> lock(read_buffer_mutex_);
-    read_buffer_->AddCommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
+    read_buffer_->AddCommand(type, args_01.get(), native_binding_object, nativePtr2, request_ui_update);
 
     if (type == UICommand::kFinishRecordingCommand && read_buffer_->size() > 0) {
       context_->dartMethodPtr()->requestBatchUpdate(false, context_->contextId());
@@ -34,7 +34,7 @@ void SharedUICommand::AddCommand(UICommand type,
   }
 
   // For dedicated contexts, use the ring buffer
-  package_buffer_->AddCommand(type, args_01, native_binding_object, nativePtr2, request_ui_update);
+  package_buffer_->AddCommand(type, args_01.get(), native_binding_object, nativePtr2, request_ui_update);
   total_commands_.fetch_add(1, std::memory_order_relaxed);
 
   // Request batch update on certain commands
@@ -90,19 +90,8 @@ int64_t SharedUICommand::size() {
   return total_size;
 }
 
-void SharedUICommand::SyncToActive() {
-  // No-op for compatibility - ring buffer handles synchronization automatically
-  WEBF_LOG(VERBOSE) << "SyncToActive called - no-op in ring buffer implementation";
-}
-
-void SharedUICommand::SyncToReserve() {
-  // No-op for compatibility - ring buffer handles synchronization automatically
-  WEBF_LOG(VERBOSE) << "SyncToReserve called - no-op in ring buffer implementation";
-}
-
-void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
-  // Could implement dynamic resizing if needed
-  WEBF_LOG(VERBOSE) << "ConfigureSyncCommandBufferSize not implemented for ring buffer";
+void SharedUICommand::FlushCurrentPackage() {
+  package_buffer_->FlushCurrentPackage();
 }
 
 void SharedUICommand::FillReadBuffer() {

@@ -490,7 +490,7 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
   new_child.SetNextSibling(&next_child);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString("beforebegin");
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, args_01.release(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
                                                        next_child.bindingObject(), new_child.bindingObject());
 }
 
@@ -505,7 +505,7 @@ void ContainerNode::AppendChildCommon(Node& child) {
   SetLastChild(&child);
 
   std::unique_ptr<SharedNativeString> args_01 = stringToNativeString("beforeend");
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, args_01.release(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
                                                        bindingObject(), child.bindingObject());
 }
 

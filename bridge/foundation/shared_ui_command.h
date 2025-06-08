@@ -28,7 +28,7 @@ class SharedUICommand : public DartReadable {
   ~SharedUICommand();
 
   void AddCommand(UICommand type,
-                  SharedNativeString* args_01,
+                  std::unique_ptr<SharedNativeString>&& args_01,
                   NativeBindingObject* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
@@ -37,10 +37,7 @@ class SharedUICommand : public DartReadable {
   void clear();
   bool empty();
   int64_t size();
-  void SyncToActive();  // No-op for compatibility
-  void SyncToReserve(); // No-op for compatibility
-
-  void ConfigureSyncCommandBufferSize(size_t size);
+  void FlushCurrentPackage();  // No-op for compatibility
 
  private:
   ExecutingContext* context_;

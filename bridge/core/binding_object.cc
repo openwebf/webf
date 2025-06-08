@@ -265,7 +265,7 @@ void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy((void*)args_02, &value, sizeof(NativeValue));
 
-  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, args_01.release(), bindingObject(),
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetProperty, std::move(args_01), bindingObject(),
                                                        args_02);
 }
 

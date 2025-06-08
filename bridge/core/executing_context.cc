@@ -47,12 +47,6 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
-  if (is_dedicated) {
-    // Set up the sync command size for dedicated thread mode.
-    // Bigger size introduce more ui consistence and lower size led to more high performance by the reason of
-    // concurrency.
-    ui_command_buffer_.ConfigureSyncCommandBufferSize(sync_buffer_size);
-  }
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   assert_m(valid_contexts[context_id] != true, "Conflict context found!");
@@ -545,7 +539,7 @@ bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
 
       // Sync commands to dart when caller dependents on Element.
       if (should_swap_ui_commands) {
-        ui_command_buffer_.SyncToActive();
+        ui_command_buffer_.FlushCurrentPackage();
       }
     }
     return true;
