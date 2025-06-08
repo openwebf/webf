@@ -75,7 +75,6 @@ class UICommandRingBuffer {
   // Helper methods
   size_t NextIndex(size_t index) const { return (index + 1) & capacity_mask_; }
   bool IsPowerOfTwo(size_t n) const { return n && !(n & (n - 1)); }
-  size_t RoundUpToPowerOfTwo(size_t n) const;
 };
 
 // Command package for efficient batch transfer
@@ -141,7 +140,6 @@ class UICommandPackageRingBuffer {
   // Helper methods
   bool ShouldCreateNewPackage(UICommand command) const;
   void PushPackage(std::unique_ptr<UICommandPackage> package);
-  size_t RoundUpToPowerOfTwo(size_t n) const;
 };
 
 }  // namespace webf

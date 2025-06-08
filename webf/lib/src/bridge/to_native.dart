@@ -693,6 +693,10 @@ typedef DartGetUICommandItems = Pointer<UICommandBufferPack> Function(Pointer<Vo
 final DartGetUICommandItems _getUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetUICommandItems>>('getUICommandItems').asFunction();
 
+Pointer<UICommandBufferPack> getUICommandItems(Pointer<Void> page) {
+  return _getUICommandItems(page);
+}
+
 typedef NativeGetUICommandItemSize = Int64 Function(Pointer<Void>);
 typedef DartGetUICommandItemSize = int Function(Pointer<Void>);
 
@@ -710,11 +714,6 @@ typedef DartClearUICommandItems = void Function(Pointer<Void>);
 final DartClearUICommandItems _clearUICommandItems =
     WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('clearUICommandItems').asFunction();
 
-typedef NativeFreeActiveCommandBuffer = Void Function(Pointer<Void>);
-typedef DartFreeActiveCommandBuffer = void Function(Pointer<Void>);
-
-final DartClearUICommandItems _freeActiveCommandBuffer =
-    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('freeActiveCommandBuffer').asFunction();
 
 typedef NativeIsJSThreadBlocked = Int8 Function(Pointer<Void>, Double);
 typedef DartIsJSThreadBlocked = int Function(Pointer<Void>, double);
@@ -739,39 +738,6 @@ void flushUICommandWithContextId(double contextId, Pointer<NativeBindingObject> 
   }
 }
 
-class _NativeCommandData {
-  static _NativeCommandData empty() {
-    return _NativeCommandData(0, []);
-  }
-
-  int length;
-  List<int> rawMemory;
-
-  _NativeCommandData(this.length, this.rawMemory);
-}
-
-_NativeCommandData readNativeUICommandMemory(double contextId) {
-  Pointer<UICommandBufferPack> nativeCommandPack = _getUICommandItems(_allocatedPages[contextId]!);
-
-  int commandLength = nativeCommandPack.ref.length;
-  if (nativeCommandPack == nullptr || commandLength == 0) {
-    _freeActiveCommandBuffer(nativeCommandPack.ref.head);
-
-    malloc.free(nativeCommandPack);
-
-    return _NativeCommandData.empty();
-  }
-
-  List<int> rawMemory =
-      nativeCommandPack.ref.data.cast<Int64>().asTypedList((commandLength) * nativeCommandSize).toList(growable: false);
-
-  _freeActiveCommandBuffer(nativeCommandPack.ref.head);
-
-  malloc.free(nativeCommandPack);
-
-  return _NativeCommandData(commandLength, rawMemory);
-}
-
 void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPointer) {
   if (view.disposed) return;
   assert(_allocatedPages.containsKey(view.contextId));
@@ -783,13 +749,7 @@ void flushUICommand(WebFViewController view, Pointer<NativeBindingObject> selfPo
     return;
   }
 
-  _NativeCommandData rawCommands = readNativeUICommandMemory(view.contextId);
-
-  List<UICommand>? commands;
-  if (rawCommands.rawMemory.isNotEmpty) {
-    commands = nativeUICommandToDart(rawCommands.rawMemory, rawCommands.length, view.contextId);
-    execUICommands(view, commands);
-    SchedulerBinding.instance.scheduleFrame();
-  }
-
+  List<UICommand> commands = nativeUICommandToDartFFI(view.contextId);
+  execUICommands(view, commands);
+  SchedulerBinding.instance.scheduleFrame();
 }

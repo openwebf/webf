@@ -11,6 +11,23 @@
 
 namespace webf {
 
+static size_t RoundUpToPowerOfTwo(size_t n) {
+  if (n <= 1) return 1;
+
+  n--;
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  if (sizeof(size_t) > 4) {
+    n |= n >> 32;
+  }
+  n++;
+
+  return n;
+}
+
 // UICommandRingBuffer implementation
 
 UICommandRingBuffer::UICommandRingBuffer(size_t initial_capacity) {
@@ -130,24 +147,6 @@ bool UICommandRingBuffer::Resize(size_t new_capacity) {
   return false;
 }
 
-size_t UICommandRingBuffer::RoundUpToPowerOfTwo(size_t n) const {
-  if (n <= 1) return 1;
-  
-  // Find the next power of 2
-  n--;
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  if (sizeof(size_t) > 4) {
-    n |= n >> 32;
-  }
-  n++;
-  
-  return n;
-}
-
 // UICommandPackage implementation
 
 void UICommandPackage::AddCommand(const UICommandItem& item) {
@@ -215,7 +214,7 @@ void UICommandPackageRingBuffer::AddCommand(UICommand type,
   if (!current_package_->commands.empty() && current_package_->ShouldSplit(type)) {
     FlushCurrentPackage();
   }
-  
+
   current_package_->AddCommand(item);
   
   // Auto-flush on certain commands
@@ -316,23 +315,6 @@ void UICommandPackageRingBuffer::Clear() {
 
 bool UICommandPackageRingBuffer::ShouldCreateNewPackage(UICommand command) const {
   return current_package_->ShouldSplit(command);
-}
-
-size_t UICommandPackageRingBuffer::RoundUpToPowerOfTwo(size_t n) const {
-  if (n <= 1) return 1;
-  
-  n--;
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  if (sizeof(size_t) > 4) {
-    n |= n >> 32;
-  }
-  n++;
-  
-  return n;
 }
 
 }  // namespace webf

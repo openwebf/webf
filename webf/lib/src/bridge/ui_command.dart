@@ -34,59 +34,64 @@ class UICommandBufferPack extends Struct {
   external int length;
 }
 
-// struct UICommandItem {
-//   int32_t type;             // offset: 0 ~ 0.5
-//   int32_t args_01_length;   // offset: 0.5 ~ 1
-//   const uint16_t *string_01;// offset: 1
-//   void* nativePtr;          // offset: 2
-//   void* nativePtr2;         // offset: 3
-// };
-const int nativeCommandSize = 4;
-const int typeAndArgs01LenMemOffset = 0;
-const int args01StringMemOffset = 1;
-const int nativePtrMemOffset = 2;
-const int native2PtrMemOffset = 3;
+// FFI struct matching C++ UICommandItem structure
+class UICommandItemFFI extends Struct {
+  @Int32()
+  external int type;
 
-const int commandBufferPrefix = 1;
+  @Int32()
+  external int args_01_length;
+
+  @Int64()
+  external int string_01;
+
+  @Int64()
+  external int nativePtr;
+
+  @Int64()
+  external int nativePtr2;
+}
 
 bool enableWebFCommandLog = !kReleaseMode && Platform.environment['ENABLE_WEBF_JS_LOG'] == 'true';
 
-// We found there are performance bottleneck of reading native memory with Dart FFI API.
-// So we align all UI instructions to a whole block of memory, and then convert them into a dart array at one time,
-// To ensure the fastest subsequent random access.
-List<UICommand> nativeUICommandToDart(List<int> rawMemory, int commandLength, double contextId) {
-  List<UICommand> results = List.generate(commandLength, (int _i) {
-    int i = _i * nativeCommandSize;
+typedef NativeFreeActiveCommandBuffer = Void Function(Pointer<Void>);
+typedef DartFreeActiveCommandBuffer = void Function(Pointer<Void>);
+
+final DartClearUICommandItems _freeActiveCommandBuffer =
+WebFDynamicLibrary.ref.lookup<NativeFunction<NativeClearUICommandItems>>('freeActiveCommandBuffer').asFunction();
+
+// New FFI-based implementation using Dart FFI structs
+List<UICommand> nativeUICommandToDartFFI(double contextId) {
+  Pointer<UICommandBufferPack> nativeCommandPack = getUICommandItems(getAllocatedPage(contextId)!);
+  int commandLength = nativeCommandPack.ref.length;
+  Pointer<UICommandItemFFI> commandBuffer = nativeCommandPack.ref.data.cast<UICommandItemFFI>();
+  List<UICommand> results = List.generate(commandLength, (int index) {
     UICommand command = UICommand();
 
-    int typeArgs01Combine = rawMemory[i + typeAndArgs01LenMemOffset];
+    // Access the struct at the current index
+    UICommandItemFFI commandItem = commandBuffer[index];
 
-    //      int32_t        int32_t
-    // +-------------+-----------------+
-    // |      type     | args_01_length  |
-    // +-------------+-----------------+
-    int args01Length = (typeArgs01Combine >> 32).toSigned(32);
-    int type = (typeArgs01Combine ^ (args01Length << 32)).toSigned(32);
+    // Extract type
+    command.type = UICommandType.values[commandItem.type];
 
-    command.type = UICommandType.values[type];
-
-    int args01StringMemory = rawMemory[i + args01StringMemOffset];
-    if (args01StringMemory != 0) {
-      Pointer<Uint16> args_01 = Pointer.fromAddress(args01StringMemory);
-      command.args = uint16ToString(args_01, args01Length);
+    // Extract args string
+    if (commandItem.string_01 != 0) {
+      Pointer<Uint16> args_01 = Pointer.fromAddress(commandItem.string_01);
+      command.args = uint16ToString(args_01, commandItem.args_01_length);
       malloc.free(args_01);
     } else {
       command.args = '';
     }
 
-    int nativePtrValue = rawMemory[i + nativePtrMemOffset];
-    command.nativePtr = nativePtrValue != 0 ? Pointer.fromAddress(rawMemory[i + nativePtrMemOffset]) : nullptr;
+    // Extract native pointers
+    command.nativePtr = commandItem.nativePtr != 0 ? Pointer.fromAddress(commandItem.nativePtr) : nullptr;
+    command.nativePtr2 = commandItem.nativePtr2 != 0 ? Pointer.fromAddress(commandItem.nativePtr2) : nullptr;
 
-    int nativePtr2Value = rawMemory[i + native2PtrMemOffset];
-    command.nativePtr2 = nativePtr2Value != 0 ? Pointer.fromAddress(nativePtr2Value) : nullptr;
     return command;
   }, growable: false);
 
+  _freeActiveCommandBuffer(nativeCommandPack.ref.head);
+  malloc.free(nativeCommandPack);
   return results;
 }
 
