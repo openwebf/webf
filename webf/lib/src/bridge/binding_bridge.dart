@@ -233,6 +233,9 @@ abstract class BindingBridge {
       } else
         target.addEventListener(type, _dispatchNomalEventToNative, addEventListenerOptions: eventListenerOptions);
     }
+    if (addEventListenerOptions != null) {
+      malloc.free(addEventListenerOptions);
+    }
   }
 
   static void unlistenEvent(EventTarget target, String type, {bool isCapture = false}) {
