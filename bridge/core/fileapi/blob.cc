@@ -45,6 +45,7 @@ void BlobReaderClient::DidFinishLoading() {
   } else if (read_type_ == ReadType::kReadAsBase64) {
     resolver_->Resolve<std::string>(blob_->Base64Result());
   }
+  context_->UnRegisterActiveScriptPromise(resolver_.get());
   delete this;
 }
 
@@ -128,18 +129,21 @@ void Blob::SetMineType(const std::string& mine_type) {
 
 ScriptPromise Blob::arrayBuffer(ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
+  GetExecutingContext()->RegisterActiveScriptPromise(resolver);
   new BlobReaderClient(GetExecutingContext(), this, resolver, BlobReaderClient::ReadType::kReadAsArrayBuffer);
   return resolver->Promise();
 }
 
 ScriptPromise Blob::text(ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
+  GetExecutingContext()->RegisterActiveScriptPromise(resolver);
   new BlobReaderClient(GetExecutingContext(), this, resolver, BlobReaderClient::ReadType::kReadAsText);
   return resolver->Promise();
 }
 
 ScriptPromise Blob::base64(ExceptionState& exception_state) {
   auto resolver = ScriptPromiseResolver::Create(GetExecutingContext());
+  GetExecutingContext()->RegisterActiveScriptPromise(resolver);
   new BlobReaderClient(GetExecutingContext(), this, resolver, BlobReaderClient::ReadType::kReadAsBase64);
   return resolver->Promise();
 }
