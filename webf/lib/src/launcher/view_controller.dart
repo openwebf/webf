@@ -288,10 +288,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     clearCssLength();
 
-    _nativeObjects.forEach((key, object) {
-      object.dispose();
-    });
-    _nativeObjects.clear();
+    await disposeAllBindingObjects();
 
     document.dispose();
     window.dispose();
@@ -634,6 +631,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       // Regular cleanup for pointers without pending events
       _schedulePointerCleanup(pointer);
     }
+  }
+
+  Future<void> disposeAllBindingObjects() async {
+    _nativeObjects.forEach((address, bindingObject) {
+      Pointer pointer = bindingObject.pointer!;
+      bindingObject.dispose();
+      disposeTargetIdToDevNodeIdMap(bindingObject);
+      _schedulePointerCleanup(pointer);
+    });
+    _nativeObjects.clear();
   }
 
   /// Schedule a pointer to be freed in batch during idle time
