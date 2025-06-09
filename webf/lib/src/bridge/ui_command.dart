@@ -105,7 +105,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
       String printMsg;
       switch(command.type) {
         case UICommandType.setStyle:
-          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${nativeStringToString(command.nativePtr2.cast<NativeString>())}';
+          printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${command.args} value: ${command.nativePtr2 != nullptr ? nativeStringToString(command.nativePtr2.cast<NativeString>()) : null}';
           break;
         case UICommandType.setAttribute:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} key: ${nativeStringToString(command.nativePtr2.cast<NativeString>())} value: ${command.args}';
