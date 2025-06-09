@@ -965,7 +965,6 @@ class WebFController with Diagnosticable {
   void pause() {
     if (_paused) return;
     _paused = true;
-    module.pauseTimer();
     module.pauseAnimationFrame();
     view.stopAnimationsTimeLine();
   }
@@ -980,7 +979,6 @@ class WebFController with Diagnosticable {
 
     _paused = false;
     flushPendingCallbacks();
-    module.resumeTimer();
     module.resumeAnimationFrame();
     view.resumeAnimationTimeline();
     SchedulerBinding.instance.scheduleFrame();
