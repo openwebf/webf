@@ -77,24 +77,28 @@ void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_
 
 BindingObject::BindingObject(JSContext* ctx) : ScriptWrappable(ctx), binding_object_(new NativeBindingObject(this)) {}
 BindingObject::~BindingObject() {
-  // Set below properties to nullptr to avoid dart callback to native.
-  binding_object_->disposed_.store(true, std::memory_order_release);
-  binding_object_->binding_target_ = nullptr;
-  binding_object_->invoke_binding_methods_from_dart = nullptr;
-  binding_object_->invoke_bindings_methods_from_native = nullptr;
+  if (binding_object_ != nullptr) {
+    // Set below properties to nullptr to avoid dart callback to native.
+    binding_object_->disposed_.store(true, std::memory_order_release);
+    binding_object_->binding_target_ = nullptr;
+    binding_object_->invoke_binding_methods_from_dart = nullptr;
+    binding_object_->invoke_bindings_methods_from_native = nullptr;
 
-  // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
-  // accessible.
-  if (isContextValid(contextId())) {
-    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kDisposeBindingObject, nullptr, bindingObject(),
-                                                         nullptr, false);
+    // When a JSObject got finalized by QuickJS GC, we can not guarantee the ExecutingContext are still alive and
+    // accessible.
+    if (isContextValid(contextId())) {
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kDisposeBindingObject, nullptr, bindingObject(),
+                                                           nullptr, false);
+    }
   }
 }
 
 BindingObject::BindingObject(JSContext* ctx, NativeBindingObject* native_binding_object) : ScriptWrappable(ctx) {
-  native_binding_object->binding_target_ = this;
-  native_binding_object->invoke_binding_methods_from_dart = HandleCallFromDartSideWrapper;
-  binding_object_ = native_binding_object;
+  if (native_binding_object != nullptr) {
+    native_binding_object->binding_target_ = this;
+    native_binding_object->invoke_binding_methods_from_dart = HandleCallFromDartSideWrapper;
+    binding_object_ = native_binding_object;
+  }
 }
 
 void BindingObject::TrackPendingPromiseBindingContext(BindingObjectPromiseContext* binding_object_promise_context) {

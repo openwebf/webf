@@ -12,6 +12,11 @@ WidgetElementShape::WidgetElementShape(JSContext* ctx, NativeWidgetElementShape*
   InitializeProperties(ctx, native_widget_element_shape->properties);
   InitializeMethods(ctx, native_widget_element_shape->methods);
   InitializeAsyncMethods(ctx, native_widget_element_shape->async_methods);
+
+  delete native_widget_element_shape->name;
+  delete native_widget_element_shape->properties;
+  delete native_widget_element_shape->methods;
+  delete native_widget_element_shape->async_methods;
 }
 
 bool WidgetElementShape::HasPropertyOrMethod(const AtomicString& name) const {
@@ -52,7 +57,7 @@ void WidgetElementShape::InitializeProperties(JSContext* ctx, NativeValue* prope
   auto* head = static_cast<NativeValue*>(properties->u.ptr);
 
   for (int i = 0; i < length; i++) {
-    built_in_properties_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx, head[i]));
+    built_in_properties_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValue(ctx, head[i]));
   }
 }
 
@@ -60,7 +65,7 @@ void WidgetElementShape::InitializeMethods(JSContext* ctx, NativeValue* methods)
   size_t length = methods->uint32;
   auto* head = static_cast<NativeValue*>(methods->u.ptr);
   for (int i = 0; i < length; i++) {
-    built_in_methods_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx, head[i]));
+    built_in_methods_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValue(ctx, head[i]));
   }
 }
 
@@ -68,7 +73,7 @@ void WidgetElementShape::InitializeAsyncMethods(JSContext* ctx, NativeValue* asy
   size_t length = async_methods->uint32;
   auto* head = static_cast<NativeValue*>(async_methods->u.ptr);
   for (int i = 0; i < length; i++) {
-    built_in_async_methods_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx, head[i]));
+    built_in_async_methods_.emplace(NativeValueConverter<NativeTypeString>::FromNativeValue(ctx, head[i]));
   }
 }
 
