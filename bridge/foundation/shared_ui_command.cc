@@ -73,6 +73,7 @@ bool SharedUICommand::empty() {
     return read_buffer_->empty();
   }
 
+  std::lock_guard<std::mutex> lock(read_buffer_mutex_);
   return package_buffer_->Empty() && read_buffer_->empty();
 }
 

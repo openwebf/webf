@@ -110,6 +110,7 @@ class UICommandPackageRingBuffer {
   // Utility methods
   size_t PackageCount() const;
   bool Empty() const;
+  bool HasUnflushedCommands() const;
   void Clear();
   
  private:

@@ -143,8 +143,48 @@ void UICommandRingBuffer::Clear() {
 }
 
 bool UICommandRingBuffer::Resize(size_t new_capacity) {
-  // Not implemented for simplicity - would require synchronization
-  return false;
+  // Validate new capacity
+  new_capacity = RoundUpToPowerOfTwo(std::clamp(new_capacity, kMinCapacity, kMaxCapacity));
+  if (new_capacity == capacity_) {
+    return true;  // Already at requested size
+  }
+  
+  // Lock both producer and consumer to ensure no concurrent access
+  std::lock_guard<std::mutex> producer_lock(producer_mutex_);
+  
+  // Get current state
+  size_t current_head = producer_.head.load(std::memory_order_relaxed);
+  size_t current_tail = consumer_.tail.load(std::memory_order_relaxed);
+  size_t current_size = (current_head - current_tail) & capacity_mask_;
+  
+  // Check if new capacity can hold current data
+  if (new_capacity < current_size) {
+    return false;  // Cannot resize smaller than current data
+  }
+  
+  // Create new buffer
+  auto new_buffer = std::make_unique<UICommandItem[]>(new_capacity);
+  size_t new_capacity_mask = new_capacity - 1;
+  
+  // Copy existing data to new buffer
+  size_t new_index = 0;
+  size_t old_index = current_tail;
+  while (old_index != current_head) {
+    new_buffer[new_index] = buffer_[old_index];
+    old_index = (old_index + 1) & capacity_mask_;
+    new_index++;
+  }
+  
+  // Update buffer and metadata
+  buffer_ = std::move(new_buffer);
+  capacity_ = new_capacity;
+  capacity_mask_ = new_capacity_mask;
+  
+  // Reset indices
+  consumer_.tail.store(0, std::memory_order_release);
+  producer_.head.store(new_index, std::memory_order_release);
+  
+  return true;
 }
 
 // UICommandPackage implementation
@@ -216,7 +256,7 @@ void UICommandPackageRingBuffer::AddCommand(UICommand type,
   }
 
   current_package_->AddCommand(item);
-  
+
   // Auto-flush on certain commands
   if (type == UICommand::kFinishRecordingCommand || type == UICommand::kAsyncCaller) {
     FlushCurrentPackage();
@@ -244,6 +284,7 @@ void UICommandPackageRingBuffer::PushPackage(std::unique_ptr<UICommandPackage> p
   if (next_write_idx == read_index_.load(std::memory_order_acquire)) {
     // Buffer full, use overflow
     std::lock_guard<std::mutex> lock(overflow_mutex_);
+    WEBF_LOG(VERBOSE) << " PUSH PACKAGE TO OVERFLOW " << package.get();
     overflow_packages_.push_back(std::move(package));
     return;
   }
@@ -262,6 +303,7 @@ std::unique_ptr<UICommandPackage> UICommandPackageRingBuffer::PopPackage() {
     std::lock_guard<std::mutex> lock(overflow_mutex_);
     if (!overflow_packages_.empty()) {
       auto package = std::move(overflow_packages_.front());
+      WEBF_LOG(VERBOSE) << " POP OVERFLOW PACKAGE " << package.get();
       overflow_packages_.erase(overflow_packages_.begin());
       return package;
     }
@@ -294,7 +336,19 @@ size_t UICommandPackageRingBuffer::PackageCount() const {
 }
 
 bool UICommandPackageRingBuffer::Empty() const {
-  return PackageCount() == 0;
+  // Check if there are any packages in the ring buffer or overflow
+  if (PackageCount() > 0) {
+    return false;
+  }
+  
+  // Also check if current package has any commands
+  std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(current_package_mutex_));
+  return current_package_->commands.empty();
+}
+
+bool UICommandPackageRingBuffer::HasUnflushedCommands() const {
+  std::lock_guard<std::mutex> lock(const_cast<std::mutex&>(current_package_mutex_));
+  return !current_package_->commands.empty();
 }
 
 void UICommandPackageRingBuffer::Clear() {
