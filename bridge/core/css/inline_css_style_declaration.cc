@@ -83,7 +83,7 @@ InlineCssStyleDeclaration* InlineCssStyleDeclaration::Create(ExecutingContext* c
 }
 
 InlineCssStyleDeclaration::InlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_)
-    : CSSStyleDeclaration(context->ctx()), owner_element_(owner_element_) {}
+    : CSSStyleDeclaration(context->ctx(), nullptr), owner_element_(owner_element_) {}
 
 ScriptValue InlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   if (IsPrototypeMethods(key)) {
