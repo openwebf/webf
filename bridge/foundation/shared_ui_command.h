@@ -11,6 +11,7 @@
 #include "foundation/native_type.h"
 #include "foundation/ui_command_buffer.h"
 #include "foundation/ui_command_ring_buffer.h"
+#include "foundation/ui_command_strategy.h"
 
 namespace webf {
 
@@ -33,17 +34,21 @@ class SharedUICommand : public DartReadable {
                   void* nativePtr2,
                   bool request_ui_update = true);
 
+  void ConfigureSyncCommandBufferSize(size_t size);
+
   void* data();
   void clear();
   bool empty();
   int64_t size();
-  void FlushCurrentPackage();  // No-op for compatibility
+  void SyncAllPackages();  // No-op for compatibility
+  void FlushCurrentPackages();
 
  private:
   ExecutingContext* context_;
   
   // Ring buffer implementation
   std::unique_ptr<UICommandPackageRingBuffer> package_buffer_;
+  std::unique_ptr<UICommandSyncStrategy> ui_command_sync_strategy_ = nullptr;
   
   // Buffer for dart-side reading
   std::unique_ptr<UICommandBuffer> read_buffer_;
@@ -56,6 +61,8 @@ class SharedUICommand : public DartReadable {
   // Helper methods
   void FillReadBuffer();
   void RequestBatchUpdate();
+  friend class UICommandSyncStrategy;
+  friend class ExecutingContext;
 };
 
 }  // namespace webf

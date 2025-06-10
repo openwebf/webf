@@ -112,10 +112,10 @@ class UICommandPackageRingBuffer {
   bool Empty() const;
   bool HasUnflushedCommands() const;
   void Clear();
-  
+
  private:
   ExecutingContext* context_;
-  
+
   // Current package being built
   std::mutex current_package_mutex_;
   std::unique_ptr<UICommandPackage> current_package_;

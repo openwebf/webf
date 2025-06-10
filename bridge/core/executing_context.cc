@@ -17,6 +17,7 @@
 #include "foundation/logging.h"
 #include "foundation/native_byte_data.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/shared_ui_command.h"
 #include "html/canvas/canvas_rendering_context_2d.h"
 #include "html/custom/widget_element_shape.h"
 #include "qjs_window.h"
@@ -47,6 +48,12 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
       is_context_valid_(true) {
+  if (is_dedicated) {
+    // Set up the sync command size for dedicated thread mode.
+    // Bigger size introduce more ui consistence and lower size led to more high performance by the reason of
+    // concurrency.
+    ui_command_buffer_.ConfigureSyncCommandBufferSize(sync_buffer_size);
+  }
 
   // @FIXME: maybe contextId will larger than MAX_JS_CONTEXT
   assert_m(valid_contexts[context_id] != true, "Conflict context found!");
@@ -515,7 +522,12 @@ void ExecutingContext::DrawCanvasElementIfNeeded() {
 bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
                                            uint32_t reason,
                                            std::vector<NativeBindingObject*>& deps) {
-  if (!uiCommandBuffer()->empty()) {
+  // Check if there are any commands to sync (both in UICommandStrategy and ring buffer)
+  auto* shared_ui_command = static_cast<SharedUICommand*>(uiCommandBuffer());
+  bool has_waiting_commands = shared_ui_command->ui_command_sync_strategy_->GetWaitingCommandsCount() > 0;
+  bool has_ring_buffer_packages = !shared_ui_command->empty();
+
+  if (has_waiting_commands || has_ring_buffer_packages) {
     if (is_dedicated_) {
       bool should_swap_ui_commands = false;
       if (isUICommandReasonDependsOnElement(reason)) {
@@ -539,7 +551,8 @@ bool ExecutingContext::SyncUICommandBuffer(const BindingObject* self,
 
       // Sync commands to dart when caller dependents on Element.
       if (should_swap_ui_commands) {
-        ui_command_buffer_.FlushCurrentPackage();
+        // Then flush current package in ring buffer to make it visible
+        shared_ui_command->SyncAllPackages();
       }
     }
     return true;

@@ -43,7 +43,7 @@ void ExecutingContextWebFMethods::FinishRecordingUIOperations(webf::ExecutingCon
 }
 
 void ExecutingContextWebFMethods::WebFSyncBuffer(webf::ExecutingContext* context) {
-  context->uiCommandBuffer()->FlushCurrentPackage();
+  context->uiCommandBuffer()->SyncAllPackages();
 }
 
 struct ImageSnapshotNativeFunctionContext {

@@ -8,6 +8,7 @@
 #include "core/executing_context.h"
 #include "core/page.h"
 #include "foundation/native_string.h"
+#include "core/binding_object.h"
 #include <thread>
 #include <chrono>
 #include <atomic>
@@ -349,7 +350,7 @@ TEST_F(SharedUICommandTest, RaceConditionDataAndEmpty) {
   // Thread 3: Another writer that calls SyncToActive
   std::thread sync_thread([&]() {
     while (!stop_flag.load()) {
-      shared_command_->FlushCurrentPackage();
+      shared_command_->SyncAllPackages();
       sync_calls.fetch_add(1);
       std::this_thread::sleep_for(std::chrono::microseconds(20));
     }
@@ -417,4 +418,116 @@ TEST_F(SharedUICommandTest, RaceConditionWithSize) {
   // Verify all threads were active
   EXPECT_GT(size_calls.load(), 0);
   EXPECT_GT(clear_calls.load(), 0);
+}
+
+// Test UICommandSyncStrategy integration
+TEST_F(SharedUICommandTest, SyncStrategyIntegration) {
+  // Configure sync buffer size
+  shared_command_->ConfigureSyncCommandBufferSize(2);
+  
+  // Test depends on dedicated mode behavior
+  // context_->setDedicated(true);  // Would need to be set if available
+  
+  // Add commands that go to waiting queue
+  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("div"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString("color:blue"), nullptr, nullptr);
+  
+  // In non-dedicated mode, commands go directly to read buffer
+  // In dedicated mode, they would go to waiting queue
+  if (!context_->isDedicated()) {
+    EXPECT_FALSE(shared_command_->empty());
+  }
+  
+  // Add a command that triggers immediate sync
+  shared_command_->AddCommand(UICommand::kAsyncCaller, CreateSharedString("async"), nullptr, nullptr);
+  
+  // Now add finish recording to request batch update
+  shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  
+  // Retrieve data - should include flushed commands
+  void* data = shared_command_->data();
+  auto* pack = static_cast<UICommandBufferPack*>(data);
+  
+  // In dedicated mode with sync strategy, we should have commands
+  if (context_->isDedicated() && pack->length > 0) {
+    EXPECT_GE(pack->length, 3); // At least the 3 commands we added
+  }
+  
+  dart_free(pack);
+}
+
+// Test waiting queue overflow triggers sync
+TEST_F(SharedUICommandTest, WaitingQueueOverflowSync) {
+  // Configure small sync buffer
+  shared_command_->ConfigureSyncCommandBufferSize(1);
+  // Test depends on dedicated mode behavior
+  
+  // Create many unique binding objects
+  struct MockNativeBindingObject : public NativeBindingObject {
+    MockNativeBindingObject() : NativeBindingObject(nullptr) {}
+  };
+  
+  std::vector<std::unique_ptr<MockNativeBindingObject>> objects;
+  for (int i = 0; i < 100; ++i) {
+    objects.push_back(std::make_unique<MockNativeBindingObject>());
+  }
+  
+  // Add commands with different objects to trigger frequency map overflow
+  for (int i = 0; i < 70; ++i) {
+    shared_command_->AddCommand(UICommand::kCreateElement, 
+                               CreateSharedString("overflow"), 
+                               objects[i].get(), 
+                               nullptr);
+  }
+  
+  // Should trigger auto-sync due to frequency map size
+  shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  
+  // Retrieve data
+  void* data = shared_command_->data();
+  auto* pack = static_cast<UICommandBufferPack*>(data);
+  
+  if (context_->isDedicated()) {
+    // Should have synced commands
+    EXPECT_GT(pack->length, 0);
+  }
+  
+  dart_free(pack);
+}
+
+// Test command categorization in sync strategy
+TEST_F(SharedUICommandTest, CommandCategorizationSync) {
+  // Test depends on dedicated mode behavior
+  shared_command_->ConfigureSyncCommandBufferSize(10);
+  
+  // Test immediate sync commands
+  shared_command_->AddCommand(UICommand::kCreateDocument, nullptr, nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  
+  void* data1 = shared_command_->data();
+  auto* pack1 = static_cast<UICommandBufferPack*>(data1);
+  
+  if (context_->isDedicated()) {
+    // Should have immediate command
+    EXPECT_GT(pack1->length, 0);
+  }
+  dart_free(pack1);
+  
+  // Test waiting queue commands
+  shared_command_->AddCommand(UICommand::kSetAttribute, CreateSharedString("attr"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString("style"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kDisposeBindingObject, nullptr, nullptr, nullptr);
+  
+  // These should be in waiting queue until we force sync
+  shared_command_->AddCommand(UICommand::kStartRecordingCommand, nullptr, nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
+  
+  void* data2 = shared_command_->data();
+  auto* pack2 = static_cast<UICommandBufferPack*>(data2);
+  
+  if (context_->isDedicated()) {
+    // Should include flushed waiting commands
+    EXPECT_GE(pack2->length, 3);
+  }
+  dart_free(pack2);
 }

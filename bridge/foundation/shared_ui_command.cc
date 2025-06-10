@@ -13,9 +13,14 @@ namespace webf {
 SharedUICommand::SharedUICommand(ExecutingContext* context)
     : context_(context),
       package_buffer_(std::make_unique<UICommandPackageRingBuffer>(context)),
-      read_buffer_(std::make_unique<UICommandBuffer>(context)) {}
+      read_buffer_(std::make_unique<UICommandBuffer>(context)),
+      ui_command_sync_strategy_(std::make_unique<UICommandSyncStrategy>(this)) {}
 
 SharedUICommand::~SharedUICommand() = default;
+
+void SharedUICommand::ConfigureSyncCommandBufferSize(size_t size) {
+  ui_command_sync_strategy_->ConfigWaitingBufferSize(size);
+}
 
 void SharedUICommand::AddCommand(UICommand type,
                                  std::unique_ptr<SharedNativeString>&& args_01,
@@ -33,14 +38,27 @@ void SharedUICommand::AddCommand(UICommand type,
     return;
   }
 
-  // For dedicated contexts, use the ring buffer
-  package_buffer_->AddCommand(type, args_01.get(), native_binding_object, nativePtr2, request_ui_update);
-  total_commands_.fetch_add(1, std::memory_order_relaxed);
+  // For dedicated contexts, use the sync strategy to handle commands
+  // The sync strategy will determine whether to add to waiting queue or flush to ring buffer
+  if (type == UICommand::kFinishRecordingCommand) {
+    // Calculate if we should request batch update based on waiting commands and ring buffer state
+    bool should_request_batch_update = ui_command_sync_strategy_->GetWaitingCommandsCount() > 0 ||
+                                      package_buffer_->HasUnflushedCommands();
 
-  // Request batch update on certain commands
-  if (type == UICommand::kFinishRecordingCommand || type == UICommand::kAsyncCaller) {
-    RequestBatchUpdate();
+    // Flush all waiting ui commands to ring buffer
+    ui_command_sync_strategy_->FlushWaitingCommands();
+    
+    // Flush current package if it has commands
+    if (package_buffer_->HasUnflushedCommands()) {
+      package_buffer_->FlushCurrentPackage();
+    }
+
+    if (should_request_batch_update) {
+      context_->dartMethodPtr()->requestBatchUpdate(true, context_->contextId());
+    }
   }
+
+  ui_command_sync_strategy_->RecordUICommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
 }
 
 void* SharedUICommand::data() {
@@ -91,7 +109,13 @@ int64_t SharedUICommand::size() {
   return total_size;
 }
 
-void SharedUICommand::FlushCurrentPackage() {
+void SharedUICommand::SyncAllPackages() {
+  // First flush waiting commands from UICommandStrategy to ring buffer
+  ui_command_sync_strategy_->FlushWaitingCommands();
+  package_buffer_->FlushCurrentPackage();
+}
+
+void SharedUICommand::FlushCurrentPackages() {
   package_buffer_->FlushCurrentPackage();
 }
 

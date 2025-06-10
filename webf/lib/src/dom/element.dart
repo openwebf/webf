@@ -1101,6 +1101,7 @@ abstract class Element extends ContainerNode
       renderStyle.runTransition(propertyName, prevValue, currentValue);
       _scheduledRunTransitions = false;
     });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   void _onStyleChanged(String propertyName, String? prevValue, String currentValue, {String? baseHref}) {
@@ -1178,7 +1179,7 @@ abstract class Element extends ContainerNode
   void recalculateStyle({bool rebuildNested = false, bool forceRecalculate = false}) {
     // Always update CSS variables even for display:none elements when rebuilding nested
     bool shouldUpdateCSSVariables = rebuildNested && renderStyle.display == CSSDisplay.none;
-    
+
     if (forceRecalculate || renderStyle.display != CSSDisplay.none || shouldUpdateCSSVariables) {
       // Diff style.
       CSSStyleDeclaration newStyle = CSSStyleDeclaration();

@@ -36,6 +36,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCEURCE
   ./core/timing/performance_test.cc
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
+  ./foundation/ui_command_strategy_test.cc
 )
 
 ### webf_unit_test executable
