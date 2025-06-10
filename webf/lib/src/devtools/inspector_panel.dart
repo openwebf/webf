@@ -867,15 +867,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                         ),
                         if (routeContext.state != null) ...[
                           SizedBox(height: 4),
-                          Text(
-                            'State: ${routeContext.state}',
-                            style: TextStyle(
-                              color: Colors.white54,
-                              fontSize: 11,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          _buildRouteStateViewer(routeContext.state),
                         ],
                         if (index == 0) ...[
                           SizedBox(height: 4),
@@ -906,6 +898,102 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             ),
           );
         }),
+      ),
+    );
+  }
+  
+  Widget _buildRouteStateViewer(dynamic state) {
+    // Try to parse the state as JSON if it's a string
+    dynamic stateData;
+    bool isJson = false;
+    
+    if (state is String) {
+      try {
+        // Try to parse as JSON
+        stateData = jsonDecode(state);
+        isJson = true;
+      } catch (_) {
+        // Not JSON, display as plain text
+        stateData = state;
+      }
+    } else if (state is Map || state is List) {
+      // Already a Map or List, treat as JSON
+      stateData = state;
+      isJson = true;
+    } else {
+      // Other types, convert to string
+      stateData = state.toString();
+    }
+    
+    return Container(
+      padding: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.data_object,
+                size: 14,
+                color: Colors.white54,
+              ),
+              SizedBox(width: 6),
+              Text(
+                'State',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              if (isJson) ...[
+                SizedBox(width: 8),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                  child: Text(
+                    'JSON',
+                    style: TextStyle(
+                      color: Colors.blue.shade300,
+                      fontSize: 9,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          SizedBox(height: 8),
+          if (isJson) ...[
+            // Use the existing JSON viewer
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 300),
+              child: _JsonTreeView(data: stateData),
+            ),
+          ] else ...[
+            // Display as plain text
+            SelectableText(
+              stateData.toString(),
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 11,
+                fontFamily: 'monospace',
+              ),
+              maxLines: 5,
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -2264,7 +2352,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                     children: [
                       _buildJsonTree(value, currentPath, depth + 1),
                       Padding(
-                        padding: EdgeInsets.only(left: indent),
+                        padding: EdgeInsets.only(left: indent + 16), // Add extra indent for closing bracket
                         child: Text(
                           value is Map ? '}' : ']',
                           style: TextStyle(
@@ -2366,7 +2454,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
                     children: [
                       _buildJsonTree(value, currentPath, depth + 1),
                       Padding(
-                        padding: EdgeInsets.only(left: indent),
+                        padding: EdgeInsets.only(left: indent + 16), // Add extra indent for closing bracket
                         child: Text(
                           value is Map ? '}' : ']',
                           style: TextStyle(
