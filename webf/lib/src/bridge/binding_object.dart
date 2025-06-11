@@ -8,7 +8,6 @@ import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
 
@@ -16,7 +15,7 @@ typedef NativeBindingObjectAsyncCallCallback = Void Function(Pointer<Void> resol
 typedef DartBindingObjectAsyncCallCallback = void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
 
 class BindingObjectAsyncCallContext extends Struct {
-  external Pointer<NativeValue> method_name;
+  external Pointer<NativeValue> methodName;
   @Int32()
   external int argc;
   external Pointer<NativeValue> argv;
@@ -115,33 +114,34 @@ abstract class StaticBindingObject extends BindingObject {
   @override
   void dispose() {
     malloc.free(pointer!.ref.extra);
+    super.dispose();
   }
 }
 
-typedef _StaticDefinedBindingPropertyGetter = dynamic Function(BindingObject);
+typedef StaticDefinedBindingPropertyGetter = dynamic Function(BindingObject);
 // ignore: avoid_annotating_with_dynamic
-typedef _StaticDefinedBindingPropertySetter = void Function(BindingObject, dynamic value);
+typedef StaticDefinedBindingPropertySetter = void Function(BindingObject, dynamic value);
 
 class StaticDefinedBindingProperty {
   StaticDefinedBindingProperty({required this.getter, this.setter});
 
-  final _StaticDefinedBindingPropertyGetter getter;
-  final _StaticDefinedBindingPropertySetter? setter;
+  final StaticDefinedBindingPropertyGetter getter;
+  final StaticDefinedBindingPropertySetter? setter;
 }
 
-typedef _StaticDefinedSyncBindingMethodCallback = dynamic Function(BindingObject, List args);
-typedef _StaticDefinedAsyncBindingMethodCallback = Future<dynamic> Function(BindingObject, List args);
+typedef StaticDefinedSyncBindingMethodCallback = dynamic Function(BindingObject, List args);
+typedef StaticDefinedAsyncBindingMethodCallback = Future<dynamic> Function(BindingObject, List args);
 
 class StaticDefinedSyncBindingObjectMethod {
   StaticDefinedSyncBindingObjectMethod({required this.call});
 
-  final _StaticDefinedSyncBindingMethodCallback call;
+  final StaticDefinedSyncBindingMethodCallback call;
 }
 
 class StaticDefinedAsyncBindingObjectMethod {
   StaticDefinedAsyncBindingObjectMethod({required this.call});
 
-  final _StaticDefinedAsyncBindingMethodCallback call;
+  final StaticDefinedAsyncBindingMethodCallback call;
 }
 
 typedef StaticDefinedBindingPropertyMap = Map<String, StaticDefinedBindingProperty>;
@@ -290,7 +290,7 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
   assert(args.length == 1);
 
   Stopwatch? stopwatch;
-  dynamic result = null;
+  dynamic result;
   String key = args[0];
 
   if (enableWebFCommandLog) {
@@ -381,7 +381,7 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
 
   BindingObject bindingObject = controller.view.getBindingObject(nativeBindingObject);
 
-  var result = null;
+  dynamic result;
   try {
     // Method is binding call method operations from internal.
     if (method is int) {
@@ -443,7 +443,7 @@ Future<void> asyncInvokeBindingMethodFromNativeImpl(WebFViewController view,
 
   try {
     await _invokeBindingMethodFromNativeImpl(view.contextId, nativeBindingObject, returnValue,
-        asyncCallContext.ref.method_name, asyncCallContext.ref.argc, asyncCallContext.ref.argv);
+        asyncCallContext.ref.methodName, asyncCallContext.ref.argc, asyncCallContext.ref.argv);
 
     f(asyncCallContext.ref.resolver, returnValue, nullptr);
   } catch (e, stack) {

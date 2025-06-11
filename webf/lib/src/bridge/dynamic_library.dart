@@ -57,14 +57,11 @@ abstract class WebFDynamicLibrary {
       _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryName));
     }
 
-    _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryName));
     return nativeDynamicLibrary;
   }
 
   static DynamicLibrary? _testRef;
   static DynamicLibrary get testRef {
-    DynamicLibrary? nativeDynamicLibrary = _testRef;
-    _testRef = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryTestName));
-    return nativeDynamicLibrary;
+    return _testRef ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryTestName));
   }
 }

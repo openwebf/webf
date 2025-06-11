@@ -8,7 +8,6 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 import 'package:webf/css.dart';
-import 'package:webf/src/bridge/native_byte_data.dart';
 import 'package:webf/src/geometry/dom_point.dart';
 import 'package:webf/src/html/canvas/canvas_context.dart';
 import 'package:webf/src/html/canvas/canvas_text_metrics.dart';

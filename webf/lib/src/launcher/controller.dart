@@ -115,12 +115,12 @@ class WebFController with Diagnosticable {
   /// during a webf view's process of loading, and completing a navigation request.
   ///
   /// Use this to intercept and handle navigation events such as page redirects or link clicks.
-  /// 
+  ///
   /// Can be set via the setup() callback when using WebFControllerManager or directly on the controller.
   WebFNavigationDelegate? _navigationDelegate;
-  
+
   WebFNavigationDelegate get navigationDelegate => _navigationDelegate ?? WebFNavigationDelegate();
-  
+
   set navigationDelegate(WebFNavigationDelegate? delegate) {
     _navigationDelegate = delegate;
     // Update the view's navigation delegate if view is already initialized

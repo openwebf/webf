@@ -12,7 +12,6 @@ import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/geometry.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/geometry/dom_point.dart';
@@ -20,8 +19,8 @@ import 'package:webf/src/html/canvas/canvas_path_2d.dart';
 
 // We have some integrated built-in behavior starting with string prefix reuse the callNativeMethod implements.
 enum BindingMethodCallOperations {
-  GetProperty,
-  SetProperty,
+  getProperty,
+  setProperty,
 }
 
 typedef NativeAsyncAnonymousFunctionCallback = Void Function(
@@ -51,9 +50,9 @@ void _handleDispatchResult(Object contextHandle, Pointer<NativeValue> returnValu
   event.cancelable = dispatchResult.ref.canceled;
   event.propagationStopped = dispatchResult.ref.propagationStopped;
   event.defaultPrevented = dispatchResult.ref.preventDefaulted;
-  event.sharedJSProps = Pointer.fromAddress(context.rawEvent.ref.bytes.elementAt(8).value);
-  event.propLen = context.rawEvent.ref.bytes.elementAt(9).value;
-  event.allocateLen = context.rawEvent.ref.bytes.elementAt(10).value;
+  event.sharedJSProps = Pointer.fromAddress((context.rawEvent.ref.bytes + 8).value);
+  event.propLen = (context.rawEvent.ref.bytes + 9).value;
+  event.allocateLen = (context.rawEvent.ref.bytes + 10).value;
 
   if (enableWebFCommandLog && context.stopwatch != null) {
     print('dispatch event to native side: target: ${event.target} arguments: ${context.dispatchEventArguments} time: ${context.stopwatch!.elapsedMicroseconds}us');
@@ -165,7 +164,7 @@ abstract class BindingBridge {
     }
 
     List<dynamic> arguments = List.generate(argc, (index) {
-      return fromNativeValue(controller.view, args.elementAt(index));
+      return fromNativeValue(controller.view, args + index);
     });
     switch(type) {
       case CreateBindingObjectType.createDOMMatrix: {
@@ -230,8 +229,9 @@ abstract class BindingBridge {
       if (addEventListenerOptions != null && addEventListenerOptions.ref.capture) {
         eventListenerOptions = EventListenerOptions(addEventListenerOptions.ref.capture, addEventListenerOptions.ref.passive, addEventListenerOptions.ref.once);
         target.addEventListener(type, _dispatchCaptureEventToNative, addEventListenerOptions: eventListenerOptions);
-      } else
+      } else {
         target.addEventListener(type, _dispatchNomalEventToNative, addEventListenerOptions: eventListenerOptions);
+      }
     }
     if (addEventListenerOptions != null) {
       malloc.free(addEventListenerOptions);
@@ -239,10 +239,11 @@ abstract class BindingBridge {
   }
 
   static void unlistenEvent(EventTarget target, String type, {bool isCapture = false}) {
-    if (isCapture)
+    if (isCapture) {
       target.removeEventListener(type, _dispatchCaptureEventToNative, isCapture: isCapture);
-    else
+    } else {
       target.removeEventListener(type, _dispatchNomalEventToNative, isCapture: isCapture);
+    }
 
   }
 

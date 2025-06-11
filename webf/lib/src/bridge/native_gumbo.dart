@@ -2,6 +2,8 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU AGPL with Enterprise exception.
  */
+// ignore_for_file: constant_identifier_names, non_constant_identifier_names
+
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';

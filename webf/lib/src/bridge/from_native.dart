@@ -13,7 +13,6 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
@@ -286,7 +285,7 @@ void _setTimeout(int newTimerId, Pointer<Void> callbackContext, double contextId
 
   controller.module.setTimeout(newTimerId, timeout, () {
     DartAsyncCallback func = callback.asFunction();
-    void _runCallback() {
+    void runCallback() {
       if (controller.view != currentView || currentView.disposed) return;
 
       try {
@@ -299,9 +298,9 @@ void _setTimeout(int newTimerId, Pointer<Void> callbackContext, double contextId
 
     // Pause if webf page paused.
     if (controller.paused) {
-      controller.pushPendingCallbacks(_runCallback);
+      controller.pushPendingCallbacks(runCallback);
     } else {
-      _runCallback();
+      runCallback();
     }
   });
 }
@@ -317,7 +316,7 @@ void _setInterval(int newTimerId, Pointer<Void> callbackContext, double contextI
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
   controller.module.setInterval(newTimerId, timeout, () {
-    void _runCallbacks() {
+    void runCallbacks() {
       if (controller.view != currentView || currentView.disposed) return;
 
       DartAsyncCallback func = callback.asFunction();
@@ -331,9 +330,9 @@ void _setInterval(int newTimerId, Pointer<Void> callbackContext, double contextI
 
     // Pause if webf page paused.
     if (controller.paused) {
-      controller.pushPendingCallbacks(_runCallbacks);
+      controller.pushPendingCallbacks(runCallbacks);
     } else {
-      _runCallbacks();
+      runCallbacks();
     }
   });
 }
@@ -359,7 +358,7 @@ void _requestAnimationFrame(int newFrameId, Pointer<Void> callbackContext, doubl
   WebFController controller = WebFController.getControllerOfJSContextId(contextId)!;
   WebFViewController currentView = controller.view;
   controller.module.requestAnimationFrame(newFrameId, (double highResTimeStamp) {
-    void _runCallback() {
+    void runCallback() {
       if (controller.view != currentView || currentView.disposed) return;
       DartRAFAsyncCallback func = callback.asFunction();
       try {
@@ -372,9 +371,9 @@ void _requestAnimationFrame(int newFrameId, Pointer<Void> callbackContext, doubl
 
     // Pause if webf page paused.
     if (controller.paused) {
-      controller.pushPendingCallbacks(_runCallback);
+      controller.pushPendingCallbacks(runCallback);
     } else {
-      _runCallback();
+      runCallback();
     }
   });
 }
@@ -517,10 +516,10 @@ String _getNativeLibraryName(String prefix) {
 void _loadNativeLibrary(double contextId, Pointer<NativeString> nativeLibName, Pointer<Void> initializeData,
     Pointer<Void> importData, Pointer<NativeFunction<NativeLoadNativeLibraryCallback>> nativeCallback) {
   String libName = nativeStringToString(nativeLibName);
-  final String _defaultLibraryPath = Platform.isLinux ? '\$ORIGIN' : '';
+  final String defaultLibraryPath = Platform.isLinux ? '\$ORIGIN' : '';
   DartLoadNativeLibraryCallback callback = nativeCallback.asFunction(isLeaf: true);
   try {
-    final library = DynamicLibrary.open(join(_defaultLibraryPath, _getNativeLibraryName(libName)));
+    final library = DynamicLibrary.open(join(defaultLibraryPath, _getNativeLibraryName(libName)));
     String entrySymbol = Platform.environment['WEBF_ENABLE_TEST'] != null ? 'init_webf_test_app' : 'init_webf_app';
     Pointer<NativeFunction<StandardWebFPluginExternalSymbol>> nativeFunction =
         library.lookup<NativeFunction<StandardWebFPluginExternalSymbol>>(entrySymbol);

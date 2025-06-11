@@ -4,8 +4,6 @@
 import 'dart:ffi' as ffi;
 import 'package:collection/collection.dart';
 import 'package:flutter/rendering.dart';
-import 'package:vector_math/vector_math_64.dart';
-import 'package:flutter/painting.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';

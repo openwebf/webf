@@ -2,13 +2,8 @@
  * Copyright (C) 2024-present The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
-import 'dart:ffi';
-
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/bridge.dart';
 
 // Mock EventTarget for testing
 class MockEventTarget extends EventTarget {

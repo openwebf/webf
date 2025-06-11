@@ -8,7 +8,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:test/test.dart';
-import 'package:webf/foundation.dart';
 
 import 'mock_bundle.dart';
 
