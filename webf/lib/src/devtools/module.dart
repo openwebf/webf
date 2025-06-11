@@ -4,7 +4,6 @@
  */
 
 import 'package:webf/devtools.dart';
-import 'package:webf/webf.dart';
 
 abstract class _InspectorModule {
   String get name;
@@ -39,12 +38,26 @@ abstract class UIInspectorModule extends _InspectorModule {
 
   @override
   void sendToFrontend(int? id, JSONEncodable? result) {
-    devtoolsService.isolateServerPort!.send(InspectorMethodResult(id, result?.toJson()));
+    // For the unified service, send directly through the service
+    if (devtoolsService is ChromeDevToolsService) {
+      final resultMap = result?.toJson() ?? <String, dynamic>{};
+      // Cast the Map to ensure it's Map<String, dynamic>
+      ChromeDevToolsService.unifiedService.sendMethodResult(id ?? 0, Map<String, dynamic>.from(resultMap));
+    } else {
+      // Legacy path for old isolate-based service
+      devtoolsService.isolateServerPort!.send(InspectorMethodResult(id, result?.toJson()));
+    }
   }
 
   @override
   void sendEventToFrontend(InspectorEvent event) {
-    devtoolsService.isolateServerPort?.send(event);
+    // For the unified service, send directly through the service
+    if (devtoolsService is ChromeDevToolsService) {
+      ChromeDevToolsService.unifiedService.sendEventToFrontend(event);
+    } else {
+      // Legacy path for old isolate-based service
+      devtoolsService.isolateServerPort?.send(event);
+    }
   }
 }
 

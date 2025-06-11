@@ -120,7 +120,12 @@ abstract class DevToolsService {
   void didReload() {
     _reloading = false;
     controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
-    _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
+    // For unified service, send DOM updated event directly
+    if (this is ChromeDevToolsService) {
+      ChromeDevToolsService.unifiedService.sendEventToFrontend(DOMUpdatedEvent());
+    } else {
+      _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
+    }
   }
 
   /// Disposes the DevTools service and releases all resources.
@@ -174,18 +179,6 @@ class ChromeDevToolsService extends DevToolsService {
     super.dispose();
   }
 
-}
-
-class RemoteDevServerService extends DevToolsService {
-  final String url;
-  RemoteDevServerService(this.url);
-
-  @override
-  void init(WebFController controller) {
-    // TODO: Implement remote dev server connection
-    // For now, just initialize the base class
-    super.init(controller);
-  }
 }
 
 /// Unified DevTools service that manages debugging for all WebF controllers

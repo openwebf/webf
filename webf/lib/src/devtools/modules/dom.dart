@@ -38,6 +38,32 @@ class InspectDOMModule extends UIInspectorModule {
       case 'getNodeForLocation':
         onGetNodeForLocation(id, params!);
         break;
+      case 'removeNode':
+        onRemoveNode(id, params!);
+        break;
+      case 'setAttributesAsText':
+        onSetAttributesAsText(id, params!);
+        break;
+      case 'getOuterHTML':
+        onGetOuterHTML(id, params!);
+        break;
+      case 'setNodeValue':
+        onSetNodeValue(id, params!);
+        break;
+      case 'pushNodesByBackendIdsToFrontend':
+        onPushNodesByBackendIdsToFrontend(id, params!);
+        break;
+      case 'highlightNode':
+        // Highlighting is handled by overlay module
+        sendToFrontend(id, null);
+        break;
+      case 'hideHighlight':
+        // Highlighting is handled by overlay module
+        sendToFrontend(id, null);
+        break;
+      case 'resolveNode':
+        onResolveNode(id, params!);
+        break;
     }
   }
 
@@ -170,6 +196,143 @@ class InspectDOMModule extends UIInspectorModule {
           JSONEncodableMap({
             'model': boxModel,
           }));
+    } else {
+      sendToFrontend(id, null);
+    }
+  }
+  
+  void onRemoveNode(int? id, Map<String, dynamic> params) {
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
+    
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    if (node != null && node.parentNode != null) {
+      node.parentNode!.removeChild(node);
+    }
+    sendToFrontend(id, null);
+  }
+  
+  void onSetAttributesAsText(int? id, Map<String, dynamic> params) {
+    int? nodeId = params['nodeId'];
+    String? text = params['text'];
+    if (nodeId == null) return;
+    
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    if (node is Element && text != null) {
+      // Parse attribute text (format: attr1="value1" attr2="value2")
+      // For now, just clear and set new attributes
+      node.attributes.clear();
+      
+      // Simple parsing - this could be improved
+      final regex = RegExp(r'(\w+)="([^"]*)"');
+      for (final match in regex.allMatches(text)) {
+        final attrName = match.group(1);
+        final attrValue = match.group(2);
+        if (attrName != null && attrValue != null) {
+          node.setAttribute(attrName, attrValue);
+        }
+      }
+    }
+    sendToFrontend(id, null);
+  }
+  
+  void onGetOuterHTML(int? id, Map<String, dynamic> params) {
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
+    
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    if (node is Element) {
+      // Generate outer HTML
+      String outerHTML = '<${node.tagName.toLowerCase()}';
+      
+      // Add attributes
+      node.attributes.forEach((key, value) {
+        outerHTML += ' $key="$value"';
+      });
+      
+      // Add children
+      if (node.hasChildren()) {
+        outerHTML += '>';
+        for (Node child in node.childNodes) {
+          if (child is TextNode) {
+            outerHTML += child.data;
+          } else if (child is Element) {
+            // Recursively get child HTML
+            outerHTML += '...'; // Simplified for now
+          }
+        }
+        outerHTML += '</${node.tagName.toLowerCase()}>';
+      } else {
+        outerHTML += '/>';
+      }
+      
+      sendToFrontend(id, JSONEncodableMap({
+        'outerHTML': outerHTML,
+      }));
+    } else {
+      sendToFrontend(id, JSONEncodableMap({
+        'outerHTML': '',
+      }));
+    }
+  }
+  
+  void onSetNodeValue(int? id, Map<String, dynamic> params) {
+    int? nodeId = params['nodeId'];
+    String? value = params['value'];
+    if (nodeId == null) return;
+    
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    if (node is TextNode && value != null) {
+      node.data = value;
+    }
+    sendToFrontend(id, null);
+  }
+  
+  void onPushNodesByBackendIdsToFrontend(int? id, Map<String, dynamic> params) {
+    List? backendNodeIds = params['backendNodeIds'];
+    if (backendNodeIds == null) {
+      sendToFrontend(id, JSONEncodableMap({
+        'nodeIds': [],
+      }));
+      return;
+    }
+    
+    List<int> nodeIds = [];
+    for (var backendId in backendNodeIds) {
+      if (backendId is int) {
+        Node? node = view.getBindingObject<Node>(Pointer.fromAddress(backendId));
+        if (node != null) {
+          nodeIds.add(view.forDevtoolsNodeId(node));
+        }
+      }
+    }
+    
+    sendToFrontend(id, JSONEncodableMap({
+      'nodeIds': nodeIds,
+    }));
+  }
+  
+  void onResolveNode(int? id, Map<String, dynamic> params) {
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) return;
+    
+    Node? node = view.getBindingObject<Node>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    if (node != null) {
+      // Return a remote object reference for the node
+      sendToFrontend(id, JSONEncodableMap({
+        'object': {
+          'type': 'object',
+          'subtype': 'node',
+          'className': node.nodeName,
+          'description': node.nodeName,
+          'objectId': '${nodeId}',
+        }
+      }));
     } else {
       sendToFrontend(id, null);
     }

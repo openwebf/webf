@@ -6,7 +6,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:webf/devtools.dart';
-import 'package:webf/launcher.dart';
 
 const String INSPECTOR_URL = 'devtools://devtools/bundled/inspector.html';
 const int INSPECTOR_DEFAULT_PORT = 9222;
@@ -88,13 +87,6 @@ class UIInspector {
     print('    $inspectorURL');
   }
 
-  void onClientConnected() {
-    assert(devtoolsService is RemoteDevServerService);
-    String remoteUrl = (devtoolsService as RemoteDevServerService).url;
-    print('WebF DevTool Connected to $remoteUrl');
-    print('Open Chrome/Edge and connect to $remoteUrl to see the inspector.');
-  }
-
   void messageRouter(int? id, String module, String method, Map<String, dynamic>? params) {
     if (moduleRegistrar.containsKey(module)) {
       moduleRegistrar[module]!.invoke(id, method, params);
@@ -102,7 +94,13 @@ class UIInspector {
   }
 
   void onDOMTreeChanged() {
-    devtoolsService.isolateServerPort?.send(DOMUpdatedEvent());
+    // For the unified service, send directly through the service
+    if (devtoolsService is ChromeDevToolsService) {
+      ChromeDevToolsService.unifiedService.sendEventToFrontend(DOMUpdatedEvent());
+    } else {
+      // Legacy path for old isolate-based service
+      devtoolsService.isolateServerPort?.send(DOMUpdatedEvent());
+    }
   }
 
   void dispose() {

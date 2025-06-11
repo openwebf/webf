@@ -34,8 +34,14 @@ class InspectOverlayModule extends UIInspectorModule {
   void onHighlightNode(int? id, Map<String, dynamic> params) {
     _highlightElement?.debugHideHighlight();
 
-    int nodeId = params['nodeId'];
-    Element? element = view.getBindingObject<Element>(Pointer.fromAddress(nodeId));
+    int? nodeId = params['nodeId'];
+    if (nodeId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    
+    Element? element = view.getBindingObject<Element>(
+        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
 
     if (element != null) {
       element.debugHighlight();

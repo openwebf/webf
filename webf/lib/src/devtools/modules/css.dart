@@ -44,6 +44,12 @@ class InspectCSSModule extends UIInspectorModule {
       case 'setStyleTexts':
         handleSetStyleTexts(id, params!);
         break;
+      case 'getBackgroundColors':
+        handleGetBackgroundColors(id, params!);
+        break;
+      case 'setEffectivePropertyValueForNode':
+        handleSetEffectivePropertyValueForNode(id, params!);
+        break;
     }
   }
 
@@ -209,6 +215,29 @@ class InspectCSSModule extends UIInspectorModule {
   // Kraken not supports attribute style for now.
   static CSSStyle? buildAttributesStyle(Map<String, dynamic> properties) {
     return null;
+  }
+  
+  void handleGetBackgroundColors(int? id, Map<String, dynamic> params) {
+    // For now, return empty background colors
+    // This could be enhanced to actually compute background colors from the render tree
+    sendToFrontend(id, JSONEncodableMap({
+      'backgroundColors': [],
+    }));
+  }
+  
+  void handleSetEffectivePropertyValueForNode(int? id, Map<String, dynamic> params) {
+    int? nodeId = params['nodeId'] != null ? view.getTargetIdByNodeId(params['nodeId']) : null;
+    String? propertyName = params['propertyName'];
+    String? value = params['value'];
+    
+    if (nodeId != null && propertyName != null && value != null) {
+      BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+      if (element is Element) {
+        element.setInlineStyle(camelize(propertyName), value);
+      }
+    }
+    
+    sendToFrontend(id, null);
   }
 }
 
