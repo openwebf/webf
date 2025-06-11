@@ -11,6 +11,7 @@ import 'package:test/test.dart';
 import 'package:webf/foundation.dart';
 
 import '../../local_http_server.dart';
+import '../../webf_test.dart';
 
 void main() {
   var server = LocalHttpServer.getInstance();
@@ -18,6 +19,10 @@ void main() {
   HttpOverrides.global = null;
   setupHttpOverrides(null, contextId: contextId);
   HttpClient httpClient = HttpClient();
+
+  setUp(() {
+    setupTest();
+  });
 
   group('HttpCache', () {
     test('Simple http request with expires', () async {
@@ -34,6 +39,9 @@ void main() {
         'method': 'GET',
         'data': {'userName': '12345'}
       });
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       // second request
       var requestSecond =
@@ -50,6 +58,9 @@ void main() {
       req.headers.ifModifiedSince = HttpDate.parse('Sun, 15 Mar 2020 11:32:20 GMT');
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res)), 'CachedData');
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       HttpCacheController cacheController = HttpCacheController.instance('local');
       var cacheObject = await cacheController.getCacheObject(req.uri);
@@ -94,6 +105,9 @@ void main() {
 
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res)), 'CachedData');
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       HttpCacheController cacheController = HttpCacheController.instance('local');
       var cacheObject = await cacheController.getCacheObject(req.uri);
@@ -156,6 +170,9 @@ void main() {
       var res = await req.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(res);
       expect(bytes.lengthInBytes, res.contentLength);
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       // Assert cache object.
       HttpCacheController cacheController = HttpCacheController.instance('local');
@@ -177,6 +194,9 @@ void main() {
       WebFHttpOverrides.setContextHeader(req.headers, contextId);
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res)), 'CachedData');
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       // Assert cache object.
       HttpCacheController cacheController = HttpCacheController.instance('local');
@@ -204,6 +224,9 @@ void main() {
       var res = await req.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(res);
       expect(bytes.lengthInBytes, res.contentLength);
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       // Assert cache object.
       HttpCacheController cacheController = HttpCacheController.instance('local');
@@ -219,6 +242,9 @@ void main() {
       WebFHttpOverrides.setContextHeader(req.headers, contextId);
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res))[0], '!');
+      
+      // Wait for cache write to complete
+      await HttpCacheController.waitForPendingCacheWrites();
 
       // Assert cache object.
       HttpCacheController cacheController = HttpCacheController.instance('local');

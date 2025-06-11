@@ -28,8 +28,25 @@ class HttpCacheController {
   static HttpCacheMode mode = Platform.isWindows ? HttpCacheMode.NO_CACHE : HttpCacheMode.DEFAULT;
 
   static final Map<String, HttpCacheController> _controllers = HashMap();
+  
+  // Track pending cache writes for testing
+  static final Set<Future<void>> _pendingCacheWrites = {};
+  
+  // Wait for all pending cache writes to complete (for testing)
+  static Future<void> waitForPendingCacheWrites({Duration timeout = const Duration(seconds: 5)}) async {
+    if (_pendingCacheWrites.isEmpty) return;
+    
+    try {
+      await Future.wait(_pendingCacheWrites).timeout(timeout);
+    } catch (e) {
+      // Ignore timeouts in tests
+    } finally {
+      _pendingCacheWrites.clear();
+    }
+  }
 
   static Directory? _cacheDirectory;
+  
   static Future<Directory> getCacheDirectory() async {
     if (_cacheDirectory != null) {
       return _cacheDirectory!;
@@ -86,9 +103,8 @@ class HttpCacheController {
       cacheObject = _caches[key]!;
     } else {
       // Get cache in disk.
-      final int hash = key.hashCode;
       final Directory cacheDirectory = await getCacheDirectory();
-      cacheObject = HttpCacheObject(key, cacheDirectory.path, hash: hash, origin: _origin);
+      cacheObject = HttpCacheObject(key, cacheDirectory.path, origin: _origin);
     }
 
     await cacheObject.read();
@@ -128,14 +144,28 @@ class HttpCacheController {
       HttpCacheObject cacheObject =
           HttpCacheObject.fromResponse(getCacheKey(request.uri), response, (await getCacheDirectory()).path);
 
-      // Cache the object.
-      if (cacheObject.valid) {
-        putObject(request.uri, cacheObject);
-      } else {
+      final cachedResponse = HttpClientCachedResponse(response, cacheObject);
+      // Track the cache write future
+      final writeFuture = cachedResponse.cacheWriteComplete;
+      _pendingCacheWrites.add(writeFuture);
+      
+      // Remove from pending set when complete
+      writeFuture.whenComplete(() => _pendingCacheWrites.remove(writeFuture));
+      
+      // Add to cache after write completes successfully
+      writeFuture.then((_) {
+        // Cache the object if it's valid after writing
+        if (cacheObject.valid) {
+          putObject(request.uri, cacheObject);
+        } else {
+          removeObject(request.uri);
+        }
+      }, onError: (_) {
+        // Remove from cache on error
         removeObject(request.uri);
-      }
-
-      return HttpClientCachedResponse(response, cacheObject);
+      });
+      
+      return cachedResponse;
     }
     return response;
   }
@@ -146,7 +176,11 @@ class HttpClientCachedResponse extends Stream<List<int>> implements HttpClientRe
   final HttpClientResponse response;
   final HttpCacheObject cacheObject;
 
-  EventSink<List<int>>? _blobSink;
+  HttpCacheObjectBlob? _blobSink;
+  final Completer<void> _cacheWriteCompleter = Completer<void>();
+  
+  /// A future that completes when the cache write operations are done
+  Future<void> get cacheWriteComplete => _cacheWriteCompleter.future;
 
   HttpClientCachedResponse(this.response, this.cacheObject);
 
@@ -225,9 +259,44 @@ class HttpClientCachedResponse extends Stream<List<int>> implements HttpClientRe
     _blobSink?.add(data);
   }
 
-  void _onDone() async {
-    await cacheObject.writeIndex();
-    _blobSink?.close();
+  void _onDone() {
+    // Execute cache write operations asynchronously
+    _executeCacheWrite();
+  }
+  
+  Future<void> _executeCacheWrite() async {
+    try {
+      // Close the blob writer first
+      await _blobSink?.close();
+      
+      // Calculate and update content checksum
+      await cacheObject.updateContentChecksum();
+      
+      // Write index with updated checksum
+      await cacheObject.writeIndex();
+      
+      // Validate the cached content after writing
+      bool isValid = await cacheObject.validateContent();
+      if (!isValid) {
+        print('Cache validation failed, removing invalid cache for ${cacheObject.url}');
+        await cacheObject.remove();
+        // Remove from memory cache as well
+        final String origin = cacheObject.origin ?? '';
+        HttpCacheController.instance(origin).removeObject(Uri.parse(cacheObject.url));
+      }
+      
+      // Complete the future to signal cache write is done
+      if (!_cacheWriteCompleter.isCompleted) {
+        _cacheWriteCompleter.complete();
+      }
+    } catch (error, stackTrace) {
+      // Complete with error
+      if (!_cacheWriteCompleter.isCompleted) {
+        _cacheWriteCompleter.completeError(error, stackTrace);
+      }
+      // Also handle the error as before
+      _onError(error, stackTrace);
+    }
   }
 
   void _onError(Object error, [StackTrace? stackTrace]) {
@@ -236,6 +305,11 @@ class HttpClientCachedResponse extends Stream<List<int>> implements HttpClientRe
       print('\n$stackTrace');
     }
     cacheObject.remove();
+    
+    // Complete the cache write future with error if not already completed
+    if (!_cacheWriteCompleter.isCompleted) {
+      _cacheWriteCompleter.completeError(error, stackTrace ?? StackTrace.current);
+    }
   }
 }
 

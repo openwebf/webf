@@ -21,6 +21,8 @@ import 'src/foundation/bundle.dart' as bundle;
 import 'src/foundation/convert.dart' as convert;
 import 'src/foundation/environment.dart' as environment;
 import 'src/foundation/http_cache.dart' as http_cache;
+import 'src/foundation/http_cache_validation_test.dart' as http_cache_validation;
+import 'src/foundation/http_cache_integration_test.dart' as http_cache_integration;
 import 'src/foundation/http_client.dart' as http_client;
 import 'src/foundation/http_client_interceptor.dart' as http_client_interceptor;
 import 'src/foundation/mock_bundle_test.dart' as mock_bundle_test;
@@ -72,6 +74,8 @@ void main() {
     bundle.main();
     convert.main();
     http_cache.main();
+    http_cache_validation.main();
+    http_cache_integration.main();
     http_client.main();
     http_client_interceptor.main();
     environment.main();
