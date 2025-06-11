@@ -193,6 +193,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   
   // Track which headers sections are expanded
   final Set<String> _expandedHeaders = {};
+  
+  // Track the selected network filter
+  NetworkRequestType? _selectedNetworkFilter;
 
   @override
   void initState() {
@@ -1189,6 +1192,35 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   ],
                 ),
                 SizedBox(height: 8),
+                // Filter chips
+                Container(
+                  height: 32,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _buildFilterChip('All', null),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Fetch/XHR', NetworkRequestType.fetch),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Doc', NetworkRequestType.document),
+                      SizedBox(width: 8),
+                      _buildFilterChip('CSS', NetworkRequestType.stylesheet),
+                      SizedBox(width: 8),
+                      _buildFilterChip('JS', NetworkRequestType.script),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Font', NetworkRequestType.font),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Image', NetworkRequestType.image),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Media', NetworkRequestType.media),
+                      SizedBox(width: 8),
+                      _buildFilterChip('WS', NetworkRequestType.websocket),
+                      SizedBox(width: 8),
+                      _buildFilterChip('Other', NetworkRequestType.other),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 12),
                 // Network requests list
                 Expanded(
                   child: requests.isEmpty
@@ -1198,13 +1230,36 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                             style: TextStyle(color: Colors.white54),
                           ),
                         )
-                      : ListView.builder(
-                          itemCount: requests.length,
-                          itemBuilder: (context, index) {
-                            final request = requests[index]; // Show chronological order
-                            return _buildNetworkRequestItem(request);
-                          },
-                        ),
+                      : () {
+                          // Filter requests based on selected type
+                          final filteredRequests = _selectedNetworkFilter == null
+                              ? requests
+                              : requests.where((req) {
+                                  // For fetch/xhr filter, include both types
+                                  if (_selectedNetworkFilter == NetworkRequestType.fetch) {
+                                    return req.type == NetworkRequestType.fetch || 
+                                           req.type == NetworkRequestType.xhr;
+                                  }
+                                  return req.type == _selectedNetworkFilter;
+                                }).toList();
+                          
+                          if (filteredRequests.isEmpty) {
+                            return Center(
+                              child: Text(
+                                'No ${_selectedNetworkFilter == null ? "" : _getFilterDisplayName(_selectedNetworkFilter!)} requests',
+                                style: TextStyle(color: Colors.white54),
+                              ),
+                            );
+                          }
+                          
+                          return ListView.builder(
+                            itemCount: filteredRequests.length,
+                            itemBuilder: (context, index) {
+                              final request = filteredRequests[index];
+                              return _buildNetworkRequestItem(request);
+                            },
+                          );
+                        }(),
                 ),
               ],
             ),
@@ -1305,6 +1360,22 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 color: Colors.white54,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getTypeColor(request.type).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                request.typeDisplayName,
+                style: TextStyle(
+                  color: _getTypeColor(request.type),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             SizedBox(width: 8),
@@ -2302,6 +2373,89 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     
     // Show interactive JSON tree when expanded
     return _JsonTreeView(data: jsonData);
+  }
+  
+  Widget _buildFilterChip(String label, NetworkRequestType? type) {
+    final isSelected = _selectedNetworkFilter == type;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedNetworkFilter = type;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.blue.withOpacity(0.3) : Colors.white10,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected ? Colors.blue : Colors.white24,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.blue : Colors.white70,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+  
+  String _getFilterDisplayName(NetworkRequestType type) {
+    switch (type) {
+      case NetworkRequestType.document:
+        return 'document';
+      case NetworkRequestType.stylesheet:
+        return 'CSS';
+      case NetworkRequestType.script:
+        return 'JS';
+      case NetworkRequestType.image:
+        return 'image';
+      case NetworkRequestType.media:
+        return 'media';
+      case NetworkRequestType.font:
+        return 'font';
+      case NetworkRequestType.xhr:
+        return 'XHR';
+      case NetworkRequestType.fetch:
+        return 'Fetch/XHR';
+      case NetworkRequestType.websocket:
+        return 'WebSocket';
+      case NetworkRequestType.manifest:
+        return 'manifest';
+      case NetworkRequestType.other:
+        return 'other';
+    }
+  }
+  
+  Color _getTypeColor(NetworkRequestType type) {
+    switch (type) {
+      case NetworkRequestType.document:
+        return Colors.blue;
+      case NetworkRequestType.stylesheet:
+        return Colors.purple;
+      case NetworkRequestType.script:
+        return Colors.orange;
+      case NetworkRequestType.image:
+        return Colors.green;
+      case NetworkRequestType.media:
+        return Colors.pink;
+      case NetworkRequestType.font:
+        return Colors.teal;
+      case NetworkRequestType.xhr:
+      case NetworkRequestType.fetch:
+        return Colors.amber;
+      case NetworkRequestType.websocket:
+        return Colors.indigo;
+      case NetworkRequestType.manifest:
+        return Colors.cyan;
+      case NetworkRequestType.other:
+        return Colors.grey;
+    }
   }
 }
 
