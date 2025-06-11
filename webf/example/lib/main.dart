@@ -473,7 +473,6 @@ class _WebFDemoState extends State<WebFDemo> {
               bundle: _getBundleForControllerName(widget.webfPageName),
               createController: () => WebFController(
                 routeObserver: routeObserver,
-                devToolsService: kDebugMode ? ChromeDevToolsService() : null,
                 initialRoute: widget.initialRoute,
               ),
               setup: (controller) {

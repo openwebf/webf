@@ -8,7 +8,6 @@ import 'dart:collection';
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
-import 'dart:isolate';
 import 'dart:ui' as ui;
 import 'dart:ui';
 
@@ -33,7 +32,6 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/devtools.dart';
 import 'package:webf/webf.dart';
 
 // Error handler when load bundle failed.
@@ -203,11 +201,6 @@ class WebFController with Diagnosticable {
   /// Use this to catch and handle JavaScript execution errors in the web content.
   JSErrorHandler? onJSError;
 
-  /// Open a service to support Chrome DevTools for debugging.
-  ///
-  /// When enabled, allows you to connect Chrome DevTools to inspect rendered DOM elements,
-  /// debug JavaScript, monitor network requests, and analyze performance of the WebF content.
-  final DevToolsService? devToolsService;
 
   /// Interceptor for HTTP client operations initiated by JavaScript code.
   ///
@@ -502,7 +495,6 @@ class WebFController with Diagnosticable {
     this.onControllerInit,
     this.onJSError,
     this.httpClientInterceptor,
-    this.devToolsService,
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
@@ -541,9 +533,6 @@ class WebFController with Diagnosticable {
 
       uriParser ??= UriParser();
 
-      if (devToolsService != null) {
-        devToolsService!.init(this);
-      }
 
       flushUICommand(view, nullptr);
 
@@ -1013,7 +1002,6 @@ class WebFController with Diagnosticable {
     // To release entrypoint bundle memory.
     _entrypoint?.dispose();
 
-    devToolsService?.dispose();
     routes = null;
     _loadingError = null;
     _disposed = true;
@@ -1324,116 +1312,3 @@ class WebFController with Diagnosticable {
   }
 }
 
-/// Abstract base class for implementing DevTools debugging services for WebF content.
-///
-/// Provides the infrastructure needed to connect Chrome DevTools to a WebF instance,
-/// enabling inspection of DOM elements, JavaScript debugging, network monitoring,
-/// and other developer tools features.
-abstract class DevToolsService {
-  /// Previous instance of DevToolsService during a page reload.
-  ///
-  /// Design prevDevTool for reload page,
-  /// do not use it in any other place.
-  /// More detail see [InspectPageModule.handleReloadPage].
-  static DevToolsService? prevDevTools;
-
-  static final Map<double, DevToolsService> _contextDevToolMap = {};
-
-  /// Retrieves the DevTools service instance associated with a specific JavaScript context ID.
-  ///
-  /// @param contextId The unique identifier for a JavaScript context
-  /// @return The DevToolsService instance for the context, or null if none exists
-  static DevToolsService? getDevToolOfContextId(double contextId) {
-    return _contextDevToolMap[contextId];
-  }
-
-  /// Used for debugger inspector.
-  UIInspector? _uiInspector;
-
-  /// Provides access to the UI inspector for debugging DOM elements.
-  ///
-  /// The UI inspector enables visualization and inspection of the DOM structure
-  /// and rendered elements in DevTools.
-  UIInspector? get uiInspector => _uiInspector;
-
-  /// The Dart isolate running the DevTools server.
-  ///
-  /// DevTools runs in a separate isolate to avoid impacting the performance
-  /// of the main Flutter application.
-  Isolate? _isolateServer;
-
-  /// Access to the isolate running the DevTools server.
-  ///
-  /// This isolate handles communication with Chrome DevTools.
-  Isolate get isolateServer => _isolateServer!;
-
-  /// Sets the isolate for the DevTools server.
-  ///
-  /// @param isolate The Dart isolate instance handling DevTools communication
-  set isolateServer(Isolate isolate) {
-    _isolateServer = isolate;
-  }
-
-  SendPort? _isolateServerPort;
-
-  SendPort? get isolateServerPort => _isolateServerPort;
-
-  set isolateServerPort(SendPort? value) {
-    _isolateServerPort = value;
-  }
-
-  WebFController? _controller;
-
-  WebFController? get controller => _controller;
-
-  /// Initializes the DevTools service for a WebF controller.
-  ///
-  /// Sets up the inspector server and UI inspector, enabling Chrome DevTools
-  /// to connect to and debug the WebF content.
-  ///
-  /// @param controller The WebFController instance to enable debugging for
-  void init(WebFController controller) {
-    _contextDevToolMap[controller.view.contextId] = this;
-    _controller = controller;
-    spawnIsolateInspectorServer(this, controller);
-    _uiInspector = UIInspector(this);
-    controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
-  }
-
-  /// Indicates whether the WebF content is currently being reloaded.
-  ///
-  /// Used to manage DevTools state during page reloads.
-  bool get isReloading => _reloading;
-
-  /// Internal flag to track reload state.
-  bool _reloading = false;
-
-  /// Called before WebF content is reloaded to prepare DevTools.
-  ///
-  /// Sets the reloading flag to true to prevent DevTools operations during reload.
-  void willReload() {
-    _reloading = true;
-  }
-
-  /// Called after WebF content has been reloaded to reconnect DevTools.
-  ///
-  /// Updates the DOM tree change handlers and notifies the inspector server
-  /// about the reload completion.
-  void didReload() {
-    _reloading = false;
-    controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
-    _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
-  }
-
-  /// Disposes the DevTools service and releases all resources.
-  ///
-  /// Cleans up the UI inspector, removes context mappings, and terminates
-  /// the inspector isolate server.
-  void dispose() {
-    _uiInspector?.dispose();
-    _contextDevToolMap.remove(controller?.view.contextId);
-    _controller = null;
-    _isolateServerPort = null;
-    _isolateServer?.kill();
-  }
-}

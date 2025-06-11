@@ -309,6 +309,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         children: [
           _buildQuickStats(),
           SizedBox(height: 16),
+          _buildDevToolsInfo(manager),
+          SizedBox(height: 16),
           _buildConfigInfo(config),
           SizedBox(height: 16),
           _buildActionButtons(manager),
@@ -355,6 +357,94 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           fontSize: 11,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+  
+  Widget _buildDevToolsInfo(WebFControllerManager manager) {
+    if (!manager.isDevToolsEnabled) {
+      return Container();
+    }
+    
+    final devToolsUrl = manager.devToolsUrl;
+    if (devToolsUrl == null) {
+      return Container();
+    }
+    
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.green.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.developer_mode,
+                size: 16,
+                color: Colors.green,
+              ),
+              SizedBox(width: 8),
+              Text(
+                'Chrome DevTools Connected',
+                style: TextStyle(
+                  color: Colors.green,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: SelectableText(
+                  devToolsUrl,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              IconButton(
+                icon: Icon(Icons.copy, size: 16),
+                color: Colors.white54,
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: devToolsUrl));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('DevTools URL copied to clipboard'),
+                      duration: Duration(seconds: 2),
+                      backgroundColor: Colors.green.withOpacity(0.8),
+                    ),
+                  );
+                },
+                tooltip: 'Copy DevTools URL',
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Open Chrome or Edge and navigate to the URL above',
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ),
     );
   }

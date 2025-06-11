@@ -26,6 +26,8 @@ dependencies:
   flutter_svg: ^2.0.17
   easy_refresh: ^3.4.0
   http_parser: ^4.1.2
+  shelf: ^1.4.2
+  shelf_web_socket: ^2.0.1
   crypto: ^3.0.6
 
 dev_dependencies:

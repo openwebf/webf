@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/devtools.dart';
 
 /// Configuration options for the WebFControllerManager.
 ///
@@ -17,6 +18,7 @@ import 'package:webf/launcher.dart';
 /// - Maximum number of alive and attached controllers
 /// - Auto-disposal policy for controllers
 /// - Callbacks for controller lifecycle events
+/// - DevTools debugging support
 ///
 /// Usage example:
 /// ```dart
@@ -26,6 +28,7 @@ import 'package:webf/launcher.dart';
 ///     WebFControllerManagerConfig(
 ///       maxAliveInstances: 5,
 ///       maxAttachedInstances: 3,
+///       enableDevTools: true, // Enable DevTools for all managed controllers
 ///       onControllerDisposed: (name, controller) {
 ///         print('Controller $name was disposed');
 ///       },
@@ -77,6 +80,24 @@ class WebFControllerManagerConfig {
   /// This callback is invoked whenever a controller is detached, whether due to
   /// attachment limits being reached or explicit detachment by the application.
   final void Function(String name, WebFController controller)? onControllerDetached;
+  
+  /// Whether to enable Chrome DevTools for all managed controllers.
+  ///
+  /// When true, a DevTools server will be started automatically when the manager
+  /// is initialized, allowing you to debug all controllers from a single endpoint.
+  /// Default is true for debug builds and false for profile/release builds.
+  final bool enableDevTools;
+  
+  /// The port number for the DevTools server.
+  ///
+  /// Only used when enableDevTools is true. Default is 9222.
+  final int devToolsPort;
+  
+  /// The address to bind the DevTools server to.
+  ///
+  /// Only used when enableDevTools is true. Default is '0.0.0.0' to allow
+  /// connections from any network interface.
+  final String devToolsAddress;
 
   /// Creates a new configuration object for WebFControllerManager.
   ///
@@ -87,6 +108,9 @@ class WebFControllerManagerConfig {
     this.autoDisposeWhenLimitReached = true,
     this.onControllerDisposed,
     this.onControllerDetached,
+    this.enableDevTools = kDebugMode,
+    this.devToolsPort = 9222,
+    this.devToolsAddress = '0.0.0.0',
   });
 }
 
@@ -180,6 +204,12 @@ class WebFControllerManager {
 
   /// Map to store creation parameters for future re-initialization.
   final Map<String, Map<String, dynamic>> _controllerInitParams = {};
+  
+  /// Whether DevTools is enabled for managed controllers
+  bool _devToolsEnabled = false;
+  
+  /// Map to track DevTools services for each controller
+  final Map<WebFController, ChromeDevToolsService> _controllerDevTools = {};
 
   /// Private constructor for the singleton implementation.
   WebFControllerManager._internal() : _config = const WebFControllerManagerConfig();
@@ -236,6 +266,16 @@ class WebFControllerManager {
   ///          auto-disposal behavior, and callbacks for lifecycle events.
   void initialize(WebFControllerManagerConfig config) {
     _config = config;
+    
+    // Start DevTools if enabled in config
+    if (config.enableDevTools && !_devToolsEnabled) {
+      startDevTools(
+        port: config.devToolsPort,
+        address: config.devToolsAddress,
+      ).catchError((error) {
+        print('Failed to start DevTools: $error');
+      });
+    }
   }
 
   /// Gets the count of currently attached controllers.
@@ -515,6 +555,11 @@ class WebFControllerManager {
       // Register the new controller with the same name and preserve attached state if needed
       _controllersByName[name] = _ControllerInstance(winnerController, ControllerState.detached);
       _updateUsageOrder(name);
+      
+      // Enable DevTools for this controller if global DevTools is enabled
+      if (_devToolsEnabled && !_controllerDevTools.containsKey(winnerController)) {
+        _enableDevToolsForController(winnerController);
+      }
 
       print('WebFControllerManager: $newController load complete with '
           'bundle: $bundle, time: ${stopwatch.elapsedMilliseconds}ms');
@@ -708,6 +753,11 @@ class WebFControllerManager {
     // Update tracking queues
     _attachedControllers.add(name);
     _updateUsageOrder(name);
+    
+    // Enable DevTools for this controller if global DevTools is enabled
+    if (_devToolsEnabled && !_controllerDevTools.containsKey(controller)) {
+      _enableDevToolsForController(controller);
+    }
   }
 
   /// Detaches a named controller from a Flutter BuildContext.
@@ -814,6 +864,12 @@ class WebFControllerManager {
     // Register the controller in detached state initially
     _controllersByName[name] = _ControllerInstance(controller, ControllerState.detached);
     _updateUsageOrder(name);
+    
+    // If DevTools is enabled and this controller doesn't have it, enable it
+    if (_devToolsEnabled) {
+      _enableDevToolsForController(controller);
+    }
+    
     return controller;
   }
 
@@ -1190,6 +1246,9 @@ class WebFControllerManager {
 
       // Get reference to controller before removing from map
       final controller = instance.controller;
+      
+      // Disable DevTools for this controller if enabled
+      _disableDevToolsForController(controller);
 
       // Remove from all tracking collections to prevent memory leaks
       _controllersByName.remove(name);
@@ -1240,4 +1299,90 @@ class WebFControllerManager {
   /// that controls the behavior of this manager, including resource limits
   /// and callback handlers.
   WebFControllerManagerConfig get config => _config;
+  
+  /// Starts the Chrome DevTools service for debugging all managed controllers
+  ///
+  /// This method initializes a unified DevTools server that can debug multiple
+  /// WebF controllers. Once started, you can connect Chrome DevTools to inspect
+  /// any controller managed by this instance.
+  ///
+  /// @param port The port number for the DevTools server (default: 9222)
+  /// @param address The address to bind the server to (default: '0.0.0.0')
+  /// @return A Future that completes when the DevTools server is started
+  Future<void> startDevTools({int port = 9222, String address = '0.0.0.0'}) async {
+    if (_devToolsEnabled) {
+      print('DevTools is already running');
+      return;
+    }
+    
+    // Start the unified DevTools service
+    await ChromeDevToolsService.unifiedService.start(
+      address: address,
+      port: port,
+    );
+    
+    _devToolsEnabled = true;
+    
+    // Enable DevTools for all existing controllers
+    for (final entry in _controllersByName.entries) {
+      final controller = entry.value.controller;
+      if (entry.value.state != ControllerState.disposed) {
+        _enableDevToolsForController(controller);
+      }
+    }
+  }
+  
+  /// Stops the Chrome DevTools service
+  ///
+  /// This method shuts down the DevTools server and cleans up all debugging
+  /// resources. After calling this, you'll need to call startDevTools again
+  /// to re-enable debugging.
+  ///
+  /// @return A Future that completes when the DevTools server is stopped
+  Future<void> stopDevTools() async {
+    if (!_devToolsEnabled) {
+      return;
+    }
+    
+    // Stop the unified DevTools service
+    await ChromeDevToolsService.unifiedService.stop();
+    
+    _devToolsEnabled = false;
+    
+    // Disable DevTools for all controllers
+    for (final controller in _controllerDevTools.keys.toList()) {
+      _disableDevToolsForController(controller);
+    }
+  }
+  
+  /// Gets whether DevTools is currently enabled
+  bool get isDevToolsEnabled => _devToolsEnabled;
+  
+  /// Gets the DevTools server URL if running
+  String? get devToolsUrl {
+    if (!_devToolsEnabled) return null;
+    return ChromeDevToolsService.unifiedService.devToolsUrl;
+  }
+  
+  /// Enables DevTools for a specific controller
+  void _enableDevToolsForController(WebFController controller) {
+    if (_devToolsEnabled) {
+      // Create and attach a DevTools service for this controller
+      final devToolsService = ChromeDevToolsService();
+      devToolsService.init(controller);
+      
+      // Store the service reference for cleanup
+      _controllerDevTools[controller] = devToolsService;
+    }
+  }
+  
+  /// Disables DevTools for a specific controller
+  void _disableDevToolsForController(WebFController controller) {
+    final devToolsService = _controllerDevTools[controller];
+    if (devToolsService != null) {
+      devToolsService.dispose();
+      _controllerDevTools.remove(controller);
+    }
+  }
+  
 }
