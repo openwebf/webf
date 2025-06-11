@@ -1,16 +1,8 @@
 # WebF UI Command Ring Buffer Design
 
-## Important Note
-
-This is a new implementation of the UI command system using ring buffers. To use this implementation:
-
-1. Replace `shared_ui_command.h/cc` with `shared_ui_command_ring_buffer.h/cc` in your build
-2. Update code to use `SharedUICommandRingBuffer` instead of `SharedUICommand`
-3. Or use the existing `SharedUICommand` class as-is (the old implementation remains unchanged)
-
 ## Overview
 
-The new UI command ring buffer system is designed to efficiently handle high-volume UI commands from the JavaScript worker thread to the Dart UI thread. It replaces the previous triple-buffer system with a lock-free ring buffer that provides better performance and scalability.
+The UI command ring buffer system is designed to efficiently handle high-volume UI commands from the JavaScript worker thread to the Dart UI thread. It uses a lock-free ring buffer with an intelligent batching strategy that provides better performance and scalability.
 
 ## Key Features
 
@@ -29,24 +21,31 @@ The new UI command ring buffer system is designed to efficiently handle high-vol
 - Reduces cross-thread communication overhead
 - Maintains command ordering within and across packages
 
-### 4. Batching Strategy
+### 4. Intelligent Batching Strategy (UICommandSyncStrategy)
+The system includes a sophisticated batching strategy that:
+- **Buffers commands** in a waiting queue before syncing to the ring buffer
+- **Tracks access frequency** of DOM elements to optimize batching
+- **Configurable buffer size** for tuning performance
+- **Automatic flushing** when buffer is full or patterns detected
+
 Commands are automatically split into separate packages when:
 - Encountering special commands (StartRecording, FinishRecording, AsyncCaller)
 - Mixing incompatible command types (e.g., node creation followed by node mutation)
 - Package size exceeds threshold (1000 commands)
+- High-frequency DOM element access is detected
 
 ## Architecture
 
 ```
-JS Worker Thread                    Dart UI Thread
-     |                                   |
-     v                                   v
-AddCommand() -----> Ring Buffer -----> PopPackage()
-     |              /         \              |
-     |         Package 1   Package 2         |
-     |             |           |             |
-     v             v           v             v
-  Commands    [Cmd1,Cmd2]  [Cmd3,Cmd4]   Read & Execute
+JS Worker Thread                                     Dart UI Thread
+     |                                                    |
+     v                                                    v
+AddCommand() -> UICommandSyncStrategy -> Ring Buffer -> PopPackage()
+     |              |                    /         \           |
+     |         Waiting Buffer      Package 1   Package 2      |
+     |              |                  |           |          |
+     v              v                  v           v          v
+  Commands    [Buffering...]    [Cmd1,Cmd2]  [Cmd3,Cmd4]  Read & Execute
 ```
 
 ## Usage
@@ -89,7 +88,43 @@ freeActiveCommandBuffer(commandPack);
 The system can be configured with:
 - Ring buffer capacity (default: 64K commands)
 - Package buffer capacity (default: 1K packages)
+- Sync buffer size for UICommandSyncStrategy
 - Custom batching strategies
+
+### Configure Sync Buffer Size
+```cpp
+// Set the waiting buffer size for batching
+context->uiCommandBuffer()->ConfigureSyncCommandBufferSize(1024);
+```
+
+### Manual Flush
+```cpp
+// Force sync of waiting commands
+context->uiCommandBuffer()->FlushCurrentPackages();
+```
+
+## UICommandSyncStrategy Details
+
+### Key Components
+
+1. **WaitingStatus**: Tracks active buffer slots to prevent command reordering
+2. **Frequency Map**: Monitors DOM element access patterns for optimization
+3. **Waiting Commands Buffer**: Temporary storage before syncing to ring buffer
+
+### Batching Logic
+
+The strategy decides when to sync based on:
+- Buffer size threshold reached
+- High-frequency element detected (hot path optimization)
+- Special command types that require immediate sync
+- Manual flush requests
+
+### Benefits
+
+- **Reduced Context Switching**: Fewer cross-thread operations
+- **Better Cache Locality**: Related commands stay together
+- **Adaptive Performance**: Learns from access patterns
+- **Memory Efficiency**: Prevents excessive buffering
 
 ## Testing
 
@@ -100,3 +135,4 @@ Comprehensive test suite includes:
 - Concurrent producer/consumer
 - Multiple producers
 - Stress tests with millions of commands
+- UICommandSyncStrategy unit tests
