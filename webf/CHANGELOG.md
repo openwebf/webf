@@ -1,18 +1,67 @@
+## 0.21.5+2
+
+## Overview
+
+This patch release focuses on improving stability and reliability by addressing critical issues in
+the HTTP cache implementation and enhancing error recovery for malformed content.
+
+## 🐛 Bug Fixes
+
+### HTTP Cache Implementation
+
+- **Fixed header parsing typo** that was causing incorrect kvTuple.length check
+- **Resolved race conditions** by implementing file locking to prevent concurrent access
+- **Fixed cache corruption issues** with atomic write operations using temp file + rename pattern
+- **Fixed hash collision issues** by replacing url.hashCode with SHA-256 hash
+- **Fixed memory leaks** in error handling with proper cleanup
+- **Fixed test timing issues** by tracking async cache writes
+
+### Error Recovery for Malformed Content
+
+- **Improved HTML parser error handling** with proper validation and logging
+- **Enhanced JavaScript execution** with input validation and size limits (100MB)
+- **Added pre-validation** in Dart layer before native parsing
+- **Fixed partial DOM creation** to continue even when some elements fail
+
+## ✨ Improvements
+
+### Cache System Enhancements
+
+- Added content checksum validation for cache integrity
+- Added version identifier to cache format for future compatibility
+- Improved error recovery and resource cleanup
+- Added comprehensive validation for cached content
+
+### Content Processing Enhancements
+
+- Added ExceptionState usage for better error propagation
+- Made traverseHTML return bool to track parsing success
+- Enhanced bytecode evaluation with better error messages
+- Added graceful degradation for parsing errors
+
 ## 0.21.5+1
 
 ### 🎯 Simplified JavaScript Channel Integration
-- **Automatic WebFJavaScriptChannel Creation**: The `WebFJavaScriptChannel` is now automatically available through `controller.javascriptChannel` getter
-- **Removed Manual Initialization**: No longer need to manually create and pass `WebFJavaScriptChannel` instances to controllers
-- **Seamless Integration**: Works automatically with all `WebFController` instances, including those managed by `WebFControllerManager`
+
+- **Automatic WebFJavaScriptChannel Creation**: The `WebFJavaScriptChannel` is now automatically
+  available through `controller.javascriptChannel` getter
+- **Removed Manual Initialization**: No longer need to manually create and pass
+  `WebFJavaScriptChannel` instances to controllers
+- **Seamless Integration**: Works automatically with all `WebFController` instances, including those
+  managed by `WebFControllerManager`
 
 ### 🔧 Enhanced Navigation Delegate Configuration
-- **Flexible Configuration**: `navigationDelegate` is now a mutable property that can be set via the `setup()` callback
-- **Consistent API Pattern**: Aligns with other controller configuration patterns for better consistency
+
+- **Flexible Configuration**: `navigationDelegate` is now a mutable property that can be set via the
+  `setup()` callback
+- **Consistent API Pattern**: Aligns with other controller configuration patterns for better
+  consistency
 - **Removed Deprecated Methods**: The deprecated `setNavigationDelegate()` method has been removed
 
 ## Breaking Changes
 
 ### WebFController Constructor Changes
+
 - **Removed Parameters**:
   - `javaScriptChannel` parameter removed from constructor
   - `navigationDelegate` parameter removed from constructor
@@ -20,7 +69,9 @@
 ### Migration Guide
 
 **Before (0.21.5):**
+
 ```dart
+
 final jsChannel = WebFJavaScriptChannel();
 final controller = WebFController(
   viewportWidth: 360,
@@ -31,7 +82,9 @@ final controller = WebFController(
 ```
 
 **After (0.21.5+1):**
+
 ```dart
+
 final controller = WebFController(
   viewportWidth: 360,
   viewportHeight: 640,
@@ -41,27 +94,37 @@ final controller = WebFController(
 );
 
 // JavaScript channel is now automatically available
-controller.javascriptChannel.invokeMethod('method', 'Hello');
+controller.javascriptChannel.invokeMethod
+('method
+'
+,
+'
+Hello
+'
+);
 ```
-
 
 ## 0.21.5
 
 🐛 Bug Fixes
 
-- Fixed ListView header and footer state management (https://github.com/openwebf/webf/commit/19f144340)
-  - Reset internal refresh/loading states when calling finishRefresh, finishLoad, resetHeader, and resetFooter APIs
+- Fixed ListView header and footer state
+  management (https://github.com/openwebf/webf/commit/19f144340)
+  - Reset internal refresh/loading states when calling finishRefresh, finishLoad, resetHeader, and
+    resetFooter APIs
   - Prevents state inconsistencies that could cause refresh/load indicators to get stuck
   - Ensures proper state synchronization between internal flags and refresh controller
 
-- Fixed dark mode not updating when controller was not evaluated (https://github.com/openwebf/webf/commit/d0013123c)
+- Fixed dark mode not updating when controller was not
+  evaluated (https://github.com/openwebf/webf/commit/d0013123c)
   - Dark mode changes now apply immediately regardless of controller evaluation state
   - Removed unnecessary check that prevented dark mode updates before content was loaded
   - Ensures consistent dark mode behavior throughout the controller lifecycle
 
 🔧 Improvements
 
-- Enhanced error handling with error builder support (https://github.com/openwebf/webf/commit/0c18d2a14)
+- Enhanced error handling with error builder
+  support (https://github.com/openwebf/webf/commit/0c18d2a14)
   - Show error builder widget when encountering unexpected errors during WebF build
   - Added debug print statements for better error diagnostics
   - Handles cases where route is not found, controller is disposed, or documentElement is null
@@ -78,7 +141,8 @@ controller.javascriptChannel.invokeMethod('method', 'Hello');
 
 - Fixed race condition in EventTarget disposal (https://github.com/openwebf/webf/commit/4ece049c5)
   - Defers freeing of pointers with pending events until controller disposal
-  - Prevents potential crashes when EventTarget objects are garbage collected while still dispatching events
+  - Prevents potential crashes when EventTarget objects are garbage collected while still
+    dispatching events
   - Adds separate tracking for pointers with pending events using _pendingPointersWithEvents list
   - Increases batch threshold from 500 to 2000 for better performance
 
@@ -86,12 +150,14 @@ controller.javascriptChannel.invokeMethod('method', 'Hello');
 
 🐛 Bug Fixes
 
-- Fixed WebFTextElement not updating when React.js changes TextNode data (https://github.com/openwebf/webf/commit/70fd51128)
+- Fixed WebFTextElement not updating when React.js changes TextNode
+  data (https://github.com/openwebf/webf/commit/70fd51128)
   - Added proper update mechanism for text elements when React.js modifies TextNode data directly
   - Resolved issue where React text updates weren't reflected in the UI
   - Implemented notifyRootTextElement() method to update ancestor WebFTextElement nodes
   - Added comprehensive test coverage for text element updates
-- Fixed preloaded bundle disposal issue for SVG images (https://github.com/openwebf/webf/commit/2b6e8a4da)
+- Fixed preloaded bundle disposal issue for SVG
+  images (https://github.com/openwebf/webf/commit/2b6e8a4da)
   - Prevented disposal of preloaded bundles after first use
   - Ensured preloaded SVG images can be efficiently reused across multiple img elements
   - Added proper bundle lifecycle management for preloaded resources
@@ -106,7 +172,8 @@ controller.javascriptChannel.invokeMethod('method', 'Hello');
 
 🔧 Chores
 
-- Added android:use-prebuilt npm script for Android package building (https://github.com/openwebf/webf/commit/77090f40e)
+- Added android:use-prebuilt npm script for Android package
+  building (https://github.com/openwebf/webf/commit/77090f40e)
 
 ## v0.21.4
 
@@ -114,7 +181,8 @@ controller.javascriptChannel.invokeMethod('method', 'Hello');
 
 #### Developer Tools
 
-- **WebF Inspector**: Added a floating inspector panel for real-time WebF controller management and debugging
+- **WebF Inspector**: Added a floating inspector panel for real-time WebF controller management and
+  debugging
   - View active, detached, and disposed controller counts
   - Monitor controller states and configurations
   - Bulk disposal of controllers for testing
@@ -122,34 +190,42 @@ controller.javascriptChannel.invokeMethod('method', 'Hello');
 
 #### Performance & Memory Management
 
-- **Idle Scheduling for Memory Cleanup**: Implemented batch freeing of native binding objects during idle time
+- **Idle Scheduling for Memory Cleanup**: Implemented batch freeing of native binding objects during
+  idle time
   - Processes up to 100 pointers per idle frame to avoid UI blocking
   - Automatic batch cleanup when threshold (500 pointers) is reached
   - Improved memory management and reduced overhead
 
 #### Build System
 
-- **iOS Prebuilt Framework Support**: Added scripts to use prebuilt frameworks instead of source compilation
+- **iOS Prebuilt Framework Support**: Added scripts to use prebuilt frameworks instead of source
+  compilation
   - `npm run ios:use-prebuilt`: Switch to xcframework usage
   - `npm run ios:use-source`: Revert to source compilation
   - Significantly reduces pod install time for iOS builds
 
 #### Platform Features
-- **Method Channel Timeout**: Added configurable timeout limits for WebF method channel calls to prevent hanging
+
+- **Method Channel Timeout**: Added configurable timeout limits for WebF method channel calls to
+  prevent hanging
 
 ### 🐛 Bug Fixes
 
 #### CSS & Styling
-- **CSS Variables with display:none**: Fixed CSS variables not updating correctly for elements with `display: none`
+
+- **CSS Variables with display:none**: Fixed CSS variables not updating correctly for elements with
+  `display: none`
 - **Gradient Cache**: Improved gradient cache invalidation with comprehensive test coverage
 - **Flexbox Constraints**: Fixed maxHeight constraints not being properly applied to flex items
 - **Transition Animations**: Fixed transitions not triggering when elements are mounted
 
 #### Memory & Resource Management
+
 - **Image Memory Leak**: Fixed BoxFitImage holding controller instances causing memory leaks
 - **Animation Parsing**: Fixed CSS animation parsing issues when controller is detached or disposed
 
 #### Platform-Specific
+
 - **iOS Compilation**: Fixed iOS compilation issues
 
 ## 0.21.3
