@@ -2,9 +2,7 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU AGPL with Enterprise exception.
  */
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:webf/webf.dart';
 
 class FlutterBottomSheet extends WidgetElement {

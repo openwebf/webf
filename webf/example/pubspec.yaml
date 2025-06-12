@@ -29,6 +29,8 @@ dependencies:
   share_plus: ^10.0.0
   showcaseview: ^4.0.1
   path_provider: ^2.1.5
+  easy_refresh: ^3.4.0
+  collection: ^1.18.0
 
 # When depending on this package from a real application,
 # you should remove the following overrides.

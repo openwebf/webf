@@ -3,10 +3,8 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:dynamic_tabbar/dynamic_tabbar.dart';
 
 class FlutterTabState extends WebFWidgetElementState with TickerProviderStateMixin {
   late final TabController _tabController;

@@ -3,7 +3,6 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:webf/webf.dart';
 
 class SliderElement extends WidgetElement {

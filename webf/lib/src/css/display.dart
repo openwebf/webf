@@ -66,7 +66,6 @@ mixin CSSDisplayMixin on RenderStyle {
       return CSSDisplay.inlineBlock;
     }
 
-    CSSRenderStyle? parentRenderStyle = getParentRenderStyle();
 
     if (hasRenderBox()) {
       if (!isParentRenderBoxModel()) {

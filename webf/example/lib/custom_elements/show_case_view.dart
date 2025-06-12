@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
-import 'package:collection/collection.dart'; // Need to import the collection package
+import 'package:collection/collection.dart';
 
 /// ShowCaseView component with on/off control and custom description slot
 class FlutterShowCaseView extends WidgetElement {
@@ -28,7 +28,7 @@ class FlutterShowCaseView extends WidgetElement {
     if (!_isShowing) return;
     _isShowing = false;
     // Directly trigger State rebuild, remove ShowCaseWidget
-    state?.setState(() {}); 
+    state?.requestUpdateState(); 
   }
   
   @override
@@ -133,7 +133,7 @@ class FlutterShowCaseViewState extends WebFWidgetElementState {
 
   void requestStartShowcase() {
     _startRequested = true;
-    setState(() {});
+    requestUpdateState();
   }
 
   @override
@@ -150,21 +150,6 @@ class FlutterShowCaseViewState extends WebFWidgetElementState {
     return targetNode?.toWidget() ?? const SizedBox(); // If not found, return an empty box
   }
 
-  // Get the child element Widget with the specified slotName
-  Widget? _getSlotWidget(String slotName) {
-    final slotNode = _getSlotNode(slotName);
-    return slotNode?.toWidget();
-  }
-
-  dom.Element? _getSlotNode(String slotName) {
-    final slotNode = widgetElement.childNodes.firstWhereOrNull((node) {
-      if (node is dom.Element) {
-        return node.getAttribute('slotName') == slotName;
-      }
-      return false;
-    });
-    return slotNode as dom.Element;
-  }
 
   // Get child elements of type FlutterShowCaseDescription
   dom.Element? _getShowCaseDescriptionNode() {
@@ -196,7 +181,7 @@ class FlutterShowCaseViewState extends WebFWidgetElementState {
         if (widgetElement._isShowing) { 
           widgetElement._isShowing = false;
           widgetElement.dispatchEvent(Event('finish'));
-          setState(() {}); 
+          requestUpdateState(); 
         }
       },
       disableBarrierInteraction: widgetElement._disableBarrierInteraction, // Use user-set value
@@ -205,11 +190,10 @@ class FlutterShowCaseViewState extends WebFWidgetElementState {
         if (_startRequested) {
            WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) { 
-              final showcaseContext = ShowCaseWidget.of(context);
-              showcaseContext?.startShowCase([widgetElement._one]);
+              ShowCaseWidget.of(context).startShowCase([widgetElement._one]);
               WidgetsBinding.instance.addPostFrameCallback((_) { 
                   if(mounted) { 
-                      setState(() { _startRequested = false; });
+                      _startRequested = false;
                   }
               });
             }

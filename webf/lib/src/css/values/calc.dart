@@ -39,7 +39,7 @@ class CSSCalcValue {
   int get hashCode => expression.hashCode;
 
   @override
-  bool operator ==(Object? other) => other is CSSCalcValue && other.expression == expression;
+  bool operator ==(Object other) => other is CSSCalcValue && other.expression == expression;
 }
 
 abstract class CalcExpressionNode {
@@ -59,7 +59,7 @@ class CalcInvertNode extends CalcExpressionNode {
   int get hashCode => node.hashCode;
 
   @override
-  bool operator ==(Object? other) => other is CalcInvertNode && other.node == node;
+  bool operator ==(Object other) => other is CalcInvertNode && other.node == node;
 
   @override
   String toString()  => 'CalcInvertNode(node: $node)';
@@ -78,7 +78,7 @@ class CalcNegateNode extends CalcExpressionNode {
   int get hashCode => node.hashCode;
 
   @override
-  bool operator ==(Object? other) => other is CalcNegateNode && other.node == node;
+  bool operator ==(Object other) => other is CalcNegateNode && other.node == node;
 
   @override
   String toString()  => 'CalcNegateNode(node: $node)';
@@ -126,7 +126,7 @@ class CalcLengthNode extends CalcExpressionNode {
   int get hashCode => value.hashCode;
 
   @override
-  bool operator ==(Object? other) => other is CalcLengthNode && other.value == value;
+  bool operator ==(Object other) => other is CalcLengthNode && other.value == value;
 
   @override
   String toString()  => 'CalcLengthNode(node: $value)';
@@ -143,7 +143,7 @@ class CalcNumberNode extends CalcExpressionNode {
   int get hashCode => value.hashCode;
 
   @override
-  bool operator ==(Object? other) => other is CalcLengthNode && other.value == value;
+  bool operator ==(Object other) => other is CalcNumberNode && other.value == value;
 
   @override
   String toString()  => 'CalcNumberNode(node: $value)';
@@ -171,7 +171,7 @@ class CalcOperationExpressionNode extends CalcExpressionNode {
   int get hashCode => Object.hash(leftNode, rightNode);
 
   @override
-  bool operator ==(Object? other) => other is CalcOperationExpressionNode &&
+  bool operator ==(Object other) => other is CalcOperationExpressionNode &&
       other.operator == operator && other.leftNode == leftNode && other.rightNode == rightNode;
 
   @override

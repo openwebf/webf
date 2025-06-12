@@ -3,22 +3,18 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:collection/collection.dart';
 import 'package:flutter/animation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/gesture.dart';
-import 'package:webf/rendering.dart';
 
 // CSS Overflow: https://drafts.csswg.org/css-overflow-3/
 
 enum CSSOverflowType { auto, visible, hidden, scroll, clip }
 
 // Styles which need to copy from outer scrolling box to inner scrolling content box.
+// ignore: unused_element
 List<String> _scrollingContentBoxCopyStyles = [
   DISPLAY,
   LINE_HEIGHT,
@@ -200,13 +196,13 @@ mixin ElementOverflowMixin on ElementBase {
   double get clientTop {
     ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
-    return renderStyle.effectiveBorderTopWidth.computedValue ?? 0.0;
+    return renderStyle.effectiveBorderTopWidth.computedValue;
   }
 
   double get clientLeft {
     ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
-    return renderStyle.effectiveBorderLeftWidth.computedValue ?? 0.0;
+    return renderStyle.effectiveBorderLeftWidth.computedValue;
   }
 
   double get clientWidth {

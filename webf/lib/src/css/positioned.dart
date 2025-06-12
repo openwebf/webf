@@ -6,8 +6,6 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 
 // CSS Positioned Layout: https://drafts.csswg.org/css-position/

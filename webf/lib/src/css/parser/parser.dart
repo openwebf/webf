@@ -282,8 +282,6 @@ class CSSParser {
     // Grammar: [ONLY | NOT]? S* media_type S*
     //          [ AND S* MediaExpr ]* | MediaExpr [ AND S* MediaExpr ]*
 
-    var start = _peekToken.span;
-
     // Is it a unary media operator?
     // @media only screen
     var op = _peekToken.text; //only
@@ -291,7 +289,6 @@ class CSSParser {
     var unaryOp = TokenKind.matchMediaOperator(op, 0, opLen);
     if (unaryOp != -1) {
       _next();
-      start = _peekToken.span;
     }
 
     Identifier? type;

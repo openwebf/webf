@@ -3,7 +3,6 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:dropdown_button2/dropdown_button2.dart';

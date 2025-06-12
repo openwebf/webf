@@ -408,7 +408,7 @@ class CSSBorderRadius {
   int get hashCode => Object.hash(x, y);
 
   @override
-  bool operator ==(Object? other) {
+  bool operator ==(Object other) {
     return other is CSSBorderRadius && other.x == x && other.y == y;
   }
 

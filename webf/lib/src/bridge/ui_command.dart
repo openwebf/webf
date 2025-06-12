@@ -7,7 +7,6 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/dom.dart';
 

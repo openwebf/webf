@@ -78,7 +78,7 @@ class FlutterWebFForm extends WidgetElement {
   final _formKey = GlobalKey<FormBuilderState>();
 
   // Whether to show validation errors
-  bool _showValidationErrors = false;
+  // bool _showValidationErrors = false;
   
   // Form layout type
   FormLayout _layout = FormLayout.vertical;
@@ -104,20 +104,16 @@ class FlutterWebFForm extends WidgetElement {
     attributes['layout'] = ElementAttributeProperty(
       getter: () => _layout.toString().split('.').last,
       setter: (value) {
-        if (value != null) {
-          switch (value.toLowerCase()) {
-            case 'horizontal':
-              _layout = FormLayout.horizontal;
-              break;
-            default:
-              _layout = FormLayout.vertical;
-              break;
-          }
-          
-          if (state != null) {
-            state!.setState(() {});
-          }
+        switch (value.toLowerCase()) {
+          case 'horizontal':
+            _layout = FormLayout.horizontal;
+            break;
+          default:
+            _layout = FormLayout.vertical;
+            break;
         }
+        
+        state?.requestUpdateState();
       }
     );
   }
@@ -166,12 +162,12 @@ class FlutterWebFForm extends WidgetElement {
   void validateAndSubmit() {
     if (state == null) return;
     
-    state!.setState(() {
-      _showValidationErrors = true;
+    state?.requestUpdateState(() {
+      // _showValidationErrors = true;
     });
     
     if (_formKey.currentState?.saveAndValidate() ?? false) {
-      Map<String, dynamic> formValues = getFormValues();
+      // Map<String, dynamic> formValues = getFormValues();
       // Record form values, then retrieve in frontend JS code
       dispatchEvent(dom.Event('submit'));
     } else {
@@ -184,8 +180,8 @@ class FlutterWebFForm extends WidgetElement {
     if (state == null) return;
     
     _formKey.currentState?.reset();
-    state!.setState(() {
-      _showValidationErrors = false;
+    state?.requestUpdateState(() {
+      // _showValidationErrors = false;
     });
     dispatchEvent(dom.Event('reset'));
   }
@@ -250,7 +246,7 @@ class FlutterWebFFormState extends WebFWidgetElementState {
       if (node is FlutterWebFFormField) {
         node.formLayout = widgetElement.layout;
       }
-      return node.toWidget() ?? const SizedBox();
+      return node.toWidget();
     }).toList();
   }
 }
@@ -275,30 +271,28 @@ class FlutterWebFFormField extends WidgetElement {
     attributes['name'] = ElementAttributeProperty(
       getter: () => _name,
       setter: (value) {
-        _name = value ?? '';
+        _name = value;
       }
     );
     
     attributes['required'] = ElementAttributeProperty(
       getter: () => _isRequired.toString(),
       setter: (value) {
-        _isRequired = value != null;
+        _isRequired = value == 'true';
       }
     );
     
     attributes['label'] = ElementAttributeProperty(
       getter: () => _label,
       setter: (value) {
-        _label = value ?? '';
+        _label = value;
       }
     );
     
     attributes['type'] = ElementAttributeProperty(
       getter: () => _type,
       setter: (value) {
-        if (value != null) {
-          _type = value;
-        }
+        _type = value;
       }
     );
   }
@@ -310,9 +304,7 @@ class FlutterWebFFormField extends WidgetElement {
           .map((rule) => ValidationRule.fromJson(rule))
           .toList();
           
-      if (state != null) {
-        state!.setState(() {});
-      }
+      state?.requestUpdateState();
     } catch (e) {
       print('Failed to set rules: $e');
     }
@@ -323,7 +315,7 @@ class FlutterWebFFormField extends WidgetElement {
     'setRules': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
         final formField = castToType<FlutterWebFFormField>(element);
-        if (args != null && args.isNotEmpty && args[0] is List) {
+        if (args.isNotEmpty && args[0] is List) {
           final List<dynamic> rulesData = args[0] as List<dynamic>;
           final List<Map<String, dynamic>> rules = rulesData
               .whereType<Map<String, dynamic>>()
@@ -351,9 +343,7 @@ class FlutterWebFFormField extends WidgetElement {
   set formLayout(FormLayout layout) {
     if (_formLayout != layout) {
       _formLayout = layout;
-      if (state != null) {
-        state!.setState(() {});
-      }
+      state?.requestUpdateState();
     }
   }
   

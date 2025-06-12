@@ -47,7 +47,7 @@ class FlutterShimmerTextElementState extends WebFWidgetElementState {
 
   @override
   Widget build(BuildContext context) {
-    final height = widgetElement.renderStyle.height?.value ?? 16.0;
+    final height = widgetElement.renderStyle.height.value ?? 16.0;
 
     return Container(
       width: double.infinity,
