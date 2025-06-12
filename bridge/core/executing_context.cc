@@ -144,6 +144,21 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
+  
+  // Validate input parameters
+  if (code == nullptr || code_len == 0) {
+    return true; // Empty script is not an error
+  }
+  
+  // Basic validation for malformed content
+  if (code_len > 100 * 1024 * 1024) { // 100MB limit
+    WEBF_LOG(ERROR) << "JavaScript code exceeds maximum size limit";
+    ExceptionState exception_state;
+    exception_state.ThrowException(ctx(), ErrorType::RangeError, "Script size exceeds maximum limit");
+    HandleException(exception_state);
+    return false;
+  }
+  
   JSValue result;
   if (parsed_bytecodes == nullptr) {
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
@@ -188,21 +203,34 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 }
 
 bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength) {
+  // Validate input
+  if (bytes == nullptr || byteLength == 0) {
+    return true; // Empty bytecode is not an error
+  }
+  
+  // Basic size validation
+  if (byteLength > 100 * 1024 * 1024) { // 100MB limit
+    ExceptionState exception_state;
+    exception_state.ThrowException(ctx(), ErrorType::RangeError, "Bytecode size exceeds maximum limit");
+    HandleException(exception_state);
+    return false;
+  }
+  
   JSValue obj, val;
   obj = JS_ReadObject(script_state_.ctx(), bytes, byteLength, JS_READ_OBJ_BYTECODE);
 
-  if (!HandleException(&obj)) {
+  if (JS_IsException(obj)) {
+    HandleException(&obj);
     return false;
   }
 
   val = JS_EvalFunction(script_state_.ctx(), obj);
 
   DrainMicrotasks();
-  if (!HandleException(&val)) {
-    return false;
-  }
+  bool success = HandleException(&val);
+  
   JS_FreeValue(script_state_.ctx(), val);
-  return true;
+  return success;
 }
 
 bool ExecutingContext::IsContextValid() const {

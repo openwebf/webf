@@ -297,6 +297,18 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
+
+  // Pre-validate JavaScript content
+  if (codeBytes.isEmpty) {
+    // Empty script is valid
+    return true;
+  }
+
+  // Check for excessive size (100MB limit)
+  if (codeBytes.length > 100 * 1024 * 1024) {
+    return false;
+  }
+
   // Assign `vm://$id` for no url (anonymous scripts).
   if (url == null) {
     url = 'vm://$_anonymousScriptEvaluationId';
@@ -409,6 +421,20 @@ Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return;
   }
+
+  // Pre-validate HTML content
+  if (codeBytes.isEmpty) {
+    // Empty HTML is valid, just return
+    completer.complete();
+    return completer.future;
+  }
+
+  // Check for excessive size (100MB limit)
+  if (codeBytes.length > 100 * 1024 * 1024) {
+    completer.completeError('HTML content exceeds maximum size limit (100MB)');
+    return completer.future;
+  }
+
   Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
   try {
     assert(_allocatedPages.containsKey(contextId));
@@ -417,7 +443,8 @@ Future<void> parseHTML(double contextId, Uint8List codeBytes) async {
         Pointer.fromFunction(_handleParseHTMLContextResult);
     _parseHTML(_allocatedPages[contextId]!, codePtr, codeBytes.length, context, resultCallback);
   } catch (e, stack) {
-    print('$e\n$stack');
+    print('Error parsing HTML: $e\n$stack');
+    completer.completeError(e);
   }
 
   return completer.future;

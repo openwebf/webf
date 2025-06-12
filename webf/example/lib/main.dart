@@ -94,15 +94,15 @@ void main() async {
   //       controller.darkModeOverride = savedThemeMode?.isDark;
   //     });
   //
-  // // Add vue controller with preloading
-  // WebFControllerManager.instance.addWithPrerendering(
+  // Add vue controller with preloading
+  // WebFControllerManager.instance.addWithPreload(
   //     name: 'miracle_plus',
   //     createController: () => WebFController(
   //           initialRoute: '/home',
   //           routeObserver: routeObserver,
   //           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
   //         ),
-  //     bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
+  //     bundle: WebFBundle.fromUrl('http://127.0.0.1:8080/'),
   //     setup: (controller) {
   //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
   //       controller.darkModeOverride = savedThemeMode?.isDark;

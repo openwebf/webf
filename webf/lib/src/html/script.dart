@@ -94,6 +94,11 @@ class ScriptRunner {
     if (isInline) {
       String? scriptCode = element.collectElementChildText();
       if (scriptCode == null) {
+        // Log warning for empty inline script
+        _document.decrementDOMContentLoadedEventDelayCount();
+        if (_document.controller.preloadStatus != PreloadingStatus.none) {
+          _document.controller.unfinishedPreloadResources--;
+        }
         return;
       }
       bundle = WebFBundle.fromContent(scriptCode);
