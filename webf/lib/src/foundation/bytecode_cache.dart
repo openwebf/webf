@@ -112,8 +112,8 @@ class QuickJSByteCodeCacheObject {
 /// particularly for larger JavaScript files (>= 1MB).
 class QuickJSByteCodeCache {
   // Memory cache.
-  //   [String cacheKey] -> [QuickJSByteCodeCache object]
-  // A splay tree is a good choice for data that is stored and accessed frequently.
+  //   [String cacheKey] -> [QuickJSByteCodeCacheObject]
+  // A LinkedLruHashMap is used to limit memory usage with LRU eviction.
   static final LinkedLruHashMap<String, QuickJSByteCodeCacheObject> _caches =
       LinkedLruHashMap(maximumSize: 25);
 
@@ -164,7 +164,7 @@ class QuickJSByteCodeCache {
     return cacheObject;
   }
 
-  // Add or update the httpCacheObject to memory cache.
+  // Add or update the byteCodeCacheObject to memory cache.
   static Future<void> putObject(Uint8List codeBytes, Uint8List bytes, { String? cacheKey }) async {
     final String key = cacheKey != null ? _getCacheHashFast(cacheKey) : _getCacheHashSlow(codeBytes);
 
@@ -178,6 +178,12 @@ class QuickJSByteCodeCache {
 
   static bool isCodeNeedCache(Uint8List codeBytes) {
     return QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
-        codeBytes.length > 1024 * 10; // >= 50 KB
+        codeBytes.length > 1024 * 10; // >= 10 KB
+  }
+
+  // Clear all memory caches
+  static void clearMemoryCache() {
+    _caches.clear();
+    _cacheDirectory = null;
   }
 }

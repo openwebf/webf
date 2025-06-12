@@ -30,6 +30,7 @@ import 'src/foundation/uri_parser.dart' as uri_parser;
 import 'src/launcher/controller_manager.dart' as controller_manager;
 import 'src/module/fetch.dart' as fetch;
 import 'src/html/link_preload_test.dart' as link_preload;
+import 'src/widget/webf_clear_cache_test.dart' as webf_clear_cache;
 
 final String __dirname = path.dirname(Platform.script.path);
 
@@ -101,6 +102,10 @@ void main() {
     style_inline_parser.main();
     style_animations_parser.main();
     css_values.main();
+  });
+
+  group('widget', () {
+    webf_clear_cache.main();
   });
 
   tearDownAll(() {

@@ -740,8 +740,7 @@ class HttpCacheObjectBlob extends EventSink<List<int>> {
   bool _isClosed = false;
   final _writeQueue = <Future<void>>[];
 
-  HttpCacheObjectBlob(this.path)
-      : _file = File(path) {
+  HttpCacheObjectBlob(this.path) : _file = File(path) {
     // Use process ID and timestamp to create unique temp file name
     _tempFile = File('$path.tmp.$pid.${DateTime.now().microsecondsSinceEpoch}');
   }
