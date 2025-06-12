@@ -1,3 +1,44 @@
+## 0.21.5+3
+
+### Global Cache Management API
+
+We've added a new static API `WebF.clearAllCaches()` that provides a unified way to clear all WebF
+caches, including both HTTP caches and QuickJS bytecode caches. This API is particularly useful for:
+
+- Freeing up disk space
+- Ensuring fresh content after updates
+- Debugging cache-related issues
+- Managing app storage in production
+
+#### Usage Example
+
+```dart
+// Clear all caches (both HTTP and bytecode)
+await WebF.clearAllCaches();
+```
+
+## Features
+
+- **`WebF.clearAllCaches()` API**: A new static method that clears all local caches
+  - Clears HTTP disk caches in the `HttpCaches` directory
+  - Clears QuickJS bytecode caches in the `ByteCodeCaches_*` directory
+  - Clears all in-memory cache instances
+  - Handles concurrent operations gracefully
+  - Provides robust error recovery for platform-specific file system issues
+
+## Improvements
+
+- **Cross-Platform File System Support**: Enhanced error handling for directory deletion operations
+  across different platforms
+  - macOS/iOS: Handles errno 66 (ENOTEMPTY)
+  - Linux/Android: Handles errno 39 (ENOTEMPTY)
+  - Implements fallback strategy to delete files individually when directory deletion fails
+  - Gracefully handles concurrent cache operations
+
+- **Memory Cache Management**: Added methods to clear memory caches
+  - `HttpCacheController.clearAllMemoryCaches()`: Clears all HTTP memory caches
+  - `QuickJSByteCodeCache.clearMemoryCache()`: Clears bytecode memory caches
+
 ## 0.21.5+2
 
 ## Overview
@@ -98,9 +139,7 @@ controller.javascriptChannel.invokeMethod
 ('method
 '
 ,
-'
-Hello
-'
+'Hello'
 );
 ```
 
