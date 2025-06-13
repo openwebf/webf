@@ -79,8 +79,7 @@ void Console::__webf_print_structured__(ExecutingContext* context,
       if (JS_IsNull(js_value)) {
         native_args[i] = Native_NewNull();
       } else if (JS_IsUndefined(js_value)) {
-        // Send undefined as a special string
-        native_args[i] = Native_NewCString("undefined");
+        native_args[i] = Native_NewUndefined();
       } else if (JS_IsBool(js_value)) {
         native_args[i] = Native_NewBool(JS_ToBool(ctx, js_value));
       } else if (JS_IsNumber(js_value)) {

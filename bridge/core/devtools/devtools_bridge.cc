@@ -115,51 +115,27 @@ NativeValue* GetObjectPropertiesImpl(double context_id,
     JS_SetPropertyStr(ctx, propObj, "writable", JS_NewBool(ctx, prop.writable));
     JS_SetPropertyStr(ctx, propObj, "isOwn", JS_NewBool(ctx, prop.is_own));
     
-    // Add value information if we have a valueId
-    if (!prop.value_id.empty()) {
+    // Add value information
+    if (prop.has_primitive_value) {
+      // For primitive values, create a primitive value object
+      JSValue valueObj = JS_NewObject(ctx);
+      JS_SetPropertyStr(ctx, valueObj, "type", JS_NewString(ctx, "primitive"));
+      
+      // Copy the primitive value
+      JS_SetPropertyStr(ctx, valueObj, "value", JS_DupValue(ctx, prop.primitive_value));
+      
+      JS_SetPropertyStr(ctx, propObj, "value", valueObj);
+    } else if (!prop.value_id.empty()) {
+      // For objects, get details and create remote object representation
       auto valueDetails = registry->GetObjectDetails(prop.value_id);
       if (valueDetails) {
-        // Check if it's a primitive type
-        if (valueDetails->type() == RemoteObjectType::Undefined ||
-            valueDetails->type() == RemoteObjectType::Null ||
-            valueDetails->type() == RemoteObjectType::Boolean ||
-            valueDetails->type() == RemoteObjectType::Number ||
-            valueDetails->type() == RemoteObjectType::String) {
-          // For primitive values, create a primitive value object
-          JSValue valueObj = JS_NewObject(ctx);
-          JS_SetPropertyStr(ctx, valueObj, "type", JS_NewString(ctx, "primitive"));
-          
-          // Convert description to actual value
-          const std::string& desc = valueDetails->description();
-          if (valueDetails->type() == RemoteObjectType::Undefined) {
-            JS_SetPropertyStr(ctx, valueObj, "value", JS_NewString(ctx, "undefined"));
-          } else if (valueDetails->type() == RemoteObjectType::Null) {
-            JS_SetPropertyStr(ctx, valueObj, "value", JS_NULL);
-          } else if (valueDetails->type() == RemoteObjectType::Boolean) {
-            JS_SetPropertyStr(ctx, valueObj, "value", JS_NewBool(ctx, desc == "true"));
-          } else if (valueDetails->type() == RemoteObjectType::Number) {
-            double num = std::stod(desc);
-            JS_SetPropertyStr(ctx, valueObj, "value", JS_NewFloat64(ctx, num));
-          } else if (valueDetails->type() == RemoteObjectType::String) {
-            // Remove quotes from string description
-            std::string str = desc;
-            if (str.length() >= 2 && str[0] == '"' && str[str.length()-1] == '"') {
-              str = str.substr(1, str.length()-2);
-            }
-            JS_SetPropertyStr(ctx, valueObj, "value", JS_NewString(ctx, str.c_str()));
-          }
-          
-          JS_SetPropertyStr(ctx, propObj, "value", valueObj);
-        } else {
-          // For objects, use remote object representation
-          JSValue valueObj = JS_NewObject(ctx);
-          JS_SetPropertyStr(ctx, valueObj, "type", JS_NewString(ctx, "remote-object"));
-          JS_SetPropertyStr(ctx, valueObj, "objectId", JS_NewString(ctx, prop.value_id.c_str()));
-          JS_SetPropertyStr(ctx, valueObj, "className", JS_NewString(ctx, valueDetails->class_name().c_str()));
-          JS_SetPropertyStr(ctx, valueObj, "description", JS_NewString(ctx, valueDetails->description().c_str()));
-          JS_SetPropertyStr(ctx, valueObj, "objectType", JS_NewInt32(ctx, static_cast<int>(valueDetails->type())));
-          JS_SetPropertyStr(ctx, propObj, "value", valueObj);
-        }
+        JSValue valueObj = JS_NewObject(ctx);
+        JS_SetPropertyStr(ctx, valueObj, "type", JS_NewString(ctx, "remote-object"));
+        JS_SetPropertyStr(ctx, valueObj, "objectId", JS_NewString(ctx, prop.value_id.c_str()));
+        JS_SetPropertyStr(ctx, valueObj, "className", JS_NewString(ctx, valueDetails->class_name().c_str()));
+        JS_SetPropertyStr(ctx, valueObj, "description", JS_NewString(ctx, valueDetails->description().c_str()));
+        JS_SetPropertyStr(ctx, valueObj, "objectType", JS_NewInt32(ctx, static_cast<int>(valueDetails->type())));
+        JS_SetPropertyStr(ctx, propObj, "value", valueObj);
       }
     }
     

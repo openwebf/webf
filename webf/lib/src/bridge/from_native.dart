@@ -14,6 +14,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/bridge/native_value.dart';
 import 'package:webf/src/devtools/console_store.dart';
 import 'package:webf/src/devtools/remote_object_service.dart';
 
@@ -581,6 +582,9 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
 
   for (int i = 0; i < argc; i++) {
     final nativeValuePtr = Pointer<NativeValue>.fromAddress(argv.address + i * sizeOf<NativeValue>());
+    
+    // Check the tag directly to determine the type
+    final tag = nativeValuePtr.ref.tag;
     final value = fromNativeValue(controller.view, nativeValuePtr);
 
     if (value is Map && value['type'] == 'remote-object') {
@@ -593,13 +597,17 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
     } else {
       // Handle primitive values
       String type = 'unknown';
-      if (value == null) {
+      
+      // Check the native tag directly for proper type identification
+      if (tag == JSValueType.TAG_NULL.index) {
         type = 'null';
-      } else if (value is bool) {
+      } else if (tag == JSValueType.TAG_UNDEFINED.index) {
+        type = 'undefined';
+      } else if (tag == JSValueType.TAG_BOOL.index) {
         type = 'boolean';
-      } else if (value is num) {
+      } else if (tag == JSValueType.TAG_INT.index || tag == JSValueType.TAG_FLOAT64.index) {
         type = 'number';
-      } else if (value is String) {
+      } else if (tag == JSValueType.TAG_STRING.index) {
         type = 'string';
       }
 

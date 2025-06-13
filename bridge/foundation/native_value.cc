@@ -20,6 +20,18 @@ NativeValue Native_NewNull() {
 #endif
 }
 
+NativeValue Native_NewUndefined() {
+#ifdef _MSC_VER
+  NativeValue value{};
+  value.u.int64 = 0;
+  value.uint32 = 0;
+  value.tag = NativeTag::TAG_UNDEFINED;
+  return value;
+#else
+  return (NativeValue){.u = {.int64 = 0}, .uint32 = 0, .tag = NativeTag::TAG_UNDEFINED};
+#endif
+}
+
 NativeValue Native_NewString(SharedNativeString* string) {
 #ifdef _MSC_VER
   NativeValue value{};

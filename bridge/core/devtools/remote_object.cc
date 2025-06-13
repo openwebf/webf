@@ -90,14 +90,54 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
   if (JS_GetOwnPropertyNames(ctx, &props, &prop_count, obj, flags) >= 0) {
     for (uint32_t i = 0; i < prop_count; i++) {
       JSAtom atom = props[i].atom;
-      const char* key = JS_AtomToCString(ctx, atom);
+      
+      // Check if this atom is a symbol
+      JSValue atom_value = JS_AtomToValue(ctx, atom);
+      bool is_symbol = JS_IsSymbol(atom_value);
+      
+      std::string prop_name;
+      if (is_symbol) {
+        // For symbols, format as Symbol(description)
+        JSValue desc_val = JS_GetPropertyStr(ctx, atom_value, "description");
+        if (!JS_IsUndefined(desc_val)) {
+          const char* desc = JS_ToCString(ctx, desc_val);
+          if (desc) {
+            prop_name = "Symbol(" + std::string(desc) + ")";
+            JS_FreeCString(ctx, desc);
+          } else {
+            prop_name = "Symbol()";
+          }
+        } else {
+          prop_name = "Symbol()";
+        }
+        JS_FreeValue(ctx, desc_val);
+      } else {
+        // For regular string properties
+        const char* key = JS_AtomToCString(ctx, atom);
+        prop_name = key;
+        JS_FreeCString(ctx, key);
+      }
+      JS_FreeValue(ctx, atom_value);
       
       JSValue prop_value = JS_GetProperty(ctx, obj, atom);
       
       RemoteObjectProperty prop;
-      prop.name = key;
-      prop.value_id = RegisterObject(ctx, prop_value);
+      prop.name = prop_name;
       prop.is_own = true;
+      
+      // Handle primitive values directly
+      if (JS_IsNull(prop_value) || JS_IsUndefined(prop_value) || 
+          JS_IsBool(prop_value) || JS_IsNumber(prop_value) || JS_IsString(prop_value)) {
+        // For primitives, store the actual value in the property
+        prop.value_id = "";  // Empty ID for primitives
+        prop.primitive_value = JS_DupValue(ctx, prop_value);  // Duplicate the value
+        prop.has_primitive_value = true;
+      } else {
+        // For objects, register them and store the ID
+        prop.value_id = RegisterObject(ctx, prop_value);
+        prop.primitive_value = JS_UNDEFINED;
+        prop.has_primitive_value = false;
+      }
       
       // Get property descriptor
       JSPropertyDescriptor desc;
@@ -114,7 +154,6 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
       properties.push_back(prop);
       
       JS_FreeValue(ctx, prop_value);
-      JS_FreeCString(ctx, key);
     }
     
     js_free(ctx, props);
@@ -122,67 +161,25 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
   
   // Get prototype properties if requested
   if (include_prototype) {
-    JSValue current_proto = JS_GetPrototype(ctx, obj);
+    JSValue proto = JS_GetPrototype(ctx, obj);
     
-    // Traverse the entire prototype chain
-    while (!JS_IsNull(current_proto) && !JS_IsUndefined(current_proto)) {
-      // Get own properties of the current prototype
-      JSPropertyEnum* proto_props = nullptr;
-      uint32_t proto_prop_count = 0;
+    // Only get properties from the immediate prototype (one level)
+    if (!JS_IsNull(proto) && !JS_IsUndefined(proto)) {
+      // Add a special [[Prototype]] property that represents the prototype object
+      RemoteObjectProperty prototype_prop;
+      prototype_prop.name = "[[Prototype]]";
+      prototype_prop.is_own = false;
+      prototype_prop.enumerable = false;
+      prototype_prop.configurable = false;
+      prototype_prop.writable = false;
+      prototype_prop.has_primitive_value = false;
+      prototype_prop.primitive_value = JS_UNDEFINED;
       
-      if (JS_GetOwnPropertyNames(ctx, &proto_props, &proto_prop_count, current_proto, flags) >= 0) {
-        for (uint32_t i = 0; i < proto_prop_count; i++) {
-          JSAtom atom = proto_props[i].atom;
-          const char* key = JS_AtomToCString(ctx, atom);
-          
-          // Skip if we already have this property (from a closer prototype or own)
-          bool already_exists = false;
-          for (const auto& existing : properties) {
-            if (existing.name == key) {
-              already_exists = true;
-              break;
-            }
-          }
-          
-          if (!already_exists) {
-            JSValue prop_value = JS_GetProperty(ctx, current_proto, atom);
-            
-            RemoteObjectProperty prop;
-            prop.name = key;
-            prop.value_id = RegisterObject(ctx, prop_value);
-            prop.is_own = false;
-            
-            // Get property descriptor
-            JSPropertyDescriptor desc;
-            if (JS_GetOwnProperty(ctx, &desc, current_proto, atom) >= 0) {
-              prop.enumerable = (desc.flags & JS_PROP_ENUMERABLE) != 0;
-              prop.configurable = (desc.flags & JS_PROP_CONFIGURABLE) != 0;
-              prop.writable = (desc.flags & JS_PROP_WRITABLE) != 0;
-              // Free the property descriptor values
-              JS_FreeValue(ctx, desc.value);
-              JS_FreeValue(ctx, desc.getter);
-              JS_FreeValue(ctx, desc.setter);
-            }
-            
-            properties.push_back(prop);
-            
-            JS_FreeValue(ctx, prop_value);
-          }
-          
-          JS_FreeCString(ctx, key);
-        }
-        
-        js_free(ctx, proto_props);
-      }
+      // Register the prototype object itself
+      prototype_prop.value_id = RegisterObject(ctx, proto);
+      properties.push_back(prototype_prop);
       
-      // Move to the next prototype in the chain
-      JSValue next_proto = JS_GetPrototype(ctx, current_proto);
-      JS_FreeValue(ctx, current_proto);
-      current_proto = next_proto;
-    }
-    
-    if (!JS_IsNull(current_proto) && !JS_IsUndefined(current_proto)) {
-      JS_FreeValue(ctx, current_proto);
+      JS_FreeValue(ctx, proto);
     }
   }
   
@@ -311,8 +308,9 @@ std::string RemoteObjectRegistry::GetObjectClassName(JSContext* ctx, JSValue val
     return "Array";
   }
   
+  // Get the constructor from the object's constructor property
   JSValue ctor = JS_GetPropertyStr(ctx, value, "constructor");
-  if (!JS_IsUndefined(ctor)) {
+  if (!JS_IsUndefined(ctor) && JS_IsFunction(ctx, ctor)) {
     JSValue name = JS_GetPropertyStr(ctx, ctor, "name");
     if (JS_IsString(name)) {
       const char* name_str = JS_ToCString(ctx, name);

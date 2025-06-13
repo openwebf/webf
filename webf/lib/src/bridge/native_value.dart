@@ -35,7 +35,8 @@ enum JSValueType {
   TAG_POINTER,
   TAG_FUNCTION,
   TAG_ASYNC_FUNCTION,
-  TAG_UINT8_BYTES
+  TAG_UINT8_BYTES,
+  TAG_UNDEFINED
 }
 
 enum JSPointerType {
@@ -98,6 +99,8 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
       return nativeValue.ref.u == 1;
     case JSValueType.TAG_NULL:
       return null;
+    case JSValueType.TAG_UNDEFINED:
+      return null; // Dart doesn't have undefined, so we return null but the caller can check the tag
     case JSValueType.TAG_FLOAT64:
       return uInt64ToDouble(nativeValue.ref.u);
     case JSValueType.TAG_POINTER:

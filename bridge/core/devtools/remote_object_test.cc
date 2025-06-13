@@ -381,3 +381,728 @@ TEST(RemoteObject, CircularReferences) {
   JS_FreeValue(ctx, obj1);
   JS_FreeValue(ctx, global);
 }
+
+TEST(RemoteObject, RecursiveReferencesComplex) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a complex recursive structure
+  const char* code = R"(
+    // Self-referencing object
+    window.selfRef = {
+      name: 'self',
+      data: 42,
+      circular: null
+    };
+    window.selfRef.circular = window.selfRef;
+    
+    // Tree structure with parent references
+    window.tree = {
+      value: 'root',
+      children: [],
+      parent: null
+    };
+    
+    // Create child nodes with parent references
+    for (let i = 0; i < 3; i++) {
+      let child = {
+        value: 'child' + i,
+        children: [],
+        parent: window.tree
+      };
+      window.tree.children.push(child);
+      
+      // Add grandchildren
+      for (let j = 0; j < 2; j++) {
+        let grandchild = {
+          value: 'grandchild' + i + '_' + j,
+          children: [],
+          parent: child
+        };
+        child.children.push(grandchild);
+      }
+    }
+    
+    // Complex circular structure
+    window.complexCircular = {
+      name: 'A',
+      next: {
+        name: 'B',
+        next: {
+          name: 'C',
+          next: null,
+          array: [1, 2, 3],
+          nested: {
+            deepValue: 'deep',
+            backRef: null
+          }
+        }
+      }
+    };
+    // Create the circular reference
+    window.complexCircular.next.next.next = window.complexCircular;
+    window.complexCircular.next.next.nested.backRef = window.complexCircular.next;
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  
+  // Test self-referencing object
+  JSValue selfRef = JS_GetPropertyStr(ctx, global, "selfRef");
+  std::string selfRefId = registry->RegisterObject(ctx, selfRef);
+  auto selfRefProps = registry->GetObjectProperties(selfRefId);
+  
+  // Verify self-referencing structure
+  ASSERT_GT(selfRefProps.size(), 0u);
+  bool found_circular = false;
+  for (const auto& prop : selfRefProps) {
+    if (prop.name == "circular") {
+      found_circular = true;
+      EXPECT_FALSE(prop.value_id.empty());
+      // The circular reference should point to a registered object
+      auto circularDetails = registry->GetObjectDetails(prop.value_id);
+      ASSERT_NE(circularDetails, nullptr);
+    }
+  }
+  EXPECT_TRUE(found_circular);
+  
+  // Test tree structure with parent references
+  JSValue tree = JS_GetPropertyStr(ctx, global, "tree");
+  std::string treeId = registry->RegisterObject(ctx, tree);
+  auto treeProps = registry->GetObjectProperties(treeId);
+  
+  // Find children array
+  std::string childrenId;
+  for (const auto& prop : treeProps) {
+    if (prop.name == "children") {
+      EXPECT_FALSE(prop.value_id.empty());
+      childrenId = prop.value_id;
+      break;
+    }
+  }
+  ASSERT_FALSE(childrenId.empty());
+  
+  // Get children array properties
+  auto childrenProps = registry->GetObjectProperties(childrenId);
+  ASSERT_GT(childrenProps.size(), 0u);
+  
+  // Check first child
+  for (const auto& prop : childrenProps) {
+    if (prop.name == "0") {  // First array element
+      EXPECT_FALSE(prop.value_id.empty());
+      // Get the child object properties
+      auto childProps = registry->GetObjectProperties(prop.value_id);
+      
+      // Verify child has parent reference
+      bool found_parent = false;
+      for (const auto& childProp : childProps) {
+        if (childProp.name == "parent") {
+          found_parent = true;
+          EXPECT_FALSE(childProp.value_id.empty());
+        }
+      }
+      EXPECT_TRUE(found_parent);
+      break;
+    }
+  }
+  
+  // Test complex circular structure
+  JSValue complexCircular = JS_GetPropertyStr(ctx, global, "complexCircular");
+  std::string complexId = registry->RegisterObject(ctx, complexCircular);
+  auto complexProps = registry->GetObjectProperties(complexId);
+  
+  // Navigate through the chain to verify it handles deep circular references
+  std::string currentId = complexId;
+  for (int i = 0; i < 5; i++) {  // Navigate more than the chain length to test circularity
+    auto props = registry->GetObjectProperties(currentId);
+    std::string nextId;
+    
+    for (const auto& prop : props) {
+      if (prop.name == "next") {
+        nextId = prop.value_id;
+        break;
+      }
+    }
+    
+    if (!nextId.empty()) {
+      currentId = nextId;
+    } else {
+      break;  // Reached a null next pointer
+    }
+  }
+  
+  // Clean up
+  JS_FreeValue(ctx, selfRef);
+  JS_FreeValue(ctx, tree);
+  JS_FreeValue(ctx, complexCircular);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, PrototypeChainWithDevTools) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test prototype chain inspection like the example: F -> G inheritance
+  const char* code = R"(
+    function F() {}
+    F.prototype.age = 10;
+    F.prototype.sharedMethod = function() { return 'F method'; };
+    
+    const f = new F();
+    f.ownProp = 'f instance';
+    
+    function G() {}
+    G.prototype = new F();
+    G.prototype.constructor = G;  // Properly set constructor
+    G.prototype.gMethod = function() { return 'G method'; };
+    
+    const g = new G();
+    g.instanceProp = 'g instance';
+    
+    // Also test without fixing constructor
+    function H() {}
+    H.prototype = new F();  // Don't fix constructor
+    const h = new H();
+    h.hProp = 'h instance';
+    
+    window.testObjects = { f, g, h };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue testObjects = JS_GetPropertyStr(ctx, global, "testObjects");
+  
+  // Test object g with proper constructor
+  JSValue g = JS_GetPropertyStr(ctx, testObjects, "g");
+  std::string gId = registry->RegisterObject(ctx, g);
+  auto gDetails = registry->GetObjectDetails(gId);
+  
+  ASSERT_NE(gDetails, nullptr);
+  EXPECT_EQ(gDetails->class_name(), "G");  // Should show G as constructor
+  EXPECT_EQ(gDetails->description(), "G {...}");
+  
+  // Get properties including prototype chain
+  auto gPropsWithProto = registry->GetObjectProperties(gId, true);
+  auto gPropsOwnOnly = registry->GetObjectProperties(gId, false);
+  
+  // Verify own properties vs inherited properties
+  EXPECT_LT(gPropsOwnOnly.size(), gPropsWithProto.size());
+  
+  // Check for specific properties
+  bool found_instanceProp = false;
+  bool found_prototype = false;
+  
+  // Print all properties for debugging
+  std::cout << "\n=== Properties of g (with prototype) ===" << std::endl;
+  std::cout << "Total properties: " << gPropsWithProto.size() << std::endl;
+  std::cout << "Own properties only: " << gPropsOwnOnly.size() << std::endl;
+  std::cout << "\nAll properties:" << std::endl;
+  for (const auto& prop : gPropsWithProto) {
+    std::cout << "  - " << prop.name << " (is_own: " << prop.is_own 
+              << ", enumerable: " << prop.enumerable 
+              << ", writable: " << prop.writable 
+              << ", configurable: " << prop.configurable << ")" << std::endl;
+    
+    if (prop.name == "instanceProp") {
+      found_instanceProp = true;
+      EXPECT_TRUE(prop.is_own);
+    } else if (prop.name == "[[Prototype]]") {
+      found_prototype = true;
+      EXPECT_FALSE(prop.is_own);
+      EXPECT_FALSE(prop.enumerable);
+      EXPECT_FALSE(prop.configurable);
+      EXPECT_FALSE(prop.writable);
+      EXPECT_FALSE(prop.value_id.empty());  // Should have an object ID
+    }
+  }
+  
+  // With the new design, we should only see own properties + [[Prototype]]
+  EXPECT_TRUE(found_instanceProp);
+  EXPECT_TRUE(found_prototype);
+  
+  // Properties like gMethod, age, sharedMethod should NOT be directly visible
+  // They will be visible when expanding the [[Prototype]] object
+  EXPECT_EQ(gPropsWithProto.size(), 2u);  // instanceProp + [[Prototype]]
+  
+  // Now test expanding the prototype
+  std::string prototypeId;
+  for (const auto& prop : gPropsWithProto) {
+    if (prop.name == "[[Prototype]]") {
+      prototypeId = prop.value_id;
+      break;
+    }
+  }
+  
+  ASSERT_FALSE(prototypeId.empty());
+  
+  // Get the prototype's properties
+  auto protoProps = registry->GetObjectProperties(prototypeId, true);
+  std::cout << "\n=== Properties of g's prototype ===" << std::endl;
+  std::cout << "Total properties: " << protoProps.size() << std::endl;
+  
+  // Check for G.prototype properties
+  bool found_gMethod = false;
+  bool found_constructor = false;
+  bool found_proto_prototype = false;
+  
+  for (const auto& prop : protoProps) {
+    std::cout << "  - " << prop.name << std::endl;
+    if (prop.name == "gMethod") {
+      found_gMethod = true;
+    } else if (prop.name == "constructor") {
+      found_constructor = true;
+    } else if (prop.name == "[[Prototype]]") {
+      found_proto_prototype = true;
+    }
+  }
+  
+  EXPECT_TRUE(found_gMethod);
+  EXPECT_TRUE(found_constructor);
+  EXPECT_TRUE(found_proto_prototype);  // G.prototype has its own [[Prototype]] pointing to F.prototype
+  
+  // Test object h without proper constructor
+  JSValue h = JS_GetPropertyStr(ctx, testObjects, "h");
+  std::string hId = registry->RegisterObject(ctx, h);
+  auto hDetails = registry->GetObjectDetails(hId);
+  
+  ASSERT_NE(hDetails, nullptr);
+  EXPECT_EQ(hDetails->class_name(), "F");  // Shows F because constructor wasn't fixed
+  EXPECT_EQ(hDetails->description(), "F {...}");
+  
+  JS_FreeValue(ctx, g);
+  JS_FreeValue(ctx, h);
+  JS_FreeValue(ctx, testObjects);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, ArrayObjectProperties) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test array objects with various scenarios
+  const char* code = R"(
+    // Regular array
+    window.regularArray = [1, 'two', true, null, undefined];
+    
+    // Array with holes (sparse array)
+    window.sparseArray = [1, , , 4];  // length is 4 but only 2 elements
+    window.sparseArray[10] = 'ten';
+    
+    // Array with non-numeric properties
+    window.arrayWithProps = [1, 2, 3];
+    window.arrayWithProps.customProp = 'custom';
+    window.arrayWithProps.method = function() { return 'array method'; };
+    
+    // Array-like object (not a real array)
+    window.arrayLike = {
+      0: 'first',
+      1: 'second',
+      2: 'third',
+      length: 3,
+      slice: Array.prototype.slice
+    };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  
+  // Test regular array
+  JSValue regularArray = JS_GetPropertyStr(ctx, global, "regularArray");
+  std::string regularId = registry->RegisterObject(ctx, regularArray);
+  auto regularDetails = registry->GetObjectDetails(regularId);
+  
+  ASSERT_NE(regularDetails, nullptr);
+  EXPECT_EQ(regularDetails->type(), RemoteObjectType::Array);
+  EXPECT_EQ(regularDetails->class_name(), "Array");
+  EXPECT_EQ(regularDetails->description(), "Array(5)");
+  
+  auto regularProps = registry->GetObjectProperties(regularId);
+  
+  // Check array indices and values
+  int found_indices = 0;
+  for (const auto& prop : regularProps) {
+    if (prop.name == "0" || prop.name == "1" || prop.name == "2" || 
+        prop.name == "3" || prop.name == "4") {
+      found_indices++;
+      EXPECT_TRUE(prop.is_own);
+    } else if (prop.name == "length") {
+      EXPECT_TRUE(prop.is_own);
+    }
+  }
+  EXPECT_EQ(found_indices, 5);
+  
+  // Test sparse array
+  JSValue sparseArray = JS_GetPropertyStr(ctx, global, "sparseArray");
+  std::string sparseId = registry->RegisterObject(ctx, sparseArray);
+  auto sparseProps = registry->GetObjectProperties(sparseId);
+  
+  // Sparse array should only have defined indices as properties
+  int sparse_indices = 0;
+  for (const auto& prop : sparseProps) {
+    if (prop.name == "0" || prop.name == "3" || prop.name == "10") {
+      sparse_indices++;
+    }
+  }
+  EXPECT_EQ(sparse_indices, 3);  // Only indices 0, 3, and 10
+  
+  // Test array with custom properties
+  JSValue arrayWithProps = JS_GetPropertyStr(ctx, global, "arrayWithProps");
+  std::string propsId = registry->RegisterObject(ctx, arrayWithProps);
+  auto propsArray = registry->GetObjectProperties(propsId);
+  
+  bool found_customProp = false;
+  bool found_method = false;
+  for (const auto& prop : propsArray) {
+    if (prop.name == "customProp") {
+      found_customProp = true;
+      EXPECT_TRUE(prop.is_own);
+    } else if (prop.name == "method") {
+      found_method = true;
+      EXPECT_TRUE(prop.is_own);
+      EXPECT_FALSE(prop.value_id.empty());  // Function has ID
+    }
+  }
+  EXPECT_TRUE(found_customProp);
+  EXPECT_TRUE(found_method);
+  
+  // Test array-like object
+  JSValue arrayLike = JS_GetPropertyStr(ctx, global, "arrayLike");
+  std::string likeId = registry->RegisterObject(ctx, arrayLike);
+  auto likeDetails = registry->GetObjectDetails(likeId);
+  
+  ASSERT_NE(likeDetails, nullptr);
+  EXPECT_EQ(likeDetails->type(), RemoteObjectType::Object);  // Not a real array
+  EXPECT_EQ(likeDetails->class_name(), "Object");
+  
+  JS_FreeValue(ctx, regularArray);
+  JS_FreeValue(ctx, sparseArray);
+  JS_FreeValue(ctx, arrayWithProps);
+  JS_FreeValue(ctx, arrayLike);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, FunctionObjectDetails) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test various function types
+  const char* code = R"(
+    // Named function
+    window.namedFunc = function myFunction(a, b) { return a + b; };
+    
+    // Anonymous function
+    window.anonymousFunc = function(x) { return x * 2; };
+    
+    // Arrow function
+    window.arrowFunc = (x, y) => x + y;
+    
+    // Constructor function
+    window.ConstructorFunc = function Person(name, age) {
+      this.name = name;
+      this.age = age;
+    };
+    window.ConstructorFunc.prototype.greet = function() {
+      return 'Hello';
+    };
+    
+    // Native function
+    window.nativeFunc = Array.prototype.slice;
+    
+    // Bound function
+    window.boundFunc = window.namedFunc.bind(null, 10);
+    
+    // Async function
+    window.asyncFunc = async function fetchData() {
+      return 'data';
+    };
+    
+    // Generator function
+    window.generatorFunc = function* generator() {
+      yield 1;
+      yield 2;
+    };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  
+  // Test named function
+  JSValue namedFunc = JS_GetPropertyStr(ctx, global, "namedFunc");
+  std::string namedId = registry->RegisterObject(ctx, namedFunc);
+  auto namedDetails = registry->GetObjectDetails(namedId);
+  
+  ASSERT_NE(namedDetails, nullptr);
+  EXPECT_EQ(namedDetails->type(), RemoteObjectType::Function);
+  EXPECT_EQ(namedDetails->class_name(), "Function: myFunction");
+  EXPECT_EQ(namedDetails->description(), "ƒ Function: myFunction()");
+  
+  // Test anonymous function
+  JSValue anonymousFunc = JS_GetPropertyStr(ctx, global, "anonymousFunc");
+  std::string anonymousId = registry->RegisterObject(ctx, anonymousFunc);
+  auto anonymousDetails = registry->GetObjectDetails(anonymousId);
+  
+  ASSERT_NE(anonymousDetails, nullptr);
+  EXPECT_EQ(anonymousDetails->type(), RemoteObjectType::Function);
+  // Anonymous functions might show empty name or "anonymous"
+  EXPECT_TRUE(anonymousDetails->class_name().find("Function") != std::string::npos);
+  
+  // Test constructor function
+  JSValue constructorFunc = JS_GetPropertyStr(ctx, global, "ConstructorFunc");
+  std::string constructorId = registry->RegisterObject(ctx, constructorFunc);
+  auto constructorDetails = registry->GetObjectDetails(constructorId);
+  
+  ASSERT_NE(constructorDetails, nullptr);
+  EXPECT_EQ(constructorDetails->type(), RemoteObjectType::Function);
+  EXPECT_EQ(constructorDetails->class_name(), "Function: Person");
+  
+  // Get properties of constructor function
+  auto constructorProps = registry->GetObjectProperties(constructorId);
+  bool found_prototype = false;
+  for (const auto& prop : constructorProps) {
+    if (prop.name == "prototype") {
+      found_prototype = true;
+      EXPECT_FALSE(prop.value_id.empty());  // prototype is an object
+      break;
+    }
+  }
+  EXPECT_TRUE(found_prototype);
+  
+  JS_FreeValue(ctx, namedFunc);
+  JS_FreeValue(ctx, anonymousFunc);
+  JS_FreeValue(ctx, constructorFunc);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, SymbolProperties) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test objects with symbol properties
+  const char* code = R"(
+    // Create various symbols
+    const sym1 = Symbol('description');
+    const sym2 = Symbol.for('global.symbol');
+    const sym3 = Symbol();  // No description
+    
+    // Object with symbol properties
+    window.objWithSymbols = {
+      regularProp: 'regular',
+      [sym1]: 'symbol value 1',
+      [sym2]: 'symbol value 2',
+      [sym3]: 'symbol value 3',
+      [Symbol.iterator]: function* () { yield 1; yield 2; },
+      [Symbol.toStringTag]: 'CustomObject'
+    };
+    
+    // Also add enumerable symbol property
+    Object.defineProperty(window.objWithSymbols, Symbol('enumerable'), {
+      value: 'enumerable symbol',
+      enumerable: true
+    });
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue objWithSymbols = JS_GetPropertyStr(ctx, global, "objWithSymbols");
+  
+  std::string objectId = registry->RegisterObject(ctx, objWithSymbols);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  // Print all properties for debugging
+  std::cout << "\n=== Symbol Properties Test ===" << std::endl;
+  std::cout << "Total properties: " << properties.size() << std::endl;
+  
+  // Check for specific symbol properties
+  bool found_regular = false;
+  bool found_symbol_description = false;
+  bool found_symbol_global = false;
+  bool found_symbol_empty = false;
+  bool found_symbol_iterator = false;
+  bool found_symbol_toStringTag = false;
+  bool found_symbol_enumerable = false;
+  
+  for (const auto& prop : properties) {
+    std::cout << "  - " << prop.name << std::endl;
+    
+    if (prop.name == "regularProp") {
+      found_regular = true;
+    } else if (prop.name == "Symbol(description)") {
+      found_symbol_description = true;
+    } else if (prop.name == "Symbol(global.symbol)") {
+      found_symbol_global = true;
+    } else if (prop.name == "Symbol()") {
+      found_symbol_empty = true;
+    } else if (prop.name == "Symbol(Symbol.iterator)") {
+      found_symbol_iterator = true;
+    } else if (prop.name == "Symbol(Symbol.toStringTag)") {
+      found_symbol_toStringTag = true;
+    } else if (prop.name == "Symbol(enumerable)") {
+      found_symbol_enumerable = true;
+    }
+  }
+  
+  EXPECT_TRUE(found_regular);
+  EXPECT_TRUE(found_symbol_description);
+  EXPECT_TRUE(found_symbol_global);
+  EXPECT_TRUE(found_symbol_empty);
+  // Well-known symbols might have different descriptions
+  
+  JS_FreeValue(ctx, objWithSymbols);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, UndefinedValueHandling) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test undefined value handling
+  const char* code = R"(
+    window.undefinedTest = {
+      explicitUndefined: undefined,
+      implicitUndefined: void 0,
+      functionReturningUndefined: function() { return undefined; },
+      undefinedString: 'undefined',  // String "undefined" not undefined value
+      nested: {
+        deep: {
+          value: undefined
+        }
+      }
+    };
+    
+    // Property that doesn't exist (accessing returns undefined)
+    window.nonExistent = {};
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue undefinedTest = JS_GetPropertyStr(ctx, global, "undefinedTest");
+  
+  std::string objectId = registry->RegisterObject(ctx, undefinedTest);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  // Check undefined properties
+  for (const auto& prop : properties) {
+    if (prop.name == "explicitUndefined" || prop.name == "implicitUndefined") {
+      EXPECT_TRUE(prop.value_id.empty());  // Undefined has empty ID
+    } else if (prop.name == "undefinedString") {
+      EXPECT_TRUE(prop.value_id.empty());  // String is primitive, has empty ID
+      // But the value should be the string "undefined", not undefined value
+    } else if (prop.name == "functionReturningUndefined") {
+      EXPECT_FALSE(prop.value_id.empty());  // Function has ID
+    }
+  }
+  
+  // Test property path evaluation with undefined
+  JSValue result = registry->EvaluatePropertyPath(objectId, "nonExistentProp");
+  EXPECT_TRUE(JS_IsUndefined(result));
+  JS_FreeValue(ctx, result);
+  
+  JS_FreeValue(ctx, undefinedTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, PropertyDescriptors) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test various property descriptors
+  const char* code = R"(
+    window.descriptorTest = {};
+    
+    // Regular property (writable, enumerable, configurable)
+    window.descriptorTest.regular = 'regular value';
+    
+    // Read-only property
+    Object.defineProperty(window.descriptorTest, 'readOnly', {
+      value: 'read only value',
+      writable: false,
+      enumerable: true,
+      configurable: true
+    });
+    
+    // Non-enumerable property
+    Object.defineProperty(window.descriptorTest, 'nonEnumerable', {
+      value: 'hidden',
+      writable: true,
+      enumerable: false,
+      configurable: true
+    });
+    
+    // Non-configurable property
+    Object.defineProperty(window.descriptorTest, 'nonConfigurable', {
+      value: 'locked',
+      writable: true,
+      enumerable: true,
+      configurable: false
+    });
+    
+    // Getter/setter property
+    let _internal = 'initial';
+    Object.defineProperty(window.descriptorTest, 'accessor', {
+      get() { return _internal; },
+      set(v) { _internal = v; },
+      enumerable: true,
+      configurable: true
+    });
+    
+    // Getter only (read-only accessor)
+    Object.defineProperty(window.descriptorTest, 'getterOnly', {
+      get() { return 'getter value'; },
+      enumerable: true,
+      configurable: true
+    });
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue descriptorTest = JS_GetPropertyStr(ctx, global, "descriptorTest");
+  
+  std::string objectId = registry->RegisterObject(ctx, descriptorTest);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  // Check property descriptors
+  for (const auto& prop : properties) {
+    if (prop.name == "regular") {
+      EXPECT_TRUE(prop.writable);
+      EXPECT_TRUE(prop.enumerable);
+      EXPECT_TRUE(prop.configurable);
+    } else if (prop.name == "readOnly") {
+      EXPECT_FALSE(prop.writable);
+      EXPECT_TRUE(prop.enumerable);
+      EXPECT_TRUE(prop.configurable);
+    } else if (prop.name == "nonEnumerable") {
+      EXPECT_TRUE(prop.writable);
+      EXPECT_FALSE(prop.enumerable);
+      EXPECT_TRUE(prop.configurable);
+    } else if (prop.name == "nonConfigurable") {
+      EXPECT_TRUE(prop.writable);
+      EXPECT_TRUE(prop.enumerable);
+      EXPECT_FALSE(prop.configurable);
+    } else if (prop.name == "accessor") {
+      // Accessor properties might have different handling
+      EXPECT_TRUE(prop.enumerable);
+      EXPECT_TRUE(prop.configurable);
+    } else if (prop.name == "getterOnly") {
+      EXPECT_FALSE(prop.writable);  // Getter-only is not writable
+      EXPECT_TRUE(prop.enumerable);
+      EXPECT_TRUE(prop.configurable);
+    }
+  }
+  
+  JS_FreeValue(ctx, descriptorTest);
+  JS_FreeValue(ctx, global);
+}

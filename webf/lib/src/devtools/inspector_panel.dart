@@ -260,7 +260,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               'WebF DevTools',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -400,7 +400,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 'Chrome DevTools Connected',
                 style: TextStyle(
                   color: Colors.green,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -815,6 +815,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                             'Controller: $name',
                             style: TextStyle(
                               color: Colors.white,
+                              fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1493,7 +1494,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 title,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1588,7 +1589,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   title,
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1769,7 +1770,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 'Response Body (${_formatBytes(request.responseBody!.length)})',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1929,7 +1930,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                       'Request Body (${_formatBytes(request.requestData.length)})',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -2626,10 +2627,13 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   }
 
   Widget _buildConsoleArgs(List<ConsoleValue> args, ConsoleLogLevel level, int contextId) {
-    return Wrap(
-      spacing: 8.0,
-      runSpacing: 4.0,
-      children: args.map((arg) => _buildConsoleValue(arg, level, contextId)).toList(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Wrap(
+        spacing: 8.0,
+        runSpacing: 4.0,
+        children: args.map((arg) => _buildConsoleValue(arg, level, contextId)).toList(),
+      ),
     );
   }
 
@@ -2657,7 +2661,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     if (value.type == 'string') return Colors.green.shade400;
     if (value.type == 'number') return Colors.blue.shade400;
     if (value.type == 'boolean') return Colors.purple.shade400;
-    if (value.type == 'null' || value.type == 'undefined') return Colors.grey.shade400;
+    if (value.type == 'null') return Colors.grey.shade400;
+    if (value.type == 'undefined') return Colors.grey.shade600;
     return Colors.white;
   }
 
@@ -3045,7 +3050,7 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
       final properties = await RemoteObjectService.instance.getObjectProperties(
         widget.contextId,
         widget.remoteObject.objectId,
-        includePrototype: false,
+        includePrototype: true,
       );
       print(properties);
 
@@ -3132,20 +3137,28 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
                   ),
                 )
               else if (_properties != null)
-                Padding(
-                  padding: EdgeInsets.only(left: 20, top: 4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _properties!.isEmpty
-                      ? [Text(
-                          'No properties',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white38,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        )]
-                      : _properties!.map((prop) => _buildProperty(prop)).toList(),
+                Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width - 40,
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 20, top: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _properties!.isEmpty
+                          ? [Text(
+                              'No properties',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white38,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )]
+                          : _buildPropertiesWithPrototype(),
+                      ),
+                    ),
                   ),
                 ),
             ],
@@ -3155,7 +3168,49 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     );
   }
 
+  List<Widget> _buildPropertiesWithPrototype() {
+    // Simply build all properties in order
+    // The [[Prototype]] property will be handled specially in _buildProperty
+    return _properties!.map((prop) => _buildProperty(prop)).toList();
+  }
+
   Widget _buildProperty(RemoteObjectProperty property) {
+    // Special handling for [[Prototype]] property
+    if (property.name == '[[Prototype]]' && property.valueId.isNotEmpty) {
+      // Create a remote object for the prototype
+      final prototypeObject = ConsoleRemoteObject(
+        objectId: property.valueId,
+        className: 'Object',  // Will be determined when expanded
+        description: '[[Prototype]]',
+        objectType: RemoteObjectType.object,
+      );
+      
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '[[Prototype]]: ',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11,
+                color: Colors.purple.shade300,
+              ),
+            ),
+            Flexible(
+              child: _RemoteObjectWidget(
+                contextId: widget.contextId,
+                remoteObject: prototypeObject,
+                logLevel: ConsoleLogLevel.log,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -3261,7 +3316,8 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     if (value.type == 'string') return Colors.green.shade400;
     if (value.type == 'number') return Colors.blue.shade400;
     if (value.type == 'boolean') return Colors.purple.shade400;
-    if (value.type == 'null' || value.type == 'undefined') return Colors.grey.shade400;
+    if (value.type == 'null') return Colors.grey.shade400;
+    if (value.type == 'undefined') return Colors.grey.shade600;
     return Colors.white70;
   }
 

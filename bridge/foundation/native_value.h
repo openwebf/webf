@@ -27,6 +27,7 @@ enum NativeTag {
   TAG_FUNCTION = 8,
   TAG_ASYNC_FUNCTION = 9,
   TAG_UINT8_BYTES = 10,
+  TAG_UNDEFINED = 11,
 };
 
 enum class JSPointerType {
@@ -59,6 +60,7 @@ struct NativeValue : public DartReadable {
 };
 
 NativeValue Native_NewNull();
+NativeValue Native_NewUndefined();
 NativeValue Native_NewString(SharedNativeString* string);
 NativeValue Native_NewCString(const std::string& string);
 NativeValue Native_NewFloat64(double value);

@@ -44,6 +44,60 @@ struct RemoteObjectProperty {
   bool configurable;
   bool writable;
   bool is_own;  // true for own properties, false for prototype properties
+  
+  // For primitive values, we store the actual value
+  JSValue primitive_value;
+  bool has_primitive_value;
+  
+  RemoteObjectProperty() 
+    : enumerable(true), 
+      configurable(true), 
+      writable(true), 
+      is_own(true),
+      primitive_value(JS_UNDEFINED),
+      has_primitive_value(false) {}
+  
+  // Copy constructor
+  RemoteObjectProperty(const RemoteObjectProperty& other)
+    : name(other.name),
+      value_id(other.value_id),
+      enumerable(other.enumerable),
+      configurable(other.configurable),
+      writable(other.writable),
+      is_own(other.is_own),
+      primitive_value(other.primitive_value),
+      has_primitive_value(other.has_primitive_value) {
+    // Note: We don't JS_DupValue here as the values are managed by the registry
+  }
+  
+  // Move constructor
+  RemoteObjectProperty(RemoteObjectProperty&& other) noexcept
+    : name(std::move(other.name)),
+      value_id(std::move(other.value_id)),
+      enumerable(other.enumerable),
+      configurable(other.configurable),
+      writable(other.writable),
+      is_own(other.is_own),
+      primitive_value(other.primitive_value),
+      has_primitive_value(other.has_primitive_value) {
+    other.primitive_value = JS_UNDEFINED;
+    other.has_primitive_value = false;
+  }
+  
+  // Assignment operator
+  RemoteObjectProperty& operator=(const RemoteObjectProperty& other) {
+    if (this != &other) {
+      name = other.name;
+      value_id = other.value_id;
+      enumerable = other.enumerable;
+      configurable = other.configurable;
+      writable = other.writable;
+      is_own = other.is_own;
+      primitive_value = other.primitive_value;
+      has_primitive_value = other.has_primitive_value;
+    }
+    return *this;
+  }
 };
 
 class RemoteObject {

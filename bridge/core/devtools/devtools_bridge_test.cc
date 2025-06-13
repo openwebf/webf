@@ -248,12 +248,57 @@ TEST_F(DevToolsBridgeTest, PrototypeChainWithDevTools) {
     std::cout << "  - " << prop.name << " (is_own: " << prop.is_own << ")" << std::endl;
   }
   
-  // Verify prototype properties
-  bool found_base = false;
+  // With the new design, we should only see own properties + [[Prototype]]
+  bool found_prototype = false;
+  std::string prototype_id;
   for (const auto& prop : all_props) {
+    if (prop.name == "[[Prototype]]") {
+      found_prototype = true;
+      prototype_id = prop.value_id;
+      EXPECT_FALSE(prop.is_own);
+      EXPECT_FALSE(prop.enumerable);
+      EXPECT_FALSE(prop.writable);
+      EXPECT_FALSE(prop.configurable);
+    }
+  }
+  EXPECT_TRUE(found_prototype);
+  EXPECT_EQ(all_props.size(), 2u);  // derivedProp + [[Prototype]]
+  
+  // Now check the prototype's properties
+  ASSERT_FALSE(prototype_id.empty());
+  auto proto_props = registry_->GetObjectProperties(prototype_id, true);
+  
+  // The prototype should have constructor and [[Prototype]]
+  bool found_constructor = false;
+  bool found_proto_prototype = false;
+  for (const auto& prop : proto_props) {
+    if (prop.name == "constructor") {
+      found_constructor = true;
+    } else if (prop.name == "[[Prototype]]") {
+      found_proto_prototype = true;
+    }
+  }
+  EXPECT_TRUE(found_constructor);
+  EXPECT_TRUE(found_proto_prototype);
+  
+  // Get the prototype's prototype to find baseProp
+  std::string proto_proto_id;
+  for (const auto& prop : proto_props) {
+    if (prop.name == "[[Prototype]]") {
+      proto_proto_id = prop.value_id;
+      break;
+    }
+  }
+  
+  ASSERT_FALSE(proto_proto_id.empty());
+  auto proto_proto_props = registry_->GetObjectProperties(proto_proto_id, false);
+  
+  // Now we should find baseProp
+  bool found_base = false;
+  for (const auto& prop : proto_proto_props) {
     if (prop.name == "baseProp") {
       found_base = true;
-      EXPECT_FALSE(prop.is_own);
+      EXPECT_TRUE(prop.is_own);  // It's own property of Base.prototype
     }
   }
   EXPECT_TRUE(found_base);
