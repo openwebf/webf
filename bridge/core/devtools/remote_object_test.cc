@@ -1106,3 +1106,259 @@ TEST(RemoteObject, PropertyDescriptors) {
   JS_FreeValue(ctx, descriptorTest);
   JS_FreeValue(ctx, global);
 }
+
+TEST(RemoteObject, SymbolPropertyValues) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test retrieving symbol property values
+  const char* code = R"(
+    const sym1 = Symbol('test');
+    const sym2 = Symbol.for('global');
+    const sym3 = Symbol();
+    
+    window.symbolValueTest = {
+      regular: 'regular value',
+      [sym1]: 'symbol test value',
+      [sym2]: { nested: 'object value' },
+      [sym3]: 42,
+      [Symbol.iterator]: function* () { yield 1; },
+      [Symbol.toStringTag]: 'CustomType'
+    };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue symbolValueTest = JS_GetPropertyStr(ctx, global, "symbolValueTest");
+  
+  std::string objectId = registry->RegisterObject(ctx, symbolValueTest);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  // Test GetPropertyValue for symbol properties
+  for (const auto& prop : properties) {
+    if (prop.is_symbol) {
+      JSValue value = registry->GetPropertyValue(objectId, prop);
+      ASSERT_FALSE(JS_IsException(value));
+      EXPECT_FALSE(JS_IsUndefined(value));  // Should get actual value
+      
+      if (prop.name == "Symbol(test)") {
+        EXPECT_TRUE(JS_IsString(value));
+        const char* str = JS_ToCString(ctx, value);
+        EXPECT_STREQ(str, "symbol test value");
+        JS_FreeCString(ctx, str);
+      } else if (prop.name == "Symbol(global)") {
+        EXPECT_TRUE(JS_IsObject(value));
+      } else if (prop.name == "Symbol()") {
+        EXPECT_TRUE(JS_IsNumber(value));
+        double num;
+        JS_ToFloat64(ctx, &num, value);
+        EXPECT_EQ(num, 42.0);
+      }
+      
+      JS_FreeValue(ctx, value);
+    }
+  }
+  
+  JS_FreeValue(ctx, symbolValueTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, GetPropertyValueForPrimitives) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test GetPropertyValue for primitive properties
+  const char* code = R"(
+    window.primitiveTest = {
+      stringProp: 'hello world',
+      numberProp: 3.14159,
+      boolProp: true,
+      nullProp: null,
+      undefinedProp: undefined,
+      infProp: Infinity,
+      nanProp: NaN
+    };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue primitiveTest = JS_GetPropertyStr(ctx, global, "primitiveTest");
+  
+  std::string objectId = registry->RegisterObject(ctx, primitiveTest);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  for (const auto& prop : properties) {
+    if (prop.is_primitive) {
+      JSValue value = registry->GetPropertyValue(objectId, prop);
+      ASSERT_FALSE(JS_IsException(value));
+      
+      if (prop.name == "stringProp") {
+        EXPECT_TRUE(JS_IsString(value));
+        const char* str = JS_ToCString(ctx, value);
+        EXPECT_STREQ(str, "hello world");
+        JS_FreeCString(ctx, str);
+      } else if (prop.name == "numberProp") {
+        EXPECT_TRUE(JS_IsNumber(value));
+        double num;
+        JS_ToFloat64(ctx, &num, value);
+        EXPECT_NEAR(num, 3.14159, 0.00001);
+      } else if (prop.name == "boolProp") {
+        EXPECT_TRUE(JS_IsBool(value));
+        EXPECT_TRUE(JS_ToBool(ctx, value));
+      } else if (prop.name == "nullProp") {
+        EXPECT_TRUE(JS_IsNull(value));
+      } else if (prop.name == "undefinedProp") {
+        EXPECT_TRUE(JS_IsUndefined(value));
+      }
+      
+      JS_FreeValue(ctx, value);
+    }
+  }
+  
+  JS_FreeValue(ctx, primitiveTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, ComplexNestedWithSymbols) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test complex nested structure with symbols
+  const char* code = R"(
+    const parentSym = Symbol('parent');
+    const childSym = Symbol('child');
+    
+    window.complexNested = {
+      level1: {
+        regular: 'level1 value',
+        [parentSym]: 'parent symbol value',
+        level2: {
+          data: 'level2 data',
+          [childSym]: { deep: 'symbol object' },
+          level3: {
+            final: 'deepest value'
+          }
+        }
+      }
+    };
+    
+    // Add circular reference with symbol
+    const circularSym = Symbol('circular');
+    window.complexNested[circularSym] = window.complexNested.level1;
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue complexNested = JS_GetPropertyStr(ctx, global, "complexNested");
+  
+  std::string objectId = registry->RegisterObject(ctx, complexNested);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  // Find the level1 object
+  std::string level1Id;
+  for (const auto& prop : properties) {
+    if (prop.name == "level1") {
+      level1Id = prop.value_id;
+      break;
+    }
+  }
+  
+  ASSERT_FALSE(level1Id.empty());
+  
+  // Get level1 properties including symbols
+  auto level1Props = registry->GetObjectProperties(level1Id);
+  
+  bool found_parent_symbol = false;
+  bool found_level2 = false;
+  
+  for (const auto& prop : level1Props) {
+    if (prop.name == "Symbol(parent)") {
+      found_parent_symbol = true;
+      EXPECT_TRUE(prop.is_symbol);
+      
+      // Test retrieving symbol property value
+      JSValue symValue = registry->GetPropertyValue(level1Id, prop);
+      EXPECT_TRUE(JS_IsString(symValue));
+      const char* str = JS_ToCString(ctx, symValue);
+      EXPECT_STREQ(str, "parent symbol value");
+      JS_FreeCString(ctx, str);
+      JS_FreeValue(ctx, symValue);
+    } else if (prop.name == "level2") {
+      found_level2 = true;
+    }
+  }
+  
+  EXPECT_TRUE(found_parent_symbol);
+  EXPECT_TRUE(found_level2);
+  
+  JS_FreeValue(ctx, complexNested);
+  JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, BuiltInObjectTypes) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test proper detection of built-in object types
+  const char* code = R"(
+    window.builtIns = {
+      date: new Date('2024-12-25T00:00:00Z'),
+      regexp: /test.*pattern/gi,
+      error: new Error('test error'),
+      typeError: new TypeError('type error'),
+      rangeError: new RangeError('range error'),
+      promise: Promise.resolve(42),
+      map: new Map([['key1', 'value1'], ['key2', 'value2']]),
+      set: new Set([1, 2, 3, 3]),
+      weakMap: new WeakMap(),
+      weakSet: new WeakSet(),
+      arrayBuffer: new ArrayBuffer(16),
+      typedArray: new Uint8Array([1, 2, 3, 4])
+    };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue builtIns = JS_GetPropertyStr(ctx, global, "builtIns");
+  
+  std::string objectId = registry->RegisterObject(ctx, builtIns);
+  auto properties = registry->GetObjectProperties(objectId);
+  
+  for (const auto& prop : properties) {
+    if (!prop.value_id.empty()) {
+      auto details = registry->GetObjectDetails(prop.value_id);
+      ASSERT_NE(details, nullptr);
+      
+      if (prop.name == "date") {
+        EXPECT_EQ(details->type(), RemoteObjectType::Date);
+        EXPECT_EQ(details->class_name(), "Date");
+      } else if (prop.name == "regexp") {
+        EXPECT_EQ(details->type(), RemoteObjectType::RegExp);
+        EXPECT_EQ(details->class_name(), "RegExp");
+      } else if (prop.name == "error" || prop.name == "typeError" || prop.name == "rangeError") {
+        EXPECT_EQ(details->type(), RemoteObjectType::Error);
+        EXPECT_TRUE(details->class_name().find("Error") != std::string::npos);
+      } else if (prop.name == "promise") {
+        EXPECT_EQ(details->type(), RemoteObjectType::Promise);
+        EXPECT_EQ(details->class_name(), "Promise");
+      } else if (prop.name == "map") {
+        EXPECT_EQ(details->type(), RemoteObjectType::Map);
+        EXPECT_EQ(details->class_name(), "Map");
+      } else if (prop.name == "set") {
+        EXPECT_EQ(details->type(), RemoteObjectType::Set);
+        EXPECT_EQ(details->class_name(), "Set");
+      }
+    }
+  }
+  
+  JS_FreeValue(ctx, builtIns);
+  JS_FreeValue(ctx, global);
+}

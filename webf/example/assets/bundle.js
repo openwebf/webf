@@ -11,3 +11,5 @@ p.appendChild(br);
 p.appendChild(text2);
 
 document.body.appendChild(p);
+
+p.onclick = (e) => console.log(e);

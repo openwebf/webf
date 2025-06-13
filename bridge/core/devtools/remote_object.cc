@@ -124,6 +124,8 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
       RemoteObjectProperty prop;
       prop.name = prop_name;
       prop.is_own = true;
+      prop.is_symbol = is_symbol;
+      prop.property_index = i;  // Store the index for later retrieval
       
       // Handle primitive values directly
       if (JS_IsNull(prop_value) || JS_IsUndefined(prop_value) || 
@@ -171,6 +173,8 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
       prototype_prop.configurable = false;
       prototype_prop.writable = false;
       prototype_prop.is_primitive = false;
+      prototype_prop.is_symbol = false;
+      prototype_prop.property_index = -1;
       
       // Register the prototype object itself
       prototype_prop.value_id = RegisterObject(ctx, proto);
@@ -410,7 +414,7 @@ NativeValue CreateRemoteObjectValue(const std::string& object_id,
   return Native_NewCString(json.str());
 }
 
-JSValue RemoteObjectRegistry::GetPropertyValue(const std::string& object_id, const std::string& property_name) {
+JSValue RemoteObjectRegistry::GetPropertyValue(const std::string& object_id, const RemoteObjectProperty& property) {
   auto it = objects_.find(object_id);
   if (it == objects_.end()) {
     return JS_UNDEFINED;
@@ -420,7 +424,28 @@ JSValue RemoteObjectRegistry::GetPropertyValue(const std::string& object_id, con
   JSValue obj = it->second.value;
   
   // Get the property value directly
-  JSValue prop_value = JS_GetPropertyStr(ctx, obj, property_name.c_str());
+  JSValue prop_value;
+  if (property.is_symbol && property.property_index >= 0) {
+    // For symbol properties, we need to re-enumerate to get the atom
+    JSPropertyEnum* props = nullptr;
+    uint32_t prop_count = 0;
+    int flags = JS_GPN_STRING_MASK | JS_GPN_SYMBOL_MASK;
+    
+    if (JS_GetOwnPropertyNames(ctx, &props, &prop_count, obj, flags) >= 0) {
+      if (property.property_index < prop_count) {
+        JSAtom atom = props[property.property_index].atom;
+        prop_value = JS_GetProperty(ctx, obj, atom);
+      } else {
+        prop_value = JS_UNDEFINED;
+      }
+      js_free(ctx, props);
+    } else {
+      prop_value = JS_UNDEFINED;
+    }
+  } else {
+    // For string properties
+    prop_value = JS_GetPropertyStr(ctx, obj, property.name.c_str());
+  }
   return prop_value;  // Caller is responsible for freeing this
 }
 

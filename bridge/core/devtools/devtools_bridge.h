@@ -22,12 +22,6 @@ webf::NativeValue* EvaluatePropertyPathFromDart(void* dart_isolate_context_ptr,
                                                 const char* property_path);
 
 WEBF_EXPORT_C
-webf::NativeValue* GetPropertyValueFromDart(void* dart_isolate_context_ptr,
-                                           double context_id,
-                                           const char* object_id,
-                                           const char* property_name);
-
-WEBF_EXPORT_C
 void ReleaseObjectFromDart(void* dart_isolate_context_ptr, double context_id, const char* object_id);
 
 namespace webf {

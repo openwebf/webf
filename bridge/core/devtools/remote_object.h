@@ -45,13 +45,17 @@ struct RemoteObjectProperty {
   bool writable;
   bool is_own;  // true for own properties, false for prototype properties
   bool is_primitive;  // true if this is a primitive value
+  bool is_symbol;  // true if the property key is a Symbol
+  int property_index;  // Index in the property enumeration (for symbol lookup)
   
   RemoteObjectProperty() 
     : enumerable(true), 
       configurable(true), 
       writable(true), 
       is_own(true),
-      is_primitive(false) {}
+      is_primitive(false),
+      is_symbol(false),
+      property_index(-1) {}
 };
 
 class RemoteObject {
@@ -91,8 +95,8 @@ class RemoteObjectRegistry {
   // Get object properties
   std::vector<RemoteObjectProperty> GetObjectProperties(const std::string& id, bool include_prototype = false);
   
-  // Get primitive value for a property (must be called with the object_id and property name)
-  JSValue GetPropertyValue(const std::string& object_id, const std::string& property_name);
+  // Get primitive value for a property (must be called with the object_id and property)
+  JSValue GetPropertyValue(const std::string& object_id, const RemoteObjectProperty& property);
   
   // Evaluate property access (e.g., "obj.prop.subprop")
   JSValue EvaluatePropertyPath(const std::string& object_id, const std::string& property_path);

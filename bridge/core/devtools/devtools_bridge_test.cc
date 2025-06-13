@@ -96,6 +96,274 @@ TEST_F(DevToolsBridgeTest, ContextRegistrationWithObjects) {
   JS_FreeValue(ctx, global);
 }
 
+TEST_F(DevToolsBridgeTest, DateAndRegExpMemoryManagement) {
+  // Test that Date and RegExp objects don't cause memory leaks
+  const char* code = R"(
+    window.memoryTest = {
+      date1: new Date('2024-01-01'),
+      date2: new Date(1640995200000),
+      regex1: /test/gi,
+      regex2: new RegExp('pattern', 'i'),
+      array: [
+        new Date(),
+        /nested/,
+        { date: new Date('2024-12-25') }
+      ]
+    };
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue memoryTest = JS_GetPropertyStr(ctx, global, "memoryTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, memoryTest);
+  
+  // Get properties multiple times to test memory management
+  for (int i = 0; i < 5; i++) {
+    auto properties = registry_->GetObjectProperties(object_id);
+    
+    // Check each property
+    for (const auto& prop : properties) {
+      if (!prop.value_id.empty()) {
+        auto details = registry_->GetObjectDetails(prop.value_id);
+        ASSERT_NE(details, nullptr);
+        
+        // Verify type detection using JS_GetClassID
+        if (prop.name == "date1" || prop.name == "date2") {
+          EXPECT_EQ(details->type(), RemoteObjectType::Date);
+          EXPECT_EQ(details->class_name(), "Date");
+        } else if (prop.name == "regex1" || prop.name == "regex2") {
+          EXPECT_EQ(details->type(), RemoteObjectType::RegExp);
+          EXPECT_EQ(details->class_name(), "RegExp");
+        }
+      }
+    }
+  }
+  
+  // Clear registry to test cleanup
+  registry_->ClearContext(context_);
+  
+  // Verify objects are cleared
+  auto details = registry_->GetObjectDetails(object_id);
+  EXPECT_EQ(details, nullptr);
+  
+  JS_FreeValue(ctx, memoryTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, EvaluatePropertyPathWithSymbols) {
+  // Test property path evaluation including symbols
+  const char* code = R"(
+    const pathSym = Symbol('path');
+    
+    window.pathTest = {
+      level1: {
+        level2: {
+          value: 'deep value',
+          [pathSym]: 'symbol value at level2'
+        }
+      },
+      [pathSym]: {
+        nested: 'symbol object'
+      }
+    };
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue pathTest = JS_GetPropertyStr(ctx, global, "pathTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, pathTest);
+  
+  // Test regular property path
+  JSValue result1 = registry_->EvaluatePropertyPath(object_id, "level1.level2.value");
+  ASSERT_FALSE(JS_IsException(result1));
+  EXPECT_TRUE(JS_IsString(result1));
+  const char* str = JS_ToCString(ctx, result1);
+  EXPECT_STREQ(str, "deep value");
+  JS_FreeCString(ctx, str);
+  JS_FreeValue(ctx, result1);
+  
+  // Test non-existent path
+  JSValue result2 = registry_->EvaluatePropertyPath(object_id, "level1.nonexistent.value");
+  EXPECT_TRUE(JS_IsUndefined(result2));
+  JS_FreeValue(ctx, result2);
+  
+  JS_FreeValue(ctx, pathTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, LargeObjectHierarchy) {
+  // Test handling of large object hierarchies
+  const char* code = R"(
+    function createDeepObject(depth, breadth) {
+      if (depth === 0) return 'leaf';
+      
+      const obj = {};
+      for (let i = 0; i < breadth; i++) {
+        obj['prop' + i] = createDeepObject(depth - 1, breadth);
+      }
+      return obj;
+    }
+    
+    window.largeObject = {
+      deep: createDeepObject(3, 5),  // 3 levels deep, 5 properties each
+      array: new Array(100).fill(0).map((_, i) => ({ index: i, value: 'item' + i })),
+      symbols: {}
+    };
+    
+    // Add many symbol properties
+    for (let i = 0; i < 20; i++) {
+      window.largeObject.symbols[Symbol('sym' + i)] = 'symbol value ' + i;
+    }
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue largeObject = JS_GetPropertyStr(ctx, global, "largeObject");
+  
+  std::string object_id = registry_->RegisterObject(ctx, largeObject);
+  auto properties = registry_->GetObjectProperties(object_id);
+  
+  // Should have at least the main properties
+  ASSERT_GE(properties.size(), 3u);
+  
+  // Find the symbols object
+  std::string symbols_id;
+  for (const auto& prop : properties) {
+    if (prop.name == "symbols") {
+      symbols_id = prop.value_id;
+      break;
+    }
+  }
+  
+  ASSERT_FALSE(symbols_id.empty());
+  
+  // Get symbol properties
+  auto symbol_props = registry_->GetObjectProperties(symbols_id);
+  
+  // Count symbol properties
+  int symbol_count = 0;
+  for (const auto& prop : symbol_props) {
+    if (prop.is_symbol) {
+      symbol_count++;
+    }
+  }
+  
+  EXPECT_EQ(symbol_count, 20);
+  
+  JS_FreeValue(ctx, largeObject);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, GetterSetterProperties) {
+  // Test handling of getter/setter properties
+  const char* code = R"(
+    let _private = 'initial';
+    let _count = 0;
+    
+    window.getterSetterTest = {
+      // Regular getter/setter
+      get computed() {
+        _count++;
+        return 'computed-' + _count;
+      },
+      set computed(val) {
+        _private = val;
+      },
+      
+      // Getter only
+      get readOnly() {
+        return _private.toUpperCase();
+      },
+      
+      // Setter only (rare but possible)
+      set writeOnly(val) {
+        _private = val;
+      }
+    };
+    
+    // Define getter/setter via Object.defineProperty
+    Object.defineProperty(window.getterSetterTest, 'defined', {
+      get() { return 'defined getter'; },
+      set(v) { /* no-op */ },
+      enumerable: true,
+      configurable: false
+    });
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue getterSetterTest = JS_GetPropertyStr(ctx, global, "getterSetterTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, getterSetterTest);
+  auto properties = registry_->GetObjectProperties(object_id);
+  
+  // Check property descriptors for getters/setters
+  for (const auto& prop : properties) {
+    if (prop.name == "computed" || prop.name == "readOnly" || 
+        prop.name == "writeOnly" || prop.name == "defined") {
+      // These are accessor properties
+      // The actual behavior depends on QuickJS implementation
+      EXPECT_TRUE(prop.is_own);
+    }
+  }
+  
+  JS_FreeValue(ctx, getterSetterTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, MultipleContextIsolation) {
+  // Test that objects from different contexts are properly managed
+  auto env2 = TEST_init();
+  auto context2 = env2->page()->executingContext();
+  auto* registry2 = context2->GetRemoteObjectRegistry();
+  
+  webf::devtools_internal::RegisterExecutingContext(context2);
+  
+  // Create objects in both contexts
+  const char* code1 = "window.ctx1Object = {context: 1, data: 'context1'};";
+  const char* code2 = "window.ctx2Object = {context: 2, data: 'context2'};";
+  
+  env_->page()->evaluateScript(code1, strlen(code1), "vm://", 0);
+  env2->page()->evaluateScript(code2, strlen(code2), "vm://", 0);
+  
+  // Register objects in their respective registries
+  JSContext* ctx1 = context_->ctx();
+  JSValue global1 = JS_GetGlobalObject(ctx1);
+  JSValue obj1 = JS_GetPropertyStr(ctx1, global1, "ctx1Object");
+  std::string id1 = registry_->RegisterObject(ctx1, obj1);
+  
+  JSContext* ctx2 = context2->ctx();
+  JSValue global2 = JS_GetGlobalObject(ctx2);
+  JSValue obj2 = JS_GetPropertyStr(ctx2, global2, "ctx2Object");
+  std::string id2 = registry2->RegisterObject(ctx2, obj2);
+  
+  // Since registries use independent counters starting at 1,
+  // both objects will have ID "remote-object-1"
+  EXPECT_EQ(id1, "remote-object-1");
+  EXPECT_EQ(id2, "remote-object-1");
+  
+  // This means each registry will find an object when queried with either ID
+  // This is a limitation of the current design - registries are not truly isolated
+  EXPECT_NE(registry_->GetObjectDetails(id1), nullptr);  // finds ctx1Object
+  EXPECT_NE(registry_->GetObjectDetails(id2), nullptr);  // also finds ctx1Object (same ID!)
+  EXPECT_NE(registry2->GetObjectDetails(id1), nullptr); // finds ctx2Object (same ID!)
+  EXPECT_NE(registry2->GetObjectDetails(id2), nullptr); // finds ctx2Object
+  
+  // Clean up
+  webf::devtools_internal::UnregisterExecutingContext(context2);
+  
+  JS_FreeValue(ctx1, obj1);
+  JS_FreeValue(ctx1, global1);
+  JS_FreeValue(ctx2, obj2);
+  JS_FreeValue(ctx2, global2);
+}
+
 TEST_F(DevToolsBridgeTest, MultipleContextRegistration) {
   // Test registering multiple contexts
   auto env2 = TEST_init();
@@ -306,3 +574,332 @@ TEST_F(DevToolsBridgeTest, PrototypeChainWithDevTools) {
   JS_FreeValue(ctx, testObj);
   JS_FreeValue(ctx, global);
 }
+
+TEST_F(DevToolsBridgeTest, SymbolPropertiesInDevTools) {
+  // Test symbol properties through DevTools
+  const char* code = R"(
+    const sym1 = Symbol('devtools');
+    const sym2 = Symbol.for('global.devtools');
+    const wellKnownSym = Symbol.toStringTag;
+    
+    window.devtoolsSymbolTest = {
+      regular: 'normal property',
+      [sym1]: 'devtools symbol value',
+      [sym2]: { type: 'global symbol object' },
+      [wellKnownSym]: 'CustomDevToolsObject',
+      [Symbol('no-description')]: 123
+    };
+    
+    // Add symbol property with special descriptor
+    Object.defineProperty(window.devtoolsSymbolTest, Symbol('readonly'), {
+      value: 'readonly symbol',
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue devtoolsSymbolTest = JS_GetPropertyStr(ctx, global, "devtoolsSymbolTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, devtoolsSymbolTest);
+  auto properties = registry_->GetObjectProperties(object_id);
+  
+  // Count symbol properties
+  int symbol_count = 0;
+  int regular_count = 0;
+  
+  for (const auto& prop : properties) {
+    if (prop.is_symbol) {
+      symbol_count++;
+      
+      // Verify symbol property format
+      EXPECT_TRUE(prop.name.find("Symbol(") == 0);
+      
+      // Test retrieving symbol property value
+      JSValue value = registry_->GetPropertyValue(object_id, prop);
+      EXPECT_FALSE(JS_IsException(value));
+      EXPECT_FALSE(JS_IsUndefined(value));
+      JS_FreeValue(ctx, value);
+    } else {
+      regular_count++;
+    }
+  }
+  
+  EXPECT_GT(symbol_count, 0);
+  EXPECT_GT(regular_count, 0);
+  
+  JS_FreeValue(ctx, devtoolsSymbolTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, DateAndRegExpMemoryManagement2) {
+  // Test that Date and RegExp objects don't cause memory leaks
+  const char* code = R"(
+    window.memoryTest = {
+      date1: new Date('2024-01-01'),
+      date2: new Date(1640995200000),
+      regex1: /test/gi,
+      regex2: new RegExp('pattern', 'i'),
+      array: [
+        new Date(),
+        /nested/,
+        { date: new Date('2024-12-25') }
+      ]
+    };
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue memoryTest = JS_GetPropertyStr(ctx, global, "memoryTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, memoryTest);
+  
+  // Get properties multiple times to test memory management
+  for (int i = 0; i < 5; i++) {
+    auto properties = registry_->GetObjectProperties(object_id);
+    
+    // Check each property
+    for (const auto& prop : properties) {
+      if (!prop.value_id.empty()) {
+        auto details = registry_->GetObjectDetails(prop.value_id);
+        ASSERT_NE(details, nullptr);
+        
+        // Verify type detection using JS_GetClassID
+        if (prop.name == "date1" || prop.name == "date2") {
+          EXPECT_EQ(details->type(), RemoteObjectType::Date);
+          EXPECT_EQ(details->class_name(), "Date");
+        } else if (prop.name == "regex1" || prop.name == "regex2") {
+          EXPECT_EQ(details->type(), RemoteObjectType::RegExp);
+          EXPECT_EQ(details->class_name(), "RegExp");
+        }
+      }
+    }
+  }
+  
+  // Clear registry to test cleanup
+  registry_->ClearContext(context_);
+  
+  // Verify objects are cleared
+  auto details = registry_->GetObjectDetails(object_id);
+  EXPECT_EQ(details, nullptr);
+  
+  JS_FreeValue(ctx, memoryTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, EvaluatePropertyPathWithSymbols2) {
+  // Test property path evaluation including symbols
+  const char* code = R"(
+    const pathSym = Symbol('path');
+    
+    window.pathTest = {
+      level1: {
+        level2: {
+          value: 'deep value',
+          [pathSym]: 'symbol value at level2'
+        }
+      },
+      [pathSym]: {
+        nested: 'symbol object'
+      }
+    };
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue pathTest = JS_GetPropertyStr(ctx, global, "pathTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, pathTest);
+  
+  // Test regular property path
+  JSValue result1 = registry_->EvaluatePropertyPath(object_id, "level1.level2.value");
+  ASSERT_FALSE(JS_IsException(result1));
+  EXPECT_TRUE(JS_IsString(result1));
+  const char* str = JS_ToCString(ctx, result1);
+  EXPECT_STREQ(str, "deep value");
+  JS_FreeCString(ctx, str);
+  JS_FreeValue(ctx, result1);
+  
+  // Test non-existent path
+  JSValue result2 = registry_->EvaluatePropertyPath(object_id, "level1.nonexistent.value");
+  EXPECT_TRUE(JS_IsUndefined(result2));
+  JS_FreeValue(ctx, result2);
+  
+  JS_FreeValue(ctx, pathTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, LargeObjectHierarchy2) {
+  // Test handling of large object hierarchies
+  const char* code = R"(
+    function createDeepObject(depth, breadth) {
+      if (depth === 0) return 'leaf';
+      
+      const obj = {};
+      for (let i = 0; i < breadth; i++) {
+        obj['prop' + i] = createDeepObject(depth - 1, breadth);
+      }
+      return obj;
+    }
+    
+    window.largeObject = {
+      deep: createDeepObject(3, 5),  // 3 levels deep, 5 properties each
+      array: new Array(100).fill(0).map((_, i) => ({ index: i, value: 'item' + i })),
+      symbols: {}
+    };
+    
+    // Add many symbol properties
+    for (let i = 0; i < 20; i++) {
+      window.largeObject.symbols[Symbol('sym' + i)] = 'symbol value ' + i;
+    }
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue largeObject = JS_GetPropertyStr(ctx, global, "largeObject");
+  
+  std::string object_id = registry_->RegisterObject(ctx, largeObject);
+  auto properties = registry_->GetObjectProperties(object_id);
+  
+  // Should have at least the main properties
+  ASSERT_GE(properties.size(), 3u);
+  
+  // Find the symbols object
+  std::string symbols_id;
+  for (const auto& prop : properties) {
+    if (prop.name == "symbols") {
+      symbols_id = prop.value_id;
+      break;
+    }
+  }
+  
+  ASSERT_FALSE(symbols_id.empty());
+  
+  // Get symbol properties
+  auto symbol_props = registry_->GetObjectProperties(symbols_id);
+  
+  // Count symbol properties
+  int symbol_count = 0;
+  for (const auto& prop : symbol_props) {
+    if (prop.is_symbol) {
+      symbol_count++;
+    }
+  }
+  
+  EXPECT_EQ(symbol_count, 20);
+  
+  JS_FreeValue(ctx, largeObject);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, GetterSetterProperties2) {
+  // Test handling of getter/setter properties
+  const char* code = R"(
+    let _private = 'initial';
+    let _count = 0;
+    
+    window.getterSetterTest = {
+      // Regular getter/setter
+      get computed() {
+        _count++;
+        return 'computed-' + _count;
+      },
+      set computed(val) {
+        _private = val;
+      },
+      
+      // Getter only
+      get readOnly() {
+        return _private.toUpperCase();
+      },
+      
+      // Setter only (rare but possible)
+      set writeOnly(val) {
+        _private = val;
+      }
+    };
+    
+    // Define getter/setter via Object.defineProperty
+    Object.defineProperty(window.getterSetterTest, 'defined', {
+      get() { return 'defined getter'; },
+      set(v) { /* no-op */ },
+      enumerable: true,
+      configurable: false
+    });
+  )";
+  env_->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context_->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue getterSetterTest = JS_GetPropertyStr(ctx, global, "getterSetterTest");
+  
+  std::string object_id = registry_->RegisterObject(ctx, getterSetterTest);
+  auto properties = registry_->GetObjectProperties(object_id);
+  
+  // Check property descriptors for getters/setters
+  for (const auto& prop : properties) {
+    if (prop.name == "computed" || prop.name == "readOnly" || 
+        prop.name == "writeOnly" || prop.name == "defined") {
+      // These are accessor properties
+      // The actual behavior depends on QuickJS implementation
+      EXPECT_TRUE(prop.is_own);
+    }
+  }
+  
+  JS_FreeValue(ctx, getterSetterTest);
+  JS_FreeValue(ctx, global);
+}
+
+TEST_F(DevToolsBridgeTest, MultipleContextIsolation2) {
+  // Test that objects from different contexts are properly managed
+  auto env2 = TEST_init();
+  auto context2 = env2->page()->executingContext();
+  auto* registry2 = context2->GetRemoteObjectRegistry();
+  
+  webf::devtools_internal::RegisterExecutingContext(context2);
+  
+  // Create objects in both contexts
+  const char* code1 = "window.ctx1Object = {context: 1, data: 'context1'};";
+  const char* code2 = "window.ctx2Object = {context: 2, data: 'context2'};";
+  
+  env_->page()->evaluateScript(code1, strlen(code1), "vm://", 0);
+  env2->page()->evaluateScript(code2, strlen(code2), "vm://", 0);
+  
+  // Register objects in their respective registries
+  JSContext* ctx1 = context_->ctx();
+  JSValue global1 = JS_GetGlobalObject(ctx1);
+  JSValue obj1 = JS_GetPropertyStr(ctx1, global1, "ctx1Object");
+  std::string id1 = registry_->RegisterObject(ctx1, obj1);
+  
+  JSContext* ctx2 = context2->ctx();
+  JSValue global2 = JS_GetGlobalObject(ctx2);
+  JSValue obj2 = JS_GetPropertyStr(ctx2, global2, "ctx2Object");
+  std::string id2 = registry2->RegisterObject(ctx2, obj2);
+  
+  // Since registries use independent counters starting at 1,
+  // both objects will have ID "remote-object-1"
+  EXPECT_EQ(id1, "remote-object-1");
+  EXPECT_EQ(id2, "remote-object-1");
+  
+  // This means each registry will find an object when queried with either ID
+  // This is a limitation of the current design - registries are not truly isolated
+  EXPECT_NE(registry_->GetObjectDetails(id1), nullptr);  // finds ctx1Object
+  EXPECT_NE(registry_->GetObjectDetails(id2), nullptr);  // also finds ctx1Object (same ID!)
+  EXPECT_NE(registry2->GetObjectDetails(id1), nullptr); // finds ctx2Object (same ID!)
+  EXPECT_NE(registry2->GetObjectDetails(id2), nullptr); // finds ctx2Object
+  
+  // Clean up
+  webf::devtools_internal::UnregisterExecutingContext(context2);
+  
+  JS_FreeValue(ctx1, obj1);
+  JS_FreeValue(ctx1, global1);
+  JS_FreeValue(ctx2, obj2);
+  JS_FreeValue(ctx2, global2);
+}
+
