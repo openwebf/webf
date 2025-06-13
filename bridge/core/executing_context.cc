@@ -114,6 +114,7 @@ ExecutingContext::~ExecutingContext() {
   // Clear remote object registry for this context
   if (remote_object_registry_) {
     remote_object_registry_->ClearContext(this);
+    remote_object_registry_.reset();  // Explicitly destroy the registry
   }
   
   // Unregister this context from DevTools access

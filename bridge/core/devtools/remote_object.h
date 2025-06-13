@@ -39,65 +39,19 @@ enum class RemoteObjectType {
 
 struct RemoteObjectProperty {
   std::string name;
-  std::string value_id;  // ID of the remote value
+  std::string value_id;  // ID of the remote value (empty for primitives)
   bool enumerable;
   bool configurable;
   bool writable;
   bool is_own;  // true for own properties, false for prototype properties
-  
-  // For primitive values, we store the actual value
-  JSValue primitive_value;
-  bool has_primitive_value;
+  bool is_primitive;  // true if this is a primitive value
   
   RemoteObjectProperty() 
     : enumerable(true), 
       configurable(true), 
       writable(true), 
       is_own(true),
-      primitive_value(JS_UNDEFINED),
-      has_primitive_value(false) {}
-  
-  // Copy constructor
-  RemoteObjectProperty(const RemoteObjectProperty& other)
-    : name(other.name),
-      value_id(other.value_id),
-      enumerable(other.enumerable),
-      configurable(other.configurable),
-      writable(other.writable),
-      is_own(other.is_own),
-      primitive_value(other.primitive_value),
-      has_primitive_value(other.has_primitive_value) {
-    // Note: We don't JS_DupValue here as the values are managed by the registry
-  }
-  
-  // Move constructor
-  RemoteObjectProperty(RemoteObjectProperty&& other) noexcept
-    : name(std::move(other.name)),
-      value_id(std::move(other.value_id)),
-      enumerable(other.enumerable),
-      configurable(other.configurable),
-      writable(other.writable),
-      is_own(other.is_own),
-      primitive_value(other.primitive_value),
-      has_primitive_value(other.has_primitive_value) {
-    other.primitive_value = JS_UNDEFINED;
-    other.has_primitive_value = false;
-  }
-  
-  // Assignment operator
-  RemoteObjectProperty& operator=(const RemoteObjectProperty& other) {
-    if (this != &other) {
-      name = other.name;
-      value_id = other.value_id;
-      enumerable = other.enumerable;
-      configurable = other.configurable;
-      writable = other.writable;
-      is_own = other.is_own;
-      primitive_value = other.primitive_value;
-      has_primitive_value = other.has_primitive_value;
-    }
-    return *this;
-  }
+      is_primitive(false) {}
 };
 
 class RemoteObject {
@@ -136,6 +90,9 @@ class RemoteObjectRegistry {
   
   // Get object properties
   std::vector<RemoteObjectProperty> GetObjectProperties(const std::string& id, bool include_prototype = false);
+  
+  // Get primitive value for a property (must be called with the object_id and property name)
+  JSValue GetPropertyValue(const std::string& object_id, const std::string& property_name);
   
   // Evaluate property access (e.g., "obj.prop.subprop")
   JSValue EvaluatePropertyPath(const std::string& object_id, const std::string& property_path);

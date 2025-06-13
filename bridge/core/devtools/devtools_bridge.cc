@@ -116,15 +116,25 @@ NativeValue* GetObjectPropertiesImpl(double context_id,
     JS_SetPropertyStr(ctx, propObj, "isOwn", JS_NewBool(ctx, prop.is_own));
     
     // Add value information
-    if (prop.has_primitive_value) {
-      // For primitive values, create a primitive value object
-      JSValue valueObj = JS_NewObject(ctx);
-      JS_SetPropertyStr(ctx, valueObj, "type", JS_NewString(ctx, "primitive"));
-      
-      // Copy the primitive value
-      JS_SetPropertyStr(ctx, valueObj, "value", JS_DupValue(ctx, prop.primitive_value));
-      
-      JS_SetPropertyStr(ctx, propObj, "value", valueObj);
+    if (prop.is_primitive) {
+      // For primitive values, get the actual value using GetPropertyValue
+      JSValue prop_value = registry->GetPropertyValue(std::string(object_id), prop.name);
+      if (!JS_IsException(prop_value)) {
+        JSValue valueObj = JS_NewObject(ctx);
+        JS_SetPropertyStr(ctx, valueObj, "type", JS_NewString(ctx, "primitive"));
+        
+        // Store the actual primitive value
+        if (JS_IsUndefined(prop_value)) {
+          JS_SetPropertyStr(ctx, valueObj, "value", JS_NewString(ctx, "undefined"));
+        } else if (JS_IsNull(prop_value)) {
+          JS_SetPropertyStr(ctx, valueObj, "value", JS_NULL);
+        } else {
+          JS_SetPropertyStr(ctx, valueObj, "value", JS_DupValue(ctx, prop_value));
+        }
+        
+        JS_SetPropertyStr(ctx, propObj, "value", valueObj);
+      }
+      JS_FreeValue(ctx, prop_value);
     } else if (!prop.value_id.empty()) {
       // For objects, get details and create remote object representation
       auto valueDetails = registry->GetObjectDetails(prop.value_id);
@@ -224,6 +234,40 @@ NativeValue* EvaluatePropertyPathImpl(double context_id,
   return result;
 }
 
+NativeValue* GetPropertyValueImpl(double context_id, const char* object_id, const char* property_name) {
+  if (!isContextValid(context_id)) {
+    return nullptr;
+  }
+  
+  ExecutingContext* context = GetExecutingContextById(context_id);
+  if (!context) {
+    return nullptr;
+  }
+  
+  RemoteObjectRegistry* registry = context->GetRemoteObjectRegistry();
+  if (!registry) {
+    return nullptr;
+  }
+  
+  JSContext* ctx = context->ctx();
+  JSValue value = registry->GetPropertyValue(std::string(object_id), std::string(property_name));
+  
+  NativeValue* result = new NativeValue();
+  
+  if (JS_IsException(value)) {
+    // Clear the exception
+    JS_GetException(ctx);
+    result->tag = NativeTag::TAG_NULL;
+    JS_FreeValue(ctx, value);
+    return result;
+  }
+  
+  // Convert the value to NativeValue
+  JSValueToNativeValue(result, ctx, value);
+  JS_FreeValue(ctx, value);
+  return result;
+}
+
 void ReleaseObjectImpl(double context_id, const char* object_id) {
   if (!isContextValid(context_id)) {
     return;
@@ -300,6 +344,34 @@ webf::NativeValue* EvaluatePropertyPathFromDart(void* dart_isolate_context_ptr,
         return nullptr;
       }
       return webf::devtools_internal::EvaluatePropertyPathImpl(context_id, object_id_str.c_str(), property_path_str.c_str());
+    }
+  );
+}
+
+WEBF_EXPORT_C
+webf::NativeValue* GetPropertyValueFromDart(void* dart_isolate_context_ptr,
+                                           double context_id, 
+                                           const char* object_id,
+                                           const char* property_name) {
+  // Cast the pointer to DartIsolateContext
+  webf::DartIsolateContext* dart_isolate_context = static_cast<webf::DartIsolateContext*>(dart_isolate_context_ptr);
+  if (!dart_isolate_context || !dart_isolate_context->dispatcher()) {
+    return nullptr;
+  }
+  
+  // Copy the strings since they might be freed before the lambda executes
+  std::string object_id_str(object_id);
+  std::string property_name_str(property_name);
+  
+  // Execute on JS thread synchronously
+  return dart_isolate_context->dispatcher()->PostToJsSync(
+    true, // is_dedicated
+    static_cast<int32_t>(context_id),
+    [context_id, object_id_str, property_name_str](bool cancel) -> webf::NativeValue* {
+      if (cancel) {
+        return nullptr;
+      }
+      return webf::devtools_internal::GetPropertyValueImpl(context_id, object_id_str.c_str(), property_name_str.c_str());
     }
   );
 }

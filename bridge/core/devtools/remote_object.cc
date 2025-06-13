@@ -128,15 +128,13 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
       // Handle primitive values directly
       if (JS_IsNull(prop_value) || JS_IsUndefined(prop_value) || 
           JS_IsBool(prop_value) || JS_IsNumber(prop_value) || JS_IsString(prop_value)) {
-        // For primitives, store the actual value in the property
+        // For primitives, we don't register them
         prop.value_id = "";  // Empty ID for primitives
-        prop.primitive_value = JS_DupValue(ctx, prop_value);  // Duplicate the value
-        prop.has_primitive_value = true;
+        prop.is_primitive = true;
       } else {
         // For objects, register them and store the ID
         prop.value_id = RegisterObject(ctx, prop_value);
-        prop.primitive_value = JS_UNDEFINED;
-        prop.has_primitive_value = false;
+        prop.is_primitive = false;
       }
       
       // Get property descriptor
@@ -172,8 +170,7 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
       prototype_prop.enumerable = false;
       prototype_prop.configurable = false;
       prototype_prop.writable = false;
-      prototype_prop.has_primitive_value = false;
-      prototype_prop.primitive_value = JS_UNDEFINED;
+      prototype_prop.is_primitive = false;
       
       // Register the prototype object itself
       prototype_prop.value_id = RegisterObject(ctx, proto);
@@ -265,27 +262,40 @@ RemoteObjectType RemoteObjectRegistry::GetObjectType(JSContext* ctx, JSValue val
   if (JS_IsFunction(ctx, value)) return RemoteObjectType::Function;
   if (JS_IsArray(ctx, value) > 0) return RemoteObjectType::Array;
   
-  // Check for specific object types
-  JSValue ctor = JS_GetPropertyStr(ctx, value, "constructor");
-  if (!JS_IsUndefined(ctor)) {
-    JSValue name = JS_GetPropertyStr(ctx, ctor, "name");
-    if (JS_IsString(name)) {
-      const char* name_str = JS_ToCString(ctx, name);
-      std::string type_name(name_str);
-      JS_FreeCString(ctx, name_str);
-      
-      if (type_name == "Date") return RemoteObjectType::Date;
-      if (type_name == "RegExp") return RemoteObjectType::RegExp;
-      if (type_name == "Error") return RemoteObjectType::Error;
-      if (type_name == "Promise") return RemoteObjectType::Promise;
-      if (type_name == "Map") return RemoteObjectType::Map;
-      if (type_name == "Set") return RemoteObjectType::Set;
-      if (type_name == "WeakMap") return RemoteObjectType::WeakMap;
-      if (type_name == "WeakSet") return RemoteObjectType::WeakSet;
+  // Check for specific object types using class ID
+  if (JS_IsObject(value)) {
+    JSClassID class_id = JS_GetClassID(value);
+    switch (class_id) {
+      case JS_CLASS_DATE:
+        return RemoteObjectType::Date;
+      case JS_CLASS_REGEXP:
+        return RemoteObjectType::RegExp;
+      case JS_CLASS_ERROR:
+        return RemoteObjectType::Error;
+      // Other types still need constructor check
+      default:
+        break;
     }
-    JS_FreeValue(ctx, name);
+    
+    // For types not covered by class ID, check constructor name
+    JSValue ctor = JS_GetPropertyStr(ctx, value, "constructor");
+    if (!JS_IsUndefined(ctor)) {
+      JSValue name = JS_GetPropertyStr(ctx, ctor, "name");
+      if (JS_IsString(name)) {
+        const char* name_str = JS_ToCString(ctx, name);
+        std::string type_name(name_str);
+        JS_FreeCString(ctx, name_str);
+        
+        if (type_name == "Promise") return RemoteObjectType::Promise;
+        if (type_name == "Map") return RemoteObjectType::Map;
+        if (type_name == "Set") return RemoteObjectType::Set;
+        if (type_name == "WeakMap") return RemoteObjectType::WeakMap;
+        if (type_name == "WeakSet") return RemoteObjectType::WeakSet;
+      }
+      JS_FreeValue(ctx, name);
+    }
+    JS_FreeValue(ctx, ctor);
   }
-  JS_FreeValue(ctx, ctor);
   
   return RemoteObjectType::Object;
 }
@@ -306,6 +316,21 @@ std::string RemoteObjectRegistry::GetObjectClassName(JSContext* ctx, JSValue val
   
   if (JS_IsArray(ctx, value)) {
     return "Array";
+  }
+  
+  // Check for specific object types using class ID first
+  if (JS_IsObject(value)) {
+    JSClassID class_id = JS_GetClassID(value);
+    switch (class_id) {
+      case JS_CLASS_DATE:
+        return "Date";
+      case JS_CLASS_REGEXP:
+        return "RegExp";
+      case JS_CLASS_ERROR:
+        return "Error";
+      default:
+        break;
+    }
   }
   
   // Get the constructor from the object's constructor property
@@ -383,6 +408,20 @@ NativeValue CreateRemoteObjectValue(const std::string& object_id,
   json << "}";
   
   return Native_NewCString(json.str());
+}
+
+JSValue RemoteObjectRegistry::GetPropertyValue(const std::string& object_id, const std::string& property_name) {
+  auto it = objects_.find(object_id);
+  if (it == objects_.end()) {
+    return JS_UNDEFINED;
+  }
+  
+  JSContext* ctx = it->second.ctx;
+  JSValue obj = it->second.value;
+  
+  // Get the property value directly
+  JSValue prop_value = JS_GetPropertyStr(ctx, obj, property_name.c_str());
+  return prop_value;  // Caller is responsible for freeing this
 }
 
 }  // namespace webf
