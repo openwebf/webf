@@ -10,7 +10,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/console_store.dart';
 import 'package:webf/src/devtools/network_store.dart';
+import 'package:webf/src/devtools/remote_object_service.dart';
 import 'package:webf/src/foundation/http_cache.dart';
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
@@ -186,14 +188,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   final HttpCacheMode _originalCacheMode = HttpCacheController.mode;
   // Track whether cache is disabled
   bool _isCacheDisabled = HttpCacheController.mode == HttpCacheMode.NO_CACHE;
-  
+
   // Track which response bodies are expanded
   final Set<String> _expandedResponseBodies = {};
   final Set<String> _expandedRequestBodies = {};
-  
+
   // Track which headers sections are expanded
   final Set<String> _expandedHeaders = {};
-  
+
   // Track the selected network filter
   NetworkRequestType? _selectedNetworkFilter;
 
@@ -201,7 +203,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 3,
+      length: 4,
       vsync: this,
       initialIndex: _lastSelectedTabIndex,
     );
@@ -282,6 +284,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 Tab(text: 'Controllers'),
                 Tab(text: 'Routes'),
                 Tab(text: 'Network'),
+                Tab(text: 'Console'),
               ],
             ),
           ),
@@ -293,6 +296,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 _buildControllersTab(),
                 _buildRoutesTab(),
                 _buildNetworkTab(),
+                _buildConsoleTab(),
               ],
             ),
           ),
@@ -363,17 +367,17 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ),
     );
   }
-  
+
   Widget _buildDevToolsInfo(WebFControllerManager manager) {
     if (!manager.isDevToolsEnabled) {
       return Container();
     }
-    
+
     final devToolsUrl = manager.devToolsUrl;
     if (devToolsUrl == null) {
       return Container();
     }
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -994,12 +998,12 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ),
     );
   }
-  
+
   Widget _buildRouteStateViewer(dynamic state) {
     // Try to parse the state as JSON if it's a string
     dynamic stateData;
     bool isJson = false;
-    
+
     if (state is String) {
       try {
         // Try to parse as JSON
@@ -1017,7 +1021,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       // Other types, convert to string
       stateData = state.toString();
     }
-    
+
     return Container(
       padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -1237,12 +1241,12 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                               : requests.where((req) {
                                   // For fetch/xhr filter, include both types
                                   if (_selectedNetworkFilter == NetworkRequestType.fetch) {
-                                    return req.type == NetworkRequestType.fetch || 
+                                    return req.type == NetworkRequestType.fetch ||
                                            req.type == NetworkRequestType.xhr;
                                   }
                                   return req.type == _selectedNetworkFilter;
                                 }).toList();
-                          
+
                           if (filteredRequests.isEmpty) {
                             return Center(
                               child: Text(
@@ -1251,7 +1255,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                               ),
                             );
                           }
-                          
+
                           return ListView.builder(
                             itemCount: filteredRequests.length,
                             itemBuilder: (context, index) {
@@ -1565,7 +1569,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   Widget _buildHeadersSection(String title, Map<String, List<String>> headers, String sectionId) {
     final isExpanded = _expandedHeaders.contains(sectionId);
     final showAllHeaders = isExpanded || headers.length <= 3; // Show first 3 headers when collapsed
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1719,18 +1723,18 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildExpandableResponseBody(NetworkRequest request) {
     final isExpanded = _expandedResponseBodies.contains(request.requestId);
-    
+
     // Try to detect if it's an image by checking the actual content
     final isImage = _isImageData(request.responseBody!);
-    
+
     String? responseString;
     dynamic jsonData;
     bool isJson = false;
-    
+
     if (!isImage) {
       try {
         responseString = utf8.decode(request.responseBody!, allowMalformed: true);
-        
+
         // Try to parse JSON
         if (request.mimeType?.contains('json') ?? false || responseString.trimLeft().startsWith('{') || responseString.trimLeft().startsWith('[')) {
           try {
@@ -1745,9 +1749,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         responseString = 'Binary data (cannot display)';
       }
     }
-    
+
     final isLongResponse = !isImage && !isJson && responseString != null && responseString.length > 500;
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1872,13 +1876,13 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     String? requestString;
     dynamic jsonData;
     Map<String, String>? formDataFields;
-    
+
     // Check content type from request headers
     final contentType = request.requestHeaders['content-type']?.first ?? '';
-    
+
     try {
       requestString = utf8.decode(request.requestData, allowMalformed: true);
-      
+
       // Try to parse JSON
       if (contentType.contains('json') || requestString.trimLeft().startsWith('{') || requestString.trimLeft().startsWith('[')) {
         try {
@@ -1888,7 +1892,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           // Not valid JSON
         }
       }
-      
+
       // Check if it's form data
       if (contentType.contains('application/x-www-form-urlencoded')) {
         isFormData = true;
@@ -1902,9 +1906,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       // If decoding fails, show as binary data
       requestString = 'Binary data (cannot display)';
     }
-    
+
     final isLongRequest = !isJson && !isFormData && requestString != null && requestString.length > 500;
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2050,7 +2054,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   Widget _buildFormDataViewer(Map<String, String> formData, bool isExpanded) {
     final entries = formData.entries.toList();
     final displayCount = isExpanded ? entries.length : 5.clamp(0, entries.length);
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2144,47 +2148,47 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
   }
-  
+
   bool _isImageData(Uint8List data) {
     if (data.isEmpty) return false;
-    
+
     // Check for common image file signatures (magic numbers)
     // PNG signature: 89 50 4E 47 0D 0A 1A 0A
-    if (data.length >= 8 && 
+    if (data.length >= 8 &&
         data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
         data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A) {
       return true;
     }
-    
+
     // JPEG signature: FF D8 FF
     if (data.length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF) {
       return true;
     }
-    
+
     // GIF signature: 47 49 46 38 (GIF87a or GIF89a)
-    if (data.length >= 6 && 
+    if (data.length >= 6 &&
         data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x38) {
       return true;
     }
-    
+
     // WebP signature: 52 49 46 46 ?? ?? ?? ?? 57 45 42 50 (RIFF....WEBP)
-    if (data.length >= 12 && 
+    if (data.length >= 12 &&
         data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
         data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50) {
       return true;
     }
-    
+
     // BMP signature: 42 4D (BM)
     if (data.length >= 2 && data[0] == 0x42 && data[1] == 0x4D) {
       return true;
     }
-    
+
     // ICO signature: 00 00 01 00
-    if (data.length >= 4 && 
+    if (data.length >= 4 &&
         data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0x00) {
       return true;
     }
-    
+
     // SVG detection - check if it starts with XML or SVG tags
     try {
       final str = utf8.decode(data.take(1000).toList(), allowMalformed: true).toLowerCase();
@@ -2194,17 +2198,17 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     } catch (_) {
       // Not text, continue checking
     }
-    
+
     return false;
   }
-  
+
   bool _isSvgData(Uint8List data) {
     if (data.isEmpty) return false;
-    
+
     try {
       final str = utf8.decode(data, allowMalformed: true).toLowerCase().trim();
       // Check if it starts with common SVG patterns
-      if (str.startsWith('<svg') || 
+      if (str.startsWith('<svg') ||
           str.startsWith('<?xml') && str.contains('<svg') ||
           str.contains('xmlns="http://www.w3.org/2000/svg"')) {
         return true;
@@ -2212,13 +2216,13 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     } catch (_) {
       // Not text, definitely not SVG
     }
-    
+
     return false;
   }
-  
+
   Widget _buildImagePreview(NetworkRequest request, bool isExpanded) {
     final isSvg = _isSvgData(request.responseBody!);
-    
+
     return Column(
       children: [
         Container(
@@ -2276,7 +2280,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ],
     );
   }
-  
+
   Widget _buildSvgPreview(Uint8List svgData, bool isExpanded) {
     try {
       final svgString = utf8.decode(svgData);
@@ -2331,7 +2335,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       );
     }
   }
-  
+
   Widget _buildJsonViewer(dynamic jsonData, bool isExpanded) {
     if (!isExpanded) {
       // Show a preview when collapsed
@@ -2343,7 +2347,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       } else {
         preview = jsonData.toString();
       }
-      
+
       return Padding(
         padding: EdgeInsets.all(8),
         child: Column(
@@ -2370,11 +2374,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ),
       );
     }
-    
+
     // Show interactive JSON tree when expanded
     return _JsonTreeView(data: jsonData);
   }
-  
+
   Widget _buildFilterChip(String label, NetworkRequestType? type) {
     final isSelected = _selectedNetworkFilter == type;
     return GestureDetector(
@@ -2404,7 +2408,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ),
     );
   }
-  
+
   String _getFilterDisplayName(NetworkRequestType type) {
     switch (type) {
       case NetworkRequestType.document:
@@ -2431,7 +2435,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         return 'other';
     }
   }
-  
+
   Color _getTypeColor(NetworkRequestType type) {
     switch (type) {
       case NetworkRequestType.document:
@@ -2457,26 +2461,270 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         return Colors.grey;
     }
   }
+
+  Widget _buildConsoleTab() {
+    // Get the current active controller
+    final manager = WebFControllerManager.instance;
+
+    // Try to get the first attached controller for console data
+    WebFController? activeController;
+    for (final name in manager.controllerNames) {
+      final controller = manager.getControllerSync(name);
+      final state = manager.getControllerState(name);
+      if (controller != null && state == ControllerState.attached) {
+        activeController = controller;
+        break;
+      }
+    }
+
+    if (activeController == null) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: Text(
+            'No active controller available',
+            style: TextStyle(color: Colors.white54),
+          ),
+        ),
+      );
+    }
+
+    // Get console logs for the active controller
+    final contextId = activeController.view.contextId.toInt();
+    final logs = ConsoleStore.instance.getLogsForContext(contextId);
+
+    return Column(
+      children: [
+        // Console controls
+        Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3),
+            border: Border(
+              bottom: BorderSide(color: Colors.white10, width: 1),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Clear button
+              IconButton(
+                onPressed: logs.isNotEmpty
+                    ? () {
+                        setState(() {
+                          ConsoleStore.instance.clearLogsForContext(contextId);
+                        });
+                      }
+                    : null,
+                icon: Icon(Icons.clear_all, size: 16),
+                tooltip: 'Clear console',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.orange.withOpacity(0.2),
+                  foregroundColor: Colors.orange,
+                  padding: EdgeInsets.all(6),
+                  minimumSize: Size(32, 32),
+                ),
+                constraints: BoxConstraints(
+                  maxWidth: 32,
+                  maxHeight: 32,
+                ),
+              ),
+              SizedBox(width: 12),
+              // Log count
+              Text(
+                '${logs.length} log${logs.length == 1 ? '' : 's'}',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Console logs list
+        Expanded(
+          child: logs.isEmpty
+              ? Center(
+                  child: Text(
+                    'Console is empty',
+                    style: TextStyle(color: Colors.white54),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: logs.length,
+                  itemBuilder: (context, index) {
+                    final log = logs[index];
+                    return _buildConsoleLogItem(log, contextId);
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConsoleLogItem(ConsoleLogEntry log, int contextId) {
+    final logColor = _getLogLevelColor(log.level);
+    final logIcon = _getLogLevelIcon(log.level);
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+        border: Border(
+          left: BorderSide(
+            color: logColor,
+            width: 3,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                logIcon,
+                size: 16,
+                color: logColor,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Log message or structured args
+                    if (log.args.isEmpty)
+                      SelectableText(
+                        log.message,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                        ),
+                      )
+                    else
+                      _buildConsoleArgs(log.args, log.level, contextId),
+                    SizedBox(height: 4),
+                    // Timestamp
+                    Text(
+                      _formatLogTimestamp(log.timestamp),
+                      style: TextStyle(
+                        color: Colors.white38,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConsoleArgs(List<ConsoleValue> args, ConsoleLogLevel level, int contextId) {
+    return Wrap(
+      spacing: 8.0,
+      runSpacing: 4.0,
+      children: args.map((arg) => _buildConsoleValue(arg, level, contextId)).toList(),
+    );
+  }
+
+  Widget _buildConsoleValue(ConsoleValue value, ConsoleLogLevel level, int contextId) {
+    if (value is ConsolePrimitiveValue) {
+      return Text(
+        value.displayString,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 12,
+          color: _getValueColor(value, level),
+        ),
+      );
+    } else if (value is ConsoleRemoteObject) {
+      return _RemoteObjectWidget(
+        remoteObject: value,
+        logLevel: level,
+        contextId: contextId,
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Color _getValueColor(ConsolePrimitiveValue value, ConsoleLogLevel level) {
+    if (value.type == 'string') return Colors.green.shade400;
+    if (value.type == 'number') return Colors.blue.shade400;
+    if (value.type == 'boolean') return Colors.purple.shade400;
+    if (value.type == 'null' || value.type == 'undefined') return Colors.grey.shade400;
+    return Colors.white;
+  }
+
+  Color _getLogLevelColor(ConsoleLogLevel level) {
+    switch (level) {
+      case ConsoleLogLevel.log:
+        return Colors.white70;
+      case ConsoleLogLevel.info:
+        return Colors.blue;
+      case ConsoleLogLevel.warning:
+        return Colors.orange;
+      case ConsoleLogLevel.error:
+        return Colors.red;
+      case ConsoleLogLevel.debug:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getLogLevelIcon(ConsoleLogLevel level) {
+    switch (level) {
+      case ConsoleLogLevel.log:
+        return Icons.message_outlined;
+      case ConsoleLogLevel.info:
+        return Icons.info_outline;
+      case ConsoleLogLevel.warning:
+        return Icons.warning_amber_outlined;
+      case ConsoleLogLevel.error:
+        return Icons.error_outline;
+      case ConsoleLogLevel.debug:
+        return Icons.bug_report_outlined;
+    }
+  }
+
+  String _formatLogTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inSeconds < 60) {
+      return '${difference.inSeconds}s ago';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
+    }
+  }
 }
 
 // Interactive JSON Tree View Widget
 class _JsonTreeView extends StatefulWidget {
   final dynamic data;
   final int depth;
-  
+
   const _JsonTreeView({
     Key? key,
     required this.data,
     this.depth = 0,
   }) : super(key: key);
-  
+
   @override
   _JsonTreeViewState createState() => _JsonTreeViewState();
 }
 
 class _JsonTreeViewState extends State<_JsonTreeView> {
   final Set<String> _expandedKeys = {};
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -2508,10 +2756,10 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
       ),
     );
   }
-  
+
   Widget _buildJsonTree(dynamic data, String path, int depth) {
     final indent = depth * 16.0;
-    
+
     if (data is Map) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2522,7 +2770,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
             final isExpanded = _expandedKeys.contains(currentPath);
             final value = entry.value;
             final isExpandable = value is Map || value is List;
-            
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2624,7 +2872,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
             final isExpanded = _expandedKeys.contains(currentPath);
             final value = entry.value;
             final isExpandable = value is Map || value is List;
-            
+
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2723,7 +2971,7 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
       );
     }
   }
-  
+
   TextStyle _getValueStyle(dynamic value) {
     Color color;
     if (value == null) {
@@ -2737,14 +2985,14 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
     } else {
       color = Colors.white70;
     }
-    
+
     return TextStyle(
       color: color,
       fontSize: 11,
       fontFamily: 'monospace',
     );
   }
-  
+
   String _formatJsonValue(dynamic value) {
     if (value == null) {
       return 'null';
@@ -2755,3 +3003,285 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
     }
   }
 }
+
+// Widget for displaying remote JavaScript objects with expandable properties
+class _RemoteObjectWidget extends StatefulWidget {
+  final ConsoleRemoteObject remoteObject;
+  final ConsoleLogLevel logLevel;
+  final int contextId;
+
+  const _RemoteObjectWidget({
+    Key? key,
+    required this.remoteObject,
+    required this.logLevel,
+    required this.contextId,
+  }) : super(key: key);
+
+  @override
+  _RemoteObjectWidgetState createState() => _RemoteObjectWidgetState();
+}
+
+class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
+  bool _isExpanded = false;
+  bool _isLoading = false;
+  List<RemoteObjectProperty>? _properties;
+  final Set<String> _loadedObjectIds = {};
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded && _properties == null) {
+        _loadProperties();
+      }
+    });
+  }
+
+  Future<void> _loadProperties() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final properties = await RemoteObjectService.instance.getObjectProperties(
+        widget.contextId,
+        widget.remoteObject.objectId,
+        includePrototype: false,
+      );
+      print(properties);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _properties = properties;
+          // Track loaded object IDs for cleanup
+          for (final prop in properties) {
+            if (prop.valueId.isNotEmpty) {
+              _loadedObjectIds.add(prop.valueId);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _properties = [];
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    // Release any loaded child objects when widget is disposed
+    for (final objectId in _loadedObjectIds) {
+      RemoteObjectService.instance.releaseObject(widget.contextId, objectId);
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isExpandable = widget.remoteObject.isExpandable;
+
+    return InkWell(
+      onTap: isExpandable ? _toggleExpanded : null,
+      borderRadius: BorderRadius.circular(4),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isExpandable)
+                  Icon(
+                    _isExpanded ? Icons.arrow_drop_down : Icons.arrow_right,
+                    size: 16,
+                    color: Colors.white54,
+                  ),
+                Text(
+                  widget.remoteObject.description,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    color: _getObjectColor(),
+                    fontStyle: widget.remoteObject.objectType == RemoteObjectType.function
+                      ? FontStyle.italic
+                      : FontStyle.normal,
+                  ),
+                ),
+              ],
+            ),
+            if (_isExpanded && isExpandable) ...[
+              if (_isLoading)
+                Padding(
+                  padding: EdgeInsets.only(left: 20, top: 4),
+                  child: Text(
+                    'Loading...',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.white38,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                )
+              else if (_properties != null)
+                Padding(
+                  padding: EdgeInsets.only(left: 20, top: 4),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _properties!.isEmpty
+                      ? [Text(
+                          'No properties',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white38,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )]
+                      : _properties!.map((prop) => _buildProperty(prop)).toList(),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProperty(RemoteObjectProperty property) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${property.name}: ',
+            style: TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 11,
+              color: property.isOwn ? Colors.blue.shade300 : Colors.grey.shade400,
+            ),
+          ),
+          Flexible(
+            child: property.value != null
+              ? _buildPropertyValue(property.value!)
+              : property.valueId.isNotEmpty
+                ? // If we have a valueId but no value, show a placeholder
+                  Text(
+                    '(...)',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      color: Colors.white54,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  )
+                : Text(
+                    'undefined',
+                    style: TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                      color: Colors.grey.shade400,
+                    ),
+                  ),
+          ),
+          // Show property attributes as small chips
+          if (!property.enumerable || !property.configurable || !property.writable) ...[
+            SizedBox(width: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (!property.enumerable)
+                  _buildAttributeChip('NE'),
+                if (!property.configurable)
+                  _buildAttributeChip('NC'),
+                if (!property.writable)
+                  _buildAttributeChip('RO'),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildAttributeChip(String label) {
+    return Container(
+      margin: EdgeInsets.only(right: 4),
+      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 0.5,
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 9,
+          color: Colors.white54,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPropertyValue(ConsoleValue value) {
+    if (value is ConsolePrimitiveValue) {
+      return Text(
+        value.displayString,
+        style: TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 11,
+          color: _getValueColor(value),
+        ),
+      );
+    } else if (value is ConsoleRemoteObject) {
+      // Nested remote object
+      return _RemoteObjectWidget(
+        remoteObject: value,
+        logLevel: widget.logLevel,
+        contextId: widget.contextId,
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  Color _getValueColor(ConsolePrimitiveValue value) {
+    if (value.type == 'string') return Colors.green.shade400;
+    if (value.type == 'number') return Colors.blue.shade400;
+    if (value.type == 'boolean') return Colors.purple.shade400;
+    if (value.type == 'null' || value.type == 'undefined') return Colors.grey.shade400;
+    return Colors.white70;
+  }
+
+  Color _getObjectColor() {
+    switch (widget.remoteObject.objectType) {
+      case RemoteObjectType.object:
+        return Colors.white;
+      case RemoteObjectType.array:
+        return Colors.blue.shade300;
+      case RemoteObjectType.function:
+        return Colors.yellow.shade300;
+      case RemoteObjectType.string:
+        return Colors.green.shade300;
+      case RemoteObjectType.number:
+        return Colors.blue.shade300;
+      case RemoteObjectType.boolean:
+        return Colors.purple.shade300;
+      default:
+        return Colors.white70;
+    }
+  }
+}
+

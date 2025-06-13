@@ -109,7 +109,7 @@ class CalcVariableNode extends CalcExpressionNode {
   int get hashCode => value.hashCode;
 
   @override
-  bool operator ==(Object? other) => other is CalcVariableNode && other.value == value;
+  bool operator ==(Object other) => other is CalcVariableNode && other.value == value;
 
   @override
   String toString()  => 'CalcVariableNode(node: $value)';

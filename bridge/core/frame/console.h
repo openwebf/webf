@@ -8,6 +8,7 @@
 #include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
+#include "../../foundation/native_value.h"
 
 namespace webf {
 
@@ -19,6 +20,10 @@ class Console final {
                              ExceptionState& exception);
   static void __webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state);
   static bool __webf_is_proxy__(ExecutingContext* context, const ScriptValue& log, ExceptionState& exception_state);
+  static void __webf_print_structured__(ExecutingContext* context,
+                                       int32_t level,
+                                       const std::vector<ScriptValue>& args,
+                                       ExceptionState& exception_state);
 };
 
 }  // namespace webf

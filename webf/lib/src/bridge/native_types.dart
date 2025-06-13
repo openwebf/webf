@@ -145,7 +145,7 @@ class NativeBindingObject extends Struct {
   external Pointer<NativeFunction<InvokeBindingsMethodsFromNative>> invokeBindingMethodFromNative;
   external Pointer<Void> extra;
   @Bool()
-  external bool _disposed;
+  external bool disposed;
 }
 
 typedef NativeAllocateNativeBindingObject = Pointer<NativeBindingObject> Function();

@@ -6,6 +6,9 @@
 // https://console.spec.whatwg.org/
 import { webfPrint, webfIsProxy } from './bridge';
 
+// Declare the structured print function
+declare const __webf_print_structured__: (level: number, ...args: any[]) => void;
+
 export interface Console {
   log(...args: any[]): void;
   inspect(...args: any[]): void;
@@ -40,6 +43,20 @@ const VALUE = '(value)';
 const PLACEHOLDER = ' '; // empty placeholder
 let groupIndent = '';
 
+// Console log levels
+enum LogLevel {
+  LOG = 1,
+  WARNING = 2,
+  ERROR = 3,
+  DEBUG = 4,
+  INFO = 5
+}
+
+// Helper to check if structured logging is available
+function isStructuredLoggingAvailable(): boolean {
+  return typeof __webf_print_structured__ !== 'undefined';
+}
+
 function printer(message: string, level?: string) {
   if (groupIndent.length !== 0) {
     if (message.includes('\n')) {
@@ -49,6 +66,26 @@ function printer(message: string, level?: string) {
   }
 
   webfPrint(message, level);
+}
+
+function structuredPrinter(args: any[], level: LogLevel) {
+  // Fallback to string-based logging
+  const message = logger(args);
+  const levelStr = level === LogLevel.LOG ? undefined : getLevelString(level);
+  printer(message, levelStr);
+  // Send arguments directly to native structured print function
+  __webf_print_structured__(level, ...args);
+}
+
+function getLevelString(level: LogLevel): string {
+  switch (level) {
+    case LogLevel.LOG: return 'log';
+    case LogLevel.WARNING: return 'warn';
+    case LogLevel.ERROR: return 'error';
+    case LogLevel.DEBUG: return 'debug';
+    case LogLevel.INFO: return 'info';
+    default: return 'log';
+  }
 }
 
 /**
@@ -238,7 +275,7 @@ function logger(allArgs: any) {
 
 export const console: Console = {
   log(...args: any) {
-    printer(logger(arguments));
+    structuredPrinter(Array.from(arguments), LogLevel.LOG);
   },
   inspect(...args: any) {
     var result = [];
@@ -248,16 +285,16 @@ export const console: Console = {
     printer(result.join(SEPARATOR));
   },
   info(...args: any) {
-    printer(logger(arguments), 'info');
+    structuredPrinter(Array.from(arguments), LogLevel.INFO);
   },
   warn(...args: any) {
-    printer(logger(arguments), 'warn');
+    structuredPrinter(Array.from(arguments), LogLevel.WARNING);
   },
   debug(...args: any) {
-    printer(logger(arguments), 'debug');
+    structuredPrinter(Array.from(arguments), LogLevel.DEBUG);
   },
   error(...args: any) {
-    printer(logger(arguments), 'error');
+    structuredPrinter(Array.from(arguments), LogLevel.ERROR);
   },
   dirxml(...args: any) {
     printer(logger(arguments));

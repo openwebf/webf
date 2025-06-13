@@ -14,6 +14,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/console_store.dart';
+import 'package:webf/src/devtools/remote_object_service.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
@@ -563,6 +565,79 @@ void _onJSLog(double contextId, int level, Pointer<Utf8> charStr) {
 
 final Pointer<NativeFunction<NativeJSLog>> _nativeOnJsLog = Pointer.fromFunction(_onJSLog);
 
+// Structured console log handler
+typedef NativeOnJSLogStructured = Void Function(Double contextId, Int32 level, Int32 argc, Pointer<NativeValue> argv);
+
+void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeValue> argv) {
+  print('[_onJSLogStructured] Called with contextId=$contextId, level=$level, argc=$argc');
+  List<ConsoleValue> consoleArgs = [];
+  WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
+
+  // Skip processing if we don't have a valid controller
+  if (controller == null) {
+    malloc.free(argv);
+    return;
+  }
+
+  for (int i = 0; i < argc; i++) {
+    final nativeValuePtr = Pointer<NativeValue>.fromAddress(argv.address + i * sizeOf<NativeValue>());
+    final value = fromNativeValue(controller.view, nativeValuePtr);
+
+    if (value is Map && value['type'] == 'remote-object') {
+      consoleArgs.add(ConsoleRemoteObject(
+        objectId: value['objectId'],
+        className: value['className'],
+        description: value['description'],
+        objectType: RemoteObjectType.values[value['objectType'] ?? 0],
+      ));
+    } else {
+      // Handle primitive values
+      String type = 'unknown';
+      if (value == null) {
+        type = 'null';
+      } else if (value is bool) {
+        type = 'boolean';
+      } else if (value is num) {
+        type = 'number';
+      } else if (value is String) {
+        type = 'string';
+      }
+
+      consoleArgs.add(ConsolePrimitiveValue(value, type));
+    }
+  }
+
+  // Generate display message
+  String displayMsg = consoleArgs.map((arg) {
+    if (arg is ConsolePrimitiveValue) {
+      return arg.displayString;
+    } else if (arg is ConsoleRemoteObject) {
+      return arg.description;
+    }
+    return arg.toString();
+  }).join(' ');
+
+  ConsoleStore.instance.addStructuredLog(
+    contextId.toInt(),
+    level,
+    consoleArgs,
+    displayMsg,
+  );
+
+  // Also call the regular log handler
+  if (controller != null) {
+    JSLogHandler? jsLogHandler = controller.onJSLog;
+    if (jsLogHandler != null) {
+      jsLogHandler(level, displayMsg);
+    }
+  }
+
+  // Free the native values
+  malloc.free(argv);
+}
+
+final Pointer<NativeFunction<NativeOnJSLogStructured>> _nativeOnJSLogStructured = Pointer.fromFunction(_onJSLogStructured);
+
 final List<int> _dartNativeMethods = [
   _nativeInvokeModule.address,
   _nativeRequestBatchUpdate.address,
@@ -580,6 +655,7 @@ final List<int> _dartNativeMethods = [
   _nativeLoadLibrary.address,
   _nativeOnJsError.address,
   _nativeOnJsLog.address,
+  _nativeOnJSLogStructured.address
 ];
 
 List<int> makeDartMethodsData() {

@@ -37,6 +37,7 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   load_native_library_ = reinterpret_cast<LoadNativeLibrary>(dart_methods[i++]);
   on_js_error_ = reinterpret_cast<OnJSError>(dart_methods[i++]);
   on_js_log_ = reinterpret_cast<OnJSLog>(dart_methods[i++]);
+  on_js_log_structured_ = reinterpret_cast<OnJSLogStructured>(dart_methods[i++]);
 
   assert_m(i == dart_methods_length, "Dart native methods count is not equal with C++ side method registrations.");
 }
@@ -279,6 +280,21 @@ void DartMethodPointer::onJSLog(bool is_dedicated, double context_id, int32_t le
   snprintf(log_str, log_length, "%s", log);
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_log_, context_id, level, log_str);
+}
+
+void DartMethodPointer::onJSLogStructured(bool is_dedicated, double context_id, int32_t level, int32_t argc, NativeValue* argv) {
+  if (on_js_log_structured_ == nullptr)
+    return;
+  
+  // Allocate memory for the native values array
+  NativeValue* values = (NativeValue*)dart_malloc(sizeof(NativeValue) * argc);
+  
+  // Copy the native values
+  for (int32_t i = 0; i < argc; i++) {
+    values[i] = argv[i];
+  }
+  
+  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, on_js_log_structured_, context_id, level, argc, values);
 }
 
 void DartMethodPointer::matchImageSnapshot(bool is_dedicated,

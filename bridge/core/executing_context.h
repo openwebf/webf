@@ -48,6 +48,7 @@ class Document;
 class Window;
 class Performance;
 class MemberMutationScope;
+class RemoteObjectRegistry;
 class ErrorEvent;
 class CanvasRenderingContext2D;
 class DartContext;
@@ -166,6 +167,9 @@ class ExecutingContext {
   FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const { return public_method_ptr_.get(); }
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
+  
+  // Get RemoteObjectRegistry for this context
+  RemoteObjectRegistry* GetRemoteObjectRegistry();
 
   const WidgetElementShape* GetWidgetElementShape(const AtomicString& key);
   bool HasWidgetElementShape(const AtomicString& key) const;
@@ -250,6 +254,7 @@ class ExecutingContext {
   std::unordered_set<NativeByteDataFinalizerContext*> active_native_byte_datas_;
   std::unordered_map<AtomicString, std::unique_ptr<WidgetElementShape>, AtomicString::KeyHasher> widget_element_shapes_;
   bool is_dedicated_;
+  std::unique_ptr<RemoteObjectRegistry> remote_object_registry_;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;

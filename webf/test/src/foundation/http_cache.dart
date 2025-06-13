@@ -14,6 +14,8 @@ import '../../local_http_server.dart';
 import '../../webf_test.dart';
 
 void main() {
+  setupTest();
+  
   var server = LocalHttpServer.getInstance();
   double contextId = 1;
   HttpOverrides.global = null;

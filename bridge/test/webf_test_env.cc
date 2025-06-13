@@ -298,6 +298,7 @@ void TEST_runLoop(webf::ExecutingContext* context) {
 }
 
 void TEST_onJSLog(double contextId, int32_t level, const char*) {}
+void TEST_onJSLogStructured(double contextId, int32_t level, int32_t argc, NativeValue* argv) {}
 void TEST_onMatchImageSnapshot(void* callbackContext,
                                double contextId,
                                uint8_t* bytes,
@@ -351,6 +352,7 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
   WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
+  mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJSLogStructured));
   return mockMethods;
 }
 

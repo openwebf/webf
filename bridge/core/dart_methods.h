@@ -87,6 +87,10 @@ typedef void (*ToBlob)(void* callback_context,
                        double devicePixelRatio);
 typedef void (*OnJSError)(double context_id, const char*);
 typedef void (*OnJSLog)(double context_id, int32_t level, const char*);
+typedef void (*OnJSLogStructured)(double context_id, int32_t level, int32_t argc, NativeValue* argv);
+typedef NativeValue* (*GetObjectProperties)(double context_id, const char* object_id, int32_t include_prototype);
+typedef NativeValue* (*EvaluatePropertyPath)(double context_id, const char* object_id, const char* property_path);
+typedef void (*ReleaseRemoteObject)(double context_id, const char* object_id);
 typedef void (*FlushUICommand)(double context_id, void* native_binding_object);
 typedef void (
     *CreateBindingObject)(double context_id, void* native_binding_object, int32_t type, void* args, int32_t argc);
@@ -218,7 +222,7 @@ class DartMethodPointer {
 
   void onJSError(bool is_dedicated, double context_id, const char*);
   void onJSLog(bool is_dedicated, double context_id, int32_t level, const char*);
-
+  void onJSLogStructured(bool is_dedicated, double context_id, int32_t level, int32_t argc, NativeValue* argv);
   void matchImageSnapshot(bool is_dedicated,
                           void* callback_context,
                           double context_id,
@@ -272,6 +276,7 @@ class DartMethodPointer {
   LoadNativeLibrary load_native_library_{nullptr};
   OnJSError on_js_error_{nullptr};
   OnJSLog on_js_log_{nullptr};
+  OnJSLogStructured on_js_log_structured_{nullptr};
   MatchImageSnapshot match_image_snapshot_{nullptr};
   MatchImageSnapshotBytes match_image_snapshot_bytes_{nullptr};
   Environment environment_{nullptr};

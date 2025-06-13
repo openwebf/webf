@@ -15,23 +15,23 @@ class LocationModule extends BaseModule {
   String get origin => moduleManager?.controller.uri?.origin ?? '';
   String get protocol {
     if (moduleManager?.controller.uri?.scheme != null) {
-      return moduleManager!.controller.uri!.scheme + ':';
+      return '${moduleManager!.controller.uri!.scheme}:';
     }
     return '';
   }
   String get port => moduleManager?.controller.uri?.port.toString() ?? '';
   String get hostname => moduleManager?.controller.uri?.host ?? '';
-  String get host => hostname + ':' + port;
+  String get host => '$hostname:$port';
   String get pathname => moduleManager?.controller.uri?.path ?? '';
   String get search {
     if (moduleManager?.controller.uri?.query != null) {
-      return '?' + moduleManager!.controller.uri!.query;
+      return '?${moduleManager!.controller.uri!.query}';
     }
     return '';
   }
   String get hash {
     if (moduleManager?.controller.uri?.fragment != null) {
-      return '#' + moduleManager!.controller.uri!.fragment;
+      return '#${moduleManager!.controller.uri!.fragment}';
     }
     return '';
   }

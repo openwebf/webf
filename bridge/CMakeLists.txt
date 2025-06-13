@@ -232,6 +232,8 @@ if (${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/page.cc
     core/dart_methods.cc
     core/bridge_polyfill.c
+    core/devtools/remote_object.cc
+    core/devtools/devtools_bridge.cc
     core/api/exception_state.cc
     core/api/event_target.cc
     core/api/node.cc

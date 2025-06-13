@@ -9,6 +9,8 @@
 #include "bindings/qjs/script_promise_resolver.h"
 #include "built_in_string.h"
 #include "core/bridge_polyfill.c"
+#include "core/devtools/remote_object.h"
+#include "core/devtools/devtools_bridge.h"
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
@@ -99,12 +101,23 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
   DrawCanvasElementIfNeeded();
+  
+  // Register this context for DevTools access
+  devtools_internal::RegisterExecutingContext(this);
 }
 
 ExecutingContext::~ExecutingContext() {
   is_context_valid_ = false;
   valid_contexts[context_id_] = false;
   executing_context_status_->disposed = true;
+
+  // Clear remote object registry for this context
+  if (remote_object_registry_) {
+    remote_object_registry_->ClearContext(this);
+  }
+  
+  // Unregister this context from DevTools access
+  devtools_internal::UnregisterExecutingContext(this);
 
   // Check if current context have unhandled exceptions.
   JSValue exception = JS_GetException(script_state_.ctx());
@@ -742,6 +755,13 @@ void ExecutingContext::UnRegisterActiveNativeByteData(
   if (it != active_native_byte_datas_.end()) {
     active_native_byte_datas_.erase(it);
   }
+}
+
+RemoteObjectRegistry* ExecutingContext::GetRemoteObjectRegistry() {
+  if (!remote_object_registry_) {
+    remote_object_registry_ = std::make_unique<RemoteObjectRegistry>(this);
+  }
+  return remote_object_registry_.get();
 }
 
 // A lock free context validator.
