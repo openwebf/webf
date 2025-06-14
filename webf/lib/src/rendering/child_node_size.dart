@@ -161,7 +161,7 @@ class RenderChildSize extends RenderProxyBox {
       double maxContentHeight = _getContentHeight(maxHeight);
       finalContentHeight = finalContentHeight > maxContentHeight ? maxContentHeight : finalContentHeight;
     } else if (isNotInline && minHeight != null && height == null) {
-      double minContentHeight = _getContentWidth(minHeight);
+      double minContentHeight = _getContentHeight(minHeight);
       finalContentHeight = finalContentHeight < minContentHeight ? minContentHeight : finalContentHeight;
     }
 

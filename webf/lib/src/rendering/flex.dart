@@ -327,9 +327,9 @@ class RenderFlexLayout extends RenderLayoutBox {
       ///  and if that containing block’s size is indefinite, the used value for flex-basis is content.
       // Note: When flex-basis is 0%, it should remain 0, not be changed to minContentWidth
       // The commented code below was incorrectly setting flexBasis to minContentWidth for 0% values
-      // if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
-      //   flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
-      // }
+      if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
+        flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+      }
 
       return flexBasis;
     }
@@ -1609,14 +1609,12 @@ class RenderFlexLayout extends RenderLayoutBox {
             child.renderStyle.display == CSSDisplay.inlineBlock ||
             child.renderStyle.display == CSSDisplay.inlineFlex) &&
         (child.renderStyle.isSelfRenderFlowLayout() || child.renderStyle.isSelfRenderFlexLayout());
-    bool isRenderTextBox = child.renderStyle.isSelfRenderLayoutBox() &&
-        _hasOneChildRenderTextBox(child.renderStyle.attachedRenderBoxModel as RenderLayoutBox);
     bool isSecondaryLayoutPass = child.hasSize;
 
     // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
-        (isTextElement || isInlineElementWithText || isRenderTextBox) &&
+        (isTextElement || isInlineElementWithText ) &&
         childFlexedMainSize != null &&
         child.renderStyle.height.isAuto;
 
@@ -1625,19 +1623,32 @@ class RenderFlexLayout extends RenderLayoutBox {
       minConstraintHeight = 0;
       maxConstraintHeight = double.infinity;
     }
+    // Calculate minimum height needed for child's content (padding + border + content)
+    double contentMinHeight = 0;
+    if (!child.renderStyle.paddingTop.isAuto) {
+      contentMinHeight += child.renderStyle.paddingTop.computedValue;
+    }
+    if (!child.renderStyle.paddingBottom.isAuto) {
+      contentMinHeight += child.renderStyle.paddingBottom.computedValue;
+    }
+    contentMinHeight += child.renderStyle.effectiveBorderTopWidth.computedValue;
+    contentMinHeight += child.renderStyle.effectiveBorderBottomWidth.computedValue;
+
+    // Allow child to expand beyond parent's maxHeight if content requires it
+    // This matches browser behavior where content can overflow constrained parents
+    double adjustedMaxHeight = maxConstraintHeight;
+    if (contentMinHeight > maxConstraintHeight) {
+      adjustedMaxHeight = contentMinHeight;
+    }
 
     BoxConstraints childConstraints = BoxConstraints(
       minWidth: minConstraintWidth,
       maxWidth: maxConstraintWidth,
       minHeight: minConstraintHeight,
-      maxHeight: maxConstraintHeight,
+      maxHeight: adjustedMaxHeight,
     );
 
     return childConstraints;
-  }
-
-  bool _hasOneChildRenderTextBox(RenderLayoutBox layoutBox) {
-    return layoutBox.childCount == 1 && layoutBox.firstChild is RenderTextBox;
   }
 
   // When replaced element is stretched or shrinked only on one axis and
