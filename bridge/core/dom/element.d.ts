@@ -66,6 +66,8 @@ interface Element extends Node, ParentNode, ChildNode {
 
   closest(selectors: string): SupportAsync<Element | null>;
 
+  insertAdjacentElement(position: string, element: Element): Element | null;
+
   scroll(options?: ScrollToOptions): SupportAsyncManual<void>;
   scroll(x: number, y: number): SupportAsyncManual<void>;
   scrollBy(options?: ScrollToOptions): SupportAsyncManual<void>;

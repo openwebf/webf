@@ -140,6 +140,8 @@ class Element : public ContainerNode {
 
   Element* closest(const AtomicString& selectors, ExceptionState& exception_state);
 
+  Element* insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state);
+
   InlineCssStyleDeclaration* style();
   InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();

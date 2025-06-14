@@ -305,6 +305,52 @@ Element* Element::closest(const AtomicString& selectors, ExceptionState& excepti
   return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
 }
 
+Element* Element::insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state) {
+  if (!element) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': 2nd parameter is not of type 'Element'.");
+    return nullptr;
+  }
+
+  if (position == AtomicString(ctx(), "beforebegin")) {
+    auto* parent = parentNode();
+    if (!parent) {
+      exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
+      return nullptr;
+    }
+    parent->InsertBefore(element, this, exception_state);
+    if (exception_state.HasException()) {
+      return nullptr;
+    }
+    return element;
+  } else if (position == AtomicString(ctx(), "afterbegin")) {
+    InsertBefore(element, firstChild(), exception_state);
+    if (exception_state.HasException()) {
+      return nullptr;
+    }
+    return element;
+  } else if (position == AtomicString(ctx(), "beforeend")) {
+    AppendChild(element, exception_state);
+    if (exception_state.HasException()) {
+      return nullptr;
+    }
+    return element;
+  } else if (position == AtomicString(ctx(), "afterend")) {
+    auto* parent = parentNode();
+    if (!parent) {
+      exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
+      return nullptr;
+    }
+    parent->InsertBefore(element, nextSibling(), exception_state);
+    if (exception_state.HasException()) {
+      return nullptr;
+    }
+    return element;
+  } else {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" + position.ToStdString(ctx()) + "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
+    return nullptr;
+  }
+}
+
 InlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
