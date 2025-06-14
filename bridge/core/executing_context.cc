@@ -227,7 +227,19 @@ bool ExecutingContext::EvaluateModule(const char* code,
   }
   JSValue result;
   if (parsed_bytecodes == nullptr) {
-    result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_MODULE);
+    // For inline modules, we need to compile first to set up import.meta
+    JSValue byte_object = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    
+    if (JS_IsException(byte_object)) {
+      HandleException(&byte_object);
+      return false;
+    }
+    
+    // Set up import.meta for inline modules
+    JSModuleDef* module_def = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(byte_object));
+    SetupImportMeta(script_state_.ctx(), module_def, sourceURL, this);
+    
+    result = JS_EvalFunction(script_state_.ctx(), byte_object);
   } else {
     JSValue byte_object =
         JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
@@ -236,6 +248,10 @@ bool ExecutingContext::EvaluateModule(const char* code,
       HandleException(&byte_object);
       return false;
     }
+
+    // Set up import.meta for precompiled modules too
+    JSModuleDef* module_def = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(byte_object));
+    SetupImportMeta(script_state_.ctx(), module_def, sourceURL, this);
 
     size_t len;
     *parsed_bytecodes = JS_WriteObject(script_state_.ctx(), &len, byte_object, JS_WRITE_OBJ_BYTECODE);
@@ -942,6 +958,136 @@ static void HandleFetchModuleResult(void* callback_context, double context_id, c
   load_context->cv.notify_one();
 }
 
+// Helper function for import.meta.resolve()
+static JSValue ImportMetaResolve(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
+  if (argc < 1) {
+    return JS_ThrowTypeError(ctx, "import.meta.resolve requires at least 1 argument");
+  }
+  
+  const char* specifier = JS_ToCString(ctx, argv[0]);
+  if (!specifier) {
+    return JS_EXCEPTION;
+  }
+  
+  // Get the current module name from the function property
+  JSValue module_name_val = JS_GetPropertyStr(ctx, this_val, "__webf_module_name");
+  const char* current_module = JS_ToCString(ctx, module_name_val);
+  JS_FreeValue(ctx, module_name_val);
+  
+  if (!current_module) {
+    JS_FreeCString(ctx, specifier);
+    return JS_ThrowTypeError(ctx, "import.meta.resolve: unable to get current module name");
+  }
+  
+  // Get the context from the global context opaque
+  ExecutingContext* context = ExecutingContext::From(ctx);
+  if (!context) {
+    JS_FreeCString(ctx, specifier);
+    JS_FreeCString(ctx, current_module);
+    return JS_ThrowTypeError(ctx, "import.meta.resolve: unable to get execution context");
+  }
+  
+  // Use the same resolution logic as ModuleNormalizeName
+  char* resolved = ExecutingContext::ModuleNormalizeName(ctx, current_module, specifier, context);
+  
+  JSValue result;
+  if (resolved) {
+    result = JS_NewString(ctx, resolved);
+    js_free(ctx, resolved);
+  } else {
+    result = JS_ThrowReferenceError(ctx, "Cannot resolve module specifier: %s", specifier);
+  }
+  
+  JS_FreeCString(ctx, specifier);
+  JS_FreeCString(ctx, current_module);
+  return result;
+}
+
+// Helper function to set up enhanced import.meta object with WebF-specific properties
+void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const char* module_name, ExecutingContext* context) {
+  // Debug logging
+  WEBF_LOG(INFO) << "SetupImportMeta called for module: " << (module_name ? module_name : "null");
+  
+  JSValue meta_obj = JS_GetImportMeta(ctx, m);
+  if (JS_IsException(meta_obj)) {
+    WEBF_LOG(ERROR) << "Failed to get import.meta object";
+    return;
+  }
+  
+  WEBF_LOG(INFO) << "Successfully got import.meta object";
+  
+  // Convert module name to proper URL format
+  std::string url_str(module_name);
+  WEBF_LOG(INFO) << "Original module name: " << url_str;
+  
+  // If it's not already a URL, format it appropriately
+  if (url_str.find("://") == std::string::npos) {
+    if (url_str.front() == '/') {
+      // Absolute path - convert to file:// URL
+      url_str = "file://" + url_str;
+    } else if (url_str.find("./") == 0 || url_str.find("../") == 0) {
+      // Relative path - leave as-is, the module loader has already resolved it
+    } else {
+      // Assume it's a resolved absolute path or asset
+      if (url_str.find("assets/") == 0) {
+        url_str = "asset://flutter/" + url_str;
+      } else {
+        url_str = "file://" + url_str;
+      }
+    }
+  }
+  
+  WEBF_LOG(INFO) << "Formatted URL: " << url_str;
+  
+  // Set up standard import.meta properties following MDN specification
+  
+  // 1. import.meta.url - the URL of the module
+  JSValue url_value = JS_NewString(ctx, url_str.c_str());
+  WEBF_LOG(INFO) << "Setting import.meta.url to: " << url_str;
+  JS_DefinePropertyValueStr(ctx, meta_obj, "url", url_value, JS_PROP_C_W_E);
+  
+  // 2. import.meta.resolve - function to resolve module specifiers relative to current module
+  // Store current module name in a property on the resolve function
+  JSValue resolve_func = JS_NewCFunction2(ctx, ImportMetaResolve, "resolve", 1, JS_CFUNC_generic, 0);
+  
+  // Store the current module name and context as properties on the function
+  JS_DefinePropertyValueStr(ctx, resolve_func, "__webf_module_name", 
+                           JS_NewString(ctx, module_name), 
+                           JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, resolve_func, "__webf_context_id", 
+                           JS_NewFloat64(ctx, context->contextId()), 
+                           JS_PROP_C_W_E);
+  
+  JS_DefinePropertyValueStr(ctx, meta_obj, "resolve", resolve_func, JS_PROP_C_W_E);
+  
+  // 3. WebF-specific properties
+  
+  // import.meta.webf - WebF-specific metadata
+  JSValue webf_obj = JS_NewObject(ctx);
+  JS_DefinePropertyValueStr(ctx, webf_obj, "version", 
+                           JS_NewString(ctx, "0.21.5+3"), 
+                           JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, webf_obj, "contextId", 
+                           JS_NewFloat64(ctx, context->contextId()), 
+                           JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, webf_obj, "isDedicated", 
+                           JS_NewBool(ctx, context->isDedicated()), 
+                           JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, meta_obj, "webf", webf_obj, JS_PROP_C_W_E);
+  
+  // 4. Environment information
+  JSValue env_obj = JS_NewObject(ctx);
+  JS_DefinePropertyValueStr(ctx, env_obj, "platform", 
+                           JS_NewString(ctx, "webf"), 
+                           JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, env_obj, "runtime", 
+                           JS_NewString(ctx, "quickjs"), 
+                           JS_PROP_C_W_E);
+  JS_DefinePropertyValueStr(ctx, meta_obj, "env", env_obj, JS_PROP_C_W_E);
+  
+  JS_FreeValue(ctx, meta_obj);
+}
+
 JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_name, void* opaque) {
   ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
   
@@ -995,6 +1141,9 @@ JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_n
     } else {
       // Get the module definition
       result = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(compiled));
+      
+      // Set up enhanced import.meta object
+      SetupImportMeta(ctx, result, module_name, context);
     }
     
     // Free the bytes

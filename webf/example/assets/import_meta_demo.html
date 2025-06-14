@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Import and Import.meta Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .demo-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #666;
+            margin-top: 0;
+        }
+        .output {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .error {
+            color: #dc3545;
+        }
+        .property {
+            margin: 5px 0;
+        }
+        .property-name {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .property-value {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebF Import and Import.meta Functionality Demo</h1>
+
+    <div class="demo-section">
+        <h2>1. import.meta Object Properties</h2>
+        <p>Test the standard and WebF-specific properties of import.meta object.</p>
+        <button id="test-import-meta-btn">Test import.meta Properties</button>
+        <div id="import-meta-output" class="output">Click button to test import.meta properties</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>2. import.meta.url Property</h2>
+        <p>Test the URL of the current module.</p>
+        <button id="test-url-btn">Test import.meta.url</button>
+        <div id="url-output" class="output">Click button to test import.meta.url</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>3. import.meta.resolve() Function</h2>
+        <p>Test module URL resolution relative to current module.</p>
+        <button id="test-resolve-btn">Test import.meta.resolve()</button>
+        <div id="resolve-output" class="output">Click button to test import.meta.resolve()</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>4. Dynamic Import Function</h2>
+        <p>Test the import() function for dynamic module loading.</p>
+        <button id="test-dynamic-import-btn">Test Dynamic Import</button>
+        <div id="dynamic-import-output" class="output">Click button to test dynamic imports</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>5. WebF-specific Properties</h2>
+        <p>Test WebF-specific properties in import.meta.webf and import.meta.env.</p>
+        <button id="test-webf-props-btn">Test WebF Properties</button>
+        <div id="webf-props-output" class="output">Click button to test WebF-specific properties</div>
+    </div>
+
+    <div class="demo-section">
+        <h2>6. Cross-module import.meta Comparison</h2>
+        <p>Compare import.meta values between different modules.</p>
+        <button id="test-cross-module-btn">Test Cross-module</button>
+        <div id="cross-module-output" class="output">Click button to test cross-module import.meta</div>
+    </div>
+
+    <!-- Module scripts for testing -->
+    <script type="module">
+        // Import the test module
+        import { getImportMetaInfo, testDynamicImport, metaUrl, isWebF } from './modules/import_meta_test.js';
+
+        // Test basic import.meta properties
+        window.testImportMetaProperties = function() {
+            const output = document.getElementById('import-meta-output');
+            try {
+                const properties = [];
+                
+                // Check standard properties
+                properties.push(`url: ${import.meta.url}`);
+                properties.push(`resolve: ${typeof import.meta.resolve}`);
+                
+                // Check WebF-specific properties
+                if (import.meta.webf) {
+                    properties.push(`webf.version: ${import.meta.webf.version}`);
+                    properties.push(`webf.contextId: ${import.meta.webf.contextId}`);
+                    properties.push(`webf.isDedicated: ${import.meta.webf.isDedicated}`);
+                }
+                
+                if (import.meta.env) {
+                    properties.push(`env.platform: ${import.meta.env.platform}`);
+                    properties.push(`env.runtime: ${import.meta.env.runtime}`);
+                }
+                
+                output.innerHTML = `<span class="success">✓ import.meta properties:</span>\n${properties.join('\n')}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Error:</span> ${error.message}`;
+            }
+        };
+
+        // Test import.meta.url
+        window.testImportMetaUrl = function() {
+            const output = document.getElementById('url-output');
+            try {
+                const currentUrl = import.meta.url;
+                const importedUrl = metaUrl;
+                
+                const result = [];
+                result.push(`Current module URL: ${currentUrl}`);
+                result.push(`Imported module URL: ${importedUrl}`);
+                result.push(`URLs match: ${currentUrl !== importedUrl ? 'false (as expected)' : 'true (unexpected)'}`);
+                
+                output.innerHTML = `<span class="success">✓ import.meta.url test:</span>\n${result.join('\n')}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Error:</span> ${error.message}`;
+            }
+        };
+
+        // Test import.meta.resolve
+        window.testImportMetaResolve = function() {
+            const output = document.getElementById('resolve-output');
+            try {
+                if (typeof import.meta.resolve !== 'function') {
+                    output.innerHTML = `<span class="error">✗ import.meta.resolve is not available</span>`;
+                    return;
+                }
+
+                const tests = [];
+                
+                // Test relative resolution
+                try {
+                    const relativeResult = import.meta.resolve('./modules/math.js');
+                    tests.push(`Relative path: ${relativeResult}`);
+                } catch (e) {
+                    tests.push(`Relative path error: ${e.message}`);
+                }
+                
+                // Test absolute resolution
+                try {
+                    const absoluteResult = import.meta.resolve('/assets/modules/utils.js');
+                    tests.push(`Absolute path: ${absoluteResult}`);
+                } catch (e) {
+                    tests.push(`Absolute path error: ${e.message}`);
+                }
+                
+                // Test external URL resolution
+                try {
+                    const externalResult = import.meta.resolve('https://cdn.skypack.dev/lodash-es');
+                    tests.push(`External URL: ${externalResult}`);
+                } catch (e) {
+                    tests.push(`External URL error: ${e.message}`);
+                }
+                
+                output.innerHTML = `<span class="success">✓ import.meta.resolve() tests:</span>\n${tests.join('\n')}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Error:</span> ${error.message}`;
+            }
+        };
+
+        // Test dynamic imports
+        window.testDynamicImport = function() {
+            const output = document.getElementById('dynamic-import-output');
+            output.innerHTML = 'Loading module dynamically...';
+            
+            Promise.all([
+                import('./modules/math.js'),
+                testDynamicImport()
+            ]).then(([mathModule, testResult]) => {
+                const results = [];
+                results.push(`Direct import - add(5, 3): ${mathModule.add(5, 3)}`);
+                results.push(`Direct import - PI: ${mathModule.PI}`);
+                results.push(`Test module result - add: ${testResult.defaultFunction}`);
+                results.push(`Test module result - named export: ${testResult.namedExport}`);
+                results.push(`Test module result - constant: ${testResult.constant}`);
+                
+                output.innerHTML = `<span class="success">✓ Dynamic import tests:</span>\n${results.join('\n')}`;
+            }).catch(error => {
+                output.innerHTML = `<span class="error">✗ Dynamic import error:</span> ${error.message}`;
+            });
+        };
+
+        // Test WebF-specific properties
+        window.testWebFProperties = function() {
+            const output = document.getElementById('webf-props-output');
+            try {
+                const results = [];
+                
+                // Test WebF detection
+                results.push(`Is WebF platform: ${isWebF}`);
+                
+                // Test WebF-specific metadata
+                if (import.meta.webf) {
+                    results.push(`WebF version: ${import.meta.webf.version}`);
+                    results.push(`Context ID: ${import.meta.webf.contextId}`);
+                    results.push(`Is dedicated: ${import.meta.webf.isDedicated}`);
+                } else {
+                    results.push('WebF metadata not available');
+                }
+                
+                // Test environment info
+                if (import.meta.env) {
+                    results.push(`Platform: ${import.meta.env.platform}`);
+                    results.push(`Runtime: ${import.meta.env.runtime}`);
+                } else {
+                    results.push('Environment metadata not available');
+                }
+                
+                output.innerHTML = `<span class="success">✓ WebF-specific properties:</span>\n${results.join('\n')}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Error:</span> ${error.message}`;
+            }
+        };
+
+        // Test cross-module comparison
+        window.testCrossModule = function() {
+            const output = document.getElementById('cross-module-output');
+            try {
+                const currentMeta = getImportMetaInfo();
+                const results = [];
+                
+                results.push(`Current module URL: ${import.meta.url}`);
+                results.push(`Test module URL: ${currentMeta.url}`);
+                results.push(`URLs are different: ${import.meta.url !== currentMeta.url}`);
+                
+                if (currentMeta.resolveTest) {
+                    results.push('\nModule resolution tests:');
+                    results.push(`  Relative: ${currentMeta.resolveTest.relative}`);
+                    results.push(`  Absolute: ${currentMeta.resolveTest.absoluteLocal}`);
+                    results.push(`  External: ${currentMeta.resolveTest.external}`);
+                }
+                
+                if (currentMeta.resolveError) {
+                    results.push(`Resolve error: ${currentMeta.resolveError}`);
+                }
+                
+                output.innerHTML = `<span class="success">✓ Cross-module comparison:</span>\n${results.join('\n')}`;
+            } catch (error) {
+                output.innerHTML = `<span class="error">✗ Error:</span> ${error.message}`;
+            }
+        };
+
+        // Log initial import.meta for debugging
+        console.log('Initial import.meta:', import.meta);
+    </script>
+
+    <!-- Event listeners script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('test-import-meta-btn').addEventListener('click', window.testImportMetaProperties);
+            document.getElementById('test-url-btn').addEventListener('click', window.testImportMetaUrl);
+            document.getElementById('test-resolve-btn').addEventListener('click', window.testImportMetaResolve);
+            document.getElementById('test-dynamic-import-btn').addEventListener('click', window.testDynamicImport);
+            document.getElementById('test-webf-props-btn').addEventListener('click', window.testWebFProperties);
+            document.getElementById('test-cross-module-btn').addEventListener('click', window.testCrossModule);
+        });
+    </script>
+</body>
+</html>

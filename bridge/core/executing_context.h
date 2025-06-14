@@ -203,6 +203,7 @@ class ExecutingContext {
   // ES Module loader functions
   static char* ModuleNormalizeName(JSContext* ctx, const char* module_base_name, const char* module_name, void* opaque);
   static JSModuleDef* ModuleLoader(JSContext* ctx, const char* module_name, void* opaque);
+  static void SetupImportMeta(JSContext* ctx, JSModuleDef* m, const char* module_name, ExecutingContext* context);
 
   // Bytecodes which registered by webf plugins.
   static std::unordered_map<std::string, NativeByteCode> plugin_byte_code;

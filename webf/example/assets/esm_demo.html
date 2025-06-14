@@ -119,7 +119,7 @@
 
         // Update the basic output
         document.getElementById('basic-output').textContent = `${moduleMessage} (Loaded at: ${moduleTimestamp})`;
-        document.getElementById('basic-status').textContent = 'Loaded';
+        document.getElementById('basic-status').textContent = `Module Loaded: import meta url: ${import.meta.url}`;
         document.getElementById('basic-status').classList.add('loaded');
 
         // Export to window for testing
@@ -367,5 +367,6 @@
         // Make updateComparison available globally
         window.updateComparison = updateComparison;
     </script>
+    <script type="module" src=""></script>
 </body>
 </html>
