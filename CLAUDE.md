@@ -165,6 +165,12 @@ When implementing TypeScript analysis:
 - [FP (First Paint) Implementation](./claude_memory/fp_implementation.md) - Implementation of FP performance metric tracking for visual changes
 - [Contentful Widget Detection](./claude_memory/contentful_widget_detection.md) - Detection system for ensuring FCP/LCP are only reported for widgets with actual visual content
 - [DevTools Performance Metrics Display](./claude_memory/devtools_performance_metrics.md) - Unified display implementation for FP/FCP/LCP metrics in WebF DevTools
+- [CSS C++ Implementation](./claude_memory/css_cpp_implementation.md) - Detailed architecture and implementation of CSS in bridge/ (400+ properties, 500+ keywords, Blink/Chromium-based)
+- **CSS Implementation Structure**: WebF has dual CSS implementations - newer C++ in bridge/ and older Dart in webf/
+- **Common Analysis Patterns**:
+  - For feature analysis: Check bridge/ for C++ implementations, webf/ for Dart, and integration_tests/specs for test coverage
+  - JSON5 files in bridge/core/css/ contain property and value definitions
+  - Generated files (css_property_names.h, css_value_keywords.h) enumerate all supported features
 
 
 ## Testing Guidelines
@@ -255,6 +261,17 @@ final controller = WebFController(
 );
 await controller.controlledInitCompleter.future;
 ```
+
+## Technical Analysis Tasks
+When asked to analyze codebase features or conduct technical audits:
+- Use the Task tool for comprehensive searches across multiple directories
+- Structure findings with clear categories and counts
+- Include file paths and specific examples when relevant
+- For web technologies (CSS, HTML, JS), check for:
+  - Implementation files (parsers, handlers, definitions)
+  - Configuration files (JSON, YAML with specifications)
+  - Test files that demonstrate supported features
+- Present results in a scannable format with headers and bullet points
 
 ## Performance Optimization Guidelines
 
