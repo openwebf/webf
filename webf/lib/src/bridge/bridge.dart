@@ -43,6 +43,9 @@ bool isJSRunningInDedicatedThread(double contextId) {
 // Native function signatures for RemoteObjectService
 typedef NativeGetObjectPropertiesFunc = Pointer<NativeValue> Function(
     Pointer<Void> dartIsolateContext, Double contextId, Pointer<Utf8> objectId, Int32 includePrototype);
+typedef NativeGetObjectPropertiesAsyncFunc = Void Function(
+    Pointer<Void> dartIsolateContext, Double contextId, Pointer<Utf8> objectId, Int32 includePrototype, Handle object, Pointer<NativeFunction<NativeGetObjectPropertiesCallback>> callback);
+typedef NativeGetObjectPropertiesCallback = Void Function(Handle object, Pointer<NativeValue> result);
 typedef NativeEvaluatePropertyPathFunc = Pointer<NativeValue> Function(
     Pointer<Void> dartIsolateContext, Double contextId, Pointer<Utf8> objectId, Pointer<Utf8> propertyPath);
 typedef NativeReleaseObjectFunc = Void Function(
@@ -58,6 +61,8 @@ void _initRemoteObjectService() {
   try {
     final getObjectPropertiesPtr = WebFDynamicLibrary.ref
         .lookup<NativeFunction<NativeGetObjectPropertiesFunc>>('GetObjectPropertiesFromDart');
+    final getObjectPropertiesAsyncPtr = WebFDynamicLibrary.ref
+        .lookup<NativeFunction<NativeGetObjectPropertiesAsyncFunc>>('GetObjectPropertiesFromDartAsync');
     final evaluatePropertyPathPtr = WebFDynamicLibrary.ref
         .lookup<NativeFunction<NativeEvaluatePropertyPathFunc>>('EvaluatePropertyPathFromDart');
     final releaseObjectPtr = WebFDynamicLibrary.ref
@@ -65,6 +70,7 @@ void _initRemoteObjectService() {
 
     RemoteObjectService.setNativeFunctions(
       getObjectPropertiesPtr.asFunction<GetObjectPropertiesFunc>(),
+      getObjectPropertiesAsyncPtr.asFunction<GetObjectPropertiesAsyncFunc>(),
       evaluatePropertyPathPtr.asFunction<EvaluatePropertyPathFunc>(),
       releaseObjectPtr.asFunction<ReleaseObjectFunc>(),
     );

@@ -2,6 +2,7 @@
  * Copyright (C) 2024-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:webf/src/devtools/console_store.dart';
@@ -9,6 +10,8 @@ import 'package:webf/webf.dart';
 
 // Function pointers that will be set from the C++ side
 typedef GetObjectPropertiesFunc = Pointer<NativeValue> Function(Pointer<Void> dartIsolateContext, double contextId, Pointer<Utf8> objectId, int includePrototype);
+typedef GetObjectPropertiesAsyncFunc = void Function(Pointer<Void> dartIsolateContext, double contextId, Pointer<Utf8> objectId, int includePrototype, Object object, Pointer<NativeFunction<NativeGetObjectPropertiesCallback>> callback);
+typedef NativeGetObjectPropertiesCallback = Void Function(Handle object, Pointer<NativeValue> result);
 typedef EvaluatePropertyPathFunc = Pointer<NativeValue> Function(Pointer<Void> dartIsolateContext, double contextId, Pointer<Utf8> objectId, Pointer<Utf8> propertyPath);
 typedef ReleaseObjectFunc = void Function(Pointer<Void> dartIsolateContext, double contextId, Pointer<Utf8> objectId);
 
@@ -19,16 +22,19 @@ class RemoteObjectService {
   RemoteObjectService._();
   
   static GetObjectPropertiesFunc? _getObjectProperties;
+  static GetObjectPropertiesAsyncFunc? _getObjectPropertiesAsync;
   static EvaluatePropertyPathFunc? _evaluatePropertyPath;
   static ReleaseObjectFunc? _releaseObject;
   
   /// Set the native function pointers (called from native side)
   static void setNativeFunctions(
     GetObjectPropertiesFunc getObjectProperties,
+    GetObjectPropertiesAsyncFunc getObjectPropertiesAsync,
     EvaluatePropertyPathFunc evaluatePropertyPath,
     ReleaseObjectFunc releaseObject,
   ) {
     _getObjectProperties = getObjectProperties;
+    _getObjectPropertiesAsync = getObjectPropertiesAsync;
     _evaluatePropertyPath = evaluatePropertyPath;
     _releaseObject = releaseObject;
   }
@@ -40,60 +46,31 @@ class RemoteObjectService {
     {bool includePrototype = false}
   ) async {
     print('[RemoteObjectService] getObjectProperties called: contextId=$contextId, objectId=$objectId, includePrototype=$includePrototype');
-    if (_getObjectProperties == null) {
-      print('[RemoteObjectService] ERROR: _getObjectProperties is null');
+    if (_getObjectPropertiesAsync == null) {
+      print('[RemoteObjectService] ERROR: _getObjectPropertiesAsync is null');
       return [];
     }
     
+    final completer = Completer<List<RemoteObjectProperty>>();
     final objectIdPtr = objectId.toNativeUtf8();
-    try {
-      final resultPtr = _getObjectProperties!(
-        dartContext!.pointer,
-        contextId.toDouble(),
-        objectIdPtr,
-        includePrototype ? 1 : 0,
-      );
-      
-      if (resultPtr == nullptr) {
-        return [];
-      }
-      
-      // Parse the result from NativeValue
-      final WebFController? controller = WebFController.getControllerOfJSContextId(contextId.toDouble());
-      if (controller == null) {
-        return [];
-      }
-      final result = fromNativeValue(controller.view, resultPtr);
-      
-      if (result is List) {
-        return result.map((item) {
-          if (item is Map<String, dynamic>) {
-            return RemoteObjectProperty(
-              name: item['name'] ?? '',
-              valueId: item['valueId'] ?? '',
-              enumerable: item['enumerable'] ?? true,
-              configurable: item['configurable'] ?? true,
-              writable: item['writable'] ?? true,
-              isOwn: item['isOwn'] ?? true,
-              value: _parsePropertyValue(item['value']),
-            );
-          }
-          return RemoteObjectProperty(
-            name: 'unknown',
-            valueId: '',
-            enumerable: false,
-            configurable: false,
-            writable: false,
-            isOwn: false,
-            value: null,
-          );
-        }).toList();
-      }
-      
-      return [];
-    } finally {
-      malloc.free(objectIdPtr);
-    }
+    
+    // Create callback context
+    final context = _GetObjectPropertiesContext(completer, contextId, objectIdPtr);
+    
+    // Create native callback
+    final callback = Pointer.fromFunction<NativeGetObjectPropertiesCallback>(_handleGetObjectPropertiesCallback);
+    
+    // Call async function
+    _getObjectPropertiesAsync!(
+      dartContext!.pointer,
+      contextId.toDouble(),
+      objectIdPtr,
+      includePrototype ? 1 : 0,
+      context,
+      callback,
+    );
+    
+    return completer.future;
   }
   
   /// Evaluate a property path on a remote object
@@ -199,6 +176,71 @@ class RemoteObjectService {
     }
     
     return null;
+  }
+}
+
+// Context class for async callback
+class _GetObjectPropertiesContext {
+  final Completer<List<RemoteObjectProperty>> completer;
+  final int contextId;
+  final Pointer<Utf8> objectIdPtr;
+  
+  _GetObjectPropertiesContext(this.completer, this.contextId, this.objectIdPtr);
+}
+
+// Callback handler for GetObjectPropertiesAsync
+void _handleGetObjectPropertiesCallback(Object handle, Pointer<NativeValue> resultPtr) {
+  final context = handle as _GetObjectPropertiesContext;
+  
+  try {
+    if (resultPtr == nullptr) {
+      context.completer.complete([]);
+      return;
+    }
+    
+    // Parse the result from NativeValue
+    final WebFController? controller = WebFController.getControllerOfJSContextId(context.contextId.toDouble());
+    if (controller == null) {
+      context.completer.complete([]);
+      return;
+    }
+    
+    final result = fromNativeValue(controller.view, resultPtr);
+    
+    if (result is List) {
+      final properties = result.map((item) {
+        if (item is Map<String, dynamic>) {
+          return RemoteObjectProperty(
+            name: item['name'] ?? '',
+            valueId: item['valueId'] ?? '',
+            enumerable: item['enumerable'] ?? true,
+            configurable: item['configurable'] ?? true,
+            writable: item['writable'] ?? true,
+            isOwn: item['isOwn'] ?? true,
+            value: RemoteObjectService.instance._parsePropertyValue(item['value']),
+          );
+        }
+        return RemoteObjectProperty(
+          name: 'unknown',
+          valueId: '',
+          enumerable: false,
+          configurable: false,
+          writable: false,
+          isOwn: false,
+          value: null,
+        );
+      }).toList();
+      
+      context.completer.complete(properties);
+    } else {
+      context.completer.complete([]);
+    }
+  } catch (e) {
+    print('[RemoteObjectService] Error in callback: $e');
+    context.completer.completeError(e);
+  } finally {
+    // Free the objectIdPtr
+    malloc.free(context.objectIdPtr);
   }
 }
 

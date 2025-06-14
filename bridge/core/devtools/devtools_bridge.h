@@ -5,6 +5,7 @@
 #ifndef WEBF_CORE_DEVTOOLS_DEVTOOLS_BRIDGE_H_
 #define WEBF_CORE_DEVTOOLS_DEVTOOLS_BRIDGE_H_
 
+#include "include/dart_api.h"
 #include "foundation/native_value.h"
 #include "include/webf_bridge.h"
 
@@ -14,6 +15,16 @@ webf::NativeValue* GetObjectPropertiesFromDart(void* dart_isolate_context_ptr,
                                                double context_id,
                                                const char* object_id,
                                                int32_t include_prototype);
+
+typedef void (*GetObjectPropertiesCallback)(Dart_Handle object, webf::NativeValue* result);
+
+WEBF_EXPORT_C
+void GetObjectPropertiesFromDartAsync(void* dart_isolate_context_ptr,
+                                      double context_id,
+                                      const char* object_id,
+                                      int32_t include_prototype,
+                                      Dart_Handle object,
+                                      GetObjectPropertiesCallback callback);
 
 WEBF_EXPORT_C
 webf::NativeValue* EvaluatePropertyPathFromDart(void* dart_isolate_context_ptr,

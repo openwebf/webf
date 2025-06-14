@@ -288,6 +288,49 @@ webf::NativeValue* GetObjectPropertiesFromDart(void* dart_isolate_context_ptr,
 }
 
 WEBF_EXPORT_C
+void GetObjectPropertiesFromDartAsync(void* dart_isolate_context_ptr,
+                                      double context_id,
+                                      const char* object_id,
+                                      int32_t include_prototype,
+                                      Dart_Handle object,
+                                      GetObjectPropertiesCallback callback) {
+  // Cast the pointer to DartIsolateContext
+  webf::DartIsolateContext* dart_isolate_context = static_cast<webf::DartIsolateContext*>(dart_isolate_context_ptr);
+  if (!dart_isolate_context || !dart_isolate_context->dispatcher()) {
+    callback(object, nullptr);
+    return;
+  }
+  
+  // Copy the object_id string since it might be freed before the lambda executes
+  std::string object_id_str(object_id);
+  
+  // Create a persistent handle to keep the Dart object alive across threads
+  Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(object);
+  
+  // Execute on JS thread asynchronously
+  dart_isolate_context->dispatcher()->PostToJs(
+    true, // is_dedicated
+    static_cast<int32_t>(context_id),
+    [context_id, object_id_str, include_prototype, persistent_handle, callback, dart_isolate_context]() -> void {
+      // This lambda runs on the JS thread
+      webf::NativeValue* result = webf::devtools_internal::GetObjectPropertiesImpl(context_id, object_id_str.c_str(), include_prototype);
+      
+      // Post callback back to Dart thread
+      dart_isolate_context->dispatcher()->PostToDart(
+        context_id,
+        [persistent_handle, callback, result]() {
+          // Convert persistent handle back to regular handle
+          Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent_handle);
+          callback(handle, result);
+          // Delete the persistent handle to free memory
+          Dart_DeletePersistentHandle_DL(persistent_handle);
+        }
+      );
+    }
+  );
+}
+
+WEBF_EXPORT_C
 webf::NativeValue* EvaluatePropertyPathFromDart(void* dart_isolate_context_ptr,
                                                 double context_id, 
                                                 const char* object_id, 
