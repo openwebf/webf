@@ -459,7 +459,7 @@ class RenderLayoutBox extends RenderBoxModel
       double maxContentHeight = _getContentHeight(maxHeight);
       finalContentHeight = finalContentHeight > maxContentHeight ? maxContentHeight : finalContentHeight;
     } else if (isNotInline && minHeight != null && height == null) {
-      double minContentHeight = _getContentWidth(minHeight);
+      double minContentHeight = _getContentHeight(minHeight);
       finalContentHeight = finalContentHeight < minContentHeight ? minContentHeight : finalContentHeight;
     }
 
@@ -712,6 +712,66 @@ class RenderBoxModel extends RenderBox
   // https://www.w3.org/TR/css-sizing-3/#min-content
   double minContentWidth = 0;
   double minContentHeight = 0;
+
+  // Flag indicating this element is being relaid out by flex layout and only contains text.
+  // When true, RenderTextBox children will use infinite width constraints to prevent
+  // box constraint errors during flex item resizing. This flag is automatically cleared
+  // after the text box reads it in getConstraints().
+  bool isFlexRelayout = false;
+
+  // Find and mark elements that only contain text boxes for flex relayout optimization.
+  // This enables text boxes to use infinite width during flex layout to expand naturally,
+  // preventing box constraint errors when flex items are resized.
+  void markFlexRelayoutForTextOnly() {
+    if (this is RenderEventListener) {
+      RenderEventListener eventListener = this as RenderEventListener;
+      RenderObject? child = eventListener.child;
+      if (child is RenderTextBox) {
+        // RenderEventListener directly contains a text box - mark it for flex relayout
+        eventListener.isFlexRelayout = true;
+        return;
+      } else if (child is RenderLayoutBox) {
+        // RenderEventListener contains a layout box - check if that layout box only contains text
+        _markRenderLayoutBoxForTextOnly(child);
+      }
+    } else if (this is RenderLayoutBox) {
+      // Check if this layout box only contains text
+      _markRenderLayoutBoxForTextOnly(this as RenderLayoutBox);
+    }
+  }
+
+  // Mark a RenderLayoutBox for flex relayout if it contains only a single RenderTextBox child.
+  // This optimization allows the text to use flexible width constraints during flex layout,
+  // preventing constraint violations when the flex container adjusts item sizes.
+  // Only apply when the flex container itself has indefinite width.
+  void _markRenderLayoutBoxForTextOnly(RenderLayoutBox layoutBox) {
+    if (layoutBox.childCount == 1 && 
+        layoutBox.firstChild is RenderTextBox && 
+        layoutBox.renderStyle.width.isAuto &&
+        _shouldApplyFlexTextOptimization(layoutBox)) {
+      layoutBox.isFlexRelayout = true;
+    }
+  }
+
+  // Check if flex text optimization should be applied
+  // Only apply when flex container has indefinite width (causing constraint conflicts)
+  bool _shouldApplyFlexTextOptimization(RenderLayoutBox layoutBox) {
+    // Find the flex parent
+    RenderObject? current = layoutBox.parent;
+    while (current != null) {
+      if (current is RenderFlexLayout) {
+        RenderFlexLayout flexParent = current as RenderFlexLayout;
+        // If flex container has definite width, no optimization needed
+        if (!flexParent.renderStyle.width.isAuto || flexParent.constraints.hasTightWidth) {
+          return false;
+        }
+        // If flex container has indefinite width, optimization may be needed
+        return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
 
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;

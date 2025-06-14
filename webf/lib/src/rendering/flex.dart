@@ -325,9 +325,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       ///  https://www.w3.org/TR/2018/CR-css-flexbox-1-20181119/#flex-basis-property
       ///  percentage values of flex-basis are resolved against the flex item’s containing block (i.e. its flex container);
       ///  and if that containing block’s size is indefinite, the used value for flex-basis is content.
-      if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
-        flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
-      }
+      // Note: When flex-basis is 0%, it should remain 0, not be changed to minContentWidth
+      // The commented code below was incorrectly setting flexBasis to minContentWidth for 0% values
+      // if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
+      //   flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+      // }
 
       return flexBasis;
     }
@@ -1469,6 +1471,9 @@ class RenderFlexLayout extends RenderLayoutBox {
           continue;
         }
 
+        // Find and mark the parent that only contains text boxes for flex relayout
+        child.markFlexRelayoutForTextOnly();
+
         BoxConstraints childConstraints = _getChildAdjustedConstraints(
           child,
           childFlexedMainSize,
@@ -1604,12 +1609,14 @@ class RenderFlexLayout extends RenderLayoutBox {
             child.renderStyle.display == CSSDisplay.inlineBlock ||
             child.renderStyle.display == CSSDisplay.inlineFlex) &&
         (child.renderStyle.isSelfRenderFlowLayout() || child.renderStyle.isSelfRenderFlexLayout());
+    bool isRenderTextBox = child.renderStyle.isSelfRenderLayoutBox() &&
+        _hasOneChildRenderTextBox(child.renderStyle.attachedRenderBoxModel as RenderLayoutBox);
     bool isSecondaryLayoutPass = child.hasSize;
 
     // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
-        (isTextElement || isInlineElementWithText) &&
+        (isTextElement || isInlineElementWithText || isRenderTextBox) &&
         childFlexedMainSize != null &&
         child.renderStyle.height.isAuto;
 
@@ -1627,6 +1634,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     );
 
     return childConstraints;
+  }
+
+  bool _hasOneChildRenderTextBox(RenderLayoutBox layoutBox) {
+    return layoutBox.childCount == 1 && layoutBox.firstChild is RenderTextBox;
   }
 
   // When replaced element is stretched or shrinked only on one axis and

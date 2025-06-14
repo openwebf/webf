@@ -341,7 +341,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
         double horizontalBorderLength = borderEdge.horizontal;
         double horizontalPaddingLength = padding.horizontal;
 
+        // Calculate normal constraint width
         maxConstraintWidth = parentConstraints.maxWidth - horizontalPaddingLength - horizontalBorderLength;
+
+        // Flex relayout optimization: Calculate proper text width during flex layout
+        if (parentRenderBoxModel.isFlexRelayout && parentRenderBoxModel.renderStyle.width.isAuto) {
+          maxConstraintWidth = double.infinity;
+          parentRenderBoxModel.isFlexRelayout = false;
+        }
       }
     }
 
@@ -537,6 +544,156 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       _renderParagraph.lineRenderList[index].paintOffset = offset;
     }
   }
+  //
+  // // Calculate appropriate text width during flex layout to prevent constraint errors
+  // // while maintaining proper text wrapping behavior
+  // double _calculateFlexTextWidth(RenderBoxModel parentRenderBoxModel, double horizontalPadding, double horizontalBorder) {
+  //   // Find the flex container
+  //   RenderFlexLayout? flexParent = _findFlexParent(parentRenderBoxModel);
+  //   if (flexParent == null) {
+  //     // No flex parent found, use current constraints
+  //     double fallbackWidth = parentRenderBoxModel.constraints.maxWidth - horizontalPadding - horizontalBorder;
+  //     return max(fallbackWidth * 0.1, fallbackWidth); // At least 10% of available width
+  //   }
+  //
+  //   // Calculate available space in flex container
+  //   double flexContainerWidth = flexParent.constraints.maxWidth;
+  //   double flexPadding = flexParent.renderStyle.padding.horizontal;
+  //   double flexBorder = flexParent.renderStyle.border.horizontal;
+  //   double availableFlexWidth = flexContainerWidth - flexPadding - flexBorder;
+  //
+  //   // Count flex children and analyze their flex properties
+  //   List<FlexItemInfo> flexItems = _analyzeFlexItems(flexParent);
+  //
+  //   if (flexItems.isEmpty) {
+  //     // Fallback: assume equal distribution among potential items
+  //     double fallbackWidth = availableFlexWidth / 2 - horizontalPadding - horizontalBorder;
+  //     return max(availableFlexWidth * 0.1, fallbackWidth); // At least 10% of container
+  //   }
+  //
+  //   // Calculate estimated width based on flex properties
+  //   double estimatedWidth = _estimateFlexItemWidth(flexItems, availableFlexWidth, parentRenderBoxModel);
+  //
+  //   // Subtract this item's padding and border
+  //   estimatedWidth -= (horizontalPadding + horizontalBorder);
+  //
+  //   // Dynamic minimum and maximum based on container size
+  //   double minWidth = availableFlexWidth * 0.1; // At least 10% of container for text wrapping
+  //   double maxWidth = availableFlexWidth * 0.9; // Don't exceed 90% of container
+  //
+  //   // Ensure we have a reasonable minimum for very small containers
+  //   double absoluteMinWidth = _calculateAbsoluteMinWidth();
+  //   minWidth = max(minWidth, absoluteMinWidth);
+  //
+  //   return max(minWidth, min(estimatedWidth, maxWidth));
+  // }
+  //
+  // // Calculate absolute minimum width based on text characteristics
+  // double _calculateAbsoluteMinWidth() {
+  //   // Base minimum on average character width for the current font
+  //   double fontSize = renderStyle.fontSize.computedValue;
+  //   // Assume average character width is approximately 0.6 * fontSize
+  //   double avgCharWidth = fontSize * 0.6;
+  //   // Allow for at least 8-10 characters to enable reasonable text wrapping
+  //   double minChars = 8.0;
+  //   return avgCharWidth * minChars;
+  // }
+  //
+  // // Find the flex parent container
+  // RenderFlexLayout? _findFlexParent(RenderBoxModel element) {
+  //   RenderObject? current = element.parent;
+  //   while (current != null) {
+  //     if (current is RenderFlexLayout) {
+  //       return current;
+  //     }
+  //     current = current.parent;
+  //   }
+  //   return null;
+  // }
+  //
+  // // Analyze flex items to understand their properties
+  // List<FlexItemInfo> _analyzeFlexItems(RenderFlexLayout flexParent) {
+  //   List<FlexItemInfo> items = [];
+  //   RenderObject? child = flexParent.firstChild;
+  //
+  //   while (child != null) {
+  //     if (child is RenderBoxModel) {
+  //       items.add(FlexItemInfo(
+  //         child: child,
+  //         flexGrow: _getFlexGrow(child),
+  //         flexShrink: _getFlexShrink(child),
+  //         flexBasis: _getFlexBasis(child),
+  //       ));
+  //     }
+  //     child = (child.parentData as ContainerBoxParentData).nextSibling;
+  //   }
+  //
+  //   return items;
+  // }
+  //
+  // // Get flex-grow value from render style
+  // double _getFlexGrow(RenderBoxModel child) {
+  //   return child.renderStyle.flexGrow;
+  // }
+  //
+  // // Get flex-shrink value from render style
+  // double _getFlexShrink(RenderBoxModel child) {
+  //   return child.renderStyle.flexShrink;
+  // }
+  //
+  // // Get flex-basis value from render style
+  // double? _getFlexBasis(RenderBoxModel child) {
+  //   if (child.renderStyle.flexBasis != null && !child.renderStyle.flexBasis!.isAuto) {
+  //     return child.renderStyle.flexBasis!.computedValue;
+  //   }
+  //   return null;
+  // }
+  //
+  // // Estimate the width this flex item should get
+  // double _estimateFlexItemWidth(List<FlexItemInfo> flexItems, double availableWidth, RenderBoxModel currentItem) {
+  //   // Calculate total flex grow and basis
+  //   double totalFlexGrow = 0;
+  //   double totalBasisWidth = 0;
+  //
+  //   for (FlexItemInfo item in flexItems) {
+  //     totalFlexGrow += item.flexGrow;
+  //     if (item.flexBasis != null) {
+  //       totalBasisWidth += item.flexBasis!;
+  //     }
+  //   }
+  //
+  //   // Find current item's info
+  //   FlexItemInfo? currentItemInfo;
+  //   for (FlexItemInfo item in flexItems) {
+  //     if (item.child == currentItem) {
+  //       currentItemInfo = item;
+  //       break;
+  //     }
+  //   }
+  //
+  //   if (currentItemInfo == null) {
+  //     // Fallback: equal distribution
+  //     return availableWidth / flexItems.length;
+  //   }
+  //
+  //   // Calculate free space after accounting for flex basis
+  //   double freeSpace = availableWidth - totalBasisWidth;
+  //
+  //   if (totalFlexGrow > 0 && freeSpace > 0) {
+  //     // Distribute free space based on flex-grow
+  //     double growRatio = currentItemInfo.flexGrow / totalFlexGrow;
+  //     double basisWidth = currentItemInfo.flexBasis ?? 0;
+  //     return basisWidth + (freeSpace * growRatio);
+  //   } else {
+  //     // No flex grow or negative space, use basis or equal distribution
+  //     if (currentItemInfo.flexBasis != null) {
+  //       return currentItemInfo.flexBasis!;
+  //     } else {
+  //       return availableWidth / flexItems.length;
+  //     }
+  //   }
+  // }
+
 }
 
 class RenderTextLineBoxes {
@@ -631,6 +788,21 @@ class MultiLineBoxConstraints extends BoxConstraints {
     final String height = describe(minHeight, maxHeight, 'h');
     return 'MultiLineBoxConstraints($width, $height$annotation, maxLines($maxLines), joinLineNum($joinLineNum) overflow($overflow))';
   }
+}
+
+// Helper class to store flex item information for width calculation
+class FlexItemInfo {
+  final RenderBoxModel child;
+  final double flexGrow;
+  final double flexShrink;
+  final double? flexBasis;
+
+  FlexItemInfo({
+    required this.child,
+    required this.flexGrow,
+    required this.flexShrink,
+    this.flexBasis,
+  });
 }
 
 class InlineBoxConstraints extends MultiLineBoxConstraints {
