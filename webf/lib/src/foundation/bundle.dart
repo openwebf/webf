@@ -215,7 +215,7 @@ abstract class WebFBundle with Diagnosticable {
       contentType.mimeType == javascriptContentType.mimeType ||
           contentType.mimeType == _javascriptApplicationContentType.mimeType ||
           contentType.mimeType == _xJavascriptContentType.mimeType;
-  bool get isBytecode => contentType.mimeType == webfBc1ContentType || _isSupportedBytecode(contentType.mimeType, _uri);
+  bool get isBytecode => contentType.mimeType == webfBc1ContentType.mimeType || _isSupportedBytecode(contentType.mimeType, _uri);
 }
 
 // The bundle that output input data.

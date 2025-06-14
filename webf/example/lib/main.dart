@@ -316,6 +316,18 @@ class FirstPageState extends State<FirstPage> {
         SizedBox(height: 18),
         ElevatedButton(
             onPressed: () {
+              widget.webfPageName.value = 'import_meta_demo';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'import_meta_demo',
+                  initialRoute: '/',
+                );
+              }));
+            },
+            child: Text('Open ES Module Import Meta Demo')),
+        SizedBox(height: 18),
+        ElevatedButton(
+            onPressed: () {
               widget.webfPageName.value = 'vuejs';
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(webfPageName: 'vuejs');
@@ -453,6 +465,8 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
       return WebFBundle.fromUrl('assets:///assets/bundle.html');
     case 'esm_demo':
       return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
+    case 'import_meta_demo':
+      return WebFBundle.fromUrl('assets:///assets/import_meta_demo.html');
     case 'vuejs':
       return WebFBundle.fromUrl('assets:///vue_project/dist/index.html');
     case 'reactjs':
