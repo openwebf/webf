@@ -1658,14 +1658,12 @@ class RenderFlexLayout extends RenderLayoutBox {
             child.renderStyle.display == CSSDisplay.inlineBlock ||
             child.renderStyle.display == CSSDisplay.inlineFlex) &&
         (child.renderStyle.isSelfRenderFlowLayout() || child.renderStyle.isSelfRenderFlexLayout());
-    bool isRenderTextBox = child.renderStyle.isSelfRenderLayoutBox() &&
-        _hasOneChildRenderTextBox(child.renderStyle.attachedRenderBoxModel as RenderLayoutBox);
     bool isSecondaryLayoutPass = child.hasSize;
 
     // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
-        (isTextElement || isInlineElementWithText || isRenderTextBox) &&
+        (isTextElement || isInlineElementWithText ) &&
         childFlexedMainSize != null &&
         child.renderStyle.height.isAuto;
 
@@ -1700,10 +1698,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     );
 
     return childConstraints;
-  }
-
-  bool _hasOneChildRenderTextBox(RenderLayoutBox layoutBox) {
-    return layoutBox.childCount == 1 && layoutBox.firstChild is RenderTextBox;
   }
 
   // When replaced element is stretched or shrinked only on one axis and
