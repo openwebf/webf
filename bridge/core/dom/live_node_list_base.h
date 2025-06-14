@@ -28,7 +28,6 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/html/collection_type.h"
 #include "element_traversal.h"
-#include "out/html_names.h"
 
 namespace webf {
 

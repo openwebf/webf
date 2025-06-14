@@ -30,15 +30,9 @@ NativeValue HTMLLinkElement::HandleCallFromDartSide(const webf::AtomicString& me
 NativeValue HTMLLinkElement::HandleParseAuthorStyleSheet(int32_t argc,
                                                          const NativeValue* argv,
                                                          Dart_Handle dart_object) {
-  GetExecutingContext()->dartIsolateContext()->profiler()->StartTrackSteps(
-      "HTMLLinkElement::HandleParseAuthorStyleSheet");
-
-  // TODO: 解析参数
   //  AtomicString& cssString();
   //  AtomicString& href();
   //  NativeValue result = parseAuthorStyleSheet(cssString(), href());
-
-  GetExecutingContext()->dartIsolateContext()->profiler()->FinishTrackSteps();
 
   return Native_NewNull();
 };

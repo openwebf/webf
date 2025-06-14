@@ -44,7 +44,6 @@ ScreenEvent::ScreenEvent(ExecutingContext* context, const AtomicString& type, Na
                                            static_cast<const char*>(native_event->state),
                                            strlen(static_cast<const char*>(native_event->state)))),
       path_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->path))))
 #endif
 {

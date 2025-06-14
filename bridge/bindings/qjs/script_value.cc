@@ -4,11 +4,12 @@
  */
 #include "script_value.h"
 
-#include <core/geometry/dom_matrix.h>
-#include <core/geometry/dom_point.h>
+#include <core/platform/geometry/dom_matrix.h>
+#include <core/platform/geometry/dom_point.h>
 #include <core/html/canvas/canvas_gradient.h>
 #include <core/html/canvas/canvas_pattern.h>
 #include <core/html/canvas/text_metrics.h>
+#include "core/css/computed_css_style_declaration.h"
 #include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"

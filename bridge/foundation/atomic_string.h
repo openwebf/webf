@@ -76,16 +76,11 @@ class AtomicString {
     return string_->Find(match_function, start);
   }
 
-  // Find substrings.
-  size_t Find(const AtomicString& value, size_t start = 0) const { return string_->Find(value, start); }
-
-  bool Contains(char c) const { return find(c) != kNotFound; }
-  bool Contains(const AtomicString& value) const { return Find(value, 0) != kNotFound; }
-
-  bool StartsWith(const AtomicString& prefix) const { return string_->StartsWith(prefix); }
-
-  bool EndsWith(const AtomicString& suffix) const { return string_.EndsWith(suffix); }
-  bool EndsWith(char16_t character) const { return string_.EndsWith(character); }
+  bool StartsWith(
+      const std::string_view& prefix,
+      TextCaseSensitivity case_sensitivity = kTextCaseSensitive) const {
+    return string_->StartsWith(prefix);
+  }
 
   inline bool ContainsOnlyLatin1OrEmpty() const {
     if (empty())
@@ -121,6 +116,34 @@ class AtomicString {
   static std::shared_ptr<StringImpl> AddSlowCase(std::shared_ptr<StringImpl>&&);
 
   std::shared_ptr<StringImpl> string_ = nullptr;
+};
+
+
+// AtomicStringRef is a reference to an AtomicString's string data.
+// It is used to pass an AtomicString's string data without copying the string data.
+struct AtomicStringRef {
+  AtomicStringRef(const AtomicString& atomic_string) {
+    is_8bit = atomic_string.Is8Bit();
+    if (is_8bit) {
+      data.characters8 = reinterpret_cast<const uint8_t*>(atomic_string.Characters8());
+    } else {
+      data.characters16 = reinterpret_cast<const uint16_t*>(atomic_string.Characters16());
+    }
+    length = atomic_string.length();
+  }
+
+  AtomicStringRef(const std::string& string) {
+    is_8bit = true;
+    data.characters8 = reinterpret_cast<const uint8_t*>(string.c_str());
+    length = string.length();
+  }
+
+  bool is_8bit;
+  union {
+    const uint8_t* characters8;
+    const uint16_t* characters16;
+  } data;
+  int64_t length;
 };
 
 inline bool operator==(const AtomicString& a, const AtomicString& b) {

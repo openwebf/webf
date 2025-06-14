@@ -11,8 +11,8 @@
 #include "core/dom/element.h"
 #include "core/dom/node.h"
 #include "core/platform/text/text_position.h"
-#include "qjs_css_style_sheet_init.h"
 #include "qjs_union_dom_stringmedia_list.h"
+#include "qjs_css_style_sheet_init.h"
 #include "style_sheet.h"
 
 namespace webf {

@@ -23,6 +23,14 @@ ScriptWrappable::~ScriptWrappable() {
   }
 }
 
+bool ScriptWrappable::IsPrototypeProperty(const webf::AtomicString& key) const {
+  JSValue proto = JS_GetPrototype(ctx_, jsObject_);
+  JSAtom key_atom = context_->stringCache()->GetJSAtomFromString(ctx_, key.Impl());
+  bool is_proto_property = JS_HasProperty(ctx_, proto, key_atom);
+  JS_FreeValue(ctx_, proto);
+  return is_proto_property;
+}
+
 bool ScriptWrappable::IsBindingObject() const {
   return false;
 }

@@ -362,7 +362,7 @@ bool EventTarget::RemoveEventListenerInternal(const AtomicString& event_type,
     bool has_capture = options->hasCapture() && options->capture();
 
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kRemoveEvent,
-                                                         event_type.ToNativeString(ctx()), bindingObject(),
+                                                         event_type.ToNativeString(), bindingObject(),
                                                          has_capture ? (void*)0x01 : nullptr);
   }
 

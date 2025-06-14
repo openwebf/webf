@@ -9,6 +9,7 @@
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "css_property_names.h"
+#include "foundation/string_view.h"
 #include "defined_properties.h"
 #include "plugin_api/css_style_declaration.h"
 
@@ -101,13 +102,16 @@ class CSSStyleDeclaration : public BindingObject {
   // an argument (see bug 829408).
   bool AnonymousNamedSetter(const AtomicString& name, const ScriptValue& value);
 
- protected:
-  explicit CSSStyleDeclaration(ExecutingContext* context);
 
   virtual bool IsComputedCssStyleDeclaration() const override;
   virtual bool IsInlineCssStyleDeclaration() const;
 
   const CSSStyleDeclarationPublicMethods* cssStyleDeclarationPublicMethods();
+
+
+
+ protected:
+  explicit CSSStyleDeclaration(ExecutingContext* context);
 
  private:
   // Fast path for when we know the value given from the script

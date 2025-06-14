@@ -74,7 +74,7 @@ HTMLElement* Document::createElement(const AtomicString& name, ExceptionState& e
   auto* html_unknown_element = MakeGarbageCollected<HTMLUnknownElement>(local_name, this);
   // Additional patch for the quickjs object, avoid warning for unknown tag in React.js
   JS_SetProperty(ctx(), html_unknown_element->ToQuickJSUnsafe(), JS_ATOM_Symbol_toStringTag,
-                 JS_NewString(ctx(), ("HTMLUnknownElement " + local_name.ToStdString(ctx())).c_str()));
+                 JS_NewString(ctx(), ("HTMLUnknownElement " + local_name.ToStdString()).c_str()));
   return html_unknown_element;
 }
 

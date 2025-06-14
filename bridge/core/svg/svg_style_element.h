@@ -22,7 +22,7 @@ class SVGStyleElement : public SVGElement {
 template <>
 struct DowncastTraits<SVGStyleElement> {
   static bool AllowFrom(const Element& element) {
-    return element.IsSVGElement() && element.HasTagName(svg_names::kstyle);
+    return element.IsSVGElement() && element.HasTagName(svg_names::kStyle);
   }
   static bool AllowFrom(const Node& node) { return node.IsHTMLElement() && IsA<SVGStyleElement>(To<SVGElement>(node)); }
 };

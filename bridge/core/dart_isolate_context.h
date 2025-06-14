@@ -57,7 +57,6 @@ class DartIsolateContext {
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
     dispatcher_ = std::move(dispatcher);
   }
-  FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
   FORCE_INLINE StringCache* stringCache() const { return string_cache_.get(); }
 
   void InitializeGlobalsPerThread();

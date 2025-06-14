@@ -136,8 +136,8 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModule(ExecutingContext* cont
                                                           const char* module_name,
                                                           const char* method,
                                                           SharedExceptionState* shared_exception_state) {
-  AtomicString module_name_atomic = AtomicString(context->ctx(), module_name);
-  AtomicString method_atomic = webf::AtomicString(context->ctx(), method);
+  AtomicString module_name_atomic = AtomicString(module_name);
+  AtomicString method_atomic = webf::AtomicString(method);
 
   ScriptValue result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic,
                                                              shared_exception_state->exception_state);
@@ -155,8 +155,8 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParams(ExecutingCon
                                                                     const char* method,
                                                                     NativeValue* params,
                                                                     SharedExceptionState* shared_exception_state) {
-  AtomicString module_name_atomic = AtomicString(context->ctx(), module_name);
-  AtomicString method_atomic = webf::AtomicString(context->ctx(), method);
+  AtomicString module_name_atomic = AtomicString(module_name);
+  AtomicString method_atomic = webf::AtomicString(method);
 
   const NativeValue* result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, *params,
                                                                     nullptr, shared_exception_state->exception_state);
@@ -176,8 +176,8 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParamsAndCallback(
     NativeValue* params,
     WebFNativeFunctionContext* callback_context,
     SharedExceptionState* shared_exception_state) {
-  AtomicString module_name_atomic = AtomicString(context->ctx(), module_name);
-  AtomicString method_atomic = webf::AtomicString(context->ctx(), method);
+  AtomicString module_name_atomic = AtomicString(module_name);
+  AtomicString method_atomic = webf::AtomicString(method);
 
   auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
 

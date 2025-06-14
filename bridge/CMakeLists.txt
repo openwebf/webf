@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -466,6 +466,8 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/platform/graphics/gradient.cc
     core/platform/geometry/length.cc
     core/platform/geometry/dom_matrix.cc
+    core/platform/geometry/dom_point_read_only.cc
+    core/platform/geometry/dom_point.cc
     core/platform/geometry/layout_unit.cc
     core/platform/geometry/calculation_expression_node.cc
     core/platform/geometry/dom_matrix_readonly.cc
@@ -585,10 +587,6 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/canvas/canvas_pattern.cc
     core/html/canvas/path_2d.cc
     core/html/canvas/text_metrics.cc
-    core/geometry/dom_matrix.cc
-    core/geometry/dom_matrix_read_only.cc
-    core/geometry/dom_point.cc
-    core/geometry/dom_point_read_only.cc
     core/html/forms/html_button_element.cc
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
@@ -735,7 +733,6 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_node_list.cc
     code_gen/qjs_idle_deadline.cc
     code_gen/event_type_names.cc
-    code_gen/built_in_string.cc
     code_gen/mutation_record_types.cc
     code_gen/binding_call_methods.cc
     code_gen/qjs_scroll_options.cc
@@ -780,6 +777,7 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_html_form_element.cc
     code_gen/qjs_html_textarea_element.cc
     code_gen/qjs_html_script_element.cc
+    code_gen/qjs_html_style_element.cc
     code_gen/qjs_promise_rejection_event.cc
     code_gen/qjs_promise_rejection_event_init.cc
     code_gen/qjs_unionevent_listener_options_boolean.cc
@@ -819,6 +817,7 @@ list(APPEND BRIDGE_SOURCE
     code_gen/at_rule_descriptors.cc
     code_gen/media_type_names.cc
     code_gen/qjs_style_sheet.cc
+    code_gen/qjs_union_dom_stringmedia_list.cc
 
     # SVG generated
     code_gen/svg_names.cc

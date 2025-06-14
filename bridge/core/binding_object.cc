@@ -256,14 +256,14 @@ ScriptPromise BindingObject::GetBindingPropertyAsync(const webf::AtomicString& p
     return ScriptPromise(ctx(), JS_NULL);
   }
 
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release())};
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release())};
   return InvokeBindingMethodAsync(BindingMethodCallOperations::kGetProperty, 1, argv, exception_state);
 }
 
 void BindingObject::SetBindingPropertyAsync(const webf::AtomicString& prop,
                                             NativeValue value,
                                             webf::ExceptionState& exception_state) {
-  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString(ctx());
+  std::unique_ptr<SharedNativeString> args_01 = prop.ToNativeString();
 
   auto* args_02 = (NativeValue*)dart_malloc(sizeof(NativeValue));
   memcpy((void*)args_02, &value, sizeof(NativeValue));
@@ -335,7 +335,7 @@ NativeValue BindingObject::GetBindingProperty(const AtomicString& prop,
     return Native_NewNull();
   }
 
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release())};
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release())};
   NativeValue result = InvokeBindingMethod(BindingMethodCallOperations::kGetProperty, 1, argv, reason, exception_state);
 
   return result;

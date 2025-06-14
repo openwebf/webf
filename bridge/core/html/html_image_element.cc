@@ -49,7 +49,7 @@ ScriptPromise HTMLImageElement::src_async(webf::ExceptionState& exception_state)
 void HTMLImageElement::setSrc_async(const AtomicString& value, ExceptionState& exception_state) {
   SetBindingPropertyAsync(defined_properties::ksrc, NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), value),
                           exception_state);
-  if (!value.IsEmpty() && !keep_alive) {
+  if (!value.empty() && !keep_alive) {
     KeepAlive();
     keep_alive = true;
   }

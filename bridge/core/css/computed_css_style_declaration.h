@@ -1,12 +1,13 @@
 /*
- * Copyright (C) 2022-present The WebF authors. All rights reserved.
- */
+* Copyright (C) 2022-present The WebF authors. All rights reserved.
+*/
 
 #ifndef WEBF_CORE_CSS_COMPUTED_CSS_STYLE_DECLARATION_H_
 #define WEBF_CORE_CSS_COMPUTED_CSS_STYLE_DECLARATION_H_
 
-#include "bindings/qjs/cppgc/member.h"
 #include "core/binding_object.h"
+#include "code_gen/css_property_names.h"
+#include "core/css/css_value.h"
 #include "css_style_declaration.h"
 #include "plugin_api/computed_css_style_declaration.h"
 
@@ -15,43 +16,58 @@ namespace webf {
 class Element;
 
 class ComputedCssStyleDeclaration : public CSSStyleDeclaration {
-  DEFINE_WRAPPERTYPEINFO();
+ DEFINE_WRAPPERTYPEINFO();
 
- public:
-  using ImplType = ComputedCssStyleDeclaration;
-  ComputedCssStyleDeclaration() = delete;
+public:
+ using ImplType = ComputedCssStyleDeclaration;
+ ComputedCssStyleDeclaration() = delete;
 
-  explicit ComputedCssStyleDeclaration(ExecutingContext* context, NativeBindingObject* native_binding_object);
+ explicit ComputedCssStyleDeclaration(ExecutingContext* context, NativeBindingObject* native_binding_object);
 
-  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
-  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
-  bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
-  int64_t length() const override;
-  ScriptPromise length_async(ExceptionState& exception_state);
+ //  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
+ unsigned length() const override;
 
-  AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
-  void setProperty_async(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
-  AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
+ AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
+ AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
-  bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
-  void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;
+ bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;
+ void NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) override;
 
-  bool IsComputedCssStyleDeclaration() const override;
+ bool IsComputedCssStyleDeclaration() const override;
 
-  AtomicString cssText() const override;
-  ScriptPromise cssText_async(ExceptionState& exception_state);
-  void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
-  ScriptPromise setCssText_async(const AtomicString& value, ExceptionState& exception_state);
+ AtomicString cssText() const override;
+ void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
 
-  const ComputedCssStyleDeclarationPublicMethods* computedCssStyleDeclarationPublicMethods();
+ // Pure virtual methods from CSSStyleDeclaration
+ CSSRule* parentRule() const override;
+ AtomicString getPropertyPriority(const AtomicString& property_name) override;
+ AtomicString GetPropertyShorthand(const AtomicString& property_name) override;
+ bool IsPropertyImplicit(const AtomicString& property_name) override;
+ void setProperty(const ExecutingContext* context,
+                  const AtomicString& property_name,
+                  const AtomicString& value,
+                  const AtomicString& priority,
+                  ExceptionState& exception_state) override;
+ const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(CSSPropertyID property_id) override;
+ const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(const AtomicString& custom_property_name) override;
+ AtomicString GetPropertyValueInternal(CSSPropertyID property_id) override;
+ AtomicString GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) override;
+ AtomicString GetPropertyPriorityWithHint(const AtomicString& property_name, unsigned index) override;
+ void SetPropertyInternal(CSSPropertyID property_id,
+                         const AtomicString& property_name,
+                         StringView value,
+                         bool important,
+                         ExceptionState& exception_state) override;
+ bool CssPropertyMatches(CSSPropertyID property_id, const CSSValue& value) const override;
+ const ComputedCssStyleDeclarationPublicMethods* computedCssStyleDeclarationPublicMethods();
 
- private:
+
+private:
 };
 
 template <>
 struct DowncastTraits<ComputedCssStyleDeclaration> {
-  static bool AllowFrom(const BindingObject& binding_object) { return binding_object.IsComputedCssStyleDeclaration(); }
+ static bool AllowFrom(const BindingObject& binding_object) { return binding_object.IsComputedCssStyleDeclaration(); }
 };
 
 }  // namespace webf

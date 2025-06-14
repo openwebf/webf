@@ -5,7 +5,7 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
 #include "core/dom/document.h"

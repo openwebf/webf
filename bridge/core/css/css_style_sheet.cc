@@ -18,7 +18,6 @@
 #include "core/html/html_style_element.h"
 #include "core/svg/svg_style_element.h"
 #include "html_element_type_helper.h"
-#include "qjs_union_dom_stringmedia_list.h"
 
 #include <utility>
 #include "css_rule.h"

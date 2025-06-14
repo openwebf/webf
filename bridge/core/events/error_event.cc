@@ -36,7 +36,7 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
                        const std::shared_ptr<ErrorEventInit>& initializer,
                        ExceptionState& exception_state)
     : Event(context, event_type_names::kerror),
-      message_(initializer->hasMessage() ? initializer->message().ToStdString(ctx()) : ""),
+      message_(initializer->hasMessage() ? initializer->message().ToStdString() : ""),
       error_(initializer->hasError() ? initializer->error() : ScriptValue::Empty(ctx())),
       source_location_(
           std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString() : "",

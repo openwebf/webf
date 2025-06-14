@@ -210,8 +210,6 @@
     "remove",
     "set_string",
     "set_blob",
-    "matrixTransform",
-    "title",
     "parseAuthorStyleSheet"
   ]
 }

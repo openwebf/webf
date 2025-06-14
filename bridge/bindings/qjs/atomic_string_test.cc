@@ -8,7 +8,6 @@
 #include "event_type_names.h"
 #include "gtest/gtest.h"
 #include "native_string_utils.h"
-#include "qjs_engine_patch.h"
 #include "webf_test_env.h"
 
 using namespace webf;

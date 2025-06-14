@@ -12,7 +12,7 @@ const char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* script_v
                                                   webf::SharedExceptionState* shared_exception_state) {
   if (script_value_ref->script_value.IsString()) {
     auto value = script_value_ref->script_value.ToString(script_value_ref->context->ctx());
-    return value.ToStringView().Characters8();
+    return value.Characters8();
   }
   shared_exception_state->exception_state.ThrowException(script_value_ref->context->ctx(), webf::ErrorType::TypeError,
                                                          "Value is not a string.");
@@ -22,7 +22,7 @@ const char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* script_v
 void ScriptValueRefPublicMethods::SetAsString(webf::ScriptValueRef* script_value_ref,
                                               const char* value,
                                               webf::SharedExceptionState* shared_exception_state) {
-  webf::AtomicString value_atomic = webf::AtomicString(script_value_ref->context->ctx(), value);
+  webf::AtomicString value_atomic = webf::AtomicString(value);
   script_value_ref->script_value = webf::ScriptValue(script_value_ref->context->ctx(), value_atomic);
 }
 

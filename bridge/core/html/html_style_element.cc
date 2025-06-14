@@ -12,7 +12,7 @@
 namespace webf {
 
 HTMLStyleElement::HTMLStyleElement(Document& document)
-    : HTMLElement(html_names::kstyle, &document), StyleElement(&document, false) {}
+    : HTMLElement(html_names::kStyle, &document), StyleElement(&document, false) {}
 
 HTMLStyleElement::~HTMLStyleElement() = default;
 

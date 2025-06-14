@@ -5,7 +5,7 @@
 #ifndef WIDGET_ELEMENT_SHAPE_H
 #define WIDGET_ELEMENT_SHAPE_H
 
-#include <bindings/qjs/atomic_string.h>
+#include <foundation/atomic_string.h>
 
 #include <unordered_set>
 #include "foundation/native_value.h"

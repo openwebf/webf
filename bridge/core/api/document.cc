@@ -261,7 +261,7 @@ NativeValue DocumentPublicMethods::Cookie(webf::Document* document,
 void DocumentPublicMethods::SetCookie(webf::Document* document,
                                       const char* value,
                                       webf::SharedExceptionState* shared_exception_state) {
-  webf::AtomicString value_atomic = webf::AtomicString(document->ctx(), value);
+  webf::AtomicString value_atomic = webf::AtomicString(value);
   document->SetBindingProperty(binding_call_methods::kcookie,
                                NativeValueConverter<NativeTypeString>::ToNativeValue(document->ctx(), value_atomic),
                                shared_exception_state->exception_state);

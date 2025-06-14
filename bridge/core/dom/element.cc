@@ -44,12 +44,12 @@ Element::Element(const AtomicString& namespace_uri,
       tag_name_(local_name.ToStdString()) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
-    buffer->AddCommand(UICommand::kCreateElement, local_name.ToNativeString(ctx()), bindingObject(), nullptr);
+    buffer->AddCommand(UICommand::kCreateElement, local_name.ToNativeString(), bindingObject(), nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->AddCommand(UICommand::kCreateSVGElement, local_name.ToNativeString(ctx()), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateSVGElement, local_name.ToNativeString(), bindingObject(),
                        nullptr);
   } else {
-    buffer->AddCommand(UICommand::kCreateElementNS, local_name.ToNativeString(ctx()), bindingObject(),
+    buffer->AddCommand(UICommand::kCreateElementNS, local_name.ToNativeString(), bindingObject(),
                        namespace_uri.ToNativeString().release());
   }
 }

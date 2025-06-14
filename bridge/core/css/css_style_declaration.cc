@@ -219,6 +219,20 @@ void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& nam
   //  names = property_names;
 }
 
+const CSSStyleDeclarationPublicMethods* CSSStyleDeclaration::cssStyleDeclarationPublicMethods() {
+  static CSSStyleDeclarationPublicMethods css_style_declaration_public_methods;
+  return &css_style_declaration_public_methods;
+}
+
+bool CSSStyleDeclaration::IsComputedCssStyleDeclaration() const {
+  return false;
+}
+
+bool CSSStyleDeclaration::IsInlineCssStyleDeclaration() const {
+  return false;
+}
+
+
 bool CSSStyleDeclaration::NamedPropertyQuery(const AtomicString& name, ExceptionState&) {
   return IsValidCSSPropertyID(CssPropertyInfo(GetExecutingContext(), name));
 }

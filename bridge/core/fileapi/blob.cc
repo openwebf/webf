@@ -111,7 +111,7 @@ std::string Blob::Base64Result() {
       modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()), reinterpret_cast<const char*>(bytes()), size());
   assert(output_size == encode_len);
 
-  return "data:" + mime_type_.ToStdString(ctx()) + ";base64," + buffer;
+  return "data:" + mime_type_.ToStdString() + ";base64," + buffer;
 }
 
 ArrayBufferData Blob::ArrayBufferResult() {
@@ -123,7 +123,7 @@ AtomicString Blob::type() {
 }
 
 void Blob::SetMineType(const std::string& mine_type) {
-  mime_type_ = AtomicString(ctx(), mine_type);
+  mime_type_ = AtomicString(mine_type);
 }
 
 ScriptPromise Blob::arrayBuffer(ExceptionState& exception_state) {

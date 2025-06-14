@@ -8,6 +8,7 @@
 #define WEBF_TIMELINE_OFFSET_H
 
 #include <cstddef>
+#include <string>
 
 namespace webf {
 

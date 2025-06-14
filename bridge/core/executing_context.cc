@@ -12,7 +12,7 @@
 #include "bindings/qjs/converter_impl.h"
 #include "bindings/qjs/native_string_utils.h"
 #include "bindings/qjs/script_promise_resolver.h"
-#include "built_in_string.h"
+// #include "built_in_string.h"
 #include "core/bridge_polyfill.c"
 #include "core/devtools/remote_object.h"
 #include "core/devtools/devtools_bridge.h"
@@ -707,7 +707,7 @@ void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_wi
     return;
 
   for (size_t i = 0; i < len; i++) {
-    const auto key = AtomicString(ctx(), native_widget_element_shape[i].name);
+    const auto key = AtomicString(native_widget_element_shape[i].name);
     widget_element_shapes_[key] = std::make_unique<WidgetElementShape>(ctx(), &native_widget_element_shape[i]);
   }
 }

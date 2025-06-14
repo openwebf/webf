@@ -7,7 +7,7 @@
 
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
-#include "core/geometry/dom_matrix.h"
+#include "core/platform/geometry/dom_matrix.h"
 #include "qjs_union_double_sequencedouble.h"
 #include "qjs_unionpath_2_d_dom_string.h"
 

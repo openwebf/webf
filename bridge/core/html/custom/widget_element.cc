@@ -6,7 +6,6 @@
 #include "widget_element.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/script_promise_resolver.h"
-#include "built_in_string.h"
 #include "core/dom/document.h"
 #include "foundation/native_value_converter.h"
 #include "widget_element_shape.h"
@@ -48,8 +47,8 @@ static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
     return false;
   }
 
-  StringView string_view = key.ToStringView();
-  const char* string = string_view.Characters8();
+  std::string_view string_view = key.ToStringView();
+  const char* string = string_view.data();
 
   const char* suffix = "_async";
   size_t str_len = string_view.length();
@@ -86,7 +85,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
   std::vector<char> async_key_string(key.length());
   bool is_async = IsAsyncKey(key, async_key_string.data());
-  AtomicString async_key = AtomicString(ctx(), async_key_string.data());
+  AtomicString async_key = AtomicString(async_key_string.data());
 
   if (shape == nullptr || !(shape->HasPropertyOrMethod(key) || shape->HasPropertyOrMethod(async_key))) {
     return ScriptValue::Undefined(ctx());
@@ -153,7 +152,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     bool is_async = IsAsyncKey(key, sync_key_string.data());
 
     if (is_async) {
-      AtomicString sync_key = AtomicString(ctx(), sync_key_string.data());
+      AtomicString sync_key = AtomicString(sync_key_string.data());
       SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state), exception_state);
       return true;
     }
@@ -200,7 +199,7 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
                                 void* private_data) {
   auto* data = reinterpret_cast<FunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
-  AtomicString method_name = AtomicString(ctx, data->method_name);
+  AtomicString method_name = AtomicString(data->method_name.c_str());
   ExceptionState exception_state;
 
   std::vector<NativeValue> arguments(argc);
@@ -216,7 +215,7 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
 
   std::vector<char> sync_method_string(method_name.length());
   if (IsAsyncKey(method_name, sync_method_string.data())) {
-    AtomicString sync_method = AtomicString(ctx, sync_method_string.data());
+    AtomicString sync_method = AtomicString(sync_method_string.data());
     ScriptPromise promise =
         event_target->InvokeBindingMethodAsync(sync_method, argc, arguments.data(), exception_state);
     return promise.ToValue();
@@ -239,7 +238,7 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
                                  void* private_data) {
   auto* data = reinterpret_cast<FunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
-  AtomicString method_name = AtomicString(ctx, data->method_name);
+  AtomicString method_name = AtomicString(data->method_name.c_str());
 
   ExceptionState exception_state;
 
@@ -266,7 +265,7 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
 
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
   auto* data = new FunctionData();
-  data->method_name = method_name.ToStdString(ctx());
+  data->method_name = method_name.ToStdString();
   return ScriptValue(ctx(),
                      QJSFunction::Create(ctx(), SyncDynamicFunction, 1, data, HandleJSCallbackGCMark, HandleJSFinalizer)
                          ->ToQuickJSUnsafe());
@@ -274,7 +273,7 @@ ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name)
 
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new FunctionData();
-  data->method_name = method_name.ToStdString(ctx());
+  data->method_name = method_name.ToStdString();
   return ScriptValue(
       ctx(), QJSFunction::Create(ctx(), AsyncDynamicFunction, 1, data, HandleJSCallbackGCMark, HandleJSFinalizer)
                  ->ToQuickJSUnsafe());

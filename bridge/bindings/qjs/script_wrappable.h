@@ -65,12 +65,7 @@ class ScriptWrappable : public GarbageCollected<ScriptWrappable>, public Element
 
   void InitializeQuickJSObject() override;
 
-  bool IsPrototypeProperty(const AtomicString& key) const {
-    JSValue proto = JS_GetPrototype(ctx_, jsObject_);
-    bool is_proto_property = JS_HasProperty(ctx_, proto, key.Impl());
-    JS_FreeValue(ctx_, proto);
-    return is_proto_property;
-  }
+  bool IsPrototypeProperty(const AtomicString& key) const;
 
   /**
    * Classes kept alive as long as they have a pending activity.

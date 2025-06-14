@@ -205,7 +205,6 @@ WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPa
     : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
-  isolate_context_->profiler()->FinishTrackInitialize();
   isolate_context_->Dispose([]() {});
   delete isolate_context_;
 }

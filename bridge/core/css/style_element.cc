@@ -32,7 +32,7 @@
 #include "core/html/html_style_element.h"
 // #include "core/svg/svg_style_element.h"
 // #include "foundation/string_builder.h"
-// #include "bindings/qjs/atomic_string.h"
+// #include "foundation/atomic_string.h"
 // #include "core/css/pending_sheet_type.h"
 
 namespace webf {
