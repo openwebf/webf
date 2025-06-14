@@ -3169,12 +3169,39 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
   }
 
   List<Widget> _buildPropertiesWithPrototype() {
+    // Check if this is an HTML element by looking at the description
+    final isHtmlElement = _isHtmlElement();
+    
     // Simply build all properties in order
     // The [[Prototype]] property will be handled specially in _buildProperty
-    return _properties!.map((prop) => _buildProperty(prop)).toList();
+    return _properties!.map((prop) => _buildProperty(prop, isHtmlElement)).toList();
+  }
+  
+  bool _isHtmlElement() {
+    // Check if the parent object is an HTML element
+    // HTML elements have descriptions like <div id="..." class="...">...</div>
+    final desc = widget.remoteObject.description;
+    
+    // First check the description format
+    if (desc.startsWith('<') && desc.contains('>') && 
+        (desc.contains('…') || desc.endsWith('/>'))) {
+      return true;
+    }
+    
+    // Also check if all properties look like child nodes
+    if (_properties != null && _properties!.isNotEmpty) {
+      // If most properties look like child nodes, this is probably an element showing its children
+      final childNodeCount = _properties!.where((prop) => 
+        prop.name != '[[Prototype]]' && _isChildNode(prop.name)
+      ).length;
+      final totalCount = _properties!.where((prop) => prop.name != '[[Prototype]]').length;
+      return totalCount > 0 && childNodeCount == totalCount;
+    }
+    
+    return false;
   }
 
-  Widget _buildProperty(RemoteObjectProperty property) {
+  Widget _buildProperty(RemoteObjectProperty property, bool isParentHtmlElement) {
     // Special handling for [[Prototype]] property
     if (property.name == '[[Prototype]]' && property.valueId.isNotEmpty) {
       // Create a remote object for the prototype
@@ -3184,7 +3211,7 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
         description: '[[Prototype]]',
         objectType: RemoteObjectType.object,
       );
-      
+
       return Padding(
         padding: EdgeInsets.symmetric(vertical: 2),
         child: Row(
@@ -3210,7 +3237,49 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
         ),
       );
     }
+
+    // Check if this is a child node of an HTML element
+    // Child nodes have names like "text content", <tagname>, or <!-- -->
+    final isChildNode = isParentHtmlElement && _isChildNode(property.name);
     
+    if (isChildNode) {
+      // For child nodes, display them without the colon separator
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Indentation for tree structure
+            SizedBox(width: 8),
+            if (property.valueId.isNotEmpty)
+              // If it has a valueId, it's an expandable node (like an element)
+              _RemoteObjectWidget(
+                contextId: widget.contextId,
+                remoteObject: ConsoleRemoteObject(
+                  objectId: property.valueId,
+                  className: 'Node',
+                  description: property.name,
+                  objectType: RemoteObjectType.object,
+                ),
+                logLevel: ConsoleLogLevel.log,
+              )
+            else
+              // For text nodes and comments without valueId
+              Text(
+                property.name,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 11,
+                  color: _getChildNodeColor(property.name),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Regular property display with key: value format
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -3248,48 +3317,11 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
                     ),
                   ),
           ),
-          // Show property attributes as small chips
-          if (!property.enumerable || !property.configurable || !property.writable) ...[
-            SizedBox(width: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!property.enumerable)
-                  _buildAttributeChip('NE'),
-                if (!property.configurable)
-                  _buildAttributeChip('NC'),
-                if (!property.writable)
-                  _buildAttributeChip('RO'),
-              ],
-            ),
-          ],
         ],
       ),
     );
   }
-  
-  Widget _buildAttributeChip(String label) {
-    return Container(
-      margin: EdgeInsets.only(right: 4),
-      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 0.5,
-        ),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 9,
-          color: Colors.white54,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildPropertyValue(ConsoleValue value) {
     if (value is ConsolePrimitiveValue) {
@@ -3338,6 +3370,30 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
       default:
         return Colors.white70;
     }
+  }
+  
+  bool _isChildNode(String name) {
+    // Check if this is a child node based on the naming pattern
+    // Text nodes: "text content"
+    // Element nodes: <tagname>
+    // Comment nodes: <!-- -->
+    return (name.startsWith('"') && name.endsWith('"')) ||
+           (name.startsWith('<') && name.endsWith('>')) ||
+           (name.startsWith('<!--') && name.endsWith('-->'));
+  }
+  
+  Color _getChildNodeColor(String name) {
+    if (name.startsWith('"') && name.endsWith('"')) {
+      // Text node - green color
+      return Colors.green.shade300;
+    } else if (name.startsWith('<!--') && name.endsWith('-->')) {
+      // Comment node - gray color
+      return Colors.grey.shade500;
+    } else if (name.startsWith('<') && name.endsWith('>')) {
+      // Element node - blue color
+      return Colors.blue.shade300;
+    }
+    return Colors.white70;
   }
 }
 

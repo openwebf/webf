@@ -95,6 +95,9 @@ class RemoteObjectRegistry {
   // Get object properties
   std::vector<RemoteObjectProperty> GetObjectProperties(const std::string& id, bool include_prototype = false);
   
+  // Get child nodes for DOM elements
+  std::vector<RemoteObjectProperty> GetChildNodes(const std::string& id);
+  
   // Get primitive value for a property (must be called with the object_id and property)
   JSValue GetPropertyValue(const std::string& object_id, const RemoteObjectProperty& property);
   

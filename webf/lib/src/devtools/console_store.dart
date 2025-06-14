@@ -120,11 +120,21 @@ class ConsoleRemoteObject extends ConsoleValue {
   });
   
   String get displayString => description;
-  bool get isExpandable => objectType == RemoteObjectType.object || 
-                           objectType == RemoteObjectType.array ||
-                           objectType == RemoteObjectType.function ||
-                           objectType == RemoteObjectType.map ||
-                           objectType == RemoteObjectType.set;
+  bool get isExpandable {
+    // Text nodes are displayed with quoted strings and should not be expandable
+    if (description.startsWith('"') && description.endsWith('"')) {
+      return false;
+    }
+    // Comment nodes are displayed as <!-- --> and should not be expandable
+    if (description.startsWith('<!--') && description.endsWith('-->')) {
+      return false;
+    }
+    return objectType == RemoteObjectType.object || 
+           objectType == RemoteObjectType.array ||
+           objectType == RemoteObjectType.function ||
+           objectType == RemoteObjectType.map ||
+           objectType == RemoteObjectType.set;
+  }
 }
 
 /// Represents a single console log entry

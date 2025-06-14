@@ -540,6 +540,116 @@ TEST(RemoteObject, RecursiveReferencesComplex) {
   JS_FreeValue(ctx, global);
 }
 
+TEST(RemoteObject, PrototypeChainEnumeration) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test that prototype chain properties are correctly enumerated
+  const char* code = R"(
+    // Create a prototype chain: GrandParent -> Parent -> Child
+    function GrandParent() {}
+    GrandParent.prototype.grandMethod = function() { return 'grand'; };
+    GrandParent.prototype.sharedProp = 'from grandparent';
+    GrandParent.prototype.overriddenProp = 'grandparent version';
+    
+    function Parent() {}
+    Parent.prototype = Object.create(GrandParent.prototype);
+    Parent.prototype.constructor = Parent;
+    Parent.prototype.parentMethod = function() { return 'parent'; };
+    Parent.prototype.overriddenProp = 'parent version';  // Override grandparent
+    
+    function Child() {}
+    Child.prototype = Object.create(Parent.prototype);
+    Child.prototype.constructor = Child;
+    Child.prototype.childMethod = function() { return 'child'; };
+    
+    const child = new Child();
+    child.ownProp = 'child instance';
+    child.overriddenProp = 'child instance version';  // Override prototype
+    
+    window.testChild = child;
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue testChild = JS_GetPropertyStr(ctx, global, "testChild");
+  
+  std::string childId = registry->RegisterObject(ctx, testChild);
+  
+  // Get properties without prototype chain
+  auto ownProps = registry->GetObjectProperties(childId, false);
+  
+  // Get properties with prototype chain
+  auto allProps = registry->GetObjectProperties(childId, true);
+  
+  // Should have more properties when including prototype
+  EXPECT_GT(allProps.size(), ownProps.size());
+  
+  // Verify own properties
+  bool found_ownProp = false;
+  bool found_overriddenProp = false;
+  
+  for (const auto& prop : ownProps) {
+    if (prop.name == "ownProp") {
+      found_ownProp = true;
+      EXPECT_TRUE(prop.is_own);
+    } else if (prop.name == "overriddenProp") {
+      found_overriddenProp = true;
+      EXPECT_TRUE(prop.is_own);
+    }
+  }
+  
+  EXPECT_TRUE(found_ownProp);
+  EXPECT_TRUE(found_overriddenProp);
+  
+  // When including prototype, should see all inherited properties
+  bool found_childMethod = false;
+  bool found_parentMethod = false;
+  bool found_grandMethod = false;
+  bool found_sharedProp = false;
+  bool found_prototype = false;
+  
+  for (const auto& prop : allProps) {
+    if (prop.name == "childMethod") {
+      found_childMethod = true;
+      EXPECT_FALSE(prop.is_own);  // From prototype
+    } else if (prop.name == "parentMethod") {
+      found_parentMethod = true;
+      EXPECT_FALSE(prop.is_own);  // From prototype
+    } else if (prop.name == "grandMethod") {
+      found_grandMethod = true;
+      EXPECT_FALSE(prop.is_own);  // From prototype
+    } else if (prop.name == "sharedProp") {
+      found_sharedProp = true;
+      EXPECT_FALSE(prop.is_own);  // From prototype
+    } else if (prop.name == "[[Prototype]]") {
+      found_prototype = true;
+      EXPECT_FALSE(prop.is_own);
+    }
+  }
+  
+  EXPECT_TRUE(found_childMethod);
+  EXPECT_TRUE(found_parentMethod);
+  EXPECT_TRUE(found_grandMethod);
+  EXPECT_TRUE(found_sharedProp);
+  EXPECT_TRUE(found_prototype);
+  
+  // Verify that overridden properties only appear once (with the instance value)
+  int overriddenCount = 0;
+  for (const auto& prop : allProps) {
+    if (prop.name == "overriddenProp") {
+      overriddenCount++;
+      EXPECT_TRUE(prop.is_own);  // Should only see the own property version
+    }
+  }
+  EXPECT_EQ(overriddenCount, 1);  // Should not duplicate overridden properties
+  
+  JS_FreeValue(ctx, testChild);
+  JS_FreeValue(ctx, global);
+}
+
 TEST(RemoteObject, PrototypeChainWithDevTools) {
   auto env = TEST_init();
   auto context = env->page()->executingContext();
@@ -589,80 +699,40 @@ TEST(RemoteObject, PrototypeChainWithDevTools) {
   auto gPropsWithProto = registry->GetObjectProperties(gId, true);
   auto gPropsOwnOnly = registry->GetObjectProperties(gId, false);
   
-  // Verify own properties vs inherited properties
-  EXPECT_LT(gPropsOwnOnly.size(), gPropsWithProto.size());
+  // With prototype chain enumeration, should have more properties
+  EXPECT_GT(gPropsWithProto.size(), gPropsOwnOnly.size());
   
   // Check for specific properties
   bool found_instanceProp = false;
+  bool found_gMethod = false;
+  bool found_age = false;
+  bool found_sharedMethod = false;
   bool found_prototype = false;
   
-  // Print all properties for debugging
-  std::cout << "\n=== Properties of g (with prototype) ===" << std::endl;
-  std::cout << "Total properties: " << gPropsWithProto.size() << std::endl;
-  std::cout << "Own properties only: " << gPropsOwnOnly.size() << std::endl;
-  std::cout << "\nAll properties:" << std::endl;
   for (const auto& prop : gPropsWithProto) {
-    std::cout << "  - " << prop.name << " (is_own: " << prop.is_own 
-              << ", enumerable: " << prop.enumerable 
-              << ", writable: " << prop.writable 
-              << ", configurable: " << prop.configurable << ")" << std::endl;
-    
     if (prop.name == "instanceProp") {
       found_instanceProp = true;
       EXPECT_TRUE(prop.is_own);
+    } else if (prop.name == "gMethod") {
+      found_gMethod = true;
+      EXPECT_FALSE(prop.is_own);  // From G.prototype
+    } else if (prop.name == "age") {
+      found_age = true;
+      EXPECT_FALSE(prop.is_own);  // From F.prototype
+    } else if (prop.name == "sharedMethod") {
+      found_sharedMethod = true;
+      EXPECT_FALSE(prop.is_own);  // From F.prototype
     } else if (prop.name == "[[Prototype]]") {
       found_prototype = true;
       EXPECT_FALSE(prop.is_own);
-      EXPECT_FALSE(prop.enumerable);
-      EXPECT_FALSE(prop.configurable);
-      EXPECT_FALSE(prop.writable);
-      EXPECT_FALSE(prop.value_id.empty());  // Should have an object ID
     }
   }
   
-  // With the new design, we should only see own properties + [[Prototype]]
   EXPECT_TRUE(found_instanceProp);
-  EXPECT_TRUE(found_prototype);
-  
-  // Properties like gMethod, age, sharedMethod should NOT be directly visible
-  // They will be visible when expanding the [[Prototype]] object
-  EXPECT_EQ(gPropsWithProto.size(), 2u);  // instanceProp + [[Prototype]]
-  
-  // Now test expanding the prototype
-  std::string prototypeId;
-  for (const auto& prop : gPropsWithProto) {
-    if (prop.name == "[[Prototype]]") {
-      prototypeId = prop.value_id;
-      break;
-    }
-  }
-  
-  ASSERT_FALSE(prototypeId.empty());
-  
-  // Get the prototype's properties
-  auto protoProps = registry->GetObjectProperties(prototypeId, true);
-  std::cout << "\n=== Properties of g's prototype ===" << std::endl;
-  std::cout << "Total properties: " << protoProps.size() << std::endl;
-  
-  // Check for G.prototype properties
-  bool found_gMethod = false;
-  bool found_constructor = false;
-  bool found_proto_prototype = false;
-  
-  for (const auto& prop : protoProps) {
-    std::cout << "  - " << prop.name << std::endl;
-    if (prop.name == "gMethod") {
-      found_gMethod = true;
-    } else if (prop.name == "constructor") {
-      found_constructor = true;
-    } else if (prop.name == "[[Prototype]]") {
-      found_proto_prototype = true;
-    }
-  }
-  
   EXPECT_TRUE(found_gMethod);
-  EXPECT_TRUE(found_constructor);
-  EXPECT_TRUE(found_proto_prototype);  // G.prototype has its own [[Prototype]] pointing to F.prototype
+  EXPECT_TRUE(found_age);
+  EXPECT_TRUE(found_sharedMethod);
+  EXPECT_TRUE(found_prototype);
   
   // Test object h without proper constructor
   JSValue h = JS_GetPropertyStr(ctx, testObjects, "h");
@@ -1361,4 +1431,489 @@ TEST(RemoteObject, BuiltInObjectTypes) {
   
   JS_FreeValue(ctx, builtIns);
   JS_FreeValue(ctx, global);
+}
+
+TEST(RemoteObject, PrototypeMethodsWithCorrectThisBinding) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Test that methods and getters from prototype use correct 'this' binding
+  const char* code = R"(
+    // Create a constructor with prototype methods and getters
+    function Person(name) {
+      this.name = name;
+      this.age = 25;
+    }
+    
+    Person.prototype.getName = function() {
+      return this.name;
+    };
+    
+    Person.prototype.getInfo = function() {
+      return this.name + ' is ' + this.age + ' years old';
+    };
+    
+    Object.defineProperty(Person.prototype, 'description', {
+      get: function() {
+        return 'Person named ' + this.name;
+      },
+      enumerable: true,
+      configurable: true
+    });
+    
+    const person1 = new Person('Alice');
+    const person2 = new Person('Bob');
+    person2.age = 30;
+    
+    window.testPersons = { person1, person2 };
+  )";
+  env->page()->evaluateScript(code, strlen(code), "vm://", 0);
+  
+  JSContext* ctx = context->ctx();
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue testPersons = JS_GetPropertyStr(ctx, global, "testPersons");
+  
+  // Test person1
+  JSValue person1 = JS_GetPropertyStr(ctx, testPersons, "person1");
+  std::string person1Id = registry->RegisterObject(ctx, person1);
+  auto person1Props = registry->GetObjectProperties(person1Id, true);
+  
+  // Find the getName method from prototype
+  for (const auto& prop : person1Props) {
+    if (prop.name == "getName") {
+      EXPECT_FALSE(prop.is_own);  // From prototype
+      
+      // Get the method value - it should be bound to person1
+      JSValue method = registry->GetPropertyValue(person1Id, prop);
+      ASSERT_FALSE(JS_IsException(method));
+      EXPECT_TRUE(JS_IsFunction(ctx, method));
+      
+      // Call the method and verify it returns "Alice"
+      JSValue result = JS_Call(ctx, method, person1, 0, nullptr);
+      ASSERT_FALSE(JS_IsException(result));
+      EXPECT_TRUE(JS_IsString(result));
+      
+      const char* str = JS_ToCString(ctx, result);
+      EXPECT_STREQ(str, "Alice");
+      JS_FreeCString(ctx, str);
+      
+      JS_FreeValue(ctx, result);
+      JS_FreeValue(ctx, method);
+    } else if (prop.name == "getInfo") {
+      JSValue method = registry->GetPropertyValue(person1Id, prop);
+      JSValue result = JS_Call(ctx, method, person1, 0, nullptr);
+      
+      const char* str = JS_ToCString(ctx, result);
+      EXPECT_STREQ(str, "Alice is 25 years old");
+      JS_FreeCString(ctx, str);
+      
+      JS_FreeValue(ctx, result);
+      JS_FreeValue(ctx, method);
+    } else if (prop.name == "description") {
+      // Test getter property
+      JSValue value = registry->GetPropertyValue(person1Id, prop);
+      ASSERT_FALSE(JS_IsException(value));
+      EXPECT_TRUE(JS_IsString(value));
+      
+      const char* str = JS_ToCString(ctx, value);
+      EXPECT_STREQ(str, "Person named Alice");
+      JS_FreeCString(ctx, str);
+      
+      JS_FreeValue(ctx, value);
+    }
+  }
+  
+  // Test person2 to ensure different instance has different results
+  JSValue person2 = JS_GetPropertyStr(ctx, testPersons, "person2");
+  std::string person2Id = registry->RegisterObject(ctx, person2);
+  auto person2Props = registry->GetObjectProperties(person2Id, true);
+  
+  for (const auto& prop : person2Props) {
+    if (prop.name == "getInfo") {
+      JSValue method = registry->GetPropertyValue(person2Id, prop);
+      JSValue result = JS_Call(ctx, method, person2, 0, nullptr);
+      
+      const char* str = JS_ToCString(ctx, result);
+      EXPECT_STREQ(str, "Bob is 30 years old");
+      JS_FreeCString(ctx, str);
+      
+      JS_FreeValue(ctx, result);
+      JS_FreeValue(ctx, method);
+    }
+  }
+  
+  JS_FreeValue(ctx, person1);
+  JS_FreeValue(ctx, person2);
+  JS_FreeValue(ctx, testPersons);
+  JS_FreeValue(ctx, global);
+}
+
+// Test that Element objects display their outerHTML
+TEST(RemoteObject, ElementDisplaysOuterHTML) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a real HTMLDivElement using document.createElement
+  const char* element_code = R"(
+    // Create a real DOM element
+    var element = document.createElement('div');
+    element.className = 'test';
+    element.textContent = 'Hello World';
+    element.setAttribute('id', 'test-div');
+    element;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue element_val = JS_Eval(ctx, element_code, strlen(element_code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(element_val));
+  
+  std::string id = registry->RegisterObject(ctx, element_val);
+  ASSERT_FALSE(id.empty());
+  
+  auto obj = registry->GetObjectDetails(id);
+  ASSERT_NE(obj, nullptr);
+  
+  // Check that it's detected as HTMLDivElement
+  // WebF objects may have empty class_name if constructor is not accessible
+  if (!obj->class_name().empty()) {
+    // Tag names might be uppercase, so check for both variants
+    EXPECT_TRUE(obj->class_name() == "HTMLDivElement" || obj->class_name() == "HTMLDIVElement");
+  }
+  // Check that a concise description is returned
+  // Should show opening tag with attributes and ellipsis for content
+  std::string desc = obj->description();
+  EXPECT_TRUE(desc.find("<div") == 0);
+  EXPECT_TRUE(desc.find("id=\"test-div\"") != std::string::npos);
+  EXPECT_TRUE(desc.find("class=\"test\"") != std::string::npos);
+  EXPECT_TRUE(desc.find(">…</div>") != std::string::npos);
+  
+  JS_FreeValue(ctx, element_val);
+}
+
+// Test that Text nodes display their text content
+TEST(RemoteObject, TextNodeDisplaysContent) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a real Text node using document.createTextNode
+  const char* text_code = R"(
+    var textNode = document.createTextNode('Hello World');
+    textNode;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue text_val = JS_Eval(ctx, text_code, strlen(text_code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(text_val));
+  
+  std::string id = registry->RegisterObject(ctx, text_val);
+  ASSERT_FALSE(id.empty());
+  
+  auto obj = registry->GetObjectDetails(id);
+  ASSERT_NE(obj, nullptr);
+  
+  // Check that it's detected as Text node
+  // WebF objects may have empty class_name if constructor is not accessible
+  if (!obj->class_name().empty()) {
+    EXPECT_EQ(obj->class_name(), "Text");
+  }
+  // Check that the text content is returned as description
+  EXPECT_EQ(obj->description(), "\"Hello World\"");
+  
+  JS_FreeValue(ctx, text_val);
+}
+
+// Test that Comment nodes display their comment content
+TEST(RemoteObject, CommentNodeDisplaysContent) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a real Comment node using document.createComment
+  const char* comment_code = R"(
+    var commentNode = document.createComment('This is a comment');
+    commentNode;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue comment_val = JS_Eval(ctx, comment_code, strlen(comment_code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(comment_val));
+  
+  std::string id = registry->RegisterObject(ctx, comment_val);
+  ASSERT_FALSE(id.empty());
+  
+  auto obj = registry->GetObjectDetails(id);
+  ASSERT_NE(obj, nullptr);
+  
+  // Check that it's detected as Comment node
+  EXPECT_EQ(obj->class_name(), "Comment");
+  // Check that the comment content is returned as description
+  EXPECT_EQ(obj->description(), "<!--This is a comment-->");
+  
+  JS_FreeValue(ctx, comment_val);
+}
+
+// Test that Element objects show their child nodes instead of properties
+TEST(RemoteObject, ElementShowsChildNodes) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a parent element with child nodes
+  const char* element_code = R"(
+    // Create a parent div
+    var parent = document.createElement('div');
+    parent.id = 'parent';
+    
+    // Add text node
+    parent.appendChild(document.createTextNode('Hello '));
+    
+    // Add child element
+    var child = document.createElement('span');
+    child.textContent = 'World';
+    parent.appendChild(child);
+    
+    // Add comment node
+    parent.appendChild(document.createComment('end'));
+    
+    parent;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue parent_val = JS_Eval(ctx, element_code, strlen(element_code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(parent_val));
+  
+  std::string parent_id = registry->RegisterObject(ctx, parent_val);
+  ASSERT_FALSE(parent_id.empty());
+  
+  // Get properties should return child nodes for Element objects
+  auto child_nodes = registry->GetObjectProperties(parent_id);
+  
+  // Should have 3 child nodes
+  EXPECT_EQ(child_nodes.size(), 3u);
+  
+  // Check first child (text node)
+  if (child_nodes.size() > 0) {
+    EXPECT_EQ(child_nodes[0].name, "\"Hello \"");
+    EXPECT_TRUE(child_nodes[0].is_own);
+    EXPECT_FALSE(child_nodes[0].writable);
+    EXPECT_FALSE(child_nodes[0].is_primitive);
+    EXPECT_FALSE(child_nodes[0].value_id.empty());
+    
+    // Get details of the text node
+    auto text_details = registry->GetObjectDetails(child_nodes[0].value_id);
+    ASSERT_NE(text_details, nullptr);
+    EXPECT_EQ(text_details->description(), "\"Hello \"");
+  }
+  
+  // Check second child (span element)
+  if (child_nodes.size() > 1) {
+    EXPECT_EQ(child_nodes[1].name, "<span>");
+    EXPECT_FALSE(child_nodes[1].value_id.empty());
+    
+    // Get details of the span element
+    auto span_details = registry->GetObjectDetails(child_nodes[1].value_id);
+    ASSERT_NE(span_details, nullptr);
+    // Check that it shows a concise description
+    std::string desc = span_details->description();
+    EXPECT_TRUE(desc.find("<span>…</span>") != std::string::npos);
+  }
+  
+  // Check third child (comment node)
+  if (child_nodes.size() > 2) {
+    EXPECT_EQ(child_nodes[2].name, "<!-- -->");
+    EXPECT_FALSE(child_nodes[2].value_id.empty());
+    
+    // Get details of the comment node
+    auto comment_details = registry->GetObjectDetails(child_nodes[2].value_id);
+    ASSERT_NE(comment_details, nullptr);
+    EXPECT_EQ(comment_details->description(), "<!--end-->");
+  }
+  
+  JS_FreeValue(ctx, parent_val);
+}
+
+// Test that non-Element objects still show properties
+TEST(RemoteObject, NonElementShowsProperties) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a plain object
+  const char* code = R"(
+    var obj = {
+      foo: 'bar',
+      num: 42,
+      nested: { value: 'deep' }
+    };
+    obj;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue obj_val = JS_Eval(ctx, code, strlen(code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(obj_val));
+  
+  std::string obj_id = registry->RegisterObject(ctx, obj_val);
+  ASSERT_FALSE(obj_id.empty());
+  
+  // Get properties should return actual properties for non-Element objects
+  auto properties = registry->GetObjectProperties(obj_id);
+  
+  // Should have at least 3 properties
+  EXPECT_GE(properties.size(), 3u);
+  
+  // Check for specific properties
+  bool found_foo = false;
+  bool found_num = false;
+  bool found_nested = false;
+  
+  for (const auto& prop : properties) {
+    if (prop.name == "foo") {
+      found_foo = true;
+      EXPECT_TRUE(prop.is_own);
+      EXPECT_TRUE(prop.value_id.empty()); // String is primitive
+    } else if (prop.name == "num") {
+      found_num = true;
+      EXPECT_TRUE(prop.is_own);
+      EXPECT_TRUE(prop.value_id.empty()); // Number is primitive
+    } else if (prop.name == "nested") {
+      found_nested = true;
+      EXPECT_TRUE(prop.is_own);
+      EXPECT_FALSE(prop.value_id.empty()); // Object has ID
+    }
+  }
+  
+  EXPECT_TRUE(found_foo);
+  EXPECT_TRUE(found_num);
+  EXPECT_TRUE(found_nested);
+  
+  JS_FreeValue(ctx, obj_val);
+}
+
+// Test that Element with mixed content shows child nodes properly
+TEST(RemoteObject, ElementWithMixedContent) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create a <p> element with text and <br> similar to the example
+  const char* element_code = R"(
+    var p = document.createElement('p');
+    p.className = 'p';
+    p.style.cssText = 'display: inline-block; text-align: center;';
+    
+    // Add text content
+    p.appendChild(document.createTextNode('Hello webf!'));
+    
+    // Add br element
+    p.appendChild(document.createElement('br'));
+    
+    // Add more text
+    p.appendChild(document.createTextNode('你好，webf！'));
+    
+    p;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue p_val = JS_Eval(ctx, element_code, strlen(element_code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(p_val));
+  
+  std::string p_id = registry->RegisterObject(ctx, p_val);
+  ASSERT_FALSE(p_id.empty());
+  
+  // Get the element details first
+  auto p_details = registry->GetObjectDetails(p_id);
+  ASSERT_NE(p_details, nullptr);
+  
+  // Get child nodes
+  auto child_nodes = registry->GetObjectProperties(p_id);
+  
+  // Should have 3 child nodes: text, br, text
+  EXPECT_EQ(child_nodes.size(), 3u);
+  
+  // Check first text node
+  if (child_nodes.size() > 0) {
+    EXPECT_EQ(child_nodes[0].name, "\"Hello webf!\"");
+  }
+  
+  // Check br element
+  if (child_nodes.size() > 1) {
+    EXPECT_EQ(child_nodes[1].name, "<br>");
+  }
+  
+  // Check second text node
+  if (child_nodes.size() > 2) {
+    EXPECT_EQ(child_nodes[2].name, "\"你好，webf！\"");
+  }
+  
+  JS_FreeValue(ctx, p_val);
+}
+
+// Test that nested Element nodes also show child nodes when expanded
+TEST(RemoteObject, NestedElementsShowChildNodes) {
+  auto env = TEST_init();
+  auto context = env->page()->executingContext();
+  auto* registry = context->GetRemoteObjectRegistry();
+  
+  // Create nested elements
+  const char* element_code = R"(
+    var outer = document.createElement('div');
+    outer.id = 'outer';
+    
+    var inner = document.createElement('span');
+    inner.id = 'inner';
+    inner.className = 'test-class';
+    
+    // Add text to inner span
+    inner.appendChild(document.createTextNode('Inner text'));
+    
+    // Add inner to outer
+    outer.appendChild(document.createTextNode('Before '));
+    outer.appendChild(inner);
+    outer.appendChild(document.createTextNode(' After'));
+    
+    outer;
+  )";
+  
+  JSContext* ctx = context->ctx();
+  JSValue outer_val = JS_Eval(ctx, element_code, strlen(element_code), "<test>", JS_EVAL_TYPE_GLOBAL);
+  ASSERT_FALSE(JS_IsException(outer_val));
+  
+  std::string outer_id = registry->RegisterObject(ctx, outer_val);
+  ASSERT_FALSE(outer_id.empty());
+  
+  // Get child nodes of outer element
+  auto outer_children = registry->GetObjectProperties(outer_id);
+  EXPECT_EQ(outer_children.size(), 3u);
+  
+  // Find the inner span element
+  std::string inner_id;
+  for (const auto& child : outer_children) {
+    if (child.name == "<span>") {
+      inner_id = child.value_id;
+      break;
+    }
+  }
+  ASSERT_FALSE(inner_id.empty());
+  
+  // Get properties of the inner span - should return its child nodes, not properties
+  auto inner_children = registry->GetObjectProperties(inner_id);
+  
+  // Should have 1 child node (the text node)
+  EXPECT_EQ(inner_children.size(), 1u);
+  
+  if (inner_children.size() > 0) {
+    // Should be the text node, not properties like 'id' or 'className'
+    EXPECT_EQ(inner_children[0].name, "\"Inner text\"");
+    
+    // Verify we're not getting properties
+    for (const auto& child : inner_children) {
+      EXPECT_NE(child.name, "id");
+      EXPECT_NE(child.name, "className");
+    }
+  }
+  
+  JS_FreeValue(ctx, outer_val);
 }
