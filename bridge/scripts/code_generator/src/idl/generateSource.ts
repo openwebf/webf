@@ -58,6 +58,8 @@ export function isTypeNeedAllocate(type: ParameterType) {
     case FunctionArgumentType.int64:
     case FunctionArgumentType.boolean:
     case FunctionArgumentType.double:
+    case FunctionArgumentType.dom_string:
+    case FunctionArgumentType.legacy_dom_string:
       return false;
     default:
       return true;
@@ -89,7 +91,10 @@ export function generateCoreTypeValue(type: ParameterType): string {
       return 'ScriptValue';
     }
   }
-
+  if (isUnionType(type) && Array.isArray(type.value)) {
+    let unionTypeClassName = generateUnionTypeClassName(type.value);
+    return `std::shared_ptr<${unionTypeClassName}>`;
+  }
   if (isDictionary(type)) {
     return `std::shared_ptr<${getPointerType(type)}>`;
   }
@@ -655,7 +660,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           if (prop.isSymbol) {
             options.classMethodsInstallList.push(`{JS_ATOM_${prop.name}, ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
           } else {
-            options.classMethodsInstallList.push(`{defined_properties::k${prop.name}.Impl(), ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
+            options.classMethodsInstallList.push(`{context->stringCache()->GetJSAtomFromString(context->ctx(), defined_properties::k${prop.name}.Impl()), ${prop.name}AttributeGetCallback, ${prop.readonly ? 'nullptr' : `${prop.name}AttributeSetCallback`}}`)
           }
         }
         function addObjectMethods(method: FunctionDeclaration, i: number) {
@@ -680,7 +685,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         object.staticMethods.forEach(addObjectStaticMethods);
 
         if (object.construct) {
-          options.constructorInstallList.push(`{defined_properties::k${className}.Impl(), nullptr, nullptr, constructor}`)
+          options.constructorInstallList.push(`{context->stringCache()->GetJSAtomFromString(context->ctx(), defined_properties::k${className}.Impl()), nullptr, nullptr, constructor}`)
         }
 
         let wrapperTypeRegisterList = [

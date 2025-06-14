@@ -18,9 +18,9 @@ WidgetElement::WidgetElement(const AtomicString& tag_name, Document* document)
 
 bool WidgetElement::IsValidName(const AtomicString& name) {
   assert(Document::IsValidName(name));
-  StringView string_view = name.ToStringView();
+  std::string_view string_view = name.ToStringView();
 
-  const char* string = string_view.Characters8();
+  const char* string = string_view.data();
   for (int i = 0; i < string_view.length(); i++) {
     if (string[i] == '-')
       return true;

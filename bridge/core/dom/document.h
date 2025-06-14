@@ -7,7 +7,10 @@
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
+#include "core/css/style_engine.h"
+#include "core/platform/url/kurl.h"
 #include "event_type_names.h"
+#include "foundation/macros.h"
 #include "plugin_api/document.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
@@ -24,6 +27,7 @@ class HTMLAllCollection;
 class Text;
 class Comment;
 class HTMLElement;
+class LiveNodeListBase;
 
 enum NodeListInvalidationType : int {
   kDoNotInvalidateOnAttributeChanges = 0,
@@ -34,6 +38,7 @@ enum NodeListInvalidationType : int {
   kInvalidateForFormControls,
   kInvalidateOnHRefAttrChange,
   kInvalidateOnAnyAttrChange,
+  kInvalidateOnPopoverInvokerAttrChange,
 };
 const int kNumNodeListInvalidationTypes = kInvalidateOnAnyAttrChange + 1;
 
@@ -85,17 +90,50 @@ class Document : public ContainerNode, public TreeScope {
   void setDomain(const AtomicString& value, ExceptionState& exception_state);
   AtomicString compatMode();
 
+  CSSStyleSheet& ElementSheet();
+
   AtomicString readyState();
   DEFINE_DOCUMENT_ATTRIBUTE_EVENT_LISTENER(readystatechange, kreadystatechange);
 
   bool hidden();
+
+  void UpdateBaseURL();
+
+  // Return the document URL, or an empty URL if it's unavailable.
+  // This is not an implementation of web-exposed Document.prototype.URL.
+  const KURL& Url() const { return url_; }
+
+  // Document base URL.
+  // https://html.spec.whatwg.org/C/#document-base-url
+  const KURL& BaseURL() const;
+
+  // Fallback base URL.
+  // https://html.spec.whatwg.org/C/#fallback-base-url
+  KURL FallbackBaseURL() const;
+
+  // If we call CompleteURL* during preload, it's possible that we may not
+  // have processed any <base> element the document might have
+  // (https://crbug.com/331806513), and so we should avoid triggering use counts
+  // for resolving relative urls into absolute urls in that case. The following
+  // enum allows us to detect calls originating from PreloadRequest.
+  // TODO(https://crbug.com/330744612): Remove `CompleteURLPreloadStatus` and
+  // related code once the associated issue is ready to be closed.
+  enum CompleteURLPreloadStatus { kIsNotPreload, kIsPreload };
+  // Creates URL based on passed relative url and this documents base URL.
+  // Depending on base URL value it is possible that parent document
+  // base URL will be used instead. Uses CompleteURLWithOverride internally.
+  KURL CompleteURL(const std::string&, const CompleteURLPreloadStatus preload_status = kIsNotPreload) const;
+  // Creates URL based on passed relative url and passed base URL override.
+  KURL CompleteURLWithOverride(const std::string&,
+                               const KURL& base_url_override,
+                               const CompleteURLPreloadStatus preload_status = kIsNotPreload) const;
 
   // The following implements the rule from HTML 4 for what valid names are.
   static bool IsValidName(const AtomicString& name);
 
   Node* Clone(Document&, CloneChildrenFlag) const override;
 
-  [[nodiscard]] HTMLHtmlElement* documentElement() const;
+  [[nodiscard]] Element* documentElement() const;
 
   // "body element" as defined by HTML5
   // (https://html.spec.whatwg.org/C/#the-body-element-2).
@@ -136,12 +174,57 @@ class Document : public ContainerNode, public TreeScope {
 
   void Trace(GCVisitor* visitor) const override;
   const DocumentPublicMethods* documentPublicMethods();
+  StyleEngine& EnsureStyleEngine();
+  bool IsForMarkupSanitization() const { return is_for_markup_sanitization_; }
+
+  bool InStyleRecalc() const;
+
+  StyleEngine& GetStyleEngine() const {
+    assert(style_engine_.get());
+    return *style_engine_.get();
+  }
+
+  void RegisterNodeList(const LiveNodeListBase*);
+  void UnregisterNodeList(const LiveNodeListBase*);
+  void RegisterNodeListWithIdNameCache(const LiveNodeListBase*);
+  void UnregisterNodeListWithIdNameCache(const LiveNodeListBase*);
+  bool ShouldInvalidateNodeListCaches(const QualifiedName* attr_name = nullptr) const;
+  void InvalidateNodeListCaches(const QualifiedName* attr_name);
+
+  enum class StyleAndLayoutTreeUpdate {
+    // Style/layout-tree is not dirty.
+    kNone,
+
+    // Style/layout-tree is dirty, and it's possible to understand whether a
+    // given element will be affected or not by analyzing its ancestor chain.
+    kAnalyzed,
+
+    // Style/layout-tree is dirty, but we cannot decide which specific elements
+    // need to have its style or layout tree updated.
+    kFull,
+  };
 
  private:
   int node_count_{0};
+  Member<CSSStyleSheet> elem_sheet_;
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
-  Member<HTMLScriptElement> current_script_;
+  std::shared_ptr<StyleEngine> style_engine_{nullptr};
+  bool is_for_markup_sanitization_ = false;
+  KURL url_;                // Document.URL: The URL from which this document was retrieved.
+  KURL base_url_;           // Node.baseURI: The URL to use when resolving relative URLs.
+  KURL base_url_override_;  // An alternative base URL that takes precedence
+                            // over base_url_ (but not base_element_url_).
+
+  // Used in FallbackBaseURL() to provide the base URL for  about:srcdoc  and
+  // about:blank documents, which is the initiator's base URL at the time the
+  // navigation was initiated. Separate from the base_url_* fields because the
+  // fallback base URL should not take precedence over things like <base>.
+  KURL fallback_base_url_;
+
+  KURL base_element_url_;  // The URL set by the <base> element.
+  KURL cookie_url_;        // The URL to use for cookie access.
+  Member<HTMLScriptElement> current_script_{nullptr};
 };
 
 template <>

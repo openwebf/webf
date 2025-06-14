@@ -7,6 +7,7 @@
 
 #include <unordered_set>
 #include "bindings/qjs/script_value.h"
+#include "bindings/qjs/value_cache.h"
 #include "dart_methods.h"
 #include "multiple_threading/dispatcher.h"
 
@@ -37,7 +38,7 @@ struct DartWireContext {
   multi_threading::Dispatcher* dispatcher;
 };
 
-void InitializeBuiltInStrings(JSContext* ctx);
+void InitializeCoreGlobals();
 
 void WatchDartWire(DartWireContext* wire);
 bool IsDartWireAlive(DartWireContext* wire);
@@ -56,6 +57,11 @@ class DartIsolateContext {
   FORCE_INLINE void SetDispatcher(std::unique_ptr<multi_threading::Dispatcher>&& dispatcher) {
     dispatcher_ = std::move(dispatcher);
   }
+  FORCE_INLINE WebFProfiler* profiler() const { return profiler_.get(); };
+  FORCE_INLINE StringCache* stringCache() const { return string_cache_.get(); }
+
+  void InitializeGlobalsPerThread();
+
   void* AddNewPage(double thread_identity,
                    int32_t sync_buffer_size,
                    int8_t use_legacy_ui_command,
@@ -109,6 +115,7 @@ class DartIsolateContext {
   int is_valid_{false};
   std::thread::id running_thread_;
   std::unordered_set<std::unique_ptr<WebFPage>> pages_in_ui_thread_;
+  static thread_local std::unique_ptr<StringCache> string_cache_;
   std::unique_ptr<multi_threading::Dispatcher> dispatcher_ = nullptr;
   // Dart methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<DartMethodPointer> dart_method_ptr_ = nullptr;

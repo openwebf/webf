@@ -205,6 +205,8 @@ WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPa
     : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
+  isolate_context_->profiler()->FinishTrackInitialize();
+  isolate_context_->Dispose([]() {});
   delete isolate_context_;
 }
 
@@ -354,7 +356,6 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
 
   };
 
-  WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJsLog));
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(TEST_onJSLogStructured));

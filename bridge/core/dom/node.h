@@ -9,11 +9,12 @@
 #include <set>
 #include <utility>
 
+#include "core/css/style_change_reason.h"
+#include "core/dom/node_rare_data.h"
 #include "events/event_target.h"
 #include "foundation/macros.h"
 #include "mutation_observer.h"
 #include "mutation_observer_registration.h"
-#include "node_data.h"
 #include "plugin_api/node.h"
 #include "qjs_union_dom_stringnode.h"
 #include "tree_scope.h"
@@ -27,6 +28,7 @@ const int kElementNamespaceTypeShift = 4;
 const int kNodeStyleChangeShift = 15;
 const int kNodeCustomElementShift = 17;
 
+class ComputedStyle;
 class Element;
 class Document;
 class DocumentFragment;
@@ -34,6 +36,31 @@ class ContainerNode;
 class NodeList;
 class EventTargetDataObject;
 class QJSUnionDomStringNode;
+class ShadowRoot;
+
+// Values for kChildNeedsStyleRecalcFlag, controlling whether a node gets its
+// style recalculated.
+enum StyleChangeType : uint32_t {
+  // This node does not need style recalculation.
+  kNoStyleChange = 0,
+  // This node needs style recalculation, but the changes are of
+  // a very limited set:
+  //
+  //  1. They only touch the node's inline style (style="" attribute).
+  //  2. They don't add or remove any properties.
+  //  3. They only touch independent properties.
+  //
+  // If all changes are of this type, we can do incremental style
+  // recalculation by reusing the previous style and just applying
+  // any modified inline style, which is cheaper than a full recalc.
+  // See CanApplyInlineStyleIncrementally() and comments on
+  // StyleResolver::ApplyBaseStyle() for more details.
+  kInlineIndependentStyleChange = 1 << kNodeStyleChangeShift,
+  // This node needs (full) style recalculation.
+  kLocalStyleChange = 2 << kNodeStyleChangeShift,
+  // This node and all of its flat-tree descendeants need style recalculation.
+  kSubtreeStyleChange = 3 << kNodeStyleChangeShift,
+};
 
 enum class CustomElementState : uint32_t {
   // https://dom.spec.whatwg.org/#concept-element-custom-element-state
@@ -148,6 +175,7 @@ class Node : public EventTarget {
   bool IsCustomElement() const { return GetCustomElementState() != CustomElementState::kUncustomized; }
   void SetCustomElementState(CustomElementState);
 
+  [[nodiscard]] virtual bool IsPseudoElement() const { return false; }
   [[nodiscard]] virtual bool IsMediaElement() const { return false; }
   [[nodiscard]] virtual bool IsAttributeNode() const { return false; }
   [[nodiscard]] virtual bool IsCharacterDataNode() const { return false; }
@@ -169,9 +197,32 @@ class Node : public EventTarget {
   // Notification of document structure changes (see container_node.h for more
   // notification methods)
   //
+  // At first, notifies the node that it has been inserted into the
+  // document. This is called during document parsing, and also when a node is
+  // added through the DOM methods insertBefore(), appendChild() or
+  // replaceChild(). The call happens _after_ the node has been added to the
+  // tree.  This is similar to the DOMNodeInsertedIntoDocument DOM event, but
+  // does not require the overhead of event dispatching.
+  //
+  // notifies this callback regardless if the subtree of the node is a
+  // document tree or a floating subtree.  Implementation can determine the type
+  // of subtree by seeing insertion_point->isConnected().  For performance
+  // reasons, notifications are delivered only to ContainerNode subclasses if
+  // the insertion_point is not in a document tree.
+  //
+  // There is another callback, DidNotifySubtreeInsertionsToDocument(),
+  // which is called after all the descendants are notified, if this node was
+  // inserted into the document tree. Only a few subclasses actually need
+  // this. To utilize this, the node should return
+  // kInsertionShouldCallDidNotifySubtreeInsertions from InsertedInto().
+  //
   // InsertedInto() implementations must not modify the DOM tree, and must not
+  // dispatch synchronous events. On the other hand,
+  // DidNotifySubtreeInsertionsToDocument() may modify the DOM tree, and may
   // dispatch synchronous events.
-  virtual void InsertedInto(ContainerNode& insertion_point);
+  enum InsertionNotificationRequest { kInsertionDone, kInsertionShouldCallDidNotifySubtreeInsertions };
+
+  virtual InsertionNotificationRequest InsertedInto(ContainerNode& insertion_point);
 
   // Notifies the node that it is no longer part of the tree.
   //
@@ -214,11 +265,25 @@ class Node : public EventTarget {
 
   [[nodiscard]] bool IsInDocumentTree() const { return isConnected(); }
   [[nodiscard]] bool IsInTreeScope() const { return GetFlag(static_cast<NodeFlags>(kIsConnectedFlag)); }
+  [[nodiscard]] bool IsInShadowTree() const { return false; }
 
   [[nodiscard]] bool IsDocumentTypeNode() const { return nodeType() == kDocumentTypeNode; }
   [[nodiscard]] virtual bool ChildTypeAllowed(NodeType) const { return false; }
   [[nodiscard]] unsigned CountChildren() const;
 
+  // If this node is in a shadow tree, returns its shadow host. Otherwise,
+  // returns nullptr.
+  Element* OwnerShadowHost() const;
+  // crbug.com/569532: containingShadowRoot() can return nullptr even if
+  // isInShadowTree() returns true.
+  // This can happen when handling queued events (e.g. during execCommand())
+  ShadowRoot* ContainingShadowRoot() const;
+  ShadowRoot* GetShadowRoot() const;
+  bool IsInUserAgentShadowRoot() const;
+
+  ContainerNode* ParentElementOrShadowRoot() const;
+
+  bool IsLink() const { return GetFlag(kIsLinkFlag); }
   bool IsNode() const override;
   bool IsDescendantOf(const Node*) const;
   bool contains(const Node*, ExceptionState&) const;
@@ -250,17 +315,101 @@ class Node : public EventTarget {
   void UnregisterTransientMutationObserver(MutationObserverRegistration*);
   void NotifyMutationObserversNodeWillDetach();
 
-  NodeData& CreateNodeData();
+  // Used exclusively by |EnsureRareData|.
+  NodeRareData& CreateRareData();
   [[nodiscard]] bool HasNodeData() const { return GetFlag(kHasDataFlag); }
   // |RareData| cannot be replaced or removed once assigned.
-  [[nodiscard]] NodeData* Data() const { return node_data_.get(); }
-  NodeData& EnsureNodeData();
+  NodeRareData* RareData() const { return data_.get(); }
+  NodeRareData& EnsureRareData() { return data_ ? *data_ : CreateRareData(); }
 
   const MutationObserverRegistrationVector* MutationObserverRegistry();
   const MutationObserverRegistrationSet* TransientMutationObserverRegistry();
+  void SetIsFinishedParsingChildren(bool value) { SetFlag(value, kIsFinishedParsingChildrenFlag); }
 
   void Trace(GCVisitor*) const override;
   const NodePublicMethods* nodePublicMethods();
+
+  NodeListsNodeData* NodeLists();
+  void ClearNodeLists();
+
+  FlatTreeNodeData* GetFlatTreeNodeData() const;
+  FlatTreeNodeData& EnsureFlatTreeNodeData();
+  void ClearFlatTreeNodeData();
+  void ClearFlatTreeNodeDataIfHostChanged(const ContainerNode& parent);
+
+  void SetStyleChange(StyleChangeType change_type) { node_flags_ = (node_flags_ & ~kStyleChangeMask) | change_type; }
+
+  Element* FlatTreeParentForChildDirty() const;
+  Element* GetStyleRecalcParent() const { return FlatTreeParentForChildDirty(); }
+  Element* GetReattachParent() const { return FlatTreeParentForChildDirty(); }
+
+  bool IsTreeScope() const;
+  bool IsShadowRoot() const { return IsDocumentFragment() && IsTreeScope(); }
+
+  bool InActiveDocument() const;
+
+  // True if the style recalc process should recalculate style for this node.
+  bool NeedsStyleRecalc() const { return GetStyleChangeType() != kNoStyleChange; }
+  StyleChangeType GetStyleChangeType() const { return static_cast<StyleChangeType>(node_flags_ & kStyleChangeMask); }
+  // True if the style recalculation process should traverse this node's
+  // children when looking for nodes that need recalculation.
+  bool ChildNeedsStyleRecalc() const { return GetFlag(kChildNeedsStyleRecalcFlag); }
+
+  // Mark node for forced layout tree re-attach during next lifecycle update.
+  // This is to trigger layout tree re-attachment when we cannot detect that we
+  // need to re-attach based on the computed style changes. This can happen when
+  // re-slotting shadow host children, for instance.
+  //  void SetForceReattachLayoutTree();
+  //  bool GetForceReattachLayoutTree() const {
+  //    return GetFlag(kForceReattachLayoutTree);
+  //  }
+
+  //  bool NeedsLayoutSubtreeUpdate() const;
+  //  bool NeedsWhitespaceChildrenUpdate() const;
+  //  bool IsDirtyForStyleRecalc() const {
+  //    return NeedsStyleRecalc() || GetForceReattachLayoutTree() ||
+  //           NeedsLayoutSubtreeUpdate();
+  //  }
+  //  bool IsDirtyForRebuildLayoutTree() const {
+  //    return NeedsReattachLayoutTree() || NeedsLayoutSubtreeUpdate();
+  //  }
+
+  bool NeedsReattachLayoutTree() const { return GetFlag(kNeedsReattachLayoutTree); }
+
+  void SetChildNeedsStyleRecalc() { SetFlag(kChildNeedsStyleRecalcFlag); }
+  void ClearChildNeedsStyleRecalc() { ClearFlag(kChildNeedsStyleRecalcFlag); }
+
+  // Sets the flag for the current node and also calls
+  // MarkAncestorsWithChildNeedsStyleRecalc
+  void SetNeedsStyleRecalc(StyleChangeType,
+                           const StyleChangeReasonForTracing& = StyleChangeReasonForTracing::Create(""));
+  void ClearNeedsStyleRecalc();
+
+  // Propagates a dirty bit breadcrumb for this element up the ancestor chain.
+  void MarkAncestorsWithChildNeedsStyleRecalc();
+
+  // True if there are pending invalidations against this node.
+  bool NeedsStyleInvalidation() const { return GetFlag(kNeedsStyleInvalidationFlag); }
+  void ClearNeedsStyleInvalidation() { ClearFlag(kNeedsStyleInvalidationFlag); }
+  // Sets the flag for the current node and also calls
+  // MarkAncestorsWithChildNeedsStyleInvalidation
+  void SetNeedsStyleInvalidation();
+
+  // ---------------------------------------------------------------------------
+  // Inline ComputedStyle accessor
+  //
+  // Note that the following 'inline' function is not defined in this header,
+  // but in node_computed_style.h. Please include that file if you want to use
+  // this function.
+  inline const ComputedStyle* GetComputedStyle() const;
+  //  bool ShouldSkipMarkingStyleDirty() const;
+
+  // True if the style invalidation process should traverse this node's children
+  // when looking for pending invalidations.
+  bool ChildNeedsStyleInvalidation() const { return GetFlag(kChildNeedsStyleInvalidationFlag); }
+  void SetChildNeedsStyleInvalidation() { SetFlag(kChildNeedsStyleInvalidationFlag); }
+  void ClearChildNeedsStyleInvalidation() { ClearFlag(kChildNeedsStyleInvalidationFlag); }
+  void MarkAncestorsWithChildNeedsStyleInvalidation();
 
  private:
   enum NodeFlags : uint32_t {
@@ -271,19 +420,32 @@ class Node : public EventTarget {
     kDOMNodeTypeMask = 0x3 << kDOMNodeTypeShift,
     kElementNamespaceTypeMask = 0x3 << kElementNamespaceTypeShift,
 
+    // Changes based on if the element should be treated like a link,
+    // ex. When setting the href attribute on an <a>.
+    kIsLinkFlag = 1u << 7,
+
     // Tree state flags. These change when the element is added/removed
     // from a DOM tree.
     kIsConnectedFlag = 1 << 8,
 
     // Set by the parser when the children are done parsing.
     kIsFinishedParsingChildrenFlag = 1 << 10,
+    // Flags related to recalcStyle.
+    kHasCustomStyleCallbacksFlag = 1u << 12,
+    kChildNeedsStyleInvalidationFlag = 1u << 13,
+    kNeedsStyleInvalidationFlag = 1u << 14,
+    kChildNeedsStyleRecalcFlag = 1u << 15,
+    kStyleChangeMask = 0x3u << kNodeStyleChangeShift,
 
     kCustomElementStateMask = 0x7 << kNodeCustomElementShift,
     kHasNameOrIsEditingTextFlag = 1 << 20,
     kHasEventTargetDataFlag = 1 << 21,
+    kNeedsReattachLayoutTree = 1u << 22,
 
     kHasDuplicateAttributes = 1 << 24,
     kIsWidgetElement = 1 << 25,
+
+    kForceReattachLayoutTree = 1u << 25,
 
     kSelfOrAncestorHasDirAutoAttribute = 1 << 27,
     kDefaultNodeFlags = kIsFinishedParsingChildrenFlag,
@@ -352,9 +514,12 @@ class Node : public EventTarget {
   Member<Node> previous_;
   Member<Node> next_;
   TreeScope* tree_scope_;
-  std::unique_ptr<EventTargetDataObject> event_target_data_;
-  std::unique_ptr<NodeData> node_data_;
+  std::unique_ptr<EventTargetDataObject> event_target_data_{nullptr};
+  std::unique_ptr<NodeRareData> data_{nullptr};
 };
+
+// Allow equality comparisons of Nodes by reference or pointer, interchangeably.
+DEFINE_COMPARISON_OPERATORS_WITH_REFERENCES(Node)
 
 template <>
 struct DowncastTraits<Node> {

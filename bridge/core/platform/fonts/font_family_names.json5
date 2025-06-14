@@ -1,0 +1,43 @@
+{
+  metadata: {
+    "templates": [
+      {
+        "template": "make_std_names",
+        "filename": "font_family_names",
+        "options": {
+          "add_atom_prefix": false
+        }
+      }
+    ]
+  },
+
+  data: [
+    ["WebKitStandard", "-webkit-standard"],
+    ["SystemUI", "system-ui"],
+    "Arial",
+    "Calibri",
+    ["CourierNew", "Courier New"],
+    "Courier",
+    "Helvetica",
+    ["HelveticaNeue", "Helvetica Neue"],
+    ["LucidaGrande", "Lucida Grande"],
+    ["MicrosoftSansSerif","Microsoft Sans Serif"],
+    ["MSSansSerif", "MS Sans Serif"],
+    ["MSSerif", "MS Serif"],
+    ["MSUIGothic", "MS UI Gothic"],
+    "Roboto",
+    "Sans",
+    ["SegoeUI", "Segoe UI"],
+    ["TimesNewRoman", "Times New Roman"],
+    "Times",
+
+    "cursive",
+    "fantasy",
+    "monospace",
+    ["sansSerif", "sans-serif"],
+    "serif",
+    "math",
+
+    "BlinkMacSystemFont",
+  ],
+}

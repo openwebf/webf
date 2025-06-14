@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "comment.h"
-#include "built_in_string.h"
 #include "document.h"
 #include "tree_scope.h"
 

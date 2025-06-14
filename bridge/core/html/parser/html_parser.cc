@@ -123,7 +123,7 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
     const GumboVector* children = &node->v.element.children;
     for (int i = 0; i < children->length; ++i) {
       auto* child = (GumboNode*)children->data[i];
-      
+
       if (child == nullptr) {
         continue; // Skip null children
       }
@@ -154,12 +154,12 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 
         switch (child->v.element.tag_namespace) {
           case ::GUMBO_NAMESPACE_SVG: {
-            element = context->document()->createElementNS(element_namespace_uris::ksvg, AtomicString(ctx, tagName),
+            element = context->document()->createElementNS(element_namespace_uris::ksvg, AtomicString(tagName),
                                                            exception_state);
             break;
           }
           default: {
-            element = context->document()->createElement(AtomicString(ctx, tagName), exception_state);
+            element = context->document()->createElement(AtomicString(tagName), exception_state);
           }
         }
 
@@ -174,6 +174,8 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
           continue;
         }
 
+        element->BeginParsingChildren();
+
         // Recursively traverse children
         if (!traverseHTML(element, child)) {
           // Log but continue processing other children
@@ -182,10 +184,12 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
 
         // Append child
         root_container->AppendChild(element);
-        
+
+        element->FinishParsingChildren();
+
         // Parse attributes
         parseProperty(element, &child->v.element);
-        
+
       } else if (child->type == GUMBO_NODE_TEXT) {
         // Handle text nodes
         const char* text_content = child->v.text.text;
@@ -270,17 +274,19 @@ bool HTMLParser::parseHTML(const std::string& html, Node* root_node, bool isHTML
     }
   }
 
+  root_container_node->ParserFinishedBuildingDocumentFragment();
+
   // Traverse and build DOM tree
   bool traverse_result = traverseHTML(root_container_node, htmlTree->root);
-  
+
   // Free gumbo parse nodes
   gumbo_destroy_output(&kGumboDefaultOptions, htmlTree);
-  
+
   // Return success even if some elements failed - partial DOM is better than no DOM
   if (!traverse_result) {
     WEBF_LOG(WARN) << "HTML traversal completed with errors - partial DOM tree may have been created";
   }
-  
+
   return true;
 }
 
@@ -323,7 +329,7 @@ void HTMLParser::parseProperty(Element* element, GumboElement* gumboElement) {
 
     std::string strName = attribute->name;
     std::string strValue = attribute->value;
-    element->setAttribute(AtomicString(ctx, strName), AtomicString(ctx, strValue), ASSERT_NO_EXCEPTION());
+    element->setAttribute(AtomicString(strName), AtomicString(strValue), ASSERT_NO_EXCEPTION());
   }
 }
 

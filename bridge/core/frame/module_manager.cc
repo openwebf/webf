@@ -180,8 +180,8 @@ NativeValue* ModuleManager::__webf_invoke_module__(ExecutingContext* context,
   context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
   NativeValue* result;
-  auto module_name_string = module_name.ToNativeString(context->ctx());
-  auto method_name_string = method.ToNativeString(context->ctx());
+  auto module_name_string = module_name.ToNativeString();
+  auto method_name_string = method.ToNativeString();
 
   if (callback != nullptr) {
     auto module_callback = ModuleCallback::Create(callback);

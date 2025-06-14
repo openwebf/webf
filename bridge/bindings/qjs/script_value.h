@@ -8,8 +8,8 @@
 #include <quickjs/quickjs.h>
 #include <memory>
 
-#include "atomic_string.h"
 #include "exception_state.h"
+#include "foundation/atomic_string.h"
 #include "foundation/macros.h"
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
@@ -40,7 +40,7 @@ class ScriptValue final {
   // Wrap an Quickjs JSValue to ScriptValue.
   explicit ScriptValue(JSContext* ctx, JSValue value) : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const AtomicString& value)
-      : value_(JS_AtomToString(ctx, value.Impl())), runtime_(JS_GetRuntime(ctx)){};
+      : value_(JS_NewStringLen(ctx, value.Characters8(), value.Impl()->length())), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const SharedNativeString* string)
       : value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx, double v) : value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}
@@ -66,6 +66,8 @@ class ScriptValue final {
   std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;
   NativeValue ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value = false) const;
 
+  double ToDouble(JSContext* ctx) const;
+
   bool IsException() const;
   bool IsEmpty() const;
   bool IsObject() const;
@@ -73,6 +75,7 @@ class ScriptValue final {
   bool IsNull() const;
   bool IsUndefined() const;
   bool IsBool() const;
+  bool IsNumber() const;
 
   void Trace(GCVisitor* visitor) const;
 

@@ -7,7 +7,6 @@
 #define BRIDGE_CORE_DOM_LEGACY_ELEMENT_ATTRIBUTES_H_
 
 #include <unordered_map>
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "plugin_api/element_attributes.h"
@@ -44,6 +43,8 @@ class ElementAttributes : public ScriptWrappable {
 
   void Trace(GCVisitor* visitor) const override;
   const ElementAttributesPublicMethods* elementAttributesPublicMethods();
+
+  bool hasAttributes() const;
 
  private:
   Member<Element> element_;

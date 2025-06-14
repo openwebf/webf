@@ -67,7 +67,7 @@ ScriptPromise NativeLoader::loadNativeLibrary(const AtomicString& lib_name,
   context->RegisterActiveScriptPromise(resolver);
 
   context->dartMethodPtr()->loadNativeLibrary(context->isDedicated(), context->contextId(),
-                                              lib_name.ToNativeString(ctx()).release(), p_native_library_load_context,
+                                              lib_name.ToNativeString().release(), p_native_library_load_context,
                                               /* TODO */ nullptr, HandleNativeLibraryLoad);
 
   return resolver->Promise();

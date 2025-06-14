@@ -27,11 +27,13 @@
  */
 
 #include "container_node.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
-#include "child_list_mutation_scope.h"
-#include "child_node_list.h"
+#include "core/dom/child_list_mutation_scope.h"
+#include "core/dom/child_node_list.h"
+#include "core/dom/events/event_dispatch_forbidden_scope.h"
+#include "core/dom/node_lists_node_data.h"
 #include "core/html/html_all_collection.h"
+#include "core/script_forbidden_scope.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "node_traversal.h"
@@ -48,6 +50,19 @@ unsigned ContainerNode::CountChildren() const {
   for (Node* node = firstChild(); node; node = node->nextSibling())
     count++;
   return count;
+}
+
+Element* ContainerNode::QuerySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+  //  SelectorQuery* selector_query = GetDocument().GetSelectorQueryCache().Add(
+  //      selectors, GetDocument(), exception_state);
+  //  if (!selector_query)
+  //    return nullptr;
+  //  return selector_query->QueryFirst(*this);
+  return nullptr;
+}
+
+Element* ContainerNode::QuerySelector(const AtomicString& selectors) {
+  return QuerySelector(selectors, ASSERT_NO_EXCEPTION());
 }
 
 inline void GetChildNodes(ContainerNode& node, NodeVector& nodes) {
@@ -411,14 +426,165 @@ void ContainerNode::CloneChildNodesFrom(const ContainerNode& node, CloneChildren
   }
 }
 
+void ContainerNode::ParserAppendChild(Node* new_child) {
+  assert(new_child);
+  assert(!new_child->IsDocumentFragment());
+  assert(!IsA<HTMLTemplateElement>(this));
+
+  // FIXME: parserRemoveChild can run script which could then insert the
+  // newChild back into the page. Loop until the child is actually removed.
+  // See: fast/parser/execute-script-during-adoption-agency-removal.html
+  while (ContainerNode* parent = new_child->parentNode())
+    parent->ParserRemoveChild(*new_child);
+
+  {
+    EventDispatchForbiddenScope assert_no_event_dispatch;
+    ScriptForbiddenScope forbid_script;
+
+    AdoptAndAppendChild()(*this, *new_child, nullptr);
+    ChildListMutationScope(*this).ChildAdded(*new_child);
+  }
+
+  NotifyNodeInserted(*new_child, ChildrenChangeSource::kParser);
+}
+
+void ContainerNode::ParserAppendChildInDocumentFragment(Node* new_child) {
+  assert(new_child);
+  assert(!new_child->IsDocumentFragment());
+  assert(!IsA<HTMLTemplateElement>(this));
+  assert(new_child->GetDocument() == GetDocument());
+  assert(&new_child->GetTreeScope() == &GetTreeScope());
+  assert(new_child->parentNode() == nullptr);
+  EventDispatchForbiddenScope assert_no_event_dispatch;
+  ScriptForbiddenScope forbid_script;
+  AppendChildCommon(*new_child);
+  ChildListMutationScope(*this).ChildAdded(*new_child);
+}
+
+void ContainerNode::ParserFinishedBuildingDocumentFragment() {
+  EventDispatchForbiddenScope assert_no_event_dispatch;
+  ScriptForbiddenScope forbid_script;
+  const ChildrenChange change = ChildrenChange::ForFinishingBuildingDocumentFragmentTree();
+
+  for (Node& node : NodeTraversal::DescendantsOf(*this)) {
+    NotifyNodeAtEndOfBuildingFragmentTree(node, change, false);
+  }
+
+  //  if (GetDocument().ShouldInvalidateNodeListCaches(nullptr)) {
+  //    GetDocument().InvalidateNodeListCaches(nullptr);
+  //  }
+}
+
+void ContainerNode::ParserRemoveChild(Node& old_child) {
+  assert(old_child.parentNode() == this);
+  assert(!old_child.IsDocumentFragment());
+
+  if (old_child.parentNode() != this)
+    return;
+
+  ChildListMutationScope(*this).WillRemoveChild(old_child);
+  old_child.NotifyMutationObserversNodeWillDetach();
+
+  //  HTMLFrameOwnerElement::PluginDisposeSuspendScope suspend_plugin_dispose;
+  //  TreeOrderedMap::RemoveScope tree_remove_scope;
+  //  StyleEngine& engine = GetDocument().GetStyleEngine();
+  //  StyleEngine::DetachLayoutTreeScope detach_scope(engine);
+
+  Node* prev = old_child.previousSibling();
+  Node* next = old_child.nextSibling();
+  {
+    //    StyleEngine::DOMRemovalScope style_scope(engine);
+    RemoveBetween(prev, next, old_child);
+    NotifyNodeRemoved(old_child);
+  }
+  ChildrenChanged(ChildrenChange::ForRemoval(old_child, prev, next, ChildrenChangeSource::kParser));
+}
+
+void ContainerNode::ParserInsertBefore(Node* new_child, Node& next_child) {
+  assert(new_child);
+  assert(next_child.parentNode() == this ||
+         (DynamicTo<DocumentFragment>(this) && DynamicTo<DocumentFragment>(this)->IsTemplateContent()));
+  assert(!new_child->IsDocumentFragment());
+  assert(!IsA<HTMLTemplateElement>(this));
+
+  if (next_child.previousSibling() == new_child || &next_child == new_child)  // nothing to do
+    return;
+
+  // FIXME: parserRemoveChild can run script which could then insert the
+  // newChild back into the page. Loop until the child is actually removed.
+  // See: fast/parser/execute-script-during-adoption-agency-removal.html
+  while (ContainerNode* parent = new_child->parentNode())
+    parent->ParserRemoveChild(*new_child);
+
+  // This can happen if foster parenting moves nodes into a template
+  // content document, but next_child is still a "direct" child of the
+  // template.
+  if (next_child.parentNode() != this)
+    return;
+
+  {
+    EventDispatchForbiddenScope assert_no_event_dispatch;
+    ScriptForbiddenScope forbid_script;
+
+    AdoptAndInsertBefore()(*this, *new_child, &next_child);
+    ChildListMutationScope(*this).ChildAdded(*new_child);
+  }
+
+  NotifyNodeInserted(*new_child, ChildrenChangeSource::kParser);
+}
+
+void ContainerNode::ParserTakeAllChildrenFrom(webf::ContainerNode& old_parent) {
+  while (Node* child = old_parent.firstChild()) {
+    // Explicitly remove since appending can fail, but this loop shouldn't be
+    // infinite.
+    old_parent.ParserRemoveChild(*child);
+    ParserAppendChild(child);
+  }
+}
+
 AtomicString ContainerNode::nodeValue() const {
   return AtomicString::Null();
+}
+
+Element* ContainerNode::querySelector(const webf::AtomicString& selectors, webf::ExceptionState& exception_state) {
+  return nullptr;
+}
+
+Element* ContainerNode::OwnerShadowHost() const {
+  return nullptr;
+}
+
+inline ContainerNode* Node::ParentElementOrShadowRoot() const {
+  ContainerNode* parent = parentNode();
+  return parent && (parent->IsElementNode() || parent->IsShadowRoot()) ? parent : nullptr;
 }
 
 ContainerNode::ContainerNode(TreeScope* tree_scope, ConstructionType type)
     : ContainerNode(tree_scope->GetDocument().GetExecutingContext(), &tree_scope->GetDocument(), type) {}
 ContainerNode::ContainerNode(ExecutingContext* context, Document* document, ConstructionType type)
     : Node(context, document, type), first_child_(nullptr), last_child_(nullptr) {}
+
+void ContainerNode::NotifyNodeAtEndOfBuildingFragmentTree(webf::Node& node,
+                                                          const webf::ContainerNode::ChildrenChange& change,
+                                                          bool may_contain_shadow_roots) {
+  // Fast path parser only creates disconnected nodes.
+  assert(!node.isConnected());
+
+  // NotifyNodeInserted() keeps a list of nodes to call
+  // DidNotifySubtreeInsertionsToDocument() on if InsertedInto() returns
+  // kInsertionShouldCallDidNotifySubtreeInsertions, but only if the node
+  // is connected. None of the nodes are connected at this point, so it's
+  // not needed here.
+  node.InsertedInto(*this);
+
+  // No node-lists should have been created at this (otherwise
+  // InvalidateNodeListCaches() would need to be called).
+  assert(!RareData() || !RareData()->NodeLists());
+
+  if (node.IsContainerNode()) {
+    DynamicTo<ContainerNode>(node)->ChildrenChanged(change);
+  }
+}
 
 void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& old_child) {
   assert(old_child.parentNode() == this);
@@ -440,6 +606,10 @@ void ContainerNode::RemoveBetween(Node* previous_child, Node* next_child, Node& 
                                                        nullptr);
 }
 
+NodeListsNodeData& ContainerNode::EnsureNodeLists() {
+  return EnsureRareData().EnsureNodeLists();
+}
+
 template <typename Functor>
 void ContainerNode::InsertNodeVector(const NodeVector& targets,
                                      Node* next,
@@ -453,7 +623,7 @@ void ContainerNode::InsertNodeVector(const NodeVector& targets,
       Node& child = *target_node;
       mutator(*this, child, next);
       ChildListMutationScope(*this).ChildAdded(child);
-      NotifyNodeInsertedInternal(child);
+      NotifyNodeInsertedInternal(child, *post_insertion_notification_targets);
     }
   }
 }
@@ -509,13 +679,33 @@ void ContainerNode::AppendChildCommon(Node& child) {
                                                        bindingObject(), child.bindingObject());
 }
 
-void ContainerNode::NotifyNodeInsertedInternal(Node& root) {
+void ContainerNode::NotifyNodeInserted(Node& root, webf::ContainerNode::ChildrenChangeSource source) {
+  assert(!EventDispatchForbiddenScope::IsEventDispatchForbidden());
+
+  NodeVector post_insertion_notification_targets;
+  NotifyNodeInsertedInternal(root, post_insertion_notification_targets);
+
+  ChildrenChanged(ChildrenChange::ForInsertion(root, root.previousSibling(), root.nextSibling(), source));
+}
+
+void ContainerNode::NotifyNodeInsertedInternal(Node& root, NodeVector& post_insertion_notification_targets) {
+  EventDispatchForbiddenScope assert_no_event_dispatch;
+  ScriptForbiddenScope forbid_script;
+
   for (Node& node : NodeTraversal::InclusiveDescendantsOf(root)) {
-    // As an optimization we don't notify leaf nodes when when inserting
+    // As an optimization we don't notify leaf nodes when inserting
     // into detached subtrees that are not in a shadow tree.
     if (!isConnected() && !node.IsContainerNode())
       continue;
-    node.InsertedInto(*this);
+
+    // Only tag the target as one that we need to call post-insertion steps on
+    // if it is being *fully* inserted, and not re-inserted as part of a
+    // state-preserving atomic move. That's because the post-insertion steps can
+    // run script and modify the frame tree, neither of which are allowed in a
+    // state-preserving atomic move.
+    if (Node::kInsertionShouldCallDidNotifySubtreeInsertions == node.InsertedInto(*this)) {
+      post_insertion_notification_targets.push_back(&node);
+    }
   }
 }
 
@@ -531,9 +721,52 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 }
 
 void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
-  InvalidateNodeListCachesInAncestors(&change);
+  InvalidateNodeListCachesInAncestors(nullptr, nullptr, &change);
 }
 
+void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,
+                                                        Element* attribute_owner_element,
+                                                        const ChildrenChange* change) {
+  // This is a performance optimization, NodeList cache invalidation is
+  // not necessary for a text change.
+  if (change && change->type == ChildrenChangeType::kTextChanged)
+    return;
+
+  if (!attr_name || IsAttributeNode()) {
+    if (const NodeRareData* data = RareData()) {
+      if (NodeListsNodeData* lists = data->NodeLists()) {
+        if (ChildNodeList* child_node_list = lists->GetChildNodeList(*this)) {
+          if (change) {
+            child_node_list->ChildrenChanged(*change);
+          } else {
+            child_node_list->InvalidateCache();
+          }
+        }
+      }
+    }
+  }
+
+  // This is a performance optimization, NodeList cache invalidation is
+  // not necessary for non-element nodes.
+  if (change && change->affects_elements == ChildrenChangeAffectsElements::kNo)
+    return;
+
+  // Modifications to attributes that are not associated with an Element can't
+  // invalidate NodeList caches.
+  if (attr_name && !attribute_owner_element)
+    return;
+
+  if (!GetDocument().ShouldInvalidateNodeListCaches(attr_name))
+    return;
+
+  GetDocument().InvalidateNodeListCaches(attr_name);
+
+  for (ContainerNode* node = this; node; node = node->parentNode()) {
+    if (NodeListsNodeData* lists = node->NodeLists())
+      lists->InvalidateCaches(attr_name);
+  }
+}
+/* // TODO(guopengfei)：webf old impl
 void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNode::ChildrenChange* change) {
   // This is a performance optimization, NodeList cache invalidation is
   // not necessary for a text change.
@@ -541,7 +774,7 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNod
     return;
 
   if (HasNodeData()) {
-    if (NodeList* lists = Data()->NodeLists()) {
+    if (NodeList* lists = RareData()->NodeLists()) {
       if (lists != nullptr && lists->IsChildNodeList()) {
         auto* child_node_list = static_cast<ChildNodeList*>(lists);
         if (change) {
@@ -564,7 +797,7 @@ void ContainerNode::InvalidateNodeListCachesInAncestors(const webf::ContainerNod
       reinterpret_cast<ChildNodeList*>(lists)->InvalidateCache();
     }
   }
-}
+}*/
 
 void ContainerNode::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(first_child_);
@@ -576,6 +809,11 @@ void ContainerNode::Trace(GCVisitor* visitor) const {
 const ContainerNodePublicMethods* ContainerNode::containerNodePublicMethods() {
   static ContainerNodePublicMethods container_node_public_methods;
   return &container_node_public_methods;
+}
+
+void ContainerNode::SetRestyleFlag(DynamicRestyleFlags mask) {
+  assert(IsElementNode() || IsShadowRoot());
+  EnsureRareData().SetRestyleFlag(mask);
 }
 
 }  // namespace webf

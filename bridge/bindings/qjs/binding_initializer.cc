@@ -18,7 +18,9 @@
 #include "qjs_comment.h"
 #include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
+#include "qjs_css_rule.h"
 #include "qjs_css_style_declaration.h"
+#include "qjs_css_style_sheet.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
 #include "qjs_document_fragment.h"
@@ -53,6 +55,7 @@
 #include "qjs_html_input_element.h"
 #include "qjs_html_link_element.h"
 #include "qjs_html_script_element.h"
+#include "qjs_html_style_element.h"
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
@@ -64,6 +67,7 @@
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
 #include "qjs_location.h"
+#include "qjs_media_list.h"
 #include "qjs_message_event.h"
 #include "qjs_module_manager.h"
 #include "qjs_mouse_event.h"
@@ -161,6 +165,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLAnchorElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
+  QJSHTMLStyleElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
   QJSHTMLBrElement::Install(context);
   QJSHTMLButtonElement::Install(context);
@@ -168,6 +173,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
+
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
   QJSHTMLCanvasElement::Install(context);
@@ -188,6 +194,8 @@ void InstallBindings(ExecutingContext* context) {
   QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
+  QJSCSSStyleSheet::Install(context);
+  QJSMediaList::Install(context);
   QJSBlob::Install(context);
   QJSFormData::Install(context);
   QJSTouch::Install(context);

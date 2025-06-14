@@ -8,6 +8,7 @@
 #include <quickjs/quickjs.h>
 #include <atomic>
 #include <cassert>
+#include "bindings/qjs/value_cache.h"
 
 namespace webf {
 

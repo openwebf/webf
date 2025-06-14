@@ -1,0 +1,46 @@
+// Copyright 2022 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+#include "css_view_value.h"
+#include "core/base/memory/values_equivalent.h"
+#include "foundation/string_builder.h"
+
+namespace webf {
+
+namespace cssvalue {
+
+CSSViewValue::CSSViewValue(const CSSValue* axis, const CSSValue* inset)
+    : CSSValue(kViewClass), axis_(axis), inset_(inset) {}
+
+std::string CSSViewValue::CustomCSSText() const {
+  StringBuilder result;
+  result.Append("view(");
+  if (axis_) {
+    result.Append(axis_->CssText());
+  }
+  if (inset_) {
+    if (axis_) {
+      result.Append(' ');
+    }
+    result.Append(inset_->CssText());
+  }
+  result.Append(")");
+  return result.ReleaseString();
+}
+
+bool CSSViewValue::Equals(const CSSViewValue& other) const {
+  return webf::ValuesEquivalent(axis_, other.axis_) && webf::ValuesEquivalent(inset_, other.inset_);
+}
+
+void CSSViewValue::TraceAfterDispatch(GCVisitor* visitor) const {
+  CSSValue::TraceAfterDispatch(visitor);
+}
+
+}  // namespace cssvalue
+
+}  // namespace webf

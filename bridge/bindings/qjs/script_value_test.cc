@@ -6,21 +6,16 @@
 #include "script_value.h"
 #include <quickjs/quickjs.h>
 #include <codecvt>
-#include "atomic_string.h"
 #include "gtest/gtest.h"
+#include "webf_test_env.h"
 
 using namespace webf;
 
 using TestCallback = void (*)(JSContext* ctx);
 
 void TestScriptValue(TestCallback callback) {
-  JSRuntime* runtime = JS_NewRuntime();
-  JSContext* ctx = JS_NewContext(runtime);
-
-  callback(ctx);
-
-  JS_FreeContext(ctx);
-  JS_FreeRuntime(runtime);
+  auto env = TEST_init();
+  callback(env->page()->executingContext()->ctx());
 }
 
 TEST(ScriptValue, createErrorObject) {
@@ -50,7 +45,7 @@ TEST(ScriptValue, ToString) {
     std::string code = "{\"name\": 1}";
     ScriptValue json = ScriptValue::CreateJsonObject(ctx, code.c_str(), code.size());
     AtomicString string = json.ToString(ctx);
-    EXPECT_STREQ(string.ToStdString(ctx).c_str(), "[object Object]");
+    EXPECT_STREQ(string.ToStdString().c_str(), "[object Object]");
   });
 }
 
@@ -63,7 +58,7 @@ TEST(ScriptValue, CopyAssignment) {
     };
     P p;
     p.value = json;
-    EXPECT_STREQ(p.value.ToJSONStringify(ctx, nullptr).ToString(ctx).ToStdString(ctx).c_str(), code.c_str());
+    EXPECT_STREQ(p.value.ToJSONStringify(ctx, nullptr).ToString(ctx).ToStdString().c_str(), code.c_str());
   });
 }
 
@@ -75,6 +70,6 @@ TEST(ScriptValue, MoveAssignment) {
       other = ScriptValue::CreateJsonObject(ctx, code.c_str(), code.size());
     }
 
-    EXPECT_STREQ(other.ToJSONStringify(ctx, nullptr).ToString(ctx).ToStdString(ctx).c_str(), "{\"name\":1}");
+    EXPECT_STREQ(other.ToJSONStringify(ctx, nullptr).ToString(ctx).ToStdString().c_str(), "{\"name\":1}");
   });
 }

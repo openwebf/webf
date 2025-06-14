@@ -34,13 +34,15 @@
 #include "character_data.h"
 #include "child_list_mutation_scope.h"
 #include "child_node_list.h"
+#include "core/dom/element_rare_data_vector.h"
+#include "core/dom/node_lists_node_data.h"
 #include "core/script_forbidden_scope.h"
+#include "core/svg/svg_element.h"
 #include "document.h"
 #include "document_fragment.h"
 #include "element.h"
 #include "empty_node_list.h"
 #include "node.h"
-#include "node_data.h"
 #include "node_traversal.h"
 #include "qjs_node.h"
 #include "text.h"
@@ -74,9 +76,10 @@ ContainerNode* Node::parentNode() const {
 
 NodeList* Node::childNodes() {
   auto* this_node = DynamicTo<ContainerNode>(this);
-  if (this_node)
-    return EnsureNodeData().EnsureChildNodeList(*this_node);
-  return EnsureNodeData().EnsureEmptyChildNodeList(*this);
+  if (this_node) {
+    return EnsureRareData().EnsureNodeLists().EnsureChildNodeList(*this_node);
+  }
+  return EnsureRareData().EnsureNodeLists().EnsureEmptyChildNodeList(*this);
 }
 
 //// Helper object to allocate EventTargetData which is otherwise only used
@@ -147,10 +150,9 @@ void Node::RegisterMutationObserver(MutationObserver& observer,
                                     MutationObserverOptions options,
                                     const std::unordered_set<AtomicString, AtomicString::KeyHasher>& attribute_filter) {
   MutationObserverRegistration* registration = nullptr;
-
-  for (const auto& item : EnsureNodeData().EnsureMutationObserverData().Registry()) {
+  for (const auto& item : EnsureRareData().EnsureMutationObserverData().Registry()) {
     if (item->Observer() == &observer) {
-      registration = item;
+      registration = item.Get();
       registration->ResetObservation(options, attribute_filter);
     }
   }
@@ -158,7 +160,7 @@ void Node::RegisterMutationObserver(MutationObserver& observer,
   if (!registration) {
     registration = MakeGarbageCollected<MutationObserverRegistration>(observer, this, options, attribute_filter);
     observer.ObservationStarted(registration);
-    EnsureNodeData().EnsureMutationObserverData().AddRegistration(registration);
+    EnsureRareData().EnsureMutationObserverData().AddRegistration(registration);
   }
 
   GetDocument().AddMutationObserverTypes(registration->MutationTypes());
@@ -171,11 +173,11 @@ void Node::UnregisterMutationObserver(MutationObserverRegistration* registration
     return;
 
   registration->Dispose();
-  EnsureNodeData().EnsureMutationObserverData().RemoveRegistration(registration);
+  EnsureRareData().EnsureMutationObserverData().RemoveRegistration(registration);
 }
 
 void Node::RegisterTransientMutationObserver(MutationObserverRegistration* registration) {
-  EnsureNodeData().EnsureMutationObserverData().AddTransientRegistration(registration);
+  EnsureRareData().EnsureMutationObserverData().AddTransientRegistration(registration);
 }
 
 void Node::UnregisterTransientMutationObserver(MutationObserverRegistration* registration) {
@@ -184,7 +186,7 @@ void Node::UnregisterTransientMutationObserver(MutationObserverRegistration* reg
   if (!transient_registry)
     return;
 
-  EnsureNodeData().EnsureMutationObserverData().RemoveTransientRegistration(registration);
+  EnsureRareData().EnsureMutationObserverData().RemoveTransientRegistration(registration);
 }
 
 void Node::NotifyMutationObserversNodeWillDetach() {
@@ -205,32 +207,30 @@ void Node::NotifyMutationObserversNodeWillDetach() {
   }
 }
 
-NodeData& Node::CreateNodeData() {
-  node_data_ = std::make_unique<NodeData>();
+NodeRareData& Node::CreateRareData() {
+  if (IsElementNode()) {
+    data_ = std::make_unique<ElementRareDataVector>();
+  } else {
+    data_ = std::make_unique<NodeRareData>();
+  }
   SetFlag(kHasDataFlag);
-  return *Data();
-}
-
-NodeData& Node::EnsureNodeData() {
-  if (HasNodeData())
-    return *Data();
-  return CreateNodeData();
+  return *data_;
 }
 
 const std::vector<Member<MutationObserverRegistration>>* Node::MutationObserverRegistry() {
   if (!HasNodeData())
     return nullptr;
-  NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
+  NodeMutationObserverData* data = EnsureRareData().MutationObserverData();
   if (!data) {
     return nullptr;
   }
-  return &data->Registry();
+  return &data->Registry().ToStdVector();
 }
 
 const MutationObserverRegistrationSet* Node::TransientMutationObserverRegistry() {
   if (!HasNodeData())
     return nullptr;
-  NodeMutationObserverData* data = EnsureNodeData().MutationObserverData();
+  NodeMutationObserverData* data = EnsureRareData().MutationObserverData();
   if (!data) {
     return nullptr;
   }
@@ -501,10 +501,10 @@ AtomicString Node::textContent(bool convert_brs_to_newlines) const {
   std::string content;
   for (const Node& node : NodeTraversal::InclusiveDescendantsOf(*this)) {
     if (auto* text_node = DynamicTo<Text>(node)) {
-      content.append(text_node->data().ToStdString(ctx()));
+      content.append(text_node->data().ToStdString());
     }
   }
-  return AtomicString(ctx(), content);
+  return AtomicString(content);
 }
 
 void Node::setTextContent(const AtomicString& text, ExceptionState& exception_state) {
@@ -522,14 +522,14 @@ void Node::setTextContent(const AtomicString& text, ExceptionState& exception_st
       // Note: This is an intentional optimization.
       // See crbug.com/352836 also.
       // No need to do anything if the text is identical.
-      if (container->HasOneTextChild() && To<Text>(container->firstChild())->data() == text && !text.IsEmpty())
+      if (container->HasOneTextChild() && To<Text>(container->firstChild())->data() == text && !text.empty())
         return;
 
       ChildListMutationScope mutation(*this);
 
       // Note: This API will not insert empty text nodes:
       // https://dom.spec.whatwg.org/#dom-node-textcontent
-      if (text.IsEmpty()) {
+      if (text.empty()) {
         container->RemoveChildren();
       } else {
         container->RemoveChildren();
@@ -588,12 +588,15 @@ Element* Node::ParentOrShadowHostElement() const {
   return DynamicTo<Element>(parent);
 }
 
-void Node::InsertedInto(ContainerNode& insertion_point) {
+Node::InsertionNotificationRequest Node::InsertedInto(ContainerNode& insertion_point) {
   assert(insertion_point.isConnected() || IsContainerNode());
+  //  DCHECK(!ChildNeedsStyleInvalidation());
+  //  DCHECK(!NeedsStyleInvalidation());
   if (insertion_point.isConnected()) {
     SetFlag(kIsConnectedFlag);
     insertion_point.GetDocument().IncrementNodeCount();
   }
+  return Node::InsertionNotificationRequest::kInsertionDone;
 }
 
 void Node::RemovedFrom(ContainerNode& insertion_point) {
@@ -616,9 +619,33 @@ unsigned int Node::NodeIndex() const {
   return count;
 }
 
+NodeListsNodeData* Node::NodeLists() {
+  return data_ ? data_->NodeLists() : nullptr;
+}
+
+void Node::ClearNodeLists() {
+  RareData()->ClearNodeLists();
+}
+
 Document* Node::ownerDocument() const {
   Document* doc = &GetDocument();
   return doc == this ? nullptr : doc;
+}
+
+Element* Node::OwnerShadowHost() const {
+  return nullptr;
+}
+
+ShadowRoot* Node::ContainingShadowRoot() const {
+  return nullptr;
+}
+
+ShadowRoot* Node::GetShadowRoot() const {
+  return nullptr;
+}
+
+bool Node::IsInUserAgentShadowRoot() const {
+  return false;
 }
 
 bool Node::IsNode() const {
@@ -698,7 +725,7 @@ Node::Node(ExecutingContext* context, TreeScope* tree_scope, ConstructionType ty
       previous_(nullptr),
       tree_scope_(tree_scope),
       next_(nullptr),
-      node_data_(nullptr) {}
+      data_(nullptr) {}
 
 Node::~Node() {}
 
@@ -706,8 +733,8 @@ void Node::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(previous_);
   visitor->TraceMember(next_);
   visitor->TraceMember(parent_or_shadow_host_node_);
-  if (node_data_ != nullptr)
-    node_data_->Trace(visitor);
+  if (data_ != nullptr)
+    data_->Trace(visitor);
   if (event_target_data_ != nullptr) {
     event_target_data_->Trace(visitor);
   }
@@ -717,6 +744,205 @@ void Node::Trace(GCVisitor* visitor) const {
 const NodePublicMethods* Node::nodePublicMethods() {
   static NodePublicMethods node_public_methods;
   return &node_public_methods;
+}
+
+FlatTreeNodeData& Node::EnsureFlatTreeNodeData() {
+  return EnsureRareData().EnsureFlatTreeNodeData();
+}
+
+FlatTreeNodeData* Node::GetFlatTreeNodeData() const {
+  if (!data_) {
+    return nullptr;
+  }
+  return RareData()->GetFlatTreeNodeData();
+}
+
+void Node::ClearFlatTreeNodeData() {
+  // TODO(guopengfei)：FlatTreeNodeData not support
+  // if (FlatTreeNodeData* data = GetFlatTreeNodeData())
+  //   data->Clear();
+}
+
+void Node::ClearFlatTreeNodeDataIfHostChanged(const ContainerNode& parent) {
+  /*
+  // TODO(guopengfei)：HTMLSlotElement not support
+  if (FlatTreeNodeData* data = GetFlatTreeNodeData()) {
+    if (data->AssignedSlot() &&
+        data->AssignedSlot()->OwnerShadowHost() != &parent) {
+      data->Clear();
+        }
+  }
+  */
+}
+
+bool Node::InActiveDocument() const {
+  //  return isConnected() && GetDocument().IsActive();
+  return false;
+}
+
+void Node::SetNeedsStyleRecalc(StyleChangeType change_type, const StyleChangeReasonForTracing& reason) {
+  //  assert(GetDocument().GetStyleEngine().MarkStyleDirtyAllowed());
+  ////  assert(!GetDocument().InvalidationDisallowed());
+  //  assert(change_type != kNoStyleChange);
+  //  assert(IsElementNode() || IsTextNode());
+  //
+  //  if (!InActiveDocument())
+  //    return;
+  ////  if (ShouldSkipMarkingStyleDirty())
+  ////    return;
+  ///*
+  //  DEVTOOLS_TIMELINE_TRACE_EVENT_INSTANT_WITH_CATEGORIES(
+  //      TRACE_DISABLED_BY_DEFAULT("devtools.timeline.invalidationTracking"),
+  //      "StyleRecalcInvalidationTracking",
+  //      inspector_style_recalc_invalidation_tracking_event::Data, this,
+  //      change_type, reason);*/
+  //
+  //  StyleChangeType existing_change_type = GetStyleChangeType();
+  //  if (change_type > existing_change_type)
+  //    SetStyleChange(change_type);
+  //
+  //  if (existing_change_type == kNoStyleChange)
+  //    MarkAncestorsWithChildNeedsStyleRecalc();
+  //
+  //  // NOTE: If we are being called from SetNeedsAnimationStyleRecalc(), the
+  //  // AnimationStyleChange bit may be reset to 'true'.
+  //  if (auto* this_element = DynamicTo<Element>(this)) {
+  //    this_element->SetAnimationStyleChange(false);
+  //    /*
+  //    // TODO(guopengfei)：PseudoElement not support
+  //    // The style walk for the pseudo tree created for a ViewTransition is
+  //    // done after resolving style for the author DOM. See
+  //    // StyleEngine::RecalcTransitionPseudoStyle.
+  //    // Since the dirty bits from the originating element (root element) are not
+  //    // propagated to these pseudo elements during the default walk, we need to
+  //    // invalidate style for these elements here.
+  //    if (this_element->IsDocumentElement()) {
+  //      auto update_style_change = [](PseudoElement* pseudo_element) {
+  //        pseudo_element->SetNeedsStyleRecalc(
+  //            kLocalStyleChange, StyleChangeReasonForTracing::Create(
+  //                                   style_change_reason::kViewTransition));
+  //      };
+  //      ViewTransitionUtils::ForEachTransitionPseudo(GetDocument(),
+  //                                                   update_style_change);
+  //    }*/
+  //  }
+  //
+  //  if (auto* svg_element = DynamicTo<SVGElement>(this))
+  //    svg_element->SetNeedsStyleRecalcForInstances(change_type, reason);
+}
+
+void Node::ClearNeedsStyleRecalc() {
+  node_flags_ &= ~kStyleChangeMask;
+  ClearFlag(kForceReattachLayoutTree);
+  if (!data_) {
+    return;
+  }
+  if (auto* element = DynamicTo<Element>(this)) {
+    element->SetAnimationStyleChange(false);
+  }
+}
+
+void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
+  //  Element* style_parent = GetStyleRecalcParent();
+  //  bool parent_dirty = style_parent && style_parent->IsDirtyForStyleRecalc();
+  //  Element* ancestor = style_parent;
+  //  for (; ancestor && !ancestor->ChildNeedsStyleRecalc();
+  //       ancestor = ancestor->GetStyleRecalcParent()) {
+  //    if (!ancestor->isConnected())
+  //      return;
+  //    ancestor->SetChildNeedsStyleRecalc();
+  //    if (ancestor->IsDirtyForStyleRecalc())
+  //      break;
+  //
+  //    // If we reach a locked ancestor, we should abort since the ancestor marking
+  //    // will be done when the lock is committed.
+  //    if (ancestor->ChildStyleRecalcBlockedByDisplayLock())
+  //      break;
+  //  }
+  //  if (!isConnected())
+  //    return;
+  //  // If the parent node is already dirty, we can keep the same recalc root. The
+  //  // early return here is a performance optimization.
+  //  if (parent_dirty)
+  //    return;
+  //  /*
+  //  // TODO(guopengfei)：DisplayLockDocumentState not support
+  //  // If we are outside the flat tree we should not update the recalc root
+  //  // because we should not traverse those nodes from StyleEngine::RecalcStyle().
+  //  const ComputedStyle* current_style = nullptr;
+  //  if (Element* element = DynamicTo<Element>(this)) {
+  //    current_style = element->GetComputedStyle();
+  //  }
+  //  if (!current_style && style_parent) {
+  //    current_style = style_parent->GetComputedStyle();
+  //  }
+  //  if (current_style && current_style->IsEnsuredOutsideFlatTree()) {
+  //    return;
+  //  }
+  //
+  //  // TODO(guopengfei)：DisplayLockDocumentState not support
+  //  // If we're in a locked subtree, then we should not update the style recalc
+  //  // roots. These would be updated when we commit the lock. If we have locked
+  //  // display locks somewhere in the document, we iterate up the ancestor chain
+  //  // to check if we're in one such subtree.
+  //  if (GetDocument().GetDisplayLockDocumentState().LockedDisplayLockCount() >
+  //      0) {
+  //    for (Element* ancestor_copy = ancestor; ancestor_copy;
+  //         ancestor_copy = ancestor_copy->GetStyleRecalcParent()) {
+  //      if (ancestor_copy->ChildStyleRecalcBlockedByDisplayLock())
+  //        return;
+  //    }
+  //  }*/
+  //
+  //  GetDocument().GetStyleEngine().UpdateStyleRecalcRoot(ancestor, this);
+  //  GetDocument().ScheduleLayoutTreeUpdateIfNeeded();
+}
+
+void Node::SetNeedsStyleInvalidation() {
+  assert(IsContainerNode());
+  //  assert(!GetDocument().InvalidationDisallowed());
+  SetFlag(kNeedsStyleInvalidationFlag);
+  MarkAncestorsWithChildNeedsStyleInvalidation();
+}
+
+void Node::MarkAncestorsWithChildNeedsStyleInvalidation() {
+  ScriptForbiddenScope forbid_script_during_raw_iteration;
+  ContainerNode* ancestor = ParentOrShadowHostNode();
+  bool parent_dirty = ancestor && ancestor->NeedsStyleInvalidation();
+  for (; ancestor && !ancestor->ChildNeedsStyleInvalidation(); ancestor = ancestor->ParentOrShadowHostNode()) {
+    if (!ancestor->isConnected())
+      return;
+    ancestor->SetChildNeedsStyleInvalidation();
+    if (ancestor->NeedsStyleInvalidation())
+      break;
+  }
+  if (!isConnected())
+    return;
+  // If the parent node is already dirty, we can keep the same invalidation
+  // root. The early return here is a performance optimization.
+  if (parent_dirty)
+    return;
+  GetDocument().GetStyleEngine().UpdateStyleInvalidationRoot(ancestor, this);
+  // TODO(guopengfei)：暂时忽略Layout
+  // GetDocument().ScheduleLayoutTreeUpdateIfNeeded();
+}
+
+Element* Node::FlatTreeParentForChildDirty() const {
+  if (IsPseudoElement())
+    return ParentOrShadowHostElement();
+  // TODO(guopengfei)：忽略Shadow
+  // if (IsChildOfShadowHost()) {
+  //   if (auto* data = GetFlatTreeNodeData())
+  //     return data->AssignedSlot();
+  //   return nullptr;
+  // }
+  Element* parent = ParentOrShadowHostElement();
+  // TODO(guopengfei)：HTMLSlotElement
+  // if (HTMLSlotElement* slot = DynamicTo<HTMLSlotElement>(parent)) {
+  //   if (slot->HasAssignedNodesNoRecalc())
+  //     return nullptr;
+  // }
+  return parent;
 }
 
 }  // namespace webf

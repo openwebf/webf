@@ -5,7 +5,6 @@
 #ifndef BRIDGE_CORE_INPUT_TOUCH_LIST_H_
 #define BRIDGE_CORE_INPUT_TOUCH_LIST_H_
 
-#include "bindings/qjs/atomic_string.h"
 #include "touch.h"
 
 namespace webf {

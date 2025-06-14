@@ -6,7 +6,6 @@
 #define BRIDGE_EVENT_H
 
 #include <cinttypes>
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/dom/events/event_target.h"

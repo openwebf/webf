@@ -23,6 +23,19 @@
 
 namespace webf {
 
+namespace {
+// This seems like a reasonable upper bound, and otherwise mutually
+// recursive frameset pages can quickly bring the program to its knees
+// with exponential growth in the number of frames.
+const int kMaxNumberOfFrames = 1000;
+
+// It is possible to use a reduced frame limit for testing, but only two values
+// are permitted, the default or reduced limit.
+const int kTenFrames = 10;
+
+bool g_limit_max_frames_to_ten_for_testing = false;
+}  // namespace
+
 ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 
 WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
@@ -79,13 +92,13 @@ NativeValue* WebFPage::invokeModuleEvent(SharedNativeString* native_module_name,
   if (ptr != nullptr) {
     std::string type = std::string(eventType);
     auto* raw_event = static_cast<RawEvent*>(ptr);
-    event = EventFactory::Create(context_, AtomicString(ctx, type), raw_event);
+    event = EventFactory::Create(context_, AtomicString(type), raw_event);
     delete raw_event;
   }
 
   ScriptValue extraObject = ScriptValue(ctx, const_cast<const NativeValue&>(*extra));
-  AtomicString module_name = AtomicString(
-      ctx, std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
+  AtomicString module_name =
+      AtomicString(std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_module_name)));
   auto listener = context_->ModuleListeners()->listener(module_name);
 
   if (listener == nullptr) {
@@ -341,6 +354,11 @@ void WebFPage::DumpQuickJsByteCodeInternal(void* page_,
 
   dart_isolate_context->dispatcher()->PostToDart(page->isDedicated(), ReturnDumpByteCodeResultToDart, persistent_handle,
                                                  result_callback);
+}
+
+// static
+int WebFPage::MaxNumberOfFrames() {
+  return kMaxNumberOfFrames;
 }
 
 }  // namespace webf

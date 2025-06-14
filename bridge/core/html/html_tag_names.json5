@@ -38,6 +38,7 @@
     "body",
     "head",
     "div",
+    "style",
     {
       "name": "link",
       "interfaceName": "HTMLLinkElement",

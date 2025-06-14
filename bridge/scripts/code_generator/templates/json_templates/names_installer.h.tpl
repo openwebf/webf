@@ -5,12 +5,12 @@
 #ifndef <%= _.snakeCase(name).toUpperCase() %>_H_
 #define <%= _.snakeCase(name).toUpperCase() %>_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 namespace <%= name %> {
 
-void Init(JSContext* ctx);
+void Init();
 void Dispose();
 
 }

@@ -6,7 +6,6 @@
 #include <modp_b64/modp_b64.h>
 #include <string>
 #include "bindings/qjs/script_promise_resolver.h"
-#include "built_in_string.h"
 #include "core/executing_context.h"
 
 namespace webf {

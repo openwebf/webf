@@ -9,6 +9,7 @@
 #include <quickjs/quickjs.h>
 #include "atomic_string.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "core/dom/element_rare_data_field.h"
 #include "foundation/macros.h"
 #include "multiple_threading/dispatcher.h"
 #include "plugin_api/webf_value.h"
@@ -38,7 +39,7 @@ class GCVisitor;
 // JavaScript object (platform object).  ToQuickJS() converts a ScriptWrappable to
 // a QuickJS object and toScriptWrappable() converts a QuickJS object back to
 // a ScriptWrappable.
-class ScriptWrappable : public GarbageCollected<ScriptWrappable> {
+class ScriptWrappable : public GarbageCollected<ScriptWrappable>, public ElementRareDataField {
  public:
   ScriptWrappable() = delete;
 

@@ -7,7 +7,7 @@
 #ifndef <%= _.snakeCase(name).toUpperCase() %>_H_
 #define <%= _.snakeCase(name).toUpperCase() %>_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 namespace <%= name %> {
@@ -31,7 +31,7 @@ namespace <%= name %> {
 
 constexpr unsigned kNamesCount = <%= data.length %>;
 
-void Init(JSContext* ctx);
+void Init();
 void Dispose();
 
 }

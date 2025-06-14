@@ -25,7 +25,7 @@ interface Document extends Node, ParentNode, GlobalEventHandlers {
   __force_rebuild__(): DartImpl<void>;
   domain: SupportAsync<DartImpl<string>>;
   readonly head: HTMLHeadElement | null;
-  readonly documentElement: HTMLHtmlElement | null;
+  readonly documentElement: Element | null;
   // Legacy impl: get the polyfill implements from global object.
   readonly location: any;
   readonly compatMode: SupportAsync<DartImpl<string>>;

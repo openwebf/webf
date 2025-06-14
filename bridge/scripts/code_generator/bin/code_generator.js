@@ -1,10 +1,12 @@
 #!/usr/bin/env node
 
-const { program } = require('commander');
+const {program} = require('commander');
 const packageJSON = require('../package.json');
 const path = require('path');
 const glob = require('glob');
 const fs = require('fs');
+const os = require('os');
+const {execSync} = require('child_process');
 const { IDLBlob } = require('../dist/idl/IDLBlob');
 const { JSONBlob } = require('../dist/json/JSONBlob');
 const { JSONTemplate } = require('../dist/json/JSONTemplate');
@@ -17,6 +19,16 @@ const { generatePluginAPI } = require("../dist/idl/pluginAPIGenerator/cppGen");
 const { generateRustSource } = require("../dist/idl/pluginAPIGenerator/rsGen");
 const { union } = require("lodash");
 const { ClassObject } = require('../dist/idl/declaration');
+const { makeCSSPropertyNames } = require("../dist/json/make_css_property_names");
+const { makePropertyBitset } = require("../dist/json/make_property_bitset");
+const { makeStylePropertyShorthand } = require("../dist/json/make_property_shorthand");
+const { makeCSSPropertySubClasses } = require("../dist/json/make_css_property_subclasses");
+const { makeCSSPropertyInstance } = require("../dist/json/make_css_property_instance");
+const { makeCSSValueIdMapping } = require('../dist/json/make_css_value_id_mappings');
+const { makeCSSPrimitiveValueUnitTrie } = require('../dist/json/make_css_primitive_value_unit_trie');
+const { makeAtRuleNames } = require('../dist/json/make_atrule_names');
+const { makeColorData } = require('../dist/json/make_color_data');
+
 
 program
   .version(packageJSON.version)
@@ -35,7 +47,7 @@ if (!path.isAbsolute(dist)) {
   dist = path.join(process.cwd(), dist);
 }
 
-function wirteFileIfChanged(filePath, content) {
+function writeFileIfChanged(filePath, content) {
   if (fs.existsSync(filePath)) {
     const oldContent = fs.readFileSync(filePath, 'utf-8')
     if (oldContent === content) {
@@ -61,12 +73,12 @@ function genCodeFromTypeDefine() {
   ClassObject.globalClassMap = Object.create(null);
 
   // Analyze all files first.
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let b = blobs[i];
     analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
 
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let b = blobs[i];
     let result = generatorSource(b);
 
@@ -76,8 +88,8 @@ function genCodeFromTypeDefine() {
 
     let genFilePath = path.join(b.dist, b.filename);
 
-    wirteFileIfChanged(genFilePath + '.h', result.header);
-    wirteFileIfChanged(genFilePath + '.cc', result.source);
+    writeFileIfChanged(genFilePath + '.h', result.header);
+    writeFileIfChanged(genFilePath + '.cc', result.source);
   }
 
   let unionTypes = Array.from(unionTypeCollector.types);
@@ -87,11 +99,27 @@ function genCodeFromTypeDefine() {
       return -(n.value - p.value);
     })
   });
-  for(let i = 0; i < unionTypes.length; i ++) {
+  for (let i = 0; i < unionTypes.length; i++) {
     let result = generateUnionTypes(unionTypes[i]);
     let filename = generateUnionTypeFileName(unionTypes[i]);
-    wirteFileIfChanged(path.join(dist, filename) + '.h', result.header);
-    wirteFileIfChanged(path.join(dist, filename) + '.cc', result.source);
+    writeFileIfChanged(path.join(dist, filename) + '.h', result.header);
+    writeFileIfChanged(path.join(dist, filename) + '.cc', result.source);
+  }
+}
+
+function callGPerf(gperfParams, genFilePath, source) {
+  if (os.platform() === 'win32') {
+    const gperfExe = path.join(__dirname, './gperf.exe');
+    execSync(`${gperfExe} ${gperfParams} --output-file=${genFilePath}`, {
+      shell: 'powershell.exe',
+      stdio: 'pipe',
+      encoding: 'utf-8',
+      input: source
+    });
+  } else {
+    execSync(`cat << EOF | gperf ${gperfParams} > ${genFilePath} 
+${source}
+EOF`, {stdio: 'inherit'})
   }
 }
 
@@ -114,7 +142,7 @@ function genCodeFromJSONData() {
     return new JSONTemplate(path.join(path.join(__dirname, '../templates/json_templates'), template), filename);
   });
 
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let blob = blobs[i];
     blob.json.metadata.templates.forEach((targetTemplate) => {
       if (targetTemplate.template === 'make_names') {
@@ -144,11 +172,16 @@ function genCodeFromJSONData() {
       let targetTemplateHeaderData = templates.find(t => t.filename === targetTemplate.template + '.h');
       let targetTemplateBodyData = templates.find(t => t.filename === targetTemplate.template + '.cc');
       blob.filename = targetTemplate.filename;
-      let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options);
+      let result = generateJSONTemplate(blobs[i], targetTemplateHeaderData, targetTemplateBodyData, depsBlob, targetTemplate.options ?? {});
       let dist = blob.dist;
       let genFilePath = path.join(dist, targetTemplate.filename);
-      wirteFileIfChanged(genFilePath + '.h', result.header);
-      result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+      writeFileIfChanged(genFilePath + '.h', result.header);
+
+      if (targetTemplate.gperf) {
+        callGPerf(targetTemplate.gperf, genFilePath + '.cc', result.source);
+      } else {
+        result.source && writeFileIfChanged(genFilePath + '.cc', result.source);
+      }
     });
   }
 
@@ -157,8 +190,76 @@ function genCodeFromJSONData() {
   let targetTemplateBody = templates.find(t => t.filename === 'names_installer.cc');
   let result = generateNamesInstaller(targetTemplateHeader, targetTemplateBody, names_needs_install);
   let genFilePath = path.join(dist, 'names_installer');
-  wirteFileIfChanged(genFilePath + '.h', result.header);
-  result.source && wirteFileIfChanged(genFilePath + '.cc', result.source);
+  writeFileIfChanged(genFilePath + '.h', result.header);
+  result.source && writeFileIfChanged(genFilePath + '.cc', result.source);
+
+  // Generate css_property_names code
+  let cssPropertyNamesResult = makeCSSPropertyNames();
+  let cssPropertyGenFilePath = path.join(dist, 'css_property_names');
+  writeFileIfChanged(cssPropertyGenFilePath + '.h', cssPropertyNamesResult.header);
+  callGPerf(
+    '--key-positions=\'*\' -P -n -m 50 -D -Q CSSPropStringPool',
+    cssPropertyGenFilePath + '.cc',
+    cssPropertyNamesResult.source
+  );
+
+  // Generate property_bitset code
+  let propertyBitsetResult = makePropertyBitset();
+  let propertyBitSetGenFilePath = path.join(dist, 'property_bitset');
+  writeFileIfChanged(propertyBitSetGenFilePath + '.cc', propertyBitsetResult.source);
+
+  // Generate css_property_subclass code
+  let cssShortHandResult = makeCSSPropertySubClasses(true);
+  let cssShortHandGenFilePath = path.join(dist, 'shorthands');
+  writeFileIfChanged(cssShortHandGenFilePath + '.h', cssShortHandResult.header);
+  writeFileIfChanged(cssShortHandGenFilePath + '.cc', cssShortHandResult.source);
+
+  let cssLongHandResult = makeCSSPropertySubClasses(false);
+  let cssLongHandResultGenFilePath = path.join(dist, 'longhands');
+  writeFileIfChanged(cssLongHandResultGenFilePath + '.h', cssLongHandResult.header);
+  writeFileIfChanged(cssLongHandResultGenFilePath + '.cc', cssLongHandResult.source);
+
+  // Generate style_property_shorthand code
+  let stylePropertyShorthandResult = makeStylePropertyShorthand();
+  let stylePropertyShorthandGenFilePath = path.join(dist, 'style_property_shorthand');
+  writeFileIfChanged(stylePropertyShorthandGenFilePath + '.h', stylePropertyShorthandResult.header);
+  writeFileIfChanged(stylePropertyShorthandGenFilePath + '.cc', stylePropertyShorthandResult.source);
+
+  // Generate css_property_instance code
+  let cssPropertyInstanceResult = makeCSSPropertyInstance();
+  let cssPropertyInstanceGenFilePath = path.join(dist, 'css_property_instance');
+  writeFileIfChanged(cssPropertyInstanceGenFilePath + '.h', cssPropertyInstanceResult.header);
+  writeFileIfChanged(cssPropertyInstanceGenFilePath + '.cc', cssPropertyInstanceResult.source);
+
+  // Generate css_value_id_mapping
+  let cssValueIdMapping = makeCSSValueIdMapping();
+  let cssValueIdMappingFilePath = path.join(dist, 'css_value_id_mappings_generated');
+
+  writeFileIfChanged(cssValueIdMappingFilePath + '.h', cssValueIdMapping.header);
+
+  // Generate color_data
+  let colorData = makeColorData();
+  let colorDataFilePath = path.join(dist, 'color_data');
+
+  writeFileIfChanged(colorDataFilePath + '.cc', colorData.source);
+  callGPerf(
+    '--key-positions=\'*\' -D -s 2',
+    colorDataFilePath + '.cc',
+    colorData.source
+  );
+
+  let cssPrimitiveValueUnitTrie = makeCSSPrimitiveValueUnitTrie();
+  let cssPrimitiveValueFilePath = path.join(dist, 'css_primitive_value_unit_trie');
+  writeFileIfChanged(cssPrimitiveValueFilePath + '.cc', cssPrimitiveValueUnitTrie.source);
+
+  let ruleData = makeAtRuleNames();
+  let atRuleDescriptorsFilePath = path.join(dist, 'at_rule_descriptors');
+  writeFileIfChanged(atRuleDescriptorsFilePath + '.h', ruleData.header);
+  callGPerf(
+    '--key-positions=\'*\' -P -n -m 50 -D',
+    atRuleDescriptorsFilePath + '.cc',
+    ruleData.source
+  );
 }
 
 class DefinedPropertyCollector {
@@ -329,7 +430,7 @@ function genPluginAPICodeFromTypeDefine() {
   ClassObject.globalClassMap = Object.create(null);
 
   // Analyze all files first.
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let b = blobs[i];
     analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
@@ -347,10 +448,10 @@ function genPluginAPICodeFromTypeDefine() {
     let headerFilePath = path.join(b.dist, '../include/plugin_api', b.filename.replace('plugin_api_', ''));
     let genFilePath = path.join(b.dist, b.filename);
 
-    wirteFileIfChanged(headerFilePath + '.h', result.header);
+    writeFileIfChanged(headerFilePath + '.h', result.header);
 
     if (result.source) {
-      wirteFileIfChanged(genFilePath + '.cc', result.source);
+      writeFileIfChanged(genFilePath + '.cc', result.source);
     }
   }
 
@@ -367,7 +468,7 @@ function genRustCodeFromTypeDefine() {
   ClassObject.globalClassMap = Object.create(null);
 
   // Analyze all files first.
-  for (let i = 0; i < blobs.length; i ++) {
+  for (let i = 0; i < blobs.length; i++) {
     let b = blobs[i];
     analyzer(b, definedPropertyCollector, unionTypeCollector);
   }
@@ -387,7 +488,7 @@ function genRustCodeFromTypeDefine() {
 
     let genFilePath = path.join(rsDist, b.filename);
 
-    wirteFileIfChanged(genFilePath + '.rs', result);
+    writeFileIfChanged(genFilePath + '.rs', result);
   }
 
 }

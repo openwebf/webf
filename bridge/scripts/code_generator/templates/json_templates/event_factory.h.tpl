@@ -6,7 +6,7 @@
 #ifndef BRIDGE_CORE_EVENT_FACTORY_H_
 #define BRIDGE_CORE_EVENT_FACTORY_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 #include "core/dom/events/event.h"
 
 namespace webf {

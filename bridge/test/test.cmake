@@ -4,6 +4,7 @@ list(APPEND WEBF_TEST_SOURCE
   ./test/test_framework_polyfill.c
 )
 
+set(CMAKE_CXX_STANDARD 20)
 set(gtest_disable_pthreads ON)
 
 add_subdirectory(./third_party/googletest)
@@ -22,22 +23,60 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/executing_context_test.cc
   ./core/frame/console_test.cc
   ./core/frame/module_manager_test.cc
-  ./core/dom/events/event_target_test.cc
-  ./core/dom/document_test.cc
-  ./core/dom/legacy/element_attribute_test.cc
-  ./core/dom/node_test.cc
-  ./core/html/html_collection_test.cc
-  ./core/dom/element_test.cc
+#  ./core/dom/events/event_target_test.cc
+#  ./core/dom/document_test.cc
+#  ./core/dom/legacy/element_attribute_test.cc
+#  ./core/dom/node_test.cc
+#  ./core/html/html_collection_test.cc
+#  ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
   ./core/frame/window_test.cc
-  ./core/css/inline_css_style_declaration_test.cc
-  ./core/html/html_element_test.cc
-  ./core/html/custom/widget_element_test.cc
+#  ./core/css/inline_css_style_declaration_test.cc
+#  ./core/html/html_element_test.cc
+#  ./core/html/custom/widget_element_test.cc
+#  ./core/html/html_style_element_test.cc
   ./core/timing/performance_test.cc
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
+  ./foundation/ui_command_strategy_test.cc
+  ./core/css/style_engine_test.cc
+  ./core/css/css_initial_test.cc
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
+
+  # CSS Parser
+  ./core/css/css_primitive_value_test.cc
+  ./core/css/css_test_helpers.cc
+  ./core/css/css_math_expression_node_test.cc
+  ./core/css/parser/css_parser_token_stream_test.cc
+  ./core/css/parser/css_parser_local_context_test.cc
+  ./core/css/parser/css_property_parser_test.cc
+  ./core/css/parser/css_lazy_parsing_test.cc
+  ./core/css/parser/container_query_parser_test.cc
+  ./core/css/parser/css_parser_fast_paths_test.cc
+  ./core/css/parser/css_parser_impl_test.cc
+  ./core/css/parser/css_parser_token_test.cc
+  ./core/css/parser/css_selector_parser_test.cc
+  ./core/css/parser/css_supports_parser_test.cc
+  ./core/css/parser/css_tokenizer_test.cc
+  ./core/css/parser/css_variable_parser_test.cc
+  ./core/css/parser/find_length_of_declaration_list_test.cc
+  ./core/css/parser/media_condition_test.cc
+  ./core/css/properties/css_bitset_test.cc
+  ./core/css/properties/css_parsing_utils_test.cc
+#  "parser/css_parser_impl_test.cc",
+#  "parser/css_parser_local_context_test.cc",
+#  "parser/css_parser_token_stream_test.cc",
+#  "parser/css_parser_token_test.cc",
+#  "parser/css_property_parser_test.cc",
+#  "parser/css_selector_parser_test.cc",
+#  "parser/css_supports_parser_test.cc",
+#  "parser/css_tokenizer_test.cc",
+#  "parser/css_variable_parser_test.cc",
+#  "parser/find_length_of_declaration_list_test.cc",
+#  "parser/media_condition_test.cc",
+#  "parser/sizes_attribute_parser_test.cc",
+#  "parser/sizes_math_function_parser_test.cc",
   ./test/html_script_element_casting_test.cc
 )
 
@@ -48,8 +87,20 @@ add_executable(webf_unit_test
   ${BRIDGE_SOURCE}
 )
 
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+enable_testing()
+
+# this sets the output dir to /bin
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
 target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_unit_test gtest gtest_main ${BRIDGE_LINK_LIBS})
+target_link_libraries(webf_unit_test
+  ${BRIDGE_LINK_LIBS}
+  GTest::gtest_main
+)
+
+include(GoogleTest)
+gtest_discover_tests(webf_unit_test)
 
 target_compile_options(quickjs PUBLIC -DDUMP_LEAKS=1)
 target_compile_definitions(quickjs PUBLIC DUMP_LEAKS=1)

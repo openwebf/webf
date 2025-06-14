@@ -10,7 +10,10 @@
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
 #include "core/native/native_function.h"
+#include "core/dom/element_rare_data_vector.h"
+#include "core/platform/gfx/geometry/vector2d_f.h"
 #include "element_data.h"
+#include "foundation/atomic_string.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"
@@ -18,6 +21,24 @@
 #include "qjs_scroll_to_options.h"
 
 namespace webf {
+
+class ShadowRoot;
+class StyleScopeData;
+
+enum class ElementFlags {
+  kTabIndexWasSetExplicitly = 1 << 0,
+  kStyleAffectedByEmpty = 1 << 1,
+  kIsInCanvasSubtree = 1 << 2,
+  kContainsFullScreenElement = 1 << 3,
+  kIsInTopLayer = 1 << 4,
+  kContainsPersistentVideo = 1 << 5,
+  kIsEligibleForElementCapture = 1 << 6,
+  kHasCheckedElementCaptureEligibility = 1 << 7,
+
+  kNumberOfElementFlags = 8,  // Size of bitfield used to store the flags.
+};
+
+using ScrollOffset = gfx::Vector2dF;
 
 class Element : public ContainerNode {
   DEFINE_WRAPPERTYPEINFO();
@@ -58,6 +79,7 @@ class Element : public ContainerNode {
   ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
   ElementAttributes& EnsureElementAttributes() const;
 
+  bool hasAttributes() const;
   bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
   AtomicString getAttribute(const AtomicString&, ExceptionState& exception_state) const;
 
@@ -108,17 +130,36 @@ class Element : public ContainerNode {
   void SynchronizeStyleAttributeInternal();
   void SynchronizeAttribute(const AtomicString& name);
 
-  void InvalidateStyleAttribute();
-  void AttributeChanged(const AttributeModificationParams& params);
+  void InvalidateStyleAttribute(bool only_changed_independent_properties);
+
+  virtual void AttributeChanged(const AttributeModificationParams& params);
+  // |ParseAttribute()| is called by |AttributeChanged()|. If an element
+  // implementation needs to check an attribute update, override this function.
+  // This function is called before Element handles the change. This means
+  // changes like `kSlotAttr` will not have been processed. Subclasses should
+  // take care to avoid any processing that needs Element to have handled the
+  // change. For example, flat-tree-travesal could be problematic. In such
+  // cases subclasses should override AttributeChanged() and do the processing
+  // after calling Element::AttributeChanged().
+  //
+  // While the owner document is parsed, this function is called after all
+  // attributes in a start tag were added to the element.
+  virtual void ParseAttribute(const AttributeModificationParams&);
+
   void StyleAttributeChanged(const AtomicString& new_style_string, AttributeModificationReason modification_reason);
   void SetInlineStyleFromString(const AtomicString&);
 
   std::string outerHTML();
   std::string innerHTML();
+  AtomicString TextFromChildren();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
+
+  ElementRareDataVector* GetElementRareData() const;
+  ElementRareDataVector& EnsureElementRareData();
 
   bool HasTagName(const AtomicString&) const;
   AtomicString nodeValue() const override;
+  const QualifiedName& TagQName() const { return tag_name_; }
   AtomicString tagName() const { return getUppercasedQualifiedName(); }
   AtomicString prefix() const { return prefix_; }
   AtomicString localName() const { return local_name_; }
@@ -143,12 +184,17 @@ class Element : public ContainerNode {
   Element* insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state);
 
   InlineCssStyleDeclaration* style();
-  InlineCssStyleDeclaration& EnsureCSSStyleDeclaration();
   DOMTokenList* classList();
   DOMStringMap* dataset();
 
   Element& CloneWithChildren(CloneChildrenFlag flag, Document* = nullptr) const;
   Element& CloneWithoutChildren(Document* = nullptr) const;
+
+  void NotifyInlineStyleMutation();
+
+  std::shared_ptr<const MutableCSSPropertyValueSet> EnsureMutableInlineStyle();
+  void ClearMutableInlineStyleIfEmpty();
+  std::shared_ptr<CSSPropertyValueSet> CreatePresentationAttributeStyle();
 
   NodeType nodeType() const override;
   bool ChildTypeAllowed(NodeType) const override;
@@ -161,18 +207,77 @@ class Element : public ContainerNode {
   virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
   virtual bool IsWidgetElement() const;
   virtual bool IsWebFTouchAreaElement() const;
+  virtual void FinishParsingChildren();
+  void BeginParsingChildren() { SetIsFinishedParsingChildren(false); }
 
   void Trace(GCVisitor* visitor) const override;
   const ElementPublicMethods* elementPublicMethods();
 
+  // add for invalidation begin
+  bool IsDocumentElement() const;
+
+  // NOTE: This shadows Node::GetComputedStyle().
+  const ComputedStyle* GetComputedStyle() const {
+    // return computed_style_.Get();
+    return nullptr;
+  }
+  // const ComputedStyle& ComputedStyleRef() const {
+  //   assert(computed_style_);
+  //   return *computed_style_;
+  // }
+
+  StyleScopeData& EnsureStyleScopeData();
+  StyleScopeData* GetStyleScopeData() const;
+
+  void SetComputedStyle(const ComputedStyle* computed_style) {
+    // computed_style_ = computed_style;
+  }
+
+  AtomicString LocalNameForSelectorMatching() const;
+
+  // Call this to get the value of the id attribute for style resolution
+  // purposes.  The value will already be lowercased if the document is in
+  // compatibility mode, so this function is not suitable for non-style uses.
+  const AtomicString& IdForStyleResolution() const;
+
+  bool HasID() const;
+  bool HasClass() const;
+  const SpaceSplitString& ClassNames() const;
+  bool HasClassName(const AtomicString& class_name) const;
+
+  // Returns true if the element has 1 or more part names.
+  bool HasPart() const;
+  // Returns the list of part names if it has ever been created.
+  DOMTokenList* GetPart() const;
+  // IDL method.
+  // Returns the list of part names, creating it if it doesn't exist.
+  // DOMTokenList& part();
+
+  // Ignores namespace.
+  bool HasAttributeIgnoringNamespace(const AtomicString& local_name) const;
+
+  void SetAnimationStyleChange(bool);
+  void SetNeedsAnimationStyleRecalc();
+
+  bool ChildStyleRecalcBlockedByDisplayLock() const;
+
+  // void SetNeedsCompositingUpdate();
+
+  // add for invalidation end
  protected:
   void SetAttributeInternal(const AtomicString&,
                             const AtomicString& value,
                             AttributeModificationReason reason,
                             ExceptionState& exception_state);
 
+  void DetachAllAttrNodesFromElement();
+
+  bool HasElementData() const { return static_cast<bool>(element_data_); }
   const ElementData* GetElementData() const { return element_data_.get(); }
-  bool HasElementData() const { return element_data_ != nullptr; }
+  UniqueElementData& EnsureUniqueElementData();
+
+  void CreateUniqueElementData();
+
   const AtomicString& getQualifiedName() const { return local_name_; }
   const AtomicString getUppercasedQualifiedName() const;
   ElementData& EnsureElementData();
@@ -192,9 +297,10 @@ class Element : public ContainerNode {
   void _notifyChildInsert();
   void _beforeUpdateId(JSValue oldIdValue, JSValue newIdValue);
 
-  mutable std::unique_ptr<ElementData> element_data_;
+  mutable std::shared_ptr<ElementData> element_data_;
   mutable Member<ElementAttributes> attributes_;
-  Member<InlineCssStyleDeclaration> cssom_wrapper_;
+
+  QualifiedName tag_name_;
 };
 
 template <typename T>
@@ -223,6 +329,49 @@ struct DowncastTraits<Element> {
 
 inline Element* Node::parentElement() const {
   return DynamicTo<Element>(parentNode());
+}
+
+inline bool Element::hasAttributes() const {
+  // return !Attributes().IsEmpty();
+
+  return !EnsureElementAttributes().hasAttributes();
+}
+
+inline const AtomicString& Element::IdForStyleResolution() const {
+  assert(HasID());
+  return GetElementData()->IdForStyleResolution();
+}
+
+inline const SpaceSplitString& Element::ClassNames() const {
+  assert(HasClass());
+  assert(HasElementData());
+  return GetElementData()->ClassNames();
+}
+
+inline bool Element::HasClassName(const AtomicString& class_name) const {
+  return HasElementData() && GetElementData()->ClassNames().Contains(class_name);
+}
+
+inline bool Element::HasID() const {
+  return HasElementData() && GetElementData()->HasID();
+}
+
+inline bool Element::HasClass() const {
+  return HasElementData() && GetElementData()->HasClass();
+}
+
+inline UniqueElementData& Element::EnsureUniqueElementData() {
+  if (!HasElementData() || !GetElementData()->IsUnique())
+    CreateUniqueElementData();
+  return To<UniqueElementData>(*element_data_);
+}
+
+inline ElementRareDataVector* Element::GetElementRareData() const {
+  return static_cast<ElementRareDataVector*>(RareData());
+}
+
+inline ElementRareDataVector& Element::EnsureElementRareData() {
+  return static_cast<ElementRareDataVector&>(EnsureRareData());
 }
 
 }  // namespace webf

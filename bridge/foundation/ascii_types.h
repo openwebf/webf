@@ -31,6 +31,12 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+
+#include <cassert>
+#include <cstring>
+#include "core/base/compiler_specific.h"
+#include "macros.h"
+
 #ifndef BRIDGE_FOUNDATION_ASCII_TYPES_H_
 #define BRIDGE_FOUNDATION_ASCII_TYPES_H_
 
@@ -52,8 +58,19 @@ inline bool IsASCIIDigit(CharType c) {
 }
 
 template <typename CharType>
+inline bool IsASCIIHexDigit(CharType c) {
+  return IsASCIIDigit(c) || ((c | 0x20) >= 'a' && (c | 0x20) <= 'f');
+}
+
+template <typename CharType>
 inline bool IsASCIIAlphanumeric(CharType c) {
   return IsASCIIDigit(c) || IsASCIIAlpha(c);
+}
+
+template <typename CharType>
+inline int ToASCIIHexValue(CharType c) {
+  assert(IsASCIIHexDigit(c));
+  return c < 'A' ? c - '0' : (c - 'A' + 10) & 0xF;
 }
 
 /*
@@ -94,8 +111,43 @@ inline bool IsASCIILower(CharacterType character) {
 }
 
 template <typename CharacterType>
+ALWAYS_INLINE bool IsUpperASCII(const CharacterType* characters, size_t length) {
+  bool contains_lower_case = false;
+  for (size_t i = 0; i < length; i++) {
+    contains_lower_case |= IsASCIILower(characters[i]);
+  }
+  return !contains_lower_case;
+}
+
+template <typename CharacterType>
 inline CharacterType ToASCIIUpper(CharacterType character) {
   return character & ~(IsASCIILower(character) << 5);
+}
+
+extern const unsigned char kASCIICaseFoldTable[256];
+
+template <typename CharType>
+inline CharType ToASCIILower(CharType c) {
+  return c | ((c >= 'A' && c <= 'Z') << 5);
+}
+
+inline unsigned char ToASCIILower(unsigned char c) {
+  return kASCIICaseFoldTable[c];
+}
+
+inline char ToASCIILower(char c) {
+  return static_cast<char>(kASCIICaseFoldTable[static_cast<unsigned char>(c)]);
+}
+
+inline bool IsASCIIAlphaCaselessEqual(char css_character, char character) {
+  // This function compares a (preferably) constant ASCII
+  // lowercase letter to any input character.
+  DCHECK_GE(character, 'a');
+  DCHECK_LE(character, 'z');
+  if ((css_character | 0x20) == character) [[likely]] {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace webf

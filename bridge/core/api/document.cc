@@ -23,7 +23,7 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElement(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
+  webf::AtomicString tag_name_atomic = webf::AtomicString(tag_name);
   Element* new_element = document->createElement(tag_name_atomic, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
     return WebFValue<Element, ElementPublicMethods>::Null();
@@ -41,7 +41,7 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementWit
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
+  webf::AtomicString tag_name_atomic = webf::AtomicString(tag_name);
 
   std::string value = std::string(R"({"is":")") + options.is + "\"}";
   const char* value_cstr = value.c_str();
@@ -65,8 +65,8 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNS(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString uri_atomic = webf::AtomicString(document->ctx(), uri);
-  webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
+  webf::AtomicString uri_atomic = webf::AtomicString(uri);
+  webf::AtomicString tag_name_atomic = webf::AtomicString(tag_name);
   Element* new_element =
       document->createElementNS(uri_atomic, tag_name_atomic, shared_exception_state->exception_state);
   if (shared_exception_state->exception_state.HasException()) {
@@ -86,8 +86,8 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::CreateElementNSW
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString uri_atomic = webf::AtomicString(document->ctx(), uri);
-  webf::AtomicString tag_name_atomic = webf::AtomicString(document->ctx(), tag_name);
+  webf::AtomicString uri_atomic = webf::AtomicString(uri);
+  webf::AtomicString tag_name_atomic = webf::AtomicString(tag_name);
 
   std::string value = std::string(R"({"is":")") + options.is + "\"}";
   const char* value_cstr = value.c_str();
@@ -110,7 +110,7 @@ WebFValue<Text, TextNodePublicMethods> DocumentPublicMethods::CreateTextNode(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString data_atomic = webf::AtomicString(document->ctx(), data);
+  webf::AtomicString data_atomic = webf::AtomicString(data);
   Text* text_node = document->createTextNode(data_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
@@ -145,7 +145,7 @@ WebFValue<Comment, CommentPublicMethods> DocumentPublicMethods::CreateComment(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString data_atomic = webf::AtomicString(document->ctx(), data);
+  webf::AtomicString data_atomic = webf::AtomicString(data);
   Comment* comment = document->createComment(data_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
@@ -163,7 +163,7 @@ WebFValue<Event, EventPublicMethods> DocumentPublicMethods::CreateEvent(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString type_atomic = webf::AtomicString(document->ctx(), type);
+  webf::AtomicString type_atomic = webf::AtomicString(type);
   Event* event = document->createEvent(type_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
@@ -181,7 +181,7 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::QuerySelector(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString selectors_atomic = webf::AtomicString(document->ctx(), selectors);
+  webf::AtomicString selectors_atomic = webf::AtomicString(selectors);
   Element* element = document->querySelector(selectors_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
@@ -199,7 +199,7 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::GetElementById(
     webf::SharedExceptionState* shared_exception_state) {
   auto* document = static_cast<webf::Document*>(ptr);
   MemberMutationScope scope{document->GetExecutingContext()};
-  webf::AtomicString id_atomic = webf::AtomicString(document->ctx(), id);
+  webf::AtomicString id_atomic = webf::AtomicString(id);
   Element* element = document->getElementById(id_atomic, shared_exception_state->exception_state);
 
   if (shared_exception_state->exception_state.HasException()) {
@@ -230,7 +230,7 @@ WebFValue<Element, ElementPublicMethods> DocumentPublicMethods::ElementFromPoint
 }
 
 WebFValue<Element, HTMLElementPublicMethods> DocumentPublicMethods::DocumentElement(webf::Document* document) {
-  auto* document_element = document->documentElement();
+  auto* document_element = DynamicTo<HTMLElement>(document->documentElement());
   WebFValueStatus* status_block = document_element->KeepAlive();
   return WebFValue<Element, HTMLElementPublicMethods>{document_element, document_element->htmlElementPublicMethods(),
                                                       status_block};

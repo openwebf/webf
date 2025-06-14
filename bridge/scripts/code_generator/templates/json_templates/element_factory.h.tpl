@@ -10,7 +10,7 @@ const uprefix = options.prefix.toUpperCase()
 #ifndef BRIDGE_CORE_<%=uprefix%>_ELEMENT_FACTORY_H_
 #define BRIDGE_CORE_<%=uprefix%>_ELEMENT_FACTORY_H_
 
-#include "bindings/qjs/atomic_string.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 

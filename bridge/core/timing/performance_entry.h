@@ -5,7 +5,6 @@
 #ifndef WEBF_CORE_TIMING_PERFORMANCE_ENTRY_H_
 #define WEBF_CORE_TIMING_PERFORMANCE_ENTRY_H_
 
-#include "bindings/qjs/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_wrappable.h"

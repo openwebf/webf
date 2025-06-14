@@ -63,8 +63,7 @@ void NativeBindingObject::HandleCallFromDartSide(const DartIsolateContext* dart_
     return;
 
   const AtomicString method =
-      AtomicString(binding_object->binding_target_->ctx(),
-                   std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_method->u.ptr)));
+      AtomicString(std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(native_method->u.ptr)));
   const NativeValue result = binding_object->binding_target_->HandleCallFromDartSide(method, argc, argv, dart_object);
 
   auto* return_value = new NativeValue();
@@ -370,7 +369,7 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
     }
   }
 
-  const NativeValue argv[] = {Native_NewString(prop.ToNativeString(GetExecutingContext()->ctx()).release()), value};
+  const NativeValue argv[] = {Native_NewString(prop.ToNativeString().release()), value};
   return InvokeBindingMethod(BindingMethodCallOperations::kSetProperty, 2, argv,
                              FlushUICommandReason::kDependentsOnElement, exception_state);
 }

@@ -7,6 +7,7 @@
 #include "binding_call_methods.h"
 #include "bindings/qjs/converter_impl.h"
 #include "core/html/custom/webf_router_link_element.h"
+#include "event_dispatch_forbidden_scope.h"
 #include "event_factory.h"
 #include "event_target.h"
 #include "include/dart_api.h"
@@ -312,7 +313,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
     //                          ASSERT_NO_EXCEPTION());
     //    } else {
     GetExecutingContext()->uiCommandBuffer()->AddCommand(
-        UICommand::kAddEvent, event_type.ToNativeString(ctx()), bindingObject(), listener_options);
+        UICommand::kAddEvent, event_type.ToNativeString(), bindingObject(), listener_options);
     //    }
   }
 
@@ -397,8 +398,7 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   NativeValue native_event_type = argv[0];
   NativeValue native_is_capture = argv[2];
   bool isCapture = NativeValueConverter<NativeTypeBool>::FromNativeValue(native_is_capture);
-  AtomicString event_type =
-      NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(native_event_type));
+  AtomicString event_type = NativeValueConverter<NativeTypeString>::FromNativeValue(std::move(native_event_type));
   RawEvent* raw_event = NativeValueConverter<NativeTypePointer<RawEvent>>::FromNativeValue(argv[1]);
 
   Event* event = EventFactory::Create(GetExecutingContext(), event_type, raw_event);
@@ -409,6 +409,8 @@ NativeValue EventTarget::HandleDispatchEventFromDart(int32_t argc, const NativeV
   if (window != nullptr && (event->type() == event_type_names::kload || event->type() == event_type_names::kgcopen)) {
     window->OnLoadEventFired();
   }
+
+  assert(!EventDispatchForbiddenScope::IsEventDispatchForbidden());
 
   ExceptionState exception_state;
   event->SetTrusted(false);

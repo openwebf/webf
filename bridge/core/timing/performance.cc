@@ -205,7 +205,7 @@ void Performance::measure(const AtomicString& measure_name,
                           const AtomicString& start_mark,
                           const AtomicString& end_mark,
                           ExceptionState& exception_state) {
-  if (start_mark.IsEmpty()) {
+  if (start_mark.empty()) {
     auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, timeOrigin(), now(exception_state),
                                                ScriptValue::Empty(ctx()), exception_state);
     entries_.emplace_back(measure);
@@ -215,7 +215,7 @@ void Performance::measure(const AtomicString& measure_name,
   auto start_it = std::begin(entries_);
   auto end_it = std::begin(entries_);
 
-  if (end_mark.IsEmpty()) {
+  if (end_mark.empty()) {
     auto start_entry = std::find_if(start_it, entries_.end(),
                                     [&start_mark](auto&& entry) -> bool { return entry->name() == start_mark; });
     auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, (*start_entry)->startTime(),
@@ -229,13 +229,13 @@ void Performance::measure(const AtomicString& measure_name,
 
   int64_t start_timestamp = 0;
   bool start_is_timestamp = false;
-  
+
   if (start_mark_count == 0) {
     // Try to parse start_mark as int64_t timestamp
-    std::string start_str = start_mark.ToStdString(ctx());
+    std::string start_str = start_mark.ToStdString();
     char* end_ptr = nullptr;
     start_timestamp = std::strtoll(start_str.c_str(), &end_ptr, 10);
-    
+
     // Check if parsing was successful (entire string was consumed and no overflow)
     if (end_ptr == start_str.c_str() + start_str.length() && start_str.length() > 0) {
       start_is_timestamp = true;
@@ -252,13 +252,13 @@ void Performance::measure(const AtomicString& measure_name,
 
   int64_t end_timestamp = 0;
   bool end_is_timestamp = false;
-  
+
   if (end_mark_count == 0) {
     // Try to parse end_mark as int64_t timestamp
     std::string end_str = end_mark.ToStdString(ctx());
     char* end_ptr = nullptr;
     end_timestamp = std::strtoll(end_str.c_str(), &end_ptr, 10);
-    
+
     // Check if parsing was successful (entire string was consumed and no overflow)
     if (end_ptr == end_str.c_str() + end_str.length() && end_str.length() > 0) {
       end_is_timestamp = true;
@@ -288,7 +288,7 @@ void Performance::measure(const AtomicString& measure_name,
   if (start_mark_count != end_mark_count) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
                                    "Failed to execute 'measure' on 'Performance': The mark " +
-                                       start_mark.ToStdString(ctx()) + " and " + end_mark.ToStdString(ctx()) +
+                                       start_mark.ToStdString() + " and " + end_mark.ToStdString() +
                                        " does not appear the same number of times");
     return;
   }
@@ -311,16 +311,16 @@ void Performance::measure(const AtomicString& measure_name,
     if (end_entry == entries_.end()) {
       size_t startIndex = start_entry - entries_.begin();
       assert_m(false, ("Can not get endEntry. startIndex: " + std::to_string(startIndex) +
-                       " startMark: " + start_mark.ToStdString(ctx()) + " endMark: " + end_mark.ToStdString(ctx())));
+                       " startMark: " + start_mark.ToStdString() + " endMark: " + end_mark.ToStdString()));
     }
 
     int64_t duration = (*end_entry)->startTime() - (*start_entry)->startTime();
     int64_t start_time = std::chrono::duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
     auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, start_time, start_time + duration,
                                                ScriptValue::Empty(ctx()), exception_state);
-    entries_.emplace_back(measure);
     start_it = ++start_entry;
     end_it = ++end_entry;
+    entries_.emplace_back(measure);
   }
 }
 

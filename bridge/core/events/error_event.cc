@@ -39,7 +39,7 @@ ErrorEvent::ErrorEvent(ExecutingContext* context,
       message_(initializer->hasMessage() ? initializer->message().ToStdString(ctx()) : ""),
       error_(initializer->hasError() ? initializer->error() : ScriptValue::Empty(ctx())),
       source_location_(
-          std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString(ctx()) : "",
+          std::make_unique<SourceLocation>(initializer->hasFilename() ? initializer->filename().ToStdString() : "",
                                            initializer->hasLineno() ? initializer->lineno() : 0,
                                            initializer->hasColno() ? initializer->colno() : 0)) {}
 
