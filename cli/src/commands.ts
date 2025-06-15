@@ -159,10 +159,10 @@ function createCommand(target: string, options: CreateOptions): void {
   console.log(`WebF ${framework} package created at: ${target}`);
 }
 
-function generateCommand(distPath: string, options: GenerateOptions): void {
+async function generateCommand(distPath: string, options: GenerateOptions): Promise<void> {
   const command = `webf codegen generate --flutter-package-src=${options.flutterPackageSrc} --framework=<framework> <distPath>`;
 
-  dartGen({
+  await dartGen({
     source: options.flutterPackageSrc,
     target: options.flutterPackageSrc,
     command,
@@ -176,14 +176,14 @@ function generateCommand(distPath: string, options: GenerateOptions): void {
       return;
     }
 
-    reactGen({
+    await reactGen({
       source: options.flutterPackageSrc,
       target: distPath,
       command,
     });
   }
   else if (options.framework === 'vue') {
-    vueGen({
+    await vueGen({
       source: options.flutterPackageSrc,
       target: distPath,
       command,

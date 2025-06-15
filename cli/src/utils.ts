@@ -4,6 +4,7 @@ import {IDLBlob} from './IDLBlob';
 import {camelCase, snakeCase} from 'lodash';
 
 export function addIndent(str: string, space: number) {
+  if (!str) return str;
   let lines = str.split('\n');
   lines = lines.map(l => {
     for (let i = 0; i < space; i ++) {
@@ -68,6 +69,7 @@ export function getWrapperTypeInfoNameOfClassName(className: string) {
 }
 
 export function getMethodName(name: string) {
+  if (!name || name.length === 0) return '';
   return name[0].toUpperCase() + name.slice(1);
 }
 
