@@ -1614,7 +1614,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
-        (isTextElement || isInlineElementWithText ) &&
+        (isTextElement || isInlineElementWithText) &&
         childFlexedMainSize != null &&
         child.renderStyle.height.isAuto;
 
