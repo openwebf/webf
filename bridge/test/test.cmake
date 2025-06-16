@@ -43,6 +43,16 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/css/css_initial_test.cc
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
+  ./core/css/css_selector_test.cc
+  ./core/css/css_value_clamping_utils_test.cc
+  ./core/css/css_property_name_test.cc
+  ./core/css/css_property_value_set_test.cc
+  ./core/css/css_syntax_string_parser_test.cc
+  ./core/css/css_identifier_value_test.cc
+  ./core/css/css_string_value_test.cc
+  ./core/css/css_value_list_test.cc
+  ./core/css/css_value_pair_test.cc
+  ./core/css/css_custom_ident_value_test.cc
 
   # CSS Parser
   ./core/css/css_primitive_value_test.cc

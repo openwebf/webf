@@ -60,7 +60,9 @@ std::shared_ptr<const CSSValue> ParseLonghand(Document& document,
 
 std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::string& block_text, CSSParserMode mode) {
   auto set = std::make_shared<MutableCSSPropertyValueSet>(mode);
-  set->ParseDeclarationList(block_text, nullptr);
+  auto context = std::make_shared<CSSParserContext>(mode);
+  auto sheet = std::make_shared<StyleSheetContents>(context);
+  set->ParseDeclarationList(AtomicString(block_text.c_str()), sheet);
   return set;
 }
 
