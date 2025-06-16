@@ -55,6 +55,21 @@ function generateEventHandlerType(type: ParameterType) {
   throw new Error('Unknown event type: ' + pointerType);
 }
 
+function generateAttributeSetter(propName: string, type: ParameterType): string {
+  // Attributes from HTML are always strings, so we need to convert them
+  switch (type.value) {
+    case FunctionArgumentType.boolean:
+      return `${propName} = value == 'true' || value == ''`;
+    case FunctionArgumentType.int:
+      return `${propName} = int.tryParse(value) ?? 0`;
+    case FunctionArgumentType.double:
+      return `${propName} = double.tryParse(value) ?? 0.0`;
+    default:
+      // String and other types can be assigned directly
+      return `${propName} = value`;
+  }
+}
+
 function generateMethodDeclaration(method: FunctionDeclaration) {
   var methodName = method.name;
   var args = method.args.map(arg => {
@@ -126,6 +141,7 @@ interface ${object.name} {
     generateReturnType,
     generateMethodDeclaration,
     generateEventHandlerType,
+    generateAttributeSetter,
     command,
   });
 
