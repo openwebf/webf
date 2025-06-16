@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "core/css/css_at_rule_id.h"
+#include "core/css/parser/allowed_rules.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/style_rule_keyframe.h"
 #include "css_nesting_type.h"
@@ -49,26 +50,112 @@ class CSSParserImpl {
   CSSParserImpl(const CSSParserImpl&) = delete;
   CSSParserImpl& operator=(const CSSParserImpl&) = delete;
 
+  // Regular rules are rules that are valid within a top-level grouping rule,
+  // like @media, @supports, etc.
+  static constexpr AllowedRules kRegularRules =
+      AllowedRules{QualifiedRuleType::kStyle} |
+      AllowedRules{
+          CSSAtRuleID::kCSSAtRuleFontFace,
+          CSSAtRuleID::kCSSAtRuleFontPaletteValues,
+          CSSAtRuleID::kCSSAtRuleKeyframes,
+          CSSAtRuleID::kCSSAtRuleLayer,
+          CSSAtRuleID::kCSSAtRuleMedia,
+          CSSAtRuleID::kCSSAtRulePage,
+          CSSAtRuleID::kCSSAtRulePositionTry,
+          CSSAtRuleID::kCSSAtRuleProperty,
+          CSSAtRuleID::kCSSAtRuleContainer,
+          CSSAtRuleID::kCSSAtRuleCounterStyle,
+          CSSAtRuleID::kCSSAtRuleScope,
+          CSSAtRuleID::kCSSAtRuleStartingStyle,
+          CSSAtRuleID::kCSSAtRuleSupports,
+          CSSAtRuleID::kCSSAtRuleWebkitKeyframes,
+          CSSAtRuleID::kCSSAtRuleFontFeatureValues,
+      };
+
+  // A few rules are only valid top-level. For example, you may not specify
+  // an @import rule within @media.
+  static constexpr AllowedRules kTopLevelRules =
+      kRegularRules | AllowedRules{
+                          CSSAtRuleID::kCSSAtRuleCharset,
+                          CSSAtRuleID::kCSSAtRuleImport,
+                          CSSAtRuleID::kCSSAtRuleNamespace,
+                      };
+
+  // Valid rules within @keyframes.
+  static constexpr AllowedRules kKeyframeRules = {QualifiedRuleType::kKeyframe};
+
+  // Valid rules within @font-feature-values.
+  static constexpr AllowedRules kFontFeatureRules = {
+      CSSAtRuleID::kCSSAtRuleAnnotation,
+      CSSAtRuleID::kCSSAtRuleCharacterVariant,
+      CSSAtRuleID::kCSSAtRuleOrnaments,
+      CSSAtRuleID::kCSSAtRuleStylistic,
+      CSSAtRuleID::kCSSAtRuleStyleset,
+      CSSAtRuleID::kCSSAtRuleSwash,
+  };
+
+  // Valid rules within @page.
+  static constexpr AllowedRules kPageMarginRules = {
+      CSSAtRuleID::kCSSAtRuleTopLeftCorner,
+      CSSAtRuleID::kCSSAtRuleTopLeft,
+      CSSAtRuleID::kCSSAtRuleTopCenter,
+      CSSAtRuleID::kCSSAtRuleTopRight,
+      CSSAtRuleID::kCSSAtRuleTopRightCorner,
+      CSSAtRuleID::kCSSAtRuleBottomLeftCorner,
+      CSSAtRuleID::kCSSAtRuleBottomLeft,
+      CSSAtRuleID::kCSSAtRuleBottomCenter,
+      CSSAtRuleID::kCSSAtRuleBottomRight,
+      CSSAtRuleID::kCSSAtRuleBottomRightCorner,
+      CSSAtRuleID::kCSSAtRuleLeftTop,
+      CSSAtRuleID::kCSSAtRuleLeftMiddle,
+      CSSAtRuleID::kCSSAtRuleLeftBottom,
+      CSSAtRuleID::kCSSAtRuleRightTop,
+      CSSAtRuleID::kCSSAtRuleRightMiddle,
+      CSSAtRuleID::kCSSAtRuleRightBottom,
+  };
+
+  // No rules allowed.
+  static constexpr AllowedRules kNoRules = {};
+
+  // https://drafts.csswg.org/css-nesting/#nested-group-rules
+  static constexpr AllowedRules kNestedGroupRules =
+      AllowedRules{
+          CSSAtRuleID::kCSSAtRuleMedia,
+          CSSAtRuleID::kCSSAtRuleSupports,
+          CSSAtRuleID::kCSSAtRuleContainer,
+          CSSAtRuleID::kCSSAtRuleLayer,
+          CSSAtRuleID::kCSSAtRuleScope,
+          CSSAtRuleID::kCSSAtRuleStartingStyle,
+      };
+
+  // Alias for kTopLevelRules to match css_parser.cc usage
+  static constexpr AllowedRules kAllowImportRules = kTopLevelRules;
+  
+  // Convenience constants for other rule types
+  static constexpr AllowedRules kLayerRules = kRegularRules;
+  static constexpr AllowedRules kPageRules = kRegularRules;
+  static constexpr AllowedRules kStyleRules = {QualifiedRuleType::kStyle};
+  static constexpr AllowedRules kAllRules = kTopLevelRules;
+
+  // Legacy enum for backward compatibility - will be removed in future
   enum AllowedRulesType {
-    // As per css-syntax, css-cascade and css-namespaces, @charset rules
-    // must come first, followed by @layer, @import then @namespace.
-    // AllowImportRules actually means we allow @import and any rules that
-    // may follow it, i.e. @namespace rules and regular rules.
-    // AllowCharsetRules and AllowNamespaceRules behave similarly.
     kAllowCharsetRules,
     kAllowLayerStatementRules,
-    kAllowImportRules,
+    kAllowImportRulesType,  // Renamed to avoid conflict with static constant
     kAllowNamespaceRules,
-    kRegularRules,
-    kKeyframeRules,
-    kFontFeatureRules,
-    // For parsing at-rules inside declaration lists.
-    kNoRules,
-    // https://drafts.csswg.org/css-nesting/#nested-group-rules
-    kNestedGroupRules,
-    // https://www.w3.org/TR/css-page-3/#syntax-page-selector
-    kPageMarginRules,
+    kRegularRulesType,      // Renamed to avoid conflict
+    kKeyframeRulesType,     // Renamed to avoid conflict
+    kFontFeatureRulesType,  // Renamed to avoid conflict
+    kNoRulesType,           // Renamed to avoid conflict
+    kNestedGroupRulesType,  // Renamed to avoid conflict
+    kPageMarginRulesType,   // Renamed to avoid conflict
+    kLayerRulesType,        // Added for layer rules
+    kPageRulesType,         // Added for page rules
+    kStyleRulesType,        // Added for style rules
   };
+
+  // Helper function to convert legacy enum to new AllowedRules
+  static AllowedRules ConvertToAllowedRules(AllowedRulesType legacy_type);
 
   // Represents the start and end offsets of a CSSParserTokenRange.
   struct RangeOffset {
@@ -113,6 +200,14 @@ class CSSParserImpl {
                                                   std::shared_ptr<StyleRule> parent_rule_for_nesting,
                                                   std::shared_ptr<StyleSheetContents>,
                                                   AllowedRulesType);
+  
+  // New overload using AllowedRules
+  static std::shared_ptr<StyleRuleBase> ParseRule(const std::string&,
+                                                  std::shared_ptr<const CSSParserContext>,
+                                                  CSSNestingType,
+                                                  std::shared_ptr<StyleRule> parent_rule_for_nesting,
+                                                  std::shared_ptr<StyleSheetContents>,
+                                                  AllowedRules);
 
   static ParseSheetResult ParseStyleSheet(const std::string&,
                                           const std::shared_ptr<const CSSParserContext>&,

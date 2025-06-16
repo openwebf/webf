@@ -332,6 +332,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_property_parser.cc
     core/css/parser/css_tokenizer_input_stream.cc
     core/css/parser/css_selector_parser.cc
+    core/css/parser/sizes_attribute_parser.cc
     core/css/properties/css_direction_aware_resolver.cc
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc

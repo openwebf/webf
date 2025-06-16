@@ -83,6 +83,8 @@ template std::string CSSPropertyValueSet::GetPropertyValue<AtomicString>(const A
 
 template const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue<CSSPropertyID>(
     const CSSPropertyID&) const;
+template const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue<AtomicString>(
+    const AtomicString&) const;
 
 template <typename T>
 bool CSSPropertyValueSet::PropertyIsImportant(const T& property) const {

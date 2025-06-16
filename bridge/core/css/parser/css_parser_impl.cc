@@ -45,6 +45,39 @@
 
 namespace webf {
 
+// Convert legacy AllowedRulesType enum to new AllowedRules class
+AllowedRules CSSParserImpl::ConvertToAllowedRules(AllowedRulesType legacy_type) {
+  switch (legacy_type) {
+    case kAllowCharsetRules:
+      return kTopLevelRules;
+    case kAllowLayerStatementRules:
+      return kTopLevelRules;
+    case kAllowImportRulesType:
+      return kTopLevelRules;
+    case kAllowNamespaceRules:
+      return kTopLevelRules;
+    case kRegularRulesType:
+      return CSSParserImpl::kRegularRules;
+    case kKeyframeRulesType:
+      return CSSParserImpl::kKeyframeRules;
+    case kFontFeatureRulesType:
+      return CSSParserImpl::kFontFeatureRules;
+    case kNoRulesType:
+      return CSSParserImpl::kNoRules;
+    case kNestedGroupRulesType:
+      return CSSParserImpl::kNestedGroupRules;
+    case kPageMarginRulesType:
+      return CSSParserImpl::kPageMarginRules;
+    default:
+      return CSSParserImpl::kNoRules;
+  }
+}
+
+// Helper to check if AllowedRulesType equals AllowedRules
+static bool AreRulesEqual(CSSParserImpl::AllowedRulesType legacy, const AllowedRules& rules) {
+  return CSSParserImpl::ConvertToAllowedRules(legacy) == rules;
+}
+
 namespace {
 
 // This may still consume tokens if it fails
@@ -226,7 +259,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ParseRule(const std::string& strin
   if (stream.UncheckedPeek().GetType() == kAtKeywordToken) {
     rule = parser.ConsumeAtRule(stream, allowed_rules, CSSNestingType::kNone,
                                 /*parent_rule_for_nesting=*/nullptr);
-  } else if (allowed_rules == kPageMarginRules) {
+  } else if (allowed_rules == kPageMarginRulesType) {
     // Style rules are not allowed inside @page.
     rule = nullptr;
   } else {
@@ -240,6 +273,37 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ParseRule(const std::string& strin
     return nullptr;  // Parse error, trailing garbage
   }
   return rule;
+}
+
+std::shared_ptr<StyleRuleBase> CSSParserImpl::ParseRule(const std::string& string,
+                                                        std::shared_ptr<const CSSParserContext> context,
+                                                        CSSNestingType nesting_type,
+                                                        std::shared_ptr<StyleRule> parent_rule_for_nesting,
+                                                        std::shared_ptr<StyleSheetContents> style_sheet,
+                                                        AllowedRules allowed_rules) {
+  // Convert AllowedRules to AllowedRulesType and delegate to existing implementation
+  AllowedRulesType legacy_type = kAllowImportRulesType;  // Default
+  
+  // Check which legacy type corresponds to the AllowedRules
+  if (allowed_rules == kAllRules) {
+    legacy_type = kAllowImportRulesType;
+  } else if (allowed_rules == kRegularRules) {
+    legacy_type = kRegularRulesType;
+  } else if (allowed_rules == kKeyframeRules) {
+    legacy_type = kKeyframeRulesType;
+  } else if (allowed_rules == kFontFeatureRules) {
+    legacy_type = kFontFeatureRulesType;
+  } else if (allowed_rules == kPageMarginRules) {
+    legacy_type = kPageMarginRulesType;
+  } else if (allowed_rules == kLayerRules) {
+    legacy_type = kLayerRulesType;
+  } else if (allowed_rules == kPageRules) {
+    legacy_type = kPageRulesType;
+  } else if (allowed_rules == kStyleRules) {
+    legacy_type = kStyleRulesType;
+  }
+  
+  return ParseRule(string, context, nesting_type, parent_rule_for_nesting, style_sheet, legacy_type);
 }
 
 ParseSheetResult CSSParserImpl::ParseStyleSheet(const std::string& string,
@@ -339,11 +403,11 @@ std::unique_ptr<std::vector<KeyframeOffset>> CSSParserImpl::ParseKeyframeKeyList
 
 static CSSParserImpl::AllowedRulesType ComputeNewAllowedRules(CSSParserImpl::AllowedRulesType allowed_rules,
                                                               const StyleRuleBase* rule) {
-  if (!rule || allowed_rules == CSSParserImpl::kKeyframeRules || allowed_rules == CSSParserImpl::kFontFeatureRules ||
-      allowed_rules == CSSParserImpl::kNoRules) {
+  if (!rule || allowed_rules == CSSParserImpl::kKeyframeRulesType || allowed_rules == CSSParserImpl::kFontFeatureRulesType ||
+      allowed_rules == CSSParserImpl::kNoRulesType) {
     return allowed_rules;
   }
-  assert(allowed_rules <= CSSParserImpl::kRegularRules);
+  assert(allowed_rules <= CSSParserImpl::kRegularRulesType);
   if (rule->IsCharsetRule()) {
     return CSSParserImpl::kAllowLayerStatementRules;
   }
@@ -351,15 +415,15 @@ static CSSParserImpl::AllowedRulesType ComputeNewAllowedRules(CSSParserImpl::All
     if (allowed_rules <= CSSParserImpl::kAllowLayerStatementRules) {
       return CSSParserImpl::kAllowLayerStatementRules;
     }
-    return CSSParserImpl::kRegularRules;
+    return CSSParserImpl::kRegularRulesType;
   }
   if (rule->IsImportRule()) {
-    return CSSParserImpl::kAllowImportRules;
+    return CSSParserImpl::kAllowImportRulesType;
   }
   if (rule->IsNamespaceRule()) {
     return CSSParserImpl::kAllowNamespaceRules;
   }
-  return CSSParserImpl::kRegularRules;
+  return CSSParserImpl::kRegularRulesType;
 }
 
 template <typename T>
@@ -368,19 +432,19 @@ bool CSSParserImpl::ConsumeRuleList(CSSParserTokenStream& stream,
                                     CSSNestingType nesting_type,
                                     const std::shared_ptr<const StyleRule>& parent_rule_for_nesting,
                                     const T callback) {
-  AllowedRulesType allowed_rules = kRegularRules;
+  AllowedRulesType allowed_rules = kRegularRulesType;
   switch (rule_list_type) {
     case kTopLevelRuleList:
       allowed_rules = kAllowCharsetRules;
       break;
     case kRegularRuleList:
-      allowed_rules = kRegularRules;
+      allowed_rules = kRegularRulesType;
       break;
     case kKeyframesRuleList:
-      allowed_rules = kKeyframeRules;
+      allowed_rules = kKeyframeRulesType;
       break;
     case kFontFeatureRuleList:
-      allowed_rules = kFontFeatureRules;
+      allowed_rules = kFontFeatureRulesType;
       break;
     default:
       assert_m(false, "NOT REACHD IN MARGATION.");
@@ -431,12 +495,12 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeQualifiedRule(
     AllowedRulesType allowed_rules,
     CSSNestingType nesting_type,
     std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
-  if (allowed_rules <= kRegularRules) {
+  if (allowed_rules <= kRegularRulesType) {
     return ConsumeStyleRule(stream, nesting_type, std::move(parent_rule_for_nesting),
                             /* semicolon_aborts_nested_selector */ false);
   }
 
-  if (allowed_rules == kKeyframeRules) {
+  if (allowed_rules == kKeyframeRulesType) {
     stream.EnsureLookAhead();
     const uint32_t prelude_offset_start = stream.LookAheadOffset();
     const CSSParserTokenRange prelude = stream.ConsumeUntilPeekedTypeIs<kLeftBraceToken>();
@@ -714,7 +778,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeNestedRule(
                              /* semicolon_aborts_nested_selector */ true);
   } else {
     child =
-        ConsumeAtRuleContents(*id, stream, parent_rule_type == StyleRule::kPage ? kPageMarginRules : kNestedGroupRules,
+        ConsumeAtRuleContents(*id, stream, parent_rule_type == StyleRule::kPage ? kPageMarginRulesType : kNestedGroupRulesType,
                               nesting_type, parent_rule_for_nesting);
   }
   parsed_properties_ = std::move(outer_parsed_properties);
@@ -1253,7 +1317,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
     AllowedRulesType allowed_rules,
     CSSNestingType nesting_type,
     std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
-  if (allowed_rules == kNestedGroupRules) {
+  if (allowed_rules == kNestedGroupRulesType) {
     if (id != CSSAtRuleID::kCSSAtRuleMedia &&      // [css-conditional-3]
         id != CSSAtRuleID::kCSSAtRuleSupports &&   // [css-conditional-3]
         id != CSSAtRuleID::kCSSAtRuleContainer &&  // [css-contain-3]
@@ -1264,17 +1328,17 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
       ConsumeErroneousAtRule(stream, id);
       return nullptr;
     }
-    allowed_rules = kRegularRules;
+    allowed_rules = kRegularRulesType;
   }
 
   // @import rules have a URI component that is not technically part of the
   // prelude.
   std::string import_prelude_uri;
-  if (allowed_rules <= kAllowImportRules && id == CSSAtRuleID::kCSSAtRuleImport) {
+  if (allowed_rules <= kAllowImportRulesType && id == CSSAtRuleID::kCSSAtRuleImport) {
     import_prelude_uri = ConsumeStringOrURI(stream);
   }
 
-  if (allowed_rules == kKeyframeRules || allowed_rules == kNoRules) {
+  if (allowed_rules == kKeyframeRulesType || allowed_rules == kNoRulesType) {
     // Parse error, no at-rules supported inside @keyframes,
     // or blocks supported inside declaration lists.
     ConsumeErroneousAtRule(stream, id);
@@ -1284,10 +1348,10 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
   stream.EnsureLookAhead();
   if (allowed_rules == kAllowCharsetRules && id == CSSAtRuleID::kCSSAtRuleCharset) {
     return ConsumeCharsetRule(stream);
-  } else if (allowed_rules <= kAllowImportRules && id == CSSAtRuleID::kCSSAtRuleImport) {
+  } else if (allowed_rules <= kAllowImportRulesType && id == CSSAtRuleID::kCSSAtRuleImport) {
     return ConsumeImportRule(std::move(import_prelude_uri), stream);
   } else {
-    DCHECK_LE(allowed_rules, kRegularRules);
+    DCHECK_LE(allowed_rules, kRegularRulesType);
 
     switch (id) {
         //      case CSSAtRuleID::kCSSAtRuleViewTransition:
