@@ -29,7 +29,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   
-  # Include the cupertino_gallery assets and example HTML files
+  # Include the example HTML files
   assets:
     - assets/
-    - cupertino_gallery/dist/

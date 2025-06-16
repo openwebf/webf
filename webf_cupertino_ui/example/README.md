@@ -42,6 +42,28 @@ Demonstrates navigation components:
 - Segmented controls (tabs)
 - Tab switching with content
 
+### Cupertino Gallery (Vue.js)
+A comprehensive Vue.js application demonstrating all components. This example loads directly from the deployed Vercel app.
+
+The Vue.js gallery is automatically deployed and available at the configured URL. Simply run the Flutter example app and navigate to "Cupertino Gallery (Vue.js)" to see it in action.
+
+To customize the gallery or deploy your own version:
+
+1. Clone the vue-cupertino-gallery repository:
+   ```bash
+   git clone https://github.com/openwebf/vue-cupertino-gallery.git
+   cd vue-cupertino-gallery
+   ```
+
+2. Deploy to Vercel:
+   ```bash
+   vercel
+   ```
+
+3. Update the `vercelUrl` in `lib/main.dart` with your deployment URL.
+
+Note: The Vue.js gallery source code is maintained separately at: https://github.com/openwebf/vue-cupertino-gallery
+
 ## Usage Tips
 
 1. **Initialize Components**: Always call `installWebFCupertinoUI()` before using any components.

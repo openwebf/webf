@@ -181,27 +181,8 @@ class CupertinoGalleryPage extends StatefulWidget {
 }
 
 class CupertinoGalleryPageState extends State<CupertinoGalleryPage> {
-  bool _isBuilt = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkIfBuilt();
-  }
-
-  Future<void> _checkIfBuilt() async {
-    // Check if the Vue app is built
-    try {
-      // In a real scenario, you might check if the dist folder exists
-      setState(() {
-        _isBuilt = true; // Assume it's built for now
-      });
-    } catch (e) {
-      setState(() {
-        _isBuilt = false;
-      });
-    }
-  }
+  // TODO: Replace with your actual Vercel deployment URL
+  static const String vercelUrl = 'https://vue-cupertino-gallery.vercel.app/';
 
   @override
   Widget build(BuildContext context) {
@@ -209,79 +190,10 @@ class CupertinoGalleryPageState extends State<CupertinoGalleryPage> {
       appBar: AppBar(
         title: Text('Cupertino Gallery (Vue.js)'),
       ),
-      body: _isBuilt
-        ? WebF.fromControllerName(
-            controllerName: 'cupertino-gallery',
-            bundle: WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html'),
-          )
-        : Center(
-            child: Padding(
-              padding: EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 64,
-                    color: Colors.orange,
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Vue.js app not built',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    'To run the Cupertino Gallery example, you need to build the Vue.js app first.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 20),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Run these commands:',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          '1. cd example/cupertino_gallery',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          '2. npm install',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          '3. npm run build',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+      body: WebF.fromControllerName(
+        controllerName: 'cupertino-gallery',
+        bundle: WebFBundle.fromUrl(vercelUrl),
+      ),
     );
   }
 }
