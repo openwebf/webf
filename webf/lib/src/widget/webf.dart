@@ -68,7 +68,7 @@ class WebF extends StatefulWidget {
   static Future<void> clearAllCaches() async {
     try {
       final String appTemporaryPath = await getWebFTemporaryPath();
-      
+
       // Clear HTTP caches
       final Directory httpCacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
       if (await httpCacheDirectory.exists()) {
@@ -79,7 +79,7 @@ class WebF extends StatefulWidget {
           if (e is FileSystemException && e.osError?.errorCode == 2) {
             // ENOENT - No such file or directory
             // This is expected in concurrent scenarios
-          } else if (e is FileSystemException && 
+          } else if (e is FileSystemException &&
                      (e.osError?.errorCode == 66 || // ENOTEMPTY - macOS/iOS
                       e.osError?.errorCode == 39)) { // ENOTEMPTY - Linux/Android
             // Directory not empty
@@ -105,7 +105,7 @@ class WebF extends StatefulWidget {
           }
         }
       }
-      
+
       // Always try to create the HTTP cache directory
       try {
         await httpCacheDirectory.create(recursive: true);
@@ -131,7 +131,7 @@ class WebF extends StatefulWidget {
           if (e is FileSystemException && e.osError?.errorCode == 2) {
             // ENOENT - No such file or directory
             // This is expected in concurrent scenarios
-          } else if (e is FileSystemException && 
+          } else if (e is FileSystemException &&
                      (e.osError?.errorCode == 66 || // ENOTEMPTY - macOS/iOS
                       e.osError?.errorCode == 39)) { // ENOTEMPTY - Linux/Android
             // Directory not empty
@@ -218,7 +218,7 @@ class WebF extends StatefulWidget {
   static AutoManagedWebF fromControllerName(
       {Key? key,
       required String controllerName,
-      String? initialRoute,
+      String initialRoute = '/',
       Map<String, dynamic>? initialState,
       Widget? loadingWidget,
       Widget Function(BuildContext context, Object error)? errorBuilder,
