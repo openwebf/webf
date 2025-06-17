@@ -222,6 +222,16 @@ class ContainerNode : public Node {
   void SetChildrenAffectedByIndirectAdjacentRules() {
     SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByIndirectAdjacentRules);
   }
+  
+  void SetChildrenAffectedByFirstChildRules() {
+    // TODO: Implement with proper flag
+    SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByForwardPositionalRules);
+  }
+  
+  void SetChildrenAffectedByLastChildRules() {
+    // TODO: Implement with proper flag
+    SetRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);
+  }
 
   bool ChildrenAffectedByBackwardPositionalRules() const {
     return HasRestyleFlag(DynamicRestyleFlags::kChildrenAffectedByBackwardPositionalRules);

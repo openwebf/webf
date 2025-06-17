@@ -61,6 +61,22 @@ ElementAttributes& Element::EnsureElementAttributes() const {
   return *attributes_;
 }
 
+AttributeCollection Element::Attributes() const {
+  if (!HasElementData()) {
+    return AttributeCollection();
+  }
+  return GetElementData()->Attributes();
+}
+
+ContainerNode* Element::ParentElementOrDocumentFragment() const {
+  ContainerNode* parent = parentNode();
+  if (!parent)
+    return nullptr;
+  if (parent->IsDocumentFragment() || parent->IsElementNode())
+    return parent;
+  return nullptr;
+}
+
 bool Element::hasAttribute(const AtomicString& name, ExceptionState& exception_state) {
   return EnsureElementAttributes().hasAttribute(name, exception_state);
 }

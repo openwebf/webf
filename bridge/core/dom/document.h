@@ -203,6 +203,15 @@ class Document : public ContainerNode, public TreeScope {
     // need to have its style or layout tree updated.
     kFull,
   };
+  
+  // Methods for selector matching
+  bool IsXrOverlay() const { return false; }
+  // Dummy Page class for compilation  
+  struct Page { 
+    struct FocusController { bool IsActive() const { return false; } };
+    FocusController& GetFocusController() const { static FocusController dummy; return dummy; }
+  };
+  Page* GetPage() const { static Page dummy; return &dummy; }
 
  private:
   int node_count_{0};

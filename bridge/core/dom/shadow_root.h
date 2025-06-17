@@ -31,7 +31,14 @@
 
 namespace webf {
 
-class ShadowRoot : public DocumentFragment {};
+class Element;
+
+class ShadowRoot : public DocumentFragment {
+ public:
+  // Methods for selector matching
+  bool IsUserAgent() const { return false; }
+  Element& host() const;
+};
 
 }  // namespace webf
 

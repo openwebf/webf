@@ -11,6 +11,7 @@
 #include "core/css/inline_css_style_declaration.h"
 #include "core/native/native_function.h"
 #include "core/dom/element_rare_data_vector.h"
+#include "core/dom/attribute_collection.h"
 #include "core/platform/gfx/geometry/vector2d_f.h"
 #include "element_data.h"
 #include "foundation/atomic_string.h"
@@ -78,6 +79,9 @@ class Element : public ContainerNode {
 
   ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
   ElementAttributes& EnsureElementAttributes() const;
+  
+  // Get attributes as a collection for selector matching
+  AttributeCollection Attributes() const;
 
   bool hasAttributes() const;
   bool hasAttribute(const AtomicString&, ExceptionState& exception_state);
@@ -262,6 +266,62 @@ class Element : public ContainerNode {
   bool ChildStyleRecalcBlockedByDisplayLock() const;
 
   // void SetNeedsCompositingUpdate();
+  
+  // :has() pseudo-class invalidation support
+  // TODO: Implement these methods with proper invalidation flags
+  void SetAffectedBySubjectHas() {}
+  void SetAffectedByNonSubjectHas() {}
+  void SetAffectedByPseudoInHas() {}
+  void SetAffectedByLogicalCombinationsInHas() {}
+  void SetAncestorsOrAncestorSiblingsAffectedByHas() {}
+  void SetSiblingsAffectedByHasFlags(unsigned flags) {}
+  bool AffectedByMultipleHas() const { return false; }
+  void SetAffectedByMultipleHas() {}
+  
+  // Additional style invalidation methods
+  void SetStyleAffectedByEmpty() {}
+  void SetAffectedByFirstChildRules() {}
+  void SetAffectedByLastChildRules() {}
+  ContainerNode* ParentElementOrDocumentFragment() const;
+  
+  // More invalidation methods
+  void SetChildrenOrSiblingsAffectedByDrag() {}
+  bool IsDragged() const { return false; }
+  void SetAncestorsOrSiblingsAffectedByFocusInHas() {}
+  void SetChildrenOrSiblingsAffectedByFocus() {}
+  void SetAncestorsOrSiblingsAffectedByFocusVisibleInHas() {}
+  void SetChildrenOrSiblingsAffectedByFocusVisible() {}
+  void SetChildrenOrSiblingsAffectedByActive() {}
+  void SetChildrenOrSiblingsAffectedByFocusWithin() {}
+  bool HasFocusWithin() const { return false; }
+  void SetAncestorsOrSiblingsAffectedByHoverInHas() {}
+  void SetChildrenOrSiblingsAffectedByHover() {}
+  bool IsHovered() const { return false; }
+  void SetAncestorsOrSiblingsAffectedByActiveInHas() {}
+  bool ShouldAppearIndeterminate() const { return false; }
+  AtomicString ComputeInheritedLanguage() const { return AtomicString(); }
+  
+  // Form control methods
+  bool IsActive() const { return false; }
+  bool MatchesEnabledPseudoClass() const { return false; }
+  bool MatchesDefaultPseudoClass() const { return false; }
+  bool IsDisabledFormControl() const { return false; }
+  bool MatchesReadOnlyPseudoClass() const { return false; }
+  bool MatchesReadWritePseudoClass() const { return false; }
+  bool IsOptionalFormControl() const { return false; }
+  bool IsRequiredFormControl() const { return false; }
+  bool MatchesValidityPseudoClasses() const { return false; }
+  bool IsValidElement() const { return false; }
+  
+  // Additional methods for selector matching
+  bool ContainsPersistentVideo() const { return false; }
+  bool IsInRange() const { return false; }
+  bool IsOutOfRange() const { return false; }
+  bool IsDefined() const { return false; }
+  bool DidAttachInternals() const { return false; }
+  // Dummy ElementInternals class for compilation
+  struct ElementInternals { bool HasState(const AtomicString&) const { return false; } };
+  ElementInternals& EnsureElementInternals() const { static ElementInternals dummy; return dummy; }
 
   // add for invalidation end
  protected:

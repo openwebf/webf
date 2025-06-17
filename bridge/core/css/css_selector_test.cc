@@ -248,6 +248,106 @@ TEST(CSSSelector, FirstInInvalidList) {
   EXPECT_FALSE(list->First());
 }
 
+TEST(CSSSelector, ModernSelectorsParsing) {
+  auto env = TEST_init();
+  
+  // Test :is() pseudo-class parsing
+  {
+    auto list = ParseSelectorList(":is(.a, .b)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+    const CSSSelector* selector = list->First();
+    ASSERT_TRUE(selector);
+    EXPECT_EQ(selector->GetPseudoType(), CSSSelector::kPseudoIs);
+    // Check that it has a selector list
+    EXPECT_TRUE(selector->SelectorList() != nullptr);
+  }
+  
+  // Test :where() pseudo-class parsing
+  {
+    auto list = ParseSelectorList(":where(.a, .b)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+    const CSSSelector* selector = list->First();
+    ASSERT_TRUE(selector);
+    EXPECT_EQ(selector->GetPseudoType(), CSSSelector::kPseudoWhere);
+    EXPECT_TRUE(selector->SelectorList() != nullptr);
+  }
+  
+  // Test :has() pseudo-class parsing
+  {
+    auto list = ParseSelectorList(":has(.child)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+    const CSSSelector* selector = list->First();
+    ASSERT_TRUE(selector);
+    EXPECT_EQ(selector->GetPseudoType(), CSSSelector::kPseudoHas);
+    EXPECT_TRUE(selector->SelectorList() != nullptr);
+  }
+  
+  // Test :focus-visible pseudo-class parsing
+  {
+    auto list = ParseSelectorList(":focus-visible");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+    const CSSSelector* selector = list->First();
+    ASSERT_TRUE(selector);
+    EXPECT_EQ(selector->GetPseudoType(), CSSSelector::kPseudoFocusVisible);
+  }
+  
+  // Test :focus-within pseudo-class parsing
+  {
+    auto list = ParseSelectorList(":focus-within");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+    const CSSSelector* selector = list->First();
+    ASSERT_TRUE(selector);
+    EXPECT_EQ(selector->GetPseudoType(), CSSSelector::kPseudoFocusWithin);
+  }
+  
+  // Test ::backdrop pseudo-element parsing
+  {
+    auto list = ParseSelectorList("::backdrop");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+    const CSSSelector* selector = list->First();
+    ASSERT_TRUE(selector);
+    EXPECT_EQ(selector->GetPseudoType(), CSSSelector::kPseudoBackdrop);
+  }
+}
+
+TEST(CSSSelector, ComplexModernSelectors) {
+  auto env = TEST_init();
+  
+  // Test nested :is() selectors
+  {
+    auto list = ParseSelectorList(":is(:is(.a, .b), .c)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+  }
+  
+  // Test :where() with complex selectors
+  {
+    auto list = ParseSelectorList(":where(.parent > .child, .sibling + .sibling)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+  }
+  
+  // Test :has() with combinators
+  {
+    auto list = ParseSelectorList("div:has(> .direct-child)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+  }
+  
+  // Test combination of modern selectors
+  {
+    auto list = ParseSelectorList(".container:has(.item):is(:hover, :focus-within)");
+    ASSERT_TRUE(list);
+    ASSERT_TRUE(list->IsValid());
+  }
+}
+
 // The following tests use lower-level CSSSelector APIs that may not be 
 // fully exposed in WebF yet, so they're commented out for now.
 
