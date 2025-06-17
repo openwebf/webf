@@ -110,6 +110,18 @@
   - Copy strings that might be freed: `std::string(const_char_ptr)`
   - Use `toNativeUtf8()` and remember to free
 
+### TypeScript Type Handling in Analyzer
+When implementing TypeScript analysis:
+- `null` can appear as both `NullKeyword` in basic types and as a `LiteralType` containing `NullKeyword`
+- Always check for literal types: `if (type.kind === ts.SyntaxKind.LiteralType)`
+- Handle null literals specifically:
+  ```typescript
+  const literalType = type as ts.LiteralTypeNode;
+  if (literalType.literal.kind === ts.SyntaxKind.NullKeyword) {
+    return FunctionArgumentType.null;
+  }
+  ```
+
 ### Thread Communication
 - PostToJs: Execute on JS thread from other threads
 - PostToDart: Return results to Dart isolate
@@ -135,7 +147,19 @@
 
 ## Memory
 
+- [Bridge Unit Tests](./claude_memory/bridge_unit_tests.md) - Guide for running and debugging bridge unit tests
+- [CSS Variable Display None Fix](./claude_memory/css_variable_display_none_fix.md) - Fix for CSS variables in display:none elements
 - [HTTP Cache Invalidation Fix](./claude_memory/http_cache_invalidation.md) - Cache invalidation mechanism for handling corrupt image cache files
+- [Image Loading Fallback](./claude_memory/image_loading_fallback.md) - Fallback mechanism for image loading failures
+- [iOS Build Troubleshooting](./claude_memory/ios_build_troubleshooting.md) - Guide for fixing iOS undefined symbol errors and understanding the build structure
+- [iOS WebF Source Compilation](./claude_memory/ios_webf_source_compilation.md) - iOS-specific source compilation details
+- [Network Panel Implementation](./claude_memory/network_panel_implementation.md) - DevTools network panel implementation details
+- [UI Command Ring Buffer Design](./claude_memory/ui_command_ring_buffer_design.md) - Design documentation for the UI command ring buffer
+- [UI Command Ring Buffer README](./claude_memory/ui_command_ring_buffer_readme.md) - Usage guide for the UI command ring buffer
+- [WebF DevTools Improvements](./claude_memory/webf_devtools_improvements.md) - Recent improvements to WebF DevTools
+- [WebF Integration Testing Guide](./claude_memory/webf_integration_testing_guide.md) - Guide for writing and running integration tests
+- [WebF Package Preparation](./claude_memory/webf_package_preparation.md) - Steps for preparing WebF packages
+- [WebF Text Element Update Fix](./claude_memory/webf_text_element_update_fix.md) - Fix for text element update issues
 
 ## Testing Guidelines
 
@@ -153,6 +177,33 @@
 - Test assets should reference files in `assets/` directory
 - Use `fdescribe()` instead of `describe()` to run only specific test specs (Jasmine feature)
 - Use `fit()` instead of `it()` to run only specific test cases
+
+### Test-Driven Development Workflow
+1. Run tests frequently during development: `npm test`
+2. When fixing failing tests:
+   - Run specific test files: `npm test -- test/analyzer.test.ts`
+   - Fix one test at a time and verify before moving to the next
+   - Use focused debugging scripts when needed to understand behavior
+3. For modules that read files at load time:
+   - Mock fs before importing the module
+   - Set up default mocks in the test file before any imports that use them
+
+### Module Mocking Patterns
+When testing modules that read files at load time:
+```typescript
+// Mock fs BEFORE importing the module
+jest.mock('fs');
+import fs from 'fs';
+const mockFs = fs as jest.Mocked<typeof fs>;
+
+// Set up file reading mocks
+mockFs.readFileSync = jest.fn().mockImplementation((path) => {
+  // Return appropriate content based on path
+});
+
+// NOW import the module that uses fs
+import { moduleUnderTest } from './module';
+```
 
 ### Threading and Async Patterns
 - When working with cross-thread communication (UI thread, JS thread, Dart thread):
@@ -192,6 +243,49 @@ final controller = WebFController(
 await controller.controlledInitCompleter.future;
 ```
 
+## Performance Optimization Guidelines
+
+### Caching Strategies
+1. **Identify Repeated Operations**: Look for operations that:
+   - Parse the same files multiple times
+   - Perform identical type conversions
+   - Read file contents repeatedly
+
+2. **Implement Caching**:
+   ```typescript
+   // File content cache
+   const cache = new Map<string, CachedType>();
+   
+   // Cache with validation
+   if (cache.has(key)) {
+     return cache.get(key);
+   }
+   const result = expensiveOperation();
+   cache.set(key, result);
+   ```
+
+3. **Provide Cache Clearing**: Always implement a clear function:
+   ```typescript
+   export function clearCaches() {
+     cache.clear();
+   }
+   ```
+
+### Batch Processing
+For file operations, process in batches to maximize parallelism:
+```typescript
+async function processFilesInBatch<T>(
+  items: T[],
+  batchSize: number,
+  processor: (item: T) => Promise<void>
+): Promise<void> {
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    await Promise.all(batch.map(processor));
+  }
+}
+```
+
 ### Implementation Review Checklist
 Before marking any FFI/cross-language task as complete, verify:
 - [ ] Memory management: All allocated memory has corresponding free calls
@@ -201,3 +295,73 @@ Before marking any FFI/cross-language task as complete, verify:
 - [ ] Thread safety: No shared mutable state without synchronization
 - [ ] Build success: Code compiles without warnings
 - [ ] Existing patterns: Implementation follows codebase conventions
+
+### Incremental Development Approach
+1. Make one logical change at a time
+2. Build after each change: `npm run build`
+3. Run relevant tests after each change
+4. Commit working states before moving to the next feature
+5. When debugging complex issues:
+   - Create minimal reproduction scripts
+   - Use console.log or debugger strategically
+   - Clean up debug code before finalizing
+
+## Enterprise Software Handling
+
+### WebF Enterprise Dependencies
+- WebF Enterprise is a closed-source product requiring subscription
+- Dependency configuration:
+  ```yaml
+  dependencies:
+    webf:
+      hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+      version: ^0.22.0
+  ```
+- For local development, use path dependencies
+- Always clarify subscription requirements in documentation
+- Use logger libraries instead of print statements in production code
+
+### Documentation Patterns
+- Clearly distinguish between open source and enterprise features
+- Include WebF Enterprise badges/notices in README files
+- Explain that WebF builds Flutter apps, not web applications
+- When referencing demos that require WebF, clarify they're not traditional web demos
+
+## Git Submodule Operations
+
+### Migrating to Submodules
+When converting a directory to a git submodule:
+1. Clone the destination repository to a temporary location outside the current repo
+2. Copy all files from the source directory to the cloned repository
+3. Commit and push changes to the remote repository
+4. Remove the original directory from the main repository
+5. Add as submodule: `git submodule add <repository-url> <path>`
+6. Use `git -C` for operations on external repositories when needed
+
+### Working with Submodules
+- Update submodules: `git submodule update --init --recursive`
+- Work within submodule: Changes are tracked separately
+- Commit submodule pointer changes in parent repository
+- Always verify `.gitmodules` file is correctly configured
+
+## Technical Documentation Guidelines
+
+### README Optimization
+When writing documentation for Flutter packages that use web technologies:
+1. **Clarify the technology stack**: Explain that WebF enables building Flutter apps with web tech, not web apps
+2. **Set clear expectations**: If examples require WebF to run, state this prominently
+3. **Provide complete quick-start examples**: Include WebFControllerManager initialization
+4. **Structure information hierarchically**: Most important info (requirements, limitations) first
+5. **Use clear section headers**: "What is WebF?", "Prerequisites", etc.
+
+### Code Examples in Documentation
+- Always show complete, runnable examples
+- Include necessary imports and initialization code
+- For WebF: Always show WebFControllerManager setup
+- Test all code examples before including in documentation
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.

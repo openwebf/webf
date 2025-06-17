@@ -2,3 +2,9 @@
 	path = bridge/third_party/quickjs
 	url = git@github.com:openwebf/quickjs.git
     branch = feat/official_version
+[submodule "webf_apps/vue-cupertino-gallery"]
+	path = webf_apps/vue-cupertino-gallery
+	url = git@github.com:openwebf/vue-cupertino-gallery.git
+[submodule "webf_cupertino_ui"]
+	path = webf_cupertino_ui
+	url = git@github.com:openwebf/webf-cupertino-ui.git

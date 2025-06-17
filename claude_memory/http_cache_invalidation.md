@@ -1,43 +1,96 @@
-# HTTP Cache Invalidation Fix for WebF
+# HTTP Cache Improvements
 
-The fix addresses an issue where HTTP cache for images could become corrupted if the OS kills the process during image loading. The cache controller wasn't recognizing these corrupted files as invalid, leading to image encoding failures on subsequent loads.
+## Overview
+Comprehensive improvements to the HTTP cache system including content validation, concurrent access protection, and various bug fixes to ensure cache reliability and data integrity.
 
-## Changes Made:
+## Problems Fixed
+1. Missing validation for cached content integrity
+2. Race conditions in concurrent cache access
+3. Hash collisions from using simple hashCode
+4. Memory leaks in error handling
+5. Missing version identifier for cache format
+6. No content checksum validation
 
-1. Changed `invalidateCache()` from an instance method to a static method in `WebFBundle` class:
-   ```dart
-   static Future<void> invalidateCache(String url) async {
-     Uri? uri = Uri.tryParse(url);
-     if (uri == null) return;
-     String origin = getOrigin(uri);
-     HttpCacheController cacheController = HttpCacheController.instance(origin);
-     HttpCacheObject cacheObject = await cacheController.getCacheObject(uri);
-     await cacheObject.remove();
-   }
-   ```
+## Solution
 
-2. Added cache invalidation to `_onImageError` in `ImageElement` class:
-   ```dart
-   void _onImageError(Object exception, StackTrace? stackTrace) async {
-     if (_resolvedUri != null) {
-       // Invalidate http cache for this failed image loads.
-       await WebFBundle.invalidateCache(_resolvedUri!.toString());
-     }
-     // ... rest of the method
-   }
-   ```
+### 1. Added `validateContent()` method to `HttpCacheObject`
+- Validates both index and blob files exist
+- Checks content length matches actual blob size for non-encoded content
+- Skips validation for compressed content (Content-Encoding: gzip, deflate, etc.)
+- Returns false if validation fails
 
-3. Updated calls to `invalidateCache()` in other places to use the static method:
-   - In `NetworkBundle.obtainData()`: `await WebFBundle.invalidateCache(url);`
-   - In `ScriptRunner._execute()`: `await WebFBundle.invalidateCache(bundle.url);`
+### 2. Integrated validation at key points:
 
-## How It Works:
+#### During Read (`read()` method)
+```dart
+// Validate content after reading
+bool isContentValid = await validateContent();
+if (!isContentValid) {
+  _valid = false;
+  await remove();
+}
+```
 
-When an image fails to load for any reason (network error, decoding error, etc.), the code now invalidates the HTTP cache for that image URL. This ensures that on the next load attempt, WebF won't use the potentially corrupted cached file and will instead try to fetch a fresh copy from the source.
+#### After Write (`_onDone()` in HttpClientCachedResponse)
+```dart
+// Validate the cached content after writing
+bool isValid = await cacheObject.validateContent();
+if (!isValid) {
+  print('Cache validation failed, removing invalid cache for ${cacheObject.url}');
+  await cacheObject.remove();
+  // Remove from memory cache as well
+  final String origin = cacheObject.origin ?? '';
+  HttpCacheController.instance(origin).removeObject(Uri.parse(cacheObject.url));
+}
+```
 
-This approach is a fallback mechanism that handles all error cases without needing complex validation logic in the cache controller.
+### 3. Fixed `HttpCacheObjectBlob.close()` method
+- Changed from `void close()` to `Future<void> close()` to properly await async operations
+- Updated `remove()` to await the close operation
 
-## Relevant Files:
-- `webf/lib/src/html/img.dart`
-- `webf/lib/src/foundation/bundle.dart`
-- `webf/lib/src/html/script.dart`
+## Key Files Modified
+- `lib/src/foundation/http_cache_object.dart` - Added validation logic
+- `lib/src/foundation/http_cache.dart` - Integrated validation after write
+- `test/src/foundation/http_cache_validation_test.dart` - Added comprehensive tests
+
+## Testing
+Created tests to verify:
+- Correct content length validation
+- Detection of content length mismatches
+- Proper handling of compressed content
+- Validation of missing cache files
+- Automatic cleanup during read operations
+
+## All Fixes Implemented
+
+1. **Fixed typo in header parsing** - Changed `kvTuple == 2` to `kvTuple.length == 2`
+
+2. **Added synchronization for HttpCacheObjectBlob** - Prevented race conditions in write operations
+
+3. **Improved error handling in read()** - Differentiated between corrupted data and temporary I/O issues
+
+4. **Fixed memory leak in addError()** - Ensured proper cleanup of resources on error
+
+5. **Replaced url.hashCode with SHA-256 hash** - Eliminated hash collision risks
+
+6. **Added proper type checking** - Changed return type of openBlobWrite() to HttpCacheObjectBlob
+
+7. **Implemented file locking** - Added lock files for concurrent access protection with stale lock detection
+
+8. **Added version identifier** - Index format now includes version for future compatibility
+
+9. **Ensured proper resource cleanup** - Added _closeWriter() method and proper error handling
+
+10. **Added content checksum validation** - SHA-256 checksums are calculated and validated for cache integrity
+
+11. **Made all write operations atomic** - Both index and blob files are written using temp file + rename pattern to prevent partial writes
+
+## Benefits
+- Prevents serving corrupt cached content
+- Automatically cleans up invalid cache entries
+- Supports compressed content (gzip) without false positives
+- Provides logging for debugging cache issues
+- Thread-safe concurrent access
+- Eliminates hash collisions
+- Forward-compatible cache format
+- Comprehensive data integrity validation
