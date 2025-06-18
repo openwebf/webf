@@ -54,26 +54,32 @@ std::shared_ptr<const IfCondition> CSSIfParser::ConsumeIfTest(CSSParserTokenStre
   return nullptr;
 }
 
+// <boolean-expr-group> = <if-test> | ( <boolean-expr[ <if-test> ]> ) |
+// <general-enclosed>
+// https://drafts.csswg.org/css-values-5/#typedef-boolean-expr
 std::shared_ptr<const IfCondition> CSSIfParser::ConsumeBooleanExprGroup(
     CSSParserTokenStream& stream) {
-  stream.ConsumeWhitespace();
-  if (stream.Peek().GetType() != kLeftParenthesisToken) {
-    return ConsumeIfTest(stream);
+  // <if-test> = supports( ... ) | media( ... ) | style( ... )
+  std::shared_ptr<const IfCondition> result = ConsumeIfTest(stream);
+  if (result) {
+    return result;
   }
 
-  CSSParserTokenStream::RestoringBlockGuard guard(stream);
-  stream.ConsumeWhitespace();
-  auto result = ConsumeIfTest(stream);
-  // If that didn't work, try to parse as <boolean-expr>
-  if (!result) {
+  // ( <boolean-expr[ <test> ]> )
+  if (stream.Peek().GetType() == kLeftParenthesisToken) {
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
+    stream.ConsumeWhitespace();
     result = ConsumeBooleanExpr(stream);
-  }
-  stream.ConsumeWhitespace();
-  if (!result || !guard.Release()) {
-    return nullptr;
+    if (result && stream.AtEnd()) {
+      guard.Release();
+      stream.ConsumeWhitespace();
+      return result;
+    }
   }
 
-  return result;
+  // <general-enclosed>
+  // Note: WebF doesn't implement general-enclosed yet, so we return nullptr
+  return nullptr;
 }
 
 namespace {
@@ -85,54 +91,38 @@ bool IsOrderingKeyword(CSSParserToken token) {
 
 }  // namespace
 
+// <boolean-expr[ <if-test> ]> = not <boolean-expr-group> | <boolean-expr-group>
+//                            [ [ and <boolean-expr-group> ]*
+//                            | [ or <boolean-expr-group> ]* ]
+// https://drafts.csswg.org/css-values-5/#typedef-boolean-expr
 std::shared_ptr<const IfCondition> CSSIfParser::ConsumeBooleanExpr(
     CSSParserTokenStream& stream) {
   if (ConsumeIfIdent(stream, "not")) {
-    auto result = ConsumeIfTest(stream);
-    stream.ConsumeWhitespace();
-    return result ? IfCondition::Not(result) : nullptr;
+    return IfCondition::Not(ConsumeBooleanExprGroup(stream));
   }
 
-  if (ConsumeIfIdent(stream, "else")) {
-    stream.ConsumeWhitespace();
-    if (stream.AtEnd()) {
-      return std::make_shared<IfConditionElse>();
+  std::shared_ptr<const IfCondition> result = ConsumeBooleanExprGroup(stream);
+
+  if (AtIdent(stream.Peek(), "and")) {
+    while (ConsumeIfIdent(stream, "and")) {
+      result = IfCondition::And(result, ConsumeBooleanExprGroup(stream));
     }
-    return nullptr;
-  }
-
-  auto result = ConsumeBooleanExprGroup(stream);
-  if (!result) {
-    return nullptr;
-  }
-
-  stream.ConsumeWhitespace();
-  while (!stream.AtEnd() && IsOrderingKeyword(stream.Peek())) {
-    bool is_and = (stream.Peek().Value() == "and");
-    stream.ConsumeIncludingWhitespace();  // Keyword
-    if (auto group = ConsumeBooleanExprGroup(stream)) {
-      if (is_and) {
-        result = IfCondition::And(result, group);
-      } else {  // "or"
-        result = IfCondition::Or(result, group);
-      }
-    } else {
-      return std::make_shared<IfConditionUnknown>(
-          std::string(stream.StringRangeAt(0, stream.LookAheadOffset() - 1)));
+  } else if (AtIdent(stream.Peek(), "or")) {
+    while (ConsumeIfIdent(stream, "or")) {
+      result = IfCondition::Or(result, ConsumeBooleanExprGroup(stream));
     }
-
-    stream.ConsumeWhitespace();
   }
 
   return result;
 }
 
-// [ <container-query> | <supports-query> ]
-// <container-query> = <container-name>? <container-condition>
-// <supports-query> = <supports-condition>
+// <if-condition> = <boolean-expr[ <if-test> ]> | else
+// https://drafts.csswg.org/css-values-5/#typedef-if-condition
 std::shared_ptr<const IfCondition> CSSIfParser::ConsumeIfCondition(
     CSSParserTokenStream& stream) {
-  stream.ConsumeWhitespace();
+  if (ConsumeIfIdent(stream, "else")) {
+    return std::make_shared<IfConditionElse>();
+  }
 
   // <boolean-expr[ <if-test> ]>
   return ConsumeBooleanExpr(stream);
