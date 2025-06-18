@@ -611,6 +611,12 @@ ContainerNode* Node::NonShadowBoundaryParentNode() const {
   return parentNode();
 }
 
+ContainerNode* Node::ParentElementOrShadowRoot() const {
+  // TODO: Implement proper shadow tree traversal
+  // For now, just return the parent node as a simplified implementation
+  return parentNode();
+}
+
 unsigned int Node::NodeIndex() const {
   const Node* temp_node = previousSibling();
   unsigned count = 0;

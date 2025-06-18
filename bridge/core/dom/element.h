@@ -322,6 +322,7 @@ class Element : public ContainerNode {
   // Dummy ElementInternals class for compilation
   struct ElementInternals { bool HasState(const AtomicString&) const { return false; } };
   ElementInternals& EnsureElementInternals() const { static ElementInternals dummy; return dummy; }
+  AtomicString ShadowPseudoId() const { return AtomicString(); }
 
   // add for invalidation end
  protected:

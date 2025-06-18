@@ -39,6 +39,7 @@
 #include "core/dom/qualified_name.h"
 #include "core/dom/nth_index_cache.h"
 #include "core/html/parser/html_parser_idioms.h"
+#include "core/css/style_scope_data.h"
 #include "foundation/atomic_string.h"
 #include "foundation/string_view.h"
 #include "foundation/ascii_types.h"
@@ -46,13 +47,42 @@
 #include "core/css/check_pseudo_has_cache_scope.h"
 #include "core/css/check_pseudo_has_argument_context.h"
 #include "core/css/check_pseudo_has_traversal_iterator.h"
+#include "core/css/part_names.h"
 #include "core/svg/svg_element.h"
 #include "core/dom/text.h"
 #include "core/html/forms/html_input_element.h"
+#include "core/html/forms/html_form_control_element.h"
 #include "foundation/casting.h"
 #include "bindings/qjs/heap_vector.h"
+#include <algorithm>
 
 namespace webf {
+
+// Shadow element names used by UA shadow DOM
+namespace shadow_element_names {
+const AtomicString kPseudoFileUploadButton("file-upload-button");
+const AtomicString kSelectFallbackButton("select-fallback-button");
+const AtomicString kSelectFallbackButtonIcon("select-fallback-button-icon");
+const AtomicString kSelectFallbackButtonText("select-fallback-button-text");
+const AtomicString kSelectFallbackDatalist("select-fallback-datalist");
+const AtomicString kPseudoInputPlaceholder("input-placeholder");
+const AtomicString kIdDetailsContent("details-content");
+const AtomicString kPlaceholder("placeholder");
+}  // namespace shadow_element_names
+
+// Stub for probe namespace - WebF doesn't have devtools probe functionality
+namespace probe {
+void ForcePseudoState(Element*, CSSSelector::PseudoType, bool* result) {
+  // WebF doesn't support forced pseudo states
+  if (result) *result = false;
+}
+}  // namespace probe
+
+// Helper function stubs
+static bool IsFrameFocused(const Element& element) {
+  // WebF doesn't have frame focus tracking yet
+  return true;
+}
 
 // Type alias for vector compatibility
 template<typename T>
@@ -1849,9 +1879,7 @@ static bool MatchesUAShadowElement(Element& element, const AtomicString& id) {
 bool SelectorChecker::CheckPseudoAutofill(CSSSelector::PseudoType pseudo_type, Element& element) const {
  HTMLFormControlElement* form_control_element = DynamicTo<HTMLFormControlElement>(&element);
  if (auto* button = DynamicTo<HTMLButtonElement>(&element)) {
-   if (auto* selectlist = button->OwnerSelectList()) {
-     form_control_element = selectlist;
-   }
+   // WebF doesn't have select list support yet
  }
  if (!form_control_element) {
    return false;
@@ -1943,7 +1971,8 @@ bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context,
      // elements we have a single flag for tracking whether an element may
      // match _any_ ::highlight() element (kPseudoIdHighlight).
      if (!pseudo_argument_ || pseudo_argument_ == selector.Argument()) {
-       result.custom_highlight_name = selector.Argument().Impl();
+       // Convert AtomicString to std::string for WebF
+      result.custom_highlight_name = selector.Argument().ToStdString();
        return true;
      }
      return false;
@@ -1986,10 +2015,11 @@ bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context,
      // <pt-name-selector><pt-class-selector>, as in [name, class, class, ...]
      // so we check that all of its items excluding the first one are
      // contained in the pseudo element's classes (pseudo_ident_list_).
-     return base::ranges::all_of(selector.IdentList().begin() + 1, selector.IdentList().end(),
-                                 [&](const AtomicString& class_from_selector) {
-                                   return base::Contains(pseudo_ident_list_, class_from_selector);
-                                 });
+     return std::all_of(selector.IdentList().begin() + 1, selector.IdentList().end(),
+                        [&](const AtomicString& class_from_selector) {
+                          return std::find(pseudo_ident_list_.begin(), pseudo_ident_list_.end(), 
+                                           class_from_selector) != pseudo_ident_list_.end();
+                        });
    }
    case CSSSelector::kPseudoScrollbarButton:
    case CSSSelector::kPseudoScrollbarCorner:
@@ -2004,7 +2034,7 @@ bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context,
    }
    case CSSSelector::kPseudoTargetText:
      if (!is_ua_rule_) {
-       UseCounter::Count(context.element->GetDocument(), WebFeature::kCSSSelectorTargetText);
+       // WebF doesn't have UseCounter yet
      }
      [[fallthrough]];
    default:
@@ -2026,7 +2056,7 @@ bool SelectorChecker::CheckPseudoHost(const SelectorCheckingContext& context, Ma
  if (!shadow_host || shadow_host != element) {
    return false;
  }
- DCHECK(IsShadowHost(element));
+ // DCHECK(IsShadowHost(element));
  DCHECK(element.GetShadowRoot());
  // For the case with no parameters, i.e. just :host.
  if (!selector.SelectorList()) {
@@ -2055,7 +2085,8 @@ bool SelectorChecker::CheckPseudoHost(const SelectorCheckingContext& context, Ma
    }
    host_context.in_rightmost_compound = false;
    host_context.impact = Impact::kNonSubject;
-   next_element = FlatTreeTraversal::ParentElement(*next_element);
+   // WebF doesn't have FlatTreeTraversal yet
+   next_element = next_element->parentElement();
  } while (next_element);
  // FIXME: this was a fallthrough condition.
  return false;
@@ -2091,40 +2122,30 @@ bool SelectorChecker::CheckScrollbarPseudoClass(const SelectorCheckingContext& c
      return !scrollbar_->Enabled();
    case CSSSelector::kPseudoHover: {
      ScrollbarPart hovered_part = scrollbar_->HoveredPart();
-     if (scrollbar_part_ == kScrollbarBGPart) {
-       return hovered_part != kNoPart;
-     }
-     if (scrollbar_part_ == kTrackBGPart) {
-       return hovered_part == kBackTrackPart || hovered_part == kForwardTrackPart || hovered_part == kThumbPart;
-     }
-     return scrollbar_part_ == hovered_part;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    }
    case CSSSelector::kPseudoActive: {
      ScrollbarPart pressed_part = scrollbar_->PressedPart();
-     if (scrollbar_part_ == kScrollbarBGPart) {
-       return pressed_part != kNoPart;
-     }
-     if (scrollbar_part_ == kTrackBGPart) {
-       return pressed_part == kBackTrackPart || pressed_part == kForwardTrackPart || pressed_part == kThumbPart;
-     }
-     return scrollbar_part_ == pressed_part;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    }
    case CSSSelector::kPseudoHorizontal:
      return scrollbar_->Orientation() == kHorizontalScrollbar;
    case CSSSelector::kPseudoVertical:
      return scrollbar_->Orientation() == kVerticalScrollbar;
    case CSSSelector::kPseudoDecrement:
-     return scrollbar_part_ == kBackButtonStartPart || scrollbar_part_ == kBackButtonEndPart ||
-            scrollbar_part_ == kBackTrackPart;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    case CSSSelector::kPseudoIncrement:
-     return scrollbar_part_ == kForwardButtonStartPart || scrollbar_part_ == kForwardButtonEndPart ||
-            scrollbar_part_ == kForwardTrackPart;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    case CSSSelector::kPseudoStart:
-     return scrollbar_part_ == kBackButtonStartPart || scrollbar_part_ == kForwardButtonStartPart ||
-            scrollbar_part_ == kBackTrackPart;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    case CSSSelector::kPseudoEnd:
-     return scrollbar_part_ == kBackButtonEndPart || scrollbar_part_ == kForwardButtonEndPart ||
-            scrollbar_part_ == kForwardTrackPart;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    case CSSSelector::kPseudoDoubleButton:
      // :double-button matches nothing on all platforms.
      return false;
@@ -2132,22 +2153,24 @@ bool SelectorChecker::CheckScrollbarPseudoClass(const SelectorCheckingContext& c
      if (!scrollbar_->GetTheme().NativeThemeHasButtons()) {
        return false;
      }
-     return scrollbar_part_ == kBackButtonStartPart || scrollbar_part_ == kForwardButtonEndPart ||
-            scrollbar_part_ == kBackTrackPart || scrollbar_part_ == kForwardTrackPart;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    case CSSSelector::kPseudoNoButton:
      if (scrollbar_->GetTheme().NativeThemeHasButtons()) {
        return false;
      }
-     return scrollbar_part_ == kBackTrackPart || scrollbar_part_ == kForwardTrackPart;
+     // WebF doesn't support scrollbar parts yet
+     return false;
    case CSSSelector::kPseudoCornerPresent:
-     return scrollbar_->GetScrollableArea() && scrollbar_->GetScrollableArea()->IsScrollCornerVisible();
+     // WebF doesn't support scrollbar corners yet
+     return false;
    default:
      return false;
  }
 }
 bool SelectorChecker::MatchesSelectorFragmentAnchorPseudoClass(const Element& element) {
- return element == element.GetDocument().CssTarget() && element.GetDocument().View()->GetFragmentAnchor() &&
-        element.GetDocument().View()->GetFragmentAnchor()->IsSelectorFragmentAnchor();
+ // WebF doesn't have CSS target/fragment anchor tracking yet
+ return false;
 }
 bool SelectorChecker::MatchesFocusPseudoClass(const Element& element) {
  bool force_pseudo_state = false;
@@ -2155,7 +2178,8 @@ bool SelectorChecker::MatchesFocusPseudoClass(const Element& element) {
  if (force_pseudo_state) {
    return true;
  }
- return element.IsFocused() && IsFrameFocused(element);
+ // WebF doesn't have IsFocused() method on Element yet
+ return false;
 }
 bool SelectorChecker::MatchesFocusVisiblePseudoClass(const Element& element) {
  bool force_pseudo_state = false;
@@ -2163,21 +2187,8 @@ bool SelectorChecker::MatchesFocusVisiblePseudoClass(const Element& element) {
  if (force_pseudo_state) {
    return true;
  }
- if (!element.IsFocused() || !IsFrameFocused(element)) {
-   return false;
- }
- const Document& document = element.GetDocument();
- // Exclude shadow hosts with non-UA ShadowRoot.
- if (document.FocusedElement() != element && element.GetShadowRoot() && !element.GetShadowRoot()->IsUserAgent()) {
-   return false;
- }
- const Settings* settings = document.GetSettings();
- bool always_show_focus = settings->GetAccessibilityAlwaysShowFocus();
- bool is_text_input = element.MayTriggerVirtualKeyboard();
- bool last_focus_from_mouse = document.GetFrame() && document.GetFrame()->Selection().FrameIsFocusedAndActive() &&
-                              document.LastFocusType() == mojom::blink::FocusType::kMouse;
- bool had_keyboard_event = document.HadKeyboardEvent();
- return (always_show_focus || is_text_input || !last_focus_from_mouse || had_keyboard_event);
+ // WebF doesn't have focus visibility tracking yet
+ return false;
 }
 namespace {
 // CalculateActivations will not produce any activations unless there is
@@ -2186,10 +2197,11 @@ namespace {
 // activation. The scope provided to DefaultActivations is typically
 // a ShadowTree.
 StyleScopeActivations& DefaultActivations(const ContainerNode* scope) {
- auto* activations = MakeGarbageCollected<StyleScopeActivations>();
- activations->vector =
-     HeapVector<StyleScopeActivation>(1, StyleScopeActivation{scope, std::numeric_limits<unsigned>::max()});
- return *activations;
+ static StyleScopeActivations activations;
+ // Clear and reinitialize with a single activation
+ activations.vector.clear();
+ activations.vector.push_back(StyleScopeActivation{const_cast<ContainerNode*>(scope), std::numeric_limits<unsigned>::max()});
+ return activations;
 }
 // The activation ceiling is the highest ancestor element that can
 // match inside some StyleScopeActivation.
@@ -2218,7 +2230,13 @@ const Element* ActivationCeiling(const StyleScopeActivation& activation) {
 // This is used to find the roots for prelude-less @scope rules.
 bool HasImplicitRoot(const StyleScope& style_scope, Element& element) {
  if (const StyleScopeData* style_scope_data = element.GetStyleScopeData()) {
-   return style_scope_data->TriggersScope(style_scope);
+   // WebF doesn't have TriggersScope implemented yet
+   // Check if the style_scope is in the triggered scopes list
+   const auto& triggered_scopes = style_scope_data->GetTriggeredScopes();
+   return std::find_if(triggered_scopes.begin(), triggered_scopes.end(),
+                       [&style_scope](const std::shared_ptr<const StyleScope>& scope) {
+                         return scope.get() == &style_scope;
+                       }) != triggered_scopes.end();
  }
  return false;
 }
@@ -2272,19 +2290,22 @@ const StyleScopeActivations* SelectorChecker::CalculateActivations(Element& elem
                                                                   const StyleScopeActivations& outer_activations,
                                                                   StyleScopeFrame* style_scope_frame,
                                                                   bool match_visited) const {
- Member<const StyleScopeActivations>* cached_activations_entry = nullptr;
+ std::shared_ptr<const StyleScopeActivations>* cached_activations_entry = nullptr;
  if (style_scope_frame) {
-   auto entry = style_scope_frame->data_.insert(&style_scope, nullptr);
+   // Create a shared_ptr key for the map
+   std::shared_ptr<const StyleScope> style_scope_ptr(const_cast<StyleScope*>(&style_scope), [](const StyleScope*){});
+   auto entry = style_scope_frame->data_.insert({style_scope_ptr, nullptr});
    // We must not modify `style_scope_frame->data_` for the remainder
    // of this function, since `cached_activations_entry` now points into
    // the hash table.
-   cached_activations_entry = &entry.stored_value->value;
-   if (!entry.is_new_entry) {
-     DCHECK(cached_activations_entry->Get());
-     return cached_activations_entry->Get();
+   cached_activations_entry = &entry.first->second;
+   if (!entry.second) {  // entry.second is true if insertion took place
+     if (*cached_activations_entry) {
+       return cached_activations_entry->get();
+     }
    }
  }
- auto* activations = MakeGarbageCollected<StyleScopeActivations>();
+ auto activations = std::make_shared<StyleScopeActivations>();
  if (!outer_activations.vector.empty()) {
    const StyleScopeActivations* parent_activations = nullptr;
    // Remain within the outer scope. I.e. don't look at elements above the
@@ -2333,7 +2354,7 @@ const StyleScopeActivations* SelectorChecker::CalculateActivations(Element& elem
  if (cached_activations_entry) {
    *cached_activations_entry = activations;
  }
- return activations;
+ return activations.get();
 }
 bool SelectorChecker::MatchesWithScope(Element& element,
                                       const CSSSelector& selector_list,

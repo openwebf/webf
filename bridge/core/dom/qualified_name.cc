@@ -24,6 +24,8 @@
 
 #include "core/dom/qualified_name.h"
 #include <unordered_set>
+#include <algorithm>
+#include <cctype>
 
 namespace webf {
 
@@ -69,6 +71,16 @@ std::string QualifiedName::ToString() const {
 unsigned QualifiedName::QualifiedNameImpl::ComputeHash() const {
   QualifiedNameComponents components = {prefix_.Impl(), local_name_.Impl(), namespace_.Impl()};
   return HashComponents(components);
+}
+
+const std::string& QualifiedName::LocalNameUpperSlow() const {
+  // Convert local name to uppercase and cache it
+  std::string local_name_str = impl_->local_name_.ToStdString();
+  std::transform(local_name_str.begin(), local_name_str.end(), 
+                 local_name_str.begin(), 
+                 [](unsigned char c) { return std::toupper(c); });
+  impl_->local_name_upper_ = local_name_str;
+  return impl_->local_name_upper_;
 }
 
 }  // namespace webf

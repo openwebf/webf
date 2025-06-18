@@ -31,6 +31,7 @@
 #define WEBF_CORE_CSS_SELECTOR_CHECKER_H_
 
 #include "core/base/compiler_specific.h"
+#include "core/css/custom_scrollbar.h"
 #include "core/css/match_flags.h"
 #include "core/css/style_request.h"
 #include "core/css/style_scope.h"
@@ -331,12 +332,12 @@ private:
                        const ContainerNode* scope,
                        bool match_visited,
                        MatchFlags&) const;
-//  // https://drafts.csswg.org/css-cascade-6/#scoping-limit
-//  bool ElementIsScopingLimit(const StyleScope&,
-//                             const StyleScopeActivation&,
-//                             Element& element,
-//                             bool match_visited,
-//                             MatchFlags&) const;
+ // https://drafts.csswg.org/css-cascade-6/#scoping-limit
+ bool ElementIsScopingLimit(const StyleScope&,
+                            const StyleScopeActivation&,
+                            Element& element,
+                            bool match_visited,
+                            MatchFlags&) const;
  CustomScrollbar* scrollbar_;
  PartNames* part_names_;
  AtomicString pseudo_argument_;
