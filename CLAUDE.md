@@ -166,6 +166,7 @@ When implementing TypeScript analysis:
 - [Contentful Widget Detection](./claude_memory/contentful_widget_detection.md) - Detection system for ensuring FCP/LCP are only reported for widgets with actual visual content
 - [DevTools Performance Metrics Display](./claude_memory/devtools_performance_metrics.md) - Unified display implementation for FP/FCP/LCP metrics in WebF DevTools
 - [CSS C++ Implementation](./claude_memory/css_cpp_implementation.md) - Detailed architecture and implementation of CSS in bridge/ (400+ properties, 500+ keywords, Blink/Chromium-based)
+- [CSS3 Parsing Migration Plan](./claude_memory/css3_parsing_migration.md) - Comprehensive plan for migrating CSS3 parsing features from Blink to WebF (2025-01-17)
 - **CSS Implementation Structure**: WebF has dual CSS implementations - newer C++ in bridge/ and older Dart in webf/
 - **Common Analysis Patterns**:
   - For feature analysis: Check bridge/ for C++ implementations, webf/ for Dart, and integration_tests/specs for test coverage
