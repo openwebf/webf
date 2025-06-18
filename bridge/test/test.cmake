@@ -53,13 +53,19 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/css/css_value_list_test.cc
   ./core/css/css_value_pair_test.cc
   ./core/css/css_custom_ident_value_test.cc
+  ./core/css/css_color_function_test.cc
+  ./core/css/css_advanced_features_test.cc
+  ./core/css/css_nesting_test.cc
+  ./core/css/container_query_test.cc
 
   # CSS Parser
   ./core/css/css_primitive_value_test.cc
   ./core/css/css_test_helpers.cc
   ./core/css/css_math_expression_node_test.cc
   ./core/css/parser/allowed_rules_test.cc
+  ./core/css/parser/at_rule_descriptor_parser_test.cc
   ./core/css/parser/css_parser_token_stream_test.cc
+  ./core/css/parser/css_if_parser_test.cc
   ./core/css/parser/css_parser_local_context_test.cc
   ./core/css/parser/css_property_parser_test.cc
   ./core/css/parser/css_lazy_parsing_test.cc
@@ -74,6 +80,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/css/parser/find_length_of_declaration_list_test.cc
   ./core/css/parser/media_condition_test.cc
   ./core/css/parser/sizes_attribute_parser_test.cc
+  ./core/css/parser/sizes_math_function_parser_test.cc
   ./core/css/properties/css_bitset_test.cc
   ./core/css/properties/css_parsing_utils_test.cc
   ./test/html_script_element_casting_test.cc
