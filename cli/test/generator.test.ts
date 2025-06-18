@@ -224,7 +224,7 @@ describe('Generator', () => {
       expect(mockFs.writeFileSync).toHaveBeenCalled();
     });
 
-    it('should kebab-case the target directory', async () => {
+    it('should use the exact target directory specified', async () => {
       await reactGen({
         source: '/test/source',
         target: 'MyReactComponents',
@@ -235,7 +235,7 @@ describe('Generator', () => {
       const componentPath = writeCalls.find(call => 
         call[0].toString().includes('.tsx')
       );
-      expect(componentPath?.[0]).toContain('my-react-components');
+      expect(componentPath?.[0]).toContain('MyReactComponents');
     });
 
     it('should create src directory if it does not exist', async () => {
@@ -293,7 +293,7 @@ describe('Generator', () => {
       );
     });
 
-    it('should kebab-case the target directory', async () => {
+    it('should use the exact target directory specified', async () => {
       await vueGen({
         source: '/test/source',
         target: 'MyVueComponents',
@@ -304,7 +304,7 @@ describe('Generator', () => {
       const typingsPath = writeCalls.find(call => 
         call[0].toString().includes('index.d.ts')
       );
-      expect(typingsPath?.[0]).toContain('my-vue-components');
+      expect(typingsPath?.[0]).toContain('MyVueComponents');
     });
 
     it('should only generate one index.d.ts file', async () => {

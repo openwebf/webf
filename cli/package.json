@@ -17,16 +17,20 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@types/inquirer": "^8.2.11",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.17",
     "@types/node": "^22.15.21",
+    "@types/yaml": "^1.9.6",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2"
   },
   "dependencies": {
     "commander": "^14.0.0",
     "glob": "^10.3.10",
+    "inquirer": "^8.2.6",
     "lodash": "^4.17.21",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "yaml": "^2.8.0"
   }
 }

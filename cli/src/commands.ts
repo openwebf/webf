@@ -3,15 +3,21 @@ import fs from 'fs';
 import path from 'path';
 import { dartGen, reactGen, vueGen } from './generator';
 import _ from 'lodash';
-
-interface CreateOptions {
-  framework: string;
-  packageName: string;
-}
+import inquirer from 'inquirer';
+import yaml from 'yaml';
 
 interface GenerateOptions {
-  flutterPackageSrc: string;
-  framework: string;
+  flutterPackageSrc?: string;
+  framework?: string;
+  packageName?: string;
+  publishToNpm?: boolean;
+  npmRegistry?: string;
+}
+
+interface FlutterPackageMetadata {
+  name: string;
+  version: string;
+  description: string;
 }
 
 const platform = process.platform;
@@ -67,20 +73,29 @@ const vueTsConfig = fs.readFileSync(
   'utf-8'
 );
 
-function initCommand(target: string): void {
-  const typingsPath = path.resolve(target);
-  const globalDtsPath = path.join(typingsPath, 'global.d.ts');
-  const tsConfigPath = path.join(typingsPath, 'tsconfig.json');
-
-  fs.mkdirSync(typingsPath, { recursive: true });
-  fs.writeFileSync(globalDtsPath, gloabalDts, 'utf-8');
-  fs.writeFileSync(tsConfigPath, tsConfig, 'utf-8');
-
-  console.log(`WebF typings initialized: ${typingsPath}`);
+function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata | null {
+  try {
+    const pubspecPath = path.join(packagePath, 'pubspec.yaml');
+    if (!fs.existsSync(pubspecPath)) {
+      return null;
+    }
+    
+    const pubspecContent = fs.readFileSync(pubspecPath, 'utf-8');
+    const pubspec = yaml.parse(pubspecContent);
+    
+    return {
+      name: pubspec.name || '',
+      version: pubspec.version || '0.0.1',
+      description: pubspec.description || ''
+    };
+  } catch (error) {
+    console.warn('Warning: Could not read Flutter package metadata:', error);
+    return null;
+  }
 }
 
-function createCommand(target: string, options: CreateOptions): void {
-  const { framework, packageName } = options;
+function createCommand(target: string, options: { framework: string; packageName: string; metadata?: FlutterPackageMetadata }): void {
+  const { framework, packageName, metadata } = options;
 
   if (!fs.existsSync(target)) {
     fs.mkdirSync(target, { recursive: true });
@@ -90,6 +105,8 @@ function createCommand(target: string, options: CreateOptions): void {
     const packageJsonPath = path.join(target, 'package.json');
     const packageJsonContent = _.template(reactPackageJson)({
       packageName,
+      version: metadata?.version || '0.0.1',
+      description: metadata?.description || ''
     });
     writeFileIfChanged(packageJsonPath, packageJsonContent);
 
@@ -134,6 +151,8 @@ function createCommand(target: string, options: CreateOptions): void {
     const packageJsonPath = path.join(target, 'package.json');
     const packageJsonContent = _.template(vuePackageJson)({
       packageName,
+      version: metadata?.version || '0.0.1',
+      description: metadata?.description || ''
     });
     writeFileIfChanged(packageJsonPath, packageJsonContent);
 
@@ -160,34 +179,144 @@ function createCommand(target: string, options: CreateOptions): void {
 }
 
 async function generateCommand(distPath: string, options: GenerateOptions): Promise<void> {
-  const command = `webf codegen generate --flutter-package-src=${options.flutterPackageSrc} --framework=<framework> <distPath>`;
-
+  const resolvedDistPath = path.resolve(distPath);
+  
+  // Check if the directory exists and has required files
+  const packageJsonPath = path.join(resolvedDistPath, 'package.json');
+  const globalDtsPath = path.join(resolvedDistPath, 'global.d.ts');
+  const tsConfigPath = path.join(resolvedDistPath, 'tsconfig.json');
+  
+  const hasPackageJson = fs.existsSync(packageJsonPath);
+  const hasGlobalDts = fs.existsSync(globalDtsPath);
+  const hasTsConfig = fs.existsSync(tsConfigPath);
+  
+  // Determine if we need to create a new project
+  const needsProjectCreation = !hasPackageJson || !hasGlobalDts || !hasTsConfig;
+  
+  let framework = options.framework;
+  let packageName = options.packageName;
+  
+  if (needsProjectCreation) {
+    // If project needs creation but options are missing, prompt for them
+    if (!framework) {
+      const frameworkAnswer = await inquirer.prompt([{
+        type: 'list',
+        name: 'framework',
+        message: 'Which framework would you like to use?',
+        choices: ['react', 'vue']
+      }]);
+      framework = frameworkAnswer.framework;
+    }
+    
+    if (!packageName) {
+      const packageNameAnswer = await inquirer.prompt([{
+        type: 'input',
+        name: 'packageName',
+        message: 'What is your package name?',
+        default: path.basename(resolvedDistPath),
+        validate: (input: string) => {
+          if (!input || input.trim() === '') {
+            return 'Package name is required';
+          }
+          // Basic npm package name validation
+          if (!/^[a-z0-9]([a-z0-9-._])*$/.test(input)) {
+            return 'Package name must be lowercase and may contain hyphens, dots, and underscores';
+          }
+          return true;
+        }
+      }]);
+      packageName = packageNameAnswer.packageName;
+    }
+    
+    // Try to read Flutter package metadata if flutterPackageSrc is provided
+    let metadata: FlutterPackageMetadata | null = null;
+    if (options.flutterPackageSrc) {
+      metadata = readFlutterPackageMetadata(options.flutterPackageSrc);
+    }
+    
+    console.log(`\nCreating new ${framework} project in ${resolvedDistPath}...`);
+    createCommand(resolvedDistPath, {
+      framework: framework!,
+      packageName: packageName!,
+      metadata: metadata || undefined
+    });
+  } else {
+    // Validate existing project structure
+    if (hasPackageJson) {
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        
+        // Detect framework from existing package.json
+        if (!framework) {
+          if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
+            framework = 'react';
+          } else if (packageJson.dependencies?.vue || packageJson.devDependencies?.vue) {
+            framework = 'vue';
+          } else {
+            // If can't detect, prompt for it
+            const frameworkAnswer = await inquirer.prompt([{
+              type: 'list',
+              name: 'framework',
+              message: 'Which framework are you using?',
+              choices: ['react', 'vue']
+            }]);
+            framework = frameworkAnswer.framework;
+          }
+        }
+        
+        console.log(`\nDetected existing ${framework} project in ${resolvedDistPath}`);
+      } catch (e) {
+        console.error('Error reading package.json:', e);
+        process.exit(1);
+      }
+    }
+  }
+  
+  // Now proceed with code generation if flutter package source is provided
+  if (!options.flutterPackageSrc) {
+    console.log('\nProject is ready for code generation.');
+    console.log('To generate code, run:');
+    console.log(`  webf codegen generate ${distPath} --flutter-package-src=<path> --framework=${framework}`);
+    return;
+  }
+  
+  const command = `webf codegen generate --flutter-package-src=${options.flutterPackageSrc} --framework=${framework} <distPath>`;
+  
+  // Auto-initialize typings in the output directory if needed
+  ensureInitialized(resolvedDistPath);
+  
+  console.log(`\nGenerating ${framework} code from ${options.flutterPackageSrc}...`);
+  
   await dartGen({
     source: options.flutterPackageSrc,
     target: options.flutterPackageSrc,
     command,
   });
-
-  if (options.framework === 'react') {
-    const packageJsonPath = path.join(distPath, 'package.json');
-
-    if (!fs.existsSync(packageJsonPath)) {
-      console.error(`Error: package.json not found in ${distPath}, please run 'webf create' first.`);
-      return;
-    }
-
+  
+  if (framework === 'react') {
     await reactGen({
       source: options.flutterPackageSrc,
-      target: distPath,
+      target: resolvedDistPath,
+      command,
+    });
+  } else if (framework === 'vue') {
+    await vueGen({
+      source: options.flutterPackageSrc,
+      target: resolvedDistPath,
       command,
     });
   }
-  else if (options.framework === 'vue') {
-    await vueGen({
-      source: options.flutterPackageSrc,
-      target: distPath,
-      command,
-    });
+  
+  console.log('\nCode generation completed successfully!');
+  
+  // Handle npm publishing if requested
+  if (options.publishToNpm && framework) {
+    try {
+      await buildAndPublishPackage(resolvedDistPath, options.npmRegistry);
+    } catch (error) {
+      console.error('\nError during npm publish:', error);
+      process.exit(1);
+    }
   }
 }
 
@@ -202,4 +331,100 @@ function writeFileIfChanged(filePath: string, content: string) {
   fs.writeFileSync(filePath, content, 'utf-8');
 }
 
-export { initCommand, createCommand, generateCommand };
+function ensureInitialized(targetPath: string): void {
+  const globalDtsPath = path.join(targetPath, 'global.d.ts');
+  const tsConfigPath = path.join(targetPath, 'tsconfig.json');
+  
+  // Check if initialization files already exist
+  const needsInit = !fs.existsSync(globalDtsPath) || !fs.existsSync(tsConfigPath);
+  
+  if (needsInit) {
+    console.log('Initializing WebF typings...');
+    fs.mkdirSync(targetPath, { recursive: true });
+    
+    if (!fs.existsSync(globalDtsPath)) {
+      fs.writeFileSync(globalDtsPath, gloabalDts, 'utf-8');
+      console.log('Created global.d.ts');
+    }
+    
+    if (!fs.existsSync(tsConfigPath)) {
+      fs.writeFileSync(tsConfigPath, tsConfig, 'utf-8');
+      console.log('Created tsconfig.json');
+    }
+  }
+}
+
+async function buildAndPublishPackage(packagePath: string, registry?: string): Promise<void> {
+  const packageJsonPath = path.join(packagePath, 'package.json');
+  
+  if (!fs.existsSync(packageJsonPath)) {
+    throw new Error(`No package.json found in ${packagePath}`);
+  }
+  
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  const packageName = packageJson.name;
+  const packageVersion = packageJson.version;
+  
+  // Check if package has a build script
+  if (packageJson.scripts?.build) {
+    console.log(`\nBuilding ${packageName}@${packageVersion}...`);
+    const buildResult = spawnSync(NPM, ['run', 'build'], {
+      cwd: packagePath,
+      stdio: 'inherit'
+    });
+    
+    if (buildResult.status !== 0) {
+      throw new Error('Build failed');
+    }
+  } else {
+    console.log(`\nNo build script found, proceeding to publish ${packageName}@${packageVersion}...`);
+  }
+  
+  // Set registry if provided
+  if (registry) {
+    console.log(`\nUsing npm registry: ${registry}`);
+    const setRegistryResult = spawnSync(NPM, ['config', 'set', 'registry', registry], {
+      cwd: packagePath,
+      stdio: 'inherit'
+    });
+    
+    if (setRegistryResult.status !== 0) {
+      throw new Error('Failed to set npm registry');
+    }
+  }
+  
+  // Check if user is logged in to npm
+  const whoamiResult = spawnSync(NPM, ['whoami'], {
+    cwd: packagePath,
+    encoding: 'utf-8'
+  });
+  
+  if (whoamiResult.status !== 0) {
+    console.error('\nError: You must be logged in to npm to publish packages.');
+    console.error('Please run "npm login" first.');
+    throw new Error('Not logged in to npm');
+  }
+  
+  console.log(`\nPublishing ${packageName}@${packageVersion} to npm...`);
+  
+  // Publish the package
+  const publishResult = spawnSync(NPM, ['publish'], {
+    cwd: packagePath,
+    stdio: 'inherit'
+  });
+  
+  if (publishResult.status !== 0) {
+    throw new Error('Publish failed');
+  }
+  
+  console.log(`\n✅ Successfully published ${packageName}@${packageVersion}`);
+  
+  // Reset registry to default if it was changed
+  if (registry) {
+    spawnSync(NPM, ['config', 'delete', 'registry'], {
+      cwd: packagePath
+    });
+  }
+}
+
+export { generateCommand };

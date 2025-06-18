@@ -1,7 +1,7 @@
 {
   "name": "<%= packageName %>",
-  "version": "0.0.1",
-  "description": "",
+  "version": "<%= version %>",
+  "description": "<%= description %>",
   "main": "",
   "types": "index.d.ts",
   "files": ["index.d.ts"],

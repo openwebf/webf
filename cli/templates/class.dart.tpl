@@ -16,7 +16,7 @@ abstract class <%= className %>Bindings extends WidgetElement {
 
   <% _.forEach(properties?.props, function(prop, index) { %>
     <% var propName = _.camelCase(prop.name); %>
-    <% if (prop.optional) { %>
+    <% if (shouldMakeNullable(prop)) { %>
   <%= generateReturnType(prop.type) %>? get <%= propName %>;
     <% } else { %>
   <%= generateReturnType(prop.type) %> get <%= propName %>;

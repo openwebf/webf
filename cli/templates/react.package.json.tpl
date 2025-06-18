@@ -1,7 +1,7 @@
 {
   "name": "<%= packageName %>",
-  "version": "0.0.1",
-  "description": "",
+  "version": "<%= version %>",
+  "description": "<%= description %>",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",

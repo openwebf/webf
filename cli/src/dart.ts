@@ -70,6 +70,15 @@ function generateAttributeSetter(propName: string, type: ParameterType): string 
   }
 }
 
+function generateAttributeGetter(propName: string, type: ParameterType, optional: boolean): string {
+  // For non-nullable types, we might need to handle null values
+  if (type.value === FunctionArgumentType.boolean && optional) {
+    // For optional booleans that are non-nullable in Dart, default to false
+    return `${propName}.toString()`;
+  }
+  return `${propName}.toString()`;
+}
+
 function generateMethodDeclaration(method: FunctionDeclaration) {
   var methodName = method.name;
   var args = method.args.map(arg => {
@@ -79,6 +88,15 @@ function generateMethodDeclaration(method: FunctionDeclaration) {
   }).join(', ');
   var returnType = generateReturnType(method.returnType);
   return `${methodName}(${args}): ${returnType};`;
+}
+
+function shouldMakeNullable(prop: any): boolean {
+  // Boolean properties should never be nullable in Dart, even if optional in TypeScript
+  if (prop.type.value === FunctionArgumentType.boolean) {
+    return false;
+  }
+  // Other optional properties remain nullable
+  return prop.optional;
 }
 
 export function generateDartClass(blob: IDLBlob, command: string): string {
@@ -142,6 +160,7 @@ interface ${object.name} {
     generateMethodDeclaration,
     generateEventHandlerType,
     generateAttributeSetter,
+    shouldMakeNullable,
     command,
   });
 

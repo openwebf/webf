@@ -210,7 +210,6 @@ export async function reactGen({ source, target }: GenerateOptions) {
   group('React Code Generation');
   time('reactGen');
   
-  target = _.kebabCase(target);
   const { source: normalizedSource, target: normalizedTarget } = validatePaths(source, target);
   
   const definedPropertyCollector = new DefinedPropertyCollector();
@@ -294,7 +293,6 @@ export async function vueGen({ source, target }: GenerateOptions) {
   group('Vue Typings Generation');
   time('vueGen');
   
-  target = _.kebabCase(target);
   const { source: normalizedSource, target: normalizedTarget } = validatePaths(source, target);
   
   const definedPropertyCollector = new DefinedPropertyCollector();

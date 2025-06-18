@@ -2,6 +2,8 @@
 jest.mock('fs');
 jest.mock('child_process');
 jest.mock('../src/generator');
+jest.mock('inquirer');
+jest.mock('yaml');
 
 import fs from 'fs';
 import path from 'path';
@@ -15,23 +17,28 @@ mockFs.readFileSync = jest.fn().mockImplementation((filePath: any) => {
   const pathStr = filePath.toString();
   if (pathStr.includes('global.d.ts')) return 'global.d.ts content';
   if (pathStr.includes('gitignore.tpl')) return 'gitignore template';
-  if (pathStr.includes('react.package.json.tpl')) return '<%= packageName %>';
+  if (pathStr.includes('react.package.json.tpl')) return '<%= packageName %> <%= version %> <%= description %>';
   if (pathStr.includes('react.tsconfig.json.tpl')) return 'react tsconfig';
   if (pathStr.includes('react.tsup.config.ts.tpl')) return 'tsup config';
   if (pathStr.includes('react.createComponent.tpl')) return 'create component';
   if (pathStr.includes('react.index.ts.tpl')) return 'index template';
-  if (pathStr.includes('vue.package.json.tpl')) return '<%= packageName %>';
+  if (pathStr.includes('vue.package.json.tpl')) return '<%= packageName %> <%= version %> <%= description %>';
   if (pathStr.includes('vue.tsconfig.json.tpl')) return 'vue tsconfig';
   // This should come after more specific checks
   if (pathStr.includes('tsconfig.json.tpl')) return 'tsconfig template';
+  if (pathStr.includes('pubspec.yaml')) return 'name: test\nversion: 1.0.0\ndescription: Test description';
   return '';
 });
 
 // Now import commands after mocks are set up
-import { initCommand, createCommand, generateCommand } from '../src/commands';
+import { generateCommand } from '../src/commands';
 import * as generator from '../src/generator';
+import inquirer from 'inquirer';
+import yaml from 'yaml';
 
 const mockGenerator = generator as jest.Mocked<typeof generator>;
+const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
+const mockYaml = yaml as jest.Mocked<typeof yaml>;
 
 describe('Commands', () => {
   beforeEach(() => {
@@ -48,92 +55,108 @@ describe('Commands', () => {
       status: 0,
       signal: null,
     });
+    // Default mock for inquirer
+    mockInquirer.prompt.mockResolvedValue({});
+    // Default mock for yaml
+    mockYaml.parse.mockReturnValue({
+      name: 'test_package',
+      version: '1.0.0',
+      description: 'Test Flutter package description'
+    });
   });
 
-  describe('initCommand', () => {
-    it('should create typings directory and write files', () => {
-      const targetPath = '/test/path';
-      
-      initCommand(targetPath);
 
-      expect(mockFs.mkdirSync).toHaveBeenCalledWith(
-        path.resolve(targetPath),
-        { recursive: true }
-      );
-      // Just check that writeFileSync was called with the correct paths
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('global.d.ts'),
-        'global.d.ts content',
-        'utf-8'
-      );
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('tsconfig.json'),
-        'tsconfig template',
-        'utf-8'
-      );
+  describe('generateCommand with auto-creation', () => {
+    let mockExit: jest.SpyInstance;
+    let consoleSpy: jest.SpyInstance;
+    
+    beforeEach(() => {
+      mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit called');
+      });
+      consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     });
-
-    it('should log success message', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
-      const targetPath = '/test/path';
-      
-      initCommand(targetPath);
-
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('WebF typings initialized:')
-      );
-      
+    
+    afterEach(() => {
+      mockExit.mockRestore();
       consoleSpy.mockRestore();
     });
-  });
-
-  describe('createCommand', () => {
-    describe('React framework', () => {
-      it('should create React project structure', () => {
+    
+    describe('React framework - new project', () => {
+      it('should create React project structure when package.json is missing', async () => {
         const target = '/test/react-project';
         const options = { framework: 'react', packageName: 'test-package' };
         
-        createCommand(target, options);
+        // Mock that required files don't exist
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          // The target directory exists but the required files don't
+          if (pathStr === path.resolve(target)) return true;
+          return false;
+        });
+        
+        await generateCommand(target, options);
 
-        // Check directory creation
-        expect(mockFs.mkdirSync).toHaveBeenCalledWith(target, { recursive: true });
+        // Should log creation message
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Creating new react project'));
+
+        // Check directory creation for src folders (target already exists)
         expect(mockFs.mkdirSync).toHaveBeenCalledWith(
-          path.join(target, 'src'),
+          path.join(path.resolve(target), 'src'),
           { recursive: true }
         );
         expect(mockFs.mkdirSync).toHaveBeenCalledWith(
-          path.join(target, 'src', 'utils'),
+          path.join(path.resolve(target), 'src', 'utils'),
           { recursive: true }
         );
       });
 
-      it('should write React configuration files', () => {
+      it('should prompt for framework and package name when missing', async () => {
         const target = '/test/react-project';
-        const options = { framework: 'react', packageName: 'test-package' };
+        const options = {};
         
-        // Mock file doesn't exist
-        mockFs.existsSync.mockImplementation((filePath) => {
-          const pathStr = filePath.toString();
-          if (pathStr === target) return false;
-          if (pathStr.includes('/src')) return false;
-          return true;
-        });
+        // Mock that required files don't exist
+        mockFs.existsSync.mockReturnValue(false);
         
-        createCommand(target, options);
+        // Mock inquirer prompts
+        mockInquirer.prompt
+          .mockResolvedValueOnce({ framework: 'react' })
+          .mockResolvedValueOnce({ packageName: 'test-package' });
+        
+        await generateCommand(target, options);
+        
+        // Should have prompted for framework and package name
+        expect(mockInquirer.prompt).toHaveBeenCalledTimes(2);
+        expect(mockInquirer.prompt).toHaveBeenCalledWith([{
+          type: 'list',
+          name: 'framework',
+          message: 'Which framework would you like to use?',
+          choices: ['react', 'vue']
+        }]);
+        expect(mockInquirer.prompt).toHaveBeenNthCalledWith(2, [{
+          type: 'input',
+          name: 'packageName',
+          message: 'What is your package name?',
+          default: 'react-project',
+          validate: expect.any(Function)
+        }]);
 
         // Check package.json was written with processed content
         expect(mockFs.writeFileSync).toHaveBeenCalledWith(
           path.join(target, 'package.json'),
-          'test-package',
+          'test-package 0.0.1 ',
           'utf-8'
         );
       });
 
-      it('should run npm install', () => {
+      it('should run npm install when creating new project', async () => {
         const target = '/test/react-project';
         const options = { framework: 'react', packageName: 'test-package' };
         
-        createCommand(target, options);
+        // Mock that required files don't exist
+        mockFs.existsSync.mockReturnValue(false);
+        
+        await generateCommand(target, options);
 
         expect(mockSpawnSync).toHaveBeenCalledWith(
           expect.stringMatching(/npm(\.cmd)?/),
@@ -143,27 +166,33 @@ describe('Commands', () => {
       });
     });
 
-    describe('Vue framework', () => {
-      it('should create Vue project structure', () => {
+    describe('Vue framework - new project', () => {
+      it('should create Vue project structure when files are missing', async () => {
         const target = '/test/vue-project';
         const options = { framework: 'vue', packageName: 'test-vue-package' };
         
-        createCommand(target, options);
+        // Mock that required files don't exist
+        mockFs.existsSync.mockReturnValue(false);
+        
+        await generateCommand(target, options);
 
         // Check directory creation
-        expect(mockFs.mkdirSync).toHaveBeenCalledWith(target, { recursive: true });
+        expect(mockFs.mkdirSync).toHaveBeenCalledWith(path.resolve(target), { recursive: true });
       });
 
-      it('should write Vue configuration files', () => {
+      it('should write Vue configuration files', async () => {
         const target = '/test/vue-project';
         const options = { framework: 'vue', packageName: 'test-vue-package' };
         
-        createCommand(target, options);
+        // Mock that required files don't exist
+        mockFs.existsSync.mockReturnValue(false);
+        
+        await generateCommand(target, options);
 
         // Check package.json was written with processed content
         expect(mockFs.writeFileSync).toHaveBeenCalledWith(
           path.join(target, 'package.json'),
-          'test-vue-package',
+          'test-vue-package 0.0.1 ',
           'utf-8'
         );
 
@@ -175,11 +204,14 @@ describe('Commands', () => {
         );
       });
 
-      it('should run npm install commands for Vue', () => {
+      it('should run npm install commands for Vue', async () => {
         const target = '/test/vue-project';
         const options = { framework: 'vue', packageName: 'test-vue-package' };
         
-        createCommand(target, options);
+        // Mock that required files don't exist
+        mockFs.existsSync.mockReturnValue(false);
+        
+        await generateCommand(target, options);
 
         // Should install WebF typings
         expect(mockSpawnSync).toHaveBeenCalledWith(
@@ -197,52 +229,85 @@ describe('Commands', () => {
       });
     });
 
-    it('should skip writing files that already have same content', () => {
+    it('should detect existing project and skip creation', async () => {
       const target = '/test/project';
-      const options = { framework: 'react', packageName: 'test-package' };
+      const options = { framework: 'react', flutterPackageSrc: '/flutter/src' };
       
-      // Mock file exists with same content
-      mockFs.existsSync.mockImplementation((filePath) => {
-        const pathStr = filePath.toString();
-        // Package.json exists, but other files don't
-        return pathStr.includes('package.json') && !pathStr.includes('.tpl');
-      });
-      const originalReadFileSync = mockFs.readFileSync;
+      // Mock all required files exist
+      mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
-          return 'test-package'; // Same as generated content
+          return JSON.stringify({ dependencies: { react: '^18.0.0' } });
         }
-        // Use original mock for template files
-        return originalReadFileSync(filePath);
+        return '';
       });
       
-      createCommand(target, options);
+      await generateCommand(target, options);
+      
+      // Should detect existing React project
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Detected existing react project'));
+      
+      // Should not create new files
+      const writeFileCallsForExisting = (mockFs.writeFileSync as jest.Mock).mock.calls;
+      const projectFileCalls = writeFileCallsForExisting.filter(call => {
+        const path = call[0].toString();
+        return path.includes('package.json') && !path.includes('.tpl');
+      });
+      expect(projectFileCalls).toHaveLength(0);
 
-      // Check that some files were written but not the ones that already exist with same content
-      const writeFileCalls = (mockFs.writeFileSync as jest.Mock).mock.calls;
-      // At least some files should be written (index.ts, createComponent.ts, etc.)
-      expect(writeFileCalls.length).toBeGreaterThan(0);
-      // But none should be package.json since it already exists with same content
-      const packageJsonCalls = writeFileCalls.filter(call => 
-        call[0].toString().includes('package.json') && !call[0].toString().includes('.tpl')
-      );
-      expect(packageJsonCalls).toHaveLength(0);
     });
+
   });
 
-  describe('generateCommand', () => {
+  describe('generateCommand with code generation', () => {
+    let mockExit: jest.SpyInstance;
+    let consoleSpy: jest.SpyInstance;
+    
     beforeEach(() => {
       mockGenerator.dartGen.mockResolvedValue(undefined);
       mockGenerator.reactGen.mockResolvedValue(undefined);
       mockGenerator.vueGen.mockResolvedValue(undefined);
+      mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+        throw new Error('process.exit called');
+      });
+      consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    });
+    
+    afterEach(() => {
+      mockExit.mockRestore();
+      consoleSpy.mockRestore();
+    });
+
+    it('should show instructions when --flutter-package-src is missing', async () => {
+      const options = { framework: 'react' };
+      
+      // Mock all required files exist
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+          return JSON.stringify({ dependencies: { react: '^18.0.0' } });
+        }
+        return '';
+      });
+      
+      await generateCommand('/dist', options);
+      
+      expect(consoleSpy).toHaveBeenCalledWith('\nProject is ready for code generation.');
+      expect(consoleSpy).toHaveBeenCalledWith('To generate code, run:');
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('webf codegen generate'));
     });
 
     it('should always call dartGen', async () => {
       const options = {
         flutterPackageSrc: '/flutter/src',
-        framework: 'react'
+        framework: 'react',
+        packageName: 'test-package'
       };
+      
+      // Mock that required files don't exist to trigger creation
+      mockFs.existsSync.mockReturnValue(false);
       
       await generateCommand('/dist', options);
 
@@ -256,28 +321,27 @@ describe('Commands', () => {
     it('should call reactGen for React framework', async () => {
       const options = {
         flutterPackageSrc: '/flutter/src',
-        framework: 'react'
+        framework: 'react',
+        packageName: 'test-package'
       };
       
-      // Mock package.json exists
-      mockFs.existsSync.mockImplementation((filePath) => 
-        filePath.toString().includes('package.json')
-      );
+      // Mock that required files don't exist to trigger creation
+      mockFs.existsSync.mockReturnValue(false);
       
       await generateCommand('/dist', options);
 
       expect(mockGenerator.reactGen).toHaveBeenCalledWith({
         source: '/flutter/src',
-        target: '/dist',
+        target: path.resolve('/dist'),
         command: expect.stringContaining('webf codegen generate')
       });
     });
 
-    it('should error if package.json not found for React', async () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    it('should create new project if package.json not found', async () => {
       const options = {
         flutterPackageSrc: '/flutter/src',
-        framework: 'react'
+        framework: 'react',
+        packageName: 'new-project'
       };
       
       // Mock package.json doesn't exist
@@ -285,26 +349,352 @@ describe('Commands', () => {
       
       await generateCommand('/dist', options);
 
-      expect(mockGenerator.reactGen).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('package.json not found')
+      // Should create project files
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        expect.stringContaining('package.json'),
+        expect.any(String),
+        'utf-8'
       );
       
-      consoleSpy.mockRestore();
+      // Should still run code generation after creation
+      expect(mockGenerator.dartGen).toHaveBeenCalled();
+      expect(mockGenerator.reactGen).toHaveBeenCalled();
+    });
+    
+    it('should detect framework from existing package.json', async () => {
+      const options = { flutterPackageSrc: '/flutter/src' };
+      
+      // Mock all required files exist
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+          return JSON.stringify({ dependencies: { vue: '^3.0.0' } });
+        }
+        return '';
+      });
+      
+      await generateCommand('/dist', options);
+      
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Detected existing vue project'));
+      expect(mockGenerator.vueGen).toHaveBeenCalled();
+    });
+    
+    it('should prompt for framework if cannot detect from package.json', async () => {
+      const options = { flutterPackageSrc: '/flutter/src' };
+      
+      // Mock all required files exist
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readFileSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+          return JSON.stringify({ name: 'test-project' });
+        }
+        return '';
+      });
+      
+      // Mock inquirer prompt
+      mockInquirer.prompt.mockResolvedValueOnce({ framework: 'react' });
+      
+      await generateCommand('/dist', options);
+      
+      expect(mockInquirer.prompt).toHaveBeenCalledWith([{
+        type: 'list',
+        name: 'framework',
+        message: 'Which framework are you using?',
+        choices: ['react', 'vue']
+      }]);
+      expect(mockGenerator.reactGen).toHaveBeenCalled();
     });
 
     it('should call vueGen for Vue framework', async () => {
       const options = {
         flutterPackageSrc: '/flutter/src',
-        framework: 'vue'
+        framework: 'vue',
+        packageName: 'test-package'
       };
+      
+      // Mock that required files don't exist to trigger creation
+      mockFs.existsSync.mockReturnValue(false);
       
       await generateCommand('/dist', options);
 
       expect(mockGenerator.vueGen).toHaveBeenCalledWith({
         source: '/flutter/src',
-        target: '/dist',
+        target: path.resolve('/dist'),
         command: expect.stringContaining('webf codegen generate')
+      });
+    });
+
+    it('should auto-initialize typings if not present', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        framework: 'react',
+        packageName: 'test-package'
+      };
+      
+      // Mock that init files don't exist
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr.includes('global.d.ts') || pathStr.includes('tsconfig.json')) {
+          return false;
+        }
+        return pathStr.includes('package.json');
+      });
+      
+      await generateCommand('/dist', options);
+
+      // Should create directory
+      expect(mockFs.mkdirSync).toHaveBeenCalledWith(path.resolve('/dist'), { recursive: true });
+      
+      // Should write init files
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        path.join(path.resolve('/dist'), 'global.d.ts'),
+        'global.d.ts content',
+        'utf-8'
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        path.join(path.resolve('/dist'), 'tsconfig.json'),
+        'tsconfig template',
+        'utf-8'
+      );
+    });
+
+    it('should not re-initialize if typings already exist', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        framework: 'react'
+      };
+      
+      // Mock that all files exist
+      mockFs.existsSync.mockReturnValue(true);
+      
+      await generateCommand('/dist', options);
+
+      // Should not create directory or write init files
+      const writeFileCalls = (mockFs.writeFileSync as jest.Mock).mock.calls;
+      const initFileCalls = writeFileCalls.filter(call => {
+        const path = call[0].toString();
+        return path.includes('global.d.ts') || (path.includes('tsconfig.json') && !path.includes('.tpl'));
+      });
+      
+      expect(initFileCalls).toHaveLength(0);
+    });
+    
+    it('should use Flutter package metadata when creating project', async () => {
+      const options = {
+        flutterPackageSrc: '/flutter/src',
+        framework: 'react',
+        packageName: 'test-package'
+      };
+      
+      // Mock that required files don't exist to trigger creation
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr.includes('pubspec.yaml')) return true;
+        return false;
+      });
+      
+      await generateCommand('/dist', options);
+      
+      // Check that package.json was written with metadata
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        expect.stringContaining('package.json'),
+        expect.stringContaining('test-package 1.0.0 Test Flutter package description'),
+        'utf-8'
+      );
+    });
+    
+    describe('npm publishing', () => {
+      it('should build and publish package when --publish-to-npm is set', async () => {
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package',
+          publishToNpm: true
+        };
+        
+        // Mock all required files exist
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json')) return true;
+          if (pathStr.includes('global.d.ts')) return true;
+          if (pathStr.includes('tsconfig.json')) return true;
+          return false;
+        });
+        
+        // Mock package.json with build script
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              dependencies: { react: '^18.0.0' },
+              scripts: { build: 'tsup' }
+            });
+          }
+          return '';
+        });
+        
+        // Mock npm whoami success
+        mockSpawnSync.mockImplementation((command, args) => {
+          if (args && args[0] === 'whoami') {
+            return {
+              pid: 1234,
+              output: ['testuser'],
+              stdout: Buffer.from('testuser'),
+              stderr: Buffer.from(''),
+              status: 0,
+              signal: null,
+            };
+          }
+          // Default mock for other commands
+          return {
+            pid: 1234,
+            output: [],
+            stdout: Buffer.from(''),
+            stderr: Buffer.from(''),
+            status: 0,
+            signal: null,
+          };
+        });
+        
+        await generateCommand('/dist', options);
+        
+        // Should run build
+        expect(mockSpawnSync).toHaveBeenCalledWith(
+          expect.stringMatching(/npm(\.cmd)?/),
+          ['run', 'build'],
+          expect.objectContaining({ cwd: path.resolve('/dist') })
+        );
+        
+        // Should check whoami
+        expect(mockSpawnSync).toHaveBeenCalledWith(
+          expect.stringMatching(/npm(\.cmd)?/),
+          ['whoami'],
+          expect.objectContaining({ cwd: path.resolve('/dist') })
+        );
+        
+        // Should publish
+        expect(mockSpawnSync).toHaveBeenCalledWith(
+          expect.stringMatching(/npm(\.cmd)?/),
+          ['publish'],
+          expect.objectContaining({ cwd: path.resolve('/dist') })
+        );
+      });
+      
+      it('should use custom npm registry when provided', async () => {
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package',
+          publishToNpm: true,
+          npmRegistry: 'https://custom.registry.com/'
+        };
+        
+        // Mock all required files exist
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              dependencies: { react: '^18.0.0' }
+            });
+          }
+          return '';
+        });
+        
+        // Mock npm commands success
+        mockSpawnSync.mockReturnValue({
+          pid: 1234,
+          output: ['testuser'],
+          stdout: Buffer.from('testuser'),
+          stderr: Buffer.from(''),
+          status: 0,
+          signal: null,
+        });
+        
+        await generateCommand('/dist', options);
+        
+        // Should set custom registry
+        expect(mockSpawnSync).toHaveBeenCalledWith(
+          expect.stringMatching(/npm(\.cmd)?/),
+          ['config', 'set', 'registry', 'https://custom.registry.com/'],
+          expect.objectContaining({ cwd: path.resolve('/dist') })
+        );
+        
+        // Should delete registry config after publish
+        expect(mockSpawnSync).toHaveBeenCalledWith(
+          expect.stringMatching(/npm(\.cmd)?/),
+          ['config', 'delete', 'registry'],
+          expect.objectContaining({ cwd: path.resolve('/dist') })
+        );
+      });
+      
+      it('should handle npm publish errors gracefully', async () => {
+        const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+          throw new Error('process.exit called');
+        });
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package',
+          publishToNpm: true
+        };
+        
+        // Mock all required files exist
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              dependencies: { react: '^18.0.0' }
+            });
+          }
+          return '';
+        });
+        
+        // Mock npm whoami failure (not logged in)
+        mockSpawnSync.mockImplementation((command, args) => {
+          if (args && args[0] === 'whoami') {
+            return {
+              pid: 1234,
+              output: [],
+              stdout: Buffer.from(''),
+              stderr: Buffer.from('npm ERR! not logged in'),
+              status: 1,
+              signal: null,
+            };
+          }
+          return {
+            pid: 1234,
+            output: [],
+            stdout: Buffer.from(''),
+            stderr: Buffer.from(''),
+            status: 0,
+            signal: null,
+          };
+        });
+        
+        await expect(async () => {
+          await generateCommand('/dist', options);
+        }).rejects.toThrow('process.exit called');
+        
+        expect(consoleSpy).toHaveBeenCalledWith(
+          '\nError during npm publish:',
+          expect.any(Error)
+        );
+        expect(mockExit).toHaveBeenCalledWith(1);
+        
+        mockExit.mockRestore();
+        consoleSpy.mockRestore();
       });
     });
   });
