@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { dartGen, reactGen, vueGen } from './generator';
 import _ from 'lodash';
 import inquirer from 'inquirer';
@@ -94,6 +95,48 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
   }
 }
 
+function validateTypeScriptEnvironment(projectPath: string): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Check for TypeScript configuration
+  const tsConfigPath = path.join(projectPath, 'tsconfig.json');
+  if (!fs.existsSync(tsConfigPath)) {
+    errors.push('Missing tsconfig.json - TypeScript configuration is required for type definitions');
+  }
+  
+  // Check for .d.ts files - this is critical
+  const libPath = path.join(projectPath, 'lib');
+  let hasDtsFiles = false;
+  
+  if (fs.existsSync(libPath)) {
+    // Check in lib directory
+    hasDtsFiles = fs.readdirSync(libPath).some(file => 
+      file.endsWith('.d.ts') || 
+      (fs.statSync(path.join(libPath, file)).isDirectory() && 
+       fs.readdirSync(path.join(libPath, file)).some(f => f.endsWith('.d.ts')))
+    );
+  }
+  
+  // Also check in root directory
+  if (!hasDtsFiles) {
+    hasDtsFiles = fs.readdirSync(projectPath).some(file => 
+      file.endsWith('.d.ts') || 
+      (fs.statSync(path.join(projectPath, file)).isDirectory() && 
+       file !== 'node_modules' && 
+       fs.existsSync(path.join(projectPath, file, 'index.d.ts')))
+    );
+  }
+  
+  if (!hasDtsFiles) {
+    errors.push('No TypeScript definition files (.d.ts) found in the project - Please create .d.ts files for your components');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
 function createCommand(target: string, options: { framework: string; packageName: string; metadata?: FlutterPackageMetadata }): void {
   const { framework, packageName, metadata } = options;
 
@@ -179,7 +222,46 @@ function createCommand(target: string, options: { framework: string; packageName
 }
 
 async function generateCommand(distPath: string, options: GenerateOptions): Promise<void> {
-  const resolvedDistPath = path.resolve(distPath);
+  // If distPath is not provided or is '.', create a temporary directory
+  let resolvedDistPath: string;
+  let isTempDir = false;
+  
+  if (!distPath || distPath === '.') {
+    // Create a temporary directory for the generated package
+    const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'webf-typings-'));
+    resolvedDistPath = tempDir;
+    isTempDir = true;
+    console.log(`\nUsing temporary directory: ${tempDir}`);
+  } else {
+    resolvedDistPath = path.resolve(distPath);
+  }
+  
+  // First, check if we're in a Flutter package directory when flutter-package-src is not provided
+  if (!options.flutterPackageSrc) {
+    // Check if current directory or parent directories contain pubspec.yaml
+    let currentDir = process.cwd();
+    let foundPubspec = false;
+    let pubspecDir = '';
+    
+    // Search up to 3 levels up for pubspec.yaml
+    for (let i = 0; i < 3; i++) {
+      const pubspecPath = path.join(currentDir, 'pubspec.yaml');
+      if (fs.existsSync(pubspecPath)) {
+        foundPubspec = true;
+        pubspecDir = currentDir;
+        break;
+      }
+      const parentDir = path.dirname(currentDir);
+      if (parentDir === currentDir) break; // Reached root
+      currentDir = parentDir;
+    }
+    
+    if (foundPubspec) {
+      // Use the directory containing pubspec.yaml as the flutter package source
+      options.flutterPackageSrc = pubspecDir;
+      console.log(`\nDetected Flutter package at: ${pubspecDir}`);
+    }
+  }
   
   // Check if the directory exists and has required files
   const packageJsonPath = path.join(resolvedDistPath, 'package.json');
@@ -208,12 +290,21 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       framework = frameworkAnswer.framework;
     }
     
+    // Try to read Flutter package metadata if flutterPackageSrc is provided
+    let metadata: FlutterPackageMetadata | null = null;
+    if (options.flutterPackageSrc) {
+      metadata = readFlutterPackageMetadata(options.flutterPackageSrc);
+    }
+    
     if (!packageName) {
+      // Use Flutter package name as default if available
+      const defaultPackageName = metadata?.name || path.basename(resolvedDistPath);
+      
       const packageNameAnswer = await inquirer.prompt([{
         type: 'input',
         name: 'packageName',
         message: 'What is your package name?',
-        default: path.basename(resolvedDistPath),
+        default: defaultPackageName,
         validate: (input: string) => {
           if (!input || input.trim() === '') {
             return 'Package name is required';
@@ -226,12 +317,6 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
         }
       }]);
       packageName = packageNameAnswer.packageName;
-    }
-    
-    // Try to read Flutter package metadata if flutterPackageSrc is provided
-    let metadata: FlutterPackageMetadata | null = null;
-    if (options.flutterPackageSrc) {
-      metadata = readFlutterPackageMetadata(options.flutterPackageSrc);
     }
     
     console.log(`\nCreating new ${framework} project in ${resolvedDistPath}...`);
@@ -276,8 +361,72 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   if (!options.flutterPackageSrc) {
     console.log('\nProject is ready for code generation.');
     console.log('To generate code, run:');
-    console.log(`  webf codegen generate ${distPath} --flutter-package-src=<path> --framework=${framework}`);
+    const displayPath = isTempDir ? '<output-dir>' : distPath;
+    console.log(`  webf codegen generate ${displayPath} --flutter-package-src=<path> --framework=${framework}`);
+    if (isTempDir) {
+      // Clean up temporary directory if we're not using it
+      fs.rmSync(resolvedDistPath, { recursive: true, force: true });
+    }
     return;
+  }
+  
+  // Validate TypeScript environment in the Flutter package
+  console.log(`\nValidating TypeScript environment in ${options.flutterPackageSrc}...`);
+  const validation = validateTypeScriptEnvironment(options.flutterPackageSrc);
+  
+  if (!validation.isValid) {
+    // Check specifically for missing tsconfig.json
+    const tsConfigPath = path.join(options.flutterPackageSrc, 'tsconfig.json');
+    if (!fs.existsSync(tsConfigPath)) {
+      const createTsConfigAnswer = await inquirer.prompt([{
+        type: 'confirm',
+        name: 'createTsConfig',
+        message: 'No tsconfig.json found. Would you like me to create one for you?',
+        default: true
+      }]);
+      
+      if (createTsConfigAnswer.createTsConfig) {
+        // Create a default tsconfig.json
+        const defaultTsConfig = {
+          compilerOptions: {
+            target: 'ES2020',
+            module: 'commonjs',
+            lib: ['ES2020', 'DOM'],
+            declaration: true,
+            strict: true,
+            esModuleInterop: true,
+            skipLibCheck: true,
+            forceConsistentCasingInFileNames: true,
+            resolveJsonModule: true,
+            moduleResolution: 'node'
+          },
+          include: ['lib/**/*.d.ts', '**/*.d.ts'],
+          exclude: ['node_modules', 'dist', 'build']
+        };
+        
+        fs.writeFileSync(tsConfigPath, JSON.stringify(defaultTsConfig, null, 2), 'utf-8');
+        console.log('✅ Created tsconfig.json');
+        
+        // Re-validate after creating tsconfig
+        const newValidation = validateTypeScriptEnvironment(options.flutterPackageSrc);
+        if (!newValidation.isValid) {
+          console.error('\n⚠️  Additional setup required:');
+          newValidation.errors.forEach(error => console.error(`   - ${error}`));
+          console.error('\nPlease fix the above issues and run the command again.');
+          process.exit(1);
+        }
+      } else {
+        console.error('\n❌ TypeScript configuration is required for code generation.');
+        console.error('Please create a tsconfig.json file manually and run the command again.');
+        process.exit(1);
+      }
+    } else {
+      // Show all validation errors
+      console.error('\n❌ TypeScript environment validation failed:');
+      validation.errors.forEach(error => console.error(`   - ${error}`));
+      console.error('\nPlease fix the above issues before generating code.');
+      process.exit(1);
+    }
   }
   
   const command = `webf codegen generate --flutter-package-src=${options.flutterPackageSrc} --framework=${framework} <distPath>`;
@@ -317,6 +466,12 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       console.error('\nError during npm publish:', error);
       process.exit(1);
     }
+  }
+  
+  // If using a temporary directory, remind the user where the files are
+  if (isTempDir) {
+    console.log(`\n📁 Generated files are in: ${resolvedDistPath}`);
+    console.log('💡 To use these files, copy them to your desired location or publish to npm.');
   }
 }
 

@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Command line tools for WebF",
   "main": "index.js",
   "bin": {
@@ -14,7 +14,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@types/inquirer": "^8.2.11",

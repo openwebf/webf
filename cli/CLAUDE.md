@@ -125,6 +125,9 @@ Requirements for publishing:
 ### Output Directory Behavior
 - Dart files are generated in the Flutter package source directory
 - React/Vue files are generated in the specified output directory
+- If no output directory is specified, a temporary directory is created
+- Temporary directories are created in the system temp folder with prefix `webf-typings-`
+- When using temporary directories, the path is displayed at the end of generation
 - Paths can be absolute or relative to current working directory
 
 ## Development Workflow

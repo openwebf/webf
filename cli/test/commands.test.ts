@@ -41,6 +41,26 @@ const mockInquirer = inquirer as jest.Mocked<typeof inquirer>;
 const mockYaml = yaml as jest.Mocked<typeof yaml>;
 
 describe('Commands', () => {
+  // Helper function to mock TypeScript environment validation
+  const mockTypeScriptValidation = (path: string) => {
+    mockFs.existsSync.mockImplementation((filePath) => {
+      const pathStr = filePath.toString();
+      if (pathStr === `${path}/tsconfig.json`) return true;
+      if (pathStr === `${path}/lib`) return true;
+      if (pathStr.includes('pubspec.yaml')) return true;
+      return false;
+    });
+    
+    mockFs.readdirSync.mockImplementation((dirPath: any) => {
+      if (dirPath.toString() === `${path}/lib`) {
+        return ['component.d.ts'] as any;
+      }
+      return [] as any;
+    });
+    
+    mockFs.statSync.mockReturnValue({ isDirectory: () => false } as any);
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Setup default mocks
@@ -63,6 +83,8 @@ describe('Commands', () => {
       version: '1.0.0',
       description: 'Test Flutter package description'
     });
+    // Default mock for readdirSync to avoid undefined
+    mockFs.readdirSync.mockReturnValue([] as any);
   });
 
 
@@ -147,6 +169,53 @@ describe('Commands', () => {
           'test-package 0.0.1 ',
           'utf-8'
         );
+      });
+      
+      it('should use Flutter package name as default when available', async () => {
+        const target = '/test/react-project';
+        const options = { flutterPackageSrc: '/flutter/src' };
+        
+        // Mock that required files don't exist except pubspec.yaml and TypeScript files
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('pubspec.yaml')) return true;
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          return false;
+        });
+        
+        // Mock .d.ts files exist
+        mockFs.readdirSync.mockImplementation((dirPath: any) => {
+          if (dirPath.toString() === '/flutter/src/lib') {
+            return ['component.d.ts'] as any;
+          }
+          return [] as any;
+        });
+        
+        mockFs.statSync.mockReturnValue({ isDirectory: () => false } as any);
+        
+        // Mock yaml parse to return Flutter package info
+        mockYaml.parse.mockReturnValue({
+          name: 'flutter_awesome_widget',
+          version: '2.0.0',
+          description: 'An awesome Flutter widget'
+        });
+        
+        // Mock inquirer prompts
+        mockInquirer.prompt
+          .mockResolvedValueOnce({ framework: 'react' })
+          .mockResolvedValueOnce({ packageName: 'flutter_awesome_widget' });
+        
+        await generateCommand(target, options);
+        
+        // Should have prompted with Flutter package name as default
+        expect(mockInquirer.prompt).toHaveBeenNthCalledWith(2, [{
+          type: 'input',
+          name: 'packageName',
+          message: 'What is your package name?',
+          default: 'flutter_awesome_widget',
+          validate: expect.any(Function)
+        }]);
       });
 
       it('should run npm install when creating new project', async () => {
@@ -233,8 +302,21 @@ describe('Commands', () => {
       const target = '/test/project';
       const options = { framework: 'react', flutterPackageSrc: '/flutter/src' };
       
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
       // Mock all required files exist
-      mockFs.existsSync.mockReturnValue(true);
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        // Project files exist
+        if (pathStr.includes(target)) return true;
+        // TypeScript validation files
+        if (pathStr === '/flutter/src/tsconfig.json') return true;
+        if (pathStr === '/flutter/src/lib') return true;
+        if (pathStr.includes('pubspec.yaml')) return true;
+        return true;
+      });
+      
       mockFs.readFileSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
@@ -282,8 +364,19 @@ describe('Commands', () => {
     it('should show instructions when --flutter-package-src is missing', async () => {
       const options = { framework: 'react' };
       
-      // Mock all required files exist
-      mockFs.existsSync.mockReturnValue(true);
+      // Don't auto-detect Flutter package for this test
+      const cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue('/non-flutter-dir');
+      
+      // Mock all required files exist except pubspec.yaml
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        // No pubspec.yaml files should exist
+        if (pathStr.includes('pubspec.yaml')) return false;
+        // But other project files exist
+        if (pathStr.includes('/dist')) return true;
+        return true;
+      });
+      
       mockFs.readFileSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
@@ -297,6 +390,8 @@ describe('Commands', () => {
       expect(consoleSpy).toHaveBeenCalledWith('\nProject is ready for code generation.');
       expect(consoleSpy).toHaveBeenCalledWith('To generate code, run:');
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('webf codegen generate'));
+      
+      cwdSpy.mockRestore();
     });
 
     it('should always call dartGen', async () => {
@@ -306,8 +401,8 @@ describe('Commands', () => {
         packageName: 'test-package'
       };
       
-      // Mock that required files don't exist to trigger creation
-      mockFs.existsSync.mockReturnValue(false);
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
       
       await generateCommand('/dist', options);
 
@@ -325,8 +420,8 @@ describe('Commands', () => {
         packageName: 'test-package'
       };
       
-      // Mock that required files don't exist to trigger creation
-      mockFs.existsSync.mockReturnValue(false);
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
       
       await generateCommand('/dist', options);
 
@@ -344,8 +439,8 @@ describe('Commands', () => {
         packageName: 'new-project'
       };
       
-      // Mock package.json doesn't exist
-      mockFs.existsSync.mockReturnValue(false);
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
       
       await generateCommand('/dist', options);
 
@@ -364,8 +459,18 @@ describe('Commands', () => {
     it('should detect framework from existing package.json', async () => {
       const options = { flutterPackageSrc: '/flutter/src' };
       
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
       // Mock all required files exist
-      mockFs.existsSync.mockReturnValue(true);
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/tsconfig.json') return true;
+        if (pathStr === '/flutter/src/lib') return true;
+        if (pathStr.includes('pubspec.yaml')) return true;
+        return true;
+      });
+      
       mockFs.readFileSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
@@ -383,8 +488,18 @@ describe('Commands', () => {
     it('should prompt for framework if cannot detect from package.json', async () => {
       const options = { flutterPackageSrc: '/flutter/src' };
       
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
       // Mock all required files exist
-      mockFs.existsSync.mockReturnValue(true);
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/tsconfig.json') return true;
+        if (pathStr === '/flutter/src/lib') return true;
+        if (pathStr.includes('pubspec.yaml')) return true;
+        return true;
+      });
+      
       mockFs.readFileSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
@@ -414,8 +529,8 @@ describe('Commands', () => {
         packageName: 'test-package'
       };
       
-      // Mock that required files don't exist to trigger creation
-      mockFs.existsSync.mockReturnValue(false);
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
       
       await generateCommand('/dist', options);
 
@@ -433,10 +548,18 @@ describe('Commands', () => {
         packageName: 'test-package'
       };
       
-      // Mock that init files don't exist
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
+      // Mock that init files don't exist in dist but TypeScript validation passes
       mockFs.existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
-        if (pathStr.includes('global.d.ts') || pathStr.includes('tsconfig.json')) {
+        // TypeScript validation files
+        if (pathStr === '/flutter/src/tsconfig.json') return true;
+        if (pathStr === '/flutter/src/lib') return true;
+        if (pathStr.includes('pubspec.yaml')) return true;
+        // Dist files don't exist
+        if (pathStr.includes('/dist') && (pathStr.includes('global.d.ts') || pathStr.includes('tsconfig.json'))) {
           return false;
         }
         return pathStr.includes('package.json');
@@ -466,8 +589,24 @@ describe('Commands', () => {
         framework: 'react'
       };
       
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
       // Mock that all files exist
-      mockFs.existsSync.mockReturnValue(true);
+      mockFs.existsSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr === '/flutter/src/tsconfig.json') return true;
+        if (pathStr === '/flutter/src/lib') return true;
+        return true;
+      });
+      
+      mockFs.readFileSync.mockImplementation((filePath) => {
+        const pathStr = filePath.toString();
+        if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+          return JSON.stringify({ dependencies: { react: '^18.0.0' } });
+        }
+        return '';
+      });
       
       await generateCommand('/dist', options);
 
@@ -488,10 +627,15 @@ describe('Commands', () => {
         packageName: 'test-package'
       };
       
+      // Mock TypeScript validation
+      mockTypeScriptValidation('/flutter/src');
+      
       // Mock that required files don't exist to trigger creation
       mockFs.existsSync.mockImplementation((filePath) => {
         const pathStr = filePath.toString();
         if (pathStr.includes('pubspec.yaml')) return true;
+        if (pathStr === '/flutter/src/tsconfig.json') return true;
+        if (pathStr === '/flutter/src/lib') return true;
         return false;
       });
       
@@ -514,9 +658,15 @@ describe('Commands', () => {
           publishToNpm: true
         };
         
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
         // Mock all required files exist
         mockFs.existsSync.mockImplementation((filePath) => {
           const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          if (pathStr.includes('pubspec.yaml')) return true;
           if (pathStr.includes('package.json')) return true;
           if (pathStr.includes('global.d.ts')) return true;
           if (pathStr.includes('tsconfig.json')) return true;
@@ -593,8 +743,16 @@ describe('Commands', () => {
           npmRegistry: 'https://custom.registry.com/'
         };
         
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
         // Mock all required files exist
-        mockFs.existsSync.mockReturnValue(true);
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          return true;
+        });
         mockFs.readFileSync.mockImplementation((filePath) => {
           const pathStr = filePath.toString();
           if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
@@ -647,8 +805,16 @@ describe('Commands', () => {
           publishToNpm: true
         };
         
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
         // Mock all required files exist
-        mockFs.existsSync.mockReturnValue(true);
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          return true;
+        });
         mockFs.readFileSync.mockImplementation((filePath) => {
           const pathStr = filePath.toString();
           if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
@@ -692,6 +858,146 @@ describe('Commands', () => {
           expect.any(Error)
         );
         expect(mockExit).toHaveBeenCalledWith(1);
+        
+        mockExit.mockRestore();
+        consoleSpy.mockRestore();
+      });
+    });
+    
+    describe('Flutter package detection and TypeScript validation', () => {
+      it('should auto-detect Flutter package from current directory', async () => {
+        const cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue('/test/flutter-package');
+        const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+        
+        const options = {
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock Flutter package structure
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/test/flutter-package/pubspec.yaml') return true;
+          if (pathStr.includes('tsconfig.json')) return true;
+          if (pathStr.includes('/lib')) return true;
+          return false;
+        });
+        
+        // Mock .d.ts files exist
+        mockFs.readdirSync.mockImplementation((dirPath: any) => {
+          if (dirPath.toString().includes('/lib')) {
+            return ['component.d.ts'] as any;
+          }
+          return [] as any;
+        });
+        
+        mockFs.statSync.mockReturnValue({ isDirectory: () => false } as any);
+        
+        await generateCommand('/dist', options);
+        
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Detected Flutter package at: /test/flutter-package'));
+        
+        cwdSpy.mockRestore();
+        consoleSpy.mockRestore();
+      });
+      
+      it('should prompt to create tsconfig.json if missing', async () => {
+        const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+          throw new Error('process.exit called');
+        });
+        
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock tsconfig.json doesn't exist in Flutter package but everything else is valid
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          // tsconfig.json missing in Flutter package
+          if (pathStr === '/flutter/src/tsconfig.json') return false;
+          // But exists in dist (after creation)
+          if (pathStr.includes('/dist') && pathStr.includes('tsconfig.json')) return true;
+          if (pathStr.includes('/lib')) return true;
+          if (pathStr.includes('package.json')) return true;
+          if (pathStr.includes('global.d.ts')) return true;
+          return true;
+        });
+        
+        // Mock .d.ts files exist
+        mockFs.readdirSync.mockImplementation((dirPath: any) => {
+          if (dirPath.toString().includes('/lib')) {
+            return ['component.d.ts'] as any;
+          }
+          return [] as any;
+        });
+        
+        mockFs.statSync.mockReturnValue({ isDirectory: () => false } as any);
+        
+        // Mock user says yes to create tsconfig
+        mockInquirer.prompt.mockResolvedValueOnce({ createTsConfig: true });
+        
+        // After tsconfig is created, mock it exists
+        let tsconfigCreated = false;
+        const originalWriteFileSync = mockFs.writeFileSync;
+        mockFs.writeFileSync = jest.fn().mockImplementation((path, content, encoding) => {
+          originalWriteFileSync(path, content, encoding);
+          if (path.toString().includes('tsconfig.json')) {
+            tsconfigCreated = true;
+          }
+        });
+        
+        // Update existsSync to return true for tsconfig after it's created
+        const originalExistsSync = mockFs.existsSync as jest.Mock;
+        mockFs.existsSync = jest.fn().mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json' && tsconfigCreated) return true;
+          return originalExistsSync(filePath);
+        });
+        
+        await generateCommand('/dist', options);
+        
+        // Should have prompted about tsconfig
+        expect(mockInquirer.prompt).toHaveBeenCalledWith([{
+          type: 'confirm',
+          name: 'createTsConfig',
+          message: 'No tsconfig.json found. Would you like me to create one for you?',
+          default: true
+        }]);
+        
+        // Should have created tsconfig.json
+        expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+          '/flutter/src/tsconfig.json',
+          expect.stringContaining('"target": "ES2020"'),
+          'utf-8'
+        );
+        
+        mockExit.mockRestore();
+      });
+      
+      it('should fail validation if no .d.ts files found', async () => {
+        const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
+          throw new Error('process.exit called');
+        });
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock everything exists except .d.ts files
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readdirSync.mockReturnValue(['file.ts', 'package.json'] as any);
+        mockFs.statSync.mockReturnValue({ isDirectory: () => false } as any);
+        
+        await expect(async () => {
+          await generateCommand('/dist', options);
+        }).rejects.toThrow('process.exit called');
+        
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('No TypeScript definition files (.d.ts) found'));
         
         mockExit.mockRestore();
         consoleSpy.mockRestore();
