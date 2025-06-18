@@ -307,6 +307,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_element.cc
     core/css/style_color.cc
     core/css/style_engine.cc
+    core/css/if_condition.cc
     core/css/style_sheet_contents.cc
     core/css/css_style_sheet.cc
     core/css/style_rule_import.cc
@@ -318,6 +319,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_parser_impl.cc
     core/css/parser/css_lazy_parsing_state.cc
     core/css/parser/at_rule_descriptor_parser.cc
+    core/css/parser/css_if_parser.cc
     core/css/parser/css_variable_parser.cc
     core/css/parser/css_supports_parser.cc
     core/css/parser/media_query_parser.cc
@@ -333,6 +335,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_tokenizer_input_stream.cc
     core/css/parser/css_selector_parser.cc
     core/css/parser/sizes_attribute_parser.cc
+    core/css/parser/sizes_math_function_parser.cc
     core/css/properties/css_direction_aware_resolver.cc
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc
@@ -524,6 +527,8 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/dom/element_data.cc
     core/dom/document.cc
     core/dom/qualified_name.cc
+    core/dom/shadow_root.cc
+    core/dom/nth_index_cache.cc
     core/dom/dom_token_list.cc
     core/dom/dom_string_map.cc
     core/dom/names_map.cc
