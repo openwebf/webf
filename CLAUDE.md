@@ -327,6 +327,35 @@ Before marking any FFI/cross-language task as complete, verify:
 - Explain that WebF builds Flutter apps, not web applications
 - When referencing demos that require WebF, clarify they're not traditional web demos
 
+## WebF CLI Code Generator
+
+### Overview
+The WebF CLI (`cli/`) is a powerful code generation tool that creates type-safe bindings between Flutter/Dart and JavaScript frameworks (React, Vue). It analyzes TypeScript definition files and generates corresponding Dart classes and JavaScript/TypeScript components.
+
+### Usage
+```bash
+# Generate code with auto-creation of project if needed
+webf codegen generate <output-dir> --flutter-package-src=<path> [--framework=react|vue] [--package-name=<name>] [--publish-to-npm] [--npm-registry=<url>]
+
+# Examples
+webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui
+webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui --publish-to-npm
+webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui --publish-to-npm --npm-registry=https://custom.registry.com/
+```
+
+### Key Features
+1. **Auto-creation**: Automatically detects if a project needs to be created
+2. **Interactive prompts**: Asks for framework and package name when not provided
+3. **Metadata synchronization**: Reads version and description from Flutter package's pubspec.yaml
+4. **NPM publishing**: Supports automatic publishing to npm registries with `--publish-to-npm`
+5. **Custom registries**: Use `--npm-registry` to specify custom npm registries
+6. **Framework detection**: Auto-detects framework from existing package.json dependencies
+
+### Development
+- See `cli/CLAUDE.md` for detailed CLI development guidelines
+- Run CLI tests: `cd cli && npm test`
+- Build CLI: `cd cli && npm run build`
+
 ## Git Submodule Operations
 
 ### Migrating to Submodules
