@@ -341,7 +341,7 @@ int Color::Blue() const {
 
 RGBA32 Color::Rgb() const {
   return (((std::lround(alpha_ * 255.0f) & 0xff) << 24) | ((std::lround(param0_ * 255.0f) & 0xff) << 16) |
-          ((std::lround(param0_ * 255.0f) & 0xff) << 8) | ((std::lround(param2_ * 255.0f) & 0xff) << 0)) &
+          ((std::lround(param1_ * 255.0f) & 0xff) << 8) | ((std::lround(param2_ * 255.0f) & 0xff) << 0)) &
          0xFFFFFFFF;
 }
 
@@ -431,6 +431,9 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
     // Channels that have a value of exactly 0.5 can get incorrectly rounded
     // down to 127 when being converted to an integer. Add a small epsilon to
     // avoid this. See crbug.com/1425856.
+    std::tie(r, g, b) = SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
+  } else if (color_space_ == Color::ColorSpace::kSRGBLegacy) {
+    // For kSRGBLegacy colors, the values are already in 0-1 range and need to be converted to 0-255
     std::tie(r, g, b) = SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
   }
 

@@ -268,18 +268,19 @@ class Color {
         param1_is_none_(0),
         param2_is_none_(0),
         alpha_is_none_(0),
-        param0_(((color >> 16) & 0xFF)),
-        param1_(((color >> 8) & 0xFF)),
-        param2_(((color >> 0) & 0xFF)),
-        alpha_(((color >> 24) & 0xFF) / 255.f) {}
+        param0_(((color >> 16) & 0xFF) / 255.f),
+        param1_(((color >> 8) & 0xFF) / 255.f),
+        param2_(((color >> 0) & 0xFF) / 255.f),
+        alpha_(((color >> 24) & 0xFF) / 255.f),
+        color_space_(ColorSpace::kSRGBLegacy) {}
   constexpr explicit Color(SkColor4f color)
       : param0_is_none_(0),
         param1_is_none_(0),
         param2_is_none_(0),
         alpha_is_none_(0),
-        param0_(color.fR * 255.0),
-        param1_(color.fG * 255.0),
-        param2_(color.fB * 255.0),
+        param0_(color.fR),
+        param1_(color.fG),
+        param2_(color.fB),
         alpha_(color.fA) {}
   static constexpr int ClampInt255(int x) { return x < 0 ? 0 : (x > 255 ? 255 : x); }
   void GetHueMaxMin(double&, double&, double&) const;

@@ -25,3 +25,18 @@
  */
 
 #include "shadow_root.h"
+#include "core/dom/element.h"
+#include <cassert>
+
+namespace webf {
+
+Element& ShadowRoot::host() const {
+  // TODO: Implement proper shadow root host tracking
+  // For now, this is a stub implementation that should never be called
+  // In a real implementation, this would return the element that hosts this shadow root
+  assert(false && "ShadowRoot::host() not implemented in WebF");
+  static Element* dummy = nullptr;
+  return *dummy; // This will crash if actually executed
+}
+
+}  // namespace webf
