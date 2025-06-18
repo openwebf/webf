@@ -242,7 +242,9 @@ std::shared_ptr<const CSSValue> ConsumeDescriptor(StyleRule::RuleType rule_type,
 
 std::shared_ptr<const CSSValue> ConsumeFontMetricOverride(CSSParserTokenRange& range,
                                                           std::shared_ptr<const CSSParserContext> context) {
-  if (auto normal = css_parsing_utils::ConsumeIdent<CSSValueID::kNormal>(range)) {
+  // Copy Blink's implementation exactly, but adapted for CSSParserTokenRange
+  if (std::shared_ptr<const CSSIdentifierValue> normal = 
+          css_parsing_utils::ConsumeIdent<CSSValueID::kNormal>(range)) {
     return normal;
   }
   return css_parsing_utils::ConsumePercent(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);

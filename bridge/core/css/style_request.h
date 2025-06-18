@@ -26,6 +26,7 @@
 #define WEBF_CORE_CSS_STYLE_REQUEST_H_
 
 #include "core/css/style_color.h"
+#include "core/css/custom_scrollbar.h"
 #include "core/style/computed_style_constants.h"
 
 namespace webf {
@@ -34,7 +35,7 @@ class ComputedStyle;
 class CustomScrollbar;
 class Element;
 
-class ScrollbarPart;
+// ScrollbarPart is defined in custom_scrollbar.h
 
 enum RuleMatchingBehavior { kMatchAllRules, kMatchAllRulesExcludingSMIL };
 
@@ -63,7 +64,7 @@ class StyleRequest {
   PseudoId pseudo_id{kPseudoIdNone};
   RequestType type{kForRenderer};
   // TODO(guopengfei)：暂不支持Scrollbar
-  // ScrollbarPart scrollbar_part{kNoPart};
+  ScrollbarPart scrollbar_part{kNoPart};
   CustomScrollbar* scrollbar{nullptr};
   AtomicString pseudo_argument{g_empty_atom};
   std::vector<AtomicString> pseudo_ident_list;
