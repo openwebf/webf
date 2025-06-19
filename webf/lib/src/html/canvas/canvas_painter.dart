@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 
 import 'canvas_context_2d.dart';
+import 'canvas.dart';
 
 class CanvasPainter extends CustomPainter {
   CanvasPainter({required Listenable repaint}) : super(repaint: repaint);
@@ -81,6 +82,11 @@ class CanvasPainter extends CustomPainter {
     Picture picture = pictureRecorder.endRecording();
     if (actionLen > 0) {
       paintedPictures.add(picture);
+      
+      // Report FCP when canvas has content painted for the first time
+      if (context != null && context!.canvas != null) {
+        context!.canvas.ownerDocument.controller.reportFCP();
+      }
     }
 
     rootCanvas.drawPicture(picture);

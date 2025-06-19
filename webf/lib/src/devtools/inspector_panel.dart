@@ -352,7 +352,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
           SizedBox(height: 8),
           Text(
-            'Largest Contentful Paint (LCP) Metrics',
+            'Core Web Vitals - Paint Metrics',
             style: TextStyle(
               color: Colors.white70,
               fontSize: 14,
@@ -360,7 +360,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
           SizedBox(height: 16),
           Expanded(
-            child: _buildLCPMetricsList(manager, controllerNames),
+            child: _buildPerformanceMetricsList(manager, controllerNames),
           ),
         ],
       ),
@@ -753,7 +753,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildLCPMetricsList(WebFControllerManager manager, List<String> controllerNames) {
+  Widget _buildPerformanceMetricsList(WebFControllerManager manager, List<String> controllerNames) {
     if (controllerNames.isEmpty) {
       return Center(
         child: Text(
@@ -828,7 +828,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               ),
               if (controller != null) ...[
                 SizedBox(height: 12),
-                _buildLCPMetrics(controller),
+                _buildPerformanceMetrics(controller),
               ],
             ],
           ),
@@ -837,13 +837,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildLCPMetrics(WebFController controller) {
-    // Check if LCP data is available
+  Widget _buildPerformanceMetrics(WebFController controller) {
+    // Check if any performance data is available
+    final bool hasFCPData = controller.fcpReported;
     final bool hasLCPData = controller.lastReportedLCPTime > 0 || controller.lcpFinalized;
 
-    if (!hasLCPData) {
+    if (!hasFCPData && !hasLCPData) {
       return Text(
-        'LCP: Not measured yet',
+        'No performance metrics measured yet',
         style: TextStyle(
           color: Colors.white54,
           fontSize: 12,
@@ -851,6 +852,98 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       );
     }
 
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // FCP Metrics
+        if (hasFCPData) ...[
+          _buildFCPMetric(controller),
+          SizedBox(height: 16),
+        ],
+        // LCP Metrics
+        if (hasLCPData) ...[
+          _buildLCPMetric(controller),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFCPMetric(WebFController controller) {
+    final double fcpTime = controller.fcpTime;
+
+    // Determine FCP rating based on time
+    Color fcpColor;
+    String rating;
+    if (fcpTime < 100) {
+      fcpColor = Colors.blue;
+      rating = 'Extreme Fast';
+    } else if (fcpTime < 500) {
+      fcpColor = Colors.teal;
+      rating = 'Fast';
+    } else if (fcpTime < 1000) {
+      fcpColor = Colors.green;
+      rating = 'Good';
+    } else if (fcpTime <= 1800) {
+      fcpColor = Colors.lightGreen;
+      rating = 'Acceptable';
+    } else if (fcpTime <= 3000) {
+      fcpColor = Colors.orange;
+      rating = 'Needs Improvement';
+    } else {
+      fcpColor = Colors.red;
+      rating = 'Poor';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'FCP: ',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+            Text(
+              '${fcpTime.toStringAsFixed(0)} ms',
+              style: TextStyle(
+                color: fcpColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: fcpColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                rating,
+                style: TextStyle(
+                  color: fcpColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 4),
+        LinearProgressIndicator(
+          value: fcpTime / 3000, // Max 3 seconds for visualization
+          backgroundColor: Colors.white10,
+          valueColor: AlwaysStoppedAnimation<Color>(fcpColor),
+          minHeight: 4,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLCPMetric(WebFController controller) {
     final double lcpTime = controller.lastReportedLCPTime;
     final bool isFinalized = controller.lcpFinalized;
     final dom.Element? lcpElement = controller.currentLCPElement;
@@ -936,7 +1029,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         ),
         SizedBox(height: 4),
         LinearProgressIndicator(
-          value: lcpTime / 6000, // Max 6 seconds for visualization
+          value: lcpTime / 3000, // Max 3 seconds for visualization
           backgroundColor: Colors.white10,
           valueColor: AlwaysStoppedAnimation<Color>(lcpColor),
           minHeight: 4,

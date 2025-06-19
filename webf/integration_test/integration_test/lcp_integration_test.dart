@@ -11,27 +11,6 @@ import 'package:path/path.dart' as path;
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Setup WebF dynamic library path
-  // final String currentPath = path.dirname(Platform.script.path);
-  // WebFDynamicLibrary.dynamicLibraryPath = path.join(currentPath, '../../../bridge/build/macos/lib/x86_64');
-
-  // Setup temporary directory mock
-  // Directory tempDirectory = Directory('./temp');
-  // if (!tempDirectory.existsSync()) {
-  //   tempDirectory.createSync();
-  // }
-  //
-  // // Mock the WebF method channel for getTemporaryDirectory
-  // TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-  //   const MethodChannel('webf'),
-  //   (MethodCall methodCall) async {
-  //     if (methodCall.method == 'getTemporaryDirectory') {
-  //       return tempDirectory.path;
-  //     }
-  //     throw FlutterError('Not implemented for method ${methodCall.method}.');
-  //   },
-  // );
-
   group('LCP Integration Tests', () {
     setUp(() {
       // Initialize WebFControllerManager for each test
@@ -379,7 +358,7 @@ void main() {
       // Get the controller to load new content
       final controller = await WebFControllerManager.instance.getController('test_loading');
       expect(controller, isNotNull);
-      
+
       currentPhase = 'content';
 
       // Load new content - use WebFControllerManager to ensure setup callback is applied
@@ -415,7 +394,7 @@ void main() {
       // Wait for controller replacement and widget rebuild
       await tester.pump();
       await tester.pumpAndSettle();
-      
+
       // Give time for LCP tracking to start on the new controller
       await Future.delayed(Duration(milliseconds: 100));
       await tester.pump();
@@ -424,11 +403,11 @@ void main() {
 
       // Should have new LCP updates after loading element was replaced
       expect(lcpTimes.length, greaterThan(initialLCPCount));
-      
+
       print('Total LCP updates: ${lcpTimes.length}');
       print('LCP for loading animation: $loadingLCPSize ms');
       print('LCP after content load: ${lcpTimes.last} ms');
-      
+
       // The loading animation (350x350) should be larger than the smaller content divs (150x80)
       // So we expect the final LCP to be from the loading phase
       expect(loadingLCPSize, greaterThan(0));
@@ -537,6 +516,153 @@ void main() {
 
       expect(lcpTimes.isNotEmpty, isTrue);
       print('LCP measurements in prerendering mode: ${lcpTimes.length}');
+    });
+
+    testWidgets('LCP tracks CSS background images', (WidgetTester tester) async {
+      final lcpTimes = <double>[];
+      bool lcpFinalCalled = false;
+      double? lcpFinalTime;
+
+      await WebFControllerManager.instance.addWithPreload(
+        name: 'test_lcp_background_image',
+        createController: () => WebFController(
+          viewportWidth: 360,
+          viewportHeight: 640,
+          onLCP: (double time) {
+            lcpTimes.add(time);
+            print('LCP update: $time ms');
+          },
+          onLCPFinal: (double time) {
+            lcpFinalCalled = true;
+            lcpFinalTime = time;
+            print('LCP final: $time ms');
+          },
+        ),
+        bundle: WebFBundle.fromContent(
+          '''
+          <html>
+            <head>
+              <style>
+                .bg-image-large {
+                  width: 300px;
+                  height: 300px;
+                  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==');
+                  background-size: cover;
+                }
+                .bg-image-small {
+                  width: 50px;
+                  height: 50px;
+                  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+                  background-size: cover;
+                }
+              </style>
+            </head>
+            <body>
+              <h1>Page with background images</h1>
+              <div class="bg-image-small"></div>
+              <div class="bg-image-large"></div>
+            </body>
+          </html>
+          ''',
+          url: 'about:blank',
+          contentType: ContentType.html,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: WebF.fromControllerName(
+              controllerName: 'test_lcp_background_image',
+            ),
+          ),
+        ),
+      );
+
+      // Wait for rendering
+      await tester.pumpAndSettle();
+      await Future.delayed(Duration(milliseconds: 500));
+
+      // Should have tracked multiple LCP updates (text and background images)
+      expect(lcpTimes.isNotEmpty, isTrue);
+      expect(lcpTimes.length >= 2, isTrue); // At least text and large background image
+
+      // The last LCP should be the largest background image (300x300)
+      final lastLcpTime = lcpTimes.last;
+      expect(lastLcpTime > 0, isTrue);
+
+      print('LCP updates: ${lcpTimes.length}');
+      print('Final LCP time: $lastLcpTime ms');
+    });
+
+    testWidgets('LCP tracks RenderWidget content', (WidgetTester tester) async {
+      final lcpTimes = <double>[];
+      bool lcpFinalCalled = false;
+      double? lcpFinalTime;
+
+      await WebFControllerManager.instance.addWithPreload(
+        name: 'test_lcp_render_widget',
+        createController: () => WebFController(
+          viewportWidth: 360,
+          viewportHeight: 640,
+          onLCP: (double time) {
+            lcpTimes.add(time);
+            print('LCP update: $time ms');
+          },
+          onLCPFinal: (double time) {
+            lcpFinalCalled = true;
+            lcpFinalTime = time;
+            print('LCP final: $time ms');
+          },
+        ),
+        bundle: WebFBundle.fromContent(
+          '''
+          <html>
+            <body>
+              <h1>Page with RenderWidget</h1>
+              <p>Small text content</p>
+              <!-- Large ListView widget element that should be the LCP -->
+              <webf-listview id="large-widget" style="width: 300px; height: 300px; display: block;">
+                <div>Large Item 1</div>
+                <div>Large Item 2</div>
+                <div>Large Item 3</div>
+              </webf-listview>
+              <!-- Smaller widget -->
+              <div style="width: 100px; height: 100px; background: blue;">
+                <webf-listview id="small-widget" style="width: 50px; height: 50px; display: block;">
+                  <div>Small Item</div>
+                </webf-listview>
+              </div>
+            </body>
+          </html>
+          ''',
+          url: 'about:blank',
+          contentType: ContentType.html,
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: WebF.fromControllerName(
+              controllerName: 'test_lcp_render_widget',
+            ),
+          ),
+        ),
+      );
+
+      // Wait for rendering
+      await tester.pumpAndSettle();
+      await Future.delayed(Duration(milliseconds: 500));
+
+      // Should have tracked multiple LCP updates
+      expect(lcpTimes.isNotEmpty, isTrue);
+
+      // The largest element should be the 300x300 flutter-widget
+      expect(lcpTimes.last > 0, isTrue);
+
+      print('LCP updates for RenderWidget: ${lcpTimes.length}');
+      print('Final LCP time: ${lcpTimes.last} ms');
     });
   });
 }

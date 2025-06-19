@@ -57,6 +57,12 @@ class RenderSVGRoot extends RenderSVGContainer {
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
+    // Report FCP when SVG content is first painted
+    if (renderStyle.target is SVGSVGElement && hasSize && !size.isEmpty) {
+      final svgElement = renderStyle.target as SVGSVGElement;
+      svgElement.ownerDocument.controller.reportFCP();
+    }
+    
     _outerClipLayer.layer = context
         .pushClipRect(true, offset, Offset.zero & size, (context, offset) {
       _transformLayer.layer = context

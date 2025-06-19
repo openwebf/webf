@@ -51,13 +51,25 @@ Added `_finalizeLCPOnUserInteraction()` to finalize LCP when user interacts:
 
 ### 3. Rendering Integration
 
-#### Image Element (webf/lib/src/html/img.dart)
-- Reports LCP candidates after image loads successfully
-- Calculates visible area and reports to controller
+#### Content Types That Trigger LCP
 
-#### Text Elements (webf/lib/src/rendering/paragraph.dart)
-- Reports text elements as LCP candidates during layout
-- Only reports elements with actual text content
+1. **Images** (webf/lib/src/html/img.dart)
+   - Reports LCP candidates after image loads successfully
+   - Calculates visible area and reports to controller
+
+2. **Text Elements** (webf/lib/src/rendering/paragraph.dart)
+   - Reports text elements as LCP candidates during layout
+   - Only reports elements with actual text content
+
+3. **Background Images** (webf/lib/src/rendering/box_decoration_painter.dart)
+   - Reports LCP when CSS background images are painted
+   - Uses visible area of the background image rect as content size
+   - Excludes CSS gradients (only actual images trigger LCP)
+
+4. **RenderWidget** (webf/lib/src/rendering/widget.dart)
+   - Reports LCP when WidgetElement content is painted
+   - Uses the widget's size (width * height) as visible area
+   - Only reports when widget has content and non-zero size
 
 #### Box Model (webf/lib/src/rendering/box_model.dart)
 - Added `shouldReportLCP` getter to determine if element should be tracked
@@ -144,7 +156,7 @@ LCP is automatically finalized when:
 
 ## Testing
 
-### Integration Tests (webf/integration_test/lcp_integration_test.dart)
+### Integration Tests (webf/integration_test/integration_test/lcp_integration_test.dart)
 1. Text content LCP tracking
 2. Image loading LCP tracking
 3. Navigation between pages (LCP reset)
@@ -152,6 +164,8 @@ LCP is automatically finalized when:
 5. Loading animation replacement
 6. Auto-finalization timeout
 7. Prerendering mode support
+8. CSS background images tracking
+9. RenderWidget content tracking
 
 ### Known Issues Fixed
 1. Navigation test - Fixed by calling `initializeLCPTracking` in the `setup` callback when using `forceReplace: true`

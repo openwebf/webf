@@ -453,6 +453,8 @@ class ImageElement extends Element {
       SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
         _dispatchLoadEvent();
         _reportLCPCandidate();
+        // Report FCP when image is first painted
+        ownerDocument.controller.reportFCP();
       });
       SchedulerBinding.instance.scheduleFrame();
     }
@@ -530,6 +532,8 @@ class ImageElement extends Element {
       _isSVGImage = true;
       SchedulerBinding.instance.addPostFrameCallback((_) {
         renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+        // Report FCP when SVG image is first painted
+        ownerDocument.controller.reportFCP();
       });
       SchedulerBinding.instance.scheduleFrame();
 

@@ -161,6 +161,7 @@ When implementing TypeScript analysis:
 - [WebF Package Preparation](./claude_memory/webf_package_preparation.md) - Steps for preparing WebF packages
 - [WebF Text Element Update Fix](./claude_memory/webf_text_element_update_fix.md) - Fix for text element update issues
 - [LCP (Largest Contentful Paint) Implementation](./claude_memory/lcp_implementation.md) - Implementation of LCP performance metric callbacks for WebFController
+- [FCP (First Contentful Paint) Implementation](./claude_memory/fcp_implementation.md) - Implementation of FCP performance metric tracking for WebFController
 
 
 ## Testing Guidelines
@@ -179,6 +180,12 @@ When implementing TypeScript analysis:
 - Test assets should reference files in `assets/` directory
 - Use `fdescribe()` instead of `describe()` to run only specific test specs (Jasmine feature)
 - Use `fit()` instead of `it()` to run only specific test cases
+
+### Flutter Integration Tests (webf/integration_test)
+- LCP integration tests: `webf/integration_test/integration_test/lcp_integration_test.dart`
+- FCP integration tests: `webf/integration_test/integration_test/fcp_integration_test.dart`
+- Run with: `cd webf && flutter test integration_test/integration_test/test_name.dart`
+
 
 ### Test-Driven Development Workflow
 1. Run tests frequently during development: `npm test`

@@ -51,6 +51,7 @@ typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
 typedef LCPHandler = void Function(double lcpTime);
+typedef FCPHandler = void Function(double fcpTime);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -105,12 +106,20 @@ class WebFController with Diagnosticable {
   double _lastReportedLCPTime = 0;
   Timer? _lcpAutoFinalizeTimer;
   WeakReference<Element>? _currentLCPElement;
+  
+  // FCP tracking
+  bool _fcpReported = false;
+  double _fcpTime = 0;
 
   // Expose LCP tracking state for WebFState
   bool get lcpInitialized => _navigationStartTime != null;
   bool get lcpReported => _lcpReported;
   bool get lcpFinalized => _lcpReported;
   double get lastReportedLCPTime => _lastReportedLCPTime;
+  
+  // Expose FCP tracking state
+  bool get fcpReported => _fcpReported;
+  double get fcpTime => _fcpTime;
   
   /// Gets the current LCP element if it's still connected to the DOM
   Element? get currentLCPElement {
@@ -361,6 +370,12 @@ class WebFController with Diagnosticable {
   /// The callback provides the final LCP time in milliseconds since navigation start.
   LCPHandler? onLCPFinal;
 
+  /// Callback triggered when the First Contentful Paint (FCP) occurs.
+  /// FCP is a Core Web Vitals metric that measures the time from when the page starts loading
+  /// to when any part of the page's content is rendered on the screen.
+  /// The callback provides the FCP time in milliseconds since navigation start.
+  FCPHandler? onFCP;
+
   WebFMethodChannel? _methodChannel;
   /// Gets the JavaScript channel for this controller.
   ///
@@ -533,6 +548,7 @@ class WebFController with Diagnosticable {
     this.onJSError,
     this.onLCP,
     this.onLCPFinal,
+    this.onFCP,
     this.httpClientInterceptor,
     this.uriParser,
     this.preloadedBundles,
@@ -726,6 +742,10 @@ class WebFController with Diagnosticable {
     _lastReportedLCPTime = 0;
     _currentLCPElement = null;
     _navigationStartTime = DateTime.now();
+    
+    // Reset FCP tracking for new page load
+    _fcpReported = false;
+    _fcpTime = 0;
     
     // Cancel any existing timer
     _lcpAutoFinalizeTimer?.cancel();
@@ -1375,6 +1395,10 @@ class WebFController with Diagnosticable {
     _largestContentfulPaintSize = 0;
     _lastReportedLCPTime = 0;
     _currentLCPElement = null;
+    
+    // Reset FCP tracking as well
+    _fcpReported = false;
+    _fcpTime = 0;
 
     // Cancel any existing timer
     _lcpAutoFinalizeTimer?.cancel();
@@ -1443,6 +1467,21 @@ class WebFController with Diagnosticable {
       onLCPFinal!(_lastReportedLCPTime);
     }
     _lcpReported = true;
+  }
+
+  /// Reports First Contentful Paint (FCP) when the first content is rendered.
+  /// This should be called when the first text, image, SVG, or non-white canvas content is painted.
+  void reportFCP() {
+    // Don't report if already reported or not initialized
+    if (_fcpReported || _navigationStartTime == null) return;
+
+    _fcpReported = true;
+    _fcpTime = DateTime.now().difference(_navigationStartTime!).inMilliseconds.toDouble();
+
+    // Fire the FCP callback
+    if (onFCP != null) {
+      onFCP!(_fcpTime);
+    }
   }
 }
 

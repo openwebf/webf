@@ -9,6 +9,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/widget.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
 class RenderWidget extends RenderBoxModel
@@ -178,6 +179,18 @@ class RenderWidget extends RenderBoxModel
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
+    // Report FCP when RenderWidget with content is first painted
+    if (renderStyle.target is WidgetElement && firstChild != null && hasSize && !size.isEmpty) {
+      final widgetElement = renderStyle.target as WidgetElement;
+      widgetElement.ownerDocument.controller.reportFCP();
+      
+      // Report LCP candidate for RenderWidget
+      double visibleArea = size.width * size.height;
+      if (visibleArea > 0) {
+        widgetElement.ownerDocument.controller.reportLCPCandidate(widgetElement, visibleArea);
+      }
+    }
+    
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;

@@ -531,6 +531,18 @@ class BoxDecorationPainter extends BoxPainter {
         break;
     }
     _imagePainter!.paint(canvas, rect, clipPath, configuration);
+    
+    // Report FCP when background image is painted (excluding CSS gradients)
+    if (_imagePainter!._image != null && !rect.isEmpty) {
+      renderStyle.target.ownerDocument.controller.reportFCP();
+      
+      // Report LCP candidate for background images
+      // Calculate the visible area of the background image
+      double visibleArea = rect.width * rect.height;
+      if (visibleArea > 0) {
+        renderStyle.target.ownerDocument.controller.reportLCPCandidate(renderStyle.target, visibleArea);
+      }
+    }
   }
 
   @override

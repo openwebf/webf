@@ -741,6 +741,9 @@ class WebFRenderParagraph extends RenderBox
 
     // Report LCP candidate after painting
     _reportLCPCandidate();
+    
+    // Report FCP if this is the first content paint
+    _reportFCP();
   }
 
   /// Returns the offset at which to paint the caret.
@@ -921,5 +924,26 @@ class WebFRenderParagraph extends RenderBox
     if (intersection.width <= 0 || intersection.height <= 0) return 0;
     
     return intersection.width * intersection.height;
+  }
+  
+  void _reportFCP() {
+    // Report FCP when text is painted with actual content
+    if (parent is RenderTextBox && !size.isEmpty && _lineRenders.isNotEmpty) {
+      final RenderTextBox parentTextBox = parent as RenderTextBox;
+      final Element element = parentTextBox.renderStyle.target;
+      
+      // Check if this text has actual visible content
+      bool hasVisibleContent = false;
+      for (int i = 0; i < _lineRenders.length; i++) {
+        if (_lineRenders[i].lineRect.width > 0 && _lineRenders[i].fontHeight > 0) {
+          hasVisibleContent = true;
+          break;
+        }
+      }
+      
+      if (hasVisibleContent) {
+        element.ownerDocument.controller.reportFCP();
+      }
+    }
   }
 }
