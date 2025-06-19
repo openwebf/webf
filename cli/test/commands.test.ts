@@ -862,6 +862,131 @@ describe('Commands', () => {
         mockExit.mockRestore();
         consoleSpy.mockRestore();
       });
+      
+      it('should prompt for npm publishing when not specified in options', async () => {
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
+        // Mock all required files exist
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          return true;
+        });
+        
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              dependencies: { react: '^18.0.0' }
+            });
+          }
+          return '';
+        });
+        
+        // Mock user says yes to publish
+        mockInquirer.prompt
+          .mockResolvedValueOnce({ publish: true })
+          .mockResolvedValueOnce({ registry: 'https://custom.registry.com/' });
+        
+        // Mock npm commands success
+        mockSpawnSync.mockReturnValue({
+          pid: 1234,
+          output: ['testuser'],
+          stdout: Buffer.from('testuser'),
+          stderr: Buffer.from(''),
+          status: 0,
+          signal: null,
+        });
+        
+        await generateCommand('/dist', options);
+        
+        // Should have prompted for publishing
+        expect(mockInquirer.prompt).toHaveBeenCalledWith([{
+          type: 'confirm',
+          name: 'publish',
+          message: 'Would you like to publish this package to npm?',
+          default: false
+        }]);
+        
+        // Should have prompted for registry
+        expect(mockInquirer.prompt).toHaveBeenCalledWith([{
+          type: 'input',
+          name: 'registry',
+          message: 'NPM registry URL (leave empty for default npm registry):',
+          default: '',
+          validate: expect.any(Function)
+        }]);
+        
+        // Should have published with custom registry
+        expect(mockSpawnSync).toHaveBeenCalledWith(
+          expect.stringMatching(/npm(\.cmd)?/),
+          ['config', 'set', 'registry', 'https://custom.registry.com/'],
+          expect.objectContaining({ cwd: path.resolve('/dist') })
+        );
+      });
+      
+      it('should skip publishing if user says no', async () => {
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
+        // Mock all required files exist
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          return true;
+        });
+        
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              dependencies: { react: '^18.0.0' }
+            });
+          }
+          return '';
+        });
+        
+        // Mock user says no to publish
+        mockInquirer.prompt.mockResolvedValueOnce({ publish: false });
+        
+        await generateCommand('/dist', options);
+        
+        // Should have prompted for publishing
+        expect(mockInquirer.prompt).toHaveBeenCalledWith([{
+          type: 'confirm',
+          name: 'publish',
+          message: 'Would you like to publish this package to npm?',
+          default: false
+        }]);
+        
+        // Should not have prompted for registry
+        expect(mockInquirer.prompt).toHaveBeenCalledTimes(1);
+        
+        // Should not have published
+        const publishCalls = (mockSpawnSync as jest.Mock).mock.calls.filter(
+          call => call[1] && call[1].includes('publish')
+        );
+        expect(publishCalls).toHaveLength(0);
+      });
     });
     
     describe('Flutter package detection and TypeScript validation', () => {
@@ -1000,6 +1125,127 @@ describe('Commands', () => {
         expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('No TypeScript definition files (.d.ts) found'));
         
         mockExit.mockRestore();
+        consoleSpy.mockRestore();
+      });
+    });
+    
+    describe('Automatic build after generation', () => {
+      it('should automatically run npm run build after code generation', async () => {
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
+        // Mock package.json exists
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          if (pathStr.includes('pubspec.yaml')) return true;
+          if (pathStr.includes('package.json')) return true;
+          return true;
+        });
+        
+        // Mock package.json with build script
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              scripts: {
+                build: 'tsup'
+              },
+              dependencies: { react: '^18.0.0' }
+            });
+          }
+          return '';
+        });
+        
+        await generateCommand('/dist', options);
+        
+        // Should have called npm run build
+        const buildCalls = (mockSpawnSync as jest.Mock).mock.calls.filter(
+          call => call[1] && call[1].includes('build') && call[1].includes('run')
+        );
+        expect(buildCalls).toHaveLength(1);
+        expect(buildCalls[0][0]).toMatch(/npm(\.cmd)?$/);
+        expect(buildCalls[0][1]).toEqual(['run', 'build']);
+      });
+      
+      it('should handle build failure gracefully', async () => {
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        
+        const options = {
+          flutterPackageSrc: '/flutter/src',
+          framework: 'react',
+          packageName: 'test-package'
+        };
+        
+        // Mock TypeScript validation
+        mockTypeScriptValidation('/flutter/src');
+        
+        // Mock package.json exists
+        mockFs.existsSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr === '/flutter/src/tsconfig.json') return true;
+          if (pathStr === '/flutter/src/lib') return true;
+          if (pathStr.includes('pubspec.yaml')) return true;
+          if (pathStr.includes('package.json')) return true;
+          return true;
+        });
+        
+        // Mock package.json with build script
+        mockFs.readFileSync.mockImplementation((filePath) => {
+          const pathStr = filePath.toString();
+          if (pathStr.includes('package.json') && !pathStr.includes('.tpl')) {
+            return JSON.stringify({ 
+              name: 'test-package',
+              version: '1.0.0',
+              scripts: {
+                build: 'tsup'
+              },
+              dependencies: { react: '^18.0.0' }
+            });
+          }
+          return '';
+        });
+        
+        // Mock build failure
+        mockSpawnSync.mockImplementation((command: any, args: any) => {
+          if (args && args.includes('build')) {
+            return {
+              pid: 1234,
+              output: [],
+              stdout: Buffer.from(''),
+              stderr: Buffer.from('Build error'),
+              status: 1,
+              signal: null,
+            };
+          }
+          return {
+            pid: 1234,
+            output: [],
+            stdout: Buffer.from(''),
+            stderr: Buffer.from(''),
+            status: 0,
+            signal: null,
+          };
+        });
+        
+        await generateCommand('/dist', options);
+        
+        // Should have logged warning about build failure
+        expect(consoleSpy).toHaveBeenCalledWith('\nWarning: Build failed:', expect.any(Error));
+        
+        // Should still complete successfully (generation worked)
+        expect(mockGenerator.dartGen).toHaveBeenCalled();
+        expect(mockGenerator.reactGen).toHaveBeenCalled();
+        
         consoleSpy.mockRestore();
       });
     });

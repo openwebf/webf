@@ -3,6 +3,6 @@
  */
 
 <% components.forEach(component => { %>
-export { <%= component.className %>, <%= component.className %>Element } from "./<%= component.fileName %>";
+export { <%= component.className %>, <%= component.className %>Element } from "./<%= component.relativeDir ? component.relativeDir + '/' : '' %><%= component.fileName %>";
 <% }); %>
 export { createComponent } from "./utils/createComponent";

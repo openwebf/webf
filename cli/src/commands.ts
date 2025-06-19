@@ -391,7 +391,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
           compilerOptions: {
             target: 'ES2020',
             module: 'commonjs',
-            lib: ['ES2020', 'DOM'],
+            lib: ['ES2020'],
             declaration: true,
             strict: true,
             esModuleInterop: true,
@@ -458,13 +458,60 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   
   console.log('\nCode generation completed successfully!');
   
-  // Handle npm publishing if requested
+  // Automatically build the generated package
+  if (framework) {
+    try {
+      await buildPackage(resolvedDistPath);
+    } catch (error) {
+      console.error('\nWarning: Build failed:', error);
+      // Don't exit here since generation was successful
+    }
+  }
+  
+  // Handle npm publishing if requested via command line option
   if (options.publishToNpm && framework) {
     try {
       await buildAndPublishPackage(resolvedDistPath, options.npmRegistry);
     } catch (error) {
       console.error('\nError during npm publish:', error);
       process.exit(1);
+    }
+  } else if (framework && !options.publishToNpm) {
+    // If not publishing via command line option, ask the user
+    const publishAnswer = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'publish',
+      message: 'Would you like to publish this package to npm?',
+      default: false
+    }]);
+    
+    if (publishAnswer.publish) {
+      // Ask for registry
+      const registryAnswer = await inquirer.prompt([{
+        type: 'input',
+        name: 'registry',
+        message: 'NPM registry URL (leave empty for default npm registry):',
+        default: '',
+        validate: (input: string) => {
+          if (!input) return true; // Empty is valid (use default)
+          try {
+            new URL(input); // Validate URL format
+            return true;
+          } catch {
+            return 'Please enter a valid URL';
+          }
+        }
+      }]);
+      
+      try {
+        await buildAndPublishPackage(
+          resolvedDistPath, 
+          registryAnswer.registry || undefined
+        );
+      } catch (error) {
+        console.error('\nError during npm publish:', error);
+        // Don't exit here since generation was successful
+      }
     }
   }
   
@@ -509,7 +556,7 @@ function ensureInitialized(targetPath: string): void {
   }
 }
 
-async function buildAndPublishPackage(packagePath: string, registry?: string): Promise<void> {
+async function buildPackage(packagePath: string): Promise<void> {
   const packageJsonPath = path.join(packagePath, 'package.json');
   
   if (!fs.existsSync(packageJsonPath)) {
@@ -531,9 +578,22 @@ async function buildAndPublishPackage(packagePath: string, registry?: string): P
     if (buildResult.status !== 0) {
       throw new Error('Build failed');
     }
+    console.log('✅ Build completed successfully!');
   } else {
-    console.log(`\nNo build script found, proceeding to publish ${packageName}@${packageVersion}...`);
+    console.log(`\nNo build script found for ${packageName}@${packageVersion}`);
   }
+}
+
+async function buildAndPublishPackage(packagePath: string, registry?: string): Promise<void> {
+  const packageJsonPath = path.join(packagePath, 'package.json');
+  
+  if (!fs.existsSync(packageJsonPath)) {
+    throw new Error(`No package.json found in ${packagePath}`);
+  }
+  
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  const packageName = packageJson.name;
+  const packageVersion = packageJson.version;
   
   // Set registry if provided
   if (registry) {

@@ -3,6 +3,7 @@ import fs from 'fs';
 import process from 'process';
 import _ from 'lodash';
 import { glob } from 'glob';
+import yaml from 'yaml';
 import { IDLBlob } from './IDLBlob';
 import { ClassObject } from './declaration';
 import { analyzer, ParameterType, clearCaches } from './analyzer';
@@ -116,7 +117,9 @@ function createBlobs(typeFiles: string[], source: string, target: string): IDLBl
   return typeFiles.map(file => {
     const filename = path.basename(file, '.d.ts');
     const implement = file.replace(path.join(__dirname, '../../'), '').replace('.d.ts', '');
-    const blob = new IDLBlob(path.join(source, file), target, filename, implement);
+    // Store the relative directory path for maintaining structure
+    const relativeDir = path.dirname(file);
+    const blob = new IDLBlob(path.join(source, file), target, filename, implement, relativeDir);
     
     // Pre-cache file content
     if (!fileContentCache.has(blob.source)) {
@@ -180,7 +183,7 @@ export async function dartGen({ source, target, command }: GenerateOptions) {
     }
   }
   
-  // Generate Dart code
+  // Generate Dart code and copy .d.ts files
   info('\nGenerating Dart classes...');
   let filesChanged = 0;
   
@@ -189,17 +192,40 @@ export async function dartGen({ source, target, command }: GenerateOptions) {
       const result = generateDartClass(blob, command);
       blob.dist = normalizedTarget;
       
-      const genFilePath = path.join(blob.dist, _.snakeCase(blob.filename));
+      // Maintain the same directory structure as the .d.ts file
+      const outputDir = path.join(blob.dist, blob.relativeDir);
+      // Ensure the directory exists
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      // Generate Dart file
+      const genFilePath = path.join(outputDir, _.snakeCase(blob.filename));
       const fullPath = genFilePath + '_bindings_generated.dart';
       
       if (writeFileIfChanged(fullPath, result)) {
         filesChanged++;
         debug(`Generated: ${path.basename(fullPath)}`);
       }
+      
+      // Copy the original .d.ts file to the output directory
+      const dtsOutputPath = path.join(outputDir, blob.filename + '.d.ts');
+      if (writeFileIfChanged(dtsOutputPath, blob.raw)) {
+        filesChanged++;
+        debug(`Copied: ${path.basename(dtsOutputPath)}`);
+      }
     } catch (err) {
       error(`Error generating Dart code for ${blob.filename}`, err);
     }
   });
+  
+  // Generate index.d.ts file with references to all .d.ts files
+  const indexDtsContent = generateTypeScriptIndex(blobs, normalizedTarget);
+  const indexDtsPath = path.join(normalizedTarget, 'index.d.ts');
+  if (writeFileIfChanged(indexDtsPath, indexDtsContent)) {
+    filesChanged++;
+    debug('Generated: index.d.ts');
+  }
   
   timeEnd('dartGen');
   success(`Dart code generation completed. ${filesChanged} files changed.`);
@@ -263,7 +289,15 @@ export async function reactGen({ source, target }: GenerateOptions) {
   await processFilesInBatch(blobs, 5, async (blob) => {
     try {
       const result = generateReactComponent(blob);
-      const genFilePath = path.join(normalizedTarget, 'src', blob.filename);
+      
+      // Maintain the same directory structure as the .d.ts file
+      const outputDir = path.join(normalizedTarget, 'src', blob.relativeDir);
+      // Ensure the directory exists
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      
+      const genFilePath = path.join(outputDir, blob.filename);
       const fullPath = genFilePath + '.tsx';
       
       if (writeFileIfChanged(fullPath, result)) {
@@ -348,6 +382,66 @@ export async function vueGen({ source, target }: GenerateOptions) {
   success(`Vue typings generation completed. ${filesChanged} files changed.`);
   info(`Output directory: ${normalizedTarget}`);
   info('You can now import these types in your Vue project.');
+}
+
+function generateTypeScriptIndex(blobs: IDLBlob[], targetPath: string): string {
+  const references: string[] = ['/// <reference path="./global.d.ts" />'];
+  const exports: string[] = [];
+  
+  // Group blobs by directory to maintain structure
+  const filesByDir = new Map<string, IDLBlob[]>();
+  
+  blobs.forEach(blob => {
+    const dir = blob.relativeDir || '.';
+    if (!filesByDir.has(dir)) {
+      filesByDir.set(dir, []);
+    }
+    filesByDir.get(dir)!.push(blob);
+  });
+  
+  // Sort directories and files for consistent output
+  const sortedDirs = Array.from(filesByDir.keys()).sort();
+  
+  sortedDirs.forEach(dir => {
+    const dirBlobs = filesByDir.get(dir)!.sort((a, b) => a.filename.localeCompare(b.filename));
+    
+    dirBlobs.forEach(blob => {
+      const relativePath = dir === '.' ? blob.filename : path.join(dir, blob.filename);
+      references.push(`/// <reference path="./${relativePath}.d.ts" />`);
+      exports.push(`export * from './${relativePath}';`);
+    });
+  });
+  
+  // Get package name from pubspec.yaml if available
+  let packageName = 'WebF Package';
+  let packageDescription = 'TypeScript Definitions';
+  
+  try {
+    const pubspecPath = path.join(targetPath, 'pubspec.yaml');
+    if (fs.existsSync(pubspecPath)) {
+      const pubspecContent = fs.readFileSync(pubspecPath, 'utf-8');
+      const pubspec = yaml.parse(pubspecContent);
+      if (pubspec.name) {
+        packageName = pubspec.name.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+      }
+      if (pubspec.description) {
+        packageDescription = pubspec.description;
+      }
+    }
+  } catch (err) {
+    // Ignore errors, use defaults
+  }
+  
+  return `${references.join('\n')}
+
+/**
+ * ${packageName} - TypeScript Definitions
+ * 
+ * ${packageDescription}
+ */
+
+${exports.join('\n')}
+`;
 }
 
 // Clear all caches (useful for watch mode or between runs)

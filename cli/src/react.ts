@@ -119,6 +119,12 @@ interface ${object.name} {
     return '';
   }
 
+  // Calculate the relative path from component location to utils
+  const componentDepth = blob.relativeDir ? blob.relativeDir.split(path.sep).length : 0;
+  const utilsPath = componentDepth > 0 
+    ? '../'.repeat(componentDepth) + 'utils/createComponent'
+    : './utils/createComponent';
+
   const content = _.template(readTemplate('react.component.tsx'))({
     className: className,
     properties: componentProperties,
@@ -126,6 +132,7 @@ interface ${object.name} {
     classObjectDictionary,
     dependencies,
     blob,
+    utilsPath,
     toReactEventName,
     generateReturnType,
     generateMethodDeclaration,
@@ -164,6 +171,7 @@ export function generateReactIndex(blobs: IDLBlob[]) {
     return {
       className: className,
       fileName: blob.filename,
+      relativeDir: blob.relativeDir,
     }
   }).filter(name => {
     return name.className.length > 0;

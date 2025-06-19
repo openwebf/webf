@@ -5,7 +5,7 @@
 <% if (events) { %>
 import React, { EventHandler, SyntheticEvent } from "react";
 <% } %>
-import { createComponent } from "./utils/createComponent";
+import { createComponent } from "<%= utilsPath %>";
 
 <%= dependencies %>
 

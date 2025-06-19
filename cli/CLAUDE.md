@@ -109,18 +109,32 @@ When creating typing projects, the CLI automatically synchronizes metadata from 
 - Applies this metadata to the generated `package.json` files
 - Ensures typing packages match the same version as the Flutter package
 
+### Automatic Build
+After code generation, the CLI automatically runs `npm run build` if a build script is present in the package.json. This ensures the generated package is immediately ready for use or publishing. The build process:
+- Checks for the presence of a `build` script in package.json
+- Runs the build command if available
+- Continues successfully even if the build fails (with a warning)
+- Provides clear console output about the build status
+
 ### NPM Publishing
 The CLI supports automatic npm publishing with the following features:
-- **--publish-to-npm**: Automatically builds and publishes the generated package to npm
+- **--publish-to-npm**: Automatically publishes the generated package to npm (build is run automatically)
 - **--npm-registry**: Specify a custom npm registry URL (defaults to https://registry.npmjs.org/)
+- **Interactive publishing**: If not using the --publish-to-npm flag, the CLI will ask if you want to publish after generation
+- **Registry configuration**: When choosing to publish interactively, you can specify a custom registry URL
 - Checks if user is logged in before attempting to publish
-- Runs build script if present in package.json
 - Temporarily sets and resets registry configuration when custom registry is used
 
 Requirements for publishing:
 - Must be logged in to npm (`npm login`)
 - Package must have a valid package.json
-- For React packages, the build script will be run automatically if present
+- Package will be built automatically before publishing (if build script exists)
+
+Publishing workflow:
+1. If `--publish-to-npm` is not specified, CLI prompts after successful generation
+2. If user chooses to publish, CLI asks for registry URL (optional)
+3. Validates npm login status
+4. Publishes to specified registry (no need to build separately)
 
 ### Output Directory Behavior
 - Dart files are generated in the Flutter package source directory
@@ -129,6 +143,16 @@ Requirements for publishing:
 - Temporary directories are created in the system temp folder with prefix `webf-typings-`
 - When using temporary directories, the path is displayed at the end of generation
 - Paths can be absolute or relative to current working directory
+
+### Generated Files Structure
+When running `dartGen`:
+- Dart binding files are generated with `_bindings_generated.dart` suffix
+- Original `.d.ts` files are copied to the output directory maintaining their structure
+- An `index.d.ts` file is generated with:
+  - TypeScript triple-slash references to all `.d.ts` files
+  - ES module exports for all type definitions
+  - Package metadata from `pubspec.yaml` in documentation comments
+- Directory structure from source is preserved in the output
 
 ## Development Workflow
 

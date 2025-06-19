@@ -335,21 +335,28 @@ The WebF CLI (`cli/`) is a powerful code generation tool that creates type-safe 
 ### Usage
 ```bash
 # Generate code with auto-creation of project if needed
-webf codegen generate <output-dir> --flutter-package-src=<path> [--framework=react|vue] [--package-name=<name>] [--publish-to-npm] [--npm-registry=<url>]
+webf codegen generate [output-dir] --flutter-package-src=<path> [--framework=react|vue] [--package-name=<name>] [--publish-to-npm] [--npm-registry=<url>]
 
 # Examples
 webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui
+webf codegen generate --flutter-package-src=../webf_cupertino_ui  # Uses temporary directory
 webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui --publish-to-npm
-webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui --publish-to-npm --npm-registry=https://custom.registry.com/
+webf codegen generate --flutter-package-src=../webf_cupertino_ui --publish-to-npm --npm-registry=https://custom.registry.com/
+
+# Interactive publishing (prompts after generation)
+webf codegen generate my-typings --flutter-package-src=../webf_cupertino_ui
+# CLI will ask: "Would you like to publish this package to npm?"
+# If yes, CLI will ask: "NPM registry URL (leave empty for default npm registry):"
 ```
 
 ### Key Features
 1. **Auto-creation**: Automatically detects if a project needs to be created
 2. **Interactive prompts**: Asks for framework and package name when not provided
 3. **Metadata synchronization**: Reads version and description from Flutter package's pubspec.yaml
-4. **NPM publishing**: Supports automatic publishing to npm registries with `--publish-to-npm`
-5. **Custom registries**: Use `--npm-registry` to specify custom npm registries
-6. **Framework detection**: Auto-detects framework from existing package.json dependencies
+4. **Automatic build**: Runs `npm run build` automatically after code generation
+5. **NPM publishing**: Supports automatic publishing to npm registries with `--publish-to-npm`
+6. **Custom registries**: Use `--npm-registry` to specify custom npm registries
+7. **Framework detection**: Auto-detects framework from existing package.json dependencies
 
 ### Development
 - See `cli/CLAUDE.md` for detailed CLI development guidelines
