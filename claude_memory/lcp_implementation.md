@@ -123,9 +123,10 @@ LCP is automatically finalized when:
 7. Prerendering mode support
 
 ### Known Issues Fixed
-1. Navigation test - LCP tracking now resets properly on `load()`
+1. Navigation test - Fixed by calling `initializeLCPTracking` in the `setup` callback when using `forceReplace: true`
 2. User interaction - Events now properly trigger LCP finalization
 3. Timer duration - Changed from 10s to 5s per spec
+4. Controller replacement - When using WebFControllerManager with `forceReplace: true`, LCP must be initialized in the setup callback
 
 ## Important Notes
 
