@@ -849,6 +849,9 @@ abstract class Element extends ContainerNode
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
     _connectedCompleter = null;
+    
+    // Notify controller that this element was removed (for LCP tracking)
+    ownerDocument.controller.notifyElementRemoved(this);
   }
 
   RenderViewportBox? getRootViewport() {

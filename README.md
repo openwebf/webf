@@ -101,27 +101,53 @@ void main() {
 ```
 
 
-### 3. Add the WebF widget to run your web applications.
+### 3. Initialize WebFControllerManager and add the WebF widget to run your web applications.
 
 ```dart
-@override
-Widget build(BuildContext context) {
-  final MediaQueryData queryData = MediaQuery.of(context);
-  final Size viewportSize = queryData.size;
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() => _MyAppState();
+}
 
-  return Scaffold(
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    _initializeWebF();
+  }
+
+  Future<void> _initializeWebF() async {
+    // Initialize WebFControllerManager
+    WebFControllerManager.instance.initialize(
+      WebFControllerManagerConfig(
+        maxAliveInstances: 4,
+        maxAttachedInstances: 2,
+      ),
+    );
+
+    // Add controller with your web app
+    await WebFControllerManager.instance.addWithPreload(
+      name: 'vue_app',
+      bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // Your Vue app URL
+    );
+  }
+
+  @override
+  void dispose() {
+    WebFControllerManager.instance.disposeAll();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
       body: Center(
-    child: Column(
-      children: [
-        WebF(
-          devToolsService: ChromeDevToolsService(), // Enable Chrome DevTools Services
-          viewportWidth: viewportSize.width - queryData.padding.horizontal, // Adjust the viewportWidth
-          viewportHeight: viewportSize.height - queryData.padding.vertical, // Adjust the viewportHeight
-          bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // The page entry point
+        child: WebF.fromControllerName(
+          controllerName: 'vue_app',
         ),
-      ],
-    ),
-  ));
+      ),
+    );
+  }
 }
 ```
 

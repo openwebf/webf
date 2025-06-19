@@ -14,6 +14,7 @@ import 'package:webf/src/devtools/console_store.dart';
 import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/devtools/remote_object_service.dart';
 import 'package:webf/src/foundation/http_cache.dart';
+import 'package:webf/dom.dart' as dom;
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -203,7 +204,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 4,
+      length: 5,
       vsync: this,
       initialIndex: _lastSelectedTabIndex,
     );
@@ -285,6 +286,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 Tab(text: 'Routes'),
                 Tab(text: 'Network'),
                 Tab(text: 'Console'),
+                Tab(text: 'Performance'),
               ],
             ),
           ),
@@ -297,6 +299,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 _buildRoutesTab(),
                 _buildNetworkTab(),
                 _buildConsoleTab(),
+                _buildPerformanceTab(),
               ],
             ),
           ),
@@ -324,6 +327,40 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           SizedBox(height: 16),
           Expanded(
             child: _buildControllersList(manager),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPerformanceTab() {
+    final manager = WebFControllerManager.instance;
+    final controllerNames = manager.controllerNames;
+
+    return Container(
+      padding: EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Performance',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Largest Contentful Paint (LCP) Metrics',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+          SizedBox(height: 16),
+          Expanded(
+            child: _buildLCPMetricsList(manager, controllerNames),
           ),
         ],
       ),
@@ -713,6 +750,238 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
         );
       },
+    );
+  }
+
+  Widget _buildLCPMetricsList(WebFControllerManager manager, List<String> controllerNames) {
+    if (controllerNames.isEmpty) {
+      return Center(
+        child: Text(
+          'No controllers registered',
+          style: TextStyle(color: Colors.white54),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: controllerNames.length,
+      itemBuilder: (context, index) {
+        final name = controllerNames[index];
+        final controller = manager.getControllerSync(name);
+        final state = manager.getControllerState(name);
+
+        return Container(
+          margin: EdgeInsets.only(bottom: 8),
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white10,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (controller != null) ...[
+                          SizedBox(height: 4),
+                          Text(
+                            'URL: ${controller.url}',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 11,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getStateColor(state).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _getStateText(state),
+                      style: TextStyle(
+                        color: _getStateColor(state),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (controller != null) ...[
+                SizedBox(height: 12),
+                _buildLCPMetrics(controller),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLCPMetrics(WebFController controller) {
+    // Check if LCP data is available
+    final bool hasLCPData = controller.lastReportedLCPTime > 0 || controller.lcpFinalized;
+
+    if (!hasLCPData) {
+      return Text(
+        'LCP: Not measured yet',
+        style: TextStyle(
+          color: Colors.white54,
+          fontSize: 12,
+        ),
+      );
+    }
+
+    final double lcpTime = controller.lastReportedLCPTime;
+    final bool isFinalized = controller.lcpFinalized;
+    final dom.Element? lcpElement = controller.currentLCPElement;
+
+    // Determine LCP rating based on time
+    Color lcpColor;
+    String rating;
+    if (lcpTime < 100) {
+      lcpColor = Colors.blue;
+      rating = 'Extreme Fast';
+    } else if (lcpTime < 500) {
+      lcpColor = Colors.teal;
+      rating = 'Fast';
+    } else if (lcpTime < 1000) {
+      lcpColor = Colors.green;
+      rating = 'Good';
+    } else if (lcpTime <= 2500) {
+      lcpColor = Colors.lightGreen;
+      rating = 'Acceptable';
+    } else if (lcpTime <= 4000) {
+      lcpColor = Colors.orange;
+      rating = 'Needs Improvement';
+    } else {
+      lcpColor = Colors.red;
+      rating = 'Poor';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'LCP: ',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+              ),
+            ),
+            Text(
+              '${lcpTime.toStringAsFixed(0)} ms',
+              style: TextStyle(
+                color: lcpColor,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(width: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: lcpColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                rating,
+                style: TextStyle(
+                  color: lcpColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (!isFinalized) ...[
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'MEASURING',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        SizedBox(height: 4),
+        LinearProgressIndicator(
+          value: lcpTime / 6000, // Max 6 seconds for visualization
+          backgroundColor: Colors.white10,
+          valueColor: AlwaysStoppedAnimation<Color>(lcpColor),
+          minHeight: 4,
+        ),
+        if (lcpElement != null) ...[
+          SizedBox(height: 8),
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'LCP Element:',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 4),
+                _buildElementInfo(lcpElement),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildElementInfo(dom.Element element) {
+    String elementDescription = element.toString();
+    return Text(
+      elementDescription,
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 11,
+        fontFamily: 'monospace',
+      ),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -3171,33 +3440,33 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
   List<Widget> _buildPropertiesWithPrototype() {
     // Check if this is an HTML element by looking at the description
     final isHtmlElement = _isHtmlElement();
-    
+
     // Simply build all properties in order
     // The [[Prototype]] property will be handled specially in _buildProperty
     return _properties!.map((prop) => _buildProperty(prop, isHtmlElement)).toList();
   }
-  
+
   bool _isHtmlElement() {
     // Check if the parent object is an HTML element
     // HTML elements have descriptions like <div id="..." class="...">...</div>
     final desc = widget.remoteObject.description;
-    
+
     // First check the description format
-    if (desc.startsWith('<') && desc.contains('>') && 
+    if (desc.startsWith('<') && desc.contains('>') &&
         (desc.contains('…') || desc.endsWith('/>'))) {
       return true;
     }
-    
+
     // Also check if all properties look like child nodes
     if (_properties != null && _properties!.isNotEmpty) {
       // If most properties look like child nodes, this is probably an element showing its children
-      final childNodeCount = _properties!.where((prop) => 
+      final childNodeCount = _properties!.where((prop) =>
         prop.name != '[[Prototype]]' && _isChildNode(prop.name)
       ).length;
       final totalCount = _properties!.where((prop) => prop.name != '[[Prototype]]').length;
       return totalCount > 0 && childNodeCount == totalCount;
     }
-    
+
     return false;
   }
 
@@ -3241,7 +3510,7 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     // Check if this is a child node of an HTML element
     // Child nodes have names like "text content", <tagname>, or <!-- -->
     final isChildNode = isParentHtmlElement && _isChildNode(property.name);
-    
+
     if (isChildNode) {
       // For child nodes, display them without the colon separator
       return Padding(
@@ -3371,7 +3640,7 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
         return Colors.white70;
     }
   }
-  
+
   bool _isChildNode(String name) {
     // Check if this is a child node based on the naming pattern
     // Text nodes: "text content"
@@ -3381,7 +3650,7 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
            (name.startsWith('<') && name.endsWith('>')) ||
            (name.startsWith('<!--') && name.endsWith('-->'));
   }
-  
+
   Color _getChildNodeColor(String name) {
     if (name.startsWith('"') && name.endsWith('"')) {
       // Text node - green color

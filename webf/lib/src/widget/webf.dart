@@ -268,6 +268,25 @@ class WebF extends StatefulWidget {
 }
 
 class AutoManagedWebFState extends State<AutoManagedWebF> {
+  // Capture LCP start time when state is created
+  final DateTime _lcpStartTime = DateTime.now();
+  
+  @override
+  void initState() {
+    super.initState();
+    // Initialize LCP tracking when state is created
+    _initializeLCPForController();
+  }
+
+  Future<void> _initializeLCPForController() async {
+    final controller = await _getOrCreateController();
+    if (controller != null) {
+      // Always reset LCP tracking with the new start time when AutoManagedWebFState is created
+      // This ensures LCP is properly tracked for each page load, even if controller is reused
+      controller.initializeLCPTracking(_lcpStartTime);
+    }
+  }
+
   Widget buildWebF(WebFController controller) {
     return WebF._(
         controller: controller,

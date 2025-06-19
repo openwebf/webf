@@ -452,6 +452,7 @@ class ImageElement extends Element {
       _loaded = true;
       SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
         _dispatchLoadEvent();
+        _reportLCPCandidate();
       });
       SchedulerBinding.instance.scheduleFrame();
     }
@@ -622,8 +623,7 @@ class ImageElement extends Element {
 
   // Reload current image when width/height/boxFit changed.
   // If url is changed, please call [_startLoadNewImage] instead.
-  void _reloadImage({ bool forceUpdate = false }) {
-
+  void _reloadImage({bool forceUpdate = false}) {
     // Clear the cache and previous loaded provider
     if (forceUpdate) {
       _currentImageProvider = null;
@@ -633,7 +633,6 @@ class ImageElement extends Element {
       );
       PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
     }
-
 
     if (_isSVGMode) {
       // In svg mode, we don't need to reload
@@ -665,6 +664,18 @@ class ImageElement extends Element {
       }
     } else if (property == OBJECT_FIT || property == OBJECT_POSITION) {
       renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+    }
+  }
+
+  void _reportLCPCandidate() {
+    if (naturalWidth > 0 &&
+        naturalHeight > 0 &&
+        renderStyle.attachedRenderBoxModel != null &&
+        !renderStyle.attachedRenderBoxModel!.size.isEmpty) {
+      double visibleArea = renderStyle.attachedRenderBoxModel!.calculateVisibleArea();
+      if (visibleArea > 0) {
+        ownerDocument.controller.reportLCPCandidate(this, visibleArea);
+      }
     }
   }
 }

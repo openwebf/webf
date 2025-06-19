@@ -10,6 +10,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/dom.dart' show Element;
+import 'package:webf/rendering.dart' show RenderBoxModel;
 import 'package:webf/src/rendering/text.dart' show InlineBoxConstraints, MultiLineBoxConstraints, RenderTextBox, webfTextMaxLines;
 import 'package:webf/src/rendering/text_span.dart';
 import 'package:webf/src/rendering/webf_text_painter.dart';
@@ -737,6 +739,9 @@ class WebFRenderParagraph extends RenderBox
       }
       context.canvas.restore();
     }
+
+    // Report LCP candidate after painting
+    _reportLCPCandidate();
   }
 
   /// Returns the offset at which to paint the caret.
@@ -855,5 +860,25 @@ class WebFRenderParagraph extends RenderBox
       defaultValue: null,
     ));
     properties.add(IntProperty('maxLines', maxLines, ifNull: 'unlimited'));
+  }
+
+  void _reportLCPCandidate() {
+    if (parent is RenderTextBox && !size.isEmpty) {
+      final RenderTextBox parentTextBox = parent as RenderTextBox;
+      // Find the nearest RenderBoxModel ancestor
+      RenderObject? ancestor = parentTextBox.parent;
+      while (ancestor != null && ancestor is! RenderBoxModel) {
+        ancestor = ancestor.parent;
+      }
+
+      if (ancestor is RenderBoxModel) {
+        double visibleArea = ancestor.calculateVisibleArea();
+        if (visibleArea > 0) {
+          // Get the element from the render style target
+          final Element element = parentTextBox.renderStyle.target;
+          element.ownerDocument.controller.reportLCPCandidate(element, visibleArea);
+        }
+      }
+    }
   }
 }

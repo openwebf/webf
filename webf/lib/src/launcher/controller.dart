@@ -50,6 +50,7 @@ typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
+typedef LCPHandler = void Function(double lcpTime);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -97,6 +98,31 @@ enum PreloadingStatus {
 enum PreRenderingStatus { none, preloading, evaluate, rendering, done, fail }
 
 class WebFController with Diagnosticable {
+  // LCP tracking
+  DateTime? _navigationStartTime;
+  bool _lcpReported = false;
+  double _largestContentfulPaintSize = 0;
+  double _lastReportedLCPTime = 0;
+  Timer? _lcpAutoFinalizeTimer;
+  WeakReference<Element>? _currentLCPElement;
+
+  // Expose LCP tracking state for WebFState
+  bool get lcpInitialized => _navigationStartTime != null;
+  bool get lcpReported => _lcpReported;
+  bool get lcpFinalized => _lcpReported;
+  double get lastReportedLCPTime => _lastReportedLCPTime;
+  
+  /// Gets the current LCP element if it's still connected to the DOM
+  Element? get currentLCPElement {
+    if (_currentLCPElement != null) {
+      final element = _currentLCPElement!.target;
+      if (element != null && element.isConnected) {
+        return element;
+      }
+    }
+    return null;
+  }
+
   /// The background color for viewport, default to transparent.
   /// This determines the background color of the WebF widget content area.
   final Color? background;
@@ -324,6 +350,17 @@ class WebFController with Diagnosticable {
   /// allowing the app to reflect title changes in the UI.
   TitleChangedHandler? onTitleChanged;
 
+  /// Callback triggered when the Largest Contentful Paint (LCP) occurs.
+  /// LCP is a Core Web Vitals metric that measures loading performance.
+  /// This callback may be called multiple times as larger content elements are rendered.
+  /// The callback provides the LCP time in milliseconds since navigation start.
+  LCPHandler? onLCP;
+
+  /// Callback triggered once when the Largest Contentful Paint (LCP) metric is finalized.
+  /// This happens when user interaction occurs (click, tap, keyboard input) or when the page is hidden.
+  /// The callback provides the final LCP time in milliseconds since navigation start.
+  LCPHandler? onLCPFinal;
+
   WebFMethodChannel? _methodChannel;
   /// Gets the JavaScript channel for this controller.
   ///
@@ -494,6 +531,8 @@ class WebFController with Diagnosticable {
     this.onLoadError,
     this.onControllerInit,
     this.onJSError,
+    this.onLCP,
+    this.onLCPFinal,
     this.httpClientInterceptor,
     this.uriParser,
     this.preloadedBundles,
@@ -680,6 +719,23 @@ class WebFController with Diagnosticable {
     String? currentPageId = WebFControllerManager.instance.getControllerName(this);
 
     if (currentPageId == null) return null;
+
+    // Reset LCP tracking for new page load
+    _lcpReported = false;
+    _largestContentfulPaintSize = 0;
+    _lastReportedLCPTime = 0;
+    _currentLCPElement = null;
+    _navigationStartTime = DateTime.now();
+    
+    // Cancel any existing timer
+    _lcpAutoFinalizeTimer?.cancel();
+    
+    // Set up new auto-finalization timer
+    _lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
+      if (!_lcpReported) {
+        finalizeLCP();
+      }
+    });
 
     return WebFControllerManager.instance
         .addOrUpdateControllerWithLoading(name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
@@ -1309,6 +1365,84 @@ class WebFController with Diagnosticable {
   String toStringShort() {
     String status = mode == WebFLoadingMode.preloading ? _preloadStatus.toString() : _preRenderingStatus.toString();
     return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, status: $status)';
+  }
+
+  /// Initializes LCP tracking by recording the navigation start time.
+  /// Called when the viewport is first laid out.
+  void initializeLCPTracking(DateTime startTime) {
+    _navigationStartTime = startTime;
+    _lcpReported = false;
+    _largestContentfulPaintSize = 0;
+    _lastReportedLCPTime = 0;
+    _currentLCPElement = null;
+
+    // Cancel any existing timer
+    _lcpAutoFinalizeTimer?.cancel();
+
+    // Set up auto-finalization timer with a 5 second delay
+    // This ensures we wait long enough for all LCP candidates to be reported
+    _lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
+      // Auto-finalize LCP if no user interaction has occurred
+      if (!_lcpReported) {
+        finalizeLCP();
+      }
+    });
+  }
+
+  /// Called when an element is removed from the DOM.
+  /// Checks if it was the current LCP element and resets tracking if so.
+  void notifyElementRemoved(Element element) {
+    if (_currentLCPElement != null && _currentLCPElement!.target == element) {
+      // The current LCP element was removed, reset tracking
+      _largestContentfulPaintSize = 0;
+      _currentLCPElement = null;
+    }
+  }
+
+  /// Reports a potential LCP candidate.
+  /// @param element The element being reported as an LCP candidate
+  /// @param contentSize The visible area of the element in pixels
+  void reportLCPCandidate(Element element, double contentSize) {
+    // Don't report if already finalized or not initialized
+    if (_lcpReported || _navigationStartTime == null) return;
+
+    // Check if the current LCP element has been removed from the DOM
+    if (_currentLCPElement != null) {
+      final currentElement = _currentLCPElement!.target;
+      if (currentElement == null || !currentElement.isConnected) {
+        // Reset LCP tracking if the current LCP element was removed
+        _largestContentfulPaintSize = 0;
+        _currentLCPElement = null;
+      }
+    }
+
+    // Only report if this is a larger content element
+    if (contentSize > _largestContentfulPaintSize) {
+      _largestContentfulPaintSize = contentSize;
+      _currentLCPElement = WeakReference(element);
+      final lcpTime = DateTime.now().difference(_navigationStartTime!).inMilliseconds.toDouble();
+      _lastReportedLCPTime = lcpTime;
+
+      // Fire the progressive onLCP callback
+      if (onLCP != null) {
+        onLCP!(lcpTime);
+      }
+    }
+  }
+
+  /// Finalizes LCP measurement when user interaction occurs.
+  /// After this is called, no more LCP candidates will be reported.
+  void finalizeLCP() {
+    // Cancel the auto-finalization timer if it's still running
+    _lcpAutoFinalizeTimer?.cancel();
+    _lcpAutoFinalizeTimer = null;
+
+    if (!_lcpReported && _navigationStartTime != null && onLCPFinal != null) {
+      // Use the last reported LCP time instead of calculating a new time
+      // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
+      onLCPFinal!(_lastReportedLCPTime);
+    }
+    _lcpReported = true;
   }
 }
 

@@ -160,6 +160,8 @@ When implementing TypeScript analysis:
 - [WebF Integration Testing Guide](./claude_memory/webf_integration_testing_guide.md) - Guide for writing and running integration tests
 - [WebF Package Preparation](./claude_memory/webf_package_preparation.md) - Steps for preparing WebF packages
 - [WebF Text Element Update Fix](./claude_memory/webf_text_element_update_fix.md) - Fix for text element update issues
+- [LCP (Largest Contentful Paint) Implementation](./claude_memory/lcp_implementation.md) - Implementation of LCP performance metric callbacks for WebFController
+
 
 ## Testing Guidelines
 
@@ -255,7 +257,7 @@ await controller.controlledInitCompleter.future;
    ```typescript
    // File content cache
    const cache = new Map<string, CachedType>();
-   
+
    // Cache with validation
    if (cache.has(key)) {
      return cache.get(key);
@@ -290,7 +292,7 @@ async function processFilesInBatch<T>(
 Before marking any FFI/cross-language task as complete, verify:
 - [ ] Memory management: All allocated memory has corresponding free calls
 - [ ] Dart handles: Persistent handles used for async operations
-- [ ] String lifetime: Strings copied when crossing thread boundaries  
+- [ ] String lifetime: Strings copied when crossing thread boundaries
 - [ ] Error paths: All error conditions handled gracefully
 - [ ] Thread safety: No shared mutable state without synchronization
 - [ ] Build success: Code compiles without warnings

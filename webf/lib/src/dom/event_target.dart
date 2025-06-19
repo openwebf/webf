@@ -157,7 +157,26 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
   }
   
+  void _finalizeLCPOnUserInteraction(Event event) {
+    // Finalize LCP when user interacts with the page
+    if (event.type == EVENT_CLICK || 
+        event.type == EVENT_TOUCH_START || 
+        event.type == 'mousedown' || 
+        event.type == EVENT_KEY_DOWN) {
+      if (this is Node) {
+        final Node node = this as Node;
+        node.ownerDocument.controller.finalizeLCP();
+      } else if (this is Window) {
+        final Window window = this as Window;
+        window.document.controller.finalizeLCP();
+      }
+    }
+  }
+  
   Future<void> _executeDispatchEvent(Event event) async {
+    // Finalize LCP on user interaction
+    _finalizeLCPOnUserInteraction(event);
+    
     await _handlerCaptureEvent(event);
     await _dispatchEventInDOM(event);
 

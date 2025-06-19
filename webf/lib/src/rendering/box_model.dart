@@ -1564,13 +1564,27 @@ class RenderBoxModel extends RenderBox
     return isHit;
   }
 
-  /// Get the root box model of document which corresponds to html element.
-  RenderBoxModel? getRootBoxModel() {
-    RenderBoxModel _self = this;
-    while (_self.parent != null && _self.parent is! RootRenderViewportBox) {
-      _self = _self.parent as RenderBoxModel;
-    }
-    return _self.parent is RootRenderViewportBox ? _self : null;
+  /// Calculates the visible area of this element within the viewport.
+  /// Returns the area in pixels that is visible, or 0 if the element is not visible.
+  double calculateVisibleArea() {
+    if (!hasSize || !attached) return 0;
+
+    // Get the viewport using the element's getRootViewport method
+    RenderViewportBox? viewport = renderStyle.target.getRootViewport();
+    if (viewport == null || !viewport.hasSize) return 0;
+
+    // Get the element's position relative to viewport
+    Offset elementOffset = getOffsetToRenderObjectAncestor(Offset.zero, viewport);
+
+    // Get element and viewport bounds
+    Rect elementBounds = elementOffset & size;
+    Rect viewportBounds = Offset.zero & viewport.size;
+
+    // Calculate intersection
+    Rect? intersection = elementBounds.intersect(viewportBounds);
+    if (intersection.width <= 0 || intersection.height <= 0) return 0;
+
+    return intersection.width * intersection.height;
   }
 
   @override
