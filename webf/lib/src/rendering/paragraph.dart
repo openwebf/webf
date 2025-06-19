@@ -11,11 +11,10 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' show Element;
-import 'package:webf/rendering.dart' show RenderBoxModel;
+import 'package:webf/rendering.dart' show RenderViewportBox;
 import 'package:webf/src/rendering/text.dart' show InlineBoxConstraints, MultiLineBoxConstraints, RenderTextBox, webfTextMaxLines;
 import 'package:webf/src/rendering/text_span.dart';
 import 'package:webf/src/rendering/webf_text_painter.dart';
-import 'package:webf/foundation.dart';
 
 const String _kEllipsis = '\u2026';
 
@@ -865,20 +864,62 @@ class WebFRenderParagraph extends RenderBox
   void _reportLCPCandidate() {
     if (parent is RenderTextBox && !size.isEmpty) {
       final RenderTextBox parentTextBox = parent as RenderTextBox;
-      // Find the nearest RenderBoxModel ancestor
-      RenderObject? ancestor = parentTextBox.parent;
-      while (ancestor != null && ancestor is! RenderBoxModel) {
-        ancestor = ancestor.parent;
-      }
-
-      if (ancestor is RenderBoxModel) {
-        double visibleArea = ancestor.calculateVisibleArea();
-        if (visibleArea > 0) {
-          // Get the element from the render style target
-          final Element element = parentTextBox.renderStyle.target;
-          element.ownerDocument.controller.reportLCPCandidate(element, visibleArea);
-        }
+      
+      // Calculate the actual text bounding box
+      double textBoundingBoxArea = _calculateTextBoundingBoxArea(parentTextBox);
+      
+      if (textBoundingBoxArea > 0) {
+        // Get the element from the render style target
+        final Element element = parentTextBox.renderStyle.target;
+        element.ownerDocument.controller.reportLCPCandidate(element, textBoundingBoxArea);
       }
     }
+  }
+  
+  double _calculateTextBoundingBoxArea(RenderTextBox parentTextBox) {
+    // Get the viewport
+    RenderViewportBox? viewport = parentTextBox.renderStyle.target.getRootViewport();
+    if (viewport == null || !viewport.hasSize) return 0;
+    
+    // Calculate the actual text bounding box based on line renders
+    if (_lineRenders.isEmpty) return 0;
+    
+    // Find the bounds of all text lines
+    double minLeft = double.infinity;
+    double maxRight = 0;
+    double minTop = double.infinity;
+    double maxBottom = 0;
+    
+    for (int i = 0; i < _lineRenders.length; i++) {
+      WebFRenderTextLine line = _lineRenders[i];
+      
+      // Calculate the actual text bounds for this line
+      double lineLeft = line.paintLeft;
+      double lineTop = line.paintTop - line.lineAscentHeightOffset;
+      double lineRight = lineLeft + line.lineRect.width;
+      double lineBottom = lineTop + line.fontHeight;
+      
+      minLeft = math.min(minLeft, lineLeft);
+      maxRight = math.max(maxRight, lineRight);
+      minTop = math.min(minTop, lineTop);
+      maxBottom = math.max(maxBottom, lineBottom);
+    }
+    
+    // Create the text bounding box relative to this paragraph
+    Rect textBounds = Rect.fromLTRB(minLeft, minTop, maxRight, maxBottom);
+    
+    // Get the position of this paragraph relative to the viewport
+    Offset paragraphOffset = localToGlobal(Offset.zero, ancestor: viewport);
+    
+    // Transform text bounds to viewport coordinates
+    Rect absoluteTextBounds = textBounds.shift(paragraphOffset);
+    
+    // Calculate intersection with viewport
+    Rect viewportBounds = Offset.zero & viewport.size;
+    Rect? intersection = absoluteTextBounds.intersect(viewportBounds);
+    
+    if (intersection.width <= 0 || intersection.height <= 0) return 0;
+    
+    return intersection.width * intersection.height;
   }
 }
