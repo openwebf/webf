@@ -1,3 +1,35 @@
+## 0.21.6
+
+## New Features
+
+### LCP (Largest Contentful Paint) Performance Metric
+
+WebF now supports tracking Largest Contentful Paint (LCP), one of Google's Core Web Vitals metrics. LCP measures the render time of the largest image or text block visible within the viewport, providing insights into perceived loading performance.
+
+#### Features:
+- **Progressive LCP tracking**: Get real-time updates as larger content elements are rendered
+- **Final LCP reporting**: Receive the final LCP value when measurement is complete
+- **Automatic finalization**: LCP is finalized on user interaction, after 5 seconds, or on navigation
+- **DevTools integration**: View LCP metrics in the WebF DevTools performance panel
+
+#### Usage:
+
+```dart
+// With WebFControllerManager (recommended)
+await WebFControllerManager.instance.addWithPreload(
+  name: 'my_page',
+  createController: () => WebFController(
+    onLCP: (time) => analytics.track('lcp', time),
+    onLCPFinal: (time) => analytics.track('lcp_final', time),
+  ),
+  bundle: bundle,
+);
+```
+
+## 0.21.5+4
+
+Same as 0.21.5+3, but reverts some unintended changes introduced in 0.22.0
+
 ## 0.21.5+3
 
 ### Global Cache Management API

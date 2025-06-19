@@ -30,6 +30,19 @@ final WebFLCPCallback? onLCPFinal;  // Final LCP when finalized
 - `finalizeLCP()` - Finalize LCP measurement (called on user interaction or timeout)
 - `notifyElementRemoved(Element element)` - Handle LCP element removal from DOM
 
+#### Load Method Reset
+The `load()` method now resets LCP state when loading new content:
+```dart
+// Reset LCP tracking for new navigation
+_navigationStartTime = null;
+_lcpReported = false;
+_largestContentfulPaintSize = 0;
+_lastReportedLCPTime = 0;
+_lcpAutoFinalizeTimer?.cancel();
+_lcpAutoFinalizeTimer = null;
+_currentLCPElement = null;
+```
+
 ### 2. Event Target Changes (webf/lib/src/dom/event_target.dart)
 
 Added `_finalizeLCPOnUserInteraction()` to finalize LCP when user interacts:
@@ -53,9 +66,27 @@ Added `_finalizeLCPOnUserInteraction()` to finalize LCP when user interacts:
 ### 4. Widget Integration (webf/lib/src/widget/webf.dart)
 
 #### AutoManagedWebFState
-- Captures LCP start time when state is created
-- Initializes LCP tracking when controller is ready
-- Ensures LCP tracking persists across controller replacements
+- Captures LCP start time as a final field when state is created
+- Initializes LCP tracking in `_getOrCreateController` when controller becomes available
+- Ensures proper timing without interfering with controller creation
+
+```dart
+class AutoManagedWebFState extends State<AutoManagedWebF> {
+  // Capture LCP start time when state is created
+  final DateTime _lcpStartTime = DateTime.now();
+  
+  Future<WebFController?> _getOrCreateController() async {
+    // ... controller creation logic ...
+    
+    // Initialize LCP tracking when controller is available
+    if (controller != null) {
+      controller.initializeLCPTracking(_lcpStartTime);
+    }
+    
+    return controller;
+  }
+}
+```
 
 ### 5. DevTools Integration (webf/lib/src/devtools/inspector_panel.dart)
 - Added LCP data to performance panel
@@ -127,6 +158,7 @@ LCP is automatically finalized when:
 2. User interaction - Events now properly trigger LCP finalization
 3. Timer duration - Changed from 10s to 5s per spec
 4. Controller replacement - When using WebFControllerManager with `forceReplace: true`, LCP must be initialized in the setup callback
+5. Widget initialization timing - Fixed by capturing `_lcpStartTime` as a final field in AutoManagedWebFState and calling `initializeLCPTracking` in `_getOrCreateController` to avoid premature controller creation
 
 ## Important Notes
 
