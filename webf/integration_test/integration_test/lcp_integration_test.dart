@@ -12,25 +12,25 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   // Setup WebF dynamic library path
-  final String currentPath = path.dirname(Platform.script.path);
-  WebFDynamicLibrary.dynamicLibraryPath = path.join(currentPath, '../../bridge/build/macos/lib/x86_64');
+  // final String currentPath = path.dirname(Platform.script.path);
+  // WebFDynamicLibrary.dynamicLibraryPath = path.join(currentPath, '../../../bridge/build/macos/lib/x86_64');
 
   // Setup temporary directory mock
-  Directory tempDirectory = Directory('./temp');
-  if (!tempDirectory.existsSync()) {
-    tempDirectory.createSync();
-  }
-
-  // Mock the WebF method channel for getTemporaryDirectory
-  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-    const MethodChannel('webf'),
-    (MethodCall methodCall) async {
-      if (methodCall.method == 'getTemporaryDirectory') {
-        return tempDirectory.path;
-      }
-      throw FlutterError('Not implemented for method ${methodCall.method}.');
-    },
-  );
+  // Directory tempDirectory = Directory('./temp');
+  // if (!tempDirectory.existsSync()) {
+  //   tempDirectory.createSync();
+  // }
+  //
+  // // Mock the WebF method channel for getTemporaryDirectory
+  // TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+  //   const MethodChannel('webf'),
+  //   (MethodCall methodCall) async {
+  //     if (methodCall.method == 'getTemporaryDirectory') {
+  //       return tempDirectory.path;
+  //     }
+  //     throw FlutterError('Not implemented for method ${methodCall.method}.');
+  //   },
+  // );
 
   group('LCP Integration Tests', () {
     setUp(() {
@@ -50,9 +50,9 @@ void main() {
 
     tearDownAll(() {
       // Clean up temp directory
-      if (tempDirectory.existsSync()) {
-        tempDirectory.deleteSync(recursive: true);
-      }
+      // if (tempDirectory.existsSync()) {
+      //   tempDirectory.deleteSync(recursive: true);
+      // }
     });
 
     testWidgets('LCP tracks text content with controller manager', (WidgetTester tester) async {

@@ -8,7 +8,7 @@
 PRODUCT_NAME = integration_test
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.openwebf.integrationTest
+PRODUCT_BUNDLE_IDENTIFIER = com.example.integrationTest
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.openwebf. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
