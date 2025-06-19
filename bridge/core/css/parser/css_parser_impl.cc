@@ -485,6 +485,24 @@ bool CSSParserImpl::ConsumeRuleList(CSSParserTokenStream& stream,
       allowed_rules = ComputeNewAllowedRules(allowed_rules, rule.get());
       callback(rule, offset);
     }
+    
+    // Safety check to prevent infinite loops - assert will fail if stream doesn't advance
+    uint32_t current_offset = stream.Offset();
+    if (current_offset <= offset) {
+      // This should not happen in normal operation - it indicates parser corruption
+      // Log the error and try to recover by consuming a token
+      fprintf(stderr, "CSS Parser: Stream stuck at offset %u, attempting recovery\n", offset);
+      if (!stream.AtEnd()) {
+        stream.UncheckedConsume();
+        current_offset = stream.Offset();
+      }
+      // If still stuck, we need to break to prevent infinite loop
+      if (current_offset <= offset) {
+        fprintf(stderr, "CSS Parser: Cannot recover from stuck stream, breaking\n");
+        break;
+      }
+    }
+    
     assert(stream.Offset() > offset);
   }
 

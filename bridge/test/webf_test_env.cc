@@ -205,6 +205,24 @@ WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPa
     : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
+  // Clean up test context map entry
+  for (auto it = test_context_map.begin(); it != test_context_map.end(); ) {
+    if (it->second && it->second->page() == page_) {
+      it = test_context_map.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  
+  // Clean up JSThreadState
+  if (isolate_context_ && isolate_context_->runtime()) {
+    JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(isolate_context_->runtime()));
+    if (ts) {
+      delete ts;
+      JS_SetRuntimeOpaque(isolate_context_->runtime(), nullptr);
+    }
+  }
+  
   isolate_context_->Dispose([]() {});
   delete isolate_context_;
 }
@@ -214,6 +232,26 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len) {
+  // Clean up old contexts more aggressively to prevent resource exhaustion
+  if (test_context_map.size() > 50) {
+    test_context_map.clear();
+  }
+  
+  // Log current context count for debugging
+  static int init_count = 0;
+  init_count++;
+  if (init_count % 25 == 0) {
+    fprintf(stderr, "TEST_init called %d times, test_context_map size: %zu, contextId: %f\n", 
+            init_count, test_context_map.size(), contextId);
+    fflush(stderr);
+  }
+  
+  // Prevent infinite context creation - hard limit at 500
+  if (init_count > 500) {
+    fprintf(stderr, "ERROR: Too many TEST_init calls (%d), possible infinite loop!\n", init_count);
+    exit(1);
+  }
+  
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto* dart_isolate_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
   double pageContextId = contextId -= 1;

@@ -77,6 +77,7 @@ class CSSRule : public ScriptWrappable {
     kFontFeatureRule,
     kStartingStyleRule,
     kViewTransitionRule,
+    kNestedDeclarationsRule,
     kPositionTryRule,
   };
 

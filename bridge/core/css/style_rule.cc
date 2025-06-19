@@ -31,6 +31,20 @@
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/style_sheet_contents.h"
 #include "css_selector_list.h"
+#include "core/css/css_style_rule.h"
+#include "core/css/css_media_rule.h"
+#include "core/css/css_supports_rule.h"
+#include "core/css/css_import_rule.h"
+#include "core/css/css_keyframes_rule.h"
+#include "core/css/css_layer_block_rule.h"
+#include "core/css/css_layer_statement_rule.h"
+#include "core/css/css_container_rule.h"
+#include "core/css/css_counter_style_rule.h"
+#include "core/css/style_rule_counter_style.h"
+#include "core/css/css_scope_rule.h"
+#include "core/css/css_nested_declarations_rule.h"
+#include "core/css/style_rule_nested_declarations.h"
+#include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
 
@@ -120,105 +134,67 @@ CSSRule* StyleRuleBase::CreateCSSOMWrapper(uint32_t position_hint,
                                            bool trigger_use_counters) const {
   CSSRule* rule = nullptr;
   StyleRuleBase* self = const_cast<StyleRuleBase*>(this);
-  //  switch (GetType()) {
-  //    case kStyle:
-  //      rule = MakeGarbageCollected<CSSStyleRule>(To<StyleRule>(self),
-  //                                                parent_sheet, position_hint);
-  //      break;
-  //    case kPage:
-  //      if (trigger_use_counters && parent_sheet) {
-  //        UseCounter::Count(parent_sheet->OwnerDocument(),
-  //                          WebFeature::kCSSPageRule);
-  //      }
-  //      rule = MakeGarbageCollected<CSSPageRule>(To<StyleRulePage>(self),
-  //                                               parent_sheet);
-  //      break;
-  //    case kPageMargin:
-  //      rule = MakeGarbageCollected<CSSMarginRule>(To<StyleRulePageMargin>(self),
-  //                                                 parent_sheet);
-  //      break;
-  //    case kProperty:
-  //      rule = MakeGarbageCollected<CSSPropertyRule>(To<StyleRuleProperty>(self),
-  //                                                   parent_sheet);
-  //      break;
-  //    case kFontFace:
-  //      rule = MakeGarbageCollected<CSSFontFaceRule>(To<StyleRuleFontFace>(self),
-  //                                                   parent_sheet);
-  //      break;
-  //    case kFontPaletteValues:
-  //      rule = MakeGarbageCollected<CSSFontPaletteValuesRule>(
-  //          To<StyleRuleFontPaletteValues>(self), parent_sheet);
-  //      break;
-  //    case kFontFeatureValues:
-  //      rule = MakeGarbageCollected<CSSFontFeatureValuesRule>(
-  //          To<StyleRuleFontFeatureValues>(self), parent_sheet);
-  //      break;
-  //    case kMedia:
-  //      rule = MakeGarbageCollected<CSSMediaRule>(To<StyleRuleMedia>(self),
-  //                                                parent_sheet);
-  //      break;
-  //    case kScope:
-  //      rule = MakeGarbageCollected<CSSScopeRule>(To<StyleRuleScope>(self),
-  //                                                parent_sheet);
-  //      break;
-  //    case kSupports:
-  //      rule = MakeGarbageCollected<CSSSupportsRule>(To<StyleRuleSupports>(self),
-  //                                                   parent_sheet);
-  //      break;
-  //    case kImport:
-  //      rule = MakeGarbageCollected<CSSImportRule>(To<StyleRuleImport>(self),
-  //                                                 parent_sheet);
-  //      break;
-  //    case kKeyframes:
-  //      rule = MakeGarbageCollected<CSSKeyframesRule>(
-  //          To<StyleRuleKeyframes>(self), parent_sheet);
-  //      break;
-  //    case kLayerBlock:
-  //      rule = MakeGarbageCollected<CSSLayerBlockRule>(
-  //          To<StyleRuleLayerBlock>(self), parent_sheet);
-  //      break;
-  //    case kLayerStatement:
-  //      rule = MakeGarbageCollected<CSSLayerStatementRule>(
-  //          To<StyleRuleLayerStatement>(self), parent_sheet);
-  //      break;
-  //    case kNamespace:
-  //      rule = MakeGarbageCollected<CSSNamespaceRule>(
-  //          To<StyleRuleNamespace>(self), parent_sheet);
-  //      break;
-  //    case kContainer:
-  //      rule = MakeGarbageCollected<CSSContainerRule>(
-  //          To<StyleRuleContainer>(self), parent_sheet);
-  //      break;
-  //    case kCounterStyle:
-  //      rule = MakeGarbageCollected<CSSCounterStyleRule>(
-  //          To<StyleRuleCounterStyle>(self), parent_sheet);
-  //      break;
-  //    case kStartingStyle:
-  //      rule = MakeGarbageCollected<CSSStartingStyleRule>(
-  //          To<StyleRuleStartingStyle>(self), parent_sheet);
-  //      break;
-  //    case kViewTransition:
-  //      rule = MakeGarbageCollected<CSSViewTransitionRule>(
-  //          To<StyleRuleViewTransition>(self), parent_sheet);
-  //      break;
-  //    case kPositionTry:
-  //      rule = MakeGarbageCollected<CSSPositionTryRule>(
-  //          To<StyleRulePositionTry>(self), parent_sheet);
-  //      break;
-  //    case kFontFeature:
-  //    case kKeyframe:
-  //    case kCharset:
-  //    case kFunction:
-  //    case kMixin:
-  //    case kApplyMixin:
-  //      NOTREACHED_IN_MIGRATION();
-  //      return nullptr;
-  //  }
-  //  if (parent_rule) {
-  //    rule->SetParentRule(parent_rule);
-  //  }
-  //  return rule;
-  return nullptr;
+  
+  // Since 'this' is const, we need to work with the const shared_ptr
+  auto self_ptr = std::const_pointer_cast<StyleRuleBase>(shared_from_this());
+  
+  // Create the appropriate CSS rule wrapper based on the rule type
+  switch (GetType()) {
+    case kStyle:
+      rule = MakeGarbageCollected<CSSStyleRule>(
+          std::static_pointer_cast<StyleRule>(self_ptr),
+          parent_sheet, position_hint);
+      break;
+    case kMedia:
+      rule = MakeGarbageCollected<CSSMediaRule>(
+          std::static_pointer_cast<StyleRuleMedia>(self_ptr), parent_sheet);
+      break;
+    case kSupports:
+      rule = MakeGarbageCollected<CSSSupportsRule>(
+          std::static_pointer_cast<StyleRuleSupports>(self_ptr), parent_sheet);
+      break;
+    case kImport:
+      rule = MakeGarbageCollected<CSSImportRule>(
+          To<StyleRuleImport>(self), parent_sheet);
+      break;
+    case kKeyframes:
+      rule = MakeGarbageCollected<CSSKeyframesRule>(
+          To<StyleRuleKeyframes>(self), parent_sheet);
+      break;
+    case kLayerBlock:
+      rule = MakeGarbageCollected<CSSLayerBlockRule>(
+          std::static_pointer_cast<StyleRuleLayerBlock>(self_ptr), parent_sheet);
+      break;
+    case kLayerStatement:
+      rule = MakeGarbageCollected<CSSLayerStatementRule>(
+          std::static_pointer_cast<StyleRuleLayerStatement>(self_ptr), parent_sheet);
+      break;
+    case kContainer:
+      rule = MakeGarbageCollected<CSSContainerRule>(
+          std::static_pointer_cast<StyleRuleContainer>(self_ptr), parent_sheet);
+      break;
+    case kCounterStyle:
+      rule = MakeGarbageCollected<CSSCounterStyleRule>(
+          std::static_pointer_cast<StyleRuleCounterStyle>(self_ptr), parent_sheet);
+      break;
+    case kScope:
+      rule = MakeGarbageCollected<CSSScopeRule>(
+          std::static_pointer_cast<StyleRuleScope>(self_ptr), parent_sheet);
+      break;
+    case kNestedDeclarations:
+      rule = MakeGarbageCollected<CSSNestedDeclarationsRule>(
+          std::static_pointer_cast<StyleRuleNestedDeclarations>(self_ptr), parent_sheet);
+      break;
+    // TODO: Implement other rule types as needed
+    default:
+      // For now, return nullptr for unimplemented types
+      return nullptr;
+  }
+  
+  if (rule && parent_rule) {
+    rule->SetParentRule(parent_rule);
+  }
+  return rule;
 }
 
 void StyleRuleBase::Reparent(webf::StyleRule* new_parent) {
@@ -752,6 +728,10 @@ void StyleRuleLayerBlock::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleGroup::TraceAfterDispatch(visitor);
 }
 
+std::string StyleRuleLayerBlock::GetNameAsString() const {
+  return StyleRuleBase::LayerNameAsString(name_);
+}
+
 StyleRuleLayerStatement::StyleRuleLayerStatement(std::vector<LayerName>&& names)
     : StyleRuleBase(kLayerStatement), names_(std::move(names)) {}
 
@@ -759,6 +739,15 @@ StyleRuleLayerStatement::StyleRuleLayerStatement(const StyleRuleLayerStatement& 
 
 void StyleRuleLayerStatement::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
+}
+
+std::vector<std::string> StyleRuleLayerStatement::GetNamesAsStrings() const {
+  std::vector<std::string> result;
+  result.reserve(names_.size());
+  for (const auto& name : names_) {
+    result.push_back(StyleRuleBase::LayerNameAsString(name));
+  }
+  return result;
 }
 
 StyleRuleCondition::StyleRuleCondition(RuleType type, std::vector<std::shared_ptr<StyleRuleBase>> rules)

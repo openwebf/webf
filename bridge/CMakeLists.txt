@@ -368,6 +368,18 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
     core/css/style_rule_counter_style.cc
+    core/css/css_grouping_rule.cc
+    core/css/css_layer_block_rule.cc
+    core/css/css_layer_statement_rule.cc
+    core/css/css_condition_rule.cc
+    core/css/css_container_rule.cc
+    core/css/css_scope_rule.cc
+    core/css/style_rule_nested_declarations.cc
+    core/css/css_nested_declarations_rule.cc
+    core/css/css_style_rule.cc
+    core/css/css_media_rule.cc
+    core/css/css_supports_rule.cc
+    core/css/css_counter_style_rule.cc
     core/animation/timeline_offset.cc
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc

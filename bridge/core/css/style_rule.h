@@ -78,6 +78,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
     kMixin,
     kApplyMixin,
     kPositionTry,
+    kNestedDeclarations,
   };
 
   // Name of a cascade layer as given by an @layer rule, split at '.' into a
@@ -110,6 +111,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
   bool IsImportRule() const { return GetType() == kImport; }
   bool IsStartingStyleRule() const { return GetType() == kStartingStyle; }
   bool IsViewTransitionRule() const { return GetType() == kViewTransition; }
+  bool IsNestedDeclarationsRule() const { return GetType() == kNestedDeclarations; }
   bool IsConditionRule() const {
     return GetType() == kContainer || GetType() == kMedia || GetType() == kSupports || GetType() == kStartingStyle;
   }

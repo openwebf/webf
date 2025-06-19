@@ -1,0 +1,47 @@
+// Copyright 2022 The Chromium Authors
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+#ifndef WEBF_CORE_CSS_CSS_SCOPE_RULE_H_
+#define WEBF_CORE_CSS_CSS_SCOPE_RULE_H_
+
+#include "core/css/css_grouping_rule.h"
+#include "core/executing_context.h"
+#include "foundation/casting.h"
+
+namespace webf {
+
+class StyleRuleScope;
+
+class CSSScopeRule final : public CSSGroupingRule {
+ public:
+  CSSScopeRule(std::shared_ptr<StyleRuleScope>, CSSStyleSheet*);
+  ~CSSScopeRule() override;
+
+  std::string PreludeText() const;
+  AtomicString cssText() const override;
+  std::string start() const;
+  std::string end() const;
+
+  void SetPreludeText(const ExecutingContext*, const std::string&);
+  StyleRuleScope& GetStyleRuleScope();
+  const StyleRuleScope& GetStyleRuleScope() const;
+
+ private:
+  CSSRule::Type GetType() const override { return kScopeRule; }
+};
+
+template <>
+struct DowncastTraits<CSSScopeRule> {
+  static bool AllowFrom(const CSSRule& rule) {
+    return rule.GetType() == CSSRule::kScopeRule;
+  }
+};
+
+}  // namespace webf
+
+#endif  // WEBF_CORE_CSS_CSS_SCOPE_RULE_H_

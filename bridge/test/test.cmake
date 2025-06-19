@@ -56,6 +56,10 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/css/css_color_function_test.cc
   ./core/css/css_advanced_features_test.cc
   ./core/css/css_counter_style_test.cc
+  ./core/css/css_layer_rule_test.cc
+  ./core/css/css_container_rule_test.cc
+  ./core/css/css_scope_rule_test.cc
+  ./core/css/css_nested_declarations_rule_test.cc
   ./core/css/css_nesting_test.cc
   ./core/css/container_query_test.cc
 
