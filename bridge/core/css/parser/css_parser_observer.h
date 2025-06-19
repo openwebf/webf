@@ -29,7 +29,7 @@
 #ifndef WEBF_CSS_PARSER_OBSERVER_H
 #define WEBF_CSS_PARSER_OBSERVER_H
 
-#include "core/css/css_at_rule_id.h"
+#include "core/css/parser/css_at_rule_id.h"
 #include "core/css/style_rule.h"
 
 namespace webf {

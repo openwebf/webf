@@ -12,7 +12,7 @@
 #include <cstdint>
 #include <initializer_list>
 
-#include "core/css/css_at_rule_id.h"
+#include "core/css/parser/css_at_rule_id.h"
 
 namespace webf {
 

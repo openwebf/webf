@@ -37,7 +37,7 @@
 #include "core/css/css_variable_data.h"
 #include "core/css/media_list.h"
 #include "core/css/style_scope.h"
-#include "css_at_rule_id.h"
+#include "parser/css_at_rule_id.h"
 #include "css_property_value_set.h"
 #include "css_selector_list.h"
 
@@ -69,6 +69,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
     kLayerStatement,
     kNamespace,
     kContainer,
+    kCounterStyle,
     kScope,
     kSupports,
     kStartingStyle,
@@ -89,6 +90,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 
   bool IsCharsetRule() const { return GetType() == kCharset; }
   bool IsContainerRule() const { return GetType() == kContainer; }
+  bool IsCounterStyleRule() const { return GetType() == kCounterStyle; }
   bool IsFontFaceRule() const { return GetType() == kFontFace; }
   bool IsFontPaletteValuesRule() const { return GetType() == kFontPaletteValues; }
   bool IsFontFeatureValuesRule() const { return GetType() == kFontFeatureValues; }

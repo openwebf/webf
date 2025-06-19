@@ -55,6 +55,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/css/css_custom_ident_value_test.cc
   ./core/css/css_color_function_test.cc
   ./core/css/css_advanced_features_test.cc
+  ./core/css/css_counter_style_test.cc
   ./core/css/css_nesting_test.cc
   ./core/css/container_query_test.cc
 

@@ -14,7 +14,7 @@
 #include "core/base/auto_reset.h"
 #include "core/base/memory/shared_ptr.h"
 #include "core/base/strings/string_util.h"
-#include "core/css/css_at_rule_id.h"
+#include "core/css/parser/css_at_rule_id.h"
 #include "core/css/css_keyframes_rule.h"
 #include "core/css/css_property_value.h"
 #include "core/css/css_selector.h"
@@ -25,6 +25,7 @@
 #include "core/css/parser/media_query_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_rule.h"
+#include "core/css/style_rule_counter_style.h"
 #include "core/css/style_rule_import.h"
 #include "core/css/style_rule_keyframe.h"
 #include "core/css/style_sheet_contents.h"
@@ -649,7 +650,7 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
       case kAtKeywordToken: {
         CSSParserToken name_token = stream.ConsumeIncludingWhitespace();
         const std::string_view name = name_token.Value();
-        const CSSAtRuleID id = CssAtRuleID(name);
+        const CSSAtRuleID id = CssAtRuleID(StringView(name.data(), name.length()));
         std::shared_ptr<StyleRuleBase> child =
             ConsumeNestedRule(id, rule_type, stream, nesting_type, parent_rule_for_nesting);
         if (child && child_rules) {
@@ -1138,7 +1139,7 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRule(CSSParserTokenStream
   assert(stream.Peek().GetType() == kAtKeywordToken);
   CSSParserToken name_token = stream.ConsumeIncludingWhitespace();  // Must live until CssAtRuleID().
   const std::string_view name = name_token.Value();
-  const CSSAtRuleID id = CssAtRuleID(name);
+  const CSSAtRuleID id = CssAtRuleID(StringView(name.data(), name.length()));
   return ConsumeAtRuleContents(id, stream, allowed_rules, nesting_type, parent_rule_for_nesting);
 }
 
@@ -1264,6 +1265,49 @@ std::shared_ptr<StyleRuleFontFace> CSSParserImpl::ConsumeFontFaceRule(CSSParserT
       CreateCSSPropertyValueSet(parsed_properties_, kCSSFontFaceRuleMode, context_->GetDocument()));
 }
 
+std::shared_ptr<StyleRuleCounterStyle> CSSParserImpl::ConsumeCounterStyleRule(CSSParserTokenStream& stream) {
+  size_t prelude_offset_start = stream.LookAheadOffset();
+  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  size_t prelude_offset_end = stream.LookAheadOffset();
+  if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
+    return nullptr;
+  }
+  CSSParserTokenStream::BlockGuard guard(stream);
+
+  // Parse counter-style name from prelude
+  AtomicString counter_style_name;
+  if (prelude.AtEnd()) {
+    return nullptr;  // Parse error; @counter-style prelude should contain a name
+  }
+  
+  auto name_token = prelude.ConsumeIncludingWhitespace();
+  if (name_token.GetType() != kIdentToken) {
+    return nullptr;  // Parse error; @counter-style name must be an identifier
+  }
+  
+  counter_style_name = AtomicString(name_token.Value().data(), name_token.Value().length());
+  
+  if (!prelude.AtEnd()) {
+    return nullptr;  // Parse error; @counter-style prelude should only contain the name
+  }
+
+  if (observer_) {
+    observer_->StartRuleHeader(StyleRule::kCounterStyle, prelude_offset_start);
+    observer_->EndRuleHeader(prelude_offset_end);
+    observer_->StartRuleBody(prelude_offset_end);
+    observer_->EndRuleBody(prelude_offset_end);
+  }
+
+  // Parse counter-style descriptors
+  ConsumeDeclarationList(stream, StyleRule::kCounterStyle, CSSNestingType::kNone,
+                         /*parent_rule_for_nesting=*/nullptr,
+                         /*child_rules=*/nullptr);
+  
+  return std::make_shared<StyleRuleCounterStyle>(
+      counter_style_name,
+      CreateCSSPropertyValueSet(parsed_properties_, kHTMLStandardMode, context_->GetDocument()));
+}
+
 std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(bool webkit_prefixed,
                                                                         CSSParserTokenStream& stream) {
   size_t prelude_offset_start = stream.LookAheadOffset();
@@ -1373,6 +1417,8 @@ std::shared_ptr<StyleRuleBase> CSSParserImpl::ConsumeAtRuleContents(
         //        return ConsumeFontPaletteValuesRule(stream);
         //      case CSSAtRuleID::kCSSAtRuleFontFeatureValues:
         //        return ConsumeFontFeatureValuesRule(stream);
+      case CSSAtRuleID::kCSSAtRuleCounterStyle:
+        return ConsumeCounterStyleRule(stream);
       case CSSAtRuleID::kCSSAtRuleWebkitKeyframes:
         return ConsumeKeyframesRule(true, stream);
       case CSSAtRuleID::kCSSAtRuleKeyframes:

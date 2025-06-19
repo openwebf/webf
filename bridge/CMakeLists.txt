@@ -319,6 +319,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/parser/css_parser_impl.cc
     core/css/parser/css_lazy_parsing_state.cc
     core/css/parser/at_rule_descriptor_parser.cc
+    core/css/parser/css_at_rule_id.cc
     core/css/parser/css_if_parser.cc
     core/css/parser/css_variable_parser.cc
     core/css/parser/css_supports_parser.cc
@@ -340,7 +341,6 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/properties/css_unresolved_property.cc
     core/css/properties/css_property.cc
     core/css/properties/css_parsing_utils.cc
-    core/css/css_at_rule_id.cc
     core/css/properties/css_color_function_parser.cc
     core/css/css_rule.cc
     core/css/css_rule_list.cc
@@ -367,6 +367,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/abstract_property_set_css_style_declaration.cc
     core/css/property_set_css_style_declaration.cc
     core/css/style_rule.cc
+    core/css/style_rule_counter_style.cc
     core/animation/timeline_offset.cc
     core/css/css_property_value_set.cc
     core/css/css_property_name.cc
