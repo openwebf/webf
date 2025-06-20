@@ -12,9 +12,7 @@ series(
   'update-typings-version',
   'generate-bindings-code',
   'compile-polyfill',
-  'generate-typings',
-  'merge-webf-and-polyfill-typings',
-  'merge-all-typings',
+  'generate-typings'
 )((err) => {
   if (err) {
     console.log(err);

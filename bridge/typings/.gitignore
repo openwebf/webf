@@ -136,3 +136,4 @@ dist
 .pnp.*
 
 webf.d.ts
+polyfill.d.ts

@@ -195,7 +195,7 @@ task('compile-polyfill', (done) => {
     env: {
       ...process.env,
       WEBF_JS_ENGINE: targetJSEngine,
-      NODE_ENV: (buildMode === 'Release' || buildMode === 'RelWithDebInfo') ? 'production' : 'development'
+      NODE_ENV: 'production'
     },
     stdio: 'inherit'
   });
