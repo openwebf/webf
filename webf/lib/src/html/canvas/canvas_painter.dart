@@ -85,6 +85,8 @@ class CanvasPainter extends CustomPainter {
       
       // Report FCP when canvas has content painted for the first time
       if (context != null && context!.canvas != null) {
+        // Report FP first (if not already reported)
+        context!.canvas.ownerDocument.controller.reportFP();
         context!.canvas.ownerDocument.controller.reportFCP();
       }
     }

@@ -162,6 +162,9 @@ When implementing TypeScript analysis:
 - [WebF Text Element Update Fix](./claude_memory/webf_text_element_update_fix.md) - Fix for text element update issues
 - [LCP (Largest Contentful Paint) Implementation](./claude_memory/lcp_implementation.md) - Implementation of LCP performance metric callbacks for WebFController
 - [FCP (First Contentful Paint) Implementation](./claude_memory/fcp_implementation.md) - Implementation of FCP performance metric tracking for WebFController
+- [FP (First Paint) Implementation](./claude_memory/fp_implementation.md) - Implementation of FP performance metric tracking for visual changes
+- [Contentful Widget Detection](./claude_memory/contentful_widget_detection.md) - Detection system for ensuring FCP/LCP are only reported for widgets with actual visual content
+- [DevTools Performance Metrics Display](./claude_memory/devtools_performance_metrics.md) - Unified display implementation for FP/FCP/LCP metrics in WebF DevTools
 
 
 ## Testing Guidelines
@@ -184,6 +187,7 @@ When implementing TypeScript analysis:
 ### Flutter Integration Tests (webf/integration_test)
 - LCP integration tests: `webf/integration_test/integration_test/lcp_integration_test.dart`
 - FCP integration tests: `webf/integration_test/integration_test/fcp_integration_test.dart`
+- FP integration tests: `webf/integration_test/integration_test/fp_integration_test.dart`
 - Run with: `cd webf && flutter test integration_test/integration_test/test_name.dart`
 
 

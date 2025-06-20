@@ -90,12 +90,19 @@ class BoxDecorationPainter extends BoxPainter {
 
   void _paintShadows(Canvas canvas, Rect rect, TextDirection? textDirection) {
     if (_decoration.boxShadow == null) return;
+    bool hasShadow = false;
     for (final WebFBoxShadow boxShadow in _decoration.boxShadow!) {
       if (boxShadow.inset) {
         _paintInsetBoxShadow(canvas, rect, textDirection, boxShadow);
+        hasShadow = true;
       } else {
         _paintBoxShadow(canvas, rect, textDirection, boxShadow);
+        hasShadow = true;
       }
+    }
+    // Report FP when box shadows are painted
+    if (hasShadow) {
+      renderStyle.target.ownerDocument.controller.reportFP();
     }
   }
 
@@ -507,8 +514,18 @@ class BoxDecorationPainter extends BoxPainter {
   }
 
   void _paintBackgroundColor(Canvas canvas, Rect rect, TextDirection? textDirection) {
-    if (_decoration.color != null || _decoration.gradient != null)
+    if (_decoration.color != null || _decoration.gradient != null) {
       _paintBox(canvas, rect, _getBackgroundPaint(rect, textDirection), textDirection);
+      
+      // Report FP when non-default background color is painted
+      // Check if this is a non-default background (not transparent or white)
+      if (_decoration.color != null && _decoration.color!.alpha > 0) {
+        renderStyle.target.ownerDocument.controller.reportFP();
+      } else if (_decoration.gradient != null) {
+        // Gradients always count as non-default backgrounds
+        renderStyle.target.ownerDocument.controller.reportFP();
+      }
+    }
   }
 
   BoxDecorationImagePainter? _imagePainter;
@@ -534,6 +551,8 @@ class BoxDecorationPainter extends BoxPainter {
     
     // Report FCP when background image is painted (excluding CSS gradients)
     if (_imagePainter!._image != null && !rect.isEmpty) {
+      // Report FP first (if not already reported)
+      renderStyle.target.ownerDocument.controller.reportFP();
       renderStyle.target.ownerDocument.controller.reportFCP();
       
       // Report LCP candidate for background images
@@ -680,7 +699,9 @@ class BoxDecorationPainter extends BoxPainter {
     // If we have a dashed border, use our custom painter
     if (hasDashedBorder) {
       _paintDashedBorder(canvas, rect, textDirection);
-    } else {
+      // Report FP when border is painted
+      renderStyle.target.ownerDocument.controller.reportFP();
+    } else if (_decoration.border != null) {
       // Otherwise use Flutter's built-in border painting
       _decoration.border?.paint(
         canvas,
@@ -689,6 +710,8 @@ class BoxDecorationPainter extends BoxPainter {
         borderRadius: _decoration.borderRadius,
         textDirection: configuration.textDirection,
       );
+      // Report FP when border is painted
+      renderStyle.target.ownerDocument.controller.reportFP();
     }
 
     _paintShadows(canvas, rect, textDirection);

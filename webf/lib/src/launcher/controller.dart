@@ -52,6 +52,7 @@ typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
 typedef LCPHandler = void Function(double lcpTime);
 typedef FCPHandler = void Function(double fcpTime);
+typedef FPHandler = void Function(double fpTime);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -106,21 +107,29 @@ class WebFController with Diagnosticable {
   double _lastReportedLCPTime = 0;
   Timer? _lcpAutoFinalizeTimer;
   WeakReference<Element>? _currentLCPElement;
-  
+
   // FCP tracking
   bool _fcpReported = false;
   double _fcpTime = 0;
+
+  // FP tracking
+  bool _fpReported = false;
+  double _fpTime = 0;
 
   // Expose LCP tracking state for WebFState
   bool get lcpInitialized => _navigationStartTime != null;
   bool get lcpReported => _lcpReported;
   bool get lcpFinalized => _lcpReported;
   double get lastReportedLCPTime => _lastReportedLCPTime;
-  
+
   // Expose FCP tracking state
   bool get fcpReported => _fcpReported;
   double get fcpTime => _fcpTime;
-  
+
+  // Expose FP tracking state
+  bool get fpReported => _fpReported;
+  double get fpTime => _fpTime;
+
   /// Gets the current LCP element if it's still connected to the DOM
   Element? get currentLCPElement {
     if (_currentLCPElement != null) {
@@ -376,6 +385,13 @@ class WebFController with Diagnosticable {
   /// The callback provides the FCP time in milliseconds since navigation start.
   FCPHandler? onFCP;
 
+  /// Callback triggered when the First Paint (FP) occurs.
+  /// FP measures the time from when the page starts loading to when the browser renders
+  /// anything visually different from what was on the screen before navigation.
+  /// This includes non-default background colors, borders, box shadows, or any visible content.
+  /// The callback provides the FP time in milliseconds since navigation start.
+  FPHandler? onFP;
+
   WebFMethodChannel? _methodChannel;
   /// Gets the JavaScript channel for this controller.
   ///
@@ -549,6 +565,7 @@ class WebFController with Diagnosticable {
     this.onLCP,
     this.onLCPFinal,
     this.onFCP,
+    this.onFP,
     this.httpClientInterceptor,
     this.uriParser,
     this.preloadedBundles,
@@ -742,14 +759,18 @@ class WebFController with Diagnosticable {
     _lastReportedLCPTime = 0;
     _currentLCPElement = null;
     _navigationStartTime = DateTime.now();
-    
+
     // Reset FCP tracking for new page load
     _fcpReported = false;
     _fcpTime = 0;
-    
+
+    // Reset FP tracking for new page load
+    _fpReported = false;
+    _fpTime = 0;
+
     // Cancel any existing timer
     _lcpAutoFinalizeTimer?.cancel();
-    
+
     // Set up new auto-finalization timer
     _lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
       if (!_lcpReported) {
@@ -1395,7 +1416,10 @@ class WebFController with Diagnosticable {
     _largestContentfulPaintSize = 0;
     _lastReportedLCPTime = 0;
     _currentLCPElement = null;
-    
+
+    _fpReported = false;
+    _fpTime = 0;
+
     // Reset FCP tracking as well
     _fcpReported = false;
     _fcpTime = 0;
@@ -1481,6 +1505,22 @@ class WebFController with Diagnosticable {
     // Fire the FCP callback
     if (onFCP != null) {
       onFCP!(_fcpTime);
+    }
+  }
+
+  /// Reports First Paint (FP) when the first visual change is rendered.
+  /// This includes any non-default background colors, borders, box shadows, or any visible content.
+  /// FP always occurs before or at the same time as FCP.
+  void reportFP() {
+    // Don't report if already reported or not initialized
+    if (_fpReported || _navigationStartTime == null) return;
+
+    _fpReported = true;
+    _fpTime = DateTime.now().difference(_navigationStartTime!).inMilliseconds.toDouble();
+
+    // Fire the FP callback
+    if (onFP != null) {
+      onFP!(_fpTime);
     }
   }
 }

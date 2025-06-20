@@ -6,9 +6,9 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/cupertino/tab.dart';
+import 'package:webf/src/cupertino/tab_bar.dart';
 import 'package:webf/widget.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
@@ -67,8 +67,8 @@ class RenderWidget extends RenderBoxModel
     double borderLeftWidth = renderStyle.borderLeftWidth?.computedValue ?? 0.0;
     double borderTopWidth = renderStyle.borderTopWidth?.computedValue ?? 0.0;
 
-    double paddingLeftWidth = renderStyle.paddingLeft.computedValue ?? 0.0;
-    double paddingTopWidth = renderStyle.paddingTop.computedValue ?? 0.0;
+    double paddingLeftWidth = renderStyle.paddingLeft.computedValue;
+    double paddingTopWidth = renderStyle.paddingTop.computedValue;
 
     Offset offset = Offset(borderLeftWidth + paddingLeftWidth, borderTopWidth + paddingTopWidth);
     // Apply position relative offset change.
@@ -179,18 +179,22 @@ class RenderWidget extends RenderBoxModel
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    // Report FCP when RenderWidget with content is first painted
+    // Report FCP/LCP when RenderWidget with contentful Flutter widget is first painted
     if (renderStyle.target is WidgetElement && firstChild != null && hasSize && !size.isEmpty) {
       final widgetElement = renderStyle.target as WidgetElement;
-      widgetElement.ownerDocument.controller.reportFCP();
-      
-      // Report LCP candidate for RenderWidget
-      double visibleArea = size.width * size.height;
-      if (visibleArea > 0) {
-        widgetElement.ownerDocument.controller.reportLCPCandidate(widgetElement, visibleArea);
+
+      // Check if the widget contains contentful content and get the actual visible area
+      double contentfulArea = _getContentfulPaintArea(widgetElement);
+      if (contentfulArea > 0) {
+        // Report FP first (if not already reported)
+        widgetElement.ownerDocument.controller.reportFP();
+        widgetElement.ownerDocument.controller.reportFCP();
+
+        // Report LCP candidate with the actual contentful area
+        widgetElement.ownerDocument.controller.reportLCPCandidate(widgetElement, contentfulArea);
       }
     }
-    
+
     RenderBox? child = firstChild;
     while (child != null) {
       final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
@@ -204,6 +208,14 @@ class RenderWidget extends RenderBoxModel
       context.paintChild(child, offset + childPaintOffset);
       child = childParentData.nextSibling;
     }
+  }
+
+  /// Gets the total visible area of contentful paint children.
+  /// Returns 0 if no contentful paint is found.
+  double _getContentfulPaintArea(WidgetElement widgetElement) {
+    // Only check render objects created directly by the WidgetElement's state build() method
+    // This uses a special method that skips any RenderBoxModel or RenderWidget children
+    return ContentfulWidgetDetector.getContentfulPaintAreaFromFlutterWidget(firstChild);
   }
 
   @override

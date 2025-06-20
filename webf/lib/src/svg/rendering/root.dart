@@ -60,6 +60,8 @@ class RenderSVGRoot extends RenderSVGContainer {
     // Report FCP when SVG content is first painted
     if (renderStyle.target is SVGSVGElement && hasSize && !size.isEmpty) {
       final svgElement = renderStyle.target as SVGSVGElement;
+      // Report FP first (if not already reported)
+      svgElement.ownerDocument.controller.reportFP();
       svgElement.ownerDocument.controller.reportFCP();
     }
     

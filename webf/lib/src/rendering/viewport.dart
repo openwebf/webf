@@ -131,6 +131,9 @@ class RenderViewportBox extends RenderBox
         rect,
         Paint()..color = background!,
       );
+      
+      // Report FP when viewport background is painted
+      controller.reportFP();
     }
 
     defaultPaint(context, offset);

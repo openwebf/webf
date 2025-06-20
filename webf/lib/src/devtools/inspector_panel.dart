@@ -839,10 +839,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildPerformanceMetrics(WebFController controller) {
     // Check if any performance data is available
+    final bool hasFPData = controller.fpReported;
     final bool hasFCPData = controller.fcpReported;
     final bool hasLCPData = controller.lastReportedLCPTime > 0 || controller.lcpFinalized;
 
-    if (!hasFCPData && !hasLCPData) {
+    if (!hasFPData && !hasFCPData && !hasLCPData) {
       return Text(
         'No performance metrics measured yet',
         style: TextStyle(
@@ -855,6 +856,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // FP Metrics
+        if (hasFPData) ...[
+          _buildFPMetric(controller),
+          SizedBox(height: 16),
+        ],
         // FCP Metrics
         if (hasFCPData) ...[
           _buildFCPMetric(controller),
@@ -868,29 +874,26 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     );
   }
 
-  Widget _buildFCPMetric(WebFController controller) {
-    final double fcpTime = controller.fcpTime;
-
-    // Determine FCP rating based on time
-    Color fcpColor;
+  Widget _buildPerformanceMetric({
+    required String label,
+    required double time,
+    String? extraInfo,
+    bool showWarning = false,
+  }) {
+    // Determine rating based on time
+    Color metricColor;
     String rating;
-    if (fcpTime < 100) {
-      fcpColor = Colors.blue;
-      rating = 'Extreme Fast';
-    } else if (fcpTime < 500) {
-      fcpColor = Colors.teal;
-      rating = 'Fast';
-    } else if (fcpTime < 1000) {
-      fcpColor = Colors.green;
+    if (time <= 0) {
+      metricColor = Colors.grey;
+      rating = 'Not measured';
+    } else if (time < 1000) {
+      metricColor = Colors.green;
       rating = 'Good';
-    } else if (fcpTime <= 1800) {
-      fcpColor = Colors.lightGreen;
-      rating = 'Acceptable';
-    } else if (fcpTime <= 3000) {
-      fcpColor = Colors.orange;
+    } else if (time < 2500) {
+      metricColor = Colors.orange;
       rating = 'Needs Improvement';
     } else {
-      fcpColor = Colors.red;
+      metricColor = Colors.red;
       rating = 'Poor';
     }
 
@@ -900,16 +903,16 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         Row(
           children: [
             Text(
-              'FCP: ',
+              label,
               style: TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
               ),
             ),
             Text(
-              '${fcpTime.toStringAsFixed(0)} ms',
+              time > 0 ? '${time.toStringAsFixed(0)} ms' : 'N/A',
               style: TextStyle(
-                color: fcpColor,
+                color: metricColor,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
@@ -918,28 +921,60 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             Container(
               padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: fcpColor.withOpacity(0.2),
+                color: metricColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
                 rating,
                 style: TextStyle(
-                  color: fcpColor,
+                  color: metricColor,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
+            if (showWarning) ...[
+              SizedBox(width: 4),
+              Icon(
+                Icons.warning,
+                color: Colors.amber,
+                size: 14,
+              ),
+            ],
           ],
         ),
+        if (extraInfo != null) ...[
+          SizedBox(height: 2),
+          Text(
+            extraInfo,
+            style: TextStyle(
+              color: Colors.white54,
+              fontSize: 10,
+            ),
+          ),
+        ],
         SizedBox(height: 4),
         LinearProgressIndicator(
-          value: fcpTime / 3000, // Max 3 seconds for visualization
+          value: time > 0 ? (time / 3000).clamp(0.0, 1.0) : 0,
           backgroundColor: Colors.white10,
-          valueColor: AlwaysStoppedAnimation<Color>(fcpColor),
+          valueColor: AlwaysStoppedAnimation<Color>(metricColor),
           minHeight: 4,
         ),
       ],
+    );
+  }
+
+  Widget _buildFPMetric(WebFController controller) {
+    return _buildPerformanceMetric(
+      label: 'FP:  ',
+      time: controller.fpTime,
+    );
+  }
+
+  Widget _buildFCPMetric(WebFController controller) {
+    return _buildPerformanceMetric(
+      label: 'FCP: ',
+      time: controller.fcpTime,
     );
   }
 
@@ -947,99 +982,32 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     final double lcpTime = controller.lastReportedLCPTime;
     final bool isFinalized = controller.lcpFinalized;
     final dom.Element? lcpElement = controller.currentLCPElement;
-
-    // Determine LCP rating based on time
-    Color lcpColor;
-    String rating;
-    if (lcpTime < 100) {
-      lcpColor = Colors.blue;
-      rating = 'Extreme Fast';
-    } else if (lcpTime < 500) {
-      lcpColor = Colors.teal;
-      rating = 'Fast';
-    } else if (lcpTime < 1000) {
-      lcpColor = Colors.green;
-      rating = 'Good';
-    } else if (lcpTime <= 2500) {
-      lcpColor = Colors.lightGreen;
-      rating = 'Acceptable';
-    } else if (lcpTime <= 4000) {
-      lcpColor = Colors.orange;
-      rating = 'Needs Improvement';
-    } else {
-      lcpColor = Colors.red;
-      rating = 'Poor';
-    }
-
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              'LCP: ',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 12,
-              ),
-            ),
-            Text(
-              '${lcpTime.toStringAsFixed(0)} ms',
-              style: TextStyle(
-                color: lcpColor,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: 8),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: lcpColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                rating,
-                style: TextStyle(
-                  color: lcpColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            if (!isFinalized) ...[
-              SizedBox(width: 8),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'MEASURING',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        _buildPerformanceMetric(
+          label: 'LCP: ',
+          time: lcpTime,
+          showWarning: !isFinalized,
         ),
-        SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: lcpTime / 3000, // Max 3 seconds for visualization
-          backgroundColor: Colors.white10,
-          valueColor: AlwaysStoppedAnimation<Color>(lcpColor),
-          minHeight: 4,
-        ),
+        if (!isFinalized) ...[
+          SizedBox(height: 4),
+          Text(
+            'Still measuring...',
+            style: TextStyle(
+              color: Colors.blue,
+              fontSize: 10,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
         if (lcpElement != null) ...[
           SizedBox(height: 8),
           Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: Colors.white.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(4),
               border: Border.all(color: Colors.white12),
             ),

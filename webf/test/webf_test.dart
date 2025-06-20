@@ -31,6 +31,7 @@ import 'src/launcher/controller_manager.dart' as controller_manager;
 import 'src/module/fetch.dart' as fetch;
 import 'src/html/link_preload_test.dart' as link_preload;
 import 'src/widget/webf_clear_cache_test.dart' as webf_clear_cache;
+import 'src/widget/contentful_widget_detector_test.dart' as contentful_widget_detector;
 
 final String __dirname = path.dirname(Platform.script.path);
 
@@ -106,6 +107,7 @@ void main() {
 
   group('widget', () {
     webf_clear_cache.main();
+    contentful_widget_detector.main();
   });
 
   tearDownAll(() {

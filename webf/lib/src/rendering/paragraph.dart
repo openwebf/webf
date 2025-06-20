@@ -942,6 +942,8 @@ class WebFRenderParagraph extends RenderBox
       }
       
       if (hasVisibleContent) {
+        // Report FP first (if not already reported)
+        element.ownerDocument.controller.reportFP();
         element.ownerDocument.controller.reportFCP();
       }
     }
