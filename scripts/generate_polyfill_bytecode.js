@@ -11,7 +11,8 @@ series(
   'generate-bindings-code',
   'compile-build-tools',
   'compile-polyfill',
-  'generate-polyfill-bytecode'
+  'generate-polyfill-typings',
+  'generate-polyfill-bytecode',
 )((err) => {
   if (err) {
     console.log(err);

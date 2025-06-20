@@ -6,7 +6,8 @@
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.js",
     "build:no-copy": "cross-env NODE_ENV=production rollup --config rollup.config.js",
     "build:release": "cross-env NODE_ENV=production rollup --config rollup.config.js",
-    "build:release:no-copy": "cross-env NODE_ENV=production rollup --config rollup.config.js"
+    "build:release:no-copy": "cross-env NODE_ENV=production rollup --config rollup.config.js",
+    "build:types": "rollup --config rollup.config.dts.js"
   },
   "dependencies": {
     "@types/raf": "^3.4.0",
