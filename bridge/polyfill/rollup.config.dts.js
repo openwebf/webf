@@ -9,7 +9,9 @@ export default {
     // Preserve the export structure
     preserveModules: false,
     // Ensure exports are properly maintained
-    exports: 'named'
+    exports: 'named',
+    // Add reference to webf.d.ts for global types
+    banner: '/// <reference path="./webf.d.ts" />\n'
   },
   plugins: [
     dts({

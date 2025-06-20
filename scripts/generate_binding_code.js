@@ -10,9 +10,7 @@ require('./tasks');
 series(
   'merge-bridge-typings',
   'update-typings-version',
-  'generate-bindings-code',
-  'compile-polyfill',
-  'generate-typings'
+  'generate-bindings-code'
 )((err) => {
   if (err) {
     console.log(err);

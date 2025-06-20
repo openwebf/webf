@@ -1340,8 +1340,22 @@ type DependentsOnLayout<T> = T;
 
 // WebF-specific types
 type EventListener = ((event: Event) => void) | null;
+type EventListenerObject = { handleEvent(event: Event): void };
 type LegacyNullToEmptyString = string;
 type BlobPart = string | ArrayBuffer | ArrayBufferView | Blob;
+
+// Additional DOM types
+type NodeListOf<T> = NodeList;
+type HTMLCollectionOf<T> = HTMLCollection;
+type DOMRect = BoundingClientRect;
+interface AbortSignal {
+  readonly aborted: boolean;
+  onabort: ((this: AbortSignal, ev: Event) => any) | null;
+}
+interface Attr extends Node {
+  readonly name: string;
+  readonly value: string;
+}
 
 `;
 
@@ -1433,6 +1447,11 @@ declare namespace webf {
       });
       mergedContent += '}\n';
     }
+    
+    // Add global instances
+    mergedContent += `\n// Global instances
+declare const document: Document;
+declare const window: Window & typeof globalThis;\n`;
     
     // Write merged webf.d.ts
     writeFileSync(webfDtsPath, mergedContent);

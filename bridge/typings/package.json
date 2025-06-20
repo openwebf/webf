@@ -6,6 +6,7 @@
   "files": [
     "index.d.ts",
     "webf.d.ts",
+    "polyfill.d.ts",
     "react.d.ts",
     "react.js"
   ],
@@ -19,7 +20,12 @@
     }
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/run-tests.js",
+    "test:compile": "tsc --project test/tsconfig.json --noEmit",
+    "generate": "cd ../polyfill && npm run build:types"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
   },
   "keywords": [
     "webf",
