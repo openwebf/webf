@@ -1005,20 +1005,13 @@ static JSValue ImportMetaResolve(JSContext* ctx, JSValueConst this_val, int argc
 
 // Helper function to set up enhanced import.meta object with WebF-specific properties
 void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const char* module_name, ExecutingContext* context) {
-  // Debug logging
-  WEBF_LOG(INFO) << "SetupImportMeta called for module: " << (module_name ? module_name : "null");
-
   JSValue meta_obj = JS_GetImportMeta(ctx, m);
   if (JS_IsException(meta_obj)) {
-    WEBF_LOG(ERROR) << "Failed to get import.meta object";
     return;
   }
 
-  WEBF_LOG(INFO) << "Successfully got import.meta object";
-
   // Convert module name to proper URL format
   std::string url_str(module_name);
-  WEBF_LOG(INFO) << "Original module name: " << url_str;
 
   // If it's not already a URL, format it appropriately
   if (url_str.find("://") == std::string::npos) {
@@ -1037,13 +1030,10 @@ void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const cha
     }
   }
 
-  WEBF_LOG(INFO) << "Formatted URL: " << url_str;
-
   // Set up standard import.meta properties following MDN specification
 
   // 1. import.meta.url - the URL of the module
   JSValue url_value = JS_NewString(ctx, url_str.c_str());
-  WEBF_LOG(INFO) << "Setting import.meta.url to: " << url_str;
   JS_DefinePropertyValueStr(ctx, meta_obj, "url", url_value, JS_PROP_C_W_E);
 
   // 2. import.meta.resolve - function to resolve module specifiers relative to current module
@@ -1064,14 +1054,8 @@ void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const cha
 
   // import.meta.webf - WebF-specific metadata
   JSValue webf_obj = JS_NewObject(ctx);
-  JS_DefinePropertyValueStr(ctx, webf_obj, "version",
-                           JS_NewString(ctx, "0.21.5+3"),
-                           JS_PROP_C_W_E);
   JS_DefinePropertyValueStr(ctx, webf_obj, "contextId",
                            JS_NewFloat64(ctx, context->contextId()),
-                           JS_PROP_C_W_E);
-  JS_DefinePropertyValueStr(ctx, webf_obj, "isDedicated",
-                           JS_NewBool(ctx, context->isDedicated()),
                            JS_PROP_C_W_E);
   JS_DefinePropertyValueStr(ctx, meta_obj, "webf", webf_obj, JS_PROP_C_W_E);
 

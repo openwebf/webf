@@ -625,11 +625,9 @@ void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, 
       return;
     }
 
-    print('Resolved URI: $resolvedUri');
     // Use WebFBundle to fetch the module content
     WebFBundle bundle = WebFBundle.fromUrl(resolvedUri.toString(), additionalHttpHeaders: {'Accept': '*/*'}, contentType: ContentType('application', 'javascript', charset: UTF_8));
     await bundle.resolve();
-    print('Bundle Resolve URI: ${bundle.url}');
     await bundle.obtainData(contextId);
 
     if (bundle.data == null) {

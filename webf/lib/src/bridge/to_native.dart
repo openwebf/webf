@@ -432,9 +432,6 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
     _anonymousScriptEvaluationId++;
   }
 
-  // TODO: Implement module-specific bytecode caching
-  // For now, always evaluate modules directly without bytecode caching
-  // because the current cache doesn't distinguish between module and non-module bytecode
   {
     Pointer<Utf8> _url = url.toNativeUtf8();
     Pointer<Uint8> codePtr = uint8ListToPointer(codeBytes);
