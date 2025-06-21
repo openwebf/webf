@@ -859,7 +859,7 @@ describe('flex-basis', () => {
     await snapshot();
   });
 
-  it('should properly layout text in flex items with flex: 1 1 0%', async () => {
+  it('should properly layout text in flex items with flex 001', async () => {
     // Create the outer container
     const div1 = document.createElement('div');
     div1.id = 'div_1';
@@ -913,6 +913,63 @@ describe('flex-basis', () => {
     div1.appendChild(div2);
     document.body.appendChild(div1);
 
+    await snapshot();
+  });
+   
+  it('should properly layout text in flex items with flex 002', async () => {
+    // Create the outer container
+    const div1 = document.createElement('div');
+    div1.id = 'div_1';
+    div1.style.display = 'flex';
+
+    // Create the main flex container
+    const div2 = document.createElement('div');
+    div2.id = 'div_2';
+    div2.style.backgroundColor = 'grey';
+    div2.style.color = 'cyan';
+    div2.style.position = 'relative';
+    div2.style.display = 'flex';
+    div2.style.height = '2.5rem';
+    div2.style.padding = '0.25rem';
+    div2.style.textAlign = 'center';
+    div2.style.boxSizing = 'border-box';
+
+    // Create the first flex item with text
+    const divBuy = document.createElement('div');
+    divBuy.id = 'div_buy';
+    divBuy.style.minWidth = '0';
+    divBuy.style.padding = '32px';
+    divBuy.style.display = 'flex';
+    divBuy.style.flex = '1 1 0%';
+    divBuy.style.flexShrink = '0';
+    divBuy.style.justifyContent = 'center';
+    divBuy.style.alignItems = 'center';
+    divBuy.style.border = '1px solid red';
+    divBuy.style.zIndex = '20';
+    divBuy.style.fontSize = '16px';
+    divBuy.textContent = 'Buy111222333111111111';
+
+    // Create the second flex item with text  
+    const divSell = document.createElement('div');
+    divSell.id = 'div_sell';
+    divSell.style.minWidth = '0';
+    divSell.style.padding = '32px';
+    divSell.style.display = 'flex';
+    divSell.style.flex = '1 1 0%';
+    divSell.style.flexShrink = '0';
+    divSell.style.justifyContent = 'center';
+    divSell.style.alignItems = 'center';
+    divSell.style.border = '1px solid red';
+    divSell.style.zIndex = '20';
+    divSell.style.fontSize = '16px';
+    divSell.textContent = 'Sell';
+
+    // Assemble the structure
+    div2.appendChild(divBuy);
+    div2.appendChild(divSell);
+    div1.appendChild(div2);
+    document.body.appendChild(div1);
+    
     await snapshot();
   });
 });
