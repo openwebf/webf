@@ -1409,45 +1409,6 @@ interface Attr extends Node {
     const typeDefinitions = [];
     const namespaceMembers = [];
     
-    // List of interfaces that should have class declarations generated
-    const interfacesNeedingClasses = [
-      'EventTarget',
-      'Node',
-      'Element',
-      'Event',
-      'CharacterData',
-      'Document',
-      'DocumentFragment',
-      'HTMLElement',
-      'SVGElement',
-      'UIEvent',
-      'MouseEvent',
-      'KeyboardEvent',
-      'TouchEvent',
-      'FocusEvent',
-      'InputEvent',
-      'CustomEvent',
-      'AnimationEvent',
-      'TransitionEvent',
-      'CloseEvent',
-      'ErrorEvent',
-      'GestureEvent',
-      'HashchangeEvent',
-      'MessageEvent',
-      'PointerEvent',
-      'PopStateEvent',
-      'PromiseRejectionEvent',
-      'ScreenEvent',
-      'Screen',
-      'Performance',
-      'Window',
-      'Blob',
-      'File'
-    ];
-    
-    // Store generated class declarations
-    const classDeclarations = [];
-    
     // Process each .d.ts file
     dtsFiles.forEach(filePath => {
       console.log(chalk.gray(`Processing: ${path.relative(bridgeCorePath, filePath)}`));
@@ -1468,49 +1429,6 @@ interface Attr extends Node {
         .trim();
       
       if (processedContent) {
-        // Extract interface/class/type names for namespace exposure
-        const interfaceMatches = processedContent.match(/(?:interface|class|type|enum)\s+(\w+)/g);
-        if (interfaceMatches) {
-          interfaceMatches.forEach(match => {
-            const name = match.replace(/(?:interface|class|type|enum)\s+/, '');
-            // Filter out invalid type names (methods, keywords, etc.)
-            const invalidNames = ['of', 'readonly', 'getBoundingClientRect'];
-            if (name && !namespaceMembers.includes(name) && !invalidNames.includes(name)) {
-              namespaceMembers.push(name);
-            }
-          });
-        }
-        
-        // Check for interfaces that need class declarations
-        const interfaceRegex = /interface\s+(\w+)(?:\s+extends\s+([^{]+))?\s*{([^}]*)}/g;
-        let match;
-        while ((match = interfaceRegex.exec(processedContent)) !== null) {
-          const interfaceName = match[1];
-          const extendsClause = match[2] || '';
-          const interfaceBody = match[3];
-          
-          if (interfacesNeedingClasses.includes(interfaceName)) {
-            // Extract constructor signature if it exists
-            const constructorMatch = interfaceBody.match(/new\s*\([^)]*\)\s*:\s*\w+;/);
-            const hasConstructor = constructorMatch !== null;
-            
-            // Generate class declaration
-            let classDecl = `// Auto-generated class declaration for ${interfaceName}\n`;
-            classDecl += `declare class ${interfaceName}`;
-            
-            // Handle inheritance
-            if (extendsClause) {
-              const parentClass = extendsClause.trim().split(',')[0].trim();
-              if (interfacesNeedingClasses.includes(parentClass)) {
-                classDecl += ` extends ${parentClass}`;
-              }
-            }
-            
-            classDecl += ' {}';
-            classDeclarations.push(classDecl);
-          }
-        }
-        
         typeDefinitions.push(processedContent);
       }
     });
@@ -1534,10 +1452,64 @@ interface Attr extends Node {
     processedContent = processedContent.replace(/\bDartImpl<([^>]+)>/g, '$1');
     processedContent = processedContent.replace(/\bDependentsOnLayout<([^>]+)>/g, '$1');
     
+    // Process interfaces to expand JSArrayProtoMethod and add async variants BEFORE converting to classes
     processedContent = generateAsyncVariants(processedContent);
     
+    // Now convert all interfaces to declare class
+    processedContent = processedContent.replace(/interface\s+(\w+)(\s+extends\s+[^{]+)?(\s*{[^}]*})/g, (match, interfaceName, extendsClause, body) => {
+      // Extract the interface name and extends clause
+      const extendsPart = extendsClause ? extendsClause.trim() : '';
+      
+      // Fix constructor signatures in the body
+      // Convert "new(): void;" to "constructor();" for classes
+      let modifiedBody = body.replace(/\bnew\s*\([^)]*\)\s*:\s*void\s*;/g, '');
+      // Convert "new(...): Type;" to proper constructor signature (remove it as constructors are implicit in class declarations)
+      modifiedBody = modifiedBody.replace(/\bnew\s*\([^)]*\)\s*:\s*\w+\s*;/g, '');
+      
+      // For interfaces that extend multiple interfaces, we need to handle them differently
+      // In TypeScript, classes can only extend one class but can implement multiple interfaces
+      if (extendsPart && extendsPart.includes(',')) {
+        // Extract the first parent (for extends) and the rest (for implements)
+        const parents = extendsPart.replace(/extends\s+/, '').split(',').map(p => p.trim());
+        const firstParent = parents[0];
+        const otherParents = parents.slice(1);
+        
+        if (otherParents.length > 0) {
+          return `declare class ${interfaceName} extends ${firstParent} /* implements ${otherParents.join(', ')} */ ${modifiedBody}`;
+        } else {
+          return `declare class ${interfaceName} extends ${firstParent} ${modifiedBody}`;
+        }
+      } else if (extendsPart) {
+        // Single inheritance - ensure space before body
+        return `declare class ${interfaceName} ${extendsPart} ${modifiedBody}`;
+      } else {
+        // No inheritance - ensure space before body
+        return `declare class ${interfaceName} ${modifiedBody}`;
+      }
+    });
+    
+    // Extract interface/class/type names for namespace exposure
+    const namespaceTypes = [];
+    const typeMatches = processedContent.match(/(?:declare\s+class|class|type|enum)\s+(\w+)/g);
+    if (typeMatches) {
+      typeMatches.forEach(match => {
+        const name = match.replace(/(?:declare\s+class|class|type|enum)\s+/, '');
+        // Filter out invalid type names (methods, keywords, etc.)
+        const invalidNames = ['of', 'readonly', 'getBoundingClientRect'];
+        if (name && !namespaceTypes.includes(name) && !invalidNames.includes(name)) {
+          namespaceTypes.push(name);
+        }
+      });
+    }
+    // Merge with existing namespaceMembers
+    namespaceTypes.forEach(name => {
+      if (!namespaceMembers.includes(name)) {
+        namespaceMembers.push(name);
+      }
+    });
+    
     // Extract and create namespace declarations for static members
-    const staticMembersByInterface = extractStaticMembers(typeDefinitions.join('\n\n'));
+    const staticMembersByInterface = extractStaticMembers(processedContent);
     let staticNamespaces = '\n// Namespace declarations for static members\n';
     
     for (const [interfaceName, members] of Object.entries(staticMembersByInterface)) {
@@ -1551,12 +1523,6 @@ interface Attr extends Node {
     }
     
     processedContent = processedContent + staticNamespaces;
-    
-    // Add generated class declarations
-    if (classDeclarations.length > 0) {
-      processedContent += '\n\n// Auto-generated class declarations for extendable interfaces\n';
-      processedContent += classDeclarations.join('\n\n');
-    }
     
     // Remove duplicate type declarations
     const typeDeclarations = {};
