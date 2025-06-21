@@ -166,12 +166,12 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
-  
+
   // Validate input parameters
   if (code == nullptr || code_len == 0) {
     return true; // Empty script is not an error
   }
-  
+
   // Basic validation for malformed content
   if (code_len > 100 * 1024 * 1024) { // 100MB limit
     WEBF_LOG(ERROR) << "JavaScript code exceeds maximum size limit";
@@ -180,7 +180,7 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
     HandleException(exception_state);
     return false;
   }
-  
+
   JSValue result;
   if (parsed_bytecodes == nullptr) {
     result = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_GLOBAL);
@@ -229,16 +229,16 @@ bool ExecutingContext::EvaluateModule(const char* code,
   if (parsed_bytecodes == nullptr) {
     // For inline modules, we need to compile first to set up import.meta
     JSValue byte_object = JS_Eval(script_state_.ctx(), code, code_len, sourceURL, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    
+
     if (JS_IsException(byte_object)) {
       HandleException(&byte_object);
       return false;
     }
-    
+
     // Set up import.meta for inline modules
     JSModuleDef* module_def = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(byte_object));
     SetupImportMeta(script_state_.ctx(), module_def, sourceURL, this);
-    
+
     result = JS_EvalFunction(script_state_.ctx(), byte_object);
   } else {
     JSValue byte_object =
@@ -280,7 +280,7 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength)
   if (bytes == nullptr || byteLength == 0) {
     return true; // Empty bytecode is not an error
   }
-  
+
   // Basic size validation
   if (byteLength > 100 * 1024 * 1024) { // 100MB limit
     ExceptionState exception_state;
@@ -288,7 +288,7 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength)
     HandleException(exception_state);
     return false;
   }
-  
+
   JSValue obj, val;
   obj = JS_ReadObject(script_state_.ctx(), bytes, byteLength, JS_READ_OBJ_BYTECODE);
 
@@ -301,7 +301,7 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength)
 
   DrainMicrotasks();
   bool success = HandleException(&val);
-  
+
   JS_FreeValue(script_state_.ctx(), val);
   return success;
 }
@@ -836,18 +836,18 @@ bool isContextValid(double contextId) {
 
 char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_base_name, const char* module_name, void* opaque) {
   ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
-  
+
   // Check if it's already an absolute URL
   if (strstr(module_name, "://") != nullptr) {
     return js_strdup(ctx, module_name);
   }
-  
+
   // Handle absolute paths (starting with /)
   if (module_name[0] == '/') {
     // If we have a base URL, extract the origin
     if (module_base_name && strstr(module_base_name, "://") != nullptr) {
       std::string base_url(module_base_name);
-      
+
       // Find the origin (protocol + host)
       size_t protocol_end = base_url.find("://");
       if (protocol_end != std::string::npos) {
@@ -858,7 +858,7 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
         } else {
           origin = base_url;
         }
-        
+
         // Combine origin with the absolute path
         std::string resolved = origin + module_name;
         return js_strdup(ctx, resolved.c_str());
@@ -867,11 +867,11 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
     // If no base or not a URL, return as-is
     return js_strdup(ctx, module_name);
   }
-  
+
   // Handle relative imports (starting with ./ or ../)
   if (module_name[0] == '.' && (module_name[1] == '/' || (module_name[1] == '.' && module_name[2] == '/'))) {
     char* normalized_name = nullptr;
-    
+
     if (module_base_name) {
       // Calculate the base path from module_base_name
       std::string base_path(module_base_name);
@@ -881,15 +881,15 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
       } else {
         base_path = "";
       }
-      
+
       // Resolve relative path
       std::string resolved_path = base_path + module_name;
-      
+
       // Normalize path (remove ./ and ../)
       std::vector<std::string> parts;
       std::istringstream iss(resolved_path);
       std::string part;
-      
+
       while (std::getline(iss, part, '/')) {
         if (part == "..") {
           if (!parts.empty()) {
@@ -899,20 +899,20 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
           parts.push_back(part);
         }
       }
-      
+
       // Reconstruct the path
       std::string normalized;
       for (size_t i = 0; i < parts.size(); ++i) {
         if (i > 0) normalized += "/";
         normalized += parts[i];
       }
-      
+
       normalized_name = js_strdup(ctx, normalized.c_str());
     }
-    
+
     return normalized_name;
   }
-  
+
   // For relative paths without ./, resolve against base
   if (module_base_name) {
     std::string base_path(module_base_name);
@@ -925,7 +925,7 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
     std::string resolved = base_path + module_name;
     return js_strdup(ctx, resolved.c_str());
   }
-  
+
   // Default: return as-is
   return js_strdup(ctx, module_name);
 }
@@ -947,14 +947,14 @@ struct ModuleLoadContext {
 // Callback function called from Dart when module content is fetched
 static void HandleFetchModuleResult(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length) {
   ModuleLoadContext* load_context = static_cast<ModuleLoadContext*>(callback_context);
-  
+
   std::unique_lock<std::mutex> lock(load_context->mutex);
-  
+
   load_context->error = error;
   load_context->bytes = bytes;
   load_context->length = length;
   load_context->completed = true;
-  
+
   load_context->cv.notify_one();
 }
 
@@ -963,22 +963,22 @@ static JSValue ImportMetaResolve(JSContext* ctx, JSValueConst this_val, int argc
   if (argc < 1) {
     return JS_ThrowTypeError(ctx, "import.meta.resolve requires at least 1 argument");
   }
-  
+
   const char* specifier = JS_ToCString(ctx, argv[0]);
   if (!specifier) {
     return JS_EXCEPTION;
   }
-  
+
   // Get the current module name from the function property
   JSValue module_name_val = JS_GetPropertyStr(ctx, this_val, "__webf_module_name");
   const char* current_module = JS_ToCString(ctx, module_name_val);
   JS_FreeValue(ctx, module_name_val);
-  
+
   if (!current_module) {
     JS_FreeCString(ctx, specifier);
     return JS_ThrowTypeError(ctx, "import.meta.resolve: unable to get current module name");
   }
-  
+
   // Get the context from the global context opaque
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context) {
@@ -986,10 +986,10 @@ static JSValue ImportMetaResolve(JSContext* ctx, JSValueConst this_val, int argc
     JS_FreeCString(ctx, current_module);
     return JS_ThrowTypeError(ctx, "import.meta.resolve: unable to get execution context");
   }
-  
+
   // Use the same resolution logic as ModuleNormalizeName
   char* resolved = ExecutingContext::ModuleNormalizeName(ctx, current_module, specifier, context);
-  
+
   JSValue result;
   if (resolved) {
     result = JS_NewString(ctx, resolved);
@@ -997,7 +997,7 @@ static JSValue ImportMetaResolve(JSContext* ctx, JSValueConst this_val, int argc
   } else {
     result = JS_ThrowReferenceError(ctx, "Cannot resolve module specifier: %s", specifier);
   }
-  
+
   JS_FreeCString(ctx, specifier);
   JS_FreeCString(ctx, current_module);
   return result;
@@ -1007,19 +1007,19 @@ static JSValue ImportMetaResolve(JSContext* ctx, JSValueConst this_val, int argc
 void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const char* module_name, ExecutingContext* context) {
   // Debug logging
   WEBF_LOG(INFO) << "SetupImportMeta called for module: " << (module_name ? module_name : "null");
-  
+
   JSValue meta_obj = JS_GetImportMeta(ctx, m);
   if (JS_IsException(meta_obj)) {
     WEBF_LOG(ERROR) << "Failed to get import.meta object";
     return;
   }
-  
+
   WEBF_LOG(INFO) << "Successfully got import.meta object";
-  
+
   // Convert module name to proper URL format
   std::string url_str(module_name);
   WEBF_LOG(INFO) << "Original module name: " << url_str;
-  
+
   // If it's not already a URL, format it appropriately
   if (url_str.find("://") == std::string::npos) {
     if (url_str.front() == '/') {
@@ -1036,61 +1036,61 @@ void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const cha
       }
     }
   }
-  
+
   WEBF_LOG(INFO) << "Formatted URL: " << url_str;
-  
+
   // Set up standard import.meta properties following MDN specification
-  
+
   // 1. import.meta.url - the URL of the module
   JSValue url_value = JS_NewString(ctx, url_str.c_str());
   WEBF_LOG(INFO) << "Setting import.meta.url to: " << url_str;
   JS_DefinePropertyValueStr(ctx, meta_obj, "url", url_value, JS_PROP_C_W_E);
-  
+
   // 2. import.meta.resolve - function to resolve module specifiers relative to current module
   // Store current module name in a property on the resolve function
   JSValue resolve_func = JS_NewCFunction2(ctx, ImportMetaResolve, "resolve", 1, JS_CFUNC_generic, 0);
-  
+
   // Store the current module name and context as properties on the function
-  JS_DefinePropertyValueStr(ctx, resolve_func, "__webf_module_name", 
-                           JS_NewString(ctx, module_name), 
+  JS_DefinePropertyValueStr(ctx, resolve_func, "__webf_module_name",
+                           JS_NewString(ctx, module_name),
                            JS_PROP_C_W_E);
-  JS_DefinePropertyValueStr(ctx, resolve_func, "__webf_context_id", 
-                           JS_NewFloat64(ctx, context->contextId()), 
+  JS_DefinePropertyValueStr(ctx, resolve_func, "__webf_context_id",
+                           JS_NewFloat64(ctx, context->contextId()),
                            JS_PROP_C_W_E);
-  
+
   JS_DefinePropertyValueStr(ctx, meta_obj, "resolve", resolve_func, JS_PROP_C_W_E);
-  
+
   // 3. WebF-specific properties
-  
+
   // import.meta.webf - WebF-specific metadata
   JSValue webf_obj = JS_NewObject(ctx);
-  JS_DefinePropertyValueStr(ctx, webf_obj, "version", 
-                           JS_NewString(ctx, "0.21.5+3"), 
+  JS_DefinePropertyValueStr(ctx, webf_obj, "version",
+                           JS_NewString(ctx, "0.21.5+3"),
                            JS_PROP_C_W_E);
-  JS_DefinePropertyValueStr(ctx, webf_obj, "contextId", 
-                           JS_NewFloat64(ctx, context->contextId()), 
+  JS_DefinePropertyValueStr(ctx, webf_obj, "contextId",
+                           JS_NewFloat64(ctx, context->contextId()),
                            JS_PROP_C_W_E);
-  JS_DefinePropertyValueStr(ctx, webf_obj, "isDedicated", 
-                           JS_NewBool(ctx, context->isDedicated()), 
+  JS_DefinePropertyValueStr(ctx, webf_obj, "isDedicated",
+                           JS_NewBool(ctx, context->isDedicated()),
                            JS_PROP_C_W_E);
   JS_DefinePropertyValueStr(ctx, meta_obj, "webf", webf_obj, JS_PROP_C_W_E);
-  
+
   // 4. Environment information
   JSValue env_obj = JS_NewObject(ctx);
-  JS_DefinePropertyValueStr(ctx, env_obj, "platform", 
-                           JS_NewString(ctx, "webf"), 
+  JS_DefinePropertyValueStr(ctx, env_obj, "platform",
+                           JS_NewString(ctx, "webf"),
                            JS_PROP_C_W_E);
-  JS_DefinePropertyValueStr(ctx, env_obj, "runtime", 
-                           JS_NewString(ctx, "quickjs"), 
+  JS_DefinePropertyValueStr(ctx, env_obj, "runtime",
+                           JS_NewString(ctx, "quickjs"),
                            JS_PROP_C_W_E);
   JS_DefinePropertyValueStr(ctx, meta_obj, "env", env_obj, JS_PROP_C_W_E);
-  
+
   JS_FreeValue(ctx, meta_obj);
 }
 
 JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_name, void* opaque) {
   ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
-  
+
   // Create the context for module loading
   ModuleLoadContext load_context;
   load_context.executing_context = context;
@@ -1101,12 +1101,12 @@ JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_n
   load_context.error = nullptr;
   load_context.bytes = nullptr;
   load_context.length = 0;
-  
+
   // Create native string for module URL
   std::u16string module_name_u16;
   fromUTF8(std::string(module_name), module_name_u16);
   SharedNativeString module_url(reinterpret_cast<const uint16_t*>(module_name_u16.c_str()), module_name_u16.length());
-  
+
   // Call Dart to fetch the module - this posts to Dart thread
   context->dart_isolate_context_->dartMethodPtr()->fetchJavaScriptESMModule(
       context->isDedicated(),
@@ -1115,16 +1115,16 @@ JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_n
       &module_url,
       HandleFetchModuleResult
   );
-  
+
   // Block the JS thread until module is loaded
   {
     std::unique_lock<std::mutex> lock(load_context.mutex);
     load_context.cv.wait(lock, [&load_context] { return load_context.completed; });
   }
-  
+
   // Process the result
   JSModuleDef* result = nullptr;
-  
+
   if (load_context.error != nullptr) {
     // Error occurred during fetch
     JS_ThrowReferenceError(ctx, "Failed to load module '%s': %s", module_name, load_context.error);
@@ -1134,24 +1134,24 @@ JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_n
     // Compile the module
     JSValue compiled = JS_Eval(ctx, reinterpret_cast<const char*>(load_context.bytes), load_context.length,
                               module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
-    
+
     if (JS_IsException(compiled)) {
       // Compilation failed - exception is already set
       result = nullptr;
     } else {
       // Get the module definition
       result = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(compiled));
-      
+
       // Set up enhanced import.meta object
       SetupImportMeta(ctx, result, module_name, context);
     }
-    
+
     // Free the bytes
     dart_free(load_context.bytes);
   } else {
     JS_ThrowReferenceError(ctx, "Empty module content for '%s'", module_name);
   }
-  
+
   return result;
 }
 
