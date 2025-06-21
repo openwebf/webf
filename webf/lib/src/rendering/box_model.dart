@@ -726,10 +726,9 @@ class RenderBoxModel extends RenderBox
     if (this is RenderEventListener) {
       RenderEventListener eventListener = this as RenderEventListener;
       RenderObject? child = eventListener.child;
-      if (child is RenderTextBox && eventListener.renderStyle.width.isAuto && !eventListener.constraints.hasBoundedWidth ) {
+      if (child is RenderTextBox) {
         // RenderEventListener directly contains a text box - mark it for flex relayout
-        eventListener.isFlexRelayout = true;
-        return;
+        _setFlexRelayoutForTextParent(eventListener);
       } else if (child is RenderLayoutBox) {
         // RenderEventListener contains a layout box - check if that layout box only contains text
         _markRenderLayoutBoxForTextOnly(child);
@@ -750,17 +749,21 @@ class RenderBoxModel extends RenderBox
       if (firstChild is RenderEventListener) {
         RenderObject? child = firstChild.child;
         if (child is RenderTextBox) {
-          if (firstChild.renderStyle.width.isAuto && !firstChild.constraints.hasBoundedWidth) {
-            firstChild.isFlexRelayout = true;
-          }
+          _setFlexRelayoutForTextParent(firstChild);
         } else if (child is RenderLayoutBox) {
           _markRenderLayoutBoxForTextOnly(child);
         }
       } else if (firstChild is RenderTextBox) {
-        if (layoutBox.renderStyle.width.isAuto && !layoutBox.constraints.hasBoundedWidth) {
-          layoutBox.isFlexRelayout = true;
-        }
+        _setFlexRelayoutForTextParent(layoutBox);
       }
+    }
+  }
+
+  void _setFlexRelayoutForTextParent(RenderBoxModel textParentBoxModel) {
+    if( textParentBoxModel.renderStyle.display == CSSDisplay.flex &&
+        textParentBoxModel.renderStyle.width.isAuto &&
+        !textParentBoxModel.constraints.hasBoundedWidth) {
+      textParentBoxModel.isFlexRelayout = true;
     }
   }
 
