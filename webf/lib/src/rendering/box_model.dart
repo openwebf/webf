@@ -726,7 +726,7 @@ class RenderBoxModel extends RenderBox
     if (this is RenderEventListener) {
       RenderEventListener eventListener = this as RenderEventListener;
       RenderObject? child = eventListener.child;
-      if (child is RenderTextBox) {
+      if (child is RenderTextBox && eventListener.renderStyle.width.isAuto && !eventListener.constraints.hasBoundedWidth ) {
         // RenderEventListener directly contains a text box - mark it for flex relayout
         eventListener.isFlexRelayout = true;
         return;
@@ -745,32 +745,23 @@ class RenderBoxModel extends RenderBox
   // preventing constraint violations when the flex container adjusts item sizes.
   // Only apply when the flex container itself has indefinite width.
   void _markRenderLayoutBoxForTextOnly(RenderLayoutBox layoutBox) {
-    if (layoutBox.childCount == 1 && 
-        layoutBox.firstChild is RenderTextBox && 
-        layoutBox.renderStyle.width.isAuto &&
-        _shouldApplyFlexTextOptimization(layoutBox)) {
-      layoutBox.isFlexRelayout = true;
-    }
-  }
-
-  // Check if flex text optimization should be applied
-  // Only apply when flex container has indefinite width (causing constraint conflicts)
-  bool _shouldApplyFlexTextOptimization(RenderLayoutBox layoutBox) {
-    // Find the flex parent
-    RenderObject? current = layoutBox.parent;
-    while (current != null) {
-      if (current is RenderFlexLayout) {
-        RenderFlexLayout flexParent = current as RenderFlexLayout;
-        // If flex container has definite width, no optimization needed
-        if (!flexParent.renderStyle.width.isAuto || flexParent.constraints.hasTightWidth) {
-          return false;
+    if (layoutBox.childCount == 1) {
+      RenderObject? firstChild = layoutBox.firstChild;
+      if (firstChild is RenderEventListener) {
+        RenderObject? child = firstChild.child;
+        if (child is RenderTextBox) {
+          if (firstChild.renderStyle.width.isAuto && !firstChild.constraints.hasBoundedWidth) {
+            firstChild.isFlexRelayout = true;
+          }
+        } else if (child is RenderLayoutBox) {
+          _markRenderLayoutBoxForTextOnly(child);
         }
-        // If flex container has indefinite width, optimization may be needed
-        return true;
+      } else if (firstChild is RenderTextBox) {
+        if (layoutBox.renderStyle.width.isAuto && !layoutBox.constraints.hasBoundedWidth) {
+          layoutBox.isFlexRelayout = true;
+        }
       }
-      current = current.parent;
     }
-    return false;
   }
 
   // Whether it needs relayout due to percentage calculation.
