@@ -16,6 +16,7 @@ import 'src/css/style_animations_parser.dart' as style_animations_parser;
 import 'src/css/style_rule_parser.dart' as style_rule_parser;
 import 'src/css/style_sheet_parser.dart' as style_sheet_parser;
 import 'src/css/style_inline_parser.dart' as style_inline_parser;
+import 'src/css/parser_test.dart' as parser_test;
 import 'src/css/values.dart' as css_values;
 import 'src/foundation/bundle.dart' as bundle;
 import 'src/foundation/convert.dart' as convert;
@@ -102,6 +103,7 @@ void main() {
     style_sheet_parser.main();
     style_inline_parser.main();
     style_animations_parser.main();
+    parser_test.main();
     css_values.main();
   });
 
