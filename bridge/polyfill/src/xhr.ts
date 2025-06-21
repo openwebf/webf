@@ -75,7 +75,7 @@ export class XMLHttpRequest extends EventTarget implements XMLHttpRequestInterfa
   public readyState = this.UNSENT;
 
   // default ready state change handler in case one is not set or is set late
-  public onreadystatechange = null;
+  public onreadystatechange: ((this: XMLHttpRequest, ev: Event) => any) | null = null;
 
   // Result & response
   public responseType = '';
@@ -120,9 +120,9 @@ export class XMLHttpRequest extends EventTarget implements XMLHttpRequestInterfa
   public open(
     method: string,
     url: string,
-    async: boolean,
-    user: string,
-    password: string
+    async?: boolean,
+    user?: string,
+    password?: string
   ) {
     this.abort();
     this.errorFlag = false;
@@ -209,7 +209,7 @@ export class XMLHttpRequest extends EventTarget implements XMLHttpRequestInterfa
    *
    * @param string data Optional data to send as request body.
    */
-  public send(data: string) {
+  public send(data?: string) {
     if (this.readyState !== this.OPENED) {
       throw new Error("INVALID_STATE_ERR: connection must be opened before send() is called");
     }

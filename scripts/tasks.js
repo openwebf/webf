@@ -1386,7 +1386,7 @@ type SupportAsyncManual<T> = T;
 type DependentsOnLayout<T> = T;
 
 // WebF-specific types
-type EventListener = ((event: Event) => void) | null;
+type EventListener<T extends Event> = ((event: T) => void) | null;
 type EventListenerObject = { handleEvent(event: Event): void };
 type LegacyNullToEmptyString = string;
 type BlobPart = string | ArrayBuffer | ArrayBufferView | Blob;
@@ -1408,12 +1408,22 @@ interface Attr extends Node {
 
     const typeDefinitions = [];
     const namespaceMembers = [];
+    const mixinInterfaces = new Map();
+    const mixinNames = new Set();
     
     // Process each .d.ts file
     dtsFiles.forEach(filePath => {
       console.log(chalk.gray(`Processing: ${path.relative(bridgeCorePath, filePath)}`));
       
       const content = readFileSync(filePath, 'utf-8');
+      
+      // First, check if this file contains @Mixin() interfaces before removing decorators
+      const mixinMatches = content.matchAll(/@Mixin\(\)\s*(?:export\s+)?interface\s+(\w+)\s*{([^}]*)}/g);
+      for (const match of mixinMatches) {
+        const [, mixinName, mixinBody] = match;
+        mixinInterfaces.set(mixinName, mixinBody);
+        mixinNames.add(mixinName);
+      }
       
       // Remove imports and exports
       let processedContent = content
@@ -1455,33 +1465,70 @@ interface Attr extends Node {
     // Process interfaces to expand JSArrayProtoMethod and add async variants BEFORE converting to classes
     processedContent = generateAsyncVariants(processedContent);
     
-    // Now convert all interfaces to declare class
+    // Now convert interfaces to classes, but skip mixin interfaces
     processedContent = processedContent.replace(/interface\s+(\w+)(\s+extends\s+[^{]+)?(\s*{[^}]*})/g, (match, interfaceName, extendsClause, body) => {
+      // Skip conversion if this is a mixin interface
+      if (mixinNames.has(interfaceName)) {
+        return match; // Keep as interface
+      }
+      
       // Extract the interface name and extends clause
       const extendsPart = extendsClause ? extendsClause.trim() : '';
       
-      // Fix constructor signatures in the body
-      // Convert "new(): void;" to "constructor();" for classes
-      let modifiedBody = body.replace(/\bnew\s*\([^)]*\)\s*:\s*void\s*;/g, '');
-      // Convert "new(...): Type;" to proper constructor signature (remove it as constructors are implicit in class declarations)
-      modifiedBody = modifiedBody.replace(/\bnew\s*\([^)]*\)\s*:\s*\w+\s*;/g, '');
+      // Convert constructor signatures in the body
+      let modifiedBody = body;
       
-      // For interfaces that extend multiple interfaces, we need to handle them differently
-      // In TypeScript, classes can only extend one class but can implement multiple interfaces
-      if (extendsPart && extendsPart.includes(',')) {
-        // Extract the first parent (for extends) and the rest (for implements)
-        const parents = extendsPart.replace(/extends\s+/, '').split(',').map(p => p.trim());
-        const firstParent = parents[0];
-        const otherParents = parents.slice(1);
+      // Extract constructor signature if present
+      const constructorMatch = body.match(/\bnew\s*\(([^)]*)\)\s*:\s*\w+\s*;/);
+      if (constructorMatch) {
+        // Remove the interface constructor signature
+        modifiedBody = modifiedBody.replace(/\bnew\s*\([^)]*\)\s*:\s*\w+\s*;/g, '');
         
-        if (otherParents.length > 0) {
-          return `declare class ${interfaceName} extends ${firstParent} /* implements ${otherParents.join(', ')} */ ${modifiedBody}`;
-        } else {
-          return `declare class ${interfaceName} extends ${firstParent} ${modifiedBody}`;
+        // Add it back as a proper constructor after the opening brace
+        const params = constructorMatch[1];
+        modifiedBody = modifiedBody.replace(/\s*{\s*/, `{\n    constructor(${params});\n    `);
+      }
+      
+      // Check if this interface extends any mixin interfaces
+      if (extendsPart) {
+        const parents = extendsPart.replace(/extends\s+/, '').split(',').map(p => p.trim());
+        const mixinParents = parents.filter(p => mixinNames.has(p));
+        const nonMixinParents = parents.filter(p => !mixinNames.has(p));
+        
+        // Merge mixin interface properties into the body
+        if (mixinParents.length > 0) {
+          let mergedMixinProperties = '';
+          mixinParents.forEach(mixinName => {
+            const mixinBody = mixinInterfaces.get(mixinName);
+            if (mixinBody) {
+              // Remove the opening and closing braces and trim
+              const cleanMixinBody = mixinBody.replace(/^\s*{\s*/, '').replace(/\s*}\s*$/, '').trim();
+              if (cleanMixinBody) {
+                mergedMixinProperties += '\n    ' + cleanMixinBody;
+              }
+            }
+          });
+          
+          // Insert mixin properties into the class body
+          if (mergedMixinProperties) {
+            modifiedBody = modifiedBody.replace(/\s*{\s*/, `{${mergedMixinProperties}\n    `);
+          }
         }
-      } else if (extendsPart) {
-        // Single inheritance - ensure space before body
-        return `declare class ${interfaceName} ${extendsPart} ${modifiedBody}`;
+        
+        // Build the extends clause with only non-mixin parents
+        if (nonMixinParents.length > 0) {
+          const firstParent = nonMixinParents[0];
+          const otherParents = nonMixinParents.slice(1);
+          
+          if (otherParents.length > 0) {
+            return `declare class ${interfaceName} extends ${firstParent} /* implements ${otherParents.join(', ')} */ ${modifiedBody}`;
+          } else {
+            return `declare class ${interfaceName} extends ${firstParent} ${modifiedBody}`;
+          }
+        } else {
+          // No non-mixin parents, just a plain class
+          return `declare class ${interfaceName} ${modifiedBody}`;
+        }
       } else {
         // No inheritance - ensure space before body
         return `declare class ${interfaceName} ${modifiedBody}`;
@@ -1541,19 +1588,14 @@ interface Attr extends Node {
     // Add webf namespace with all types
     if (namespaceMembers.length > 0) {
       mergedContent += `\n\n// WebF namespace containing all bridge types
-declare namespace webf {
+declare namespace WEBF {
 `;
       namespaceMembers.forEach(member => {
         mergedContent += `  export type ${member} = globalThis.${member};\n`;
       });
       mergedContent += '}\n';
     }
-    
-    // Add global instances and constructors
-    mergedContent += `\n// Global instances
-declare const document: Document;
-declare const window: Window & typeof globalThis;
-\n`;
+  
     
     // Write merged webf.d.ts
     writeFileSync(webfDtsPath, mergedContent);

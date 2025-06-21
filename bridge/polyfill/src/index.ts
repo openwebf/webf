@@ -7,7 +7,7 @@ import './dom';
 import { console, Console } from './console';
 import { fetch, Request, Response, Headers } from './fetch';
 import {matchMedia, MediaQueryList} from './match-media';
-import {location, LocationInterface} from './location';
+import {Location, location, LocationInterface} from './location';
 import {History, history} from './history';
 import {navigator, NavigatorInterface} from './navigator';
 import { XMLHttpRequest } from './xhr';
@@ -22,6 +22,7 @@ import {Webf, webf} from './webf';
 import { WebSocket } from './websocket'
 import { ResizeObserver } from './resize-observer';
 import { _AbortController, _AbortSignal } from './abort-signal';
+import {HTMLCanvasElement} from "../../core/html/canvas/html_canvas_element";
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -46,81 +47,26 @@ defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
 
-
-declare global {
-  // @ts-ignore
-  const console: Console;
-  // @ts-ignore
-  const localStorage: StorageInterface;
-  // @ts-ignore
-  const sessionStorage: StorageInterface;
-  // @ts-ignore
-  const history: History;
-  // @ts-ignore
-  const location: LocationInterface;
-  // @ts-ignore
-  const navigator: NavigatorInterface;
-  // @ts-ignore
-  const webf: Webf;
-
-
-  function fetch(input: RequestInfo, init?: RequestInit): Promise<Response>;
-  function matchMedia(query: string): MediaQueryList;
-
-  // @ts-ignore
-  var Headers: {
-    prototype: Headers;
-    new(headers?: HeadersInit): Headers;
-  };
-
-  // @ts-ignore
-  var Request: {
-    prototype: Request;
-    new(input: RequestInfo, init?: RequestInit): Request;
-  };
-
-  // @ts-ignore
-  var Response: {
-    prototype: Response;
-    new(body?: BodyInit | null, init?: ResponseInit): Response;
-  };
-
-  // @ts-ignore
-  var URL: {
-    prototype: URL;
-    new(url: string, base?: string | URL): URL;
-  };
-
-  // @ts-ignore
-  var URLSearchParams: {
-    prototype: URLSearchParams;
-    new(query?: any): URLSearchParams;
-  };
-
-  // @ts-ignore
-  var XMLHttpRequest: {
-    prototype: XMLHttpRequest;
-    new(): XMLHttpRequest;
-  };
-
-  // @ts-ignore
-  var WebSocket: {
-    prototype: WebSocket;
-    new(url: string, protocols?: string | string[]): WebSocket;
-  };
-
-  // @ts-ignore
-  var DOMException: {
-    prototype: DOMException;
-    new(message?: string, name?: string): DOMException;
-  };
-
-  // @ts-ignore
-  var ResizeObserver: {
-    prototype: ResizeObserver;
-    new(callback: (entries: ResizeObserverEntry[]) => void): ResizeObserver;
-  };
-}
+export type PolyFillGlobal = {
+  console: Console,
+  webf: Webf,
+  Request: Request,
+  Response: Response,
+  Headers: Headers,
+  fetch: typeof fetch,
+  matchMedia: typeof matchMedia,
+  location: Location,
+  navigator: typeof navigator,
+  XMLHttpRequest: XMLHttpRequest,
+  localStorage: typeof localStorage,
+  sessionStorage: typeof sessionStorage,
+  DOMException: DOMException,
+  URL: URL,
+  WebSocket: WebSocket,
+  ResizeObserver: ResizeObserver,
+  AbortSignal: _AbortSignal,
+  AbortController: _AbortController
+};
 
 export {
   console,
@@ -141,6 +87,7 @@ export {
   DOMException,
   URL,
   webf,
+  Webf,
   WebSocket,
   ResizeObserver
 }

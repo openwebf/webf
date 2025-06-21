@@ -1,8 +1,6 @@
 /*
  * Basic WebF type test that should work without errors
  */
-import '../index.d.ts';
-/// <reference path="../index.d.ts" />
 
 // Test 1: Basic DOM elements are available
 function testBasicDOM() {
@@ -29,11 +27,11 @@ function testBasicDOM() {
 }
 
 // Test 2: WebF-specific APIs
-// function testWebFAPIs() {
-//   // The webf global is declared in polyfill.d.ts
-//   // For now, we'll skip this test since webf global isn't properly exposed
-//   // TODO: Fix webf global declaration
-// }
+function testWebFAPIs() {
+  // The webf global is declared in polyfill.d.ts
+  // For now, we'll skip this test since webf global isn't properly exposed
+  // TODO: Fix webf global declaration
+}
 //
 // // Test 3: Event handling
 // function testEvents() {
@@ -114,7 +112,7 @@ function testBasicDOM() {
 // Run all tests
 export function runBasicTests() {
   testBasicDOM();
-  // testWebFAPIs();
+  testWebFAPIs();
   // testEvents();
   // testConsole();
   // testStorage();

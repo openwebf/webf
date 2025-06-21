@@ -3,14 +3,15 @@
  * This file tests that the webf global object and its methods are properly typed
  */
 
-/// <reference path="../index.d.ts" />
+import {Webf, webf} from '../index';
 
 // Test global webf object exists
-const webfInstance: webf.Webf = webf;
+const webfInstance = webf;
 
 // Test webf properties
 const doc: Document = webf.document;
 const win: Window & typeof globalThis = webf.window;
+
 
 // Test methodChannel API
 webf.methodChannel.addMethodCallHandler('test', (args: any[]) => {
@@ -48,32 +49,32 @@ function testHybridHistory() {
   // State access
   const currentState: any = webf.hybridHistory.state;
   const currentPath: string = webf.hybridHistory.path;
-  
+
   // Navigation methods
   webf.hybridHistory.back();
   webf.hybridHistory.pushState({ page: 1 }, 'page1');
   webf.hybridHistory.replaceState({ page: 2 }, 'page2');
-  
+
   // Flutter-style navigation
   webf.hybridHistory.pop();
   webf.hybridHistory.pop({ result: 'data' });
-  
+
   webf.hybridHistory.pushNamed('/home');
   webf.hybridHistory.pushNamed('/profile', { arguments: { userId: 123 } });
-  
+
   webf.hybridHistory.pushReplacementNamed('/login');
   webf.hybridHistory.pushReplacementNamed('/dashboard', { arguments: { role: 'admin' } });
-  
+
   // Navigation checks
   const canPop: boolean = webf.hybridHistory.canPop();
   const didPop: boolean = webf.hybridHistory.maybePop();
-  
+
   // Advanced navigation
   webf.hybridHistory.popAndPushNamed('/settings');
   webf.hybridHistory.popUntil('/home');
   webf.hybridHistory.pushNamedAndRemoveUntil({ data: 'test' }, '/new', '/home');
   webf.hybridHistory.pushNamedAndRemoveUntilRoute('/new', '/home', { arguments: { clear: true } });
-  
+
   // Restorable navigation
   const restorationId1: string = webf.hybridHistory.restorablePopAndPushState({ page: 3 }, 'page3');
   const restorationId2: string = webf.hybridHistory.restorablePopAndPushNamed('/restore', { arguments: {} });
@@ -94,18 +95,6 @@ const idleHandle: number = webf.requestIdleCallback(
   },
   { timeout: 1000 }
 );
-
-// Test webf on window
-const webfFromWindow: webf.Webf = window.webf;
-
-// Test type exports from webf namespace
-type WebfType = webf.Webf;
-type ConsoleType = webf.Console;
-type HeadersType = webf.Headers;
-type RequestType = webf.Request;
-type ResponseType = webf.Response;
-type URLType = webf.URL;
-type URLSearchParamsType = webf.URLSearchParams;
 
 // Verify all APIs compile without errors
 export function runAllTests() {

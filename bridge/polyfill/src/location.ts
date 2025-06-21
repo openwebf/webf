@@ -23,7 +23,7 @@ export interface LocationInterface {
   toString(): string;
 }
 
-class Location implements LocationInterface {
+export class Location implements LocationInterface {
   get href() {
     return webf.invokeModule('Location', 'href');
   }

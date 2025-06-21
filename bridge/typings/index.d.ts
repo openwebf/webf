@@ -8,11 +8,13 @@ import './webf';
 // Import core WebF types (namespace declaration)
 /// <reference path="./webf.d.ts" />
 
-// Import polyfill module
-/// <reference path="./polyfill.d.ts" />
+import {PolyFillGlobal } from './polyfill';
 
-// Re-export polyfill module exports
+// Global instances
+declare global {
+  const document: Document;
+  const window: Window & typeof globalThis & PolyFillGlobal;
+  const screen: Screen;
+}
+
 export * from './polyfill';
-
-// Ensure this is treated as a module
-export {};
