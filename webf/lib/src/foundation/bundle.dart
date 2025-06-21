@@ -182,7 +182,7 @@ abstract class WebFBundle with Diagnosticable {
   }
 
   static ContentType _resolveContentType(Uri? uri) {
-    if (_isUriExt(uri, '.js')) {
+    if (_isUriExt(uri, '.js') || _isUriExt(uri, '.mjs')) {
       return _javascriptApplicationContentType;
     } else if (_isUriExt(uri, '.html')) {
       return ContentType.html;

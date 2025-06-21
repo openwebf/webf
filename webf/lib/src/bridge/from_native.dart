@@ -627,7 +627,7 @@ void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, 
 
     print('Resolved URI: $resolvedUri');
     // Use WebFBundle to fetch the module content
-    WebFBundle bundle = WebFBundle.fromUrl(resolvedUri.toString());
+    WebFBundle bundle = WebFBundle.fromUrl(resolvedUri.toString(), additionalHttpHeaders: {'Accept': '*/*'}, contentType: ContentType('application', 'javascript', charset: UTF_8));
     await bundle.resolve();
     print('Bundle Resolve URI: ${bundle.url}');
     await bundle.obtainData(contextId);
@@ -636,8 +636,10 @@ void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, 
       callback(callbackContext, contextId, 'Failed to fetch module: ${resolvedUri.toString()}'.toNativeUtf8(), nullptr, 0);
     } else {
       // Pass the module content to C++
-      Pointer<Uint8> bytesPtr = malloc.allocate<Uint8>(bundle.data!.length);
-      bytesPtr.asTypedList(bundle.data!.length).setAll(0, bundle.data!);
+      Pointer<Uint8> bytesPtr = malloc.allocate<Uint8>(bundle.data!.length + 1);
+      Uint8List dataView = bytesPtr.asTypedList(bundle.data!.length + 1);
+      dataView.setAll(0, bundle.data!);
+      dataView[bundle.data!.length] = 0; // Null terminate
       callback(callbackContext, contextId, nullptr, bytesPtr, bundle.data!.length);
     }
 
