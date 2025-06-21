@@ -20,6 +20,7 @@ class HTMLHtmlElement;
 class HTMLAllCollection;
 class Text;
 class Comment;
+class HTMLElement;
 
 enum NodeListInvalidationType : int {
   kDoNotInvalidateOnAttributeChanges = 0,
@@ -46,8 +47,8 @@ class Document : public ContainerNode, public TreeScope {
 
   static Document* Create(ExecutingContext* context, ExceptionState& exception_state);
 
-  Element* createElement(const AtomicString& name, ExceptionState& exception_state);
-  Element* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);
+  HTMLElement* createElement(const AtomicString& name, ExceptionState& exception_state);
+  HTMLElement* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri,
                            const AtomicString& name,

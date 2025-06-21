@@ -44,7 +44,7 @@ Document::Document(ExecutingContext* context)
 }
 
 // https://dom.spec.whatwg.org/#dom-document-createelement
-Element* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
+HTMLElement* Document::createElement(const AtomicString& name, ExceptionState& exception_state) {
   const AtomicString& local_name = name.ToLowerIfNecessary(ctx());
   if (!IsValidName(local_name)) {
     exception_state.ThrowException(
@@ -76,7 +76,7 @@ Element* Document::createElement(const AtomicString& name, ExceptionState& excep
   return html_unknown_element;
 }
 
-Element* Document::createElement(const AtomicString& name,
+HTMLElement* Document::createElement(const AtomicString& name,
                                  const ScriptValue& options,
                                  ExceptionState& exception_state) {
   return createElement(name, exception_state);

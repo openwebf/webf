@@ -19,7 +19,7 @@ class HTMLCanvasElement : public HTMLElement {
  public:
   explicit HTMLCanvasElement(Document&);
 
-  CanvasRenderingContext* getContext(const AtomicString& type, ExceptionState& exception_state);
+  CanvasRenderingContext2D* getContext(const AtomicString& type, ExceptionState& exception_state);
 
   void Trace(GCVisitor* visitor) const override;
 

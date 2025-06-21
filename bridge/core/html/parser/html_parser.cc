@@ -10,6 +10,7 @@
 #include "core/dom/text.h"
 #include "core/executing_context.h"
 #include "element_namespace_uris.h"
+#include "core/html/html_element.h"
 #include "foundation/logging.h"
 #include "gumbo-parser/src/error.h"
 #include "html_names.h"

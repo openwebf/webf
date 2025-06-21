@@ -40,6 +40,7 @@ inline bool IsElementOfType<const HTMLElement>(const Node& node) {
 template <>
 struct DowncastTraits<HTMLElement> {
   static bool AllowFrom(const Node& node) { return node.IsHTMLElement(); }
+  static bool AllowFrom(const Element& element) { return element.IsHTMLElement(); }
   static bool AllowFrom(const EventTarget& event_target) {
     return event_target.IsNode() && To<Node>(event_target).IsHTMLElement();
   }

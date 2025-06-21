@@ -14,7 +14,7 @@ namespace webf {
 
 HTMLCanvasElement::HTMLCanvasElement(Document& document) : HTMLElement(html_names::kCanvas, &document) {}
 
-CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, ExceptionState& exception_state) {
+CanvasRenderingContext2D* HTMLCanvasElement::getContext(const AtomicString& type, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), type)};
   NativeValue value = InvokeBindingMethod(binding_call_methods::kgetContext, 1, arguments,
                                           FlushUICommandReason::kDependentsOnElement, exception_state);
@@ -25,7 +25,7 @@ CanvasRenderingContext* HTMLCanvasElement::getContext(const AtomicString& type, 
     return nullptr;
 
   if (type == canvas_types::k2d) {
-    CanvasRenderingContext* context =
+    auto* context =
         MakeGarbageCollected<CanvasRenderingContext2D>(GetExecutingContext(), native_binding_object);
     running_context_2ds_.emplace_back(context);
     return context;

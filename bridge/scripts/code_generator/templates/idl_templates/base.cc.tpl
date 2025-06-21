@@ -22,6 +22,7 @@
 #include "core/geometry/dom_matrix.h"
 #include "core/geometry/dom_point.h"
 #include "core/input/touch_list.h"
+#include "core/html/canvas/canvas_rendering_context_2d.h"
 #include "core/dom/static_node_list.h"
 #include "core/html/html_all_collection.h"
 #include "defined_properties.h"
