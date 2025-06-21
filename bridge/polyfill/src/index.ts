@@ -22,7 +22,7 @@ import {Webf, webf} from './webf';
 import { WebSocket } from './websocket'
 import { ResizeObserver } from './resize-observer';
 import { _AbortController, _AbortSignal } from './abort-signal';
-import {HTMLCanvasElement} from "../../core/html/canvas/html_canvas_element";
+import { BroadcastChannel } from './broadcast-channel';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -46,6 +46,7 @@ defineGlobalProperty('WebSocket', WebSocket);
 defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
+defineGlobalProperty('BroadcastChannel', BroadcastChannel);
 
 export type PolyFillGlobal = {
   console: Console,

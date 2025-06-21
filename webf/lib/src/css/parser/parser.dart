@@ -385,6 +385,9 @@ class CSSParser {
           if (rule != null) {
             rules.addAll(rule);
           }
+          else {
+            break;
+          }
         } while (!_maybeEat(TokenKind.RBRACE));
         // rules.forEach((rule) {
         //   if (rule is CSSStyleRule) {
@@ -1057,6 +1060,8 @@ class CSSParser {
           case TokenKind.IDENTIFIER:
             if (resetProperty) {
               propertyIdent = identifier().name;
+            } else {
+              keepGoing = false;
             }
             break;
           default:
