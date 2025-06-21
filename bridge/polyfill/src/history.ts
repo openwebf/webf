@@ -16,7 +16,7 @@ export interface HistoryInterface {
   replaceState(state: any, title: string, url?: string): void;
 }
 
-class History implements HistoryInterface {
+export class History implements HistoryInterface {
   constructor() {
   }
 

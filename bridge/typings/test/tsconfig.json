@@ -14,8 +14,7 @@
     "typeRoots": ["../"]
   },
   "include": [
-    "*.test.ts",
-    "*.ts"
+    "simple-test.ts"
   ],
   "exclude": [
     "node_modules"

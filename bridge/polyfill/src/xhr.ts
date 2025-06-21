@@ -9,7 +9,7 @@ import { URL } from './url';
 import { navigator } from './navigator';
 import { initPropertyHandlersForEventTargets } from './helpers';
 
-export interface XMLHttpRequestInterface extends EventTarget {
+export interface XMLHttpRequestInterface {
   readonly UNSENT: number;
   readonly OPENED: number;
   readonly HEADERS_RECEIVED: number;
