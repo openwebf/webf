@@ -68,3 +68,22 @@ series(
 - **Regenerate all types**: `node scripts/generate_binding_code.js`
 - **Generate only polyfill types**: `cd bridge/typings && npm run generate`
 - **Test typings**: `cd bridge/typings && npm test`
+
+## Error Handling
+
+The type generation scripts now include improved error handling:
+
+1. **generate_binding_code.js**: 
+   - Displays detailed error messages with stack traces
+   - Exits with non-zero status code on failure
+   - Shows specific task that failed (merge-bridge-typings, update-typings-version, or generate-bindings-code)
+
+2. **Task-level errors**:
+   - Each gulp task provides specific error messages
+   - Failed builds show build tool output
+   - Parsing errors include file paths and line numbers
+
+3. **Common errors**:
+   - Missing dependencies: Run `npm install` in the appropriate directory
+   - TypeScript parsing errors: Check the source .d.ts files for syntax errors
+   - File not found: Ensure all required directories exist

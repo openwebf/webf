@@ -39,6 +39,7 @@ const paths = {
   webf: resolveWebF('webf'),
   bridge: resolveWebF('bridge'),
   polyfill: resolveWebF('bridge/polyfill'),
+  typings: resolveWebF('bridge/typings'),
   codeGen: resolveWebF('bridge/scripts/code_generator'),
   thirdParty: resolveWebF('third_party'),
   tests: resolveWebF('integration_tests'),
@@ -216,7 +217,6 @@ task('generate-polyfill-typings', (done) => {
       stdio: 'inherit'
     });
   }
-  console.log
 
   // Generate TypeScript declarations using rollup
   const result = spawnSync(NPM, ['run', 'build:types'], {
@@ -229,7 +229,40 @@ task('generate-polyfill-typings', (done) => {
     return done(result.status);
   }
 
-  console.log(chalk.green('Polyfill typings generated successfully'));
+  // Fix the generated polyfill.d.ts file
+  const polyfillTypesPath = path.join(paths.typings, 'polyfill.d.ts');
+  let polyfillContent = fs.readFileSync(polyfillTypesPath, 'utf-8');
+  
+  // Fix all $1 renaming issues from rollup-plugin-dts
+  polyfillContent = polyfillContent.replace(/URLSearchParams\$1/g, 'URLSearchParams');
+  polyfillContent = polyfillContent.replace(/HeadersInit\$1/g, 'HeadersInit');
+  polyfillContent = polyfillContent.replace(/BodyInit\$1/g, 'BodyInit');
+  polyfillContent = polyfillContent.replace(/RequestInit\$1/g, 'RequestInit');
+  polyfillContent = polyfillContent.replace(/ResponseInit\$1/g, 'ResponseInit');
+  polyfillContent = polyfillContent.replace(/ResizeObserverEntry\$1/g, 'ResizeObserverEntry');
+  
+  // Fix EventTarget extension issue - change extends to implements for interfaces
+  polyfillContent = polyfillContent.replace(
+    /class\s+(\w+)\s+implements\s+(\w+Interface)\s+extends\s+EventTarget/g,
+    'class $1 extends EventTarget implements $2'
+  );
+  
+  // Fix DOMException private properties conflict
+  polyfillContent = polyfillContent.replace(
+    /declare class DOMException extends Error \{\s*private message;\s*private name;/g,
+    'declare class DOMException extends Error {'
+  );
+  
+  // Add RequestInfo type alias (used by fetch API)
+  const requestInfoType = '\ntype RequestInfo = Request | string;\n';
+  polyfillContent = polyfillContent.replace(
+    /declare type HeadersInit = /,
+    requestInfoType + 'declare type HeadersInit = '
+  );
+  
+  fs.writeFileSync(polyfillTypesPath, polyfillContent);
+
+  console.log(chalk.green('Polyfill typings generated and fixed successfully'));
   done();
 });
 
@@ -636,7 +669,11 @@ task('generate-bindings-code', (done) => {
   });
 
   if (buildResult.status !== 0) {
-    return done(buildResult.status);
+    console.error(chalk.red('Failed to build code generator'));
+    if (buildResult.error) {
+      console.error(chalk.red(buildResult.error.message));
+    }
+    return done(new Error(`Code generator build failed with status ${buildResult.status}`));
   }
 
   let compileResult = spawnSync('node', ['bin/code_generator', '-s', '../../core', '-d', '../../code_gen'], {
@@ -649,7 +686,11 @@ task('generate-bindings-code', (done) => {
   });
 
   if (compileResult.status !== 0) {
-    return done(compileResult.status);
+    console.error(chalk.red('Failed to generate binding code'));
+    if (compileResult.error) {
+      console.error(chalk.red(compileResult.error.message));
+    }
+    return done(new Error(`Code generation failed with status ${compileResult.status}`));
   }
 
   done();
@@ -945,6 +986,12 @@ task('update-typings-version', (done) => {
 
     done();
   } catch (err) {
+    console.error(chalk.red('Error updating typings version:'));
+    if (err instanceof Error) {
+      console.error(chalk.red(err.message));
+    } else {
+      console.error(chalk.red(err));
+    }
     done(err);
   }
 });
@@ -1362,6 +1409,45 @@ interface Attr extends Node {
     const typeDefinitions = [];
     const namespaceMembers = [];
     
+    // List of interfaces that should have class declarations generated
+    const interfacesNeedingClasses = [
+      'EventTarget',
+      'Node',
+      'Element',
+      'Event',
+      'CharacterData',
+      'Document',
+      'DocumentFragment',
+      'HTMLElement',
+      'SVGElement',
+      'UIEvent',
+      'MouseEvent',
+      'KeyboardEvent',
+      'TouchEvent',
+      'FocusEvent',
+      'InputEvent',
+      'CustomEvent',
+      'AnimationEvent',
+      'TransitionEvent',
+      'CloseEvent',
+      'ErrorEvent',
+      'GestureEvent',
+      'HashchangeEvent',
+      'MessageEvent',
+      'PointerEvent',
+      'PopStateEvent',
+      'PromiseRejectionEvent',
+      'ScreenEvent',
+      'Screen',
+      'Performance',
+      'Window',
+      'Blob',
+      'File'
+    ];
+    
+    // Store generated class declarations
+    const classDeclarations = [];
+    
     // Process each .d.ts file
     dtsFiles.forEach(filePath => {
       console.log(chalk.gray(`Processing: ${path.relative(bridgeCorePath, filePath)}`));
@@ -1387,10 +1473,42 @@ interface Attr extends Node {
         if (interfaceMatches) {
           interfaceMatches.forEach(match => {
             const name = match.replace(/(?:interface|class|type|enum)\s+/, '');
-            if (name && !namespaceMembers.includes(name)) {
+            // Filter out invalid type names (methods, keywords, etc.)
+            const invalidNames = ['of', 'readonly', 'getBoundingClientRect'];
+            if (name && !namespaceMembers.includes(name) && !invalidNames.includes(name)) {
               namespaceMembers.push(name);
             }
           });
+        }
+        
+        // Check for interfaces that need class declarations
+        const interfaceRegex = /interface\s+(\w+)(?:\s+extends\s+([^{]+))?\s*{([^}]*)}/g;
+        let match;
+        while ((match = interfaceRegex.exec(processedContent)) !== null) {
+          const interfaceName = match[1];
+          const extendsClause = match[2] || '';
+          const interfaceBody = match[3];
+          
+          if (interfacesNeedingClasses.includes(interfaceName)) {
+            // Extract constructor signature if it exists
+            const constructorMatch = interfaceBody.match(/new\s*\([^)]*\)\s*:\s*\w+;/);
+            const hasConstructor = constructorMatch !== null;
+            
+            // Generate class declaration
+            let classDecl = `// Auto-generated class declaration for ${interfaceName}\n`;
+            classDecl += `declare class ${interfaceName}`;
+            
+            // Handle inheritance
+            if (extendsClause) {
+              const parentClass = extendsClause.trim().split(',')[0].trim();
+              if (interfacesNeedingClasses.includes(parentClass)) {
+                classDecl += ` extends ${parentClass}`;
+              }
+            }
+            
+            classDecl += ' {}';
+            classDeclarations.push(classDecl);
+          }
         }
         
         typeDefinitions.push(processedContent);
@@ -1434,6 +1552,23 @@ interface Attr extends Node {
     
     processedContent = processedContent + staticNamespaces;
     
+    // Add generated class declarations
+    if (classDeclarations.length > 0) {
+      processedContent += '\n\n// Auto-generated class declarations for extendable interfaces\n';
+      processedContent += classDeclarations.join('\n\n');
+    }
+    
+    // Remove duplicate type declarations
+    const typeDeclarations = {};
+    processedContent = processedContent.replace(/^type\s+(\w+)\s*=\s*([^;]+);$/gm, (match, typeName, typeValue) => {
+      if (typeDeclarations[typeName]) {
+        // Skip duplicate
+        return '';
+      }
+      typeDeclarations[typeName] = typeValue;
+      return match;
+    });
+    
     // Combine all processed content
     mergedContent += processedContent;
     
@@ -1448,10 +1583,11 @@ declare namespace webf {
       mergedContent += '}\n';
     }
     
-    // Add global instances
+    // Add global instances and constructors
     mergedContent += `\n// Global instances
 declare const document: Document;
-declare const window: Window & typeof globalThis;\n`;
+declare const window: Window & typeof globalThis;
+\n`;
     
     // Write merged webf.d.ts
     writeFileSync(webfDtsPath, mergedContent);
@@ -1536,7 +1672,16 @@ export {};
     
     done();
   } catch (err) {
-    console.error(chalk.red('Error merging bridge typings:'), err);
+    console.error(chalk.red('Error merging bridge typings:'));
+    if (err instanceof Error) {
+      console.error(chalk.red(err.message));
+      if (err.stack) {
+        console.error(chalk.gray('Stack trace:'));
+        console.error(chalk.gray(err.stack));
+      }
+    } else {
+      console.error(chalk.red(err));
+    }
     done(err);
   }
 });

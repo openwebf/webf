@@ -13,7 +13,16 @@ series(
   'generate-bindings-code'
 )((err) => {
   if (err) {
-    console.log(err);
+    console.error(chalk.red('Error occurred during code generation:'));
+    if (err instanceof Error) {
+      console.error(chalk.red(err.message));
+      if (err.stack) {
+        console.error(chalk.gray(err.stack));
+      }
+    } else {
+      console.error(chalk.red(err));
+    }
+    process.exit(1);
   } else {
     console.log(chalk.green('Success.'));
   }
