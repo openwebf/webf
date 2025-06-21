@@ -718,7 +718,6 @@ class RenderBoxModel extends RenderBox
   // box constraint errors during flex item resizing. This flag is automatically cleared
   // after the text box reads it in getConstraints().
   bool isFlexRelayout = false;
-
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
 
