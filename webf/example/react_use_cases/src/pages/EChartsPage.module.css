@@ -1,0 +1,151 @@
+/* ECharts page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.chartContainer {
+  width: 100%;
+  margin-top: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.chart {
+  width: 100%;
+  height: 400px;
+  background: #ffffff;
+}
+
+/* Feature list styles */
+.featureList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--feature-background, #f8f9fa);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-color, #007aff);
+}
+
+.featureIcon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+
+.featureText {
+  font-size: 14px;
+  color: var(--primary-text-color, #333);
+  font-weight: 500;
+}
+
+/* Responsive design */
+@media (min-width: 768px) {
+  .componentSection {
+    padding: 32px;
+  }
+
+  .chart {
+    height: 450px;
+  }
+  
+  .featureList {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chart {
+    height: 500px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .sectionTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .feature {
+    background: var(--dark-feature-background, #383838);
+  }
+
+  .featureText {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .chart {
+    background: #ffffff;
+  }
+}

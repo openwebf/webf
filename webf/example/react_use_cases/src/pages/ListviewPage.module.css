@@ -1,0 +1,59 @@
+.pageContainer {
+  padding: 16px;
+}
+
+h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.listviewContainer {
+  height: 200px; /* Fixed height for demonstration */
+  border: 1px solid #ccc;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  background-color: #f9f9f9;
+}
+
+.listItem {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  background-color: white;
+}
+
+.listItem:last-child {
+  border-bottom: none;
+}
+
+.description {
+  font-size: 0.9em;
+  color: #555;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.customRefreshIndicator {
+  /* Style for the custom indicator element */
+  display: none; /* Important: Hide it initially */
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  color: #007aff; /* Cupertino blue */
+  font-size: 0.9em;
+}
+
+.customRefreshIndicator img {
+  margin-right: 8px;
+  /* Basic animation - consider a smoother spinner gif/css */
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Override display when controlled by CupertinoSliverRefreshControl */
+webf-listview[refresh-style="customCupertino"] > [slotName="refresh-indicator"] {
+   display: flex; /* Make it visible when used by the refresh control */
+}

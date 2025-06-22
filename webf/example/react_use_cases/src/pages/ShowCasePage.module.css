@@ -1,0 +1,195 @@
+.list {
+  padding: 10px 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--background-primary);
+}
+
+.componentSection {
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--font-color-primary);
+  margin-bottom: 16px;
+}
+
+.componentBlock {
+  background-color: var(--background-secondary);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.componentItem {
+  margin-bottom: 32px;
+}
+
+.componentItem:last-child {
+  margin-bottom: 0;
+}
+
+.itemLabel {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--font-color-primary);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--font-color-secondary);
+  margin-bottom: 16px;
+}
+
+.showcaseContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.showcaseContainer > * {
+  margin-bottom: 20px;
+}
+
+.showcaseContainer > *:last-child {
+  margin-bottom: 0;
+}
+
+.showcaseRow {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  margin-top: 20px;
+  justify-content: flex-start;
+}
+
+.showcaseItem {
+  width: 140px;
+  margin-right: 20px;
+  margin-bottom: 20px;
+}
+
+.showcaseView {
+  margin: 0 auto;
+}
+
+.targetElement {
+  width: 120px;
+  height: 80px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  margin: 10px;
+}
+
+.basicTarget {
+  flex-direction: row;
+}
+
+.targetDesc {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: normal;
+}
+
+.blueBg {
+  background-color: #1677ff;
+}
+
+.redBg {
+  background-color: #ff4d4f;
+}
+
+.greenBg {
+  background-color: #52c41a;
+}
+
+.orangeBg {
+  background-color: #fa8c16;
+}
+
+.purpleBg {
+  background-color: #722ed1;
+}
+
+.descriptionContainer {
+  background-color: #f0f8ff;
+  border: 1px solid #91caff;
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 300px;
+}
+
+.redContainer {
+  background-color: #fff1f0;
+  border-color: #ffa39e;
+}
+
+.redContainer h3 {
+  color: #ff4d4f;
+}
+
+.greenContainer {
+  background-color: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.greenContainer h3 {
+  color: #52c41a;
+}
+
+.orangeContainer {
+  background-color: #fff7e6;
+  border-color: #ffd591;
+}
+
+.orangeContainer h3 {
+  color: #fa8c16;
+}
+
+.purpleContainer {
+  background-color: #f9f0ff;
+  border-color: #d3adf7;
+}
+
+.purpleContainer h3 {
+  color: #722ed1;
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #1677ff;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.buttonGroup > * {
+  margin-right: 12px;
+  margin-bottom: 12px;
+}
+
+.buttonGroup > *:last-child {
+  margin-right: 0;
+}
+
+.buttonContainer, 
+.buttonRow {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.buttonDemoContainer {
+  min-width: 250px;
+}

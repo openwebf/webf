@@ -1,0 +1,588 @@
+/* Deep Link page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* URL container styles */
+.urlContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.urlSection {
+  margin-bottom: 16px;
+}
+
+.urlSection:last-child {
+  margin-bottom: 0;
+}
+
+.urlLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.urlValue {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  color: var(--accent-color, #007aff);
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  word-break: break-all;
+}
+
+.paramsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.paramItem {
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  font-size: 14px;
+}
+
+.paramKey {
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-right: 8px;
+}
+
+.paramValue {
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.historyList {
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.historyItem {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f8f9fa;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  color: var(--secondary-text-color, #666);
+}
+
+.historyItem:last-child {
+  border-bottom: none;
+}
+
+/* Links container styles */
+.linksContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.linkCard {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.linkCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.linkHeader {
+  margin-bottom: 12px;
+}
+
+.linkTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 4px;
+}
+
+.linkDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.4;
+}
+
+.linkUrl {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  color: var(--accent-color, #007aff);
+  background: #ffffff;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.linkActions {
+  display: flex;
+  gap: 8px;
+}
+
+.linkButton {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.linkButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.linkButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.secondaryButton {
+  background: #6c757d;
+}
+
+.secondaryButton:hover {
+  background: #545b62;
+}
+
+.processing {
+  background: #ffc107 !important;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Schemes container styles */
+.schemesContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.schemeCard {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.schemeCard:last-child {
+  margin-bottom: 0;
+}
+
+.schemeHeader {
+  margin-bottom: 12px;
+}
+
+.schemeTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 4px;
+}
+
+.schemeDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.4;
+}
+
+.schemeUrl {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  color: var(--accent-color, #007aff);
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.schemeButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.schemeButton:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.schemeButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Registration container styles */
+.registrationContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.registrationInfo {
+  margin-bottom: 20px;
+}
+
+.infoTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.infoDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.exampleSchemes {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.exampleItem {
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+}
+
+.exampleItem:last-child {
+  margin-bottom: 0;
+}
+
+.exampleItem code {
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: #f8f9fa;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: var(--accent-color, #007aff);
+}
+
+.registerButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.registerButton:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.registerButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Result container styles */
+.resultContainer {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #dee2e6;
+  margin-top: 16px;
+}
+
+.resultLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.resultText {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+  word-break: break-word;
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* Guide container styles */
+.guideContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.guideSection {
+  margin-bottom: 24px;
+}
+
+.guideSection:last-child {
+  margin-bottom: 0;
+}
+
+.guideTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 6px 6px 0 0;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}
+
+.codeBlock {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 0 0 6px 6px;
+  overflow-x: auto;
+  white-space: pre;
+  border-top: none;
+}
+
+.bestPractices {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.practiceItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+}
+
+.practiceItem:last-child {
+  margin-bottom: 0;
+}
+
+.practiceIcon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .componentSection {
+    padding: 16px;
+  }
+
+  .linksContainer {
+    grid-template-columns: 1fr;
+  }
+
+  .paramsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .linkActions {
+    flex-direction: column;
+  }
+
+  .codeBlock {
+    font-size: 11px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .linkCard,
+  .schemeCard {
+    padding: 12px;
+  }
+
+  .linkButton,
+  .schemeButton,
+  .registerButton {
+    padding: 6px 12px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+
+  .urlValue,
+  .linkUrl,
+  .schemeUrl {
+    font-size: 12px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .sectionTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .urlContainer,
+  .schemesContainer,
+  .registrationContainer,
+  .guideContainer {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .urlValue,
+  .paramItem,
+  .historyList,
+  .linkCard,
+  .schemeCard,
+  .exampleSchemes,
+  .bestPractices,
+  .resultContainer {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .urlLabel,
+  .paramKey,
+  .linkTitle,
+  .schemeTitle,
+  .infoTitle,
+  .resultLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .paramValue,
+  .linkDesc,
+  .schemeDesc,
+  .infoDesc,
+  .historyItem,
+  .practiceItem,
+  .resultText {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .linkUrl,
+  .schemeUrl,
+  .urlValue {
+    background: #383838;
+  }
+
+  .codeBlock {
+    background: #2d2d2d;
+    color: var(--dark-primary-text-color, #ffffff);
+    border-color: #555;
+  }
+
+  .guideTitle {
+    color: #ffffff;
+    background: rgba(0, 122, 255, 0.3);
+    border-color: rgba(0, 122, 255, 0.4);
+  }
+}

@@ -5,15 +5,10 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/cupertino.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:io' show File;
 
 import 'custom_elements/icon.dart';
 import 'custom_elements/search.dart';
@@ -38,6 +33,9 @@ import 'custom_hybrid_history_delegate.dart';
 import 'custom_listview.dart';
 import 'modules/test_array_buffer.dart';
 import 'modules/share.dart';
+import 'modules/deeplink.dart';
+import 'flutter_ui_handler.dart';
+import 'flutter_interaction_handler.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
@@ -78,6 +76,7 @@ void main() async {
   WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
+  WebF.defineModule((context) => DeepLinkModule(context));
 
   installWebFCupertino();
 
@@ -107,6 +106,22 @@ void main() async {
   //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
   //       controller.darkModeOverride = savedThemeMode?.isDark;
   //     });
+
+  // Add react use cases controller with preloading for image preload test
+  WebFControllerManager.instance.addWithPreload(
+      name: 'react_use_cases',
+      createController: () => WebFController(
+            routeObserver: routeObserver,
+            // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+          ),
+      bundle: WebFBundle.fromUrl('assets:///react_use_cases/dist/index.html'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+        
+        // Set up method call handler for FlutterInteractionPage using dedicated handler
+        controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
+      });
 
   WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
 
@@ -393,7 +408,16 @@ class FirstPageState extends State<FirstPage> {
                 return WebFDemo(webfPageName: 'use_cases');
               }));
             },
-            child: Text('Open Use Cases')),
+            child: Text('Open Use Cases (Vue.js)')),
+        SizedBox(height: 18),
+        ElevatedButton(
+            onPressed: () {
+              widget.webfPageName.value = 'react_use_cases';
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(webfPageName: 'react_use_cases');
+              }));
+            },
+            child: Text('Open Use Cases (React.js)')),
           ]),
           WebFInspectorFloatingPanel(),
         ],
@@ -421,6 +445,8 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
       return WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html');
     case 'use_cases':
       return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
+    case 'react_use_cases':
+      return WebFBundle.fromUrl('assets:///react_use_cases/dist/index.html');
     default:
       // Return null if the controller name is not recognized
       return null;
@@ -441,6 +467,9 @@ class WebFDemo extends StatefulWidget {
 class _WebFDemoState extends State<WebFDemo> {
   @override
   Widget build(BuildContext context) {
+    // Set context for FlutterUIHandler
+    FlutterUIHandler().setContext(context);
+    
     bool darkModeOverride =  AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
     // bool isDarkModeEnabled = AdaptiveTheme.of(context).
     return Scaffold(

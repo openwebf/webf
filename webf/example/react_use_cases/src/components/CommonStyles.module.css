@@ -1,0 +1,53 @@
+/* This demonstrates how CSS Modules prevent conflicts */
+/* Even if multiple components use the same class names, they won't conflict */
+
+.button {
+  background-color: #007acc;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.container {
+  padding: 16px;
+  margin: 8px 0;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--font-color-primary);
+  margin-bottom: 8px;
+}
+
+/* These classes have the same names as in other components, 
+   but won't conflict due to CSS Modules */
+.item {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+/* Responsive container */
+.responsiveContainer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+  box-sizing: border-box;
+}
+
+/* Responsive padding utilities */
+@media (min-width: 768px) {
+  .responsiveContainer {
+    padding: 0 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsiveContainer {
+    padding: 0 24px;
+  }
+}
