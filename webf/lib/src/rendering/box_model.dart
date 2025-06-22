@@ -719,54 +719,6 @@ class RenderBoxModel extends RenderBox
   // after the text box reads it in getConstraints().
   bool isFlexRelayout = false;
 
-  // Find and mark elements that only contain text boxes for flex relayout optimization.
-  // This enables text boxes to use infinite width during flex layout to expand naturally,
-  // preventing box constraint errors when flex items are resized.
-  void markFlexRelayoutForTextOnly() {
-    if (this is RenderEventListener) {
-      RenderEventListener eventListener = this as RenderEventListener;
-      RenderObject? child = eventListener.child;
-      if (child is RenderTextBox) {
-        // RenderEventListener directly contains a text box - mark it for flex relayout
-        _setFlexRelayoutForTextParent(eventListener);
-      } else if (child is RenderLayoutBox) {
-        // RenderEventListener contains a layout box - check if that layout box only contains text
-        _markRenderLayoutBoxForTextOnly(child);
-      }
-    } else if (this is RenderLayoutBox) {
-      // Check if this layout box only contains text
-      _markRenderLayoutBoxForTextOnly(this as RenderLayoutBox);
-    }
-  }
-
-  // Mark a RenderLayoutBox for flex relayout if it contains only a single RenderTextBox child.
-  // This optimization allows the text to use flexible width constraints during flex layout,
-  // preventing constraint violations when the flex container adjusts item sizes.
-  // Only apply when the flex container itself has indefinite width.
-  void _markRenderLayoutBoxForTextOnly(RenderLayoutBox layoutBox) {
-    if (layoutBox.childCount == 1) {
-      RenderObject? firstChild = layoutBox.firstChild;
-      if (firstChild is RenderEventListener) {
-        RenderObject? child = firstChild.child;
-        if (child is RenderTextBox) {
-          _setFlexRelayoutForTextParent(firstChild);
-        } else if (child is RenderLayoutBox) {
-          _markRenderLayoutBoxForTextOnly(child);
-        }
-      } else if (firstChild is RenderTextBox) {
-        _setFlexRelayoutForTextParent(layoutBox);
-      }
-    }
-  }
-
-  void _setFlexRelayoutForTextParent(RenderBoxModel textParentBoxModel) {
-    if( textParentBoxModel.renderStyle.display == CSSDisplay.flex &&
-        textParentBoxModel.renderStyle.width.isAuto &&
-        !textParentBoxModel.constraints.hasBoundedWidth) {
-      textParentBoxModel.isFlexRelayout = true;
-    }
-  }
-
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
 
