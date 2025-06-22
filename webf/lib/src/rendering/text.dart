@@ -640,21 +640,6 @@ class MultiLineBoxConstraints extends BoxConstraints {
   }
 }
 
-// Helper class to store flex item information for width calculation
-class FlexItemInfo {
-  final RenderBoxModel child;
-  final double flexGrow;
-  final double flexShrink;
-  final double? flexBasis;
-
-  FlexItemInfo({
-    required this.child,
-    required this.flexGrow,
-    required this.flexShrink,
-    this.flexBasis,
-  });
-}
-
 class InlineBoxConstraints extends MultiLineBoxConstraints {
   final double leftWidth;
   final double lineMainExtent;
