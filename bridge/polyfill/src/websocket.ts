@@ -122,7 +122,7 @@ export class WebSocket extends EventTarget implements WebSocketInterface {
   readyState: number;
   id: string;
 
-  constructor(url: string, protocol: string) {
+  constructor(url: string, protocol?: string | string[]) {
     // @ts-ignore
     super();
     this.CONNECTING = ReadyState.CONNECTING;
@@ -130,13 +130,13 @@ export class WebSocket extends EventTarget implements WebSocketInterface {
     this.CLOSING = ReadyState.CLOSING;
     this.CLOSED = ReadyState.CLOSED;
     this.extensions = ''; // TODO add extensions support
-    this.protocol = ''; // TODO add protocol support
+    this.protocol = typeof protocol === 'string' ? protocol : (Array.isArray(protocol) ? protocol[0] || '' : '');
     this.binaryType = BinaryType.blob;
     // verify url schema
     validateUrl(url);
     this.url = url;
     this.readyState = ReadyState.CONNECTING;
-    this.id = webf.invokeModule('WebSocket', 'init', url);
+    this.id = webf.invokeModule('WebSocket', 'init', url, this.protocol || undefined);
     wsClientMap[this.id] = this;
     initPropertyHandlersForEventTargets(this, builtInEvents$1);
   }

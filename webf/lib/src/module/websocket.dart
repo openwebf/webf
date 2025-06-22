@@ -33,9 +33,10 @@ class WebSocketModule extends BaseModule {
   @override
   String invoke(String method, List<dynamic> params) {
     if (method == 'init') {
+      String? protocols = params.length > 1 ? params[1] : null;
       return init(params[0], (String id, Event event) {
         moduleManager!.emitModuleEvent(name, event: event, data: id);
-      });
+      }, protocols: protocols);
     } else if (method == 'addEvent') {
       addEvent(params[0], params[1]);
     } else if (method == 'send') {
