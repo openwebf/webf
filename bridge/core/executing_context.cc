@@ -837,9 +837,21 @@ bool isContextValid(double contextId) {
 char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_base_name, const char* module_name, void* opaque) {
   ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
 
-  // Check if it's already an absolute URL
+  // Check if it's already an absolute URL (including http/https)
   if (strstr(module_name, "://") != nullptr) {
-    return js_strdup(ctx, module_name);
+    // Support http, https, file, and asset protocols
+    const char* protocols[] = {"http://", "https://", "file://", "asset://"};
+    bool is_supported_protocol = false;
+    for (const char* protocol : protocols) {
+      if (strncmp(module_name, protocol, strlen(protocol)) == 0) {
+        is_supported_protocol = true;
+        break;
+      }
+    }
+    if (is_supported_protocol) {
+      return js_strdup(ctx, module_name);
+    }
+    // For unsupported protocols, fall through to default handling
   }
 
   // Handle absolute paths (starting with /)
@@ -848,20 +860,37 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
     if (module_base_name && strstr(module_base_name, "://") != nullptr) {
       std::string base_url(module_base_name);
 
-      // Find the origin (protocol + host)
+      // Find the origin (protocol + host) for http/https/file/asset protocols
       size_t protocol_end = base_url.find("://");
       if (protocol_end != std::string::npos) {
-        size_t path_start = base_url.find('/', protocol_end + 3);
-        std::string origin;
-        if (path_start != std::string::npos) {
-          origin = base_url.substr(0, path_start);
+        // Check if it's an http/https URL
+        bool is_http_url = (base_url.find("http://") == 0 || base_url.find("https://") == 0);
+        
+        if (is_http_url) {
+          // For HTTP URLs, find the path start after the host
+          size_t path_start = base_url.find('/', protocol_end + 3);
+          std::string origin;
+          if (path_start != std::string::npos) {
+            origin = base_url.substr(0, path_start);
+          } else {
+            origin = base_url;
+          }
+          // Combine origin with the absolute path
+          std::string resolved = origin + module_name;
+          return js_strdup(ctx, resolved.c_str());
         } else {
-          origin = base_url;
+          // For file/asset URLs, handle differently
+          size_t path_start = base_url.find('/', protocol_end + 3);
+          std::string origin;
+          if (path_start != std::string::npos) {
+            origin = base_url.substr(0, path_start);
+          } else {
+            origin = base_url;
+          }
+          // Combine origin with the absolute path
+          std::string resolved = origin + module_name;
+          return js_strdup(ctx, resolved.c_str());
         }
-
-        // Combine origin with the absolute path
-        std::string resolved = origin + module_name;
-        return js_strdup(ctx, resolved.c_str());
       }
     }
     // If no base or not a URL, return as-is
@@ -873,21 +902,57 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
     char* normalized_name = nullptr;
 
     if (module_base_name) {
-      // Calculate the base path from module_base_name
       std::string base_path(module_base_name);
-      size_t last_slash = base_path.rfind('/');
-      if (last_slash != std::string::npos) {
-        base_path = base_path.substr(0, last_slash + 1);
+      
+      // Check if base is an HTTP/HTTPS URL
+      bool is_http_base = (base_path.find("http://") == 0 || base_path.find("https://") == 0);
+      
+      if (is_http_base) {
+        // For HTTP URLs, preserve the full URL structure
+        size_t last_slash = base_path.rfind('/');
+        if (last_slash != std::string::npos) {
+          base_path = base_path.substr(0, last_slash + 1);
+        } else {
+          // If no slash found, add one to the end
+          base_path += "/";
+        }
       } else {
-        base_path = "";
+        // For file/asset URLs, handle as before
+        size_t last_slash = base_path.rfind('/');
+        if (last_slash != std::string::npos) {
+          base_path = base_path.substr(0, last_slash + 1);
+        } else {
+          base_path = "";
+        }
       }
 
       // Resolve relative path
       std::string resolved_path = base_path + module_name;
 
-      // Normalize path (remove ./ and ../)
+      // Normalize path (remove ./ and ../) while preserving URL structure
       std::vector<std::string> parts;
-      std::istringstream iss(resolved_path);
+      std::string path_to_normalize;
+      std::string url_prefix;
+      
+      if (is_http_base) {
+        // Extract URL prefix (protocol + host)
+        size_t protocol_end = resolved_path.find("://");
+        if (protocol_end != std::string::npos) {
+          size_t path_start = resolved_path.find('/', protocol_end + 3);
+          if (path_start != std::string::npos) {
+            url_prefix = resolved_path.substr(0, path_start);
+            path_to_normalize = resolved_path.substr(path_start);
+          } else {
+            url_prefix = resolved_path;
+            path_to_normalize = "";
+          }
+        }
+      } else {
+        path_to_normalize = resolved_path;
+      }
+
+      // Normalize the path portion
+      std::istringstream iss(path_to_normalize);
       std::string part;
 
       while (std::getline(iss, part, '/')) {
@@ -902,8 +967,12 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
 
       // Reconstruct the path
       std::string normalized;
+      if (is_http_base) {
+        normalized = url_prefix;
+      }
+      
       for (size_t i = 0; i < parts.size(); ++i) {
-        if (i > 0) normalized += "/";
+        normalized += "/";
         normalized += parts[i];
       }
 
@@ -916,12 +985,29 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
   // For relative paths without ./, resolve against base
   if (module_base_name) {
     std::string base_path(module_base_name);
-    size_t last_slash = base_path.rfind('/');
-    if (last_slash != std::string::npos) {
-      base_path = base_path.substr(0, last_slash + 1);
+    
+    // Check if base is an HTTP/HTTPS URL
+    bool is_http_base = (base_path.find("http://") == 0 || base_path.find("https://") == 0);
+    
+    if (is_http_base) {
+      // For HTTP URLs, preserve the full URL structure
+      size_t last_slash = base_path.rfind('/');
+      if (last_slash != std::string::npos) {
+        base_path = base_path.substr(0, last_slash + 1);
+      } else {
+        // If no slash found, add one to the end
+        base_path += "/";
+      }
     } else {
-      base_path = "";
+      // For file/asset URLs, handle as before
+      size_t last_slash = base_path.rfind('/');
+      if (last_slash != std::string::npos) {
+        base_path = base_path.substr(0, last_slash + 1);
+      } else {
+        base_path = "";
+      }
     }
+    
     std::string resolved = base_path + module_name;
     return js_strdup(ctx, resolved.c_str());
   }
@@ -1028,6 +1114,12 @@ void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const cha
         url_str = "file://" + url_str;
       }
     }
+  }
+  
+  // Handle http/https protocols - ensure they're properly formatted
+  if (url_str.find("http://") == 0 || url_str.find("https://") == 0) {
+    // URL is already properly formatted for http/https
+    WEBF_LOG(INFO) << "Using HTTP/HTTPS URL: " << url_str;
   }
 
   // Set up standard import.meta properties following MDN specification
