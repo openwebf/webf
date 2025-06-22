@@ -107,7 +107,9 @@ class ScriptRunner {
         }
         return;
       }
-      bundle = WebFBundle.fromContent(scriptCode);
+      // Use document URL as base for inline scripts instead of 'about:blank'
+      // This ensures that relative imports in inline modules resolve correctly
+      bundle = WebFBundle.fromContent(scriptCode, url: _document.controller.url);
     } else {
       String url = element.src.toString();
       bundle = _document.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
