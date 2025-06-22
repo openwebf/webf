@@ -24,7 +24,7 @@ import { ModalPopupPage } from './pages/ModalPopupPage';
 import { LoadingPage } from './pages/LoadingPage';
 import { AlertPage } from './pages/AlertPage';
 import { ImagePreloadPage } from './pages/ImagePreloadPage';
-import { FormAdvancedPage } from './pages/FormAdvancedPage';
+// import { FormAdvancedPage } from './pages/FormAdvancedPage';
 
 function App() {
   return (
@@ -41,9 +41,9 @@ function App() {
       <RouterView path="/form" title="Form">
         <FormPage />
       </RouterView>
-      <RouterView path="/form-advanced" title="Form Advanced">
+      {/* <RouterView path="/form-advanced" title="Form Advanced">
         <FormAdvancedPage />
-      </RouterView>
+      </RouterView> */}
       <RouterView path="/echarts" title="ECharts">
         <EChartsPage />
       </RouterView>

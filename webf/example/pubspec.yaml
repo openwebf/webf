@@ -82,3 +82,7 @@ flutter:
     - tailwind_react/build/static/js/
     - tailwind_react/build/static/css/
     - tailwind_react/build/static/media/
+    - react_use_cases/build/
+    - react_use_cases/build/static/
+    - react_use_cases/build/static/js/
+    - react_use_cases/build/static/css/

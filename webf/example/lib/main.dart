@@ -128,11 +128,11 @@ void main() async {
             routeObserver: routeObserver,
             // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
           ),
-      bundle: WebFBundle.fromUrl('assets:///react_use_cases/dist/index.html'),
+      bundle: WebFBundle.fromUrl('assets:///react_use_cases/build/index.html'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
-        
+
         // Set up method call handler for FlutterInteractionPage using dedicated handler
         controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
       });
@@ -460,7 +460,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'use_cases':
       return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
     case 'react_use_cases':
-      return WebFBundle.fromUrl('assets:///react_use_cases/dist/index.html');
+      return WebFBundle.fromUrl('assets:///react_use_cases/build/index.html');
     default:
       // Return null if the controller name is not recognized
       return null;
@@ -483,7 +483,7 @@ class _WebFDemoState extends State<WebFDemo> {
   Widget build(BuildContext context) {
     // Set context for FlutterUIHandler
     FlutterUIHandler().setContext(context);
-    
+
     bool darkModeOverride =  AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
     // bool isDarkModeEnabled = AdaptiveTheme.of(context).
     return Scaffold(
