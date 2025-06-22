@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:test_popup/popup_view.dart';
+import 'popup_view.dart';
 
 ///从下到上弹窗
 Future<T?> showBottom<T>(
   BuildContext context, {
-  String title = "",
+  String title = '',
   bool showClose = true,
   bool showBack = false,
   Widget? content,
-  String leftButtonText = "",
-  String rightButtonText = "",
+  String leftButtonText = '',
+  String rightButtonText = '',
   Function? onLeftButtonPressed,
   Function? onRightButtonPressed,
   Function? onClosePressed,

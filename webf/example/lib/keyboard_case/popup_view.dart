@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:test_popup/popup_title.dart';
+import 'popup_title.dart';
 
 enum PopupDirection { left, right, top, bottom }
 
@@ -29,11 +29,11 @@ class PopupView extends StatefulWidget {
 
   const PopupView({
     super.key,
-    this.title = "",
+    this.title = '',
     this.showClose = true,
     this.showBack = false,
-    this.leftButtonText = "",
-    this.rightButtonText = "",
+    this.leftButtonText = '',
+    this.rightButtonText = '',
     this.content,
     this.onLeftButtonPressed,
     this.onRightButtonPressed,

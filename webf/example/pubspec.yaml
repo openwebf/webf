@@ -31,6 +31,9 @@ dependencies:
   path_provider: ^2.1.5
   easy_refresh: ^3.4.0
   collection: ^1.18.0
+  auto_size_text: ^3.0.0
+  webf_cupertino_ui:
+    path: ../../webf_cupertino_ui
 
 # When depending on this package from a real application,
 # you should remove the following overrides.

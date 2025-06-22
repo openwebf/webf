@@ -33,7 +33,7 @@ class FlutterPopup extends FlutterPopupBindings {
   }
 
   @override
-  bool? get open => state?.isVisible;
+  bool get open => state?.isVisible ?? false;
   @override
   set open(value) {
     final shouldShow = value == 'true';
@@ -43,12 +43,21 @@ class FlutterPopup extends FlutterPopupBindings {
     }
   }
 
-
+  bool _showClose = true;
   @override
-  bool showClose;
-
+  bool get showClose => _showClose;
   @override
-  String? title;
+  set showClose(value) {
+    _showClose = value == true || value == 'true' || value == '';
+  }
+
+  String _title = '';
+  @override
+  String get title => _title;
+  @override
+  set title(value) {
+    _title = value?.toString() ?? '';
+  }
 }
 
 class FlutterPopupState extends WebFWidgetElementState {

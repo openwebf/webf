@@ -7,7 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
-import 'package:webf/cupertino.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'custom_elements/icon.dart';
@@ -25,6 +24,8 @@ import 'custom_elements/show_case_view.dart';
 import 'custom_elements/custom_listview_cupertino.dart';
 import 'custom_elements/custom_listview_material.dart';
 import 'custom_elements/form.dart';
+import 'keyboard_case/popup.dart';
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -43,9 +44,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final savedThemeMode = await AdaptiveTheme.getThemeMode();
 
+  installWebFCupertinoUI();
+
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
-      maxAliveInstances: 2,
+      maxAliveInstances: 4,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
@@ -53,6 +56,8 @@ void main() async {
       onControllerDetached: (String name, WebFController controller) {
         print('controller detached: $name $controller');
       }));
+  WebF.defineCustomElement('test-flutter-popup', (context) => FlutterPopup(context));
+  WebF.defineCustomElement('test-flutter-popup-item', (context) => FlutterPopupItem(context));
   WebF.defineCustomElement('flutter-tab', (context) => FlutterTab(context));
   WebF.defineCustomElement('flutter-tab-item', (context) => FlutterTabItem(context));
   WebF.defineCustomElement('flutter-icon', (context) => FlutterIcon(context));
@@ -78,34 +83,43 @@ void main() async {
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));
 
-  installWebFCupertino();
-
   // Add home controller with preloading
-  // WebFControllerManager.instance.addWithPreload(
-  //     name: 'html/css',
-  //     createController: () => WebFController(
-  //           routeObserver: routeObserver,
-  //           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-  //         ),
-  //     bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //     });
-  //
+  WebFControllerManager.instance.addWithPreload(
+      name: 'html/css',
+      createController: () => WebFController(
+            routeObserver: routeObserver,
+          ),
+      bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
   // Add vue controller with preloading
-  // WebFControllerManager.instance.addWithPreload(
-  //     name: 'miracle_plus',
-  //     createController: () => WebFController(
-  //           initialRoute: '/home',
-  //           routeObserver: routeObserver,
-  //           devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-  //         ),
-  //     bundle: WebFBundle.fromUrl('http://127.0.0.1:8080/'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //     });
+  WebFControllerManager.instance.addWithPrerendering(
+      name: 'miracle_plus',
+      createController: () => WebFController(
+            initialRoute: '/home',
+            routeObserver: routeObserver,
+          ),
+      bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
+
+  // Add vue controller with preloading
+  WebFControllerManager.instance.addWithPrerendering(
+      name: 'cupertino_gallery',
+      createController: () => WebFController(
+        initialRoute: '/',
+        routeObserver: routeObserver,
+      ),
+      bundle: WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
 
   // Add react use cases controller with preloading for image preload test
   WebFControllerManager.instance.addWithPreload(
@@ -440,9 +454,9 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'hybrid_router':
       return WebFBundle.fromUrl('assets:///hybrid_router/build/index.html');
     case 'tailwind_react':
-      return WebFBundle.fromUrl('http://192.168.50.228:3000/tailwind_react/build');
+      return WebFBundle.fromUrl('assets:///tailwind_react/build/index.html');
     case 'cupertino_gallery':
-      return WebFBundle.fromUrl('assets:///cupertino_gallery/dist/index.html');
+      return WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/');
     case 'use_cases':
       return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
     case 'react_use_cases':

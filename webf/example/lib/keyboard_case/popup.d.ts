@@ -1,6 +1,6 @@
 interface FlutterPopupProperties {
-  open?: boolean;
-  title?: string;
+  open: boolean;
+  title: string;
   showClose: boolean;
 }
 
@@ -9,4 +9,7 @@ interface FlutterPopupEvents {
   back: Event;
   close: Event;
   mask: Event;
+}
+
+interface FlutterPopupItemProperties {
 }
