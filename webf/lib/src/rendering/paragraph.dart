@@ -118,6 +118,8 @@ class WebFRenderParagraph extends RenderBox
     _lineHeight = value;
   }
 
+  WebFTextPainter get textPainter => _textPainter;
+
   // The text to display.
   WebFTextSpan get text => _textPainter.text as WebFTextSpan;
 
