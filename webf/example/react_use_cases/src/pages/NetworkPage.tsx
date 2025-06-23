@@ -33,7 +33,7 @@ export const NetworkPage: React.FC = () => {
     setLoading('get', true);
     const startTime = Date.now();
     try {
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts/1', {
+      const response = await fetch('https://dummyjson.com/products/1', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +73,7 @@ export const NetworkPage: React.FC = () => {
         timestamp: new Date().toISOString()
       };
 
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts', {
+      const response = await fetch('https://dummyjson.com/products/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,14 +106,13 @@ export const NetworkPage: React.FC = () => {
     const startTime = Date.now();
     try {
       const putData = {
-        id: 1,
         title: 'Updated WebF Demo Post',
         body: 'This post has been updated using a PUT request from the WebF React demo.',
         userId: 1,
         lastModified: new Date().toISOString()
       };
 
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts/1', {
+      const response = await fetch('https://dummyjson.com/products/1', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +144,7 @@ export const NetworkPage: React.FC = () => {
     setLoading('delete', true);
     const startTime = Date.now();
     try {
-      const response = await fetch('https://jsonplaceholder.typicode.com/posts/1', {
+      const response = await fetch('https://dummyjson.com/products/1', {
         method: 'DELETE',
         headers: {
           'Accept': 'application/json'
@@ -184,7 +183,7 @@ export const NetworkPage: React.FC = () => {
       const textFile = new Blob(['This is a demo file content from WebF React app'], { type: 'text/plain' });
       formData.append('file', textFile, 'demo.txt');
 
-      const response = await fetch('https://httpbin.org/post', {
+      const response = await fetch('https://postman-echo.com/post', {
         method: 'POST',
         body: formData
       });
@@ -213,7 +212,7 @@ export const NetworkPage: React.FC = () => {
     setLoading('headers', true);
     const startTime = Date.now();
     try {
-      const response = await fetch('https://httpbin.org/headers', {
+      const response = await fetch('https://postman-echo.com/headers', {
         method: 'GET',
         headers: {
           'X-Custom-Header': 'WebF-React-Demo',
@@ -250,11 +249,11 @@ export const NetworkPage: React.FC = () => {
     const startTime = Date.now();
     try {
       const requests = [
-        fetch('https://jsonplaceholder.typicode.com/posts/1'),
-        fetch('https://jsonplaceholder.typicode.com/posts/2'),
-        fetch('https://jsonplaceholder.typicode.com/posts/3'),
-        fetch('https://jsonplaceholder.typicode.com/users/1'),
-        fetch('https://jsonplaceholder.typicode.com/users/2')
+        fetch('https://dummyjson.com/products/1'),
+        fetch('https://dummyjson.com/products/2'),
+        fetch('https://dummyjson.com/products/3'),
+        fetch('https://dummyjson.com/users/1'),
+        fetch('https://dummyjson.com/users/2')
       ];
 
       const responses = await Promise.all(requests);
