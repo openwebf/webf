@@ -188,7 +188,7 @@ class _WebFRouterViewElement extends StatefulElement {
 
 typedef WebFRouterViewBuilder = Widget Function(BuildContext context, WebFController controller);
 
-class _AsyncWebFRouterView extends StatelessWidget {
+class _AsyncWebFRouterView extends StatefulWidget {
   final String controllerName;
   final String path;
   final Widget? loadingWidget;
@@ -199,15 +199,23 @@ class _AsyncWebFRouterView extends StatelessWidget {
       {required this.controllerName, required this.path, this.builder, this.loadingWidget, this.errorBuilder});
 
   @override
+  State<_AsyncWebFRouterView> createState() => _AsyncWebFRouterViewState();
+}
+
+class _AsyncWebFRouterViewState extends State<_AsyncWebFRouterView> {
+  // Capture start time when state is created for performance tracking
+  final DateTime _pfStartTime = DateTime.now();
+
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: WebFControllerManager.instance.getController(controllerName),
+        future: WebFControllerManager.instance.getController(widget.controllerName),
         builder: (context, snapshot) {
-          WebFController? existController = WebFControllerManager.instance.getControllerSync(controllerName);
+          WebFController? existController = WebFControllerManager.instance.getControllerSync(widget.controllerName);
           if (existController == null ||
               !existController.evaluated ||
               snapshot.connectionState == ConnectionState.waiting) {
-            return loadingWidget ??
+            return widget.loadingWidget ??
                 const SizedBox(
                   width: 50,
                   height: 50,
@@ -218,21 +226,64 @@ class _AsyncWebFRouterView extends StatelessWidget {
           }
 
           if (snapshot.hasError) {
-            return errorBuilder != null
-                ? errorBuilder!(context, snapshot.error!)
+            return widget.errorBuilder != null
+                ? widget.errorBuilder!(context, snapshot.error!)
                 : Center(child: Text('Error: ${snapshot.error}'));
           }
 
           if (!snapshot.hasData || snapshot.data == null) {
-            final errorMsg = 'Controller "$controllerName" not found';
-            return errorBuilder != null ? errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
+            final errorMsg = 'Controller "${widget.controllerName}" not found';
+            return widget.errorBuilder != null ? widget.errorBuilder!(context, errorMsg) : Center(child: Text(errorMsg));
           }
 
           WebFController controller = snapshot.data!;
 
-          return builder != null
-              ? builder!(context, controller)
-              : WebFRouterView(controller: snapshot.data!, path: path);
+          return widget.builder != null
+              ? widget.builder!(context, controller)
+              : _WebFRouterViewWithStartTime(controller: snapshot.data!, path: widget.path, startTime: _pfStartTime);
         });
   }
+}
+
+// A wrapper widget to pass the start time to WebFRouterView
+class _WebFRouterViewWithStartTime extends StatefulWidget {
+  final WebFController controller;
+  final String path;
+  final DateTime startTime;
+
+  const _WebFRouterViewWithStartTime({
+    required this.controller,
+    required this.path,
+    required this.startTime,
+  });
+
+  @override
+  State<_WebFRouterViewWithStartTime> createState() => _WebFRouterViewWithStartTimeState();
+
+  @override
+  StatefulElement createElement() {
+    return _WebFRouterViewWithStartTimeElement(this);
+  }
+}
+
+class _WebFRouterViewWithStartTimeState extends State<_WebFRouterViewWithStartTime> {
+  @override
+  Widget build(BuildContext context) {
+    return WebFRouterView(controller: widget.controller, path: widget.path);
+  }
+}
+
+class _WebFRouterViewWithStartTimeElement extends StatefulElement {
+  _WebFRouterViewWithStartTimeElement(super.widget);
+
+  @override
+  void mount(Element? parent, Object? newSlot) {
+    super.mount(parent, newSlot);
+    // Only initialize performance tracking with the captured start time
+    // The actual route push/pop is handled by _WebFRouterViewElement
+    widget.controller.initializePerformanceTracking(widget.startTime);
+  }
+
+  @override
+  _WebFRouterViewWithStartTime get widget => super.widget as _WebFRouterViewWithStartTime;
 }

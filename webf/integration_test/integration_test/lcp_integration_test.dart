@@ -212,7 +212,7 @@ void main() {
         mode: WebFLoadingMode.preloading,  // Use preloading mode
         setup: (controller) {
           // Initialize LCP tracking for the new controller
-          controller.initializeLCPTracking(page2StartTime);
+          controller.initializePerformanceTracking(page2StartTime);
 
           // Re-setup the LCP callback as the controller is replaced
           controller.onLCP = (double time) {
@@ -386,7 +386,7 @@ void main() {
         mode: WebFLoadingMode.preloading,
         setup: (controller) {
           // Ensure LCP tracking is initialized for the new controller
-          controller.initializeLCPTracking(DateTime.now());
+          controller.initializePerformanceTracking(DateTime.now());
           setupLCP(controller);
         },
       );

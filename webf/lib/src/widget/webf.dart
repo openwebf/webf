@@ -268,8 +268,8 @@ class WebF extends StatefulWidget {
 }
 
 class AutoManagedWebFState extends State<AutoManagedWebF> {
-  // Capture LCP start time when state is created
-  final DateTime _lcpStartTime = DateTime.now();
+  // Capture start time when state is created
+  final DateTime _pfStartTime = DateTime.now();
 
   @override
   void initState() {
@@ -328,7 +328,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
 
     // Initialize LCP tracking when controller is available
     if (controller != null) {
-      controller.initializeLCPTracking(_lcpStartTime);
+      controller.initializePerformanceTracking(_pfStartTime);
     }
 
     return controller;

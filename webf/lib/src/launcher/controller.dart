@@ -54,7 +54,37 @@ typedef LCPHandler = void Function(double lcpTime);
 typedef FCPHandler = void Function(double fcpTime);
 typedef FPHandler = void Function(double fpTime);
 
+// Route-aware performance metric handlers
+typedef RouteLCPHandler = void Function(double lcpTime, String routePath);
+typedef RouteFCPHandler = void Function(double fcpTime, String routePath);
+typedef RouteFPHandler = void Function(double fpTime, String routePath);
+
 typedef TraverseElementCallback = void Function(Element element);
+
+/// Tracks performance metrics for a specific route page
+class RoutePerformanceMetrics {
+  final String routePath;
+  DateTime? navigationStartTime;
+  bool lcpReported = false;
+  double largestContentfulPaintSize = 0;
+  double lastReportedLCPTime = 0;
+  WeakReference<Element>? currentLCPElement;
+  Timer? lcpAutoFinalizeTimer;
+
+  // FCP tracking
+  bool fcpReported = false;
+  double fcpTime = 0;
+
+  // FP tracking
+  bool fpReported = false;
+  double fpTime = 0;
+
+  RoutePerformanceMetrics(this.routePath);
+
+  void dispose() {
+    lcpAutoFinalizeTimer?.cancel();
+  }
+}
 
 class HybridRoutePageContext {
   /// The route path for the hybrid router in WebF.
@@ -100,21 +130,45 @@ enum PreloadingStatus {
 enum PreRenderingStatus { none, preloading, evaluate, rendering, done, fail }
 
 class WebFController with Diagnosticable {
-  // LCP tracking
-  DateTime? _navigationStartTime;
-  bool _lcpReported = false;
-  double _largestContentfulPaintSize = 0;
-  double _lastReportedLCPTime = 0;
-  Timer? _lcpAutoFinalizeTimer;
-  WeakReference<Element>? _currentLCPElement;
+  // Route-specific performance metrics tracking
+  final Map<String, RoutePerformanceMetrics> _routeMetrics = {};
+
+  // Get current route metrics based on the current route in buildContextStack
+  RoutePerformanceMetrics? get _currentRouteMetrics {
+    if (_buildContextStack.isEmpty) {
+      // If no route is attached yet, try to get metrics for the initial route
+      final defaultRoute = initialRoute ?? '/';
+      return _routeMetrics[defaultRoute];
+    }
+    final currentRoutePath = _buildContextStack.last.path;
+    return _routeMetrics[currentRoutePath];
+  }
+
+  // Legacy single-route tracking for backward compatibility
+  DateTime? get _navigationStartTime => _currentRouteMetrics?.navigationStartTime;
+  bool get _lcpReported => _currentRouteMetrics?.lcpReported ?? false;
+  double get _largestContentfulPaintSize => _currentRouteMetrics?.largestContentfulPaintSize ?? 0;
+  double get _lastReportedLCPTime => _currentRouteMetrics?.lastReportedLCPTime ?? 0;
+  Timer? get _lcpAutoFinalizeTimer => _currentRouteMetrics?.lcpAutoFinalizeTimer;
+  set _lcpAutoFinalizeTimer(Timer? timer) {
+    if (_currentRouteMetrics != null) {
+      _currentRouteMetrics!.lcpAutoFinalizeTimer = timer;
+    }
+  }
+  WeakReference<Element>? get _currentLCPElement => _currentRouteMetrics?.currentLCPElement;
+  set _currentLCPElement(WeakReference<Element>? ref) {
+    if (_currentRouteMetrics != null) {
+      _currentRouteMetrics!.currentLCPElement = ref;
+    }
+  }
 
   // FCP tracking
-  bool _fcpReported = false;
-  double _fcpTime = 0;
+  bool get _fcpReported => _currentRouteMetrics?.fcpReported ?? false;
+  double get _fcpTime => _currentRouteMetrics?.fcpTime ?? 0;
 
   // FP tracking
-  bool _fpReported = false;
-  double _fpTime = 0;
+  bool get _fpReported => _currentRouteMetrics?.fpReported ?? false;
+  double get _fpTime => _currentRouteMetrics?.fpTime ?? 0;
 
   // Expose LCP tracking state for WebFState
   bool get lcpInitialized => _navigationStartTime != null;
@@ -140,6 +194,14 @@ class WebFController with Diagnosticable {
     }
     return null;
   }
+
+  /// Gets performance metrics for a specific route
+  RoutePerformanceMetrics? getRouteMetrics(String routePath) {
+    return _routeMetrics[routePath];
+  }
+
+  /// Gets all route performance metrics
+  Map<String, RoutePerformanceMetrics> get allRouteMetrics => Map.unmodifiable(_routeMetrics);
 
   /// The background color for viewport, default to transparent.
   /// This determines the background color of the WebF widget content area.
@@ -392,6 +454,13 @@ class WebFController with Diagnosticable {
   /// The callback provides the FP time in milliseconds since navigation start.
   FPHandler? onFP;
 
+  /// Route-aware callbacks for performance metrics
+  /// These callbacks include the route path along with the timing information
+  RouteLCPHandler? onRouteLCP;
+  RouteLCPHandler? onRouteLCPFinal;
+  RouteFCPHandler? onRouteFCP;
+  RouteFPHandler? onRouteFP;
+
   WebFMethodChannel? _methodChannel;
   /// Gets the JavaScript channel for this controller.
   ///
@@ -440,15 +509,36 @@ class WebFController with Diagnosticable {
 
   void pushNewBuildContext({required BuildContext context, required String routePath, required Object? state}) {
     _buildContextStack.add(HybridRoutePageContext(routePath, context, state));
+
+    // Initialize performance metrics for this route if not already present
+    if (!_routeMetrics.containsKey(routePath)) {
+      _routeMetrics[routePath] = RoutePerformanceMetrics(routePath);
+      // Initialize the navigation start time for the new route
+      _routeMetrics[routePath]!.navigationStartTime = DateTime.now();
+    }
   }
 
   void popBuildContext({BuildContext? context, String? routePath}) {
     if (_buildContextStack.isNotEmpty) {
+      String? removedPath;
       if (context != null) {
         assert(routePath != null);
-        _buildContextStack.removeWhere((context) => context.path == routePath);
+        _buildContextStack.removeWhere((ctx) {
+          if (ctx.path == routePath) {
+            removedPath = ctx.path;
+            return true;
+          }
+          return false;
+        });
       } else {
-        _buildContextStack.removeLast();
+        final removed = _buildContextStack.removeLast();
+        removedPath = removed.path;
+      }
+
+      // Clean up metrics for the removed route
+      if (removedPath != null && _routeMetrics.containsKey(removedPath)) {
+        _routeMetrics[removedPath]?.dispose();
+        _routeMetrics.remove(removedPath);
       }
     }
   }
@@ -753,30 +843,36 @@ class WebFController with Diagnosticable {
 
     if (currentPageId == null) return null;
 
-    // Reset LCP tracking for new page load
-    _lcpReported = false;
-    _largestContentfulPaintSize = 0;
-    _lastReportedLCPTime = 0;
-    _currentLCPElement = null;
-    _navigationStartTime = DateTime.now();
+    // Reset performance metrics for the current route
+    if (_currentRouteMetrics != null) {
+      final metrics = _currentRouteMetrics!;
+      // Reset LCP tracking for new page load
+      metrics.lcpReported = false;
+      metrics.largestContentfulPaintSize = 0;
+      metrics.lastReportedLCPTime = 0;
+      metrics.currentLCPElement = null;
+      metrics.navigationStartTime = DateTime.now();
 
-    // Reset FCP tracking for new page load
-    _fcpReported = false;
-    _fcpTime = 0;
+      // Reset FCP tracking for new page load
+      metrics.fcpReported = false;
+      metrics.fcpTime = 0;
 
-    // Reset FP tracking for new page load
-    _fpReported = false;
-    _fpTime = 0;
+      // Reset FP tracking for new page load
+      metrics.fpReported = false;
+      metrics.fpTime = 0;
+    }
 
     // Cancel any existing timer
-    _lcpAutoFinalizeTimer?.cancel();
+    _currentRouteMetrics?.lcpAutoFinalizeTimer?.cancel();
 
     // Set up new auto-finalization timer
-    _lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
-      if (!_lcpReported) {
-        finalizeLCP();
-      }
-    });
+    if (_currentRouteMetrics != null) {
+      _currentRouteMetrics!.lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
+        if (!_currentRouteMetrics!.lcpReported) {
+          finalizeLCP();
+        }
+      });
+    }
 
     return WebFControllerManager.instance
         .addOrUpdateControllerWithLoading(name: currentPageId, bundle: bundle, forceReplace: true, mode: mode);
@@ -1096,6 +1192,12 @@ class WebFController with Diagnosticable {
       }
     }
 
+    // Clean up all route metrics
+    for (final metrics in _routeMetrics.values) {
+      metrics.dispose();
+    }
+    _routeMetrics.clear();
+
     // To release entrypoint bundle memory.
     _entrypoint?.dispose();
 
@@ -1408,30 +1510,41 @@ class WebFController with Diagnosticable {
     return '${describeIdentity(this)} (disposed: $disposed, evaluated: $evaluated, status: $status)';
   }
 
-  /// Initializes LCP tracking by recording the navigation start time.
+  /// Initializes performance tracking by recording the navigation start time.
   /// Called when the viewport is first laid out.
-  void initializeLCPTracking(DateTime startTime) {
-    _navigationStartTime = startTime;
-    _lcpReported = false;
-    _largestContentfulPaintSize = 0;
-    _lastReportedLCPTime = 0;
-    _currentLCPElement = null;
+  void initializePerformanceTracking(DateTime startTime) {
+    // If no route is attached yet, initialize metrics for the initial route
+    if (_buildContextStack.isEmpty) {
+      final defaultRoute = initialRoute ?? '/';
+      if (!_routeMetrics.containsKey(defaultRoute)) {
+        _routeMetrics[defaultRoute] = RoutePerformanceMetrics(defaultRoute);
+      }
+    }
 
-    _fpReported = false;
-    _fpTime = 0;
+    if (_currentRouteMetrics == null) return;
+
+    final metrics = _currentRouteMetrics!;
+    metrics.navigationStartTime = startTime;
+    metrics.lcpReported = false;
+    metrics.largestContentfulPaintSize = 0;
+    metrics.lastReportedLCPTime = 0;
+    metrics.currentLCPElement = null;
+
+    metrics.fpReported = false;
+    metrics.fpTime = 0;
 
     // Reset FCP tracking as well
-    _fcpReported = false;
-    _fcpTime = 0;
+    metrics.fcpReported = false;
+    metrics.fcpTime = 0;
 
     // Cancel any existing timer
-    _lcpAutoFinalizeTimer?.cancel();
+    metrics.lcpAutoFinalizeTimer?.cancel();
 
     // Set up auto-finalization timer with a 5 second delay
     // This ensures we wait long enough for all LCP candidates to be reported
-    _lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
+    metrics.lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
       // Auto-finalize LCP if no user interaction has occurred
-      if (!_lcpReported) {
+      if (!metrics.lcpReported) {
         finalizeLCP();
       }
     });
@@ -1440,10 +1553,13 @@ class WebFController with Diagnosticable {
   /// Called when an element is removed from the DOM.
   /// Checks if it was the current LCP element and resets tracking if so.
   void notifyElementRemoved(Element element) {
-    if (_currentLCPElement != null && _currentLCPElement!.target == element) {
+    if (_currentRouteMetrics == null) return;
+
+    final metrics = _currentRouteMetrics!;
+    if (metrics.currentLCPElement != null && metrics.currentLCPElement!.target == element) {
       // The current LCP element was removed, reset tracking
-      _largestContentfulPaintSize = 0;
-      _currentLCPElement = null;
+      metrics.largestContentfulPaintSize = 0;
+      metrics.currentLCPElement = null;
     }
   }
 
@@ -1451,29 +1567,37 @@ class WebFController with Diagnosticable {
   /// @param element The element being reported as an LCP candidate
   /// @param contentSize The visible area of the element in pixels
   void reportLCPCandidate(Element element, double contentSize) {
+    if (_currentRouteMetrics == null) return;
+
+    final metrics = _currentRouteMetrics!;
     // Don't report if already finalized or not initialized
-    if (_lcpReported || _navigationStartTime == null) return;
+    if (metrics.lcpReported || metrics.navigationStartTime == null) return;
 
     // Check if the current LCP element has been removed from the DOM
-    if (_currentLCPElement != null) {
-      final currentElement = _currentLCPElement!.target;
+    if (metrics.currentLCPElement != null) {
+      final currentElement = metrics.currentLCPElement!.target;
       if (currentElement == null || !currentElement.isConnected) {
         // Reset LCP tracking if the current LCP element was removed
-        _largestContentfulPaintSize = 0;
-        _currentLCPElement = null;
+        metrics.largestContentfulPaintSize = 0;
+        metrics.currentLCPElement = null;
       }
     }
 
     // Only report if this is a larger content element
-    if (contentSize > _largestContentfulPaintSize) {
-      _largestContentfulPaintSize = contentSize;
-      _currentLCPElement = WeakReference(element);
-      final lcpTime = DateTime.now().difference(_navigationStartTime!).inMilliseconds.toDouble();
-      _lastReportedLCPTime = lcpTime;
+    if (contentSize > metrics.largestContentfulPaintSize) {
+      metrics.largestContentfulPaintSize = contentSize;
+      metrics.currentLCPElement = WeakReference(element);
+      final lcpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
+      metrics.lastReportedLCPTime = lcpTime;
 
       // Fire the progressive onLCP callback
       if (onLCP != null) {
         onLCP!(lcpTime);
+      }
+
+      // Fire the route-aware callback
+      if (onRouteLCP != null) {
+        onRouteLCP!(lcpTime, metrics.routePath);
       }
     }
   }
@@ -1481,30 +1605,48 @@ class WebFController with Diagnosticable {
   /// Finalizes LCP measurement when user interaction occurs.
   /// After this is called, no more LCP candidates will be reported.
   void finalizeLCP() {
-    // Cancel the auto-finalization timer if it's still running
-    _lcpAutoFinalizeTimer?.cancel();
-    _lcpAutoFinalizeTimer = null;
+    if (_currentRouteMetrics == null) return;
 
-    if (!_lcpReported && _navigationStartTime != null && onLCPFinal != null) {
+    final metrics = _currentRouteMetrics!;
+    // Cancel the auto-finalization timer if it's still running
+    metrics.lcpAutoFinalizeTimer?.cancel();
+    metrics.lcpAutoFinalizeTimer = null;
+
+    if (!metrics.lcpReported && metrics.navigationStartTime != null) {
       // Use the last reported LCP time instead of calculating a new time
       // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
-      onLCPFinal!(_lastReportedLCPTime);
+      if (onLCPFinal != null) {
+        onLCPFinal!(metrics.lastReportedLCPTime);
+      }
+
+      // Fire the route-aware callback
+      if (onRouteLCPFinal != null) {
+        onRouteLCPFinal!(metrics.lastReportedLCPTime, metrics.routePath);
+      }
     }
-    _lcpReported = true;
+    metrics.lcpReported = true;
   }
 
   /// Reports First Contentful Paint (FCP) when the first content is rendered.
   /// This should be called when the first text, image, SVG, or non-white canvas content is painted.
   void reportFCP() {
-    // Don't report if already reported or not initialized
-    if (_fcpReported || _navigationStartTime == null) return;
+    if (_currentRouteMetrics == null) return;
 
-    _fcpReported = true;
-    _fcpTime = DateTime.now().difference(_navigationStartTime!).inMilliseconds.toDouble();
+    final metrics = _currentRouteMetrics!;
+    // Don't report if already reported or not initialized
+    if (metrics.fcpReported || metrics.navigationStartTime == null) return;
+
+    metrics.fcpReported = true;
+    metrics.fcpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
 
     // Fire the FCP callback
     if (onFCP != null) {
-      onFCP!(_fcpTime);
+      onFCP!(metrics.fcpTime);
+    }
+
+    // Fire the route-aware callback
+    if (onRouteFCP != null) {
+      onRouteFCP!(metrics.fcpTime, metrics.routePath);
     }
   }
 
@@ -1512,15 +1654,23 @@ class WebFController with Diagnosticable {
   /// This includes any non-default background colors, borders, box shadows, or any visible content.
   /// FP always occurs before or at the same time as FCP.
   void reportFP() {
-    // Don't report if already reported or not initialized
-    if (_fpReported || _navigationStartTime == null) return;
+    if (_currentRouteMetrics == null) return;
 
-    _fpReported = true;
-    _fpTime = DateTime.now().difference(_navigationStartTime!).inMilliseconds.toDouble();
+    final metrics = _currentRouteMetrics!;
+    // Don't report if already reported or not initialized
+    if (metrics.fpReported || metrics.navigationStartTime == null) return;
+
+    metrics.fpReported = true;
+    metrics.fpTime = DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds.toDouble();
 
     // Fire the FP callback
     if (onFP != null) {
-      onFP!(_fpTime);
+      onFP!(metrics.fpTime);
+    }
+
+    // Fire the route-aware callback
+    if (onRouteFP != null) {
+      onRouteFP!(metrics.fpTime, metrics.routePath);
     }
   }
 }

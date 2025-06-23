@@ -15,6 +15,7 @@ import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/devtools/remote_object_service.dart';
 import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/dom.dart' as dom;
+import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -838,12 +839,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   }
 
   Widget _buildPerformanceMetrics(WebFController controller) {
-    // Check if any performance data is available
-    final bool hasFPData = controller.fpReported;
-    final bool hasFCPData = controller.fcpReported;
-    final bool hasLCPData = controller.lastReportedLCPTime > 0 || controller.lcpFinalized;
-
-    if (!hasFPData && !hasFCPData && !hasLCPData) {
+    // Get all route metrics
+    final allRouteMetrics = controller.allRouteMetrics;
+    
+    if (allRouteMetrics.isEmpty) {
       return Text(
         'No performance metrics measured yet',
         style: TextStyle(
@@ -856,25 +855,103 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // FP Metrics
-        if (hasFPData) ...[
-          _buildFPMetric(controller),
-          SizedBox(height: 16),
-        ],
-        // FCP Metrics
-        if (hasFCPData) ...[
-          _buildFCPMetric(controller),
-          SizedBox(height: 16),
-        ],
-        // LCP Metrics
-        if (hasLCPData) ...[
-          _buildLCPMetric(controller),
+        // Display metrics for each route
+        for (final entry in allRouteMetrics.entries) ...[
+          _buildRouteMetrics(entry.key, entry.value, controller),
+          if (entry.key != allRouteMetrics.keys.last) 
+            SizedBox(height: 16),
         ],
       ],
     );
   }
-
-  Widget _buildPerformanceMetric({
+  
+  Widget _buildRouteMetrics(String routePath, RoutePerformanceMetrics metrics, WebFController controller) {
+    final bool hasFPData = metrics.fpReported;
+    final bool hasFCPData = metrics.fcpReported;
+    final bool hasLCPData = metrics.lastReportedLCPTime > 0 || metrics.lcpReported;
+    
+    if (!hasFPData && !hasFCPData && !hasLCPData) {
+      return Container();
+    }
+    
+    // Check if this is the current route
+    final isCurrentRoute = controller.currentBuildContext?.path == routePath;
+    
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isCurrentRoute ? Colors.blue.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isCurrentRoute ? Colors.blue.withValues(alpha: 0.3) : Colors.white12,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.route,
+                color: isCurrentRoute ? Colors.blue : Colors.white54,
+                size: 16,
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Route: $routePath',
+                  style: TextStyle(
+                    color: isCurrentRoute ? Colors.blue : Colors.white70,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              if (isCurrentRoute)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'ACTIVE',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          SizedBox(height: 12),
+          // FP Metrics
+          if (hasFPData) ...[
+            _buildRoutePerformanceMetric(
+              label: 'FP:  ',
+              time: metrics.fpTime,
+            ),
+            SizedBox(height: 12),
+          ],
+          // FCP Metrics
+          if (hasFCPData) ...[
+            _buildRoutePerformanceMetric(
+              label: 'FCP: ',
+              time: metrics.fcpTime,
+            ),
+            SizedBox(height: 12),
+          ],
+          // LCP Metrics
+          if (hasLCPData) ...[
+            _buildRouteLCPMetric(metrics, controller),
+          ],
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildRoutePerformanceMetric({
     required String label,
     required double time,
     String? extraInfo,
@@ -963,30 +1040,16 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ],
     );
   }
-
-  Widget _buildFPMetric(WebFController controller) {
-    return _buildPerformanceMetric(
-      label: 'FP:  ',
-      time: controller.fpTime,
-    );
-  }
-
-  Widget _buildFCPMetric(WebFController controller) {
-    return _buildPerformanceMetric(
-      label: 'FCP: ',
-      time: controller.fcpTime,
-    );
-  }
-
-  Widget _buildLCPMetric(WebFController controller) {
-    final double lcpTime = controller.lastReportedLCPTime;
-    final bool isFinalized = controller.lcpFinalized;
-    final dom.Element? lcpElement = controller.currentLCPElement;
+  
+  Widget _buildRouteLCPMetric(RoutePerformanceMetrics metrics, WebFController controller) {
+    final double lcpTime = metrics.lastReportedLCPTime;
+    final bool isFinalized = metrics.lcpReported;
+    final dom.Element? lcpElement = metrics.currentLCPElement?.target;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildPerformanceMetric(
+        _buildRoutePerformanceMetric(
           label: 'LCP: ',
           time: lcpTime,
           showWarning: !isFinalized,
@@ -1002,7 +1065,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
             ),
           ),
         ],
-        if (lcpElement != null) ...[
+        if (lcpElement != null && lcpElement.isConnected) ...[
           SizedBox(height: 8),
           Container(
             padding: EdgeInsets.all(8),
@@ -1031,6 +1094,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ],
     );
   }
+
+
 
   Widget _buildElementInfo(dom.Element element) {
     String elementDescription = element.toString();
