@@ -10,6 +10,7 @@ const WebFListView = createComponent({
 
 export const NativeInteractionPage: React.FC = () => {
   const [screenshotResult, setScreenshotResult] = useState<string>('');
+  const [screenshotImage, setScreenshotImage] = useState<string>('');
   const [shareResult, setShareResult] = useState<string>('');
   const [shareImage, setShareImage] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<{[key: string]: boolean}>({});
@@ -58,6 +59,9 @@ export const NativeInteractionPage: React.FC = () => {
 
   const saveScreenshotToLocal = async (targetRef: React.RefObject<HTMLDivElement | null>, resultSetter: (result: string) => void) => {
     setIsProcessing(prev => ({...prev, saveScreenshot: true}));
+    // Clear previous results
+    setScreenshotResult('');
+    setScreenshotImage('');
     
     // Add a small delay to ensure UI is ready
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -100,6 +104,8 @@ export const NativeInteractionPage: React.FC = () => {
       if (result === true || (typeof result === 'object' && result.success === 'true')) {
         if (typeof result === 'object' && result.filePath) {
           resultSetter(`Screenshot saved successfully!\nPath: ${result.filePath}`);
+          // Display the saved screenshot using Flutter's file protocol
+          setScreenshotImage(`file://${result.filePath}`);
         } else {
           resultSetter(`Screenshot saved successfully as: ${filename}.png`);
         }
@@ -244,10 +250,26 @@ export const NativeInteractionPage: React.FC = () => {
                 >
                   {isProcessing.saveScreenshot ? 'Saving...' : 'Save to Device'}
                 </button>
-                {screenshotResult && (
+                {(screenshotResult || screenshotImage) && (
                   <div className={styles.resultContainer}>
-                    <div className={styles.resultLabel}>Save Result:</div>
-                    <div className={styles.resultText}>{screenshotResult}</div>
+                    {screenshotResult && (
+                      <>
+                        <div className={styles.resultLabel}>Save Result:</div>
+                        <div className={styles.resultText}>{screenshotResult}</div>
+                      </>
+                    )}
+                    {screenshotImage && (
+                      <>
+                        <div className={styles.resultLabel}>Saved Screenshot:</div>
+                        <div className={styles.imagePreview}>
+                          <img 
+                            src={screenshotImage} 
+                            alt="Saved screenshot" 
+                            className={styles.previewImage}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
