@@ -9,12 +9,7 @@ const WebFListView = createComponent({
 
 export const HomePage: React.FC = () => {
   const navigateTo = (path: string) => {
-    // Assuming window.webf.hybridHistory is the correct way to navigate
-    if ((window as any).webf && (window as any).webf.hybridHistory) {
-      (window as any).webf.hybridHistory.pushState({}, path);
-    } else {
-      console.error('Navigation object (window.webf.hybridHistory) not found.');
-    }
+    window.webf.hybridHistory.pushState({}, path);
   };
 
   return (
