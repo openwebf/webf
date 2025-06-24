@@ -1521,7 +1521,7 @@ class WebFController with Diagnosticable {
       }
     }
 
-    if (_currentRouteMetrics == null) return;
+    if (_currentRouteMetrics == null || _currentRouteMetrics!.lcpReported) return;
 
     final metrics = _currentRouteMetrics!;
     metrics.navigationStartTime = startTime;

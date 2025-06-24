@@ -336,7 +336,20 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildPerformanceTab() {
     final manager = WebFControllerManager.instance;
-    final controllerNames = manager.controllerNames;
+    
+    // Find the currently attached controller
+    WebFController? attachedController;
+    String? attachedControllerName;
+    
+    for (final name in manager.controllerNames) {
+      final controller = manager.getControllerSync(name);
+      final state = manager.getControllerState(name);
+      if (controller != null && state == ControllerState.attached) {
+        attachedController = controller;
+        attachedControllerName = name;
+        break;
+      }
+    }
 
     return Container(
       padding: EdgeInsets.all(16),
@@ -361,7 +374,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
           SizedBox(height: 16),
           Expanded(
-            child: _buildPerformanceMetricsList(manager, controllerNames),
+            child: attachedController != null && attachedControllerName != null
+                ? _buildSingleControllerPerformance(attachedController, attachedControllerName)
+                : Center(
+                    child: Text(
+                      'No attached controller found',
+                      style: TextStyle(color: Colors.white54),
+                    ),
+                  ),
           ),
         ],
       ),
@@ -751,6 +771,84 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSingleControllerPerformance(WebFController controller, String controllerName) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Controller info header
+        Container(
+          padding: EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Colors.green.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      controllerName,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'URL: ${controller.url}',
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 11,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'ATTACHED',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+        // Performance metrics
+        Expanded(
+          child: SingleChildScrollView(
+            child: _buildPerformanceMetrics(controller),
+          ),
+        ),
+      ],
     );
   }
 
