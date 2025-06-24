@@ -570,7 +570,6 @@ final Pointer<NativeFunction<NativeJSLog>> _nativeOnJsLog = Pointer.fromFunction
 typedef NativeOnJSLogStructured = Void Function(Double contextId, Int32 level, Int32 argc, Pointer<NativeValue> argv);
 
 void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeValue> argv) {
-  print('[_onJSLogStructured] Called with contextId=$contextId, level=$level, argc=$argc');
   List<ConsoleValue> consoleArgs = [];
   WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
 
@@ -582,7 +581,7 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
 
   for (int i = 0; i < argc; i++) {
     final nativeValuePtr = Pointer<NativeValue>.fromAddress(argv.address + i * sizeOf<NativeValue>());
-    
+
     // Check the tag directly to determine the type
     final tag = nativeValuePtr.ref.tag;
     final value = fromNativeValue(controller.view, nativeValuePtr);
@@ -597,7 +596,7 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
     } else {
       // Handle primitive values
       String type = 'unknown';
-      
+
       // Check the native tag directly for proper type identification
       if (tag == JSValueType.TAG_NULL.index) {
         type = 'null';

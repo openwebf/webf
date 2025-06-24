@@ -11,7 +11,8 @@ PROJECTS=(
   "react_project"
   "tailwind_react"
   "use_cases"
-  "vue_project"
+  "vue_project",
+  "react_use_cases"
 )
 
 # Total number of projects for progress tracking

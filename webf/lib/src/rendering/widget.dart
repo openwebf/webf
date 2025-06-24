@@ -7,8 +7,6 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/cupertino/tab.dart';
-import 'package:webf/src/cupertino/tab_bar.dart';
 import 'package:webf/widget.dart';
 
 /// RenderBox of a widget element whose content is rendering by Flutter Widgets.
