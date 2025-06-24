@@ -135,7 +135,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         } else if (node is RouterLinkElement) {
           webFState ??= context.findAncestorStateOfType<WebFState>();
           String routerPath = node.path;
-          if (webFState != null && webFState?.widget.controller.initialRoute == routerPath) {
+          if (webFState != null && (webFState?.widget.controller.initialRoute ?? '/') == routerPath) {
             children.add(node.toWidget());
             return;
           }
