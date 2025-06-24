@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { createComponent } from '../utils/CreateComponent';
 import styles from './ImagePreloadPage.module.css';
 
@@ -8,43 +8,32 @@ const WebFListView = createComponent({
 });
 
 export const ImagePreloadPage: React.FC = () => {
-  const [loadTimes, setLoadTimes] = useState<{ preload: number | null; normal: number | null }>({
-    preload: null,
-    normal: null
-  });
-
-  // 预加载的图片（在 index.html 中配置的）
-  const preloadedImageUrl = 'https://picsum.photos/800/600?image=1015';
-  // 普通图片（没有预加载）
-  const normalImageUrl = 'https://picsum.photos/800/600?image=1016';
-
-  useEffect(() => {
-    // 测试预加载图片的加载时间
-    const startTime1 = performance.now();
-    const img1 = new Image();
-    img1.onload = () => {
-      const endTime1 = performance.now();
-      setLoadTimes(prev => ({ ...prev, preload: endTime1 - startTime1 }));
-    };
-    img1.src = preloadedImageUrl;
-
-    // 测试普通图片的加载时间
-    const startTime2 = performance.now();
-    const img2 = new Image();
-    img2.onload = () => {
-      const endTime2 = performance.now();
-      setLoadTimes(prev => ({ ...prev, normal: endTime2 - startTime2 }));
-    };
-    img2.src = normalImageUrl;
-  }, []);
-
-  const getDifference = () => {
-    if (loadTimes.preload && loadTimes.normal) {
-      const diff = loadTimes.normal - loadTimes.preload;
-      return diff > 0 ? `${diff.toFixed(0)}ms faster` : 'No significant difference';
+  // Generate 100 small image URLs
+  const generateImageUrls = () => {
+    const urls: { url: string; isPreloaded: boolean; id: number }[] = [];
+    
+    // 50 preloaded images (using image ID 1-50)
+    for (let i = 1; i <= 50; i++) {
+      urls.push({
+        id: i,
+        url: `https://picsum.photos/80/80?image=${i}`,
+        isPreloaded: true
+      });
     }
-    return 'Loading...';
+    
+    // 50 normal loading images (using image ID 51-100)
+    for (let i = 51; i <= 100; i++) {
+      urls.push({
+        id: i,
+        url: `https://picsum.photos/80/80?image=${i}`,
+        isPreloaded: false
+      });
+    }
+    
+    return urls;
   };
+
+  const imageUrls = generateImageUrls();
 
   return (
     <div id="main">
@@ -53,45 +42,52 @@ export const ImagePreloadPage: React.FC = () => {
           <h1 className={styles.title}>Image Preload Performance Test</h1>
           
           <div className={styles.description}>
-            <p>This demo shows two similar images loading - one with preload, one without.</p>
-            <p>The first image is preloaded in the HTML head, the second loads normally.</p>
+            <p>100 images loading comparison demo - Observe the loading speed difference between left and right sides</p>
+            <p>Left half: Preloaded images (1-50) | Right half: Normal loading images (51-100)</p>
           </div>
 
-          <div className={styles.results}>
-            <div className={styles.resultCard}>
-              <h3>With Preload</h3>
-              <p className={styles.resultDesc}>Preloaded in HTML head</p>
-              <div className={styles.imageContainer}>
-                <img 
-                  src={preloadedImageUrl} 
-                  className={styles.testImage}
-                  alt="Preloaded image"
-                />
-              </div>
-              <div className={styles.loadTime}>
-                Load time: {loadTimes.preload ? `${loadTimes.preload.toFixed(0)}ms` : 'Loading...'}
-              </div>
+          <div className={styles.imageDisplay}>
+            <div className={styles.imageSection}>
+              <h3 className={styles.sectionTitle}>Preloaded (1-50)</h3>
+              <WebFListView className={styles.scrollContainer}>
+                <div className={styles.imageGrid}>
+                  {imageUrls
+                    .filter(img => img.isPreloaded)
+                    .map(img => (
+                      <div key={img.id} className={styles.imageItem}>
+                        <img 
+                          src={img.url}
+                          alt={`Preloaded ${img.id}`}
+                          className={styles.testImage}
+                        />
+                        <span className={styles.imageNumber}>{img.id}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </WebFListView>
             </div>
 
-            <div className={styles.resultCard}>
-              <h3>Without Preload</h3>
-              <p className={styles.resultDesc}>Normal loading</p>
-              <div className={styles.imageContainer}>
-                <img 
-                  src={normalImageUrl} 
-                  className={styles.testImage}
-                  alt="Normal image"
-                />
-              </div>
-              <div className={styles.loadTime}>
-                Load time: {loadTimes.normal ? `${loadTimes.normal.toFixed(0)}ms` : 'Loading...'}
-              </div>
+            <div className={styles.imageSection}>
+              <h3 className={styles.sectionTitle}>Normal Loading (51-100)</h3>
+              <WebFListView className={styles.scrollContainer}>
+                <div className={styles.imageGrid}>
+                  {imageUrls
+                    .filter(img => !img.isPreloaded)
+                    .map(img => (
+                      <div key={img.id} className={styles.imageItem}>
+                        <img 
+                          src={img.url}
+                          alt={`Normal ${img.id}`}
+                          className={styles.testImage}
+                        />
+                        <span className={styles.imageNumber}>{img.id}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </WebFListView>
             </div>
-          </div>
-
-          <div className={styles.comparison}>
-            <h3>Result</h3>
-            <p>Preload improvement: {getDifference()}</p>
           </div>
         </div>
       </WebFListView>
