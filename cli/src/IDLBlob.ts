@@ -1,4 +1,3 @@
-import fs from 'fs';
 import {ClassObject, FunctionObject} from "./declaration";
 
 export class IDLBlob {

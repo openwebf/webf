@@ -389,7 +389,7 @@ describe('Commands', () => {
       
       expect(consoleSpy).toHaveBeenCalledWith('\nProject is ready for code generation.');
       expect(consoleSpy).toHaveBeenCalledWith('To generate code, run:');
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('webf codegen generate'));
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('webf codegen'));
       
       cwdSpy.mockRestore();
     });
@@ -409,7 +409,7 @@ describe('Commands', () => {
       expect(mockGenerator.dartGen).toHaveBeenCalledWith({
         source: '/flutter/src',
         target: '/flutter/src',
-        command: expect.stringContaining('webf codegen generate')
+        command: expect.stringContaining('webf codegen')
       });
     });
 
@@ -428,7 +428,7 @@ describe('Commands', () => {
       expect(mockGenerator.reactGen).toHaveBeenCalledWith({
         source: '/flutter/src',
         target: path.resolve('/dist'),
-        command: expect.stringContaining('webf codegen generate')
+        command: expect.stringContaining('webf codegen')
       });
     });
 
@@ -537,7 +537,7 @@ describe('Commands', () => {
       expect(mockGenerator.vueGen).toHaveBeenCalledWith({
         source: '/flutter/src',
         target: path.resolve('/dist'),
-        command: expect.stringContaining('webf codegen generate')
+        command: expect.stringContaining('webf codegen')
       });
     });
 

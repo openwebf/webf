@@ -4,7 +4,7 @@ import path from 'path';
 import {ParameterType} from "./analyzer";
 import {ClassObject, FunctionArgumentType, FunctionDeclaration} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
-import {getClassName, getPointerType, isPointerType} from "./utils";
+import {getPointerType, isPointerType} from "./utils";
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});

@@ -1,6 +1,6 @@
 # WebF CLI
 
-A command-line tool for generating Flutter classes and Vue/React component declaration files for WebF projects.
+A powerful code generation tool for WebF that creates type-safe bindings between Flutter/Dart and JavaScript frameworks (React, Vue). It analyzes TypeScript definition files and generates corresponding Dart classes and JavaScript/TypeScript components.
 
 ## Installation
 
@@ -10,213 +10,109 @@ npm install -g @openwebf/webf
 
 ## Usage
 
-The WebF CLI provides three main commands:
+### Generate Code
 
-### 1. Initialize Typings
-
-Initialize WebF typings in your project:
+The `webf codegen` command generates Dart abstract classes and React/Vue components from TypeScript definitions. It automatically creates a project if needed.
 
 ```bash
-webf init <target-directory>
+webf codegen [output-dir] [options]
 ```
 
-This will create the necessary type definition files in the specified directory.
+#### Arguments:
+- `output-dir`: Path to output generated files (default: ".")
 
-### 2. Create a New Project
+#### Options:
+- `--flutter-package-src <path>`: Flutter package source path containing TypeScript definitions
+- `--framework <framework>`: Target framework - 'react' or 'vue'
+- `--package-name <name>`: Package name for the webf typings
+- `--publish-to-npm`: Automatically publish the generated package to npm
+- `--npm-registry <url>`: Custom npm registry URL (defaults to https://registry.npmjs.org/)
 
-Create a new Vue or React project:
+#### Examples:
+
+**Generate code with auto-creation of project:**
+```bash
+# Generate React components from Flutter package
+webf codegen my-typings --flutter-package-src=../webf_cupertino_ui --framework=react
+
+# Generate Vue components with custom package name
+webf codegen my-vue-app --flutter-package-src=./flutter_pkg --framework=vue --package-name=@myorg/webf-vue
+
+# Use temporary directory (auto-created)
+webf codegen --flutter-package-src=../webf_cupertino_ui
+```
+
+**Create a new project without code generation:**
+```bash
+# Create React project structure
+webf codegen my-project --framework=react --package-name=my-webf-react
+
+# Create Vue project structure  
+webf codegen my-project --framework=vue --package-name=my-webf-vue
+```
+
+**Generate and publish to npm:**
+```bash
+# Publish to default npm registry
+webf codegen my-typings --flutter-package-src=../webf_ui --publish-to-npm
+
+# Publish to custom registry
+webf codegen my-typings --flutter-package-src=../webf_ui --publish-to-npm --npm-registry=https://custom.registry.com/
+```
+
+### Interactive Mode
+
+If you don't provide all required options, the CLI will prompt you interactively:
 
 ```bash
-webf create <target-directory> --framework <framework> --package-name <package-name>
+webf codegen my-app
+# CLI will ask:
+# - Which framework would you like to use? (react/vue)
+# - What is your package name?
+# - Would you like to publish this package to npm?
 ```
 
-Options:
-- `--framework`: Choose between 'vue' or 'react'
-- `--package-name`: Specify your package name
+## Key Features
 
-Example:
-```bash
-webf create my-webf-app --framework react --package-name @myorg/my-webf-app
-```
+### 1. Auto-creation
+The CLI automatically detects if a project needs to be created based on the presence of required files (package.json, global.d.ts, tsconfig.json).
 
-### 3. Generate Code
+### 2. Flutter Package Detection
+When `--flutter-package-src` is not provided, the CLI searches for a Flutter package in the current directory or parent directories by looking for `pubspec.yaml`.
 
-Generate Flutter classes and component declaration files:
+### 3. Metadata Synchronization
+The CLI reads version and description from the Flutter package's `pubspec.yaml` and applies them to the generated `package.json`.
 
-```bash
-webf generate <dist-path> --flutter-package-src <flutter-source> --framework <framework>
-```
+### 4. Automatic Build
+After code generation, the CLI automatically runs `npm run build` if a build script exists in the package.json.
 
-Options:
-- `--flutter-package-src`: Path to your Flutter package source
-- `--framework`: Choose between 'vue' or 'react'
+### 5. Framework Detection
+For existing projects, the CLI can auto-detect the framework from package.json dependencies.
 
-Example:
-```bash
-webf generate ./src --flutter-package-src ./flutter_package --framework react
-```
+### 6. TypeScript Environment Validation
+The CLI validates that the Flutter package has proper TypeScript configuration:
+- Checks for `tsconfig.json`
+- Verifies `.d.ts` files exist
+- Offers to create `tsconfig.json` if missing
 
-## Implementation Details
-
-### Type System
-
-The CLI uses a sophisticated type system to handle various data types:
-
-- Basic Types:
-  - `string` (DOM String)
-  - `number` (int/double)
-  - `boolean`
-  - `any`
-  - `void`
-  - `null`
-  - `undefined`
-
-- Complex Types:
-  - Arrays: `Type[]`
-  - Functions: `Function`
-  - Promises: `Promise<Type>`
-  - Custom Events: `CustomEvent`
-  - Layout-dependent types: `DependentsOnLayout<Type>`
-
-### Naming Conventions and File Structure
-
-#### Interface Naming Patterns
-
-The CLI follows specific patterns for interface naming:
-
-1. **Component Interfaces**:
-   - Properties interface: `{ComponentName}Properties`
-   - Events interface: `{ComponentName}Events`
-   - Example: `ButtonProperties`, `ButtonEvents`
-
-2. **Generated File Names**:
-   - React components: `{componentName}.tsx`
-   - Vue components: `{componentName}.vue`
-   - Flutter classes: `{componentName}.dart`
-   - Type definitions: `{componentName}.d.ts`
-
-3. **Name Transformations**:
-   - Component name extraction:
-     - From `{Name}Properties` → `{Name}`
-     - From `{Name}Events` → `{Name}`
-   - Example: `ButtonProperties` → `Button`
-
-#### Generated Component Names
-
-1. **React Components**:
-   - Tag name: `<{ComponentName} />`
-   - File name: `{componentName}.tsx`
-   - Example: `ButtonProperties` → `<Button />` in `button.tsx`
-
-2. **Vue Components**:
-   - Tag name: `<{component-name} />`
-   - File name: `{componentName}.vue`
-   - Example: `ButtonProperties` → `<button-component />` in `button.vue`
-
-3. **Flutter Classes**:
-   - Class name: `{ComponentName}`
-   - File name: `{componentName}.dart`
-   - Example: `ButtonProperties` → `Button` class in `button.dart`
-
-#### Type Definition Files
-
-1. **File Location**:
-   - React: `src/components/{componentName}.d.ts`
-   - Vue: `src/components/{componentName}.d.ts`
-   - Flutter: `lib/src/{componentName}.dart`
-
-2. **Interface Structure**:
-   ```typescript
-   interface {ComponentName}Properties {
-     // Properties
-   }
-
-   interface {ComponentName}Events {
-     // Events
-   }
-   ```
-
-3. **Component Registration**:
-   - React: Exported in `index.ts`
-   - Vue: Registered in component declaration file
-   - Flutter: Exported in library file
-
-### Component Generation
-
-#### React Components
-- Generates TypeScript React components with proper type definitions
-- Handles event bindings with proper event types
-- Supports async methods with Promise-based return types
-- Converts event names to React conventions (e.g., `onClick`, `onChange`)
-
-#### Vue Components
-- Generates Vue component type declarations
-- Supports Vue's event system
-- Handles props and events with proper TypeScript types
-- Generates component registration code
-
-#### Flutter Classes
-- Generates Dart classes with proper type mappings
-- Handles method declarations with correct parameter types
-- Supports async operations
-- Generates proper event handler types
-
-### Type Analysis
-
-The CLI uses TypeScript's compiler API to analyze and process type definitions:
-
-1. Parses TypeScript interface declarations
-2. Analyzes class relationships and inheritance
-3. Processes method signatures and parameter types
-4. Handles union types and complex type expressions
-5. Generates appropriate type mappings for each target platform
-
-### Code Generation Conventions
-
-1. **Naming Conventions**:
-   - Properties: camelCase
-   - Events: camelCase with 'on' prefix
-   - Methods: camelCase
-   - Classes: PascalCase
-
-2. **Type Mapping**:
-   - TypeScript → Dart:
-     - `string` → `String`
-     - `number` → `int`/`double`
-     - `boolean` → `bool`
-     - `any` → `dynamic`
-     - `void` → `void`
-
-   - TypeScript → React/Vue:
-     - `string` → `string`
-     - `number` → `number`
-     - `boolean` → `boolean`
-     - `any` → `any`
-     - `void` → `void`
-
-3. **Event Handling**:
-   - React: `EventHandler<SyntheticEvent<Element>>`
-   - Vue: `Event`/`CustomEvent`
-   - Flutter: `EventHandler<Event>`
-
-## Project Structure
-
-After running the commands, your project will have the following structure:
+## Generated Project Structure
 
 ### React Project
 ```
 my-webf-app/
 ├── src/
 │   ├── components/
-│   │   ├── button.tsx
-│   │   ├── button.d.ts
-│   │   └── index.ts
+│   │   ├── Button.tsx
+│   │   ├── Input.tsx
+│   │   └── ...
 │   ├── utils/
 │   │   └── createComponent.ts
 │   └── index.ts
 ├── package.json
 ├── tsconfig.json
-└── tsup.config.ts
+├── tsup.config.ts
+├── global.d.ts
+└── .gitignore
 ```
 
 ### Vue Project
@@ -224,32 +120,112 @@ my-webf-app/
 my-webf-app/
 ├── src/
 │   ├── components/
-│   │   ├── button.vue
-│   │   └── button.d.ts
+│   │   ├── Button.vue
+│   │   ├── Input.vue
+│   │   └── ...
+│   └── index.ts
 ├── package.json
-└── tsconfig.json
+├── tsconfig.json
+├── global.d.ts
+└── .gitignore
 ```
 
-## Dependencies
+### Flutter Package (Generated Dart Files)
+```
+flutter_package/
+├── lib/
+│   ├── src/
+│   │   ├── button_bindings_generated.dart
+│   │   ├── input_bindings_generated.dart
+│   │   └── ...
+│   └── widgets.dart
+└── pubspec.yaml
+```
 
-The CLI automatically installs necessary dependencies for your chosen framework:
-- For React: React and related type definitions
-- For Vue: Vue and related type definitions
+## Type System
+
+The CLI handles comprehensive type mapping between TypeScript and Dart:
+
+### Basic Types
+- `string` → `String` (Dart) / `string` (JS)
+- `number` → `int`/`double` (Dart) / `number` (JS)
+- `boolean` → `bool` (Dart) / `boolean` (JS)
+- `any` → `dynamic` (Dart) / `any` (JS)
+- `void` → `void`
+- `null` → `null`
+- `undefined` → handled specially
+
+### Complex Types
+- Arrays: `Type[]` → `List<Type>` (Dart)
+- Functions: Proper signature conversion
+- Promises: `Promise<Type>` → `Future<Type>` (Dart)
+- Union types: Handled with appropriate conversions
+- Custom types: Preserved with proper imports
+
+### Attribute Type Conversion
+HTML attributes are always strings, so the generator includes automatic type conversion:
+- Boolean: `value == 'true' || value == ''`
+- Integer: `int.tryParse(value) ?? 0`
+- Double: `double.tryParse(value) ?? 0.0`
+- String: Direct assignment
+
+## Performance Optimizations
+
+The CLI implements several performance optimizations:
+
+### Multi-level Caching
+1. **Source File Cache**: Parsed TypeScript AST files
+2. **Type Conversion Cache**: Frequently used type conversions
+3. **File Content Cache**: Detect changes efficiently
+
+### Parallel Processing
+Files are processed in batches for optimal performance, maximizing CPU utilization.
 
 ## Development
 
-### Building from Source
+### Prerequisites
+- Node.js >= 14
+- npm or yarn
 
+### Building from Source
 ```bash
+git clone https://github.com/openwebf/webf
+cd webf/cli
 npm install
 npm run build
 ```
 
-### Testing
-
+### Running Tests
 ```bash
-npm test
+npm test                    # Run all tests
+npm test -- --coverage      # Run with coverage
+npm test -- analyzer.test   # Run specific test file
 ```
+
+### Development Workflow
+```bash
+# Make changes to source files
+npm run build    # Compile TypeScript
+npm test         # Run tests
+npm link         # Link for local testing
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Missing TypeScript definitions:**
+- Ensure your Flutter package has `.d.ts` files in the `lib/` directory
+- Create a `tsconfig.json` in your Flutter package root
+
+**Build failures:**
+- Check that all dependencies are installed: `npm install`
+- Verify TypeScript compilation: `npm run build`
+
+**Publishing errors:**
+- Ensure you're logged in to npm: `npm login`
+- Verify package name availability
+- Check registry URL if using custom registry
 
 ## License
 

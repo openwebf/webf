@@ -83,16 +83,16 @@ import { moduleUnderTest } from './module';
 ### Commands
 ```bash
 # Generate code from TypeScript definitions (auto-creates project if needed)
-webf codegen generate <output-dir> --flutter-package-src=<path> [--framework=react|vue] [--package-name=<name>] [--publish-to-npm] [--npm-registry=<url>]
+webf codegen <output-dir> --flutter-package-src=<path> [--framework=react|vue] [--package-name=<name>] [--publish-to-npm] [--npm-registry=<url>]
 
 # Create a new project without code generation
-webf codegen generate <output-dir> [--framework=react|vue] [--package-name=<name>]
+webf codegen <output-dir> [--framework=react|vue] [--package-name=<name>]
 
 # Generate and publish to npm
-webf codegen generate <output-dir> --flutter-package-src=<path> --publish-to-npm
+webf codegen <output-dir> --flutter-package-src=<path> --publish-to-npm
 
 # Generate and publish to custom registry
-webf codegen generate <output-dir> --flutter-package-src=<path> --publish-to-npm --npm-registry=https://custom.registry.com/
+webf codegen <output-dir> --flutter-package-src=<path> --publish-to-npm --npm-registry=https://custom.registry.com/
 ```
 
 ### Auto-creation Behavior

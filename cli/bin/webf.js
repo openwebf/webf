@@ -11,10 +11,8 @@ program
   .description('CLI tool for webf development')
   .version(version, '-v, --version', 'output the current version');
 
-const codegen = program.command('codegen').description('Webf codegen utilities');
-
-codegen
-  .command('generate')
+program
+  .command('codegen')
   .option('--flutter-package-src <src>', 'Flutter package source path (for code generation)')
   .option('--framework <framework>', 'Target framework (react or vue)')
   .option('--package-name <name>', 'Package name for the webf typings')

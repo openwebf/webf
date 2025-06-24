@@ -362,7 +362,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
     console.log('\nProject is ready for code generation.');
     console.log('To generate code, run:');
     const displayPath = isTempDir ? '<output-dir>' : distPath;
-    console.log(`  webf codegen generate ${displayPath} --flutter-package-src=<path> --framework=${framework}`);
+    console.log(`  webf codegen ${displayPath} --flutter-package-src=<path> --framework=${framework}`);
     if (isTempDir) {
       // Clean up temporary directory if we're not using it
       fs.rmSync(resolvedDistPath, { recursive: true, force: true });
@@ -429,7 +429,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
     }
   }
   
-  const command = `webf codegen generate --flutter-package-src=${options.flutterPackageSrc} --framework=${framework} <distPath>`;
+  const command = `webf codegen --flutter-package-src=${options.flutterPackageSrc} --framework=${framework} <distPath>`;
   
   // Auto-initialize typings in the output directory if needed
   ensureInitialized(resolvedDistPath);
