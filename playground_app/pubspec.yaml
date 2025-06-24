@@ -35,6 +35,25 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # QR code scanning
+  qr_code_scanner_plus: ^2.0.0
+  permission_handler: ^11.3.1
+
+  # WebF
+  webf: ^0.22.0
+  webf_cupertino_ui:
+    path: ../webf_cupertino_ui
+
+  vibration: ^3.1.3
+  url_launcher: ^6.3.1
+  image_picker: ^1.1.2
+  file_picker: ^10.2.0
+  shared_preferences: ^2.5.3
+
+dependency_overrides:
+  webf:
+    path: ../webf
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
