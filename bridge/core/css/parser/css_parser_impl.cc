@@ -366,24 +366,33 @@ std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
     CSSParserTokenRange range,
     std::shared_ptr<StyleSheetContents> style_sheet,
     std::shared_ptr<const CSSParserContext> context) {
+  // Convert to stream and call the stream version
+  CSSTokenizer tokenizer(range.Serialize());
+  CSSParserTokenStream stream(tokenizer);
+  return ParsePageSelector(stream, style_sheet, context);
+}
+
+std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
+    CSSParserTokenStream& stream,
+    std::shared_ptr<StyleSheetContents> style_sheet,
+    std::shared_ptr<const CSSParserContext> context) {
   // We only support a small subset of the css-page spec.
-  range.ConsumeWhitespace();
+  stream.ConsumeWhitespace();
   std::optional<std::string> type_selector;
-  if (range.Peek().GetType() == kIdentToken) {
-    type_selector = range.Consume().Value();
+  if (stream.Peek().GetType() == kIdentToken) {
+    type_selector = stream.ConsumeIncludingWhitespace().Value();
   }
 
   std::string pseudo;
-  if (range.Peek().GetType() == kColonToken) {
-    range.Consume();
-    if (range.Peek().GetType() != kIdentToken) {
+  if (stream.Peek().GetType() == kColonToken) {
+    stream.Consume();
+    if (stream.Peek().GetType() != kIdentToken) {
       return nullptr;
     }
-    pseudo = range.Consume().Value();
+    pseudo = stream.ConsumeIncludingWhitespace().Value();
   }
 
-  range.ConsumeWhitespace();
-  if (!range.AtEnd()) {
+  if (!stream.AtEnd()) {
     return nullptr;  // Parse error; extra tokens in @page selector
   }
 
@@ -1178,6 +1187,13 @@ CSSParserTokenRange ConsumeAtRulePrelude(CSSParserTokenStream& stream) {
   return stream.ConsumeUntilPeekedTypeIs<kLeftBraceToken, kSemicolonToken>();
 }
 
+// Helper to check if at-rule prelude would be empty without consuming
+bool IsAtRulePreludeEmpty(CSSParserTokenStream& stream) {
+  stream.EnsureLookAhead();
+  return stream.Peek().GetType() == kLeftBraceToken || 
+         stream.Peek().GetType() == kSemicolonToken;
+}
+
 bool ConsumeEndOfPreludeForAtRuleWithoutBlock(CSSParserTokenStream& stream) {
   if (stream.AtEnd() || stream.UncheckedPeek().GetType() == kSemicolonToken) {
     if (!stream.UncheckedAtEnd()) {
@@ -1267,16 +1283,19 @@ std::shared_ptr<StyleRuleMedia> CSSParserImpl::ConsumeMediaRule(
 
 std::shared_ptr<StyleRuleFontFace> CSSParserImpl::ConsumeFontFaceRule(CSSParserTokenStream& stream) {
   size_t prelude_offset_start = stream.LookAheadOffset();
-  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  
+  // Check if prelude is empty before consuming
+  if (!IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; @font-face prelude should be empty
+  }
+  
+  // Consume the empty prelude
+  ConsumeAtRulePrelude(stream);
   size_t prelude_offset_end = stream.LookAheadOffset();
   if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
     return nullptr;
   }
   CSSParserTokenStream::BlockGuard guard(stream);
-
-  if (!prelude.AtEnd()) {
-    return nullptr;  // Parse error; @font-face prelude should be empty
-  }
 
   if (observer_) {
     observer_->StartRuleHeader(StyleRule::kFontFace, prelude_offset_start);
@@ -1298,29 +1317,33 @@ std::shared_ptr<StyleRuleFontFace> CSSParserImpl::ConsumeFontFaceRule(CSSParserT
 
 std::shared_ptr<StyleRuleCounterStyle> CSSParserImpl::ConsumeCounterStyleRule(CSSParserTokenStream& stream) {
   size_t prelude_offset_start = stream.LookAheadOffset();
-  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  
+  // Check if prelude is non-empty first
+  stream.ConsumeWhitespace();
+  if (IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; prelude should contain counter-style name
+  }
+  
+  // Get counter-style name from stream
+  const CSSParserToken& name_token = stream.ConsumeIncludingWhitespace();
+  if (name_token.GetType() != kIdentToken) {
+    return nullptr;  // Parse error; @counter-style name must be an identifier
+  }
+  
+  AtomicString counter_style_name = AtomicString(name_token.Value().data(), name_token.Value().length());
+  
+  // Check if prelude now contains only the name
+  if (!IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; prelude should contain exactly one token
+  }
+  
+  // Consume the rest of the prelude
+  ConsumeAtRulePrelude(stream);
   size_t prelude_offset_end = stream.LookAheadOffset();
   if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
     return nullptr;
   }
   CSSParserTokenStream::BlockGuard guard(stream);
-
-  // Parse counter-style name from prelude
-  AtomicString counter_style_name;
-  if (prelude.AtEnd()) {
-    return nullptr;  // Parse error; @counter-style prelude should contain a name
-  }
-  
-  auto name_token = prelude.ConsumeIncludingWhitespace();
-  if (name_token.GetType() != kIdentToken) {
-    return nullptr;  // Parse error; @counter-style name must be an identifier
-  }
-  
-  counter_style_name = AtomicString(name_token.Value().data(), name_token.Value().length());
-  
-  if (!prelude.AtEnd()) {
-    return nullptr;  // Parse error; @counter-style prelude should only contain the name
-  }
 
   if (observer_) {
     observer_->StartRuleHeader(StyleRule::kCounterStyle, prelude_offset_start);
@@ -1342,19 +1365,16 @@ std::shared_ptr<StyleRuleCounterStyle> CSSParserImpl::ConsumeCounterStyleRule(CS
 std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(bool webkit_prefixed,
                                                                         CSSParserTokenStream& stream) {
   size_t prelude_offset_start = stream.LookAheadOffset();
-  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
-  size_t prelude_offset_end = stream.LookAheadOffset();
-  if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
-    return nullptr;
+  
+  // Check if prelude is non-empty first
+  stream.ConsumeWhitespace();
+  if (IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; prelude should contain keyframes name
   }
-  CSSParserTokenStream::BlockGuard guard(stream);
-
-  const CSSParserToken& name_token = prelude.ConsumeIncludingWhitespace();
-  if (!prelude.AtEnd()) {
-    return nullptr;  // Parse error; expected single non-whitespace token in
-                     // @keyframes header
-  }
-
+  
+  // Get keyframes name from stream
+  const CSSParserToken& name_token = stream.ConsumeIncludingWhitespace();
+  
   std::string name;
   if (name_token.GetType() == kIdentToken) {
     name = std::string(name_token.Value());
@@ -1363,6 +1383,19 @@ std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(bool web
   } else {
     return nullptr;  // Parse error; expected ident token in @keyframes header
   }
+  
+  // Check if prelude now contains only the name
+  if (!IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; prelude should contain exactly one token
+  }
+  
+  // Consume the rest of the prelude
+  ConsumeAtRulePrelude(stream);
+  size_t prelude_offset_end = stream.LookAheadOffset();
+  if (!ConsumeEndOfPreludeForAtRuleWithBlock(stream)) {
+    return nullptr;
+  }
+  CSSParserTokenStream::BlockGuard guard(stream);
 
   if (observer_) {
     observer_->StartRuleHeader(StyleRule::kKeyframes, prelude_offset_start);
@@ -1746,15 +1779,29 @@ std::shared_ptr<StyleRuleImport> CSSParserImpl::ConsumeImportRule(const std::str
 }
 
 std::shared_ptr<StyleRuleCharset> CSSParserImpl::ConsumeCharsetRule(CSSParserTokenStream& stream) {
-  CSSParserTokenRange prelude = ConsumeAtRulePrelude(stream);
+  // Check if prelude is non-empty first
+  stream.ConsumeWhitespace();
+  if (IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; prelude should contain charset string
+  }
+  
+  // Get charset string from stream
+  const CSSParserToken& string_token = stream.ConsumeIncludingWhitespace();
+  if (string_token.GetType() != kStringToken) {
+    return nullptr;  // Parse error; @charset rule must contain a string
+  }
+  
+  // Check if prelude now contains only the string
+  if (!IsAtRulePreludeEmpty(stream)) {
+    return nullptr;  // Parse error; prelude should contain exactly one token
+  }
+  
+  // Consume the rest of the prelude
+  ConsumeAtRulePrelude(stream);
   if (!ConsumeEndOfPreludeForAtRuleWithoutBlock(stream)) {
     return nullptr;
   }
 
-  const CSSParserToken& string = prelude.ConsumeIncludingWhitespace();
-  if (string.GetType() != kStringToken || !prelude.AtEnd()) {
-    return nullptr;  // Parse error, expected a single string
-  }
   return std::make_shared<StyleRuleCharset>();
 }
 

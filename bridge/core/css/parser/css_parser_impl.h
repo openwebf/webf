@@ -219,6 +219,9 @@ class CSSParserImpl {
   static std::shared_ptr<const CSSSelectorList> ParsePageSelector(CSSParserTokenRange,
                                                                   std::shared_ptr<StyleSheetContents>,
                                                                   std::shared_ptr<const CSSParserContext> context);
+  static std::shared_ptr<const CSSSelectorList> ParsePageSelector(CSSParserTokenStream&,
+                                                                  std::shared_ptr<StyleSheetContents>,
+                                                                  std::shared_ptr<const CSSParserContext> context);
 
   static std::unique_ptr<std::vector<KeyframeOffset>> ParseKeyframeKeyList(std::shared_ptr<const CSSParserContext>,
                                                                            const std::string&);
