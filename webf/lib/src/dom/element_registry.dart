@@ -212,7 +212,11 @@ void defineBuiltInElements() {
   defineWidgetElement(TEXT, (context) => WebFTextElement(context));
   defineWidgetElement(WEBF_LISTVIEW, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
-
+  defineWidgetElement(SHIMMER, (context) => FlutterShimmerElement(context));
+  defineWidgetElement(SHIMMER_AVATAR, (context) => FlutterShimmerAvatarElement(context));
+  defineWidgetElement(SHIMMER_TEXT, (context) => FlutterShimmerTextElement(context));
+  defineWidgetElement(SHIMMER_BUTTON, (context) => FlutterShimmerButtonElement(context));
+  //
   // Gesture Elements
   defineElement(TOUCH_AREA, (context) => WebFTouchAreaElement(context));
 

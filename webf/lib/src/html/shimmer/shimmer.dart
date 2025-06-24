@@ -7,6 +7,8 @@ import 'package:webf/webf.dart';
 import 'shimmer_widget.dart';
 import 'shimmer_loading.dart';
 
+const SHIMMER = 'FLUTTER-SHIMMER';
+
 class FlutterShimmerElement extends WidgetElement {
   FlutterShimmerElement(BindingContext? context) : super(context);
 
@@ -19,7 +21,6 @@ class FlutterShimmerElement extends WidgetElement {
 class FlutterShimerElementState extends WebFWidgetElementState {
   FlutterShimerElementState(super.widgetElement);
 
-  // 定义渐变色，可以通过属性配置
   final LinearGradient _shimmerGradient = LinearGradient(
     colors: [
       Color(0xFFEBEBF4),
@@ -37,7 +38,7 @@ class FlutterShimerElementState extends WebFWidgetElementState {
     return Shimmer(
       linearGradient: _shimmerGradient,
       child: ShimmerLoading(
-        isLoading: true, // 这里可以通过属性控制
+        isLoading: true,
         child: widgetElement.childNodes.isEmpty ? const SizedBox() : widgetElement.childNodes.first.toWidget(),
       ),
     );

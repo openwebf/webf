@@ -5,6 +5,8 @@
 import 'package:webf/webf.dart';
 import 'package:flutter/material.dart';
 
+const String SHIMMER_AVATAR = 'FLUTTER-SHIMMER-AVATAR';
+
 class FlutterShimmerAvatarElement extends WidgetElement {
   FlutterShimmerAvatarElement(BindingContext? context) : super(context);
 
@@ -33,6 +35,8 @@ class FlutterShimerAvatarElementState extends WebFWidgetElementState {
   }
 }
 
+const String SHIMMER_TEXT = 'FLUTTER-SHIMMER-TEXT';
+
 class FlutterShimmerTextElement extends WidgetElement {
   FlutterShimmerTextElement(BindingContext? context) : super(context);
 
@@ -59,6 +63,8 @@ class FlutterShimmerTextElementState extends WebFWidgetElementState {
     );
   }
 }
+
+const String SHIMMER_BUTTON = 'FLUTTER-SHIMMER-BUTTON';
 
 class FlutterShimmerButtonElement extends WidgetElement {
   FlutterShimmerButtonElement(BindingContext? context) : super(context);

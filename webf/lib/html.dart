@@ -26,3 +26,7 @@ export 'src/html/router_link.dart';
 export 'src/html/template.dart';
 export 'src/html/textarea.dart';
 export 'src/html/pseudo.dart';
+export 'src/html/shimmer/shimmer.dart';
+export 'src/html/shimmer/shimmer_items.dart';
+export 'src/html/shimmer/shimmer_loading.dart';
+export 'src/html/shimmer/shimmer_widget.dart';
