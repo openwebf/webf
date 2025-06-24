@@ -18,6 +18,8 @@ class CSSLayerRuleTest : public ::testing::Test {
  protected:
   void SetUp() override {
     // Use test infrastructure to create parser context
+    // Force a fresh context each time to avoid state pollution
+    parser_context_.reset();
     parser_context_ = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   }
   
@@ -38,8 +40,11 @@ TEST_F(CSSLayerRuleTest, ParseLayerBlockRule) {
     }
   )CSS";
 
+  fprintf(stderr, "DEBUG: Starting ParseLayerBlockRule test\n");
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
+  fprintf(stderr, "DEBUG: About to call CSSParser::ParseSheet\n");
   CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  fprintf(stderr, "DEBUG: CSSParser::ParseSheet completed\n");
   
   // Should successfully parse the @layer block rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);

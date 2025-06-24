@@ -184,19 +184,35 @@ CSSTokenizedValue CSSParserImpl::ConsumeRestrictedPropertyValue(CSSParserTokenSt
                       [](CSSParserTokenStream& stream) { return stream.ConsumeUntilPeekedTypeIs<kLeftBraceToken>(); });
 }
 
-static inline void FilterProperties(bool important,
-                                    const std::vector<CSSPropertyValue>& input,
-                                    std::vector<CSSPropertyValue>& output,
+static inline void FilterProperties(std::vector<CSSPropertyValue>& values,
                                     size_t& unused_entries,
                                     std::bitset<kNumCSSProperties>& seen_properties,
                                     std::unordered_set<std::string>& seen_custom_properties) {
+  // Move !important declarations last, using a simple insertion sort.
+  // This is O(n²), but n is typically small, and std::stable_partition
+  // wants to allocate memory to get to O(n), which is overkill here.
+  // Moreover, this is O(n) if there are no !important properties
+  // (the common case) or only !important properties.
+  size_t last_nonimportant_idx = values.size() - 1;
+  for (size_t i = values.size(); i--;) {
+    if (values[i].IsImportant()) {
+      if (i != last_nonimportant_idx) {
+        // Move this element to the end, preserving the order
+        // of the other elements.
+        CSSPropertyValue tmp = std::move(values[i]);
+        for (size_t j = i; j < last_nonimportant_idx; ++j) {
+          values[j] = std::move(values[j + 1]);
+        }
+        values[last_nonimportant_idx] = std::move(tmp);
+      }
+      --last_nonimportant_idx;
+    }
+  }
+
   // Add properties in reverse order so that highest priority definitions are
   // reached first. Duplicate definitions can then be ignored when found.
-  for (size_t i = input.size(); i--;) {
-    const CSSPropertyValue& property = input[i];
-    if (property.IsImportant() != important) {
-      continue;
-    }
+  for (size_t i = values.size(); i--;) {
+    const CSSPropertyValue& property = values[i];
     if (property.Id() == CSSPropertyID::kVariable) {
       const std::string& name = property.CustomPropertyName().ToStdString();
       if (seen_custom_properties.count(name) > 0) {
@@ -210,7 +226,7 @@ static inline void FilterProperties(bool important,
       }
       seen_properties.set(property_id_index);
     }
-    output[--unused_entries] = property;
+    values[--unused_entries] = property;
   }
 }
 
@@ -232,15 +248,15 @@ bool CSSParserImpl::ParseDeclarationList(MutableCSSPropertyValueSet* declaration
 
   std::bitset<kNumCSSProperties> seen_properties;
   size_t unused_entries = parser.parsed_properties_.size();
-  std::vector<CSSPropertyValue> results;
-  results.reserve(64);
   std::unordered_set<std::string> seen_custom_properties;
-  FilterProperties(true, parser.parsed_properties_, results, unused_entries, seen_properties, seen_custom_properties);
-  FilterProperties(false, parser.parsed_properties_, results, unused_entries, seen_properties, seen_custom_properties);
-  if (unused_entries) {
-    results.erase(results.begin(), results.begin() + unused_entries);
-  }
-  return declaration->AddParsedProperties(results);
+  FilterProperties(parser.parsed_properties_, unused_entries, seen_properties, seen_custom_properties);
+  
+  // Create a vector from the filtered properties (skipping unused entries at the beginning)
+  std::vector<CSSPropertyValue> filtered_properties(
+      parser.parsed_properties_.begin() + unused_entries,
+      parser.parsed_properties_.end());
+  
+  return declaration->AddParsedProperties(filtered_properties);
 }
 
 std::shared_ptr<StyleRuleBase> CSSParserImpl::ParseRule(const std::string& string,
@@ -821,15 +837,12 @@ static std::shared_ptr<ImmutableCSSPropertyValueSet> CreateCSSPropertyValueSet(
 
   std::bitset<kNumCSSProperties> seen_properties;
   size_t unused_entries = parsed_properties.size();
-  std::vector<CSSPropertyValue> results;
-  results.reserve(64);
   std::unordered_set<std::string> seen_custom_properties;
 
-  FilterProperties(true, parsed_properties, results, unused_entries, seen_properties, seen_custom_properties);
-  FilterProperties(false, parsed_properties, results, unused_entries, seen_properties, seen_custom_properties);
+  FilterProperties(parsed_properties, unused_entries, seen_properties, seen_custom_properties);
 
   auto result =
-      ImmutableCSSPropertyValueSet::Create(results.data() + unused_entries, results.size() - unused_entries, mode);
+      ImmutableCSSPropertyValueSet::Create(parsed_properties.data() + unused_entries, parsed_properties.size() - unused_entries, mode);
   parsed_properties.clear();
   return result;
 }

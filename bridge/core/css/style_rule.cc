@@ -535,6 +535,13 @@ StyleRule::StyleRule(const StyleRule& other, size_t flattened_size)
 StyleRule::~StyleRule() {
   // Clean up any RareData that the selectors may be owning.
   CSSSelector* selector = SelectorArray();
+  
+  // Check if we have an invalid selector list (empty selector case)
+  if (selector->Match() == CSSSelector::kInvalidList) {
+    selector->~CSSSelector();
+    return;
+  }
+  
   for (;;) {
     bool is_last = selector->IsLastInSelectorList();
     selector->~CSSSelector();

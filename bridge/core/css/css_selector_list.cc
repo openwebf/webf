@@ -59,6 +59,12 @@ std::shared_ptr<CSSSelectorList> CSSSelectorList::Copy() const {
 }
 
 void CSSSelectorList::AdoptSelectorVector(tcb::span<CSSSelector> selector_vector, CSSSelector* selector_array) {
+  if (selector_vector.empty()) {
+    // If the vector is empty, we still need to create an invalid selector
+    new (selector_array) CSSSelector();
+    selector_array[0].SetMatch(CSSSelector::kInvalidList);
+    return;
+  }
   std::uninitialized_move(selector_vector.begin(), selector_vector.end(), selector_array);
   selector_array[selector_vector.size() - 1].SetLastInSelectorList(true);
 }

@@ -26,6 +26,7 @@
 #ifndef WEBF_STYLE_RULE_H
 #define WEBF_STYLE_RULE_H
 
+#include <algorithm>
 #include <cstdint>
 #include <span>
 #include "core/base/bits.h"
@@ -237,7 +238,9 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
 class StyleRule : public StyleRuleBase {
   static size_t AdditionalBytesForSelectors(size_t flattened_size) {
     constexpr size_t padding_bytes = base::bits::AlignUp(sizeof(StyleRule), alignof(CSSSelector)) - sizeof(StyleRule);
-    return (sizeof(CSSSelector) * flattened_size) + padding_bytes;
+    // Always allocate at least one selector to avoid zero-size allocations
+    size_t selector_count = std::max(flattened_size, size_t(1));
+    return (sizeof(CSSSelector) * selector_count) + padding_bytes;
   }
 
  public:

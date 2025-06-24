@@ -350,7 +350,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin, co
 
 #endif
 
-inline ALWAYS_INLINE size_t FindLengthOfDeclarationList(std::string_view str) {
+ALWAYS_INLINE size_t FindLengthOfDeclarationList(std::string_view str) {
   return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(str.data()),
                                      reinterpret_cast<const uint8_t*>(str.data() + str.length()));
 }
