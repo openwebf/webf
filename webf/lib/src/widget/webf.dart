@@ -218,7 +218,7 @@ class WebF extends StatefulWidget {
   static AutoManagedWebF fromControllerName(
       {Key? key,
       required String controllerName,
-      String initialRoute = '/',
+      String? initialRoute = '/',
       Map<String, dynamic>? initialState,
       Widget? loadingWidget,
       Widget Function(BuildContext context, Object error)? errorBuilder,
