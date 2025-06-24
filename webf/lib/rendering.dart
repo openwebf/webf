@@ -30,3 +30,4 @@ export 'src/rendering/image.dart';
 export 'src/rendering/widget_element_child.dart';
 export 'src/rendering/logic_box.dart';
 export 'src/rendering/child_node_size.dart';
+export 'src/rendering/content_verification.dart';
