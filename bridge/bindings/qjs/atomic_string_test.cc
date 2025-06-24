@@ -17,7 +17,7 @@ using TestCallback = void (*)(JSContext* ctx);
 TEST(AtomicString, Empty) {
   TEST_init();
   AtomicString atomic_string = AtomicString::Empty();
-  EXPECT_STREQ(atomic_string.Impl()->Characters8(), "");
+  EXPECT_EQ(*atomic_string.Impl(), "");
 }
 
 TEST(AtomicString, FromNativeString) {

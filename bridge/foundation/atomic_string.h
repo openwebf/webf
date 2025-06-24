@@ -55,6 +55,10 @@ class AtomicString {
   bool IsNull() const { return string_ == nullptr; }
   bool empty() const { return !string_ || !string_->length(); }
 
+  friend bool operator==(const AtomicString& lhs, const char* rhs) {
+    return *lhs.string_ == rhs;
+  }
+
   char16_t operator[](size_t i) const { return string_->operator[](i); }
 
   size_t length() const { return string_->length(); }

@@ -89,6 +89,22 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
     }
   };
 
+  friend bool operator== (const StringImpl& lhs, const char* rhs) {
+    if (lhs.length() == 0) {
+      return !rhs[0];
+    }
+
+    if (auto size = strlen(rhs); size == lhs.length()) {
+      for (size_t i = 0; i < size; ++i) {
+        if (lhs[i] != rhs[i])
+          return false;
+      }
+      return true;
+    }
+
+    return false;
+  }
+
   static inline constexpr uint32_t LengthToAsciiFlags(int length) {
     return length ? 0 : kAsciiPropertyCheckDone | kContainsOnlyAscii | kIsLowerAscii;
   }
