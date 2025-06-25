@@ -25,15 +25,15 @@ TEST(CSSParsingUtilsTest, Revert) {
 }
 
 double ConsumeAngleValue(std::string target) {
-  auto tokens = CSSTokenizer(target).TokenizeToEOF();
-  CSSParserTokenRange range(tokens);
-  return ConsumeAngle(range, MakeContext())->ComputeDegrees();
+  CSSTokenizer tokenizer(target);
+  CSSParserTokenStream stream(tokenizer);
+  return ConsumeAngle(stream, MakeContext())->ComputeDegrees();
 }
 
 double ConsumeAngleValue(std::string target, double min, double max) {
-  auto tokens = CSSTokenizer(target).TokenizeToEOF();
-  CSSParserTokenRange range(tokens);
-  return ConsumeAngle(range, MakeContext(), min, max)->ComputeDegrees();
+  CSSTokenizer tokenizer(target);
+  CSSParserTokenStream stream(tokenizer);
+  return ConsumeAngle(stream, MakeContext(), min, max)->ComputeDegrees();
 }
 
 TEST(CSSParsingUtilsTest, ConsumeAngles) {
@@ -224,7 +224,8 @@ TEST(CSSParsingUtilsTest, ConsumeAbsoluteColor) {
   for (auto& expectation : expectations) {
     EXPECT_EQ(ConsumeColorForTest(expectation.css_text, css_parsing_utils::ConsumeColor<CSSParserTokenRange>),
               expectation.consume_color_expectation);
-    EXPECT_EQ(ConsumeColorForTest(expectation.css_text, css_parsing_utils::ConsumeAbsoluteColor),
+    EXPECT_EQ(ConsumeColorForTest(expectation.css_text, 
+                                  static_cast<std::shared_ptr<const CSSValue>(*)(CSSParserTokenRange&, std::shared_ptr<const CSSParserContext>)>(css_parsing_utils::ConsumeAbsoluteColor)),
               expectation.consume_absolute_color_expectation);
   }
 }

@@ -372,12 +372,8 @@ bool CSSPropertyParser::ParseFontFaceDescriptor(CSSPropertyID resolved_property)
   //
   // This should obviously go away when everything uses
   // the streaming parser.
-  size_t start_offset = stream_.LookAheadOffset();
-  CSSParserTokenRange range = stream_.ConsumeUntilPeekedTypeIs();
-  size_t end_offset = stream_.Offset();
-  std::string_view original_text = stream_.StringRangeAt(start_offset, end_offset - start_offset);
-
-  auto parsed_value = AtRuleDescriptorParser::ParseFontFaceDescriptor(id, {range, original_text}, context_);
+  // Use the stream-based version of ParseFontFaceDescriptor
+  auto parsed_value = AtRuleDescriptorParser::ParseFontFaceDescriptor(id, stream_, context_);
   if (!parsed_value) {
     return false;
   }

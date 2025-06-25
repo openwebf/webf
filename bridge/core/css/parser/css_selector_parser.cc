@@ -35,18 +35,7 @@ namespace webf {
 
 namespace {
 
-CSSParserTokenRange ConsumeNestedArgument(CSSParserTokenRange& range) {
-  const CSSParserToken& first = range.Peek();
-  while (!range.AtEnd() && range.Peek().GetType() != kCommaToken) {
-    const CSSParserToken& token = range.Peek();
-    if (token.GetBlockType() == CSSParserToken::kBlockStart) {
-      range.ConsumeBlock();
-      continue;
-    }
-    range.Consume();
-  }
-  return range.MakeSubRange(&first, &range.Peek());
-}
+// Removed unused ConsumeNestedArgument function that used CSSParserTokenRange
 
 bool AtEndIgnoringWhitespace(CSSParserTokenStream& stream) {
   stream.EnsureLookAhead();

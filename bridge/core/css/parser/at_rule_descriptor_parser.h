@@ -9,7 +9,7 @@
 namespace webf {
 
 class CSSParserContext;
-class CSSParserTokenRange;
+class CSSParserTokenStream;
 class CSSValue;
 struct CSSTokenizedValue;
 
@@ -23,7 +23,7 @@ class AtRuleDescriptorParser {
                           std::shared_ptr<const CSSParserContext>,
                           std::vector<CSSPropertyValue>&);
   static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID,
-                                                                 CSSParserTokenRange&,
+                                                                 CSSParserTokenStream&,
                                                                  std::shared_ptr<const CSSParserContext>);
   static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID,
                                                                  const std::string& value,
@@ -31,17 +31,20 @@ class AtRuleDescriptorParser {
   static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID,
                                                                  const CSSTokenizedValue&,
                                                                  std::shared_ptr<const CSSParserContext>);
-  static std::shared_ptr<const CSSValue> ParseFontFaceDeclaration(CSSParserTokenRange&,
+  static std::shared_ptr<const CSSValue> ParseFontFaceDeclaration(CSSParserTokenStream&,
                                                                   std::shared_ptr<const CSSParserContext>);
   static std::shared_ptr<const CSSValue> ParseAtPropertyDescriptor(AtRuleDescriptorID,
                                                                    const CSSTokenizedValue&,
                                                                    std::shared_ptr<const CSSParserContext>);
   static std::shared_ptr<const CSSValue> ParseAtFontPaletteValuesDescriptor(AtRuleDescriptorID,
-                                                                            CSSParserTokenRange&,
+                                                                            CSSParserTokenStream&,
                                                                             std::shared_ptr<const CSSParserContext>);
   static std::shared_ptr<const CSSValue> ParseAtViewTransitionDescriptor(AtRuleDescriptorID,
-                                                                         CSSParserTokenRange&,
+                                                                         CSSParserTokenStream&,
                                                                          std::shared_ptr<const CSSParserContext>);
+  static std::shared_ptr<const CSSValue> ParseAtCounterStyleDescriptor(AtRuleDescriptorID,
+                                                                       CSSParserTokenStream&,
+                                                                       std::shared_ptr<const CSSParserContext>);
 };
 
 }  // namespace webf

@@ -78,13 +78,13 @@ constexpr size_t kMaxNumAnimationLonghands = 12;
 void Complete4Sides(std::shared_ptr<const CSSValue> side[4]);
 
 // TODO(timloh): These should probably just be consumeComma and consumeSlash.
-bool ConsumeCommaIncludingWhitespace(CSSParserTokenRange&);
 bool ConsumeCommaIncludingWhitespace(CSSParserTokenStream&);
-bool ConsumeSlashIncludingWhitespace(CSSParserTokenRange&);
+bool ConsumeCommaIncludingWhitespace(CSSParserTokenRange&); // Temporary for migration
 bool ConsumeSlashIncludingWhitespace(CSSParserTokenStream&);
-// consumeFunction expects the range starts with a FunctionToken.
-CSSParserTokenRange ConsumeFunction(CSSParserTokenRange&);
+bool ConsumeSlashIncludingWhitespace(CSSParserTokenRange&); // Temporary for migration
+// consumeFunction expects the stream starts with a FunctionToken.
 CSSParserTokenRange ConsumeFunction(CSSParserTokenStream&);
+CSSParserTokenRange ConsumeFunction(CSSParserTokenRange&); // Temporary for migration
 
 inline bool AtDelimiter(const CSSParserToken& token, char c) {
   return token.GetType() == kDelimiterToken && token.Delimiter() == c;
@@ -103,20 +103,21 @@ bool ConsumeIfDelimiter(T& range_or_stream, char c) {
 //
 // Consumes component values until it reaches a token that is not allowed
 // for <any-value>.
-bool ConsumeAnyValue(CSSParserTokenRange&);
+bool ConsumeAnyValue(CSSParserTokenStream&);
+bool ConsumeAnyValue(CSSParserTokenRange&); // Temporary for migration
 
 inline bool AtIdent(const CSSParserToken& token, const char* ident) {
   return token.GetType() == kIdentToken && EqualIgnoringASCIICase(std::string(token.Value()), ident);
 }
 
-std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenRange&,
-                                                        std::shared_ptr<const CSSParserContext> context,
-                                                        double minimum_value = -std::numeric_limits<double>::max(),
-                                                        const bool is_percentage_allowed = true);
 std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenStream&,
                                                         std::shared_ptr<const CSSParserContext> context,
                                                         double minimum_value = -std::numeric_limits<double>::max(),
                                                         const bool is_percentage_allowed = true);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenRange&,
+                                                        std::shared_ptr<const CSSParserContext> context,
+                                                        double minimum_value = -std::numeric_limits<double>::max(),
+                                                        const bool is_percentage_allowed = true); // Temporary for migration
 
 template <typename T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
@@ -126,70 +127,60 @@ ConsumeIntegerOrNumberCalc(T& range,
                            CSSPrimitiveValue::ValueRange value_range = CSSPrimitiveValue::ValueRange::kInteger);
 std::shared_ptr<const CSSPrimitiveValue> ConsumePositiveInteger(CSSParserTokenStream&,
                                                                 std::shared_ptr<const CSSParserContext> context);
-std::shared_ptr<const CSSPrimitiveValue> ConsumePositiveInteger(CSSParserTokenRange&,
-                                                                std::shared_ptr<const CSSParserContext> context);
 bool ConsumeNumberRaw(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext>, double& result);
-bool ConsumeNumberRaw(CSSParserTokenRange&, std::shared_ptr<const CSSParserContext>, double& result);
-std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenRange&,
-                                                       std::shared_ptr<const CSSParserContext> context,
-                                                       CSSPrimitiveValue::ValueRange);
 std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenStream&,
                                                        std::shared_ptr<const CSSParserContext> context,
                                                        CSSPrimitiveValue::ValueRange);
-std::shared_ptr<const CSSPrimitiveValue> ConsumeLength(CSSParserTokenRange&,
+std::shared_ptr<const CSSPrimitiveValue> ConsumeNumber(CSSParserTokenRange&,
                                                        std::shared_ptr<const CSSParserContext> context,
-                                                       CSSPrimitiveValue::ValueRange,
-                                                       UnitlessQuirk = UnitlessQuirk::kForbid);
+                                                       CSSPrimitiveValue::ValueRange); // Temporary for migration
 std::shared_ptr<const CSSPrimitiveValue> ConsumeLength(CSSParserTokenStream&,
                                                        std::shared_ptr<const CSSParserContext> context,
                                                        CSSPrimitiveValue::ValueRange,
                                                        UnitlessQuirk = UnitlessQuirk::kForbid);
-std::shared_ptr<const CSSPrimitiveValue> ConsumePercent(CSSParserTokenRange&,
-                                                        std::shared_ptr<const CSSParserContext> context,
-                                                        CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLength(CSSParserTokenRange&,
+                                                       std::shared_ptr<const CSSParserContext> context,
+                                                       CSSPrimitiveValue::ValueRange,
+                                                       UnitlessQuirk = UnitlessQuirk::kForbid); // Temporary for migration
 std::shared_ptr<const CSSPrimitiveValue> ConsumePercent(CSSParserTokenStream&,
                                                         std::shared_ptr<const CSSParserContext> context,
                                                         CSSPrimitiveValue::ValueRange);
+std::shared_ptr<const CSSPrimitiveValue> ConsumePercent(CSSParserTokenRange&,
+                                                        std::shared_ptr<const CSSParserContext> context,
+                                                        CSSPrimitiveValue::ValueRange); // Temporary for migration
 
 // Any percentages are converted to numbers.
-std::shared_ptr<const CSSPrimitiveValue> ConsumeNumberOrPercent(CSSParserTokenRange&,
-                                                                std::shared_ptr<const CSSParserContext> context,
-                                                                CSSPrimitiveValue::ValueRange);
 std::shared_ptr<const CSSPrimitiveValue> ConsumeNumberOrPercent(CSSParserTokenStream& stream,
                                                                 std::shared_ptr<const CSSParserContext>,
                                                                 CSSPrimitiveValue::ValueRange value_range);
 
 std::shared_ptr<const CSSPrimitiveValue> ConsumeAlphaValue(CSSParserTokenStream&,
                                                            std::shared_ptr<const CSSParserContext> context);
-std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercent(CSSParserTokenRange&,
-                                                                std::shared_ptr<const CSSParserContext> context,
-                                                                CSSPrimitiveValue::ValueRange,
-                                                                UnitlessQuirk = UnitlessQuirk::kForbid,
-                                                                CSSAnchorQueryTypes = kCSSAnchorQueryTypesNone,
-                                                                AllowCalcSize = AllowCalcSize::kForbid);
 std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercent(CSSParserTokenStream&,
                                                                 std::shared_ptr<const CSSParserContext> context,
                                                                 CSSPrimitiveValue::ValueRange,
                                                                 UnitlessQuirk = UnitlessQuirk::kForbid,
                                                                 CSSAnchorQueryTypes = kCSSAnchorQueryTypesNone,
                                                                 AllowCalcSize = AllowCalcSize::kForbid);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeLengthOrPercent(CSSParserTokenRange&,
+                                                                std::shared_ptr<const CSSParserContext> context,
+                                                                CSSPrimitiveValue::ValueRange,
+                                                                UnitlessQuirk = UnitlessQuirk::kForbid,
+                                                                CSSAnchorQueryTypes = kCSSAnchorQueryTypesNone,
+                                                                AllowCalcSize = AllowCalcSize::kForbid); // Temporary for migration
 std::shared_ptr<const CSSPrimitiveValue> ConsumeSVGGeometryPropertyLength(
     CSSParserTokenStream&,
     std::shared_ptr<const CSSParserContext> context,
     CSSPrimitiveValue::ValueRange);
 
-std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenRange&,
-                                                      std::shared_ptr<const CSSParserContext> context);
-std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenRange&,
-                                                      std::shared_ptr<const CSSParserContext> context,
-                                                      double minimum_value,
-                                                      double maximum_value);
 std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenStream&,
                                                       std::shared_ptr<const CSSParserContext> context);
 std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenStream&,
                                                       std::shared_ptr<const CSSParserContext> context,
                                                       double minimum_value,
                                                       double maximum_value);
+std::shared_ptr<const CSSPrimitiveValue> ConsumeAngle(CSSParserTokenRange&,
+                                                      std::shared_ptr<const CSSParserContext> context); // Temporary for migration
 
 template <typename T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
@@ -202,9 +193,8 @@ typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_
 ConsumeResolution(T& range, std::shared_ptr<const CSSParserContext>);
 
 std::shared_ptr<const CSSValue> ConsumeRatio(CSSParserTokenStream&, std::shared_ptr<const CSSParserContext> context);
-std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&);
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream&);
-std::shared_ptr<const CSSIdentifierValue> ConsumeIdentRange(CSSParserTokenRange&, CSSValueID lower, CSSValueID upper);
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&); // Temporary for migration
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdentRange(CSSParserTokenStream&, CSSValueID lower, CSSValueID upper);
 
 template <CSSValueID, CSSValueID...>
@@ -220,17 +210,9 @@ inline bool IdentMatches(CSSValueID id) {
 }
 
 template <CSSValueID... allowedIdents>
-std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&);
-template <CSSValueID... allowedIdents>
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream&);
-
-template <CSSValueID... names>
-std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange& range) {
-  if (range.Peek().GetType() != kIdentToken || !IdentMatches<names...>(range.Peek().Id())) {
-    return nullptr;
-  }
-  return CSSIdentifierValue::Create(range.ConsumeIncludingWhitespace().Id());
-}
+template <CSSValueID... allowedIdents>
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange&); // Temporary for migration
 
 template <CSSValueID... names>
 std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream& stream) {
@@ -240,23 +222,34 @@ std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenStream& str
   return CSSIdentifierValue::Create(stream.ConsumeIncludingWhitespace().Id());
 }
 
-std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRange&,
-                                                              std::shared_ptr<const CSSParserContext> context);
+template <CSSValueID... names>
+std::shared_ptr<const CSSIdentifierValue> ConsumeIdent(CSSParserTokenRange& range) {
+  if (range.Peek().GetType() != kIdentToken || !IdentMatches<names...>(range.Peek().Id())) {
+    return nullptr;
+  }
+  return CSSIdentifierValue::Create(range.ConsumeIncludingWhitespace().Id());
+}
+
 std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenStream&,
                                                               std::shared_ptr<const CSSParserContext> context);
+std::shared_ptr<const CSSCustomIdentValue> ConsumeCustomIdent(CSSParserTokenRange&,
+                                                              std::shared_ptr<const CSSParserContext> context); // Temporary for migration
+
+std::shared_ptr<const CSSCustomIdentValue> ConsumeCounterStyleName(CSSParserTokenStream&,
+                                                                   std::shared_ptr<const CSSParserContext> context);
 
 template <typename T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
                         std::shared_ptr<const CSSCustomIdentValue>>::type
 ConsumeDashedIdent(T& range, std::shared_ptr<const CSSParserContext>);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
-std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange& range);
+std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange&); // Temporary for migration
 std::string ConsumeStringAsString(CSSParserTokenStream& stream, bool* is_string_null);
 std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream&,
                                                   std::shared_ptr<const CSSParserContext> context);
 
-std::shared_ptr<const CSSValue> ConsumeCSSWideKeyword(CSSParserTokenRange&);
 std::shared_ptr<const CSSValue> ConsumeCSSWideKeyword(CSSParserTokenStream&);
+std::shared_ptr<const CSSValue> ConsumeCSSWideKeyword(CSSParserTokenRange&); // Temporary for migration
 
 // Some properties accept non-standard colors, like rgb values without a
 // preceding hash, in quirks mode.
@@ -270,26 +263,23 @@ typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_
 ConsumeColor(T& range, std::shared_ptr<const CSSParserContext>);
 
 // https://drafts.csswg.org/css-color-5/#absolute-color
-std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenRange&,
+std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenStream&,
                                                      std::shared_ptr<const CSSParserContext> context);
+std::shared_ptr<const CSSValue> ConsumeAbsoluteColor(CSSParserTokenRange&,
+                                                     std::shared_ptr<const CSSParserContext> context); // Temporary for migration
 
-std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenRange&,
-                                                 std::shared_ptr<const CSSParserContext> context,
-                                                 UnitlessQuirk);
 std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenStream&,
                                                  std::shared_ptr<const CSSParserContext> context,
                                                  UnitlessQuirk);
+std::shared_ptr<const CSSValue> ConsumeLineWidth(CSSParserTokenRange&,
+                                                 std::shared_ptr<const CSSParserContext> context,
+                                                 UnitlessQuirk); // Temporary for migration
 
 template <typename T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
                         std::shared_ptr<const CSSValuePair>>::type
 ConsumePosition(T& range, std::shared_ptr<const CSSParserContext>, UnitlessQuirk unitless);
 
-bool ConsumePosition(CSSParserTokenRange&,
-                     std::shared_ptr<const CSSParserContext> context,
-                     UnitlessQuirk,
-                     std::shared_ptr<const CSSValue>& result_x,
-                     std::shared_ptr<const CSSValue>& result_y);
 bool ConsumePosition(CSSParserTokenStream&,
                      std::shared_ptr<const CSSParserContext> context,
                      UnitlessQuirk,
@@ -363,7 +353,7 @@ std::shared_ptr<const CSSValue> ConsumeAnimationIterationCount(CSSParserTokenStr
                                                                std::shared_ptr<const CSSParserContext> context);
 // https://drafts.csswg.org/scroll-animations-1/#typedef-timeline-range-name
 std::shared_ptr<const CSSValue> ConsumeTimelineRangeName(CSSParserTokenStream&);
-std::shared_ptr<const CSSValue> ConsumeTimelineRangeName(CSSParserTokenRange&);
+std::shared_ptr<const CSSValue> ConsumeTimelineRangeName(CSSParserTokenRange&); // Temporary for migration
 std::shared_ptr<const CSSValue> ConsumeAnimationName(CSSParserTokenStream&,
                                                      std::shared_ptr<const CSSParserContext> context,
                                                      bool allow_quoted_name);
@@ -537,10 +527,9 @@ std::shared_ptr<const CSSValue> ConsumeMathDepth(CSSParserTokenStream& stream, s
 
 std::shared_ptr<const CSSValue> ConsumeFontPalette(CSSParserTokenStream&,
                                                    std::shared_ptr<const CSSParserContext> context);
-std::shared_ptr<const CSSValueList> ConsumeFontFamily(CSSParserTokenRange&);
 std::shared_ptr<const CSSValueList> ConsumeFontFamily(CSSParserTokenStream&);
-std::shared_ptr<const CSSValueList> ConsumeNonGenericFamilyNameList(CSSParserTokenRange& range);
-std::shared_ptr<const CSSValue> ConsumeGenericFamily(CSSParserTokenRange&);
+std::shared_ptr<const CSSValueList> ConsumeNonGenericFamilyNameList(CSSParserTokenStream& stream);
+std::shared_ptr<const CSSValueList> ConsumeNonGenericFamilyNameList(CSSParserTokenRange& range); // Temporary for migration
 std::shared_ptr<const CSSValue> ConsumeGenericFamily(CSSParserTokenStream&);
 
 template <typename T>
@@ -700,6 +689,14 @@ bool IsDefaultKeyword(const std::string_view&);
 bool IsHashIdentifier(const CSSParserToken&);
 bool IsDashedIdent(const CSSParserToken&);
 
+template <CSSValueID... disallowed_values>
+bool IsCustomIdent(CSSValueID id) {
+  if (IsCSSWideKeyword(id) || id == CSSValueID::kDefault) {
+    return false;
+  }
+  return !IdentMatches<disallowed_values...>(id);
+}
+
 bool ConsumeTranslate3d(CSSParserTokenStream& stream,
                         std::shared_ptr<const CSSParserContext>,
                         std::shared_ptr<CSSFunctionValue>& transform_value);
@@ -753,7 +750,8 @@ UnitlessQuirk UnitlessUnlessShorthand(const CSSParserLocalContext&);
 
 std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream& stream,
                                                   std::shared_ptr<const CSSParserContext>);
-std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenRange& range, std::shared_ptr<const CSSParserContext>);
+std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenRange& range,
+                                                  std::shared_ptr<const CSSParserContext>); // Temporary for migration
 
 std::shared_ptr<const CSSIdentifierValue> ConsumeShapeBox(CSSParserTokenStream&);
 std::shared_ptr<const CSSIdentifierValue> ConsumeVisualBox(CSSParserTokenStream&);

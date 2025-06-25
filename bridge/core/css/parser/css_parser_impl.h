@@ -287,7 +287,7 @@ class CSSParserImpl {
   [[nodiscard]] std::shared_ptr<const CSSParserContext> GetContext() const { return context_; }
 
   static std::unique_ptr<std::vector<KeyframeOffset>> ConsumeKeyframeKeyList(std::shared_ptr<const CSSParserContext>,
-                                                                             CSSParserTokenRange);
+                                                                             CSSParserTokenStream&);
 
   static std::string ParseCustomPropertyName(const std::string& name_text);
 

@@ -8,7 +8,6 @@
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/css_value_list.h"
 #include "core/css/css_value_pair.h"
-#include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_tokenized_value.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/parser/css_variable_parser.h"
@@ -18,10 +17,12 @@ namespace webf {
 
 namespace {
 
-std::shared_ptr<const CSSValue> ConsumeFontVariantList(CSSParserTokenRange& range) {
+
+// Stream versions of helper functions
+std::shared_ptr<const CSSValue> ConsumeFontVariantList(CSSParserTokenStream& stream) {
   std::shared_ptr<CSSValueList> values = CSSValueList::CreateCommaSeparated();
   do {
-    if (range.Peek().Id() == CSSValueID::kAll) {
+    if (stream.Peek().Id() == CSSValueID::kAll) {
       // FIXME: CSSPropertyParser::ParseFontVariant() implements
       // the old css3 draft:
       // http://www.w3.org/TR/2002/WD-css3-webfonts-20020802/#font-variant
@@ -29,13 +30,13 @@ std::shared_ptr<const CSSValue> ConsumeFontVariantList(CSSParserTokenRange& rang
       if (values->length()) {
         return nullptr;
       }
-      return css_parsing_utils::ConsumeIdent(range);
+      return css_parsing_utils::ConsumeIdent(stream);
     }
-    std::shared_ptr<const CSSIdentifierValue> font_variant = css_parsing_utils::ConsumeFontVariantCSS21(range);
+    std::shared_ptr<const CSSIdentifierValue> font_variant = css_parsing_utils::ConsumeFontVariantCSS21(stream);
     if (font_variant) {
       values->Append(font_variant);
     }
-  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(range));
+  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(stream));
 
   if (values->length()) {
     return values;
@@ -44,10 +45,67 @@ std::shared_ptr<const CSSValue> ConsumeFontVariantList(CSSParserTokenRange& rang
   return nullptr;
 }
 
-std::shared_ptr<const CSSIdentifierValue> ConsumeFontDisplay(CSSParserTokenRange& range) {
+std::shared_ptr<const CSSIdentifierValue> ConsumeFontDisplay(CSSParserTokenStream& stream) {
   return css_parsing_utils::ConsumeIdent<CSSValueID::kAuto, CSSValueID::kBlock, CSSValueID::kSwap,
-                                         CSSValueID::kFallback, CSSValueID::kOptional>(range);
+                                         CSSValueID::kFallback, CSSValueID::kOptional>(stream);
 }
+
+// Stream versions of helper functions for ConsumeFontFaceSrc
+std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenStream& stream,
+                                                      std::shared_ptr<const CSSParserContext> context);
+std::shared_ptr<const CSSValue> ConsumeFontFaceSrcLocal(CSSParserTokenStream& stream,
+                                                        std::shared_ptr<const CSSParserContext> context);
+
+std::shared_ptr<const CSSValue> ConsumeFontFaceSrcSkipToComma(
+    std::shared_ptr<const CSSValue> parse_function(CSSParserTokenStream&,
+                                                   std::shared_ptr<const CSSParserContext> context),
+    CSSParserTokenStream& stream,
+    std::shared_ptr<const CSSParserContext> context) {
+  std::shared_ptr<const CSSValue> parse_result = parse_function(stream, std::move(context));
+  stream.ConsumeWhitespace();
+  if (parse_result && (stream.AtEnd() || stream.Peek().GetType() == CSSParserTokenType::kCommaToken)) {
+    return parse_result;
+  }
+
+  while (!stream.AtEnd() && stream.Peek().GetType() != CSSParserTokenType::kCommaToken) {
+    stream.Consume();
+  }
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValueList> ConsumeFontFaceSrc(CSSParserTokenStream& stream,
+                                                       std::shared_ptr<const CSSParserContext> context) {
+  std::shared_ptr<CSSValueList> values = CSSValueList::CreateCommaSeparated();
+
+  stream.ConsumeWhitespace();
+  do {
+    const CSSParserToken& token = stream.Peek();
+    std::shared_ptr<CSSValue> parsed_value = nullptr;
+    if (token.FunctionId() == CSSValueID::kLocal) {
+      parsed_value =
+          std::const_pointer_cast<CSSValue>(ConsumeFontFaceSrcSkipToComma(ConsumeFontFaceSrcLocal, stream, context));
+    } else {
+      parsed_value =
+          std::const_pointer_cast<CSSValue>(ConsumeFontFaceSrcSkipToComma(ConsumeFontFaceSrcURI, stream, context));
+    }
+    if (parsed_value) {
+      values->Append(parsed_value);
+    }
+  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(stream));
+
+  return values->length() ? values : nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeFontMetricOverride(CSSParserTokenStream& stream,
+                                                          std::shared_ptr<const CSSParserContext> context) {
+  if (std::shared_ptr<const CSSIdentifierValue> normal = 
+          css_parsing_utils::ConsumeIdent<CSSValueID::kNormal>(stream)) {
+    return normal;
+  }
+  return css_parsing_utils::ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+}
+
+
 
 bool IsSupportedFontFormat(std::string font_format) {
   return css_parsing_utils::IsSupportedKeywordFormat(css_parsing_utils::FontFormatToId(font_format));
@@ -70,10 +128,10 @@ CSSFontFaceSrcValue::FontTechnology ValueIDToTechnology(CSSValueID valueID) {
       return CSSFontFaceSrcValue::FontTechnology::kTechnologyUnknown;
   }
 }
-
-std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenRange& range,
+// Stream versions of ConsumeFontFaceSrcURI and ConsumeFontFaceSrcLocal
+std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenStream& stream,
                                                       std::shared_ptr<const CSSParserContext> context) {
-  std::shared_ptr<const cssvalue::CSSURIValue> src_value = css_parsing_utils::ConsumeUrl(range, context);
+  std::shared_ptr<const cssvalue::CSSURIValue> src_value = css_parsing_utils::ConsumeUrl(stream, context);
   if (!src_value) {
     return nullptr;
   }
@@ -81,15 +139,16 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenRange& range
 
   // After the url() it's either the end of the src: line, or a comma
   // for the next url() or format().
-  if (!range.AtEnd() && range.Peek().GetType() != CSSParserTokenType::kCommaToken &&
-      (range.Peek().GetType() != CSSParserTokenType::kFunctionToken ||
-       (range.Peek().FunctionId() != CSSValueID::kFormat && range.Peek().FunctionId() != CSSValueID::kTech))) {
+  if (!stream.AtEnd() && stream.Peek().GetType() != CSSParserTokenType::kCommaToken &&
+      (stream.Peek().GetType() != CSSParserTokenType::kFunctionToken ||
+       (stream.Peek().FunctionId() != CSSValueID::kFormat && stream.Peek().FunctionId() != CSSValueID::kTech))) {
     return nullptr;
   }
 
-  if (range.Peek().FunctionId() == CSSValueID::kFormat) {
-    CSSParserTokenRange format_args = css_parsing_utils::ConsumeFunction(range);
-    CSSParserTokenType peek_type = format_args.Peek().GetType();
+  if (stream.Peek().FunctionId() == CSSValueID::kFormat) {
+    CSSParserTokenStream::BlockGuard guard(stream);
+    stream.ConsumeWhitespace();
+    CSSParserTokenType peek_type = stream.Peek().GetType();
     if (peek_type != kIdentToken && peek_type != kStringToken) {
       return nullptr;
     }
@@ -97,7 +156,7 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenRange& range
     std::string sanitized_format;
 
     if (peek_type == kIdentToken) {
-      std::shared_ptr<const CSSIdentifierValue> font_format = css_parsing_utils::ConsumeFontFormatIdent(format_args);
+      std::shared_ptr<const CSSIdentifierValue> font_format = css_parsing_utils::ConsumeFontFormatIdent(stream);
       if (!font_format) {
         return nullptr;
       }
@@ -105,7 +164,7 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenRange& range
     }
 
     if (peek_type == kStringToken) {
-      sanitized_format = css_parsing_utils::ConsumeString(format_args)->Value();
+      sanitized_format = css_parsing_utils::ConsumeString(stream)->Value();
     }
 
     if (IsSupportedFontFormat(sanitized_format)) {
@@ -114,20 +173,21 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenRange& range
       return nullptr;
     }
 
-    format_args.ConsumeWhitespace();
+    stream.ConsumeWhitespace();
 
     // After one argument to the format function, there shouldn't be anything
     // else, for example not a comma.
-    if (!format_args.AtEnd()) {
+    if (!stream.AtEnd()) {
       return nullptr;
     }
   }
 
-  if (range.Peek().FunctionId() == CSSValueID::kTech) {
-    CSSParserTokenRange tech_args = css_parsing_utils::ConsumeFunction(range);
+  if (stream.Peek().FunctionId() == CSSValueID::kTech) {
+    CSSParserTokenStream::BlockGuard guard(stream);
+    stream.ConsumeWhitespace();
 
     // One or more tech args expected.
-    if (tech_args.AtEnd()) {
+    if (stream.AtEnd()) {
       return nullptr;
     }
   }
@@ -135,19 +195,20 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenRange& range
   return uri_value;
 }
 
-std::shared_ptr<const CSSValue> ConsumeFontFaceSrcLocal(CSSParserTokenRange& range,
+std::shared_ptr<const CSSValue> ConsumeFontFaceSrcLocal(CSSParserTokenStream& stream,
                                                         std::shared_ptr<const CSSParserContext> context) {
-  CSSParserTokenRange args = css_parsing_utils::ConsumeFunction(range);
-  if (args.Peek().GetType() == kStringToken) {
-    const CSSParserToken& arg = args.ConsumeIncludingWhitespace();
-    if (!args.AtEnd()) {
+  CSSParserTokenStream::BlockGuard guard(stream);
+  
+  if (stream.Peek().GetType() == kStringToken) {
+    const CSSParserToken& arg = stream.ConsumeIncludingWhitespace();
+    if (!stream.AtEnd()) {
       return nullptr;
     }
     return CSSFontFaceSrcValue::CreateLocal(std::string(arg.Value()));
   }
-  if (args.Peek().GetType() == kIdentToken) {
-    std::string family_name = css_parsing_utils::ConcatenateFamilyName(args);
-    if (!args.AtEnd()) {
+  if (stream.Peek().GetType() == kIdentToken) {
+    std::string family_name = css_parsing_utils::ConcatenateFamilyName(stream);
+    if (!stream.AtEnd()) {
       return nullptr;
     }
     if (family_name.empty()) {
@@ -158,62 +219,27 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcLocal(CSSParserTokenRange& ran
   return nullptr;
 }
 
-std::shared_ptr<const CSSValue> ConsumeFontFaceSrcSkipToComma(
-    std::shared_ptr<const CSSValue> parse_function(CSSParserTokenRange&,
-                                                   std::shared_ptr<const CSSParserContext> context),
-    CSSParserTokenRange& range,
-    std::shared_ptr<const CSSParserContext> context) {
-  std::shared_ptr<const CSSValue> parse_result = parse_function(range, std::move(context));
-  range.ConsumeWhitespace();
-  if (parse_result && (range.AtEnd() || range.Peek().GetType() == CSSParserTokenType::kCommaToken)) {
-    return parse_result;
-  }
-
-  while (!range.AtEnd() && range.Peek().GetType() != CSSParserTokenType::kCommaToken) {
-    range.Consume();
-  }
-  return nullptr;
-}
-
-std::shared_ptr<const CSSValueList> ConsumeFontFaceSrc(CSSParserTokenRange& range,
-                                                       std::shared_ptr<const CSSParserContext> context) {
-  std::shared_ptr<CSSValueList> values = CSSValueList::CreateCommaSeparated();
-
-  range.ConsumeWhitespace();
-  do {
-    const CSSParserToken& token = range.Peek();
-    std::shared_ptr<CSSValue> parsed_value = nullptr;
-    if (token.FunctionId() == CSSValueID::kLocal) {
-      parsed_value =
-          std::const_pointer_cast<CSSValue>(ConsumeFontFaceSrcSkipToComma(ConsumeFontFaceSrcLocal, range, context));
-    } else {
-      parsed_value =
-          std::const_pointer_cast<CSSValue>(ConsumeFontFaceSrcSkipToComma(ConsumeFontFaceSrcURI, range, context));
-    }
-    if (parsed_value) {
-      values->Append(parsed_value);
-    }
-  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(range));
-
-  return values->length() ? values : nullptr;
-}
-
 std::shared_ptr<const CSSValue> ConsumeDescriptor(StyleRule::RuleType rule_type,
                                                   AtRuleDescriptorID id,
                                                   const CSSTokenizedValue& tokenized_value,
                                                   std::shared_ptr<const CSSParserContext> context) {
   using Parser = AtRuleDescriptorParser;
-  CSSParserTokenRange range = tokenized_value.range;
+  
+  // Convert tokenized_value to a stream
+  CSSTokenizer tokenizer(tokenized_value.range.Serialize());
+  CSSParserTokenStream stream(tokenizer);
 
   switch (rule_type) {
     case StyleRule::kFontFace:
       return Parser::ParseFontFaceDescriptor(id, tokenized_value, context);
     case StyleRule::kFontPaletteValues:
-      return Parser::ParseAtFontPaletteValuesDescriptor(id, range, context);
+      return Parser::ParseAtFontPaletteValuesDescriptor(id, stream, context);
     case StyleRule::kProperty:
       return Parser::ParseAtPropertyDescriptor(id, tokenized_value, context);
     case StyleRule::kViewTransition:
-      return Parser::ParseAtViewTransitionDescriptor(id, range, context);
+      return Parser::ParseAtViewTransitionDescriptor(id, stream, context);
+    case StyleRule::kCounterStyle:
+      return Parser::ParseAtCounterStyleDescriptor(id, stream, context);
     case StyleRule::kCharset:
     case StyleRule::kContainer:
     case StyleRule::kStyle:
@@ -240,24 +266,14 @@ std::shared_ptr<const CSSValue> ConsumeDescriptor(StyleRule::RuleType rule_type,
   }
 }
 
-std::shared_ptr<const CSSValue> ConsumeFontMetricOverride(CSSParserTokenRange& range,
-                                                          std::shared_ptr<const CSSParserContext> context) {
-  // Copy Blink's implementation exactly, but adapted for CSSParserTokenRange
-  if (std::shared_ptr<const CSSIdentifierValue> normal = 
-          css_parsing_utils::ConsumeIdent<CSSValueID::kNormal>(range)) {
-    return normal;
-  }
-  return css_parsing_utils::ConsumePercent(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
-}
-
 }  // namespace
 
 std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
     AtRuleDescriptorID id,
-    CSSParserTokenRange& range,
+    CSSParserTokenStream& stream,
     std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<const CSSValue> parsed_value = nullptr;
-  range.ConsumeWhitespace();
+  stream.ConsumeWhitespace();
   switch (id) {
     case AtRuleDescriptorID::FontFamily:
       // In order to avoid confusion, <family-name> does not accept unquoted
@@ -265,52 +281,52 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
       // ConsumeGenericFamily will take care of excluding the former while the
       // ConsumeFamilyName will take care of excluding the latter.
       // See https://drafts.csswg.org/css-fonts/#family-name-syntax,
-      if (css_parsing_utils::ConsumeGenericFamily(range)) {
+      if (css_parsing_utils::ConsumeGenericFamily(stream)) {
         return nullptr;
       }
-      parsed_value = css_parsing_utils::ConsumeFamilyName(range);
+      parsed_value = css_parsing_utils::ConsumeFamilyName(stream);
       break;
     case AtRuleDescriptorID::Src:  // This is a list of urls or local
                                    // references.
-      parsed_value = ConsumeFontFaceSrc(range, context);
+      parsed_value = ConsumeFontFaceSrc(stream, context);
       break;
     case AtRuleDescriptorID::FontDisplay:
-      parsed_value = ConsumeFontDisplay(range);
+      parsed_value = ConsumeFontDisplay(stream);
       break;
     case AtRuleDescriptorID::FontStretch: {
       CSSParserContext::ParserModeOverridingScope scope(*context, kCSSFontFaceRuleMode);
-      parsed_value = css_parsing_utils::ConsumeFontStretch(range, context);
+      parsed_value = css_parsing_utils::ConsumeFontStretch(stream, context);
       break;
     }
     case AtRuleDescriptorID::FontStyle: {
       CSSParserContext::ParserModeOverridingScope scope(*context, kCSSFontFaceRuleMode);
-      parsed_value = css_parsing_utils::ConsumeFontStyle(range, context);
+      parsed_value = css_parsing_utils::ConsumeFontStyle(stream, context);
       break;
     }
     case AtRuleDescriptorID::FontVariant:
-      parsed_value = ConsumeFontVariantList(range);
+      parsed_value = ConsumeFontVariantList(stream);
       break;
     case AtRuleDescriptorID::FontWeight: {
       CSSParserContext::ParserModeOverridingScope scope(*context, kCSSFontFaceRuleMode);
-      parsed_value = css_parsing_utils::ConsumeFontWeight(range, context);
+      parsed_value = css_parsing_utils::ConsumeFontWeight(stream, context);
       break;
     }
     case AtRuleDescriptorID::FontFeatureSettings:
-      parsed_value = css_parsing_utils::ConsumeFontFeatureSettings(range, context);
+      parsed_value = css_parsing_utils::ConsumeFontFeatureSettings(stream, context);
       break;
     case AtRuleDescriptorID::AscentOverride:
     case AtRuleDescriptorID::DescentOverride:
     case AtRuleDescriptorID::LineGapOverride:
-      parsed_value = ConsumeFontMetricOverride(range, context);
+      parsed_value = ConsumeFontMetricOverride(stream, context);
       break;
     case AtRuleDescriptorID::SizeAdjust:
-      parsed_value = css_parsing_utils::ConsumePercent(range, context, CSSPrimitiveValue::ValueRange::kNonNegative);
+      parsed_value = css_parsing_utils::ConsumePercent(stream, context, CSSPrimitiveValue::ValueRange::kNonNegative);
       break;
     default:
       break;
   }
 
-  if (!parsed_value || !range.AtEnd()) {
+  if (!parsed_value || !stream.AtEnd()) {
     return nullptr;
   }
 
@@ -322,34 +338,31 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
     const std::string& string,
     std::shared_ptr<const CSSParserContext> context) {
   CSSTokenizer tokenizer(string);
-  std::vector<CSSParserToken> tokens;
-  tokens.reserve(32);
-
-  tokens = tokenizer.TokenizeToEOF();
-  CSSParserTokenRange range = CSSParserTokenRange(tokens);
-  return ParseFontFaceDescriptor(id, range, context);
+  CSSParserTokenStream stream(tokenizer);
+  return ParseFontFaceDescriptor(id, stream, context);
 }
 
 std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
     AtRuleDescriptorID id,
     const CSSTokenizedValue& tokenized_value,
     std::shared_ptr<const CSSParserContext> context) {
-  CSSParserTokenRange range = tokenized_value.range;
-  return ParseFontFaceDescriptor(id, range, context);
+  CSSTokenizer tokenizer(tokenized_value.range.Serialize());
+  CSSParserTokenStream stream(tokenizer);
+  return ParseFontFaceDescriptor(id, stream, context);
 }
 
 std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDeclaration(
-    CSSParserTokenRange& range,
+    CSSParserTokenStream& stream,
     std::shared_ptr<const CSSParserContext> context) {
-  DCHECK_EQ(range.Peek().GetType(), kIdentToken);
-  const CSSParserToken& token = range.ConsumeIncludingWhitespace();
+  DCHECK_EQ(stream.Peek().GetType(), kIdentToken);
+  const CSSParserToken& token = stream.ConsumeIncludingWhitespace();
   AtRuleDescriptorID id = token.ParseAsAtRuleDescriptorID();
 
-  if (range.Consume().GetType() != kColonToken) {
+  if (stream.Consume().GetType() != kColonToken) {
     return nullptr;  // Parse error
   }
 
-  return ParseFontFaceDescriptor(id, range, context);
+  return ParseFontFaceDescriptor(id, stream, context);
 }
 
 std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtPropertyDescriptor(
@@ -357,25 +370,29 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtPropertyDescripto
     const CSSTokenizedValue& tokenized_value,
     std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<const CSSValue> parsed_value = nullptr;
-  CSSParserTokenRange range = tokenized_value.range;
+  
+  // Create a stream from the tokenized value
+  CSSTokenizer tokenizer(std::string(tokenized_value.text));
+  CSSParserTokenStream stream(tokenizer);
+  
   switch (id) {
     case AtRuleDescriptorID::Syntax:
-      range.ConsumeWhitespace();
-      parsed_value = css_parsing_utils::ConsumeString(range);
+      stream.ConsumeWhitespace();
+      parsed_value = css_parsing_utils::ConsumeString(stream);
       break;
     case AtRuleDescriptorID::InitialValue: {
       // Note that we must retain leading whitespace here.
       return CSSVariableParser::ParseDeclarationValue(tokenized_value, false /* is_animation_tainted */, context);
     }
     case AtRuleDescriptorID::Inherits:
-      range.ConsumeWhitespace();
-      parsed_value = css_parsing_utils::ConsumeIdent<CSSValueID::kTrue, CSSValueID::kFalse>(range);
+      stream.ConsumeWhitespace();
+      parsed_value = css_parsing_utils::ConsumeIdent<CSSValueID::kTrue, CSSValueID::kFalse>(stream);
       break;
     default:
       break;
   }
 
-  if (!parsed_value || !range.AtEnd()) {
+  if (!parsed_value || !stream.AtEnd()) {
     return nullptr;
   }
 
@@ -384,23 +401,23 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtPropertyDescripto
 
 std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtViewTransitionDescriptor(
     AtRuleDescriptorID id,
-    CSSParserTokenRange& range,
+    CSSParserTokenStream& stream,
     std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<const CSSValue> parsed_value = nullptr;
   switch (id) {
     case AtRuleDescriptorID::Navigation:
-      range.ConsumeWhitespace();
-      parsed_value = css_parsing_utils::ConsumeIdent<CSSValueID::kAuto, CSSValueID::kNone>(range);
+      stream.ConsumeWhitespace();
+      parsed_value = css_parsing_utils::ConsumeIdent<CSSValueID::kAuto, CSSValueID::kNone>(stream);
       break;
     case AtRuleDescriptorID::Types: {
       std::shared_ptr<CSSValueList> types = CSSValueList::CreateSpaceSeparated();
       parsed_value = types;
-      while (!range.AtEnd()) {
-        range.ConsumeWhitespace();
-        if (range.Peek().Id() == CSSValueID::kNone) {
+      while (!stream.AtEnd()) {
+        stream.ConsumeWhitespace();
+        if (stream.Peek().Id() == CSSValueID::kNone) {
           return nullptr;
         }
-        std::shared_ptr<const CSSCustomIdentValue> ident = css_parsing_utils::ConsumeCustomIdent(range, context);
+        std::shared_ptr<const CSSCustomIdentValue> ident = css_parsing_utils::ConsumeCustomIdent(stream, context);
         if (!ident || base::StartsWith(ident->Value(), "-ua-")) {
           return nullptr;
         }
@@ -412,7 +429,7 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtViewTransitionDes
       break;
   }
 
-  if (!parsed_value || !range.AtEnd()) {
+  if (!parsed_value || !stream.AtEnd()) {
     return nullptr;
   }
 
@@ -437,30 +454,47 @@ bool AtRuleDescriptorParser::ParseAtRule(StyleRule::RuleType rule_type,
   return true;
 }
 
-std::shared_ptr<const CSSValue> ConsumeFontFamily(CSSParserTokenRange& range,
+// Stream versions of font palette helper functions
+std::shared_ptr<const CSSValue> ConsumeFontFamily(CSSParserTokenStream& stream,
+                                                  std::shared_ptr<const CSSParserContext> context);
+std::shared_ptr<const CSSValue> ConsumeBasePalette(CSSParserTokenStream& stream,
+                                                   std::shared_ptr<const CSSParserContext> context);
+std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenStream& stream,
+                                                    std::shared_ptr<const CSSParserContext> context);
+std::shared_ptr<const CSSValue> ConsumeFontFamily(CSSParserTokenStream& stream,
                                                   std::shared_ptr<const CSSParserContext> context) {
-  return css_parsing_utils::ConsumeNonGenericFamilyNameList(range);
+  return css_parsing_utils::ConsumeNonGenericFamilyNameList(stream);
 }
-
-std::shared_ptr<const CSSValue> ConsumeBasePalette(CSSParserTokenRange& range,
+std::shared_ptr<const CSSValue> ConsumeBasePalette(CSSParserTokenStream& stream,
                                                    std::shared_ptr<const CSSParserContext> context) {
-  if (auto ident = css_parsing_utils::ConsumeIdent<CSSValueID::kLight, CSSValueID::kDark>(range)) {
+  if (auto ident = css_parsing_utils::ConsumeIdent<CSSValueID::kLight, CSSValueID::kDark>(stream)) {
     return ident;
   }
 
-  return css_parsing_utils::ConsumeInteger(range, context, 0);
+  auto palette_index = css_parsing_utils::ConsumeInteger(stream, context, 0);
+  if (palette_index) {
+    // TODO: Add IsElementDependent check when WebF supports it
+    // Only calc() expressions that can be fully simplified at parse time are
+    // valid. If not, they rely on an element context, and @font-palette-values
+    // descriptors are not in an element context.
+    return palette_index;
+  }
+  return nullptr;
 }
-
-std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenRange& range,
-                                                     std::shared_ptr<const CSSParserContext> context) {
+std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenStream& stream,
+                                                    std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
   do {
-    auto color_index = css_parsing_utils::ConsumeInteger(range, context, 0);
+    auto color_index = css_parsing_utils::ConsumeInteger(stream, context, 0);
     if (!color_index) {
+      // TODO: Add IsElementDependent check when WebF supports it
+      // Only calc() expressions that can be fully simplified at parse time are
+      // valid. If not, they rely on an element context, and
+      // @font-palette-values descriptors are not in an element context.
       return nullptr;
     }
-    range.ConsumeWhitespace();
-    auto color = css_parsing_utils::ConsumeAbsoluteColor(range, context);
+    stream.ConsumeWhitespace();
+    auto color = css_parsing_utils::ConsumeAbsoluteColor(stream, context);
     if (!color) {
       return nullptr;
     }
@@ -469,8 +503,8 @@ std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenRange& range,
       return nullptr;
     }
     list->Append(std::make_shared<CSSValuePair>(color_index, color, CSSValuePair::kKeepIdenticalValues));
-  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(range));
-  if (!range.AtEnd() || !list->length()) {
+  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(stream));
+  if (!stream.AtEnd() || !list->length()) {
     return nullptr;
   }
 
@@ -479,28 +513,335 @@ std::shared_ptr<const CSSValue> ConsumeColorOverride(CSSParserTokenRange& range,
 
 std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtFontPaletteValuesDescriptor(
     AtRuleDescriptorID id,
-    CSSParserTokenRange& range,
+    CSSParserTokenStream& stream,
     std::shared_ptr<const CSSParserContext> context) {
   std::shared_ptr<const CSSValue> parsed_value = nullptr;
+  CSSParserContext::ParserModeOverridingScope scope(
+      *context, kCSSFontPaletteValuesRuleMode);
 
   switch (id) {
     case AtRuleDescriptorID::FontFamily:
-      range.ConsumeWhitespace();
-      parsed_value = ConsumeFontFamily(range, context);
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeFontFamily(stream, context);
       break;
     case AtRuleDescriptorID::BasePalette:
-      range.ConsumeWhitespace();
-      parsed_value = ConsumeBasePalette(range, context);
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeBasePalette(stream, context);
       break;
     case AtRuleDescriptorID::OverrideColors:
-      range.ConsumeWhitespace();
-      parsed_value = ConsumeColorOverride(range, context);
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeColorOverride(stream, context);
       break;
     default:
       break;
   }
 
-  if (!parsed_value || !range.AtEnd()) {
+  if (!parsed_value || !stream.AtEnd()) {
+    return nullptr;
+  }
+
+  return parsed_value;
+}
+
+namespace {
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleSymbol(CSSParserTokenStream& stream,
+                                                          std::shared_ptr<const CSSParserContext> context) {
+  // <symbol> = <string> | <image> | <custom-ident>
+  if (std::shared_ptr<const CSSValue> string = css_parsing_utils::ConsumeString(stream)) {
+    return string;
+  }
+  // TODO: Add image support when WebF supports CSS images in counter styles
+  // For now, skip the RuntimeEnabledFeatures check and image parsing
+  if (std::shared_ptr<const CSSCustomIdentValue> custom_ident =
+          css_parsing_utils::ConsumeCustomIdent(stream, context)) {
+    return custom_ident;
+  }
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleSystem(CSSParserTokenStream& stream,
+                                                          std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: cyclic | numeric | alphabetic | symbolic | additive |
+  // [ fixed <integer>? ] | [ extends <counter-style-name> ]
+  if (std::shared_ptr<const CSSValue> ident = css_parsing_utils::ConsumeIdent<
+          CSSValueID::kCyclic, CSSValueID::kSymbolic, CSSValueID::kAlphabetic,
+          CSSValueID::kNumeric, CSSValueID::kAdditive>(stream)) {
+    return ident;
+  }
+
+  if (std::shared_ptr<const CSSValue> ident =
+          css_parsing_utils::ConsumeIdent<CSSValueID::kFixed>(stream)) {
+    std::shared_ptr<const CSSPrimitiveValue> first_symbol_value =
+        css_parsing_utils::ConsumeInteger(stream, context);
+    if (!first_symbol_value) {
+      first_symbol_value = CSSNumericLiteralValue::Create(
+          1, CSSPrimitiveValue::UnitType::kInteger);
+    } else {
+      // For fixed system, the integer must be positive
+      if (first_symbol_value->GetFloatValue() <= 0) {
+        return nullptr;
+      }
+    }
+    // WebF doesn't have IsElementDependent yet
+    return std::make_shared<CSSValuePair>(
+        ident, first_symbol_value, CSSValuePair::kKeepIdenticalValues);
+  }
+
+  if (std::shared_ptr<const CSSValue> ident =
+          css_parsing_utils::ConsumeIdent<CSSValueID::kExtends>(stream)) {
+    std::shared_ptr<const CSSValue> extended =
+        css_parsing_utils::ConsumeCounterStyleName(stream, context);
+    if (!extended) {
+      return nullptr;
+    }
+    return std::make_shared<CSSValuePair>(
+        ident, extended, CSSValuePair::kKeepIdenticalValues);
+  }
+
+  // Internal keywords for predefined counter styles that use special
+  // algorithms. For example, 'simp-chinese-informal'.
+  if (context->Mode() == kUASheetMode) {
+    if (std::shared_ptr<const CSSValue> ident = css_parsing_utils::ConsumeIdent<
+            CSSValueID::kInternalHebrew,
+            CSSValueID::kInternalSimpChineseInformal,
+            CSSValueID::kInternalSimpChineseFormal,
+            CSSValueID::kInternalTradChineseInformal,
+            CSSValueID::kInternalTradChineseFormal,
+            CSSValueID::kInternalKoreanHangulFormal,
+            CSSValueID::kInternalKoreanHanjaInformal,
+            CSSValueID::kInternalKoreanHanjaFormal,
+            CSSValueID::kInternalLowerArmenian,
+            CSSValueID::kInternalUpperArmenian,
+            CSSValueID::kInternalEthiopicNumeric>(stream)) {
+      return ident;
+    }
+  }
+
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleNegative(CSSParserTokenStream& stream,
+                                                            std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: <symbol> <symbol>?
+  std::shared_ptr<const CSSValue> prepend = ConsumeCounterStyleSymbol(stream, context);
+  if (!prepend) {
+    return nullptr;
+  }
+  if (stream.AtEnd()) {
+    return prepend;
+  }
+
+  std::shared_ptr<const CSSValue> append = ConsumeCounterStyleSymbol(stream, context);
+  if (!append || !stream.AtEnd()) {
+    return nullptr;
+  }
+
+  return std::make_shared<CSSValuePair>(prepend, append,
+                                        CSSValuePair::kKeepIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleRangeBound(CSSParserTokenStream& stream,
+                                                              std::shared_ptr<const CSSParserContext> context) {
+  if (std::shared_ptr<const CSSValue> infinite =
+          css_parsing_utils::ConsumeIdent<CSSValueID::kInfinite>(stream)) {
+    return infinite;
+  }
+  if (std::shared_ptr<const CSSPrimitiveValue> integer =
+          css_parsing_utils::ConsumeInteger(stream, context)) {
+    // WebF doesn't have IsElementDependent yet
+    return integer;
+  }
+  return nullptr;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleRange(CSSParserTokenStream& stream,
+                                                         std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: [ [ <integer> | infinite ]{2} ]# | auto
+  if (std::shared_ptr<const CSSValue> auto_value =
+          css_parsing_utils::ConsumeIdent<CSSValueID::kAuto>(stream)) {
+    return auto_value;
+  }
+
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
+  do {
+    std::shared_ptr<const CSSValue> lower_bound = ConsumeCounterStyleRangeBound(stream, context);
+    if (!lower_bound) {
+      return nullptr;
+    }
+    std::shared_ptr<const CSSValue> upper_bound = ConsumeCounterStyleRangeBound(stream, context);
+    if (!upper_bound) {
+      return nullptr;
+    }
+
+    // If the lower bound of any range is higher than the upper bound, the
+    // entire descriptor is invalid and must be ignored.
+    // TODO: Add range validation when WebF supports MediaValues
+    
+    list->Append(std::make_shared<CSSValuePair>(
+        lower_bound, upper_bound, CSSValuePair::kKeepIdenticalValues));
+  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(stream));
+  if (!stream.AtEnd() || !list->length()) {
+    return nullptr;
+  }
+  return list;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStylePad(CSSParserTokenStream& stream,
+                                                       std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: <integer [0,∞]> && <symbol>
+  std::shared_ptr<const CSSPrimitiveValue> integer = nullptr;
+  std::shared_ptr<const CSSValue> symbol = nullptr;
+  while (!integer || !symbol) {
+    if (!integer) {
+      integer = css_parsing_utils::ConsumeInteger(stream, context, 0);
+      if (integer) {
+        // WebF doesn't have IsElementDependent yet
+        continue;
+      }
+    }
+    if (!symbol) {
+      symbol = ConsumeCounterStyleSymbol(stream, context);
+      if (symbol) {
+        continue;
+      }
+    }
+    return nullptr;
+  }
+  if (!stream.AtEnd()) {
+    return nullptr;
+  }
+
+  return std::make_shared<CSSValuePair>(integer, symbol,
+                                        CSSValuePair::kKeepIdenticalValues);
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleSymbols(CSSParserTokenStream& stream,
+                                                           std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: <symbol>+
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
+  while (!stream.AtEnd()) {
+    std::shared_ptr<const CSSValue> symbol = ConsumeCounterStyleSymbol(stream, context);
+    if (!symbol) {
+      return nullptr;
+    }
+    list->Append(symbol);
+  }
+  if (!list->length()) {
+    return nullptr;
+  }
+  return list;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleAdditiveSymbols(CSSParserTokenStream& stream,
+                                                                   std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: [ <integer [0,∞]> && <symbol> ]#
+  std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
+  std::shared_ptr<const CSSPrimitiveValue> last_integer = nullptr;
+  do {
+    std::shared_ptr<const CSSPrimitiveValue> integer = nullptr;
+    std::shared_ptr<const CSSValue> symbol = nullptr;
+    while (!integer || !symbol) {
+      if (!integer) {
+        integer = css_parsing_utils::ConsumeInteger(stream, context, 0);
+        if (integer) {
+          // WebF doesn't have IsElementDependent yet
+          continue;
+        }
+      }
+      if (!symbol) {
+        symbol = ConsumeCounterStyleSymbol(stream, context);
+        if (symbol) {
+          continue;
+        }
+      }
+      return nullptr;
+    }
+
+    if (last_integer) {
+      // The additive tuples must be specified in order of strictly descending
+      // weight; otherwise, the declaration is invalid and must be ignored.
+      // TODO: Add weight validation when WebF supports MediaValues
+    }
+    last_integer = integer;
+
+    list->Append(std::make_shared<CSSValuePair>(
+        integer, symbol, CSSValuePair::kKeepIdenticalValues));
+  } while (css_parsing_utils::ConsumeCommaIncludingWhitespace(stream));
+  if (!stream.AtEnd() || !list->length()) {
+    return nullptr;
+  }
+  return list;
+}
+
+std::shared_ptr<const CSSValue> ConsumeCounterStyleSpeakAs(CSSParserTokenStream& stream,
+                                                           std::shared_ptr<const CSSParserContext> context) {
+  // Syntax: auto | bullets | numbers | words | <counter-style-name>
+  // We don't support spell-out now.
+  if (std::shared_ptr<const CSSValue> ident = css_parsing_utils::ConsumeIdent<
+          CSSValueID::kAuto, CSSValueID::kBullets, CSSValueID::kNumbers,
+          CSSValueID::kWords>(stream)) {
+    return ident;
+  }
+  if (std::shared_ptr<const CSSValue> name =
+          css_parsing_utils::ConsumeCounterStyleName(stream, context)) {
+    return name;
+  }
+  return nullptr;
+}
+
+}  // namespace
+
+
+std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtCounterStyleDescriptor(
+    AtRuleDescriptorID id,
+    CSSParserTokenStream& stream,
+    std::shared_ptr<const CSSParserContext> context) {
+  std::shared_ptr<const CSSValue> parsed_value = nullptr;
+  switch (id) {
+    case AtRuleDescriptorID::System:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleSystem(stream, context);
+      break;
+    case AtRuleDescriptorID::Negative:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleNegative(stream, context);
+      break;
+    case AtRuleDescriptorID::Prefix:
+    case AtRuleDescriptorID::Suffix:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleSymbol(stream, context);
+      break;
+    case AtRuleDescriptorID::Range:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleRange(stream, context);
+      break;
+    case AtRuleDescriptorID::Pad:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStylePad(stream, context);
+      break;
+    case AtRuleDescriptorID::Fallback:
+      stream.ConsumeWhitespace();
+      parsed_value =
+          css_parsing_utils::ConsumeCounterStyleName(stream, context);
+      break;
+    case AtRuleDescriptorID::Symbols:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleSymbols(stream, context);
+      break;
+    case AtRuleDescriptorID::AdditiveSymbols:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleAdditiveSymbols(stream, context);
+      break;
+    case AtRuleDescriptorID::SpeakAs:
+      stream.ConsumeWhitespace();
+      parsed_value = ConsumeCounterStyleSpeakAs(stream, context);
+      break;
+    default:
+      break;
+  }
+
+  if (!parsed_value || !stream.AtEnd()) {
     return nullptr;
   }
 

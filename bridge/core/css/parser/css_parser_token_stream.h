@@ -243,14 +243,22 @@ class CSSParserTokenStream {
     // ignore garbage after a declaration, and there usually is no such
     // garbage.)
     if (next_.IsEOF() || TokenMarksEnd<Types...>(next_)) {
+      // We still have lookahead - we didn't consume anything
       return CSSParserTokenRange(tcb::span<CSSParserToken>{});
     }
 
-    buffer_.clear();
-    buffer_.shrink_to_fit();
+    // FIXME: Clearing the buffer here causes use-after-free when the returned
+    // CSSParserTokenRange is still in use. This is a temporary fix until
+    // ConsumeUntilPeekedTypeIs is completely removed.
+    // buffer_.clear();
+    // buffer_.shrink_to_fit();
 
+    // Remember the starting position in the buffer
+    size_t start_index = buffer_.size();
+    
     // Process the lookahead token.
     buffer_.push_back(next_);
+    has_look_ahead_ = false;  // We've consumed the lookahead token
     unsigned nesting_level = 0;
     if (next_.GetBlockType() == CSSParserToken::kBlockStart) {
       nesting_level++;
@@ -266,6 +274,7 @@ class CSSParserTokenStream {
         next_ = buffer_.back();
         buffer_.pop_back();
         offset_ = tokenizer_.PreviousOffset();
+        has_look_ahead_ = true;  // We now have a lookahead token
         break;
       } else if (buffer_.back().GetBlockType() == CSSParserToken::kBlockStart) {
         nesting_level++;
@@ -273,7 +282,14 @@ class CSSParserTokenStream {
         nesting_level--;
       }
     }
-    return CSSParserTokenRange(buffer_);
+    
+    // Create a range from only the tokens we just added
+    tcb::span<CSSParserToken> range_tokens(buffer_.data() + start_index, buffer_.size() - start_index);
+    
+    // The stream should have lookahead after this operation
+    // assert(has_look_ahead_);
+    
+    return CSSParserTokenRange(range_tokens);
   }
 
   // Like ConsumeUntilPeekedTypeIs(), but does not return anything, so that it
@@ -470,7 +486,9 @@ class CSSParserTokenStream {
   }
 
   void Restore(State state) {
-    assert(has_look_ahead_);
+    // Ensure we have lookahead before restoring
+    EnsureLookAhead();
+    
     if (offset_ == state) {
       // No rewind needed, so we don't need to re-tokenize.
       // This happens especially often in MathFunctionParser

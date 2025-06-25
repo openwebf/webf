@@ -71,5 +71,36 @@
     {
       name: "unicode-range",
     },
+    // @counter-style descriptors
+    {
+      name: "system",
+    },
+    {
+      name: "negative",
+    },
+    {
+      name: "prefix",
+    },
+    {
+      name: "suffix",
+    },
+    {
+      name: "range",
+    },
+    {
+      name: "pad",
+    },
+    {
+      name: "fallback",
+    },
+    {
+      name: "symbols",
+    },
+    {
+      name: "additive-symbols",
+    },
+    {
+      name: "speak-as",
+    },
   ],
 }

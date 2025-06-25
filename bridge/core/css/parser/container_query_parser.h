@@ -12,6 +12,7 @@
 namespace webf {
 
 class CSSParserContext;
+class CSSParserTokenStream;
 
 class ContainerQueryParser {
   WEBF_STACK_ALLOCATED();
@@ -21,28 +22,22 @@ class ContainerQueryParser {
 
   // https://drafts.csswg.org/css-contain-3/#typedef-container-condition
   std::shared_ptr<const MediaQueryExpNode> ParseCondition(const std::string&);
-  std::shared_ptr<const MediaQueryExpNode> ParseCondition(CSSParserTokenRange, const CSSParserTokenOffsets&);
+  std::shared_ptr<const MediaQueryExpNode> ParseCondition(CSSParserTokenStream&);
 
  private:
   friend class ContainerQueryParserTest;
 
   using FeatureSet = MediaQueryParser::FeatureSet;
 
-  std::shared_ptr<const MediaQueryExpNode> ConsumeQueryInParens(CSSParserTokenRange&,
-                                                                const CSSParserTokenOffsets& offsets);
-  std::shared_ptr<const MediaQueryExpNode> ConsumeContainerCondition(CSSParserTokenRange&,
-                                                                     const CSSParserTokenOffsets&);
-  std::shared_ptr<const MediaQueryExpNode> ConsumeFeatureQuery(CSSParserTokenRange&,
-                                                               const CSSParserTokenOffsets& offsets,
+  std::shared_ptr<const MediaQueryExpNode> ConsumeQueryInParens(CSSParserTokenStream&);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeContainerCondition(CSSParserTokenStream&);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeFeatureQuery(CSSParserTokenStream&,
                                                                const FeatureSet&);
-  std::shared_ptr<const MediaQueryExpNode> ConsumeFeatureQueryInParens(CSSParserTokenRange&,
-                                                                       const CSSParserTokenOffsets&,
+  std::shared_ptr<const MediaQueryExpNode> ConsumeFeatureQueryInParens(CSSParserTokenStream&,
                                                                        const FeatureSet&);
-  std::shared_ptr<const MediaQueryExpNode> ConsumeFeatureCondition(CSSParserTokenRange&,
-                                                                   const CSSParserTokenOffsets& offsets,
+  std::shared_ptr<const MediaQueryExpNode> ConsumeFeatureCondition(CSSParserTokenStream&,
                                                                    const FeatureSet&);
-  std::shared_ptr<const MediaQueryExpNode> ConsumeFeature(CSSParserTokenRange&,
-                                                          const CSSParserTokenOffsets& offsets,
+  std::shared_ptr<const MediaQueryExpNode> ConsumeFeature(CSSParserTokenStream&,
                                                           const FeatureSet&);
 
   const CSSParserContext& context_;

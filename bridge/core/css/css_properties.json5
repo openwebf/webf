@@ -8726,6 +8726,57 @@
       is_property: false,
       runtime_flag: "ViewTransitionOnNavigation",
     },
+    // @counter-style descriptors
+    {
+      name: "system",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "negative",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "prefix",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "suffix",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "range",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "pad",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "fallback",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "symbols",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "additive-symbols",
+      is_descriptor: true,
+      is_property: false,
+    },
+    {
+      name: "speak-as",
+      is_descriptor: true,
+      is_property: false,
+    },
     // Shorthands
 //    {
 //      name: "animation",

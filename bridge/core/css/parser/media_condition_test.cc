@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "core/css/media_list.h"
+#include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/parser/media_query_parser.h"
 #include "gtest/gtest.h"
@@ -46,11 +47,9 @@ TEST(MediaConditionParserTest, Basic) {
 
   for (unsigned i = 0; test_cases[i].input; ++i) {
     SCOPED_TRACE(test_cases[i].input);
-    std::string_view str(test_cases[i].input);
     CSSTokenizer tokenizer(test_cases[i].input);
-    const auto [tokens, offsets] = tokenizer.TokenizeToEOFWithOffsets();
-    std::shared_ptr<MediaQuerySet> media_condition_query_set = MediaQueryParser::ParseMediaCondition(
-        CSSParserTokenRange(tokens), CSSParserTokenOffsets(tokens, std::move(offsets), str), nullptr);
+    CSSParserTokenStream stream(tokenizer);
+    std::shared_ptr<MediaQuerySet> media_condition_query_set = MediaQueryParser::ParseMediaCondition(stream, nullptr);
     std::string query_text = media_condition_query_set->MediaText();
     const char* expected_text = test_cases[i].output ? test_cases[i].output : test_cases[i].input;
     EXPECT_EQ(expected_text, query_text);

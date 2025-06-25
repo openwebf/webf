@@ -4,6 +4,7 @@
 
 #include "core/css/parser/container_query_parser.h"
 #include "core/css/parser/css_parser_context.h"
+#include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "gtest/gtest.h"
 
@@ -39,11 +40,10 @@ class ContainerQueryParserTest : public testing::Test {
   // E.g. https://drafts.csswg.org/css-contain-3/#typedef-style-query
   std::string ParseFeatureQuery(std::string feature_query) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-    auto [tokens, raw_offsets] = CSSTokenizer(feature_query).TokenizeToEOFWithOffsets();
-    CSSParserTokenRange range(tokens);
-    CSSParserTokenOffsets offsets(tokens, std::move(raw_offsets), feature_query);
-    auto node = ContainerQueryParser(*context).ConsumeFeatureQuery(range, offsets, TestFeatureSet());
-    if (!node || !range.AtEnd()) {
+    CSSTokenizer tokenizer(feature_query);
+    CSSParserTokenStream stream(tokenizer);
+    auto node = ContainerQueryParser(*context).ConsumeFeatureQuery(stream, TestFeatureSet());
+    if (!node || !stream.AtEnd()) {
       return "";
     }
     return node->Serialize();

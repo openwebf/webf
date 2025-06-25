@@ -15,6 +15,7 @@ namespace webf {
 class MediaQuerySet;
 class CSSParserContext;
 class ContainerQueryParser;
+class CSSParserTokenStream;
 
 class MediaQueryParser {
   WEBF_STACK_ALLOCATED();
@@ -24,8 +25,12 @@ class MediaQueryParser {
   static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(CSSParserTokenRange,
                                                            const CSSParserTokenOffsets&,
                                                            const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(CSSParserTokenStream&,
+                                                           const ExecutingContext*);
   static std::shared_ptr<MediaQuerySet> ParseMediaCondition(CSSParserTokenRange,
                                                             const CSSParserTokenOffsets&,
+                                                            const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> ParseMediaCondition(CSSParserTokenStream&,
                                                             const ExecutingContext*);
   static std::shared_ptr<MediaQuerySet> ParseMediaQuerySetInMode(CSSParserTokenRange,
                                                                  const CSSParserTokenOffsets&,
@@ -73,22 +78,27 @@ class MediaQueryParser {
 
   // [ not | only ]
   static MediaQuery::RestrictorType ConsumeRestrictor(CSSParserTokenRange&);
+  static MediaQuery::RestrictorType ConsumeRestrictor(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-type
   static std::string ConsumeType(CSSParserTokenRange&);
+  static std::string ConsumeType(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-mf-comparison
   static MediaQueryOperator ConsumeComparison(CSSParserTokenRange&);
+  static MediaQueryOperator ConsumeComparison(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-mf-name
   //
   // The <mf-name> is only consumed if the name is allowed by the specified
   // FeatureSet.
   std::string ConsumeAllowedName(CSSParserTokenRange&, const FeatureSet&);
+  std::string ConsumeAllowedName(CSSParserTokenStream&, const FeatureSet&);
 
   // Like ConsumeAllowedName, except returns null if the name has a min-
   // or max- prefix.
   std::string ConsumeUnprefixedName(CSSParserTokenRange&, const FeatureSet&);
+  std::string ConsumeUnprefixedName(CSSParserTokenStream&, const FeatureSet&);
 
   enum class NameAffinity {
     // <mf-name> appears on the left, e.g. width < 10px.
@@ -119,6 +129,8 @@ class MediaQueryParser {
   std::shared_ptr<const MediaQueryExpNode> ConsumeFeature(CSSParserTokenRange&,
                                                           const CSSParserTokenOffsets& offsets,
                                                           const FeatureSet&);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeFeature(CSSParserTokenStream&,
+                                                          const FeatureSet&);
 
   enum class ConditionMode {
     // https://drafts.csswg.org/mediaqueries-4/#typedef-media-condition
@@ -131,15 +143,20 @@ class MediaQueryParser {
   std::shared_ptr<const MediaQueryExpNode> ConsumeCondition(CSSParserTokenRange&,
                                                             const CSSParserTokenOffsets&,
                                                             ConditionMode = ConditionMode::kNormal);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeCondition(CSSParserTokenStream&,
+                                                            ConditionMode = ConditionMode::kNormal);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-in-parens
   std::shared_ptr<const MediaQueryExpNode> ConsumeInParens(CSSParserTokenRange&, const CSSParserTokenOffsets&);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeInParens(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-general-enclosed
   std::shared_ptr<const MediaQueryExpNode> ConsumeGeneralEnclosed(CSSParserTokenRange&);
+  std::shared_ptr<const MediaQueryExpNode> ConsumeGeneralEnclosed(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-query
   std::shared_ptr<MediaQuery> ConsumeQuery(CSSParserTokenRange&, const CSSParserTokenOffsets&);
+  std::shared_ptr<MediaQuery> ConsumeQuery(CSSParserTokenStream&);
 
   // Used for ParserType::kMediaConditionParser.
   //

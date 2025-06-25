@@ -51,8 +51,8 @@ std::shared_ptr<const CSSSelectorList> CSSParser::ParsePageSelector(
     std::shared_ptr<StyleSheetContents> style_sheet_contents,
     const std::string& selector) {
   CSSTokenizer tokenizer(selector);
-  const auto tokens = tokenizer.TokenizeToEOF();
-  return CSSParserImpl::ParsePageSelector(CSSParserTokenRange(tokens), style_sheet_contents, context);
+  CSSParserTokenStream stream(tokenizer);
+  return CSSParserImpl::ParsePageSelector(stream, style_sheet_contents, context);
 }
 
 std::shared_ptr<StyleRuleBase> CSSParser::ParseMarginRule(std::shared_ptr<const CSSParserContext> context,
@@ -299,13 +299,12 @@ std::shared_ptr<const CSSPrimitiveValue> CSSParser::ParseLengthPercentage(const 
     return nullptr;
   }
   CSSTokenizer tokenizer(string);
-  const auto tokens = tokenizer.TokenizeToEOF();
-  CSSParserTokenRange range(tokens);
+  CSSParserTokenStream stream(tokenizer);
   // Trim whitespace from the string. It's only necessary to consume leading
   // whitespaces, since ConsumeLengthOrPercent always consumes trailing ones.
-  range.ConsumeWhitespace();
-  auto parsed_value = css_parsing_utils::ConsumeLengthOrPercent(range, context, value_range);
-  return range.AtEnd() ? parsed_value : nullptr;
+  stream.ConsumeWhitespace();
+  auto parsed_value = css_parsing_utils::ConsumeLengthOrPercent(stream, context, value_range);
+  return stream.AtEnd() ? parsed_value : nullptr;
 }
 
 std::shared_ptr<MutableCSSPropertyValueSet> CSSParser::ParseFont(const std::string& string,
