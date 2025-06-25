@@ -136,6 +136,7 @@ std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeQueryInPar
     if (query && stream.AtEnd()) {
       return MediaQueryExpNode::Nested(query);
     }
+    stream.EnsureLookAhead();  // Ensure lookahead before Restore
     stream.Restore(inner_save_state);
 
     // <container-condition>
@@ -161,6 +162,7 @@ std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeQueryInPar
       return MediaQueryExpNode::Function(query, "scroll-state");
     }
   }
+  stream.EnsureLookAhead();  // Ensure lookahead before Restore
   stream.Restore(save_state);
 
   // <general-enclosed>

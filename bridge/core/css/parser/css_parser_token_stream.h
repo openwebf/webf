@@ -258,7 +258,6 @@ class CSSParserTokenStream {
     
     // Process the lookahead token.
     buffer_.push_back(next_);
-    has_look_ahead_ = false;  // We've consumed the lookahead token
     unsigned nesting_level = 0;
     if (next_.GetBlockType() == CSSParserToken::kBlockStart) {
       nesting_level++;
@@ -486,9 +485,7 @@ class CSSParserTokenStream {
   }
 
   void Restore(State state) {
-    // Ensure we have lookahead before restoring
-    EnsureLookAhead();
-    
+    assert(has_look_ahead_);
     if (offset_ == state) {
       // No rewind needed, so we don't need to re-tokenize.
       // This happens especially often in MathFunctionParser
