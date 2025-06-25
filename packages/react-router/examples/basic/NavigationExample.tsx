@@ -1,10 +1,10 @@
 import React from 'react';
-import { Routes, Route, useNavigate, useRouteContext } from '@openwebf/react-router';
+import { Routes, Route, useNavigate, useRouteContext, useLocation } from '@openwebf/react-router';
 
 // Navigation Menu component
 function NavigationMenu() {
   const { navigate, canPop, pop } = useNavigate();
-  const { path } = useRouteContext();
+  const location = useLocation();
   
   const handleBack = () => {
     if (canPop()) {
@@ -16,7 +16,7 @@ function NavigationMenu() {
   
   return (
     <nav style={{ padding: '10px', borderBottom: '1px solid #ccc' }}>
-      <h3>Current Path: {path}</h3>
+      <h3>Current Path: {location.pathname}</h3>
       <button onClick={() => navigate('/')}>Home</button>
       <button onClick={() => navigate('/about')}>About</button>
       <button onClick={() => navigate('/contact')}>Contact</button>
@@ -70,7 +70,7 @@ function HomePage() {
 // About page
 function AboutPage() {
   const { navigate, popUntil, maybePop } = useNavigate();
-  const { params } = useRouteContext();
+  const location = useLocation();
   
   const handleReplaceNavigation = () => {
     navigate('/contact', { 
@@ -96,10 +96,10 @@ function AboutPage() {
       <h1>About Page</h1>
       <p>Learn more about us!</p>
       
-      {params?.message && (
+      {location.state?.message && (
         <div style={{ padding: '10px', background: '#f0f0f0' }}>
-          <p>Received state:</p>
-          <pre>{JSON.stringify(params, null, 2)}</pre>
+          <p>Received state from location:</p>
+          <pre>{JSON.stringify(location.state, null, 2)}</pre>
         </div>
       )}
       

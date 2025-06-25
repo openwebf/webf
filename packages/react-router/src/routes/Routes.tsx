@@ -55,12 +55,101 @@ const RouteContext = createContext<RouteContext>({
  * ```
  */
 export function useRouteContext() {
-  const context = useContext(RouteContext);
+  const context = useContext<RouteContext>(RouteContext);
+  
+  // isActive is true only for push events with matching path
+  const isActive = (context.routeEventKind === 'didPush' || context.routeEventKind === 'didPushNext') 
+    && context.path === context.activePath;
+  
   return {
     ...context,
-    // Helper to check if this route is currently active
-    isActive: context.path === context.activePath
+    isActive
   };
+}
+
+/**
+ * Location object interface
+ */
+export interface Location {
+  /**
+   * The path of the current location
+   */
+  pathname: string;
+  /**
+   * The state object associated with this location
+   */
+  state: any;
+  /**
+   * A unique key for this location
+   */
+  key?: string;
+}
+
+/**
+ * Hook to get the current location
+ * 
+ * @returns Current location object with pathname and state
+ * 
+ * @example
+ * ```tsx
+ * function MyComponent() {
+ *   const location = useLocation();
+ *   
+ *   console.log('Current path:', location.pathname);
+ *   console.log('Location state:', location.state);
+ *   console.log('Is active:', location.isActive);
+ *   
+ *   return <div>Current path: {location.pathname}</div>;
+ * }
+ * ```
+ */
+export function useLocation(): Location & { isActive: boolean } {
+  const context = useRouteContext();
+  
+  // Create location object from context
+  const location = useMemo(() => {
+    // For active routes, return the current location with state
+    if (context.isActive) {
+      return {
+        pathname: context.path || context.activePath || WebFRouter.path,
+        state: context.params,
+        isActive: true,
+        key: `${context.path}-active-${Date.now()}`
+      };
+    }
+    
+    // For inactive routes, return the global location without state
+    return {
+      pathname: context.activePath || WebFRouter.path,
+      state: undefined,
+      isActive: false,
+      key: `${context.activePath}-inactive`
+    };
+  }, [context.isActive, context.path, context.activePath, context.params]);
+  
+  return location;
+}
+
+/**
+ * Route configuration object
+ */
+export interface RouteObject {
+  /**
+   * Path for the route
+   */
+  path: string;
+  /**
+   * Element to render for this route
+   */
+  element: React.ReactNode;
+  /**
+   * Whether to pre-render this route
+   */
+  prerender?: boolean;
+  /**
+   * Child routes (not supported yet)
+   */
+  children?: RouteObject[];
 }
 
 /**
@@ -132,9 +221,14 @@ export function Routes({ children }: RoutesProps) {
       const routeEvent = event as unknown as HybridRouterChangeEvent;
       console.log(routeEvent);
       
+      // Only update activePath for push events
+      const newActivePath = (routeEvent.kind === 'didPushNext' || routeEvent.kind === 'didPush') 
+        ? routeEvent.path 
+        : routeState.activePath;
+      
       // Update state based on event kind
       setRouteState({
-        activePath: routeEvent.path,
+        activePath: newActivePath,
         params: routeEvent.state,
         routeEventKind: routeEvent.kind
       });
@@ -147,7 +241,7 @@ export function Routes({ children }: RoutesProps) {
     return () => {
       document.removeEventListener('hybridrouterchange', handleRouteChange);
     };
-  }, []);
+  }, [routeState.activePath]);
 
   // Global context value
   const globalContextValue = useMemo(() => ({
@@ -185,6 +279,49 @@ export function Routes({ children }: RoutesProps) {
       {wrappedChildren}
     </RouteContext.Provider>
   );
+}
+
+/**
+ * Hook to create routes from a configuration object
+ * 
+ * @param routes Array of route configuration objects
+ * @returns React element tree of Routes and Route components
+ * 
+ * @example
+ * ```tsx
+ * function App() {
+ *   const routes = useRoutes([
+ *     { path: '/', element: <Home /> },
+ *     { path: '/about', element: <About /> },
+ *     { path: '/users', element: <Users /> },
+ *     { path: '/contact', element: <Contact /> }
+ *   ]);
+ *   
+ *   return routes;
+ * }
+ * ```
+ */
+export function useRoutes(routes: RouteObject[]): React.ReactElement | null {
+  // Convert route objects to Route components
+  const routeElements = useMemo(() => {
+    return routes.map((route) => {
+      if (route.children && route.children.length > 0) {
+        console.warn('Nested routes are not supported yet');
+      }
+      
+      return (
+        <Route
+          key={route.path}
+          path={route.path}
+          element={route.element}
+          prerender={route.prerender}
+        />
+      );
+    });
+  }, [routes]);
+
+  // Return Routes component with Route children
+  return <Routes>{routeElements}</Routes>;
 }
 
 
