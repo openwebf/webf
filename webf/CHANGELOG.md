@@ -1,65 +1,44 @@
 ## 0.21.7
 
-### New Features
+New Features
 
-#### FCP (First Contentful Paint) Performance Metric
+Performance Metrics Enhancements
 
-WebF now supports tracking First Contentful Paint (FCP), another Core Web Vitals metric that measures the time from navigation to when the browser renders the first bit of content from the DOM. This provides insights into how quickly users see actual content.
+- Added evaluate variable in performance metrics callbacks: Performance metric callbacks now include an evaluate parameter, providing more context for metric reporting in WebFController
+- Route-specific performance metrics tracking: Performance metrics (FP/FCP/LCP) are now tracked per route, allowing detailed performance analysis for multi-route applications
+- Contentful widget detection: Implemented intelligent detection system to ensure FCP/LCP are only reported for widgets with actual visual content, improving metric accuracy
+- First Contentful Paint (FCP) support: Added complete FCP implementation to track when the first contentful element is rendered
+- First Paint (FP) support: Added FP metric tracking for initial visual changes
+- Standalone content verification system: New system for verifying and validating content rendering
 
-#### Features:
-- **Content detection**: Tracks when text, images, SVG, canvas, or other content elements are first painted
-- **Single reporting**: FCP is reported only once per page load
-- **Automatic tracking**: No additional configuration needed beyond the callback
-- **DevTools integration**: View FCP metrics in the WebF DevTools performance panel
+Improvements
 
-#### FP (First Paint) Performance Metric
+HTTP Client Stability
 
-WebF now supports tracking First Paint (FP), a key performance metric that measures when the browser first renders any pixels that are visually different from the screen before navigation. This complements FCP and LCP metrics to provide a complete picture of paint performance.
+- Socket error handling: Added robust error handling for 'Bad file descriptor' socket errors with automatic recovery mechanism
+- Connection management: Configured HTTP client with optimized settings:
+  - Idle timeout: 15 seconds to close stale connections
+  - Connection timeout: 30 seconds
+  - Max connections per host: 6
+- Stream error handling: Fixed 'Cannot add event after closing' errors in HTTP client
+- Cache reliability: Improved HTTP cache lock acquisition for better concurrency handling
 
-#### Features:
-- **Visual change detection**: Tracks any visual changes including backgrounds, borders, and shadows
-- **W3C compliant**: Follows the W3C Paint Timing specification
-- **Automatic reporting**: FP is reported once per page load when the first visual change occurs
-- **DevTools integration**: View FP metrics alongside FCP and LCP in the WebF DevTools performance panel
+DevTools Enhancements
 
-#### Usage:
+- Performance metrics display: Only attached controller's performance metrics are now shown in DevTools, reducing clutter
+- Unified metrics view: FP/FCP/LCP metrics are displayed in a unified, organized manner
 
-```dart
-// Track all paint metrics together
-WebFController(
-  onFP: (double fpTime) {
-    print('First Paint occurred at: $fpTime ms');
-    analytics.track('fp', fpTime);
-  },
-  onFCP: (double fcpTime) {
-    print('First Contentful Paint: $fcpTime ms');
-    analytics.track('fcp', fcpTime);
-  },
-  onLCP: (double lcpTime) {
-    print('Largest Contentful Paint: $lcpTime ms');
-    analytics.track('lcp', lcpTime);
-  },
-  onLCPFinal: (double finalTime) {
-    print('Final LCP: $finalTime ms');
-    analytics.track('lcp_final', finalTime);
-  },
-)
-```
+Bug Fixes
 
-#### What triggers each metric:
-- **FP**: Non-default backgrounds, borders, box shadows, any visual change
-- **FCP**: Text, images, SVG elements, canvas with content, background images
-- **LCP**: Largest text block or image within the viewport
+- Loading display: Fixed loading display issues when initial route link elements were not ready
+- Default initial route: Added proper default initial route handling
+- Text LCP calculation: Updated text LCP calculation to use actual text bounding box for more accurate measurements
 
-The typical order is: FP ≤ FCP ≤ LCP, providing a complete view of the page's paint timeline.
+Technical Details
 
-#### Enhanced DevTools Performance Panel
-
-The WebF DevTools now displays all three paint metrics (FP, FCP, LCP) with:
-- Color-coded performance ratings
-- Progress bars for visual comparison
-- Real-time updates
-- LCP element identification
+- Enhanced error recovery with detailed logging for debugging
+- Improved performance metric accuracy with content verification
+- Better multi-route application support with per-route metric tracking
 
 ## 0.21.6
 
