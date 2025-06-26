@@ -287,7 +287,27 @@ class ProxyHttpClientRequest extends HttpClientRequest {
   }
 
   Future<HttpClientRequest> _createBackendClientRequest() async {
-    HttpClientRequest backendRequest = await _nativeHttpClient.openUrl(_method, _uri);
+    HttpClientRequest backendRequest;
+    
+    try {
+      backendRequest = await _nativeHttpClient.openUrl(_method, _uri);
+    } catch (e) {
+      // Handle "Bad file descriptor" and other socket errors
+      if (e is SocketException || e.toString().contains('Bad file descriptor')) {
+        print('Warning: Socket error when opening URL $_uri: $e');
+        // Try to recover by creating a new HTTP client
+        final newClient = _httpOverrides.createHttpClient(null);
+        try {
+          backendRequest = await newClient.openUrl(_method, _uri);
+          print('Successfully recovered with new HTTP client for $_uri');
+        } catch (retryError) {
+          print('Failed to recover with new HTTP client: $retryError');
+          rethrow;
+        }
+      } else {
+        rethrow;
+      }
+    }
 
     if (_cookies.isNotEmpty) {
       backendRequest.cookies.addAll(_cookies);
