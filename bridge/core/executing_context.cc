@@ -837,17 +837,37 @@ bool isContextValid(double contextId) {
 char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_base_name, const char* module_name, void* opaque) {
   ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
 
+  // Validate input parameters to prevent buffer overflows
+  if (!module_name || strlen(module_name) == 0) {
+    return nullptr;
+  }
+
+  // Limit maximum URL length to prevent potential DoS attacks
+  const size_t MAX_URL_LENGTH = 8192;
+  size_t module_name_len = strlen(module_name);
+  if (module_name_len > MAX_URL_LENGTH) {
+    return nullptr;
+  }
+
   // Check if it's already an absolute URL (including http/https)
   if (strstr(module_name, "://") != nullptr) {
-    // Support http, https, file, and asset protocols
+    // Support http, https, file, and asset protocols with safe string comparison
     const char* protocols[] = {"http://", "https://", "file://", "asset://"};
+    const size_t protocol_count = sizeof(protocols) / sizeof(protocols[0]);
+
     bool is_supported_protocol = false;
-    for (const char* protocol : protocols) {
-      if (strncmp(module_name, protocol, strlen(protocol)) == 0) {
+    for (size_t i = 0; i < protocol_count; ++i) {
+      const char* protocol = protocols[i];
+      size_t protocol_len = strlen(protocol);
+
+      // Safe string comparison with length bounds checking
+      if (module_name_len >= protocol_len &&
+          strncmp(module_name, protocol, protocol_len) == 0) {
         is_supported_protocol = true;
         break;
       }
     }
+
     if (is_supported_protocol) {
       return js_strdup(ctx, module_name);
     }
@@ -865,7 +885,7 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
       if (protocol_end != std::string::npos) {
         // Check if it's an http/https URL
         bool is_http_url = (base_url.find("http://") == 0 || base_url.find("https://") == 0);
-        
+
         if (is_http_url) {
           // For HTTP URLs, find the path start after the host
           size_t path_start = base_url.find('/', protocol_end + 3);
@@ -903,10 +923,10 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
 
     if (module_base_name) {
       std::string base_path(module_base_name);
-      
+
       // Check if base is an HTTP/HTTPS URL
       bool is_http_base = (base_path.find("http://") == 0 || base_path.find("https://") == 0);
-      
+
       if (is_http_base) {
         // For HTTP URLs, preserve the full URL structure
         size_t last_slash = base_path.rfind('/');
@@ -933,7 +953,7 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
       std::vector<std::string> parts;
       std::string path_to_normalize;
       std::string url_prefix;
-      
+
       if (is_http_base) {
         // Extract URL prefix (protocol + host)
         size_t protocol_end = resolved_path.find("://");
@@ -970,7 +990,7 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
       if (is_http_base) {
         normalized = url_prefix;
       }
-      
+
       for (size_t i = 0; i < parts.size(); ++i) {
         normalized += "/";
         normalized += parts[i];
@@ -985,10 +1005,10 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
   // For relative paths without ./, resolve against base
   if (module_base_name) {
     std::string base_path(module_base_name);
-    
+
     // Check if base is an HTTP/HTTPS URL
     bool is_http_base = (base_path.find("http://") == 0 || base_path.find("https://") == 0);
-    
+
     if (is_http_base) {
       // For HTTP URLs, preserve the full URL structure
       size_t last_slash = base_path.rfind('/');
@@ -1007,7 +1027,7 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
         base_path = "";
       }
     }
-    
+
     std::string resolved = base_path + module_name;
     return js_strdup(ctx, resolved.c_str());
   }
@@ -1016,32 +1036,88 @@ char* ExecutingContext::ModuleNormalizeName(JSContext* ctx, const char* module_b
   return js_strdup(ctx, module_name);
 }
 
-// Context structure for module loading
-struct ModuleLoadContext {
+// RAII wrapper for module content memory management
+class ModuleContentGuard {
+ public:
+  ModuleContentGuard() : bytes_(nullptr), error_(nullptr) {}
+  ~ModuleContentGuard() {
+    if (bytes_) {
+      dart_free(bytes_);
+      bytes_ = nullptr;
+    }
+    if (error_) {
+      dart_free(error_);
+      error_ = nullptr;
+    }
+  }
+
+  void SetBytes(uint8_t* bytes) { bytes_ = bytes; }
+  void SetError(char* error) { error_ = error; }
+  uint8_t* GetBytes() const { return bytes_; }
+  char* GetError() const { return error_; }
+
+  // Release ownership (call when transferring ownership elsewhere)
+  uint8_t* ReleaseBytes() {
+    uint8_t* tmp = bytes_;
+    bytes_ = nullptr;
+    return tmp;
+  }
+
+  char* ReleaseError() {
+    char* tmp = error_;
+    error_ = nullptr;
+    return tmp;
+  }
+
+ private:
+  uint8_t* bytes_;
+  char* error_;
+  WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(ModuleContentGuard);
+};
+
+// Context structure for module loading - made thread-safe
+class ModuleLoadContext {
+ public:
+  ModuleLoadContext(ExecutingContext* ctx, JSContext* js_ctx, const std::string& name)
+      : executing_context(ctx), ctx(js_ctx), module_name(name), completed(false),
+        module_def(nullptr), length(0) {}
+
+  ~ModuleLoadContext() = default;
+
+  void SetResult(char* error, uint8_t* bytes, int32_t len) {
+    std::unique_lock<std::mutex> lock(mutex);
+    content_guard.SetError(error);
+    content_guard.SetBytes(bytes);
+    length = len;
+    completed = true;
+    cv.notify_one();
+  }
+
+  void WaitForCompletion() {
+    std::unique_lock<std::mutex> lock(mutex);
+    cv.wait(lock, [this] { return completed.load(); });
+  }
+
   ExecutingContext* executing_context;
   JSContext* ctx;
   std::string module_name;
-  bool completed;
+  std::atomic<bool> completed;
   JSModuleDef* module_def;
-  char* error;
-  uint8_t* bytes;
+  ModuleContentGuard content_guard;
   int32_t length;
   std::condition_variable cv;
   std::mutex mutex;
+
+ private:
+  WEBF_DISALLOW_COPY_ASSIGN_AND_MOVE(ModuleLoadContext);
 };
 
 // Callback function called from Dart when module content is fetched
 static void HandleFetchModuleResult(void* callback_context, double context_id, char* error, uint8_t* bytes, int32_t length) {
   ModuleLoadContext* load_context = static_cast<ModuleLoadContext*>(callback_context);
 
-  std::unique_lock<std::mutex> lock(load_context->mutex);
-
-  load_context->error = error;
-  load_context->bytes = bytes;
-  load_context->length = length;
-  load_context->completed = true;
-
-  load_context->cv.notify_one();
+  // Use the thread-safe SetResult method
+  load_context->SetResult(error, bytes, length);
 }
 
 // Helper function for import.meta.resolve()
@@ -1115,7 +1191,7 @@ void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const cha
       }
     }
   }
-  
+
   // Handle http/https protocols - ensure they're properly formatted
   if (url_str.find("http://") == 0 || url_str.find("https://") == 0) {
     // URL is already properly formatted for http/https
@@ -1167,16 +1243,8 @@ void ExecutingContext::SetupImportMeta(JSContext* ctx, JSModuleDef* m, const cha
 JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_name, void* opaque) {
   ExecutingContext* context = static_cast<ExecutingContext*>(opaque);
 
-  // Create the context for module loading
-  ModuleLoadContext load_context;
-  load_context.executing_context = context;
-  load_context.ctx = ctx;
-  load_context.module_name = module_name;
-  load_context.completed = false;
-  load_context.module_def = nullptr;
-  load_context.error = nullptr;
-  load_context.bytes = nullptr;
-  load_context.length = 0;
+  // Create the context for module loading with RAII memory management
+  auto load_context = std::make_unique<ModuleLoadContext>(context, ctx, std::string(module_name));
 
   // Create native string for module URL
   std::u16string module_name_u16;
@@ -1186,48 +1254,47 @@ JSModuleDef* ExecutingContext::ModuleLoader(JSContext* ctx, const char* module_n
   // Call Dart to fetch the module - this posts to Dart thread
   context->dart_isolate_context_->dartMethodPtr()->fetchJavaScriptESMModule(
       context->isDedicated(),
-      &load_context,
+      load_context.get(),
       context->contextId(),
       &module_url,
       HandleFetchModuleResult
   );
 
   // Block the JS thread until module is loaded
-  {
-    std::unique_lock<std::mutex> lock(load_context.mutex);
-    load_context.cv.wait(lock, [&load_context] { return load_context.completed; });
-  }
+  load_context->WaitForCompletion();
 
-  // Process the result
+  // Process the result with automatic memory cleanup
   JSModuleDef* result = nullptr;
 
-  if (load_context.error != nullptr) {
+  if (load_context->content_guard.GetError() != nullptr) {
     // Error occurred during fetch
-    JS_ThrowReferenceError(ctx, "Failed to load module '%s': %s", module_name, load_context.error);
-    dart_free(load_context.error);
-  } else if (load_context.bytes != nullptr && load_context.length > 0) {
+    JS_ThrowReferenceError(ctx, "Failed to load module '%s': %s", module_name, load_context->content_guard.GetError());
+    // Error will be automatically freed by ModuleContentGuard destructor
+  } else if (load_context->content_guard.GetBytes() != nullptr && load_context->length > 0) {
     // Module content fetched successfully
     // Compile the module
-    JSValue compiled = JS_Eval(ctx, reinterpret_cast<const char*>(load_context.bytes), load_context.length,
-                              module_name, JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
+    JSValue compiled = JS_Eval(ctx, reinterpret_cast<const char*>(load_context->content_guard.GetBytes()),
+                              load_context->length, module_name,
+                              JS_EVAL_TYPE_MODULE | JS_EVAL_FLAG_COMPILE_ONLY);
 
     if (JS_IsException(compiled)) {
       // Compilation failed - exception is already set
       result = nullptr;
+      // Bytes will be automatically freed by ModuleContentGuard destructor
     } else {
       // Get the module definition
       result = static_cast<JSModuleDef*>(JS_VALUE_GET_PTR(compiled));
 
       // Set up enhanced import.meta object
       SetupImportMeta(ctx, result, module_name, context);
+      // Bytes will be automatically freed by ModuleContentGuard destructor
     }
-
-    // Free the bytes
-    dart_free(load_context.bytes);
   } else {
     JS_ThrowReferenceError(ctx, "Empty module content for '%s'", module_name);
   }
 
+  // ModuleLoadContext and its ModuleContentGuard will be automatically destroyed,
+  // ensuring proper cleanup of all allocated memory
   return result;
 }
 
