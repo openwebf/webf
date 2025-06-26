@@ -9,8 +9,6 @@ import 'package:webf/foundation.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
   group('LCP Integration Tests', () {
     setUp(() {
       // Initialize WebFControllerManager for each test
@@ -46,12 +44,12 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             lcpCalled = true;
             lcpTime = time;
             print('LCP reported: $time ms');
           },
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             lcpFinalCalled = true;
             lcpFinalTime = time;
             print('LCP final: $time ms');
@@ -67,7 +65,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -99,7 +97,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             lcpTimes.add(time);
             print('LCP update: $time ms');
           },
@@ -114,7 +112,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -158,11 +156,11 @@ void main() {
           </html>
           ''',
           url: 'about:page1',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
         mode: WebFLoadingMode.preloading,
         setup: (controller) {
-          controller.onLCP = (double time) {
+          controller.onLCP = (double time, bool isEvaluated) {
             if (currentPage == 'page1') {
               page1LCPTimes.add(time);
               print('Page 1 LCP: $time ms');
@@ -206,7 +204,7 @@ void main() {
           </html>
           ''',
           url: 'about:page2',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
         forceReplace: true,  // Force reload with new content
         mode: WebFLoadingMode.preloading,  // Use preloading mode
@@ -215,7 +213,7 @@ void main() {
           controller.initializePerformanceTracking(page2StartTime);
 
           // Re-setup the LCP callback as the controller is replaced
-          controller.onLCP = (double time) {
+          controller.onLCP = (double time, bool isEvaluated) {
             if (currentPage == 'page1') {
               page1LCPTimes.add(time);
               print('Page 1 LCP: $time ms');
@@ -254,11 +252,11 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             lcpCallCount++;
             print('LCP update #$lcpCallCount: $time ms');
           },
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             lcpFinalCalled = true;
             lcpFinalTime = time;
             print('LCP finalized: $time ms');
@@ -275,7 +273,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -310,7 +308,7 @@ void main() {
 
       // Use setup callback to ensure LCP tracking persists across controller replacements
       final setupLCP = (WebFController controller) {
-        controller.onLCP = (double time) {
+        controller.onLCP = (double time, bool isEvaluated) {
           lcpTimes.add(time);
           print('LCP update ($currentPhase): $time ms');
         };
@@ -333,7 +331,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
         setup: setupLCP,
       );
@@ -380,7 +378,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
         forceReplace: true,
         mode: WebFLoadingMode.preloading,
@@ -422,7 +420,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             lcpFinalCalled = true;
             lcpFinalTime = time;
             print('LCP auto-finalized: $time ms');
@@ -438,7 +436,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -473,7 +471,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             lcpTimes.add(time);
             print('LCP reported (attached: $pageAttached): $time ms');
           },
@@ -491,7 +489,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -528,11 +526,11 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             lcpTimes.add(time);
             print('LCP update: $time ms');
           },
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             lcpFinalCalled = true;
             lcpFinalTime = time;
             print('LCP final: $time ms');
@@ -565,7 +563,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -605,11 +603,11 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             lcpTimes.add(time);
             print('LCP update: $time ms');
           },
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             lcpFinalCalled = true;
             lcpFinalTime = time;
             print('LCP final: $time ms');
@@ -637,7 +635,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
