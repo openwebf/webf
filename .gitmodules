@@ -8,6 +8,3 @@
 [submodule "webf_cupertino_ui"]
 	path = webf_cupertino_ui
 	url = git@github.com:openwebf/webf-cupertino-ui.git
-[submodule "webf_apps/miracleplus_news"]
-        path = webf_apps/miracleplus_news
-        url = git@github.com:openwebf/miracleplus_news.git
