@@ -64,11 +64,6 @@ void UnregisterExecutingContext(ExecutingContext* context) {
   }
 }
 
-// Helper to validate if a context ID is valid
-bool isContextValid(double context_id) {
-  return g_context_map.find(context_id) != g_context_map.end();
-}
-
 // Helper to get ExecutingContext from context_id in the JS thread
 ExecutingContext* GetExecutingContextById(double context_id) {
   auto it = g_context_map.find(context_id);
