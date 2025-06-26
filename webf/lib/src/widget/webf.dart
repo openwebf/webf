@@ -48,7 +48,7 @@ class WebF extends StatefulWidget {
   final Map<String, dynamic>? initialState;
 
   /// Custom error builder when using controllerName
-  final Widget Function(BuildContext context, Object error)? errorBuilder;
+  final Widget Function(BuildContext context, Object? error)? errorBuilder;
 
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
@@ -221,7 +221,7 @@ class WebF extends StatefulWidget {
       String? initialRoute = '/',
       Map<String, dynamic>? initialState,
       Widget? loadingWidget,
-      Widget Function(BuildContext context, Object error)? errorBuilder,
+      Widget Function(BuildContext context, Object? error)? errorBuilder,
       // Parameters for auto-initialization if controller is not found
       WebFBundle? bundle,
       ControllerFactory? createController,
@@ -378,7 +378,7 @@ class AutoManagedWebF extends StatefulWidget {
   final Widget? loadingWidget;
   final String? initialRoute;
   final Map<String, dynamic>? initialState;
-  final Widget Function(BuildContext context, Object error)? errorBuilder;
+  final Widget Function(BuildContext context, Object? error)? errorBuilder;
 
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
@@ -610,8 +610,8 @@ class WebFState extends State<WebF> with RouteAware {
       RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
       if (child == null) {
         debugPrint('WebF Loading Error: the route path for $initialRoute was not found');
-        if (widget.errorBuilder != null) {
-          return widget.errorBuilder!(context, widget.controller.loadingError!);
+        if (widget.loadingWidget != null) {
+          return widget.loadingWidget!;
         }
         return WebFHTMLElement(
             tagName: 'DIV',
@@ -626,7 +626,7 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.controller.disposed) {
       debugPrint('WebF Loading Error: ${widget.controller} was disposed');
       if (widget.errorBuilder != null) {
-        return widget.errorBuilder!(context, widget.controller.loadingError!);
+        return widget.errorBuilder!(context, widget.controller.loadingError);
       }
       return Center(
         child: Text('${widget.controller} was disposed'),
@@ -636,7 +636,7 @@ class WebFState extends State<WebF> with RouteAware {
     if (widget.controller.view.document.documentElement == null) {
       debugPrint('WebF Loading Error: the documentElement is Null ');
       if (widget.errorBuilder != null) {
-        return widget.errorBuilder!(context, widget.controller.loadingError!);
+        return widget.errorBuilder!(context, widget.controller.loadingError);
       }
       return WebFHTMLElement(
           tagName: 'DIV',
