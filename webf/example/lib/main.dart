@@ -92,8 +92,7 @@ void main() async {
               print('LCP time: $time, evaluated: $isEvaluated');
             },
           ),
-      bundle: WebFBundle.fromUrl('http://localhost:3000/'),
-      // bundle: WebFBundle.fromUrl('http://localhost:3000/'),
+      bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
@@ -579,7 +578,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'reactjs':
       return WebFBundle.fromUrl('assets:///react_project/build/index.html');
     case 'miracle_plus':
-      return WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html');
+      return WebFBundle.fromUrl('https://miracleplus.openwebf.com/');
     case 'hybrid_router':
       return WebFBundle.fromUrl('assets:///hybrid_router/build/index.html');
     case 'tailwind_react':

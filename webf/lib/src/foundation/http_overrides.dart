@@ -64,6 +64,11 @@ class WebFHttpOverrides extends HttpOverrides {
       nativeHttpClient = super.createHttpClient(context);
     }
 
+    // Configure connection management to prevent stale connections
+    nativeHttpClient
+      ..maxConnectionsPerHost = 30
+      ..connectionTimeout = Duration(seconds: 30);  // Timeout for establishing connections
+
     return ProxyHttpClient(nativeHttpClient, this);
   }
 
