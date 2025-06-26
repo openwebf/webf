@@ -394,9 +394,11 @@ class HttpCacheObject {
   }
 
   Future<void> writeIndex() async {
-    // Try to acquire lock with timeout
-    if (!await _acquireLock()) {
-      throw StateError('Failed to acquire lock for writing cache index');
+    // Try to acquire lock with longer timeout for write operations
+    if (!await _acquireLock(timeout: const Duration(seconds: 10))) {
+      // Log warning and return gracefully instead of throwing error
+      print('Warning: Failed to acquire lock for writing cache index for $url - skipping cache update');
+      return;
     }
 
     try {
@@ -561,8 +563,11 @@ class HttpCacheObject {
 
   // Remove all the cached files.
   Future<void> remove() async {
-    // Try to acquire lock
-    await _acquireLock(timeout: Duration(seconds: 1));
+    // Try to acquire lock with longer timeout for remove operations
+    if (!await _acquireLock(timeout: Duration(seconds: 5))) {
+      // Log warning but still attempt to remove files
+      print('Warning: Failed to acquire lock for removing cache for $url - attempting removal anyway');
+    }
 
     try {
       if (await _file.exists()) {
@@ -572,14 +577,8 @@ class HttpCacheObject {
 
       _valid = false;
     } finally {
-      // Clean up lock file
-      if (await _lockFile.exists()) {
-        try {
-          await _lockFile.delete();
-        } catch (_) {
-          // Ignore errors when releasing lock
-        }
-      }
+      // Always release lock
+      await _releaseLock();
     }
   }
 
@@ -725,9 +724,32 @@ class HttpCacheObject {
       }
     }
 
-    // Update index.
+    // Update index with retry logic.
     if (indexChanged) {
-      await writeIndex();
+      int retries = 0;
+      const maxRetries = 3;
+      
+      while (retries < maxRetries) {
+        try {
+          await writeIndex();
+          return;
+        } catch (e) {
+          // If it's a lock acquisition warning (not an error), we've already handled it gracefully
+          if (e.toString().contains('Failed to acquire lock')) {
+            return;
+          }
+          
+          // For other errors, retry with exponential backoff
+          retries++;
+          if (retries < maxRetries) {
+            await Future.delayed(Duration(milliseconds: 100 * retries));
+            continue;
+          }
+          // After max retries, log and continue without throwing
+          print('Warning: Failed to update cache index after $maxRetries retries for $url: $e');
+          return;
+        }
+      }
     }
   }
 }
