@@ -200,11 +200,17 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
   try {
     const pubspecPath = path.join(packagePath, 'pubspec.yaml');
     if (!fs.existsSync(pubspecPath)) {
+      console.warn(`Warning: pubspec.yaml not found at ${pubspecPath}. Using default metadata.`);
       return null;
     }
     
     const pubspecContent = fs.readFileSync(pubspecPath, 'utf-8');
     const pubspec = yaml.parse(pubspecContent);
+    
+    // Validate required fields
+    if (!pubspec.name) {
+      console.warn(`Warning: Flutter package name not found in ${pubspecPath}. Using default name.`);
+    }
     
     return {
       name: pubspec.name || '',
@@ -212,7 +218,8 @@ function readFlutterPackageMetadata(packagePath: string): FlutterPackageMetadata
       description: pubspec.description || ''
     };
   } catch (error) {
-    console.warn('Warning: Could not read Flutter package metadata:', error);
+    console.warn(`Warning: Could not read Flutter package metadata from ${packagePath}:`, error);
+    console.warn('Using default metadata. Ensure pubspec.yaml exists and is valid YAML.');
     return null;
   }
 }
