@@ -46,12 +46,8 @@ class TestTextWidgetState extends WebFWidgetElementState {
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
-  // Register custom elements once
-  WebF.defineCustomElement('test-text-widget', (context) => TestTextWidgetElement(context));
-
-  testWidgets('Simple widget FCP test', (WidgetTester tester) async {
+  group('Simple Widget FCP Test', () {
+    testWidgets('Simple widget FCP test', (WidgetTester tester) async {
     bool fcpCalled = false;
     double? fcpTime;
 
@@ -60,10 +56,10 @@ void main() {
       createController: () => WebFController(
         viewportWidth: 360,
         viewportHeight: 640,
-        onFCP: (time) {
+        onFCP: (time, isEvaluated) {
           fcpCalled = true;
           fcpTime = time;
-          print('FCP reported: $time ms');
+          print('FCP reported: $time ms, isEvaluated: $isEvaluated');
         },
       ),
       bundle: WebFBundle.fromContent(
@@ -75,7 +71,7 @@ void main() {
         </body>
         </html>
         ''',
-        contentType: ContentType.html,
+        contentType: htmlContentType,
       ),
     );
 
@@ -92,8 +88,9 @@ void main() {
 
     print('FCP called: $fcpCalled');
     print('FCP time: $fcpTime');
-    
+
     expect(fcpCalled, isTrue, reason: 'FCP should be called');
     expect(fcpTime, isNotNull, reason: 'FCP time should not be null');
+  });
   });
 }

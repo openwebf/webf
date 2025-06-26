@@ -82,13 +82,8 @@ class TestLayoutWidgetState extends WebFWidgetElementState {
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
-  // Register custom elements once
-  WebF.defineCustomElement('test-text-widget', (context) => TestTextWidgetElement(context));
-  WebF.defineCustomElement('test-layout-widget', (context) => TestLayoutWidgetElement(context));
-
-  testWidgets('Widget FCP and LCP reporting for contentful widgets', (WidgetTester tester) async {
+  group('Widget FCP and LCP Tests', () {
+    testWidgets('Widget FCP and LCP reporting for contentful widgets', (WidgetTester tester) async {
     // Track FCP and LCP callbacks
     double? fcpTime;
     double? lcpTime;
@@ -99,13 +94,13 @@ void main() {
       createController: () => WebFController(
         viewportWidth: 360,
         viewportHeight: 640,
-        onFCP: (time) {
+        onFCP: (time, isEvaluated) {
           fcpTime = time;
         },
-        onLCP: (time) {
+        onLCP: (time, isEvaluated) {
           lcpTime = time;
         },
-        onLCPFinal: (time) {
+        onLCPFinal: (time, isEvaluated) {
           lcpFinalTime = time;
         },
       ),
@@ -125,7 +120,7 @@ void main() {
         </body>
         </html>
         ''',
-        contentType: ContentType.html,
+        contentType: htmlContentType,
       ),
     );
 
@@ -166,10 +161,10 @@ void main() {
       createController: () => WebFController(
         viewportWidth: 360,
         viewportHeight: 640,
-        onFCP: (time) {
+        onFCP: (time, isEvaluated) {
           fcpTime = time;
         },
-        onLCP: (time) {
+        onLCP: (time, isEvaluated) {
           lcpTime = time;
         },
       ),
@@ -189,7 +184,7 @@ void main() {
         </body>
         </html>
         ''',
-        contentType: ContentType.html,
+        contentType: htmlContentType,
       ),
     );
 
@@ -214,14 +209,14 @@ void main() {
   testWidgets('Widget LCP updates for larger contentful widgets', (WidgetTester tester) async {
     // Track LCP updates
     List<double> lcpTimes = [];
-    
+
     // Create controller with initial small widget
     await WebFControllerManager.instance.addWithPreload(
       name: 'test_widget_lcp_update',
       createController: () => WebFController(
         viewportWidth: 360,
         viewportHeight: 640,
-        onLCP: (time) {
+        onLCP: (time, isEvaluated) {
           lcpTimes.add(time);
         },
       ),
@@ -241,7 +236,7 @@ void main() {
         </body>
         </html>
         ''',
-        contentType: ContentType.html,
+        contentType: htmlContentType,
       ),
     );
 
@@ -280,7 +275,7 @@ void main() {
         </body>
         </html>
         ''',
-        contentType: ContentType.html,
+        contentType: htmlContentType,
       ),
       mode: WebFLoadingMode.preloading,
       forceReplace: true,
@@ -292,5 +287,6 @@ void main() {
     // Should have updated LCP for the larger widget
     expect(lcpTimes.length, greaterThan(1));
     expect(lcpTimes.last, greaterThan(initialLCP), reason: 'LCP should update for larger widget');
+  });
   });
 }

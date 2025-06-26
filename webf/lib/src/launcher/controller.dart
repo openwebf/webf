@@ -50,14 +50,17 @@ typedef TitleChangedHandler = void Function(String title);
 typedef JSErrorHandler = void Function(String message);
 typedef JSLogHandler = void Function(int level, String message);
 typedef PendingCallback = void Function();
-typedef LCPHandler = void Function(double lcpTime);
-typedef FCPHandler = void Function(double fcpTime);
-typedef FPHandler = void Function(double fpTime);
+typedef LCPHandler = void Function(double lcpTime, bool isEvaluated);
+typedef FCPHandler = void Function(double fcpTime, bool isEvaluated);
+typedef FPHandler = void Function(double fpTime, bool isEvaluated);
 
 // Route-aware performance metric handlers
 typedef RouteLCPHandler = void Function(double lcpTime, String routePath);
 typedef RouteFCPHandler = void Function(double fcpTime, String routePath);
 typedef RouteFPHandler = void Function(double fpTime, String routePath);
+
+// Content verification handler
+typedef ContentVerificationHandler = void Function(ContentInfo contentInfo, String routePath);
 
 typedef TraverseElementCallback = void Function(Element element);
 
@@ -78,6 +81,9 @@ class RoutePerformanceMetrics {
   // FP tracking
   bool fpReported = false;
   double fpTime = 0;
+
+  // Content verification results
+  ContentInfo? lcpContentInfo;
 
   RoutePerformanceMetrics(this.routePath);
 
@@ -495,6 +501,10 @@ class WebFController with Diagnosticable {
   RouteFCPHandler? onRouteFCP;
   RouteFPHandler? onRouteFP;
 
+  /// Callback triggered when LCP is finalized and content verification is performed.
+  /// This callback provides content information about what was actually rendered when LCP occurred.
+  ContentVerificationHandler? onLCPContentVerification;
+
   WebFMethodChannel? _methodChannel;
   /// Gets the JavaScript channel for this controller.
   ///
@@ -690,6 +700,7 @@ class WebFController with Diagnosticable {
     this.onLCPFinal,
     this.onFCP,
     this.onFP,
+    this.onLCPContentVerification,
     this.httpClientInterceptor,
     this.uriParser,
     this.preloadedBundles,
@@ -1626,7 +1637,7 @@ class WebFController with Diagnosticable {
 
       // Fire the progressive onLCP callback
       if (onLCP != null) {
-        onLCP!(lcpTime);
+        onLCP!(lcpTime, evaluated);
       }
 
       // Fire the route-aware callback
@@ -1650,12 +1661,21 @@ class WebFController with Diagnosticable {
       // Use the last reported LCP time instead of calculating a new time
       // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
       if (onLCPFinal != null) {
-        onLCPFinal!(metrics.lastReportedLCPTime);
+        onLCPFinal!(metrics.lastReportedLCPTime, evaluated);
       }
 
       // Fire the route-aware callback
       if (onRouteLCPFinal != null) {
         onRouteLCPFinal!(metrics.lastReportedLCPTime, metrics.routePath);
+      }
+
+      // Perform content verification when LCP is finalized
+      final contentInfo = ContentVerification.getContentInfo(this);
+      metrics.lcpContentInfo = contentInfo;
+
+      // Fire the content verification callback
+      if (onLCPContentVerification != null) {
+        onLCPContentVerification!(contentInfo, metrics.routePath);
       }
     }
     metrics.lcpReported = true;
@@ -1675,7 +1695,7 @@ class WebFController with Diagnosticable {
 
     // Fire the FCP callback
     if (onFCP != null) {
-      onFCP!(metrics.fcpTime);
+      onFCP!(metrics.fcpTime, evaluated);
     }
 
     // Fire the route-aware callback
@@ -1699,7 +1719,7 @@ class WebFController with Diagnosticable {
 
     // Fire the FP callback
     if (onFP != null) {
-      onFP!(metrics.fpTime);
+      onFP!(metrics.fpTime, evaluated);
     }
 
     // Fire the route-aware callback

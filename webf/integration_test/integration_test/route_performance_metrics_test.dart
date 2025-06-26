@@ -8,8 +8,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
   group('Route-Specific Performance Metrics Tests', () {
     setUp(() {
       // Initialize WebFControllerManager for each test
@@ -82,12 +80,12 @@ void main() {
           viewportWidth: 360,
           viewportHeight: 640,
           initialRoute: '/',
-          onLCP: (double time) {
+          onLCP: (double time, bool isEvaluated) {
             // Manually track route-aware metrics
             final routePath = currentRoute;
             routeLCPTimes.putIfAbsent(routePath, () => []).add(time);
           },
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             final routePath = currentRoute;
             routeLCPFinalTimes[routePath] = time;
           },
@@ -162,10 +160,10 @@ void main() {
           viewportWidth: 360,
           viewportHeight: 640,
           initialRoute: '/',
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             routeFCPTimes[currentRoute] = time;
           },
-          onFP: (double time) {
+          onFP: (double time, bool isEvaluated) {
             routeFPTimes[currentRoute] = time;
           },
         ),
@@ -306,9 +304,9 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCP: (double time) => lcpTimes.add(time),
-          onFCP: (double time) => fcpTimes.add(time),
-          onFP: (double time) => fpTimes.add(time),
+          onLCP: (double time, bool isEvaluated) => lcpTimes.add(time),
+          onFCP: (double time, bool isEvaluated) => fcpTimes.add(time),
+          onFP: (double time, bool isEvaluated) => fpTimes.add(time),
         ),
         bundle: WebFBundle.fromContent(
           '''
@@ -370,7 +368,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onLCPFinal: (double time) {
+          onLCPFinal: (double time, bool isEvaluated) {
             routeLCPFinalTimes[currentRoute] = time;
           },
         ),

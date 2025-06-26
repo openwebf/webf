@@ -9,8 +9,6 @@ import 'package:webf/foundation.dart';
 import 'package:path/path.dart' as path;
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
   group('FCP Integration Tests', () {
     setUp(() {
       // Initialize WebFControllerManager for each test
@@ -37,7 +35,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -53,7 +51,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -86,7 +84,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -101,7 +99,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -133,7 +131,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -154,7 +152,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -186,7 +184,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -207,7 +205,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -239,7 +237,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCallCount++;
             fcpTime = time;
             print('FCP call #$fcpCallCount: $time ms');
@@ -264,7 +262,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -308,11 +306,11 @@ void main() {
           </html>
           ''',
           url: 'about:page1',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
         mode: WebFLoadingMode.preloading,
         setup: (controller) {
-          controller.onFCP = (double time) {
+          controller.onFCP = (double time, bool isEvaluated) {
             if (currentPage == 'page1') {
               page1FCPCount++;
               print('Page 1 FCP: $time ms');
@@ -353,12 +351,12 @@ void main() {
           </html>
           ''',
           url: 'about:page2',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
         forceReplace: true,
         mode: WebFLoadingMode.preloading,
         setup: (controller) {
-          controller.onFCP = (double time) {
+          controller.onFCP = (double time, bool isEvaluated) {
             if (currentPage == 'page1') {
               page1FCPCount++;
               print('Page 1 FCP: $time ms');
@@ -388,7 +386,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -416,7 +414,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -449,7 +447,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -475,7 +473,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -508,7 +506,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -524,7 +522,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -559,7 +557,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -592,7 +590,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 
@@ -625,7 +623,7 @@ void main() {
         createController: () => WebFController(
           viewportWidth: 360,
           viewportHeight: 640,
-          onFCP: (double time) {
+          onFCP: (double time, bool isEvaluated) {
             fcpCalled = true;
             fcpTime = time;
             print('FCP reported: $time ms');
@@ -645,7 +643,7 @@ void main() {
           </html>
           ''',
           url: 'about:blank',
-          contentType: ContentType.html,
+          contentType: htmlContentType,
         ),
       );
 

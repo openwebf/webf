@@ -5,6 +5,9 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 import 'package:flutter/cupertino.dart';
@@ -84,7 +87,10 @@ void main() async {
       name: 'html/css',
       createController: () => WebFController(
             routeObserver: routeObserver,
-            initialRoute: '/'
+            initialRoute: '/',
+            onLCP: (time, isEvaluated) {
+              print('LCP time: $time, evaluated: $isEvaluated');
+            },
           ),
       bundle: WebFBundle.fromUrl('http://localhost:3000/'),
       // bundle: WebFBundle.fromUrl('http://localhost:3000/'),
@@ -220,22 +226,22 @@ class MyApp extends StatefulWidget {
 class MyAppState extends State<MyApp> {
   final ValueNotifier<String> webfPageName = ValueNotifier('');
   late AppLinks _appLinks;
-  
+
   @override
   void initState() {
     super.initState();
-    
+
     // Initialize app links
     _appLinks = AppLinks();
-    
+
     // Set up deep link navigation callback - but don't use Navigator in initState
     DeepLinkModule.setNavigationCallback((String target, Map<String, String> params) async {
-      
+
       if (target == 'react_use_cases') {
         // Get the page parameter to determine route
         final page = params['page'];
         String targetRoute = '/';
-        
+
         // Map page parameter to specific routes
         if (page != null) {
           switch (page) {
@@ -255,11 +261,11 @@ class MyAppState extends State<MyApp> {
               targetRoute = '/';
           }
         }
-        
+
         // Check if react_use_cases controller already exists
-        WebFController? existingController = 
+        WebFController? existingController =
             await WebFControllerManager.instance.getController('react_use_cases');
-        
+
         if (existingController != null && webfPageName.value == 'react_use_cases') {
           // If controller exists and we're already on the react_use_cases page,
           // use hybridHistory to navigate within the existing page
@@ -269,7 +275,7 @@ class MyAppState extends State<MyApp> {
           // Set page name and navigate after a short delay to ensure UI is ready
           webfPageName.value = 'react_use_cases';
           print('Set page to react_use_cases with route: $targetRoute');
-          
+
           // Use a delayed navigation to ensure the Navigator is ready
           Future.delayed(Duration(milliseconds: 100), () async {
             final context = navigatorKey.currentContext;
@@ -285,21 +291,21 @@ class MyAppState extends State<MyApp> {
         }
       }
     });
-    
+
     // Listen for incoming app links when app is already running
     _appLinks.uriLinkStream.listen((Uri uri) {
       print('Received app link: $uri');
       _handleIncomingLink(uri.toString());
     });
-    
+
     // Handle initial deep link when app is launched from closed state
     _handleInitialLink();
   }
-  
+
   void _handleInitialLink() async {
     // Add a small delay to ensure the app is fully initialized
     await Future.delayed(Duration(milliseconds: 500));
-    
+
     try {
       final Uri? initialLink = await _appLinks.getInitialLink();
       if (initialLink != null) {
@@ -310,7 +316,7 @@ class MyAppState extends State<MyApp> {
       print('Failed to get initial app link: $e');
     }
   }
-  
+
   void _handleIncomingLink(String url) async {
     final result = await DeepLinkModule.processDeepLink(url);
     print('Deep link processing result: $result');
@@ -640,6 +646,12 @@ class _WebFDemoState extends State<WebFDemo> {
               createController: () => WebFController(
                 routeObserver: routeObserver,
                 initialRoute: widget.initialRoute,
+                onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
+                  print('contentInfo: $contentInfo $routePath');
+                },
+                onLCP: (time, isEvaluated) {
+                  print('LCP time: $time ms, evaluated: $isEvaluated');
+                },
               ),
               setup: (controller) {
                 controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
