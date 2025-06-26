@@ -21,6 +21,128 @@ interface FlutterPackageMetadata {
   description: string;
 }
 
+/**
+ * Sanitize a package name to comply with npm naming rules
+ * NPM package name rules:
+ * - Must be lowercase
+ * - Must be one word, no spaces
+ * - Can contain hyphens and underscores
+ * - Must start with a letter or number (or @ for scoped packages)
+ * - Cannot contain special characters except @ for scoped packages
+ * - Must be less than 214 characters
+ * - Cannot start with . or _
+ * - Cannot contain leading or trailing spaces
+ * - Cannot contain any non-URL-safe characters
+ */
+function sanitizePackageName(name: string): string {
+  // Remove any leading/trailing whitespace
+  let sanitized = name.trim();
+  
+  // Check if it's a scoped package
+  const isScoped = sanitized.startsWith('@');
+  let scope = '';
+  let packageName = sanitized;
+  
+  if (isScoped) {
+    const parts = sanitized.split('/');
+    if (parts.length >= 2) {
+      scope = parts[0];
+      packageName = parts.slice(1).join('/');
+    } else {
+      // Invalid scoped package, treat as regular
+      packageName = sanitized.substring(1);
+    }
+  }
+  
+  // Sanitize scope if present
+  if (scope) {
+    scope = scope.toLowerCase();
+    // Remove invalid characters from scope (keep only @ and alphanumeric/hyphen)
+    scope = scope.replace(/[^@a-z0-9-]/g, '');
+    if (scope === '@') {
+      scope = '@pkg'; // Default scope if only @ remains
+    }
+  }
+  
+  // Sanitize package name part
+  packageName = packageName.toLowerCase();
+  packageName = packageName.replace(/\s+/g, '-');
+  packageName = packageName.replace(/[^a-z0-9\-_.]/g, '');
+  packageName = packageName.replace(/^[._]+/, '');
+  packageName = packageName.replace(/[._]+$/, '');
+  packageName = packageName.replace(/[-_.]{2,}/g, '-');
+  packageName = packageName.replace(/^-+/, '').replace(/-+$/, '');
+  
+  // Ensure package name is not empty
+  if (!packageName) {
+    packageName = 'package';
+  }
+  
+  // Ensure it starts with a letter or number
+  if (!/^[a-z0-9]/.test(packageName)) {
+    packageName = 'pkg-' + packageName;
+  }
+  
+  // Combine scope and package name
+  let result = scope ? `${scope}/${packageName}` : packageName;
+  
+  // Truncate to 214 characters (npm limit)
+  if (result.length > 214) {
+    if (scope) {
+      // Try to preserve scope
+      const maxPackageLength = 214 - scope.length - 1; // -1 for the /
+      packageName = packageName.substring(0, maxPackageLength);
+      packageName = packageName.replace(/[._-]+$/, '');
+      result = `${scope}/${packageName}`;
+    } else {
+      result = result.substring(0, 214);
+      result = result.replace(/[._-]+$/, '');
+    }
+  }
+  
+  return result;
+}
+
+/**
+ * Validate if a package name follows npm naming rules
+ */
+function isValidNpmPackageName(name: string): boolean {
+  // Check basic rules
+  if (!name || name.length === 0 || name.length > 214) return false;
+  if (name.trim() !== name) return false;
+  
+  // Check if it's a scoped package
+  if (name.startsWith('@')) {
+    const parts = name.split('/');
+    if (parts.length !== 2) return false; // Scoped packages must have exactly one /
+    
+    const scope = parts[0];
+    const packageName = parts[1];
+    
+    // Validate scope
+    if (!/^@[a-z0-9][a-z0-9-]*$/.test(scope)) return false;
+    
+    // Validate package name part
+    return isValidNpmPackageName(packageName);
+  }
+  
+  // For non-scoped packages
+  if (name !== name.toLowerCase()) return false;
+  if (name.startsWith('.') || name.startsWith('_')) return false;
+  
+  // Check for valid characters (letters, numbers, hyphens, underscores, dots)
+  if (!/^[a-z0-9][a-z0-9\-_.]*$/.test(name)) return false;
+  
+  // Check for URL-safe characters
+  try {
+    if (encodeURIComponent(name) !== name) return false;
+  } catch {
+    return false;
+  }
+  
+  return true;
+}
+
 const platform = process.platform;
 const NPM = platform == 'win32' ? 'npm.cmd' : 'npm';
 
@@ -138,7 +260,11 @@ function validateTypeScriptEnvironment(projectPath: string): { isValid: boolean;
 }
 
 function createCommand(target: string, options: { framework: string; packageName: string; metadata?: FlutterPackageMetadata }): void {
-  const { framework, packageName, metadata } = options;
+  const { framework, metadata } = options;
+  // Ensure package name is always valid
+  const packageName = isValidNpmPackageName(options.packageName) 
+    ? options.packageName 
+    : sanitizePackageName(options.packageName);
 
   if (!fs.existsSync(target)) {
     fs.mkdirSync(target, { recursive: true });
@@ -278,6 +404,14 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   let framework = options.framework;
   let packageName = options.packageName;
   
+  // Validate and sanitize package name if provided
+  if (packageName && !isValidNpmPackageName(packageName)) {
+    console.warn(`Warning: Package name "${packageName}" is not valid for npm.`);
+    const sanitized = sanitizePackageName(packageName);
+    console.log(`Using sanitized name: "${sanitized}"`);
+    packageName = sanitized;
+  }
+  
   if (needsProjectCreation) {
     // If project needs creation but options are missing, prompt for them
     if (!framework) {
@@ -297,8 +431,9 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
     }
     
     if (!packageName) {
-      // Use Flutter package name as default if available
-      const defaultPackageName = metadata?.name || path.basename(resolvedDistPath);
+      // Use Flutter package name as default if available, sanitized for npm
+      const rawDefaultName = metadata?.name || path.basename(resolvedDistPath);
+      const defaultPackageName = sanitizePackageName(rawDefaultName);
       
       const packageNameAnswer = await inquirer.prompt([{
         type: 'input',
@@ -309,11 +444,15 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
           if (!input || input.trim() === '') {
             return 'Package name is required';
           }
-          // Basic npm package name validation
-          if (!/^[a-z0-9]([a-z0-9-._])*$/.test(input)) {
-            return 'Package name must be lowercase and may contain hyphens, dots, and underscores';
+          
+          // Check if it's valid as-is
+          if (isValidNpmPackageName(input)) {
+            return true;
           }
-          return true;
+          
+          // If not valid, show what it would be sanitized to
+          const sanitized = sanitizePackageName(input);
+          return `Invalid npm package name. Would be sanitized to: "${sanitized}". Please enter a valid name.`;
         }
       }]);
       packageName = packageNameAnswer.packageName;

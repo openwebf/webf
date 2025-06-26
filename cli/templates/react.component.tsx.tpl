@@ -22,6 +22,7 @@ interface <%= className %>Props {
     <% var propName = toReactEventName(prop.name); %>
   <%= propName %>?: <%= generateEventHandlerType(prop.type) %>;
   <% }); %>
+  style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
