@@ -208,7 +208,31 @@ class ProxyHttpClientRequest extends HttpClientRequest {
       // After this, response should not be null.
       if (!hitInterceptorResponse) {
         // Handle 304 here.
-        final HttpClientResponse rawResponse = await _requestQueue.add(request.close);
+        HttpClientResponse rawResponse;
+        try {
+          rawResponse = await _requestQueue.add(() async {
+            try {
+              return await request.close();
+            } catch (e) {
+              // Handle "Cannot add event after closing" error gracefully
+              if (e.toString().contains('Cannot add event after closing')) {
+                print('Warning: Stream already closed for request to $uri - retrying with new request');
+                // Create a new request and try again
+                final newRequest = await _createBackendClientRequest();
+                if (_data.isNotEmpty) {
+                  await newRequest.addStream(Stream.value(_data));
+                  _data.clear();
+                }
+                return await newRequest.close();
+              }
+              rethrow;
+            }
+          });
+        } catch (e) {
+          // If still failing, log and rethrow
+          print('Error closing HTTP request for $uri: $e');
+          rethrow;
+        }
         response = cacheObject == null
             ? rawResponse
             : await HttpCacheController.instance(origin)
@@ -248,7 +272,18 @@ class ProxyHttpClientRequest extends HttpClientRequest {
       }
     }
 
-    return _requestQueue.add(request.close);
+    return _requestQueue.add(() async {
+      try {
+        return await request.close();
+      } catch (e) {
+        // Handle "Cannot add event after closing" error gracefully
+        if (e.toString().contains('Cannot add event after closing')) {
+          print('Warning: Stream already closed for request to $_uri - cannot retry without data');
+          rethrow;
+        }
+        rethrow;
+      }
+    });
   }
 
   Future<HttpClientRequest> _createBackendClientRequest() async {
