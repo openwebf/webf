@@ -32,21 +32,21 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
 
   final Map<String, List<Event>> _eventDeps = {};
-  
+
   // Track pending dispatchEvent futures to ensure safe disposal
   final List<Future<void>> _pendingDispatchEvents = [];
 
   bool hasEventListener(String type) => _eventHandlers.containsKey(type);
-  
+
   /// Wait for all pending dispatchEvent operations to complete
   Future<void> waitForPendingEvents() async {
     if (_pendingDispatchEvents.isEmpty) return;
-    
+
     // Create a copy of current pending events to avoid concurrent modification
     List<Future<void>> currentPending = List.from(_pendingDispatchEvents);
     await Future.wait(currentPending);
   }
-  
+
   /// Check if there are any pending dispatchEvent operations
   bool hasPendingEvents() => _pendingDispatchEvents.isNotEmpty;
 
@@ -87,12 +87,12 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
         }
       });
     }
-    if (_eventWaitingCompleter.containsKey(eventType)) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_eventWaitingCompleter.containsKey(eventType)) {
         _eventWaitingCompleter[eventType]!();
         _eventWaitingCompleter.remove(eventType);
-      });
-    }
+      }
+    });
   }
 
   @mustCallSuper
@@ -148,7 +148,7 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     // Track this dispatch operation
     Future<void> dispatchFuture = _executeDispatchEvent(event);
     _pendingDispatchEvents.add(dispatchFuture);
-    
+
     // Wait for completion and clean up
     try {
       await dispatchFuture;
@@ -156,12 +156,12 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
       _pendingDispatchEvents.remove(dispatchFuture);
     }
   }
-  
+
   void _finalizeLCPOnUserInteraction(Event event) {
     // Finalize LCP when user interacts with the page
-    if (event.type == EVENT_CLICK || 
-        event.type == EVENT_TOUCH_START || 
-        event.type == 'mousedown' || 
+    if (event.type == EVENT_CLICK ||
+        event.type == EVENT_TOUCH_START ||
+        event.type == 'mousedown' ||
         event.type == EVENT_KEY_DOWN) {
       if (this is Node) {
         final Node node = this as Node;
@@ -172,11 +172,11 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
       }
     }
   }
-  
+
   Future<void> _executeDispatchEvent(Event event) async {
     // Finalize LCP on user interaction
     _finalizeLCPOnUserInteraction(event);
-    
+
     await _handlerCaptureEvent(event);
     await _dispatchEventInDOM(event);
 
