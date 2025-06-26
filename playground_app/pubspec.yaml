@@ -49,6 +49,19 @@ dependencies:
   image_picker: ^1.1.2
   file_picker: ^10.2.0
   shared_preferences: ^2.5.3
+  flutter_form_builder: ^9.7.0
+  form_builder_validators: ^11.1.2
+  dropdown_button2: ^2.3.9
+  dynamic_tabbar: ^1.0.9
+  day_night_switcher: ^0.2.0+1
+  adaptive_theme: ^3.3.0
+  flutter_svg: ^2.0.17
+  share_plus: ^10.0.0
+  showcaseview: ^4.0.1
+  path_provider: ^2.1.5
+  easy_refresh: ^3.4.0
+  collection: ^1.18.0
+  auto_size_text: ^3.0.0
 
 dependency_overrides:
   webf:

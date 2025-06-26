@@ -88,14 +88,14 @@ class _WebFScreenState extends State<WebFScreen> {
         ),
         bundle: WebFBundle.fromUrl(url),
         setup: (controller) {
-          controller.onLoadError = (FlutterError error, stack) {
-            if (mounted) {
-              setState(() {
-                isLoading = false;
-                loadingError = error.message;
-              });
-            }
-          };
+          // controller.onLoadError = (FlutterError error, stack) {
+          //   if (mounted) {
+          //     setState(() {
+          //       isLoading = false;
+          //       loadingError = error.message;
+          //     });
+          //   }
+          // };
         },
       );
 
