@@ -71,12 +71,40 @@ function generateAttributeSetter(propName: string, type: ParameterType): string 
 }
 
 function generateAttributeGetter(propName: string, type: ParameterType, optional: boolean): string {
-  // For non-nullable types, we might need to handle null values
-  if (type.value === FunctionArgumentType.boolean && optional) {
-    // For optional booleans that are non-nullable in Dart, default to false
-    return `${propName}.toString()`;
+  // Handle nullable properties - they should return null if the value is null
+  if (optional && type.value !== FunctionArgumentType.boolean) {
+    // For nullable properties, we need to handle null values properly
+    return `${propName}?.toString()`;
   }
+  // For non-nullable properties (including booleans), always convert to string
   return `${propName}.toString()`;
+}
+
+function generateAttributeDeleter(propName: string, type: ParameterType, optional: boolean): string {
+  // When deleting an attribute, we should reset it to its default value
+  switch (type.value) {
+    case FunctionArgumentType.boolean:
+      // Booleans default to false
+      return `${propName} = false`;
+    case FunctionArgumentType.int:
+      // Integers default to 0
+      return `${propName} = 0`;
+    case FunctionArgumentType.double:
+      // Doubles default to 0.0
+      return `${propName} = 0.0`;
+    case FunctionArgumentType.dom_string:
+      // Strings default to empty string or null for optional
+      if (optional) {
+        return `${propName} = null`;
+      }
+      return `${propName} = ''`;
+    default:
+      // For other types, set to null if optional, otherwise empty string
+      if (optional) {
+        return `${propName} = null`;
+      }
+      return `${propName} = ''`;
+  }
 }
 
 function generateMethodDeclaration(method: FunctionDeclaration) {
@@ -160,6 +188,8 @@ interface ${object.name} {
     generateMethodDeclaration,
     generateEventHandlerType,
     generateAttributeSetter,
+    generateAttributeGetter,
+    generateAttributeDeleter,
     shouldMakeNullable,
     command,
   });

@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf-react-core-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Core UI components for WebF React applications",
   "main": "lib/index.js",
   "module": "lib/index.esm.js",

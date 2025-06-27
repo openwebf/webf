@@ -53,6 +53,21 @@ function generateEventHandlerType(type: ParameterType) {
   throw new Error('Unknown event type: ' + pointerType);
 }
 
+function getEventType(type: ParameterType) {
+  if (!isPointerType(type)) {
+    return 'Event';
+  }
+  const pointerType = getPointerType(type);
+  if (pointerType === 'CustomEvent') {
+    return 'CustomEvent';
+  }
+  // For specific event types like MouseEvent, TouchEvent, etc.
+  if (pointerType.endsWith('Event')) {
+    return pointerType;
+  }
+  return 'Event';
+}
+
 function generateMethodDeclaration(method: FunctionDeclaration) {
   var methodName = method.name;
   var args = method.args.map(arg => {
@@ -119,12 +134,6 @@ interface ${object.name} {
     return '';
   }
 
-  // Calculate the relative path from component location to utils
-  const componentDepth = blob.relativeDir ? blob.relativeDir.split(path.sep).length : 0;
-  const utilsPath = componentDepth > 0 
-    ? '../'.repeat(componentDepth) + 'utils/createComponent'
-    : './utils/createComponent';
-
   const content = _.template(readTemplate('react.component.tsx'))({
     className: className,
     properties: componentProperties,
@@ -132,11 +141,11 @@ interface ${object.name} {
     classObjectDictionary,
     dependencies,
     blob,
-    utilsPath,
     toReactEventName,
     generateReturnType,
     generateMethodDeclaration,
     generateEventHandlerType,
+    getEventType,
   });
 
   const result = content.split('\n').filter(str => {
