@@ -3,3 +3,6 @@
 export * from './WebFListView';
 export * from './WebFTouchArea';
 export * from './WebFShimmer';
+
+// Utilities
+export * from './utils/createWebFComponent';

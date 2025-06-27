@@ -1,4 +1,5 @@
-import React, { useRef, useEffect, useCallback, ReactNode } from 'react';
+import { ReactNode } from 'react';
+import { createWebFComponent, WebFElementWithMethods } from './utils/createWebFComponent';
 
 export interface WebFListViewProps {
   /**
@@ -41,8 +42,8 @@ export interface WebFListViewProps {
   style?: React.CSSProperties;
 }
 
-export interface WebFListViewElement extends HTMLElement {
-/**
+export interface WebFListViewElement extends WebFElementWithMethods<{
+  /**
    * Completes a refresh operation with the specified result
    * @param result - The result of the refresh operation: 'success', 'fail', 'noMore', or any other value
    */
@@ -63,7 +64,7 @@ export interface WebFListViewElement extends HTMLElement {
    * Resets the load-more footer to its initial state
    */
   resetFooter: () => void;
-}
+}> {}
 
 /**
  * WebFListView - A React component that wraps the WebF ListView element
@@ -94,72 +95,31 @@ export interface WebFListViewElement extends HTMLElement {
  * </WebFListView>
  * ```
  */
-export const WebFListView = React.forwardRef<WebFListViewElement, WebFListViewProps>(
-  ({ scrollDirection = 'vertical', shrinkWrap = false, onRefresh, onLoadMore, children, className, style }, ref) => {
-    const elementRef = useRef<WebFListViewElement>(null);
-
-    // Expose the element ref directly
-    React.useImperativeHandle(ref, () => elementRef.current!, []);
-
-    // Handle refresh event
-    const handleRefresh = useCallback(() => {
-      if (onRefresh) {
-        const result = onRefresh();
-        if (result instanceof Promise) {
-          result.catch(console.error);
-        }
-      }
-    }, [onRefresh]);
-
-    // Handle loadmore event
-    const handleLoadMore = useCallback(() => {
-      if (onLoadMore) {
-        const result = onLoadMore();
-        if (result instanceof Promise) {
-          result.catch(console.error);
-        }
-      }
-    }, [onLoadMore]);
-
-    // Set up event listeners
-    useEffect(() => {
-      const element = elementRef.current;
-      if (!element) return;
-
-      if (onRefresh) {
-        element.addEventListener('refresh', handleRefresh);
-      }
-      if (onLoadMore) {
-        element.addEventListener('loadmore', handleLoadMore);
-      }
-
-      return () => {
-        if (onRefresh) {
-          element.removeEventListener('refresh', handleRefresh);
-        }
-        if (onLoadMore) {
-          element.removeEventListener('loadmore', handleLoadMore);
-        }
-      };
-    }, [handleRefresh, handleLoadMore, onRefresh, onLoadMore]);
-
-    // Compute attributes
-    const attributes: Record<string, string> = {
-      'scroll-direction': scrollDirection,
-      'shrink-wrap': String(shrinkWrap),
-    };
-
-    return React.createElement(
-      'webf-listview',
-      {
-        ref: elementRef,
-        className,
-        style,
-        ...attributes,
-      },
-      children
-    );
-  }
-);
-
-WebFListView.displayName = 'WebFListView';
+export const WebFListView = createWebFComponent<WebFListViewElement, WebFListViewProps>({
+  tagName: 'webf-listview',
+  displayName: 'WebFListView',
+  
+  attributeMap: {
+    scrollDirection: 'scroll-direction',
+    shrinkWrap: 'shrink-wrap',
+  },
+  
+  events: [
+    {
+      propName: 'onRefresh',
+      eventName: 'refresh',
+    },
+    {
+      propName: 'onLoadMore',
+      eventName: 'loadmore',
+    },
+  ],
+  
+  defaultProps: {
+    scrollDirection: 'vertical',
+    shrinkWrap: false,
+  },
+  
+  attributeProps: ['scrollDirection', 'shrinkWrap'],
+  excludeProps: ['onRefresh', 'onLoadMore'],
+});
