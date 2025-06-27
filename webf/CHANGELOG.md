@@ -1,3 +1,15 @@
+## 0.21.7+1
+
+Bug Fixes
+
+### Content Verification Fix
+- Fixed content verification to use the correct root render object (`RenderViewportBox`) instead of `document.documentElement`
+- This ensures that content detection works properly with WebF's rendering architecture
+- Affected methods:
+  - `ContentVerification.getContentInfoFromDocument()`
+  - `ContentVerification.hasVisibleContentInDocument()`
+  - `ContentVerification.getTotalVisibleContentArea()`
+
 ## 0.21.7
 
 New Features
