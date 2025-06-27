@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { createWebFComponent } from './utils/createWebFComponent';
 
 export interface WebFShimmerProps {
   /**
@@ -30,20 +31,10 @@ export interface WebFShimmerProps {
  * </WebFShimmer>
  * ```
  */
-export const WebFShimmer: React.FC<WebFShimmerProps> = ({
-  children,
-  className,
-  style,
-}) => {
-  return React.createElement(
-    'flutter-shimmer',
-    {
-      className,
-      style,
-    },
-    children
-  );
-};
+export const WebFShimmer = createWebFComponent<HTMLElement, WebFShimmerProps>({
+  tagName: 'flutter-shimmer',
+  displayName: 'WebFShimmer',
+});
 
 export interface WebFShimmerAvatarProps {
   /**
@@ -77,23 +68,26 @@ export interface WebFShimmerAvatarProps {
  * <WebFShimmerAvatar width={60} height={60} />
  * ```
  */
-export const WebFShimmerAvatar: React.FC<WebFShimmerAvatarProps> = ({
-  width = 40,
-  height = 40,
-  className,
-  style,
-}) => {
-  return React.createElement(
-    'flutter-shimmer-avatar',
-    {
-      className,
-      style: {
-        width,
-        height,
-        ...style,
-      },
-    }
-  );
+// For WebFShimmerAvatar, we need to handle width/height as part of style directly
+const WebFShimmerAvatarBase = createWebFComponent<HTMLElement, WebFShimmerAvatarProps>({
+  tagName: 'flutter-shimmer-avatar',
+  displayName: 'WebFShimmerAvatar',
+  defaultProps: {
+    width: 40,
+    height: 40,
+  },
+});
+
+export const WebFShimmerAvatar: React.FC<WebFShimmerAvatarProps> = ({ width = 40, height = 40, className, style, ...props }) => {
+  return <WebFShimmerAvatarBase 
+    {...props}
+    className={className}
+    style={{
+      width,
+      height,
+      ...style,
+    }}
+  />;
 };
 
 export interface WebFShimmerTextProps {
@@ -122,21 +116,24 @@ export interface WebFShimmerTextProps {
  * <WebFShimmerText height={20} />
  * ```
  */
-export const WebFShimmerText: React.FC<WebFShimmerTextProps> = ({
-  height = 16,
-  className,
-  style,
-}) => {
-  return React.createElement(
-    'flutter-shimmer-text',
-    {
-      className,
-      style: {
-        height,
-        ...style,
-      },
-    }
-  );
+// For WebFShimmerText, we need to handle height as part of style directly
+const WebFShimmerTextBase = createWebFComponent<HTMLElement, WebFShimmerTextProps>({
+  tagName: 'flutter-shimmer-text',
+  displayName: 'WebFShimmerText',
+  defaultProps: {
+    height: 16,
+  },
+});
+
+export const WebFShimmerText: React.FC<WebFShimmerTextProps> = ({ height = 16, className, style, ...props }) => {
+  return <WebFShimmerTextBase 
+    {...props}
+    className={className}
+    style={{
+      height,
+      ...style,
+    }}
+  />;
 };
 
 export interface WebFShimmerButtonProps {
@@ -177,25 +174,29 @@ export interface WebFShimmerButtonProps {
  * <WebFShimmerButton width={120} height={40} radius={8} />
  * ```
  */
-export const WebFShimmerButton: React.FC<WebFShimmerButtonProps> = ({
-  width = 80,
-  height = 32,
-  radius = 4,
-  className,
-  style,
-}) => {
-  return React.createElement(
-    'flutter-shimmer-button',
-    {
-      width: width.toString(),
-      height: height.toString(),
-      radius: radius.toString(),
-      className,
-      style: {
-        width,
-        height,
-        ...style,
-      },
-    }
-  );
+// For WebFShimmerButton, we need both attributes and styles
+const WebFShimmerButtonBase = createWebFComponent<HTMLElement, WebFShimmerButtonProps>({
+  tagName: 'flutter-shimmer-button',
+  displayName: 'WebFShimmerButton',
+  defaultProps: {
+    width: 80,
+    height: 32,
+    radius: 4,
+  },
+  attributeProps: ['width', 'height', 'radius'],
+});
+
+export const WebFShimmerButton: React.FC<WebFShimmerButtonProps> = ({ width = 80, height = 32, radius = 4, className, style, ...props }) => {
+  return <WebFShimmerButtonBase 
+    {...props}
+    width={width}
+    height={height}
+    radius={radius}
+    className={className}
+    style={{
+      width,
+      height,
+      ...style,
+    }}
+  />;
 };
