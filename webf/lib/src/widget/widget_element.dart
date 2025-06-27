@@ -77,6 +77,11 @@ abstract class WidgetElement extends dom.Element {
 
   bool get isScrollingElement => false;
 
+  /// Override this property to disable box model painting for this widget element.
+  /// When set to true, RenderWidget will call performPaint directly instead of paintBoxModel.
+  /// This is useful for widgets that handle their own painting entirely.
+  bool get disableBoxModelPaint => false;
+
   @mustCallSuper
   @override
   void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {

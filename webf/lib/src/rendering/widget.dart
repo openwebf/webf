@@ -172,6 +172,17 @@ class RenderWidget extends RenderBoxModel
   /// override it to layout box model paint.
   @override
   void paint(PaintingContext context, Offset offset) {
+    // Check if the widget element has disabled box model painting
+    if (renderStyle.target is WidgetElement) {
+      final widgetElement = renderStyle.target as WidgetElement;
+      if (widgetElement.disableBoxModelPaint) {
+        // Call performPaint directly without box model painting
+        performPaint(context, offset);
+        return;
+      }
+    }
+    
+    // Default behavior: paint with box model
     paintBoxModel(context, offset);
   }
 
