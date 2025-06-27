@@ -399,13 +399,47 @@ class WebFController with Diagnosticable {
   /// @param routePath Optional path to a specific route whose render tree should be printed.
   ///                 If null or matches initialRoute, prints the root render object tree.
   ///                 Otherwise prints the render tree of the specified hybrid route view.
-  void printRenderObjectTree(String? routePath) {
+  ///
+  /// On macOS platform, this method also writes the render object tree to a file
+  /// in the user's Documents directory with a timestamp.
+  Future<void> printRenderObjectTree(String? routePath) async {
+    String? renderObjectTreeString;
+
     if (routePath == null || routePath == initialRoute) {
-      debugPrint(view.getRootRenderObject()?.toStringDeep());
+      renderObjectTreeString = view.getRootRenderObject()?.toStringDeep();
     } else {
       RouterLinkElement? routeLinkElement = view.getHybridRouterView(routePath);
-      String? renderObjectTree = routeLinkElement?.getRenderObjectTree();
-      debugPrint(renderObjectTree);
+      renderObjectTreeString = routeLinkElement?.getRenderObjectTree();
+    }
+
+    // On macOS, also write to file
+    if (Platform.isMacOS && renderObjectTreeString != null) {
+      try {
+        // Get the Documents directory
+        final documentsDir = Directory('${Platform.environment['HOME']}/Documents');
+        final webfDebugDir = Directory('${documentsDir.path}/WebF_Debug');
+
+        // Create WebF_Debug directory if it doesn't exist
+        if (!await webfDebugDir.exists()) {
+          await webfDebugDir.create();
+        }
+
+        // Generate filename with timestamp and route info
+        final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-').replaceAll('.', '-');
+        final routeInfo = routePath != null ? '_route_${routePath.replaceAll('/', '_')}' : '_root';
+        final filename = 'render_tree${routeInfo}_$timestamp.txt';
+
+        // Write to file
+        final file = File('${webfDebugDir.path}/$filename');
+        await file.writeAsString(renderObjectTreeString);
+
+        debugPrint('Render object tree written to: ${file.path}');
+      } catch (e) {
+        debugPrint('Failed to write render object tree to file: $e');
+      }
+    } else {
+      // Always print to console
+      debugPrint(renderObjectTreeString);
     }
   }
 

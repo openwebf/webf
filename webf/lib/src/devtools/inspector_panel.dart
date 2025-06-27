@@ -5,6 +5,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -188,6 +189,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   // Track the original cache mode to restore it when unchecked
   final HttpCacheMode _originalCacheMode = HttpCacheController.mode;
+
   // Track whether cache is disabled
   bool _isCacheDisabled = HttpCacheController.mode == HttpCacheMode.NO_CACHE;
 
@@ -267,15 +269,17 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               ),
             ),
           ),
-          // Tab Bar
+          // Tab Bar with horizontal scrolling
           Container(
-            margin: EdgeInsets.symmetric(horizontal: 16),
+            // margin: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: Colors.white10,
               borderRadius: BorderRadius.circular(8),
             ),
             child: TabBar(
               controller: _tabController,
+              isScrollable: true,
+              tabAlignment: TabAlignment.start,
               indicator: BoxDecoration(
                 color: Colors.blue.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(8),
@@ -283,11 +287,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white54,
               tabs: [
-                Tab(text: 'Controllers'),
-                Tab(text: 'Routes'),
-                Tab(text: 'Network'),
-                Tab(text: 'Console'),
-                Tab(text: 'Performance'),
+                Tab(child: Text('Controllers', style: TextStyle(fontSize: 12))),
+                Tab(child: Text('Routes', style: TextStyle(fontSize: 12))),
+                Tab(child: Text('Network', style: TextStyle(fontSize: 12))),
+                Tab(child: Text('Console', style: TextStyle(fontSize: 12))),
+                Tab(child: Text('Performance', style: TextStyle())),
               ],
             ),
           ),
@@ -336,11 +340,11 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
 
   Widget _buildPerformanceTab() {
     final manager = WebFControllerManager.instance;
-    
+
     // Find the currently attached controller
     WebFController? attachedController;
     String? attachedControllerName;
-    
+
     for (final name in manager.controllerNames) {
       final controller = manager.getControllerSync(name);
       final state = manager.getControllerState(name);
@@ -387,7 +391,6 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ),
     );
   }
-
 
   Widget _buildQuickStats() {
     final manager = WebFControllerManager.instance;
@@ -571,8 +574,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                       context: context,
                       builder: (context) => AlertDialog(
                         title: Text('Confirm Disposal'),
-                        content: Text(
-                            'Are you sure you want to dispose all ${manager.controllerCount} controllers?'),
+                        content: Text('Are you sure you want to dispose all ${manager.controllerCount} controllers?'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(false),
@@ -698,6 +700,38 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                   ),
                 ),
               ),
+              if (controller != null) ...[
+                SizedBox(width: 8),
+                IconButton(
+                  icon: Icon(Icons.account_tree, size: 18),
+                  color: Colors.white70,
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  onPressed: () async {
+                    // Get current route path if available
+                    String? routePath = controller.currentBuildContext?.path;
+
+                    // Print render object tree
+                    await controller.printRenderObjectTree(routePath);
+
+                    // Show feedback
+                    final message = Platform.isMacOS
+                        ? 'Render object tree printed to console and saved to ~/Documents/WebF_Debug/'
+                        : 'Render object tree printed to console';
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(message),
+                        duration: Duration(seconds: 3),
+                        backgroundColor: Colors.blue,
+                      ),
+                    );
+                  },
+                  tooltip: 'Print Render Object Tree',
+                ),
+              ],
               if (controller != null && state == ControllerState.detached) ...[
                 SizedBox(width: 8),
                 IconButton(
@@ -939,7 +973,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   Widget _buildPerformanceMetrics(WebFController controller) {
     // Get all route metrics
     final allRouteMetrics = controller.allRouteMetrics;
-    
+
     if (allRouteMetrics.isEmpty) {
       return Text(
         'No performance metrics measured yet',
@@ -956,25 +990,24 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         // Display metrics for each route
         for (final entry in allRouteMetrics.entries) ...[
           _buildRouteMetrics(entry.key, entry.value, controller),
-          if (entry.key != allRouteMetrics.keys.last) 
-            SizedBox(height: 16),
+          if (entry.key != allRouteMetrics.keys.last) SizedBox(height: 16),
         ],
       ],
     );
   }
-  
+
   Widget _buildRouteMetrics(String routePath, RoutePerformanceMetrics metrics, WebFController controller) {
     final bool hasFPData = metrics.fpReported;
     final bool hasFCPData = metrics.fcpReported;
     final bool hasLCPData = metrics.lastReportedLCPTime > 0 || metrics.lcpReported;
-    
+
     if (!hasFPData && !hasFCPData && !hasLCPData) {
       return Container();
     }
-    
+
     // Check if this is the current route
     final isCurrentRoute = controller.currentBuildContext?.path == routePath;
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1048,7 +1081,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ),
     );
   }
-  
+
   Widget _buildRoutePerformanceMetric({
     required String label,
     required double time,
@@ -1138,12 +1171,12 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ],
     );
   }
-  
+
   Widget _buildRouteLCPMetric(RoutePerformanceMetrics metrics, WebFController controller) {
     final double lcpTime = metrics.lastReportedLCPTime;
     final bool isFinalized = metrics.lcpReported;
     final dom.Element? lcpElement = metrics.currentLCPElement?.target;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1192,8 +1225,6 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ],
     );
   }
-
-
 
   Widget _buildElementInfo(dom.Element element) {
     String elementDescription = element.toString();
@@ -1250,7 +1281,6 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       ),
     );
   }
-
 
   Widget _buildRoutesList() {
     final manager = WebFControllerManager.instance;
@@ -1735,8 +1765,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                               : requests.where((req) {
                                   // For fetch/xhr filter, include both types
                                   if (_selectedNetworkFilter == NetworkRequestType.fetch) {
-                                    return req.type == NetworkRequestType.fetch ||
-                                           req.type == NetworkRequestType.xhr;
+                                    return req.type == NetworkRequestType.fetch || req.type == NetworkRequestType.xhr;
                                   }
                                   return req.type == _selectedNetworkFilter;
                                 }).toList();
@@ -2092,9 +2121,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                 icon: Icon(Icons.copy_all, size: 16),
                 color: Colors.white54,
                 onPressed: () async {
-                  final allHeaders = headers.entries
-                      .map((e) => '${e.key}: ${e.value.join(', ')}')
-                      .join('\n');
+                  final allHeaders = headers.entries.map((e) => '${e.key}: ${e.value.join(', ')}').join('\n');
                   await Clipboard.setData(ClipboardData(text: allHeaders));
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -2230,7 +2257,8 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
         responseString = utf8.decode(request.responseBody!, allowMalformed: true);
 
         // Try to parse JSON
-        if (request.mimeType?.contains('json') ?? false || responseString.trimLeft().startsWith('{') || responseString.trimLeft().startsWith('[')) {
+        if (request.mimeType?.contains('json') ??
+            false || responseString.trimLeft().startsWith('{') || responseString.trimLeft().startsWith('[')) {
           try {
             jsonData = jsonDecode(responseString);
             isJson = true;
@@ -2378,7 +2406,9 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
       requestString = utf8.decode(request.requestData, allowMalformed: true);
 
       // Try to parse JSON
-      if (contentType.contains('json') || requestString.trimLeft().startsWith('{') || requestString.trimLeft().startsWith('[')) {
+      if (contentType.contains('json') ||
+          requestString.trimLeft().startsWith('{') ||
+          requestString.trimLeft().startsWith('[')) {
         try {
           jsonData = jsonDecode(requestString);
           isJson = true;
@@ -2649,8 +2679,14 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     // Check for common image file signatures (magic numbers)
     // PNG signature: 89 50 4E 47 0D 0A 1A 0A
     if (data.length >= 8 &&
-        data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
-        data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A) {
+        data[0] == 0x89 &&
+        data[1] == 0x50 &&
+        data[2] == 0x4E &&
+        data[3] == 0x47 &&
+        data[4] == 0x0D &&
+        data[5] == 0x0A &&
+        data[6] == 0x1A &&
+        data[7] == 0x0A) {
       return true;
     }
 
@@ -2660,15 +2696,20 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     }
 
     // GIF signature: 47 49 46 38 (GIF87a or GIF89a)
-    if (data.length >= 6 &&
-        data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x38) {
+    if (data.length >= 6 && data[0] == 0x47 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x38) {
       return true;
     }
 
     // WebP signature: 52 49 46 46 ?? ?? ?? ?? 57 45 42 50 (RIFF....WEBP)
     if (data.length >= 12 &&
-        data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
-        data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50) {
+        data[0] == 0x52 &&
+        data[1] == 0x49 &&
+        data[2] == 0x46 &&
+        data[3] == 0x46 &&
+        data[8] == 0x57 &&
+        data[9] == 0x45 &&
+        data[10] == 0x42 &&
+        data[11] == 0x50) {
       return true;
     }
 
@@ -2678,8 +2719,7 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     }
 
     // ICO signature: 00 00 01 00
-    if (data.length >= 4 &&
-        data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0x00) {
+    if (data.length >= 4 && data[0] == 0x00 && data[1] == 0x00 && data[2] == 0x01 && data[3] == 0x00) {
       return true;
     }
 
@@ -3231,7 +3271,11 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
         children: [
           if (widget.depth == 0) ...[
             Text(
-              widget.data is Map ? '{' : widget.data is List ? '[' : '',
+              widget.data is Map
+                  ? '{'
+                  : widget.data is List
+                      ? '['
+                      : '',
               style: TextStyle(
                 color: Colors.white54,
                 fontSize: 11,
@@ -3242,7 +3286,11 @@ class _JsonTreeViewState extends State<_JsonTreeView> {
           _buildJsonTree(widget.data, '', widget.depth),
           if (widget.depth == 0) ...[
             Text(
-              widget.data is Map ? '}' : widget.data is List ? ']' : '',
+              widget.data is Map
+                  ? '}'
+                  : widget.data is List
+                      ? ']'
+                      : '',
               style: TextStyle(
                 color: Colors.white54,
                 fontSize: 11,
@@ -3610,8 +3658,8 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
                     fontSize: 12,
                     color: _getObjectColor(),
                     fontStyle: widget.remoteObject.objectType == RemoteObjectType.function
-                      ? FontStyle.italic
-                      : FontStyle.normal,
+                        ? FontStyle.italic
+                        : FontStyle.normal,
                   ),
                 ),
               ],
@@ -3641,15 +3689,17 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: _properties!.isEmpty
-                          ? [Text(
-                              'No properties',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white38,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            )]
-                          : _buildPropertiesWithPrototype(),
+                            ? [
+                                Text(
+                                  'No properties',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white38,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                )
+                              ]
+                            : _buildPropertiesWithPrototype(),
                       ),
                     ),
                   ),
@@ -3676,17 +3726,15 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     final desc = widget.remoteObject.description;
 
     // First check the description format
-    if (desc.startsWith('<') && desc.contains('>') &&
-        (desc.contains('…') || desc.endsWith('/>'))) {
+    if (desc.startsWith('<') && desc.contains('>') && (desc.contains('…') || desc.endsWith('/>'))) {
       return true;
     }
 
     // Also check if all properties look like child nodes
     if (_properties != null && _properties!.isNotEmpty) {
       // If most properties look like child nodes, this is probably an element showing its children
-      final childNodeCount = _properties!.where((prop) =>
-        prop.name != '[[Prototype]]' && _isChildNode(prop.name)
-      ).length;
+      final childNodeCount =
+          _properties!.where((prop) => prop.name != '[[Prototype]]' && _isChildNode(prop.name)).length;
       final totalCount = _properties!.where((prop) => prop.name != '[[Prototype]]').length;
       return totalCount > 0 && childNodeCount == totalCount;
     }
@@ -3700,7 +3748,7 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
       // Create a remote object for the prototype
       final prototypeObject = ConsoleRemoteObject(
         objectId: property.valueId,
-        className: 'Object',  // Will be determined when expanded
+        className: 'Object', // Will be determined when expanded
         description: '[[Prototype]]',
         objectType: RemoteObjectType.object,
       );
@@ -3789,32 +3837,31 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
           ),
           Flexible(
             child: property.value != null
-              ? _buildPropertyValue(property.value!)
-              : property.valueId.isNotEmpty
-                ? // If we have a valueId but no value, show a placeholder
-                  Text(
-                    '(...)',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                      color: Colors.white54,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  )
-                : Text(
-                    'undefined',
-                    style: TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 11,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
+                ? _buildPropertyValue(property.value!)
+                : property.valueId.isNotEmpty
+                    ? // If we have a valueId but no value, show a placeholder
+                    Text(
+                        '(...)',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          color: Colors.white54,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      )
+                    : Text(
+                        'undefined',
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildPropertyValue(ConsoleValue value) {
     if (value is ConsolePrimitiveValue) {
@@ -3871,8 +3918,8 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     // Element nodes: <tagname>
     // Comment nodes: <!-- -->
     return (name.startsWith('"') && name.endsWith('"')) ||
-           (name.startsWith('<') && name.endsWith('>')) ||
-           (name.startsWith('<!--') && name.endsWith('-->'));
+        (name.startsWith('<') && name.endsWith('>')) ||
+        (name.startsWith('<!--') && name.endsWith('-->'));
   }
 
   Color _getChildNodeColor(String name) {
@@ -3889,4 +3936,3 @@ class _RemoteObjectWidgetState extends State<_RemoteObjectWidget> {
     return Colors.white70;
   }
 }
-
