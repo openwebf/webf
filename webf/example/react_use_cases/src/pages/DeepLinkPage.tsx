@@ -12,7 +12,6 @@ export const DeepLinkPage: React.FC = () => {
   const [currentUrl, setCurrentUrl] = useState<string>('');
   const [deepLinkHistory, setDeepLinkHistory] = useState<string[]>([]);
   const [customSchemeResult, setCustomSchemeResult] = useState<string>('');
-  const [registerResult, setRegisterResult] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
@@ -26,51 +25,11 @@ export const DeepLinkPage: React.FC = () => {
       setDeepLinkHistory(prev => [...prev, newUrl].slice(-5)); // Keep last 5 URLs
     };
 
+    // FIXME
     window.addEventListener('popstate', handleURLChange);
     return () => window.removeEventListener('popstate', handleURLChange);
   }, []);
 
-  const generateDeepLink = (path: string, params?: {[key: string]: string}) => {
-    const baseUrl = window.location.origin;
-    const searchParams = new URLSearchParams(params);
-    const queryString = searchParams.toString();
-    return `${baseUrl}${path}${queryString ? `?${queryString}` : ''}`;
-  };
-
-  const testWebLink = (url: string) => {
-    setIsProcessing(prev => ({...prev, webLink: true}));
-    try {
-      // In WebF, use hybridHistory for navigation instead of window.location
-      if ((window as any).webf?.hybridHistory) {
-        // Extract path and params from the URL manually (WebF doesn't support searchParams.entries)
-        const urlObj = new URL(url);
-        const path = urlObj.pathname;
-        
-        // Parse query parameters manually
-        const params: {[key: string]: string} = {};
-        const queryString = urlObj.search.slice(1); // Remove the '?' prefix
-        if (queryString) {
-          const pairs = queryString.split('&');
-          pairs.forEach(pair => {
-            const [key, value] = pair.split('=');
-            if (key) {
-              params[decodeURIComponent(key)] = value ? decodeURIComponent(value) : '';
-            }
-          });
-        }
-        
-        console.log('Navigating to path:', path, 'with params:', params);
-        // Navigate using hybridHistory
-        (window as any).webf.hybridHistory.pushState(params, path);
-      } else {
-        console.error('WebF hybrid history not available');
-      }
-    } catch (error) {
-      console.error('Failed to navigate to:', url, error);
-    } finally {
-      setTimeout(() => setIsProcessing(prev => ({...prev, webLink: false})), 1000);
-    }
-  };
 
   const testCustomScheme = async (scheme: string) => {
     setIsProcessing(prev => ({...prev, customScheme: true}));
@@ -98,61 +57,7 @@ export const DeepLinkPage: React.FC = () => {
     }
   };
 
-  const shareDeepLink = async (link: string) => {
-    setIsProcessing(prev => ({...prev, share: true}));
-    try {
-      if (!window.webf?.invokeModuleAsync) {
-        throw new Error('WebF native module not available');
-      }
 
-      const title = 'WebF Deep Link Demo';
-      const text = `Check out this WebF demo: ${link}`;
-      
-      const result = await window.webf.invokeModuleAsync(
-        'Share',
-        'shareText',
-        title,
-        text
-      );
-      
-      console.log('Share result:', result);
-      if (result) {
-        console.log('Deep link shared successfully');
-      } else {
-        console.log('Failed to share deep link');
-      }
-    } catch (error) {
-      console.error('Failed to share deep link:', error);
-    } finally {
-      setIsProcessing(prev => ({...prev, share: false}));
-    }
-  };
-
-  const registerDeepLinkHandler = async () => {
-    setIsProcessing(prev => ({...prev, register: true}));
-    try {
-      if (!window.webf?.invokeModuleAsync) {
-        throw new Error('WebF native module not available');
-      }
-
-      const result = await window.webf.invokeModuleAsync(
-        'DeepLink',
-        'registerDeepLinkHandler',
-        {
-          scheme: 'webfdemo',
-          host: 'app'
-        }
-      );
-      
-      console.log('Register result:', result);
-      setRegisterResult(`Registration result: ${JSON.stringify(result)}`);
-    } catch (error) {
-      console.error('Failed to register deep link handler:', error);
-      setRegisterResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsProcessing(prev => ({...prev, register: false}));
-    }
-  };
 
   const parseUrlParams = (url: string) => {
     try {
@@ -168,29 +73,6 @@ export const DeepLinkPage: React.FC = () => {
   };
 
   const currentParams = parseUrlParams(currentUrl);
-
-  const demoLinks = [
-    {
-      title: 'Home Page',
-      description: 'Navigate to the main home page',
-      url: generateDeepLink('/', {source: 'deeplink', campaign: 'demo'})
-    },
-    {
-      title: 'Animation Demo',
-      description: 'Direct link to animation showcase',
-      url: generateDeepLink('/animation', {feature: 'animations', from: 'deeplink'})
-    },
-    {
-      title: 'Video Player',
-      description: 'Link to video player functionality',
-      url: generateDeepLink('/video', {autoplay: 'true', quality: 'hd'})
-    },
-    {
-      title: 'Typography Showcase',
-      description: 'Typography with specific language',
-      url: generateDeepLink('/typography', {lang: 'multilingual', demo: 'text'})
-    }
-  ];
 
   const customSchemes = [
     {
@@ -224,7 +106,10 @@ export const DeepLinkPage: React.FC = () => {
     <div id="main">
       <WebFListView className={styles.list}>
         <div className={styles.componentSection}>
-          <div className={styles.sectionTitle}>Deep Link Showcase</div>
+          <div className={styles.sectionTitle}>Deep Link Integration Demo</div>
+          <div className={styles.sectionDescription}>
+            Demonstrate WebF application's deep link capabilities: launching external apps and registering custom URL schemes
+          </div>
           <div className={styles.componentBlock}>
             
             {/* Current URL Info */}
@@ -266,43 +151,11 @@ export const DeepLinkPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Web Deep Links */}
-            <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Web Deep Links</div>
-              <div className={styles.itemDesc}>Navigate to different sections with URL parameters</div>
-              <div className={styles.linksContainer}>
-                {demoLinks.map((link, index) => (
-                  <div key={index} className={styles.linkCard}>
-                    <div className={styles.linkHeader}>
-                      <div className={styles.linkTitle}>{link.title}</div>
-                      <div className={styles.linkDesc}>{link.description}</div>
-                    </div>
-                    <div className={styles.linkUrl}>{link.url}</div>
-                    <div className={styles.linkActions}>
-                      <button 
-                        className={`${styles.linkButton} ${isProcessing.webLink ? styles.processing : ''}`}
-                        onClick={() => testWebLink(link.url)}
-                        disabled={isProcessing.webLink}
-                      >
-                        {isProcessing.webLink ? 'Navigating...' : 'Open Link'}
-                      </button>
-                      <button 
-                        className={`${styles.linkButton} ${styles.secondaryButton} ${isProcessing.share ? styles.processing : ''}`}
-                        onClick={() => shareDeepLink(link.url)}
-                        disabled={isProcessing.share}
-                      >
-                        {isProcessing.share ? 'Sharing...' : 'Share'}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Custom URL Schemes */}
             <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Custom URL Schemes</div>
-              <div className={styles.itemDesc}>Test integration with system apps and services</div>
+              <div className={styles.itemLabel}>Launch External Apps</div>
+              <div className={styles.itemDesc}>Test opening external applications using custom URL schemes</div>
               <div className={styles.schemesContainer}>
                 {customSchemes.map((scheme, index) => (
                   <div key={index} className={styles.schemeCard}>
@@ -330,45 +183,44 @@ export const DeepLinkPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Deep Link Registration */}
+            {/* Deep Link Examples */}
             <div className={styles.componentItem}>
-              <div className={styles.itemLabel}>Deep Link Handler Registration</div>
-              <div className={styles.itemDesc}>Register custom scheme handlers for the application</div>
+              <div className={styles.itemLabel}>Custom Deep Link Examples</div>
+              <div className={styles.itemDesc}>Examples of deep links that can open this application</div>
+              <div className={styles.platformSupport}>
+                <strong>Configured on: macOS and iOS</strong> 
+              </div>
               <div className={styles.registrationContainer}>
                 <div className={styles.registrationInfo}>
                   <div className={styles.infoTitle}>Custom Scheme: webfdemo://</div>
                   <div className={styles.infoDesc}>
-                    Register a custom URL scheme that can be used to open this app from external sources.
+                    This application is registered to handle webfdemo:// URLs. You can test these from Terminal or other applications.
                   </div>
                   <div className={styles.exampleSchemes}>
                     <div className={styles.exampleItem}>
-                      <code>webfdemo://app/home</code>
-                      <div className={styles.exampleDesc}>Open home page</div>
+                      <code>webfdemo://app/react_use_cases?page=deeplink</code>
+                      <div className={styles.exampleDesc}>Open Deep Link demo page</div>
                     </div>
                     <div className={styles.exampleItem}>
-                      <code>webfdemo://app/video?id=123</code>
-                      <div className={styles.exampleDesc}>Open specific video</div>
+                      <code>webfdemo://app/react_use_cases?page=animation</code>
+                      <div className={styles.exampleDesc}>Open Animation demo</div>
                     </div>
                     <div className={styles.exampleItem}>
-                      <code>webfdemo://app/share?url=example.com</code>
-                      <div className={styles.exampleDesc}>Share URL</div>
+                      <code>webfdemo://app/react_use_cases?page=video</code>
+                      <div className={styles.exampleDesc}>Open Video demo</div>
                     </div>
+                    <div className={styles.exampleItem}>
+                      <code>webfdemo://app/react_use_cases?page=network</code>
+                      <div className={styles.exampleDesc}>Open Network demo</div>
+                    </div>
+                  </div>
+                  <div className={styles.terminalExample}>
+                    <div className={styles.terminalTitle}>Terminal Test Example:</div>
+                    <code className={styles.terminalCommand}>
+                      open "webfdemo://app/react_use_cases?page=deeplink"
+                    </code>
                   </div>
                 </div>
-                <button 
-                  className={`${styles.registerButton} ${isProcessing.register ? styles.processing : ''}`}
-                  onClick={registerDeepLinkHandler}
-                  disabled={isProcessing.register}
-                >
-                  {isProcessing.register ? 'Registering...' : 'Register Handler'}
-                </button>
-                
-                {registerResult && (
-                  <div className={styles.resultContainer}>
-                    <div className={styles.resultLabel}>Registration Result:</div>
-                    <div className={styles.resultText}>{registerResult}</div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

@@ -45,5 +45,16 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>webf.demo.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>webfdemo</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
