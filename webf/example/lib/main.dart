@@ -27,6 +27,7 @@ import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 
 import 'package:day_night_switcher/day_night_switcher.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:app_links/app_links.dart';
 
 import 'custom_hybrid_history_delegate.dart';
 import 'custom_listview.dart';
@@ -37,6 +38,7 @@ import 'flutter_ui_handler.dart';
 import 'flutter_interaction_handler.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -217,6 +219,102 @@ class MyApp extends StatefulWidget {
 
 class MyAppState extends State<MyApp> {
   final ValueNotifier<String> webfPageName = ValueNotifier('');
+  late AppLinks _appLinks;
+  
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initialize app links
+    _appLinks = AppLinks();
+    
+    // Set up deep link navigation callback - but don't use Navigator in initState
+    DeepLinkModule.setNavigationCallback((String target, Map<String, String> params) async {
+      
+      if (target == 'react_use_cases') {
+        // Get the page parameter to determine route
+        final page = params['page'];
+        String targetRoute = '/';
+        
+        // Map page parameter to specific routes
+        if (page != null) {
+          switch (page) {
+            case 'deeplink':
+              targetRoute = '/deeplink';
+              break;
+            case 'animation':
+              targetRoute = '/animation';
+              break;
+            case 'video':
+              targetRoute = '/video';
+              break;
+            case 'network':
+              targetRoute = '/network';
+              break;
+            default:
+              targetRoute = '/';
+          }
+        }
+        
+        // Check if react_use_cases controller already exists
+        WebFController? existingController = 
+            await WebFControllerManager.instance.getController('react_use_cases');
+        
+        if (existingController != null && webfPageName.value == 'react_use_cases') {
+          // If controller exists and we're already on the react_use_cases page,
+          // use hybridHistory to navigate within the existing page
+          print('Using existing controller, navigating to: $targetRoute');
+          existingController.hybridHistory.pushState(params, targetRoute);
+        } else {
+          // Set page name and navigate after a short delay to ensure UI is ready
+          webfPageName.value = 'react_use_cases';
+          print('Set page to react_use_cases with route: $targetRoute');
+          
+          // Use a delayed navigation to ensure the Navigator is ready
+          Future.delayed(Duration(milliseconds: 100), () async {
+            final context = navigatorKey.currentContext;
+            if (context != null && mounted) {
+              Navigator.push(context, MaterialPageRoute(builder: (context) {
+                return WebFDemo(
+                  webfPageName: 'react_use_cases',
+                  initialRoute: targetRoute,
+                );
+              }));
+            }
+          });
+        }
+      }
+    });
+    
+    // Listen for incoming app links when app is already running
+    _appLinks.uriLinkStream.listen((Uri uri) {
+      print('Received app link: $uri');
+      _handleIncomingLink(uri.toString());
+    });
+    
+    // Handle initial deep link when app is launched from closed state
+    _handleInitialLink();
+  }
+  
+  void _handleInitialLink() async {
+    // Add a small delay to ensure the app is fully initialized
+    await Future.delayed(Duration(milliseconds: 500));
+    
+    try {
+      final Uri? initialLink = await _appLinks.getInitialLink();
+      if (initialLink != null) {
+        print('App launched with link: $initialLink');
+        _handleIncomingLink(initialLink.toString());
+      }
+    } catch (e) {
+      print('Failed to get initial app link: $e');
+    }
+  }
+  
+  void _handleIncomingLink(String url) async {
+    final result = await DeepLinkModule.processDeepLink(url);
+    print('Deep link processing result: $result');
+  }
 
   Route<dynamic>? handleOnGenerateRoute(RouteSettings settings) {
     return CupertinoPageRoute(
@@ -244,6 +342,7 @@ class MyAppState extends State<MyApp> {
         initialRoute: '/',
         theme: theme,
         darkTheme: darkTheme,
+        navigatorKey: navigatorKey,
         navigatorObservers: [routeObserver],
         themeMode: ThemeMode.system,
         onGenerateInitialRoutes: (initialRoute) {

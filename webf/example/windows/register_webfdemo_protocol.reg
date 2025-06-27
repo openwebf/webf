@@ -1,0 +1,15 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\webfdemo]
+@="WebF Demo Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\webfdemo\DefaultIcon]
+@="webf_example.exe"
+
+[HKEY_CLASSES_ROOT\webfdemo\shell]
+
+[HKEY_CLASSES_ROOT\webfdemo\shell\open]
+
+[HKEY_CLASSES_ROOT\webfdemo\shell\open\command]
+@="\"C:\\path\\to\\webf_example.exe\" \"%1\""

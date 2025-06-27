@@ -8,6 +8,9 @@ class DeepLinkModule extends WebFBaseModule {
   
   // Store registered deep link handlers
   static final Map<String, Function> _deepLinkHandlers = {};
+  
+  // Global navigation callback
+  static Function(String, Map<String, String>)? _navigationCallback;
 
   @override
   void dispose() {
@@ -21,8 +24,99 @@ class DeepLinkModule extends WebFBaseModule {
         return await handleOpenDeepLink(params);
       case 'registerDeepLinkHandler':
         return await handleRegisterDeepLinkHandler(params);
+      case 'handleIncomingDeepLink':
+        return await handleIncomingDeepLink(params);
       default:
         return {'success': false, 'error': 'Method not found: $method'};
+    }
+  }
+  
+  /// Set global navigation callback
+  static void setNavigationCallback(Function(String, Map<String, String>) callback) {
+    _navigationCallback = callback;
+  }
+  
+  /// Handle incoming deep link (from app launch or while running)
+  static Future<Map<String, dynamic>> processDeepLink(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      
+      // Check if it's our custom scheme
+      if (uri.scheme == 'webfdemo') {
+        return await _handleWebFDemoDeepLink(uri);
+      }
+      
+      return {
+        'success': false,
+        'error': 'Unsupported URL scheme: ${uri.scheme}'
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to process deep link: $e'
+      };
+    }
+  }
+  
+  /// Handle webfdemo:// deep links
+  static Future<Map<String, dynamic>> _handleWebFDemoDeepLink(Uri uri) async {
+    try {
+      // Parse the URL: webfdemo://app/react_use_cases?page=deeplink
+      final path = uri.path;
+      final queryParams = uri.queryParameters;
+      
+      print('Processing webfdemo deep link: $uri');
+      print('Path: $path');
+      print('Query params: $queryParams');
+      
+      // Handle different path patterns
+      if (path.startsWith('/react_use_cases')) {
+        // Direct navigation to react use cases
+        if (_navigationCallback != null) {
+          _navigationCallback!('react_use_cases', queryParams);
+          return {
+            'success': true,
+            'action': 'navigate',
+            'target': 'react_use_cases',
+            'params': queryParams
+          };
+        } else {
+          return {
+            'success': false,
+            'error': 'Navigation callback not set'
+          };
+        }
+      } else if (path == '/app' || path == '/') {
+        // General app deep link with query params
+        final target = queryParams['target'] ?? 'home';
+        final page = queryParams['page'];
+        
+        if (target == 'react_use_cases' && _navigationCallback != null) {
+          _navigationCallback!('react_use_cases', queryParams);
+          return {
+            'success': true,
+            'action': 'navigate',
+            'target': 'react_use_cases',
+            'params': queryParams
+          };
+        } else {
+          return {
+            'success': true,
+            'action': 'open_app',
+            'params': queryParams
+          };
+        }
+      }
+      
+      return {
+        'success': false,
+        'error': 'Unrecognized deep link path: $path'
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to handle webfdemo deep link: $e'
+      };
     }
   }
 
@@ -198,6 +292,35 @@ class DeepLinkModule extends WebFBaseModule {
       return 'macOS: Add URL scheme to Info.plist similar to iOS';
     } else {
       return 'Platform-specific configuration required';
+    }
+  }
+
+  /// Handle incoming deep link from WebF
+  Future<Map<String, dynamic>> handleIncomingDeepLink(params) async {
+    try {
+      // Handle both List<dynamic> and direct Map parameters
+      Map paramMap;
+      if (params is List && params.isNotEmpty) {
+        paramMap = params[0] as Map;
+      } else {
+        paramMap = params as Map;
+      }
+      
+      final url = paramMap['url'] as String?;
+      
+      if (url == null || url.isEmpty) {
+        return {
+          'success': false,
+          'error': 'URL is required'
+        };
+      }
+      
+      return await processDeepLink(url);
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Failed to handle incoming deep link: $e'
+      };
     }
   }
 

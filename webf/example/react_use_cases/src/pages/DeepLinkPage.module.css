@@ -585,4 +585,57 @@
     background: rgba(0, 122, 255, 0.3);
     border-color: rgba(0, 122, 255, 0.4);
   }
+  
+  .terminalExample {
+    background: #383838;
+    border-color: #007bff;
+  }
+  
+  .terminalTitle {
+    color: #ffffff;
+  }
+  
+  .terminalCommand {
+    background: #1a1a1a;
+    color: #e2e8f0;
+  }
+}
+
+/* Platform support badge styles */
+.platformSupport {
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #1565c0;
+}
+
+/* Terminal example styles */
+.terminalExample {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.terminalTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.terminalCommand {
+  display: block;
+  background: #2d3748;
+  color: #e2e8f0;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
