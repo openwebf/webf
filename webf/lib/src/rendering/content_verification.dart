@@ -176,13 +176,12 @@ class ContentVerification {
   
   /// Gets the total visible content area in the document
   static double getTotalVisibleContentArea(Document document) {
-    final documentElement = document.documentElement;
-    if (documentElement == null || documentElement.attachedRenderer == null) {
+    final viewport = document.viewport;
+    if (viewport == null) {
       return 0;
     }
     
-    final renderer = documentElement.attachedRenderer!;
-    return _calculateVisibleArea(renderer);
+    return _calculateVisibleArea(viewport);
   }
   
   /// Calculates the total visible area of content in a render tree
@@ -219,13 +218,12 @@ class ContentVerification {
   
   /// Verifies if the document has any visible content rendered
   static bool hasVisibleContentInDocument(Document document) {
-    final documentElement = document.documentElement;
-    if (documentElement == null || documentElement.attachedRenderer == null) {
+    final viewport = document.viewport;
+    if (viewport == null) {
       return false;
     }
     
-    final renderer = documentElement.attachedRenderer!;
-    return _hasVisibleContentInTree(renderer);
+    return _hasVisibleContentInTree(viewport);
   }
   
   /// Gets detailed content information from a WebFController
@@ -264,9 +262,9 @@ class ContentVerification {
       renderObject.visitChildren(countContent);
     }
     
-    final documentElement = document.documentElement;
-    if (documentElement?.attachedRenderer != null) {
-      countContent(documentElement!.attachedRenderer!);
+    final viewport = document.viewport;
+    if (viewport != null) {
+      countContent(viewport);
     }
     
     return info;
