@@ -85,6 +85,9 @@ class RoutePerformanceMetrics {
   // Content verification results
   ContentInfo? lcpContentInfo;
 
+  // Initial evaluated state when performance tracking started
+  bool initialEvaluatedState = false;
+
   RoutePerformanceMetrics(this.routePath);
 
   void dispose() {
@@ -559,6 +562,8 @@ class WebFController with Diagnosticable {
       _routeMetrics[routePath] = RoutePerformanceMetrics(routePath);
       // Initialize the navigation start time for the new route
       _routeMetrics[routePath]!.navigationStartTime = DateTime.now();
+      // Capture the initial evaluated state when route is pushed
+      _routeMetrics[routePath]!.initialEvaluatedState = evaluated;
     }
   }
 
@@ -905,6 +910,9 @@ class WebFController with Diagnosticable {
       // Reset FP tracking for new page load
       metrics.fpReported = false;
       metrics.fpTime = 0;
+
+      // Capture the initial evaluated state for new page load
+      metrics.initialEvaluatedState = evaluated;
     }
 
     // Cancel any existing timer
@@ -1582,12 +1590,15 @@ class WebFController with Diagnosticable {
     metrics.fcpReported = false;
     metrics.fcpTime = 0;
 
+    // Capture the initial evaluated state when performance tracking starts
+    metrics.initialEvaluatedState = evaluated;
+
     // Cancel any existing timer
     metrics.lcpAutoFinalizeTimer?.cancel();
 
     // Set up auto-finalization timer with a 5 second delay
     // This ensures we wait long enough for all LCP candidates to be reported
-    metrics.lcpAutoFinalizeTimer = Timer(Duration(seconds: 5), () {
+    metrics.lcpAutoFinalizeTimer = Timer(Duration(seconds: 10), () {
       // Auto-finalize LCP if no user interaction has occurred
       if (!metrics.lcpReported) {
         finalizeLCP();
@@ -1637,7 +1648,7 @@ class WebFController with Diagnosticable {
 
       // Fire the progressive onLCP callback
       if (onLCP != null) {
-        onLCP!(lcpTime, evaluated);
+        onLCP!(lcpTime, metrics.initialEvaluatedState);
       }
 
       // Fire the route-aware callback
@@ -1661,7 +1672,7 @@ class WebFController with Diagnosticable {
       // Use the last reported LCP time instead of calculating a new time
       // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
       if (onLCPFinal != null) {
-        onLCPFinal!(metrics.lastReportedLCPTime, evaluated);
+        onLCPFinal!(metrics.lastReportedLCPTime, metrics.initialEvaluatedState);
       }
 
       // Fire the route-aware callback
@@ -1695,7 +1706,7 @@ class WebFController with Diagnosticable {
 
     // Fire the FCP callback
     if (onFCP != null) {
-      onFCP!(metrics.fcpTime, evaluated);
+      onFCP!(metrics.fcpTime, metrics.initialEvaluatedState);
     }
 
     // Fire the route-aware callback
@@ -1719,7 +1730,7 @@ class WebFController with Diagnosticable {
 
     // Fire the FP callback
     if (onFP != null) {
-      onFP!(metrics.fpTime, evaluated);
+      onFP!(metrics.fpTime, metrics.initialEvaluatedState);
     }
 
     // Fire the route-aware callback
