@@ -91,6 +91,9 @@ void main() async {
             onLCP: (time, isEvaluated) {
               print('LCP time: $time, evaluated: $isEvaluated');
             },
+            onLCPContentVerification: (contentInfo, routePath) {
+              print('contentInfo: $contentInfo');
+            },
           ),
       bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
       setup: (controller) {

@@ -1,3 +1,16 @@
+## 0.21.7+2
+
+Bug Fixes
+
+### Performance Metrics
+
+- **Fixed `isEvaluated` parameter in performance callbacks
+  - The `isEvaluated` parameter in `onFP`, `onFCP`, and `onLCP` callbacks now correctly reflects the
+    controller's evaluated state when performance tracking started, rather than the current state
+    when the callback fires
+- Performance Metrics: Fixed content visibility reporting in release mode, ensuring accurate
+  performance metric callbacks (FCP/LCP) are triggered correctly in production builds
+
 ## 0.21.7+1
 
 Bug Fixes
