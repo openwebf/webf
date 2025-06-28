@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:webf/webf.dart';
 import 'flutter_ui_handler.dart';
 
 class FlutterInteractionHandler {
@@ -41,6 +43,10 @@ class FlutterInteractionHandler {
           return await _handleGetFromClipboard();
         case 'processComplexData':
           return await _handleProcessComplexData(arguments);
+        case 'toggleTheme':
+          return await _handleToggleTheme(arguments);
+        case 'getCurrentTheme':
+          return await _handleGetCurrentTheme();
         default:
           return {
             'success': false,
@@ -377,5 +383,82 @@ class FlutterInteractionHandler {
       ],
       'message': 'Complex data processed and analyzed successfully by Flutter backend',
     };
+  }
+
+  /// Handle theme toggle
+  Future<Map<String, dynamic>> _handleToggleTheme(arguments) async {
+    try {
+      final themeData = arguments[0];
+      final String targetTheme = themeData['targetTheme']?.toString() ?? 'light';
+      
+      // Get the current context from FlutterUIHandler
+      final context = FlutterUIHandler().getCurrentContext();
+      if (context == null) {
+        return {
+          'success': false,
+          'error': 'No context available for theme switching',
+        };
+      }
+
+      // Get the WebF controller for react_use_cases
+      WebFController? controller = await WebFControllerManager.instance.getController('react_use_cases');
+      
+      // Toggle theme using AdaptiveTheme
+      if (targetTheme == 'dark') {
+        AdaptiveTheme.of(context).setDark();
+        controller?.darkModeOverride = true;
+      } else {
+        AdaptiveTheme.of(context).setLight();
+        controller?.darkModeOverride = false;
+      }
+
+      return {
+        'success': true,
+        'newTheme': targetTheme,
+        'timestamp': DateTime.now().toIso8601String(),
+        'message': 'Theme switched to $targetTheme mode successfully',
+        'platform': Platform.operatingSystem,
+        'controller': controller != null ? 'Updated WebF controller' : 'No WebF controller found',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Theme toggle error: ${e.toString()}',
+        'platform': Platform.operatingSystem,
+      };
+    }
+  }
+
+  /// Get current theme
+  Future<Map<String, dynamic>> _handleGetCurrentTheme() async {
+    try {
+      // Get the current context from FlutterUIHandler
+      final context = FlutterUIHandler().getCurrentContext();
+      if (context == null) {
+        return {
+          'success': false,
+          'error': 'No context available for theme detection',
+        };
+      }
+
+      // Get current theme using AdaptiveTheme
+      final isDarkMode = AdaptiveTheme.of(context).theme.brightness == Brightness.dark;
+      final currentTheme = isDarkMode ? 'dark' : 'light';
+
+      return {
+        'success': true,
+        'currentTheme': currentTheme,
+        'isDarkMode': isDarkMode,
+        'timestamp': DateTime.now().toIso8601String(),
+        'message': 'Current theme retrieved successfully',
+        'platform': Platform.operatingSystem,
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Get current theme error: ${e.toString()}',
+        'platform': Platform.operatingSystem,
+      };
+    }
   }
 }

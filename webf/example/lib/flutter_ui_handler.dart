@@ -12,6 +12,10 @@ class FlutterUIHandler {
     _context = context;
   }
 
+  BuildContext? getCurrentContext() {
+    return _context;
+  }
+
   Future<Map<String, dynamic>> showDialog({
     required String title,
     required String message,

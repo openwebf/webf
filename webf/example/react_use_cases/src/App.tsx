@@ -24,6 +24,7 @@ import { ModalPopupPage } from './pages/ModalPopupPage';
 import { LoadingPage } from './pages/LoadingPage';
 import { AlertPage } from './pages/AlertPage';
 import { ImagePreloadPage } from './pages/ImagePreloadPage';
+import { ThemeTogglePage } from './pages/ThemeTogglePage';
 // import { FormAdvancedPage } from './pages/FormAdvancedPage';
 
 function App() {
@@ -97,6 +98,9 @@ function App() {
       </RouterView>
       <RouterView path="/image-preload" title="Image Preload">
         <ImagePreloadPage />
+      </RouterView>
+      <RouterView path="/theme-toggle" title="Theme Toggle">
+        <ThemeTogglePage />
       </RouterView>
     </div>
   );

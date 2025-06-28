@@ -16,45 +16,23 @@ export const HomePage: React.FC = () => {
     <div id="main">
       <WebFListView className={styles.list}>
         <div className={styles.componentSection}>
-          {/* Common Category */}
-          <div className={styles.sectionTitle}>Common</div>
+          {/* Basic Components */}
+          <div className={styles.sectionTitle}>Basic Components</div>
           <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
-            {/* Show Case */}
-            <div className={styles.componentItem} onClick={() => navigateTo('/show_case')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Show Case</div>
-                <div className={styles.itemDesc}>Highlight your elements step by step.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/listview')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Custom Listview</div>
-                <div className={styles.itemDesc}>A custom listview component.</div>
+                <div className={styles.itemDesc}>Custom listview component with scroll and refresh capabilities.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/form')}>
               <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Basic Form</div>
-                <div className={styles.itemDesc}>Simple form with basic validation using WebF components.</div>
+                <div className={styles.itemTitle}>Forms & Input</div>
+                <div className={styles.itemDesc}>Form validation, input handling, and user interaction patterns.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
-            {/* <div className={styles.componentItem} onClick={() => navigateTo('/form-advanced')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Advanced Form</div>
-                <div className={styles.itemDesc}>Comprehensive form with React Hook Form, dynamic fields, and complex validation.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div> */}
-            {/* <div className={styles.componentItem} onClick={() => navigateTo('/echarts')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>ECharts</div>
-                <div className={styles.itemDesc}>Interactive charts including pie, bar, and line charts.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div> */}
             <div className={styles.componentItem} onClick={() => navigateTo('/image')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Image Gallery</div>
@@ -62,15 +40,22 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/show_case')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Show Case</div>
+                <div className={styles.itemDesc}>Highlight and guide users through UI elements step by step.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
           </div>
 
-          {/* UI & Animation Category */}
-          <div className={styles.sectionTitle}>UI & Animation</div>
+          {/* UI & Styling */}
+          <div className={styles.sectionTitle}>UI & Styling</div>
           <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
             <div className={styles.componentItem} onClick={() => navigateTo('/animation')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>CSS Animations</div>
-                <div className={styles.itemDesc}>Basic CSS animations: fade, slide, scale, rotate, bounce, and pulse.</div>
+                <div className={styles.itemDesc}>CSS animations: fade, slide, scale, rotate, bounce, and pulse effects.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
@@ -78,6 +63,20 @@ export const HomePage: React.FC = () => {
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Typography</div>
                 <div className={styles.itemDesc}>Text layouts with multilingual support and image wrapping.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/theme-toggle')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Theme Toggle</div>
+                <div className={styles.itemDesc}>Dark/light mode switching with Flutter integration.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/responsive')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Responsive Design</div>
+                <div className={styles.itemDesc}>Adaptive layouts and responsive design patterns for all screen sizes.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
@@ -123,8 +122,8 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Media & Fonts Category */}
-          <div className={styles.sectionTitle}>Media & Fonts</div>
+          {/* Media & Performance */}
+          <div className={styles.sectionTitle}>Media & Performance</div>
           <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
             <div className={styles.componentItem} onClick={() => navigateTo('/video')}>
               <div className={styles.itemContent}>
@@ -147,22 +146,36 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
-          </div>
-
-          {/* Advanced Features Category */}
-          <div className={styles.sectionTitle}>Advanced Features</div>
-          <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
-            <div className={styles.componentItem} onClick={() => navigateTo('/native-interaction')}>
+            <div className={styles.componentItem} onClick={() => navigateTo('/network')}>
               <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Native Interaction</div>
-                <div className={styles.itemDesc}>Screenshot capture and sharing capabilities with native modules.</div>
+                <div className={styles.itemTitle}>Network Requests</div>
+                <div className={styles.itemDesc}>HTTP requests: GET, POST, PUT, DELETE, FormData, and file uploads.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+          </div>
+
+          {/* Native Integration */}
+          <div className={styles.sectionTitle}>Native Integration</div>
+          <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
             <div className={styles.componentItem} onClick={() => navigateTo('/flutter-interaction')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Flutter Interaction</div>
                 <div className={styles.itemDesc}>Method channel communication between WebF and Flutter.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/native-interaction')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Native Modules</div>
+                <div className={styles.itemDesc}>Screenshot capture and sharing capabilities with native modules.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/routing')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Routing & Navigation</div>
+                <div className={styles.itemDesc}>Multi-route scenarios using WebF hybrid history API.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
@@ -173,27 +186,6 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
-            <div className={styles.componentItem} onClick={() => navigateTo('/network')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Network Requests</div>
-                <div className={styles.itemDesc}>HTTP requests: GET, POST, PUT, DELETE, FormData, and file uploads.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
-            <div className={styles.componentItem} onClick={() => navigateTo('/responsive')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Responsive Design</div>
-                <div className={styles.itemDesc}>Adaptive layouts and responsive design patterns for all screen sizes.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
-            {/* <div className={styles.componentItem} onClick={() => navigateTo('/routing')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Routing & Navigation</div>
-                <div className={styles.itemDesc}>Multi-route scenarios using WebF hybrid history API.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div> */}
           </div>
         </div> {/* End of main component-section */}
       </WebFListView>
