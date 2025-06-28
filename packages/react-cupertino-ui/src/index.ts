@@ -3,6 +3,10 @@
  */
 export { FlutterCupertinoTimerPicker, FlutterCupertinoTimerPickerElement } from "./lib/src/timer-picker";
 export { FlutterCupertinoTextarea, FlutterCupertinoTextareaElement } from "./lib/src/textarea";
+export { FlutterCupertinoTabBar, FlutterCupertinoTabBarElement } from "./lib/src/tab_bar";
+export { FlutterCupertinoTabBarItem, FlutterCupertinoTabBarItemElement } from "./lib/src/tab_bar";
+export { FlutterCupertinoTab, FlutterCupertinoTabElement } from "./lib/src/tab";
+export { FlutterCupertinoTabItem, FlutterCupertinoTabItemElement } from "./lib/src/tab";
 export { FlutterCupertinoSwitch, FlutterCupertinoSwitchElement } from "./lib/src/switch";
 export { FlutterCupertinoSlider, FlutterCupertinoSliderElement } from "./lib/src/slider";
 export { FlutterCupertinoSearchInput, FlutterCupertinoSearchInputElement } from "./lib/src/search-input";
@@ -12,6 +16,7 @@ export { FlutterCupertinoModalPopup, FlutterCupertinoModalPopupElement } from ".
 export { FlutterCupertinoInput, FlutterCupertinoInputElement } from "./lib/src/input";
 export { FlutterCupertinoIcon, FlutterCupertinoIconElement } from "./lib/src/icon";
 export { FlutterCupertinoDatePicker, FlutterCupertinoDatePickerElement } from "./lib/src/date-picker";
+export { FlutterCupertinoContextMenu, FlutterCupertinoContextMenuElement } from "./lib/src/context-menu";
 export { FlutterCupertinoCheckbox, FlutterCupertinoCheckboxElement } from "./lib/src/checkbox";
 export { FlutterCupertinoButton, FlutterCupertinoButtonElement } from "./lib/src/button";
 export { createComponent } from "./utils/createComponent";
