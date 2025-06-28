@@ -1,5 +1,5 @@
 import React, { EventHandler, FC, ReactNode, SyntheticEvent, useState } from "react";
-import { createComponent } from "./CreateComponent";
+import { createWebFComponent, WebFElementWithMethods } from "@openwebf/webf-react-core-ui";
 
 export interface HybridRouterChangeEvent extends SyntheticEvent {
   readonly state: any;
@@ -16,13 +16,37 @@ export interface WebFHybridRouterProps {
   children?: ReactNode;
 }
 
-const RawWebFRouterLink = createComponent({
+// Define the element interface for WebFRouterLink
+export interface WebFRouterLinkElement extends WebFElementWithMethods<{}> {}
+
+// Create the raw component using createWebFComponent
+const RawWebFRouterLink = createWebFComponent<WebFRouterLinkElement, WebFHybridRouterProps>({
   tagName: 'webf-router-link',
   displayName: 'WebFRouterLink',
-  events: {
-    onScreen: 'onscreen'
-  }
-}) as React.ComponentType<WebFHybridRouterProps & { children?: React.ReactNode; ref?: React.Ref<HTMLUnknownElement> }>
+  
+  // Map props to attributes
+  attributeProps: ['path'],
+  
+  // Event handlers
+  events: [
+    {
+      propName: 'onScreen',
+      eventName: 'onscreen',
+      handler: (callback) => (event) => {
+        // Cast through unknown first for proper type conversion
+        callback(event as unknown as HybridRouterChangeEvent);
+      },
+    },
+    {
+      propName: 'offScreen',
+      eventName: 'offscreen',
+      handler: (callback) => (event) => {
+        // Cast through unknown first for proper type conversion
+        callback(event as unknown as HybridRouterChangeEvent);
+      },
+    },
+  ],
+});
 
 export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHybridRouterProps) {
   const [isRender, enableRender] = useState(false);
@@ -31,7 +55,7 @@ export const WebFRouterLink: FC<WebFHybridRouterProps> = function (props: WebFHy
     enableRender(true);
     
     if (props.onScreen) {
-      props.onScreen!(event);
+      props.onScreen(event);
     }
   };
 

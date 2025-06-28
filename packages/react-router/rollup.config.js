@@ -4,7 +4,7 @@ import typescript from '@rollup/plugin-typescript';
 import dts from 'rollup-plugin-dts';
 import path from 'path';
 
-const external = ['react', 'react-dom'];
+const external = ['react', 'react-dom', '@openwebf/webf-react-core-ui', '@openwebf/webf-enterprise-typings'];
 
 export default [
   {
@@ -30,10 +30,11 @@ export default [
       },
     ],
     external: (id) => {
-      // Mark react and react-dom as external
+      // Mark external dependencies
       if (external.includes(id)) return true;
-      // Also mark any react submodules as external
+      // Also mark any submodules as external
       if (id.startsWith('react/') || id.startsWith('react-dom/')) return true;
+      if (id.startsWith('@openwebf/')) return true;
       return false;
     },
     plugins: [
