@@ -25,7 +25,7 @@ import { LoadingPage } from './pages/LoadingPage';
 import { AlertPage } from './pages/AlertPage';
 import { ImagePreloadPage } from './pages/ImagePreloadPage';
 import { ThemeTogglePage } from './pages/ThemeTogglePage';
-// import { FormAdvancedPage } from './pages/FormAdvancedPage';
+import { FormAdvancedPage } from './pages/FormAdvancedPage';
 
 function App() {
   return (
@@ -42,9 +42,9 @@ function App() {
       <RouterView path="/form" title="Form">
         <FormPage />
       </RouterView>
-      {/* <RouterView path="/form-advanced" title="Form Advanced">
+      <RouterView path="/advanced-form" title="Advanced Form">
         <FormAdvancedPage />
-      </RouterView> */}
+      </RouterView>
       <RouterView path="/echarts" title="ECharts">
         <EChartsPage />
       </RouterView>

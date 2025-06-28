@@ -33,6 +33,13 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/advanced-form')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Advanced Forms</div>
+                <div className={styles.itemDesc}>Advanced form with react-hook-form.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/image')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Image Gallery</div>

@@ -39,7 +39,7 @@ export const RoutingPage: React.FC = () => {
       TabBarManager.setTabBarRef(tabBar.current);
       console.log('RoutingPage: TabBar ref updated');
     }
-  }, [tabBar.current]);
+  });
 
   return (
     <CupertinoTabBar ref={tabBar}>
