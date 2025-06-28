@@ -2,7 +2,7 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
 import {getPointerType, isPointerType} from "./utils";
 
@@ -128,7 +128,7 @@ function shouldMakeNullable(prop: any): boolean {
 }
 
 export function generateDartClass(blob: IDLBlob, command: string): string {
-  const classObjects = blob.objects as ClassObject[];
+  const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
   const classObjectDictionary = Object.fromEntries(
     classObjects.map(object => {
       return [object.name, object];

@@ -82,3 +82,8 @@ export class ClassObject {
 export class FunctionObject {
   declare: FunctionDeclaration
 }
+
+export class TypeAliasObject {
+  name: string;
+  type: string;
+}

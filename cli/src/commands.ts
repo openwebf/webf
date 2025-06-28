@@ -717,6 +717,29 @@ async function buildPackage(packagePath: string): Promise<void> {
   const packageName = packageJson.name;
   const packageVersion = packageJson.version;
   
+  // Check if node_modules exists
+  const nodeModulesPath = path.join(packagePath, 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    console.log(`\n📦 Installing dependencies for ${packageName}...`);
+    
+    // Check if yarn.lock exists to determine package manager
+    const yarnLockPath = path.join(packagePath, 'yarn.lock');
+    const useYarn = fs.existsSync(yarnLockPath);
+    
+    const installCommand = useYarn ? 'yarn' : NPM;
+    const installArgs = useYarn ? [] : ['install'];
+    
+    const installResult = spawnSync(installCommand, installArgs, {
+      cwd: packagePath,
+      stdio: 'inherit'
+    });
+    
+    if (installResult.status !== 0) {
+      throw new Error('Failed to install dependencies');
+    }
+    console.log('✅ Dependencies installed successfully!');
+  }
+  
   // Check if package has a build script
   if (packageJson.scripts?.build) {
     console.log(`\nBuilding ${packageName}@${packageVersion}...`);
@@ -744,6 +767,9 @@ async function buildAndPublishPackage(packagePath: string, registry?: string): P
   const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
   const packageName = packageJson.name;
   const packageVersion = packageJson.version;
+  
+  // First, ensure dependencies are installed and build the package
+  await buildPackage(packagePath);
   
   // Set registry if provided
   if (registry) {

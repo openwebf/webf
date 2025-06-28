@@ -10,6 +10,7 @@ import {
   IndexedPropertyDeclaration,
   ParameterMode,
   PropsDeclaration,
+  TypeAliasObject,
 } from './declaration';
 import {isUnionType} from "./utils";
 
@@ -67,7 +68,7 @@ export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropert
           return null;
         }
       })
-      .filter(o => o instanceof ClassObject || o instanceof FunctionObject) as (FunctionObject | ClassObject)[];
+      .filter(o => o instanceof ClassObject || o instanceof FunctionObject || o instanceof TypeAliasObject) as (FunctionObject | ClassObject | TypeAliasObject)[];
   } catch (error) {
     console.error(`Error analyzing ${blob.source}:`, error);
     throw new Error(`Failed to analyze ${blob.source}: ${error instanceof Error ? error.message : String(error)}`);
@@ -418,9 +419,26 @@ function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyColl
     case ts.SyntaxKind.VariableStatement:
       return processVariableStatement(statement as VariableStatement, unionTypeCollector);
       
+    case ts.SyntaxKind.TypeAliasDeclaration:
+      return processTypeAliasDeclaration(statement as ts.TypeAliasDeclaration, blob);
+      
     default:
       return null;
   }
+}
+
+function processTypeAliasDeclaration(
+  statement: ts.TypeAliasDeclaration,
+  blob: IDLBlob
+): TypeAliasObject {
+  const typeAlias = new TypeAliasObject();
+  typeAlias.name = statement.name.text;
+  
+  // Convert the type to a string representation
+  const printer = ts.createPrinter();
+  typeAlias.type = printer.printNode(ts.EmitHint.Unspecified, statement.type, statement.getSourceFile());
+  
+  return typeAlias;
 }
 
 function processInterfaceDeclaration(
