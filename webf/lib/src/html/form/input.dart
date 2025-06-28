@@ -38,6 +38,9 @@ class FlutterInputElement extends WidgetElement
   }
 
   @override
+  get value => state?.controller.text ?? '';
+
+  @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     super.initializeProperties(properties);
 
@@ -140,7 +143,7 @@ class FlutterInputElement extends WidgetElement
 class FlutterInputElementState extends WebFWidgetElementState
     with BaseInputState, RadioElementState, CheckboxElementState, ButtonElementState, TimeElementState {
   FlutterInputElementState(super.widgetElement);
-  
+
   // Implementation for TimeElementState
   @override
   Widget _createTimeInput(BuildContext context) {
