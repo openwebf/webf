@@ -2,7 +2,7 @@ import _ from "lodash";
 import fs from 'fs';
 import path from 'path';
 import {ParameterType} from "./analyzer";
-import {ClassObject, FunctionArgumentType, FunctionDeclaration} from "./declaration";
+import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
 import {getPointerType, isPointerType} from "./utils";
 
@@ -85,7 +85,9 @@ function toReactEventName(name: string) {
 }
 
 export function generateReactComponent(blob: IDLBlob) {
-  const classObjects = blob.objects as ClassObject[];
+  const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
+  const typeAliases = blob.objects.filter(obj => obj instanceof TypeAliasObject) as TypeAliasObject[];
+  
   const classObjectDictionary = Object.fromEntries(
     classObjects.map(object => {
       return [object.name, object];
@@ -104,60 +106,126 @@ export function generateReactComponent(blob: IDLBlob) {
       && !object.name.endsWith('Events');
   });
 
-  const dependencies = others.map(object => {
-    const props = object.props.map(prop => {
-      if (prop.optional) {
-        return `${prop.name}?: ${generateReturnType(prop.type)};`;
-      }
-      return `${prop.name}: ${generateReturnType(prop.type)};`;
-    }).join('\n  ');
+  // Include type aliases
+  const typeAliasDeclarations = typeAliases.map(typeAlias => {
+    return `type ${typeAlias.name} = ${typeAlias.type};`;
+  }).join('\n');
+  
+  const dependencies = [
+    typeAliasDeclarations,
+    others.map(object => {
+      const props = object.props.map(prop => {
+        if (prop.optional) {
+          return `${prop.name}?: ${generateReturnType(prop.type)};`;
+        }
+        return `${prop.name}: ${generateReturnType(prop.type)};`;
+      }).join('\n  ');
 
-    return `
+      return `
 interface ${object.name} {
   ${props}
 }`;
-  }).join('\n\n');
+    }).join('\n\n')
+  ].filter(Boolean).join('\n\n');
 
-  const componentProperties = properties.length > 0 ? properties[0] : undefined;
-  const componentEvents = events.length > 0 ? events[0] : undefined;
-  const className = (() => {
-    if (componentProperties) {
-      return componentProperties.name.replace(/Properties$/, '');
+  // Generate all components from this file
+  const components: string[] = [];
+  
+  // Create a map of component names to their properties and events
+  const componentMap = new Map<string, { properties?: ClassObject, events?: ClassObject }>();
+  
+  // Process all Properties interfaces
+  properties.forEach(prop => {
+    const componentName = prop.name.replace(/Properties$/, '');
+    if (!componentMap.has(componentName)) {
+      componentMap.set(componentName, {});
     }
-    if (componentEvents) {
-      return componentEvents.name.replace(/Events$/, '');
+    componentMap.get(componentName)!.properties = prop;
+  });
+  
+  // Process all Events interfaces
+  events.forEach(event => {
+    const componentName = event.name.replace(/Events$/, '');
+    if (!componentMap.has(componentName)) {
+      componentMap.set(componentName, {});
     }
-    return '';
-  })();
-
-  if (!className) {
+    componentMap.get(componentName)!.events = event;
+  });
+  
+  // If we have multiple components, we need to generate a combined file
+  const componentEntries = Array.from(componentMap.entries());
+  
+  if (componentEntries.length === 0) {
     return '';
   }
+  
+  if (componentEntries.length === 1) {
+    // Single component - use existing template
+    const [className, component] = componentEntries[0];
+    const content = _.template(readTemplate('react.component.tsx'))({
+      className: className,
+      properties: component.properties,
+      events: component.events,
+      classObjectDictionary,
+      dependencies,
+      blob,
+      toReactEventName,
+      generateReturnType,
+      generateMethodDeclaration,
+      generateEventHandlerType,
+      getEventType,
+    });
 
-  const content = _.template(readTemplate('react.component.tsx'))({
-    className: className,
-    properties: componentProperties,
-    events: componentEvents,
-    classObjectDictionary,
-    dependencies,
-    blob,
-    toReactEventName,
-    generateReturnType,
-    generateMethodDeclaration,
-    generateEventHandlerType,
-    getEventType,
+    return content.split('\n').filter(str => {
+      return str.trim().length > 0;
+    }).join('\n');
+  }
+  
+  // Multiple components - generate with shared imports
+  const componentDefinitions: string[] = [];
+  
+  componentEntries.forEach(([className, component]) => {
+    const content = _.template(readTemplate('react.component.tsx'))({
+      className: className,
+      properties: component.properties,
+      events: component.events,
+      classObjectDictionary,
+      dependencies: '', // Dependencies will be at the top
+      blob,
+      toReactEventName,
+      generateReturnType,
+      generateMethodDeclaration,
+      generateEventHandlerType,
+      getEventType,
+    });
+    
+    // Remove the import statements from all but the first component
+    const lines = content.split('\n');
+    const withoutImports = lines.filter(line => {
+      return !line.startsWith('import ');
+    }).join('\n');
+    
+    componentDefinitions.push(withoutImports);
   });
-
-  const result = content.split('\n').filter(str => {
+  
+  // Combine with shared imports at the top
+  const result = [
+    'import React from "react";',
+    'import { createWebFComponent, WebFElementWithMethods } from "@openwebf/webf-react-core-ui";',
+    '',
+    dependencies,
+    '',
+    ...componentDefinitions
+  ].filter(line => line !== undefined).join('\n');
+  
+  return result.split('\n').filter(str => {
     return str.trim().length > 0;
   }).join('\n');
-
-  return result;
 }
 
 export function generateReactIndex(blobs: IDLBlob[]) {
-  const components = blobs.map(blob => {
-    const classObjects = blob.objects as ClassObject[];
+  const components = blobs.flatMap(blob => {
+    const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
 
     const properties = classObjects.filter(object => {
       return object.name.endsWith('Properties');
@@ -166,25 +234,31 @@ export function generateReactIndex(blobs: IDLBlob[]) {
       return object.name.endsWith('Events');
     });
 
-    const componentProperties = properties.length > 0 ? properties[0] : undefined;
-    const componentEvents = events.length > 0 ? events[0] : undefined;
-    const className = (() => {
-      if (componentProperties) {
-        return componentProperties.name.replace(/Properties$/, '');
-      }
-      if (componentEvents) {
-        return componentEvents.name.replace(/Events$/, '');
-      }
-      return '';
-    })();
-    return {
+    // Create a map of component names
+    const componentMap = new Map<string, boolean>();
+    
+    // Add all components from Properties interfaces
+    properties.forEach(prop => {
+      const componentName = prop.name.replace(/Properties$/, '');
+      componentMap.set(componentName, true);
+    });
+    
+    // Add all components from Events interfaces
+    events.forEach(event => {
+      const componentName = event.name.replace(/Events$/, '');
+      componentMap.set(componentName, true);
+    });
+    
+    // Return an array of all components from this file
+    return Array.from(componentMap.keys()).map(className => ({
       className: className,
       fileName: blob.filename,
       relativeDir: blob.relativeDir,
-    }
-  }).filter(name => {
-    return name.className.length > 0;
+    }));
+  }).filter(component => {
+    return component.className.length > 0;
   });
+  
   const content = _.template(readTemplate('react.index.ts'))({
     components,
   });
