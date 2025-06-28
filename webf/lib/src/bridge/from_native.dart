@@ -18,6 +18,8 @@ import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/console_store.dart';
 
+import '../../foundation.dart';
+
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
 }
