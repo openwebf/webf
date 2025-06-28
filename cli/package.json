@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf",
-  "version": "0.22.1",
+  "version": "0.22.2",
   "description": "Command line tools for WebF",
   "main": "index.js",
   "bin": {
