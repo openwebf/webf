@@ -58,46 +58,17 @@ export function Route({path, prerender = false, element }: RouteProps) {
   const shouldPrerender = prerender || WebFRouter.path === path
   const shouldRenderChildren = shouldPrerender || hasRendered
 
-  // /**
-  //  * Listen to route state changes, update context and rendering state
-  //  */
-  // const handleRouteStateChange = useMemoizedFn(event => {
-  //   // Create new context object
-  //   const newContext: RouteContext = {
-  //     ...context,
-  //     path,
-  //     params: event.state
-  //   }
-
-  //   // Check if context has changed
-  //   const isSameContext = isEqual(context, newContext)
-
-  //   // Update state when context changes
-  //   if (!isSameContext) {
-  //     setContext(newContext)
-  //   }
-
-  //   if (event.kind === 'didPush') {
-  //     setHasRendered(true)
-  //   }
-  // })
-
   /**
    * Handle page display event
    */
   const handleOnScreen = useMemoizedFn(() => {
-    console.log('on screen');
     updateRender(true);
-    // logger.trace('onScreen', { path })
-    // RouterEvents$.emit('onScreen', { path })
   })
 
   /**
    * Handle page hide event
    */
   const handleOffScreen = useMemoizedFn(() => {
-    console.log('off screen');
-    // RouterEvents$.emit('offScreen', { path })
   })
 
   return (
