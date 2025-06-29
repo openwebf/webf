@@ -14,6 +14,12 @@ export interface WebFTableCellProps {
    */
   verticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
   /**
+   * Fixed column width in pixels when this cell is used in a header.
+   * This property is only effective when the cell is inside a WebFTableHeader.
+   * @example 150 (for 150px wide column)
+   */
+  columnWidth?: number;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;
@@ -47,10 +53,12 @@ export const WebFTableCell = createWebFComponent<WebFTableCellElement, WebFTable
   // Map props to attributes
   attributeProps: [
     'verticalAlignment',
+    'columnWidth',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
     verticalAlignment: 'vertical-alignment',
+    columnWidth: 'column-width',
   },
   // Event handlers
   events: [

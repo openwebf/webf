@@ -4,16 +4,16 @@ import 'package:webf/src/html/table_bindings_generated.dart';
 import 'package:webf/src/html/table_header.dart';
 import 'package:webf/src/html/table_row.dart';
 import 'package:webf/src/widget/widget_element.dart';
+import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 
 const String WEBF_TABLE = 'WEBF-TABLE';
-
 
 class WebFTable extends WebFTableBindings {
   WebFTable(super.context);
 
   WebFTableTextDirection? _textDirection;
   WebFTableDefaultVerticalAlignment? _defaultVerticalAlignment;
-  WebFTableDefaultColumnWidth? _defaultColumnWidth;
+  double? _defaultColumnWidth;
   String? _columnWidths;
   String? _border;
   WebFTableTextBaseline? _textBaseline;
@@ -54,14 +54,14 @@ class WebFTable extends WebFTableBindings {
   }
 
   @override
-  WebFTableDefaultColumnWidth? get defaultColumnWidth => _defaultColumnWidth;
+  double? get defaultColumnWidth => _defaultColumnWidth;
 
   @override
   set defaultColumnWidth(value) {
-    if (value is WebFTableDefaultColumnWidth?) {
-      _defaultColumnWidth = value;
+    if (value is num?) {
+      _defaultColumnWidth = value?.toDouble();
     } else if (value is String) {
-      _defaultColumnWidth = WebFTableDefaultColumnWidth.parse(value);
+      _defaultColumnWidth = double.tryParse(value);
     } else {
       _defaultColumnWidth = null;
     }
@@ -131,20 +131,13 @@ class WebFTableState extends WebFWidgetElementState {
   }
 
   TableColumnWidth _getDefaultColumnWidth(WebFTable table) {
-    switch (table.defaultColumnWidth) {
-      case WebFTableDefaultColumnWidth.flex:
-        return const FlexColumnWidth();
-      case WebFTableDefaultColumnWidth.intrinsic:
-        return const IntrinsicColumnWidth();
-      case WebFTableDefaultColumnWidth.fixed:
-        return const FixedColumnWidth(100.0);
-      case WebFTableDefaultColumnWidth.min:
-        return const MinColumnWidth(FixedColumnWidth(50.0), FlexColumnWidth());
-      case WebFTableDefaultColumnWidth.max:
-        return const MaxColumnWidth(FixedColumnWidth(200.0), FlexColumnWidth());
-      default:
-        return const FlexColumnWidth();
+    // If a fixed width is specified, use it
+    if (table._defaultColumnWidth != null) {
+      return FixedColumnWidth(table._defaultColumnWidth!);
     }
+
+    // Otherwise default to flex layout
+    return const FlexColumnWidth();
   }
 
   TextDirection? _getTextDirection(WebFTable table) {
@@ -193,12 +186,16 @@ class WebFTableState extends WebFWidgetElementState {
 
     bool isStickyHeader = header != null && header.sticky;
 
+    // Get column widths from header cells
+    final headerColumnWidths = header?.getColumnWidths();
+
     if (header != null && isStickyHeader) {
       // With sticky header: header stays at top while scrolling
       return Column(
         children: [
           // Sticky header
           Table(
+            columnWidths: headerColumnWidths,
             textDirection: textDirection,
             defaultVerticalAlignment: verticalAlignment,
             defaultColumnWidth: defaultColumnWidth,
@@ -209,18 +206,22 @@ class WebFTableState extends WebFWidgetElementState {
           // Scrollable content
           Expanded(
             child: SingleChildScrollView(
-              child: Table(
-                textDirection: textDirection,
-                defaultVerticalAlignment: verticalAlignment,
-                defaultColumnWidth: defaultColumnWidth,
-                border: border,
-                textBaseline: textBaseline,
-                children: [
-                  ...rows.map((row) {
-                    return TableRow(decoration: row.renderStyle.decoration, children: row.buildCellChildren());
-                  })
-                ],
-              ),
+              scrollDirection: Axis.horizontal,
+              child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Table(
+                    columnWidths: headerColumnWidths,
+                    textDirection: textDirection,
+                    defaultVerticalAlignment: verticalAlignment,
+                    defaultColumnWidth: defaultColumnWidth,
+                    border: border,
+                    textBaseline: textBaseline,
+                    children: [
+                      ...rows.map((row) {
+                        return TableRow(decoration: row.renderStyle.decoration, children: row.buildCellChildren());
+                      })
+                    ],
+                  )),
             ),
           ),
         ],
@@ -228,24 +229,27 @@ class WebFTableState extends WebFWidgetElementState {
     } else {
       // Without sticky header: everything scrolls together
       return SingleChildScrollView(
-        child: Table(
-          textDirection: textDirection,
-          defaultVerticalAlignment: verticalAlignment,
-          defaultColumnWidth: defaultColumnWidth,
-          border: border,
-          textBaseline: textBaseline,
-          children: [
-            if (header != null)
-              TableRow(
-                decoration: header.renderStyle.decoration,
-                children: header.buildCellChildren(),
-              ),
-            ...rows.map((row) {
-              return TableRow(decoration: row.renderStyle.decoration, children: row.buildCellChildren());
-            })
-          ],
-        ),
-      );
+          scrollDirection: Axis.horizontal,
+          child: SingleChildScrollView(
+              scrollDirection: Axis.vertical,
+              child: Table(
+                columnWidths: headerColumnWidths,
+                textDirection: textDirection,
+                defaultVerticalAlignment: verticalAlignment,
+                defaultColumnWidth: defaultColumnWidth,
+                border: border,
+                textBaseline: textBaseline,
+                children: [
+                  if (header != null)
+                    TableRow(
+                      decoration: header.renderStyle.decoration,
+                      children: header.buildCellChildren(),
+                    ),
+                  ...rows.map((row) {
+                    return TableRow(decoration: row.renderStyle.decoration, children: row.buildCellChildren());
+                  })
+                ],
+              )));
     }
   }
 }

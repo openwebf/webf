@@ -9,6 +9,13 @@ interface WebFTableCellProperties {
    * - 'fill': Expand to fill cell height
    */
   verticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
+  
+  /**
+   * Fixed column width in pixels when this cell is used in a header.
+   * This property is only effective when the cell is inside a WebFTableHeader.
+   * @example 150 (for 150px wide column)
+   */
+  columnWidth?: number;
 }
 interface WebFTableCellMethods {}
 interface WebFTableCellEvents {}

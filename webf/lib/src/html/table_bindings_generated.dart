@@ -41,24 +41,6 @@ enum WebFTableDefaultVerticalAlignment {
   @override
   String toString() => value;
 }
-enum WebFTableDefaultColumnWidth {
-  flex('flex'),
-  intrinsic('intrinsic'),
-  fixed('fixed'),
-  min('min'),
-  max('max');
-  final String value;
-  const WebFTableDefaultColumnWidth(this.value);
-  static WebFTableDefaultColumnWidth? parse(String? value) {
-    if (value == null) return null;
-    return WebFTableDefaultColumnWidth.values.firstWhere(
-      (e) => e.value == value,
-      orElse: () => throw ArgumentError('Invalid WebFTableDefaultColumnWidth value: $value'),
-    );
-  }
-  @override
-  String toString() => value;
-}
 enum WebFTableTextBaseline {
   alphabetic('alphabetic'),
   ideographic('ideographic');
@@ -80,7 +62,7 @@ abstract class WebFTableBindings extends WidgetElement {
   set textDirection(value);
   WebFTableDefaultVerticalAlignment? get defaultVerticalAlignment;
   set defaultVerticalAlignment(value);
-  WebFTableDefaultColumnWidth? get defaultColumnWidth;
+  double? get defaultColumnWidth;
   set defaultColumnWidth(value);
   String? get columnWidths;
   set columnWidths(value);
@@ -102,9 +84,9 @@ abstract class WebFTableBindings extends WidgetElement {
       deleter: () => defaultVerticalAlignment = null
     );
     attributes['default-column-width'] = ElementAttributeProperty(
-      getter: () => defaultColumnWidth?.value,
-      setter: (value) => defaultColumnWidth = WebFTableDefaultColumnWidth.parse(value),
-      deleter: () => defaultColumnWidth = null
+      getter: () => defaultColumnWidth?.toString(),
+      setter: (value) => defaultColumnWidth = double.tryParse(value) ?? 0.0,
+      deleter: () => defaultColumnWidth = 0.0
     );
     attributes['column-widths'] = ElementAttributeProperty(
       getter: () => columnWidths?.toString(),
