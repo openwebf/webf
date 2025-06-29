@@ -64,6 +64,7 @@ interface GenerateOptions {
   source: string;
   target: string;
   command: string;
+  exclude?: string[];
 }
 
 // Batch processing for file operations
@@ -99,11 +100,14 @@ function validatePaths(source: string, target: string): { source: string; target
   return { source: normalizedSource, target: normalizedTarget };
 }
 
-function getTypeFiles(source: string): string[] {
+function getTypeFiles(source: string, excludePatterns?: string[]): string[] {
   try {
+    const defaultIgnore = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**'];
+    const ignore = excludePatterns ? [...defaultIgnore, ...excludePatterns] : defaultIgnore;
+    
     const files = glob.globSync("**/*.d.ts", {
       cwd: source,
-      ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
+      ignore: ignore
     });
     
     return files.filter(file => !file.includes('global.d.ts'));
@@ -139,7 +143,7 @@ function createBlobs(typeFiles: string[], source: string, target: string): IDLBl
   });
 }
 
-export async function dartGen({ source, target, command }: GenerateOptions) {
+export async function dartGen({ source, target, command, exclude }: GenerateOptions) {
   group('Dart Code Generation');
   time('dartGen');
   
@@ -154,7 +158,7 @@ export async function dartGen({ source, target, command }: GenerateOptions) {
   }
   
   // Get type files
-  const typeFiles = getTypeFiles(normalizedSource);
+  const typeFiles = getTypeFiles(normalizedSource, exclude);
   info(`Found ${typeFiles.length} type definition files`);
   
   if (typeFiles.length === 0) {
@@ -232,7 +236,7 @@ export async function dartGen({ source, target, command }: GenerateOptions) {
   info(`Output directory: ${normalizedTarget}`);
 }
 
-export async function reactGen({ source, target }: GenerateOptions) {
+export async function reactGen({ source, target, exclude }: GenerateOptions) {
   group('React Code Generation');
   time('reactGen');
   
@@ -247,7 +251,7 @@ export async function reactGen({ source, target }: GenerateOptions) {
   }
   
   // Get type files
-  const typeFiles = getTypeFiles(normalizedSource);
+  const typeFiles = getTypeFiles(normalizedSource, exclude);
   info(`Found ${typeFiles.length} type definition files`);
   
   if (typeFiles.length === 0) {
@@ -290,6 +294,12 @@ export async function reactGen({ source, target }: GenerateOptions) {
     try {
       const result = generateReactComponent(blob);
       
+      // Skip if no content was generated
+      if (!result || result.trim().length === 0) {
+        debug(`Skipped ${blob.filename} - no components found`);
+        return;
+      }
+      
       // Maintain the same directory structure as the .d.ts file
       const outputDir = path.join(normalizedTarget, 'src', blob.relativeDir);
       // Ensure the directory exists
@@ -323,7 +333,7 @@ export async function reactGen({ source, target }: GenerateOptions) {
   info('You can now import these components in your React project.');
 }
 
-export async function vueGen({ source, target }: GenerateOptions) {
+export async function vueGen({ source, target, exclude }: GenerateOptions) {
   group('Vue Typings Generation');
   time('vueGen');
   
@@ -338,7 +348,7 @@ export async function vueGen({ source, target }: GenerateOptions) {
   }
   
   // Get type files
-  const typeFiles = getTypeFiles(normalizedSource);
+  const typeFiles = getTypeFiles(normalizedSource, exclude);
   info(`Found ${typeFiles.length} type definition files`);
   
   if (typeFiles.length === 0) {

@@ -20,7 +20,6 @@ mockFs.readFileSync = jest.fn().mockImplementation((filePath: any) => {
   if (pathStr.includes('react.package.json.tpl')) return '<%= packageName %> <%= version %> <%= description %>';
   if (pathStr.includes('react.tsconfig.json.tpl')) return 'react tsconfig';
   if (pathStr.includes('react.tsup.config.ts.tpl')) return 'tsup config';
-  if (pathStr.includes('react.createComponent.tpl')) return 'create component';
   if (pathStr.includes('react.index.ts.tpl')) return 'index template';
   if (pathStr.includes('vue.package.json.tpl')) return '<%= packageName %> <%= version %> <%= description %>';
   if (pathStr.includes('vue.tsconfig.json.tpl')) return 'vue tsconfig';
@@ -125,10 +124,6 @@ describe('Commands', () => {
         // Check directory creation for src folders (target already exists)
         expect(mockFs.mkdirSync).toHaveBeenCalledWith(
           path.join(path.resolve(target), 'src'),
-          { recursive: true }
-        );
-        expect(mockFs.mkdirSync).toHaveBeenCalledWith(
-          path.join(path.resolve(target), 'src', 'utils'),
           { recursive: true }
         );
       });

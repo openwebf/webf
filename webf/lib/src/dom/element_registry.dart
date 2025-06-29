@@ -6,6 +6,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/src/html/text.dart';
+import 'package:webf/src/html/table.dart';
 import 'package:webf/svg.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -216,6 +217,13 @@ void defineBuiltInElements() {
   defineWidgetElement(SHIMMER_AVATAR, (context) => FlutterShimmerAvatarElement(context));
   defineWidgetElement(SHIMMER_TEXT, (context) => FlutterShimmerTextElement(context));
   defineWidgetElement(SHIMMER_BUTTON, (context) => FlutterShimmerButtonElement(context));
+  
+  // Table Elements
+  defineWidgetElement(WEBF_TABLE, (context) => WebFTableElement(context));
+  defineWidgetElement(WEBF_TABLE_ROW, (context) => WebFTableRowElement(context));
+  defineWidgetElement(WEBF_TABLE_CELL, (context) => WebFTableCellElement(context));
+  defineWidgetElement(WEBF_TABLE_HEADER, (context) => WebFTableHeaderElement(context));
+  
   //
   // Gesture Elements
   defineElement(TOUCH_AREA, (context) => WebFTouchAreaElement(context));

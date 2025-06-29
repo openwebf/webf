@@ -18,6 +18,7 @@ program
   .option('--package-name <name>', 'Package name for the webf typings')
   .option('--publish-to-npm', 'Automatically publish the generated package to npm')
   .option('--npm-registry <url>', 'Custom npm registry URL (defaults to https://registry.npmjs.org/)')
+  .option('--exclude <patterns...>', 'Additional glob patterns to exclude from code generation')
   .argument('[distPath]', 'Path to output generated files', '.')
   .description('Generate dart abstract classes and React/Vue components (auto-creates project if needed)')
   .action(generateCommand);
