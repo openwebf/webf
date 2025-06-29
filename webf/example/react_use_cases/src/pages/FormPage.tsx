@@ -1,14 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoSwitch } from '@openwebf/react-cupertino-ui';
 import styles from './FormPage.module.css';
-
-const FlutterCupertinoSwitch = createComponent({
-  tagName: 'flutter-cupertino-switch',
-  displayName: 'FlutterCupertinoSwitch',
-  events: {
-    onChange: 'change'
-  }
-});
 
 const FlutterWebFForm = createComponent({
   tagName: 'flutter-webf-form',

@@ -1,18 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoTabBar, FlutterCupertinoTabBarItem } from '@openwebf/react-cupertino-ui';
 import { RoutingDemo } from '../components/RoutingDemo';
 import TabBarManager from '../utils/tabBarManager';
-
-
-const CupertinoTabBar = createComponent({
-  tagName: 'flutter-cupertino-tab-bar',
-  displayName: 'CupertinoTabBar'
-});
-
-const CupertinoTabBarItem = createComponent({
-  tagName: 'flutter-cupertino-tab-bar-item',
-  displayName: 'CupertinoTabBarItem'
-});
 
 
 export const RoutingPage: React.FC = () => {
@@ -42,11 +32,11 @@ export const RoutingPage: React.FC = () => {
   });
 
   return (
-    <CupertinoTabBar ref={tabBar}>
-      <CupertinoTabBarItem title="Demo" icon="home" path="/demo">
+    <FlutterCupertinoTabBar ref={tabBar}>
+      <FlutterCupertinoTabBarItem title="Demo" icon="home" path="/demo">
         <RoutingDemo />
-      </CupertinoTabBarItem>
-      <CupertinoTabBarItem title="Search" icon="search" path="/search">
+      </FlutterCupertinoTabBarItem>
+      <FlutterCupertinoTabBarItem title="Search" icon="search" path="/search">
         <div style={{ padding: '20px', textAlign: 'center' }}>
           <h3>Search Page</h3>
           <p>This is the search tab content.</p>
@@ -68,8 +58,8 @@ export const RoutingPage: React.FC = () => {
             Switch to My Tab
           </button>
         </div>
-      </CupertinoTabBarItem>
-      <CupertinoTabBarItem title="My" icon="person" path="/my">
+      </FlutterCupertinoTabBarItem>
+      <FlutterCupertinoTabBarItem title="My" icon="person" path="/my">
         <div style={{ padding: '20px', textAlign: 'center' }}>
           <h3>My Page</h3>
           <p>This is the my tab content.</p>
@@ -91,7 +81,7 @@ export const RoutingPage: React.FC = () => {
             Go to Animation Page
           </button>
         </div>
-      </CupertinoTabBarItem>      
-    </CupertinoTabBar>
+      </FlutterCupertinoTabBarItem>      
+    </FlutterCupertinoTabBar>
   );
 };

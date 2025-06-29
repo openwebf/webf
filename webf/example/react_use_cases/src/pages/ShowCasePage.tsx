@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoButton, FlutterCupertinoIcon } from '@openwebf/react-cupertino-ui';
 import styles from './ShowCasePage.module.css';
 
 const WebFListView = createComponent({
@@ -7,10 +8,6 @@ const WebFListView = createComponent({
   displayName: 'WebFListView'
 });
 
-const FlutterCupertinoButton = createComponent({
-  tagName: 'flutter-cupertino-button',
-  displayName: 'FlutterCupertinoButton'
-});
 
 const FlutterShowcaseView = createComponent({
   tagName: 'flutter-showcase-view',
@@ -23,11 +20,6 @@ const FlutterShowcaseView = createComponent({
 const FlutterShowcaseDescription = createComponent({
   tagName: 'flutter-showcase-description',
   displayName: 'FlutterShowcaseDescription'
-});
-
-const FlutterCupertinoIcon = createComponent({
-  tagName: 'flutter-cupertino-icon',
-  displayName: 'FlutterCupertinoIcon'
 });
 
 export const ShowCasePage: React.FC = () => {
@@ -164,7 +156,8 @@ export const ShowCasePage: React.FC = () => {
                 </FlutterCupertinoButton>
                 <FlutterShowcaseView ref={basicShowcaseRef} onFinish={onBasicFinish} className={styles.showcaseView}>
                   <div className={`${styles.targetElement} ${styles.blueBg} ${styles.basicTarget}`}>
-                    <FlutterCupertinoIcon type="info_circle_fill" color="#ffffff" size="30" />
+                    {/* @ts-ignore */}
+                    <FlutterCupertinoIcon size={30} color="#ffffff" type="info_circle_fill" />
                     <span>Basic Target</span>
                   </div>
                   <FlutterShowcaseDescription>

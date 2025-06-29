@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoIcon, FlutterCupertinoSwitch } from '@openwebf/react-cupertino-ui';
 import styles from './ContextMenuPage.module.css';
 
 const WebFListView = createComponent({
@@ -20,19 +21,6 @@ const FlutterCupertinoContextMenu = createComponent({
     onCall: 'call',
     onMessage: 'message',
     onEmail: 'email'
-  }
-});
-
-const FlutterCupertinoIcon = createComponent({
-  tagName: 'flutter-cupertino-icon',
-  displayName: 'FlutterCupertinoIcon'
-});
-
-const FlutterCupertinoSwitch = createComponent({
-  tagName: 'flutter-cupertino-switch',
-  displayName: 'FlutterCupertinoSwitch',
-  events: {
-    onChange: 'change'
   }
 });
 
