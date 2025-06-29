@@ -2,7 +2,30 @@ import { generateReactComponent } from '../src/react';
 import { IDLBlob } from '../src/IDLBlob';
 import { ClassObject, ClassObjectKind } from '../src/declaration';
 
+// Import the toWebFTagName function for testing
+import { toWebFTagName } from '../src/react';
+
 describe('React Generator', () => {
+  describe('toWebFTagName', () => {
+    it('should convert WebF prefixed components correctly', () => {
+      expect(toWebFTagName('WebFTable')).toBe('webf-table');
+      expect(toWebFTagName('WebFTableCell')).toBe('webf-table-cell');
+      expect(toWebFTagName('WebFListView')).toBe('webf-list-view');
+      expect(toWebFTagName('WebFTouchArea')).toBe('webf-touch-area');
+    });
+    
+    it('should convert Flutter prefixed components correctly', () => {
+      expect(toWebFTagName('FlutterShimmer')).toBe('flutter-shimmer');
+      expect(toWebFTagName('FlutterShimmerText')).toBe('flutter-shimmer-text');
+      expect(toWebFTagName('FlutterShimmerAvatar')).toBe('flutter-shimmer-avatar');
+    });
+    
+    it('should handle components without special prefixes', () => {
+      expect(toWebFTagName('CustomComponent')).toBe('custom-component');
+      expect(toWebFTagName('MyElement')).toBe('my-element');
+    });
+  });
+
   describe('generateReactComponent', () => {
     it('should import createWebFComponent from @openwebf/react-core-ui', () => {
       const blob = new IDLBlob('/test/source', '/test/target', 'TestComponent', 'test', 'components/ui');
@@ -47,6 +70,35 @@ describe('React Generator', () => {
       // Should have proper interfaces
       expect(result).toContain('export interface TestComponentProps {');
       expect(result).toContain('export interface TestComponentElement extends WebFElementWithMethods<{');
+    });
+    
+    it('should generate correct tagName for WebF components', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'WebFTableCell', 'test', '');
+      
+      const properties = new ClassObject();
+      properties.name = 'WebFTableCellProperties';
+      properties.kind = ClassObjectKind.interface;
+      blob.objects = [properties];
+      
+      const result = generateReactComponent(blob);
+      
+      // Should generate correct tagName
+      expect(result).toContain('tagName: \'webf-table-cell\'');
+      expect(result).not.toContain('tagName: \'web-f-table-cell\'');
+    });
+    
+    it('should generate correct tagName for Flutter components', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'FlutterShimmerText', 'test', '');
+      
+      const properties = new ClassObject();
+      properties.name = 'FlutterShimmerTextProperties';
+      properties.kind = ClassObjectKind.interface;
+      blob.objects = [properties];
+      
+      const result = generateReactComponent(blob);
+      
+      // Should generate correct tagName
+      expect(result).toContain('tagName: \'flutter-shimmer-text\'');
     });
     
     it('should use relative import for @openwebf/react-core-ui package', () => {

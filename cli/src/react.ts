@@ -84,6 +84,21 @@ function toReactEventName(name: string) {
   return _.camelCase(eventName);
 }
 
+export function toWebFTagName(className: string): string {
+  // Special handling for WebF prefix - treat it as a single unit
+  if (className.startsWith('WebF')) {
+    // Replace WebF with webf- and then kebab-case the rest
+    const withoutPrefix = className.substring(4);
+    return 'webf-' + _.kebabCase(withoutPrefix);
+  } else if (className.startsWith('Flutter')) {
+    // Handle Flutter prefix similarly
+    const withoutPrefix = className.substring(7);
+    return 'flutter-' + _.kebabCase(withoutPrefix);
+  }
+  // Default kebab-case for other components
+  return _.kebabCase(className);
+}
+
 export function generateReactComponent(blob: IDLBlob, packageName?: string, relativeDir?: string) {
   const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
   const typeAliases = blob.objects.filter(obj => obj instanceof TypeAliasObject) as TypeAliasObject[];
@@ -191,6 +206,7 @@ interface ${object.name} {
       dependencies,
       blob,
       toReactEventName,
+      toWebFTagName,
       generateReturnType,
       generateMethodDeclaration,
       generateEventHandlerType,
@@ -228,6 +244,7 @@ interface ${object.name} {
       dependencies: '', // Dependencies will be at the top
       blob,
       toReactEventName,
+      toWebFTagName,
       generateReturnType,
       generateMethodDeclaration,
       generateEventHandlerType,

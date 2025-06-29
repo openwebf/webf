@@ -63,7 +63,7 @@ export interface <%= className %>Element extends WebFElementWithMethods<{
  * ```
  */
 export const <%= className %> = createWebFComponent<<%= className %>Element, <%= className %>Props>({
-  tagName: '<%= _.kebabCase(className) %>',
+  tagName: '<%= toWebFTagName(className) %>',
   displayName: '<%= className %>',
   
   // Map props to attributes
