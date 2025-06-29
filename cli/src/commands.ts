@@ -13,6 +13,7 @@ interface GenerateOptions {
   packageName?: string;
   publishToNpm?: boolean;
   npmRegistry?: string;
+  exclude?: string[];
 }
 
 interface FlutterPackageMetadata {
@@ -176,11 +177,6 @@ const reactTsUpConfig = fs.readFileSync(
   'utf-8'
 );
 
-const createComponentTpl = fs.readFileSync(
-  path.resolve(__dirname, '../templates/react.createComponent.tpl'),
-  'utf-8'
-);
-
 const reactIndexTpl = fs.readFileSync(
   path.resolve(__dirname, '../templates/react.index.ts.tpl'),
   'utf-8'
@@ -308,15 +304,6 @@ function createCommand(target: string, options: { framework: string; packageName
       components: [],
     });
     writeFileIfChanged(indexFilePath, indexContent);
-
-    const utilsDir = path.join(srcDir, 'utils');
-    if (!fs.existsSync(utilsDir)) {
-      fs.mkdirSync(utilsDir, { recursive: true });
-    }
-
-    const createComponentPath = path.join(utilsDir, 'createComponent.ts');
-    const createComponentContent = _.template(createComponentTpl)({});
-    writeFileIfChanged(createComponentPath, createComponentContent);
 
     spawnSync(NPM, ['install', '--omit=peer'], {
       cwd: target,
@@ -586,6 +573,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
     source: options.flutterPackageSrc,
     target: options.flutterPackageSrc,
     command,
+    exclude: options.exclude,
   });
   
   if (framework === 'react') {
@@ -593,12 +581,14 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       source: options.flutterPackageSrc,
       target: resolvedDistPath,
       command,
+      exclude: options.exclude,
     });
   } else if (framework === 'vue') {
     await vueGen({
       source: options.flutterPackageSrc,
       target: resolvedDistPath,
       command,
+      exclude: options.exclude,
     });
   }
   

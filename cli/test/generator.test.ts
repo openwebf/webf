@@ -86,7 +86,7 @@ describe('Generator', () => {
 
       expect(mockGlob.globSync).toHaveBeenCalledWith('**/*.d.ts', {
         cwd: '/test/source',
-        ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
+        ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**']
       });
       
       expect(mockAnalyzer.analyzer).toHaveBeenCalledTimes(2); // For each file
@@ -103,7 +103,7 @@ describe('Generator', () => {
 
       expect(mockGlob.globSync).toHaveBeenCalledWith('**/*.d.ts', {
         cwd: expect.stringContaining('relative/source'),
-        ignore: ['**/node_modules/**', '**/dist/**', '**/build/**']
+        ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**']
       });
     });
 
@@ -269,6 +269,20 @@ describe('Generator', () => {
         originalContent,
         'utf-8'
       );
+    });
+    
+    it('should handle custom exclude patterns', async () => {
+      await dartGen({
+        source: '/test/source',
+        target: '/test/target',
+        command: 'test command',
+        exclude: ['**/test/**', '**/docs/**']
+      });
+
+      expect(mockGlob.globSync).toHaveBeenCalledWith('**/*.d.ts', {
+        cwd: '/test/source',
+        ignore: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/example/**', '**/test/**', '**/docs/**']
+      });
     });
   });
 
