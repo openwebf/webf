@@ -29,19 +29,34 @@ export interface FlutterCupertinoContextMenuProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoContextMenuElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoContextMenuElement extends WebFElementWithMethods<{
+  setActions(actions: ContextMenuAction[]): void;
 }> {}
 /**
  * FlutterCupertinoContextMenu - WebF FlutterCupertinoContextMenu component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoContextMenuElement>(null);
  * 
  * <FlutterCupertinoContextMenu
+ *   ref={ref}
  *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoContextMenu>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoContextMenu = createWebFComponent<FlutterCupertinoContextMenuElement, FlutterCupertinoContextMenuProps>({

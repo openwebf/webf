@@ -108,18 +108,35 @@ export interface FlutterCupertinoModelPopupProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoModelPopupElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoModelPopupElement extends WebFElementWithMethods<{
+  show(): void;
+  hide(): void;
 }> {}
 /**
  * FlutterCupertinoModelPopup - WebF FlutterCupertinoModelPopup component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoModelPopupElement>(null);
+ * 
  * <FlutterCupertinoModelPopup
- *   // Add example props here
+ *   ref={ref}
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoModelPopup>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoModelPopup = createWebFComponent<FlutterCupertinoModelPopupElement, FlutterCupertinoModelPopupProps>({

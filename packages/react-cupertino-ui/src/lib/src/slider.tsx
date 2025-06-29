@@ -55,19 +55,35 @@ export interface FlutterCupertinoSliderProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoSliderElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoSliderElement extends WebFElementWithMethods<{
+  getValue(): number;
+  setValue(val: number): void;
 }> {}
 /**
  * FlutterCupertinoSlider - WebF FlutterCupertinoSlider component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoSliderElement>(null);
  * 
  * <FlutterCupertinoSlider
+ *   ref={ref}
  *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoSlider>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoSlider = createWebFComponent<FlutterCupertinoSliderElement, FlutterCupertinoSliderProps>({

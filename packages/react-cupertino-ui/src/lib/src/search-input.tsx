@@ -82,19 +82,38 @@ export interface FlutterCupertinoSearchInputProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoSearchInputElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoSearchInputElement extends WebFElementWithMethods<{
+  getValue(): string;
+  setValue(value: string): void;
+  focus(): void;
+  blur(): void;
+  clear(): void;
 }> {}
 /**
  * FlutterCupertinoSearchInput - WebF FlutterCupertinoSearchInput component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoSearchInputElement>(null);
  * 
  * <FlutterCupertinoSearchInput
+ *   ref={ref}
  *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoSearchInput>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoSearchInput = createWebFComponent<FlutterCupertinoSearchInputElement, FlutterCupertinoSearchInputProps>({

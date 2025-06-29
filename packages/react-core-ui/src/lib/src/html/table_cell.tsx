@@ -3,32 +3,32 @@ import { createWebFComponent, WebFElementWithMethods } from "../../../utils/crea
 export interface WebFTableCellProps {
   /**
    * Text alignment
-   *  "left"
+   * @default "left"
    */
   align?: 'left' | 'center' | 'right';
   /**
    * Cell type (header or data)
-   *  "data"
+   * @default "data"
    */
   type?: 'header' | 'data';
   /**
    * Column span
-   *  1
+   * @default 1
    */
   colspan?: number;
   /**
    * Row span
-   *  1
+   * @default 1
    */
   rowspan?: number;
   /**
    * Cell width
-   *  undefined
+   * @default undefined
    */
   width?: string;
   /**
    * Text color based on value
-   *  undefined
+   * @default undefined
    */
   valueColor?: string;
   /**

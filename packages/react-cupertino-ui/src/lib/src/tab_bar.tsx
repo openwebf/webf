@@ -63,6 +63,7 @@ export interface FlutterCupertinoTabBarProps {
  * ```
  */
 export interface FlutterCupertinoTabBarElement extends WebFElementWithMethods<{
+  switchTab(path: string): void;
 }> {}
 /**
  * FlutterCupertinoTabBar - WebF FlutterCupertinoTabBar component
