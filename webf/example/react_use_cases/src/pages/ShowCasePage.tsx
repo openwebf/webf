@@ -156,8 +156,7 @@ export const ShowCasePage: React.FC = () => {
                 </FlutterCupertinoButton>
                 <FlutterShowcaseView ref={basicShowcaseRef} onFinish={onBasicFinish} className={styles.showcaseView}>
                   <div className={`${styles.targetElement} ${styles.blueBg} ${styles.basicTarget}`}>
-                    {/* @ts-ignore */}
-                    <FlutterCupertinoIcon size={30} color="#ffffff" type="info_circle_fill" />
+                    <FlutterCupertinoIcon style={{fontSize: '30px', color: '#ffffff'}} type="info_circle_fill" />
                     <span>Basic Target</span>
                   </div>
                   <FlutterShowcaseDescription>
