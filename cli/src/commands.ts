@@ -577,11 +577,24 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   });
   
   if (framework === 'react') {
+    // Get the package name from package.json if it exists
+    let reactPackageName: string | undefined;
+    try {
+      const packageJsonPath = path.join(resolvedDistPath, 'package.json');
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        reactPackageName = packageJson.name;
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    
     await reactGen({
       source: options.flutterPackageSrc,
       target: resolvedDistPath,
       command,
       exclude: options.exclude,
+      packageName: reactPackageName,
     });
   } else if (framework === 'vue') {
     await vueGen({

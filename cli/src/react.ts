@@ -84,7 +84,7 @@ function toReactEventName(name: string) {
   return _.camelCase(eventName);
 }
 
-export function generateReactComponent(blob: IDLBlob) {
+export function generateReactComponent(blob: IDLBlob, packageName?: string, relativeDir?: string) {
   const classObjects = blob.objects.filter(obj => obj instanceof ClassObject) as ClassObject[];
   const typeAliases = blob.objects.filter(obj => obj instanceof TypeAliasObject) as TypeAliasObject[];
   
@@ -162,7 +162,28 @@ interface ${object.name} {
   if (componentEntries.length === 1) {
     // Single component - use existing template
     const [className, component] = componentEntries[0];
-    const content = _.template(readTemplate('react.component.tsx'))({
+    
+    // Determine the import path for createWebFComponent
+    const isReactCoreUI = packageName === '@openwebf/react-core-ui';
+    let createWebFComponentImport: string;
+    
+    if (isReactCoreUI && relativeDir) {
+      // Calculate relative path from current file to utils/createWebFComponent
+      // Files are generated in src/<relativeDir>/ and need to import from src/utils/
+      const depth = relativeDir.split('/').filter(p => p).length;
+      const upPath = '../'.repeat(depth);
+      createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "${upPath}utils/createWebFComponent";`;
+    } else {
+      createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";`;
+    }
+    
+    const templateContent = readTemplate('react.component.tsx')
+      .replace(
+        'import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";',
+        createWebFComponentImport
+      );
+    
+    const content = _.template(templateContent)({
       className: className,
       properties: component.properties,
       events: component.events,
@@ -183,6 +204,20 @@ interface ${object.name} {
   
   // Multiple components - generate with shared imports
   const componentDefinitions: string[] = [];
+  
+  // Determine the import path for createWebFComponent
+  const isReactCoreUI = packageName === '@openwebf/react-core-ui';
+  let createWebFComponentImport: string;
+  
+  if (isReactCoreUI && relativeDir) {
+    // Calculate relative path from current file to utils/createWebFComponent
+    // Files are generated in src/<relativeDir>/ and need to import from src/utils/
+    const depth = relativeDir.split('/').filter(p => p).length;
+    const upPath = '../'.repeat(depth);
+    createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "${upPath}utils/createWebFComponent";`;
+  } else {
+    createWebFComponentImport = `import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";`;
+  }
   
   componentEntries.forEach(([className, component]) => {
     const content = _.template(readTemplate('react.component.tsx'))({
@@ -211,7 +246,7 @@ interface ${object.name} {
   // Combine with shared imports at the top
   const result = [
     'import React from "react";',
-    'import { createWebFComponent, WebFElementWithMethods } from "@openwebf/webf-react-core-ui";',
+    createWebFComponentImport,
     '',
     dependencies,
     '',
