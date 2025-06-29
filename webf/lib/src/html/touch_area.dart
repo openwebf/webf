@@ -12,6 +12,7 @@ const Map<String, dynamic> _defaultStyle = {
   DISPLAY: BLOCK,
 };
 
+// Avoid generate bindings for this special element
 class WebFTouchAreaElement extends Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;

@@ -7,6 +7,7 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
+import 'text_bindings_generated.dart';
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
@@ -24,7 +25,7 @@ final RegExp _trimRightWhitespaceReg = RegExp(r'([^' + _documentWhiteSpace + r']
 
 const TEXT = 'TEXT';
 
-class WebFTextElement extends WidgetElement {
+class WebFTextElement extends WebFTextBindings {
   WebFTextElement(super.context);
 
   @override

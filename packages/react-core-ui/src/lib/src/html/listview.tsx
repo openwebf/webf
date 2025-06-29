@@ -44,7 +44,7 @@ export interface WebFListViewElement extends WebFElementWithMethods<{
  * ```
  */
 export const WebFListView = createWebFComponent<WebFListViewElement, WebFListViewProps>({
-  tagName: 'web-f-list-view',
+  tagName: 'webf-list-view',
   displayName: 'WebFListView',
   // Map props to attributes
   attributeProps: [

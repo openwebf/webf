@@ -58,7 +58,7 @@ export interface WebFTableElement extends WebFElementWithMethods<{
  * ```
  */
 export const WebFTable = createWebFComponent<WebFTableElement, WebFTableProps>({
-  tagName: 'web-f-table',
+  tagName: 'webf-table',
   displayName: 'WebFTable',
   // Map props to attributes
   attributeProps: [

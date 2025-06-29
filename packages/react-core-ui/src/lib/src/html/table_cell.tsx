@@ -63,7 +63,7 @@ export interface WebFTableCellElement extends WebFElementWithMethods<{
  * ```
  */
 export const WebFTableCell = createWebFComponent<WebFTableCellElement, WebFTableCellProps>({
-  tagName: 'web-f-table-cell',
+  tagName: 'webf-table-cell',
   displayName: 'WebFTableCell',
   // Map props to attributes
   attributeProps: [

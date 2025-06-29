@@ -6,7 +6,6 @@ import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/src/html/text.dart';
-import 'package:webf/src/html/table.dart';
 import 'package:webf/svg.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
@@ -209,21 +208,21 @@ void defineBuiltInElements() {
   defineElement(BODY, (context) => BodyElement(context));
   defineElement(IMAGE, (context) => ImageElement(context));
   defineElement(CANVAS, (context) => CanvasElement(context));
-  defineWidgetElement(LISTVIEW, (context) => WebFListViewElement(context));
+  defineWidgetElement(listView, (context) => WebFListViewElement(context));
   defineWidgetElement(TEXT, (context) => WebFTextElement(context));
-  defineWidgetElement(WEBF_LISTVIEW, (context) => WebFListViewElement(context));
+  defineWidgetElement(webfListView, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
   defineWidgetElement(SHIMMER, (context) => FlutterShimmerElement(context));
   defineWidgetElement(SHIMMER_AVATAR, (context) => FlutterShimmerAvatarElement(context));
   defineWidgetElement(SHIMMER_TEXT, (context) => FlutterShimmerTextElement(context));
   defineWidgetElement(SHIMMER_BUTTON, (context) => FlutterShimmerButtonElement(context));
-  
+
   // Table Elements
-  defineWidgetElement(WEBF_TABLE, (context) => WebFTableElement(context));
-  defineWidgetElement(WEBF_TABLE_ROW, (context) => WebFTableRowElement(context));
-  defineWidgetElement(WEBF_TABLE_CELL, (context) => WebFTableCellElement(context));
-  defineWidgetElement(WEBF_TABLE_HEADER, (context) => WebFTableHeaderElement(context));
-  
+  defineWidgetElement(WEBF_TABLE, (context) => WebFTable(context));
+  defineWidgetElement(WEBF_TABLE_HEADER, (context) => WebFTableHeader(context));
+  defineWidgetElement(WEBF_TABLE_ROW, (context) => WebFTableRow(context));
+  defineWidgetElement(WEBF_TABLE_CELL, (context) => WebFTableCell(context));
+
   //
   // Gesture Elements
   defineElement(TOUCH_AREA, (context) => WebFTouchAreaElement(context));

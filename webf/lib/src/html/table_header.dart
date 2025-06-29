@@ -17,7 +17,7 @@ const Map<String, dynamic> _defaultRowStyle = {
 
 // WebF Table Header Element
 class WebFTableHeader extends WebFTableHeaderBindings {
-  WebFTableHeader(BindingContext? context) : super(context);
+  WebFTableHeader(super.context);
 
   String? _backgroundColor;
   String? _color;

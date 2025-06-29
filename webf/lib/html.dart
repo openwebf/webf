@@ -31,3 +31,6 @@ export 'src/html/shimmer/shimmer_items.dart';
 export 'src/html/shimmer/shimmer_loading.dart';
 export 'src/html/shimmer/shimmer_widget.dart';
 export 'src/html/table.dart';
+export 'src/html/table_header.dart';
+export 'src/html/table_row.dart';
+export 'src/html/table_cell.dart';

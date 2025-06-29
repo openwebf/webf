@@ -2,6 +2,8 @@
  * Copyright (C) 2024-present The OpenWebF Company. All rights reserved.
  * Licensed under GNU AGPL with Enterprise exception.
  */
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
@@ -10,12 +12,13 @@ import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:easy_refresh/easy_refresh.dart';
+import 'listview_bindings_generated.dart';
 
 /// Tag name for the ListView element in HTML
-const LISTVIEW = 'LISTVIEW';
+const listView = 'LISTVIEW';
 
 /// Tag name for the WebF-specific ListView element in HTML
-const WEBF_LISTVIEW = 'WEBF-LISTVIEW';
+const webfListView = 'WEBF-LISTVIEW';
 
 /// A custom element that renders a Flutter ListView in WebF
 ///
@@ -30,7 +33,7 @@ const WEBF_LISTVIEW = 'WEBF-LISTVIEW';
 /// The element supports these JavaScript events:
 /// - 'refresh': Triggered when pull-to-refresh is activated
 /// - 'loadmore': Triggered when scrolling near the end of the list
-class WebFListViewElement extends WidgetElement {
+class WebFListViewElement extends WebFListViewBindings {
   /// Creates a new FlutterListViewElement
   ///
   /// @param context The binding context for the element
@@ -38,6 +41,17 @@ class WebFListViewElement extends WidgetElement {
 
   /// The scroll direction for the list view (vertical by default)
   Axis scrollDirection = Axis.vertical;
+  
+  String? _shrinkWrap = 'true';
+  
+  @override
+  String? get shrinkWrap => _shrinkWrap;
+  
+  @override
+  set shrinkWrap(value) {
+    _shrinkWrap = value as String?;
+    state?.requestUpdateState();
+  }
 
   /// Returns the horizontal scroll controller if this is a horizontal list
   @override
@@ -144,8 +158,9 @@ class WebFListViewElement extends WidgetElement {
   /// load indicators. This is useful when you need to abort a load-more
   /// operation without completing it.
   void resetFooter() {
-    state?.refreshController.resetFooter();
+    state?.refreshController.finishLoad();
     state?._isLoading = false;
+    state?.refreshController.resetFooter();
   }
 
   static StaticDefinedSyncBindingObjectMethodMap listViewMethods = {
@@ -301,17 +316,18 @@ class WebFListViewState extends WebFWidgetElementState {
   ///
   /// @return A custom Footer widget, or null to use the default
   Footer? buildEasyRefreshFooter() {
-    return null;
+    return CupertinoFooter();
   }
 
   onLoad() async {
     await widgetElement.dispatchEvent(Event('loadmore'));
     _isLoading = true;
-    await Future.delayed(Duration(seconds: 4));
-    if (_isLoading) {
-      refreshController.finishLoad();
-      _isLoading = false;
-    }
+
+    // await Future.delayed(Duration(seconds: 4));
+    // if (_isLoading) {
+    //   refreshController.finishLoad();
+    //   _isLoading = false;
+    // }
   }
 
   onRefresh() async {
@@ -349,7 +365,7 @@ class WebFListViewState extends WebFWidgetElementState {
         child: ListView.builder(
             controller: scrollController,
             scrollDirection: widgetElement.scrollDirection,
-            shrinkWrap: widgetElement.getAttribute('shrink-wrap') == 'false' ? false : true,
+            shrinkWrap: widgetElement.shrinkWrap == 'false' ? false : true,
             itemCount: widgetElement.childNodes.length,
             itemBuilder: (context, index) {
               return buildListViewItemByIndex(index);

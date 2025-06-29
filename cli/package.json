@@ -1,11 +1,21 @@
 {
   "name": "@openwebf/webf",
-  "version": "0.22.2",
+  "version": "0.22.5",
   "description": "Command line tools for WebF",
   "main": "index.js",
   "bin": {
     "webf": "./bin/webf.js"
   },
+  "files": [
+    "bin",
+    "dist",
+    "src",
+    "templates",
+    "test",
+    "global.d.ts",
+    "tsconfig.json",
+    "TYPING_GUIDE.md"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest",

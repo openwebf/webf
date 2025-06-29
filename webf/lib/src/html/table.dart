@@ -4,6 +4,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:webf/css.dart';
+import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
 import 'table_bindings_generated.dart';
@@ -17,7 +18,7 @@ const Map<String, dynamic> _defaultStyle = {
 
 // WebF Table Container Element
 class WebFTable extends WebFTableBindings {
-  WebFTable(BindingContext? context) : super(context);
+  WebFTable(super.context);
 
   bool _bordered = true;
   bool _striped = false;
@@ -27,7 +28,7 @@ class WebFTable extends WebFTableBindings {
 
   @override
   bool get bordered => _bordered;
-  
+
   @override
   set bordered(value) {
     _bordered = value as bool;
@@ -36,7 +37,7 @@ class WebFTable extends WebFTableBindings {
 
   @override
   bool get striped => _striped;
-  
+
   @override
   set striped(value) {
     _striped = value as bool;
@@ -45,7 +46,7 @@ class WebFTable extends WebFTableBindings {
 
   @override
   bool get compact => _compact;
-  
+
   @override
   set compact(value) {
     _compact = value as bool;
@@ -54,7 +55,7 @@ class WebFTable extends WebFTableBindings {
 
   @override
   bool get stickyHeader => _stickyHeader;
-  
+
   @override
   set stickyHeader(value) {
     _stickyHeader = value as bool;
@@ -63,7 +64,7 @@ class WebFTable extends WebFTableBindings {
 
   @override
   bool get hoverable => _hoverable;
-  
+
   @override
   set hoverable(value) {
     _hoverable = value as bool;
@@ -103,13 +104,13 @@ class WebFTableState extends WebFWidgetElementState {
 
   List<Widget> _buildTableRows() {
     List<Widget> rows = [];
-    
+
     for (final node in widgetElement.childNodes) {
       if (node is dom.Element) {
         rows.add(node.toWidget());
       }
     }
-    
+
     return rows;
   }
 
@@ -117,13 +118,13 @@ class WebFTableState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final renderStyle = widgetElement.renderStyle;
-    
+
     if (renderStyle.display == CSSDisplay.none) {
       return const SizedBox.shrink();
     }
 
     final rows = _buildTableRows();
-    
+
     Widget tableContent = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: rows,

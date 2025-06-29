@@ -18,24 +18,24 @@ const Map<String, dynamic> _defaultRowStyle = {
 
 // WebF Table Row Element
 class WebFTableRow extends WebFTableRowBindings {
-  WebFTableRow(BindingContext? context) : super(context);
+  WebFTableRow(super.context);
 
-  int? _index;
+  double? _index;
   bool _highlighted = false;
   bool _clickable = true;
 
   @override
-  int? get index => _index;
-  
+  double? get index => _index;
+
   @override
   set index(value) {
-    _index = value as int?;
+    _index = value is double? ? value : (value is int ? value.toDouble() : null);
     state?.requestUpdateState();
   }
 
   @override
   bool get highlighted => _highlighted;
-  
+
   @override
   set highlighted(value) {
     _highlighted = value as bool;
@@ -44,7 +44,7 @@ class WebFTableRow extends WebFTableRowBindings {
 
   @override
   bool get clickable => _clickable;
-  
+
   @override
   set clickable(value) {
     _clickable = value as bool;
@@ -72,7 +72,7 @@ class WebFTableRowState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final renderStyle = widgetElement.renderStyle;
-    
+
     if (renderStyle.display == CSSDisplay.none) {
       return const SizedBox.shrink();
     }
