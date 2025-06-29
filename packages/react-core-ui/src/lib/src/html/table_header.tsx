@@ -44,7 +44,7 @@ export interface WebFTableHeaderElement extends WebFElementWithMethods<{
  * ```
  */
 export const WebFTableHeader = createWebFComponent<WebFTableHeaderElement, WebFTableHeaderProps>({
-  tagName: 'web-f-table-header',
+  tagName: 'webf-table-header',
   displayName: 'WebFTableHeader',
   // Map props to attributes
   attributeProps: [

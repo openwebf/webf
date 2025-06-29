@@ -8,11 +8,42 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
+enum WebFTableCellAlign {
+  left('left'),
+  center('center'),
+  right('right');
+  final String value;
+  const WebFTableCellAlign(this.value);
+  static WebFTableCellAlign? parse(String? value) {
+    if (value == null) return null;
+    return WebFTableCellAlign.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid WebFTableCellAlign value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
+enum WebFTableCellType {
+  header('header'),
+  data('data');
+  final String value;
+  const WebFTableCellType(this.value);
+  static WebFTableCellType? parse(String? value) {
+    if (value == null) return null;
+    return WebFTableCellType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid WebFTableCellType value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
 abstract class WebFTableCellBindings extends WidgetElement {
   WebFTableCellBindings(super.context);
-  void? get align;
+  WebFTableCellAlign? get align;
   set align(value);
-  void? get type;
+  WebFTableCellType? get type;
   set type(value);
   double? get colspan;
   set colspan(value);
@@ -26,13 +57,13 @@ abstract class WebFTableCellBindings extends WidgetElement {
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['align'] = ElementAttributeProperty(
-      getter: () => align?.toString(),
-      setter: (value) => align = value,
+      getter: () => align?.value,
+      setter: (value) => align = WebFTableCellAlign.parse(value),
       deleter: () => align = null
     );
     attributes['type'] = ElementAttributeProperty(
-      getter: () => type?.toString(),
-      setter: (value) => type = value,
+      getter: () => type?.value,
+      setter: (value) => type = WebFTableCellType.parse(value),
       deleter: () => type = null
     );
     attributes['colspan'] = ElementAttributeProperty(

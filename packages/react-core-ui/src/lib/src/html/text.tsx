@@ -29,7 +29,7 @@ export interface WebFTextElement extends WebFElementWithMethods<{
  * ```
  */
 export const WebFText = createWebFComponent<WebFTextElement, WebFTextProps>({
-  tagName: 'web-f-text',
+  tagName: 'webf-text',
   displayName: 'WebFText',
   // Map props to attributes
   attributeProps: [

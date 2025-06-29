@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
+import 'package:webf/rendering.dart';
 import 'table_cell_bindings_generated.dart';
 import 'table.dart';
 import 'table_row.dart';
@@ -19,54 +20,62 @@ const Map<String, dynamic> _defaultCellStyle = {
 
 // WebF Table Cell Element
 class WebFTableCell extends WebFTableCellBindings {
-  WebFTableCell(BindingContext? context) : super(context);
+  WebFTableCell(super.context);
 
-  String _align = 'left';
-  String _type = 'data';
-  int _colspan = 1;
-  int _rowspan = 1;
+  WebFTableCellAlign _align = WebFTableCellAlign.left;
+  WebFTableCellType _type = WebFTableCellType.data;
+  double _colspan = 1;
+  double _rowspan = 1;
   String? _width;
   String? _valueColor;
 
   @override
-  String get align => _align;
-  
+  WebFTableCellAlign? get align => _align;
+
   @override
   set align(value) {
-    _align = value as String;
+    if (value is WebFTableCellAlign) {
+      _align = value;
+    } else if (value is String) {
+      _align = WebFTableCellAlign.parse(value) ?? WebFTableCellAlign.left;
+    }
     state?.requestUpdateState();
   }
 
   @override
-  String get type => _type;
-  
+  WebFTableCellType? get type => _type;
+
   @override
   set type(value) {
-    _type = value as String;
+    if (value is WebFTableCellType) {
+      _type = value;
+    } else if (value is String) {
+      _type = WebFTableCellType.parse(value) ?? WebFTableCellType.data;
+    }
     state?.requestUpdateState();
   }
 
   @override
-  int get colspan => _colspan;
-  
+  double? get colspan => _colspan;
+
   @override
   set colspan(value) {
-    _colspan = value as int;
+    _colspan = value is double ? value : (value is int ? value.toDouble() : 1);
     state?.requestUpdateState();
   }
 
   @override
-  int get rowspan => _rowspan;
-  
+  double? get rowspan => _rowspan;
+
   @override
   set rowspan(value) {
-    _rowspan = value as int;
+    _rowspan = value is double ? value : (value is int ? value.toDouble() : 1);
     state?.requestUpdateState();
   }
 
   @override
   String? get width => _width;
-  
+
   @override
   set width(value) {
     _width = value as String?;
@@ -75,7 +84,7 @@ class WebFTableCell extends WebFTableCellBindings {
 
   @override
   String? get valueColor => _valueColor;
-  
+
   @override
   set valueColor(value) {
     _valueColor = value as String?;
@@ -99,10 +108,11 @@ class WebFTableCellState extends WebFWidgetElementState {
 
   TextAlign _getTextAlign() {
     switch (widgetElement.align) {
-      case 'center':
+      case WebFTableCellAlign.center:
         return TextAlign.center;
-      case 'right':
+      case WebFTableCellAlign.right:
         return TextAlign.right;
+      case WebFTableCellAlign.left:
       default:
         return TextAlign.left;
     }
@@ -110,10 +120,11 @@ class WebFTableCellState extends WebFWidgetElementState {
 
   Alignment _getAlignment() {
     switch (widgetElement.align) {
-      case 'center':
+      case WebFTableCellAlign.center:
         return Alignment.center;
-      case 'right':
+      case WebFTableCellAlign.right:
         return Alignment.centerRight;
+      case WebFTableCellAlign.left:
       default:
         return Alignment.centerLeft;
     }
@@ -144,7 +155,7 @@ class WebFTableCellState extends WebFWidgetElementState {
 
   String? _getTextContent() {
     for (final node in widgetElement.childNodes) {
-      if (node is dom.Text) {
+      if (node is dom.TextNode) {
         return node.data;
       }
     }
@@ -155,7 +166,7 @@ class WebFTableCellState extends WebFWidgetElementState {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final renderStyle = widgetElement.renderStyle;
-    
+
     if (renderStyle.display == CSSDisplay.none) {
       return const SizedBox.shrink();
     }
@@ -172,15 +183,15 @@ class WebFTableCellState extends WebFWidgetElementState {
     }
 
     final isCompact = parentTable?.compact ?? false;
-    final isHeader = widgetElement.type == 'header';
+    final isHeader = widgetElement.type == WebFTableCellType.header;
 
     Widget cellContent = WebFWidgetElementChild(
       child: widgetElement.childNodes.isEmpty
           ? const SizedBox()
           : DefaultTextStyle(
               style: TextStyle(
-                color: _getValueColor() ?? (isHeader 
-                    ? theme.textTheme.titleMedium?.color 
+                color: _getValueColor() ?? (isHeader
+                    ? theme.textTheme.titleMedium?.color
                     : theme.textTheme.bodyMedium?.color),
                 fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
                 fontSize: isCompact ? 12 : 14,
@@ -197,13 +208,13 @@ class WebFTableCellState extends WebFWidgetElementState {
         // Get row and column indices
         int rowIndex = 0;
         int columnIndex = 0;
-        
+
         // Find row index
         final parentRow = widgetElement.parentElement;
         if (parentRow is WebFTableRow) {
-          rowIndex = parentRow.index ?? 0;
+          rowIndex = (parentRow.index ?? 0).toInt();
         }
-        
+
         // Find column index
         if (parentRow != null) {
           int currentIndex = 0;

@@ -11,15 +11,20 @@
 
 import 'package:webf/webf.dart';
 
+<% _.forEach(enums, function(enumDef) { %>
+<%= enumDef.definition %>
+
+<% }); %>
+
 abstract class <%= className %>Bindings extends WidgetElement {
   <%= className %>Bindings(super.context);
 
   <% _.forEach(properties?.props, function(prop, index) { %>
     <% var propName = _.camelCase(prop.name); %>
     <% if (shouldMakeNullable(prop)) { %>
-  <%= generateReturnType(prop.type) %>? get <%= propName %>;
+  <%= generateReturnType(prop.type, propName) %>? get <%= propName %>;
     <% } else { %>
-  <%= generateReturnType(prop.type) %> get <%= propName %>;
+  <%= generateReturnType(prop.type, propName) %> get <%= propName %>;
     <% } %>
   set <%= propName %>(value);
   <% }); %>

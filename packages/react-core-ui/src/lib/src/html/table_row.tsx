@@ -48,7 +48,7 @@ export interface WebFTableRowElement extends WebFElementWithMethods<{
  * ```
  */
 export const WebFTableRow = createWebFComponent<WebFTableRowElement, WebFTableRowProps>({
-  tagName: 'web-f-table-row',
+  tagName: 'webf-table-row',
   displayName: 'WebFTableRow',
   // Map props to attributes
   attributeProps: [
