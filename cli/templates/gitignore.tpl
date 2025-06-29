@@ -1,2 +1,9 @@
-dist/
 node_modules/
+lib/
+dist/
+.DS_Store
+*.log
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
