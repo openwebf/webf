@@ -72,7 +72,7 @@ describe('Generator', () => {
     
     mockDartGenerator.generateDartClass.mockReturnValue('dart code');
     mockReactGenerator.generateReactComponent.mockReturnValue('react component');
-    mockReactGenerator.generateReactIndex.mockReturnValue('export * from "./test"');
+    mockReactGenerator.generateReactIndex.mockReturnValue('export { Component, ComponentElement } from "./lib/src/html/component";');
     mockVueGenerator.generateVueTypings.mockReturnValue('vue typings');
   });
 
@@ -331,6 +331,12 @@ describe('Generator', () => {
     });
 
     it('should generate index file', async () => {
+      // Update the mock to return proper format with export statements
+      mockReactGenerator.generateReactIndex.mockReturnValue(
+        'export { Test, TestElement } from "./lib/src/html/test";\n' +
+        'export { Component, ComponentElement } from "./lib/src/html/component";'
+      );
+      
       await reactGen({
         source: '/test/source',
         target: '/test/target',
@@ -344,11 +350,12 @@ describe('Generator', () => {
         ])
       );
       
-      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('index.ts'),
-        'export * from "./test"',
-        'utf-8'
-      );
+      // Check that index.ts was written (the content check is done by looking at the mock return value)
+      const writeCalls = mockFs.writeFileSync.mock.calls;
+      const indexCall = writeCalls.find(call => call[0].toString().includes('index.ts'));
+      expect(indexCall).toBeDefined();
+      expect(indexCall![1]).toContain('export { Test, TestElement }');
+      expect(indexCall![1]).toContain('export { Component, ComponentElement }');
     });
   });
 

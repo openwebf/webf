@@ -302,6 +302,7 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
       }
       
       // Maintain the same directory structure as the .d.ts file
+      // Always put files under src/ directory
       const outputDir = path.join(normalizedTarget, 'src', blob.relativeDir);
       // Ensure the directory exists
       if (!fs.existsSync(outputDir)) {
@@ -320,12 +321,68 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
     }
   });
   
-  // Generate index file
-  const indexContent = generateReactIndex(blobs);
+  // Generate or update index file
   const indexFilePath = path.join(normalizedTarget, 'src', 'index.ts');
-  if (writeFileIfChanged(indexFilePath, indexContent)) {
-    filesChanged++;
-    debug(`Generated: index.ts`);
+  const newExports = generateReactIndex(blobs);
+  
+  if (fs.existsSync(indexFilePath)) {
+    // Read existing index file
+    const existingContent = fs.readFileSync(indexFilePath, 'utf-8');
+    const existingLines = existingContent.split('\n');
+    
+    // Parse new exports
+    const newExportLines = newExports.split('\n').filter(line => line.startsWith('export '));
+    
+    // Find which exports are missing
+    const missingExports: string[] = [];
+    for (const newExport of newExportLines) {
+      // Extract the export statement to check if it exists
+      const exportMatch = newExport.match(/export\s*{\s*([^}]+)\s*}\s*from\s*["']([^"']+)["']/);
+      if (exportMatch) {
+        const [, exportNames, modulePath] = exportMatch;
+        const exportedItems = exportNames.split(',').map(s => s.trim());
+        
+        // Check if this exact export exists
+        const exists = existingLines.some(line => {
+          if (!line.startsWith('export ')) return false;
+          const lineMatch = line.match(/export\s*{\s*([^}]+)\s*}\s*from\s*["']([^"']+)["']/);
+          if (!lineMatch) return false;
+          const [, lineExportNames, lineModulePath] = lineMatch;
+          const lineExportedItems = lineExportNames.split(',').map(s => s.trim());
+          
+          // Check if same module and same exports
+          return lineModulePath === modulePath && 
+                 exportedItems.every(item => lineExportedItems.includes(item)) &&
+                 lineExportedItems.every(item => exportedItems.includes(item));
+        });
+        
+        if (!exists) {
+          missingExports.push(newExport);
+        }
+      }
+    }
+    
+    // If there are missing exports, append them
+    if (missingExports.length > 0) {
+      let updatedContent = existingContent.trimRight();
+      if (!updatedContent.endsWith('\n')) {
+        updatedContent += '\n';
+      }
+      updatedContent += missingExports.join('\n') + '\n';
+      
+      if (writeFileIfChanged(indexFilePath, updatedContent)) {
+        filesChanged++;
+        debug(`Updated: index.ts (added ${missingExports.length} exports)`);
+      }
+    } else {
+      debug(`Skipped: index.ts (all exports already exist)`);
+    }
+  } else {
+    // File doesn't exist, create it
+    if (writeFileIfChanged(indexFilePath, newExports)) {
+      filesChanged++;
+      debug(`Generated: index.ts`);
+    }
   }
   
   timeEnd('reactGen');
