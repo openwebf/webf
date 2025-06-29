@@ -24,18 +24,38 @@ namespace {
 template <typename Func>
 std::shared_ptr<const MediaQueryExpNode> ConsumeNotAndOr(Func func, CSSParserTokenStream& stream) {
   if (ConsumeIfIdent(stream, "not")) {
-    return MediaQueryExpNode::Not(func(stream));
+    // After consuming "not", we expect a query in parentheses
+    auto operand = func(stream);
+    if (!operand) {
+      return nullptr;
+    }
+    return MediaQueryExpNode::Not(operand);
   }
 
   std::shared_ptr<const MediaQueryExpNode> result = func(stream);
+  if (!result) {
+    return nullptr;
+  }
 
-  if (AtIdent(stream.Peek(), "and")) {
+  // Check for "and" or "or" operators
+  stream.ConsumeWhitespace();  // Ensure we consume whitespace before checking for operators
+  if (!stream.AtEnd() && AtIdent(stream.Peek(), "and")) {
     while (result && ConsumeIfIdent(stream, "and")) {
-      result = MediaQueryExpNode::And(result, func(stream));
+      auto operand = func(stream);
+      if (!operand) {
+        return nullptr;
+      }
+      result = MediaQueryExpNode::And(result, operand);
+      stream.ConsumeWhitespace();  // Consume whitespace after each operand
     }
-  } else if (AtIdent(stream.Peek(), "or")) {
-    while (ConsumeIfIdent(stream, "or")) {
-      result = MediaQueryExpNode::Or(result, func(stream));
+  } else if (!stream.AtEnd() && AtIdent(stream.Peek(), "or")) {
+    while (result && ConsumeIfIdent(stream, "or")) {
+      auto operand = func(stream);
+      if (!operand) {
+        return nullptr;
+      }
+      result = MediaQueryExpNode::Or(result, operand);
+      stream.ConsumeWhitespace();  // Consume whitespace after each operand
     }
   }
 
@@ -114,78 +134,100 @@ std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ParseCondition(co
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ParseCondition(CSSParserTokenStream& stream) {
   stream.ConsumeWhitespace();
   std::shared_ptr<const MediaQueryExpNode> node = ConsumeContainerCondition(stream);
+  stream.ConsumeWhitespace();  // Consume any trailing whitespace
   if (!stream.AtEnd()) {
     return nullptr;
   }
   return node;
 }
 
+// <query-in-parens> = ( <container-condition> )
+//                   | ( <size-feature> )
+//                   | style( <style-query> )
+//                   | scroll-state( <scroll-state-query> )
+//                   | <general-enclosed>
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeQueryInParens(CSSParserTokenStream& stream) {
-  stream.EnsureLookAhead();
-  auto save_state = stream.Save();
+  CSSParserTokenStream::State savepoint = stream.Save();
 
   if (stream.Peek().GetType() == kLeftParenthesisToken) {
     // ( <size-feature> ) | ( <container-condition> )
-    CSSParserTokenStream::BlockGuard guard(stream);
-    stream.ConsumeWhitespace();
-
-    stream.EnsureLookAhead();
-    auto inner_save_state = stream.Save();
-    // <size-feature>
-    std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeature(stream, SizeFeatureSet());
-    if (query && stream.AtEnd()) {
-      return MediaQueryExpNode::Nested(query);
+    {
+      CSSParserTokenStream::RestoringBlockGuard guard(stream);
+      stream.ConsumeWhitespace();
+      // <size-feature>
+      std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeature(stream, SizeFeatureSet());
+      if (query && stream.AtEnd()) {
+        guard.Release();
+        stream.ConsumeWhitespace();
+        return MediaQueryExpNode::Nested(query);
+      }
     }
-    stream.EnsureLookAhead();  // Ensure lookahead before Restore
-    stream.Restore(inner_save_state);
 
-    // <container-condition>
-    std::shared_ptr<const MediaQueryExpNode> condition = ConsumeContainerCondition(stream);
-    if (condition && stream.AtEnd()) {
-      return MediaQueryExpNode::Nested(condition);
+    {
+      CSSParserTokenStream::RestoringBlockGuard guard(stream);
+      stream.ConsumeWhitespace();
+      // <container-condition>
+      std::shared_ptr<const MediaQueryExpNode> condition = ConsumeContainerCondition(stream);
+      if (condition) {
+        stream.ConsumeWhitespace();
+        if (stream.AtEnd()) {
+          guard.Release();
+          stream.ConsumeWhitespace();
+          return MediaQueryExpNode::Nested(condition);
+        }
+      }
     }
-  } else if (stream.Peek().GetType() == kFunctionToken && stream.Peek().FunctionId() == CSSValueID::kStyle) {
+  } else if (stream.Peek().GetType() == kFunctionToken &&
+             stream.Peek().FunctionId() == CSSValueID::kStyle) {
     // style( <style-query> )
-    CSSParserTokenStream::BlockGuard guard(stream);
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
     stream.ConsumeWhitespace();
 
-    if (std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeatureQuery(stream, StyleFeatureSet())) {
+    std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeatureQuery(stream, StyleFeatureSet());
+    if (query) {
+      guard.Release();
+      stream.ConsumeWhitespace();
       return MediaQueryExpNode::Function(query, "style");
     }
-  } else if (stream.Peek().GetType() == kFunctionToken && stream.Peek().FunctionId() == CSSValueID::kScrollState) {
-    // scroll-state(stuck: [ none | top | left | right | bottom | inset-* ] )
-    // scroll-state(snapped: [ none | block | inline | x | y ] )
-    CSSParserTokenStream::BlockGuard guard(stream);
+  } else if (stream.Peek().GetType() == kFunctionToken &&
+             stream.Peek().FunctionId() == CSSValueID::kScrollState) {
+    // scroll-state( <scroll-state-query> )
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
     stream.ConsumeWhitespace();
 
-    if (std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeatureQuery(stream, StateFeatureSet())) {
+    std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeatureQuery(stream, StateFeatureSet());
+    if (query) {
+      guard.Release();
+      stream.ConsumeWhitespace();
       return MediaQueryExpNode::Function(query, "scroll-state");
     }
   }
-  stream.EnsureLookAhead();  // Ensure lookahead before Restore
-  stream.Restore(save_state);
+  stream.Restore(savepoint);
 
   // <general-enclosed>
   return media_query_parser_.ConsumeGeneralEnclosed(stream);
 }
 
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeContainerCondition(CSSParserTokenStream& stream) {
-  return ConsumeNotAndOr([this](CSSParserTokenStream& stream) { 
-    return this->ConsumeQueryInParens(stream); 
-  }, stream);
+  return ConsumeNotAndOr(
+      [this](CSSParserTokenStream& stream) {
+        return this->ConsumeQueryInParens(stream);
+      },
+      stream);
 }
 
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeFeatureQuery(CSSParserTokenStream& stream,
                                                                                    const FeatureSet& feature_set) {
   stream.EnsureLookAhead();
-  auto save_state = stream.Save();
-
-  if (std::shared_ptr<const MediaQueryExpNode> feature = ConsumeFeature(stream, feature_set)) {
+  CSSParserTokenStream::State savepoint = stream.Save();
+  std::shared_ptr<const MediaQueryExpNode> feature = ConsumeFeature(stream, feature_set);
+  if (feature) {
     return feature;
   }
-  stream.Restore(save_state);
+  stream.Restore(savepoint);
 
-  if (std::shared_ptr<const MediaQueryExpNode> node = ConsumeFeatureCondition(stream, feature_set)) {
+  std::shared_ptr<const MediaQueryExpNode> node = ConsumeFeatureCondition(stream, feature_set);
+  if (node) {
     return node;
   }
 
@@ -194,27 +236,29 @@ std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeFeatureQue
 
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeFeatureQueryInParens(CSSParserTokenStream& stream,
                                                                                            const FeatureSet& feature_set) {
-  stream.EnsureLookAhead();
-  auto save_state = stream.Save();
-
+  CSSParserTokenStream::State savepoint = stream.Save();
   if (stream.Peek().GetType() == kLeftParenthesisToken) {
-    CSSParserTokenStream::BlockGuard guard(stream);
+    CSSParserTokenStream::RestoringBlockGuard guard(stream);
     stream.ConsumeWhitespace();
     std::shared_ptr<const MediaQueryExpNode> query = ConsumeFeatureQuery(stream, feature_set);
     if (query && stream.AtEnd()) {
+      guard.Release();
+      stream.ConsumeWhitespace();
       return MediaQueryExpNode::Nested(query);
     }
   }
-  stream.Restore(save_state);
+  stream.Restore(savepoint);
 
   return media_query_parser_.ConsumeGeneralEnclosed(stream);
 }
 
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeFeatureCondition(CSSParserTokenStream& stream,
                                                                                        const FeatureSet& feature_set) {
-  return ConsumeNotAndOr([this, &feature_set](CSSParserTokenStream& stream) {
-    return this->ConsumeFeatureQueryInParens(stream, feature_set);
-  }, stream);
+  return ConsumeNotAndOr(
+      [this, &feature_set](CSSParserTokenStream& stream) {
+        return this->ConsumeFeatureQueryInParens(stream, feature_set);
+      },
+      stream);
 }
 
 std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeFeature(CSSParserTokenStream& stream,

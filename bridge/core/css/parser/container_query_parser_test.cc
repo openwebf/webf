@@ -51,26 +51,46 @@ class ContainerQueryParserTest : public testing::Test {
 };
 
 TEST_F(ContainerQueryParserTest, ParseQuery) {
+  // Test simple cases that are passing
+  EXPECT_EQ("(width)", ParseQuery("(width)"));
+  EXPECT_EQ("(min-width: 100px)", ParseQuery("(min-width: 100px)"));
+  EXPECT_EQ("(width > 100px)", ParseQuery("(width > 100px)"));
+  EXPECT_EQ("(width: 100px)", ParseQuery("(width: 100px)"));
+  EXPECT_EQ("not (width)", ParseQuery("not (width)"));
+  
+  // Test a simple failing case first
+  fprintf(stderr, "\nTesting: (width) and (height)\n");
+  std::string result = ParseQuery("(width) and (height)");
+  fprintf(stderr, "Result: '%s'\n", result.c_str());
+  EXPECT_EQ("(width) and (height)", result);
+  
+  fprintf(stderr, "\nTesting: ((width) and (width))\n");
+  result = ParseQuery("((width) and (width))");
+  fprintf(stderr, "Result: '%s'\n", result.c_str());
+  EXPECT_EQ("((width) and (width))", result);
+  
+  fprintf(stderr, "\nTesting: ((width) and (width) and (width))\n");
+  result = ParseQuery("((width) and (width) and (width))");
+  fprintf(stderr, "Result: '%s'\n", result.c_str());
+  EXPECT_EQ("((width) and (width) and (width))", result);
+  
+  // Test cases that are currently failing
   const char* tests[] = {
-      "(width)",
-      "(min-width: 100px)",
-      "(width > 100px)",
-      "(width: 100px)",
       "(not (width))",
       "((not (width)) and (width))",
-      "((not (width)) and (width))",
-      "((width) and (width))",
       "((width) or ((width) and (not (width))))",
       "((width > 100px) and (width > 200px))",
       "((width) and (width) and (width))",
       "((width) or (width) or (width))",
-      "not (width)",
-      "(width) and (height)",
       "(width) or (height)",
   };
 
   for (const char* test : tests) {
-    EXPECT_EQ(test, ParseQuery(test));
+    std::string result = ParseQuery(test);
+    if (result != test) {
+      fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.c_str());
+    }
+    EXPECT_EQ(test, result);
   }
 
   // Invalid:
