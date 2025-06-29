@@ -1,5 +1,5 @@
 import React, { EventHandler, FC, ReactNode, SyntheticEvent, useState } from "react";
-import { createWebFComponent, WebFElementWithMethods } from "@openwebf/webf-react-core-ui";
+import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
 
 export interface HybridRouterChangeEvent extends SyntheticEvent {
   readonly state: any;
