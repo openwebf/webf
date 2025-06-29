@@ -17,12 +17,14 @@ export interface FlutterShimmerAvatarProps {
 export interface FlutterShimmerAvatarElement extends WebFElementWithMethods<{
 }> {}
 /**
- * FlutterShimmerAvatar - WebF FlutterShimmerAvatar component
+ * Flutter Shimmer Avatar component
+Creates a circular shimmer placeholder for avatar images
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterShimmerAvatar
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterShimmerAvatar>

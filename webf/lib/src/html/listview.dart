@@ -19,6 +19,7 @@ const listView = 'LISTVIEW';
 
 /// Tag name for the WebF-specific ListView element in HTML
 const webfListView = 'WEBF-LISTVIEW';
+const webfListView2 = 'WEBF-LIST-VIEW';
 
 /// A custom element that renders a Flutter ListView in WebF
 ///
@@ -41,15 +42,21 @@ class WebFListViewElement extends WebFListViewBindings {
 
   /// The scroll direction for the list view (vertical by default)
   Axis scrollDirection = Axis.vertical;
-  
-  String? _shrinkWrap = 'true';
-  
+
+  bool _shrinkWrap = true;
+
   @override
-  String? get shrinkWrap => _shrinkWrap;
-  
+  bool get shrinkWrap => _shrinkWrap;
+
   @override
   set shrinkWrap(value) {
-    _shrinkWrap = value as String?;
+    if (value is bool) {
+      _shrinkWrap = value;
+    } else if (value is String) {
+      _shrinkWrap = value == 'true' || value == '';
+    } else {
+      _shrinkWrap = true; // default value
+    }
     state?.requestUpdateState();
   }
 
@@ -365,7 +372,7 @@ class WebFListViewState extends WebFWidgetElementState {
         child: ListView.builder(
             controller: scrollController,
             scrollDirection: widgetElement.scrollDirection,
-            shrinkWrap: widgetElement.shrinkWrap == 'false' ? false : true,
+            shrinkWrap: widgetElement.shrinkWrap,
             itemCount: widgetElement.childNodes.length,
             itemBuilder: (context, index) {
               return buildListViewItemByIndex(index);

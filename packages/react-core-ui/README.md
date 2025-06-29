@@ -5,7 +5,7 @@ Core UI components for building React applications with WebF.
 ## Installation
 
 ```bash
-npm install @openwebf/webf-react-core-ui
+npm install @openwebf/react-core-ui
 ```
 
 ## Components
@@ -24,7 +24,7 @@ A scrollable list view component with pull-to-refresh and infinite scrolling cap
 #### Usage
 
 ```tsx
-import { WebFListView, WebFListViewElement } from '@openwebf/webf-react-core-ui';
+import { WebFListView, WebFListViewElement } from '@openwebf/react-core-ui';
 import { useRef } from 'react';
 
 function MyList() {
@@ -92,7 +92,7 @@ A component that provides enhanced touch handling with support for tap and long 
 #### Usage
 
 ```tsx
-import { WebFTouchArea } from '@openwebf/webf-react-core-ui';
+import { WebFTouchArea } from '@openwebf/react-core-ui';
 
 function MyComponent() {
   return (
@@ -128,7 +128,7 @@ WebF provides native Flutter shimmer effects through custom elements. These Reac
 #### Usage
 
 ```tsx
-import { WebFShimmer, WebFShimmerText, WebFShimmerAvatar, WebFShimmerButton } from '@openwebf/webf-react-core-ui';
+import { WebFShimmer, WebFShimmerText, WebFShimmerAvatar, WebFShimmerButton } from '@openwebf/react-core-ui';
 
 function LoadingState() {
   return (

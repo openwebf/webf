@@ -17,12 +17,14 @@ export interface FlutterShimmerTextProps {
 export interface FlutterShimmerTextElement extends WebFElementWithMethods<{
 }> {}
 /**
- * FlutterShimmerText - WebF FlutterShimmerText component
+ * Flutter Shimmer Text component
+Creates a text line shimmer placeholder
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterShimmerText
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterShimmerText>

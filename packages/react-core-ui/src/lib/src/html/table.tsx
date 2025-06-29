@@ -2,32 +2,32 @@ import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
 export interface WebFTableProps {
   /**
-   * bordered property
-   * @default undefined
+   * Show table borders
+   *  true
    */
   bordered?: boolean;
   /**
-   * striped property
-   * @default undefined
+   * Striped rows
+   *  false
    */
   striped?: boolean;
   /**
-   * compact property
-   * @default undefined
+   * Compact table style
+   *  false
    */
   compact?: boolean;
   /**
-   * stickyHeader property
-   * @default undefined
+   * Fixed header when scrolling
+   *  false
    */
   stickyHeader?: boolean;
   /**
-   * hoverable property
-   * @default undefined
+   * Hover effect on rows
+   *  false
    */
   hoverable?: boolean;
   /**
-   * datachange event handler
+   * Table data change event
    */
   onDatachange?: (event: Event) => void;
   /**
@@ -50,8 +50,9 @@ export interface WebFTableElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <WebFTable
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </WebFTable>

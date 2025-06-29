@@ -17,12 +17,14 @@ export interface WebFTextProps {
 export interface WebFTextElement extends WebFElementWithMethods<{
 }> {}
 /**
- * WebFText - WebF WebFText component
+ * WebF Text component
+A specialized text rendering element that provides Flutter text rendering capabilities
  * 
  * @example
  * ```tsx
+ * 
  * <WebFText
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </WebFText>

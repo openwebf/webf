@@ -2,18 +2,18 @@ import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
 export interface WebFTableHeaderProps {
   /**
-   * backgroundColor property
-   * @default undefined
+   * Header background color
+   *  undefined
    */
   backgroundColor?: string;
   /**
-   * color property
-   * @default undefined
+   * Header text color
+   *  undefined
    */
   color?: string;
   /**
-   * sticky property
-   * @default undefined
+   * Fixed header
+   *  false
    */
   sticky?: boolean;
   /**
@@ -36,8 +36,9 @@ export interface WebFTableHeaderElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <WebFTableHeader
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </WebFTableHeader>

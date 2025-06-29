@@ -2,18 +2,18 @@ import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../../utils/createWebFComponent";
 export interface FlutterShimmerButtonProps {
   /**
-   * width property
-   * @default undefined
+   * Button width in pixels
+   *  "80"
    */
   width?: string;
   /**
-   * height property
-   * @default undefined
+   * Button height in pixels
+   *  "32"
    */
   height?: string;
   /**
-   * radius property
-   * @default undefined
+   * Button border radius in pixels
+   *  "4"
    */
   radius?: string;
   /**
@@ -32,12 +32,14 @@ export interface FlutterShimmerButtonProps {
 export interface FlutterShimmerButtonElement extends WebFElementWithMethods<{
 }> {}
 /**
- * FlutterShimmerButton - WebF FlutterShimmerButton component
+ * Flutter Shimmer Button component
+Creates a button shimmer placeholder
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterShimmerButton
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterShimmerButton>
