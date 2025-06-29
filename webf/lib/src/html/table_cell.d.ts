@@ -1,44 +1,14 @@
 interface WebFTableCellProperties {
   /**
-   * Text alignment
-   * @default "left"
+   * Vertical alignment for this specific cell.
+   * Overrides the table's defaultVerticalAlignment.
+   * - 'top': Align content to the top
+   * - 'middle': Center content vertically
+   * - 'bottom': Align content to the bottom
+   * - 'baseline': Align to baseline
+   * - 'fill': Expand to fill cell height
    */
-  align?: 'left' | 'center' | 'right';
-  
-  /**
-   * Cell type (header or data)
-   * @default "data"
-   */
-  type?: 'header' | 'data';
-  
-  /**
-   * Column span
-   * @default 1
-   */
-  colspan?: number;
-  
-  /**
-   * Row span
-   * @default 1
-   */
-  rowspan?: number;
-  
-  /**
-   * Cell width
-   * @default undefined
-   */
-  width?: string;
-  
-  /**
-   * Text color based on value
-   * @default undefined
-   */
-  'value-color'?: string;
+  verticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
 }
-
-interface WebFTableCellEvents {
-  /**
-   * Cell click event
-   */
-  click: CustomEvent<{row: number, column: number, value: any}>;
-}
+interface WebFTableCellMethods {}
+interface WebFTableCellEvents {}

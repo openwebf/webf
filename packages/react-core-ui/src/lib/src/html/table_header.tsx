@@ -1,18 +1,11 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
+interface WebFTableHeaderMethods {
+}
 export interface WebFTableHeaderProps {
   /**
-   * Header background color
-   * @default undefined
-   */
-  backgroundColor?: string;
-  /**
-   * Header text color
-   * @default undefined
-   */
-  color?: string;
-  /**
-   * Fixed header
+   * Whether this header group should be sticky.
+   * When true, this header section remains visible when scrolling.
    * @default false
    */
   sticky?: boolean;
@@ -49,14 +42,14 @@ export const WebFTableHeader = createWebFComponent<WebFTableHeaderElement, WebFT
   displayName: 'WebFTableHeader',
   // Map props to attributes
   attributeProps: [
-    'backgroundColor',
-    'color',
     'sticky',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
-    backgroundColor: 'background-color',
   },
+  // Event handlers
+  events: [
+  ],
   // Default prop values
   defaultProps: {
     // Add default values here

@@ -8,72 +8,150 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
+enum WebFTableTextDirection {
+  ltr('ltr'),
+  rtl('rtl');
+  final String value;
+  const WebFTableTextDirection(this.value);
+  static WebFTableTextDirection? parse(String? value) {
+    if (value == null) return null;
+    return WebFTableTextDirection.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid WebFTableTextDirection value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
+enum WebFTableDefaultVerticalAlignment {
+  top('top'),
+  middle('middle'),
+  bottom('bottom'),
+  baseline('baseline'),
+  fill('fill');
+  final String value;
+  const WebFTableDefaultVerticalAlignment(this.value);
+  static WebFTableDefaultVerticalAlignment? parse(String? value) {
+    if (value == null) return null;
+    return WebFTableDefaultVerticalAlignment.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid WebFTableDefaultVerticalAlignment value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
+enum WebFTableDefaultColumnWidth {
+  flex('flex'),
+  intrinsic('intrinsic'),
+  fixed('fixed'),
+  min('min'),
+  max('max');
+  final String value;
+  const WebFTableDefaultColumnWidth(this.value);
+  static WebFTableDefaultColumnWidth? parse(String? value) {
+    if (value == null) return null;
+    return WebFTableDefaultColumnWidth.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid WebFTableDefaultColumnWidth value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
+enum WebFTableTextBaseline {
+  alphabetic('alphabetic'),
+  ideographic('ideographic');
+  final String value;
+  const WebFTableTextBaseline(this.value);
+  static WebFTableTextBaseline? parse(String? value) {
+    if (value == null) return null;
+    return WebFTableTextBaseline.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => throw ArgumentError('Invalid WebFTableTextBaseline value: $value'),
+    );
+  }
+  @override
+  String toString() => value;
+}
 abstract class WebFTableBindings extends WidgetElement {
   WebFTableBindings(super.context);
-  bool get bordered;
-  set bordered(value);
-  bool get striped;
-  set striped(value);
-  bool get compact;
-  set compact(value);
-  bool get stickyHeader;
-  set stickyHeader(value);
-  bool get hoverable;
-  set hoverable(value);
+  WebFTableTextDirection? get textDirection;
+  set textDirection(value);
+  WebFTableDefaultVerticalAlignment? get defaultVerticalAlignment;
+  set defaultVerticalAlignment(value);
+  WebFTableDefaultColumnWidth? get defaultColumnWidth;
+  set defaultColumnWidth(value);
+  String? get columnWidths;
+  set columnWidths(value);
+  String? get border;
+  set border(value);
+  WebFTableTextBaseline? get textBaseline;
+  set textBaseline(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['bordered'] = ElementAttributeProperty(
-      getter: () => bordered.toString(),
-      setter: (value) => bordered = value == 'true' || value == '',
-      deleter: () => bordered = false
+    attributes['text-direction'] = ElementAttributeProperty(
+      getter: () => textDirection?.value,
+      setter: (value) => textDirection = WebFTableTextDirection.parse(value),
+      deleter: () => textDirection = null
     );
-    attributes['striped'] = ElementAttributeProperty(
-      getter: () => striped.toString(),
-      setter: (value) => striped = value == 'true' || value == '',
-      deleter: () => striped = false
+    attributes['default-vertical-alignment'] = ElementAttributeProperty(
+      getter: () => defaultVerticalAlignment?.value,
+      setter: (value) => defaultVerticalAlignment = WebFTableDefaultVerticalAlignment.parse(value),
+      deleter: () => defaultVerticalAlignment = null
     );
-    attributes['compact'] = ElementAttributeProperty(
-      getter: () => compact.toString(),
-      setter: (value) => compact = value == 'true' || value == '',
-      deleter: () => compact = false
+    attributes['default-column-width'] = ElementAttributeProperty(
+      getter: () => defaultColumnWidth?.value,
+      setter: (value) => defaultColumnWidth = WebFTableDefaultColumnWidth.parse(value),
+      deleter: () => defaultColumnWidth = null
     );
-    attributes['sticky-header'] = ElementAttributeProperty(
-      getter: () => stickyHeader.toString(),
-      setter: (value) => stickyHeader = value == 'true' || value == '',
-      deleter: () => stickyHeader = false
+    attributes['column-widths'] = ElementAttributeProperty(
+      getter: () => columnWidths?.toString(),
+      setter: (value) => columnWidths = value,
+      deleter: () => columnWidths = null
     );
-    attributes['hoverable'] = ElementAttributeProperty(
-      getter: () => hoverable.toString(),
-      setter: (value) => hoverable = value == 'true' || value == '',
-      deleter: () => hoverable = false
+    attributes['border'] = ElementAttributeProperty(
+      getter: () => border?.toString(),
+      setter: (value) => border = value,
+      deleter: () => border = null
+    );
+    attributes['text-baseline'] = ElementAttributeProperty(
+      getter: () => textBaseline?.value,
+      setter: (value) => textBaseline = WebFTableTextBaseline.parse(value),
+      deleter: () => textBaseline = null
     );
   }
   static StaticDefinedBindingPropertyMap webFTableProperties = {
-    'bordered': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableBindings>(element).bordered,
+    'textDirection': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableBindings>(element).textDirection,
       setter: (element, value) =>
-      castToType<WebFTableBindings>(element).bordered = value,
+      castToType<WebFTableBindings>(element).textDirection = value,
     ),
-    'striped': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableBindings>(element).striped,
+    'defaultVerticalAlignment': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableBindings>(element).defaultVerticalAlignment,
       setter: (element, value) =>
-      castToType<WebFTableBindings>(element).striped = value,
+      castToType<WebFTableBindings>(element).defaultVerticalAlignment = value,
     ),
-    'compact': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableBindings>(element).compact,
+    'defaultColumnWidth': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableBindings>(element).defaultColumnWidth,
       setter: (element, value) =>
-      castToType<WebFTableBindings>(element).compact = value,
+      castToType<WebFTableBindings>(element).defaultColumnWidth = value,
     ),
-    'stickyHeader': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableBindings>(element).stickyHeader,
+    'columnWidths': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableBindings>(element).columnWidths,
       setter: (element, value) =>
-      castToType<WebFTableBindings>(element).stickyHeader = value,
+      castToType<WebFTableBindings>(element).columnWidths = value,
     ),
-    'hoverable': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableBindings>(element).hoverable,
+    'border': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableBindings>(element).border,
       setter: (element, value) =>
-      castToType<WebFTableBindings>(element).hoverable = value,
+      castToType<WebFTableBindings>(element).border = value,
+    ),
+    'textBaseline': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableBindings>(element).textBaseline,
+      setter: (element, value) =>
+      castToType<WebFTableBindings>(element).textBaseline = value,
     ),
   };
   @override
