@@ -72,19 +72,36 @@ export interface FlutterCupertinoTextareaProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoTextareaElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoTextareaElement extends WebFElementWithMethods<{
+  focus(): void;
+  blur(): void;
+  clear(): void;
 }> {}
 /**
  * FlutterCupertinoTextarea - WebF FlutterCupertinoTextarea component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoTextareaElement>(null);
  * 
  * <FlutterCupertinoTextarea
+ *   ref={ref}
  *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTextarea>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoTextarea = createWebFComponent<FlutterCupertinoTextareaElement, FlutterCupertinoTextareaProps>({

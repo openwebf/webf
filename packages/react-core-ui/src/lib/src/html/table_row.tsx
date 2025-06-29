@@ -3,17 +3,17 @@ import { createWebFComponent, WebFElementWithMethods } from "../../../utils/crea
 export interface WebFTableRowProps {
   /**
    * Row index
-   *  undefined
+   * @default undefined
    */
   index?: number;
   /**
    * Highlight this row
-   *  false
+   * @default false
    */
   highlighted?: boolean;
   /**
    * Clickable row
-   *  true
+   * @default true
    */
   clickable?: boolean;
   /**

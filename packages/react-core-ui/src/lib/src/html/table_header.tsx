@@ -3,17 +3,17 @@ import { createWebFComponent, WebFElementWithMethods } from "../../../utils/crea
 export interface WebFTableHeaderProps {
   /**
    * Header background color
-   *  undefined
+   * @default undefined
    */
   backgroundColor?: string;
   /**
    * Header text color
-   *  undefined
+   * @default undefined
    */
   color?: string;
   /**
    * Fixed header
-   *  false
+   * @default false
    */
   sticky?: boolean;
   /**

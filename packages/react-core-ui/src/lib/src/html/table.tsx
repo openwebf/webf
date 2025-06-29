@@ -3,27 +3,27 @@ import { createWebFComponent, WebFElementWithMethods } from "../../../utils/crea
 export interface WebFTableProps {
   /**
    * Show table borders
-   *  true
+   * @default true
    */
   bordered?: boolean;
   /**
    * Striped rows
-   *  false
+   * @default false
    */
   striped?: boolean;
   /**
    * Compact table style
-   *  false
+   * @default false
    */
   compact?: boolean;
   /**
    * Fixed header when scrolling
-   *  false
+   * @default false
    */
   stickyHeader?: boolean;
   /**
    * Hover effect on rows
-   *  false
+   * @default false
    */
   hoverable?: boolean;
   /**

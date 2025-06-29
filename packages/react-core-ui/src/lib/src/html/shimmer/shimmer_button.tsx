@@ -3,17 +3,17 @@ import { createWebFComponent, WebFElementWithMethods } from "../../../../utils/c
 export interface FlutterShimmerButtonProps {
   /**
    * Button width in pixels
-   *  "80"
+   * @default "80"
    */
   width?: string;
   /**
    * Button height in pixels
-   *  "32"
+   * @default "32"
    */
   height?: string;
   /**
    * Button border radius in pixels
-   *  "4"
+   * @default "4"
    */
   radius?: string;
   /**

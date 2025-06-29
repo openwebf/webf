@@ -67,19 +67,37 @@ export interface FlutterCupertinoInputProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoInputElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoInputElement extends WebFElementWithMethods<{
+  getValue(): string;
+  setValue(value: string): void;
+  focus(): void;
+  blur(): void;
 }> {}
 /**
  * FlutterCupertinoInput - WebF FlutterCupertinoInput component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoInputElement>(null);
  * 
  * <FlutterCupertinoInput
+ *   ref={ref}
  *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoInput>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoInput = createWebFComponent<FlutterCupertinoInputElement, FlutterCupertinoInputProps>({
