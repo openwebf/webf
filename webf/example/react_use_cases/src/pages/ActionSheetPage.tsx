@@ -1,15 +1,11 @@
 import React, { useRef } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoButton } from '@openwebf/react-cupertino-ui';
 import styles from './ActionSheetPage.module.css';
 
 const WebFListView = createComponent({
   tagName: 'webf-listview',
   displayName: 'WebFListView'
-});
-
-const FlutterCupertinoButton = createComponent({
-  tagName: 'flutter-cupertino-button',
-  displayName: 'FlutterCupertinoButton'
 });
 
 const FlutterCupertinoActionSheet = createComponent({

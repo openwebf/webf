@@ -1,23 +1,11 @@
 import React, { useRef } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoButton, FlutterCupertinoModalPopup } from '@openwebf/react-cupertino-ui';
 import styles from './ModalPopupPage.module.css';
 
 const WebFListView = createComponent({
   tagName: 'webf-listview',
   displayName: 'WebFListView'
-});
-
-const FlutterCupertinoButton = createComponent({
-  tagName: 'flutter-cupertino-button',
-  displayName: 'FlutterCupertinoButton'
-});
-
-const FlutterCupertinoModalPopup = createComponent({
-  tagName: 'flutter-cupertino-modal-popup',
-  displayName: 'FlutterCupertinoModalPopup',
-  events: {
-    onClose: 'close'
-  }
 });
 
 export const ModalPopupPage: React.FC = () => {
@@ -114,7 +102,7 @@ export const ModalPopupPage: React.FC = () => {
         {/* Basic Popup */}
         <FlutterCupertinoModalPopup
           ref={basicPopupRef}
-          height="200"
+          height={200}
           onClose={onPopupClose}
         >
           <div className={styles.popupContent}>
@@ -126,7 +114,7 @@ export const ModalPopupPage: React.FC = () => {
         {/* Custom Popup */}
         <FlutterCupertinoModalPopup
           ref={customPopupRef}
-          height="300"
+          height={300}
           onClose={onPopupClose}
         >
           <div className={styles.popupContent}>
@@ -144,7 +132,7 @@ export const ModalPopupPage: React.FC = () => {
         {/* Height Popup */}
         <FlutterCupertinoModalPopup
           ref={heightPopupRef}
-          height="400"
+          height={400}
           onClose={onPopupClose}
         >
           <div className={styles.popupContent}>
@@ -156,9 +144,9 @@ export const ModalPopupPage: React.FC = () => {
         {/* No Mask Close Popup */}
         <FlutterCupertinoModalPopup
           ref={noMaskClosePopupRef}
-          height="250"
-          maskClosable="false"
-          backgroundOpacity="0.6"
+          height={250}
+          maskClosable={false}
+          backgroundOpacity={0.6}
           onClose={onPopupClose}
         >
           <div className={styles.popupContent}>
@@ -177,9 +165,9 @@ export const ModalPopupPage: React.FC = () => {
         {/* Custom Style Popup */}
         <FlutterCupertinoModalPopup
           ref={customStylePopupRef}
-          height="250"
-          surfacePainted="false"
-          backgroundOpacity="0.2"
+          height={250}
+          surfacePainted={false}
+          backgroundOpacity={0.2}
           onClose={onPopupClose}
         >
           <div className={`${styles.popupContent} ${styles.customStyle}`}>
