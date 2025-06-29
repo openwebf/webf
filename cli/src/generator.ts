@@ -65,6 +65,7 @@ interface GenerateOptions {
   target: string;
   command: string;
   exclude?: string[];
+  packageName?: string;
 }
 
 // Batch processing for file operations
@@ -236,7 +237,7 @@ export async function dartGen({ source, target, command, exclude }: GenerateOpti
   info(`Output directory: ${normalizedTarget}`);
 }
 
-export async function reactGen({ source, target, exclude }: GenerateOptions) {
+export async function reactGen({ source, target, exclude, packageName }: GenerateOptions) {
   group('React Code Generation');
   time('reactGen');
   
@@ -292,7 +293,7 @@ export async function reactGen({ source, target, exclude }: GenerateOptions) {
   
   await processFilesInBatch(blobs, 5, async (blob) => {
     try {
-      const result = generateReactComponent(blob);
+      const result = generateReactComponent(blob, packageName, blob.relativeDir);
       
       // Skip if no content was generated
       if (!result || result.trim().length === 0) {
