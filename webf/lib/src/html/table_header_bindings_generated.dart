@@ -10,25 +10,11 @@
 import 'package:webf/webf.dart';
 abstract class WebFTableHeaderBindings extends WidgetElement {
   WebFTableHeaderBindings(super.context);
-  String? get backgroundColor;
-  set backgroundColor(value);
-  String? get color;
-  set color(value);
   bool get sticky;
   set sticky(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['background-color'] = ElementAttributeProperty(
-      getter: () => backgroundColor?.toString(),
-      setter: (value) => backgroundColor = value,
-      deleter: () => backgroundColor = null
-    );
-    attributes['color'] = ElementAttributeProperty(
-      getter: () => color?.toString(),
-      setter: (value) => color = value,
-      deleter: () => color = null
-    );
     attributes['sticky'] = ElementAttributeProperty(
       getter: () => sticky.toString(),
       setter: (value) => sticky = value == 'true' || value == '',
@@ -36,16 +22,6 @@ abstract class WebFTableHeaderBindings extends WidgetElement {
     );
   }
   static StaticDefinedBindingPropertyMap webFTableHeaderProperties = {
-    'backgroundColor': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableHeaderBindings>(element).backgroundColor,
-      setter: (element, value) =>
-      castToType<WebFTableHeaderBindings>(element).backgroundColor = value,
-    ),
-    'color': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableHeaderBindings>(element).color,
-      setter: (element, value) =>
-      castToType<WebFTableHeaderBindings>(element).color = value,
-    ),
     'sticky': StaticDefinedBindingProperty(
       getter: (element) => castToType<WebFTableHeaderBindings>(element).sticky,
       setter: (element, value) =>

@@ -1,40 +1,18 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
+interface WebFTableCellMethods {
+}
 export interface WebFTableCellProps {
   /**
-   * Text alignment
-   * @default "left"
+   * Vertical alignment for this specific cell.
+   * Overrides the table's defaultVerticalAlignment.
+   * - 'top': Align content to the top
+   * - 'middle': Center content vertically
+   * - 'bottom': Align content to the bottom
+   * - 'baseline': Align to baseline
+   * - 'fill': Expand to fill cell height
    */
-  align?: 'left' | 'center' | 'right';
-  /**
-   * Cell type (header or data)
-   * @default "data"
-   */
-  type?: 'header' | 'data';
-  /**
-   * Column span
-   * @default 1
-   */
-  colspan?: number;
-  /**
-   * Row span
-   * @default 1
-   */
-  rowspan?: number;
-  /**
-   * Cell width
-   * @default undefined
-   */
-  width?: string;
-  /**
-   * Text color based on value
-   * @default undefined
-   */
-  valueColor?: string;
-  /**
-   * Cell click event
-   */
-  onClick?: (event: CustomEvent) => void;
+  verticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
   /**
    * Additional CSS styles
    */
@@ -68,26 +46,14 @@ export const WebFTableCell = createWebFComponent<WebFTableCellElement, WebFTable
   displayName: 'WebFTableCell',
   // Map props to attributes
   attributeProps: [
-    'align',
-    'type',
-    'colspan',
-    'rowspan',
-    'width',
-    'valueColor',
+    'verticalAlignment',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
-    valueColor: 'value-color',
+    verticalAlignment: 'vertical-alignment',
   },
   // Event handlers
   events: [
-    {
-      propName: 'onClick',
-      eventName: 'click',
-      handler: (callback) => (event) => {
-        callback((event as CustomEvent));
-      },
-    },
   ],
   // Default prop values
   defaultProps: {

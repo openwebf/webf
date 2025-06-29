@@ -1,25 +1,8 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
+interface WebFTableRowMethods {
+}
 export interface WebFTableRowProps {
-  /**
-   * Row index
-   * @default undefined
-   */
-  index?: number;
-  /**
-   * Highlight this row
-   * @default false
-   */
-  highlighted?: boolean;
-  /**
-   * Clickable row
-   * @default true
-   */
-  clickable?: boolean;
-  /**
-   * Row click event
-   */
-  onClick?: (event: CustomEvent) => void;
   /**
    * Additional CSS styles
    */
@@ -53,22 +36,12 @@ export const WebFTableRow = createWebFComponent<WebFTableRowElement, WebFTableRo
   displayName: 'WebFTableRow',
   // Map props to attributes
   attributeProps: [
-    'index',
-    'highlighted',
-    'clickable',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
   },
   // Event handlers
   events: [
-    {
-      propName: 'onClick',
-      eventName: 'click',
-      handler: (callback) => (event) => {
-        callback((event as CustomEvent));
-      },
-    },
   ],
   // Default prop values
   defaultProps: {

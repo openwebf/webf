@@ -1,163 +1,251 @@
-/*
- * Copyright (C) 2019-present The WebF authors. All rights reserved.
- */
-
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
-import 'package:webf/css.dart';
-import 'package:webf/bridge.dart';
-import 'package:webf/dom.dart' as dom;
-import 'package:webf/widget.dart';
-import 'table_bindings_generated.dart';
+import 'package:webf/src/html/table_bindings_generated.dart';
+import 'package:webf/src/html/table_header.dart';
+import 'package:webf/src/html/table_row.dart';
+import 'package:webf/src/widget/widget_element.dart';
 
-/// Tag name for WebF Table element
-const WEBF_TABLE = 'WEBF-TABLE';
+const String WEBF_TABLE = 'WEBF-TABLE';
 
-const Map<String, dynamic> _defaultStyle = {
-  DISPLAY: BLOCK,
-};
 
-// WebF Table Container Element
 class WebFTable extends WebFTableBindings {
   WebFTable(super.context);
 
-  bool _bordered = true;
-  bool _striped = false;
-  bool _compact = false;
-  bool _stickyHeader = false;
-  bool _hoverable = false;
-
-  @override
-  bool get bordered => _bordered;
-
-  @override
-  set bordered(value) {
-    _bordered = value as bool;
-    state?.requestUpdateState();
-  }
-
-  @override
-  bool get striped => _striped;
-
-  @override
-  set striped(value) {
-    _striped = value as bool;
-    state?.requestUpdateState();
-  }
-
-  @override
-  bool get compact => _compact;
-
-  @override
-  set compact(value) {
-    _compact = value as bool;
-    state?.requestUpdateState();
-  }
-
-  @override
-  bool get stickyHeader => _stickyHeader;
-
-  @override
-  set stickyHeader(value) {
-    _stickyHeader = value as bool;
-    state?.requestUpdateState();
-  }
-
-  @override
-  bool get hoverable => _hoverable;
-
-  @override
-  set hoverable(value) {
-    _hoverable = value as bool;
-    state?.requestUpdateState();
-  }
-
-  @override
-  Map<String, dynamic> get defaultStyle => _defaultStyle;
+  WebFTableTextDirection? _textDirection;
+  WebFTableDefaultVerticalAlignment? _defaultVerticalAlignment;
+  WebFTableDefaultColumnWidth? _defaultColumnWidth;
+  String? _columnWidths;
+  String? _border;
+  WebFTableTextBaseline? _textBaseline;
 
   @override
   WebFWidgetElementState createState() {
     return WebFTableState(this);
+  }
+
+  @override
+  WebFTableTextDirection? get textDirection => _textDirection;
+
+  @override
+  set textDirection(value) {
+    if (value is WebFTableTextDirection?) {
+      _textDirection = value;
+    } else if (value is String) {
+      _textDirection = WebFTableTextDirection.parse(value);
+    } else {
+      _textDirection = null;
+    }
+    state?.requestUpdateState(() {});
+  }
+
+  @override
+  WebFTableDefaultVerticalAlignment? get defaultVerticalAlignment => _defaultVerticalAlignment;
+
+  @override
+  set defaultVerticalAlignment(value) {
+    if (value is WebFTableDefaultVerticalAlignment?) {
+      _defaultVerticalAlignment = value;
+    } else if (value is String) {
+      _defaultVerticalAlignment = WebFTableDefaultVerticalAlignment.parse(value);
+    } else {
+      _defaultVerticalAlignment = null;
+    }
+    state?.requestUpdateState(() {});
+  }
+
+  @override
+  WebFTableDefaultColumnWidth? get defaultColumnWidth => _defaultColumnWidth;
+
+  @override
+  set defaultColumnWidth(value) {
+    if (value is WebFTableDefaultColumnWidth?) {
+      _defaultColumnWidth = value;
+    } else if (value is String) {
+      _defaultColumnWidth = WebFTableDefaultColumnWidth.parse(value);
+    } else {
+      _defaultColumnWidth = null;
+    }
+    state?.requestUpdateState(() {});
+  }
+
+  @override
+  String? get columnWidths => _columnWidths;
+
+  @override
+  set columnWidths(value) {
+    if (value is String?) {
+      _columnWidths = value;
+    } else {
+      _columnWidths = value?.toString();
+    }
+    state?.requestUpdateState(() {});
+  }
+
+  @override
+  String? get border => _border;
+
+  @override
+  set border(value) {
+    if (value is String?) {
+      _border = value;
+    } else {
+      _border = value?.toString();
+    }
+    state?.requestUpdateState(() {});
+  }
+
+  @override
+  WebFTableTextBaseline? get textBaseline => _textBaseline;
+
+  @override
+  set textBaseline(value) {
+    if (value is WebFTableTextBaseline?) {
+      _textBaseline = value;
+    } else if (value is String) {
+      _textBaseline = WebFTableTextBaseline.parse(value);
+    } else {
+      _textBaseline = null;
+    }
+    state?.requestUpdateState(() {});
   }
 }
 
 class WebFTableState extends WebFWidgetElementState {
   WebFTableState(super.widgetElement);
 
-  @override
-  WebFTable get widgetElement => super.widgetElement as WebFTable;
-
-  ScrollController? _scrollController;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widgetElement.stickyHeader) {
-      _scrollController = ScrollController();
+  TableCellVerticalAlignment _getVerticalAlignment(WebFTable table) {
+    switch (table.defaultVerticalAlignment) {
+      case WebFTableDefaultVerticalAlignment.top:
+        return TableCellVerticalAlignment.top;
+      case WebFTableDefaultVerticalAlignment.middle:
+        return TableCellVerticalAlignment.middle;
+      case WebFTableDefaultVerticalAlignment.bottom:
+        return TableCellVerticalAlignment.bottom;
+      case WebFTableDefaultVerticalAlignment.baseline:
+        return TableCellVerticalAlignment.baseline;
+      case WebFTableDefaultVerticalAlignment.fill:
+        return TableCellVerticalAlignment.fill;
+      default:
+        return TableCellVerticalAlignment.middle;
     }
   }
 
-  @override
-  void dispose() {
-    _scrollController?.dispose();
-    super.dispose();
+  TableColumnWidth _getDefaultColumnWidth(WebFTable table) {
+    switch (table.defaultColumnWidth) {
+      case WebFTableDefaultColumnWidth.flex:
+        return const FlexColumnWidth();
+      case WebFTableDefaultColumnWidth.intrinsic:
+        return const IntrinsicColumnWidth();
+      case WebFTableDefaultColumnWidth.fixed:
+        return const FixedColumnWidth(100.0);
+      case WebFTableDefaultColumnWidth.min:
+        return const MinColumnWidth(FixedColumnWidth(50.0), FlexColumnWidth());
+      case WebFTableDefaultColumnWidth.max:
+        return const MaxColumnWidth(FixedColumnWidth(200.0), FlexColumnWidth());
+      default:
+        return const FlexColumnWidth();
+    }
   }
 
-  List<Widget> _buildTableRows() {
-    List<Widget> rows = [];
-
-    for (final node in widgetElement.childNodes) {
-      if (node is dom.Element) {
-        rows.add(node.toWidget());
-      }
+  TextDirection? _getTextDirection(WebFTable table) {
+    switch (table.textDirection) {
+      case WebFTableTextDirection.ltr:
+        return TextDirection.ltr;
+      case WebFTableTextDirection.rtl:
+        return TextDirection.rtl;
+      default:
+        return null;
     }
+  }
 
-    return rows;
+  TextBaseline? _getTextBaseline(WebFTable table) {
+    switch (table.textBaseline) {
+      case WebFTableTextBaseline.alphabetic:
+        return TextBaseline.alphabetic;
+      case WebFTableTextBaseline.ideographic:
+        return TextBaseline.ideographic;
+      default:
+        return null;
+    }
+  }
+
+  TableBorder? _getBorder(WebFTable table) {
+    if (table.border == null || table.border!.isEmpty) {
+      return null;
+    }
+    // Simple border for now - can be enhanced to parse JSON configuration
+    return TableBorder.all();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final renderStyle = widgetElement.renderStyle;
+    final webfTable = widgetElement as WebFTable;
+    // Get table configuration
+    final verticalAlignment = _getVerticalAlignment(webfTable);
+    final defaultColumnWidth = _getDefaultColumnWidth(webfTable);
+    final textDirection = _getTextDirection(webfTable);
+    final textBaseline = _getTextBaseline(webfTable);
+    final border = _getBorder(webfTable);
 
-    if (renderStyle.display == CSSDisplay.none) {
-      return const SizedBox.shrink();
-    }
+    WebFTableHeader? header =
+        widgetElement.childNodes.firstWhereOrNull((node) => node is WebFTableHeader) as WebFTableHeader?;
+    List<WebFTableRow> rows = widgetElement.childNodes.whereType<WebFTableRow>().toList(growable: false);
 
-    final rows = _buildTableRows();
+    bool isStickyHeader = header != null && header.sticky;
 
-    Widget tableContent = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: rows,
-    );
-
-    if (_scrollController != null) {
-      tableContent = SingleChildScrollView(
-        controller: _scrollController,
-        child: tableContent,
+    if (header != null && isStickyHeader) {
+      // With sticky header: header stays at top while scrolling
+      return Column(
+        children: [
+          // Sticky header
+          Table(
+            textDirection: textDirection,
+            defaultVerticalAlignment: verticalAlignment,
+            defaultColumnWidth: defaultColumnWidth,
+            border: border,
+            textBaseline: textBaseline,
+            children: [TableRow(decoration: header.renderStyle.decoration, children: header.buildCellChildren())],
+          ),
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
+              child: Table(
+                textDirection: textDirection,
+                defaultVerticalAlignment: verticalAlignment,
+                defaultColumnWidth: defaultColumnWidth,
+                border: border,
+                textBaseline: textBaseline,
+                children: [
+                  ...rows.map((row) {
+                    return TableRow(decoration: row.renderStyle.decoration, children: row.buildCellChildren());
+                  })
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Without sticky header: everything scrolls together
+      return SingleChildScrollView(
+        child: Table(
+          textDirection: textDirection,
+          defaultVerticalAlignment: verticalAlignment,
+          defaultColumnWidth: defaultColumnWidth,
+          border: border,
+          textBaseline: textBaseline,
+          children: [
+            if (header != null)
+              TableRow(
+                decoration: header.renderStyle.decoration,
+                children: header.buildCellChildren(),
+              ),
+            ...rows.map((row) {
+              return TableRow(decoration: row.renderStyle.decoration, children: row.buildCellChildren());
+            })
+          ],
+        ),
       );
     }
-
-    return Container(
-      width: renderStyle.width.isAuto ? null : renderStyle.width.computedValue,
-      height: renderStyle.height.isAuto ? null : renderStyle.height.computedValue,
-      margin: renderStyle.margin,
-      padding: renderStyle.padding,
-      decoration: BoxDecoration(
-        color: renderStyle.backgroundColor?.value,
-        border: widgetElement.bordered ? Border.all(
-          color: theme.dividerColor,
-          width: 1,
-        ) : null,
-        borderRadius: renderStyle.borderRadius != null
-            ? BorderRadius.circular(renderStyle.borderRadius!.first.x)
-            : null,
-      ),
-      child: ClipRRect(
-        borderRadius: renderStyle.borderRadius != null
-            ? BorderRadius.circular(renderStyle.borderRadius!.first.x - 1)
-            : BorderRadius.zero,
-        child: tableContent,
-      ),
-    );
   }
 }

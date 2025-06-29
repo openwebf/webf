@@ -8,32 +8,19 @@
 // ignore_for_file: library_private_types_in_public_api
 // ignore_for_file: prefer_void_to_null
 import 'package:webf/webf.dart';
-enum WebFTableCellAlign {
-  left('left'),
-  center('center'),
-  right('right');
+enum WebFTableCellVerticalAlignment {
+  top('top'),
+  middle('middle'),
+  bottom('bottom'),
+  baseline('baseline'),
+  fill('fill');
   final String value;
-  const WebFTableCellAlign(this.value);
-  static WebFTableCellAlign? parse(String? value) {
+  const WebFTableCellVerticalAlignment(this.value);
+  static WebFTableCellVerticalAlignment? parse(String? value) {
     if (value == null) return null;
-    return WebFTableCellAlign.values.firstWhere(
+    return WebFTableCellVerticalAlignment.values.firstWhere(
       (e) => e.value == value,
-      orElse: () => throw ArgumentError('Invalid WebFTableCellAlign value: $value'),
-    );
-  }
-  @override
-  String toString() => value;
-}
-enum WebFTableCellType {
-  header('header'),
-  data('data');
-  final String value;
-  const WebFTableCellType(this.value);
-  static WebFTableCellType? parse(String? value) {
-    if (value == null) return null;
-    return WebFTableCellType.values.firstWhere(
-      (e) => e.value == value,
-      orElse: () => throw ArgumentError('Invalid WebFTableCellType value: $value'),
+      orElse: () => throw ArgumentError('Invalid WebFTableCellVerticalAlignment value: $value'),
     );
   }
   @override
@@ -41,82 +28,22 @@ enum WebFTableCellType {
 }
 abstract class WebFTableCellBindings extends WidgetElement {
   WebFTableCellBindings(super.context);
-  WebFTableCellAlign? get align;
-  set align(value);
-  WebFTableCellType? get type;
-  set type(value);
-  double? get colspan;
-  set colspan(value);
-  double? get rowspan;
-  set rowspan(value);
-  String? get width;
-  set width(value);
-  String? get valueColor;
-  set valueColor(value);
+  WebFTableCellVerticalAlignment? get verticalAlignment;
+  set verticalAlignment(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
-    attributes['align'] = ElementAttributeProperty(
-      getter: () => align?.value,
-      setter: (value) => align = WebFTableCellAlign.parse(value),
-      deleter: () => align = null
-    );
-    attributes['type'] = ElementAttributeProperty(
-      getter: () => type?.value,
-      setter: (value) => type = WebFTableCellType.parse(value),
-      deleter: () => type = null
-    );
-    attributes['colspan'] = ElementAttributeProperty(
-      getter: () => colspan?.toString(),
-      setter: (value) => colspan = double.tryParse(value) ?? 0.0,
-      deleter: () => colspan = 0.0
-    );
-    attributes['rowspan'] = ElementAttributeProperty(
-      getter: () => rowspan?.toString(),
-      setter: (value) => rowspan = double.tryParse(value) ?? 0.0,
-      deleter: () => rowspan = 0.0
-    );
-    attributes['width'] = ElementAttributeProperty(
-      getter: () => width?.toString(),
-      setter: (value) => width = value,
-      deleter: () => width = null
-    );
-    attributes['value-color'] = ElementAttributeProperty(
-      getter: () => valueColor?.toString(),
-      setter: (value) => valueColor = value,
-      deleter: () => valueColor = null
+    attributes['vertical-alignment'] = ElementAttributeProperty(
+      getter: () => verticalAlignment?.value,
+      setter: (value) => verticalAlignment = WebFTableCellVerticalAlignment.parse(value),
+      deleter: () => verticalAlignment = null
     );
   }
   static StaticDefinedBindingPropertyMap webFTableCellProperties = {
-    'align': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableCellBindings>(element).align,
+    'verticalAlignment': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableCellBindings>(element).verticalAlignment,
       setter: (element, value) =>
-      castToType<WebFTableCellBindings>(element).align = value,
-    ),
-    'type': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableCellBindings>(element).type,
-      setter: (element, value) =>
-      castToType<WebFTableCellBindings>(element).type = value,
-    ),
-    'colspan': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableCellBindings>(element).colspan,
-      setter: (element, value) =>
-      castToType<WebFTableCellBindings>(element).colspan = value,
-    ),
-    'rowspan': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableCellBindings>(element).rowspan,
-      setter: (element, value) =>
-      castToType<WebFTableCellBindings>(element).rowspan = value,
-    ),
-    'width': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableCellBindings>(element).width,
-      setter: (element, value) =>
-      castToType<WebFTableCellBindings>(element).width = value,
-    ),
-    'valueColor': StaticDefinedBindingProperty(
-      getter: (element) => castToType<WebFTableCellBindings>(element).valueColor,
-      setter: (element, value) =>
-      castToType<WebFTableCellBindings>(element).valueColor = value,
+      castToType<WebFTableCellBindings>(element).verticalAlignment = value,
     ),
   };
   @override
