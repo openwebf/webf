@@ -337,7 +337,7 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
     return nullptr;
   }
 
-  if (position == AtomicString(ctx(), "beforebegin")) {
+  if (position == AtomicString("beforebegin")) {
     auto* parent = parentNode();
     if (!parent) {
       exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
@@ -348,19 +348,19 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
       return nullptr;
     }
     return element;
-  } else if (position == AtomicString(ctx(), "afterbegin")) {
+  } else if (position == AtomicString("afterbegin")) {
     InsertBefore(element, firstChild(), exception_state);
     if (exception_state.HasException()) {
       return nullptr;
     }
     return element;
-  } else if (position == AtomicString(ctx(), "beforeend")) {
+  } else if (position == AtomicString("beforeend")) {
     AppendChild(element, exception_state);
     if (exception_state.HasException()) {
       return nullptr;
     }
     return element;
-  } else if (position == AtomicString(ctx(), "afterend")) {
+  } else if (position == AtomicString("afterend")) {
     auto* parent = parentNode();
     if (!parent) {
       exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
@@ -372,7 +372,7 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
     }
     return element;
   } else {
-    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" + position.ToStdString(ctx()) + "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" + position.ToStdString() + "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
     return nullptr;
   }
 }
