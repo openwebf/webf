@@ -29,8 +29,10 @@ endif()
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
-endif()
+  if (NOT ${ENABLE_COVERAGE})
+    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+  endif ()
+endif ()
 
 set(WEBF_JS_ENGINE $ENV{WEBF_JS_ENGINE})
 if(NOT WEBF_JS_ENGINE)
