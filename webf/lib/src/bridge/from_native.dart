@@ -13,8 +13,8 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/src/bridge/native_value.dart';
 import 'package:webf/src/devtools/console_store.dart';
 import 'package:webf/src/devtools/remote_object_service.dart';
 

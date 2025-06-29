@@ -323,18 +323,18 @@ class WebFListViewState extends WebFWidgetElementState {
   ///
   /// @return A custom Footer widget, or null to use the default
   Footer? buildEasyRefreshFooter() {
-    return CupertinoFooter();
+    return null;
   }
 
   onLoad() async {
     await widgetElement.dispatchEvent(Event('loadmore'));
     _isLoading = true;
 
-    // await Future.delayed(Duration(seconds: 4));
-    // if (_isLoading) {
-    //   refreshController.finishLoad();
-    //   _isLoading = false;
-    // }
+    await Future.delayed(Duration(seconds: 4));
+    if (_isLoading) {
+      refreshController.finishLoad();
+      _isLoading = false;
+    }
   }
 
   onRefresh() async {
