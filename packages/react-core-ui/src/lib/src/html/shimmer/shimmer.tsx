@@ -17,12 +17,14 @@ export interface FlutterShimmerProps {
 export interface FlutterShimmerElement extends WebFElementWithMethods<{
 }> {}
 /**
- * FlutterShimmer - WebF FlutterShimmer component
+ * Flutter Shimmer component
+Creates a shimmer loading effect over its child content
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterShimmer
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterShimmer>

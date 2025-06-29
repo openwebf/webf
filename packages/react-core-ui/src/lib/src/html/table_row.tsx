@@ -2,22 +2,22 @@ import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
 export interface WebFTableRowProps {
   /**
-   * index property
-   * @default undefined
+   * Row index
+   *  undefined
    */
   index?: number;
   /**
-   * highlighted property
-   * @default undefined
+   * Highlight this row
+   *  false
    */
   highlighted?: boolean;
   /**
-   * clickable property
-   * @default undefined
+   * Clickable row
+   *  true
    */
   clickable?: boolean;
   /**
-   * click event handler
+   * Row click event
    */
   onClick?: (event: CustomEvent) => void;
   /**
@@ -40,8 +40,9 @@ export interface WebFTableRowElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <WebFTableRow
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </WebFTableRow>

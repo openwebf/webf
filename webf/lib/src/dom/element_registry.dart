@@ -211,6 +211,7 @@ void defineBuiltInElements() {
   defineWidgetElement(listView, (context) => WebFListViewElement(context));
   defineWidgetElement(TEXT, (context) => WebFTextElement(context));
   defineWidgetElement(webfListView, (context) => WebFListViewElement(context));
+  defineWidgetElement(webfListView2, (context) => WebFListViewElement(context));
   defineElement(PORTAL, (context) => PortalElement(context));
   defineWidgetElement(SHIMMER, (context) => FlutterShimmerElement(context));
   defineWidgetElement(SHIMMER_AVATAR, (context) => FlutterShimmerAvatarElement(context));

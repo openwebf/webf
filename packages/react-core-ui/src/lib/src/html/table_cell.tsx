@@ -2,37 +2,37 @@ import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../utils/createWebFComponent";
 export interface WebFTableCellProps {
   /**
-   * align property
-   * @default undefined
+   * Text alignment
+   *  "left"
    */
-  align?: void;
+  align?: 'left' | 'center' | 'right';
   /**
-   * type property
-   * @default undefined
+   * Cell type (header or data)
+   *  "data"
    */
-  type?: void;
+  type?: 'header' | 'data';
   /**
-   * colspan property
-   * @default undefined
+   * Column span
+   *  1
    */
   colspan?: number;
   /**
-   * rowspan property
-   * @default undefined
+   * Row span
+   *  1
    */
   rowspan?: number;
   /**
-   * width property
-   * @default undefined
+   * Cell width
+   *  undefined
    */
   width?: string;
   /**
-   * valueColor property
-   * @default undefined
+   * Text color based on value
+   *  undefined
    */
   valueColor?: string;
   /**
-   * click event handler
+   * Cell click event
    */
   onClick?: (event: CustomEvent) => void;
   /**
@@ -55,8 +55,9 @@ export interface WebFTableCellElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <WebFTableCell
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </WebFTableCell>

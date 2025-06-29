@@ -10,15 +10,15 @@
 import 'package:webf/webf.dart';
 abstract class WebFListViewBindings extends WidgetElement {
   WebFListViewBindings(super.context);
-  String? get shrinkWrap;
+  bool get shrinkWrap;
   set shrinkWrap(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
     attributes['shrink-wrap'] = ElementAttributeProperty(
-      getter: () => shrinkWrap?.toString(),
-      setter: (value) => shrinkWrap = value,
-      deleter: () => shrinkWrap = null
+      getter: () => shrinkWrap.toString(),
+      setter: (value) => shrinkWrap = value == 'true' || value == '',
+      deleter: () => shrinkWrap = false
     );
   }
   static StaticDefinedBindingPropertyMap webFListViewProperties = {
