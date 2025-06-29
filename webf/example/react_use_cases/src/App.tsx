@@ -1,7 +1,7 @@
 import React from 'react';
 import './App.css';
 import './main.css';
-import { RouterView } from './components/RouterView';
+import { Routes, Route } from '@openwebf/react-router';
 import { HomePage } from './pages/HomePage';
 import { ShowCasePage } from './pages/ShowCasePage';
 import { ListviewPage } from './pages/ListviewPage';
@@ -30,78 +30,32 @@ import { FormAdvancedPage } from './pages/FormAdvancedPage';
 function App() {
   return (
     <div className="App">
-      <RouterView path="/" title="Home">
-        <HomePage />
-      </RouterView>
-      <RouterView path="/show_case" title="Show Case">
-        <ShowCasePage />
-      </RouterView>
-      <RouterView path="/listview" title="Listview">
-        <ListviewPage />
-      </RouterView>
-      <RouterView path="/form" title="Form">
-        <FormPage />
-      </RouterView>
-      <RouterView path="/advanced-form" title="Advanced Form">
-        <FormAdvancedPage />
-      </RouterView>
-      <RouterView path="/echarts" title="ECharts">
-        <EChartsPage />
-      </RouterView>
-      <RouterView path="/image" title="Image Gallery">
-        <ImagePage />
-      </RouterView>
-      <RouterView path="/animation" title="Animations">
-        <AnimationPage />
-      </RouterView>
-      <RouterView path="/typography" title="Typography">
-        <TypographyPage />
-      </RouterView>
-      <RouterView path="/actionsheet" title="Action Sheets">
-        <ActionSheetPage />
-      </RouterView>
-      <RouterView path="/video" title="Video Player">
-        <VideoPage />
-      </RouterView>
-      <RouterView path="/fontface" title="Custom Fonts">
-        <FontFacePage />
-      </RouterView>
-      <RouterView path="/native-interaction" title="Native Interaction">
-        <NativeInteractionPage />
-      </RouterView>
-      <RouterView path="/flutter-interaction" title="Flutter Interaction">
-        <FlutterInteractionPage />
-      </RouterView>
-      <RouterView path="/deep-link" title="Deep Links">
-        <DeepLinkPage />
-      </RouterView>
-      <RouterView path="/network" title="Network Requests">
-        <NetworkPage />
-      </RouterView>
-      <RouterView path="/responsive" title="Responsive Design">
-        <ResponsivePage />
-      </RouterView>
-      <RouterView path="/routing" title="Routing & Navigation">
-        <RoutingPage />
-      </RouterView>
-      <RouterView path="/contextmenu" title="Context Menu">
-        <ContextMenuPage />
-      </RouterView>
-      <RouterView path="/modalpopup" title="Modal Popup">
-        <ModalPopupPage />
-      </RouterView>
-      <RouterView path="/loading" title="Loading">
-        <LoadingPage />
-      </RouterView>
-      <RouterView path="/alert" title="Alert">
-        <AlertPage />
-      </RouterView>
-      <RouterView path="/image-preload" title="Image Preload">
-        <ImagePreloadPage />
-      </RouterView>
-      <RouterView path="/theme-toggle" title="Theme Toggle">
-        <ThemeTogglePage />
-      </RouterView>
+      <Routes>
+        <Route path="/" title="Home" element={<HomePage />} />
+        <Route path="/show_case" title="Show Case" element={<ShowCasePage />} />
+        <Route path="/listview" title="Listview" element={<ListviewPage />} />
+        <Route path="/form" title="Form" element={<FormPage />} />
+        <Route path="/advanced-form" title="Advanced Form" element={<FormAdvancedPage />} />
+        <Route path="/echarts" title="ECharts" element={<EChartsPage />} />
+        <Route path="/image" title="Image Gallery" element={<ImagePage />} />
+        <Route path="/animation" title="Animations" element={<AnimationPage />} />
+        <Route path="/typography" title="Typography" element={<TypographyPage />} />
+        <Route path="/actionsheet" title="Action Sheets" element={<ActionSheetPage />} />
+        <Route path="/video" title="Video Player" element={<VideoPage />} />
+        <Route path="/fontface" title="Custom Fonts" element={<FontFacePage />} />
+        <Route path="/native-interaction" title="Native Interaction" element={<NativeInteractionPage />} />
+        <Route path="/flutter-interaction" title="Flutter Interaction" element={<FlutterInteractionPage />} />
+        <Route path="/deep-link" title="Deep Links" element={<DeepLinkPage />} />
+        <Route path="/network" title="Network Requests" element={<NetworkPage />} />
+        <Route path="/responsive" title="Responsive Design" element={<ResponsivePage />} />
+        <Route path="/routing" title="Routing & Navigation" element={<RoutingPage />} />
+        <Route path="/contextmenu" title="Context Menu" element={<ContextMenuPage />} />
+        <Route path="/modalpopup" title="Modal Popup" element={<ModalPopupPage />} />
+        <Route path="/loading" title="Loading" element={<LoadingPage />} />
+        <Route path="/alert" title="Alert" element={<AlertPage />} />
+        <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
+        <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
+      </Routes>
     </div>
   );
 }

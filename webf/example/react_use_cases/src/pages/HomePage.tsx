@@ -1,5 +1,6 @@
 import React from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { WebFRouter } from '@openwebf/react-router';
 import styles from './HomePage.module.css';
 
 const WebFListView = createComponent({
@@ -9,7 +10,7 @@ const WebFListView = createComponent({
 
 export const HomePage: React.FC = () => {
   const navigateTo = (path: string) => {
-    window.webf.hybridHistory.pushState({}, path);
+    WebFRouter.pushState({}, path);
   };
 
   return (
