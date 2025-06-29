@@ -233,27 +233,58 @@ class FlutterCupertinoButton extends FlutterCupertinoButtonBindings {
 import { createWebFComponent } from '@openwebf/webf-react-core-ui';
 
 export const FlutterCupertinoButton = createWebFComponent<
-  FlutterCupertinoButtonProps,
-  FlutterCupertinoButtonElement
->('flutter-cupertino-button', {
-  variant: { type: 'string' },
-  size: { type: 'string' },
-  disabled: { type: 'boolean' },
-  pressedOpacity: { type: 'string', attribute: 'pressed-opacity' }
-}, {
-  onClick: 'click'
+  FlutterCupertinoButtonElement,
+  FlutterCupertinoButtonProps
+>({
+  tagName: 'flutter-cupertino-button',
+  displayName: 'FlutterCupertinoButton',
+  
+  // Map props to attributes
+  attributeProps: [
+    'variant',
+    'size', 
+    'disabled',
+    'pressedOpacity'
+  ],
+  
+  // Convert prop names to attribute names if needed
+  attributeMap: {
+    pressedOpacity: 'pressed-opacity'
+  },
+  
+  // Event handlers
+  events: [{
+    propName: 'onClick',
+    eventName: 'click',
+    handler: (callback) => (event) => {
+      callback(event as Event);
+    }
+  }]
 });
 ```
 
 ### Registration
 
-Components are registered in the Flutter package using `WebF.defineCustomElement()`:
+Components can be registered in two ways:
 
+**For external packages** (like webf_cupertino_ui):
 ```dart
 void installWebFCupertinoUI() {
   WebF.defineCustomElement('flutter-cupertino-button', 
     (context) => FlutterCupertinoButton(context));
   // ... register other components
+}
+```
+
+**For WebF core elements** (built into WebF):
+```dart
+// In element_registry.dart
+void defineBuiltInElements() {
+  // ... other elements
+  defineWidgetElement(WEBF_TABLE, (context) => WebFTable(context));
+  defineWidgetElement(WEBF_TABLE_HEADER, (context) => WebFTableHeader(context));
+  defineWidgetElement(WEBF_TABLE_ROW, (context) => WebFTableRow(context));
+  defineWidgetElement(WEBF_TABLE_CELL, (context) => WebFTableCell(context));
 }
 ```
 
@@ -291,6 +322,7 @@ void installWebFCupertinoUI() {
 4. **Component Naming**:
    - Use consistent prefixes (e.g., `flutter-cupertino-`)
    - Match TypeScript interface names to Dart class names
+   - Note: The CLI may generate tag names with different formats (e.g., `web-f-table` instead of `webf-table`)
 
 This integration enables developers to create Flutter-based components that can be consumed as native React/Vue components with full type safety and IDE support.
 
