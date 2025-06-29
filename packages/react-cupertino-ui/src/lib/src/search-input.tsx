@@ -1,5 +1,12 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+interface FlutterCupertinoSearchInputMethods {
+  getValue(): string;
+  setValue(value: string): void;
+  focus(): void;
+  blur(): void;
+  clear(): void;
+}
 export interface FlutterCupertinoSearchInputProps {
   /**
    * val property
@@ -76,11 +83,6 @@ export interface FlutterCupertinoSearchInputProps {
   className?: string;
 }
 export interface FlutterCupertinoSearchInputElement extends WebFElementWithMethods<{
-  getValue(): string;
-  setValue(value: string): void;
-  focus(): void;
-  blur(): void;
-  clear(): void;
 }> {}
 /**
  * FlutterCupertinoSearchInput - WebF FlutterCupertinoSearchInput component

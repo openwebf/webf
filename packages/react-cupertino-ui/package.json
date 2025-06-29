@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/react-cupertino-ui",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "description": "iOS-style UI components for WebF applications. This package provides Flutter's Cupertino widgets wrapped as HTML custom elements for use in WebF.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",

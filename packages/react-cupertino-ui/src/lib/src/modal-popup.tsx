@@ -1,5 +1,9 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+interface FlutterCupertinoModelPopupMethods {
+  show(): void;
+  hide(): void;
+}
 export interface FlutterCupertinoModalPopupProps {
   /**
    * visible property
@@ -44,8 +48,6 @@ export interface FlutterCupertinoModalPopupProps {
   className?: string;
 }
 export interface FlutterCupertinoModalPopupElement extends WebFElementWithMethods<{
-  show(): void;
-  hide(): void;
 }> {}
 /**
  * FlutterCupertinoModalPopup - WebF FlutterCupertinoModalPopup component
@@ -86,6 +88,48 @@ export const FlutterCupertinoModalPopup = createWebFComponent<FlutterCupertinoMo
       },
     },
   ],
+  // Default prop values
+  defaultProps: {
+    // Add default values here
+  },
+});
+export interface FlutterCupertinoModelPopupProps {
+  /**
+   * Additional CSS styles
+   */
+  style?: React.CSSProperties;
+  /**
+   * Children elements
+   */
+  children?: React.ReactNode;
+  /**
+   * Additional CSS class names
+   */
+  className?: string;
+}
+export interface FlutterCupertinoModelPopupElement extends WebFElementWithMethods<{
+}> {}
+/**
+ * FlutterCupertinoModelPopup - WebF FlutterCupertinoModelPopup component
+ * 
+ * @example
+ * ```tsx
+ * <FlutterCupertinoModelPopup
+ *   // Add example props here
+ * >
+ *   Content
+ * </FlutterCupertinoModelPopup>
+ * ```
+ */
+export const FlutterCupertinoModelPopup = createWebFComponent<FlutterCupertinoModelPopupElement, FlutterCupertinoModelPopupProps>({
+  tagName: 'flutter-cupertino-model-popup',
+  displayName: 'FlutterCupertinoModelPopup',
+  // Map props to attributes
+  attributeProps: [
+  ],
+  // Convert prop names to attribute names if needed
+  attributeMap: {
+  },
   // Default prop values
   defaultProps: {
     // Add default values here
