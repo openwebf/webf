@@ -18,6 +18,13 @@ function generateReturnType(type: ParameterType) {
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
     return `${getPointerType(type.value)}[]`;
   }
+  
+  // Handle union types (e.g., 'left' | 'center' | 'right')
+  if (Array.isArray(type.value)) {
+    // Union types are typically string literals in TypeScript
+    return 'String';
+  }
+  
   switch (type.value) {
     case FunctionArgumentType.int: {
       return 'int';
