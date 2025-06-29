@@ -80,8 +80,9 @@ export interface FlutterCupertinoDatePickerElement extends WebFElementWithMethod
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoDatePicker
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoDatePicker>

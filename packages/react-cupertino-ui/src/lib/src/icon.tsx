@@ -31,8 +31,9 @@ export interface FlutterCupertinoIconElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoIcon
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoIcon>

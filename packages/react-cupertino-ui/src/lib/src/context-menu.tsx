@@ -36,8 +36,9 @@ export interface FlutterCupertinoContextMenuElement extends WebFElementWithMetho
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoContextMenu
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoContextMenu>

@@ -395,6 +395,9 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   // Determine if we need to create a new project
   const needsProjectCreation = !hasPackageJson || !hasGlobalDts || !hasTsConfig;
   
+  // Track if this is an existing project (has all required files)
+  const isExistingProject = hasPackageJson && hasGlobalDts && hasTsConfig;
+  
   let framework = options.framework;
   let packageName = options.packageName;
   
@@ -620,7 +623,7 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
   // Handle npm publishing if requested via command line option
   if (options.publishToNpm && framework) {
     try {
-      await buildAndPublishPackage(resolvedDistPath, options.npmRegistry);
+      await buildAndPublishPackage(resolvedDistPath, options.npmRegistry, isExistingProject);
     } catch (error) {
       console.error('\nError during npm publish:', error);
       process.exit(1);
@@ -655,7 +658,8 @@ async function generateCommand(distPath: string, options: GenerateOptions): Prom
       try {
         await buildAndPublishPackage(
           resolvedDistPath, 
-          registryAnswer.registry || undefined
+          registryAnswer.registry || undefined,
+          isExistingProject
         );
       } catch (error) {
         console.error('\nError during npm publish:', error);
@@ -760,19 +764,39 @@ async function buildPackage(packagePath: string): Promise<void> {
   }
 }
 
-async function buildAndPublishPackage(packagePath: string, registry?: string): Promise<void> {
+async function buildAndPublishPackage(packagePath: string, registry?: string, isExistingProject: boolean = false): Promise<void> {
   const packageJsonPath = path.join(packagePath, 'package.json');
   
   if (!fs.existsSync(packageJsonPath)) {
     throw new Error(`No package.json found in ${packagePath}`);
   }
   
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+  let packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
   const packageName = packageJson.name;
-  const packageVersion = packageJson.version;
+  let packageVersion = packageJson.version;
   
   // First, ensure dependencies are installed and build the package
   await buildPackage(packagePath);
+  
+  // If this is an existing project, increment the patch version before publishing
+  if (isExistingProject) {
+    console.log(`\nIncrementing version for existing project...`);
+    const versionResult = spawnSync(NPM, ['version', 'patch', '--no-git-tag-version'], {
+      cwd: packagePath,
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    });
+    
+    if (versionResult.status !== 0) {
+      console.error('Failed to increment version:', versionResult.stderr);
+      throw new Error('Failed to increment version');
+    }
+    
+    // Re-read package.json to get the new version
+    packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    packageVersion = packageJson.version;
+    console.log(`Version updated to ${packageVersion}`);
+  }
   
   // Set registry if provided
   if (registry) {

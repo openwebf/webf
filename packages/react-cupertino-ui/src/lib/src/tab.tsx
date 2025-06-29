@@ -20,15 +20,15 @@ export interface FlutterCupertinoTabProps {
   className?: string;
 }
 export interface FlutterCupertinoTabElement extends WebFElementWithMethods<{
-  switchTab(index: number): void;
 }> {}
 /**
  * FlutterCupertinoTab - WebF FlutterCupertinoTab component
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoTab
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTab>
@@ -84,8 +84,9 @@ export interface FlutterCupertinoTabItemElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoTabItem
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTabItem>

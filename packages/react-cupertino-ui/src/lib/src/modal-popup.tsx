@@ -54,8 +54,9 @@ export interface FlutterCupertinoModalPopupElement extends WebFElementWithMethod
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoModalPopup
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoModalPopup>

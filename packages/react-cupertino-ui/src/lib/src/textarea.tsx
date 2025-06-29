@@ -79,8 +79,9 @@ export interface FlutterCupertinoTextareaElement extends WebFElementWithMethods<
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoTextarea
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTextarea>

@@ -35,8 +35,9 @@ export interface FlutterCupertinoPickerElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoPicker
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoPicker>

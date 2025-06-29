@@ -1,6 +1,6 @@
 {
   "name": "@openwebf/webf",
-  "version": "0.22.5",
+  "version": "0.22.7",
   "description": "Command line tools for WebF",
   "main": "index.js",
   "bin": {
@@ -36,6 +36,8 @@
     "ts-jest": "^29.1.2"
   },
   "dependencies": {
+    "@microsoft/tsdoc": "^0.15.1",
+    "@microsoft/tsdoc-config": "^0.17.1",
     "commander": "^14.0.0",
     "glob": "^10.3.10",
     "inquirer": "^8.2.6",

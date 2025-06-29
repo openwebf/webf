@@ -4,7 +4,7 @@ import typescript from '@rollup/plugin-typescript';
 import dts from 'rollup-plugin-dts';
 import path from 'path';
 
-const external = ['react', 'react-dom', '@openwebf/webf-react-core-ui', '@openwebf/webf-enterprise-typings'];
+const external = ['react', 'react-dom', '@openwebf/react-core-ui', '@openwebf/webf-enterprise-typings'];
 
 export default [
   {

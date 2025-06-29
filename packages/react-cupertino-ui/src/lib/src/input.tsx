@@ -74,8 +74,9 @@ export interface FlutterCupertinoInputElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoInput
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoInput>
