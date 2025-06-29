@@ -1,5 +1,5 @@
 import React from "react";
-import { createWebFComponent, WebFElementWithMethods } from "@openwebf/webf-react-core-ui";
+import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
 export interface FlutterCupertinoInputProps {
   /**
    * val property
