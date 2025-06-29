@@ -82,54 +82,56 @@ void main() async {
       name: 'html/css',
       createController: () => WebFController(
             routeObserver: routeObserver,
+            initialRoute: '/'
           ),
-      bundle: WebFBundle.fromUrl('assets:///assets/bundle.html'),
+      bundle: WebFBundle.fromUrl('http://localhost:3000/'),
+      // bundle: WebFBundle.fromUrl('http://localhost:3000/'),
       setup: (controller) {
         controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
         controller.darkModeOverride = savedThemeMode?.isDark;
       });
 
-  // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPrerendering(
-      name: 'miracle_plus',
-      createController: () => WebFController(
-            initialRoute: '/home',
-            routeObserver: routeObserver,
-          ),
-      bundle: WebFBundle.fromUrl('assets:///news_miracleplus/dist/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  // Add vue controller with preloading
-  WebFControllerManager.instance.addWithPrerendering(
-      name: 'cupertino_gallery',
-      createController: () => WebFController(
-        initialRoute: '/',
-        routeObserver: routeObserver,
-      ),
-      bundle: WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
-
-  // Add react use cases controller with preloading for image preload test
-  WebFControllerManager.instance.addWithPreload(
-      name: 'react_use_cases',
-      createController: () => WebFController(
-            routeObserver: routeObserver,
-            // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-          ),
-      bundle: WebFBundle.fromUrl('assets:///react_use_cases/build/index.html'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-
-        // Set up method call handler for FlutterInteractionPage using dedicated handler
-        controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
-      });
+  // // Add vue controller with preloading
+  // WebFControllerManager.instance.addWithPrerendering(
+  //     name: 'miracle_plus',
+  //     createController: () => WebFController(
+  //           initialRoute: '/home',
+  //           routeObserver: routeObserver,
+  //         ),
+  //     bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //     });
+  //
+  // // Add vue controller with preloading
+  // WebFControllerManager.instance.addWithPrerendering(
+  //     name: 'cupertino_gallery',
+  //     createController: () => WebFController(
+  //       initialRoute: '/',
+  //       routeObserver: routeObserver,
+  //     ),
+  //     bundle: WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //     });
+  //
+  // // Add react use cases controller with preloading for image preload test
+  // WebFControllerManager.instance.addWithPreload(
+  //     name: 'react_use_cases',
+  //     createController: () => WebFController(
+  //           routeObserver: routeObserver,
+  //           // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+  //         ),
+  //     bundle: WebFBundle.fromUrl('assets:///react_use_cases/build/index.html'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //
+  //       // Set up method call handler for FlutterInteractionPage using dedicated handler
+  //       controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
+  //     });
 
   WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
 

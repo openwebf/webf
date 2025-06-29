@@ -53,6 +53,15 @@ export interface FlutterCupertinoTabBarProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoTabBarElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoTabBarElement extends WebFElementWithMethods<{
 }> {}
 /**
@@ -60,11 +69,17 @@ export interface FlutterCupertinoTabBarElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoTabBarElement>(null);
+ * 
  * <FlutterCupertinoTabBar
- *   // Add example props here
+ *   ref={ref}
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTabBar>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoTabBar = createWebFComponent<FlutterCupertinoTabBarElement, FlutterCupertinoTabBarProps>({
@@ -138,8 +153,9 @@ export interface FlutterCupertinoTabBarItemElement extends WebFElementWithMethod
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoTabBarItem
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTabBarItem>

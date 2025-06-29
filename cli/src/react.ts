@@ -4,13 +4,16 @@ import path from 'path';
 import {ParameterType} from "./analyzer";
 import {ClassObject, FunctionArgumentType, FunctionDeclaration, TypeAliasObject} from "./declaration";
 import {IDLBlob} from "./IDLBlob";
-import {getPointerType, isPointerType} from "./utils";
+import {getPointerType, isPointerType, isUnionType} from "./utils";
 
 function readTemplate(name: string) {
   return fs.readFileSync(path.join(__dirname, '../templates/' + name + '.tpl'), {encoding: 'utf-8'});
 }
 
 function generateReturnType(type: ParameterType) {
+  if (isUnionType(type)) {
+    return (type.value as ParameterType[]).map(v => `'${v.value}'`).join(' | ');
+  }
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return pointerType;
@@ -79,6 +82,20 @@ function generateMethodDeclaration(method: FunctionDeclaration) {
   return `${methodName}(${args}): ${returnType};`;
 }
 
+function generateMethodDeclarationWithDocs(method: FunctionDeclaration, indent: string = ''): string {
+  let result = '';
+  if (method.documentation) {
+    result += `${indent}/**\n`;
+    const docLines = method.documentation.split('\n');
+    docLines.forEach(line => {
+      result += `${indent} * ${line}\n`;
+    });
+    result += `${indent} */\n`;
+  }
+  result += `${indent}${generateMethodDeclaration(method)}`;
+  return result;
+}
+
 function toReactEventName(name: string) {
   const eventName = 'on-' + name;
   return _.camelCase(eventName);
@@ -115,10 +132,14 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
   const events = classObjects.filter(object => {
     return object.name.endsWith('Events');
   });
+  const methods = classObjects.filter(object => {
+    return object.name.endsWith('Methods');
+  });
 
   const others = classObjects.filter(object => {
     return !object.name.endsWith('Properties')
-      && !object.name.endsWith('Events');
+      && !object.name.endsWith('Events')
+      && !object.name.endsWith('Methods');
   });
 
   // Include type aliases
@@ -128,6 +149,21 @@ export function generateReactComponent(blob: IDLBlob, packageName?: string, rela
   
   const dependencies = [
     typeAliasDeclarations,
+    // Include Methods interfaces as dependencies
+    methods.map(object => {
+      const methodDeclarations = object.methods.map(method => {
+        return generateMethodDeclarationWithDocs(method, '  ');
+      }).join('\n');
+
+      let interfaceDoc = '';
+      if (object.documentation) {
+        interfaceDoc = `/**\n${object.documentation.split('\n').map(line => ` * ${line}`).join('\n')}\n */\n`;
+      }
+
+      return `${interfaceDoc}interface ${object.name} {
+${methodDeclarations}
+}`;
+    }).join('\n\n'),
     others.map(object => {
       const props = object.props.map(prop => {
         if (prop.optional) {
@@ -146,8 +182,8 @@ interface ${object.name} {
   // Generate all components from this file
   const components: string[] = [];
   
-  // Create a map of component names to their properties and events
-  const componentMap = new Map<string, { properties?: ClassObject, events?: ClassObject }>();
+  // Create a map of component names to their properties, events, and methods
+  const componentMap = new Map<string, { properties?: ClassObject, events?: ClassObject, methods?: ClassObject }>();
   
   // Process all Properties interfaces
   properties.forEach(prop => {
@@ -165,6 +201,15 @@ interface ${object.name} {
       componentMap.set(componentName, {});
     }
     componentMap.get(componentName)!.events = event;
+  });
+  
+  // Process all Methods interfaces
+  methods.forEach(method => {
+    const componentName = method.name.replace(/Methods$/, '');
+    if (!componentMap.has(componentName)) {
+      componentMap.set(componentName, {});
+    }
+    componentMap.get(componentName)!.methods = method;
   });
   
   // If we have multiple components, we need to generate a combined file
@@ -202,6 +247,7 @@ interface ${object.name} {
       className: className,
       properties: component.properties,
       events: component.events,
+      methods: component.methods,
       classObjectDictionary,
       dependencies,
       blob,
@@ -209,6 +255,7 @@ interface ${object.name} {
       toWebFTagName,
       generateReturnType,
       generateMethodDeclaration,
+      generateMethodDeclarationWithDocs,
       generateEventHandlerType,
       getEventType,
     });
@@ -240,6 +287,7 @@ interface ${object.name} {
       className: className,
       properties: component.properties,
       events: component.events,
+      methods: component.methods,
       classObjectDictionary,
       dependencies: '', // Dependencies will be at the top
       blob,
@@ -247,6 +295,7 @@ interface ${object.name} {
       toWebFTagName,
       generateReturnType,
       generateMethodDeclaration,
+      generateMethodDeclarationWithDocs,
       generateEventHandlerType,
       getEventType,
     });

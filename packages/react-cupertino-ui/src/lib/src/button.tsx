@@ -45,8 +45,9 @@ export interface FlutterCupertinoButtonElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoButton
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoButton>

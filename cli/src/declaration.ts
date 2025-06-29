@@ -45,6 +45,7 @@ export class PropsDeclaration {
   isSymbol?: boolean;
   readonly: boolean;
   optional: boolean;
+  documentation?: string;
 }
 
 export class IndexedPropertyDeclaration extends PropsDeclaration {
@@ -77,6 +78,7 @@ export class ClassObject {
   staticMethods: FunctionDeclaration[] = [];
   construct?: FunctionDeclaration;
   kind: ClassObjectKind = ClassObjectKind.interface;
+  documentation?: string;
 }
 
 export class FunctionObject {

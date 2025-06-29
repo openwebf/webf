@@ -55,8 +55,9 @@ export interface FlutterCupertinoTimerPickerElement extends WebFElementWithMetho
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoTimerPicker
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoTimerPicker>

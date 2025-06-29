@@ -55,8 +55,9 @@ export interface FlutterCupertinoRadioElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoRadio
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoRadio>

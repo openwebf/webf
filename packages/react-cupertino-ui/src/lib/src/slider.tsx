@@ -62,8 +62,9 @@ export interface FlutterCupertinoSliderElement extends WebFElementWithMethods<{
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoSlider
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoSlider>

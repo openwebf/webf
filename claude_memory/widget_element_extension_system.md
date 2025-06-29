@@ -230,7 +230,7 @@ class FlutterCupertinoButton extends FlutterCupertinoButtonBindings {
 
 **Generated React Component** (`button.tsx`):
 ```tsx
-import { createWebFComponent } from '@openwebf/webf-react-core-ui';
+import { createWebFComponent } from '@openwebf/react-core-ui';
 
 export const FlutterCupertinoButton = createWebFComponent<
   FlutterCupertinoButtonElement,
@@ -483,7 +483,7 @@ onPressed: () {
 **React/Vue Event Binding:**
 ```tsx
 // React component (generated)
-import { createWebFComponent } from '@openwebf/webf-react-core-ui';
+import { createWebFComponent } from '@openwebf/react-core-ui';
 
 export const MyElement = createWebFComponent<...>({
   events: [{

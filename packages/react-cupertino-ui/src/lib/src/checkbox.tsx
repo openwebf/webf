@@ -60,8 +60,9 @@ export interface FlutterCupertinoCheckboxElement extends WebFElementWithMethods<
  * 
  * @example
  * ```tsx
+ * 
  * <FlutterCupertinoCheckbox
- *   // Add example props here
+ *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoCheckbox>

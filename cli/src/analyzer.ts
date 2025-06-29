@@ -1,4 +1,5 @@
 import ts, {HeritageClause, ScriptTarget, VariableStatement} from 'typescript';
+import { TSDocParser, TextRange, DocComment } from '@microsoft/tsdoc';
 import {IDLBlob} from './IDLBlob';
 import {
   ClassObject,
@@ -29,6 +30,9 @@ const sourceFileCache = new Map<string, ts.SourceFile>();
 
 // Cache for type conversions to avoid redundant processing
 const typeConversionCache = new Map<string, ParameterType>();
+
+// TSDoc parser instance
+const tsdocParser = new TSDocParser();
 
 // Type mapping constants for better performance
 const BASIC_TYPE_MAP: Partial<Record<ts.SyntaxKind, FunctionArgumentType>> = {
@@ -62,7 +66,7 @@ export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropert
     blob.objects = sourceFile.statements
       .map(statement => {
         try {
-          return walkProgram(blob, statement, definedPropertyCollector, unionTypeCollector);
+          return walkProgram(blob, statement, sourceFile, definedPropertyCollector, unionTypeCollector);
         } catch (error) {
           console.error(`Error processing statement in ${blob.source}:`, error);
           return null;
@@ -96,6 +100,118 @@ function getInterfaceName(statement: ts.Statement): string {
     throw new Error('Statement is not an interface declaration');
   }
   return statement.name.escapedText as string;
+}
+
+function getJSDocComment(node: ts.Node, sourceFile: ts.SourceFile): string | undefined {
+  
+  const sourceText = sourceFile.getFullText();
+  const nodeStart = node.getFullStart();
+  const nodePos = node.getStart(sourceFile);
+  
+  // Get the text between full start and actual start (includes leading trivia)
+  const leadingText = sourceText.substring(nodeStart, nodePos);
+  
+  
+  // Find JSDoc comment in the leading text
+  const jsDocMatch = leadingText.match(/\/\*\*([\s\S]*?)\*\/\s*$/);
+  if (!jsDocMatch) return undefined;
+  
+  // Extract the full JSDoc comment including delimiters
+  const commentText = jsDocMatch[0];
+  const commentStartPos = nodeStart + leadingText.lastIndexOf(commentText);
+  
+  // Create a TextRange for the comment
+  const textRange = TextRange.fromStringRange(
+    sourceText,
+    commentStartPos,
+    commentStartPos + commentText.length
+  );
+  
+  // Parse the JSDoc comment using TSDoc
+  const parserContext = tsdocParser.parseRange(textRange);
+  const docComment = parserContext.docComment;
+  
+  // For now, always use the raw comment to preserve all tags including @default
+  // TSDoc parser doesn't handle @default tags properly out of the box
+  
+  // Fallback to raw comment if TSDoc parsing fails
+  const comment = jsDocMatch[1]
+    .split('\n')
+    .map(line => line.replace(/^\s*\*\s?/, ''))
+    .join('\n')
+    .trim();
+  return comment || undefined;
+}
+
+// Helper function to render TSDoc nodes to string
+function renderDocNodes(nodes: ReadonlyArray<any>): string {
+  return nodes.map(node => {
+    if (node.kind === 'PlainText') {
+      return node.text;
+    } else if (node.kind === 'SoftBreak') {
+      return '\n';
+    } else if (node.kind === 'Paragraph') {
+      return renderDocNodes(node.nodes);
+    }
+    return '';
+  }).join('').trim();
+}
+
+// Special function to get the first JSDoc comment in a file for the first interface
+function getFirstInterfaceJSDoc(statement: ts.InterfaceDeclaration, sourceFile: ts.SourceFile): string | undefined {
+  
+  // Find all interfaces in the file
+  const interfaces: ts.InterfaceDeclaration[] = [];
+  ts.forEachChild(sourceFile, child => {
+    if (ts.isInterfaceDeclaration(child)) {
+      interfaces.push(child);
+    }
+  });
+  
+  // If this is the first interface, check for a file-level JSDoc
+  if (interfaces.length > 0 && interfaces[0] === statement) {
+    const sourceText = sourceFile.getFullText();
+    const firstInterfacePos = statement.getFullStart();
+    
+    // Get all text before the first interface
+    const textBeforeInterface = sourceText.substring(0, firstInterfacePos);
+    
+    // Find the last JSDoc comment before the interface
+    const jsDocMatches = textBeforeInterface.match(/\/\*\*([\s\S]*?)\*\//g);
+    if (jsDocMatches && jsDocMatches.length > 0) {
+      const lastJsDoc = jsDocMatches[jsDocMatches.length - 1];
+      const commentStartPos = textBeforeInterface.lastIndexOf(lastJsDoc);
+      
+      // Create a TextRange for the comment
+      const textRange = TextRange.fromStringRange(
+        sourceText,
+        commentStartPos,
+        commentStartPos + lastJsDoc.length
+      );
+      
+      // Parse the JSDoc comment using TSDoc
+      const parserContext = tsdocParser.parseRange(textRange);
+      const docComment = parserContext.docComment;
+      
+      // Extract the parsed content
+      if (docComment.summarySection) {
+        const summary = renderDocNodes(docComment.summarySection.nodes);
+        if (summary) return summary;
+      }
+      
+      // Fallback to raw comment
+      const comment = lastJsDoc
+        .replace(/^\/\*\*/, '')
+        .replace(/\*\/$/, '')
+        .split('\n')
+        .map(line => line.replace(/^\s*\*\s?/, ''))
+        .join('\n')
+        .trim();
+      return comment || undefined;
+    }
+  }
+  
+  return undefined;
 }
 
 function getHeritageType(heritage: HeritageClause): string | null {
@@ -217,10 +333,14 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
   }
   
   if (type.kind === ts.SyntaxKind.LiteralType) {
-    // Handle literal types - check if it's a null literal
+    // Handle literal types
     const literalType = type as ts.LiteralTypeNode;
     if (literalType.literal.kind === ts.SyntaxKind.NullKeyword) {
       return FunctionArgumentType.null;
+    }
+    if (literalType.literal.kind === ts.SyntaxKind.StringLiteral) {
+      // Return the string literal value itself
+      return (literalType.literal as ts.StringLiteral).text;
     }
     return FunctionArgumentType.any;
   }
@@ -411,10 +531,10 @@ function isParamsReadOnly(m: ts.PropertySignature): boolean {
   return m.modifiers.some(k => k.kind === ts.SyntaxKind.ReadonlyKeyword);
 }
 
-function walkProgram(blob: IDLBlob, statement: ts.Statement, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
+function walkProgram(blob: IDLBlob, statement: ts.Statement, sourceFile: ts.SourceFile, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
   switch(statement.kind) {
     case ts.SyntaxKind.InterfaceDeclaration:
-      return processInterfaceDeclaration(statement as ts.InterfaceDeclaration, blob, definedPropertyCollector, unionTypeCollector);
+      return processInterfaceDeclaration(statement as ts.InterfaceDeclaration, blob, sourceFile, definedPropertyCollector, unionTypeCollector);
       
     case ts.SyntaxKind.VariableStatement:
       return processVariableStatement(statement as VariableStatement, unionTypeCollector);
@@ -444,11 +564,18 @@ function processTypeAliasDeclaration(
 function processInterfaceDeclaration(
   statement: ts.InterfaceDeclaration,
   blob: IDLBlob,
+  sourceFile: ts.SourceFile,
   definedPropertyCollector: DefinedPropertyCollector,
   unionTypeCollector: UnionTypeCollector
 ): ClassObject | null {
   const interfaceName = statement.name.escapedText.toString();
   const obj = new ClassObject();
+  
+  // Capture JSDoc comment for the interface
+  const directComment = getJSDocComment(statement, sourceFile);
+  const fileComment = getFirstInterfaceJSDoc(statement, sourceFile);
+  obj.documentation = directComment || fileComment;
+  
   
   // Process heritage clauses
   if (statement.heritageClauses) {
@@ -470,7 +597,7 @@ function processInterfaceDeclaration(
   
   // Process members in batches for better performance
   const members = Array.from(statement.members);
-  processMembersBatch(members, obj, definedPropertyCollector, unionTypeCollector);
+  processMembersBatch(members, obj, sourceFile, definedPropertyCollector, unionTypeCollector);
   
   ClassObject.globalClassMap[interfaceName] = obj;
   
@@ -480,12 +607,13 @@ function processInterfaceDeclaration(
 function processMembersBatch(
   members: ts.TypeElement[],
   obj: ClassObject,
+  sourceFile: ts.SourceFile,
   definedPropertyCollector: DefinedPropertyCollector,
   unionTypeCollector: UnionTypeCollector
 ): void {
   for (const member of members) {
     try {
-      processMember(member, obj, definedPropertyCollector, unionTypeCollector);
+      processMember(member, obj, sourceFile, definedPropertyCollector, unionTypeCollector);
     } catch (error) {
       console.error(`Error processing member:`, error);
     }
@@ -495,24 +623,25 @@ function processMembersBatch(
 function processMember(
   member: ts.TypeElement,
   obj: ClassObject,
+  sourceFile: ts.SourceFile,
   definedPropertyCollector: DefinedPropertyCollector,
   unionTypeCollector: UnionTypeCollector
 ): void {
   switch(member.kind) {
     case ts.SyntaxKind.PropertySignature:
-      processPropertySignature(member as ts.PropertySignature, obj, definedPropertyCollector, unionTypeCollector);
+      processPropertySignature(member as ts.PropertySignature, obj, sourceFile, definedPropertyCollector, unionTypeCollector);
       break;
       
     case ts.SyntaxKind.MethodSignature:
-      processMethodSignature(member as ts.MethodSignature, obj, unionTypeCollector);
+      processMethodSignature(member as ts.MethodSignature, obj, sourceFile, unionTypeCollector);
       break;
       
     case ts.SyntaxKind.IndexSignature:
-      processIndexSignature(member as ts.IndexSignatureDeclaration, obj, unionTypeCollector);
+      processIndexSignature(member as ts.IndexSignatureDeclaration, obj, sourceFile, unionTypeCollector);
       break;
       
     case ts.SyntaxKind.ConstructSignature:
-      processConstructSignature(member as ts.ConstructSignatureDeclaration, obj, unionTypeCollector);
+      processConstructSignature(member as ts.ConstructSignatureDeclaration, obj, sourceFile, unionTypeCollector);
       break;
   }
 }
@@ -520,12 +649,14 @@ function processMember(
 function processPropertySignature(
   member: ts.PropertySignature,
   obj: ClassObject,
+  sourceFile: ts.SourceFile,
   definedPropertyCollector: DefinedPropertyCollector,
   unionTypeCollector: UnionTypeCollector
 ): void {
   const prop = new PropsDeclaration();
   prop.name = getPropName(member.name!, prop);
   prop.readonly = isParamsReadOnly(member);
+  prop.documentation = getJSDocComment(member, sourceFile);
   
   definedPropertyCollector.properties.add(prop.name);
   
@@ -577,10 +708,12 @@ function createAsyncProperty(prop: PropsDeclaration, mode: ParameterMode): Props
 function processMethodSignature(
   member: ts.MethodSignature,
   obj: ClassObject,
+  sourceFile: ts.SourceFile,
   unionTypeCollector: UnionTypeCollector
 ): void {
   const f = new FunctionDeclaration();
   f.name = getPropName(member.name!);
+  f.documentation = getJSDocComment(member, sourceFile);
   f.args = member.parameters.map(params => 
     paramsNodeToArguments(params, unionTypeCollector)
   );
@@ -639,6 +772,7 @@ function createAsyncMethod(
 function processIndexSignature(
   member: ts.IndexSignatureDeclaration,
   obj: ClassObject,
+  sourceFile: ts.SourceFile,
   unionTypeCollector: UnionTypeCollector
 ): void {
   const prop = new IndexedPropertyDeclaration();
@@ -659,6 +793,7 @@ function processIndexSignature(
 function processConstructSignature(
   member: ts.ConstructSignatureDeclaration,
   obj: ClassObject,
+  sourceFile: ts.SourceFile,
   unionTypeCollector: UnionTypeCollector
 ): void {
   const c = new FunctionDeclaration();
