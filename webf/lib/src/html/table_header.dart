@@ -21,6 +21,22 @@ class WebFTableHeader extends WebFTableHeaderBindings {
     }).toList(growable: false);
   }
 
+  Map<int, TableColumnWidth>? getColumnWidths() {
+    final cells = childNodes.whereType<WebFTableCell>().toList();
+    if (cells.isEmpty) return null;
+
+    Map<int, TableColumnWidth>? columnWidths;
+    for (int i = 0; i < cells.length; i++) {
+      final cell = cells[i];
+      if (cell.columnWidth != null) {
+        columnWidths ??= {};
+        columnWidths[i] = FixedColumnWidth(cell.columnWidth!);
+      }
+    }
+
+    return columnWidths;
+  }
+
   @override
   bool get sticky => _sticky;
 

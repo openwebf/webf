@@ -30,6 +30,8 @@ abstract class WebFTableCellBindings extends WidgetElement {
   WebFTableCellBindings(super.context);
   WebFTableCellVerticalAlignment? get verticalAlignment;
   set verticalAlignment(value);
+  double? get columnWidth;
+  set columnWidth(value);
   @override
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
     super.initializeAttributes(attributes);
@@ -38,12 +40,22 @@ abstract class WebFTableCellBindings extends WidgetElement {
       setter: (value) => verticalAlignment = WebFTableCellVerticalAlignment.parse(value),
       deleter: () => verticalAlignment = null
     );
+    attributes['column-width'] = ElementAttributeProperty(
+      getter: () => columnWidth?.toString(),
+      setter: (value) => columnWidth = double.tryParse(value) ?? 0.0,
+      deleter: () => columnWidth = 0.0
+    );
   }
   static StaticDefinedBindingPropertyMap webFTableCellProperties = {
     'verticalAlignment': StaticDefinedBindingProperty(
       getter: (element) => castToType<WebFTableCellBindings>(element).verticalAlignment,
       setter: (element, value) =>
       castToType<WebFTableCellBindings>(element).verticalAlignment = value,
+    ),
+    'columnWidth': StaticDefinedBindingProperty(
+      getter: (element) => castToType<WebFTableCellBindings>(element).columnWidth,
+      setter: (element, value) =>
+      castToType<WebFTableCellBindings>(element).columnWidth = value,
     ),
   };
   @override

@@ -9,6 +9,7 @@ class WebFTableCell extends WebFTableCellBindings {
   WebFTableCell(super.context);
 
   WebFTableCellVerticalAlignment? _verticalAlignment;
+  double? _columnWidth;
 
   @override
   WebFWidgetElementState createState() {
@@ -26,6 +27,21 @@ class WebFTableCell extends WebFTableCellBindings {
       _verticalAlignment = WebFTableCellVerticalAlignment.parse(value);
     } else {
       _verticalAlignment = null;
+    }
+    state?.requestUpdateState(() {});
+  }
+
+  @override
+  double? get columnWidth => _columnWidth;
+
+  @override
+  set columnWidth(value) {
+    if (value is num?) {
+      _columnWidth = value?.toDouble();
+    } else if (value is String) {
+      _columnWidth = double.tryParse(value);
+    } else {
+      _columnWidth = null;
     }
     state?.requestUpdateState(() {});
   }

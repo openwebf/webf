@@ -19,15 +19,11 @@ interface WebFTableProperties {
   defaultVerticalAlignment?: 'top' | 'middle' | 'bottom' | 'baseline' | 'fill';
 
   /**
-   * The default column width strategy for the table.
-   * - 'flex': Columns expand proportionally to fill available space
-   * - 'intrinsic': Columns size based on their content
-   * - 'fixed': Columns have a fixed width (100px by default)
-   * - 'min': Columns use minimum of fixed and flex widths
-   * - 'max': Columns use maximum of fixed and flex widths
-   * @default 'flex'
+   * The default fixed width for all columns in pixels.
+   * If not specified, columns will use flex layout by default.
+   * @example 120 (for 120px wide columns)
    */
-  defaultColumnWidth?: 'flex' | 'intrinsic' | 'fixed' | 'min' | 'max';
+  defaultColumnWidth?: number;
 
   /**
    * JSON string to configure individual column widths.
