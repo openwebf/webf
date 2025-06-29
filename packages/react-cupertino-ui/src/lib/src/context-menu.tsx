@@ -1,5 +1,8 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+interface FlutterCupertinoContextMenuMethods {
+  setActions(actions: ContextMenuAction[]): void;
+}
 interface ContextMenuAction {
   text: string;
   icon?: string;
@@ -27,7 +30,6 @@ export interface FlutterCupertinoContextMenuProps {
   className?: string;
 }
 export interface FlutterCupertinoContextMenuElement extends WebFElementWithMethods<{
-  setActions(actions: ContextMenuAction[]): void;
 }> {}
 /**
  * FlutterCupertinoContextMenu - WebF FlutterCupertinoContextMenu component

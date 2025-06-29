@@ -1,5 +1,10 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+interface FlutterCupertinoTextareaMethods {
+  focus(): void;
+  blur(): void;
+  clear(): void;
+}
 export interface FlutterCupertinoTextareaProps {
   /**
    * val property
@@ -68,9 +73,6 @@ export interface FlutterCupertinoTextareaProps {
   className?: string;
 }
 export interface FlutterCupertinoTextareaElement extends WebFElementWithMethods<{
-  focus(): void;
-  blur(): void;
-  clear(): void;
 }> {}
 /**
  * FlutterCupertinoTextarea - WebF FlutterCupertinoTextarea component

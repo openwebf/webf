@@ -1,5 +1,9 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+interface FlutterCupertinoSliderMethods {
+  getValue(): number;
+  setValue(val: number): void;
+}
 export interface FlutterCupertinoSliderProps {
   /**
    * val property
@@ -52,8 +56,6 @@ export interface FlutterCupertinoSliderProps {
   className?: string;
 }
 export interface FlutterCupertinoSliderElement extends WebFElementWithMethods<{
-  getValue(): number;
-  setValue(val: number): void;
 }> {}
 /**
  * FlutterCupertinoSlider - WebF FlutterCupertinoSlider component

@@ -1,5 +1,11 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
+interface FlutterCupertinoInputMethods {
+  getValue(): string;
+  setValue(value: string): void;
+  focus(): void;
+  blur(): void;
+}
 export interface FlutterCupertinoInputProps {
   /**
    * val property
@@ -62,10 +68,6 @@ export interface FlutterCupertinoInputProps {
   className?: string;
 }
 export interface FlutterCupertinoInputElement extends WebFElementWithMethods<{
-  getValue(): string;
-  setValue(value: string): void;
-  focus(): void;
-  blur(): void;
 }> {}
 /**
  * FlutterCupertinoInput - WebF FlutterCupertinoInput component
