@@ -1,4 +1,4 @@
-# @openwebf/webf-react-core-ui
+# @openwebf/react-core-ui
 
 Core UI components for building React applications with WebF.
 
