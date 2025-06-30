@@ -12,7 +12,6 @@ import React, { useState } from 'react'
 // import { Router, RouterEvents$ } from './router'
 import { useMemoizedFn } from 'ahooks';
 import { WebFRouterLink } from '../utils/RouterLink';
-import { WebFRouter } from './utils';
 
 /**
  * Route component props interface
@@ -48,14 +47,14 @@ export interface RouteProps {
  *
  * Responsible for managing page rendering, lifecycle and navigation bar
  */
-export function Route({path, prerender = false, element }: RouteProps) {
+export function Route({path, prerender = false, element, title }: RouteProps) {
   // Mark whether the page has been rendered
-  const [hasRendered, updateRender] = useState(WebFRouter.path === path)
+  const [hasRendered, updateRender] = useState(false)
 
   /**
    * Rendering control logic
    */
-  const shouldPrerender = prerender || WebFRouter.path === path
+  const shouldPrerender = prerender;
   const shouldRenderChildren = shouldPrerender || hasRendered
 
   /**
@@ -72,7 +71,7 @@ export function Route({path, prerender = false, element }: RouteProps) {
   })
 
   return (
-    <WebFRouterLink path={path} onScreen={handleOnScreen} offScreen={handleOffScreen}>
+    <WebFRouterLink path={path} title={title} onScreen={handleOnScreen} offScreen={handleOffScreen}>
       {shouldRenderChildren ? element : null}
     </WebFRouterLink>
   )

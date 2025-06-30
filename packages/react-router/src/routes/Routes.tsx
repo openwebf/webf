@@ -56,11 +56,11 @@ const RouteContext = createContext<RouteContext>({
  */
 export function useRouteContext() {
   const context = useContext<RouteContext>(RouteContext);
-  
+
   // isActive is true only for push events with matching path
-  const isActive = (context.routeEventKind === 'didPush' || context.routeEventKind === 'didPushNext') 
+  const isActive = (context.routeEventKind === 'didPush' || context.routeEventKind === 'didPushNext')
     && context.path === context.activePath;
-  
+
   return {
     ...context,
     isActive
@@ -105,7 +105,7 @@ export interface Location {
  */
 export function useLocation(): Location & { isActive: boolean } {
   const context = useRouteContext();
-  
+
   // Create location object from context
   const location = useMemo(() => {
     // For active routes, return the current location with state
@@ -117,7 +117,7 @@ export function useLocation(): Location & { isActive: boolean } {
         key: `${context.path}-active-${Date.now()}`
       };
     }
-    
+
     // For inactive routes, return the global location without state
     return {
       pathname: context.activePath || WebFRouter.path,
@@ -126,7 +126,7 @@ export function useLocation(): Location & { isActive: boolean } {
       key: `${context.activePath}-inactive`
     };
   }, [context.isActive, context.path, context.activePath, context.params]);
-  
+
   return location;
 }
 
@@ -179,7 +179,7 @@ export interface RoutesProps {
  */
 function RouteContextProvider({ path, children }: { path: string, children: React.ReactNode }) {
   const globalContext = useContext(RouteContext);
-  
+
   // Create a route-specific context that only updates when this route is active
   const routeSpecificContext = useMemo(() => {
     // Only update if this route is the active one
@@ -209,25 +209,25 @@ function RouteContextProvider({ path, children }: { path: string, children: Reac
 
 export function Routes({ children }: RoutesProps) {
   // State to track current route information
-  const [routeState, setRouteState] = useState({
-    activePath: WebFRouter.path,
-    params: WebFRouter.state,
-    routeEventKind: undefined as 'didPushNext' | 'didPush' | 'didPop' | 'didPupNext' | undefined
+  const [routeState, setRouteState] = useState<RouteContext>({
+    path: undefined,
+    activePath: undefined,
+    params: undefined,
+    routeEventKind: undefined
   });
 
   // Listen to hybridrouterchange event
   useEffect(() => {
     const handleRouteChange = (event: Event) => {
       const routeEvent = event as unknown as HybridRouterChangeEvent;
-      console.log(routeEvent);
-      
       // Only update activePath for push events
-      const newActivePath = (routeEvent.kind === 'didPushNext' || routeEvent.kind === 'didPush') 
-        ? routeEvent.path 
+      const newActivePath = (routeEvent.kind === 'didPushNext' || routeEvent.kind === 'didPush')
+        ? routeEvent.path
         : routeState.activePath;
-      
+
       // Update state based on event kind
       setRouteState({
+        path: routeEvent.path,
         activePath: newActivePath,
         params: routeEvent.state,
         routeEventKind: routeEvent.kind
@@ -308,7 +308,7 @@ export function useRoutes(routes: RouteObject[]): React.ReactElement | null {
       if (route.children && route.children.length > 0) {
         console.warn('Nested routes are not supported yet');
       }
-      
+
       return (
         <Route
           key={route.path}
@@ -349,32 +349,32 @@ export interface NavigationMethods {
    * Navigate to a route or go back
    */
   navigate: NavigateFunction;
-  
+
   /**
    * Close the current screen and return to the previous one
    */
   pop: (result?: any) => void;
-  
+
   /**
    * Pop routes until reaching a specific route
    */
   popUntil: (path: string) => void;
-  
+
   /**
    * Pop the current route and push a new route
    */
   popAndPush: (path: string, state?: any) => Promise<void>;
-  
+
   /**
    * Push a new route and remove all routes until a specific route
    */
   pushAndRemoveUntil: (newPath: string, untilPath: string, state?: any) => Promise<void>;
-  
+
   /**
    * Check if the navigator can go back
    */
   canPop: () => boolean;
-  
+
   /**
    * Pop the current route if possible
    */
