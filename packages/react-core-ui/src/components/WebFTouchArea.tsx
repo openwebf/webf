@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { createWebFComponent } from './utils/createWebFComponent';
+import { createWebFComponent } from '../utils/createWebFComponent';
 
 export interface WebFTouchAreaProps {
   /**

@@ -8,8 +8,9 @@ export { FlutterShimmerButton, FlutterShimmerButtonElement } from "./lib/src/htm
 export { FlutterShimmerAvatar, FlutterShimmerAvatarElement } from "./lib/src/html/shimmer/shimmer_avatar";
 export { FlutterShimmer, FlutterShimmerElement } from "./lib/src/html/shimmer/shimmer";
 export * from './utils/createWebFComponent';
-export * from './WebFTouchArea';
+export * from './components/WebFTouchArea';
 export { WebFTable, WebFTableElement } from "./lib/src/html/table";
 export { WebFTableRow, WebFTableRowElement } from "./lib/src/html/table_row";
 export { WebFTableHeader, WebFTableHeaderElement } from "./lib/src/html/table_header";
 export { WebFTableCell, WebFTableCellElement } from "./lib/src/html/table_cell";
+export { WebFLazyRender } from "./components/WebFLazyRender";
