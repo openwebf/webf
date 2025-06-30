@@ -14,6 +14,9 @@ list(APPEND WEBF_TEST_SOURCE
         test/webf_test_context.cc
         test/webf_test_context.h
         )
+
+# Include CSS unit tests
+include(${CMAKE_CURRENT_SOURCE_DIR}/test/css_unittests.cmake)
 list(APPEND WEBF_UNIT_TEST_SOURCE
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
@@ -39,56 +42,8 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
   ./foundation/ui_command_strategy_test.cc
-  ./core/css/style_engine_test.cc
-  ./core/css/css_initial_test.cc
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
-  ./core/css/css_selector_test.cc
-  ./core/css/css_value_clamping_utils_test.cc
-  ./core/css/css_property_name_test.cc
-  ./core/css/css_property_value_set_test.cc
-  ./core/css/css_syntax_string_parser_test.cc
-  ./core/css/css_identifier_value_test.cc
-  ./core/css/css_string_value_test.cc
-  ./core/css/css_value_list_test.cc
-  ./core/css/css_value_pair_test.cc
-  ./core/css/css_custom_ident_value_test.cc
-  ./core/css/css_color_function_test.cc
-  ./core/css/css_advanced_features_test.cc
-  ./core/css/css_counter_style_test.cc
-  ./core/css/css_layer_rule_test.cc
-  ./core/css/css_container_rule_test.cc
-  ./core/css/css_scope_rule_test.cc
-  ./core/css/css_nested_declarations_rule_test.cc
-  ./core/css/css_nesting_test.cc
-  ./core/css/container_query_test.cc
-
-  # CSS Parser
-  ./core/css/css_primitive_value_test.cc
-  ./core/css/css_test_helpers.cc
-  ./core/css/css_math_expression_node_test.cc
-  ./core/css/parser/allowed_rules_test.cc
-  ./core/css/parser/at_rule_descriptor_parser_test.cc
-  ./core/css/parser/css_parser_token_stream_test.cc
-  ./core/css/parser/css_if_parser_test.cc
-  ./core/css/parser/css_parser_local_context_test.cc
-  ./core/css/parser/css_property_parser_test.cc
-  ./core/css/parser/css_lazy_parsing_test.cc
-  ./core/css/parser/container_query_parser_test.cc
-  ./core/css/parser/css_parser_fast_paths_test.cc
-  ./core/css/parser/css_parser_impl_test.cc
-  ./core/css/parser/css_parser_token_test.cc
-  ./core/css/parser/css_selector_parser_test.cc
-  ./core/css/parser/css_supports_parser_test.cc
-  ./core/css/parser/css_tokenizer_test.cc
-  ./core/css/parser/css_variable_parser_test.cc
-  ./core/css/parser/find_length_of_declaration_list_test.cc
-  ./core/css/parser/media_condition_test.cc
-  ./core/css/parser/sizes_attribute_parser_test.cc
-  ./core/css/parser/sizes_math_function_parser_test.cc
-  ./core/css/properties/css_bitset_test.cc
-  ./core/css/properties/css_parsing_utils_test.cc
-  ./test/html_script_element_casting_test.cc
 )
 
 ### webf_unit_test executable
