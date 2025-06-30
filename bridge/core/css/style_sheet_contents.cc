@@ -342,7 +342,7 @@ void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& pr
     default_namespace_ = uri.value();
     return;
   }
-  namespaces_.insert(std::make_pair(prefix.value(), uri.value()));
+  namespaces_.insert(std::make_pair(AtomicString(prefix.value()), AtomicString(uri.value())));
 }
 
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}

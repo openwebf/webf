@@ -66,8 +66,7 @@ std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string&);
 // (for kNesting), or the :scope pseudo-class (for kScope).
 std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string&,
                                                    CSSNestingType,
-                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                                   bool is_within_scope);
+                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting);
 
 }  // namespace css_test_helpers
 }  // namespace webf

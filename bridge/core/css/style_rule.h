@@ -477,7 +477,6 @@ class StyleRuleScope : public StyleRuleGroup {
                       std::string,
                       CSSNestingType,
                       std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                      bool is_within_scope,
                       std::shared_ptr<StyleSheetContents> style_sheet);
 
  private:

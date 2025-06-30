@@ -329,6 +329,8 @@ PseudoId CSSSelector::GetPseudoId(PseudoType type) {
       return kPseudoIdViewTransition;
     case kPseudoViewTransitionGroup:
       return kPseudoIdViewTransitionGroup;
+    case kPseudoViewTransitionGroupChildren:
+      return kPseudoIdViewTransitionGroupChildren;
     case kPseudoViewTransitionImagePair:
       return kPseudoIdViewTransitionImagePair;
     case kPseudoViewTransitionOld:
@@ -610,9 +612,11 @@ constexpr static NameToPseudoStruct kPseudoTypeWithArgumentsMap[] = {
     {"nth-last-of-type", CSSSelector::kPseudoNthLastOfType},
     {"nth-of-type", CSSSelector::kPseudoNthOfType},
     {"part", CSSSelector::kPseudoPart},
+    {"scroll-button", CSSSelector::kPseudoScrollButton},
     {"slotted", CSSSelector::kPseudoSlotted},
     {"state", CSSSelector::kPseudoState},
     {"view-transition-group", CSSSelector::kPseudoViewTransitionGroup},
+    {"view-transition-group-children", CSSSelector::kPseudoViewTransitionGroupChildren},
     {"view-transition-image-pair", CSSSelector::kPseudoViewTransitionImagePair},
     {"view-transition-new", CSSSelector::kPseudoViewTransitionNew},
     {"view-transition-old", CSSSelector::kPseudoViewTransitionOld},
@@ -1375,7 +1379,10 @@ bool CSSSelector::IsTreeAbidingPseudoElement() const {
           GetPseudoType() == kPseudoPlaceholder || GetPseudoType() == kPseudoFileSelectorButton ||
           GetPseudoType() == kPseudoBackdrop || GetPseudoType() == kPseudoSelectFallbackButton ||
           GetPseudoType() == kPseudoSelectFallbackButtonIcon || GetPseudoType() == kPseudoSelectFallbackButtonText ||
-          GetPseudoType() == kPseudoSelectFallbackDatalist);
+          GetPseudoType() == kPseudoSelectFallbackDatalist || GetPseudoType() == kPseudoViewTransition ||
+          GetPseudoType() == kPseudoViewTransitionGroup || GetPseudoType() == kPseudoViewTransitionGroupChildren ||
+          GetPseudoType() == kPseudoViewTransitionImagePair || GetPseudoType() == kPseudoViewTransitionOld ||
+          GetPseudoType() == kPseudoViewTransitionNew);
 }
 
 bool CSSSelector::IsAllowedAfterPart() const {

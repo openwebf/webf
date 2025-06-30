@@ -47,7 +47,6 @@ class CSSParser {
   static tcb::span<CSSSelector> ParseSelector(std::shared_ptr<const CSSParserContext>,
                                               CSSNestingType,
                                               std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                              bool is_within_scope,
                                               std::shared_ptr<StyleSheetContents>,
                                               const std::string&,
                                               std::vector<CSSSelector>& arena);

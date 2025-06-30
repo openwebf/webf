@@ -86,21 +86,19 @@ std::shared_ptr<const CSSValue> ParseValue(Document& document, std::string synta
 
 std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string& string) {
   return ParseSelectorList(string, CSSNestingType::kNone,
-                           /*parent_rule_for_nesting=*/nullptr,
-                           /*is_within_scope=*/false);
+                           /*parent_rule_for_nesting=*/nullptr);
 }
 
 std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string& string,
                                                    CSSNestingType nesting_type,
-                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                                   bool is_within_scope) {
+                                                   std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
   CSSTokenizer tokenizer(string);
   CSSParserTokenStream stream(tokenizer);
   std::vector<CSSSelector> arena;
   tcb::span<CSSSelector> vector = CSSSelectorParser::ParseSelector(
-      stream, context, nesting_type, std::move(parent_rule_for_nesting), is_within_scope,
+      stream, context, nesting_type, std::move(parent_rule_for_nesting),
       /* semicolon_aborts_nested_selector */ false, sheet, arena);
   return CSSSelectorList::AdoptSelectorVector(vector);
 }

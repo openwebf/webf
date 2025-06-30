@@ -42,7 +42,6 @@ class StyleScope final {
                                            std::shared_ptr<const CSSParserContext> context,
                                            CSSNestingType nesting_type,
                                            std::shared_ptr<const StyleRule>& parent_rule_for_nesting,
-                                           bool is_within_scope,
                                            std::shared_ptr<StyleSheetContents>& style_sheet);
 
   void Trace(GCVisitor*) const;

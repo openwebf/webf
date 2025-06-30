@@ -152,9 +152,33 @@ TEST(CSSSelectorParserTest, PseudoElementsInCompoundLists) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, ValidSimpleAfterPseudoElementInCompound) {
+  const char* test_cases[] = {"::-webkit-volume-slider:hover",
+                              "::selection:window-inactive",
+                              "::search-text:current",
+                              "::search-text:not(:current)",
+                              "::-webkit-scrollbar:disabled",
+                              "::-webkit-volume-slider:not(:hover)",
+                              "::-webkit-scrollbar:not(:horizontal)",
+                              "::slotted(span)::before",
+                              "::slotted(div)::after",
+                              "::slotted(div)::view-transition"};
+
+  std::vector<CSSSelector> arena;
+  for (const char* test_case : test_cases) {
+    SCOPED_TRACE(test_case);
+    CSSTokenizer tokenizer(test_case);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
+                                         CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
+                                         /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
+    EXPECT_GT(vector.size(), 0u);
   }
 }
 
@@ -188,7 +212,6 @@ TEST(CSSSelectorParserTest, InvalidSimpleAfterPseudoElementInCompound) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_EQ(vector.size(), 0u);
   }
@@ -206,6 +229,7 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
       {"html::view-transition-group(*)", true, g_null_atom, CSSSelector::kPseudoViewTransitionGroup},
       {"html::view-transition-group(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroup},
       {"html::view-transition-image-pair(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionImagePair},
+      {"html::view-transition-group-children(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroupChildren},
       {"html::view-transition-old(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionOld},
       {"html::view-transition-new(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionNew},
       {"::view-transition-group(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroup},
@@ -222,7 +246,6 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_EQ(!vector.empty(), test_case.valid);
     if (!test_case.valid) {
@@ -256,7 +279,6 @@ TEST(CSSSelectorParserTest, WorkaroundForInvalidCustomPseudoInUAStyle) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_GT(vector.size(), 0u);
   }
@@ -273,7 +295,6 @@ TEST(CSSSelectorParserTest, InvalidPseudoElementInNonRightmostCompound) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_EQ(vector.size(), 0u);
   }
@@ -291,7 +312,7 @@ TEST(CSSSelectorParserTest, UnresolvedNamespacePrefix) {
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, sheet, arena);
     EXPECT_EQ(vector.size(), 0u);
   }
@@ -309,7 +330,7 @@ TEST(CSSSelectorParserTest, UnexpectedPipe) {
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, sheet, arena);
     EXPECT_EQ(vector.size(), 0u);
   }
@@ -328,9 +349,45 @@ TEST(CSSSelectorParserTest, AttributeSelectorUniversalInvalid) {
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, sheet, arena);
     EXPECT_EQ(vector.size(), 0u);
+  }
+}
+
+TEST(CSSSelectorParserTest, DISABLED_SerializedUniversal) {
+  struct SerializationTestCase {
+    const char* source;
+    const char* expected;
+  };
+  const SerializationTestCase test_cases[] = {
+      {"*::-webkit-volume-slider", "::-webkit-volume-slider"},
+      {"*::cue(i)", "::cue(i)"},
+      {"*:host-context(.x)", "*:host-context(.x)"},
+      {"*:host", "*:host"},
+      {"|*::-webkit-volume-slider", "|*::-webkit-volume-slider"},
+      {"|*::cue(i)", "|*::cue(i)"},
+      {"*|*::-webkit-volume-slider", "::-webkit-volume-slider"},
+      {"*|*::cue(i)", "::cue(i)"},
+      {"ns|*::-webkit-volume-slider", "ns|*::-webkit-volume-slider"},
+      {"ns|*::cue(i)", "ns|*::cue(i)"}};
+
+  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto sheet = std::make_shared<StyleSheetContents>(context);
+  sheet->ParserAddNamespace(std::optional<std::string>("ns"), std::optional<std::string>("http://ns.org"));
+
+  std::vector<CSSSelector> arena;
+  for (const SerializationTestCase& test_case : test_cases) {
+    SCOPED_TRACE(test_case.source);
+    CSSTokenizer tokenizer(test_case.source);
+    CSSParserTokenStream stream(tokenizer);
+    tcb::span<CSSSelector> vector =
+        CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
+                                         /*parent_rule_for_nesting=*/nullptr,
+                                         /*semicolon_aborts_nested_selector=*/false, sheet, arena);
+    std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
+    EXPECT_TRUE(list->IsValid());
+    EXPECT_EQ(test_case.expected, list->SelectorsText());
   }
 }
 
@@ -354,7 +411,6 @@ TEST(CSSSelectorParserTest, InternalPseudo) {
       tcb::span<CSSSelector> author_vector =
           CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                            CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                           /*is_within_scope=*/false,
                                            /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
       EXPECT_EQ(author_vector.size(), 0u);
     }
@@ -365,7 +421,6 @@ TEST(CSSSelectorParserTest, InternalPseudo) {
       tcb::span<CSSSelector> ua_vector =
           CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
                                            CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                           /*is_within_scope=*/false,
                                            /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
       EXPECT_GT(ua_vector.size(), 0u);
     }
@@ -381,6 +436,9 @@ TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
   TestCase test_cases[] = {
       {"ul::scroll-marker-group", CSSSelector::kPseudoScrollMarkerGroup},
       {"li::scroll-marker", CSSSelector::kPseudoScrollMarker},
+      {"div::scroll-button(up)", CSSSelector::kPseudoScrollButton},
+      {"div::scroll-button(left)", CSSSelector::kPseudoScrollButton},
+      {"div::scroll-button(*)", CSSSelector::kPseudoScrollButton},
   };
 
   std::vector<CSSSelector> arena;
@@ -391,7 +449,6 @@ TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_TRUE(!vector.empty());
 
@@ -581,7 +638,6 @@ TEST(CSSSelectorParserTest, ShadowPartPseudoElementValid) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
     EXPECT_EQ(test_case, list->SelectorsText());
@@ -600,7 +656,6 @@ TEST(CSSSelectorParserTest, ShadowPartAndBeforeAfterPseudoElementValid) {
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
-                                         /*is_within_scope=*/false,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     EXPECT_GT(vector.size(), 0u);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
@@ -664,7 +719,7 @@ TEST(CSSSelectorParserTest, ImplicitShadowCrossingCombinators) {
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
-                                         /*parent_rule_for_nesting=*/nullptr, /*is_within_scope=*/false,
+                                         /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, sheet, arena);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
     EXPECT_TRUE(list->IsValid());
@@ -772,9 +827,8 @@ static std::shared_ptr<CSSSelectorList> ParseNested(Document* document,
   std::shared_ptr<StyleRuleBase> rule = css_test_helpers::ParseRule(*document, "div {}");
   auto parent_rule_for_nesting =
       nesting_type == CSSNestingType::kNone ? nullptr : std::reinterpret_pointer_cast<const StyleRule>(rule);
-  bool is_within_scope = nesting_type == CSSNestingType::kScope;
   std::shared_ptr<CSSSelectorList> list =
-      css_test_helpers::ParseSelectorList(inner_rule, nesting_type, parent_rule_for_nesting, is_within_scope);
+      css_test_helpers::ParseSelectorList(inner_rule, nesting_type, parent_rule_for_nesting);
   if (!list || !list->First()) {
     return nullptr;
   }

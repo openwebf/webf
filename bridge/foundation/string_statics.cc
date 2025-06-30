@@ -44,6 +44,8 @@ DEFINE_GLOBAL(std::string, g_empty_string);
 
 void StringStatics::Init() {
   new ((void*)&g_empty_string) std::string();
+  new ((void*)&g_null_atom) AtomicString();
+  new ((void*)&g_empty_atom) AtomicString("");
   new ((void*)&g_star_atom) AtomicString("*");
   new ((void*)&g_xml_atom) AtomicString("xml");
   new ((void*)&g_xmlns_atom) AtomicString("xmlns");

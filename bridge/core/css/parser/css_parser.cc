@@ -35,14 +35,13 @@ void CSSParser::ParseDeclarationListForInspector(std::shared_ptr<CSSParserContex
 tcb::span<CSSSelector> CSSParser::ParseSelector(std::shared_ptr<const CSSParserContext> context,
                                                 CSSNestingType nesting_type,
                                                 std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                                bool is_within_scope,
                                                 std::shared_ptr<StyleSheetContents> style_sheet_contents,
                                                 const std::string& selector,
                                                 std::vector<CSSSelector>& arena) {
   CSSTokenizer tokenizer(selector);
   CSSParserTokenStream stream(tokenizer);
   return CSSSelectorParser::ParseSelector(
-      stream, std::move(context), nesting_type, std::move(parent_rule_for_nesting), is_within_scope,
+      stream, std::move(context), nesting_type, std::move(parent_rule_for_nesting),
       /* semicolon_aborts_nested_selector */ false, std::move(style_sheet_contents), arena);
 }
 

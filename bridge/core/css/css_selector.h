@@ -375,11 +375,13 @@ class CSSSelector {
     kPseudoViewTransition,
     kPseudoViewTransitionGroup,
     kPseudoViewTransitionImagePair,
+    kPseudoViewTransitionGroupChildren,
     kPseudoViewTransitionNew,
     kPseudoViewTransitionOld,
     // Scroll markers pseudos for Carousel
     kPseudoScrollMarker,
     kPseudoScrollMarkerGroup,
+    kPseudoScrollButton,
   };
 
   enum class AttributeMatchType : int {

@@ -697,7 +697,6 @@ void StyleRuleScope::SetPreludeText(const ExecutingContext* execution_context,
                                     std::string value,
                                     CSSNestingType nesting_type,
                                     std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-                                    bool is_within_scope,
                                     std::shared_ptr<StyleSheetContents> style_sheet) {
   auto parser_context = std::make_shared<CSSParserContext>(execution_context);
   CSSTokenizer tokenizer(value);
@@ -705,7 +704,7 @@ void StyleRuleScope::SetPreludeText(const ExecutingContext* execution_context,
   tokens.reserve(32);
 
   style_scope_ =
-      StyleScope::Parse(tokens, parser_context, nesting_type, parent_rule_for_nesting, is_within_scope, style_sheet);
+      StyleScope::Parse(tokens, parser_context, nesting_type, parent_rule_for_nesting, style_sheet);
 
   // Reparent rules within the @scope's body.
   Reparent(style_scope_->RuleForNesting());
