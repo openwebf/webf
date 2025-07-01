@@ -39,7 +39,10 @@ TestStyleSheet::TestStyleSheet() {
 }
 
 CSSStyleSheet* CreateStyleSheet(Document& document) {
-  return CSSStyleSheet::CreateInline(document, NullURL(), TextPosition::MinimumPosition());
+  // Create parser context without Document to avoid memory leaks in tests
+  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto contents = std::make_shared<StyleSheetContents>(parser_context, NullURL().GetString());
+  return CSSStyleSheet::CreateInline(document.GetExecutingContext(), contents, document, TextPosition::MinimumPosition());
 }
 
 std::shared_ptr<CSSVariableData> CreateVariableData(std::string s) {
@@ -78,7 +81,7 @@ std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::stri
 }
 
 std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text) {
-  MemberMutationScope scope{document.GetExecutingContext()};
+  // Note: Document parameter kept for API compatibility but not used
   // Use a temporary shared_ptr for the sheet contents instead of creating a full CSSStyleSheet
   const auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet_contents = std::make_shared<StyleSheetContents>(context);
