@@ -42,6 +42,9 @@ class CSSDefaultStyleSheets {
   // Check if initialized
   static bool IsInitialized();
   
+  // Reset all default style sheets (for testing)
+  static void Reset();
+  
  private:
   static std::shared_ptr<StyleSheetContents> ParseUASheet(const char* css);
   

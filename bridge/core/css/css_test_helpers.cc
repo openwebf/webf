@@ -78,9 +78,10 @@ std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::stri
 
 std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text) {
   MemberMutationScope scope{document.GetExecutingContext()};
-  auto* sheet = CSSStyleSheet::CreateInline(document, NullURL(), TextPosition::MinimumPosition());
+  // Use a temporary shared_ptr for the sheet contents instead of creating a full CSSStyleSheet
   const auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  return CSSParser::ParseRule(context, sheet->Contents(), CSSNestingType::kNone,
+  auto sheet_contents = std::make_shared<StyleSheetContents>(context);
+  return CSSParser::ParseRule(context, sheet_contents, CSSNestingType::kNone,
                               /*parent_rule_for_nesting=*/nullptr, text);
 }
 

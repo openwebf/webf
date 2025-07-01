@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "bindings/qjs/native_string_utils.h"
+#include "core/css/css_default_style_sheets.h"
 #include "core/dom/frame_request_callback_collection.h"
 #include "core/frame/dom_timer.h"
 #include "core/page.h"
@@ -225,6 +226,9 @@ WebFTestEnv::~WebFTestEnv() {
   
   isolate_context_->Dispose([]() {});
   delete isolate_context_;
+  
+  // Reset CSS default style sheets to prevent memory leaks
+  CSSDefaultStyleSheets::Reset();
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {

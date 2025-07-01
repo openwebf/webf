@@ -86,4 +86,17 @@ std::shared_ptr<StyleSheetContents> CSSDefaultStyleSheets::ParseUASheet(const ch
   return std::make_shared<StyleSheetContents>(parser_context);
 }
 
+void CSSDefaultStyleSheets::Reset() {
+  // Reset all static style sheets to release memory
+  default_html_style_.reset();
+  default_svg_style_.reset();
+  default_mathml_style_.reset();
+  media_controls_style_.reset();
+  fullscreen_style_.reset();
+  quirks_style_.reset();
+  
+  // Mark as uninitialized so they can be recreated if needed
+  is_initialized_ = false;
+}
+
 }  // namespace webf
