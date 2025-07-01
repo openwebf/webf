@@ -278,6 +278,7 @@ class CSSSelector {
     kPseudoParent,  // Written as & (in nested rules).
     kPseudoPart,
     kPseudoPermissionGranted,
+    kPseudoPermissionIcon,
     kPseudoPlaceholder,
     kPseudoPlaceholderShown,
     kPseudoReadOnly,
@@ -294,6 +295,8 @@ class CSSSelector {
     kPseudoScrollbarTrack,
     kPseudoScrollbarTrackPiece,
     kPseudoSearchText,
+    kPseudoPickerIcon,
+    kPseudoPicker,
     kPseudoSelectFallbackButton,
     kPseudoSelectFallbackButtonIcon,
     kPseudoSelectFallbackButtonText,

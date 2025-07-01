@@ -239,28 +239,28 @@ std::shared_ptr<const CSSSelectorList> CSSSelectorParser::ConsumeNthChildOfSelec
 }
 
 // static
-// std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ParseScopeBoundary(
-//    CSSParserTokenStream& stream,
-//    std::shared_ptr<const CSSParserContext> context,
-//    CSSNestingType nesting_type,
-//    std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-//    bool is_within_scope,
-//    std::shared_ptr<StyleSheetContents> style_sheet,
-//    std::vector<CSSSelector>& arena) {
-//  CSSSelectorParser parser(std::move(context), parent_rule_for_nesting, is_within_scope,
-//                           /*semicolon_aborts_nested_selector=*/false,
-//                           std::move(style_sheet), arena);
-//  DisallowPseudoElementsScope disallow_pseudo_elements(&parser);
-//
-//  stream.ConsumeWhitespace();
-//  std::optional<tcb::span<CSSSelector>> result =
-//      parser.ConsumeForgivingComplexSelectorList(stream, nesting_type);
-//  assert(result.has_value());
-//  if (!stream.AtEnd()) {
-//    return std::nullopt;
-//  }
-//  return result;
-//}
+tcb::span<CSSSelector> CSSSelectorParser::ParseScopeBoundary(
+    CSSParserTokenStream& stream,
+    std::shared_ptr<const CSSParserContext> context,
+    CSSNestingType nesting_type,
+    std::shared_ptr<const StyleRule> parent_rule_for_nesting,
+    std::shared_ptr<StyleSheetContents> style_sheet,
+    std::vector<CSSSelector>& arena) {
+  CSSSelectorParser parser(std::move(context), parent_rule_for_nesting,
+                           /*semicolon_aborts_nested_selector=*/false,
+                           std::move(style_sheet), arena);
+  DisallowPseudoElementsScope disallow_pseudo_elements(&parser);
+
+  stream.ConsumeWhitespace();
+  ResultFlags result_flags = 0;
+  tcb::span<CSSSelector> result =
+      parser.ConsumeComplexSelectorList(stream, nesting_type, result_flags);
+  if (result.empty() || !stream.AtEnd()) {
+    return {};
+  }
+  parser.RecordUsageAndDeprecations(result);
+  return result;
+}
 
 // static
 bool CSSSelectorParser::SupportsComplexSelector(CSSParserTokenStream& stream,
@@ -665,8 +665,6 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserToken
 
   CSSSelector selector;
   selector.SetMatch(CSSSelector::kPseudoClass);
-  // TODO(xiezuobing): 需要传入ExecutingContext
-  ExecutingContext* context;
   selector.UpdatePseudoType(AtomicString("-internal-relative-anchor"), *context_, false /*has_arguments*/,
                             context_->Mode());
   assert(selector.GetPseudoType() == CSSSelector::kPseudoRelativeAnchor);
