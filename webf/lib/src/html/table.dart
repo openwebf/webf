@@ -4,7 +4,6 @@ import 'package:webf/src/html/table_bindings_generated.dart';
 import 'package:webf/src/html/table_header.dart';
 import 'package:webf/src/html/table_row.dart';
 import 'package:webf/src/widget/widget_element.dart';
-import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 
 const String WEBF_TABLE = 'WEBF-TABLE';
 
@@ -194,14 +193,17 @@ class WebFTableState extends WebFWidgetElementState {
       return Column(
         children: [
           // Sticky header
-          Table(
-            columnWidths: headerColumnWidths,
-            textDirection: textDirection,
-            defaultVerticalAlignment: verticalAlignment,
-            defaultColumnWidth: defaultColumnWidth,
-            border: border,
-            textBaseline: textBaseline,
-            children: [TableRow(decoration: header.renderStyle.decoration, children: header.buildCellChildren())],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Table(
+              columnWidths: headerColumnWidths,
+              textDirection: textDirection,
+              defaultVerticalAlignment: verticalAlignment,
+              defaultColumnWidth: defaultColumnWidth,
+              border: border,
+              textBaseline: textBaseline,
+              children: [TableRow(decoration: header.renderStyle.decoration, children: header.buildCellChildren())],
+            ),
           ),
           // Scrollable content
           Expanded(
