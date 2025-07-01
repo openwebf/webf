@@ -4,9 +4,11 @@
 
 #include "style_engine.h"
 
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/resolver/style_resolver.h"
 #include "core/dom/document.h"
+#include "core/html/html_body_element.h"
 #include "core/html/html_style_element.h"
 #include "core/platform/text/text_position.h"
 #include "gtest/gtest.h"
@@ -19,7 +21,8 @@ class StyleEngineTest : public ::testing::Test {
   void SetUp() override {
     env_ = TEST_init();
     context_ = env_->page()->executingContext();
-    document_ = MakeGarbageCollected<Document>(context_);
+    // Use the document from the page instead of creating a new one
+    document_ = context_->document();
   }
 
   void TearDown() override {
@@ -30,7 +33,7 @@ class StyleEngineTest : public ::testing::Test {
 
   Document* GetDocument() { return document_; }
   ExecutingContext* GetExecutingContext() { return context_; }
-  StyleEngine& GetStyleEngine() { return document_->GetStyleEngine(); }
+  StyleEngine& GetStyleEngine() { return document_->EnsureStyleEngine(); }
 
  private:
   std::unique_ptr<WebFTestEnv> env_;
@@ -39,8 +42,13 @@ class StyleEngineTest : public ::testing::Test {
 };
 
 TEST_F(StyleEngineTest, DISABLED_CreateSheet) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   element->setAttribute(AtomicString("type"), AtomicString("text/css"));
+  
+  // Connect element to document
+  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
   
   std::string css_text = R"(
     .test {
@@ -56,7 +64,12 @@ TEST_F(StyleEngineTest, DISABLED_CreateSheet) {
 }
 
 TEST_F(StyleEngineTest, DISABLED_ParseSheet) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  
+  // Connect element to document
+  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
   
   std::string css_text = R"(
     body {
@@ -73,14 +86,14 @@ TEST_F(StyleEngineTest, DISABLED_ParseSheet) {
   EXPECT_EQ(sheet->ownerNode(), element);
 }
 
-TEST_F(StyleEngineTest, DISABLED_StyleResolver) {
+TEST_F(StyleEngineTest, StyleResolver) {
   StyleResolver* resolver = GetStyleEngine().GetStyleResolver();
   
   ASSERT_NE(resolver, nullptr);
   EXPECT_EQ(&resolver->GetDocument(), GetDocument());
 }
 
-TEST_F(StyleEngineTest, DISABLED_EnsureStyleResolver) {
+TEST_F(StyleEngineTest, EnsureStyleResolver) {
   StyleResolver& resolver = GetStyleEngine().EnsureStyleResolver();
   
   // Should return the same instance
@@ -98,21 +111,21 @@ TEST_F(StyleEngineTest, DISABLED_EnsureStyleResolver) {
 //   EXPECT_FALSE(features.UsesAnimationAffectingSelectors());
 // }
 
-TEST_F(StyleEngineTest, DISABLED_MarkStyleDirtyAllowed) {
+TEST_F(StyleEngineTest, MarkStyleDirtyAllowed) {
   // Initially should be allowed
   EXPECT_TRUE(GetStyleEngine().MarkStyleDirtyAllowed());
   
   // TODO: Test with different states when InStyleRecalc, etc.
 }
 
-TEST_F(StyleEngineTest, DISABLED_MarkReattachAllowed) {
+TEST_F(StyleEngineTest, MarkReattachAllowed) {
   // Initially should be allowed
   EXPECT_TRUE(GetStyleEngine().MarkReattachAllowed());
   
   // TODO: Test with different states when InRebuildLayoutTree, etc.
 }
 
-TEST_F(StyleEngineTest, DISABLED_InApplyAnimationUpdateScope) {
+TEST_F(StyleEngineTest, InApplyAnimationUpdateScope) {
   EXPECT_FALSE(GetStyleEngine().InApplyAnimationUpdate());
   
   {
@@ -123,7 +136,7 @@ TEST_F(StyleEngineTest, DISABLED_InApplyAnimationUpdateScope) {
   EXPECT_FALSE(GetStyleEngine().InApplyAnimationUpdate());
 }
 
-TEST_F(StyleEngineTest, DISABLED_InEnsureComputedStyleScope) {
+TEST_F(StyleEngineTest, InEnsureComputedStyleScope) {
   EXPECT_FALSE(GetStyleEngine().InEnsureComputedStyle());
   
   {
@@ -135,8 +148,14 @@ TEST_F(StyleEngineTest, DISABLED_InEnsureComputedStyleScope) {
 }
 
 TEST_F(StyleEngineTest, DISABLED_CachedSheet) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
   auto* element1 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   auto* element2 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  
+  // Connect elements to document
+  GetDocument()->body()->appendChild(element1, ASSERT_NO_EXCEPTION());
+  GetDocument()->body()->appendChild(element2, ASSERT_NO_EXCEPTION());
   
   std::string css_text = R"(
     .cached-test {
@@ -160,7 +179,12 @@ TEST_F(StyleEngineTest, DISABLED_CachedSheet) {
 }
 
 TEST_F(StyleEngineTest, DISABLED_LargeSheetCaching) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  
+  // Connect element to document
+  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
   
   // Create a large CSS text (> 1024 chars)
   std::string large_css_text;

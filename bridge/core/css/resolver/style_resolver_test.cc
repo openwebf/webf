@@ -4,12 +4,14 @@
 
 #include "style_resolver.h"
 
+#include "bindings/qjs/cppgc/mutation_scope.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_recalc_context.h"
 #include "core/css/style_request.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
+#include "core/html/html_body_element.h"
 #include "core/html/html_element.h"
 #include "core/style/computed_style.h"
 #include "gtest/gtest.h"
@@ -23,7 +25,8 @@ class StyleResolverTest : public ::testing::Test {
     // Initialize test environment
     env_ = TEST_init();
     context_ = env_->page()->executingContext();
-    document_ = MakeGarbageCollected<Document>(context_);
+    // Use the document from the page instead of creating a new one
+    document_ = context_->document();
   }
 
   void TearDown() override {
@@ -41,7 +44,7 @@ class StyleResolverTest : public ::testing::Test {
   Document* document_ = nullptr;
 };
 
-TEST_F(StyleResolverTest, DISABLED_InitialStyle) {
+TEST_F(StyleResolverTest, InitialStyle) {
   StyleResolver resolver(*GetDocument());
   
   const ComputedStyle& initial_style = resolver.InitialStyle();
@@ -52,7 +55,7 @@ TEST_F(StyleResolverTest, DISABLED_InitialStyle) {
   EXPECT_EQ(initial_style.GetDirection(), TextDirection::kLtr);
 }
 
-TEST_F(StyleResolverTest, DISABLED_StyleForDocument) {
+TEST_F(StyleResolverTest, StyleForDocument) {
   auto document_style = StyleResolver::StyleForDocument(*GetDocument());
   
   ASSERT_NE(document_style, nullptr);
@@ -62,7 +65,7 @@ TEST_F(StyleResolverTest, DISABLED_StyleForDocument) {
   EXPECT_EQ(document_style->OverflowY(), EOverflow::kAuto);
 }
 
-TEST_F(StyleResolverTest, DISABLED_CreateAnonymousStyleWithDisplay) {
+TEST_F(StyleResolverTest, CreateAnonymousStyleWithDisplay) {
   StyleResolver resolver(*GetDocument());
   const ComputedStyle& parent_style = resolver.InitialStyle();
   
@@ -75,10 +78,15 @@ TEST_F(StyleResolverTest, DISABLED_CreateAnonymousStyleWithDisplay) {
   EXPECT_EQ(flex_style->Display(), EDisplay::kFlex);
 }
 
-TEST_F(StyleResolverTest, DISABLED_ResolveStyleForElement) {
+TEST_F(StyleResolverTest, ResolveStyleForElement) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
   // Create a simple element
   auto* element = MakeGarbageCollected<HTMLElement>(
       AtomicString("div"), GetDocument());
+  
+  // Connect element to document
+  GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
   
   // Create style resolver
   StyleResolver resolver(*GetDocument());
@@ -90,11 +98,11 @@ TEST_F(StyleResolverTest, DISABLED_ResolveStyleForElement) {
   auto computed_style = resolver.ResolveStyle(element, recalc_context);
   
   ASSERT_NE(computed_style, nullptr);
-  // Default div should be block
-  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
+  // In WebF, default display is inline
+  EXPECT_EQ(computed_style->Display(), EDisplay::kInline);
 }
 
-TEST_F(StyleResolverTest, DISABLED_ComputedStyleBuilder) {
+TEST_F(StyleResolverTest, ComputedStyleBuilder) {
   StyleResolver resolver(*GetDocument());
   
   // Test creating a builder from initial style
@@ -108,7 +116,7 @@ TEST_F(StyleResolverTest, DISABLED_ComputedStyleBuilder) {
   EXPECT_EQ(style->Position(), EPosition::kRelative);
 }
 
-TEST_F(StyleResolverTest, DISABLED_ComputedStyleBuilderInheritingFrom) {
+TEST_F(StyleResolverTest, ComputedStyleBuilderInheritingFrom) {
   StyleResolver resolver(*GetDocument());
   
   // Create parent style
@@ -128,14 +136,14 @@ TEST_F(StyleResolverTest, DISABLED_ComputedStyleBuilderInheritingFrom) {
   EXPECT_EQ(child_style->GetFontSize(), 16);
 }
 
-TEST_F(StyleResolverTest, DISABLED_MediaTypeUpdate) {
+TEST_F(StyleResolverTest, MediaTypeUpdate) {
   StyleResolver resolver(*GetDocument());
   
   // This should not crash
   resolver.UpdateMediaType();
 }
 
-TEST_F(StyleResolverTest, DISABLED_ViewportUnits) {
+TEST_F(StyleResolverTest, ViewportUnits) {
   StyleResolver resolver(*GetDocument());
   
   // Test viewport unit methods don't crash
