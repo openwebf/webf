@@ -87,6 +87,8 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
     assert(contents->HasSingleOwnerDocument());
 
     contents->SetIsUsedFromTextCache();
+    // Ensure cached contents for style elements never have load errors
+    contents->SetDidLoadErrorOccur(false);
 
     style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
   }
@@ -100,6 +102,8 @@ CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const std::string& text
   CSSStyleSheet* style_sheet = nullptr;
   style_sheet = CSSStyleSheet::CreateInline(element, KURL(""));
   style_sheet->Contents()->ParseString(text);
+  // For style elements (inline CSS), ensure no load error is flagged
+  style_sheet->Contents()->SetDidLoadErrorOccur(false);
   return style_sheet;
 }
 

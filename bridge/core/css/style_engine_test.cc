@@ -41,7 +41,7 @@ class StyleEngineTest : public ::testing::Test {
   Document* document_ = nullptr;
 };
 
-TEST_F(StyleEngineTest, DISABLED_CreateSheet) {
+TEST_F(StyleEngineTest, CreateSheet) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
@@ -63,7 +63,7 @@ TEST_F(StyleEngineTest, DISABLED_CreateSheet) {
   EXPECT_EQ(sheet->ownerNode(), element);
 }
 
-TEST_F(StyleEngineTest, DISABLED_ParseSheet) {
+TEST_F(StyleEngineTest, ParseSheet) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
@@ -147,7 +147,7 @@ TEST_F(StyleEngineTest, InEnsureComputedStyleScope) {
   EXPECT_FALSE(GetStyleEngine().InEnsureComputedStyle());
 }
 
-TEST_F(StyleEngineTest, DISABLED_CachedSheet) {
+TEST_F(StyleEngineTest, CachedSheet) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   
   auto* element1 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
@@ -178,7 +178,7 @@ TEST_F(StyleEngineTest, DISABLED_CachedSheet) {
   // EXPECT_TRUE(sheet1->Contents()->IsUsedFromTextCache());
 }
 
-TEST_F(StyleEngineTest, DISABLED_LargeSheetCaching) {
+TEST_F(StyleEngineTest, LargeSheetCaching) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());

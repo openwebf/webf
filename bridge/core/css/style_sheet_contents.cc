@@ -51,6 +51,7 @@ StyleSheetContents::StyleSheetContents(const std::shared_ptr<const CSSParserCont
     : owner_rule_(std::move(owner_rule)),
       original_url_(std::move(original_url)),
       has_syntactically_valid_css_header_(true),
+      did_load_error_occur_(false),
       is_mutable_(false),
       has_font_face_rule_(false),
       default_namespace_("*"),
@@ -123,8 +124,11 @@ bool StyleSheetContents::IsCacheableForStyleElement() const {
     return false;
   }
   // Until import rules are supported in cached sheets it's not possible for
-  // loading to fail.
-  assert(!DidLoadErrorOccur());
+  // loading to fail. For style elements (inline CSS), load errors should never occur.
+  if (DidLoadErrorOccur()) {
+    // This should not happen for style elements, but if it does, we should not cache
+    return false;
+  }
   // It is not the original sheet anymore.
   if (IsMutable()) {
     return false;

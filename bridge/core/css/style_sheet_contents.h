@@ -179,6 +179,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   bool HasMediaQueries() const { return has_media_queries_; }
 
   bool DidLoadErrorOccur() const { return did_load_error_occur_; }
+  void SetDidLoadErrorOccur(bool did_error) { did_load_error_occur_ = did_error; }
 
   //  RuleSet& GetRuleSet() {
   //    DCHECK(rule_set_);
