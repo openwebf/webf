@@ -14,3 +14,5 @@ export { WebFTableRow, WebFTableRowElement } from "./lib/src/html/table_row";
 export { WebFTableHeader, WebFTableHeaderElement } from "./lib/src/html/table_header";
 export { WebFTableCell, WebFTableCellElement } from "./lib/src/html/table_cell";
 export { WebFLazyRender } from "./components/WebFLazyRender";
+export { useFlutterAttached, useFlutterAttachedEffect } from "./hooks/useFlutterAttached";
+export type { FlutterAttachedCallback, FlutterDetachedCallback } from "./hooks/useFlutterAttached";
