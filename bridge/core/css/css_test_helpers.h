@@ -6,10 +6,12 @@
 #define WEBF_CORE_CSS_CSS_TEST_HELPERS_H_
 
 #include <optional>
+#include <memory>
 #include "core/css/css_property_value_set.h"
 #include "core/css/style_rule.h"
 #include "core/executing_context.h"
 #include "foundation/macros.h"
+#include "webf_test_env.h"
 
 namespace webf {
 
@@ -42,6 +44,7 @@ class TestStyleSheet {
   //  CSSRuleList* CssRules();
 
  private:
+  std::unique_ptr<WebFTestEnv> env_;
   ExecutingContext* execution_context_;
   Document* document_;
   CSSStyleSheet* style_sheet_;

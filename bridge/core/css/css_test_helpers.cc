@@ -21,10 +21,20 @@ namespace webf {
 
 namespace css_test_helpers {
 
-TestStyleSheet::~TestStyleSheet() = default;
+TestStyleSheet::~TestStyleSheet() {
+  // Ensure proper cleanup order
+  style_sheet_ = nullptr;
+  document_ = nullptr;
+  execution_context_ = nullptr;
+  env_.reset();
+}
 
 TestStyleSheet::TestStyleSheet() {
-  document_ = Document::Create(execution_context_, ASSERT_NO_EXCEPTION());
+  // Properly initialize the test environment
+  env_ = TEST_init();
+  execution_context_ = env_->page()->executingContext();
+  // Use the document from the page instead of creating a new one
+  document_ = execution_context_->document();
   style_sheet_ = CreateStyleSheet(*document_);
 }
 
