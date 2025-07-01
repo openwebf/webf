@@ -130,7 +130,6 @@ class WebFListViewElement extends WebFListViewBindings {
   void finishRefresh(String result) {
     state?.refreshController.finishRefresh(_parseIndicatorResult(result));
     state?._isRefreshing = false;
-    state?.refreshController.resetHeader();
   }
 
   /// Completes a load-more operation with the specified result
