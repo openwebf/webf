@@ -17,6 +17,8 @@ list(APPEND WEBF_TEST_SOURCE
 
 # Include CSS unit tests
 include(${CMAKE_CURRENT_SOURCE_DIR}/test/css_unittests.cmake)
+# Add CSS unit tests to the main test executable
+list(APPEND WEBF_UNIT_TEST_SOURCE ${WEBF_CSS_UNIT_TEST_SOURCE})
 list(APPEND WEBF_UNIT_TEST_SOURCE
   ./test/webf_test_env.cc
   ./test/webf_test_env.h

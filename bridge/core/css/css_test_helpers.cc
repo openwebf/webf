@@ -60,7 +60,8 @@ std::shared_ptr<const CSSValue> ParseLonghand(Document& document,
     return nullptr;
   }
 
-  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode, &document);
+  // Create parser context without Document to avoid memory leaks in tests
+  auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   CSSParserLocalContext local_context;
 
   CSSTokenizer tokenizer(value);
