@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@openwebf/react-core-ui": "^0.2.1",
-    "@openwebf/react-cupertino-ui": "^0.2.0",
+    "@openwebf/react-core-ui": "^0.2.7",
+    "@openwebf/react-cupertino-ui": "^0.2.5",
     "@openwebf/react-router": "^0.2.5",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
