@@ -100,8 +100,8 @@ WebFValue<EventTarget, WebFPublicMethods> EventTargetPublicMethods::DynamicTo(we
       if (document == nullptr) {
         return WebFValue<EventTarget, WebFPublicMethods>::Null();
       }
-      WebFValueStatus* status_block = document->KeepAlive();
-      return WebFValue<EventTarget, WebFPublicMethods>(document, document->documentPublicMethods(), status_block);
+      WebFValueStatus* status_block = static_cast<ScriptWrappable*>(document)->KeepAlive();
+      return WebFValue<EventTarget, WebFPublicMethods>(static_cast<EventTarget*>(document), document->documentPublicMethods(), status_block);
     }
     case EventTargetType::kElement: {
       auto* element = webf::DynamicTo<Element>(event_target);

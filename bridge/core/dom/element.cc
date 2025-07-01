@@ -16,6 +16,7 @@
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/inline_css_style_declaration.h"
+#include "core/css/style_engine.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/style_scope_data.h"
 #include "core/dom/document_fragment.h"

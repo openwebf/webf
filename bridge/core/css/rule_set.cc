@@ -1,0 +1,229 @@
+/*
+ * Copyright (C) 1999 Lars Knoll (knoll@kde.org)
+ *           (C) 2004-2005 Allan Sandfeld Jensen (kde@carewolf.com)
+ * Copyright (C) 2006, 2007 Nicholas Shanks (webkit@nickshanks.com)
+ * Copyright (C) 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012 Apple Inc.
+ * All rights reserved.
+ * Copyright (C) 2007 Alexey Proskuryakov <ap@webkit.org>
+ * Copyright (C) 2007, 2008 Eric Seidel <eric@webkit.org>
+ * Copyright (C) 2008, 2009 Torch Mobile Inc. All rights reserved.
+ * (http://www.torchmobile.com/)
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+ * Copyright (C) Research In Motion Limited 2011. All rights reserved.
+ * Copyright (C) 2012 Google Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
+ */
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+#include "rule_set.h"
+
+#include "core/css/css_selector.h"
+#include "core/css/css_style_rule.h"
+#include "core/css/media_query_evaluator.h"
+#include "core/css/style_rule.h"
+#include "core/css/style_sheet_contents.h"
+
+namespace webf {
+
+const std::vector<std::shared_ptr<RuleData>> RuleSet::empty_rule_data_vector_;
+
+RuleData::RuleData(std::shared_ptr<StyleRule> rule, 
+                   unsigned selector_index, 
+                   unsigned position)
+    : rule_(rule),
+      selector_index_(selector_index),
+      position_(position),
+      specificity_(0) {
+  
+  if (rule_) {
+    const CSSSelector& selector = rule_->SelectorAt(selector_index_);
+    specificity_ = selector.Specificity();
+  }
+}
+
+RuleSet::RuleSet() = default;
+
+RuleSet::~RuleSet() = default;
+
+void RuleSet::AddRulesFromSheet(
+    std::shared_ptr<StyleSheetContents> sheet,
+    const MediaQueryEvaluator& medium,
+    AddRuleFlags add_rule_flags) {
+  
+  if (!sheet) {
+    return;
+  }
+  
+  // TODO: Implement adding rules from stylesheet
+  // This would iterate through all rules in the stylesheet,
+  // evaluate media queries, and add matching rules
+}
+
+void RuleSet::AddRule(std::shared_ptr<StyleRule> rule,
+                     unsigned selector_index,
+                     AddRuleFlags add_rule_flags) {
+  
+  if (!rule) {
+    return;
+  }
+  
+  auto rule_data = std::make_shared<RuleData>(rule, selector_index, rule_count_++);
+  
+  // Update features
+  // TODO: Add feature tracking
+  // features_.Add(rule_data->Selector());
+  
+  // Find the best rule set for this selector
+  RuleDataVector* rules = FindBestRuleSetForSelector(rule_data->Selector());
+  if (rules) {
+    rules->push_back(rule_data);
+  }
+}
+
+void RuleSet::AddStyleRule(std::shared_ptr<StyleRule> rule,
+                          AddRuleFlags add_rule_flags) {
+  
+  if (!rule) {
+    return;
+  }
+  
+  // Add rules for all selectors
+  // StyleRule has a linked list of selectors, count them
+  unsigned selector_count = 0;
+  const CSSSelector* first_selector = rule->FirstSelector();
+  for (const CSSSelector* selector = first_selector; selector; 
+       selector = CSSSelectorList::Next(*selector)) {
+    selector_count++;
+  }
+  
+  // Add a rule for each selector in the style rule
+  for (unsigned i = 0; i < selector_count; ++i) {
+    AddRule(rule, i, add_rule_flags);
+  }
+}
+
+const std::vector<std::shared_ptr<RuleData>>& RuleSet::IdRules(
+    const AtomicString& id) const {
+  
+  auto it = id_rules_.find(id);
+  if (it != id_rules_.end() && it->second) {
+    return *it->second;
+  }
+  return empty_rule_data_vector_;
+}
+
+const std::vector<std::shared_ptr<RuleData>>& RuleSet::ClassRules(
+    const AtomicString& class_name) const {
+  
+  auto it = class_rules_.find(class_name);
+  if (it != class_rules_.end() && it->second) {
+    return *it->second;
+  }
+  return empty_rule_data_vector_;
+}
+
+const std::vector<std::shared_ptr<RuleData>>& RuleSet::TagRules(
+    const AtomicString& tag_name) const {
+  
+  auto it = tag_rules_.find(tag_name);
+  if (it != tag_rules_.end() && it->second) {
+    return *it->second;
+  }
+  return empty_rule_data_vector_;
+}
+
+const std::vector<std::shared_ptr<RuleData>>& RuleSet::ShadowPseudoElementRules(
+    const AtomicString& pseudo) const {
+  
+  auto it = shadow_pseudo_element_rules_.find(pseudo);
+  if (it != shadow_pseudo_element_rules_.end() && it->second) {
+    return *it->second;
+  }
+  return empty_rule_data_vector_;
+}
+
+void RuleSet::CompactRulesIfNeeded() {
+  // TODO: Implement rule compaction for memory efficiency
+}
+
+RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
+    const CSSSelector& selector) {
+  
+  // Start with the rightmost selector
+  const CSSSelector* current = &selector;
+  
+  // Skip pseudo elements
+  for (; current->Match() == CSSSelector::kPseudoElement; 
+       current = current->NextSimpleSelector()) {
+    if (!current->NextSimpleSelector()) {
+      return &universal_rules_;
+    }
+  }
+  
+  // Check for ID selector
+  if (current->Match() == CSSSelector::kId) {
+    return id_rules_[current->Value()].get();
+  }
+  
+  // Check for class selector
+  if (current->Match() == CSSSelector::kClass) {
+    return class_rules_[current->Value()].get();
+  }
+  
+  // Check for tag selector
+  if (current->Match() == CSSSelector::kTag) {
+    const AtomicString& tag_name = current->TagQName().LocalName();
+    if (!tag_name.IsNull() && tag_name != "*") {
+      return tag_rules_[tag_name].get();
+    }
+  }
+  
+  // Check for pseudo class
+  if (current->Match() == CSSSelector::kPseudoClass) {
+    switch (current->GetPseudoType()) {
+      case CSSSelector::kPseudoLink:
+      case CSSSelector::kPseudoVisited:
+      case CSSSelector::kPseudoAnyLink:
+        return &link_pseudo_class_rules_;
+      case CSSSelector::kPseudoFocus:
+      case CSSSelector::kPseudoFocusVisible:
+      case CSSSelector::kPseudoFocusWithin:
+        return &focus_pseudo_class_rules_;
+      default:
+        break;
+    }
+  }
+  
+  // Default to universal rules
+  return &universal_rules_;
+}
+
+void RuleSet::AddToRuleSet(
+    const AtomicString& key,
+    std::unordered_map<AtomicString, std::unique_ptr<RuleDataVector>, AtomicString::KeyHasher>& rules,
+    std::shared_ptr<RuleData> rule_data) {
+  
+  if (rules.find(key) == rules.end()) {
+    rules[key] = std::make_unique<RuleDataVector>();
+  }
+  rules[key]->push_back(rule_data);
+}
+
+}  // namespace webf

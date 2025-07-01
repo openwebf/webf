@@ -7,6 +7,7 @@
 
 #include "core/css/css_rule.h"
 #include "core/css/media_query_set_owner.h"
+#include "core/css/resolver/media_query_result.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/node.h"

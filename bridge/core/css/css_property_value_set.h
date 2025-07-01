@@ -48,6 +48,10 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   friend class PropertyReference;
 
  public:
+  enum PropertySetFlag {
+    kNormalProperty = 0,
+    kImportant = 1,
+  };
   CSSPropertyValueSet(const CSSPropertyValueSet&) = delete;
   CSSPropertyValueSet& operator=(const CSSPropertyValueSet&) = delete;
 

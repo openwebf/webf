@@ -120,8 +120,8 @@ class InterpolableNumber final : public InterpolableValue {
   void Add(const InterpolableValue& other) final;
   void AssertCanInterpolateWith(const InterpolableValue& other) const final;
 
-  std::shared_ptr<InterpolableNumber> Clone() const { return RawClone(); }
-  std::shared_ptr<InterpolableNumber> CloneAndZero() const { return RawCloneAndZero(); }
+  std::shared_ptr<InterpolableNumber> Clone() const { return std::static_pointer_cast<InterpolableNumber>(RawClone()); }
+  std::shared_ptr<InterpolableNumber> CloneAndZero() const { return std::static_pointer_cast<InterpolableNumber>(RawCloneAndZero()); }
   // TODO(guopengfei)：
   // void Trace(Visitor* v) const override {
   //  InterpolableValue::Trace(v);
@@ -130,13 +130,13 @@ class InterpolableNumber final : public InterpolableValue {
   //}
 
  private:
-  std::shared_ptr<InterpolableNumber> RawClone() const final {
+  std::shared_ptr<InterpolableValue> RawClone() const final {
     if (IsDoubleValue()) {
       return std::make_shared<InterpolableNumber>(value_.Value());
     }
     return std::make_shared<InterpolableNumber>(*expression_);
   }
-  std::shared_ptr<InterpolableNumber> RawCloneAndZero() const final { return std::make_shared<InterpolableNumber>(0); }
+  std::shared_ptr<InterpolableValue> RawCloneAndZero() const final { return std::make_shared<InterpolableNumber>(0); }
 
   bool IsDoubleValue() const { return type_ == Type::kDouble; }
   bool IsExpression() const { return type_ == Type::kExpression; }
@@ -179,8 +179,8 @@ class InterpolableList final : public InterpolableValue {
     values_[position] = std::move(value);
   }
 
-  std::shared_ptr<InterpolableList> Clone() const { return RawClone(); }
-  std::shared_ptr<InterpolableList> CloneAndZero() const { return RawCloneAndZero(); }
+  std::shared_ptr<InterpolableList> Clone() const { return std::static_pointer_cast<InterpolableList>(RawClone()); }
+  std::shared_ptr<InterpolableList> CloneAndZero() const { return std::static_pointer_cast<InterpolableList>(RawCloneAndZero()); }
 
   // InterpolableValue
   void Interpolate(const InterpolableValue& to, const double progress, InterpolableValue& result) const final;
@@ -198,14 +198,14 @@ class InterpolableList final : public InterpolableValue {
   //}
 
  private:
-  std::shared_ptr<InterpolableList> RawClone() const final {
+  std::shared_ptr<InterpolableValue> RawClone() const final {
     std::shared_ptr<InterpolableList> result = std::make_shared<InterpolableList>(length());
     for (uint32_t i = 0; i < length(); i++) {
       result->Set(i, values_[i]->Clone());
     }
     return result;
   }
-  std::shared_ptr<InterpolableList> RawCloneAndZero() const final;
+  std::shared_ptr<InterpolableValue> RawCloneAndZero() const final;
 
   std::vector<std::shared_ptr<InterpolableValue>> values_;
 };

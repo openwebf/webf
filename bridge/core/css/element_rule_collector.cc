@@ -1,0 +1,294 @@
+/*
+ * Copyright (C) 1999 Lars Knoll (knoll@kde.org)
+ *           (C) 2004-2005 Allan Sandfeld Jensen (kde@carewolf.com)
+ * Copyright (C) 2006, 2007 Nicholas Shanks (webkit@nickshanks.com)
+ * Copyright (C) 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013 Apple Inc.
+ * All rights reserved.
+ * Copyright (C) 2007 Alexey Proskuryakov <ap@webkit.org>
+ * Copyright (C) 2007, 2008 Eric Seidel <eric@webkit.org>
+ * Copyright (C) 2008, 2009 Torch Mobile Inc. All rights reserved.
+ * (http://www.torchmobile.com/)
+ * Copyright (c) 2011, Code Aurora Forum. All rights reserved.
+ * Copyright (C) Research In Motion Limited 2011. All rights reserved.
+ * Copyright (C) 2012 Google Inc. All rights reserved.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Library General Public License for more details.
+ *
+ * You should have received a copy of the GNU Library General Public License
+ * along with this library; see the file COPYING.LIB.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301, USA.
+ */
+
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+#include "element_rule_collector.h"
+
+#include <algorithm>
+#include "core/css/css_property_value_set.h"
+#include "core/css/css_rule_list.h"
+#include "core/css/css_selector.h"
+#include "core/css/css_style_rule.h"
+#include "core/css/resolver/style_resolver_state.h"
+#include "core/css/rule_set.h"
+#include "core/css/selector_filter.h"
+#include "core/css/style_rule.h"
+#include "core/dom/element.h"
+
+namespace webf {
+
+ElementRuleCollector::ElementRuleCollector(StyleResolverState& state)
+    : state_(state),
+      element_(&state.GetElement()),
+      pseudo_element_id_(state.GetPseudoElementId()),
+      selector_checker_(SelectorChecker::kResolvingStyle),
+      selector_filter_(nullptr) {
+}
+
+ElementRuleCollector::~ElementRuleCollector() = default;
+
+void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_request) {
+  assert(element_);
+  
+  // Collect rules from the match request
+  for (const auto& rule_set : match_request.GetRuleSets()) {
+    if (rule_set) {
+      CollectRuleSetMatchingRules(match_request, 
+                                 rule_set,
+                                 match_request.GetOrigin(),
+                                 0);
+    }
+  }
+}
+
+void ElementRuleCollector::CollectRuleSetMatchingRules(
+    const MatchRequest& match_request,
+    std::shared_ptr<RuleSet> rule_set,
+    CascadeOrigin cascade_origin,
+    CascadeLayerLevel cascade_layer) {
+  
+  if (!rule_set) {
+    return;
+  }
+  
+  // Collect universal rules
+  const auto& universal_rules = rule_set->UniversalRules();
+  if (!universal_rules.empty()) {
+    CollectMatchingRulesForList(universal_rules, 
+                               cascade_origin, 
+                               cascade_layer,
+                               match_request);
+  }
+  
+  // Collect ID rules
+  if (element_->HasID()) {
+    const auto& id_rules = rule_set->IdRules(element_->id());
+    if (!id_rules.empty()) {
+      CollectMatchingRulesForList(id_rules,
+                                 cascade_origin,
+                                 cascade_layer,
+                                 match_request);
+    }
+  }
+  
+  // Collect class rules
+  if (element_->HasClass()) {
+    for (const auto& class_name : element_->ClassNames()) {
+      const auto& class_rules = rule_set->ClassRules(class_name);
+      if (!class_rules.empty()) {
+        CollectMatchingRulesForList(class_rules,
+                                   cascade_origin,
+                                   cascade_layer,
+                                   match_request);
+      }
+    }
+  }
+  
+  // Collect tag rules
+  const auto& tag_rules = rule_set->TagRules(element_->TagQName().LocalName());
+  if (!tag_rules.empty()) {
+    CollectMatchingRulesForList(tag_rules,
+                               cascade_origin,
+                               cascade_layer,
+                               match_request);
+  }
+}
+
+template <typename RuleDataListType>
+void ElementRuleCollector::CollectMatchingRulesForList(
+    const RuleDataListType& rules,
+    CascadeOrigin cascade_origin,
+    CascadeLayerLevel cascade_layer,
+    const MatchRequest& match_request) {
+  
+  for (const auto& rule_data : rules) {
+    if (!rule_data) {
+      continue;
+    }
+    
+    // Check if selector matches
+    SelectorChecker::SelectorCheckingContext context(element_);
+    context.selector = &rule_data->Selector();
+    SelectorChecker::MatchResult match_result;
+    if (selector_checker_.Match(context, match_result)) {
+      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
+    }
+  }
+}
+
+void ElementRuleCollector::DidMatchRule(
+    std::shared_ptr<const RuleData> rule_data,
+    CascadeOrigin cascade_origin,
+    CascadeLayerLevel cascade_layer,
+    const MatchRequest& match_request) {
+  
+  if (!rule_data || !rule_data->Rule()) {
+    return;
+  }
+  
+  // Check if we should include empty rules
+  if (!include_empty_rules_ && 
+      rule_data->Rule()->Properties().PropertyCount() == 0) {
+    return;
+  }
+  
+  // Add the matched rule
+  AddMatchedRule(rule_data,
+                rule_data->SelectorSpecificity(),
+                cascade_origin,
+                cascade_layer,
+                match_request.GetStyleSheetIndex(),
+                match_request);
+}
+
+void ElementRuleCollector::AddMatchedRule(
+    std::shared_ptr<const RuleData> rule_data,
+    unsigned specificity,
+    CascadeOrigin cascade_origin,
+    CascadeLayerLevel cascade_layer,
+    unsigned style_sheet_index,
+    const MatchRequest& match_request) {
+  
+  MatchedRule matched_rule;
+  matched_rule.rule_data = rule_data;
+  matched_rule.specificity = specificity;
+  matched_rule.cascade_origin = cascade_origin;
+  matched_rule.cascade_layer = cascade_layer;
+  matched_rule.style_sheet_index = style_sheet_index;
+  matched_rule.cascade_order = current_cascade_order_++;
+  
+  matched_rules_.push_back(matched_rule);
+}
+
+void ElementRuleCollector::CollectMatchingRulesFromShadowHosts() {
+  // TODO: Implement shadow host rule collection
+}
+
+void ElementRuleCollector::CollectMatchingSlottedRules() {
+  // TODO: Implement slotted rule collection
+}
+
+void ElementRuleCollector::CollectMatchingPartRules() {
+  // TODO: Implement part rule collection
+}
+
+void ElementRuleCollector::SortAndTransferMatchedRules() {
+  if (matched_rules_.empty()) {
+    return;
+  }
+  
+  SortMatchedRules();
+  TransferMatchedRules();
+}
+
+void ElementRuleCollector::SortMatchedRules() {
+  // Sort by cascade order
+  std::stable_sort(matched_rules_.begin(), matched_rules_.end(),
+      [](const MatchedRule& a, const MatchedRule& b) {
+        // First by origin
+        if (a.cascade_origin != b.cascade_origin) {
+          return static_cast<int>(a.cascade_origin) < static_cast<int>(b.cascade_origin);
+        }
+        
+        // Then by cascade layer
+        if (a.cascade_layer != b.cascade_layer) {
+          return a.cascade_layer < b.cascade_layer;
+        }
+        
+        // Then by specificity
+        if (a.specificity != b.specificity) {
+          return a.specificity < b.specificity;
+        }
+        
+        // Finally by order of appearance
+        return a.cascade_order < b.cascade_order;
+      });
+}
+
+void ElementRuleCollector::TransferMatchedRules() {
+  for (const auto& matched_rule : matched_rules_) {
+    if (matched_rule.rule_data && matched_rule.rule_data->Rule()) {
+      result_.AddMatchedProperties(
+          &matched_rule.rule_data->Rule()->Properties(),
+          matched_rule.cascade_origin,
+          matched_rule.cascade_layer);
+    }
+  }
+  
+  matched_rules_.clear();
+}
+
+void ElementRuleCollector::ClearMatchedRules() {
+  matched_rules_.clear();
+  result_.Clear();
+  current_cascade_order_ = 0;
+}
+
+void ElementRuleCollector::AddElementStyleProperties(
+    std::shared_ptr<const StylePropertySet> property_set,
+    PropertyAllowedInMode property_mode) {
+  
+  if (!property_set || property_set->PropertyCount() == 0) {
+    return;
+  }
+  
+  result_.AddMatchedProperties(property_set.get(),
+                              CascadeOrigin::kAuthor,
+                              0);
+}
+
+void ElementRuleCollector::SetPseudoElementStyleRequest(
+    const PseudoElementStyleRequest& request) {
+  
+  pseudo_element_id_ = request.pseudo_id;
+  is_collecting_for_pseudo_element_ = true;
+}
+
+template <class CSSRuleCollection>
+std::shared_ptr<CSSRule> ElementRuleCollector::FindStyleRule(
+    CSSRuleCollection* css_rules,
+    std::shared_ptr<StyleRule> style_rule) {
+  
+  if (!css_rules || !style_rule) {
+    return nullptr;
+  }
+  
+  // TODO: Implement finding CSS rule wrapper
+  return nullptr;
+}
+
+void ElementRuleCollector::AppendCSSOMWrapperForRule(std::shared_ptr<CSSRule> css_rule) {
+  // TODO: Implement CSSOM wrapper appending
+}
+
+}  // namespace webf

@@ -31,13 +31,14 @@
 #include "core/css/css_property_name.h"
 //#include "core/css/css_to_length_conversion_data.h"
 #include "core/css/parser/css_parser_mode.h"
+#include "core/css/properties/css_property.h"
+#include "core/css/selector_checker.h"
 //#include "core/css/resolver/css_to_style_map.h"
 //#include "core/css/resolver/element_resolve_context.h"
 //#include "core/css/resolver/element_style_resources.h"
-//#include "core/css/resolver/font_builder.h"
+#include "core/css/resolver/font_builder.h"
 //#include "core/css/style_recalc_context.h"
 //#include "core/css/style_request.h"
-#include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/style/computed_style_base_constants.h"
 
@@ -45,6 +46,7 @@ namespace webf {
 
 class AnchorEvaluator;
 class ComputedStyle;
+class Document;
 class FontDescription;
 class PseudoElement;
 
@@ -57,10 +59,7 @@ class StyleResolverState {
   enum class ElementType { kElement, kPseudoElement };
 
  public:
-  //  StyleResolverState(Document&,
-  //                     Element&,
-  //                     const StyleRecalcContext* = nullptr,
-  //                     const StyleRequest& = StyleRequest());
+  StyleResolverState(Document& document, Element& element);
   StyleResolverState(const StyleResolverState&) = delete;
   StyleResolverState& operator=(const StyleResolverState&) = delete;
   ~StyleResolverState();
@@ -79,16 +78,9 @@ class StyleResolverState {
   // PseudoElement present.
   Element* GetStyledElement() const { return styled_element_; }
   // These are all just pass-through methods to ElementResolveContext.
-  //  Element& GetElement() const { return element_context_.GetElement(); }
-  //  const Element* ParentElement() const {
-  //    return element_context_.ParentElement();
-  //  }
-  //  const ComputedStyle* RootElementStyle() const {
-  //    return element_context_.RootElementStyle();
-  //  }
-  //  EInsideLink ElementLinkState() const {
-  //    return element_context_.ElementLinkState();
-  //  }
+  Element& GetElement() const { return *element_; }
+  const Element* ParentElement() const;
+  const ComputedStyle* RootElementStyle() const;
 
   // See inside_link_.
   EInsideLink InsideLink() const;
@@ -116,8 +108,19 @@ class StyleResolverState {
   //                           is_at_shadow_boundary);
   //    UpdateLengthConversionData();
   //  }
-  //  ComputedStyleBuilder& StyleBuilder() { return *style_builder_; }
-  //  const ComputedStyleBuilder& StyleBuilder() const { return *style_builder_; }
+  ComputedStyleBuilder& StyleBuilder() { return *style_builder_; }
+  const ComputedStyleBuilder& StyleBuilder() const { return *style_builder_; }
+  
+  void SetComputedStyleBuilder(ComputedStyleBuilder&& builder) {
+    style_builder_ = std::make_unique<ComputedStyleBuilder>(std::move(builder));
+  }
+  
+  std::shared_ptr<const ComputedStyle> TakeComputedStyle() {
+    if (style_builder_) {
+      return style_builder_->TakeStyle();
+    }
+    return nullptr;
+  }
   const ComputedStyle* TakeStyle();
 
   //  const CSSToLengthConversionData& CssToLengthConversionData() const {
@@ -150,6 +153,13 @@ class StyleResolverState {
   // Returns the pseudo element if the style resolution is targeting a pseudo
   // element, null otherwise.
   PseudoElement* GetPseudoElement() const;
+  
+  // Get the pseudo element ID
+  PseudoId GetPseudoElementId() const { return pseudo_element_id_; }
+  
+  // Get the selector checker
+  SelectorChecker& GetSelectorChecker() { return selector_checker_; }
+  const SelectorChecker& GetSelectorChecker() const { return selector_checker_; }
 
   void SetParentStyle(const ComputedStyle*);
   const ComputedStyle* ParentStyle() const { return parent_style_; }
@@ -173,8 +183,8 @@ class StyleResolverState {
   //    return element_style_resources_.GetStyleImage(property_id, value);
   //  }
   //
-  //  FontBuilder& GetFontBuilder() { return font_builder_; }
-  //  const FontBuilder& GetFontBuilder() const { return font_builder_; }
+  FontBuilder& GetFontBuilder() { return font_builder_; }
+  const FontBuilder& GetFontBuilder() const { return font_builder_; }
   // FIXME: These exist as a primitive way to track mutations to font-related
   // properties on a ComputedStyle. As designed, these are very error-prone, as
   // some callers set these directly on the ComputedStyle w/o telling us.
@@ -251,9 +261,12 @@ class StyleResolverState {
   //
   //  ElementResolveContext element_context_;
   Document* document_;
+  Element* element_;
+  PseudoId pseudo_element_id_ = PseudoId::kPseudoIdNone;
+  SelectorChecker selector_checker_;
 
   // The primary output for each element's style resolve.
-  //  std::optional<ComputedStyleBuilder> style_builder_;
+  std::unique_ptr<ComputedStyleBuilder> style_builder_;
   //
   //  CSSToLengthConversionData::Flags length_conversion_flags_ = 0;
   //  CSSToLengthConversionData css_to_length_conversion_data_;
@@ -272,7 +285,7 @@ class StyleResolverState {
   //  CSSAnimationUpdate animation_update_;
   //  StyleRequest::RequestType pseudo_request_type_;
   //
-  //  FontBuilder font_builder_;
+  FontBuilder font_builder_;
 
   // May be different than GetElement() if the element being styled is a pseudo
   // element or an instantiation via an SVG <use> element. In those cases,

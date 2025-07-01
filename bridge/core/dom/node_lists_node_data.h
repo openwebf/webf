@@ -26,6 +26,7 @@
 
 #include <unordered_map>
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "core/css/css_selector.h"
 #include "core/dom/child_node_list.h"
 #include "core/dom/empty_node_list.h"
 #include "core/dom/qualified_name.h"

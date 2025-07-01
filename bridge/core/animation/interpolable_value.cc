@@ -145,7 +145,7 @@ void InterpolableList::Interpolate(const InterpolableValue& to,
   }
 }
 
-std::shared_ptr<InterpolableList> InterpolableList::RawCloneAndZero() const {
+std::shared_ptr<InterpolableValue> InterpolableList::RawCloneAndZero() const {
   std::shared_ptr<InterpolableList> result = std::make_shared<InterpolableList>(length());
   for (uint32_t i = 0; i < length(); i++) {
     result->Set(i, values_[i]->CloneAndZero());

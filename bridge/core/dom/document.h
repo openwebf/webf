@@ -7,7 +7,6 @@
 
 #include "bindings/qjs/cppgc/local_handle.h"
 #include "container_node.h"
-#include "core/css/style_engine.h"
 #include "core/platform/url/kurl.h"
 #include "event_type_names.h"
 #include "foundation/macros.h"
@@ -23,6 +22,8 @@ class HTMLBodyElement;
 class HTMLHeadElement;
 class HTMLHtmlElement;
 class HTMLScriptElement;
+class StyleEngine;
+class CSSStyleSheet;
 class HTMLAllCollection;
 class Text;
 class Comment;

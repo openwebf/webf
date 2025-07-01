@@ -39,7 +39,7 @@
 #include "core/css/css_global_rule_set.h"
 #include "core/css/invalidation/pending_invalidations.h"
 //#include "core/css/layout_tree_rebuild_root.h"
-//#include "core/css/resolver/style_resolver.h"
+#include "core/css/resolver/style_resolver.h"
 //#include "core/css/style_invalidation_root.h"
 #include "core/css/style_recalc_root.h"
 #include "core/dom/element.h"
@@ -106,6 +106,16 @@ class StyleEngine final {
     assert(global_rule_set_);
     return global_rule_set_->GetRuleFeatureSet();
   }
+
+  StyleResolver* GetStyleResolver() const { return resolver_.get(); }
+  StyleResolver& EnsureStyleResolver() {
+    if (!resolver_) {
+      CreateResolver();
+    }
+    return *resolver_;
+  }
+  
+  void CreateResolver();
 
  private:
   Document* document_;

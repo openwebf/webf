@@ -21,6 +21,10 @@
  */
 
 #include "style_attribute_mutation_scope.h"
+#include "core/css/abstract_property_set_css_style_declaration.h"
+#include "core/dom/element.h"
+#include "core/dom/mutation_observer_interest_group.h"
+#include "core/dom/mutation_record.h"
 #include "html_names.h"
 
 namespace webf {
@@ -58,8 +62,8 @@ StyleAttributeMutationScope::StyleAttributeMutationScope(AbstractPropertySetCSSS
     return;
   }
 
-  mutation_recipients_ = MutationObserverInterestGroup::CreateForAttributesMutation(*current_decl_->ParentElement(),
-                                                                                    html_names::kStyleAttr);
+  mutation_recipients_ = MutationObserverInterestGroup::CreateForAttributesMutation(
+      static_cast<Node&>(*current_decl_->ParentElement()), html_names::kStyleAttr);
   bool should_read_old_value = (mutation_recipients_ && mutation_recipients_->IsOldValueRequested());
 
   if (should_read_old_value) {

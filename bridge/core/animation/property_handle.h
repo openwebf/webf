@@ -37,7 +37,7 @@ class PropertyHandle {
       : handle_type_(property_name.IsCustomProperty() ? kHandleCSSCustomProperty : kHandleCSSProperty),
         css_property_(property_name.IsCustomProperty() ? &GetCSSPropertyVariable()
                                                        : &CSSProperty::Get(property_name.Id())),
-        property_name_(property_name.IsCustomProperty() ? property_name.ToString() : "") {}
+        property_name_(property_name.IsCustomProperty() ? property_name.ToAtomicString().GetString() : "") {}
 
   explicit PropertyHandle(const QualifiedName& attribute_name)
       : handle_type_(kHandleSVGAttribute), svg_attribute_(&attribute_name) {}

@@ -40,6 +40,7 @@
 #include "core/svg/svg_element.h"
 #include "document.h"
 #include "document_fragment.h"
+#include "core/css/style_engine.h"
 #include "element.h"
 #include "empty_node_list.h"
 #include "node.h"

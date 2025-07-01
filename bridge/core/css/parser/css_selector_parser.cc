@@ -1035,27 +1035,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
   }
 }
 
-// static
-tcb::span<CSSSelector> CSSSelectorParser::ParseScopeBoundary(
-    CSSParserTokenStream& stream,
-    std::shared_ptr<const CSSParserContext> context,
-    CSSNestingType nesting_type,
-    std::shared_ptr<const StyleRule> parent_rule_for_nesting,
-    std::shared_ptr<StyleSheetContents> style_sheet,
-    std::vector<CSSSelector>& arena) {
-  CSSSelectorParser parser(std::move(context), std::move(parent_rule_for_nesting),
-                           /*semicolon_aborts_nested_selector=*/false, std::move(style_sheet), arena);
-  DisallowPseudoElementsScope disallow_pseudo_elements(&parser);
-
-  stream.ConsumeWhitespace();
-  ResultFlags flags = 0;
-  std::optional<tcb::span<CSSSelector>> result = parser.ConsumeForgivingComplexSelectorList(stream, nesting_type, flags);
-  DCHECK(result.has_value());
-  if (!stream.AtEnd()) {
-    return {};
-  }
-  return result.value();
-}
+// Duplicate definition removed - see line 242 for the actual implementation
 
 namespace {
 

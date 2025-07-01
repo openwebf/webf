@@ -36,6 +36,7 @@
 #include <span>
 #include "core/css/css_style_sheet.h"
 #include "core/css/style_sheet_contents.h"
+#include "core/css/resolver/style_resolver.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 
@@ -43,10 +44,11 @@ namespace webf {
 
 StyleEngine::StyleEngine(Document& document) : document_(&document) {
   WEBF_LOG(VERBOSE) << &document;
+  CreateResolver();
 }
 
 CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& text) {
-  assert(element.GetDocument() == GetDocument());
+  assert(&element.GetDocument() == &GetDocument());
   assert(element.isConnected());
 
   CSSStyleSheet* style_sheet = nullptr;
@@ -122,6 +124,10 @@ bool StyleEngine::MarkStyleDirtyAllowed() const {
     return allow_mark_style_dirty_from_recalc_;
   }
   return !InRebuildLayoutTree();
+}
+
+void StyleEngine::CreateResolver() {
+  resolver_ = std::make_shared<StyleResolver>(GetDocument());
 }
 
 }  // namespace webf

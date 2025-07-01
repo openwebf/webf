@@ -34,7 +34,12 @@ FontDescription::FontDescription(const FontDescription&) = default;
 FontDescription& FontDescription::operator=(const FontDescription&) = default;
 
 bool FontDescription::operator==(const webf::FontDescription& other) const {
-  return other.family_list_ == family_list_;
+  return other.family_list_ == family_list_ &&
+         other.specified_size_ == specified_size_ &&
+         other.computed_size_ == computed_size_ &&
+         other.weight_ == weight_ &&
+         other.style_ == style_ &&
+         other.stretch_ == stretch_;
 }
 
 }  // namespace webf

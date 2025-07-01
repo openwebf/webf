@@ -26,4 +26,124 @@
 
 #include "style_resolver_state.h"
 
-namespace webf {}  // namespace webf
+#include "core/dom/element.h"
+#include "core/dom/document.h"
+#include "core/style/computed_style.h"
+
+namespace webf {
+
+StyleResolverState::StyleResolverState(Document& document, Element& element)
+    : document_(&document),
+      element_(&element),
+      selector_checker_(SelectorChecker::kResolvingStyle),
+      parent_style_(nullptr),
+      layout_parent_style_(nullptr),
+      old_style_(nullptr),
+      styled_element_(&element),
+      element_type_(ElementType::kElement),
+      container_unit_context_(nullptr),
+      is_for_highlight_(false),
+      uses_highlight_pseudo_inheritance_(false),
+      is_outside_flat_tree_(false),
+      can_trigger_animations_(true),
+      had_no_matched_properties_(false),
+      conditionally_affects_animations_(false),
+      affects_compositor_snapshots_(false),
+      rejected_legacy_overlapping_(false),
+      has_tree_scoped_reference_(false) {
+  style_builder_ = std::make_unique<ComputedStyleBuilder>();
+}
+
+StyleResolverState::~StyleResolverState() = default;
+
+bool StyleResolverState::IsInheritedForUnset(const CSSProperty& property) const {
+  return property.IsInherited();
+}
+
+const Element* StyleResolverState::ParentElement() const {
+  return element_->parentElement();
+}
+
+const ComputedStyle* StyleResolverState::RootElementStyle() const {
+  // TODO: Implement getting root element style
+  return nullptr;
+}
+
+EInsideLink StyleResolverState::InsideLink() const {
+  // TODO: Implement inside link detection
+  return EInsideLink::kNotInsideLink;
+}
+
+void StyleResolverState::UpdateLengthConversionData() {
+  // TODO: Implement length conversion data update
+}
+
+const ComputedStyle* StyleResolverState::TakeStyle() {
+  // TODO: Implement
+  return nullptr;
+}
+
+Element* StyleResolverState::GetAnimatingElement() const {
+  // TODO: Implement
+  return element_;
+}
+
+PseudoElement* StyleResolverState::GetPseudoElement() const {
+  // TODO: Implement
+  return nullptr;
+}
+
+void StyleResolverState::SetParentStyle(const ComputedStyle* style) {
+  parent_style_ = style;
+}
+
+void StyleResolverState::SetLayoutParentStyle(const ComputedStyle* style) {
+  layout_parent_style_ = style;
+}
+
+void StyleResolverState::LoadPendingResources() {
+  // TODO: Implement
+}
+
+const FontDescription& StyleResolverState::ParentFontDescription() const {
+  if (parent_style_) {
+    return parent_style_->GetFontDescription();
+  }
+  return ComputedStyle::GetInitialStyle().GetFontDescription();
+}
+
+void StyleResolverState::SetZoom(float zoom) {
+  // TODO: Implement
+}
+
+void StyleResolverState::SetEffectiveZoom(float zoom) {
+  // TODO: Implement
+}
+
+void StyleResolverState::SetWritingMode(WritingMode mode) {
+  style_builder_->SetWritingMode(mode);
+}
+
+CSSParserMode StyleResolverState::GetParserMode() const {
+  // TODO: Implement quirks mode detection
+  return kHTMLStandardMode;
+}
+
+const CSSValue& StyleResolverState::ResolveLightDarkPair(const CSSValue& value) {
+  // TODO: Implement light-dark pair resolution
+  return value;
+}
+
+bool StyleResolverState::CanAffectAnimations() const {
+  return conditionally_affects_animations_;
+}
+
+void StyleResolverState::UpdateFont() {
+  // TODO: Implement font update
+}
+
+void StyleResolverState::UpdateLineHeight() {
+  // TODO: Implement line height update
+}
+
+}  // namespace webf

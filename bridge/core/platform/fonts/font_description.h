@@ -60,9 +60,43 @@ class FontDescription {
   FontDescription& operator=(const FontDescription&);
   bool operator==(const FontDescription&) const;
   bool operator!=(const FontDescription& other) const { return !(*this == other); }
+  
+  // Font properties
+  const FontFamily& Family() const { return family_list_; }
+  void SetFamily(const FontFamily& family) { family_list_ = family; }
+  
+  float SpecifiedSize() const { return specified_size_; }
+  void SetSpecifiedSize(float size) { specified_size_ = size; }
+  
+  float ComputedSize() const { return computed_size_; }
+  void SetComputedSize(float size) { computed_size_ = size; }
+  
+  class FontSelectionValue {
+   public:
+    FontSelectionValue() : value_(0) {}
+    explicit FontSelectionValue(float value) : value_(value) {}
+    float Value() const { return value_; }
+    bool operator==(const FontSelectionValue& other) const { return value_ == other.value_; }
+   private:
+    float value_;
+  };
+  
+  FontSelectionValue Weight() const { return weight_; }
+  void SetWeight(FontSelectionValue weight) { weight_ = weight; }
+  
+  FontSelectionValue Style() const { return style_; }
+  void SetStyle(FontSelectionValue style) { style_ = style; }
+  
+  FontSelectionValue Stretch() const { return stretch_; }
+  void SetStretch(FontSelectionValue stretch) { stretch_ = stretch; }
 
  private:
   FontFamily family_list_;  // The list of font families to be used.
+  float specified_size_ = 0.0f;
+  float computed_size_ = 0.0f;
+  FontSelectionValue weight_;
+  FontSelectionValue style_;
+  FontSelectionValue stretch_;
 };
 
 }  // namespace webf

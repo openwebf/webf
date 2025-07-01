@@ -312,9 +312,20 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/if_condition.cc
     core/css/style_sheet_contents.cc
     core/css/css_style_sheet.cc
+    core/css/css_default_style_sheets.cc
     core/css/style_rule_import.cc
     #    core/css/style_recalc_root.cc
     core/css/style_sheet.cc
+    core/css/resolver/style_resolver.cc
+    core/css/resolver/style_builder.cc
+    core/css/resolver/style_resolver_state.cc
+    core/css/resolver/font_builder.cc
+    core/css/resolver/style_cascade.cc
+    core/css/resolver/matched_properties_cache.cc
+    core/css/element_rule_collector.cc
+    core/css/rule_set.cc
+    core/css/selector_filter.cc
+    core/style/computed_style.cc
     core/css/parser/css_parser.cc
     core/css/parser/css_parser_context.cc
     core/css/parser/css_parser_idioms.cc
