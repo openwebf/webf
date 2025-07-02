@@ -16,8 +16,32 @@ import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
+enum ScreenEventType { onScreen, offScreen }
+
+class ScreenEvent {
+  final ScreenEventType type;
+  final OnScreenEvent? onScreenEvent;
+  final OffScreenEvent? offScreenEvent;
+  final DateTime timestamp;
+
+  ScreenEvent.onScreen(this.onScreenEvent)
+      : type = ScreenEventType.onScreen,
+        offScreenEvent = null,
+        timestamp = DateTime.now();
+
+  ScreenEvent.offScreen(this.offScreenEvent)
+      : type = ScreenEventType.offScreen,
+        onScreenEvent = null,
+        timestamp = DateTime.now();
+}
+
 mixin ElementAdapterMixin on ElementBase {
   final List<Element> _fixedPositionElements = [];
+
+  // Track the screen state and event queue
+  bool _isOnScreen = false;
+  final List<ScreenEvent> _screenEventQueue = [];
+  bool _isProcessingQueue = false;
 
   @flutter.immutable
   List<Element> get fixedPositionElements => _fixedPositionElements;
@@ -61,6 +85,42 @@ mixin ElementAdapterMixin on ElementBase {
 
   bool hasEvent = false;
   bool hasScroll = false;
+
+  void enqueueScreenEvent(ScreenEvent event) {
+    // If we're enqueuing an onScreen event, remove any pending offScreen events
+    if (event.type == ScreenEventType.onScreen) {
+      _screenEventQueue.removeWhere((e) => e.type == ScreenEventType.offScreen);
+    }
+    
+    _screenEventQueue.add(event);
+    _processEventQueue();
+  }
+
+  void _processEventQueue() {
+    if (_isProcessingQueue || _screenEventQueue.isEmpty) return;
+
+    _isProcessingQueue = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      while (_screenEventQueue.isNotEmpty) {
+        final event = _screenEventQueue.removeAt(0);
+
+        // Process events based on current state and event type
+        if (event.type == ScreenEventType.offScreen) {
+          if (_isOnScreen) {
+            _isOnScreen = false;
+            await (this as Element).dispatchEvent(event.offScreenEvent!);
+          }
+        } else if (event.type == ScreenEventType.onScreen) {
+          // Only dispatch onScreen if we're not already on screen
+          if (!_isOnScreen) {
+            _isOnScreen = true;
+            await (this as Element).dispatchEventUtilAdded(event.onScreenEvent!);
+          }
+        }
+      }
+      _isProcessingQueue = false;
+    });
+  }
 
   @override
   flutter.Widget toWidget({Key? key}) {
@@ -172,9 +232,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
             child: flutter.Scrollable(
                 controller: webFElement.scrollControllerX,
                 axisDirection: AxisDirection.right,
-                physics: overflowX == CSSOverflowType.hidden
-                    ? flutter.NeverScrollableScrollPhysics()
-                    : null,
+                physics: overflowX == CSSOverflowType.hidden ? flutter.NeverScrollableScrollPhysics() : null,
                 viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                     webFElement: webFElement,
@@ -196,7 +254,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
         widget = LayoutBoxWrapper(
             child: flutter.Scrollable(
                 axisDirection: AxisDirection.down,
-                physics:  overflowY == CSSOverflowType.hidden ? flutter.NeverScrollableScrollPhysics() : null,
+                physics: overflowY == CSSOverflowType.hidden ? flutter.NeverScrollableScrollPhysics() : null,
                 controller: webFElement.scrollControllerY,
                 viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
                   if (scrollableX != null) {
@@ -326,12 +384,10 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
 
     _currentRouteSettings = route?.settings;
 
+    // Queue the onscreen event
     OnScreenEvent event =
         OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
-    // Should dispatch onscreen event after did build and layout
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      webFElement.dispatchEventUtilAdded(event);
-    });
+    webFElement.enqueueScreenEvent(ScreenEvent.onScreen(event));
 
     if (webFElement is ImageElement && webFElement.shouldLazyLoading) {
       (renderObject as RenderReplaced)
@@ -345,11 +401,12 @@ class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObj
   void unmount() {
     // Flutter element unmount call dispose of _renderObject, so we should not call dispose in unmountRenderObject.
     Element element = widget.webFElement;
+
+    // Queue the offscreen event
     OffScreenEvent event =
         OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      element.dispatchEvent(event);
-    });
+    element.enqueueScreenEvent(ScreenEvent.offScreen(event));
+
     _currentRouteSettings = null;
     element.willDetachRenderer(this);
     super.unmount();
@@ -465,22 +522,21 @@ class ExternalWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectEl
 
     _currentRouteSettings = route?.settings;
 
+    // Queue the onscreen event
     OnScreenEvent event =
         OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
-    Element webfElement = webFElement;
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      webfElement.dispatchEventUtilAdded(event);
-    });
+    webFElement.enqueueScreenEvent(ScreenEvent.onScreen(event));
   }
 
   @override
   void unmount() {
     Element element = webFElement;
+
+    // Queue the offscreen event
     OffScreenEvent event =
         OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      element.dispatchEvent(event);
-    });
+    element.enqueueScreenEvent(ScreenEvent.offScreen(event));
+
     _currentRouteSettings = null;
 
     super.unmount();
