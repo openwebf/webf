@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include <cstddef>
+#include <memory>
 
 #include "logging.h"
 
@@ -21,19 +22,54 @@ static void setThreadName(const std::string& name) {
 #endif
 }
 
+// Helper struct to pass data to pthread
+struct ThreadData {
+  Looper* looper;
+  std::string thread_name;
+};
+
+// Thread function for pthread_create
+static void* threadFunc(void* arg) {
+  std::unique_ptr<ThreadData> data(static_cast<ThreadData*>(arg));
+  setThreadName(data->thread_name);
+  data->looper->ThreadMain();
+  return nullptr;
+}
+
 Looper::Looper(int32_t js_id) : js_id_(js_id), running_(false), paused_(false) {}
 
 Looper::~Looper() {}
 
 void Looper::Start() {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (!worker_.joinable()) {
+  if (!has_pthread_) {
     running_ = true;
-    worker_ = std::thread([this] {
-      std::string thread_name = "JS Worker " + std::to_string(js_id_);
-      setThreadName(thread_name.c_str());
-      this->Run();
-    });
+    
+    // Create pthread attributes
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    
+    // Set stack size to 8MB (default is usually 512KB-2MB)
+    const size_t stackSize = 8 * 1024 * 1024;  // 8MB
+    pthread_attr_setstacksize(&attr, stackSize);
+    
+    // Create thread data
+    auto* threadData = new ThreadData{
+      this,
+      "JS Worker " + std::to_string(js_id_)
+    };
+    
+    // Create pthread with custom stack size
+    int result = pthread_create(&pthread_worker_, &attr, threadFunc, threadData);
+    if (result == 0) {
+      has_pthread_ = true;
+    } else {
+      delete threadData;
+      running_ = false;
+    }
+    
+    // Clean up attributes
+    pthread_attr_destroy(&attr);
   }
 }
 
@@ -43,9 +79,17 @@ void Looper::Stop() {
     running_ = false;
   }
   cv_.notify_one();
-  if (worker_.joinable()) {
+  
+  if (has_pthread_) {
+    pthread_join(pthread_worker_, nullptr);
+    has_pthread_ = false;
+  } else if (worker_.joinable()) {
     worker_.join();
   }
+}
+
+void Looper::ThreadMain() {
+  Run();
 }
 
 // private methods
