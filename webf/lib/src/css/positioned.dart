@@ -434,7 +434,8 @@ class CSSPositionedLayout {
         }
         offset = parentBorderBeforeWidth.computedValue + insetBefore.computedValue + marginBeforeValue;
       } else if (insetBefore.isAuto && insetAfter.isNotAuto) {
-        // If left is auto, width and right are not auto, then solve for left.
+        // If left/top is auto, width/height and right/bottom are not auto, then solve for left/top.
+        // For vertical axis with bottom specified, we need to calculate position from the bottom edge
         double insetBeforeValue = containingBlockLength -
             length -
             insetAfter.computedValue -
