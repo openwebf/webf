@@ -1,6 +1,6 @@
 import { generateReactComponent } from '../src/react';
 import { IDLBlob } from '../src/IDLBlob';
-import { ClassObject, ClassObjectKind } from '../src/declaration';
+import { ClassObject, ClassObjectKind, PropsDeclaration } from '../src/declaration';
 
 // Import the toWebFTagName function for testing
 import { toWebFTagName } from '../src/react';
@@ -129,6 +129,67 @@ describe('React Generator', () => {
       // Should use relative import with correct depth
       // From src/lib/src/html/shimmer to src/utils: ../../../../utils
       expect(result).toContain('import { createWebFComponent, WebFElementWithMethods } from "../../../../utils/createWebFComponent"');
+    });
+
+    it('should include standard HTML props (id, className, style) in component interface', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'TestComponent', 'test', '');
+      
+      const properties = new ClassObject();
+      properties.name = 'TestComponentProperties';
+      properties.kind = ClassObjectKind.interface;
+      blob.objects = [properties];
+      
+      const result = generateReactComponent(blob);
+      
+      // Should include standard HTML props
+      expect(result).toContain('id?: string;');
+      expect(result).toContain('style?: React.CSSProperties;');
+      expect(result).toContain('children?: React.ReactNode;');
+      expect(result).toContain('className?: string;');
+      
+      // Props should have proper JSDoc comments
+      expect(result).toMatch(/\/\*\*\s*\n\s*\*\s*HTML id attribute\s*\n\s*\*\/\s*\n\s*id\?: string;/);
+      expect(result).toMatch(/\/\*\*\s*\n\s*\*\s*Additional CSS styles\s*\n\s*\*\/\s*\n\s*style\?: React\.CSSProperties;/);
+      expect(result).toMatch(/\/\*\*\s*\n\s*\*\s*Children elements\s*\n\s*\*\/\s*\n\s*children\?: React\.ReactNode;/);
+      expect(result).toMatch(/\/\*\*\s*\n\s*\*\s*Additional CSS class names\s*\n\s*\*\/\s*\n\s*className\?: string;/);
+    });
+
+    it('should include standard HTML props even when component has custom properties', () => {
+      const blob = new IDLBlob('/test/source', '/test/target', 'TestComponent', 'test', '');
+      
+      const properties = new ClassObject();
+      properties.name = 'TestComponentProperties';
+      properties.kind = ClassObjectKind.interface;
+      const titleProp = new PropsDeclaration();
+      titleProp.name = 'title';
+      titleProp.type = { value: 'dom_string' };
+      titleProp.optional = false;
+      titleProp.documentation = 'The component title';
+      titleProp.readonly = false;
+      titleProp.typeMode = {};
+      
+      const disabledProp = new PropsDeclaration();
+      disabledProp.name = 'disabled';
+      disabledProp.type = { value: 'boolean' };
+      disabledProp.optional = true;
+      disabledProp.documentation = 'Whether the component is disabled';
+      disabledProp.readonly = false;
+      disabledProp.typeMode = {};
+      
+      properties.props = [titleProp, disabledProp];
+      blob.objects = [properties];
+      
+      const result = generateReactComponent(blob);
+      
+      // Should include custom props (dom_string is not converted in raw output)
+      expect(result).toContain('title: dom_string;');
+      expect(result).toContain('disabled?: boolean;');
+      
+      // And still include standard HTML props
+      expect(result).toContain('id?: string;');
+      expect(result).toContain('style?: React.CSSProperties;');
+      expect(result).toContain('children?: React.ReactNode;');
+      expect(result).toContain('className?: string;');
     });
   });
 });
