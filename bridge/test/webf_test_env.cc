@@ -206,11 +206,9 @@ WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPa
     : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
-  // Clean up test context map entry and delete WebFTestContext
+  // Clean up test context map entry
   for (auto it = test_context_map.begin(); it != test_context_map.end(); ) {
     if (it->second && it->second->page() == page_) {
-      // Delete the WebFTestContext to prevent memory leaks
-      delete it->second;
       it = test_context_map.erase(it);
     } else {
       ++it;
