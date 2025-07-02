@@ -516,7 +516,7 @@ class BoxDecorationPainter extends BoxPainter {
   void _paintBackgroundColor(Canvas canvas, Rect rect, TextDirection? textDirection) {
     if (_decoration.color != null || _decoration.gradient != null) {
       _paintBox(canvas, rect, _getBackgroundPaint(rect, textDirection), textDirection);
-      
+
       // Report FP when non-default background color is painted
       // Check if this is a non-default background (not transparent or white)
       if (_decoration.color != null && _decoration.color!.alpha > 0) {
@@ -548,13 +548,13 @@ class BoxDecorationPainter extends BoxPainter {
         break;
     }
     _imagePainter!.paint(canvas, rect, clipPath, configuration);
-    
+
     // Report FCP when background image is painted (excluding CSS gradients)
     if (_imagePainter!._image != null && !rect.isEmpty) {
       // Report FP first (if not already reported)
       renderStyle.target.ownerDocument.controller.reportFP();
       renderStyle.target.ownerDocument.controller.reportFCP();
-      
+
       // Report LCP candidate for background images
       // Calculate the visible area of the background image
       double visibleArea = rect.width * rect.height;
@@ -691,9 +691,17 @@ class BoxDecorationPainter extends BoxPainter {
     if (_decoration.border != null) {
       Border border = _decoration.border as Border;
 
-      // Check if top border is dashed - assuming uniform border
-      hasDashedBorder = border.top is ExtendedBorderSide &&
+      // Check if any border side is dashed
+      bool hasTopDashedBorder = border.top is ExtendedBorderSide &&
           (border.top as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+      bool hasRightDashedBorder = border.right is ExtendedBorderSide &&
+          (border.right as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+      bool hasBottomDashedBorder = border.bottom is ExtendedBorderSide &&
+          (border.bottom as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+      bool hasLeftDashedBorder = border.left is ExtendedBorderSide &&
+          (border.left as ExtendedBorderSide).extendBorderStyle == CSSBorderStyleType.dashed;
+
+      hasDashedBorder = hasTopDashedBorder || hasRightDashedBorder || hasBottomDashedBorder || hasLeftDashedBorder;
     }
 
     // If we have a dashed border, use our custom painter
