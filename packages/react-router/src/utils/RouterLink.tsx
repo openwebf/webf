@@ -3,7 +3,7 @@ import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-cor
 
 export interface HybridRouterChangeEvent extends SyntheticEvent {
   readonly state: any;
-  readonly kind: 'didPushNext' | 'didPush' | 'didPop' | 'didPupNext';
+  readonly kind: 'didPushNext' | 'didPush' | 'didPop' | 'didPopNext';
   readonly path: string;
 }
 

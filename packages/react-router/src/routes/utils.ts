@@ -32,6 +32,7 @@ export const WebFRouter = {
    * Applies route guards for permission checks before navigation
    */
   push: async <P extends RoutePath>(path: P, state?: any) => {
+
     webf.hybridHistory.pushNamed(path, { arguments: state })
   },
   

@@ -28,7 +28,7 @@ interface RouteContext<S = any> {
   /**
    * Route event kind
    */
-  routeEventKind?: 'didPushNext' | 'didPush' | 'didPop' | 'didPupNext'
+  routeEventKind?: 'didPushNext' | 'didPush' | 'didPop' | 'didPopNext'
 }
 
 /**
