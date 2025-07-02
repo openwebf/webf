@@ -189,7 +189,11 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   
   // Connect element to document
+  ASSERT_NE(GetDocument()->body(), nullptr) << "Document should have a body";
   GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
+  
+  // Verify element is connected
+  ASSERT_TRUE(element->isConnected()) << "element should be connected after appendChild";
   
   // Create a large CSS text (> 1024 chars)
   std::string large_css_text;
@@ -204,6 +208,13 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   
   // Create another element with same large CSS
   auto* element2 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
+  // Make sure we have a body before appending
+  ASSERT_NE(GetDocument()->body(), nullptr);
+  GetDocument()->body()->appendChild(element2, ASSERT_NO_EXCEPTION());
+  
+  // Verify element2 is connected
+  ASSERT_TRUE(element2->isConnected()) << "element2 should be connected after appendChild";
+  
   CSSStyleSheet* sheet2 = GetStyleEngine().CreateSheet(*element2, large_css_text);
   
   // Should use cached version based on hash

@@ -59,7 +59,7 @@ class StyleEngine final {
  public:
   explicit StyleEngine(Document& document);
   ~StyleEngine() { 
-    WEBF_LOG(VERBOSE) << 1; 
+    WEBF_LOG(VERBOSE) << "Destroying StyleEngine, clearing cache of size: " << text_to_sheet_cache_.size(); 
     // Clear the cache to break circular references
     text_to_sheet_cache_.clear();
   }
