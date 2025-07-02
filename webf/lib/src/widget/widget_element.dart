@@ -348,14 +348,17 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
     dom.OnScreenEvent event = dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '/');
 
     WidgetElement widgetElement = widget.widgetElement;
-    widgetElement.dispatchEventUtilAdded(event);
+    // Use the queue system if the element has the mixin
+    widgetElement.enqueueScreenEvent(dom.ScreenEvent.onScreen(event));
   }
 
   @override
   void unmount() {
     dom.OffScreenEvent event = dom.OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     dom.Element widgetElement = widget.widgetElement;
-    widgetElement.dispatchEventUtilAdded(event);
+
+    // Use the queue system if the element has the mixin
+    widgetElement.enqueueScreenEvent(dom.ScreenEvent.offScreen(event));
 
     _currentRouteSettings = null;
 
