@@ -183,7 +183,7 @@ TEST_F(StyleEngineTest, CachedSheet) {
   // EXPECT_TRUE(sheet1->Contents()->IsUsedFromTextCache());
 }
 
-TEST_F(StyleEngineTest, DISABLED_LargeSheetCaching) {
+TEST_F(StyleEngineTest, LargeSheetCaching) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());

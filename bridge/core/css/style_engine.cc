@@ -49,7 +49,7 @@ StyleEngine::StyleEngine(Document& document) : document_(&document) {
 
 CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& text) {
   assert(&element.GetDocument() == &GetDocument());
-  assert(element.isConnected());
+  // Note: Blink allows creating sheets for disconnected elements, so we don't check isConnected()
 
   CSSStyleSheet* style_sheet = nullptr;
 
