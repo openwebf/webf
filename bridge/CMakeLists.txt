@@ -87,13 +87,6 @@ if (ENABLE_ASAN)
   add_link_options(-fsanitize=address -fno-omit-frame-pointer)
 endif ()
 
-if (NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    # Avoid quickjs stackoverflow.
-    add_compile_options(-O1)
-  endif()
-endif()
-
 if (DEFINED PLATFORM)
   if (${PLATFORM} STREQUAL "OS")
     add_compile_options(-fno-aligned-allocation)

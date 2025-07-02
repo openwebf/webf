@@ -5,6 +5,7 @@
 #ifndef MULTI_THREADING_LOOPER_H_
 #define MULTI_THREADING_LOOPER_H_
 
+#include <pthread.h>
 #include <condition_variable>
 #include <functional>
 #include <future>
@@ -77,6 +78,9 @@ class Looper {
   bool isBlocked();
 
   void ExecuteOpaqueFinalizer();
+  
+  // Public method for pthread to run the looper
+  void ThreadMain();
 
  private:
   void Run();
@@ -85,6 +89,8 @@ class Looper {
   std::mutex mutex_;
   std::queue<std::shared_ptr<Task>> tasks_;
   std::thread worker_;
+  pthread_t pthread_worker_;
+  bool has_pthread_ = false;
   bool paused_;
   bool running_;
   void* opaque_;
