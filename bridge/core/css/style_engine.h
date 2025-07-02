@@ -58,7 +58,11 @@ class LayoutTreeRebuildRoot;
 class StyleEngine final {
  public:
   explicit StyleEngine(Document& document);
-  ~StyleEngine() { WEBF_LOG(VERBOSE) << 1; }
+  ~StyleEngine() { 
+    WEBF_LOG(VERBOSE) << 1; 
+    // Clear the cache to break circular references
+    text_to_sheet_cache_.clear();
+  }
   CSSStyleSheet* CreateSheet(Element&, const std::string& text);
   Document& GetDocument() const;
   void Trace(GCVisitor* visitor);

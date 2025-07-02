@@ -99,11 +99,14 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
 }
 
 CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const std::string& text) {
-  CSSStyleSheet* style_sheet = nullptr;
-  style_sheet = CSSStyleSheet::CreateInline(element, KURL(""));
-  style_sheet->Contents()->ParseString(text);
+  // Create parser context without Document to avoid circular references
+  auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
+  auto contents = std::make_shared<StyleSheetContents>(parser_context, KURL("").GetString());
+  contents->ParseString(text);
   // For style elements (inline CSS), ensure no load error is flagged
-  style_sheet->Contents()->SetDidLoadErrorOccur(false);
+  contents->SetDidLoadErrorOccur(false);
+  
+  CSSStyleSheet* style_sheet = CSSStyleSheet::CreateInline(element.GetExecutingContext(), contents, element);
   return style_sheet;
 }
 
