@@ -26,6 +26,11 @@ class StyleEngineTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    // Force garbage collection before cleanup
+    if (context_ && context_->dartIsolateContext()) {
+      context_->DrainMicrotasks();
+    }
+    
     document_ = nullptr;
     context_ = nullptr;
     env_.reset();
