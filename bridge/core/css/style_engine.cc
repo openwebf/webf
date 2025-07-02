@@ -65,11 +65,9 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
   // that keeps it alive.
   std::string key;
   if (text.length() >= 1024) {
-    std::hash<const char*> hasher;
-    size_t digest = hasher(text.c_str());
-    char digest_as_char[sizeof(digest)];
-    memcpy(digest_as_char, &digest, sizeof(digest));
-    key = digest_as_char;
+    std::hash<std::string> hasher;
+    size_t digest = hasher(text);
+    key = std::to_string(digest);
   } else {
     key = text;
   }
