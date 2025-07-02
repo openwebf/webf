@@ -7,6 +7,9 @@ export type <%= className %>Props = {
   '<%= propName %>': <%= generateReturnType(prop.type) %>;
     <% } %>
   <% }); %>
+  'id'?: string;
+  'class'?: string;
+  'style'?: string | Record<string, any>;
 }
 
 export interface <%= className %>Element {
