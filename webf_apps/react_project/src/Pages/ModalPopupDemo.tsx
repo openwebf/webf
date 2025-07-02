@@ -1,7 +1,6 @@
 import React, { useRef } from 'react';
-import FlutterCupertinoButton from '../CustomElements/FlutterCupertinoButton';
-import FlutterCupertinoModalPopup, { FlutterCupertinoModalPopupElement } from '../CustomElements/FlutterCupertinoModalPopup';
-import WebFListView from '../CustomElements/WebFListView';
+import { FlutterCupertinoButton, FlutterCupertinoModalPopup, FlutterCupertinoModalPopupElement } from '@openwebf/react-cupertino-ui';
+import { WebFListView } from '@openwebf/react-core-ui';
 
 interface ShareItem {
   icon: string;
