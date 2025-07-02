@@ -61,6 +61,10 @@ export interface WebFListViewProps {
    */
   onLoadmore?: (event: Event) => void;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

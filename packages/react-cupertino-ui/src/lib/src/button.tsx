@@ -26,6 +26,10 @@ export interface FlutterCupertinoButtonProps {
    */
   onClick?: (event: Event) => void;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

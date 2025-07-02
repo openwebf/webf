@@ -7,6 +7,10 @@ export interface FlutterCupertinoTabProps {
    */
   onChange?: (event: CustomEvent) => void;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;
@@ -64,6 +68,10 @@ export interface FlutterCupertinoTabItemProps {
    * @default undefined
    */
   title?: string;
+  /**
+   * HTML id attribute
+   */
+  id?: string;
   /**
    * Additional CSS styles
    */

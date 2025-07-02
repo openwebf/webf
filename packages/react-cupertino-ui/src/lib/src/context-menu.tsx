@@ -17,6 +17,10 @@ export interface FlutterCupertinoContextMenuProps {
    */
   enableHapticFeedback?: boolean;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

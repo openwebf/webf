@@ -17,6 +17,10 @@ export interface FlutterShimmerButtonProps {
    */
   radius?: string;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

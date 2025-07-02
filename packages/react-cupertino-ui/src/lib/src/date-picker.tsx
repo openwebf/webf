@@ -61,6 +61,10 @@ export interface FlutterCupertinoDatePickerProps {
    */
   onChange?: (event: CustomEvent) => void;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

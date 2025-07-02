@@ -12,6 +12,10 @@ export interface FlutterCupertinoIconProps {
    */
   label?: string;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

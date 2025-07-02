@@ -49,6 +49,10 @@ export interface WebFTableProps {
    */
   textBaseline?: 'alphabetic' | 'ideographic';
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

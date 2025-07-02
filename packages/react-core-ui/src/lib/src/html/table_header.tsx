@@ -10,6 +10,10 @@ export interface WebFTableHeaderProps {
    */
   sticky?: boolean;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;
