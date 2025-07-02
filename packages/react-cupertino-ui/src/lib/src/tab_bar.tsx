@@ -41,6 +41,10 @@ export interface FlutterCupertinoTabBarProps {
    */
   onTabchange?: (event: CustomEvent) => void;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;
@@ -134,6 +138,10 @@ export interface FlutterCupertinoTabBarItemProps {
    * @default undefined
    */
   path?: string;
+  /**
+   * HTML id attribute
+   */
+  id?: string;
   /**
    * Additional CSS styles
    */

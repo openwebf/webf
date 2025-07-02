@@ -1,6 +1,6 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
-interface FlutterCupertinoModelPopupMethods {
+interface FlutterCupertinoModalPopupMethods {
   show(): void;
   hide(): void;
 }
@@ -35,6 +35,10 @@ export interface FlutterCupertinoModalPopupProps {
    */
   onClose?: (event: CustomEvent) => void;
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;
@@ -47,19 +51,35 @@ export interface FlutterCupertinoModalPopupProps {
    */
   className?: string;
 }
+/**
+ * Element interface with methods accessible via ref
+ * @example
+ * ```tsx
+ * const ref = useRef<FlutterCupertinoModalPopupElement>(null);
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
+ * ```
+ */
 export interface FlutterCupertinoModalPopupElement extends WebFElementWithMethods<{
+  show(): void;
+  hide(): void;
 }> {}
 /**
  * FlutterCupertinoModalPopup - WebF FlutterCupertinoModalPopup component
  * 
  * @example
  * ```tsx
+ * const ref = useRef<FlutterCupertinoModalPopupElement>(null);
  * 
  * <FlutterCupertinoModalPopup
+ *   ref={ref}
  *   // Add props here
  * >
  *   Content
  * </FlutterCupertinoModalPopup>
+ * 
+ * // Call methods on the element
+ * ref.current?.finishRefresh('success');
  * ```
  */
 export const FlutterCupertinoModalPopup = createWebFComponent<FlutterCupertinoModalPopupElement, FlutterCupertinoModalPopupProps>({
@@ -89,65 +109,6 @@ export const FlutterCupertinoModalPopup = createWebFComponent<FlutterCupertinoMo
       },
     },
   ],
-  // Default prop values
-  defaultProps: {
-    // Add default values here
-  },
-});
-export interface FlutterCupertinoModelPopupProps {
-  /**
-   * Additional CSS styles
-   */
-  style?: React.CSSProperties;
-  /**
-   * Children elements
-   */
-  children?: React.ReactNode;
-  /**
-   * Additional CSS class names
-   */
-  className?: string;
-}
-/**
- * Element interface with methods accessible via ref
- * @example
- * ```tsx
- * const ref = useRef<FlutterCupertinoModelPopupElement>(null);
- * // Call methods on the element
- * ref.current?.finishRefresh('success');
- * ```
- */
-export interface FlutterCupertinoModelPopupElement extends WebFElementWithMethods<{
-  show(): void;
-  hide(): void;
-}> {}
-/**
- * FlutterCupertinoModelPopup - WebF FlutterCupertinoModelPopup component
- * 
- * @example
- * ```tsx
- * const ref = useRef<FlutterCupertinoModelPopupElement>(null);
- * 
- * <FlutterCupertinoModelPopup
- *   ref={ref}
- *   // Add props here
- * >
- *   Content
- * </FlutterCupertinoModelPopup>
- * 
- * // Call methods on the element
- * ref.current?.finishRefresh('success');
- * ```
- */
-export const FlutterCupertinoModelPopup = createWebFComponent<FlutterCupertinoModelPopupElement, FlutterCupertinoModelPopupProps>({
-  tagName: 'flutter-cupertino-model-popup',
-  displayName: 'FlutterCupertinoModelPopup',
-  // Map props to attributes
-  attributeProps: [
-  ],
-  // Convert prop names to attribute names if needed
-  attributeMap: {
-  },
   // Default prop values
   defaultProps: {
     // Add default values here

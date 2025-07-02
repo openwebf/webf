@@ -4,6 +4,10 @@ interface WebFTableRowMethods {
 }
 export interface WebFTableRowProps {
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

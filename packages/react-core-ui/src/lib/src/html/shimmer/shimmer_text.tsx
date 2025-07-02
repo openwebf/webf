@@ -2,6 +2,10 @@ import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "../../../../utils/createWebFComponent";
 export interface FlutterShimmerTextProps {
   /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
    * Additional CSS styles
    */
   style?: React.CSSProperties;

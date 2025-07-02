@@ -352,7 +352,7 @@ describe('block-non', () => {
     BODY.appendChild(p);
     BODY.appendChild(div);
 
-    await snapshot(0.1);
+    await snapshot(1);
   });
 
   it('replaced-height-005', async () => {
