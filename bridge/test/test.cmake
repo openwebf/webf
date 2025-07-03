@@ -36,7 +36,6 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/timing/performance_test.cc
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
-  ./foundation/ui_command_strategy_test.cc
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
 )

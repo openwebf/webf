@@ -129,12 +129,13 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      DartIsolateContext* dart_isolate_context,
                                                      double page_context_id,
                                                      int32_t sync_buffer_size,
+                                                     int8_t use_legacy_ui_command,
                                                      NativeWidgetElementShape* native_widget_element_shapes,
                                                      int32_t shape_len,
                                                      Dart_Handle dart_handle,
                                                      AllocateNewPageCallback result_callback) {
   DartIsolateContext::InitializeJSRuntime();
-  auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, page_context_id, native_widget_element_shapes,
+  auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, use_legacy_ui_command, page_context_id, native_widget_element_shapes,
                             shape_len, nullptr);
 
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
@@ -161,6 +162,7 @@ void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_
 
 void* DartIsolateContext::AddNewPage(double thread_identity,
                                      int32_t sync_buffer_size,
+                                     int8_t use_legacy_ui_command,
                                      void* native_widget_element_shapes,
                                      int32_t shape_len,
                                      Dart_Handle dart_handle,
@@ -183,7 +185,7 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
   }
 
   dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity,
-                        sync_buffer_size, static_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
+                        sync_buffer_size, use_legacy_ui_command, static_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
                         shape_len, dart_handle, result_callback);
   return nullptr;
 }
@@ -194,7 +196,7 @@ std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateC
                                                                     void* native_widget_element_shapes,
                                                                     int32_t shape_len) {
   DartIsolateContext::InitializeJSRuntime();
-  auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, page_context_id,
+  auto page = std::make_unique<WebFPage>(dart_isolate_context, false, sync_buffer_size, 0, page_context_id,
                                          reinterpret_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
                                          shape_len, nullptr);
 

@@ -12,6 +12,7 @@ namespace webf {
 
 SharedUICommand::SharedUICommand(ExecutingContext* context)
     : context_(context),
+      legacy_shared_ui_command_(std::make_unique<LegacySharedUICommand>(context)),
       package_buffer_(std::make_unique<UICommandPackageRingBuffer>(context)),
       read_buffer_(std::make_unique<UICommandBuffer>(context)),
       ui_command_sync_strategy_(std::make_unique<UICommandSyncStrategy>(this)) {}
@@ -27,6 +28,10 @@ void SharedUICommand::AddCommand(UICommand type,
                                  NativeBindingObject* native_binding_object,
                                  void* nativePtr2,
                                  bool request_ui_update) {
+  if (UseLegacySharedUICommand()) {
+    legacy_shared_ui_command_->AddCommand(type, args_01.release(), native_binding_object, nativePtr2, request_ui_update);
+    return;
+  }
   // For non-dedicated contexts, add directly to read buffer
   if (!context_->isDedicated()) {
     std::lock_guard<std::mutex> lock(read_buffer_mutex_);
@@ -42,12 +47,12 @@ void SharedUICommand::AddCommand(UICommand type,
   // The sync strategy will determine whether to add to waiting queue or flush to ring buffer
   if (type == UICommand::kFinishRecordingCommand) {
     // Calculate if we should request batch update based on waiting commands and ring buffer state
-    bool should_request_batch_update = ui_command_sync_strategy_->GetWaitingCommandsCount() > 0 ||
-                                      package_buffer_->HasUnflushedCommands();
+    bool should_request_batch_update =
+        ui_command_sync_strategy_->GetWaitingCommandsCount() > 0 || package_buffer_->HasUnflushedCommands();
 
     // Flush all waiting ui commands to ring buffer
     ui_command_sync_strategy_->FlushWaitingCommands();
-    
+
     // Flush current package if it has commands
     if (package_buffer_->HasUnflushedCommands()) {
       package_buffer_->FlushCurrentPackage();
@@ -58,10 +63,15 @@ void SharedUICommand::AddCommand(UICommand type,
     }
   }
 
-  ui_command_sync_strategy_->RecordUICommand(type, std::move(args_01), native_binding_object, nativePtr2, request_ui_update);
+  ui_command_sync_strategy_->RecordUICommand(type, std::move(args_01), native_binding_object, nativePtr2,
+                                             request_ui_update);
 }
 
 void* SharedUICommand::data() {
+  if (UseLegacySharedUICommand()) {
+    return legacy_shared_ui_command_->data();
+  }
+
   std::lock_guard<std::mutex> lock(read_buffer_mutex_);
 
   // Fill read buffer from ring buffer
@@ -80,12 +90,20 @@ void* SharedUICommand::data() {
 }
 
 void SharedUICommand::clear() {
+  if (UseLegacySharedUICommand()) {
+    legacy_shared_ui_command_->clear();
+    return;
+  }
+
   std::lock_guard<std::mutex> lock(read_buffer_mutex_);
   read_buffer_->clear();
   package_buffer_->Clear();
 }
 
 bool SharedUICommand::empty() {
+  if (UseLegacySharedUICommand()) {
+    return legacy_shared_ui_command_->empty();
+  }
   if (!context_->isDedicated()) {
     std::lock_guard<std::mutex> lock(read_buffer_mutex_);
     return read_buffer_->empty();
@@ -96,6 +114,9 @@ bool SharedUICommand::empty() {
 }
 
 int64_t SharedUICommand::size() {
+  if (UseLegacySharedUICommand()) {
+    return legacy_shared_ui_command_->size();
+  }
   std::lock_guard<std::mutex> lock(read_buffer_mutex_);
 
   int64_t total_size = read_buffer_->size();
@@ -110,13 +131,17 @@ int64_t SharedUICommand::size() {
 }
 
 void SharedUICommand::SyncAllPackages() {
+  if (UseLegacySharedUICommand()) {
+    legacy_shared_ui_command_->SyncToActive();
+    return;
+  }
   // First flush waiting commands from UICommandStrategy to ring buffer
   ui_command_sync_strategy_->FlushWaitingCommands();
   package_buffer_->FlushCurrentPackage();
 }
 
-void SharedUICommand::FlushCurrentPackages() {
-  package_buffer_->FlushCurrentPackage();
+bool SharedUICommand::UseLegacySharedUICommand() {
+  return context_->useLegacyUICommand();
 }
 
 void SharedUICommand::FillReadBuffer() {
@@ -131,12 +156,6 @@ void SharedUICommand::FillReadBuffer() {
     for (const auto& item : package->commands) {
       read_buffer_->addCommand(item, false);
     }
-  }
-}
-
-void SharedUICommand::RequestBatchUpdate() {
-  if (!package_buffer_->Empty()) {
-    context_->dartMethodPtr()->requestBatchUpdate(true, context_->contextId());
   }
 }
 

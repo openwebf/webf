@@ -36,6 +36,7 @@ class WebFPage final {
   WebFPage(DartIsolateContext* dart_isolate_context,
            bool is_dedicated,
            size_t sync_buffer_size,
+           int8_t use_legacy_ui_command,
            double context_id,
            NativeWidgetElementShape* naive_widget_element_shape,
            int32_t shape_len,

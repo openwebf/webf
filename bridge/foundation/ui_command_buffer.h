@@ -98,6 +98,7 @@ class UICommandBuffer {
   int64_t size_{0};
   int64_t max_size_{MAXIMUM_UI_COMMAND_SIZE};
   friend class SharedUICommand;
+  friend class LegacySharedUICommand;
 };
 
 }  // namespace webf

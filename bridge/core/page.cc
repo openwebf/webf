@@ -25,13 +25,14 @@ ConsoleMessageHandler WebFPage::consoleMessageHandler{nullptr};
 WebFPage::WebFPage(DartIsolateContext* dart_isolate_context,
                    bool is_dedicated,
                    size_t sync_buffer_size,
+                   int8_t use_legacy_ui_command,
                    double context_id,
                    NativeWidgetElementShape* naive_widget_element_shape,
                    int32_t shape_len,
                    const JSExceptionHandler& handler)
     : ownerThreadId(std::this_thread::get_id()), dart_isolate_context_(dart_isolate_context) {
   context_ = new ExecutingContext(
-      dart_isolate_context, is_dedicated, sync_buffer_size, context_id, naive_widget_element_shape, shape_len,
+      dart_isolate_context, is_dedicated, sync_buffer_size, use_legacy_ui_command, context_id, naive_widget_element_shape, shape_len,
       [](ExecutingContext* context, const char* message) {
         WEBF_LOG(ERROR) << message << std::endl;
         if (context->IsContextValid()) {
