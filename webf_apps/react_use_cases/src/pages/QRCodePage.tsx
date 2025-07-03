@@ -1,6 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { FlutterCupertinoButton, FlutterCupertinoTextarea, FlutterCupertinoPicker, FlutterCupertinoModalPopup } from '@openwebf/react-cupertino-ui';
+import { FlutterCupertinoButton, FlutterCupertinoTextarea, FlutterCupertinoPicker, FlutterCupertinoModalPopup, FlutterCupertinoModalPopupElement } from '@openwebf/react-cupertino-ui';
 import { createComponent } from '../utils/CreateComponent';
 import styles from './QRCodePage.module.css';
 
@@ -26,9 +26,9 @@ export const QRCodePage: React.FC = () => {
   const [showBgColorPicker, setShowBgColorPicker] = useState(false);
   const [showErrorLevelPicker, setShowErrorLevelPicker] = useState(false);
 
-  const fgColorPickerRef = useRef(null);
-  const bgColorPickerRef = useRef(null);
-  const errorLevelPickerRef = useRef(null);
+  const fgColorPickerRef = useRef<FlutterCupertinoModalPopupElement>(null);
+  const bgColorPickerRef = useRef<FlutterCupertinoModalPopupElement>(null);
+  const errorLevelPickerRef = useRef<FlutterCupertinoModalPopupElement>(null);
 
   const colorPresets = [
     { name: 'Black', value: '#000000' },
@@ -163,7 +163,6 @@ export const QRCodePage: React.FC = () => {
                   variant="tinted"
                   size="small"
                   onClick={() => {
-                    // @ts-ignore
                     fgColorPickerRef.current?.show()
                   }}
                   className={styles.colorButton}
@@ -179,7 +178,6 @@ export const QRCodePage: React.FC = () => {
                   variant="tinted"
                   size="small"
                   onClick={() => {
-                    // @ts-ignore
                     bgColorPickerRef.current?.show()
                   }}
                   className={styles.colorButton}
@@ -195,7 +193,6 @@ export const QRCodePage: React.FC = () => {
                   variant="filled"
                   size="small"
                   onClick={() => {
-                    // @ts-ignore
                     errorLevelPickerRef.current?.show()
                   }}
                   className={styles.selectButton}
@@ -265,7 +262,6 @@ export const QRCodePage: React.FC = () => {
       <FlutterCupertinoModalPopup
         ref={fgColorPickerRef}
         onClose={() => {
-          // @ts-ignore
           fgColorPickerRef.current?.hide();
         }}
       >
@@ -286,7 +282,6 @@ export const QRCodePage: React.FC = () => {
       <FlutterCupertinoModalPopup
         ref={bgColorPickerRef}
         onClose={() => {
-          // @ts-ignore
           bgColorPickerRef.current?.hide();
         }}
       >
@@ -306,8 +301,7 @@ export const QRCodePage: React.FC = () => {
       {/* Modal Popup for Error Level Selection */}
       <FlutterCupertinoModalPopup
         ref={errorLevelPickerRef}
-        onClose={() => {
-          // @ts-ignore
+        onClose={() => {  
           errorLevelPickerRef.current?.hide()
         }}
       >
