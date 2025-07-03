@@ -1,3 +1,72 @@
+## 0.22.0
+
+Features
+
+### WebF CLI Code Generator
+- New powerful CLI tool for generating type-safe bindings between Flutter/Dart and JavaScript frameworks
+- Auto-creation of projects with interactive prompts
+- Support for React and Vue framework code generation
+- NPM publishing support with custom registry options
+- Automatic metadata synchronization from Flutter package's pubspec.yaml
+- TypeScript type alias support and improved union type handling
+
+To use the new CLI code generator:
+```bash
+webf codegen [output-dir] --flutter-package-src=<path> [--framework=react|vue]
+```
+
+### UI Command Ring Buffer System
+- New ring buffer implementation for UI command system, improving performance
+- Configurable fallback to legacy UI command sync system
+- Enhanced memory management with reduced allocations
+- Better command batching and atomic operations
+
+### WebF DevTools Enhancements
+- New Network panel with request/response inspection
+- JSON viewer for complex data structures
+- Routes tab for router state inspection
+- Enhanced object property inspection
+- Request body inspection and image preview support
+- Performance metrics display in DevTools
+- Improved error handling and memory leak fixes
+
+### Component Libraries
+- New `@openwebf/react-core-ui` package for React components
+- New `@openwebf/react-cupertino-ui` package
+- Enhanced React Router integration with core UI components
+- Support for lazy rendering in core UI components
+
+### ES Module Support
+- Added ES module support to WebF
+- Support for `import.meta` and `import.meta.url`
+- HTTP/HTTPS import support
+- Better module loading with error recovery
+
+Others
+
+- Thread stack size increased to 8MB for JS workers
+
+Bug Fixed
+
+- Fixed multiple memory leaks:
+  - Date and RegExp objects in DevTools
+  - Inline CSS style declaration native bindings
+  - Event listener options
+  - Widget element shapes
+  - SharedNativeString in UI commands
+- Improved atomic_string memory safety
+- Fixed dashed border detection logic
+- Fixed flex layout issues with text-only content
+- Fixed loading display when init route link not ready
+- Support for table elements with configurable column sizes
+- Fixed table header scrolling in horizontal direction
+- Fixed ListView header/footer reset on refresh
+- Fixed event.target.value access from input elements
+- Fixed image object-fit position alignment
+- Fixed TypeScript compilation issues
+- Fixed OnScreen/OffScreen event ordering during rapid switching
+
+
 ## 0.21.7+2
 
 Bug Fixes
