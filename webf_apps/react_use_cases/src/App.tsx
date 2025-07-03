@@ -26,6 +26,7 @@ import { AlertPage } from './pages/AlertPage';
 import { ImagePreloadPage } from './pages/ImagePreloadPage';
 import { ThemeTogglePage } from './pages/ThemeTogglePage';
 import { FormAdvancedPage } from './pages/FormAdvancedPage';
+import { QRCodePage } from './pages/QRCodePage';
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
         <Route path="/typography" title="Typography" element={<TypographyPage />} />
         <Route path="/actionsheet" title="Action Sheets" element={<ActionSheetPage />} />
         <Route path="/video" title="Video Player" element={<VideoPage />} />
+        <Route path="/qrcode" title="QR Code Generator" element={<QRCodePage />} />
         <Route path="/fontface" title="Custom Fonts" element={<FontFacePage />} />
         <Route path="/native-interaction" title="Native Interaction" element={<NativeInteractionPage />} />
         <Route path="/flutter-interaction" title="Flutter Interaction" element={<FlutterInteractionPage />} />

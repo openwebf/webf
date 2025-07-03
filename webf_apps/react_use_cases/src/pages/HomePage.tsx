@@ -140,6 +140,13 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/qrcode')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>QR Code Generator</div>
+                <div className={styles.itemDesc}>Generate and customize QR codes with various data types and styling options.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/fontface')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Custom Fonts</div>
