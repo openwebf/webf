@@ -7,64 +7,6 @@
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
-include: package:lints/recommended.yaml
+include: package:flutter_lints/flutter.yaml
 
-analyzer:
-  errors:
-    invalid_assignment: error
-    prefer_single_quotes: error
-    slash_for_doc_comments: error
-    unnecessary_string_escapes: error
-    close_sinks: error
-    cancel_subscriptions: error
-    prefer_contains: error
-    prefer_is_empty: error
-    prefer_is_not_empty: error
-    file_names: error
-
-linter:
-  # The lint rules applied to this project can be customized in the
-  # section below to disable rules from the `package:lints/recommended.yaml`
-  # included above or to enable additional rules. A list of all available lints
-  # and their documentation is published at https://dart.dev/lints.
-  #
-  # Instead of disabling a lint rule for the entire project in the
-  # section below, it can also be suppressed for a single line of code
-  # or a specific dart file by using the `// ignore: name_of_lint` and
-  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
-  # producing the lint.
-  rules:
-    # Additional rules beyond the recommended set
-    - avoid_annotating_with_dynamic
-    - avoid_type_to_string
-    - prefer_single_quotes
-    - prefer_generic_function_type_aliases
-    - prefer_is_empty
-    - prefer_is_not_empty
-    - prefer_iterable_whereType
-    - prefer_adjacent_string_concatenation
-    - prefer_collection_literals
-    - prefer_conditional_assignment
-    - prefer_contains
-    - prefer_final_fields
-    - prefer_for_elements_to_map_fromIterable
-    - prefer_function_declarations_over_variables
-    - prefer_if_null_operators
-    - prefer_initializing_formals
-    - prefer_inlined_adds
-    - prefer_is_not_operator
-    - prefer_null_aware_operators
-    - prefer_spread_collections
-    - prefer_void_to_null
-    - cancel_subscriptions
-    - close_sinks
-    - slash_for_doc_comments
-    - annotate_overrides
-    - file_names
-    - camel_case_extensions
-    - camel_case_types
-    - void_checks
-    - no_duplicate_case_values
-    - hash_and_equals
-    - collection_methods_unrelated_type
-    - use_function_type_syntax_for_parameters
+# Additional configuration can be added here if needed in the future

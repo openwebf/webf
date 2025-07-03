@@ -10,13 +10,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart' as flutter_foundation;
 import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/console_store.dart';
-import 'package:webf/src/devtools/remote_object_service.dart';
 
 String uint16ToString(Pointer<Uint16> pointer, int length) {
   return String.fromCharCodes(pointer.asTypedList(length));
@@ -127,7 +127,7 @@ void _handleInvokeModuleResult(Object handle, Pointer<NativeValue> result) {
   var returnValue = fromNativeValue(context.currentView, result);
 
   if (enableWebFCommandLog && context.stopwatch != null) {
-    print(
+    bridgeLogger.fine(
         'Invoke module callback from(name: ${context.moduleName} method: ${context.method}, params: ${context.params}) '
         'return: $returnValue time: ${context.stopwatch!.elapsedMicroseconds}us');
   }
@@ -193,7 +193,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
     result = controller.module.moduleManager.invokeModule(moduleName, method, params, invokeModuleCallback);
   } catch (e, stack) {
     if (enableWebFCommandLog) {
-      print('Invoke module failed: $e\n$stack');
+      bridgeLogger.severe('Invoke module failed', e, stack);
     }
     String error = '$e\n$stack';
 
@@ -210,7 +210,7 @@ dynamic invokeModule(Pointer<Void> callbackContext, WebFController controller, S
   }
 
   if (enableWebFCommandLog) {
-    print('Invoke module name: $moduleName method: $method, params: $params '
+    bridgeLogger.fine('Invoke module name: $moduleName method: $method, params: $params '
         'return: $result time: ${stopwatch!.elapsedMicroseconds}us');
   }
 
@@ -252,7 +252,7 @@ void _reloadApp(double contextId) async {
   try {
     await controller.reload();
   } catch (e, stack) {
-    print('Dart Error: $e\n$stack');
+    bridgeLogger.severe('Dart Error', e, stack);
   }
 }
 
@@ -418,7 +418,7 @@ void _requestIdleCallback(int newIdleId, Pointer<Void> callbackContext, double c
       f(callbackContext, contextId, remainingTime);
     });
   } catch (e, stack) {
-    print('$e $stack');
+    bridgeLogger.severe('Error in requestIdleCallback', e, stack);
   }
 }
 
@@ -582,7 +582,7 @@ void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, 
     } else if (moduleUrl.startsWith('//')) {
       // Protocol-relative URL (e.g., //cdn.example.com/module.js)
       // Use https by default
-      resolvedUri = Uri.tryParse('https:' + moduleUrl);
+      resolvedUri = Uri.tryParse('https:$moduleUrl');
     } else if (moduleUrl.startsWith('/')) {
       // Absolute path - this is tricky when base is assets://
       // For HTTP imports from assets, we need to handle this specially
@@ -612,8 +612,8 @@ void _fetchJavaScriptESMModule(Pointer<Void> callbackContext, double contextId, 
           } else {
             basePath = '';
           }
-          String resolvedPath = basePath + moduleUrl;
-          resolvedUri = Uri.parse('assets:///' + resolvedPath);
+          String resolvedPath = '$basePath$moduleUrl';
+          resolvedUri = Uri.parse('assets:///$resolvedPath');
         } else {
           resolvedUri = baseUri.resolve(moduleUrl);
         }
@@ -713,15 +713,15 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
       String type = 'unknown';
 
       // Check the native tag directly for proper type identification
-      if (tag == JSValueType.TAG_NULL.index) {
+      if (tag == JSValueType.tagNull.index) {
         type = 'null';
-      } else if (tag == JSValueType.TAG_UNDEFINED.index) {
+      } else if (tag == JSValueType.tagUndefined.index) {
         type = 'undefined';
-      } else if (tag == JSValueType.TAG_BOOL.index) {
+      } else if (tag == JSValueType.tagBool.index) {
         type = 'boolean';
-      } else if (tag == JSValueType.TAG_INT.index || tag == JSValueType.TAG_FLOAT64.index) {
+      } else if (tag == JSValueType.tagInt.index || tag == JSValueType.tagFloat64.index) {
         type = 'number';
-      } else if (tag == JSValueType.TAG_STRING.index) {
+      } else if (tag == JSValueType.tagString.index) {
         type = 'string';
       }
 
@@ -747,11 +747,9 @@ void _onJSLogStructured(double contextId, int level, int argc, Pointer<NativeVal
   );
 
   // Also call the regular log handler
-  if (controller != null) {
-    JSLogHandler? jsLogHandler = controller.onJSLog;
-    if (jsLogHandler != null) {
-      jsLogHandler(level, displayMsg);
-    }
+  JSLogHandler? jsLogHandler = controller.onJSLog;
+  if (jsLogHandler != null) {
+    jsLogHandler(level, displayMsg);
   }
 
   // Free the native values

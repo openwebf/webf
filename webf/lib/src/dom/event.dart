@@ -200,7 +200,7 @@ class Event {
     bytes.asTypedList(methods.length).setAll(0, methods);
     event.ref.bytes = bytes;
     event.ref.length = methods.length;
-    event.ref.is_custom_event = isCustomEvent ? 1 : 0;
+    event.ref.isCustomEvent = isCustomEvent ? 1 : 0;
 
     return event.cast<Pointer>();
   }

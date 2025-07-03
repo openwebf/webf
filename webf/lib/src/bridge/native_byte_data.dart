@@ -8,8 +8,8 @@ import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
 
-// Private class that maps to the C++ struct memory layout
-class _NativeByteDataStruct extends Struct {
+// Class that maps to the C++ struct memory layout
+class NativeByteDataStruct extends Struct {
   /// Pointer to the byte array
   external Pointer<Uint8> bytes;
 
@@ -18,7 +18,7 @@ class _NativeByteDataStruct extends Struct {
   external int length;
 
   /// Pointer to the free function
-  external Pointer<NativeFunction<Void Function(Pointer<Void>)>> free_native_byte_data_;
+  external Pointer<NativeFunction<Void Function(Pointer<Void>)>> freeNativeByteData_;
 
   /// Optional context pointer for the free function
   external Pointer<Void> ptr;
@@ -28,7 +28,7 @@ class _NativeByteDataStruct extends Struct {
 /// It wraps a Uint8List (byte array) for efficient binary data transfer between Dart and C++.
 class NativeByteData implements Finalizable {
   // Pointer to the native struct
-  final Pointer<_NativeByteDataStruct> _pointer;
+  final Pointer<NativeByteDataStruct> _pointer;
 
   // Finalizer to clean up native resources when this object is garbage collected
   static final _finalizer = Finalizer(_finalize);
@@ -62,22 +62,22 @@ class NativeByteData implements Finalizable {
   int get length => _pointer.ref.length;
 
   /// Get the pointer to the underlying struct
-  Pointer<_NativeByteDataStruct> get pointer => _pointer;
+  Pointer<NativeByteDataStruct> get pointer => _pointer;
 
   /// Native finalizer callback
   static void _finalize(Pointer<Void> pointer) {
-    final nativeData = pointer.cast<_NativeByteDataStruct>();
+    final nativeData = pointer.cast<NativeByteDataStruct>();
 
     // Call the free function if provided
-    if (nativeData.ref.free_native_byte_data_ != nullptr && nativeData.ref.ptr != nullptr) {
-      final freeFunction = nativeData.ref.free_native_byte_data_
+    if (nativeData.ref.freeNativeByteData_ != nullptr && nativeData.ref.ptr != nullptr) {
+      final freeFunction = nativeData.ref.freeNativeByteData_
           .asFunction<void Function(Pointer<Void>)>();
       freeFunction(nativeData.ref.ptr);
     }
 
     // Free the bytes if allocated by Dart
     if (nativeData.ref.bytes != nullptr &&
-        nativeData.ref.free_native_byte_data_ == nullptr) {
+        nativeData.ref.freeNativeByteData_ == nullptr) {
       malloc.free(nativeData.ref.bytes);
     }
 

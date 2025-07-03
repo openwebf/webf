@@ -8,6 +8,7 @@ import 'package:collection/collection.dart';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/launcher.dart';
 
@@ -178,7 +179,7 @@ mixin StaticDefinedBindingObject<T> on BindingObject<T> {
 }
 
 abstract class DynamicBindingObject<T> extends BindingObject<T> {
-  DynamicBindingObject([BindingContext? context]) : super(context) {
+  DynamicBindingObject([super.context]) {
     initializeProperties(_dynamicProperties);
     initializeMethods(_dynamicMethods);
   }
@@ -300,7 +301,7 @@ dynamic getterBindingCall(BindingObject bindingObject, List<dynamic> args) {
   result = _getBindingObjectProperty(bindingObject, key);
 
   if (enableWebFCommandLog && stopwatch != null) {
-    print('$bindingObject getBindingProperty key: $key result: $result time: ${stopwatch.elapsedMicroseconds}us');
+    bridgeLogger.fine('$bindingObject getBindingProperty key: $key result: $result time: ${stopwatch.elapsedMicroseconds}us');
   }
 
   return result;
@@ -330,7 +331,7 @@ dynamic _setBindingObjectProperty(BindingObject bindingObject, String key, value
 dynamic setterBindingCall(BindingObject bindingObject, List<dynamic> args) {
   assert(args.length == 2);
   if (enableWebFCommandLog) {
-    print('$bindingObject setBindingProperty key: ${args[0]} value: ${args[1]}');
+    bridgeLogger.fine('$bindingObject setBindingProperty key: ${args[0]} value: ${args[1]}');
   }
 
   String key = args[0];
@@ -402,12 +403,12 @@ Future<void> _invokeBindingMethodFromNativeImpl(double contextId, Pointer<Native
       }
 
       if (enableWebFCommandLog) {
-        print(
+        bridgeLogger.fine(
             '$bindingObject invokeBindingMethod method: $method args: $values result: $result time: ${stopwatch!.elapsedMicroseconds}us');
       }
     }
   } catch (e, stack) {
-    print('$e\n$stack');
+    bridgeLogger.severe('Error in invokeBindingMethod', e, stack);
     rethrow;
   } finally {
     if (result is Future) {
