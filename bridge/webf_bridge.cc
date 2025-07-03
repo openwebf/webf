@@ -78,6 +78,7 @@ void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget
 
 void allocateNewPage(double thread_identity,
                      int32_t sync_buffer_size,
+                     int8_t use_legacy_ui_command,
                      void* ptr,
                      void* native_widget_element_shapes,
                      int32_t shape_len,
@@ -91,7 +92,7 @@ void allocateNewPage(double thread_identity,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
   static_cast<webf::DartIsolateContext*>(dart_isolate_context)
-      ->AddNewPage(thread_identity, sync_buffer_size, native_widget_element_shapes, shape_len, persistent_handle,
+      ->AddNewPage(thread_identity, sync_buffer_size, use_legacy_ui_command, native_widget_element_shapes, shape_len, persistent_handle,
                    result_callback);
 #if ENABLE_LOG
   WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPage Call END";

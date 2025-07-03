@@ -48,6 +48,7 @@ void* initDartIsolateContextSync(int64_t dart_port,
 WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
                      int32_t sync_buffer_size,
+                     int8_t use_legacy_ui_command,
                      void* dart_isolate_context,
                      void* native_widget_element_shapes,
                      int32_t shape_len,

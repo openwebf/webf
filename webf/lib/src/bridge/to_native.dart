@@ -668,9 +668,9 @@ int newPageId() {
 typedef NativeAllocateNewPageSync = Pointer<Void> Function(Double, Pointer<Void>, Pointer<WidgetElementShape>, Int32);
 typedef DartAllocateNewPageSync = Pointer<Void> Function(double, Pointer<Void>, Pointer<WidgetElementShape>, int);
 typedef HandleAllocateNewPageResult = Void Function(Handle object, Pointer<Void> page);
-typedef NativeAllocateNewPage = Void Function(Double, Int32, Pointer<Void>, Pointer<WidgetElementShape>, Int32 shapeLen,
+typedef NativeAllocateNewPage = Void Function(Double, Int32, Int8, Pointer<Void>, Pointer<WidgetElementShape>, Int32 shapeLen,
     Handle object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
-typedef DartAllocateNewPage = void Function(double, int, Pointer<Void>, Pointer<WidgetElementShape>, int shapeLen,
+typedef DartAllocateNewPage = void Function(double, int, int, Pointer<Void>, Pointer<WidgetElementShape>, int shapeLen,
     Object object, Pointer<NativeFunction<HandleAllocateNewPageResult>> handle_result);
 
 final DartAllocateNewPageSync _allocateNewPageSync =
@@ -693,7 +693,7 @@ class _AllocateNewPageContext {
   _AllocateNewPageContext(this.completer, this.contextId);
 }
 
-Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize) async {
+Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize, {bool useLegacyUICommand = false}) async {
   await waitingSyncTaskComplete(newContextId);
 
   Map<String, ElementCreator> widgetElementCreators = getAllWidgetElements();
@@ -704,7 +704,7 @@ Future<void> allocateNewPage(bool sync, double newContextId, int syncBufferSize)
     _AllocateNewPageContext context = _AllocateNewPageContext(completer, newContextId);
     Pointer<NativeFunction<HandleAllocateNewPageResult>> f = Pointer.fromFunction(_handleAllocateNewPageResult);
     _allocateNewPage(
-        newContextId, syncBufferSize, dartContext!.pointer, shapes, widgetElementCreators.length, context, f);
+        newContextId, syncBufferSize, useLegacyUICommand ? 1 : 0, dartContext!.pointer, shapes, widgetElementCreators.length, context, f);
     return completer.future;
   } else {
     Pointer<Void> page = _allocateNewPageSync(newContextId, dartContext!.pointer, shapes, widgetElementCreators.length);

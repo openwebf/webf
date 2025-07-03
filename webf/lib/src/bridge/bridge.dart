@@ -94,7 +94,12 @@ FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) a
   _initRemoteObjectService();
 
   double newContextId = runningThread.identity();
-  await allocateNewPage(runningThread is FlutterUIThread, newContextId, runningThread.syncBufferSize());
+  await allocateNewPage(
+    runningThread is FlutterUIThread, 
+    newContextId, 
+    runningThread.syncBufferSize(),
+    useLegacyUICommand: runningThread is DedicatedThread ? runningThread.useLegacyUICommand : false
+  );
 
   return newContextId;
 }

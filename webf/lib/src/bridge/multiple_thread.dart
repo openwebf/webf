@@ -46,9 +46,14 @@ class FlutterUIThread extends WebFThread {
 class DedicatedThread extends WebFThread {
   double? _identity;
   final int _syncBufferSize;
+  final bool _useLegacyUICommand;
 
-  DedicatedThread({ int syncBufferSize = 4 }): _syncBufferSize = syncBufferSize;
-  DedicatedThread._(this._identity, { int syncBufferSize = 4 }): _syncBufferSize = syncBufferSize;
+  DedicatedThread({ int syncBufferSize = 4, bool useLegacyUICommand = false }):
+    _syncBufferSize = syncBufferSize,
+    _useLegacyUICommand = useLegacyUICommand;
+  DedicatedThread._(this._identity, { int syncBufferSize = 4, bool useLegacyUICommand = false }):
+    _syncBufferSize = syncBufferSize,
+    _useLegacyUICommand = useLegacyUICommand;
 
   @override
   int syncBufferSize() {
@@ -59,6 +64,8 @@ class DedicatedThread extends WebFThread {
   double identity() {
     return _identity ?? (newPageId()).toDouble();
   }
+
+  bool get useLegacyUICommand => _useLegacyUICommand;
 }
 
 /// Executes multiple JavaScript contexts in a single thread.
@@ -68,8 +75,8 @@ class DedicatedThreadGroup {
 
   DedicatedThreadGroup();
 
-  DedicatedThread slave({ int syncBufferSize = 4 }) {
+  DedicatedThread slave({ int syncBufferSize = 4, bool useLegacyUICommand = false }) {
     String input = '$_identity.${_slaveCount++}';
-    return DedicatedThread._(double.parse(input), syncBufferSize: syncBufferSize);
+    return DedicatedThread._(double.parse(input), syncBufferSize: syncBufferSize, useLegacyUICommand: useLegacyUICommand);
   }
 }

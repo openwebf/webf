@@ -58,6 +58,7 @@ class DartIsolateContext {
   }
   void* AddNewPage(double thread_identity,
                    int32_t sync_buffer_size,
+                   int8_t use_legacy_ui_command,
                    void* native_widget_element_shapes,
                    int32_t shape_len,
                    Dart_Handle dart_handle,
@@ -81,6 +82,7 @@ class DartIsolateContext {
                                           DartIsolateContext* dart_isolate_context,
                                           double page_context_id,
                                           int32_t sync_buffer_size,
+                                          int8_t use_legacy_ui_command,
                                           NativeWidgetElementShape* native_widget_element_shapes,
                                           int32_t shape_len,
                                           Dart_Handle dart_handle,
