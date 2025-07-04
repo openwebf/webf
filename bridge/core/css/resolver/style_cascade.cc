@@ -7,6 +7,7 @@
 #include "code_gen/css_property_names.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_value.h"
+#include "core/css/properties/css_property.h"
 #include "core/css/resolver/style_builder.h"
 #include "core/css/resolver/style_resolver_state.h"
 

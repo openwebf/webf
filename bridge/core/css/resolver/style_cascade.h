@@ -60,8 +60,7 @@ class StyleCascade {
 
   StyleResolverState& state_;
   
-  // Bitset to track which properties have been applied
-  // TODO: Use a proper bitset class
+  // Vector to track which properties have been applied
   std::vector<bool> applied_properties_;
   
   // Track if we're applying important properties
