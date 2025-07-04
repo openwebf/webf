@@ -324,6 +324,9 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/resolver/matched_properties_cache.cc
     core/css/resolver/cascade_map.cc
     core/css/resolver/cascade_resolver.cc
+    core/css/resolver/element_resolve_context.cc
+    core/css/resolver/style_adjuster.cc
+    core/css/resolver/style_builder_converter.cc
     core/css/element_rule_collector.cc
     core/css/rule_set.cc
     core/css/selector_filter.cc

@@ -33,7 +33,8 @@
 namespace webf {
 
 StyleResolverState::StyleResolverState(Document& document, Element& element)
-    : document_(&document),
+    : element_context_(element),
+      document_(&document),
       element_(&element),
       selector_checker_(SelectorChecker::kResolvingStyle),
       parent_style_(nullptr),

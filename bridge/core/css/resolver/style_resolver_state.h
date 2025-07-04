@@ -34,7 +34,7 @@
 #include "core/css/properties/css_property.h"
 #include "core/css/selector_checker.h"
 //#include "core/css/resolver/css_to_style_map.h"
-//#include "core/css/resolver/element_resolve_context.h"
+#include "core/css/resolver/element_resolve_context.h"
 //#include "core/css/resolver/element_style_resources.h"
 #include "core/css/resolver/font_builder.h"
 //#include "core/css/style_recalc_context.h"
@@ -85,9 +85,9 @@ class StyleResolverState {
   // See inside_link_.
   EInsideLink InsideLink() const;
 
-  //  const ElementResolveContext& ElementContext() const {
-  //    return element_context_;
-  //  }
+  const ElementResolveContext& ElementContext() const {
+    return element_context_;
+  }
 
   void SetStyle(const ComputedStyle& style) {
     // FIXME: Improve RAII of StyleResolverState to remove this function.
@@ -258,8 +258,8 @@ class StyleResolverState {
 
  private:
   //  CSSToLengthConversionData UnzoomedLengthConversionData(const FontSizeStyle&);
-  //
-  //  ElementResolveContext element_context_;
+  
+  ElementResolveContext element_context_;
   Document* document_;
   Element* element_;
   PseudoId pseudo_element_id_ = PseudoId::kPseudoIdNone;

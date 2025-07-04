@@ -44,6 +44,7 @@
 #include "core/css/resolver/style_builder.h"
 #include "core/css/resolver/style_cascade.h"
 #include "core/css/resolver/style_resolver_state.h"
+#include "core/css/resolver/style_adjuster.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/dom/document.h"
@@ -263,6 +264,13 @@ void StyleResolver::ApplyMatchedPropertiesAndCustomPropertyAnimations(
   
   // Update color scheme if needed
   UpdateColorScheme(state);
+  
+  // Apply style adjustments
+  StyleRequest style_request;  // TODO: Get proper style request
+  StyleAdjuster::AdjustComputedStyle(const_cast<ElementResolveContext&>(state.ElementContext()), 
+                                     style_request,
+                                     &state.GetElement(),
+                                     state.StyleBuilder());
 }
 
 bool StyleResolver::ApplyAnimatedStyle(
