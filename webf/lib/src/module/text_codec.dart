@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -36,14 +35,14 @@ class TextCodecModule extends BaseModule {
           }
           codec = utf8;
       }
-      
+
       // Handle BOM for UTF-8
       if (!ignoreBOM && encoding.toLowerCase().startsWith('utf-8') && bytes.length >= 3) {
         if (bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF) {
           bytes = bytes.sublist(3);
         }
       }
-      
+
       return codec.decode(bytes);
     } catch (e) {
       if (fatal) {
@@ -62,9 +61,7 @@ class TextCodecModule extends BaseModule {
   void dispose() {}
 
   @override
-  Future<dynamic> invoke(String method, List<dynamic> params) {
-    Completer<dynamic> completer = Completer();
-    
+  dynamic invoke(String method, List<dynamic> params) {
     try {
       if (method == 'textDecoder') {
         // params: [bytes, encoding, fatal, ignoreBOM]
@@ -72,22 +69,16 @@ class TextCodecModule extends BaseModule {
         String encoding = params[1] as String;
         bool fatal = params[2] as bool;
         bool ignoreBOM = params[3] as bool;
-        
-        String result = TextCodecModule.textDecoder(bytes, encoding, fatal, ignoreBOM);
-        completer.complete(result);
+        return TextCodecModule.textDecoder(bytes, encoding, fatal, ignoreBOM);
       } else if (method == 'textEncoder') {
         // params: [text]
         String text = params[0] as String;
-        
-        List<int> result = TextCodecModule.textEncoder(text);
-        completer.complete(result);
+        return TextCodecModule.textEncoder(text);
       } else {
-        completer.completeError('Unknown method: $method');
+        throw Exception('Unknown method: $method');
       }
-    } catch (e, stack) {
-      completer.completeError(e, stack);
+    } catch (e) {
+      rethrow;
     }
-    
-    return completer.future;
   }
 }

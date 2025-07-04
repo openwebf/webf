@@ -67,7 +67,7 @@ export class TextDecoder {
       throw new TypeError('Input must be a BufferSource');
     }
 
-    return webf.invokeModule('TextCodec', 'textDecoder', [bytes, this._encoding, this._fatal, this._ignoreBOM]);
+    return webf.invokeModule('TextCodec', 'textDecoder', bytes, this._encoding, this._fatal, this._ignoreBOM);
   }
 }
 
@@ -77,7 +77,7 @@ export class TextEncoder {
   }
 
   encode(input: string = ''): Uint8Array {
-    const bytes: number[] = webf.invokeModule('TextCodec', 'textEncoder', [input]);
+    const bytes: number[] = webf.invokeModule('TextCodec', 'textEncoder', input);
     return new Uint8Array(bytes);
   }
 
@@ -88,7 +88,7 @@ export class TextEncoder {
 
     const encoded = this.encode(source);
     const written = Math.min(encoded.length, destination.length);
-    
+
     for (let i = 0; i < written; i++) {
       destination[i] = encoded[i];
     }
@@ -99,7 +99,7 @@ export class TextEncoder {
     for (let i = 0; i < source.length && bytesProcessed < written; i++) {
       const codePoint = source.codePointAt(i);
       if (codePoint === undefined) break;
-      
+
       // Calculate UTF-8 byte length for this code point
       let utf8Length: number;
       if (codePoint < 0x80) {
@@ -111,7 +111,7 @@ export class TextEncoder {
       } else {
         utf8Length = 4;
       }
-      
+
       if (bytesProcessed + utf8Length <= written) {
         read += (codePoint > 0xFFFF) ? 2 : 1; // Surrogate pairs count as 2 UTF-16 code units
         bytesProcessed += utf8Length;
