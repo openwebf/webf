@@ -12,8 +12,10 @@
 #include "core/frame/window.h"
 #include "core/html/custom/widget_element_shape.h"
 #include "core/html/html_html_element.h"
+#include "core/html/html_script_element.h"
 #include "core/html/parser/html_parser.h"
 #include "event_factory.h"
+#include "html_element_type_helper.h"
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
 #include "page.h"
@@ -164,10 +166,10 @@ uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* u
   return context_->DumpByteCode(script, static_cast<uint32_t>(length), url, is_module, byteLength);
 }
 
-bool WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength) {
+bool WebFPage::evaluateByteCode(uint8_t* bytes, size_t byteLength, HTMLScriptElement* script_element) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateByteCode(bytes, byteLength);
+  return context_->EvaluateByteCode(bytes, byteLength, script_element);
 }
 
 std::thread::id WebFPage::currentThread() const {
@@ -242,12 +244,22 @@ static void ReturnEvaluateQuickjsByteCodeResultToDart(Dart_PersistentHandle pers
 void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
                                                uint8_t* bytes,
                                                int32_t byteLen,
+                                               void* script_element_,
                                                Dart_PersistentHandle persistent_handle,
                                                EvaluateQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  auto script_element_native_binding_object = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
+  auto binding_object = BindingObject::From(script_element_native_binding_object);
+  auto* event_target = DynamicTo<EventTarget>(binding_object);
+  auto* node = DynamicTo<Node>(event_target);
+  auto* html_element = DynamicTo<HTMLElement>(node);
+  auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
+
   assert(std::this_thread::get_id() == page->currentThread());
 
-  bool is_success = page->evaluateByteCode(bytes, byteLen);
+  WEBF_LOG(VERBOSE)  << "" << script_element->tagName().Character8() << std::endl;
+
+  bool is_success = page->evaluateByteCode(bytes, byteLen, script_element);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateQuickjsByteCodeResultToDart,
                                                        persistent_handle, result_callback, is_success);

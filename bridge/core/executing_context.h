@@ -60,6 +60,7 @@ struct NativeBindingObject;
 class ScriptWrappable;
 class NativeByteDataFinalizerContext;
 class ScriptPromiseResolver;
+class HTMLScriptElement;
 
 using JSExceptionHandler = std::function<void(ExecutingContext* context, const char* message)>;
 using MicrotaskCallback = void (*)(void* data);
@@ -94,6 +95,7 @@ class ExecutingContext {
   bool EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine);
   bool EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine);
   bool EvaluateByteCode(const uint8_t* bytes, size_t byteLength);
+  bool EvaluateByteCode(const uint8_t* bytes, size_t byteLength, HTMLScriptElement* script_element);
   bool EvaluateModule(const char* code,
                       size_t code_len,
                       uint8_t** parsed_bytecodes,
@@ -175,7 +177,7 @@ class ExecutingContext {
   FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const { return public_method_ptr_.get(); }
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
-  
+
   // Get RemoteObjectRegistry for this context
   RemoteObjectRegistry* GetRemoteObjectRegistry();
 

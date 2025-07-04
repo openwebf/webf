@@ -40,7 +40,7 @@ class ScriptRunner {
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
-  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle,
+  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle, ScriptElement scriptElement,
       {bool async = false, bool isModule = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
@@ -57,7 +57,7 @@ class ScriptRunner {
         throw FlutterError('Script code are not valid to evaluate.');
       }
     } else if (bundle.isBytecode) {
-      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!);
+      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!, scriptElement: scriptElement);
       if (!result) {
         throw FlutterError('Bytecode are not valid to execute.');
       }
@@ -125,7 +125,7 @@ class ScriptRunner {
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
       try {
-        await _evaluateScriptBundle(_contextId, bundle, async: async, isModule: isModule);
+        await _evaluateScriptBundle(_contextId, bundle, element, async: async, isModule: isModule);
       } catch (err, stack) {
         debugPrint('$err\n$stack');
         _document.decrementDOMContentLoadedEventDelayCount();

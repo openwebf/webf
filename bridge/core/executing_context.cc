@@ -19,6 +19,7 @@
 #include "core/dom/document.h"
 #include "core/dom/mutation_observer.h"
 #include "core/events/error_event.h"
+#include "core/html/html_script_element.h"
 #include "core/events/promise_rejection_event.h"
 #include "event_type_names.h"
 #include "foundation/logging.h"
@@ -111,7 +112,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
   ui_command_buffer_.AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
 
   DrawCanvasElementIfNeeded();
-  
+
   // Register this context for DevTools access
   devtools_internal::RegisterExecutingContext(this);
 }
@@ -126,7 +127,7 @@ ExecutingContext::~ExecutingContext() {
     remote_object_registry_->ClearContext(this);
     remote_object_registry_.reset();  // Explicitly destroy the registry
   }
-  
+
   // Unregister this context from DevTools access
   devtools_internal::UnregisterExecutingContext(this);
 
@@ -278,6 +279,10 @@ bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, c
 }
 
 bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength) {
+  return EvaluateByteCode(bytes, byteLength, nullptr);
+}
+
+bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength, HTMLScriptElement* script_element) {
   // Validate input
   if (bytes == nullptr || byteLength == 0) {
     return true; // Empty bytecode is not an error
@@ -289,6 +294,14 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength)
     exception_state.ThrowException(ctx(), ErrorType::RangeError, "Bytecode size exceeds maximum limit");
     HandleException(exception_state);
     return false;
+  }
+
+  // Set document.currentScript if script element is provided
+  HTMLScriptElement* previous_current_script = nullptr;
+  if (script_element && document()) {
+    previous_current_script = document()->currentScript();
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(script_element);
   }
 
   JSValue obj, val;
@@ -305,6 +318,13 @@ bool ExecutingContext::EvaluateByteCode(const uint8_t* bytes, size_t byteLength)
   bool success = HandleException(&val);
 
   JS_FreeValue(script_state_.ctx(), val);
+
+  // Restore previous currentScript
+  if (script_element && document()) {
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(previous_current_script);
+  }
+
   return success;
 }
 

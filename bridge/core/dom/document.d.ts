@@ -5,6 +5,8 @@ import {DocumentFragment} from "./document_fragment";
 import {HTMLHeadElement} from "../html/html_head_element";
 import {HTMLBodyElement} from "../html/html_body_element";
 import {HTMLHtmlElement} from "../html/html_html_element";
+import {HTMLScriptElement} from "../html/html_script_element";
+import {HTMLElement} from '../html/html_element';
 import {Element} from "./element";
 import {Event} from "./events/event";
 import {HTMLAllCollection} from "../html/html_all_collection";
@@ -30,6 +32,7 @@ interface Document extends Node, ParentNode, GlobalEventHandlers {
   readonly visibilityState: SupportAsync<DartImpl<string>>;
   readonly hidden: SupportAsync<DartImpl<boolean>>;
   readonly defaultView: Window;
+  readonly currentScript: HTMLScriptElement | null;
 
   createElement(tagName: string): HTMLElement;
   createElementNS(uri: string | null, tagName: string): Element;

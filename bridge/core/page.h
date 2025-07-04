@@ -20,6 +20,7 @@ namespace webf {
 class WebFPage;
 class WidgetElementShape;
 class DartContext;
+class HTMLScriptElement;
 
 using JSBridgeDisposeCallback = void (*)(WebFPage* bridge);
 using ConsoleMessageHandler = std::function<void(void* ctx, const std::string& message, int logLevel)>;
@@ -68,6 +69,7 @@ class WebFPage final {
   static void EvaluateQuickjsByteCodeInternal(void* page_,
                                               uint8_t* bytes,
                                               int32_t byteLen,
+                                              void* script_element_,
                                               Dart_PersistentHandle persistent_handle,
                                               EvaluateQuickjsByteCodeCallback result_callback);
   static void ParseHTMLInternal(void* page_,
@@ -111,7 +113,7 @@ class WebFPage final {
   bool parseHTML(const char* code, size_t length);
   void evaluateScript(const char* script, size_t length, const char* url, int startLine);
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, bool is_module, uint64_t* byteLength);
-  bool evaluateByteCode(uint8_t* bytes, size_t byteLength);
+  bool evaluateByteCode(uint8_t* bytes, size_t byteLength, HTMLScriptElement* script_element = nullptr);
 
   std::thread::id currentThread() const;
 

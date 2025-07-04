@@ -379,9 +379,9 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   }
 }
 
-typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen, Handle object,
+typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen, Pointer<NativeBindingObject>, Handle object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
-typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen, Object object,
+typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen, Pointer<NativeBindingObject>, Object object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
 
 typedef NativeEvaluateQuickjsByteCodeCallback = Void Function(Handle object, Int8 result);
@@ -403,7 +403,7 @@ void handleEvaluateQuickjsByteCodeResult(Object handle, int result) {
   context.completer.complete(result == 1);
 }
 
-Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
+Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -417,7 +417,9 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
   Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> nativeCallback =
       Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
 
-  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, context, nativeCallback);
+  Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
+
+  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, scriptElementPtr, context, nativeCallback);
 
   return completer.future;
 }

@@ -17,6 +17,7 @@ namespace webf {
 class HTMLBodyElement;
 class HTMLHeadElement;
 class HTMLHtmlElement;
+class HTMLScriptElement;
 class HTMLAllCollection;
 class Text;
 class Comment;
@@ -99,6 +100,8 @@ class Document : public ContainerNode, public TreeScope {
   void setBody(HTMLBodyElement* body, ExceptionState& exception_state);
   [[nodiscard]] HTMLHeadElement* head() const;
   void setHead(HTMLHeadElement* head, ExceptionState& exception_state);
+  [[nodiscard]] HTMLScriptElement* currentScript() const;
+  void setCurrentScript(HTMLScriptElement* script);
 
   ScriptValue location() const;
 
@@ -134,6 +137,7 @@ class Document : public ContainerNode, public TreeScope {
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
+  Member<HTMLScriptElement> current_script_{nullptr};
 };
 
 template <>

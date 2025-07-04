@@ -6,6 +6,7 @@
 #include <core/binding_object.h>
 
 #include "core/dart_isolate_context.h"
+#include "core/html/html_script_element.h"
 #include "core/html/parser/html_parser.h"
 #include "core/page.h"
 #include "foundation/native_type.h"
@@ -194,16 +195,18 @@ void dumpQuickjsByteCode(void* page_,
 void evaluateQuickjsByteCode(void* page_,
                              uint8_t* bytes,
                              int32_t byteLen,
+                             void* script_element_,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dart] evaluateQuickjsByteCodeWrapper call" << std::endl;
 #endif
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  auto script_element = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
   page->dartIsolateContext()->dispatcher()->PostToJs(page->isDedicated(), static_cast<int32_t>(page->contextId()),
                                                      webf::WebFPage::EvaluateQuickjsByteCodeInternal, page_, bytes,
-                                                     byteLen, persistent_handle, result_callback);
+                                                     byteLen, script_element, persistent_handle, result_callback);
 }
 
 void parseHTML(void* page_,

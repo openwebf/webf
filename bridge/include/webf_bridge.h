@@ -100,6 +100,7 @@ WEBF_EXPORT_C
 void evaluateQuickjsByteCode(void* page,
                              uint8_t* bytes,
                              int32_t byteLen,
+                             void* script_element_,
                              Dart_Handle dart_handle,
                              EvaluateQuickjsByteCodeCallback result_callback);
 
