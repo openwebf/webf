@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/foundation.dart';
 import '../../webf_test.dart';
+import '../widget/test_utils.dart';
 
 void main() {
   setUp(() {
@@ -26,78 +27,55 @@ void main() {
   group('Flex Layout', () {
     // Important: WebF uses border-box as the default box-sizing (not content-box)
     // This means padding and border are included in the element's width/height
+    
+    testWidgets('simple layout test using utility', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        html: '''
+          <div id="box" style="width: 200px; height: 100px; padding: 10px; background: red;">
+            Test Box
+          </div>
+        ''',
+      );
+      
+      final box = prepared.getElementById('box');
+      
+      // With border-box, width includes padding
+      expect(box.offsetWidth, equals(200.0));
+      expect(box.offsetHeight, equals(100.0));
+    });
 
     testWidgets('measure layout and text size in flex container', (WidgetTester tester) async {
-      WebFController? controller;
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                width: 300px;
+                background: #f0f0f0;
+                padding: 10px;
+              ">
+                <div id="text1" style="background: red; padding: 5px; font-size: 16px;">Short</div>
+                <div id="text2" style="background: blue; padding: 5px; font-size: 20px;">Medium length</div>
+                <div id="text3" style="background: green; padding: 5px; font-size: 14px;">This is a much longer text content</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
 
-      await tester.runAsync(() async {
-        controller = await WebFControllerManager.instance.addWithPreload(
-          name: 'flex-measure-test',
-          createController: () => WebFController(
-            viewportWidth: 360,
-            viewportHeight: 640,
-          ),
-          bundle: WebFBundle.fromContent('''
-            <html>
-              <body style="margin: 0; padding: 0;">
-                <div id="container" style="
-                  display: flex;
-                  flex-direction: column;
-                  align-items: flex-start;
-                  width: 300px;
-                  background: #f0f0f0;
-                  padding: 10px;
-                ">
-                  <div id="text1" style="background: red; padding: 5px; font-size: 16px;">Short</div>
-                  <div id="text2" style="background: blue; padding: 5px; font-size: 20px;">Medium length</div>
-                  <div id="text3" style="background: green; padding: 5px; font-size: 14px;">This is a much longer text content</div>
-                </div>
-              </body>
-            </html>
-          ''', contentType: htmlContentType),
-        );
-        await controller!.controlledInitCompleter.future;
-      });
-
-      final webf = WebF.fromControllerName(controllerName: 'flex-measure-test');
-      await tester.pumpWidget(webf);
-
-      // Wait for initial rendering
-      await tester.pump();
-      await tester.pump(Duration(milliseconds: 100));
-
-      await tester.runAsync(() async {
-        await controller!.controllerPreloadingCompleter.future;
-      });
-
-      // Additional frames to ensure layout
-      await tester.pump();
-      await tester.pump(Duration(milliseconds: 100));
-      await tester.pumpFrames(webf, Duration(milliseconds: 100));
-
-      await tester.runAsync(() async {
-        return Future.wait([
-          controller!.controllerOnDOMContentLoadedCompleter.future,
-          controller!.viewportLayoutCompleter.future,
-        ]);
-      });
-
-      // Get elements
-      final container = controller!.view.document.getElementById(['container']);
-      final text1 = controller!.view.document.getElementById(['text1']);
-      final text2 = controller!.view.document.getElementById(['text2']);
-      final text3 = controller!.view.document.getElementById(['text3']);
-
-      expect(container, isNotNull);
-      expect(text1, isNotNull);
-      expect(text2, isNotNull);
-      expect(text3, isNotNull);
+      // Get elements using the helper
+      final container = prepared.getElementById('container');
+      final text1 = prepared.getElementById('text1');
+      final text2 = prepared.getElementById('text2');
+      final text3 = prepared.getElementById('text3');
 
       // Force layout flush to ensure measurements are available
-      container!.flushLayout();
-      text1!.flushLayout();
-      text2!.flushLayout();
-      text3!.flushLayout();
+      WebFWidgetTestUtils.flushLayout([container, text1, text2, text3]);
 
       // Try to get measurements
       final containerWidth = container.offsetWidth;
