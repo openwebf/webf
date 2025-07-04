@@ -23,6 +23,7 @@ import { WebSocket } from './websocket'
 import { ResizeObserver } from './resize-observer';
 import { _AbortController, _AbortSignal } from './abort-signal';
 import { BroadcastChannel } from './broadcast-channel';
+import { TextDecoder, TextEncoder } from './text-codec';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -47,6 +48,8 @@ defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
 defineGlobalProperty('BroadcastChannel', BroadcastChannel);
+defineGlobalProperty('TextDecoder', TextDecoder);
+defineGlobalProperty('TextEncoder', TextEncoder);
 
 export type PolyFillGlobal = {
   console: Console,
@@ -66,7 +69,9 @@ export type PolyFillGlobal = {
   WebSocket: WebSocket,
   ResizeObserver: ResizeObserver,
   AbortSignal: _AbortSignal,
-  AbortController: _AbortController
+  AbortController: _AbortController,
+  TextDecoder: TextDecoder,
+  TextEncoder: TextEncoder
 };
 
 export {
@@ -90,7 +95,9 @@ export {
   webf,
   Webf,
   WebSocket,
-  ResizeObserver
+  ResizeObserver,
+  TextDecoder,
+  TextEncoder
 }
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {
