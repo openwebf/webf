@@ -241,6 +241,8 @@ inline unsigned CSSSelector::SpecificityForOneSelector() const {
         return 0;
       }
       return kTagSpecificity;
+    case kUniversalTag:
+      return 0;
     case kInvalidList:
     case kPagePseudoClass:
       NOTREACHED_IN_MIGRATION();
@@ -380,7 +382,17 @@ PseudoId CSSSelector::GetPseudoId(PseudoType type) {
     case kPseudoHorizontal:
     case kPseudoHost:
     case kPseudoHostContext:
-    case kPseudoHostHasAppearance:
+    case kPseudoCheckMark:
+    case kPseudoColumn:
+    case kPseudoHasInterest:
+    case kPseudoHasPartialInterest:
+    case kPseudoHasSlotted:
+    case kPseudoHostHasNonAutoAppearance:
+    case kPseudoPermissionElementInvalidStyle:
+    case kPseudoPermissionElementOccluded:
+    case kPseudoTargetCurrent:
+    case kPseudoTargetOfInterest:
+    case kPseudoTargetOfPartialInterest:
     case kPseudoHover:
     case kPseudoInRange:
     case kPseudoIncrement:
@@ -482,15 +494,22 @@ constexpr static NameToPseudoStruct kPseudoTypeWithoutArgumentsMap[] = {
     {"-internal-autofill-selected", CSSSelector::kPseudoAutofillSelected},
     {"-internal-dialog-in-top-layer", CSSSelector::kPseudoDialogInTopLayer},
     {"-internal-has-datalist", CSSSelector::kPseudoHasDatalist},
+    {"-internal-has-interest", CSSSelector::kPseudoHasInterest},
+    {"-internal-has-partial-interest", CSSSelector::kPseudoHasPartialInterest},
+    {"-internal-has-slotted", CSSSelector::kPseudoHasSlotted},
     {"-internal-is-html", CSSSelector::kPseudoIsHtml},
     {"-internal-list-box", CSSSelector::kPseudoListBox},
     {"-internal-media-controls-overlay-cast-button", CSSSelector::kPseudoWebKitCustomElement},
     {"-internal-multi-select-focus", CSSSelector::kPseudoMultiSelectFocus},
+    {"-internal-permission-element-invalid-style", CSSSelector::kPseudoPermissionElementInvalidStyle},
+    {"-internal-permission-element-occluded", CSSSelector::kPseudoPermissionElementOccluded},
     {"-internal-popover-in-top-layer", CSSSelector::kPseudoPopoverInTopLayer},
     {"-internal-relative-anchor", CSSSelector::kPseudoRelativeAnchor},
     {"-internal-selector-fragment-anchor", CSSSelector::kPseudoSelectorFragmentAnchor},
-    {"-internal-shadow-host-has-appearance", CSSSelector::kPseudoHostHasAppearance},
+    {"-internal-shadow-host-has-non-auto-appearance", CSSSelector::kPseudoHostHasNonAutoAppearance},
     {"-internal-spatial-navigation-focus", CSSSelector::kPseudoSpatialNavigationFocus},
+    {"-internal-target-of-interest", CSSSelector::kPseudoTargetOfInterest},
+    {"-internal-target-of-partial-interest", CSSSelector::kPseudoTargetOfPartialInterest},
     {"-internal-video-persistent", CSSSelector::kPseudoVideoPersistent},
     {"-internal-video-persistent-ancestor", CSSSelector::kPseudoVideoPersistentAncestor},
     {"-webkit-any-link", CSSSelector::kPseudoWebkitAnyLink},
@@ -513,8 +532,10 @@ constexpr static NameToPseudoStruct kPseudoTypeWithoutArgumentsMap[] = {
     {"autofill", CSSSelector::kPseudoAutofill},
     {"backdrop", CSSSelector::kPseudoBackdrop},
     {"before", CSSSelector::kPseudoBefore},
+    {"check-mark", CSSSelector::kPseudoCheckMark},
     {"checked", CSSSelector::kPseudoChecked},
     {"closed", CSSSelector::kPseudoClosed},
+    {"column", CSSSelector::kPseudoColumn},
     {"corner-present", CSSSelector::kPseudoCornerPresent},
     {"cue", CSSSelector::kPseudoWebKitCustomElement},
     {"current", CSSSelector::kPseudoCurrent},
@@ -584,6 +605,7 @@ constexpr static NameToPseudoStruct kPseudoTypeWithoutArgumentsMap[] = {
     {"spelling-error", CSSSelector::kPseudoSpellingError},
     {"start", CSSSelector::kPseudoStart},
     {"target", CSSSelector::kPseudoTarget},
+    {"target-current", CSSSelector::kPseudoTargetCurrent},
     {"target-text", CSSSelector::kPseudoTargetText},
     {"user-invalid", CSSSelector::kPseudoUserInvalid},
     {"user-valid", CSSSelector::kPseudoUserValid},
@@ -658,11 +680,11 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const AtomicString& name,
 void CSSSelector::Show(int indent) const {
   printf("%*sSelectorText(): %s\n", indent, "", SelectorText().c_str());
   printf("%*smatch_: %d\n", indent, "", Match());
-  if (Match() != kTag) {
+  if (Match() != kTag && Match() != kUniversalTag) {
     printf("%*sValue(): %s\n", indent, "", Value().ToStdString().c_str());
   }
   printf("%*sGetPseudoType(): %d\n", indent, "", GetPseudoType());
-  if (Match() == kTag) {
+  if (Match() == kTag || Match() == kUniversalTag) {
     printf("%*sTagQName().LocalName(): %s\n", indent, "", TagQName().LocalName().ToStdString().c_str());
   }
   printf("%*sIsAttributeSelector(): %d\n", indent, "", IsAttributeSelector());
@@ -752,6 +774,8 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
     case kPseudoViewTransitionOld:
     case kPseudoViewTransitionNew:
     case kPseudoDetailsContent:
+    case kPseudoColumn:
+    case kPseudoTargetCurrent:
       if (Match() != kPseudoElement) {
         bits_.set<PseudoTypeField>(kPseudoUnknown);
       }
@@ -762,7 +786,7 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
       }
       break;
     case kPseudoHasDatalist:
-    case kPseudoHostHasAppearance:
+    case kPseudoHostHasNonAutoAppearance:
     case kPseudoIsHtml:
     case kPseudoListBox:
     case kPseudoMultiSelectFocus:
@@ -783,6 +807,7 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
     case kPseudoAutofill:
     case kPseudoAutofillPreviewed:
     case kPseudoAutofillSelected:
+    case kPseudoCheckMark:
     case kPseudoChecked:
     case kPseudoClosed:
     case kPseudoCornerPresent:
@@ -809,6 +834,9 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
     case kPseudoFullscreen:
     case kPseudoFutureCue:
     case kPseudoHas:
+    case kPseudoHasInterest:
+    case kPseudoHasPartialInterest:
+    case kPseudoHasSlotted:
     case kPseudoHorizontal:
     case kPseudoHost:
     case kPseudoHostContext:
@@ -837,6 +865,8 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
     case kPseudoParent:
     case kPseudoPastCue:
     case kPseudoPaused:
+    case kPseudoPermissionElementInvalidStyle:
+    case kPseudoPermissionElementOccluded:
     case kPseudoPermissionGranted:
     case kPseudoPictureInPicture:
     case kPseudoPlaceholderShown:
@@ -855,6 +885,8 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
     case kPseudoState:
     case kPseudoStateDeprecatedSyntax:
     case kPseudoTarget:
+    case kPseudoTargetOfInterest:
+    case kPseudoTargetOfPartialInterest:
     case kPseudoTrue:
     case kPseudoUnknown:
     case kPseudoUnparsed:
@@ -1132,7 +1164,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
 }
 
 const CSSSelector* CSSSelector::SerializeCompound(StringBuilder& builder) const {
-  if (Match() == kTag && !IsImplicit()) {
+  if ((Match() == kTag || Match() == kUniversalTag) && !IsImplicit()) {
     SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), g_star_atom, builder, IsAttributeSelector());
     SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(), builder);
   }
@@ -1216,7 +1248,7 @@ std::string CSSSelector::SelectorText() const {
 
 std::string CSSSelector::SimpleSelectorTextForDebug() const {
   StringBuilder builder;
-  if (Match() == kTag && !IsImplicit()) {
+  if ((Match() == kTag || Match() == kUniversalTag) && !IsImplicit()) {
     SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), g_star_atom, builder, IsAttributeSelector());
     SerializeIdentifierOrAny(TagQName().LocalName(), UniversalSelectorAtom(), builder);
   } else {
@@ -1248,6 +1280,7 @@ void CSSSelector::SetContainsComplexLogicalCombinationsInsideHasPseudoClass() {
 static bool ValidateSubSelector(const CSSSelector* selector) {
   switch (selector->Match()) {
     case CSSSelector::kTag:
+    case CSSSelector::kUniversalTag:
     case CSSSelector::kId:
     case CSSSelector::kClass:
     case CSSSelector::kAttributeExact:
@@ -1293,7 +1326,7 @@ static bool ValidateSubSelector(const CSSSelector* selector) {
     case CSSSelector::kPseudoHasDatalist:
     case CSSSelector::kPseudoIsHtml:
     case CSSSelector::kPseudoListBox:
-    case CSSSelector::kPseudoHostHasAppearance:
+    case CSSSelector::kPseudoHostHasNonAutoAppearance:
       // TODO(https://crbug.com/1346456): Many pseudos should probably be
       // added to this list.  The default: case below should also be removed
       // so that those adding new pseudos know they need to choose one path or

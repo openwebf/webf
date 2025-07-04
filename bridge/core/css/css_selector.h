@@ -110,6 +110,7 @@ class CSSSelector {
     kUnknown,
     kInvalidList,       // Used as a marker in CSSSelectorList.
     kTag,               // Example: div
+    kUniversalTag,      // Example: *
     kId,                // Example: #id
     kClass,             // Example: .class
     kPseudoClass,       // Example: :nth-child(2)
@@ -230,6 +231,7 @@ class CSSSelector {
     kPseudoAutofillSelected,
     kPseudoBackdrop,
     kPseudoBefore,
+    kPseudoCheckMark,
     kPseudoChecked,
     kPseudoCornerPresent,
     kPseudoCurrent,
@@ -253,6 +255,9 @@ class CSSSelector {
     kPseudoFocusVisible,
     kPseudoFocusWithin,
     kPseudoFullPageMedia,
+    kPseudoHasInterest,
+    kPseudoHasPartialInterest,
+    kPseudoHasSlotted,
     kPseudoHorizontal,
     kPseudoHover,
     kPseudoIncrement,
@@ -277,6 +282,8 @@ class CSSSelector {
     kPseudoOptional,
     kPseudoParent,  // Written as & (in nested rules).
     kPseudoPart,
+    kPseudoPermissionElementInvalidStyle,
+    kPseudoPermissionElementOccluded,
     kPseudoPermissionGranted,
     kPseudoPermissionIcon,
     kPseudoPlaceholder,
@@ -312,6 +319,8 @@ class CSSSelector {
     kPseudoState,
     kPseudoStateDeprecatedSyntax,
     kPseudoTarget,
+    kPseudoTargetOfInterest,
+    kPseudoTargetOfPartialInterest,
     kPseudoUnknown,
     // Something that was unparsable, but contained either a nesting
     // selector (&), or a :scope pseudo-class, and must therefore be kept
@@ -343,6 +352,8 @@ class CSSSelector {
     // Pseudo elements in UA ShadowRoots. Available only in UA stylesheets.
     kPseudoBlinkInternalElement,
     kPseudoClosed,
+    // Pseudo element for fragment styling
+    kPseudoColumn,
     kPseudoCue,
     kPseudoDefined,
     kPseudoDir,
@@ -353,7 +364,7 @@ class CSSSelector {
     kPseudoHighlight,
     kPseudoHost,
     kPseudoHostContext,
-    kPseudoHostHasAppearance,
+    kPseudoHostHasNonAutoAppearance,
     kPseudoIsHtml,
     kPseudoListBox,
     kPseudoMultiSelectFocus,
@@ -370,6 +381,10 @@ class CSSSelector {
     kPseudoTrue,
     kPseudoVideoPersistent,
     kPseudoVideoPersistentAncestor,
+
+    // Active ::scroll-marker styling.
+    // https://drafts.csswg.org/css-overflow-5/#active-scroll-marker
+    kPseudoTargetCurrent,
 
     // The following selectors are used to target pseudo elements created for
     // ViewTransition.
@@ -697,7 +712,7 @@ class CSSSelector {
   // The type tag for DataUnion is actually inferred from multiple state
   // variables in the containing CSSSelector using the following rules.
   //
-  //  if (Match() == kTag) {
+  //  if (Match() == kTag || Match() == kUniversalTag) {
   //     /* data_.tag_q_name_or_attribute_ is valid (is tag_q_name) */
   //  } else if (Match() == kAttributeSet) {
   //     /* data_.tag_q_name_or_attribute_ is valid (is attribute) */
@@ -778,6 +793,7 @@ inline bool CSSSelector::IsASCIILower(const AtomicString& value) {
 
 inline void CSSSelector::SetValue(const AtomicString& value, bool match_lower_case = false) {
   DCHECK_NE(Match(), static_cast<unsigned>(kTag));
+  DCHECK_NE(Match(), static_cast<unsigned>(kUniversalTag));
   DCHECK(!(Match() == kPseudoClass && GetPseudoType() == kPseudoParent));
   if (match_lower_case && !HasRareData() && !IsASCIILower(value)) {
     CreateRareData();
@@ -833,7 +849,7 @@ inline CSSSelector::CSSSelector(const AtomicString& pseudo_name, bool is_implici
       data_(pseudo_name) {}
 
 inline CSSSelector::CSSSelector(const CSSSelector& o) : bits_(o.bits_), data_(DataUnion::kConstructUninitialized) {
-  if (o.Match() == kTag || o.Match() == kAttributeSet) {
+  if (o.Match() == kTag || o.Match() == kUniversalTag || o.Match() == kAttributeSet) {
     new (&data_.tag_q_name_or_attribute_) QualifiedName(o.data_.tag_q_name_or_attribute_);
   } else if (o.Match() == kPseudoClass && o.GetPseudoType() == kPseudoParent) {
     data_.parent_rule_ = o.data_.parent_rule_;
@@ -854,7 +870,7 @@ inline CSSSelector::CSSSelector(CSSSelector&& o) : data_(DataUnion::kConstructUn
 }
 
 inline CSSSelector::~CSSSelector() {
-  if (Match() == kTag || Match() == kAttributeSet) {
+  if (Match() == kTag || Match() == kUniversalTag || Match() == kAttributeSet) {
     data_.tag_q_name_or_attribute_.~QualifiedName();
   }
 }
@@ -878,6 +894,7 @@ inline std::shared_ptr<const StyleRule> CSSSelector::ParentRule() const {
 
 inline const AtomicString& CSSSelector::Value() const {
   DCHECK_NE(Match(), static_cast<unsigned>(kTag));
+  DCHECK_NE(Match(), static_cast<unsigned>(kUniversalTag));
   if (HasRareData()) {
     return data_.rare_data_->matching_value_;
   }
@@ -886,6 +903,7 @@ inline const AtomicString& CSSSelector::Value() const {
 
 inline const AtomicString& CSSSelector::SerializingValue() const {
   DCHECK_NE(Match(), static_cast<unsigned>(kTag));
+  DCHECK_NE(Match(), static_cast<unsigned>(kUniversalTag));
   if (HasRareData()) {
     return data_.rare_data_->serializing_value_;
   }

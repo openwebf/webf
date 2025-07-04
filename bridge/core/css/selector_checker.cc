@@ -1749,7 +1749,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      // TODO: Implement MatchesMultiSelectFocusPseudoClass
      // return MatchesMultiSelectFocusPseudoClass(element);
      return false;
-   case CSSSelector::kPseudoHostHasAppearance:
+   case CSSSelector::kPseudoHostHasNonAutoAppearance:
      DCHECK(is_ua_rule_);
      if (ShadowRoot* root = element.ContainingShadowRoot()) {
        if (!root->IsUserAgent()) {

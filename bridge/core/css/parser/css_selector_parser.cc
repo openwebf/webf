@@ -1992,7 +1992,12 @@ void CSSSelectorParser::PrependTypeSelectorIfNeeded(const AtomicString& namespac
     const bool is_implicit = determined_prefix == g_null_atom &&
                              determined_element_name == CSSSelector::UniversalSelectorAtom() && !is_host_pseudo;
 
-    output_.insert(output_.begin() + start_index_of_compound_selector, CSSSelector(tag, is_implicit));
+    CSSSelector selector(tag, is_implicit);
+    // If this is a universal selector, update the match type to kUniversalTag
+    if (determined_element_name == CSSSelector::UniversalSelectorAtom() && !is_implicit) {
+      selector.SetMatch(CSSSelector::kUniversalTag);
+    }
+    output_.insert(output_.begin() + start_index_of_compound_selector, std::move(selector));
   }
 }
 
