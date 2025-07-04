@@ -298,7 +298,7 @@ bool EventTarget::AddEventListenerInternal(const AtomicString& event_type,
     if ((event_type == event_type_names::ktouchstart || event_type == event_type_names::ktouchmove ||
          event_type == event_type_names::ktouchend || event_type == event_type_names::ktouchcancel)) {
       auto* self_element = DynamicTo<HTMLElement>(this);
-      if (!self_element->IsWebFTouchAreaElement()) {
+      if (self_element && !self_element->IsWebFTouchAreaElement()) {
         return false;
       }
     }
