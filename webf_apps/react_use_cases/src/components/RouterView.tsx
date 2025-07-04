@@ -1,19 +1,11 @@
 import React, { useState, ReactNode } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFRouterLink } from '@openwebf/react-router';
 
 interface RouterViewProps {
   path: string;
   title?: string;
   children?: ReactNode;
 }
-
-const WebFRouterLink = createComponent({
-  tagName: 'webf-router-link',
-  displayName: 'WebFRouterLink',
-  events: {
-    onOnScreen: 'onscreen'
-  }
-});
 
 export const RouterView: React.FC<RouterViewProps> = ({ path, title, children }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -23,7 +15,7 @@ export const RouterView: React.FC<RouterViewProps> = ({ path, title, children })
   };
 
   return (
-    <WebFRouterLink path={path} title={title} onOnScreen={handleOnScreen}>
+    <WebFRouterLink path={path} title={title} onScreen={handleOnScreen}>
       {isMounted ? children : null}
     </WebFRouterLink>
   );
