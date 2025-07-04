@@ -246,8 +246,9 @@ void StyleResolver::ApplyMatchedPropertiesAndCustomPropertyAnimations(
   // Create cascade
   StyleCascade cascade(state);
   
-  // Apply matched properties
-  cascade.Apply(match_result);
+  // Add match result to cascade and apply
+  cascade.MutableMatchResult() = match_result;
+  cascade.Apply();
   
   // Apply animations if needed
   if (apply_animations) {
