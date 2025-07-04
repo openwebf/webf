@@ -44,6 +44,10 @@
 
 namespace webf {
 
+namespace cssvalue {
+class CSSPendingSubstitutionValue;
+}  // namespace cssvalue
+
 class CascadeResolver;
 class CSSParserContext;
 class CSSProperty;
@@ -136,13 +140,29 @@ class StyleCascade {
                           CascadePriority,
                           CascadeOrigin&,
                           CascadeResolver&);
+  const CSSValue* ResolveSubstitutions(const CSSProperty&,
+                                       const CSSValue&,
+                                       CascadeResolver&);
   const CSSValue* ResolveCustomProperty(const CSSProperty&,
                                         const CSSUnparsedDeclarationValue&,
                                         CascadeResolver&);
   const CSSValue* ResolveVariableReference(const CSSProperty&,
                                            const CSSUnparsedDeclarationValue&,
                                            CascadeResolver&);
+  const CSSValue* ResolvePendingSubstitution(const CSSProperty&,
+                                             const cssvalue::CSSPendingSubstitutionValue&,
+                                             CascadeResolver&);
+  const CSSValue* ResolveRevert(const CSSProperty&,
+                                const CSSValue&,
+                                CascadeOrigin&,
+                                CascadeResolver&);
+  const CSSValue* ResolveRevertLayer(const CSSProperty&,
+                                     CascadePriority,
+                                     CascadeOrigin&,
+                                     CascadeResolver&);
 
+  std::shared_ptr<CSSVariableData> ResolveVariableData(CSSVariableData*,
+                                                        CascadeResolver&);
 
   const CSSProperty& ResolveSurrogate(const CSSProperty&);
 
