@@ -29,3 +29,4 @@ export { FlutterCupertinoButton, FlutterCupertinoButtonElement } from "./lib/src
 export { FlutterCupertinoAlert, FlutterCupertinoAlertElement } from "./lib/src/alert";
 export { FlutterCupertinoActionSheet, FlutterCupertinoActionSheetElement } from "./lib/src/action-sheet";
 export { createComponent } from "./utils/createComponent";
+export { FlutterCupertinoPickerItem, FlutterCupertinoPickerItemElement } from "./lib/src/picker-item";

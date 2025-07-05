@@ -12,7 +12,7 @@ export interface FlutterCupertinoLoadingProps {
    * maskClosable property
    * @default undefined
    */
-  maskClosable?: string;
+  maskClosable?: boolean;
   /**
    * HTML id attribute
    */

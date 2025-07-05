@@ -1,16 +1,7 @@
 import React, { useRef } from 'react';
-import { createComponent } from '../utils/CreateComponent';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { FlutterCupertinoButton } from '@openwebf/react-cupertino-ui';
+import { FlutterCupertinoButton, FlutterCupertinoLoading } from '@openwebf/react-cupertino-ui';
 import styles from './LoadingPage.module.css';
-
-const FlutterCupertinoLoading = createComponent({
-  tagName: 'flutter-cupertino-loading',
-  displayName: 'FlutterCupertinoLoading',
-  events: {
-    onClose: 'close'
-  }
-});
 
 export const LoadingPage: React.FC = () => {
   const basicLoadingRef = useRef<any>(null);
@@ -47,10 +38,6 @@ export const LoadingPage: React.FC = () => {
     maskClosableLoadingRef.current?.show({
       text: 'Click mask to close'
     });
-  };
-
-  const handleLoadingClose = () => {
-    console.log('Loading closed by mask click');
   };
 
   return (
@@ -98,7 +85,7 @@ export const LoadingPage: React.FC = () => {
         <FlutterCupertinoLoading ref={basicLoadingRef} />
         <FlutterCupertinoLoading ref={textLoadingRef} />
         <FlutterCupertinoLoading ref={autoHideLoadingRef} />
-        <FlutterCupertinoLoading ref={maskClosableLoadingRef} maskClosable onClose={handleLoadingClose} />
+        <FlutterCupertinoLoading ref={maskClosableLoadingRef} maskClosable />
       </WebFListView>
     </div>
   );
