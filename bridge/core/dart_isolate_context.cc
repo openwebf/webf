@@ -76,6 +76,7 @@ void DartIsolateContext::InitializeJSRuntime() {
   runtime_ = JS_NewRuntime();
   // Avoid stack overflow when running in multiple threads.
   JS_UpdateStackTop(runtime_);
+  JS_SetMaxStackSize(runtime_, 8 * 1024 * 1024 - 1);
   // Bump up the built-in classId. To make sure the created classId are larger than JS_CLASS_CUSTOM_CLASS_INIT_COUNT.
   for (int i = 0; i < JS_CLASS_CUSTOM_CLASS_INIT_COUNT - JS_CLASS_GC_TRACKER + 2; i++) {
     JSClassID id{0};
