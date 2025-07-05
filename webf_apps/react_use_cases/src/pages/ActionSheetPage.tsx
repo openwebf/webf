@@ -1,20 +1,7 @@
 import React, { useRef } from 'react';
-import { createComponent } from '../utils/CreateComponent';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { FlutterCupertinoButton } from '@openwebf/react-cupertino-ui';
+import { FlutterCupertinoButton, FlutterCupertinoActionSheet } from '@openwebf/react-cupertino-ui';
 import styles from './ActionSheetPage.module.css';
-
-
-
-const FlutterCupertinoActionSheet = createComponent({
-  tagName: 'flutter-cupertino-action-sheet',
-  displayName: 'FlutterCupertinoActionSheet',
-  events: {
-    onAction: 'action',
-    onCancel: 'cancel'
-  }
-});
-
 
 export const ActionSheetPage: React.FC = () => {
   const basicActionSheetRef = useRef<any>(null);
@@ -109,8 +96,7 @@ export const ActionSheetPage: React.FC = () => {
                 
                 <FlutterCupertinoActionSheet 
                   ref={basicActionSheetRef}
-                  onAction={handleAction}
-                  onCancel={handleCancel}
+                  onSelect={handleAction}
                 />
               </div>
             </div>
@@ -126,8 +112,7 @@ export const ActionSheetPage: React.FC = () => {
                 
                 <FlutterCupertinoActionSheet 
                   ref={destructiveActionSheetRef}
-                  onAction={handleAction}
-                  onCancel={handleCancel}
+                  onSelect={handleAction}
                 />
               </div>
             </div>
@@ -143,8 +128,7 @@ export const ActionSheetPage: React.FC = () => {
                 
                 <FlutterCupertinoActionSheet 
                   ref={customActionSheetRef}
-                  onAction={handleAction}
-                  onCancel={handleCancel}
+                  onSelect={handleAction}
                 />
               </div>
             </div>
@@ -160,8 +144,7 @@ export const ActionSheetPage: React.FC = () => {
                 
                 <FlutterCupertinoActionSheet 
                   ref={longListActionSheetRef}
-                  onAction={handleAction}
-                  onCancel={handleCancel}
+                  onSelect={handleAction}
                 />
               </div>
             </div>

@@ -1,25 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
-import { FlutterCupertinoIcon, FlutterCupertinoSwitch } from '@openwebf/react-cupertino-ui';
-import { createComponent } from '../utils/CreateComponent';
+import { FlutterCupertinoIcon, FlutterCupertinoSwitch, FlutterCupertinoContextMenu } from '@openwebf/react-cupertino-ui';
 import styles from './ContextMenuPage.module.css';
-
-
-const FlutterCupertinoContextMenu = createComponent({
-  tagName: 'flutter-cupertino-context-menu',
-  displayName: 'FlutterCupertinoContextMenu',
-  events: {
-    onDefaultAction: 'defaultAction',
-    onDelete: 'delete',
-    onShare: 'share',
-    onFavorite: 'favorite',
-    onOpen: 'open',
-    onEdit: 'edit',
-    onCall: 'call',
-    onMessage: 'message',
-    onEmail: 'email'
-  }
-});
 
 export const ContextMenuPage: React.FC = () => {
   const menu0Ref = useRef<any>(null);
@@ -100,16 +82,8 @@ export const ContextMenuPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Event Handlers
-  const onShare = () => console.log('Share pressed');
-  const onFavorite = () => console.log('Favorite pressed');
-  const onOpen = () => console.log('Open pressed');
-  const onDelete = () => console.log('Delete pressed (menu0, menu1, or menu3)');
-  const onCall = () => console.log('Call pressed');
-  const onMessage = () => console.log('Message pressed');
-  const onEmail = () => console.log('Email pressed');
-  const onDefaultAction = () => console.log('Default action pressed (menu1)');
-  const onEdit = () => console.log('Edit pressed');
+  // Event Handler
+  const onSelect = (e) => console.log('Select event', e.detail);
 
   return (
     <div id="main">
@@ -144,8 +118,7 @@ export const ContextMenuPage: React.FC = () => {
               <div className={styles.menuContainer}>
                 <FlutterCupertinoContextMenu 
                   ref={menu1Ref} 
-                  onDefaultAction={onDefaultAction} 
-                  onDelete={onDelete}
+                  onSelect={onSelect}
                 >
                   <div className={styles.previewBox}>
                     <FlutterCupertinoIcon type="photo" style={{fontSize: '48px'}} />
@@ -159,10 +132,9 @@ export const ContextMenuPage: React.FC = () => {
             <div className={styles.componentItem}>
               <div className={styles.itemLabel}>Custom Menu Items</div>
               <div className={styles.menuContainer}>
-                <FlutterCupertinoContextMenu 
+                <FlutterCupertinoContextMenu
+                  onSelect={onSelect}
                   ref={menu2Ref} 
-                  onShare={onShare} 
-                  onFavorite={onFavorite}
                 >
                   <div className={styles.previewBox}>
                     <FlutterCupertinoIcon type="heart" style={{fontSize: '48px'}} />
@@ -179,9 +151,7 @@ export const ContextMenuPage: React.FC = () => {
                 <FlutterCupertinoContextMenu 
                   ref={menu3Ref} 
                   enableHapticFeedback 
-                  onOpen={onOpen} 
-                  onEdit={onEdit}
-                  onDelete={onDelete}
+                  onSelect={onSelect}
                 >
                   <div className={styles.previewBox}>
                     <FlutterCupertinoIcon type="doc_text" style={{fontSize: '48px'}} />
@@ -198,9 +168,7 @@ export const ContextMenuPage: React.FC = () => {
                 <FlutterCupertinoContextMenu 
                   ref={menu4Ref} 
                   enableHapticFeedback 
-                  onCall={onCall} 
-                  onMessage={onMessage}
-                  onEmail={onEmail}
+                  onSelect={onSelect}
                 >
                   <div className={styles.previewBox}>
                     <FlutterCupertinoIcon type="person_circle" style={{fontSize: '48px'}} />
@@ -214,7 +182,10 @@ export const ContextMenuPage: React.FC = () => {
             <div className={styles.componentItem}>
               <div className={styles.itemLabel}>setActions([]) (no menu)</div>
               <div className={styles.menuContainer}>
-                <FlutterCupertinoContextMenu ref={menu5Ref}>
+                <FlutterCupertinoContextMenu 
+                  ref={menu5Ref}
+                  onSelect={onSelect}
+                >
                   <div className={styles.previewBox}>
                     <FlutterCupertinoIcon type="xmark_circle" style={{fontSize: '48px'}} />
                     <div className={styles.previewText}>Empty menu</div>

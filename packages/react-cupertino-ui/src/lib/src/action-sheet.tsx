@@ -15,7 +15,18 @@ interface FlutterCupertinoActionSheetOptions {
   actions?: FlutterCupertinoActionSheetAction[];
   cancelButton?: FlutterCupertinoActionSheetAction;
 }
+interface FlutterCupertinoActionSheetSelectDetail {
+  text: string;
+  event: string;
+  isDefault: boolean; 
+  isDestructive: boolean;
+  index?: number;
+}
 export interface FlutterCupertinoActionSheetProps {
+  /**
+   * select event handler
+   */
+  onSelect?: (event: CustomEvent<FlutterCupertinoActionSheetSelectDetail>) => void;
   /**
    * HTML id attribute
    */
@@ -74,6 +85,13 @@ export const FlutterCupertinoActionSheet = createWebFComponent<FlutterCupertinoA
   },
   // Event handlers
   events: [
+    {
+      propName: 'onSelect',
+      eventName: 'select',
+      handler: (callback) => (event) => {
+        callback((event as CustomEvent<FlutterCupertinoActionSheetSelectDetail>));
+      },
+    },
   ],
   // Default prop values
   defaultProps: {
