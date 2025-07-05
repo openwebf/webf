@@ -827,6 +827,14 @@ class RenderBoxModel extends RenderBox
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay == CSSDisplay.inline;
 
+    // Ensure parent width is computed before resolving percentage-based constraints
+    if (renderStyle.isParentRenderBoxModel()) {
+      RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
+      if (parentRenderBoxModel.renderStyle is CSSRenderStyle) {
+        (parentRenderBoxModel.renderStyle as CSSRenderStyle).computeContentBoxLogicalWidth();
+      }
+    }
+    
     double? minWidth = renderStyle.minWidth.isAuto ? null : renderStyle.minWidth.computedValue;
     double? maxWidth = renderStyle.maxWidth.isNone ? null : renderStyle.maxWidth.computedValue;
     double? minHeight = renderStyle.minHeight.isAuto ? null : renderStyle.minHeight.computedValue;
@@ -849,9 +857,11 @@ class RenderBoxModel extends RenderBox
       parentBoxContentConstraintsWidth =
           parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
 
-      // When inner minimal content size are larger that parent's constraints.
+      // When inner minimal content size are larger that parent's constraints,
+      // still use parent constraints but ensure minConstraintWidth is properly handled later
       if (parentBoxContentConstraintsWidth < minConstraintWidth) {
-        parentBoxContentConstraintsWidth = null;
+        // Don't nullify parent constraints, let the constraint resolution handle this
+        // parentBoxContentConstraintsWidth will be used as maxConstraintWidth
       }
 
       // FlexItems with flex:none won't inherit parent box's constraints
@@ -890,16 +900,28 @@ class RenderBoxModel extends RenderBox
       }
     }
 
-    // Clamp constraints by min/max size when display is not inline.
-    if (!isDisplayInline) {
-      if (minWidth != null) {
-        minConstraintWidth = minConstraintWidth < minWidth ? minWidth : minConstraintWidth;
-        maxConstraintWidth = maxConstraintWidth < minWidth ? minWidth : maxConstraintWidth;
-      }
-      if (maxWidth != null) {
+    // Apply min/max width constraints for all display types
+    if (minWidth != null && !isDisplayInline) {
+      minConstraintWidth = minConstraintWidth < minWidth ? minWidth : minConstraintWidth;
+      maxConstraintWidth = maxConstraintWidth < minWidth ? minWidth : maxConstraintWidth;
+    }
+    
+    // Apply maxWidth constraint for all elements (including inline)
+    if (maxWidth != null) {
+      // Ensure maxConstraintWidth respects maxWidth, but don't reduce minConstraintWidth below border+padding
+      maxConstraintWidth = maxConstraintWidth > maxWidth ? maxWidth : maxConstraintWidth;
+      // Only reduce minConstraintWidth if maxWidth is larger than border+padding requirements
+      double borderPadding = renderStyle.effectiveBorderLeftWidth.computedValue +
+          renderStyle.effectiveBorderRightWidth.computedValue +
+          renderStyle.paddingLeft.computedValue +
+          renderStyle.paddingRight.computedValue;
+      if (maxWidth >= borderPadding) {
         minConstraintWidth = minConstraintWidth > maxWidth ? maxWidth : minConstraintWidth;
-        maxConstraintWidth = maxConstraintWidth > maxWidth ? maxWidth : maxConstraintWidth;
       }
+    }
+    
+    // Apply min/max height constraints when display is not inline
+    if (!isDisplayInline) {
       if (minHeight != null) {
         minConstraintHeight = minConstraintHeight < minHeight ? minHeight : minConstraintHeight;
         maxConstraintHeight = maxConstraintHeight < minHeight ? minHeight : maxConstraintHeight;

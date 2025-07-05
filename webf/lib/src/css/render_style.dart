@@ -2615,6 +2615,11 @@ class CSSRenderStyle extends RenderStyle
     // Compute logical width directly in case as renderBoxModel is not layouted yet,
     // eg. compute percentage length before layout.
     if (_contentBoxLogicalWidth == double.infinity) {
+      // Ensure parent layout is complete before resolving child percentages
+      CSSRenderStyle? parentStyle = getParentRenderStyle();
+      if (parentStyle != null && parentStyle._contentBoxLogicalWidth == double.infinity) {
+        parentStyle.computeContentBoxLogicalWidth();
+      }
       computeContentBoxLogicalWidth();
     }
     return _contentBoxLogicalWidth;
