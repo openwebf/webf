@@ -1,15 +1,9 @@
 import React, { useState } from 'react';
+import { WebFListView } from '@openwebf/react-core-ui';
+import { FlutterCupertinoListSection } from '@openwebf/react-cupertino-ui';
+import { WebFSlot } from '../components/WebFSlot';
 import { createComponent } from '../utils/CreateComponent';
 import styles from './ListviewPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView',
-  events: {
-    onRefresh: 'refresh',
-    onLoadmore: 'loadmore'
-  }
-});
 
 const WebFListViewCupertino = createComponent({
   tagName: 'webf-listview-cupertino',
@@ -25,11 +19,6 @@ const WebFListViewMaterial = createComponent({
   events: {
     onRefresh: 'refresh'
   }
-});
-
-const FlutterCupertinoListSection = createComponent({
-  tagName: 'flutter-cupertino-list-section',
-  displayName: 'FlutterCupertinoListSection'
 });
 
 export const ListviewPage: React.FC = () => {
@@ -67,8 +56,10 @@ export const ListviewPage: React.FC = () => {
         <h2>Custom ListView Examples</h2>
 
         {/* Example 1: Custom Refresh and Load More Style */}
-        <FlutterCupertinoListSection title="Custom Refresh and Load More Style">
-          <p className={styles.description}>Uses a custom element for the refresh and load more indicator.</p>
+        <FlutterCupertinoListSection>
+          <WebFSlot name="header">
+            Custom Refresh and Load More Style
+          </WebFSlot>
           <WebFListView
             className={styles.listviewContainer}
             refresh-style="customCupertino"
@@ -80,12 +71,13 @@ export const ListviewPage: React.FC = () => {
               <div key={item} className={styles.listItem}>Custom Item {item}</div>
             ))}
           </WebFListView>
-          <p className={styles.description}>Scroll down to load more items.</p>
         </FlutterCupertinoListSection>
-
         {/* Example 2: Cupertino Refresh Style */}
-        <FlutterCupertinoListSection title="Cupertino Refresh Style">
-          <p className={styles.description}>Forced Cupertino style.</p>
+        <FlutterCupertinoListSection className={styles.listSection}>
+          <WebFSlot name="header">
+            Cupertino Refresh Style
+            <p className={styles.description}>Forced Cupertino style.</p>
+          </WebFSlot>
           <WebFListViewCupertino className={styles.listviewContainer} onRefresh={() => handleRefresh('cupertino')}>
             {items.map(item => (
               <div key={item} className={styles.listItem}>Item {item}</div>
@@ -94,8 +86,11 @@ export const ListviewPage: React.FC = () => {
         </FlutterCupertinoListSection>
 
         {/* Example 3: Material Refresh Style */}
-        <FlutterCupertinoListSection title="Material Refresh Style">
-          <p className={styles.description}>Forced Material style.</p>
+        <FlutterCupertinoListSection>
+          <WebFSlot name="header">
+            Material Refresh Style
+            <p className={styles.description}>Forced Material style.</p>
+          </WebFSlot>
           <WebFListViewMaterial className={styles.listviewContainer} onRefresh={() => handleRefresh('material')}>
             {items.map(item => (
               <div key={item} className={styles.listItem}>Item {item}</div>
