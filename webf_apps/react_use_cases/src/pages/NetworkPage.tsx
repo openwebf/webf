@@ -1,11 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import React, { useState } from 'react';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './NetworkPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 interface RequestResult {
   status: number;
@@ -18,7 +13,6 @@ interface RequestResult {
 export const NetworkPage: React.FC = () => {
   const [results, setResults] = useState<{[key: string]: RequestResult | string}>({});
   const [isLoading, setIsLoading] = useState<{[key: string]: boolean}>({});
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateResult = (key: string, result: RequestResult | string) => {
     setResults(prev => ({...prev, [key]: result}));

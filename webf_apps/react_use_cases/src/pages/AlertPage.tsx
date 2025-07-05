@@ -1,12 +1,8 @@
 import React, { useRef } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton } from '@openwebf/react-cupertino-ui';
 import styles from './AlertPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 const FlutterCupertinoAlert = createComponent({
   tagName: 'flutter-cupertino-alert',

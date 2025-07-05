@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './FormAdvancedPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 // Simplified form data structure
 interface FormData {
@@ -71,7 +66,7 @@ export const FormAdvancedPage: React.FC = () => {
   const watchedValues = watch();
 
   // useFieldArray for dynamic skills
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: 'skills'
   });
@@ -272,7 +267,7 @@ Personal Basic Information
                 <input
                   {...register('phone', {
                     pattern: {
-                      value: /^[\+]?[\d\s\-\(\)]+$/,
+                      value: /^[+]?[\d\s\-()]+$/,
                       message: 'Please enter a valid phone number'
                     }
                   })}

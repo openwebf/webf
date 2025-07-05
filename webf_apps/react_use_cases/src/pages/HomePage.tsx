@@ -1,12 +1,7 @@
 import React from 'react';
-import { createComponent } from '../utils/CreateComponent';
 import { WebFRouter } from '@openwebf/react-router';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './HomePage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const HomePage: React.FC = () => {
   const navigateTo = (path: string) => {
@@ -52,6 +47,13 @@ export const HomePage: React.FC = () => {
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Show Case</div>
                 <div className={styles.itemDesc}>Highlight and guide users through UI elements step by step.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/table')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Tables</div>
+                <div className={styles.itemDesc}>Rich table components with sticky headers, custom alignment, and flexible layouts.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>

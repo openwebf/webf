@@ -1,27 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import TabBarManager from '../utils/tabBarManager';
 import styles from './RoutingDemo.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
-
 
 interface RouteState {
   path: string;
   title: string;
   params: {[key: string]: any};
   timestamp: number;
-}
-
-interface HistoryEntry {
-  index: number;
-  state: RouteState;
-  url: string;
-  action: string;
-  timestamp: string;
 }
 
 export const RoutingDemo: React.FC = () => {
@@ -180,7 +166,9 @@ export const RoutingDemo: React.FC = () => {
     setIsNavigating(prev => ({...prev, canPop: true}));
     try {
       const canPop = window.webf.hybridHistory.canPop();
+      console.log('canPop', canPop);
       const didPop = window.webf.hybridHistory.maybePop({ cancelled: false });
+      console.log('didPop', didPop);
     } catch (error) {
     } finally {
       setIsNavigating(prev => ({...prev, canPop: false}));

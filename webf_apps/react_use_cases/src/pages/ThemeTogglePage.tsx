@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './ThemeTogglePage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const ThemeTogglePage: React.FC = () => {
   const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');

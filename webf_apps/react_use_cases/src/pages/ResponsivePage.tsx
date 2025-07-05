@@ -1,11 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import React, { useState } from 'react';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './ResponsivePage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 interface ViewportInfo {
   width: number;
@@ -27,13 +22,13 @@ export const ResponsivePage: React.FC = () => {
     return 'xs';
   };
 
-  const [viewportInfo, setViewportInfo] = useState<ViewportInfo>({
+  const viewportInfo: ViewportInfo = {
     width: window.innerWidth,
     height: window.innerHeight,
     devicePixelRatio: window.devicePixelRatio,
     breakpoint: getBreakpoint(window.innerWidth),
     orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
-  });
+  }
 
 
   const toggleLayout = () => {

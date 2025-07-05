@@ -1,12 +1,9 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoIcon, FlutterCupertinoSwitch } from '@openwebf/react-cupertino-ui';
+import { createComponent } from '../utils/CreateComponent';
 import styles from './ContextMenuPage.module.css';
 
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 const FlutterCupertinoContextMenu = createComponent({
   tagName: 'flutter-cupertino-context-menu',

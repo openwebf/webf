@@ -1,12 +1,7 @@
 import React, { useRef } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton, FlutterCupertinoModalPopup } from '@openwebf/react-cupertino-ui';
 import styles from './ModalPopupPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const ModalPopupPage: React.FC = () => {
   const basicPopupRef = useRef<any>(null);

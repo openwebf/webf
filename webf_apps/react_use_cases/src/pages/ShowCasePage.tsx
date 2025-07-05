@@ -1,13 +1,8 @@
 import React, { useRef } from 'react';
 import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoButton, FlutterCupertinoIcon } from '@openwebf/react-cupertino-ui';
 import styles from './ShowCasePage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
-
 
 const FlutterShowcaseView = createComponent({
   tagName: 'flutter-showcase-view',

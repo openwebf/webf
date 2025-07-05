@@ -2,12 +2,8 @@ import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FlutterCupertinoButton, FlutterCupertinoTextarea, FlutterCupertinoPicker, FlutterCupertinoModalPopup, FlutterCupertinoModalPopupElement } from '@openwebf/react-cupertino-ui';
 import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './QRCodePage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 const FlutterCupertinoPickerItem = createComponent({
   tagName: 'flutter-cupertino-picker-item',
@@ -20,11 +16,6 @@ export const QRCodePage: React.FC = () => {
   const [bgColor, setBgColor] = useState('#FFFFFF');
   const [fgColor, setFgColor] = useState('#000000');
   const [errorLevel, setErrorLevel] = useState<'L' | 'M' | 'Q' | 'H'>('M');
-  
-  // Modal popup states
-  const [showFgColorPicker, setShowFgColorPicker] = useState(false);
-  const [showBgColorPicker, setShowBgColorPicker] = useState(false);
-  const [showErrorLevelPicker, setShowErrorLevelPicker] = useState(false);
 
   const fgColorPickerRef = useRef<FlutterCupertinoModalPopupElement>(null);
   const bgColorPickerRef = useRef<FlutterCupertinoModalPopupElement>(null);
