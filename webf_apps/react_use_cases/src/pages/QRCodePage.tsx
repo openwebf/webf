@@ -1,14 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { FlutterCupertinoButton, FlutterCupertinoTextarea, FlutterCupertinoPicker, FlutterCupertinoModalPopup, FlutterCupertinoModalPopupElement } from '@openwebf/react-cupertino-ui';
-import { createComponent } from '../utils/CreateComponent';
+import { 
+  FlutterCupertinoButton, FlutterCupertinoTextarea, FlutterCupertinoModalPopupElement, 
+  FlutterCupertinoModalPopup, FlutterCupertinoPicker, FlutterCupertinoPickerItem,
+} from '@openwebf/react-cupertino-ui';
 import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './QRCodePage.module.css';
 
-const FlutterCupertinoPickerItem = createComponent({
-  tagName: 'flutter-cupertino-picker-item',
-  displayName: 'FlutterCupertinoPickerItem',
-});
 
 export const QRCodePage: React.FC = () => {
   const [textValue, setTextValue] = useState('https://openwebf.com');
@@ -263,7 +261,7 @@ export const QRCodePage: React.FC = () => {
             <FlutterCupertinoPickerItem
               key={preset.value}
               label={`${preset.name} (${preset.value})`}
-              val={index}
+              val={index.toString()}
             />
           ))}
         </FlutterCupertinoPicker>
@@ -283,7 +281,7 @@ export const QRCodePage: React.FC = () => {
             <FlutterCupertinoPickerItem
               key={preset.value}
               label={`${preset.name} (${preset.value})`}
-              val={index}
+              val={index.toString()}
             />
           ))}
         </FlutterCupertinoPicker>
@@ -303,7 +301,7 @@ export const QRCodePage: React.FC = () => {
             <FlutterCupertinoPickerItem
               key={option.value}
               label={option.label}
-              val={index}
+              val={index.toString()}
             />
           ))}
         </FlutterCupertinoPicker>
