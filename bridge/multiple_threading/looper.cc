@@ -48,11 +48,16 @@ void Looper::Start() {
     // Create pthread attributes
     pthread_attr_t attr;
     pthread_attr_init(&attr);
-    
+
+#ifndef NDEBUG
     // Set stack size to 8MB (default is usually 512KB-2MB)
     const size_t stackSize = 8 * 1024 * 1024;  // 8MB
     pthread_attr_setstacksize(&attr, stackSize);
-    
+#else
+    // Set stack size to 1MB (default is usually 512KB-2MB)
+    const size_t stackSize = 1024 * 1024;  // 1MB
+    pthread_attr_setstacksize(&attr, stackSize);
+#endif
     // Create thread data
     auto* threadData = new ThreadData{
       this,
