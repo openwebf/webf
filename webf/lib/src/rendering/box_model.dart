@@ -827,14 +827,6 @@ class RenderBoxModel extends RenderBox
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay == CSSDisplay.inline;
 
-    // Ensure parent width is computed before resolving percentage-based constraints
-    if (renderStyle.isParentRenderBoxModel()) {
-      RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
-      if (parentRenderBoxModel.renderStyle is CSSRenderStyle) {
-        (parentRenderBoxModel.renderStyle as CSSRenderStyle).computeContentBoxLogicalWidth();
-      }
-    }
-    
     double? minWidth = renderStyle.minWidth.isAuto ? null : renderStyle.minWidth.computedValue;
     double? maxWidth = renderStyle.maxWidth.isNone ? null : renderStyle.maxWidth.computedValue;
     double? minHeight = renderStyle.minHeight.isAuto ? null : renderStyle.minHeight.computedValue;
