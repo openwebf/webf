@@ -882,12 +882,6 @@ class RenderFlexLayout extends RenderLayoutBox {
           arguments: {'renderObject': describeIdentity(this)});
     }
 
-    // print('_setContainerSize1 id:${renderStyle.target.id} ${renderStyle.target.className} size:${hasSize ? boxSize : 0}');
-
-    // if (renderStyle.target.id == 'div_3') {
-    //   print('div_3 hasSize:$hasSize');
-    // }
-
     // Layout children to compute metrics of flex lines.
     List<_RunMetrics> _runMetrics = _computeRunMetrics(children);
 
@@ -1026,15 +1020,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Use intrinsic size for run calculations
       Size childSize = intrinsicSizes[childNodeId]!;
       _childrenIntrinsicMainSizes[child.hashCode] = _isHorizontalFlexDirection ? childSize.width : childSize.height;
-
-
-      if(child is RenderBoxModel && child.renderStyle.target.id == 'div_3' ) {
-        // print('div_3 _computeRunMetrics');
-      }
-
-      if(child is RenderBoxModel && child.renderStyle.target.id == 'span') {
-        // print('_computeRunMetrics span');
-      }
 
       Size? intrinsicChildSize = _getChildSize(child, shouldUseIntrinsicMainSize: true);
 
