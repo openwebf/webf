@@ -63,13 +63,13 @@ void main() {
 
       final container = prepared.getElementById('container');
       final absolute = prepared.getElementById('absolute');
-      
+
       expect(container.offsetWidth, equals(200.0));
       expect(container.offsetHeight, equals(200.0));
-      
+
       expect(absolute.offsetWidth, equals(100.0));
       expect(absolute.offsetHeight, equals(100.0));
-      
+
       // Check position
       final rect = absolute.getBoundingClientRect();
       expect(rect.top, equals(50.0));
@@ -105,10 +105,10 @@ void main() {
 
       final container = prepared.getElementById('container');
       final absolute = prepared.getElementById('absolute');
-      
+
       final rect = absolute.getBoundingClientRect();
       final containerRect = container.getBoundingClientRect();
-      
+
       // Should be positioned 50px from bottom and right
       expect(rect.top, equals(containerRect.top + 50.0)); // 200 - 100 - 50 = 50
       expect(rect.left, equals(containerRect.left + 50.0)); // 200 - 100 - 50 = 50
@@ -142,7 +142,7 @@ void main() {
       );
 
       final absolute = prepared.getElementById('absolute');
-      
+
       // Should stretch to fill container minus 10px on each side
       expect(absolute.offsetWidth, equals(280.0));
       expect(absolute.offsetHeight, equals(280.0));
@@ -178,7 +178,7 @@ void main() {
 
       final absolute = prepared.getElementById('absolute');
       final rect = absolute.getBoundingClientRect();
-      
+
       // Position should include margin
       expect(rect.top, equals(30.0)); // 20 + 10 margin
       expect(rect.left, equals(30.0)); // 20 + 10 margin
@@ -222,7 +222,7 @@ void main() {
 
       final inner = prepared.getElementById('inner');
       final rect = inner.getBoundingClientRect();
-      
+
       // Inner should be positioned relative to middle, not outer
       expect(rect.top, equals(75.0)); // 50 + 25
       expect(rect.left, equals(75.0)); // 50 + 25
@@ -265,15 +265,15 @@ void main() {
       final before = prepared.getElementById('before');
       final relative = prepared.getElementById('relative');
       final after = prepared.getElementById('after');
-      
+
       final beforeRect = before.getBoundingClientRect();
       final relativeRect = relative.getBoundingClientRect();
       final afterRect = after.getBoundingClientRect();
-      
+
       // Relative element should be offset from its normal position
       expect(relativeRect.top, equals(beforeRect.bottom + 20.0));
       expect(relativeRect.left, equals(30.0));
-      
+
       // After element should be positioned as if relative element wasn't offset
       expect(afterRect.top, equals(100.0)); // 50 + 50 (not affected by relative offset)
     });
@@ -302,7 +302,7 @@ void main() {
 
       final relative = prepared.getElementById('relative');
       final rect = relative.getBoundingClientRect();
-      
+
       // Should be offset negatively from normal position
       expect(rect.top, equals(30.0)); // 50 - 20
       expect(rect.left, equals(20.0)); // 50 - 30
@@ -337,7 +337,7 @@ void main() {
       final container = prepared.getElementById('container');
       final relative = prepared.getElementById('relative');
       final rect = relative.getBoundingClientRect();
-      
+
       // Percentages should be relative to containing block
       expect(rect.top, equals(20.0)); // 10% of 200
       expect(rect.left, equals(50.0)); // 25% of 200
@@ -367,9 +367,11 @@ void main() {
         ''',
       );
 
+      await tester.pump();
+
       final fixed = prepared.getElementById('fixed');
       final rect = fixed.getBoundingClientRect();
-      
+
       // Fixed element should be positioned relative to viewport
       expect(rect.top, equals(20.0));
       // Right position depends on viewport width, so just verify dimensions
@@ -407,12 +409,12 @@ void main() {
 
       final fixed = prepared.getElementById('fixed');
       final relative = prepared.getElementById('relative');
-      
+
       expect(fixed.offsetWidth, equals(100.0));
       expect(fixed.offsetHeight, equals(100.0));
       expect(relative.offsetWidth, equals(200.0));
       expect(relative.offsetHeight, equals(200.0));
-      
+
       // Z-index ordering would be tested visually
     });
   });
@@ -445,13 +447,13 @@ void main() {
 
       final div1 = prepared.getElementById('div1');
       final div2 = prepared.getElementById('div2');
-      
+
       // Static positioned element should have specific dimensions
       expect(div1.offsetWidth, equals(100.0));
       expect(div1.offsetHeight, equals(50.0));
       expect(div2.offsetWidth, equals(100.0));
       expect(div2.offsetHeight, equals(50.0));
-      
+
       // Verify position is static (top/left should be ignored)
       expect(div2.style.getPropertyValue('position'), equals('static'));
     });
@@ -485,20 +487,20 @@ void main() {
 
       final container = prepared.getElementById('container');
       final sticky = prepared.getElementById('sticky');
-      
+
       // Initial position
       final initialRect = sticky.getBoundingClientRect();
       final containerRect = container.getBoundingClientRect();
-      
+
       // Sticky element should be at its normal position initially
       expect(initialRect.top, greaterThanOrEqualTo(containerRect.top));
-      
+
       // Scroll container
       await tester.runAsync(() async {
         container.scrollTop = 150.0;
       });
       await tester.pump();
-      
+
       // TODO: WebF may not fully support sticky positioning yet
       // For now, just verify the element exists and has expected dimensions
       expect(sticky.offsetHeight, equals(50.0));
@@ -547,7 +549,7 @@ void main() {
       final px = prepared.getElementById('px');
       final percent = prepared.getElementById('percent');
       final auto = prepared.getElementById('auto');
-      
+
       expect(px.getBoundingClientRect().left, equals(50.0));
       expect(percent.getBoundingClientRect().left, equals(150.0)); // 50% of 300
       expect(auto.getBoundingClientRect().left, equals(230.0)); // 300 - 50 - 20
@@ -584,7 +586,7 @@ void main() {
 
       final px = prepared.getElementById('px');
       final percent = prepared.getElementById('percent');
-      
+
       expect(px.getBoundingClientRect().top, equals(30.0));
       expect(percent.getBoundingClientRect().top, equals(75.0)); // 25% of 300
     });
@@ -614,7 +616,7 @@ void main() {
       final right = prepared.getElementById('right');
       final rect = right.getBoundingClientRect();
       final containerRect = container.getBoundingClientRect();
-      
+
       // Element should be 40px from right edge
       expect(rect.left, equals(containerRect.left + 200.0)); // 300 - 60 - 40
     });
@@ -644,7 +646,7 @@ void main() {
       final bottom = prepared.getElementById('bottom');
       final rect = bottom.getBoundingClientRect();
       final containerRect = container.getBoundingClientRect();
-      
+
       // Element should be 30px from bottom edge
       expect(rect.top, equals(containerRect.top + 190.0)); // 300 - 80 - 30
     });
@@ -672,12 +674,12 @@ void main() {
       );
 
       final element = prepared.getElementById('element');
-      
+
       // Initially static
       final initialRect = element.getBoundingClientRect();
       expect(initialRect.top, equals(0.0));
       expect(initialRect.left, equals(0.0));
-      
+
       // Change to absolute
       await tester.runAsync(() async {
         element.style.setProperty('position', 'absolute');
@@ -685,12 +687,12 @@ void main() {
         element.style.setProperty('left', '50px');
       });
       await tester.pump();
-      
+
       // TODO: WebF may have issues with dynamic position type changes
       // For now, just verify the element still exists and has correct dimensions
       expect(element.offsetWidth, equals(100.0));
       expect(element.offsetHeight, equals(100.0));
-      
+
       // Verify style was set
       expect(element.style.getPropertyValue('position'), equals('absolute'));
     });
@@ -719,19 +721,19 @@ void main() {
       );
 
       final element = prepared.getElementById('element');
-      
+
       // Get initial position
       final initialRect = element.getBoundingClientRect();
       expect(initialRect.top, equals(20.0));
       expect(initialRect.left, equals(20.0));
-      
+
       // Change position
       await tester.runAsync(() async {
         element.style.setProperty('top', '100px');
         element.style.setProperty('left', '150px');
       });
       await tester.pump();
-      
+
       // TODO: WebF may have issues updating position dynamically
       // For now, just verify the element exists and is positioned
       expect(element.offsetWidth, equals(100.0));
@@ -777,11 +779,11 @@ void main() {
 
       final autoWidth = prepared.getElementById('auto-width');
       final autoHeight = prepared.getElementById('auto-height');
-      
+
       // Auto width should stretch between left and right
       expect(autoWidth.offsetWidth, equals(280.0)); // 300 - 10 - 10
       expect(autoWidth.offsetHeight, equals(50.0));
-      
+
       // Auto height should stretch between top and bottom
       expect(autoHeight.offsetWidth, equals(100.0));
       expect(autoHeight.offsetHeight, equals(120.0)); // 200 - 70 - 10
@@ -819,10 +821,10 @@ void main() {
 
       final parent = prepared.getElementById('relative-parent');
       final child = prepared.getElementById('absolute-child');
-      
+
       final parentRect = parent.getBoundingClientRect();
       final childRect = child.getBoundingClientRect();
-      
+
       // Child should be positioned relative to parent
       expect(childRect.top, equals(parentRect.top + 10.0));
       expect(childRect.left, equals(parentRect.left + 10.0));
@@ -857,9 +859,9 @@ void main() {
 
       final container = prepared.getElementById('container');
       final percentPos = prepared.getElementById('percent-pos');
-      
+
       final rect = percentPos.getBoundingClientRect();
-      
+
       // Position should be percentage of container
       expect(rect.top, equals(30.0)); // 10% of 300
       expect(rect.left, equals(100.0)); // 25% of 400
@@ -892,7 +894,7 @@ void main() {
       );
 
       final fixed = prepared.getElementById('fixed');
-      
+
       // Fixed element dimensions
       expect(fixed.offsetHeight, equals(100.0));
       // Width depends on viewport width
@@ -942,12 +944,12 @@ void main() {
       final bottom = prepared.getElementById('bottom');
       final middle = prepared.getElementById('middle');
       final top = prepared.getElementById('top');
-      
+
       // All elements should be rendered
       expect(bottom.offsetWidth, equals(150.0));
       expect(middle.offsetWidth, equals(150.0));
       expect(top.offsetWidth, equals(150.0));
-      
+
       // Z-index creates stacking context
       // TODO: WebF may not always return z-index values as strings
       // For now, just verify elements exist with proper dimensions
@@ -985,10 +987,10 @@ void main() {
 
       final auto = prepared.getElementById('auto');
       final numeric = prepared.getElementById('numeric');
-      
+
       expect(auto.offsetWidth, equals(100.0));
       expect(numeric.offsetWidth, equals(100.0));
-      
+
       // Auto z-index doesn't create new stacking context
       // TODO: WebF may not always return z-index values correctly
       // For now, just verify elements exist
@@ -1020,7 +1022,7 @@ void main() {
       );
 
       final transformed = prepared.getElementById('transformed');
-      
+
       // Element should have its dimensions regardless of transform
       expect(transformed.offsetWidth, equals(100.0));
       expect(transformed.offsetHeight, equals(100.0));
@@ -1050,10 +1052,10 @@ void main() {
       );
 
       final inlineAbsolute = prepared.getElementById('inline-absolute');
-      
+
       expect(inlineAbsolute.offsetWidth, equals(100.0));
       expect(inlineAbsolute.offsetHeight, equals(50.0));
-      
+
       final rect = inlineAbsolute.getBoundingClientRect();
       expect(rect.top, equals(20.0));
       expect(rect.left, equals(20.0));
@@ -1089,11 +1091,11 @@ void main() {
 
       final container = prepared.getElementById('container');
       final overflowing = prepared.getElementById('overflowing');
-      
+
       // Container should maintain its dimensions
       expect(container.offsetWidth, equals(200.0));
       expect(container.offsetHeight, equals(200.0));
-      
+
       // Overflowing element should still have its dimensions
       expect(overflowing.offsetWidth, equals(100.0));
       expect(overflowing.offsetHeight, equals(100.0));
@@ -1140,15 +1142,15 @@ void main() {
       final grandparent = prepared.getElementById('grandparent');
       final parent = prepared.getElementById('parent');
       final child = prepared.getElementById('child');
-      
+
       final grandparentRect = grandparent.getBoundingClientRect();
       final parentRect = parent.getBoundingClientRect();
       final childRect = child.getBoundingClientRect();
-      
+
       // Parent positioned relative to grandparent
       expect(parentRect.top, equals(grandparentRect.top + 30.0));
       expect(parentRect.left, equals(grandparentRect.left + 30.0));
-      
+
       // Child positioned relative to parent
       expect(childRect.top, equals(parentRect.top + 40.0));
       expect(childRect.left, equals(parentRect.left + 40.0));
@@ -1208,7 +1210,7 @@ void main() {
       );
 
       final calcPos = prepared.getElementById('calc-pos');
-      
+
       // Element should be centered (150 - 50 = 100)
       final rect = calcPos.getBoundingClientRect();
       // TODO: WebF may not fully support calc() in positioning
@@ -1243,7 +1245,7 @@ void main() {
       );
 
       final constrained = prepared.getElementById('constrained');
-      
+
       // Width should be constrained by max-width (300px)
       expect(constrained.offsetWidth, equals(300.0));
       // Height should be 380px but constrained by max-height (250px)
@@ -1274,10 +1276,10 @@ void main() {
 
       final negativePos = prepared.getElementById('negative-pos');
       final parent = negativePos.parentElement!;
-      
+
       final parentRect = parent.getBoundingClientRect();
       final childRect = negativePos.getBoundingClientRect();
-      
+
       // Child should be positioned with negative offsets
       expect(childRect.top, equals(parentRect.top - 20.0));
       expect(childRect.left, equals(parentRect.left - 30.0));
@@ -1309,7 +1311,7 @@ void main() {
 
       final absoluteNoCb = prepared.getElementById('absolute-no-cb');
       final rect = absoluteNoCb.getBoundingClientRect();
-      
+
       // Without positioned ancestor, should be relative to viewport
       expect(rect.top, equals(10.0));
       expect(rect.left, equals(10.0));
@@ -1339,10 +1341,10 @@ void main() {
       );
 
       final conflict = prepared.getElementById('conflict');
-      
+
       // When width is specified with left/right, width should win
       expect(conflict.offsetWidth, equals(200.0));
-      
+
       final rect = conflict.getBoundingClientRect();
       expect(rect.left, equals(50.0)); // Left takes precedence in LTR
     });
@@ -1374,16 +1376,16 @@ void main() {
 
       final container = prepared.getElementById('scroll-container');
       final sticky = prepared.getElementById('sticky-element');
-      
+
       // Initial position
       expect(sticky.offsetHeight, equals(50.0));
-      
+
       // Scroll and check if element sticks
       await tester.runAsync(() async {
         container.scrollTop = 200.0;
       });
       await tester.pump();
-      
+
       // TODO: WebF sticky positioning implementation may vary
       expect(sticky.offsetHeight, equals(50.0));
     });
@@ -1416,7 +1418,7 @@ void main() {
       );
 
       final verticalPos = prepared.getElementById('vertical-pos');
-      
+
       // Basic dimensions should still work
       expect(verticalPos.offsetWidth, equals(100.0));
       expect(verticalPos.offsetHeight, equals(100.0));
@@ -1449,7 +1451,7 @@ void main() {
         expect(element.offsetWidth, greaterThan(0));
         expect(element.offsetHeight, greaterThan(0));
       }
-      
+
       // Fixed element should be positioned relative to viewport
       final fixed = prepared.getElementById('level5');
       final rect = fixed.getBoundingClientRect();

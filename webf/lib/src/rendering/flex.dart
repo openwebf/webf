@@ -174,7 +174,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   @override
   void setupParentData(RenderBox child) {
-    child.parentData = RenderLayoutParentData();
+    if (child.parentData is! RenderLayoutParentData) {
+      child.parentData = RenderLayoutParentData();
+    }
   }
 
   bool get _isHorizontalFlexDirection {

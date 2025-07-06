@@ -88,6 +88,7 @@ class RenderEventListener extends RenderBoxModel
     properties.add(DiagnosticsProperty('hasEvent', _enableEvent));
   }
 
+
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
     if (child == null) {
@@ -104,6 +105,16 @@ class RenderEventListener extends RenderBoxModel
       return false;
     });
     return isHit;
+  }
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final RenderBox? child = this.child;
+    if (child == null) {
+      return;
+    }
+    final BoxParentData childParentData = child.parentData as BoxParentData;
+    context.paintChild(child, offset + childParentData.offset);
   }
 
   @override
