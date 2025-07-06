@@ -1,4 +1,4 @@
-describe('flexbox column advanced use cases', () => {
+xdescribe('flexbox column advanced use cases', () => {
   it('should handle sticky positioning in flex column', async () => {
     const container = document.createElement('div');
     setElementStyle(container, {

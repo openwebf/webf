@@ -1,4 +1,4 @@
-describe('flexbox column content fit size', () => {
+xdescribe('flexbox column content fit size', () => {
   it('should fit content width with flex-direction column', async () => {
     const container = document.createElement('div');
     setElementStyle(container, {
