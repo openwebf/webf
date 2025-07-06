@@ -41,8 +41,8 @@ void main() {
       final box = prepared.getElementById('box');
 
       // With border-box, width includes padding
-      expect(box.offsetWidth, equals(200.0));
-      expect(box.offsetHeight, equals(100.0));
+      expect(box.offsetWidth, equals(200.0), reason: 'Box width should be 200px');
+      expect(box.offsetHeight, equals(100.0), reason: 'Box height should be 100px');
     });
 
     testWidgets('measure layout and text size in flex container', (WidgetTester tester) async {
@@ -96,22 +96,27 @@ void main() {
       print('Text2 (Medium, 20px): ${text2Width}x${text2Height}');
       print('Text3 (Long, 14px): ${text3Width}x${text3Height}');
 
-      // Verify container has expected width (300px with border-box sizing includes padding)
-      if (containerWidth > 0) {
-        expect(containerWidth, equals(300.0), reason: 'Container should be 300px (border-box includes padding)');
+      // Verify container has proper layout
+      expect(containerWidth, greaterThan(0), reason: 'Container width should not be zero');
+      expect(containerHeight, greaterThan(0), reason: 'Container height should not be zero');
+      expect(containerWidth, equals(300.0), reason: 'Container should be 300px (border-box includes padding)');
 
-        // Text elements should have different widths based on content
-        expect(text1Width, lessThan(text3Width), reason: 'Short text should be narrower than long text');
-        expect(text2Width, lessThan(text3Width), reason: 'Medium text should be narrower than long text');
+      // Text elements should have non-zero dimensions
+      expect(text1Width, greaterThan(0), reason: 'Text1 width should not be zero');
+      expect(text1Height, greaterThan(0), reason: 'Text1 height should not be zero');
+      expect(text2Width, greaterThan(0), reason: 'Text2 width should not be zero');
+      expect(text2Height, greaterThan(0), reason: 'Text2 height should not be zero');
+      expect(text3Width, greaterThan(0), reason: 'Text3 width should not be zero');
+      expect(text3Height, greaterThan(0), reason: 'Text3 height should not be zero');
 
-        // Text heights are affected by content wrapping
-        // The long text (text3) wraps to multiple lines, making it taller
-        expect(text3Height, greaterThan(text1Height), reason: 'Long text wraps to multiple lines');
-        expect(text3Height, greaterThan(text2Height), reason: 'Long text is taller due to wrapping');
-      } else {
-        print('Warning: Layout measurements returned 0. This is expected in unit tests.');
-        print('For accurate layout testing, use integration tests.');
-      }
+      // Text elements should have different widths based on content
+      expect(text1Width, lessThan(text3Width), reason: 'Short text should be narrower than long text');
+      expect(text2Width, lessThan(text3Width), reason: 'Medium text should be narrower than long text');
+
+      // Text heights are affected by content wrapping
+      // The long text (text3) wraps to multiple lines, making it taller
+      expect(text3Height, greaterThan(text1Height), reason: 'Long text wraps to multiple lines');
+      expect(text3Height, greaterThan(text2Height), reason: 'Long text is taller due to wrapping');
     });
 
     testWidgets('access render objects for layout measurements', (WidgetTester tester) async {
@@ -197,22 +202,20 @@ void main() {
       print('Flex item 1 offset: ${flexItem1.offsetWidth}x${flexItem1.offsetHeight}');
       print('Flex item 2 offset: ${flexItem2.offsetWidth}x${flexItem2.offsetHeight}');
 
-      // Check if measurements are available
-      if (fixedBoxRect.width > 0) {
-        // Fixed box should be 200px wide (border-box includes padding)
-        expect(fixedBoxRect.width, equals(200.0), reason: 'Fixed box width (border-box includes padding)');
-        expect(fixedBoxRect.height, equals(100.0), reason: 'Fixed box height (border-box includes padding)');
+      // Verify measurements are available
+      expect(fixedBoxRect.width, greaterThan(0), reason: 'Fixed box width should not be zero');
+      expect(fixedBoxRect.height, greaterThan(0), reason: 'Fixed box height should not be zero');
+      expect(flexItem1Rect.width, greaterThan(0), reason: 'Flex item 1 width should not be zero');
+      expect(flexItem2Rect.width, greaterThan(0), reason: 'Flex item 2 width should not be zero');
 
-        // Flex items should follow the flex ratio
-        // Due to padding and gap, the ratio won't be exactly 2.0
-        if (flexItem1Rect.width > 0 && flexItem2Rect.width > 0) {
-          final ratio = flexItem2Rect.width / flexItem1Rect.width;
-          expect(ratio, closeTo(1.85, 0.1), reason: 'Flex item 2 should be approximately twice as wide as item 1');
-        }
-      } else {
-        print('Note: getBoundingClientRect returns 0 in unit tests.');
-        print('This is expected behavior. Use integration tests for layout measurements.');
-      }
+      // Fixed box should be 200px wide (border-box includes padding)
+      expect(fixedBoxRect.width, equals(200.0), reason: 'Fixed box width (border-box includes padding)');
+      expect(fixedBoxRect.height, equals(100.0), reason: 'Fixed box height (border-box includes padding)');
+
+      // Flex items should follow the flex ratio
+      // Due to padding and gap, the ratio won't be exactly 2.0
+      final ratio = flexItem2Rect.width / flexItem1Rect.width;
+      expect(ratio, closeTo(1.85, 0.1), reason: 'Flex item 2 should be approximately twice as wide as item 1');
     });
     testWidgets('flex-direction row creates elements with correct structure', (WidgetTester tester) async {
       WebFController? controller;
