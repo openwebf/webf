@@ -730,6 +730,166 @@ void main() {
     });
   });
 
+  group('Absolute Positioning Advanced', () {
+    testWidgets('absolute with auto dimensions', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-absolute-auto-dimensions-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                position: relative;
+                width: 300px;
+                height: 200px;
+                background-color: #eee;
+              ">
+                <div id="auto-width" style="
+                  position: absolute;
+                  top: 10px;
+                  left: 10px;
+                  right: 10px;
+                  height: 50px;
+                  background-color: red;
+                ">Auto width</div>
+                <div id="auto-height" style="
+                  position: absolute;
+                  top: 70px;
+                  bottom: 10px;
+                  left: 10px;
+                  width: 100px;
+                  background-color: green;
+                ">Auto height</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final autoWidth = prepared.getElementById('auto-width');
+      final autoHeight = prepared.getElementById('auto-height');
+      
+      // Auto width should stretch between left and right
+      expect(autoWidth.offsetWidth, equals(280.0)); // 300 - 10 - 10
+      expect(autoWidth.offsetHeight, equals(50.0));
+      
+      // Auto height should stretch between top and bottom
+      expect(autoHeight.offsetWidth, equals(100.0));
+      expect(autoHeight.offsetHeight, equals(120.0)); // 200 - 70 - 10
+    });
+
+    testWidgets('absolute positioning with containing block', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-absolute-containing-block-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="position: static;">
+                <div id="relative-parent" style="
+                  position: relative;
+                  margin: 50px;
+                  width: 200px;
+                  height: 200px;
+                  background-color: #eee;
+                ">
+                  <div id="absolute-child" style="
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    width: 50px;
+                    height: 50px;
+                    background-color: red;
+                  ">Absolute</div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final parent = prepared.getElementById('relative-parent');
+      final child = prepared.getElementById('absolute-child');
+      
+      final parentRect = parent.getBoundingClientRect();
+      final childRect = child.getBoundingClientRect();
+      
+      // Child should be positioned relative to parent
+      expect(childRect.top, equals(parentRect.top + 10.0));
+      expect(childRect.left, equals(parentRect.left + 10.0));
+    });
+
+    testWidgets('absolute with percentage positioning', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-absolute-percentage-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                position: relative;
+                width: 400px;
+                height: 300px;
+                background-color: #eee;
+              ">
+                <div id="percent-pos" style="
+                  position: absolute;
+                  top: 10%;
+                  left: 25%;
+                  width: 50%;
+                  height: 20%;
+                  background-color: green;
+                ">Percentage</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final percentPos = prepared.getElementById('percent-pos');
+      
+      final rect = percentPos.getBoundingClientRect();
+      
+      // Position should be percentage of container
+      expect(rect.top, equals(30.0)); // 10% of 300
+      expect(rect.left, equals(100.0)); // 25% of 400
+      expect(percentPos.offsetWidth, equals(200.0)); // 50% of 400
+      expect(percentPos.offsetHeight, equals(60.0)); // 20% of 300
+    });
+  });
+
+  group('Fixed Positioning Advanced', () {
+    testWidgets('fixed with percentage dimensions', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-fixed-percentage-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="height: 1000px;">
+                <div id="fixed" style="
+                  position: fixed;
+                  top: 10%;
+                  left: 10%;
+                  width: 80%;
+                  height: 100px;
+                  background-color: rgba(255, 0, 0, 0.5);
+                ">Fixed overlay</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final fixed = prepared.getElementById('fixed');
+      
+      // Fixed element dimensions
+      expect(fixed.offsetHeight, equals(100.0));
+      // Width depends on viewport width
+    });
+  });
+
   group('Z-Index', () {
     testWidgets('z-index stacking order', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
@@ -823,6 +983,166 @@ void main() {
       // Auto z-index doesn't create new stacking context
       // TODO: WebF may not always return z-index values correctly
       // For now, just verify elements exist
+    });
+  });
+
+  group('Position Edge Cases', () {
+    testWidgets('position with transform', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-transform-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="position: relative; width: 300px; height: 300px;">
+                <div id="transformed" style="
+                  position: absolute;
+                  top: 50px;
+                  left: 50px;
+                  width: 100px;
+                  height: 100px;
+                  background-color: red;
+                  transform: translateX(50px) translateY(50px);
+                ">Transformed</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final transformed = prepared.getElementById('transformed');
+      
+      // Element should have its dimensions regardless of transform
+      expect(transformed.offsetWidth, equals(100.0));
+      expect(transformed.offsetHeight, equals(100.0));
+    });
+
+    testWidgets('position with display inline-block', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-inline-block-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div style="position: relative;">
+                <span id="inline-absolute" style="
+                  position: absolute;
+                  top: 20px;
+                  left: 20px;
+                  display: inline-block;
+                  width: 100px;
+                  height: 50px;
+                  background-color: green;
+                ">Inline Block</span>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final inlineAbsolute = prepared.getElementById('inline-absolute');
+      
+      expect(inlineAbsolute.offsetWidth, equals(100.0));
+      expect(inlineAbsolute.offsetHeight, equals(50.0));
+      
+      final rect = inlineAbsolute.getBoundingClientRect();
+      expect(rect.top, equals(20.0));
+      expect(rect.left, equals(20.0));
+    });
+
+    testWidgets('position with overflow hidden', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-overflow-hidden-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                position: relative;
+                width: 200px;
+                height: 200px;
+                overflow: hidden;
+                background-color: #eee;
+              ">
+                <div id="overflowing" style="
+                  position: absolute;
+                  top: 150px;
+                  left: 150px;
+                  width: 100px;
+                  height: 100px;
+                  background-color: red;
+                ">Overflowing</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final overflowing = prepared.getElementById('overflowing');
+      
+      // Container should maintain its dimensions
+      expect(container.offsetWidth, equals(200.0));
+      expect(container.offsetHeight, equals(200.0));
+      
+      // Overflowing element should still have its dimensions
+      expect(overflowing.offsetWidth, equals(100.0));
+      expect(overflowing.offsetHeight, equals(100.0));
+    });
+
+    testWidgets('multiple positioned ancestors', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'position-multiple-ancestors-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="grandparent" style="
+                position: relative;
+                top: 20px;
+                left: 20px;
+                width: 300px;
+                height: 300px;
+                background-color: #ddd;
+              ">
+                <div id="parent" style="
+                  position: absolute;
+                  top: 30px;
+                  left: 30px;
+                  width: 200px;
+                  height: 200px;
+                  background-color: #bbb;
+                ">
+                  <div id="child" style="
+                    position: absolute;
+                    top: 40px;
+                    left: 40px;
+                    width: 100px;
+                    height: 100px;
+                    background-color: #999;
+                  ">Child</div>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final grandparent = prepared.getElementById('grandparent');
+      final parent = prepared.getElementById('parent');
+      final child = prepared.getElementById('child');
+      
+      final grandparentRect = grandparent.getBoundingClientRect();
+      final parentRect = parent.getBoundingClientRect();
+      final childRect = child.getBoundingClientRect();
+      
+      // Parent positioned relative to grandparent
+      expect(parentRect.top, equals(grandparentRect.top + 30.0));
+      expect(parentRect.left, equals(grandparentRect.left + 30.0));
+      
+      // Child positioned relative to parent
+      expect(childRect.top, equals(parentRect.top + 40.0));
+      expect(childRect.left, equals(parentRect.left + 40.0));
     });
   });
 }
