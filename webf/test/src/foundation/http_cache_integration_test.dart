@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/src/foundation/http_cache_object.dart';
 
-import '../../webf_test.dart';
+import '../../setup.dart';
 
 void main() {
   Directory? tempDirectory;

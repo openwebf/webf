@@ -5,7 +5,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/foundation.dart';
-import '../../webf_test.dart';
+import '../../setup.dart';
 import '../widget/test_utils.dart';
 
 void main() {
@@ -27,7 +27,7 @@ void main() {
   group('Flex Layout', () {
     // Important: WebF uses border-box as the default box-sizing (not content-box)
     // This means padding and border are included in the element's width/height
-    
+
     testWidgets('simple layout test using utility', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
@@ -37,9 +37,9 @@ void main() {
           </div>
         ''',
       );
-      
+
       final box = prepared.getElementById('box');
-      
+
       // With border-box, width includes padding
       expect(box.offsetWidth, equals(200.0));
       expect(box.offsetHeight, equals(100.0));

@@ -11,11 +11,11 @@ import 'package:test/test.dart';
 import 'package:webf/foundation.dart';
 
 import '../../local_http_server.dart';
-import '../../webf_test.dart';
+import '../../setup.dart';
 
 void main() {
   setupTest();
-  
+
   var server = LocalHttpServer.getInstance();
   double contextId = 1;
   HttpOverrides.global = null;
@@ -41,7 +41,7 @@ void main() {
         'method': 'GET',
         'data': {'userName': '12345'}
       });
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
@@ -60,7 +60,7 @@ void main() {
       req.headers.ifModifiedSince = HttpDate.parse('Sun, 15 Mar 2020 11:32:20 GMT');
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res)), 'CachedData');
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
@@ -107,7 +107,7 @@ void main() {
 
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res)), 'CachedData');
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
@@ -172,7 +172,7 @@ void main() {
       var res = await req.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(res);
       expect(bytes.lengthInBytes, res.contentLength);
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
@@ -196,7 +196,7 @@ void main() {
       WebFHttpOverrides.setContextHeader(req.headers, contextId);
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res)), 'CachedData');
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
@@ -226,7 +226,7 @@ void main() {
       var res = await req.close();
       Uint8List bytes = await consolidateHttpClientResponseBytes(res);
       expect(bytes.lengthInBytes, res.contentLength);
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
@@ -244,7 +244,7 @@ void main() {
       WebFHttpOverrides.setContextHeader(req.headers, contextId);
       var res = await req.close();
       expect(String.fromCharCodes(await consolidateHttpClientResponseBytes(res))[0], '!');
-      
+
       // Wait for cache write to complete
       await HttpCacheController.waitForPendingCacheWrites();
 
