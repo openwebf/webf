@@ -83,7 +83,7 @@ export const ContextMenuPage: React.FC = () => {
   }, []);
 
   // Event Handler
-  const onSelect = (e) => console.log('Select event', e.detail);
+  const onSelect = (e: any) => console.log('Select event', e.detail);
 
   return (
     <div id="main">

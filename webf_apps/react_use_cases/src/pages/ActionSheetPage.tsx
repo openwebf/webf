@@ -74,10 +74,6 @@ export const ActionSheetPage: React.FC = () => {
     console.log('Action selected:', event.detail);
   };
 
-  const handleCancel = () => {
-    console.log('Action sheet cancelled');
-  };
-
   return (
     <div id="main">
       <WebFListView className={styles.list}>

@@ -88,7 +88,7 @@ export const ResponsivePage: React.FC = () => {
         <div className={styles.imageContainer}>
           <img 
             src={currentImage.url}
-            alt="Responsive image that changes based on screen size"
+            alt="Responsive one that changes based on screen size"
             className={styles.responsiveImage}
           />
           <div className={styles.imageLabel}>
