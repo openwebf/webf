@@ -149,7 +149,7 @@ void main() {
                 </div>
               </body>
             </html>
-          ''', contentType: htmlContentType),
+          ''', url: 'test://render-object-test/', contentType: htmlContentType),
         );
         await controller!.controlledInitCompleter.future;
       });
@@ -243,7 +243,7 @@ void main() {
                 </div>
               </body>
             </html>
-          ''', contentType: htmlContentType),
+          ''', url: 'test://flex-row-test/', contentType: htmlContentType),
         );
         await controller!.controlledInitCompleter.future;
       });
@@ -317,7 +317,7 @@ void main() {
                 </div>
               </body>
             </html>
-          ''', contentType: htmlContentType),
+          ''', url: 'test://flex-column-test/', contentType: htmlContentType),
         );
         await controller!.controlledInitCompleter.future;
       });
@@ -403,7 +403,7 @@ void main() {
                 ">Content Box</div>
               </body>
             </html>
-          ''', contentType: htmlContentType),
+          ''', url: 'test://border-box-test/', contentType: htmlContentType),
         );
         await controller!.controlledInitCompleter.future;
       });

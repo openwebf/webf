@@ -44,7 +44,7 @@ class WebFWidgetTestUtils {
           viewportWidth: viewportWidth,
           viewportHeight: viewportHeight,
         ),
-        bundle: WebFBundle.fromContent(html, contentType: htmlContentType),
+        bundle: WebFBundle.fromContent(html, url: 'test://$name/', contentType: htmlContentType),
       );
       await controller!.controlledInitCompleter.future;
     });
