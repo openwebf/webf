@@ -245,6 +245,8 @@ const String RIGHT = 'right';
 const String TOP = 'top';
 const String BOTTOM = 'bottom';
 const String TEXT_BOTTOM = 'text-bottom';
+const String TEXT_TOP = 'text-top';
+const String MIDDLE = 'middle';
 
 const String CENTER = 'center';
 
