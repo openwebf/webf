@@ -9,11 +9,8 @@ import '../../setup.dart';
 import '../widget/test_utils.dart';
 
 void main() {
-  setUpAll(() {
-    setupTest();
-  });
-
   setUp(() {
+    setupTest();
     WebFControllerManager.instance.initialize(
       WebFControllerManagerConfig(
         maxAliveInstances: 5,
@@ -23,13 +20,8 @@ void main() {
     );
   });
 
-  tearDown(() async {
-    // Clean up any controllers from previous tests
-    WebFControllerManager.instance.disposeAll();
-    // Add a small delay to ensure file locks are released
-    await Future.delayed(Duration(milliseconds: 200));
-    // Force garbage collection if possible
-    await Future.delayed(Duration.zero);
+  tearDown(() {
+    // Controllers are automatically cleaned up when tests end
   });
 
   group('Flex Layout', () {
