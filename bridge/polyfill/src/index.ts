@@ -55,6 +55,11 @@ defineGlobalProperty('ReadableStream', ReadableStream);
 defineGlobalProperty('WritableStream', WritableStream);
 defineGlobalProperty('TransformStream', TransformStream);
 
+// @ts-expect-error
+globalThis.Element.prototype.attachShadow = function (init) {
+  return document.createElement('shadow-root');
+}
+
 export type PolyFillGlobal = {
   console: Console,
   webf: Webf,
