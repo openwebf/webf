@@ -82,6 +82,7 @@ void evaluateScripts(void* page,
                      uint64_t* bytecode_len,
                      const char* bundleFilename,
                      int32_t start_line,
+                     void* script_element_,
                      Dart_Handle dart_handle,
                      EvaluateScriptsCallback result_callback);
 
@@ -93,6 +94,7 @@ void evaluateModule(void* page,
                     uint64_t* bytecode_len,
                     const char* bundleFilename,
                     int32_t start_line,
+                    void* script_element_,
                     Dart_Handle dart_handle,
                     EvaluateScriptsCallback result_callback);
 

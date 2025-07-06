@@ -53,9 +53,10 @@ class WebFPage final {
                                       uint64_t* bytecode_len,
                                       const char* bundleFilename,
                                       int32_t startLine,
+                                      void* script_element_,
                                       Dart_Handle dart_handle,
                                       EvaluateScriptsCallback result_callback);
-  
+
   static void EvaluateModuleInternal(void* page_,
                                      const char* code,
                                      uint64_t code_len,
@@ -63,6 +64,7 @@ class WebFPage final {
                                      uint64_t* bytecode_len,
                                      const char* bundleFilename,
                                      int32_t startLine,
+                                     void* script_element_,
                                      Dart_Handle dart_handle,
                                      EvaluateScriptsCallback result_callback);
 
@@ -102,16 +104,18 @@ class WebFPage final {
                       uint8_t** parsed_bytecodes,
                       uint64_t* bytecode_len,
                       const char* url,
-                      int startLine);
+                      int startLine,
+                      HTMLScriptElement* script_element = nullptr);
   // evaluate JavaScript source codes as ES module.
   bool evaluateModule(const char* script,
                       uint64_t script_len,
                       uint8_t** parsed_bytecodes,
                       uint64_t* bytecode_len,
                       const char* url,
-                      int startLine);
+                      int startLine,
+                      HTMLScriptElement* script_element = nullptr);
   bool parseHTML(const char* code, size_t length);
-  void evaluateScript(const char* script, size_t length, const char* url, int startLine);
+  void evaluateScript(const char* script, size_t length, const char* url, int startLine, HTMLScriptElement* script_element = nullptr);
   uint8_t* dumpByteCode(const char* script, size_t length, const char* url, bool is_module, uint64_t* byteLength);
   bool evaluateByteCode(uint8_t* bytes, size_t byteLength, HTMLScriptElement* script_element = nullptr);
 

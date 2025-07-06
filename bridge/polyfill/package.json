@@ -15,16 +15,17 @@
     "event-emitter": "^0.3.5",
     "expect": "^25.1.0",
     "ts-jest": "^24.3.0",
-    "tslib": "^1.11.2"
+    "tslib": "^1.11.2",
+    "web-streams-polyfill": "^4.1.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "@rollup/plugin-replace": "^6.0.0",
-    "@rollup/plugin-typescript": "^12.0.0",
     "@rollup/plugin-terser": "^0.4.4",
-    "cross-env": "^7.0.3",
+    "@rollup/plugin-typescript": "^12.0.0",
     "@types/babel__traverse": "7.18.3",
+    "cross-env": "^7.0.3",
     "jest": "^24.9.0",
     "rollup": "^4.0.0",
     "rollup-plugin-dts": "^6.1.0",

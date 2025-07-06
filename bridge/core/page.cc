@@ -137,16 +137,17 @@ bool WebFPage::evaluateScript(const char* script,
                               uint8_t** parsed_bytecodes,
                               uint64_t* bytecode_len,
                               const char* url,
-                              int startLine) {
+                              int startLine,
+                              HTMLScriptElement* script_element) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
+  return context_->EvaluateJavaScript(script, script_len, parsed_bytecodes, bytecode_len, url, startLine, script_element);
 }
 
-void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine) {
+void WebFPage::evaluateScript(const char* script, size_t length, const char* url, int startLine, HTMLScriptElement* script_element) {
   if (!context_->IsContextValid())
     return;
-  context_->EvaluateJavaScript(script, length, url, startLine);
+  context_->EvaluateJavaScript(script, length, url, startLine, script_element);
 }
 
 bool WebFPage::evaluateModule(const char* script,
@@ -154,10 +155,11 @@ bool WebFPage::evaluateModule(const char* script,
                               uint8_t** parsed_bytecodes,
                               uint64_t* bytecode_len,
                               const char* url,
-                              int startLine) {
+                              int startLine,
+                              HTMLScriptElement* script_element) {
   if (!context_->IsContextValid())
     return false;
-  return context_->EvaluateModule(script, script_len, parsed_bytecodes, bytecode_len, url, startLine);
+  return context_->EvaluateModule(script, script_len, parsed_bytecodes, bytecode_len, url, startLine, script_element);
 }
 
 uint8_t* WebFPage::dumpByteCode(const char* script, size_t length, const char* url, bool is_module, uint64_t* byteLength) {
@@ -204,12 +206,19 @@ void WebFPage::EvaluateScriptsInternal(void* page_,
                                        uint64_t* bytecode_len,
                                        const char* bundleFilename,
                                        int32_t startLine,
+                                       void* script_element_,
                                        Dart_Handle persistent_handle,
                                        EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  auto script_element_native_binding_object = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
+  auto binding_object = BindingObject::From(script_element_native_binding_object);
+  auto* event_target = DynamicTo<EventTarget>(binding_object);
+  auto* node = DynamicTo<Node>(event_target);
+  auto* html_element = DynamicTo<HTMLElement>(node);
+  auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
   assert(std::this_thread::get_id() == page->currentThread());
 
-  bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+  bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine, script_element);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
                                                        persistent_handle, result_callback, is_success);
@@ -222,12 +231,19 @@ void WebFPage::EvaluateModuleInternal(void* page_,
                                       uint64_t* bytecode_len,
                                       const char* bundleFilename,
                                       int32_t startLine,
+                                      void* script_element_,
                                       Dart_Handle persistent_handle,
                                       EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
+  auto script_element_native_binding_object = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
+  auto binding_object = BindingObject::From(script_element_native_binding_object);
+  auto* event_target = DynamicTo<EventTarget>(binding_object);
+  auto* node = DynamicTo<Node>(event_target);
+  auto* html_element = DynamicTo<HTMLElement>(node);
+  auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
   assert(std::this_thread::get_id() == page->currentThread());
 
-  bool is_success = page->evaluateModule(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine);
+  bool is_success = page->evaluateModule(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine, script_element);
 
   page->dartIsolateContext()->dispatcher()->PostToDart(page->isDedicated(), ReturnEvaluateScriptsInternal,
                                                        persistent_handle, result_callback, is_success);
@@ -256,8 +272,6 @@ void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
   auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
 
   assert(std::this_thread::get_id() == page->currentThread());
-
-  WEBF_LOG(VERBOSE)  << "" << script_element->tagName().Character8() << std::endl;
 
   bool is_success = page->evaluateByteCode(bytes, byteLen, script_element);
 

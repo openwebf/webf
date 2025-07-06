@@ -48,10 +48,10 @@ class ScriptRunner {
       bool result;
       if (isModule) {
         result = await evaluateModule(contextId, bundle.data!,
-            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache, scriptElement: scriptElement);
       } else {
         result = await evaluateScripts(contextId, bundle.data!,
-            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache, scriptElement: scriptElement);
       }
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');

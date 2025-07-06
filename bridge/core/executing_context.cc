@@ -166,6 +166,16 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
                                           uint64_t* bytecode_len,
                                           const char* sourceURL,
                                           int startLine) {
+  return EvaluateJavaScript(code, code_len, parsed_bytecodes, bytecode_len, sourceURL, startLine, nullptr);
+}
+
+bool ExecutingContext::EvaluateJavaScript(const char* code,
+                                          size_t code_len,
+                                          uint8_t** parsed_bytecodes,
+                                          uint64_t* bytecode_len,
+                                          const char* sourceURL,
+                                          int startLine,
+                                          HTMLScriptElement* script_element) {
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
@@ -182,6 +192,14 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
     exception_state.ThrowException(ctx(), ErrorType::RangeError, "Script size exceeds maximum limit");
     HandleException(exception_state);
     return false;
+  }
+
+  // Set document.currentScript if script element is provided
+  HTMLScriptElement* previous_current_script = nullptr;
+  if (script_element && document()) {
+    previous_current_script = document()->currentScript();
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(script_element);
   }
 
   JSValue result;
@@ -207,15 +225,42 @@ bool ExecutingContext::EvaluateJavaScript(const char* code,
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
+  // Restore previous currentScript
+  if (script_element && document()) {
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(previous_current_script);
+  }
+
   return success;
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine) {
+  return EvaluateJavaScript(code, length, sourceURL, startLine, nullptr);
+}
+
+bool ExecutingContext::EvaluateJavaScript(const char16_t* code, size_t length, const char* sourceURL, int startLine,
+                                          HTMLScriptElement* script_element) {
   std::string utf8Code = toUTF8(std::u16string(reinterpret_cast<const char16_t*>(code), length));
+
+  // Set document.currentScript if script element is provided
+  HTMLScriptElement* previous_current_script = nullptr;
+  if (script_element && document()) {
+    previous_current_script = document()->currentScript();
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(script_element);
+  }
+
   JSValue result = JS_Eval(script_state_.ctx(), utf8Code.c_str(), utf8Code.size(), sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
+
+  // Restore previous currentScript
+  if (script_element && document()) {
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(previous_current_script);
+  }
+
   return success;
 }
 
@@ -225,9 +270,28 @@ bool ExecutingContext::EvaluateModule(const char* code,
                                       uint64_t* bytecode_len,
                                       const char* sourceURL,
                                       int startLine) {
+  return EvaluateModule(code, code_len, parsed_bytecodes, bytecode_len, sourceURL, startLine, nullptr);
+}
+
+bool ExecutingContext::EvaluateModule(const char* code,
+                                      size_t code_len,
+                                      uint8_t** parsed_bytecodes,
+                                      uint64_t* bytecode_len,
+                                      const char* sourceURL,
+                                      int startLine,
+                                      HTMLScriptElement* script_element) {
   if (ScriptForbiddenScope::IsScriptForbidden()) {
     return false;
   }
+
+  // Set document.currentScript if script element is provided
+  HTMLScriptElement* previous_current_script = nullptr;
+  if (script_element && document()) {
+    previous_current_script = document()->currentScript();
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(script_element);
+  }
+
   JSValue result;
   if (parsed_bytecodes == nullptr) {
     // For inline modules, we need to compile first to set up import.meta
@@ -267,14 +331,40 @@ bool ExecutingContext::EvaluateModule(const char* code,
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
 
+  // Restore previous currentScript
+  if (script_element && document()) {
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(previous_current_script);
+  }
+
   return success;
 }
 
 bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine) {
+  return EvaluateJavaScript(code, codeLength, sourceURL, startLine, nullptr);
+}
+
+bool ExecutingContext::EvaluateJavaScript(const char* code, size_t codeLength, const char* sourceURL, int startLine,
+                                          HTMLScriptElement* script_element) {
+  // Set document.currentScript if script element is provided
+  HTMLScriptElement* previous_current_script = nullptr;
+  if (script_element && document()) {
+    previous_current_script = document()->currentScript();
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(script_element);
+  }
+
   JSValue result = JS_Eval(script_state_.ctx(), code, codeLength, sourceURL, JS_EVAL_TYPE_GLOBAL);
   DrainMicrotasks();
   bool success = HandleException(&result);
   JS_FreeValue(script_state_.ctx(), result);
+
+  // Restore previous currentScript
+  if (script_element && document()) {
+    MemberMutationScope scope{this};
+    document()->setCurrentScript(previous_current_script);
+  }
+
   return success;
 }
 

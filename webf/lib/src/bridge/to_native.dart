@@ -217,6 +217,7 @@ typedef NativeEvaluateScripts = Void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     Int32 startLine,
+    Pointer<NativeBindingObject>,
     Handle object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 typedef DartEvaluateScripts = void Function(
@@ -227,6 +228,7 @@ typedef DartEvaluateScripts = void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     int startLine,
+    Pointer<NativeBindingObject>,
     Object object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 
@@ -310,7 +312,7 @@ void handleEvaluateScriptsResult(Object handle, int result) {
 }
 
 Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
-    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0}) async {
+    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0, ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -342,7 +344,7 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
     if (!result) {
       await cacheObject.remove();
       // Fallback to normal script mode.
-      return evaluateScripts(contextId, codeBytes);
+      return evaluateScripts(contextId, codeBytes, scriptElement: scriptElement);
     }
     return result;
   } else {
@@ -353,6 +355,8 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
     _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, urlPtr, cacheKey);
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
         Pointer.fromFunction(handleEvaluateScriptsResult);
+
+    Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
 
     try {
       assert(_allocatedPages.containsKey(contextId));
@@ -365,10 +369,10 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
         context.bytecodeLen = bytecodeLen;
 
         _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line,
-            context, resultCallback);
+            scriptElementPtr, context, resultCallback);
       } else {
-        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, context,
-            resultCallback);
+        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
+            context, resultCallback);
       }
       return completer.future;
     } catch (e, stack) {
@@ -425,7 +429,7 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptE
 }
 
 Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
-    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0}) async {
+    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0, ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -443,6 +447,7 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
     _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, urlPtr, cacheKey);
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
         Pointer.fromFunction(handleEvaluateScriptsResult);
+    Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
 
     try {
       assert(_allocatedPages.containsKey(contextId));
@@ -454,11 +459,11 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
         context.bytecodes = bytecodes;
         context.bytecodeLen = bytecodeLen;
 
-        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line,
+        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line, scriptElementPtr,
             context, resultCallback);
       } else {
-        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, context,
-            resultCallback);
+        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
+            context, resultCallback);
       }
       return completer.future;
     } catch (e, stack) {
