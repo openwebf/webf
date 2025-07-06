@@ -254,6 +254,7 @@ typedef NativeEvaluateModule = Void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     Int32 startLine,
+    Pointer<NativeBindingObject>,
     Handle object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 
