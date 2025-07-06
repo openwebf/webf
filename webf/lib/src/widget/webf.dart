@@ -716,40 +716,37 @@ class WebFStateElement extends StatefulElement {
 
     await controller.controlledInitCompleter.future;
 
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      // Sync element state.
-      flushUICommand(controller.view, nullptr);
+    // Sync element state.
+    flushUICommand(controller.view, nullptr);
 
-      if (controller.evaluated) {
-        _resumeForLoaded();
-        return;
-      }
+    if (controller.evaluated) {
+      _resumeForLoaded();
+      return;
+    }
 
-      if (controller.hasLoadingError) {
-        markNeedsBuild();
-        return;
-      }
+    if (controller.hasLoadingError) {
+      markNeedsBuild();
+      return;
+    }
 
-      // Starting to flush ui commands every frames.
-      controller.view.flushPendingCommandsPerFrame();
+    // Starting to flush ui commands every frames.
+    controller.view.flushPendingCommandsPerFrame();
 
-      // Bundle could be executed before mount to the flutter tree.
-      if (controller.mode == WebFLoadingMode.preloading) {
-        await _loadingInPreloadMode();
-      } else if (controller.mode == WebFLoadingMode.preRendering) {
-        await _loadingInPreRenderingMode();
-      }
+    // Bundle could be executed before mount to the flutter tree.
+    if (controller.mode == WebFLoadingMode.preloading) {
+      await _loadingInPreloadMode();
+    } else if (controller.mode == WebFLoadingMode.preRendering) {
+      await _loadingInPreRenderingMode();
+    }
 
-      bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;
-      String initialRoute = widget.initialRoute ?? widget.controller.initialRoute ?? '/';
+    bool hasInitialRoute = widget.initialRoute != null || widget.controller.initialRoute != null;
+    String initialRoute = widget.initialRoute ?? widget.controller.initialRoute ?? '/';
 
-      if (hasInitialRoute && initialRoute != '/') {
-        await widget.controller.view.awaitForHybridRouteLoaded(initialRoute);
-      }
+    if (hasInitialRoute && initialRoute != '/') {
+      await widget.controller.view.awaitForHybridRouteLoaded(initialRoute);
+    }
 
-      controller.evaluated = true;
-    });
-    SchedulerBinding.instance.scheduleFrame();
+    controller.evaluated = true;
   }
 
   Future<void> _loadingInNormalMode() async {
