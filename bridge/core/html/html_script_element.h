@@ -19,14 +19,6 @@ class HTMLScriptElement : public HTMLElement {
   explicit HTMLScriptElement(Document& document);
 };
 
-template <>
-struct DowncastTraits<HTMLScriptElement> {
-  static bool AllowFrom(const BindingObject& binding_object) {
-    return binding_object.IsEventTarget() && To<EventTarget>(binding_object).IsNode() &&
-           To<Node>(binding_object).IsHTMLElement() && To<HTMLElement>(binding_object).tagName() == html_names::kScript;
-  }
-};
-
 }  // namespace webf
 
 #endif  // BRIDGE_CORE_HTML_HTML_SCRIPT_ELEMENT_H_

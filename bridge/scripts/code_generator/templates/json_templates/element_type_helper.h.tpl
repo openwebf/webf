@@ -47,7 +47,11 @@ struct DowncastTraits<${name}> {
  static bool AllowFrom(const EventTarget& event_target) {
     return event_target.IsNode() && To<Node>(event_target).IsHTMLElement() &&
             To<HTMLElement>(event_target).tagName() == html_names::k${ upperCamelCase(htmlName) };
-  }
+ }
+ static bool AllowFrom(const BindingObject& binding_object) {
+    return binding_object.IsEventTarget() && To<EventTarget>(binding_object).IsNode() && To<Node>(binding_object).IsHTMLElement() &&
+   To<HTMLElement>(binding_object).tagName() == html_names::k${ upperCamelCase(htmlName) };
+ }
 };
 `;
 } %>
