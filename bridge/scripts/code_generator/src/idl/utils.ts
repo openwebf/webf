@@ -27,6 +27,34 @@ export function getClassName(blob: IDLBlob) {
     if (raw === 'htmlIframeElement') {
       return `HTMLIFrameElement`;
     }
+    // Handle HTML elements with uppercase abbreviations
+    if (raw === 'htmlLiElement') {
+      return `HTMLLIElement`;
+    }
+    if (raw === 'htmlUlistElement') {
+      return `HTMLUListElement`;
+    }
+    if (raw === 'htmlOlistElement') {
+      return `HTMLOListElement`;
+    }
+    if (raw === 'htmlHrElement') {
+      return `HTMLHRElement`;
+    }
+    if (raw === 'htmlDlElement') {
+      return `HTMLDLElement`;
+    }
+    if (raw === 'htmlDtElement') {
+      return `HTMLDTElement`;
+    }
+    if (raw === 'htmlDdElement') {
+      return `HTMLDDElement`;
+    }
+    if (raw === 'htmlFigcaptionElement') {
+      return `HTMLFigCaptionElement`;
+    }
+    if (raw === 'htmlNoscriptElement') {
+      return `HTMLNoScriptElement`;
+    }
     return 'HTML' + raw.slice(4);
   }
   if (raw.slice(0, 6) == 'svgSvg') {
@@ -60,6 +88,35 @@ export function getWrapperTypeInfoNameOfClassName(className: string) {
   } else if (className === 'SVGGElement') {
     // TODO: use more better way
     className = `SVG_G_Element`
+  }
+
+  // Handle HTML elements with uppercase abbreviations
+  if (className === 'HTMLLIElement') {
+    return 'HTML_LI_ELEMENT';
+  }
+  if (className === 'HTMLUListElement') {
+    return 'HTML_U_LIST_ELEMENT';
+  }
+  if (className === 'HTMLOListElement') {
+    return 'HTML_O_LIST_ELEMENT';
+  }
+  if (className === 'HTMLHRElement') {
+    return 'HTML_HR_ELEMENT';
+  }
+  if (className === 'HTMLDLElement') {
+    return 'HTML_DL_ELEMENT';
+  }
+  if (className === 'HTMLDTElement') {
+    return 'HTML_DT_ELEMENT';
+  }
+  if (className === 'HTMLDDElement') {
+    return 'HTML_DD_ELEMENT';
+  }
+  if (className === 'HTMLFigCaptionElement') {
+    return 'HTML_FIG_CAPTION_ELEMENT';
+  }
+  if (className === 'HTMLNoScriptElement') {
+    return 'HTML_NO_SCRIPT_ELEMENT';
   }
 
   return snakeCase(className).toUpperCase()
