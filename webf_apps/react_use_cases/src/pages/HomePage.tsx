@@ -203,6 +203,13 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/gesture')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Gesture Detection</div>
+                <div className={styles.itemDesc}>Flutter gesture capabilities: tap, pan, scale, rotate, and swipe gestures.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
           </div>
         </div> {/* End of main component-section */}
       </WebFListView>
