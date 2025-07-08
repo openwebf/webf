@@ -631,6 +631,26 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_span_element.cc
     core/html/html_strong_element.cc
     core/html/html_ulist_element.cc
+    core/html/html_bold_element.cc
+    core/html/html_italic_element.cc
+    core/html/html_underline_element.cc
+    core/html/html_strikethrough_element.cc
+    core/html/html_mark_element.cc
+    core/html/html_small_element.cc
+    core/html/html_hr_element.cc
+    core/html/html_dl_element.cc
+    core/html/html_dt_element.cc
+    core/html/html_dd_element.cc
+    core/html/html_figure_element.cc
+    core/html/html_figcaption_element.cc
+    core/html/html_address_element.cc
+    core/html/html_aside_element.cc
+    core/html/html_main_element.cc
+    core/html/html_del_element.cc
+    core/html/html_ins_element.cc
+    core/html/html_title_element.cc
+    core/html/html_meta_element.cc
+    core/html/html_noscript_element.cc
     core/html/custom_html_element_factory.cc
     core/html/image.cc
     core/html/html_collection.cc
@@ -645,6 +665,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/forms/html_input_element.cc
     core/html/forms/html_form_element.cc
     core/html/forms/html_textarea_element.cc
+    core/html/forms/html_label_element.cc
     core/html/forms/form_data.cc
     core/html/touches/webf_touch_area_element.cc
 
@@ -822,6 +843,35 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_html_olist_element.cc
     code_gen/qjs_html_paragraph_element.cc
     code_gen/qjs_html_heading_element.cc
+    code_gen/qjs_html_bold_element.cc
+    code_gen/qjs_html_italic_element.cc
+    code_gen/qjs_html_underline_element.cc
+    code_gen/qjs_html_strikethrough_element.cc
+    code_gen/qjs_html_mark_element.cc
+    code_gen/qjs_html_small_element.cc
+    code_gen/qjs_html_hr_element.cc
+    code_gen/qjs_html_abbr_element.cc
+    code_gen/qjs_html_cite_element.cc
+    code_gen/qjs_html_kbd_element.cc
+    code_gen/qjs_html_var_element.cc
+    code_gen/qjs_html_dfn_element.cc
+    code_gen/qjs_html_samp_element.cc
+    code_gen/qjs_html_data_element.cc
+    code_gen/qjs_html_time_element.cc
+    code_gen/qjs_html_dl_element.cc
+    code_gen/qjs_html_dt_element.cc
+    code_gen/qjs_html_dd_element.cc
+    code_gen/qjs_html_figure_element.cc
+    code_gen/qjs_html_figcaption_element.cc
+    code_gen/qjs_html_address_element.cc
+    code_gen/qjs_html_aside_element.cc
+    code_gen/qjs_html_main_element.cc
+    code_gen/qjs_html_label_element.cc
+    code_gen/qjs_html_del_element.cc
+    code_gen/qjs_html_ins_element.cc
+    code_gen/qjs_html_title_element.cc
+    code_gen/qjs_html_meta_element.cc
+    code_gen/qjs_html_noscript_element.cc
     code_gen/qjs_image.cc
     code_gen/qjs_widget_element.cc
     code_gen/qjs_canvas_rendering_context_2d.cc

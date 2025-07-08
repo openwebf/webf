@@ -143,6 +143,110 @@
       "name": "code",
       "interfaceName": "HTMLCodeElement",
       "filename": "html_code_element"
+    },
+    {
+      "name": "b",
+      "interfaceName": "HTMLBoldElement",
+      "filename": "html_bold_element"
+    },
+    {
+      "name": "i",
+      "interfaceName": "HTMLItalicElement",
+      "filename": "html_italic_element"
+    },
+    {
+      "name": "u",
+      "interfaceName": "HTMLUnderlineElement",
+      "filename": "html_underline_element"
+    },
+    {
+      "name": "s",
+      "interfaceName": "HTMLStrikethroughElement",
+      "filename": "html_strikethrough_element"
+    },
+    {
+      "name": "mark",
+      "interfaceName": "HTMLMarkElement",
+      "filename": "html_mark_element"
+    },
+    {
+      "name": "small",
+      "interfaceName": "HTMLSmallElement",
+      "filename": "html_small_element"
+    },
+    {
+      "name": "hr",
+      "interfaceName": "HTMLHRElement",
+      "filename": "html_hr_element"
+    },
+    {
+      "name": "dl",
+      "interfaceName": "HTMLDLElement",
+      "filename": "html_dl_element"
+    },
+    {
+      "name": "dt",
+      "interfaceName": "HTMLDTElement",
+      "filename": "html_dt_element"
+    },
+    {
+      "name": "dd",
+      "interfaceName": "HTMLDDElement",
+      "filename": "html_dd_element"
+    },
+    {
+      "name": "figure",
+      "interfaceName": "HTMLFigureElement",
+      "filename": "html_figure_element"
+    },
+    {
+      "name": "figcaption",
+      "interfaceName": "HTMLFigCaptionElement",
+      "filename": "html_figcaption_element"
+    },
+    {
+      "name": "address",
+      "interfaceName": "HTMLAddressElement",
+      "filename": "html_address_element"
+    },
+    {
+      "name": "aside",
+      "interfaceName": "HTMLAsideElement",
+      "filename": "html_aside_element"
+    },
+    {
+      "name": "main",
+      "interfaceName": "HTMLMainElement",
+      "filename": "html_main_element"
+    },
+    {
+      "name": "label",
+      "interfaceHeaderDir": "core/html/forms"
+    },
+    {
+      "name": "del",
+      "interfaceName": "HTMLDelElement",
+      "filename": "html_del_element"
+    },
+    {
+      "name": "ins",
+      "interfaceName": "HTMLInsElement",
+      "filename": "html_ins_element"
+    },
+    {
+      "name": "title",
+      "interfaceName": "HTMLTitleElement",
+      "filename": "html_title_element"
+    },
+    {
+      "name": "meta",
+      "interfaceName": "HTMLMetaElement",
+      "filename": "html_meta_element"
+    },
+    {
+      "name": "noscript",
+      "interfaceName": "HTMLNoScriptElement",
+      "filename": "html_noscript_element"
     }
   ]
 }

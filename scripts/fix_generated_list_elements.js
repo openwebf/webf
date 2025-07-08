@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-// Fix generated list element files
+// Fix generated element files that have naming issues
 function fixGeneratedFiles() {
   const codeGenPath = path.join(__dirname, '..', 'bridge', 'code_gen');
   
@@ -33,6 +33,15 @@ function fixGeneratedFiles() {
         { from: /"HTMLOlistElement"/g, to: '"HTMLOListElement"' },
         { from: /JS_CLASS_HTML_OLIST_ELEMENT/g, to: 'JS_CLASS_HTML_OL_ELEMENT' },
         { from: /kHTMLOlistElement/g, to: 'kHTMLOListElement' }
+      ]
+    },
+    {
+      files: ['qjs_html_hr_element.cc', 'qjs_html_hr_element.h'],
+      replacements: [
+        { from: /QJSHTMLHrElement/g, to: 'QJSHTMLHRElement' },
+        { from: /HTMLHrElement/g, to: 'HTMLHRElement' },
+        { from: /"HTMLHrElement"/g, to: '"HTMLHRElement"' },
+        { from: /kHTMLHrElement/g, to: 'kHTMLHRElement' }
       ]
     }
   ];
