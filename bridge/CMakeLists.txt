@@ -614,7 +614,24 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/html/html_iframe_element.cc
     core/html/html_link_element.cc
     core/html/html_unknown_element.cc
+    core/html/html_article_element.cc
     core/html/html_br_element.cc
+    core/html/html_code_element.cc
+    core/html/html_em_element.cc
+    core/html/html_footer_element.cc
+    core/html/html_header_element.cc
+    core/html/html_heading_element.cc
+    core/html/html_li_element.cc
+    core/html/html_nav_element.cc
+    core/html/html_olist_element.cc
+    core/html/html_paragraph_element.cc
+    core/html/html_pre_element.cc
+    core/html/html_quote_element.cc
+    core/html/html_section_element.cc
+    core/html/html_span_element.cc
+    core/html/html_strong_element.cc
+    core/html/html_ulist_element.cc
+    core/html/custom_html_element_factory.cc
     core/html/image.cc
     core/html/html_collection.cc
     core/html/canvas/html_canvas_element.cc
@@ -789,6 +806,22 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_html_canvas_element.cc
     code_gen/qjs_html_br_element.cc
     code_gen/qjs_html_link_element.cc
+    code_gen/qjs_html_article_element.cc
+    code_gen/qjs_html_section_element.cc
+    code_gen/qjs_html_footer_element.cc
+    code_gen/qjs_html_header_element.cc
+    code_gen/qjs_html_nav_element.cc
+    code_gen/qjs_html_span_element.cc
+    code_gen/qjs_html_strong_element.cc
+    code_gen/qjs_html_em_element.cc
+    code_gen/qjs_html_pre_element.cc
+    code_gen/qjs_html_code_element.cc
+    code_gen/qjs_html_quote_element.cc
+    code_gen/qjs_html_li_element.cc
+    code_gen/qjs_html_ulist_element.cc
+    code_gen/qjs_html_olist_element.cc
+    code_gen/qjs_html_paragraph_element.cc
+    code_gen/qjs_html_heading_element.cc
     code_gen/qjs_image.cc
     code_gen/qjs_widget_element.cc
     code_gen/qjs_canvas_rendering_context_2d.cc

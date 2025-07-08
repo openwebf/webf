@@ -48,10 +48,10 @@ void LegacySharedUICommand::AddCommand(UICommand type,
 // first called by dart to being read commands.
 void* LegacySharedUICommand::data() {
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
+  while (is_blocking_reading_.load(std::memory_order_acquire)) {
   }
 
-  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
+  is_blocking_writing_.store(true, std::memory_order_release);
 
   auto* pack = (UICommandBufferPack*)dart_malloc(sizeof(UICommandBufferPack));
   pack->length = active_buffer->size();
@@ -60,7 +60,7 @@ void* LegacySharedUICommand::data() {
 
   active_buffer = std::make_unique<UICommandBuffer>(context_);
 
-  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
+  is_blocking_writing_.store(false, std::memory_order_release);
 
   return pack;
 }
@@ -68,26 +68,26 @@ void* LegacySharedUICommand::data() {
 // third called by dart to clear commands.
 void LegacySharedUICommand::clear() {
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
+  while (is_blocking_reading_.load(std::memory_order_acquire)) {
   }
 
-  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
+  is_blocking_writing_.store(true, std::memory_order_release);
 
   active_buffer->clear();
 
-  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
+  is_blocking_writing_.store(false, std::memory_order_release);
 }
 
 // called by c++ to check if there are commands.
 bool LegacySharedUICommand::empty() {
   if (context_->isDedicated()) {
     // simply spin wait for the swapBuffers to finish.
-    while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+    while (is_blocking_writing_.load(std::memory_order_acquire)) {
     }
 
-    is_blocking_reading_.store(true, std::memory_order::memory_order_release);
+    is_blocking_reading_.store(true, std::memory_order_release);
     int is_empty = reserve_buffer_->empty() && waiting_buffer_->empty() && active_buffer->empty();
-    is_blocking_reading_.store(false, std::memory_order::memory_order_release);
+    is_blocking_reading_.store(false, std::memory_order_release);
     return is_empty;
   }
 
@@ -96,12 +96,12 @@ bool LegacySharedUICommand::empty() {
 
 int64_t LegacySharedUICommand::size() {
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_reading_.load(std::memory_order::memory_order_acquire)) {
+  while (is_blocking_reading_.load(std::memory_order_acquire)) {
   }
 
-  is_blocking_writing_.store(true, std::memory_order::memory_order_release);
+  is_blocking_writing_.store(true, std::memory_order_release);
   int64_t size = reserve_buffer_->size() + waiting_buffer_->size() + active_buffer->size();
-  is_blocking_writing_.store(false, std::memory_order::memory_order_release);
+  is_blocking_writing_.store(false, std::memory_order_release);
 
   return size;
 }
@@ -136,10 +136,10 @@ void LegacySharedUICommand::SyncToActive() {
     return;
 
   // simply spin wait for the swapBuffers to finish.
-  while (is_blocking_writing_.load(std::memory_order::memory_order_acquire)) {
+  while (is_blocking_writing_.load(std::memory_order_acquire)) {
   }
 
-  is_blocking_reading_.store(true, std::memory_order::memory_order_release);
+  is_blocking_reading_.store(true, std::memory_order_release);
 
   ui_command_sync_strategy_->Reset();
 
@@ -149,7 +149,7 @@ void LegacySharedUICommand::SyncToActive() {
   assert(reserve_buffer_->empty());
   assert(active_buffer->size() == reserve_size + origin_active_size);
 
-  is_blocking_reading_.store(false, std::memory_order::memory_order_release);
+  is_blocking_reading_.store(false, std::memory_order_release);
 }
 
 void LegacySharedUICommand::swap(std::unique_ptr<UICommandBuffer>& target, std::unique_ptr<UICommandBuffer>& original) {

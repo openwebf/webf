@@ -692,6 +692,14 @@ task('generate-bindings-code', (done) => {
     }
     return done(new Error(`Code generation failed with status ${compileResult.status}`));
   }
+  
+  // Fix generated list element files
+  console.log(chalk.yellow('Fixing generated list element files...'));
+  try {
+    require('./fix_generated_list_elements.js');
+  } catch (e) {
+    console.error(chalk.red('Failed to fix generated files:'), e.message);
+  }
 
   done();
 });

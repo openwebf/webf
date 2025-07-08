@@ -73,6 +73,76 @@
       "name": "iframe",
       "interfaceName": "HTMLIFrameElement",
       "filename": "html_iframe_element"
+    },
+    {
+      "name": "p",
+      "interfaceName": "HTMLParagraphElement",
+      "filename": "html_paragraph_element"
+    },
+    {
+      "name": "pre",
+      "interfaceName": "HTMLPreElement", 
+      "filename": "html_pre_element"
+    },
+    {
+      "name": "span",
+      "interfaceName": "HTMLSpanElement",
+      "filename": "html_span_element"
+    },
+    {
+      "name": "ul",
+      "interfaceName": "HTMLUListElement",
+      "filename": "html_ulist_element"
+    },
+    {
+      "name": "ol",
+      "interfaceName": "HTMLOListElement",
+      "filename": "html_olist_element"
+    },
+    {
+      "name": "li",
+      "interfaceName": "HTMLLIElement",
+      "filename": "html_li_element"
+    },
+    {
+      "name": "header",
+      "interfaceName": "HTMLHeaderElement",
+      "filename": "html_header_element"
+    },
+    {
+      "name": "footer",
+      "interfaceName": "HTMLFooterElement",
+      "filename": "html_footer_element"
+    },
+    {
+      "name": "nav",
+      "interfaceName": "HTMLNavElement",
+      "filename": "html_nav_element"
+    },
+    {
+      "name": "section",
+      "interfaceName": "HTMLSectionElement",
+      "filename": "html_section_element"
+    },
+    {
+      "name": "article",
+      "interfaceName": "HTMLArticleElement",
+      "filename": "html_article_element"
+    },
+    {
+      "name": "strong",
+      "interfaceName": "HTMLStrongElement",
+      "filename": "html_strong_element"
+    },
+    {
+      "name": "em",
+      "interfaceName": "HTMLEmElement",
+      "filename": "html_em_element"
+    },
+    {
+      "name": "code",
+      "interfaceName": "HTMLCodeElement",
+      "filename": "html_code_element"
     }
   ]
 }
