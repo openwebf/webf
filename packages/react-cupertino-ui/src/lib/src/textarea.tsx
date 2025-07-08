@@ -54,7 +54,7 @@ export interface FlutterCupertinoTextareaProps {
   /**
    * input event handler
    */
-  onInput?: (event: CustomEvent) => void;
+  onInput?: (event: CustomEvent<string>) => void;
   /**
    * complete event handler
    */
@@ -135,7 +135,7 @@ export const FlutterCupertinoTextarea = createWebFComponent<FlutterCupertinoText
       propName: 'onInput',
       eventName: 'input',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
     {

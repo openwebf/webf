@@ -59,7 +59,7 @@ export interface FlutterCupertinoDatePickerProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: CustomEvent<string>) => void;
   /**
    * HTML id attribute
    */
@@ -126,7 +126,7 @@ export const FlutterCupertinoDatePicker = createWebFComponent<FlutterCupertinoDa
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
   ],

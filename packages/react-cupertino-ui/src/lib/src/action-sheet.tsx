@@ -18,7 +18,7 @@ interface FlutterCupertinoActionSheetOptions {
 interface FlutterCupertinoActionSheetSelectDetail {
   text: string;
   event: string;
-  isDefault: boolean; 
+  isDefault: boolean;
   isDestructive: boolean;
   index?: number;
 }

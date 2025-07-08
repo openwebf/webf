@@ -49,11 +49,11 @@ export interface FlutterCupertinoInputProps {
   /**
    * input event handler
    */
-  onInput?: (event: CustomEvent) => void;
+  onInput?: (event: CustomEvent<string>) => void;
   /**
    * submit event handler
    */
-  onSubmit?: (event: CustomEvent) => void;
+  onSubmit?: (event: CustomEvent<string>) => void;
   /**
    * HTML id attribute
    */
@@ -127,14 +127,14 @@ export const FlutterCupertinoInput = createWebFComponent<FlutterCupertinoInputEl
       propName: 'onInput',
       eventName: 'input',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
     {
       propName: 'onSubmit',
       eventName: 'submit',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
   ],

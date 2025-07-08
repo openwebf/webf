@@ -61,6 +61,12 @@ function getEventType(type: ParameterType) {
     return 'Event';
   }
   const pointerType = getPointerType(type);
+  
+  // Handle CustomEvent with generic parameter
+  if (pointerType.startsWith('CustomEvent<') && pointerType.endsWith('>')) {
+    return pointerType;
+  }
+  
   if (pointerType === 'CustomEvent') {
     return 'CustomEvent';
   }

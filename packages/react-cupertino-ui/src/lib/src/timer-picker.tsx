@@ -34,7 +34,7 @@ export interface FlutterCupertinoTimerPickerProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: CustomEvent<number>) => void;
   /**
    * HTML id attribute
    */
@@ -92,7 +92,7 @@ export const FlutterCupertinoTimerPicker = createWebFComponent<FlutterCupertinoT
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<number>));
       },
     },
   ],
