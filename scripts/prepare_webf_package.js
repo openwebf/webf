@@ -286,10 +286,6 @@ function addFilesToGit(webfDir) {
     cwd: webfDir
   });
   
-  // Set git user for the commit
-  exec('git config user.email bot@openwebf.com');
-  exec('git config user.name openwebf-bot');
-  
   // Create commit
   exec('git commit -m "Prepare WebF package for publishing"');
   

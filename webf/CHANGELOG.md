@@ -1,3 +1,4 @@
+
 ## 0.22.0
 
 Features
@@ -66,6 +67,16 @@ Bug Fixed
 - Fixed TypeScript compilation issues
 - Fixed OnScreen/OffScreen event ordering during rapid switching
 
+## 0.21.8
+
+Bug Fixes
+
+### Hybrid History Module
+- **Fixed null context handling** - Prevents crashes when hybrid history methods are called before Flutter context is attached
+  - Modified `path()` and `state()` methods in `HybridHistoryDelegate` to accept nullable BuildContext
+  - Added null safety checks in `HybridHistoryModule` to handle cases where context is not yet available
+  - Extracted `getState()` method for better code organization and null safety
+  - Ensures `path()` and `state()` API methods can be safely called during initialization
 
 ## 0.21.7+2
 
