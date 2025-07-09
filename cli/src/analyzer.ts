@@ -26,7 +26,7 @@ export interface UnionTypeCollector {
 }
 
 // Cache for parsed source files to avoid re-parsing
-const sourceFileCache = new Map<string, ts.SourceFile>();
+const sourceFileCache = new Map<string, { content: string; sourceFile: ts.SourceFile }>();
 
 // Cache for type conversions to avoid redundant processing
 const typeConversionCache = new Map<string, ParameterType>();
@@ -56,11 +56,17 @@ const TYPE_REFERENCE_MAP: Record<string, FunctionArgumentType> = {
 
 export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
   try {
-    // Check cache first
-    let sourceFile = sourceFileCache.get(blob.source);
-    if (!sourceFile) {
+    // Check cache first - consider both file path and content
+    const cacheEntry = sourceFileCache.get(blob.source);
+    let sourceFile: ts.SourceFile;
+    
+    if (cacheEntry && cacheEntry.content === blob.raw) {
+      // Cache hit with same content
+      sourceFile = cacheEntry.sourceFile;
+    } else {
+      // Cache miss or content changed - parse and update cache
       sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-      sourceFileCache.set(blob.source, sourceFile);
+      sourceFileCache.set(blob.source, { content: blob.raw, sourceFile });
     }
     
     blob.objects = sourceFile.statements
