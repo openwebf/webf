@@ -331,10 +331,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       // The commented code below was incorrectly setting flexBasis to minContentWidth for 0% values
       if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
         // Only convert flex-basis: 0% to content size when the container's main size is indefinite
-        bool isMainSizeDefinite = _isHorizontalFlexDirection ? 
-            renderStyle.contentBoxLogicalWidth != null : 
+        bool isMainSizeDefinite = _isHorizontalFlexDirection ?
+            renderStyle.contentBoxLogicalWidth != null :
             renderStyle.contentBoxLogicalHeight != null;
-        
+
         if (!isMainSizeDefinite) {
           flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
         }
@@ -571,11 +571,11 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     _RunChild current = runChildren[childNodeId]!;
     double currentFlexShrink = _getFlexShrink(current.child);
-    
+
     // Use flexBasis if available, otherwise use originalMainSize
     double? flexBasis = _getFlexBasis(current.child);
     double baseSize = flexBasis ?? current.originalMainSize;
-    
+
     double currentExtent = currentFlexShrink * baseSize;
     double minusConstraints = (currentExtent / totalWeightedFlexShrink) * remainingFreeSpace;
 
@@ -1177,7 +1177,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (child is RenderBoxModel) {
         bool hasPercentageMaxWidth = child.renderStyle.maxWidth.type == CSSLengthType.PERCENTAGE;
         bool hasPercentageMaxHeight = child.renderStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
-        
+
         if (hasPercentageMaxWidth || hasPercentageMaxHeight) {
           // Store the final constraints for use in _adjustChildrenSize
           BoxConstraints finalConstraints = child.getConstraints();
