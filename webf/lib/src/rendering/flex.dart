@@ -330,7 +330,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Note: When flex-basis is 0%, it should remain 0, not be changed to minContentWidth
       // The commented code below was incorrectly setting flexBasis to minContentWidth for 0% values
       if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
-        flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+        // Only convert flex-basis: 0% to content size when the container's main size is indefinite
+        bool isMainSizeDefinite = _isHorizontalFlexDirection ? 
+            renderStyle.contentBoxLogicalWidth != null : 
+            renderStyle.contentBoxLogicalHeight != null;
+        
+        if (!isMainSizeDefinite) {
+          flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+        }
       }
 
       return flexBasis;
@@ -542,11 +549,13 @@ class RenderFlexLayout extends RenderLayoutBox {
   double _getShrinkConstraints(RenderBox child, Map<int?, _RunChild> runChildren, double remainingFreeSpace) {
     double totalWeightedFlexShrink = 0;
     runChildren.forEach((int? hashCode, _RunChild runChild) {
-      double childOriginalMainSize = runChild.originalMainSize;
       RenderBox child = runChild.child;
       if (!runChild.frozen) {
         double childFlexShrink = _getFlexShrink(child);
-        totalWeightedFlexShrink += childOriginalMainSize * childFlexShrink;
+        // Use flexBasis for weight calculation, consistent with CSS spec
+        double? flexBasis = _getFlexBasis(child);
+        double baseSize = flexBasis ?? runChild.originalMainSize;
+        totalWeightedFlexShrink += baseSize * childFlexShrink;
       }
     });
     if (totalWeightedFlexShrink == 0) {
@@ -561,9 +570,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     _RunChild current = runChildren[childNodeId]!;
-    double currentOriginalMainSize = current.originalMainSize;
     double currentFlexShrink = _getFlexShrink(current.child);
-    double currentExtent = currentFlexShrink * currentOriginalMainSize;
+    
+    // Use flexBasis if available, otherwise use originalMainSize
+    double? flexBasis = _getFlexBasis(current.child);
+    double baseSize = flexBasis ?? current.originalMainSize;
+    
+    double currentExtent = currentFlexShrink * baseSize;
     double minusConstraints = (currentExtent / totalWeightedFlexShrink) * remainingFreeSpace;
 
     return minusConstraints;
