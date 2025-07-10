@@ -203,9 +203,11 @@ void StyleCascade::AnalyzeMatchResult() {
           map_.Add(metadata.custom_name_, priority);
         }
       } else {
-        // Regular property
-        // WEBF_LOG(VERBOSE) << "Adding property " << static_cast<int>(property.Id()) << " to cascade map at position " << (position - 1);
-        map_.Add(property.Id(), priority);
+        // Regular property - resolve surrogates first
+        const CSSProperty& css_property = CSSProperty::Get(property.Id());
+        const CSSProperty& resolved_property = ResolveSurrogate(css_property);
+        // WEBF_LOG(VERBOSE) << "Adding property " << static_cast<int>(resolved_property.PropertyID()) << " to cascade map at position " << (position - 1);
+        map_.Add(resolved_property.PropertyID(), priority);
       }
     }
   }

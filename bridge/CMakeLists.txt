@@ -95,6 +95,37 @@ if (DEFINED PLATFORM)
   endif()
 endif()
 
+# Generate CSS resource headers
+# This section generates C++ header files from CSS source files
+set(CSS_RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/css/resources)
+set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/core/css/resources)
+
+# Ensure the generated directory exists
+file(MAKE_DIRECTORY ${GENERATED_DIR})
+
+# Read HTML CSS content (no escaping needed for raw string literals)
+file(READ ${CSS_RESOURCES_DIR}/html.css HTML_CSS_CONTENT)
+
+# Generate html_css.h from template
+configure_file(
+  ${CSS_RESOURCES_DIR}/html_css.h.in
+  ${GENERATED_DIR}/html_css.h
+  @ONLY
+)
+
+# Read Quirks CSS content (no escaping needed for raw string literals)
+file(READ ${CSS_RESOURCES_DIR}/quirks.css QUIRKS_CSS_CONTENT)
+
+# Generate quirks_css.h from template
+configure_file(
+  ${CSS_RESOURCES_DIR}/quirks_css.h.in
+  ${GENERATED_DIR}/quirks_css.h
+  @ONLY
+)
+
+# Add generated directory to include path
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated)
+
 list(APPEND BRIDGE_SOURCE
   foundation/logging.cc
   foundation/native_string.cc
@@ -152,6 +183,7 @@ list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/core_rs/include
   ${CMAKE_CURRENT_LIST_DIR}/third_party/dart
   ${CMAKE_CURRENT_LIST_DIR}/third_party/double_conversion
+  ${CMAKE_CURRENT_BINARY_DIR}
   ${ADDITIONAL_INCLUDE_DIRS}
 )
 
