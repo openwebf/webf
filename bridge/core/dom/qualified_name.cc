@@ -83,4 +83,18 @@ const std::string& QualifiedName::LocalNameUpperSlow() const {
   return impl_->local_name_upper_;
 }
 
+void QualifiedName::Init() {
+  static bool initialized = false;
+  if (initialized) {
+    return;
+  }
+  initialized = true;
+  
+  // Initialize the any name (matches any tag) - note the different order compared to InitAndReserveCapacityForSize
+  new ((void*)&g_any_name) QualifiedName(g_null_atom, g_null_atom, g_star_atom, true);
+  
+  // Initialize the null name
+  new ((void*)&g_null_name) QualifiedName(g_null_atom, g_null_atom, g_null_atom, true);
+}
+
 }  // namespace webf

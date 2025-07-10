@@ -39,6 +39,8 @@
 #include "core/css/media_query_evaluator.h"
 #include "core/css/style_rule.h"
 #include "core/css/style_sheet_contents.h"
+#include "foundation/casting.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -71,9 +73,15 @@ void RuleSet::AddRulesFromSheet(
     return;
   }
   
-  // TODO: Implement adding rules from stylesheet
-  // This would iterate through all rules in the stylesheet,
-  // evaluate media queries, and add matching rules
+  // Process child rules
+  const auto& child_rules = sheet->ChildRules();
+  for (const auto& rule : child_rules) {
+    if (auto style_rule = DynamicTo<StyleRule>(rule.get())) {
+      // For style rules, add them to the RuleSet
+      AddStyleRule(std::static_pointer_cast<StyleRule>(rule), add_rule_flags);
+    }
+    // TODO: Handle other rule types (@media, @supports, etc) when implemented
+  }
 }
 
 void RuleSet::AddRule(std::shared_ptr<StyleRule> rule,
@@ -112,6 +120,8 @@ void RuleSet::AddStyleRule(std::shared_ptr<StyleRule> rule,
        selector = CSSSelectorList::Next(*selector)) {
     selector_count++;
   }
+  
+  // WEBF_LOG(VERBOSE) << "Adding style rule with " << selector_count << " selectors";
   
   // Add a rule for each selector in the style rule
   for (unsigned i = 0; i < selector_count; ++i) {
@@ -179,18 +189,29 @@ RuleSet::RuleDataVector* RuleSet::FindBestRuleSetForSelector(
   
   // Check for ID selector
   if (current->Match() == CSSSelector::kId) {
-    return id_rules_[current->Value()].get();
+    const AtomicString& id = current->Value();
+    if (id_rules_.find(id) == id_rules_.end()) {
+      id_rules_[id] = std::make_unique<RuleDataVector>();
+    }
+    return id_rules_[id].get();
   }
   
   // Check for class selector
   if (current->Match() == CSSSelector::kClass) {
-    return class_rules_[current->Value()].get();
+    const AtomicString& class_name = current->Value();
+    if (class_rules_.find(class_name) == class_rules_.end()) {
+      class_rules_[class_name] = std::make_unique<RuleDataVector>();
+    }
+    return class_rules_[class_name].get();
   }
   
   // Check for tag selector
   if (current->Match() == CSSSelector::kTag) {
     const AtomicString& tag_name = current->TagQName().LocalName();
     if (!tag_name.IsNull() && tag_name != "*") {
+      if (tag_rules_.find(tag_name) == tag_rules_.end()) {
+        tag_rules_[tag_name] = std::make_unique<RuleDataVector>();
+      }
       return tag_rules_[tag_name].get();
     }
   }

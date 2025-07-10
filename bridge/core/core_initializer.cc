@@ -6,6 +6,7 @@
 #include "core/css/media_query_evaluator.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/style_change_reason.h"
+#include "core/dom/qualified_name.h"
 #include "foundation/dtoa.h"
 #include "foundation/string_statics.h"
 #include "names_installer.h"
@@ -21,6 +22,7 @@ void CoreInitializer::Initialize() {
   internal::InitializeDoubleConverter();
   StringStatics::Init();
   names_installer::Init();
+  QualifiedName::Init();
 }
 
 }  // namespace webf

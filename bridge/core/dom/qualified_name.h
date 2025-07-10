@@ -150,6 +150,9 @@ class QualifiedName {
   // ref counting.
   static void CreateStatic(void* target_address, std::string* name);
   static void CreateStatic(void* target_address, std::string* name, const std::string& name_namespace);
+  
+  // Initialize global QualifiedName instances
+  static void Init();
 
  private:
   // This constructor is used only to create global/static QNames that don't

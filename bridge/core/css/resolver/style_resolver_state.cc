@@ -52,7 +52,8 @@ StyleResolverState::StyleResolverState(Document& document, Element& element)
       affects_compositor_snapshots_(false),
       rejected_legacy_overlapping_(false),
       has_tree_scoped_reference_(false) {
-  style_builder_ = std::make_unique<ComputedStyleBuilder>();
+  // Initialize with a proper ComputedStyleBuilder with initial values
+  // Don't set it here, let the StyleResolver initialize it properly
 }
 
 StyleResolverState::~StyleResolverState() = default;

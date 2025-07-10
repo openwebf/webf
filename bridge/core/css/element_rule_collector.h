@@ -113,6 +113,9 @@ class ElementRuleCollector {
 
   // Include or exclude rules based on their properties
   void SetIncludeEmptyRules(bool include) { include_empty_rules_ = include; }
+  
+  // Set whether we're matching UA rules
+  void SetIsUARule(bool is_ua_rule) { is_ua_rule_ = is_ua_rule; }
 
   StyleResolverState& State() { return state_; }
   const StyleResolverState& State() const { return state_; }
@@ -167,6 +170,7 @@ class ElementRuleCollector {
   bool include_empty_rules_ = false;
   bool in_rightmost_compound_ = true;
   bool is_collecting_for_pseudo_element_ = false;
+  bool is_ua_rule_ = false;
   uint16_t current_cascade_order_ = 0;
 };
 

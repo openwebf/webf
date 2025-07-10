@@ -5,14 +5,19 @@
 #include "style_resolver.h"
 
 #include "bindings/qjs/cppgc/mutation_scope.h"
+#include "core/css/css_default_style_sheets.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_recalc_context.h"
 #include "core/css/style_request.h"
+#include "core/css/style_sheet_contents.h"
+#include "core/dart_isolate_context.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/html/html_body_element.h"
 #include "core/html/html_element.h"
+#include "core/html/html_div_element.h"
+#include "core/html/html_paragraph_element.h"
 #include "core/style/computed_style.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
@@ -27,9 +32,20 @@ class StyleResolverTest : public ::testing::Test {
     context_ = env_->page()->executingContext();
     // Use the document from the page instead of creating a new one
     document_ = context_->document();
+    
+    // Ensure core globals are initialized (including html_names)
+    InitializeCoreGlobals();
   }
 
   void TearDown() override {
+    // Force garbage collection before cleanup
+    if (context_ && context_->dartIsolateContext()) {
+      context_->DrainMicrotasks();
+    }
+    
+    // Reset UA stylesheets to avoid memory leaks
+    CSSDefaultStyleSheets::Reset();
+    
     document_ = nullptr;
     context_ = nullptr;
     env_.reset();
@@ -81,12 +97,22 @@ TEST_F(StyleResolverTest, CreateAnonymousStyleWithDisplay) {
 TEST_F(StyleResolverTest, ResolveStyleForElement) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
   
-  // Create a simple element
-  auto* element = MakeGarbageCollected<HTMLElement>(
-      AtomicString("div"), GetDocument());
+  // Create a div element
+  auto* element = MakeGarbageCollected<HTMLDivElement>(*GetDocument());
   
   // Connect element to document
   GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
+  
+  // Debug: Print actual tag name and expected
+  fprintf(stderr, "Expected tag name: 'div'\n");
+  fprintf(stderr, "Actual tag name: '%s'\n", element->tagName().GetString().c_str());
+  fprintf(stderr, "Actual local name: '%s'\n", element->localName().GetString().c_str());
+  fprintf(stderr, "Element is HTMLElement: %d\n", element->IsHTMLElement());
+  fflush(stderr);
+  
+  // Check element tag name
+  EXPECT_EQ(element->tagName(), AtomicString("div")) << "Element tag name should be div";
+  EXPECT_EQ(element->localName(), AtomicString("div")) << "Element local name should be div";
   
   // Create style resolver
   StyleResolver resolver(*GetDocument());
@@ -98,8 +124,10 @@ TEST_F(StyleResolverTest, ResolveStyleForElement) {
   auto computed_style = resolver.ResolveStyle(element, recalc_context);
   
   ASSERT_NE(computed_style, nullptr);
-  // In WebF, default display is inline
-  EXPECT_EQ(computed_style->Display(), EDisplay::kInline);
+  // With UA stylesheet, div elements should have display: block
+  fprintf(stderr, "DIV computed display value: %d (expected %d for kBlock)\n", 
+          static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
+  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
 }
 
 TEST_F(StyleResolverTest, ComputedStyleBuilder) {
@@ -149,6 +177,70 @@ TEST_F(StyleResolverTest, ViewportUnits) {
   // Test viewport unit methods don't crash
   resolver.SetResizedForViewportUnits();
   resolver.ClearResizedForViewportUnits();
+}
+
+TEST_F(StyleResolverTest, UAStylesheetBodyDisplay) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
+  // Initialize UA stylesheets
+  CSSDefaultStyleSheets::Init();
+  
+  // Verify UA stylesheet is loaded
+  auto html_style = CSSDefaultStyleSheets::DefaultHTMLStyle();
+  ASSERT_NE(html_style, nullptr);
+  EXPECT_GT(html_style->RuleCount(), 0u) << "UA stylesheet should have rules";
+  
+  // Get the body element
+  auto* body = GetDocument()->body();
+  ASSERT_NE(body, nullptr);
+  
+  // Check body element tag name
+  EXPECT_EQ(body->tagName(), AtomicString("body")) << "Body tag name should be body";
+  EXPECT_EQ(body->localName(), AtomicString("body")) << "Body local name should be body";
+  
+  // Create style resolver
+  StyleResolver resolver(*GetDocument());
+  
+  // Create recalc context
+  StyleRecalcContext recalc_context;
+  
+  // Resolve style
+  auto computed_style = resolver.ResolveStyle(body, recalc_context);
+  
+  ASSERT_NE(computed_style, nullptr);
+  // Body should have display: block from UA stylesheet
+  fprintf(stderr, "BODY computed display value: %d (expected %d for kBlock)\n", 
+          static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
+  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
+}
+
+TEST_F(StyleResolverTest, UAStylesheetParagraphDisplay) {
+  MemberMutationScope mutation_scope{GetExecutingContext()};
+  
+  // Create a p element
+  auto* paragraph = MakeGarbageCollected<HTMLParagraphElement>(*GetDocument());
+  
+  // Connect element to document
+  GetDocument()->body()->appendChild(paragraph, ASSERT_NO_EXCEPTION());
+  
+  // Check paragraph tag name
+  EXPECT_EQ(paragraph->tagName(), AtomicString("p")) << "Paragraph tag name should be p";
+  EXPECT_EQ(paragraph->localName(), AtomicString("p")) << "Paragraph local name should be p";
+  
+  // Create style resolver
+  StyleResolver resolver(*GetDocument());
+  
+  // Create recalc context
+  StyleRecalcContext recalc_context;
+  
+  // Resolve style
+  auto computed_style = resolver.ResolveStyle(paragraph, recalc_context);
+  
+  ASSERT_NE(computed_style, nullptr);
+  // Paragraph should have display: block from UA stylesheet
+  fprintf(stderr, "P computed display value: %d (expected %d for kBlock)\n", 
+          static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
+  EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
 }
 
 }  // namespace webf

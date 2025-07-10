@@ -6,7 +6,9 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/style_engine_test.cc
   ./core/css/resolver/style_resolver_test.cc
   ./core/css/resolver/style_resolver_simple_test.cc
+  ./core/css/selector_test.cc
   ./core/css/css_initial_test.cc
+  ./core/css/css_default_style_sheets_test.cc
   ./core/css/css_selector_test.cc
   ./core/css/css_value_clamping_utils_test.cc
   ./core/css/css_property_name_test.cc

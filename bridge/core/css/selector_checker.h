@@ -38,6 +38,7 @@
 #include "core/css/style_scope_frame.h"
 #include "core/dom/attribute.h"
 #include "core/style/computed_style_constants.h"
+#include "foundation/string_impl.h"
 #include "foundation/macros.h"
 #include "foundation/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
@@ -176,7 +177,7 @@ public:
    // Comes from an AtomicString, but not stored as one to avoid
    // the cost of checking the refcount on cleaning up from every
    // Match() call. Owned by the CSS selector it came from.
-   std::string custom_highlight_name{nullptr};
+   StringImpl* custom_highlight_name{nullptr};
    // From the :has() argument selector checking, we need to get the element
    // that matches the leftmost compound selector to mark all possible :has()
    // anchor elements (the relative anchor element of the :has() argument).

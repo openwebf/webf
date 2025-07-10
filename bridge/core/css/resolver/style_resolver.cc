@@ -34,6 +34,7 @@
 
 #include "style_resolver.h"
 
+#include "foundation/logging.h"
 #include "core/css/css_default_style_sheets.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_property_value_set.h"
@@ -41,10 +42,14 @@
 #include "core/css/css_selector.h"
 #include "core/css/css_style_rule.h"
 #include "core/css/css_style_sheet.h"
+#include "core/css/element_rule_collector.h"
+#include "core/css/media_query_evaluator.h"
+#include "core/css/resolver/match_request.h"
 #include "core/css/resolver/style_builder.h"
 #include "core/css/resolver/style_cascade.h"
 #include "core/css/resolver/style_resolver_state.h"
 #include "core/css/resolver/style_adjuster.h"
+#include "core/css/rule_set.h"
 #include "core/css/style_engine.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/dom/document.h"
@@ -131,23 +136,14 @@ std::shared_ptr<const ComputedStyle> StyleResolver::ResolveStyle(
     return nullptr;
   }
 
-  // Initialize the state for style resolution
+  // Initialize the state for style resolution (following Blink's pattern)
   StyleResolverState state(GetDocument(), *element);
   
-  InitStyleAndApplyInheritance(*element, style_request, state);
+  // Create cascade early (like Blink does)
+  StyleCascade cascade(state);
   
-  // Collect matching rules
-  ElementRuleCollector collector(state);
-  MatchAllRules(state, collector, false);
-  
-  // Apply the collected properties
-  if (collector.HasMatchedRules()) {
-    ApplyMatchedPropertiesAndCustomPropertyAnimations(
-        state, collector.GetMatchResult(), true);
-  }
-  
-  // Load pending resources if any
-  LoadPendingResources(state);
+  // Apply base style (this is the core of Blink's approach)
+  ApplyBaseStyle(element, style_recalc_context, style_request, state, cascade);
   
   // Return the computed style
   return state.TakeComputedStyle();
@@ -167,31 +163,115 @@ const ComputedStyle& StyleResolver::ResolveBaseStyle(
   return *style;
 }
 
-void StyleResolver::InitStyleAndApplyInheritance(
+void StyleResolver::ApplyBaseStyle(
+    Element* element,
+    const StyleRecalcContext& style_recalc_context,
+    const StyleRequest& style_request,
+    StyleResolverState& state,
+    StyleCascade& cascade) {
+  
+  // For now, skip animation optimizations and go directly to ApplyBaseStyleNoCache
+  // This follows Blink's pattern but without the caching optimizations
+  ApplyBaseStyleNoCache(element, style_recalc_context, style_request, state, cascade);
+}
+
+void StyleResolver::ApplyBaseStyleNoCache(
+    Element* element,
+    const StyleRecalcContext& style_recalc_context,
+    const StyleRequest& style_request,
+    StyleResolverState& state,
+    StyleCascade& cascade) {
+  
+  // Set parent style if not already set (following Blink's pattern)
+  if (!state.ParentStyle()) {
+    const ComputedStyle* parent_style = style_request.parent_override;
+    if (!parent_style && element->parentElement()) {
+      parent_style = element->parentElement()->GetComputedStyle();
+    }
+    if (!parent_style) {
+      // Use initial style as parent for root elements
+      parent_style = &InitialStyle();
+    }
+    state.SetParentStyle(parent_style);
+    state.SetLayoutParentStyle(style_request.layout_parent_override ? 
+                                style_request.layout_parent_override : parent_style);
+  }
+  
+  // Create ElementRuleCollector and collect all matching rules
+  ElementRuleCollector collector(state);
+  MatchAllRules(state, collector, false);
+  
+  // Sort and transfer matched rules to the cascade
+  collector.SortAndTransferMatchedRules();
+  
+  const auto& match_result = collector.GetMatchResult();
+  
+  // For pseudo elements, check if we have no matched properties
+  if (style_request.IsPseudoStyleRequest()) {
+    if (match_result.IsEmpty()) {
+      InitStyle(*element, style_request, InitialStyle(), state.ParentStyle(), state);
+      StyleAdjuster::AdjustComputedStyle(const_cast<ElementResolveContext&>(state.ElementContext()), 
+                                         style_request,
+                                         element,
+                                         state.StyleBuilder());
+      state.SetHadNoMatchedProperties();
+      return;
+    }
+  }
+  
+  // This is where Blink gets the match result from the cascade
+  const MatchResult& result = cascade.GetMatchResult();
+  
+  // Apply matched cache (simplified - skip caching for now)
+  // CacheSuccess cache_success = ApplyMatchedCache(state, style_request, result);
+  ComputedStyleBuilder& builder = state.StyleBuilder();
+  
+  // Initialize the style properly (like Blink's InitStyle)
+  InitStyle(*element, style_request, InitialStyle(), state.ParentStyle(), state);
+  
+  // Copy the match result to the cascade
+  cascade.MutableMatchResult() = match_result;
+  
+  // Apply properties from cascade (always apply since we skip caching)
+  ApplyPropertiesFromCascade(state, cascade);
+  
+  // Apply style adjustments
+  StyleAdjuster::AdjustComputedStyle(const_cast<ElementResolveContext&>(state.ElementContext()), 
+                                     style_request,
+                                     element,
+                                     state.StyleBuilder());
+}
+
+void StyleResolver::InitStyle(
     Element& element,
     const StyleRequest& style_request,
+    const ComputedStyle& source_for_noninherited,
+    const ComputedStyle* parent_style,
     StyleResolverState& state) {
   
-  const ComputedStyle* parent_style = style_request.parent_override;
-  const ComputedStyle* layout_parent_style = style_request.layout_parent_override;
+  // Following Blink's InitStyle implementation:
+  // state.CreateNewStyle(source_for_noninherited, *parent_style);
+  // Since CreateNewStyle is not implemented in WebF, we need to do what it does:
+  // Create a ComputedStyleBuilder that takes non-inherited properties from
+  // source_for_noninherited and inherited properties from parent_style
   
-  if (!parent_style) {
-    parent_style = element.parentElement() ? 
-        element.parentElement()->GetComputedStyle() : nullptr;
-  }
+  // First create from parent to get inherited properties
+  ComputedStyleBuilder builder = CreateComputedStyleBuilderInheritingFrom(*parent_style);
   
-  if (!layout_parent_style) {
-    layout_parent_style = parent_style;
-  }
+  // But we need a proper way to copy non-inherited properties from source_for_noninherited
+  // In Blink, this is done inside the ComputedStyleBuilder constructor
+  // For now, WebF's builder doesn't support this pattern, so we keep the simple approach
   
-  // Create initial style
-  ComputedStyleBuilder builder = parent_style ?
-      CreateComputedStyleBuilderInheritingFrom(*parent_style) :
-      InitialStyleBuilderForElement();
-  
+  // Set the builder on the state
   state.SetComputedStyleBuilder(std::move(builder));
-  state.SetParentStyle(parent_style);
-  state.SetLayoutParentStyle(layout_parent_style);
+}
+
+void StyleResolver::ApplyPropertiesFromCascade(
+    StyleResolverState& state,
+    StyleCascade& cascade) {
+  
+  // Apply the cascade (this is where CSS properties are actually applied)
+  cascade.Apply();
 }
 
 void StyleResolver::MatchAllRules(
@@ -215,8 +295,40 @@ void StyleResolver::MatchAllRules(
 }
 
 void StyleResolver::MatchUARules(ElementRuleCollector& collector) {
-  // TODO: Implement UA rules matching
-  // This would match default styles from the UA stylesheet
+  // Initialize UA stylesheets if not already done
+  CSSDefaultStyleSheets::Init();
+  
+  // Match rules from the default HTML stylesheet
+  auto html_style = CSSDefaultStyleSheets::DefaultHTMLStyle();
+  if (html_style && html_style->RuleCount() > 0) {
+    // Create a RuleSet from the stylesheet for matching
+    // TODO: This should be cached for performance
+    auto rule_set = std::make_shared<RuleSet>();
+    MediaQueryEvaluator evaluator("screen");
+    rule_set->AddRulesFromSheet(html_style, evaluator, kRuleHasNoSpecialState);
+    
+    // Create match request and collect matching rules
+    MatchRequest request(rule_set, CascadeOrigin::kUserAgent);
+    collector.CollectMatchingRules(request);
+  }
+  
+  // Apply quirks mode stylesheet if in quirks mode
+  // TODO: Implement quirks mode detection in Document
+  // For now, we'll skip quirks mode styles
+  /*
+  if (document_->InQuirksMode()) {
+    auto quirks_style = CSSDefaultStyleSheets::QuirksStyle();
+    if (quirks_style && quirks_style->RuleCount() > 0) {
+      auto rule_set = std::make_shared<RuleSet>();
+      MediaQueryEvaluator evaluator("screen");
+      rule_set->AddRulesFromSheet(quirks_style, evaluator, kRuleHasNoSpecialState);
+      MatchRequest request(rule_set, CascadeOrigin::kUserAgent);
+      collector.CollectMatchingRules(request);
+    }
+  }
+  */
+  
+  // TODO: Add SVG and MathML stylesheets when elements support them
 }
 
 void StyleResolver::MatchUserRules(ElementRuleCollector& collector) {
@@ -239,39 +351,8 @@ void StyleResolver::MatchAuthorRules(
   // This would match rules from author stylesheets
 }
 
-void StyleResolver::ApplyMatchedPropertiesAndCustomPropertyAnimations(
-    StyleResolverState& state,
-    const MatchResult& match_result,
-    bool apply_animations) {
-  
-  // Create cascade
-  StyleCascade cascade(state);
-  
-  // Add match result to cascade and apply
-  cascade.MutableMatchResult() = match_result;
-  cascade.Apply();
-  
-  // Apply animations if needed
-  if (apply_animations) {
-    ApplyAnimatedStyle(state, cascade);
-  }
-  
-  // Apply callback selectors
-  ApplyCallbackSelectors(state);
-  
-  // Update font if needed
-  UpdateFont(state);
-  
-  // Update color scheme if needed
-  UpdateColorScheme(state);
-  
-  // Apply style adjustments
-  StyleRequest style_request;  // TODO: Get proper style request
-  StyleAdjuster::AdjustComputedStyle(const_cast<ElementResolveContext&>(state.ElementContext()), 
-                                     style_request,
-                                     &state.GetElement(),
-                                     state.StyleBuilder());
-}
+// Old method - can be removed as it's replaced by ApplyBaseStyleNoCache flow
+// void StyleResolver::ApplyMatchedPropertiesAndCustomPropertyAnimations(...) { ... }
 
 bool StyleResolver::ApplyAnimatedStyle(
     StyleResolverState& state,

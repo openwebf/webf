@@ -204,9 +204,25 @@ class StyleResolver final {
   }
 
  private:
-  void InitStyleAndApplyInheritance(Element& element,
-                                    const StyleRequest&,
-                                    StyleResolverState&);
+  void ApplyBaseStyle(Element*,
+                     const StyleRecalcContext&,
+                     const StyleRequest&,
+                     StyleResolverState&,
+                     StyleCascade&);
+  
+  void ApplyBaseStyleNoCache(Element*,
+                            const StyleRecalcContext&,
+                            const StyleRequest&,
+                            StyleResolverState&,
+                            StyleCascade&);
+  
+  void InitStyle(Element& element,
+                const StyleRequest&,
+                const ComputedStyle& source_for_noninherited,
+                const ComputedStyle* parent_style,
+                StyleResolverState&);
+  
+  void ApplyPropertiesFromCascade(StyleResolverState&, StyleCascade&);
   
   void ApplyAllProperty(StyleResolverState&,
                        const CSSValue&,

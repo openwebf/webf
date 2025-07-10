@@ -43,6 +43,7 @@
 #include "core/css/css_invalid_variable_value.h"
 #include "core/css/css_pending_substitution_value.h"
 #include "core/platform/text/writing_direction_mode.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -145,6 +146,8 @@ void StyleCascade::AnalyzeMatchResult() {
   const auto& matched_properties = match_result_.GetMatchedProperties();
   uint32_t position = 0;
   
+  // WEBF_LOG(VERBOSE) << "AnalyzeMatchResult: " << matched_properties.size() << " matched property sets";
+  
   for (const auto& entry : matched_properties) {
     if (!entry.properties) {
       continue;
@@ -161,12 +164,16 @@ void StyleCascade::AnalyzeMatchResult() {
     }
     
     // Process each property in the set
+    // WEBF_LOG(VERBOSE) << "Property set has " << properties.PropertyCount() << " properties, origin: " << static_cast<int>(entry.origin);
+    
     for (unsigned i = 0; i < properties.PropertyCount(); ++i) {
       const StylePropertySet::PropertyReference property = properties.PropertyAt(i);
       
       if (!property.Value() || !*property.Value()) {
         continue;
       }
+      
+      // WEBF_LOG(VERBOSE) << "Property ID: " << static_cast<int>(property.Id()) << " value: " << property.Value()->get()->CssText();
       
       // Convert cascade origin based on importance
       StyleCascadeOrigin style_origin = StyleCascadeOrigin::kAuthor;
@@ -197,6 +204,7 @@ void StyleCascade::AnalyzeMatchResult() {
         }
       } else {
         // Regular property
+        // WEBF_LOG(VERBOSE) << "Adding property " << static_cast<int>(property.Id()) << " to cascade map at position " << (position - 1);
         map_.Add(property.Id(), priority);
       }
     }
@@ -285,10 +293,15 @@ void StyleCascade::LookupAndApplyDeclaration(const CSSProperty& property,
   
   const CSSValue* value = ValueAt(match_result_, priority->GetPosition());
   if (value) {
+    // WEBF_LOG(VERBOSE) << "Applying property " << property.PropertyID() << " with value: " << value->CssText() 
+    //                   << " origin: " << static_cast<int>(priority->GetOrigin());
+    
     resolver.CollectFlags(property, priority->GetOrigin());
     
     // Apply the value
     StyleBuilder::ApplyProperty(property.PropertyID(), state_, *value);
+  } else {
+    // WEBF_LOG(VERBOSE) << "No value found for property " << property.PropertyID() << " at position " << priority->GetPosition();
   }
 }
 
@@ -299,6 +312,8 @@ const CSSValue* StyleCascade::ValueAt(const MatchResult& result,
   // MatchedProperties based on the position
   uint32_t current_pos = 0;
   
+  // WEBF_LOG(VERBOSE) << "ValueAt looking for position " << position;
+  
   for (const auto& entry : result.GetMatchedProperties()) {
     if (!entry.properties) {
       continue;
@@ -308,12 +323,14 @@ const CSSValue* StyleCascade::ValueAt(const MatchResult& result,
     for (unsigned i = 0; i < properties.PropertyCount(); ++i) {
       if (current_pos == position) {
         const auto& prop = properties.PropertyAt(i);
+        // WEBF_LOG(VERBOSE) << "Found property at position " << position << ": ID=" << static_cast<int>(prop.Id());
         return prop.Value() ? prop.Value()->get() : nullptr;
       }
       current_pos++;
     }
   }
   
+  // WEBF_LOG(VERBOSE) << "No property found at position " << position;
   return nullptr;
 }
 

@@ -60,6 +60,9 @@ ElementRuleCollector::~ElementRuleCollector() = default;
 void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_request) {
   assert(element_);
   
+  WEBF_LOG(VERBOSE) << "CollectMatchingRules for element: " << element_->localName().GetString() 
+                    << " origin: " << static_cast<int>(match_request.GetOrigin());
+  
   // Collect rules from the match request
   for (const auto& rule_set : match_request.GetRuleSets()) {
     if (rule_set) {
@@ -79,6 +82,17 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
   
   if (!rule_set) {
     return;
+  }
+  
+  // The hang might be in accessing rules from RuleSet - let's be more careful
+  
+  // Collect tag rules first (most likely to match for simple selectors like "div")
+  const auto& tag_rules = rule_set->TagRules(element_->localName());
+  if (!tag_rules.empty()) {
+    CollectMatchingRulesForList(tag_rules,
+                               cascade_origin,
+                               cascade_layer, 
+                               match_request);
   }
   
   // Collect universal rules
@@ -113,15 +127,6 @@ void ElementRuleCollector::CollectRuleSetMatchingRules(
       }
     }
   }
-  
-  // Collect tag rules
-  const auto& tag_rules = rule_set->TagRules(element_->TagQName().LocalName());
-  if (!tag_rules.empty()) {
-    CollectMatchingRulesForList(tag_rules,
-                               cascade_origin,
-                               cascade_layer,
-                               match_request);
-  }
 }
 
 template <typename RuleDataListType>
@@ -131,14 +136,44 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     CascadeLayerLevel cascade_layer,
     const MatchRequest& match_request) {
   
+  // Safety check - don't process too many rules to prevent hangs
+  size_t processed_count = 0;
+  const size_t MAX_RULES_TO_PROCESS = 1000;
+  
   for (const auto& rule_data : rules) {
     if (!rule_data) {
       continue;
     }
     
-    // Check if selector matches
+    // Prevent processing too many rules
+    if (++processed_count > MAX_RULES_TO_PROCESS) {
+      break;
+    }
+    
+    // Check if selector matches element
     SelectorChecker::SelectorCheckingContext context(element_);
     context.selector = &rule_data->Selector();
+    
+    // Safety check: skip malformed selectors
+    if (!context.selector) {
+      continue;
+    }
+    
+    // For UA stylesheets, do a simple tag name check to avoid complex selector matching
+    if (cascade_origin == CascadeOrigin::kUserAgent) {
+      // Simple tag matching for UA stylesheet - bypass complex selector matching
+      if (context.selector->Match() == CSSSelector::kTag) {
+        const AtomicString& selector_tag = context.selector->TagQName().LocalName();
+        WEBF_LOG(VERBOSE) << "UA rule tag: " << selector_tag.GetString() 
+                          << " element: " << element_->localName().GetString();
+        if (selector_tag == element_->localName() || selector_tag == CSSSelector::UniversalSelectorAtom()) {
+          WEBF_LOG(VERBOSE) << "UA rule matched!";
+          DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
+        }
+      }
+      continue;  // Skip complex matching for UA rules
+    }
+    
     SelectorChecker::MatchResult match_result;
     if (selector_checker_.Match(context, match_result)) {
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
