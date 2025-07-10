@@ -54,6 +54,7 @@
 #include "qjs_html_image_element.h"
 #include "qjs_html_input_element.h"
 #include "qjs_html_link_element.h"
+#include "qjs_html_paragraph_element.h"
 #include "qjs_html_script_element.h"
 #include "qjs_html_style_element.h"
 #include "qjs_html_template_element.h"
@@ -165,6 +166,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLAnchorElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
+  QJSHTMLParagraphElement::Install(context);
   QJSHTMLStyleElement::Install(context);
   QJSHTMLTextareaElement::Install(context);
   QJSHTMLBrElement::Install(context);

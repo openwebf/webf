@@ -38,9 +38,25 @@ class StyleResolverTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    // Force garbage collection before cleanup
-    if (context_ && context_->dartIsolateContext()) {
+    // Force cleanup following WebF ExecutingContext destructor pattern
+    if (context_ && context_->IsCtxValid()) {
+      // Check for any pending exceptions and handle them like WebF does
+      JSValue exception = JS_GetException(context_->ctx());
+      if (JS_IsObject(exception) || JS_IsException(exception)) {
+        // Report and clear the exception like WebF does
+        context_->ReportError(exception);
+        JS_FreeValue(context_->ctx(), exception);
+      }
+      
+      // Drain microtasks to complete any pending operations
       context_->DrainMicrotasks();
+      
+      // Force garbage collection before releasing references
+      auto* runtime = context_->dartIsolateContext()->runtime();
+      if (runtime) {
+        JS_RunGC(runtime);
+        JS_RunGC(runtime);
+      }
     }
     
     // Reset UA stylesheets to avoid memory leaks
@@ -241,6 +257,7 @@ TEST_F(StyleResolverTest, UAStylesheetParagraphDisplay) {
   fprintf(stderr, "P computed display value: %d (expected %d for kBlock)\n", 
           static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
   EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
+  
 }
 
 }  // namespace webf

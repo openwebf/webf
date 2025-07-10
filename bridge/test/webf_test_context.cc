@@ -335,6 +335,8 @@ void WebFTestContext::invokeExecuteTest(Dart_PersistentHandle persistent_handle,
           callback_context->executeCallback(handle, status);
           Dart_DeletePersistentHandle_DL(callback_context->persistent_handle);
           callback_context->webf_context->execute_test_proxy_object_ = JS_NULL;
+          // Fix memory leak: free the ExecuteCallbackContext that was allocated with new
+          delete callback_context;
         },
         callbackContext, status.release());
     JS_FreeValue(ctx, proxyObject);
@@ -378,7 +380,36 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 }
 
 WebFTestContext::~WebFTestContext() {
-  JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
+  // Follow Blink's pattern for complete JavaScript context cleanup
+  if (context_ && context_->IsCtxValid()) {
+    // Free the execute test proxy object first
+    JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
+    
+    // Clear the global object to remove all polyfill functions
+    // This is critical to prevent JavaScript function leaks
+    JSValue global = context_->Global();
+    if (JS_IsObject(global)) {
+      // Force all pending finalizers to run before cleanup
+      JS_RunGC(context_->dartIsolateContext()->runtime());
+      
+      // Clear all enumerable properties from the global object
+      // This removes the polyfill functions that were installed
+      JSPropertyEnum* props = nullptr;
+      uint32_t prop_count = 0;
+      if (JS_GetOwnPropertyNames(context_->ctx(), &props, &prop_count, global, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY) == 0) {
+        for (uint32_t i = 0; i < prop_count; i++) {
+          // Delete all non-essential global properties
+          JS_DeleteProperty(context_->ctx(), global, props[i].atom, 0);
+          JS_FreeAtom(context_->ctx(), props[i].atom);
+        }
+        js_free(context_->ctx(), props);
+      }
+    }
+    
+    // Force garbage collection again to clean up the freed objects
+    JS_RunGC(context_->dartIsolateContext()->runtime());
+    JS_RunGC(context_->dartIsolateContext()->runtime());
+  }
 }
 
 bool WebFTestContext::parseTestHTML(const uint16_t* code, size_t codeLength) {
