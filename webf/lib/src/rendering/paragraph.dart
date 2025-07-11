@@ -15,6 +15,7 @@ import 'package:webf/rendering.dart' show RenderViewportBox;
 import 'package:webf/src/rendering/text.dart' show InlineBoxConstraints, MultiLineBoxConstraints, RenderTextBox, webfTextMaxLines;
 import 'package:webf/src/rendering/text_span.dart';
 import 'package:webf/src/rendering/webf_text_painter.dart';
+import 'package:webf/src/css/text_script_detector.dart';
 
 const String _kEllipsis = '\u2026';
 
@@ -24,20 +25,20 @@ class WebFRenderTextLine {
   late Offset paintOffset = Offset.zero;
   late double fontHeight = 0;
   late double leading = 0;
-  late double lineAscentHeightOffset = 0;
+  late double baselineAdjustment = 0; // Adjustment for CJK baseline
+  late bool containsCJK = false;
 
   WebFRenderTextLine();
 
   double get paintTop {
+    double top;
     if (paintOffset.dy > lineRect.top) {
-      return paintOffset.dy + leading/2;
+      top = paintOffset.dy + leading/2;
+    } else {
+      top = lineRect.top + leading/2;
     }
-    // when lineHeight < fontSize, offset is negative
-    // if (fontHeight != 0 && fontHeight > lineRect.height) {
-    //   return lineRect.top + leading/2;
-    // }
-
-    return lineRect.top + leading/2;
+    // Apply baseline adjustment for CJK text
+    return top + baselineAdjustment;
   }
 
   double get paintLeft {
@@ -497,7 +498,6 @@ class WebFRenderParagraph extends RenderBox
       _lineRenders[i].leading = leading;
       _lineRenders[i].lineRect = Rect.fromLTWH(old.left, offset, old.width, lineHeight ?? lineMetric.height);
       _lineRenders[i].fontHeight = lineMetric.height;
-      _lineRenders[i].lineAscentHeightOffset = lineMetric.ascent + lineMetric.descent -  lineMetric.height;
     }
   }
 
@@ -564,6 +564,9 @@ class WebFRenderParagraph extends RenderBox
         minWidth: constraints.minWidth,
         maxWidth: widthMatters ? constraints.maxWidth : double.infinity,
       );
+
+      // Calculate baseline adjustment for CJK text
+      _calculateBaselineAdjustment(i, lineText);
     }
   }
 
@@ -591,6 +594,44 @@ class WebFRenderParagraph extends RenderBox
     List<Object> result =
     _updateLineRectFromMetrics(range, _textPainter.text as WebFTextSpan, oldRect, lineMetric, isLastLine: true);
     _lineRenders[0].lineRect = oldRect = result[0] as Rect;
+
+    // Calculate baseline adjustment for single line
+    String lineText = (result[1] as String);
+    _calculateBaselineAdjustment(0, lineText);
+  }
+
+  void _calculateBaselineAdjustment(int lineIndex, String lineText) {
+    if (lineIndex >= _lineRenders.length) return;
+
+    // Check if the line contains CJK characters
+    _lineRenders[lineIndex].containsCJK = TextScriptDetector.containsCJK(lineText);
+
+    if (_lineRenders[lineIndex].containsCJK) {
+      // Get the CJK ratio to determine how much adjustment is needed
+      double cjkRatio = TextScriptDetector.getCJKRatio(lineText);
+
+      // Get line metrics
+      if (lineIndex < _lineMetrics.length) {
+        ui.LineMetrics metrics = _lineMetrics[lineIndex];
+
+        // Calculate the baseline adjustment
+        // CJK fonts typically have different ascent/descent ratios
+        // We adjust based on the difference between expected and actual baseline position
+        double fontHeight = metrics.height;
+        double ascent = metrics.ascent;
+        double descent = metrics.descent;
+
+        // For CJK text, we want to slightly lower the baseline to align better with Latin text
+        // The adjustment is proportional to the CJK content ratio
+        // Typical adjustment is about 10-15% of the descent value
+        double adjustmentFactor = 0.15; // This can be tuned based on font metrics
+        double baseAdjustment = descent * adjustmentFactor * cjkRatio;
+
+        _lineRenders[lineIndex].baselineAdjustment = baseAdjustment;
+      }
+    } else {
+      _lineRenders[lineIndex].baselineAdjustment = 0;
+    }
   }
 
   @override
@@ -722,11 +763,11 @@ class WebFRenderParagraph extends RenderBox
       // Adjust text paint offset of each line according to line-height.
       for (int i = 0; i < _lineRenders.length; i++) {
         WebFTextPainter _lineTextPainter = _lineRenders[i].textPainter;
-        Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop - _lineRenders[i].lineAscentHeightOffset);
+        Offset lineOffset = Offset(offset.dx + _lineRenders[i].paintLeft, offset.dy + _lineRenders[i].paintTop);
         _lineTextPainter.paint(context.canvas, lineOffset);
       }
     } else if (_lineRenders.length == 1) {
-      Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop - _lineRenders[0].lineAscentHeightOffset);
+      Offset lineOffset = Offset(offset.dx + _lineRenders[0].paintOffset.dx, offset.dy + _lineRenders[0].paintTop);
       _lineRenders[0].textPainter.paint(context.canvas, lineOffset);
     }
 
@@ -743,7 +784,7 @@ class WebFRenderParagraph extends RenderBox
 
     // Report LCP candidate after painting
     _reportLCPCandidate();
-    
+
     // Report FCP if this is the first content paint
     _reportFCP();
   }
@@ -869,10 +910,10 @@ class WebFRenderParagraph extends RenderBox
   void _reportLCPCandidate() {
     if (parent is RenderTextBox && !size.isEmpty) {
       final RenderTextBox parentTextBox = parent as RenderTextBox;
-      
+
       // Calculate the actual text bounding box
       double textBoundingBoxArea = _calculateTextBoundingBoxArea(parentTextBox);
-      
+
       if (textBoundingBoxArea > 0) {
         // Get the element from the render style target
         final Element element = parentTextBox.renderStyle.target;
@@ -880,60 +921,60 @@ class WebFRenderParagraph extends RenderBox
       }
     }
   }
-  
+
   double _calculateTextBoundingBoxArea(RenderTextBox parentTextBox) {
     // Get the viewport
     RenderViewportBox? viewport = parentTextBox.renderStyle.target.getRootViewport();
     if (viewport == null || !viewport.hasSize) return 0;
-    
+
     // Calculate the actual text bounding box based on line renders
     if (_lineRenders.isEmpty) return 0;
-    
+
     // Find the bounds of all text lines
     double minLeft = double.infinity;
     double maxRight = 0;
     double minTop = double.infinity;
     double maxBottom = 0;
-    
+
     for (int i = 0; i < _lineRenders.length; i++) {
       WebFRenderTextLine line = _lineRenders[i];
-      
+
       // Calculate the actual text bounds for this line
       double lineLeft = line.paintLeft;
-      double lineTop = line.paintTop - line.lineAscentHeightOffset;
+      double lineTop = line.paintTop;
       double lineRight = lineLeft + line.lineRect.width;
       double lineBottom = lineTop + line.fontHeight;
-      
+
       minLeft = math.min(minLeft, lineLeft);
       maxRight = math.max(maxRight, lineRight);
       minTop = math.min(minTop, lineTop);
       maxBottom = math.max(maxBottom, lineBottom);
     }
-    
+
     // Create the text bounding box relative to this paragraph
     Rect textBounds = Rect.fromLTRB(minLeft, minTop, maxRight, maxBottom);
-    
+
     // Get the position of this paragraph relative to the viewport
     Offset paragraphOffset = localToGlobal(Offset.zero, ancestor: viewport);
-    
+
     // Transform text bounds to viewport coordinates
     Rect absoluteTextBounds = textBounds.shift(paragraphOffset);
-    
+
     // Calculate intersection with viewport
     Rect viewportBounds = Offset.zero & viewport.size;
     Rect? intersection = absoluteTextBounds.intersect(viewportBounds);
-    
+
     if (intersection.width <= 0 || intersection.height <= 0) return 0;
-    
+
     return intersection.width * intersection.height;
   }
-  
+
   void _reportFCP() {
     // Report FCP when text is painted with actual content
     if (parent is RenderTextBox && !size.isEmpty && _lineRenders.isNotEmpty) {
       final RenderTextBox parentTextBox = parent as RenderTextBox;
       final Element element = parentTextBox.renderStyle.target;
-      
+
       // Check if this text has actual visible content
       bool hasVisibleContent = false;
       for (int i = 0; i < _lineRenders.length; i++) {
@@ -942,7 +983,7 @@ class WebFRenderParagraph extends RenderBox
           break;
         }
       }
-      
+
       if (hasVisibleContent) {
         // Report FP first (if not already reported)
         element.ownerDocument.controller.reportFP();

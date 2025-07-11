@@ -29,6 +29,7 @@ export 'src/css/style_sheet.dart';
 export 'src/css/rule_set.dart';
 export 'src/css/parser/parser.dart';
 export 'src/css/text.dart';
+export 'src/css/text_script_detector.dart';
 export 'src/css/origin.dart';
 export 'src/css/matrix.dart';
 export 'src/css/transform.dart';
