@@ -1,3 +1,37 @@
+## 0.22.1
+
+## Bug Fixes
+
+### Text and Layout
+
+- **CJK Text Alignment**: Improved CJK text baseline alignment with Latin text for better
+  international support
+- **Text Wrapping**: Fixed text wrapper behavior and max-width 50% text container height fitting
+- **Flex Layout**: Multiple fixes for flexbox layout including:
+  - Fixed flex-basis and flex item layout size calculations
+  - Resolved flex layout issues with text-only content
+  - Fixed child constraints max height handling
+  - Improved getConstraints to avoid unnecessary computeContentBoxLogic calculations
+- Fixed OnScreen/OffScreen Event Order: Corrected the dispatch order of visibility events to ensure
+  consistent behavior
+
+### CSS and Positioning
+
+- **Fixed Positioning**: CSS fixed positioning now returns correct getBoundingClientRect values
+- **Border Rendering**: Fixed dashed border detection logic in box decoration painter
+
+### Performance and Memory
+
+- **JS Thread Stack Size**: Set JS thread max stack size to 8MB in debug mode for better debugging
+  experience
+- **Stack Size Adjustment**: Adjusted max stack size for JSRuntime to prevent overflow issues
+- **Event Ordering**: Ensured consistent OnScreen/OffScreen event ordering during rapid switching
+
+### Platform-Specific
+
+- **iOS Compilation**: Fixed iOS compilation issues
+- **TypeScript**: Resolved TypeScript compilation issues
+- **Release Mode**: Fixed content visible reporting in release mode
 
 ## 0.22.0
 
