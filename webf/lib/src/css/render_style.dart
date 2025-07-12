@@ -309,6 +309,13 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   double get flexShrink;
 
+  // Gap
+  CSSLengthValue get gap;
+
+  CSSLengthValue get rowGap;
+
+  CSSLengthValue get columnGap;
+
   // Color
   CSSColor get color;
 
@@ -1256,6 +1263,7 @@ class CSSRenderStyle extends RenderStyle
         CSSVisibilityMixin,
         CSSContentVisibilityMixin,
         CSSFlexboxMixin,
+        CSSGapMixin,
         CSSDisplayMixin,
         CSSInlineMixin,
         CSSObjectFitMixin,
@@ -1380,6 +1388,13 @@ class CSSRenderStyle extends RenderStyle
         return flexShrink;
       case FLEX_BASIS:
         return flexBasis;
+      // Gap
+      case GAP:
+        return gap;
+      case ROW_GAP:
+        return rowGap;
+      case COLUMN_GAP:
+        return columnGap;
       // Background
       case BACKGROUND_COLOR:
         return backgroundColor;
@@ -1680,6 +1695,16 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FLEX_BASIS:
         flexBasis = value;
+        break;
+      // Gap
+      case GAP:
+        gap = value;
+        break;
+      case ROW_GAP:
+        rowGap = value;
+        break;
+      case COLUMN_GAP:
+        columnGap = value;
         break;
       // Background
       case BACKGROUND_COLOR:
@@ -2080,6 +2105,11 @@ class CSSRenderStyle extends RenderStyle
       case Y2:
       case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
+        break;
+      case GAP:
+      case ROW_GAP:
+      case COLUMN_GAP:
+        value = CSSGapMixin.resolveGap(propertyValue, renderStyle: renderStyle);
         break;
       case PADDING_TOP:
       case MARGIN_TOP:

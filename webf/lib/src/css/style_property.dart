@@ -1004,6 +1004,24 @@ class CSSStyleProperty {
     return values;
   }
 
+  static void setShorthandGap(Map<String, String?> properties, String shorthandValue) {
+    List<String> values = _splitBySpace(shorthandValue);
+    if (values.length == 1) {
+      // gap: 20px -> row-gap: 20px, column-gap: 20px
+      properties[ROW_GAP] = values[0];
+      properties[COLUMN_GAP] = values[0];
+    } else if (values.length == 2) {
+      // gap: 20px 10px -> row-gap: 20px, column-gap: 10px
+      properties[ROW_GAP] = values[0];
+      properties[COLUMN_GAP] = values[1];
+    }
+  }
+
+  static void removeShorthandGap(CSSStyleDeclaration style, [bool? isImportant]) {
+    if (style.contains(ROW_GAP)) style.removeProperty(ROW_GAP, isImportant);
+    if (style.contains(COLUMN_GAP)) style.removeProperty(COLUMN_GAP, isImportant);
+  }
+
   static void setShorthandAnimation(Map<String, String?> properties, String shorthandValue) {
     List<String?>? values = _getAnimationValues(shorthandValue);
     if (values == null) return;

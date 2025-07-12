@@ -732,6 +732,26 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
   }
 
+  // Get gap spacing for main axis (between flex items)
+  double _getMainAxisGap() {
+    CSSLengthValue gap = _isHorizontalFlexDirection 
+      ? renderStyle.columnGap 
+      : renderStyle.rowGap;
+    if (gap.type == CSSLengthType.NORMAL) return 0;
+    double? computedValue = gap.computedValue;
+    return computedValue ?? 0;
+  }
+
+  // Get gap spacing for cross axis (between flex lines)
+  double _getCrossAxisGap() {
+    CSSLengthValue gap = _isHorizontalFlexDirection 
+      ? renderStyle.rowGap 
+      : renderStyle.columnGap;
+    if (gap.type == CSSLengthType.NORMAL) return 0;
+    double? computedValue = gap.computedValue;
+    return computedValue ?? 0;
+  }
+
   @override
   void performLayout() {
     try {
@@ -1038,7 +1058,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       double childMainAxisExtent = _getMainAxisExtent(child, shouldUseIntrinsicMainSize: true);
       double childCrossAxisExtent = _getCrossAxisExtent(child);
-      bool isExceedFlexLineLimit = runMainAxisExtent + childMainAxisExtent > flexLineLimit;
+      // Include gap spacing in flex line limit check
+      double gapSpacing = runChildren.isNotEmpty ? _getMainAxisGap() : 0;
+      bool isExceedFlexLineLimit = runMainAxisExtent + gapSpacing + childMainAxisExtent > flexLineLimit;
       // calculate flex line
       if ((renderStyle.flexWrap == FlexWrap.wrap || renderStyle.flexWrap == FlexWrap.wrapReverse) &&
           runChildren.isNotEmpty &&
@@ -1053,6 +1075,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         totalFlexGrow = 0;
         totalFlexShrink = 0;
+      }
+      // Add gap spacing between items (not before the first item)
+      if (runChildren.isNotEmpty) {
+        runMainAxisExtent += _getMainAxisGap();
       }
       runMainAxisExtent += childMainAxisExtent;
       runCrossAxisExtent = math.max(runCrossAxisExtent, childCrossAxisExtent);
@@ -1267,8 +1293,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     List<_RunMetrics> _runMetrics,
   ) {
     double crossSize = 0;
-    for (_RunMetrics run in _runMetrics) {
-      crossSize += run.crossAxisExtent;
+    double crossAxisGap = _getCrossAxisGap();
+    for (int i = 0; i < _runMetrics.length; i++) {
+      crossSize += _runMetrics[i].crossAxisExtent;
+      // Add gap spacing between lines (not after the last line)
+      if (i < _runMetrics.length - 1) {
+        crossSize += crossAxisGap;
+      }
     }
     return crossSize;
   }
@@ -1476,6 +1507,13 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       runChildren.forEach(calTotalSpace);
+
+      // Add gap spacing to total space calculation for flex-grow available space
+      int itemCount = runChildren.length;
+      if (itemCount > 1) {
+        double totalGapSpacing = (itemCount - 1) * _getMainAxisGap();
+        totalSpace += totalGapSpacing;
+      }
 
       // Flexbox with no size on main axis should adapt the main axis size with children.
       double initialFreeSpace = isMainSizeDefinite ? (maxMainSize ?? 0) - totalSpace : 0;
@@ -2405,14 +2443,17 @@ class RenderFlexLayout extends RenderLayoutBox {
         CSSPositionedLayout.applyRelativeOffset(relativeOffset, child);
 
         // Need to subtract start margin of main axis when calculating next child's start position.
+        double mainAxisGap = _getMainAxisGap();
         if (flipMainAxis) {
-          childMainPosition -= betweenSpace + childMainAxisMargin;
+          childMainPosition -= betweenSpace + childMainAxisMargin + mainAxisGap;
         } else {
-          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace;
+          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace + mainAxisGap;
         }
       }
 
-      crossAxisOffset += runCrossAxisExtent + runBetweenSpace;
+      // Add cross-axis gap spacing between flex lines
+      double crossAxisGap = _getCrossAxisGap();
+      crossAxisOffset += runCrossAxisExtent + runBetweenSpace + crossAxisGap;
     }
   }
 

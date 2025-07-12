@@ -135,6 +135,10 @@ const String FLEX_FLOW = 'flexFlow';
 const String FLEX_DIRECTION = 'flexDirection';
 const String FLEX_WRAP = 'flexWrap';
 
+const String GAP = 'gap';
+const String ROW_GAP = 'rowGap';
+const String COLUMN_GAP = 'columnGap';
+
 const String JUSTIFY_CONTENT = 'justifyContent';
 const String TEXT_ALIGN = 'textAlign';
 const String ALIGN_ITEMS = 'alignItems';

@@ -10,6 +10,7 @@ export 'src/css/box.dart';
 export 'src/css/box_shadow.dart';
 export 'src/css/content_visibility.dart';
 export 'src/css/flexbox.dart';
+export 'src/css/gap.dart';
 export 'src/css/filter.dart';
 export 'src/css/opacity.dart';
 export 'src/css/overflow.dart';
