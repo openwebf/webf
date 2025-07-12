@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:playground_app/main.dart';
 import 'package:webf/webf.dart';
 import 'qr_scanner_screen.dart';
+import 'showcase_screen.dart';
 
 class WebFScreen extends StatefulWidget {
   const WebFScreen({super.key});
@@ -15,7 +16,7 @@ class _WebFScreenState extends State<WebFScreen> {
   static const String initialControllerName = 'miracle_plus_demo';
   static const String initialUrl = 'https://miracleplus.openwebf.com/';
 
-  final TextEditingController _urlController = TextEditingController(text: initialUrl);
+  final TextEditingController _urlController = TextEditingController();
 
   String currentControllerName = initialControllerName;
   String currentUrl = initialUrl;
@@ -27,38 +28,27 @@ class _WebFScreenState extends State<WebFScreen> {
   @override
   void initState() {
     super.initState();
-    _checkInitialController();
+    // Remove the unnecessary initial controller check
+    // _checkInitialController();
   }
 
-  Future<void> _checkInitialController() async {
+  Future<void> _loadUrl(String url, {bool withPrerendering = false}) async {
+    // Clear any previous state
     setState(() {
-      isLoading = true;
+      isLoading = false;
+      isLoadingComplete = false;
+      loadingError = null;
+      loadingProgress = 0.0;
     });
 
-    try {
-      final controller = await WebFControllerManager.instance.getController(initialControllerName);
-      if (controller != null) {
-        setState(() {
-          isLoading = false;
-          isLoadingComplete = true;
-          loadingProgress = 1.0;
-        });
-      } else {
-        setState(() {
-          isLoading = false;
-          loadingError = 'Initial controller not found';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-        loadingError = e.toString();
-      });
-    }
-  }
-
-  Future<void> _loadUrl(String url) async {
     // Validate URL
+    if (url.trim().isEmpty) {
+      setState(() {
+        loadingError = 'Please enter a URL';
+      });
+      return;
+    }
+
     if (!_isValidUrl(url)) {
       setState(() {
         loadingError = 'Invalid URL format';
@@ -67,50 +57,63 @@ class _WebFScreenState extends State<WebFScreen> {
     }
 
     setState(() {
-      isLoading = true;
-      isLoadingComplete = false;
-      loadingError = null;
-      loadingProgress = 0.0;
+      isLoading = withPrerendering;
       currentUrl = url;
     });
 
-    // Generate a unique controller name
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final newControllerName = 'webf_page_$timestamp';
+    if (withPrerendering) {
+      // Generate a unique controller name
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final newControllerName = 'webf_page_$timestamp';
 
-    try {
-      // Add new controller with prerendering
-      await WebFControllerManager.instance.addWithPrerendering(
-        name: newControllerName,
-        createController: () => WebFController(
-          initialRoute: '/home',
-          routeObserver: routeObserver,
-        ),
-        bundle: WebFBundle.fromUrl(url),
-        setup: (controller) {
-          // controller.onLoadError = (FlutterError error, stack) {
-          //   if (mounted) {
-          //     setState(() {
-          //       isLoading = false;
-          //       loadingError = error.message;
-          //     });
-          //   }
-          // };
-        },
-      );
+      try {
+        // Add new controller with prerendering
+        await WebFControllerManager.instance.addWithPrerendering(
+          name: newControllerName,
+          createController: () => WebFController(
+            initialRoute: '/home',
+            routeObserver: routeObserver,
+          ),
+          bundle: WebFBundle.fromUrl(url),
+          setup: (controller) {
+            // controller.onLoadError = (FlutterError error, stack) {
+            //   if (mounted) {
+            //     setState(() {
+            //       isLoading = false;
+            //       loadingError = error.message;
+            //     });
+            //   }
+            // };
+          },
+        );
 
-      // The Future completes when prerendering is done
-      setState(() {
-        isLoading = false;
-        isLoadingComplete = true;
-        currentControllerName = newControllerName;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-        loadingError = e.toString();
-      });
+        // The Future completes when prerendering is done
+        setState(() {
+          isLoading = false;
+          isLoadingComplete = true;
+          currentControllerName = newControllerName;
+          loadingProgress = 1.0;
+        });
+      } catch (e) {
+        setState(() {
+          isLoading = false;
+          loadingError = e.toString();
+        });
+      }
+    } else {
+      // Direct access without prerendering
+      _navigateToWebFPage(url);
     }
+  }
+
+  void _resetState() {
+    setState(() {
+      isLoading = false;
+      isLoadingComplete = false;
+      loadingError = null;
+      loadingProgress = 0.0;
+      currentUrl = initialUrl;
+    });
   }
 
   Future<void> _scanQRCode() async {
@@ -121,7 +124,6 @@ class _WebFScreenState extends State<WebFScreen> {
 
     if (result != null && result.isNotEmpty) {
       _urlController.text = result;
-      await _loadUrl(result);
     }
   }
 
@@ -134,14 +136,27 @@ class _WebFScreenState extends State<WebFScreen> {
     }
   }
 
-  void _navigateToWebFPage() {
+  void _navigateToWebFPage([String? url]) {
+    final targetUrl = url ?? currentUrl;
+    final controllerName = url != null ? 'direct_access_${DateTime.now().millisecondsSinceEpoch}' : currentControllerName;
+    
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => WebFViewScreen(
-          controllerName: currentControllerName,
-          url: currentUrl,
+          controllerName: controllerName,
+          url: targetUrl,
+          isDirect: url != null,
         ),
+      ),
+    );
+  }
+
+  void _navigateToShowcase() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ShowcaseScreen(),
       ),
     );
   }
@@ -149,187 +164,435 @@ class _WebFScreenState extends State<WebFScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('WebF Browser'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            // URL Input Section
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Enter URL',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _urlController,
-                            decoration: InputDecoration(
-                              hintText: 'https://example.com',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
-                            ),
-                            keyboardType: TextInputType.url,
-                            onSubmitted: isLoading ? null : _loadUrl,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          onPressed: isLoading ? null : _scanQRCode,
-                          icon: const Icon(Icons.qr_code_scanner),
-                          tooltip: 'Scan QR Code',
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                          ),
-                        ),
-                      ],
+                    child: const Icon(
+                      Icons.explore,
+                      color: Colors.white,
+                      size: 20,
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: isLoading
-                          ? null
-                          : () => _loadUrl(_urlController.text),
-                        icon: const Icon(Icons.download),
-                        label: const Text('Load with Prerendering'),
-                      ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'WebF Explorer',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 40),
+
+              // URL Input Card
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Status Section
-            Card(
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.language,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Current URL',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      currentUrl,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Card URL',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-
-                    if (isLoading) ...[
-                      Column(
+                      const SizedBox(height: 16),
+                      Row(
                         children: [
-                          const CupertinoActivityIndicator(radius: 16),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Prerendering... ${(loadingProgress * 100).toInt()}%',
-                            style: const TextStyle(fontSize: 16),
+                          Expanded(
+                            child: TextField(
+                              controller: _urlController,
+                              decoration: const InputDecoration(
+                                hintText: 'Enter Card URL',
+                                hintStyle: TextStyle(
+                                  color: Color(0xFFB0B0B0),
+                                  fontSize: 16,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.black,
+                              ),
+                              onSubmitted: (url) => _loadUrl(url),
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: 200,
-                            child: LinearProgressIndicator(
-                              value: loadingProgress,
-                              minHeight: 4,
+                          const SizedBox(width: 16),
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F8F8),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              onPressed: isLoading ? null : _scanQRCode,
+                              icon: const Icon(
+                                Icons.qr_code_scanner,
+                                color: Color(0xFF666666),
+                                size: 20,
+                              ),
+                              tooltip: 'Scan QR Code',
                             ),
                           ),
                         ],
                       ),
-                    ] else if (loadingError != null) ...[
+                      const SizedBox(height: 24),
+                      
+                      // Two action buttons - vertical layout
                       Column(
                         children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: Colors.red,
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: (isLoading || isLoadingComplete)
+                                ? null 
+                                : () => _loadUrl(_urlController.text),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF4CAF50),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Go',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: (isLoading || isLoadingComplete)
+                                ? null 
+                                : () => _loadUrl(_urlController.text, withPrerendering: true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF4444),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: isLoading 
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Prerender',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      // Helper text when buttons are disabled
+                      if (isLoadingComplete) ...[
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Page is ready! Use "View Page" below or "Reset" to try another URL.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF888888),
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Prerendering Status Card - only show when there's actual loading/result
+              if (isLoading || isLoadingComplete || loadingError != null)
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      children: [
+                        if (isLoading) ...[
+                          const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Color(0xFFFF4444),
+                              strokeWidth: 2,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Loading failed',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.red,
+                            'Prerendering... ${(loadingProgress * 100).toInt()}%',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            currentUrl,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF666666),
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ] else if (loadingError != null) ...[
+                          const Icon(
+                            Icons.error_outline,
+                            size: 32,
+                            color: Color(0xFFFF4444),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Loading Failed',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             loadingError!,
-                            style: const TextStyle(color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF666666),
+                            ),
                             textAlign: TextAlign.center,
                           ),
-                        ],
-                      ),
-                    ] else if (isLoadingComplete) ...[
-                      Column(
-                        children: [
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: _resetState,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFFF4444),
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text(
+                                'Reset',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ] else if (isLoadingComplete) ...[
                           const Icon(
                             Icons.check_circle,
-                            size: 48,
-                            color: Colors.green,
+                            size: 32,
+                            color: Color(0xFF4CAF50),
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'Page ready!',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.green,
+                          const Text(
+                            'Page Ready!',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'The page has been prerendered',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                          const SizedBox(height: 24),
-                          ElevatedButton.icon(
-                            onPressed: _navigateToWebFPage,
-                            icon: const Icon(Icons.launch),
-                            label: const Text('View Page'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                              textStyle: const TextStyle(fontSize: 16),
+                            'The page has been prerendered successfully',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF666666),
                             ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          Column(
+                            children: [
+                              SizedBox(
+                                width: double.infinity,
+                                height: 44,
+                                child: ElevatedButton(
+                                  onPressed: _navigateToWebFPage,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4CAF50),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'View Page',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              SizedBox(
+                                width: double.infinity,
+                                height: 44,
+                                child: ElevatedButton(
+                                  onPressed: _resetState,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFF8F8F8),
+                                    foregroundColor: const Color(0xFF666666),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Reset',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+
+              if (isLoading || isLoadingComplete || loadingError != null)
+                const SizedBox(height: 24),
+
+              // Showcase Option
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _navigateToShowcase,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.star,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          const Text(
+                            'Showcase',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const Spacer(),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Color(0xFFB0B0B0),
+                            size: 16,
                           ),
                         ],
                       ),
-                    ],
-                  ],
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 40), // Add some bottom padding
+            ],
+          ),
         ),
       ),
     );
@@ -345,11 +608,13 @@ class _WebFScreenState extends State<WebFScreen> {
 class WebFViewScreen extends StatelessWidget {
   final String controllerName;
   final String url;
+  final bool isDirect;
 
   const WebFViewScreen({
     super.key,
     required this.controllerName,
     required this.url,
+    this.isDirect = false,
   });
 
   @override
@@ -357,29 +622,52 @@ class WebFViewScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(Uri.parse(url).host),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
-              final controller = await WebFControllerManager.instance.getController(controllerName);
-              controller?.reload();
+              if (isDirect) {
+                // For direct access, just reload the current page
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WebFViewScreen(
+                      controllerName: 'direct_access_${DateTime.now().millisecondsSinceEpoch}',
+                      url: url,
+                      isDirect: true,
+                    ),
+                  ),
+                );
+              } else {
+                final controller = await WebFControllerManager.instance.getController(controllerName);
+                controller?.reload();
+              }
             },
           ),
         ],
       ),
-      body: WebF.fromControllerName(
-        controllerName: controllerName,
-        loadingWidget: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CupertinoActivityIndicator(radius: 16),
-              SizedBox(height: 16),
-              Text('Loading...'),
-            ],
+      body: isDirect
+        ? WebF.fromControllerName(
+            controllerName: controllerName,
+            bundle: WebFBundle.fromUrl(url),
+          )
+        : WebF.fromControllerName(
+            controllerName: controllerName,
+            loadingWidget: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Loading...'),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
     );
   }
 }
+
