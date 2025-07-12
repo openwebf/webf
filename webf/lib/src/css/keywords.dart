@@ -134,6 +134,7 @@ const String FLEX_BASIS = 'flexBasis';
 const String FLEX_FLOW = 'flexFlow';
 const String FLEX_DIRECTION = 'flexDirection';
 const String FLEX_WRAP = 'flexWrap';
+const String ORDER = 'order';
 
 const String GAP = 'gap';
 const String ROW_GAP = 'rowGap';

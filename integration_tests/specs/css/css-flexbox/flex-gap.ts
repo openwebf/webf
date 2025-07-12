@@ -1,5 +1,5 @@
 /*auto generated*/
-fdescribe('css-flexbox gap', () => {
+describe('css-flexbox gap', () => {
   it('gap-basic-row-direction', async () => {
     let p;
     let flexbox;

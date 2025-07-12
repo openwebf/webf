@@ -309,6 +309,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   double get flexShrink;
 
+  int get order;
+
   // Gap
   CSSLengthValue get gap;
 
@@ -1263,6 +1265,7 @@ class CSSRenderStyle extends RenderStyle
         CSSVisibilityMixin,
         CSSContentVisibilityMixin,
         CSSFlexboxMixin,
+        CSSOrderMixin,
         CSSGapMixin,
         CSSDisplayMixin,
         CSSInlineMixin,
@@ -1388,6 +1391,8 @@ class CSSRenderStyle extends RenderStyle
         return flexShrink;
       case FLEX_BASIS:
         return flexBasis;
+      case ORDER:
+        return order;
       // Gap
       case GAP:
         return gap;
@@ -1695,6 +1700,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FLEX_BASIS:
         flexBasis = value;
+        break;
+      case ORDER:
+        order = value;
         break;
       // Gap
       case GAP:
@@ -2170,6 +2178,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FLEX_SHRINK:
         value = CSSFlexboxMixin.resolveFlexShrink(propertyValue);
+        break;
+      case ORDER:
+        value = CSSOrderMixin.resolveOrder(propertyValue);
         break;
       case SLIVER_DIRECTION:
         value = CSSSliverMixin.resolveAxis(propertyValue);

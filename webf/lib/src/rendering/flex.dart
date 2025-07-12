@@ -752,6 +752,32 @@ class RenderFlexLayout extends RenderLayoutBox {
     return computedValue ?? 0;
   }
 
+  // Sort flex items by their order property (default order is 0)
+  List<RenderBox> _getSortedFlexItems(List<RenderBox> children) {
+    List<RenderBox> sortedChildren = List.from(children);
+    
+    sortedChildren.sort((a, b) {
+      int orderA = 0;
+      int orderB = 0;
+      
+      // Get order value from RenderStyle if available
+      if (a is RenderBoxModel) {
+        orderA = a.renderStyle.order;
+      }
+      if (b is RenderBoxModel) {
+        orderB = b.renderStyle.order;
+      }
+      
+      // If orders are equal, maintain document order (stable sort)
+      if (orderA == orderB) {
+        return 0;
+      }
+      return orderA.compareTo(orderB);
+    });
+    
+    return sortedChildren;
+  }
+
   @override
   void performLayout() {
     try {
@@ -828,7 +854,9 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Layout non positioned element (include element in normal flow and
     // placeholder of positioned element).
-    _layoutFlexItems(_flexItemChildren);
+    // Sort flex items by their order property for visual reordering
+    List<RenderBox> orderedChildren = _getSortedFlexItems(_flexItemChildren);
+    _layoutFlexItems(orderedChildren);
 
     if (!kReleaseMode) {
       developer.Timeline.finishSync();
