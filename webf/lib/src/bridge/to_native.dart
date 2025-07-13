@@ -340,7 +340,7 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
       cacheObject.valid &&
       cacheObject.bytes != null) {
-    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, scriptElement: scriptElement);
     // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
     if (!result) {
       await cacheObject.remove();

@@ -594,7 +594,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'hybrid_router':
       return WebFBundle.fromUrl('assets:///hybrid_router/build/index.html');
     case 'tailwind_react':
-      return WebFBundle.fromUrl('http://192.168.86.121:3000/client-component');
+      return WebFBundle.fromUrl('assets:///tailwind_react/build/index.html');
     case 'cupertino_gallery':
       return WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/');
     case 'use_cases':
