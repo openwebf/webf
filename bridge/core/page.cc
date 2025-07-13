@@ -212,7 +212,11 @@ void WebFPage::EvaluateScriptsInternal(void* page_,
                                        EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto script_element_native_binding_object = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
-  auto* script_element = DynamicTo<HTMLScriptElement>(BindingObject::From(script_element_native_binding_object));
+  auto binding_object = BindingObject::From(script_element_native_binding_object);
+  auto* event_target = DynamicTo<EventTarget>(binding_object);
+  auto* node = DynamicTo<Node>(event_target);
+  auto* html_element = DynamicTo<HTMLElement>(node);
+  auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
   assert(std::this_thread::get_id() == page->currentThread());
 
   bool is_success = page->evaluateScript(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine, script_element);
@@ -233,7 +237,11 @@ void WebFPage::EvaluateModuleInternal(void* page_,
                                       EvaluateScriptsCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto script_element_native_binding_object = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
-  auto* script_element = DynamicTo<HTMLScriptElement>(BindingObject::From(script_element_native_binding_object));
+  auto binding_object = BindingObject::From(script_element_native_binding_object);
+  auto* event_target = DynamicTo<EventTarget>(binding_object);
+  auto* node = DynamicTo<Node>(event_target);
+  auto* html_element = DynamicTo<HTMLElement>(node);
+  auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
   assert(std::this_thread::get_id() == page->currentThread());
 
   bool is_success = page->evaluateModule(code, code_len, parsed_bytecodes, bytecode_len, bundleFilename, startLine, script_element);
@@ -258,7 +266,11 @@ void WebFPage::EvaluateQuickjsByteCodeInternal(void* page_,
                                                EvaluateQuickjsByteCodeCallback result_callback) {
   auto page = reinterpret_cast<webf::WebFPage*>(page_);
   auto script_element_native_binding_object = reinterpret_cast<webf::NativeBindingObject*>(script_element_);
-  auto* script_element = DynamicTo<HTMLScriptElement>(BindingObject::From(script_element_native_binding_object));
+  auto binding_object = BindingObject::From(script_element_native_binding_object);
+  auto* event_target = DynamicTo<EventTarget>(binding_object);
+  auto* node = DynamicTo<Node>(event_target);
+  auto* html_element = DynamicTo<HTMLElement>(node);
+  auto* script_element = DynamicTo<HTMLScriptElement>(html_element);
 
   assert(std::this_thread::get_id() == page->currentThread());
 

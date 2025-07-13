@@ -60,6 +60,40 @@ globalThis.Element.prototype.attachShadow = function (init) {
   return document.createElement('shadow-root');
 }
 
+globalThis.Element.prototype.getRootNode = function (init) {
+  return document;
+}
+
+// @ts-expect-error
+document.activeElement = document.body;
+
+document.hasFocus = function () {
+  return true;
+}
+
+globalThis.HTMLElement.prototype.focus = function () {
+  // No-op for now.
+}
+
+globalThis.HTMLElement.prototype.blur = function () {
+  // No-op for now.
+}
+
+class ShadowRoot {
+  constructor() {
+    throw new Error('ShadowRoot is not supported in WebF.');
+  }
+}
+
+defineGlobalProperty('ShadowRoot', ShadowRoot, false);
+
+globalThis.HTMLImageElement.prototype.decode = function () {
+  return new Promise((resolve, reject) => {
+    // No-op for now.
+    resolve();
+  });
+}
+
 export type PolyFillGlobal = {
   console: Console,
   webf: Webf,

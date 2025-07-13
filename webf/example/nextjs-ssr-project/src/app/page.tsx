@@ -13,13 +13,13 @@ export default function Home() {
           height={38}
           priority
         />
-        
+
         <h1 style={{ fontSize: '24px', marginBottom: '20px', textAlign: 'center' }}>
           WebF Next.js Test Suite
         </h1>
-        
-        <div style={{ 
-          maxWidth: '600px', 
+
+        <div style={{
+          maxWidth: '600px',
           margin: '0 auto',
           padding: '20px',
           backgroundColor: '#f8f9fa',
@@ -46,7 +46,7 @@ export default function Home() {
           >
             🖥️ Test Server Components
           </a>
-          
+
           <a
             href="/client-component"
             className={styles.secondary}
@@ -54,7 +54,7 @@ export default function Home() {
           >
             ⚡ Test Client Components
           </a>
-          
+
           <a
             href="/hybrid"
             className={styles.primary}
@@ -64,7 +64,7 @@ export default function Home() {
           </a>
         </div>
 
-        <div style={{ 
+        <div style={{
           marginTop: '30px',
           padding: '20px',
           backgroundColor: '#fff3cd',
@@ -81,7 +81,7 @@ export default function Home() {
           </ul>
         </div>
       </main>
-      
+
       <footer className={styles.footer}>
         <a
           href="https://nextjs.org/docs/app/building-your-application/rendering/server-components"
