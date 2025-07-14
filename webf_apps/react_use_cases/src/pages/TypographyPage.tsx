@@ -1,11 +1,6 @@
 import React from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './TypographyPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const TypographyPage: React.FC = () => {
   return (
@@ -76,7 +71,7 @@ export const TypographyPage: React.FC = () => {
                   <div className={styles.flexContainer}>
                     <img 
                       src="https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/w3c-icon.png" 
-                      alt="Flex image" 
+                      alt="Flex" 
                       className={styles.flexImage}
                     />
                     <p className={styles.flexText}>

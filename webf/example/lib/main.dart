@@ -25,6 +25,7 @@ import 'custom_elements/show_case_view.dart';
 import 'custom_elements/custom_listview_cupertino.dart';
 import 'custom_elements/custom_listview_material.dart';
 import 'custom_elements/form.dart';
+import 'custom_elements/gesture_detector.dart';
 import 'keyboard_case/popup.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 

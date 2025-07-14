@@ -10,12 +10,23 @@ interface ContextMenuAction {
   default?: boolean;
   event?: string;
 }
+interface FlutterCupertinoContextMenuSelectDetail {
+  index: number;
+  text: string;
+  event: string;
+  destructive: boolean;
+  default: boolean;
+}
 export interface FlutterCupertinoContextMenuProps {
   /**
    * enableHapticFeedback property
    * @default undefined
    */
   enableHapticFeedback?: boolean;
+  /**
+   * select event handler
+   */
+  onSelect?: (event: CustomEvent<FlutterCupertinoContextMenuSelectDetail>) => void;
   /**
    * HTML id attribute
    */
@@ -76,6 +87,13 @@ export const FlutterCupertinoContextMenu = createWebFComponent<FlutterCupertinoC
   },
   // Event handlers
   events: [
+    {
+      propName: 'onSelect',
+      eventName: 'select',
+      handler: (callback) => (event) => {
+        callback((event as CustomEvent<FlutterCupertinoContextMenuSelectDetail>));
+      },
+    },
   ],
   // Default prop values
   defaultProps: {

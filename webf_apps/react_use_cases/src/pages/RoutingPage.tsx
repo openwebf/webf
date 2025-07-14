@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import { createComponent } from '../utils/CreateComponent';
 import { FlutterCupertinoTabBar, FlutterCupertinoTabBarItem } from '@openwebf/react-cupertino-ui';
 import { RoutingDemo } from '../components/RoutingDemo';
 import TabBarManager from '../utils/tabBarManager';

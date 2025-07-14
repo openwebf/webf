@@ -33,15 +33,15 @@ export interface FlutterCupertinoSliderProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: CustomEvent<number>) => void;
   /**
    * changestart event handler
    */
-  onChangestart?: (event: CustomEvent) => void;
+  onChangestart?: (event: CustomEvent<number>) => void;
   /**
    * changeend event handler
    */
-  onChangeend?: (event: CustomEvent) => void;
+  onChangeend?: (event: CustomEvent<number>) => void;
   /**
    * HTML id attribute
    */
@@ -110,21 +110,21 @@ export const FlutterCupertinoSlider = createWebFComponent<FlutterCupertinoSlider
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<number>));
       },
     },
     {
       propName: 'onChangestart',
       eventName: 'changestart',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<number>));
       },
     },
     {
       propName: 'onChangeend',
       eventName: 'changeend',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<number>));
       },
     },
   ],

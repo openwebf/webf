@@ -5,6 +5,7 @@ interface FlutterCupertinoInputMethods {
   setValue(value: string): void;
   focus(): void;
   blur(): void;
+  clear(): void;
 }
 export interface FlutterCupertinoInputProps {
   /**
@@ -49,11 +50,23 @@ export interface FlutterCupertinoInputProps {
   /**
    * input event handler
    */
-  onInput?: (event: CustomEvent) => void;
+  onInput?: (event: CustomEvent<string>) => void;
   /**
    * submit event handler
    */
-  onSubmit?: (event: CustomEvent) => void;
+  onSubmit?: (event: CustomEvent<string>) => void;
+  /**
+   * focus event handler
+   */
+  onFocus?: (event: CustomEvent) => void;
+  /**
+   * blur event handler
+   */
+  onBlur?: (event: CustomEvent) => void;
+  /**
+   * clear event handler
+   */
+  onClear?: (event: CustomEvent) => void;
   /**
    * HTML id attribute
    */
@@ -85,6 +98,7 @@ export interface FlutterCupertinoInputElement extends WebFElementWithMethods<{
   setValue(value: string): void;
   focus(): void;
   blur(): void;
+  clear(): void;
 }> {}
 /**
  * FlutterCupertinoInput - WebF FlutterCupertinoInput component
@@ -127,16 +141,137 @@ export const FlutterCupertinoInput = createWebFComponent<FlutterCupertinoInputEl
       propName: 'onInput',
       eventName: 'input',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
     {
       propName: 'onSubmit',
       eventName: 'submit',
       handler: (callback) => (event) => {
+        callback((event as CustomEvent<string>));
+      },
+    },
+    {
+      propName: 'onFocus',
+      eventName: 'focus',
+      handler: (callback) => (event) => {
         callback((event as CustomEvent));
       },
     },
+    {
+      propName: 'onBlur',
+      eventName: 'blur',
+      handler: (callback) => (event) => {
+        callback((event as CustomEvent));
+      },
+    },
+    {
+      propName: 'onClear',
+      eventName: 'clear',
+      handler: (callback) => (event) => {
+        callback((event as CustomEvent));
+      },
+    },
+  ],
+  // Default prop values
+  defaultProps: {
+    // Add default values here
+  },
+});
+export interface FlutterCupertinoInputPrefixProps {
+  /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
+   * Additional CSS styles
+   */
+  style?: React.CSSProperties;
+  /**
+   * Children elements
+   */
+  children?: React.ReactNode;
+  /**
+   * Additional CSS class names
+   */
+  className?: string;
+}
+export interface FlutterCupertinoInputPrefixElement extends WebFElementWithMethods<{
+}> {}
+/**
+ * FlutterCupertinoInputPrefix - WebF FlutterCupertinoInputPrefix component
+ * 
+ * @example
+ * ```tsx
+ * 
+ * <FlutterCupertinoInputPrefix
+ *   // Add props here
+ * >
+ *   Content
+ * </FlutterCupertinoInputPrefix>
+ * ```
+ */
+export const FlutterCupertinoInputPrefix = createWebFComponent<FlutterCupertinoInputPrefixElement, FlutterCupertinoInputPrefixProps>({
+  tagName: 'flutter-cupertino-input-prefix',
+  displayName: 'FlutterCupertinoInputPrefix',
+  // Map props to attributes
+  attributeProps: [
+  ],
+  // Convert prop names to attribute names if needed
+  attributeMap: {
+  },
+  // Event handlers
+  events: [
+  ],
+  // Default prop values
+  defaultProps: {
+    // Add default values here
+  },
+});
+export interface FlutterCupertinoInputSuffixProps {
+  /**
+   * HTML id attribute
+   */
+  id?: string;
+  /**
+   * Additional CSS styles
+   */
+  style?: React.CSSProperties;
+  /**
+   * Children elements
+   */
+  children?: React.ReactNode;
+  /**
+   * Additional CSS class names
+   */
+  className?: string;
+}
+export interface FlutterCupertinoInputSuffixElement extends WebFElementWithMethods<{
+}> {}
+/**
+ * FlutterCupertinoInputSuffix - WebF FlutterCupertinoInputSuffix component
+ * 
+ * @example
+ * ```tsx
+ * 
+ * <FlutterCupertinoInputSuffix
+ *   // Add props here
+ * >
+ *   Content
+ * </FlutterCupertinoInputSuffix>
+ * ```
+ */
+export const FlutterCupertinoInputSuffix = createWebFComponent<FlutterCupertinoInputSuffixElement, FlutterCupertinoInputSuffixProps>({
+  tagName: 'flutter-cupertino-input-suffix',
+  displayName: 'FlutterCupertinoInputSuffix',
+  // Map props to attributes
+  attributeProps: [
+  ],
+  // Convert prop names to attribute names if needed
+  attributeMap: {
+  },
+  // Event handlers
+  events: [
   ],
   // Default prop values
   defaultProps: {

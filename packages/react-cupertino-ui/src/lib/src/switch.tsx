@@ -24,7 +24,7 @@ export interface FlutterCupertinoSwitchProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: CustomEvent<boolean>) => void;
   /**
    * HTML id attribute
    */
@@ -78,7 +78,7 @@ export const FlutterCupertinoSwitch = createWebFComponent<FlutterCupertinoSwitch
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<boolean>));
       },
     },
   ],

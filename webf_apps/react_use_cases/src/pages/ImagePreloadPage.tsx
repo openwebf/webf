@@ -1,11 +1,6 @@
 import React from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './ImagePreloadPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const ImagePreloadPage: React.FC = () => {
   // Generate 100 small image URLs

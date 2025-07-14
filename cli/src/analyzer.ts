@@ -26,7 +26,7 @@ export interface UnionTypeCollector {
 }
 
 // Cache for parsed source files to avoid re-parsing
-const sourceFileCache = new Map<string, ts.SourceFile>();
+const sourceFileCache = new Map<string, { content: string; sourceFile: ts.SourceFile }>();
 
 // Cache for type conversions to avoid redundant processing
 const typeConversionCache = new Map<string, ParameterType>();
@@ -56,11 +56,17 @@ const TYPE_REFERENCE_MAP: Record<string, FunctionArgumentType> = {
 
 export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropertyCollector, unionTypeCollector: UnionTypeCollector) {
   try {
-    // Check cache first
-    let sourceFile = sourceFileCache.get(blob.source);
-    if (!sourceFile) {
+    // Check cache first - consider both file path and content
+    const cacheEntry = sourceFileCache.get(blob.source);
+    let sourceFile: ts.SourceFile;
+    
+    if (cacheEntry && cacheEntry.content === blob.raw) {
+      // Cache hit with same content
+      sourceFile = cacheEntry.sourceFile;
+    } else {
+      // Cache miss or content changed - parse and update cache
       sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-      sourceFileCache.set(blob.source, sourceFile);
+      sourceFileCache.set(blob.source, { content: blob.raw, sourceFile });
     }
     
     blob.objects = sourceFile.statements
@@ -324,6 +330,9 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
         if (mode) mode.staticMethod = true;
         return handleGenericWrapper(typeReference, mode);
         
+      case 'CustomEvent':
+        return handleCustomEventType(typeReference);
+        
       default:
         if (identifier.includes('SupportAsync')) {
           return handleSupportAsyncType(identifier, typeReference, mode);
@@ -384,6 +393,93 @@ function handleGenericWrapper(typeReference: ts.TypeReferenceNode, mode?: Parame
   
   const argument = typeReference.typeArguments[0];
   return getParameterBaseType(argument, mode);
+}
+
+function handleCustomEventType(typeReference: ts.TypeReferenceNode): ParameterBaseType {
+  // Handle CustomEvent<T> by returning the full type with generic parameter
+  if (!typeReference.typeArguments || !typeReference.typeArguments[0]) {
+    return 'CustomEvent';
+  }
+  
+  const argument = typeReference.typeArguments[0];
+  let genericType: string;
+  
+  if (ts.isTypeReferenceNode(argument) && ts.isIdentifier(argument.typeName)) {
+    const typeName = argument.typeName.text;
+    
+    // Check if it's a mapped type reference like 'int' or 'double'
+    const mappedType = TYPE_REFERENCE_MAP[typeName];
+    if (mappedType !== undefined) {
+      switch (mappedType) {
+        case FunctionArgumentType.boolean:
+          genericType = 'boolean';
+          break;
+        case FunctionArgumentType.dom_string:
+          genericType = 'string';
+          break;
+        case FunctionArgumentType.double:
+        case FunctionArgumentType.int:
+          genericType = 'number';
+          break;
+        case FunctionArgumentType.any:
+          genericType = 'any';
+          break;
+        case FunctionArgumentType.void:
+          genericType = 'void';
+          break;
+        case FunctionArgumentType.function:
+          genericType = 'Function';
+          break;
+        case FunctionArgumentType.promise:
+          genericType = 'Promise<any>';
+          break;
+        default:
+          genericType = typeName;
+      }
+    } else {
+      // For other type references, use the type name directly
+      genericType = typeName;
+    }
+  } else if (ts.isLiteralTypeNode(argument) && ts.isStringLiteral(argument.literal)) {
+    genericType = argument.literal.text;
+  } else {
+    // Handle basic types (boolean, string, number, etc.)
+    const basicType = BASIC_TYPE_MAP[argument.kind];
+    if (basicType !== undefined) {
+      switch (basicType) {
+        case FunctionArgumentType.boolean:
+          genericType = 'boolean';
+          break;
+        case FunctionArgumentType.dom_string:
+          genericType = 'string';
+          break;
+        case FunctionArgumentType.double:
+        case FunctionArgumentType.int:
+          genericType = 'number';
+          break;
+        case FunctionArgumentType.any:
+          genericType = 'any';
+          break;
+        case FunctionArgumentType.void:
+          genericType = 'void';
+          break;
+        case FunctionArgumentType.null:
+          genericType = 'null';
+          break;
+        case FunctionArgumentType.undefined:
+          genericType = 'undefined';
+          break;
+        default:
+          genericType = 'any';
+      }
+    } else {
+      // For truly complex types, fallback to 'any' to avoid errors
+      console.warn('Complex generic type in CustomEvent, using any');
+      genericType = 'any';
+    }
+  }
+  
+  return `CustomEvent<${genericType}>`;
 }
 
 function handleSupportAsyncType(identifier: string, typeReference: ts.TypeReferenceNode, mode?: ParameterMode): ParameterBaseType {

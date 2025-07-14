@@ -9,6 +9,7 @@ import 'custom_elements/show_case_view.dart';
 import 'custom_elements/slider.dart';
 import 'custom_elements/svg_img.dart';
 import 'custom_elements/switch.dart';
+import 'custom_elements/gesture_detector.dart';
 import 'modules/deeplink.dart';
 import 'modules/share.dart';
 import 'modules/test_array_buffer.dart';
@@ -55,7 +56,8 @@ void main() async {
   WebF.defineCustomElement('webf-listview-material', (context) => CustomWebFListViewWithMeterialRefreshIndicator(context));
   WebF.defineCustomElement('flutter-webf-form', (context) => FlutterWebFForm(context));
   WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
-
+  WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
+  
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));

@@ -5,7 +5,7 @@ export interface FlutterCupertinoTabProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: CustomEvent<number>) => void;
   /**
    * HTML id attribute
    */
@@ -53,7 +53,7 @@ export const FlutterCupertinoTab = createWebFComponent<FlutterCupertinoTabElemen
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<number>));
       },
     },
   ],

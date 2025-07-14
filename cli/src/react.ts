@@ -61,6 +61,12 @@ function getEventType(type: ParameterType) {
     return 'Event';
   }
   const pointerType = getPointerType(type);
+  
+  // Handle CustomEvent with generic parameter
+  if (pointerType.startsWith('CustomEvent<') && pointerType.endsWith('>')) {
+    return pointerType;
+  }
+  
   if (pointerType === 'CustomEvent') {
     return 'CustomEvent';
   }
@@ -360,8 +366,16 @@ export function generateReactIndex(blobs: IDLBlob[]) {
     return component.className.length > 0;
   });
   
+  // Deduplicate components by className, keeping the first occurrence
+  const deduplicatedComponents = new Map<string, { className: string; fileName: string; relativeDir: string }>();
+  components.forEach(component => {
+    if (!deduplicatedComponents.has(component.className)) {
+      deduplicatedComponents.set(component.className, component);
+    }
+  });
+  
   const content = _.template(readTemplate('react.index.ts'))({
-    components,
+    components: Array.from(deduplicatedComponents.values()),
   });
 
   return content.split('\n').filter(str => {

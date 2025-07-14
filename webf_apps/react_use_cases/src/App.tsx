@@ -26,6 +26,9 @@ import { AlertPage } from './pages/AlertPage';
 import { ImagePreloadPage } from './pages/ImagePreloadPage';
 import { ThemeTogglePage } from './pages/ThemeTogglePage';
 import { FormAdvancedPage } from './pages/FormAdvancedPage';
+import { QRCodePage } from './pages/QRCodePage';
+import { TablePage } from './pages/TablePage';
+import { GesturePage } from './pages/GesturePage';
 
 function App() {
   return (
@@ -39,9 +42,11 @@ function App() {
         <Route path="/echarts" title="ECharts" element={<EChartsPage />} />
         <Route path="/image" title="Image Gallery" element={<ImagePage />} />
         <Route path="/animation" title="Animations" element={<AnimationPage />} />
+        <Route path="/table" title="Tables" element={<TablePage />} />
         <Route path="/typography" title="Typography" element={<TypographyPage />} />
         <Route path="/actionsheet" title="Action Sheets" element={<ActionSheetPage />} />
         <Route path="/video" title="Video Player" element={<VideoPage />} />
+        <Route path="/qrcode" title="QR Code Generator" element={<QRCodePage />} />
         <Route path="/fontface" title="Custom Fonts" element={<FontFacePage />} />
         <Route path="/native-interaction" title="Native Interaction" element={<NativeInteractionPage />} />
         <Route path="/flutter-interaction" title="Flutter Interaction" element={<FlutterInteractionPage />} />
@@ -55,6 +60,7 @@ function App() {
         <Route path="/alert" title="Alert" element={<AlertPage />} />
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
+        <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
       </Routes>
     </div>
   );

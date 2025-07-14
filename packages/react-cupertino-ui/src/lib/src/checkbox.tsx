@@ -39,7 +39,7 @@ export interface FlutterCupertinoCheckboxProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: CustomEvent<boolean>) => void;
   /**
    * HTML id attribute
    */
@@ -99,7 +99,7 @@ export const FlutterCupertinoCheckbox = createWebFComponent<FlutterCupertinoChec
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<boolean>));
       },
     },
   ],

@@ -1,12 +1,7 @@
 import React from 'react';
-import { createComponent } from '../utils/CreateComponent';
 import { WebFRouter } from '@openwebf/react-router';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './HomePage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const HomePage: React.FC = () => {
   const navigateTo = (path: string) => {
@@ -52,6 +47,13 @@ export const HomePage: React.FC = () => {
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Show Case</div>
                 <div className={styles.itemDesc}>Highlight and guide users through UI elements step by step.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/table')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Tables</div>
+                <div className={styles.itemDesc}>Rich table components with sticky headers, custom alignment, and flexible layouts.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
@@ -140,6 +142,13 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/qrcode')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>QR Code Generator</div>
+                <div className={styles.itemDesc}>Generate and customize QR codes with various data types and styling options.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/fontface')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Custom Fonts</div>
@@ -191,6 +200,13 @@ export const HomePage: React.FC = () => {
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Deep Links</div>
                 <div className={styles.itemDesc}>URL schemes and deep linking for navigation and sharing.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/gesture')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Gesture Detection</div>
+                <div className={styles.itemDesc}>Flutter gesture capabilities: tap, pan, scale, rotate, and swipe gestures.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>

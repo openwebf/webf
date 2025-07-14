@@ -1,12 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './NativeInteractionPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
-
 
 export const NativeInteractionPage: React.FC = () => {
   const [screenshotResult, setScreenshotResult] = useState<string>('');

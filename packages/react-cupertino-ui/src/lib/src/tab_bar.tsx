@@ -39,7 +39,7 @@ export interface FlutterCupertinoTabBarProps {
   /**
    * tabchange event handler
    */
-  onTabchange?: (event: CustomEvent) => void;
+  onTabchange?: (event: CustomEvent<number>) => void;
   /**
    * HTML id attribute
    */
@@ -113,7 +113,7 @@ export const FlutterCupertinoTabBar = createWebFComponent<FlutterCupertinoTabBar
       propName: 'onTabchange',
       eventName: 'tabchange',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<number>));
       },
     },
   ],

@@ -1,12 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as echarts from 'echarts';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './EChartsPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const EChartsPage: React.FC = () => {
   const pieChartRef = useRef<HTMLDivElement>(null);

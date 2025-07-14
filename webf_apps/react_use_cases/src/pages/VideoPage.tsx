@@ -1,11 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './VideoPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const VideoPage: React.FC = () => {
   const [videoStates, setVideoStates] = useState<{[key: string]: {isPlaying: boolean, currentTime: number, duration: number}}>({});

@@ -1,20 +1,10 @@
 import React from "react";
 import { createWebFComponent, WebFElementWithMethods } from "@openwebf/react-core-ui";
-export interface FlutterCupertinoPickerProps {
-  /**
-   * height property
-   * @default undefined
-   */
-  height?: number;
-  /**
-   * itemHeight property
-   * @default undefined
-   */
-  itemHeight?: number;
+export interface FlutterCupertinoSegmentedTabProps {
   /**
    * change event handler
    */
-  onChange?: (event: CustomEvent<string>) => void;
+  onChange?: (event: CustomEvent<number>) => void;
   /**
    * HTML id attribute
    */
@@ -32,32 +22,29 @@ export interface FlutterCupertinoPickerProps {
    */
   className?: string;
 }
-export interface FlutterCupertinoPickerElement extends WebFElementWithMethods<{
+export interface FlutterCupertinoSegmentedTabElement extends WebFElementWithMethods<{
 }> {}
 /**
- * FlutterCupertinoPicker - WebF FlutterCupertinoPicker component
+ * FlutterCupertinoSegmentedTab - WebF FlutterCupertinoSegmentedTab component
  * 
  * @example
  * ```tsx
  * 
- * <FlutterCupertinoPicker
+ * <FlutterCupertinoSegmentedTab
  *   // Add props here
  * >
  *   Content
- * </FlutterCupertinoPicker>
+ * </FlutterCupertinoSegmentedTab>
  * ```
  */
-export const FlutterCupertinoPicker = createWebFComponent<FlutterCupertinoPickerElement, FlutterCupertinoPickerProps>({
-  tagName: 'flutter-cupertino-picker',
-  displayName: 'FlutterCupertinoPicker',
+export const FlutterCupertinoSegmentedTab = createWebFComponent<FlutterCupertinoSegmentedTabElement, FlutterCupertinoSegmentedTabProps>({
+  tagName: 'flutter-cupertino-segmented-tab',
+  displayName: 'FlutterCupertinoSegmentedTab',
   // Map props to attributes
   attributeProps: [
-    'height',
-    'itemHeight',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
-    itemHeight: 'item-height',
   },
   // Event handlers
   events: [
@@ -65,7 +52,7 @@ export const FlutterCupertinoPicker = createWebFComponent<FlutterCupertinoPicker
       propName: 'onChange',
       eventName: 'change',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent<string>));
+        callback((event as CustomEvent<number>));
       },
     },
   ],

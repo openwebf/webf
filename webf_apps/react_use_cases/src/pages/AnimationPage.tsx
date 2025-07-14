@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView } from '@openwebf/react-core-ui';
 import styles from './AnimationPage.module.css';
-
-const WebFListView = createComponent({
-  tagName: 'webf-listview',
-  displayName: 'WebFListView'
-});
 
 export const AnimationPage: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState<{[key: string]: boolean}>({});

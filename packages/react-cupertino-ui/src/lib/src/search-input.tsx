@@ -60,11 +60,11 @@ export interface FlutterCupertinoSearchInputProps {
   /**
    * input event handler
    */
-  onInput?: (event: CustomEvent) => void;
+  onInput?: (event: CustomEvent<string>) => void;
   /**
    * search event handler
    */
-  onSearch?: (event: CustomEvent) => void;
+  onSearch?: (event: CustomEvent<string>) => void;
   /**
    * clear event handler
    */
@@ -150,14 +150,14 @@ export const FlutterCupertinoSearchInput = createWebFComponent<FlutterCupertinoS
       propName: 'onInput',
       eventName: 'input',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
     {
       propName: 'onSearch',
       eventName: 'search',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent));
+        callback((event as CustomEvent<string>));
       },
     },
     {

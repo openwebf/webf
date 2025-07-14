@@ -1,0 +1,262 @@
+.list {
+  height: 100%;
+  width: 100%;
+}
+
+.componentSection {
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #007aff;
+}
+
+.qrCodeDisplay {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  padding: 30px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.qrCodeContainer {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.qrCode {
+  display: block;
+}
+
+.qrInfo {
+  margin-top: 15px;
+  flex: 1;
+}
+
+.qrInfo h3 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.contentDisplay {
+  background: #f0f0f0;
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.contentDisplay code {
+  font-family: 'SF Mono', Monaco, monospace;
+  font-size: 14px;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.downloadButton {
+  align-self: flex-start;
+}
+
+.componentBlock {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.componentBlock h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.settingItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settingItem label {
+  min-width: 140px;
+  font-weight: 500;
+  color: #555;
+}
+
+.numberInput {
+  width: 80px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.rangeInput {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+  outline: none;
+}
+
+.rangeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #007aff;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.colorButton {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 120px !important;
+}
+
+.colorPreview {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.selectButton {
+  flex: 1;
+  min-width: 150px;
+  font-size: 14px !important;
+}
+
+.customGenerator {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.textArea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #007aff;
+}
+
+.generateButton {
+  align-self: flex-start;
+  margin-top: 10px;
+}
+
+.examplesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 15px;
+}
+
+.exampleCard {
+  display: flex;
+  gap: 15px;
+  padding: 15px;
+  background: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exampleCard:hover {
+  background: #f0f0f0;
+  border-color: #007aff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
+}
+
+.miniQrCode {
+  flex-shrink: 0;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.exampleContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.exampleContent h4 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exampleContent p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .qrCodeDisplay {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .settingItem {
+    flex-wrap: wrap;
+  }
+
+  .settingItem label {
+    width: 100%;
+    margin-bottom: 5px;
+  }
+
+  .examplesGrid {
+    grid-template-columns: 1fr;
+  }
+}
