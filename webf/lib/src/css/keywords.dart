@@ -134,6 +134,11 @@ const String FLEX_BASIS = 'flexBasis';
 const String FLEX_FLOW = 'flexFlow';
 const String FLEX_DIRECTION = 'flexDirection';
 const String FLEX_WRAP = 'flexWrap';
+const String ORDER = 'order';
+
+const String GAP = 'gap';
+const String ROW_GAP = 'rowGap';
+const String COLUMN_GAP = 'columnGap';
 
 const String JUSTIFY_CONTENT = 'justifyContent';
 const String TEXT_ALIGN = 'textAlign';
@@ -245,6 +250,8 @@ const String RIGHT = 'right';
 const String TOP = 'top';
 const String BOTTOM = 'bottom';
 const String TEXT_BOTTOM = 'text-bottom';
+const String TEXT_TOP = 'text-top';
+const String MIDDLE = 'middle';
 
 const String CENTER = 'center';
 

@@ -7,6 +7,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/dom.dart';
 
@@ -39,7 +40,7 @@ class UICommandItemFFI extends Struct {
   external int type;
 
   @Int32()
-  external int args_01_length;
+  external int args01Length;
 
   @Int64()
   external int string_01;
@@ -76,7 +77,7 @@ List<UICommand> nativeUICommandToDartFFI(double contextId) {
     // Extract args string
     if (commandItem.string_01 != 0) {
       Pointer<Uint16> args_01 = Pointer.fromAddress(commandItem.string_01);
-      command.args = uint16ToString(args_01, commandItem.args_01_length);
+      command.args = uint16ToString(args_01, commandItem.args01Length);
       malloc.free(args_01);
     } else {
       command.args = '';
@@ -115,7 +116,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
         default:
           printMsg = 'nativePtr: ${command.nativePtr} type: ${command.type} args: ${command.args} nativePtr2: ${command.nativePtr2}';
       }
-      print(printMsg);
+      bridgeLogger.fine(printMsg);
     }
 
     if (commandType == UICommandType.startRecordingCommand || commandType == UICommandType.finishRecordingCommand) continue;
@@ -223,7 +224,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           break;
       }
     } catch (e, stack) {
-      print('$e\n$stack');
+      bridgeLogger.severe('Error executing UI command', e, stack);
     }
   }
   // For pending style properties, we needs to flush to render style.
@@ -231,7 +232,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
     try {
       view.flushPendingStyleProperties(address);
     } catch (e, stack) {
-      print('$e\n$stack');
+      bridgeLogger.severe('Error executing UI command', e, stack);
     }
   }
   pendingStylePropertiesTargets.clear();

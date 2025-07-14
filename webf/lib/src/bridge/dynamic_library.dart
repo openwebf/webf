@@ -12,13 +12,7 @@ abstract class WebFDynamicLibrary {
   static final String _defaultLibraryPath = Platform.isLinux ? '\$ORIGIN' : '';
 
   /// The search path that dynamic library be load, if null using default.
-  static String _dynamicLibraryPath = _defaultLibraryPath;
-
-  static String get dynamicLibraryPath => _dynamicLibraryPath;
-
-  static set dynamicLibraryPath(String value) {
-    _dynamicLibraryPath = value;
-  }
+  static String dynamicLibraryPath = _defaultLibraryPath;
 
   // The kraken library name.
   static String libName = 'webf';
@@ -54,7 +48,7 @@ abstract class WebFDynamicLibrary {
     if (Platform.isIOS) {
       _ref = nativeDynamicLibrary ??= DynamicLibrary.executable();
     } else {
-      _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryName));
+      _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(dynamicLibraryPath, _nativeDynamicLibraryName));
     }
 
     return nativeDynamicLibrary;
@@ -62,6 +56,6 @@ abstract class WebFDynamicLibrary {
 
   static DynamicLibrary? _testRef;
   static DynamicLibrary get testRef {
-    return _testRef ??= DynamicLibrary.open(join(_dynamicLibraryPath, _nativeDynamicLibraryTestName));
+    return _testRef ??= DynamicLibrary.open(join(dynamicLibraryPath, _nativeDynamicLibraryTestName));
   }
 }

@@ -3,8 +3,8 @@ import 'package:webf/webf.dart';
 import 'package:webf/html.dart' as html;
 import 'package:webf/foundation.dart';
 import 'dart:io';
+import '../../setup.dart';
 import '../foundation/mock_bundle.dart';
-import '../../webf_test.dart';
 
 void main() {
   setUp(() {

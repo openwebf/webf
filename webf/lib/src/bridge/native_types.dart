@@ -14,10 +14,10 @@ import 'package:webf/bridge.dart';
 // All class members include variables and functions must be follow the same order with C++ struct, to keep the same memory layout cross dart and C++ code.
 
 class NativeWebFInfo extends Struct {
-  external Pointer<Utf8> app_name;
-  external Pointer<Utf8> app_version;
-  external Pointer<Utf8> app_revision;
-  external Pointer<Utf8> system_name;
+  external Pointer<Utf8> appName;
+  external Pointer<Utf8> appVersion;
+  external Pointer<Utf8> appRevision;
+  external Pointer<Utf8> systemName;
 }
 
 // An native struct can be directly convert to javaScript String without any conversion cost.
@@ -38,7 +38,7 @@ class RawEvent extends Struct {
   @Int64()
   external int length;
   @Int8()
-  external int is_custom_event;
+  external int isCustomEvent;
 }
 
 class EventDispatchResult extends Struct {
@@ -114,29 +114,29 @@ class NativeTouch extends Struct {
 
 typedef InvokeBindingsMethodsFromNative = Void Function(
     Double contextId,
-    Pointer<NativeBindingObject> binding_object,
-    Pointer<NativeValue> return_value,
+    Pointer<NativeBindingObject> bindingObject,
+    Pointer<NativeValue> returnValue,
     Pointer<NativeValue> method,
     Int32 argc,
     Pointer<NativeValue> argv);
 typedef NativeInvokeResultCallback = Void Function(Handle object, Pointer<NativeValue> result);
 
 typedef InvokeBindingMethodsFromDart = Void Function(
-    Pointer<NativeBindingObject> binding_object,
+    Pointer<NativeBindingObject> bindingObject,
     Double contextId,
     Pointer<NativeValue> method,
     Int32 argc,
     Pointer<NativeValue> argv,
     Handle bindingDartObject,
-    Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+    Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback);
 typedef DartInvokeBindingMethodsFromDart = void Function(
-    Pointer<NativeBindingObject> binding_object,
+    Pointer<NativeBindingObject> bindingObject,
     double contextId,
     Pointer<NativeValue> method,
     int argc,
     Pointer<NativeValue> argv,
     Object bindingDartObject,
-    Pointer<NativeFunction<NativeInvokeResultCallback>> result_callback);
+    Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback);
 
 class NativeBindingObject extends Struct {
   external Pointer<Void> instance;

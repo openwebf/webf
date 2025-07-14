@@ -6,16 +6,12 @@
 import 'dart:async';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 
-import 'dynamic_library.dart';
-import 'binding_bridge.dart';
-import 'from_native.dart';
-import 'to_native.dart';
-import 'multiple_thread.dart';
-import 'native_types.dart';
 import 'package:webf/src/devtools/remote_object_service.dart';
 
 typedef NativeOnDartContextFinalized = Void Function(Pointer<Void> data);
@@ -76,9 +72,8 @@ void _initRemoteObjectService() {
     );
 
     _remoteObjectServiceInitialized = true;
-    print('[Bridge] RemoteObjectService functions initialized successfully');
   } catch (e) {
-    print('[Bridge] Failed to initialize RemoteObjectService: $e');
+    bridgeLogger.severe('Failed to initialize RemoteObjectService', e);
   }
 }
 
@@ -95,8 +90,8 @@ FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) a
 
   double newContextId = runningThread.identity();
   await allocateNewPage(
-    runningThread is FlutterUIThread, 
-    newContextId, 
+    runningThread is FlutterUIThread,
+    newContextId,
     runningThread.syncBufferSize(),
     useLegacyUICommand: runningThread is DedicatedThread ? runningThread.useLegacyUICommand : false
   );

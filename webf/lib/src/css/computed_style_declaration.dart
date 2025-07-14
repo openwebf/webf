@@ -779,7 +779,11 @@ extension VerticalAlignText on VerticalAlign {
       case VerticalAlign.bottom:
         return 'bottom';
       case VerticalAlign.textBottom:
-        return 'textBottom';
+        return 'text-bottom';
+      case VerticalAlign.middle:
+        return 'middle';
+      case VerticalAlign.textTop:
+        return 'text-top';
     }
   }
 }

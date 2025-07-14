@@ -309,6 +309,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   double get flexShrink;
 
+  int get order;
+
+  // Gap
+  CSSLengthValue get gap;
+
+  CSSLengthValue get rowGap;
+
+  CSSLengthValue get columnGap;
+
   // Color
   CSSColor get color;
 
@@ -1256,6 +1265,8 @@ class CSSRenderStyle extends RenderStyle
         CSSVisibilityMixin,
         CSSContentVisibilityMixin,
         CSSFlexboxMixin,
+        CSSOrderMixin,
+        CSSGapMixin,
         CSSDisplayMixin,
         CSSInlineMixin,
         CSSObjectFitMixin,
@@ -1380,6 +1391,15 @@ class CSSRenderStyle extends RenderStyle
         return flexShrink;
       case FLEX_BASIS:
         return flexBasis;
+      case ORDER:
+        return order;
+      // Gap
+      case GAP:
+        return gap;
+      case ROW_GAP:
+        return rowGap;
+      case COLUMN_GAP:
+        return columnGap;
       // Background
       case BACKGROUND_COLOR:
         return backgroundColor;
@@ -1680,6 +1700,19 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FLEX_BASIS:
         flexBasis = value;
+        break;
+      case ORDER:
+        order = value;
+        break;
+      // Gap
+      case GAP:
+        gap = value;
+        break;
+      case ROW_GAP:
+        rowGap = value;
+        break;
+      case COLUMN_GAP:
+        columnGap = value;
         break;
       // Background
       case BACKGROUND_COLOR:
@@ -2081,6 +2114,11 @@ class CSSRenderStyle extends RenderStyle
       case STROKE_WIDTH:
         value = CSSLength.resolveLength(propertyValue, renderStyle, propertyName);
         break;
+      case GAP:
+      case ROW_GAP:
+      case COLUMN_GAP:
+        value = CSSGapMixin.resolveGap(propertyValue, renderStyle: renderStyle);
+        break;
       case PADDING_TOP:
       case MARGIN_TOP:
         List<String?>? values = CSSStyleProperty.getEdgeValues(propertyValue);
@@ -2140,6 +2178,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case FLEX_SHRINK:
         value = CSSFlexboxMixin.resolveFlexShrink(propertyValue);
+        break;
+      case ORDER:
+        value = CSSOrderMixin.resolveOrder(propertyValue);
         break;
       case SLIVER_DIRECTION:
         value = CSSSliverMixin.resolveAxis(propertyValue);
@@ -2615,6 +2656,11 @@ class CSSRenderStyle extends RenderStyle
     // Compute logical width directly in case as renderBoxModel is not layouted yet,
     // eg. compute percentage length before layout.
     if (_contentBoxLogicalWidth == double.infinity) {
+      // Ensure parent layout is complete before resolving child percentages
+      CSSRenderStyle? parentStyle = getParentRenderStyle();
+      if (parentStyle != null && parentStyle._contentBoxLogicalWidth == double.infinity) {
+        parentStyle.computeContentBoxLogicalWidth();
+      }
       computeContentBoxLogicalWidth();
     }
     return _contentBoxLogicalWidth;

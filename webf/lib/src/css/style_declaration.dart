@@ -34,6 +34,7 @@ const Map<String, bool> _CSSShorthandProperty = {
   FONT: true,
   FLEX: true,
   FLEX_FLOW: true,
+  GAP: true,
   OVERFLOW: true,
   TRANSITION: true,
   TEXT_DECORATION: true,
@@ -180,6 +181,8 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
         return CSSStyleProperty.removeShorthandFlex(this, isImportant);
       case FLEX_FLOW:
         return CSSStyleProperty.removeShorthandFlexFlow(this, isImportant);
+      case GAP:
+        return CSSStyleProperty.removeShorthandGap(this, isImportant);
       case BORDER:
       case BORDER_TOP:
       case BORDER_RIGHT:
@@ -257,6 +260,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
           break;
         case FLEX_FLOW:
           CSSStyleProperty.setShorthandFlexFlow(longhandProperties, normalizedValue);
+          break;
+        case GAP:
+          CSSStyleProperty.setShorthandGap(longhandProperties, normalizedValue);
           break;
         case BORDER:
         case BORDER_TOP:

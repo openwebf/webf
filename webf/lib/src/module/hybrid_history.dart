@@ -39,9 +39,9 @@ abstract class HybridHistoryDelegate {
 
   void replaceState(BuildContext context, Object? state, String name);
 
-  String path(BuildContext context, String? initialRoute);
+  String path(BuildContext? context, String? initialRoute);
 
-  dynamic state(BuildContext context, Map<String, dynamic>? initialState);
+  dynamic state(BuildContext? context, Map<String, dynamic>? initialState);
 
   /// Pops until a route with the given name.
   void popUntil(BuildContext context, RoutePredicate predicate);
@@ -146,9 +146,9 @@ class HybridHistoryModule extends BaseModule {
   String path() {
     String initialRoute = moduleManager!.controller.initialRoute ?? '/';
     if (_delegate != null) {
-      return _delegate!.path(_context!, initialRoute);
+      return _delegate!.path(_context, initialRoute);
     }
-    String? currentPath = ModalRoute.of(_context!)?.settings.name;
+    String? currentPath = _context != null ? ModalRoute.of(_context!)?.settings.name : null;
     return currentPath ?? initialRoute ?? '/';
   }
 
@@ -214,32 +214,39 @@ class HybridHistoryModule extends BaseModule {
     );
   }
 
+  getState() {
+    Map<String, dynamic>? initialState = moduleManager!.controller.initialState;
+
+    if (_delegate != null) {
+      return _delegate!.state(_context, initialState);
+    }
+
+    ModalRoute? route = _context != null ? ModalRoute.of(_context!) : null;
+
+    if (route?.settings.arguments != null) {
+      return jsonEncode(route!.settings.arguments);
+    } else if (route?.settings.name == null && initialState != null) {
+      return jsonEncode(initialState);
+    }
+    return jsonEncode(initialState) ?? '{}';
+  }
+
   @override
   dynamic invoke(String method, List<dynamic> params) {
     // Handle the case where params might be null
     List<dynamic> paramsList = params;
+
+    if (method == 'path') {
+      return path();
+    } else if (method == 'state') {
+      return getState();
+    }
 
     if (_context == null) {
       throw FlutterError('Could not invoke HybridHistory API when flutter context was not attached');
     }
 
     switch (method) {
-      case 'state':
-        Map<String, dynamic>? initialState = moduleManager!.controller.initialState;
-
-        if (_delegate != null) {
-          return _delegate!.state(_context!, initialState);
-        }
-
-        var route = ModalRoute.of(_context!);
-
-        if (route?.settings.arguments != null) {
-          return jsonEncode(route!.settings.arguments);
-        } else if (route?.settings.name == null && initialState != null) {
-          return jsonEncode(initialState);
-        }
-        return '{}';
-
       // Original API methods - for backward compatibility
       case 'back':
         back();
@@ -287,8 +294,6 @@ class HybridHistoryModule extends BaseModule {
         break;
 
       // Other methods
-      case 'path':
-        return path();
       case 'canPop':
         return canPop().toString();
       case 'maybePop':

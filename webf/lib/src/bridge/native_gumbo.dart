@@ -7,6 +7,8 @@
 import 'dart:ffi';
 
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/foundation.dart';
 
 class GumboNodeType {
   static const GUMBO_NODE_DOCUMENT = 0;
@@ -299,7 +301,7 @@ class NativeGumboAttribute extends Struct {
 void debugPrintGumboNodeTree(Pointer<NativeGumboNode> nodePtr, [int indent = 0]) {
   final p = ' ' * (indent * 2);
   final type = nodePtr.ref.type;
-  print('$p node type: $type');
+  bridgeLogger.finest('$p node type: $type');
   switch(type) {
     case GumboNodeType.GUMBO_NODE_ELEMENT: {
       // element
@@ -308,14 +310,14 @@ void debugPrintGumboNodeTree(Pointer<NativeGumboNode> nodePtr, [int indent = 0])
       final tag = element.tag;
       final tagName = element.original_tag.length != 0 ? element.original_tag.data.toDartString(length: element.original_tag.length) : '(none)';
 
-      print('$p tag: $tag($tagName) in namespace ${element.tag_namespace} with ${children.length} child');
+      bridgeLogger.finest('$p tag: $tag($tagName) in namespace ${element.tag_namespace} with ${children.length} child');
 
       final attributes = element.attributes;
       for (int i = 0; i < attributes.length; i++) {
         final attr = attributes.data[i] as Pointer<NativeGumboAttribute>;
         final name = attr.ref.name.toDartString();
         final value = attr.ref.value.toDartString();
-        print('$p $name=$value');
+        bridgeLogger.finest('$p $name=$value');
       }
 
       for (int i = 0; i < children.length; i++) {
@@ -328,7 +330,7 @@ void debugPrintGumboNodeTree(Pointer<NativeGumboNode> nodePtr, [int indent = 0])
     case GumboNodeType.GUMBO_NODE_COMMENT: {
       final node = nodePtr.ref.v.text;
       final content = node.text.toDartString();
-      print('$p "$content"');
+      bridgeLogger.finest('$p "$content"');
       break;
     }
     case GumboNodeType.GUMBO_NODE_WHITESPACE: {

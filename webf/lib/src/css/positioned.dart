@@ -281,7 +281,7 @@ class CSSPositionedLayout {
     RenderBoxModel parent,
     RenderBoxModel child,
   ) {
-    final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+    RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
     Size size = child.boxSize!;
     Size parentSize = parent.boxSize!;
 
@@ -314,6 +314,7 @@ class CSSPositionedLayout {
     // Fix side effects by render portal.
     if (child is RenderEventListener && child.child is RenderBoxModel) {
       child = child.child as RenderBoxModel;
+      childParentData = child.parentData as RenderLayoutParentData;
     }
 
     // The static position of positioned element is its offset when its position property had been static

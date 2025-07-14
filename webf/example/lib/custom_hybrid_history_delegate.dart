@@ -13,9 +13,10 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   }
 
   @override
-  String path(BuildContext context, String? initialRoute) {
+  String path(BuildContext? context, String? initialRoute) {
+    if (context == null) return initialRoute ?? '/';
     String? currentPath = ModalRoute.of(context)?.settings.name;
-    return currentPath ?? initialRoute ?? '';
+    return currentPath ?? initialRoute ?? '/';
   }
 
   @override
@@ -29,7 +30,8 @@ class CustomHybridHistoryDelegate extends HybridHistoryDelegate {
   }
 
   @override
-  dynamic state(BuildContext context, Map<String, dynamic>? initialState) {
+  dynamic state(BuildContext? context, Map<String, dynamic>? initialState) {
+    if (context == null) return initialState != null ? jsonEncode(initialState) : '{}';
     var route = ModalRoute.of(context);
     if (route?.settings.arguments != null) {
       return jsonEncode(route!.settings.arguments);

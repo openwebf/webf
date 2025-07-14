@@ -25,59 +25,59 @@ class NativeValue extends Struct {
 }
 
 enum JSValueType {
-  TAG_STRING,
-  TAG_INT,
-  TAG_BOOL,
-  TAG_NULL,
-  TAG_FLOAT64,
-  TAG_JSON,
-  TAG_LIST,
-  TAG_POINTER,
-  TAG_FUNCTION,
-  TAG_ASYNC_FUNCTION,
-  TAG_UINT8_BYTES,
-  TAG_UNDEFINED
+  tagString,
+  tagInt,
+  tagBool,
+  tagNull,
+  tagFloat64,
+  tagJson,
+  tagList,
+  tagPointer,
+  tagFunction,
+  tagAsyncFunction,
+  tagUint8Bytes,
+  tagUndefined
 }
 
 enum JSPointerType {
-  NativeBindingObject,
-  DOMMatrix,
-  BoundingClientRect,
-  TextMetrics,
-  Screen,
-  ComputedCSSStyleDeclaration,
-  DOMPoint,
-  CanvasGradient,
-  CanvasPattern,
-  NativeByteData,
-  Others
+  nativeBindingObject,
+  domMatrix,
+  boundingClientRect,
+  textMetrics,
+  screen,
+  computedCSSStyleDeclaration,
+  domPoint,
+  canvasGradient,
+  canvasPattern,
+  nativeByteData,
+  others
 }
 
 
 JSPointerType getPointerTypeOfBindingObject(BindingObject bindingObject) {
   if (bindingObject.pointer?.ref.instance != nullptr) {
-    return JSPointerType.NativeBindingObject;
+    return JSPointerType.nativeBindingObject;
   }
 
   if (bindingObject is DOMMatrix) {
-    return JSPointerType.DOMMatrix;
+    return JSPointerType.domMatrix;
   } else if (bindingObject is BoundingClientRect) {
-    return JSPointerType.BoundingClientRect;
+    return JSPointerType.boundingClientRect;
   } else if (bindingObject is TextMetrics) {
-    return JSPointerType.TextMetrics;
+    return JSPointerType.textMetrics;
   } else if (bindingObject is Screen) {
-    return JSPointerType.Screen;
+    return JSPointerType.screen;
   } else if (bindingObject is ComputedCSSStyleDeclaration) {
-    return JSPointerType.ComputedCSSStyleDeclaration;
+    return JSPointerType.computedCSSStyleDeclaration;
   } else if (bindingObject is DOMPoint) {
-    return JSPointerType.DOMPoint;
+    return JSPointerType.domPoint;
   } else if (bindingObject is CanvasGradient) {
-    return JSPointerType.CanvasGradient;
+    return JSPointerType.canvasGradient;
   } else if (bindingObject is CanvasPattern) {
-    return JSPointerType.CanvasPattern;
+    return JSPointerType.canvasPattern;
   }
 
-  return JSPointerType.Others;
+  return JSPointerType.others;
 }
 
 typedef AnonymousNativeFunction = dynamic Function(List<dynamic> args);
@@ -88,49 +88,49 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
 
   JSValueType type = JSValueType.values[nativeValue.ref.tag];
   switch (type) {
-    case JSValueType.TAG_STRING:
+    case JSValueType.tagString:
       Pointer<NativeString> nativeString = Pointer.fromAddress(nativeValue.ref.u);
       String result = nativeStringToString(nativeString);
       freeNativeString(nativeString);
       return result;
-    case JSValueType.TAG_INT:
+    case JSValueType.tagInt:
       return nativeValue.ref.u;
-    case JSValueType.TAG_BOOL:
+    case JSValueType.tagBool:
       return nativeValue.ref.u == 1;
-    case JSValueType.TAG_NULL:
+    case JSValueType.tagNull:
       return null;
-    case JSValueType.TAG_UNDEFINED:
+    case JSValueType.tagUndefined:
       return null; // Dart doesn't have undefined, so we return null but the caller can check the tag
-    case JSValueType.TAG_FLOAT64:
+    case JSValueType.tagFloat64:
       return uInt64ToDouble(nativeValue.ref.u);
-    case JSValueType.TAG_POINTER:
+    case JSValueType.tagPointer:
       JSPointerType pointerType = JSPointerType.values[nativeValue.ref.uint32];
 
-      if (pointerType == JSPointerType.NativeByteData) {
+      if (pointerType == JSPointerType.nativeByteData) {
         return NativeByteData(Pointer.fromAddress(nativeValue.ref.u));
       }
 
-      if (pointerType.index < JSPointerType.NativeByteData.index) {
+      if (pointerType.index < JSPointerType.nativeByteData.index) {
         return view.getBindingObject(Pointer.fromAddress(nativeValue.ref.u));
       }
 
       return Pointer.fromAddress(nativeValue.ref.u);
-    case JSValueType.TAG_LIST:
+    case JSValueType.tagList:
       Pointer<NativeValue> head = Pointer.fromAddress(nativeValue.ref.u).cast<NativeValue>();
       List result = List.generate(nativeValue.ref.uint32, (index) {
-        return fromNativeValue(view, head.elementAt(index));
+        return fromNativeValue(view, head + index);
       });
       malloc.free(head);
       return result;
-    case JSValueType.TAG_FUNCTION:
-    case JSValueType.TAG_ASYNC_FUNCTION:
+    case JSValueType.tagFunction:
+    case JSValueType.tagAsyncFunction:
       break;
-    case JSValueType.TAG_JSON:
+    case JSValueType.tagJson:
       Pointer<NativeString> nativeString = Pointer.fromAddress(nativeValue.ref.u);
       dynamic value = jsonDecode(nativeStringToString(nativeString));
       freeNativeString(nativeString);
       return value;
-    case JSValueType.TAG_UINT8_BYTES:
+    case JSValueType.tagUint8Bytes:
       Pointer<Uint8> buffer = Pointer.fromAddress(nativeValue.ref.u);
       return buffer.asTypedList(nativeValue.ref.uint32);
   }
@@ -138,38 +138,38 @@ dynamic fromNativeValue(WebFViewController view, Pointer<NativeValue> nativeValu
 
 void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBindingObject]) {
   if (value == null) {
-    target.ref.tag = JSValueType.TAG_NULL.index;
+    target.ref.tag = JSValueType.tagNull.index;
   } else if (value is int) {
-    target.ref.tag = JSValueType.TAG_INT.index;
+    target.ref.tag = JSValueType.tagInt.index;
     target.ref.u = value;
   } else if (value is bool) {
-    target.ref.tag = JSValueType.TAG_BOOL.index;
+    target.ref.tag = JSValueType.tagBool.index;
     target.ref.u = value ? 1 : 0;
   } else if (value is double) {
-    target.ref.tag = JSValueType.TAG_FLOAT64.index;
+    target.ref.tag = JSValueType.tagFloat64.index;
     target.ref.u = doubleToInt64(value);
   } else if (value is String) {
     Pointer<NativeString> nativeString = stringToNativeString(value);
-    target.ref.tag = JSValueType.TAG_STRING.index;
+    target.ref.tag = JSValueType.tagString.index;
     target.ref.u = nativeString.address;
   } else if (value is Pointer) {
-    target.ref.tag = JSValueType.TAG_POINTER.index;
-    target.ref.uint32 = JSPointerType.Others.index;
+    target.ref.tag = JSValueType.tagPointer.index;
+    target.ref.uint32 = JSPointerType.others.index;
     target.ref.u = value.address;
   } else if (value is Uint8List) {
     Pointer<Uint8> buffer = malloc.allocate(sizeOf<Uint8>() * value.length);
     final bytes = buffer.asTypedList(value.length);
     bytes.setAll(0, value);
-    target.ref.tag = JSValueType.TAG_UINT8_BYTES.index;
+    target.ref.tag = JSValueType.tagUint8Bytes.index;
     target.ref.uint32 = value.length;
     target.ref.u = buffer.address;
   } else if (value is BindingObject) {
-    assert((value.pointer)!.address != nullptr);
-    target.ref.tag = JSValueType.TAG_POINTER.index;
+    assert((value.pointer)!.address != 0);
+    target.ref.tag = JSValueType.tagPointer.index;
     target.ref.uint32 = getPointerTypeOfBindingObject(value).index;
     target.ref.u = (value.pointer)!.address;
   } else if (value is List) {
-    target.ref.tag = JSValueType.TAG_LIST.index;
+    target.ref.tag = JSValueType.tagList.index;
     target.ref.uint32 = value.length;
     Pointer<NativeValue> lists = malloc.allocate(sizeOf<NativeValue>() * value.length);
     target.ref.u = lists.address;
@@ -178,7 +178,7 @@ void toNativeValue(Pointer<NativeValue> target, value, [BindingObject? ownerBind
     }
   } else if (value is Object) {
     String str = jsonEncode(value);
-    target.ref.tag = JSValueType.TAG_JSON.index;
+    target.ref.tag = JSValueType.tagJson.index;
     target.ref.u = str.toNativeUtf8().address;
   }
 }

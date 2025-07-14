@@ -489,12 +489,16 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
       size = paragraph.size;
 
-      // @FIXME: Minimum size of text equals to single word in browser
-      // which cannot be calculated in Flutter currently.
-      // Set minimum width to 0 to allow flex item containing text to shrink into
-      // flex container which is similar to the effect of word-break: break-all in the browser.
-      minContentWidth = 0;
-      minContentWidth = size.height;
+      // Calculate proper minimum content width for text
+      // This represents the minimum width needed to display text without overflow
+      try {
+        minContentWidth = paragraph.textPainter.minIntrinsicWidth;
+      } catch (e) {
+        // Fallback: Set minimum width to 0 to allow flex item containing text to shrink
+        // similar to the effect of word-break: break-all in the browser.
+        minContentWidth = 0;
+      }
+      minContentHeight = size.height;
     } else {
       performResize();
     }

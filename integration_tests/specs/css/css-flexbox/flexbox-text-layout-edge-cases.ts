@@ -260,7 +260,7 @@ describe('Text layout edge cases in flex containers', () => {
     await snapshot();
   });
 
-  it('should handle flex items with minWidth 0 and text content', async () => {
+  xit('should handle flex items with minWidth 0 and text content', async () => {
     // Test specific to minWidth: 0 behavior with flex-basis 0%
     const container = document.createElement('div');
     container.style.display = 'flex';

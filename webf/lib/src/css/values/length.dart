@@ -269,9 +269,39 @@ class CSSLengthValue {
             if (relativeParentWidth != null) {
               _computedValue = value! * relativeParentWidth;
             } else {
-              // Mark parent to relayout to get renderer width of parent.
-              renderStyle?.markParentNeedsRelayout();
-              _computedValue = double.infinity;
+              // Attempt to force parent width computation before giving up
+              if (parentRenderStyle != null && parentRenderStyle is CSSRenderStyle) {
+                // Ensure parent's layout width is computed
+                (parentRenderStyle as CSSRenderStyle).computeContentBoxLogicalWidth();
+                // Try to get parent width again after computation
+                double? recomputedParentWidth = isPositioned 
+                    ? parentRenderStyle.paddingBoxLogicalWidth 
+                    : parentRenderStyle.contentBoxLogicalWidth;
+                
+                if (recomputedParentWidth != null) {
+                  _computedValue = value! * recomputedParentWidth;
+                  if (renderStyle?.target.id == 'span' && realPropertyName == MAX_WIDTH) {
+                    print('span maxWidth resolved: ${value!} * ${recomputedParentWidth} = ${_computedValue}');
+                  }
+                } else {
+                  // Last resort: use available constraint width or mark for relayout
+                  RenderBox? parentRenderBox = parentRenderStyle.attachedRenderBoxModel;
+                  if (parentRenderBox != null && parentRenderBox.hasSize) {
+                    double constraintWidth = parentRenderBox.constraints.maxWidth;
+                    if (constraintWidth != double.infinity) {
+                      _computedValue = value! * constraintWidth;
+                    } else {
+                      renderStyle?.markParentNeedsRelayout();
+                      _computedValue = double.infinity;
+                    }
+                  } else {
+                    renderStyle?.markParentNeedsRelayout();
+                    _computedValue = double.infinity;
+                  }
+                }
+              } else {
+                _computedValue = double.infinity;
+              }
             }
             break;
           case HEIGHT:
@@ -415,6 +445,40 @@ class CSSLengthValue {
             }
             break;
 
+          case GAP:
+          case ROW_GAP:
+          case COLUMN_GAP:
+            // Gap percentages resolve against the content area of the container itself
+            // For row-gap: against the container's height
+            // For column-gap: against the container's width  
+            // For gap (shorthand): against width for horizontal, height for vertical
+            double? containerContentWidth = renderStyle!.contentBoxWidth ?? renderStyle!.contentBoxLogicalWidth;
+            double? containerContentHeight = renderStyle!.contentBoxHeight ?? renderStyle!.contentBoxLogicalHeight;
+            
+            if (realPropertyName == ROW_GAP) {
+              // Row gap resolves against container height
+              if (containerContentHeight != null && containerContentHeight > 0) {
+                _computedValue = value! * containerContentHeight;
+              } else {
+                _computedValue = 0;
+              }
+            } else if (realPropertyName == COLUMN_GAP) {
+              // Column gap resolves against container width
+              if (containerContentWidth != null && containerContentWidth > 0) {
+                _computedValue = value! * containerContentWidth;
+              } else {
+                _computedValue = 0;
+              }
+            } else {
+              // GAP shorthand - resolve against width (like column-gap for now)
+              if (containerContentWidth != null && containerContentWidth > 0) {
+                _computedValue = value! * containerContentWidth;
+              } else {
+                _computedValue = 0;
+              }
+            }
+            break;
+
           case RX:
             final target = renderStyle!.target;
             if (target is SVGElement) {
@@ -441,6 +505,9 @@ class CSSLengthValue {
         _computedValue = 0;
     }
 
+    // Ensure _computedValue is never null
+    _computedValue ??= 0;
+    
     // Cache computed value.
     if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
       cacheComputedValue(renderStyle!, propertyName!, _computedValue!);

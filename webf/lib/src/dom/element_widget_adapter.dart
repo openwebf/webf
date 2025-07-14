@@ -39,7 +39,6 @@ mixin ElementAdapterMixin on ElementBase {
   final List<Element> _fixedPositionElements = [];
 
   // Track the screen state and event queue
-  bool _isOnScreen = false;
   final List<ScreenEvent> _screenEventQueue = [];
   bool _isProcessingQueue = false;
 
@@ -91,7 +90,7 @@ mixin ElementAdapterMixin on ElementBase {
     if (event.type == ScreenEventType.onScreen) {
       _screenEventQueue.removeWhere((e) => e.type == ScreenEventType.offScreen);
     }
-    
+
     _screenEventQueue.add(event);
     _processEventQueue();
   }
@@ -106,20 +105,15 @@ mixin ElementAdapterMixin on ElementBase {
 
         // Process events based on current state and event type
         if (event.type == ScreenEventType.offScreen) {
-          if (_isOnScreen) {
-            _isOnScreen = false;
-            await (this as Element).dispatchEvent(event.offScreenEvent!);
-          }
+          await (this as Element).dispatchEvent(event.offScreenEvent!);
         } else if (event.type == ScreenEventType.onScreen) {
           // Only dispatch onScreen if we're not already on screen
-          if (!_isOnScreen) {
-            _isOnScreen = true;
-            await (this as Element).dispatchEventUtilAdded(event.onScreenEvent!);
-          }
+          await (this as Element).dispatchEventUtilAdded(event.onScreenEvent!);
         }
       }
       _isProcessingQueue = false;
     });
+    SchedulerBinding.instance.scheduleFrame();
   }
 
   @override

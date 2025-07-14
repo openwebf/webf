@@ -126,7 +126,9 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void setupParentData(RenderBox child) {
-    child.parentData = RenderLayoutParentData();
+    if (child.parentData is! RenderLayoutParentData) {
+      child.parentData = RenderLayoutParentData();
+    }
   }
 
   double _getMainAxisExtent(RenderBox child) {

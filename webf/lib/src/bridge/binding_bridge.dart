@@ -11,6 +11,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/geometry.dart';
 import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
@@ -55,7 +56,7 @@ void _handleDispatchResult(Object contextHandle, Pointer<NativeValue> returnValu
   event.allocateLen = (context.rawEvent.ref.bytes + 10).value;
 
   if (enableWebFCommandLog && context.stopwatch != null) {
-    print('dispatch event to native side: target: ${event.target} arguments: ${context.dispatchEventArguments} time: ${context.stopwatch!.elapsedMicroseconds}us');
+    bridgeLogger.fine('dispatch event to native side: target: ${event.target} arguments: ${context.dispatchEventArguments} time: ${context.stopwatch!.elapsedMicroseconds}us');
   }
 
   // Free the allocated arguments.
@@ -184,7 +185,7 @@ abstract class BindingBridge {
         break;
     }
     if (enableWebFCommandLog) {
-      print('CreateBindingObject: $pointer $type arg: $arguments, time: ${stopwatch!.elapsedMicroseconds}us');
+      bridgeLogger.fine('CreateBindingObject: $pointer $type arg: $arguments, time: ${stopwatch!.elapsedMicroseconds}us');
     }
   }
 
