@@ -53,6 +53,12 @@ class FontDescription {
     kCursiveFamily,
     kFantasyFamily
   };
+  
+  enum class Kerning : uint8_t {
+    kAuto,
+    kNormal,
+    kNone
+  };
 
   FontDescription();
   FontDescription(const FontDescription&);
@@ -89,6 +95,69 @@ class FontDescription {
   
   FontSelectionValue Stretch() const { return stretch_; }
   void SetStretch(FontSelectionValue stretch) { stretch_ = stretch; }
+  
+  // Text rendering
+  int TextRendering() const { return 0; } // TODO: Implement
+  
+  // Font smoothing
+  int FontSmoothing() const { return 0; } // TODO: Implement
+  
+  // Feature settings (stub for now)
+  int FeatureSettings() const { return 0; }
+  
+  // Kerning
+  Kerning GetKerning() const { return kerning_; }
+  void SetKerning(Kerning k) { kerning_ = k; }
+  
+  // Font optical sizing
+  int FontOpticalSizing() const { return 0; }
+  
+  // Font palette
+  int GetFontPalette() const { return 0; }
+  
+  // Font size  
+  float GetSize() const { return computed_size_; }
+  
+  // Font size adjust
+  float SizeAdjust() const { return 1.0f; }
+  
+  // Font synthesis enum types
+  enum class FontSynthesisSmallCaps : uint8_t {
+    kAuto,
+    kNone
+  };
+  enum class FontSynthesisStyle : uint8_t {
+    kAuto,
+    kNone
+  };
+  enum class FontSynthesisWeight : uint8_t {
+    kAuto,
+    kNone
+  };
+  
+  // Font synthesis getters
+  FontSynthesisSmallCaps GetFontSynthesisSmallCaps() const { return FontSynthesisSmallCaps::kAuto; }
+  FontSynthesisStyle GetFontSynthesisStyle() const { return FontSynthesisStyle::kAuto; }
+  FontSynthesisWeight GetFontSynthesisWeight() const { return FontSynthesisWeight::kAuto; }
+  
+  // Font variant settings - both with and without Get/Font prefix
+  int GetFontVariantCaps() const { return 0; }
+  int GetFontVariantEastAsian() const { return 0; }
+  int GetFontVariantLigatures() const { return 0; }
+  int GetVariantLigatures() const { return GetFontVariantLigatures(); } // Alias for generated code
+  int GetFontVariantNumeric() const { return 0; }
+  int GetFontVariantPosition() const { return 0; }
+  int GetFontVariationSettings() const { return 0; }
+  int GetFontVariantAlternates() const { return 0; }
+  // Shorter names for generated code
+  int VariantCaps() const { return GetFontVariantCaps(); }
+  int VariantEastAsian() const { return GetFontVariantEastAsian(); }
+  int VariantLigatures() const { return GetFontVariantLigatures(); }
+  int VariantNumeric() const { return GetFontVariantNumeric(); }
+  int VariantPosition() const { return GetFontVariantPosition(); }
+  int VariationSettings() const { return GetFontVariationSettings(); }
+  int VariantAlternates() const { return GetFontVariantAlternates(); }
+  int VariantEmoji() const { return 0; } // TODO: Implement font-variant-emoji
 
  private:
   FontFamily family_list_;  // The list of font families to be used.
@@ -97,6 +166,7 @@ class FontDescription {
   FontSelectionValue weight_;
   FontSelectionValue style_;
   FontSelectionValue stretch_;
+  Kerning kerning_ = Kerning::kAuto;
 };
 
 }  // namespace webf

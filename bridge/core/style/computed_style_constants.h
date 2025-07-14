@@ -458,6 +458,22 @@ inline PositionVisibility& operator|=(PositionVisibility& a, PositionVisibility 
   return a = a | b;
 }
 
+// Text rendering mode
+enum class TextRenderingMode : uint8_t {
+  kAuto,
+  kOptimizeSpeed,
+  kOptimizeLegibility,
+  kGeometricPrecision
+};
+
+// Font smoothing mode (-webkit-font-smoothing)
+enum class FontSmoothingMode : uint8_t {
+  kAuto,
+  kNone,
+  kAntialiased,
+  kSubpixelAntialiased
+};
+
 }  // namespace webf
 
 #endif  // WEBF_COMPUTED_STYLE_CONSTANTS_H

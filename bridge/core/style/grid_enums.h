@@ -7,11 +7,16 @@
 #ifndef WEBF_CORE_STYLE_GRID_ENUMS_H_
 #define WEBF_CORE_STYLE_GRID_ENUMS_H_
 
+#include <cstdint>
+
 namespace webf {
 
 enum GridPositionSide { kColumnStartSide, kColumnEndSide, kRowStartSide, kRowEndSide };
 
 enum GridTrackSizingDirection { kForColumns, kForRows };
+
+enum class AutoRepeatType : uint8_t { kNoAutoRepeat, kAutoFill, kAutoFit };
+enum class GridAxisType : uint8_t { kStandaloneAxis, kSubgriddedAxis };
 
 }  // namespace webf
 

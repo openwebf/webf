@@ -335,7 +335,7 @@ TEST_F(CSSPrimitiveValueTest, ComputeMethodsWithLengthResolver) {
 
     Font font;
     CSSToLengthConversionData length_resolver = CSSToLengthConversionData();
-    length_resolver.SetFontSizes(CSSToLengthConversionData::FontSizes(10.0f, 10.0f, &font, 1.0f));
+    length_resolver.SetFontSizes(CSSToLengthConversionData::FontSizes(10.0f, 10.0f, font, 1.0f));
     EXPECT_EQ(10.0, value->ComputeDegrees(length_resolver));
     EXPECT_EQ("calc(sign(-1em + 12px) * 10deg)", value->CustomCSSText());
   }
@@ -394,7 +394,7 @@ TEST_F(CSSPrimitiveValueTest, ComputeValueToCanonicalUnit) {
 
   Font font;
   CSSToLengthConversionData length_resolver = CSSToLengthConversionData();
-  length_resolver.SetFontSizes(CSSToLengthConversionData::FontSizes(10.0f, 10.0f, &font, 1.0f));
+  length_resolver.SetFontSizes(CSSToLengthConversionData::FontSizes(10.0f, 10.0f, font, 1.0f));
 
   EXPECT_EQ(function->ComputeValueInCanonicalUnit(length_resolver), 0);
   EXPECT_EQ(numeric_percentage->ComputeValueInCanonicalUnit(length_resolver), 10);

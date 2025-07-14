@@ -47,23 +47,26 @@ bool operator==(const FontFamily& a, const FontFamily& b) {
 
 std::string FontFamily::ToString() const {
   std::string builder;
-  builder += family_name_;
+  builder += family_name_.ToStdString();
   const FontFamily* current = Next();
   while (current) {
     builder += ", ";
-    builder += current->FamilyName();
+    builder += current->FamilyName().ToStdString();
     current = current->Next();
   }
   return builder;
 }
 
-/*static*/ FontFamily::Type FontFamily::InferredTypeFor(const std::string& family_name) {
-  return (family_name == font_family_names_stdstring::kcursive ||
-          family_name == font_family_names_stdstring::kfantasy ||
-          family_name == font_family_names_stdstring::kmonospace ||
-          family_name == font_family_names_stdstring::ksansSerif ||
-          family_name == font_family_names_stdstring::kserif || family_name == font_family_names_stdstring::kSystemUI ||
-          family_name == font_family_names_stdstring::kmath)
+/*static*/ FontFamily::Type FontFamily::InferredTypeFor(const AtomicString& family_name) {
+  // Convert to std::string for comparison with existing constants
+  std::string family_str = family_name.ToStdString();
+  return (family_str == font_family_names_stdstring::kcursive ||
+          family_str == font_family_names_stdstring::kfantasy ||
+          family_str == font_family_names_stdstring::kmonospace ||
+          family_str == font_family_names_stdstring::ksansSerif ||
+          family_str == font_family_names_stdstring::kserif || 
+          family_str == font_family_names_stdstring::kSystemUI ||
+          family_str == font_family_names_stdstring::kmath)
              ? Type::kGenericFamily
              : Type::kFamilyName;
 }

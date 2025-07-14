@@ -37,6 +37,7 @@ StyleResolverState::StyleResolverState(Document& document, Element& element)
       document_(&document),
       element_(&element),
       selector_checker_(SelectorChecker::kResolvingStyle),
+      css_to_length_conversion_data_(),
       parent_style_(nullptr),
       layout_parent_style_(nullptr),
       old_style_(nullptr),
@@ -77,7 +78,26 @@ EInsideLink StyleResolverState::InsideLink() const {
 }
 
 void StyleResolverState::UpdateLengthConversionData() {
-  // TODO: Implement length conversion data update
+  if (!style_builder_) {
+    return;
+  }
+  
+  // Create viewport size - for now just use default values
+  CSSToLengthConversionData::ViewportSize viewport_size(800, 600);
+  
+  // Create container sizes
+  CSSToLengthConversionData::ContainerSizes container_sizes(element_);
+  
+  // Update the conversion data
+  css_to_length_conversion_data_ = CSSToLengthConversionData(
+      *style_builder_,
+      parent_style_,
+      RootElementStyle(),
+      viewport_size,
+      container_sizes,
+      style_builder_->EffectiveZoom(),
+      length_conversion_flags_
+  );
 }
 
 const ComputedStyle* StyleResolverState::TakeStyle() {
@@ -146,6 +166,82 @@ void StyleResolverState::UpdateFont() {
 
 void StyleResolverState::UpdateLineHeight() {
   // TODO: Implement line height update
+}
+
+CSSToLengthConversionData StyleResolverState::FontSizeConversionData() {
+  // Create conversion data for font size calculations
+  // This uses the parent style's font size
+  if (parent_style_) {
+    CSSToLengthConversionData::FontSizes font_sizes(
+        parent_style_->GetFont().SpecifiedSize(),
+        parent_style_->GetFont().SpecifiedSize(),
+        parent_style_->GetFont(),
+        1.0f  // zoom
+    );
+    CSSToLengthConversionData::LineHeightSize line_height_size;
+    CSSToLengthConversionData::ViewportSize viewport_size;
+    CSSToLengthConversionData::ContainerSizes container_sizes;
+    
+    return CSSToLengthConversionData(
+        WritingMode::kHorizontalTb,
+        font_sizes,
+        line_height_size,
+        viewport_size,
+        container_sizes,
+        1.0f,  // zoom
+        length_conversion_flags_
+    );
+  }
+  return CSSToLengthConversionData();
+}
+
+CSSToLengthConversionData StyleResolverState::UnzoomedLengthConversionData() {
+  // Create conversion data without zoom
+  if (style_builder_) {
+    CSSToLengthConversionData::FontSizes font_sizes(
+        style_builder_->GetFont().SpecifiedSize(),
+        style_builder_->GetFont().SpecifiedSize(),
+        style_builder_->GetFont(),
+        1.0f  // zoom
+    );
+    CSSToLengthConversionData::LineHeightSize line_height_size;
+    CSSToLengthConversionData::ViewportSize viewport_size;
+    CSSToLengthConversionData::ContainerSizes container_sizes;
+    
+    return CSSToLengthConversionData(
+        style_builder_->GetWritingMode(),
+        font_sizes,
+        line_height_size,
+        viewport_size,
+        container_sizes,
+        1.0f,  // unzoomed
+        length_conversion_flags_
+    );
+  }
+  return CSSToLengthConversionData();
+}
+
+CSSToLengthConversionData StyleResolverState::UnzoomedLengthConversionData(const FontSizeStyle& font_size_style) {
+  // Create conversion data with specific font size style
+  CSSToLengthConversionData::FontSizes font_sizes(
+      font_size_style.GetFont().SpecifiedSize(),
+      font_size_style.GetFont().SpecifiedSize(),
+      font_size_style.GetFont(),
+      1.0f  // zoom
+  );
+  CSSToLengthConversionData::LineHeightSize line_height_size;
+  CSSToLengthConversionData::ViewportSize viewport_size;
+  CSSToLengthConversionData::ContainerSizes container_sizes;
+  
+  return CSSToLengthConversionData(
+      WritingMode::kHorizontalTb,
+      font_sizes,
+      line_height_size,
+      viewport_size,
+      container_sizes,
+      1.0f,  // unzoomed
+      length_conversion_flags_
+  );
 }
 
 }  // namespace webf

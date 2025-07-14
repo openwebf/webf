@@ -13,9 +13,12 @@ function applyInitial(property: PropertyBase, fn: (property: PropertyBase) => st
   const className = upperCamelCase(property.name);
   if (property.style_builder_declare) {
     if (property['style_builder_generate_initial']) {
-      return `void ${className}::ApplyInitial(StyleResolverState& state) const {
-      
-     }`;
+      const body = fn(property);
+      if (body) {
+        return `void ${className}::ApplyInitial(StyleResolverState& state) const {
+  ${body}
+}`;
+      }
     }
   }
   return '';
@@ -25,9 +28,12 @@ function applyInherit(property: PropertyBase, fn: (property: PropertyBase) => st
   const className = upperCamelCase(property.name);
   if (property.style_builder_declare) {
     if (property['style_builder_generate_inherit']) {
-      return `void ${className}::ApplyInherit(StyleResolverState& state) const {
-        
-      }`
+      const body = fn(property);
+      if (body) {
+        return `void ${className}::ApplyInherit(StyleResolverState& state) const {
+  ${body}
+}`;
+      }
     }
   }
   return '';
@@ -37,9 +43,12 @@ function applyValue(property: PropertyBase, fn: (property: PropertyBase) => stri
   const className = upperCamelCase(property.name);
   if (property.style_builder_declare) {
     if (property['style_builder_generate_value']) {
-      return `void ${className}::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-        
-      }`;
+      const body = fn(property);
+      if (body) {
+        return `void ${className}::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  ${body}
+}`;
+      }
     }
   }
   return '';
@@ -61,6 +70,18 @@ function concat(...args: string[]) {
   return args.join('\n');
 }
 
+function getEnumValueForKeyword(keyword: string, typeName: string): string {
+  // Convert CSS keyword to C++ enum value
+  // e.g., "static" -> "webf::EPosition::kStatic"
+  // Handle special cases for multi-word keywords
+  const parts = keyword.split('-');
+  const capitalizedKeyword = parts.map(part => 
+    part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+  ).join('');
+  
+  return `webf::${typeName}::k${capitalizedKeyword}`;
+}
+
 function convertAndSetValue(property: PropertyBase) {
   if (property['converter'] === 'CSSPrimitiveValue') {
     return `${setValue(property)}(To<CSSPrimitiveValue>(value).ConvertTo<${property.type_name}>(state.CssToLengthConversionData()));`;
@@ -68,11 +89,14 @@ function convertAndSetValue(property: PropertyBase) {
     return `${setValue(property)}(To<CSSIdentifierValue>(value).ConvertTo<webf::${property.type_name}>());`;
   } else if (property['converter']) {
     return `${setValue(property)}(StyleBuilderConverter::${property['converter']}(state, value));`;
+  } else if (property.field_template === 'keyword') {
+    // For keyword properties without explicit converter, follow Blink's pattern
+    return `${setValue(property)}(To<CSSIdentifierValue>(value).ConvertTo<webf::${property.type_name}>());`;
   }
   return '';
 }
 
-function styleBuilderFunction(property: PropertyBase) {
+function styleBuilderFunction(property: PropertyBase) {  
   if (!property.style_builder_template) {
     return concat(
       applyInitial(property, (property) => {

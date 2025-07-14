@@ -12,6 +12,9 @@
 #include "core/css/css_value_list.h"
 #include "core/css/css_value_pair.h"
 #include "core/css/resolver/style_resolver_state.h"
+#include "core/platform/std_lib_extras.h"
+#include "computed_style_initial_values.h"
+#include "core/css/properties/style_builder_converter.h"
 
 namespace webf {
 namespace css_<%= isShortHand ? 'shorthand' : 'longhand' %> {
@@ -39,7 +42,7 @@ const char* <%= class_name %>::GetPropertyName() const {
 }
 
 const AtomicString& <%= class_name %>::GetPropertyNameAtomicString() const {
-  thread_local static AtomicString name("<%= exposed_property.name %>");
+  DEFINE_STATIC_LOCAL(const AtomicString, name, ("<%= exposed_property.name %>"));
   return name;
 }
 

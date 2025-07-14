@@ -3862,7 +3862,7 @@
         "third_party/blink/public/mojom/frame/color_scheme.mojom-blink.h"
       ],
       type_name: "Vector<AtomicString>",
-      default_value: "Vector<AtomicString, 0>()",
+      default_value: "Vector<AtomicString>()",
       field_template: "external",
       valid_for_highlight_legacy: true,
       computable: false,
@@ -6340,7 +6340,7 @@
         "Keyword"
       ],
       default_value: "static",
-      getter: "GetPosition",
+      getter: "Position",
       computed_style_custom_functions: [
         "getter"
       ],
@@ -7227,7 +7227,7 @@
       // FIXME: Make this use "kTouchActionBits".
       field_template: "primitive",
       include_paths: [
-        "third_party/blink/renderer/platform/graphics/touch_action.h"
+        "core/platform/graphics/touch_action.h"
       ],
       default_value: "TouchAction::kAuto",
       type_name: "TouchAction",

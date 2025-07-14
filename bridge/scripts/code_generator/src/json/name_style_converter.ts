@@ -38,7 +38,6 @@ const SPECIAL_TOKENS: string[] = [
   's3tc',
   'SPv2',
   'UTF8',
-  'sRGB',
   'URLs',
   'API',
   'CSS',

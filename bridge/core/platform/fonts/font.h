@@ -48,6 +48,7 @@ class Font {
   bool operator!=(const Font& other) const { return !(*this == other); }
 
   const FontDescription& GetFontDescription() const { return font_description_; }
+  float SpecifiedSize() const { return font_description_.SpecifiedSize(); }
 
  public:
   FontDescription font_description_;

@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <iostream>
 #include "foundation/macros.h"
+#include "foundation/atomic_string.h"
 
 namespace webf {
 
@@ -43,8 +44,10 @@ class FontFamily {
   // https://drafts.csswg.org/css-fonts/#font-family-prop
   enum class Type : uint8_t { kFamilyName, kGenericFamily };
 
-  FontFamily(const std::string& family_name, Type family_type, std::shared_ptr<SharedFontFamily> next = nullptr)
+  FontFamily(const AtomicString& family_name, Type family_type, std::shared_ptr<SharedFontFamily> next = nullptr)
       : family_name_(family_name), next_(std::move(next)), family_type_(family_type) {}
+  FontFamily(const std::string& family_name, Type family_type, std::shared_ptr<SharedFontFamily> next = nullptr)
+      : family_name_(AtomicString(family_name)), next_(std::move(next)), family_type_(family_type) {}
   FontFamily() = default;
   ~FontFamily();
 
@@ -53,7 +56,8 @@ class FontFamily {
   // ComputedStyleUtils::ValueForFontFamily(const FontFamily&) and
   // CSSValue::CssText() in order to match formatting rules from the CSSOM
   // specification.
-  const std::string& FamilyName() const { return family_name_; }
+  const AtomicString& FamilyName() const { return family_name_; }
+  std::string FamilyNameString() const { return family_name_.ToStdString(); }
   bool FamilyIsGeneric() const { return family_type_ == Type::kGenericFamily; }
 
   const FontFamily* Next() const;
@@ -74,10 +78,13 @@ class FontFamily {
   // Return kGenericFamily if family_name is equal to one of the supported
   // <generic-family> keyword from the CSS fonts module spec and kFamilyName
   // otherwise.
-  static Type InferredTypeFor(const std::string& family_name);
+  static Type InferredTypeFor(const AtomicString& family_name);
+  static Type InferredTypeFor(const std::string& family_name) {
+    return InferredTypeFor(AtomicString(family_name));
+  }
 
  private:
-  std::string family_name_;
+  AtomicString family_name_;
   std::shared_ptr<SharedFontFamily> next_;
   Type family_type_ = Type::kFamilyName;
   mutable bool is_prewarmed_ = false;
@@ -90,13 +97,13 @@ class SharedFontFamily : public FontFamily {
   SharedFontFamily(const SharedFontFamily&) = delete;
   SharedFontFamily& operator=(const SharedFontFamily&) = delete;
 
-  static std::shared_ptr<SharedFontFamily> Create(const std::string& family_name,
+  static std::shared_ptr<SharedFontFamily> Create(const AtomicString& family_name,
                                                   Type family_type,
                                                   std::shared_ptr<SharedFontFamily> next = nullptr) {
     return std::make_shared<SharedFontFamily>(family_name, family_type, std::move(next));
   }
 
-  SharedFontFamily(const std::string& family_name, Type family_type, std::shared_ptr<SharedFontFamily> next)
+  SharedFontFamily(const AtomicString& family_name, Type family_type, std::shared_ptr<SharedFontFamily> next)
       : FontFamily(family_name, family_type, std::move(next)) {}
 };
 

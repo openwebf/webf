@@ -29,7 +29,7 @@
 
 //#include "core/animation/css/css_animation_update.h"
 #include "core/css/css_property_name.h"
-//#include "core/css/css_to_length_conversion_data.h"
+#include "core/css/css_to_length_conversion_data.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/properties/css_property.h"
 #include "core/css/selector_checker.h"
@@ -123,24 +123,24 @@ class StyleResolverState {
   }
   const ComputedStyle* TakeStyle();
 
-  //  const CSSToLengthConversionData& CssToLengthConversionData() const {
-  //    return css_to_length_conversion_data_;
-  //  }
-  //  CSSToLengthConversionData FontSizeConversionData();
-  //  CSSToLengthConversionData UnzoomedLengthConversionData();
-  //
-  //  CSSToLengthConversionData::Flags TakeLengthConversionFlags() {
-  //    CSSToLengthConversionData::Flags flags = length_conversion_flags_;
-  //    length_conversion_flags_ = 0;
-  //    return flags;
-  //  }
+  const CSSToLengthConversionData& CssToLengthConversionData() const {
+    return css_to_length_conversion_data_;
+  }
+  CSSToLengthConversionData FontSizeConversionData();
+  CSSToLengthConversionData UnzoomedLengthConversionData();
 
-  //  void SetConversionFontSizes(
-  //      const CSSToLengthConversionData::FontSizes& font_sizes) {
-  //    css_to_length_conversion_data_.SetFontSizes(font_sizes);
-  //  }
+  CSSToLengthConversionData::Flags TakeLengthConversionFlags() {
+    CSSToLengthConversionData::Flags flags = length_conversion_flags_;
+    length_conversion_flags_ = 0;
+    return flags;
+  }
+
+  void SetConversionFontSizes(
+      const CSSToLengthConversionData::FontSizes& font_sizes) {
+    css_to_length_conversion_data_.SetFontSizes(font_sizes);
+  }
   void SetConversionZoom(float zoom) {
-    //    css_to_length_conversion_data_.SetZoom(zoom);
+    css_to_length_conversion_data_.SetZoom(zoom);
   }
 
   //  CSSAnimationUpdate& AnimationUpdate() { return animation_update_; }
@@ -257,7 +257,7 @@ class StyleResolverState {
   bool HasTreeScopedReference() const { return has_tree_scoped_reference_; }
 
  private:
-  //  CSSToLengthConversionData UnzoomedLengthConversionData(const FontSizeStyle&);
+  CSSToLengthConversionData UnzoomedLengthConversionData(const FontSizeStyle&);
   
   ElementResolveContext element_context_;
   Document* document_;
@@ -267,9 +267,9 @@ class StyleResolverState {
 
   // The primary output for each element's style resolve.
   std::unique_ptr<ComputedStyleBuilder> style_builder_;
-  //
-  //  CSSToLengthConversionData::Flags length_conversion_flags_ = 0;
-  //  CSSToLengthConversionData css_to_length_conversion_data_;
+
+  CSSToLengthConversionData::Flags length_conversion_flags_ = 0;
+  CSSToLengthConversionData css_to_length_conversion_data_;
 
   // parent_style_ is not always just ElementResolveContext::ParentStyle(),
   // so we keep it separate.

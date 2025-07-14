@@ -87,7 +87,7 @@ class StaticSingleton final {
     // TODO(guopengfei)：注释IsGarbageCollectedType，以通过编译
     //  static_assert(!WTF::IsGarbageCollectedType<Type>::value,
     //                "Garbage collected objects must be wrapped in a Persistent");
-    ((void)0)(instance_.Get());
+    (void)instance_.Get();
   }
 
   StaticSingleton(const StaticSingleton&) = delete;

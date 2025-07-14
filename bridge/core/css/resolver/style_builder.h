@@ -45,24 +45,6 @@ class StyleBuilder {
                               TextDirection,
                               CSSPropertyValueSet::PropertySetFlag);
 
- private:
-  // Apply individual property handlers
-  static void ApplyColorProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyBackgroundColorProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyDisplayProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyPositionProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyWidthProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyHeightProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyMarginProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyPaddingProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyBorderProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyFontProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyTextProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyFlexProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyTransformProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyOpacityProperty(StyleResolverState&, const CSSValue&);
-  static void ApplyOverflowProperty(CSSPropertyID, StyleResolverState&, const CSSValue&);
-  static void ApplyZIndexProperty(StyleResolverState&, const CSSValue&);
 };
 
 }  // namespace webf

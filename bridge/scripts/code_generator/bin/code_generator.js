@@ -28,6 +28,7 @@ const { makeCSSValueIdMapping } = require('../dist/json/make_css_value_id_mappin
 const { makeCSSPrimitiveValueUnitTrie } = require('../dist/json/make_css_primitive_value_unit_trie');
 const { makeAtRuleNames } = require('../dist/json/make_atrule_names');
 const { makeColorData } = require('../dist/json/make_color_data');
+const { makeComputedStyleInitialValues } = require('../dist/json/make_computed_style_initial_values');
 
 
 program
@@ -260,6 +261,11 @@ function genCodeFromJSONData() {
     atRuleDescriptorsFilePath + '.cc',
     ruleData.source
   );
+
+  // Generate computed_style_initial_values code
+  let computedStyleInitialValues = makeComputedStyleInitialValues();
+  let computedStyleInitialValuesFilePath = path.join(dist, 'computed_style_initial_values');
+  writeFileIfChanged(computedStyleInitialValuesFilePath + '.h', computedStyleInitialValues.header);
 }
 
 class DefinedPropertyCollector {

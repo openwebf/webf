@@ -42,6 +42,7 @@ namespace webf {
 
 class AnchorEvaluator;
 class ComputedStyle;
+class ComputedStyleBuilder;
 class Element;
 
 class CSSToLengthConversionData : public CSSLengthResolver {
@@ -53,20 +54,17 @@ class CSSToLengthConversionData : public CSSLengthResolver {
 
    public:
     FontSizes() = default;
-    FontSizes(float em, float rem, const Font* font, float font_zoom)
+    FontSizes(float em, float rem, const Font& font, float font_zoom)
         : em_(em), rem_(rem), font_(font), root_font_(font), font_zoom_(font_zoom), root_font_zoom_(font_zoom) {
-      DCHECK(font_);
     }
 
-    FontSizes(float em, float rem, const Font* font, const Font* root_font, float font_zoom, float root_font_zoom)
+    FontSizes(float em, float rem, const Font& font, const Font& root_font, float font_zoom, float root_font_zoom)
         : em_(em),
           rem_(rem),
           font_(font),
           root_font_(root_font),
           font_zoom_(font_zoom),
           root_font_zoom_(root_font_zoom) {
-      DCHECK(font_);
-      DCHECK(root_font_);
     }
 
     //    FontSizes(const FontSizeStyle& style, const ComputedStyle* root_style)
@@ -93,8 +91,8 @@ class CSSToLengthConversionData : public CSSLengthResolver {
    private:
     float em_ = 0;
     float rem_ = 0;
-    const Font* font_ = nullptr;
-    const Font* root_font_ = nullptr;
+    Font font_;
+    Font root_font_;
     // Font-metrics-based units (ex, ch, ic) are pre-zoomed by a factor of
     // `font_zoom_`.
     float font_zoom_ = 1;
@@ -106,12 +104,12 @@ class CSSToLengthConversionData : public CSSLengthResolver {
 
    public:
     LineHeightSize() = default;
-    LineHeightSize(const Length& line_height, const Font* font, float font_zoom)
+    LineHeightSize(const Length& line_height, const Font& font, float font_zoom)
         : line_height_(line_height), font_(font), font_zoom_(font_zoom) {}
     LineHeightSize(const Length& line_height,
                    const Length& root_line_height,
-                   const Font* font,
-                   const Font* root_font,
+                   const Font& font,
+                   const Font& root_font,
                    float font_zoom,
                    float root_font_zoom)
         : line_height_(line_height),
@@ -130,8 +128,8 @@ class CSSToLengthConversionData : public CSSLengthResolver {
     Length root_line_height_;
     // Note that this Font may be different from the instance held
     // by FontSizes (for the same CSSToLengthConversionData object).
-    const Font* font_ = nullptr;
-    const Font* root_font_ = nullptr;
+    Font font_;
+    Font root_font_;
     // Like ex/ch/ic, lh is also based on font-metrics and is pre-zoomed by
     // a factor of `font_zoom_`.
     float font_zoom_ = 1;
@@ -255,6 +253,20 @@ class CSSToLengthConversionData : public CSSLengthResolver {
                             const ContainerSizes&,
                             float zoom,
                             Flags&);
+  CSSToLengthConversionData(const ComputedStyle& element_style,
+                            const ComputedStyle* parent_style,
+                            const ComputedStyle* root_style,
+                            const ViewportSize& viewport_size,
+                            const ContainerSizes& container_sizes,
+                            float zoom,
+                            Flags& flags);
+  CSSToLengthConversionData(const ComputedStyleBuilder& element_style,
+                            const ComputedStyle* parent_style,
+                            const ComputedStyle* root_style,
+                            const ViewportSize& viewport_size,
+                            const ContainerSizes& container_sizes,
+                            float zoom,
+                            Flags& flags);
 
   float EmFontSize(float zoom) const override;
   float RemFontSize(float zoom) const override;
@@ -285,6 +297,7 @@ class CSSToLengthConversionData : public CSSLengthResolver {
 
   void SetFontSizes(const FontSizes& font_sizes) { font_sizes_ = font_sizes; }
   void SetLineHeightSize(const LineHeightSize& line_height_size) { line_height_size_ = line_height_size; }
+  void SetZoom(float zoom) { /* TODO: Implement zoom setting */ }
 
  private:
   void SetFlag(Flag flag) const {

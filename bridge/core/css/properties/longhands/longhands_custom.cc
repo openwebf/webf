@@ -53,6 +53,7 @@
 #include "core/platform/geometry/layout_unit.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/graphics/color.h"
+#include "core/style/computed_style_constants.h"
 #include "css_value_keywords.h"
 #include "style_property_shorthand.h"
 
@@ -1204,12 +1205,39 @@ void Display::ApplyInherit(StyleResolverState& state) const {
 }
 
 void Display::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  //  ComputedStyleBuilder& builder = state.StyleBuilder();
-  //  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(value)) {
-  //    builder.SetDisplay(identifier_value->ConvertTo<EDisplay>());
-  //    builder.SetDisplayLayoutCustomName(ComputedStyleInitialValues::InitialDisplayLayoutCustomName());
-  //    return;
-  //  }
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    EDisplay display = EDisplay::kInline;
+    
+    switch (ident_value.GetValueID()) {
+      case CSSValueID::kBlock:
+        display = EDisplay::kBlock;
+        break;
+      case CSSValueID::kInline:
+        display = EDisplay::kInline;
+        break;
+      case CSSValueID::kInlineBlock:
+        display = EDisplay::kInlineBlock;
+        break;
+      case CSSValueID::kFlex:
+        display = EDisplay::kFlex;
+        break;
+      case CSSValueID::kInlineFlex:
+        display = EDisplay::kInlineFlex;
+        break;
+      case CSSValueID::kNone:
+        display = EDisplay::kNone;
+        break;
+      case CSSValueID::kContents:
+        display = EDisplay::kContents;
+        break;
+      default:
+        break;
+    }
+    
+    state.StyleBuilder().SetDisplay(display);
+    return;
+  }
   //
   //  if (value.IsValueList()) {
   //    builder.SetDisplayLayoutCustomName(ComputedStyleInitialValues::InitialDisplayLayoutCustomName());
@@ -3021,9 +3049,267 @@ void OverflowX::ApplyInitial(webf::StyleResolverState&) const {}
 
 void TextAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-void Color::ApplyInherit(webf::StyleResolverState&) const {}
-void Color::ApplyInitial(webf::StyleResolverState&) const {}
-void Color::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+// BackgroundColor implementation
+void BackgroundColor::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetBackgroundColor(::webf::Color::kTransparent);
+}
+
+void BackgroundColor::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetBackgroundColor(state.ParentStyle()->BackgroundColor());
+}
+
+void BackgroundColor::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsColorValue()) {
+    const auto& color_value = static_cast<const cssvalue::CSSColor&>(value);
+    state.StyleBuilder().SetBackgroundColor(color_value.Value());
+  } else if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    if (ident_value.GetValueID() == CSSValueID::kTransparent) {
+      state.StyleBuilder().SetBackgroundColor(::webf::Color::kTransparent);
+    } else if (ident_value.GetValueID() == CSSValueID::kCurrentcolor) {
+      state.StyleBuilder().SetBackgroundColor(state.StyleBuilder().Color());
+    }
+  }
+}
+
+// Position implementation
+void Position::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetPosition(EPosition::kStatic);
+}
+
+void Position::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetPosition(state.ParentStyle()->Position());
+}
+
+void Position::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    EPosition position = EPosition::kStatic;
+    
+    switch (ident_value.GetValueID()) {
+      case CSSValueID::kStatic:
+        position = EPosition::kStatic;
+        break;
+      case CSSValueID::kRelative:
+        position = EPosition::kRelative;
+        break;
+      case CSSValueID::kAbsolute:
+        position = EPosition::kAbsolute;
+        break;
+      case CSSValueID::kFixed:
+        position = EPosition::kFixed;
+        break;
+      case CSSValueID::kSticky:
+        position = EPosition::kSticky;
+        break;
+      default:
+        break;
+    }
+    
+    state.StyleBuilder().SetPosition(position);
+  }
+}
+
+// Width implementation
+void Width::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetWidth(Length::Auto());
+}
+
+void Width::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetWidth(state.ParentStyle()->Width());
+}
+
+void Width::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    if (ident_value.GetValueID() == CSSValueID::kAuto) {
+      state.StyleBuilder().SetWidth(Length::Auto());
+    }
+  } else if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetWidth(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
+
+// Margin implementations
+void MarginTop::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginTop(Length::Fixed(0));
+}
+
+void MarginTop::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginTop(state.ParentStyle()->MarginTop());
+}
+
+void MarginTop::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetMarginTop(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
+
+void MarginRight::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginRight(Length::Fixed(0));
+}
+
+void MarginRight::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginRight(state.ParentStyle()->MarginRight());
+}
+
+void MarginRight::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetMarginRight(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
+
+void MarginBottom::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginBottom(Length::Fixed(0));
+}
+
+void MarginBottom::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginBottom(state.ParentStyle()->MarginBottom());
+}
+
+void MarginBottom::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetMarginBottom(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
+
+void MarginLeft::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginLeft(Length::Fixed(0));
+}
+
+void MarginLeft::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetMarginLeft(state.ParentStyle()->MarginLeft());
+}
+
+void MarginLeft::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetMarginLeft(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
+
+// Opacity implementation
+void Opacity::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetOpacity(1.0f);
+}
+
+void Opacity::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetOpacity(state.ParentStyle()->Opacity());
+}
+
+void Opacity::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    if (primitive_value.IsNumber()) {
+      float opacity = primitive_value.GetFloatValue();
+      state.StyleBuilder().SetOpacity(opacity);
+    }
+  }
+}
+
+// ZIndex implementation
+void ZIndex::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetZIndex(0);
+  state.StyleBuilder().SetHasAutoZIndex(true);
+}
+
+void ZIndex::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetZIndex(state.ParentStyle()->ZIndex());
+  state.StyleBuilder().SetHasAutoZIndex(state.ParentStyle()->HasAutoZIndex());
+}
+
+void ZIndex::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    if (ident_value.GetValueID() == CSSValueID::kAuto) {
+      state.StyleBuilder().SetZIndex(0);
+      state.StyleBuilder().SetHasAutoZIndex(true);
+    }
+  } else if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    if (primitive_value.IsInteger()) {
+      state.StyleBuilder().SetZIndex(primitive_value.GetIntValue());
+      state.StyleBuilder().SetHasAutoZIndex(false);
+    }
+  }
+}
+
+// FlexDirection implementation
+void FlexDirection::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetFlexDirection(EFlexDirection::kRow);
+}
+
+void FlexDirection::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetFlexDirection(state.ParentStyle()->FlexDirection());
+}
+
+void FlexDirection::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    EFlexDirection direction = EFlexDirection::kRow;
+    
+    switch (ident_value.GetValueID()) {
+      case CSSValueID::kRow:
+        direction = EFlexDirection::kRow;
+        break;
+      case CSSValueID::kRowReverse:
+        direction = EFlexDirection::kRowReverse;
+        break;
+      case CSSValueID::kColumn:
+        direction = EFlexDirection::kColumn;
+        break;
+      case CSSValueID::kColumnReverse:
+        direction = EFlexDirection::kColumnReverse;
+        break;
+      default:
+        break;
+    }
+    
+    state.StyleBuilder().SetFlexDirection(direction);
+  }
+}
+
+// FontSize implementation
+void FontSize::ApplyInitial(StyleResolverState& state) const {
+  state.GetFontBuilder().SetFontSize(16.0f);
+}
+
+void FontSize::ApplyInherit(StyleResolverState& state) const {
+  state.GetFontBuilder().SetFontSize(state.ParentFontDescription().ComputedSize());
+}
+
+void FontSize::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    float size = primitive_value.ComputeLength<float>(state.CssToLengthConversionData());
+    state.GetFontBuilder().SetFontSize(size);
+  }
+}
+
+void Color::ApplyInherit(webf::StyleResolverState& state) const {
+  state.StyleBuilder().SetColor(state.ParentStyle()->Color());
+}
+
+void Color::ApplyInitial(webf::StyleResolverState& state) const {
+  state.StyleBuilder().SetColor(webf::Color::kBlack);
+}
+
+void Color::ApplyValue(webf::StyleResolverState& state, const webf::CSSValue& value, webf::CSSProperty::ValueMode) const {
+  if (value.IsColorValue()) {
+    const auto& color_value = static_cast<const cssvalue::CSSColor&>(value);
+    state.StyleBuilder().SetColor(color_value.Value());
+  } else if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    if (ident_value.GetValueID() == CSSValueID::kCurrentcolor) {
+      // For currentColor, we should use the inherited color
+      state.StyleBuilder().SetColor(state.ParentStyle()->Color());
+    }
+  }
+}
 
 void LineClamp::ApplyInitial(webf::StyleResolverState&) const {}
 
