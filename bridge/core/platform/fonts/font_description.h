@@ -28,6 +28,7 @@
 
 #include <cinttypes>
 #include "core/platform/fonts/font_family.h"
+#include "core/style/computed_style_constants.h"
 #include "font_family_names.h"
 #include "foundation/macros.h"
 
@@ -97,10 +98,10 @@ class FontDescription {
   void SetStretch(FontSelectionValue stretch) { stretch_ = stretch; }
   
   // Text rendering
-  int TextRendering() const { return 0; } // TODO: Implement
+  TextRenderingMode TextRendering() const { return TextRenderingMode::kAuto; } // TODO: Implement
   
   // Font smoothing
-  int FontSmoothing() const { return 0; } // TODO: Implement
+  FontSmoothingMode FontSmoothing() const { return FontSmoothingMode::kAuto; } // TODO: Implement
   
   // Feature settings (stub for now)
   int FeatureSettings() const { return 0; }
