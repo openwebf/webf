@@ -8,11 +8,15 @@ import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
+import '../css/flex_direction_test.dart' as flex_direction_test;
 
 void main() {
   setUpAll(() {
     setupTest();
   });
+  
+  // Run flex-direction specific tests
+  flex_direction_test.main();
 
   setUp(() {
     WebFControllerManager.instance.initialize(
