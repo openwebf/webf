@@ -13,7 +13,9 @@
 #include "core/base/memory/values_equivalent.h"
 #include "core/style/computed_style_constants.h"
 #include "core/style/scoped_css_name.h"
-#include "third_party/abseil-cpp/absl/types/variant.h"
+#include "core/platform/std_lib_extras.h"
+#include "css_value_keywords.h"
+#include <variant>
 //#include "third_party/blink/renderer/platform/heap/persistent.h"
 
 namespace webf {
@@ -66,7 +68,7 @@ class StyleTimeline {
 
   explicit StyleTimeline(CSSValueID keyword) : data_(keyword) {}
   explicit StyleTimeline(const ScopedCSSName* name)
-      : data_(absl::in_place_type<Persistent<const ScopedCSSName>>, name) {}
+      : data_(std::in_place_type<Persistent<const ScopedCSSName>>, name) {}
   explicit StyleTimeline(const ScrollData& scroll_data) : data_(scroll_data) {}
   explicit StyleTimeline(const ViewData& view_data) : data_(view_data) {}
 
@@ -78,18 +80,18 @@ class StyleTimeline {
   }
   bool operator!=(const StyleTimeline& other) const { return !(*this == other); }
 
-  bool IsKeyword() const { return absl::holds_alternative<CSSValueID>(data_); }
-  bool IsName() const { return absl::holds_alternative<Persistent<const ScopedCSSName>>(data_); }
-  bool IsScroll() const { return absl::holds_alternative<ScrollData>(data_); }
-  bool IsView() const { return absl::holds_alternative<ViewData>(data_); }
+  bool IsKeyword() const { return std::holds_alternative<CSSValueID>(data_); }
+  bool IsName() const { return std::holds_alternative<Persistent<const ScopedCSSName>>(data_); }
+  bool IsScroll() const { return std::holds_alternative<ScrollData>(data_); }
+  bool IsView() const { return std::holds_alternative<ViewData>(data_); }
 
-  const CSSValueID& GetKeyword() const { return absl::get<CSSValueID>(data_); }
-  const ScopedCSSName& GetName() const { return *absl::get<Persistent<const ScopedCSSName>>(data_); }
-  const ScrollData& GetScroll() const { return absl::get<ScrollData>(data_); }
-  const ViewData& GetView() const { return absl::get<ViewData>(data_); }
+  const CSSValueID& GetKeyword() const { return std::get<CSSValueID>(data_); }
+  const ScopedCSSName& GetName() const { return *std::get<Persistent<const ScopedCSSName>>(data_); }
+  const ScrollData& GetScroll() const { return std::get<ScrollData>(data_); }
+  const ViewData& GetView() const { return std::get<ViewData>(data_); }
 
  private:
-  absl::variant<CSSValueID, Persistent<const ScopedCSSName>, ScrollData, ViewData> data_;
+  std::variant<CSSValueID, Persistent<const ScopedCSSName>, ScrollData, ViewData> data_;
 };
 
 }  // namespace webf

@@ -42,6 +42,7 @@ DEFINE_GLOBAL(Length, g_fit_content_length);
 DEFINE_GLOBAL(Length, g_max_content_length);
 DEFINE_GLOBAL(Length, g_min_content_length);
 DEFINE_GLOBAL(Length, g_min_intrinsic_length);
+DEFINE_GLOBAL(Length, g_normal_length);
 
 void Length::Initialize() {
   new ((void*)&g_auto_length) Length(kAuto);
@@ -50,6 +51,7 @@ void Length::Initialize() {
   new ((void*)&g_max_content_length) Length(kMaxContent);
   new ((void*)&g_min_content_length) Length(kMinContent);
   new ((void*)&g_min_intrinsic_length) Length(kMinIntrinsic);
+  new ((void*)&g_normal_length) Length(kNormal);
 }
 
 PixelsAndPercent Length::GetPixelsAndPercent() const {

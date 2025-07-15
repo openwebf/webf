@@ -42,6 +42,14 @@
 #include "core/platform/geometry/length.h"
 #include "core/platform/graphics/color.h"
 #include "core/platform/text/writing_mode.h"
+#include "core/platform/geometry/length_size.h"
+#include "core/platform/geometry/length_box.h"
+#include "core/platform/geometry/length_point.h"
+#include "core/platform/geometry/layout_unit.h"
+#include "core/css/css_identifier_value.h"
+#include "core/style/style_stubs.h"
+#include <type_traits>
+#include <optional>
 
 namespace webf {
 
@@ -141,7 +149,8 @@ int StyleBuilderConverter::ConvertInteger(const StyleResolverState& state,
 }
 
 StyleColor StyleBuilderConverter::ConvertStyleColor(const StyleResolverState& state,
-                                                   const CSSValue& value) {
+                                                   const CSSValue& value,
+                                                   bool for_visited_link) {
   if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
     if (identifier_value->GetValueID() == CSSValueID::kCurrentcolor) {
       return StyleColor::CurrentColor();
@@ -270,30 +279,30 @@ EOverflow StyleBuilderConverter::ConvertOverflow(const StyleResolverState& state
 // - EWhiteSpace ConvertWhiteSpace()
 // - EBoxSizing ConvertBoxSizing()
 
-FontSelectionValue StyleBuilderConverter::ConvertFontWeight(const StyleResolverState& state,
-                                                          const CSSValue& value) {
+FontDescription::FontSelectionValue StyleBuilderConverter::ConvertFontWeight(const StyleResolverState& state,
+                                                                          const CSSValue& value) {
   if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
     switch (identifier_value->GetValueID()) {
       case CSSValueID::kNormal:
-        return FontSelectionValue(400);
+        return FontDescription::FontSelectionValue(400);
       case CSSValueID::kBold:
-        return FontSelectionValue(700);
+        return FontDescription::FontSelectionValue(700);
       case CSSValueID::kBolder:
         // TODO: Calculate based on parent weight
-        return FontSelectionValue(700);
+        return FontDescription::FontSelectionValue(700);
       case CSSValueID::kLighter:
         // TODO: Calculate based on parent weight
-        return FontSelectionValue(300);
+        return FontDescription::FontSelectionValue(300);
       default:
         break;
     }
   }
   
   if (auto* numeric_value = DynamicTo<CSSNumericLiteralValue>(&value)) {
-    return FontSelectionValue(numeric_value->GetFloatValue());
+    return FontDescription::FontSelectionValue(numeric_value->GetFloatValue());
   }
   
-  return FontSelectionValue(400); // Normal weight
+  return FontDescription::FontSelectionValue(400); // Normal weight
 }
 
 // TODO: Implement FontStyle converter when FontStyle class is available
@@ -382,6 +391,452 @@ int StyleBuilderConverter::ConvertToInt(const StyleResolverState& state,
     return static_cast<int>(numeric_value->GetFloatValue());
   }
   return 0;
+}
+
+// Font converters
+
+FontFamily StyleBuilderConverter::ConvertFontFamily(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    switch (ident.GetValueID()) {
+      case CSSValueID::kSerif:
+        return FontFamily(AtomicString("serif"), FontFamily::Type::kGenericFamily);
+      case CSSValueID::kSansSerif:
+        return FontFamily(AtomicString("sans-serif"), FontFamily::Type::kGenericFamily);
+      case CSSValueID::kMonospace:
+        return FontFamily(AtomicString("monospace"), FontFamily::Type::kGenericFamily);
+      case CSSValueID::kCursive:
+        return FontFamily(AtomicString("cursive"), FontFamily::Type::kGenericFamily);
+      case CSSValueID::kFantasy:
+        return FontFamily(AtomicString("fantasy"), FontFamily::Type::kGenericFamily);
+      default:
+        break;
+    }
+  }
+  return FontFamily();
+}
+
+int StyleBuilderConverter::ConvertFontFeatureSettings(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+FontDescription::Kerning StyleBuilderConverter::ConvertFontKerning(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    switch (ident.GetValueID()) {
+      case CSSValueID::kAuto:
+        return FontDescription::Kerning::kAuto;
+      case CSSValueID::kNormal:
+        return FontDescription::Kerning::kNormal;
+      case CSSValueID::kNone:
+        return FontDescription::Kerning::kNone;
+      default:
+        break;
+    }
+  }
+  return FontDescription::Kerning::kAuto;
+}
+
+int StyleBuilderConverter::ConvertFontOpticalSizing(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontPalette(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+float StyleBuilderConverter::ConvertFontSizeAdjust(StyleResolverState& state, const CSSValue& value) {
+  return 1.0f;
+}
+
+FontDescription::FontSelectionValue StyleBuilderConverter::ConvertFontStretch(StyleResolverState& state, const CSSValue& value) {
+  return FontDescription::FontSelectionValue(100);
+}
+
+FontDescription::FontSelectionValue StyleBuilderConverter::ConvertFontStyle(StyleResolverState& state, const CSSValue& value) {
+  return FontDescription::FontSelectionValue(0);
+}
+
+int StyleBuilderConverter::ConvertFontVariantAlternates(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariantCaps(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariantEastAsian(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariantEmoji(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariantLigatures(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariantNumeric(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariantPosition(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+int StyleBuilderConverter::ConvertFontVariationSettings(StyleResolverState& state, const CSSValue& value) {
+  return 0;
+}
+
+// Color converters
+
+StyleAutoColor StyleBuilderConverter::ConvertStyleAutoColor(StyleResolverState& state, const CSSValue& value, bool for_visited_link) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    if (ident.GetValueID() == CSSValueID::kAuto) {
+      return StyleAutoColor::AutoColor();
+    }
+  }
+  return StyleAutoColor::AutoColor();
+}
+
+// Alignment converters
+
+StyleContentAlignmentData StyleBuilderConverter::ConvertContentAlignmentData(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    switch (ident.GetValueID()) {
+      case CSSValueID::kNormal:
+        return StyleContentAlignmentData(ContentPosition::kNormal, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      case CSSValueID::kStart:
+        return StyleContentAlignmentData(ContentPosition::kStart, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      case CSSValueID::kEnd:
+        return StyleContentAlignmentData(ContentPosition::kEnd, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      case CSSValueID::kCenter:
+        return StyleContentAlignmentData(ContentPosition::kCenter, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      case CSSValueID::kStretch:
+        return StyleContentAlignmentData(ContentPosition::kCenter, ContentDistributionType::kStretch, OverflowAlignment::kDefault);
+      case CSSValueID::kFlexStart:
+        return StyleContentAlignmentData(ContentPosition::kFlexStart, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      case CSSValueID::kFlexEnd:
+        return StyleContentAlignmentData(ContentPosition::kFlexEnd, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      case CSSValueID::kSpaceBetween:
+        return StyleContentAlignmentData(ContentPosition::kCenter, ContentDistributionType::kSpaceBetween, OverflowAlignment::kDefault);
+      case CSSValueID::kSpaceAround:
+        return StyleContentAlignmentData(ContentPosition::kCenter, ContentDistributionType::kSpaceAround, OverflowAlignment::kDefault);
+      case CSSValueID::kSpaceEvenly:
+        return StyleContentAlignmentData(ContentPosition::kCenter, ContentDistributionType::kSpaceEvenly, OverflowAlignment::kDefault);
+      case CSSValueID::kBaseline:
+        return StyleContentAlignmentData(ContentPosition::kBaseline, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+      default:
+        break;
+    }
+  }
+  return StyleContentAlignmentData(ContentPosition::kNormal, ContentDistributionType::kDefault, OverflowAlignment::kDefault);
+}
+
+// Self alignment data converter
+StyleSelfAlignmentData StyleBuilderConverter::ConvertSelfOrDefaultAlignmentData(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    switch (ident.GetValueID()) {
+      case CSSValueID::kAuto:
+        return StyleSelfAlignmentData(ItemPosition::kAuto, OverflowAlignment::kDefault);
+      case CSSValueID::kNormal:
+        return StyleSelfAlignmentData(ItemPosition::kNormal, OverflowAlignment::kDefault);
+      case CSSValueID::kStart:
+        return StyleSelfAlignmentData(ItemPosition::kStart, OverflowAlignment::kDefault);
+      case CSSValueID::kEnd:
+        return StyleSelfAlignmentData(ItemPosition::kEnd, OverflowAlignment::kDefault);
+      case CSSValueID::kCenter:
+        return StyleSelfAlignmentData(ItemPosition::kCenter, OverflowAlignment::kDefault);
+      case CSSValueID::kStretch:
+        return StyleSelfAlignmentData(ItemPosition::kStretch, OverflowAlignment::kDefault);
+      case CSSValueID::kFlexStart:
+        return StyleSelfAlignmentData(ItemPosition::kFlexStart, OverflowAlignment::kDefault);
+      case CSSValueID::kFlexEnd:
+        return StyleSelfAlignmentData(ItemPosition::kFlexEnd, OverflowAlignment::kDefault);
+      case CSSValueID::kBaseline:
+        return StyleSelfAlignmentData(ItemPosition::kBaseline, OverflowAlignment::kDefault);
+      default:
+        break;
+    }
+  }
+  return StyleSelfAlignmentData(ItemPosition::kAuto, OverflowAlignment::kDefault);
+}
+
+// Additional converters
+ScopedCSSNameList* StyleBuilderConverter::ConvertAnchorName(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+ScopedCSSNameList* StyleBuilderConverter::ConvertAnchorScope(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+StyleAspectRatio StyleBuilderConverter::ConvertAspectRatio(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    if (ident.GetValueID() == CSSValueID::kAuto) {
+      return StyleAspectRatio(EAspectRatioType::kAuto, gfx::SizeF());
+    }
+  }
+  return StyleAspectRatio(EAspectRatioType::kAuto, gfx::SizeF());
+}
+
+int StyleBuilderConverter::ConvertBorderWidth(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    switch (ident.GetValueID()) {
+      case CSSValueID::kThin:
+        return 1;
+      case CSSValueID::kMedium:
+        return 3;
+      case CSSValueID::kThick:
+        return 5;
+      default:
+        return 3;
+    }
+  }
+  return 3;
+}
+
+// Radius converter
+LengthSize StyleBuilderConverter::ConvertRadius(StyleResolverState& state, const CSSValue& value) {
+  return LengthSize(Length::Fixed(0), Length::Fixed(0));
+}
+
+// Shadow list converter
+ShadowList* StyleBuilderConverter::ConvertShadowList(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+// Clip converter
+LengthBox StyleBuilderConverter::ConvertClip(StyleResolverState& state, const CSSValue& value) {
+  return LengthBox();
+}
+
+// Clip path converter
+ClipPathOperation* StyleBuilderConverter::ConvertClipPath(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+// Gap length converter
+Length StyleBuilderConverter::ConvertGapLength(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    if (ident.GetValueID() == CSSValueID::kNormal) {
+      return Length::Normal();
+    }
+  }
+  return Length::Fixed(0);
+}
+
+// Column rule width converter
+uint16_t StyleBuilderConverter::ConvertColumnRuleWidth(StyleResolverState& state, const CSSValue& value) {
+  if (value.IsIdentifierValue()) {
+    const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
+    switch (ident.GetValueID()) {
+      case CSSValueID::kThin:
+        return 1;
+      case CSSValueID::kMedium:
+        return 3;
+      case CSSValueID::kThick:
+        return 5;
+      default:
+        return 3;
+    }
+  }
+  return 3;
+}
+
+// Computed length converter template
+template<typename T>
+T StyleBuilderConverter::ConvertComputedLength(StyleResolverState& state, const CSSValue& value) {
+  return T(0);
+}
+
+// Explicit template instantiation for float
+template float StyleBuilderConverter::ConvertComputedLength<float>(StyleResolverState& state, const CSSValue& value);
+
+// Flags converter template
+template<typename T>
+T StyleBuilderConverter::ConvertFlags(StyleResolverState& state, const CSSValue& value) {
+  if constexpr (std::is_same_v<T, unsigned>) {
+    return 0;
+  } else {
+    return static_cast<T>(0);
+  }
+}
+
+// Flags converter template with default value
+template<typename T, CSSValueID DefaultValue>
+T StyleBuilderConverter::ConvertFlags(StyleResolverState& state, const CSSValue& value) {
+  if constexpr (std::is_same_v<T, unsigned>) {
+    return 0;
+  } else {
+    return static_cast<T>(0);
+  }
+}
+
+// Explicit template instantiations for known types
+template unsigned StyleBuilderConverter::ConvertFlags<unsigned>(StyleResolverState& state, const CSSValue& value);
+template EContainerType StyleBuilderConverter::ConvertFlags<EContainerType, CSSValueID::kNormal>(StyleResolverState& state, const CSSValue& value);
+template Containment StyleBuilderConverter::ConvertFlags<Containment>(StyleResolverState& state, const CSSValue& value);
+template TouchAction StyleBuilderConverter::ConvertFlags<TouchAction>(StyleResolverState& state, const CSSValue& value);
+template TextDecorationLine StyleBuilderConverter::ConvertFlags<TextDecorationLine>(StyleResolverState& state, const CSSValue& value);
+
+// Intrinsic dimension converter
+StyleIntrinsicLength StyleBuilderConverter::ConvertIntrinsicDimension(StyleResolverState& state, const CSSValue& value) {
+  return StyleIntrinsicLength::None();
+}
+
+// Container name converter
+ScopedCSSNameList* StyleBuilderConverter::ConvertContainerName(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+// Grid converters
+ComputedGridTrackList StyleBuilderConverter::ConvertGridTrackSizeList(StyleResolverState& state, const CSSValue& value) {
+  return ComputedGridTrackList::CreateDefault();
+}
+
+GridAutoFlow StyleBuilderConverter::ConvertGridAutoFlow(StyleResolverState& state, const CSSValue& value) {
+  return GridAutoFlow::kAutoFlowRow;
+}
+
+GridPosition StyleBuilderConverter::ConvertGridPosition(StyleResolverState& state, const CSSValue& value) {
+  return GridPosition::CreateAuto();
+}
+
+ComputedGridTemplateAreas* StyleBuilderConverter::ConvertGridTemplateAreas(StyleResolverState& state, const CSSValue& value) {
+  return ComputedGridTemplateAreas::CreateDefault();
+}
+
+void StyleBuilderConverter::ConvertGridTrackList(const CSSValue& value, ComputedGridTrackList& computed_grid_track_list, StyleResolverState& state) {
+  computed_grid_track_list = ComputedGridTrackList::CreateDefault();
+}
+
+// Additional missing converters
+RespectImageOrientationEnum StyleBuilderConverter::ConvertImageOrientation(StyleResolverState& state, const CSSValue& value) {
+  return RespectImageOrientationEnum::kNone;
+}
+
+StyleInitialLetter StyleBuilderConverter::ConvertInitialLetter(StyleResolverState& state, const CSSValue& value) {
+  return StyleInitialLetter::None();
+}
+
+float StyleBuilderConverter::ConvertSpacing(StyleResolverState& state, const CSSValue& value) {
+  return 0.0f;
+}
+
+template<int DefaultValue>
+int StyleBuilderConverter::ConvertIntegerOrNone(StyleResolverState& state, const CSSValue& value) {
+  return DefaultValue;
+}
+
+// Explicit template instantiation
+template int StyleBuilderConverter::ConvertIntegerOrNone<0>(StyleResolverState& state, const CSSValue& value);
+
+Length StyleBuilderConverter::ConvertQuirkyLength(StyleResolverState& state, const CSSValue& value) {
+  return Length::Fixed(0);
+}
+
+StyleSVGResource* StyleBuilderConverter::ConvertElementReference(StyleResolverState& state, const CSSValue& value) {
+  return StyleSVGResource::CreateDefault();
+}
+
+LengthPoint StyleBuilderConverter::ConvertPosition(StyleResolverState& state, const CSSValue& value) {
+  return LengthPoint(Length::Percent(50.0), Length::Percent(50.0));
+}
+
+BasicShape* StyleBuilderConverter::ConvertObjectViewBox(StyleResolverState& state, const CSSValue& value) {
+  return BasicShape::CreateDefault();
+}
+
+OffsetPathOperation* StyleBuilderConverter::ConvertOffsetPath(StyleResolverState& state, const CSSValue& value) {
+  return OffsetPathOperation::CreateDefault();
+}
+
+LengthPoint StyleBuilderConverter::ConvertOffsetPosition(StyleResolverState& state, const CSSValue& value) {
+  return LengthPoint(Length::None(), Length::None());
+}
+
+StyleOffsetRotation StyleBuilderConverter::ConvertOffsetRotate(StyleResolverState& state, const CSSValue& value) {
+  return StyleOffsetRotation::Auto();
+}
+
+LengthPoint StyleBuilderConverter::ConvertPositionOrAuto(StyleResolverState& state, const CSSValue& value) {
+  return LengthPoint(Length::Auto(), Length::Auto());
+}
+
+QuotesData* StyleBuilderConverter::ConvertQuotes(StyleResolverState& state, const CSSValue& value) {
+  return QuotesData::CreateDefault();
+}
+
+LayoutUnit StyleBuilderConverter::ConvertLayoutUnit(StyleResolverState& state, const CSSValue& value) {
+  return LayoutUnit();
+}
+
+std::optional<StyleOverflowClipMargin> StyleBuilderConverter::ConvertOverflowClipMargin(StyleResolverState& state, const CSSValue& value) {
+  return StyleOverflowClipMargin::CreateContent();
+}
+
+AtomicString StyleBuilderConverter::ConvertPage(StyleResolverState& state, const CSSValue& value) {
+  return AtomicString();
+}
+
+float StyleBuilderConverter::ConvertPerspective(StyleResolverState& state, const CSSValue& value) {
+  return -1.0f;
+}
+
+float StyleBuilderConverter::ConvertTimeValue(StyleResolverState& state, const CSSValue& value) {
+  return 0.0f;
+}
+
+RotateTransformOperation* StyleBuilderConverter::ConvertRotate(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+ScaleTransformOperation* StyleBuilderConverter::ConvertScale(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+TabSize StyleBuilderConverter::ConvertLengthOrTabSpaces(StyleResolverState& state, const CSSValue& value) {
+  return TabSize(8);
+}
+
+TextBoxEdge StyleBuilderConverter::ConvertTextBoxEdge(StyleResolverState& state, const CSSValue& value) {
+  return TextBoxEdge();
+}
+
+TextDecorationThickness StyleBuilderConverter::ConvertTextDecorationThickness(StyleResolverState& state, const CSSValue& value) {
+  return TextDecorationThickness();
+}
+
+TextEmphasisPosition StyleBuilderConverter::ConvertTextTextEmphasisPosition(StyleResolverState& state, const CSSValue& value) {
+  return TextEmphasisPosition::kOverRight;
+}
+
+Length StyleBuilderConverter::ConvertTextUnderlineOffset(StyleResolverState& state, const CSSValue& value) {
+  return Length();
+}
+
+TextUnderlinePosition StyleBuilderConverter::ConvertTextUnderlinePosition(StyleResolverState& state, const CSSValue& value) {
+  return TextUnderlinePosition::kAuto;
+}
+
+ScopedCSSNameList* StyleBuilderConverter::ConvertTimelineScope(StyleResolverState& state, const CSSValue& value) {
+  return nullptr;
+}
+
+TransformOperations StyleBuilderConverter::ConvertTransformOperations(StyleResolverState& state, const CSSValue& value) {
+  return TransformOperations();
+}
+
+TransformOrigin StyleBuilderConverter::ConvertTransformOrigin(StyleResolverState& state, const CSSValue& value) {
+  return TransformOrigin(Length::Percent(50.0), Length::Percent(50.0), 0.0);
 }
 
 }  // namespace webf

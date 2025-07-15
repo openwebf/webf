@@ -1,163 +1,11 @@
-/*
- * Copyright (C) 2008 Apple Inc. All Rights Reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY APPLE INC. ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL APPLE INC. OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-// Copyright (C) 2022-present The WebF authors. All rights reserved.
-
 #ifndef WEBF_CORE_PLATFORM_WTF_STD_LIB_EXTRAS_H_
 #define WEBF_CORE_PLATFORM_WTF_STD_LIB_EXTRAS_H_
 
-#include <cstddef>
-#include <cstdint>
+#include "sanitizers.h"
 
-//#include "build/build_config.h"
-#include "core/platform/sanitizers.h"
-//#include "third_party/blink/renderer/platform/wtf/type_traits.h"
-
-//#if DCHECK_IS_ON()
-//#include "third_party/blink/renderer/platform/wtf/threading.h"
-//#endif
-
-#define DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, allow_cross_thread)                           \
-  static WTF::StaticSingleton<Type> s_##Name(                                                         \
-      [&]() { return new WTF::StaticSingleton<Type>::WrapperType Arguments; },                        \
-      [&](void* leaked_ptr) { new (leaked_ptr) WTF::StaticSingleton<Type>::WrapperType Arguments; }); \
-  Type& Name = s_##Name.Get(allow_cross_thread)
-
-// Use |DEFINE_STATIC_LOCAL()| to declare and define a static local variable
-// (|static T;|) so that it is leaked and its destructors are not called at
-// exit.
-//
-// A |DEFINE_STATIC_LOCAL()| static should only be used on the thread it was
-// created on.
-//
-#define DEFINE_STATIC_LOCAL(Type, Name, Arguments) DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, false)
-
-// |DEFINE_THREAD_SAFE_STATIC_LOCAL()| is the cross-thread accessible variant
-// of |DEFINE_STATIC_LOCAL()|; use it if the singleton can be accessed by
-// multiple threads.
-//
-// TODO: rename as DEFINE_CROSS_THREAD_STATIC_LOCAL() ?
-#define DEFINE_THREAD_SAFE_STATIC_LOCAL(Type, Name, Arguments) DEFINE_STATIC_LOCAL_IMPL(Type, Name, Arguments, true)
-
-namespace WTF {
-
-template <typename Type>
-class StaticSingleton final {
- public:
-  template <typename T>
-  struct Wrapper {
-    using type = T;
-
-    static T& Unwrap(T* singleton) { return *singleton; }
-  };
-
-  using WrapperType = typename Wrapper<Type>::type;
-
-  template <typename HeapNew, typename PlacementNew>
-  StaticSingleton(const HeapNew& heap_new, const PlacementNew& placement_new)
-      : instance_(heap_new, placement_new)
-  //#if DCHECK_IS_ON()
-  //        ,
-  //        safely_initialized_(WTF::IsBeforeThreadCreated()),
-  //        thread_(WTF::CurrentThread())
-  //#endif
-  {
-    // TODO(guopengfei)：注释IsGarbageCollectedType，以通过编译
-    //  static_assert(!WTF::IsGarbageCollectedType<Type>::value,
-    //                "Garbage collected objects must be wrapped in a Persistent");
-    (void)instance_.Get();
-  }
-
-  StaticSingleton(const StaticSingleton&) = delete;
-  StaticSingleton& operator=(const StaticSingleton&) = delete;
-
-  Type& Get([[maybe_unused]] bool allow_cross_thread_use) {
-    //#if DCHECK_IS_ON()
-    //    DCHECK(IsNotRacy(allow_cross_thread_use));
-    //#endif
-    return Wrapper<Type>::Unwrap(instance_.Get());
-  }
-
-  operator Type&() { return Get(); }
-
- private:
-  /*#if DCHECK_IS_ON()
-
-    bool IsNotRacy(bool allow_cross_thread_use) const {
-      // Make sure that singleton is safely initialized, or
-      // keeps being called on the same thread if cross-thread
-      // use is not permitted.
-      return allow_cross_thread_use || safely_initialized_ ||
-             thread_ == WTF::CurrentThread();
-    }
-  #endif*/
-  template <typename T, bool is_small = sizeof(T) <= 32>
-  class InstanceStorage {
-   public:
-    template <typename HeapNew, typename PlacementNew>
-    InstanceStorage(const HeapNew& heap_new, const PlacementNew&) : pointer_(heap_new()) {}
-    T* Get() { return pointer_; }
-
-   private:
-    T* pointer_;
-  };
-
-  template <typename T>
-  class InstanceStorage<T, true> {
-   public:
-    template <typename HeapNew, typename PlacementNew>
-    InstanceStorage(const HeapNew&, const PlacementNew& placement_new) {
-      placement_new(&object_);
-    }
-    T* Get() { return reinterpret_cast<T*>(object_); }
-
-   private:
-    alignas(T) char object_[sizeof(T)];
-  };
-
-  InstanceStorage<WrapperType> instance_;
-  /*#if DCHECK_IS_ON()
-    bool safely_initialized_;
-    base::PlatformThreadId thread_;
-  #endif*/
-};
-
-}  // namespace WTF
-/* // TODO(guopengfei)：
-// Use this to declare and define a static local pointer to a ref-counted object
-// so that it is leaked so that the object's destructors are not called at
-// exit.  This macro should be used with ref-counted objects rather than
-// DEFINE_STATIC_LOCAL macro, as this macro does not lead to an extra memory
-// allocation.
-#define DEFINE_STATIC_REF(type, name, arguments)  \
-  static type* name = [](scoped_refptr<type> o) { \
-    if (o)                                        \
-      o->AddRef();                                \
-    return o.get();                               \
-  }(arguments);
-*/
+// We don't need cross-threads, we only have single one.
+#define DEFINE_STATIC_LOCAL(type, var, value)   \
+  thread_local static type var(value)
 
 /*
  * The reinterpret_cast<Type1*>([pointer to Type2]) expressions - where
@@ -212,6 +60,31 @@ NO_SANITIZE_UNRELATED_CAST TypePtr unsafe_reinterpret_cast_ptr(const void* ptr) 
 
 namespace WTF {
 
+// Stub for Persistent smart pointer template
+// This is a simplified implementation for WebF compatibility
+template<typename T>
+class Persistent {
+ public:
+  Persistent() : ptr_(nullptr) {}
+  explicit Persistent(T* ptr) : ptr_(ptr) {}
+  Persistent(const Persistent& other) : ptr_(other.ptr_) {}
+  
+  Persistent& operator=(const Persistent& other) {
+    ptr_ = other.ptr_;
+    return *this;
+  }
+  
+  T* operator->() const { return ptr_; }
+  T& operator*() const { return *ptr_; }
+  T* Get() const { return ptr_; }
+  
+  bool operator==(const Persistent& other) const { return ptr_ == other.ptr_; }
+  bool operator!=(const Persistent& other) const { return ptr_ != other.ptr_; }
+  
+ private:
+  T* ptr_;
+};
+
 // Use the following macros to prevent errors caused by accidental
 // implicit casting of function arguments.  For example, this can
 // be used to prevent overflows from non-promoting conversions.
@@ -245,5 +118,12 @@ namespace WTF {
       "identical size (could overflow).");
 
 }  // namespace WTF
+
+namespace webf {
+
+// Import Persistent into webf namespace
+using WTF::Persistent;
+
+}  // namespace webf
 
 #endif  // WEBF_CORE_PLATFORM_WTF_STD_LIB_EXTRAS_H_

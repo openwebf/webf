@@ -88,6 +88,7 @@ extern const Length& g_fit_content_length;
 extern const Length& g_max_content_length;
 extern const Length& g_min_content_length;
 extern const Length& g_min_intrinsic_length;
+extern const Length& g_normal_length;
 
 class Length {
   WEBF_DISALLOW_NEW();
@@ -115,7 +116,8 @@ class Length {
     kDeviceWidth,
     kDeviceHeight,
     kNone,    // only valid for max-width, max-height, or contain-intrinsic-size
-    kContent  // only valid for flex-basis
+    kContent, // only valid for flex-basis
+    kNormal   // for gap properties and other CSS properties using 'normal'
   };
 
   Length() : value_(0), type_(kAuto) {}
@@ -178,6 +180,7 @@ class Length {
   static const Length& MaxContent() { return g_max_content_length; }
   static const Length& MinContent() { return g_min_content_length; }
   static const Length& MinIntrinsic() { return g_min_intrinsic_length; }
+  static const Length& Normal() { return g_normal_length; }
 
   static Length Content() { return Length(kContent); }
   static Length Fixed() { return Length(kFixed); }

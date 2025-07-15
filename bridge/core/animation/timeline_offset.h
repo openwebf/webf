@@ -22,6 +22,17 @@ struct TimelineOffset {
   using NamedRange = Enum;
 
   static std::string TimelineRangeNameToString(NamedRange range_name);
+  
+  // Add comparison operators for std::optional<TimelineOffset> comparisons
+  bool operator==(const TimelineOffset& other) const {
+    // Since TimelineOffset is currently just a struct with static members,
+    // all instances are considered equal
+    return true;
+  }
+  
+  bool operator!=(const TimelineOffset& other) const {
+    return !(*this == other);
+  }
 };
 
 }  // namespace webf

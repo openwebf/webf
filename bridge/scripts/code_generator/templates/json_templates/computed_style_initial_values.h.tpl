@@ -16,6 +16,7 @@
 #include "core/style/style_aspect_ratio.h"
 #include "core/style/text_size_adjust.h"
 #include "core/style/style_stubs.h"
+#include "core/style/filter_operations.h"
 #include "core/platform/geometry/length_size.h"
 #include "core/platform/geometry/length_box.h"
 #include "core/platform/geometry/length_point.h"
@@ -46,6 +47,18 @@ class ComputedStyleInitialValues {
   WEBF_STATIC_ONLY(ComputedStyleInitialValues);
  public:
   // Hand-written methods.
+
+  static FilterOperations InitialBackdropFilter() {
+    return FilterOperations();
+  }
+  
+  static int InitialColumnRuleWidth() {
+    return 3;
+  }
+  
+  static FilterOperations InitialFilter() {
+    return FilterOperations();
+  }
 
   static StyleContentAlignmentData InitialContentAlignment() {
     return StyleContentAlignmentData(ContentPosition::kNormal,

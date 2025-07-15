@@ -47,6 +47,7 @@
 // #include "core/css/resolver/style_builder_converter.h"
 // #include "core/css/resolver/style_resolver.h"
 #include "core/css/resolver/style_resolver_state.h"
+#include "core/css/resolver/style_builder_converter.h"
 #include "core/css/style_color.h"
 #include "core/css/style_engine.h"
 // #include "core/css/zoom_adjusted_pixel_value.h"
@@ -3049,246 +3050,39 @@ void OverflowX::ApplyInitial(webf::StyleResolverState&) const {}
 
 void TextAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
 
-// BackgroundColor implementation
-void BackgroundColor::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetBackgroundColor(::webf::Color::kTransparent);
-}
 
-void BackgroundColor::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetBackgroundColor(state.ParentStyle()->BackgroundColor());
-}
 
-void BackgroundColor::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsColorValue()) {
-    const auto& color_value = static_cast<const cssvalue::CSSColor&>(value);
-    state.StyleBuilder().SetBackgroundColor(color_value.Value());
-  } else if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    if (ident_value.GetValueID() == CSSValueID::kTransparent) {
-      state.StyleBuilder().SetBackgroundColor(::webf::Color::kTransparent);
-    } else if (ident_value.GetValueID() == CSSValueID::kCurrentcolor) {
-      state.StyleBuilder().SetBackgroundColor(state.StyleBuilder().Color());
-    }
-  }
-}
 
-// Position implementation
-void Position::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetPosition(EPosition::kStatic);
-}
 
-void Position::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetPosition(state.ParentStyle()->Position());
-}
 
-void Position::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    EPosition position = EPosition::kStatic;
-    
-    switch (ident_value.GetValueID()) {
-      case CSSValueID::kStatic:
-        position = EPosition::kStatic;
-        break;
-      case CSSValueID::kRelative:
-        position = EPosition::kRelative;
-        break;
-      case CSSValueID::kAbsolute:
-        position = EPosition::kAbsolute;
-        break;
-      case CSSValueID::kFixed:
-        position = EPosition::kFixed;
-        break;
-      case CSSValueID::kSticky:
-        position = EPosition::kSticky;
-        break;
-      default:
-        break;
-    }
-    
-    state.StyleBuilder().SetPosition(position);
-  }
-}
 
-// Width implementation
-void Width::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetWidth(Length::Auto());
-}
 
-void Width::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetWidth(state.ParentStyle()->Width());
-}
 
-void Width::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    if (ident_value.GetValueID() == CSSValueID::kAuto) {
-      state.StyleBuilder().SetWidth(Length::Auto());
-    }
-  } else if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    state.StyleBuilder().SetWidth(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
-  }
-}
 
 // Margin implementations
-void MarginTop::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginTop(Length::Fixed(0));
-}
 
-void MarginTop::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginTop(state.ParentStyle()->MarginTop());
-}
 
-void MarginTop::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    state.StyleBuilder().SetMarginTop(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
-  }
-}
 
-void MarginRight::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginRight(Length::Fixed(0));
-}
 
-void MarginRight::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginRight(state.ParentStyle()->MarginRight());
-}
 
-void MarginRight::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    state.StyleBuilder().SetMarginRight(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
-  }
-}
 
-void MarginBottom::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginBottom(Length::Fixed(0));
-}
 
-void MarginBottom::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginBottom(state.ParentStyle()->MarginBottom());
-}
 
-void MarginBottom::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    state.StyleBuilder().SetMarginBottom(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
-  }
-}
 
-void MarginLeft::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginLeft(Length::Fixed(0));
-}
 
-void MarginLeft::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetMarginLeft(state.ParentStyle()->MarginLeft());
-}
 
-void MarginLeft::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    state.StyleBuilder().SetMarginLeft(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
-  }
-}
 
-// Opacity implementation
-void Opacity::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetOpacity(1.0f);
-}
 
-void Opacity::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetOpacity(state.ParentStyle()->Opacity());
-}
 
-void Opacity::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    if (primitive_value.IsNumber()) {
-      float opacity = primitive_value.GetFloatValue();
-      state.StyleBuilder().SetOpacity(opacity);
-    }
-  }
-}
 
-// ZIndex implementation
-void ZIndex::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetZIndex(0);
-  state.StyleBuilder().SetHasAutoZIndex(true);
-}
 
-void ZIndex::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetZIndex(state.ParentStyle()->ZIndex());
-  state.StyleBuilder().SetHasAutoZIndex(state.ParentStyle()->HasAutoZIndex());
-}
 
-void ZIndex::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    if (ident_value.GetValueID() == CSSValueID::kAuto) {
-      state.StyleBuilder().SetZIndex(0);
-      state.StyleBuilder().SetHasAutoZIndex(true);
-    }
-  } else if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    if (primitive_value.IsInteger()) {
-      state.StyleBuilder().SetZIndex(primitive_value.GetIntValue());
-      state.StyleBuilder().SetHasAutoZIndex(false);
-    }
-  }
-}
 
-// FlexDirection implementation
-void FlexDirection::ApplyInitial(StyleResolverState& state) const {
-  state.StyleBuilder().SetFlexDirection(EFlexDirection::kRow);
-}
 
-void FlexDirection::ApplyInherit(StyleResolverState& state) const {
-  state.StyleBuilder().SetFlexDirection(state.ParentStyle()->FlexDirection());
-}
 
-void FlexDirection::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    EFlexDirection direction = EFlexDirection::kRow;
-    
-    switch (ident_value.GetValueID()) {
-      case CSSValueID::kRow:
-        direction = EFlexDirection::kRow;
-        break;
-      case CSSValueID::kRowReverse:
-        direction = EFlexDirection::kRowReverse;
-        break;
-      case CSSValueID::kColumn:
-        direction = EFlexDirection::kColumn;
-        break;
-      case CSSValueID::kColumnReverse:
-        direction = EFlexDirection::kColumnReverse;
-        break;
-      default:
-        break;
-    }
-    
-    state.StyleBuilder().SetFlexDirection(direction);
-  }
-}
 
-// FontSize implementation
-void FontSize::ApplyInitial(StyleResolverState& state) const {
-  state.GetFontBuilder().SetFontSize(16.0f);
-}
 
-void FontSize::ApplyInherit(StyleResolverState& state) const {
-  state.GetFontBuilder().SetFontSize(state.ParentFontDescription().ComputedSize());
-}
 
-void FontSize::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
-  if (value.IsPrimitiveValue()) {
-    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
-    float size = primitive_value.ComputeLength<float>(state.CssToLengthConversionData());
-    state.GetFontBuilder().SetFontSize(size);
-  }
-}
 
 void Color::ApplyInherit(webf::StyleResolverState& state) const {
   state.StyleBuilder().SetColor(state.ParentStyle()->Color());
@@ -3419,9 +3213,43 @@ void BackgroundClip::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&
 void BackgroundClip::ApplyInherit(webf::StyleResolverState&) const {}
 void BackgroundClip::ApplyInitial(webf::StyleResolverState&) const {}
 
-void VerticalAlign::ApplyInherit(webf::StyleResolverState&) const {}
-// void VerticalAlign::ApplyInitial(webf::StyleResolverState&) const {}
-void VerticalAlign::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, webf::CSSProperty::ValueMode) const {}
+void VerticalAlign::ApplyInherit(webf::StyleResolverState& state) const {
+  // TODO: Implement proper vertical-align inheritance
+  state.StyleBuilder().SetVerticalAlign(state.ParentStyle()->VerticalAlign());
+}
+
+void VerticalAlign::ApplyInitial(webf::StyleResolverState& state) const {
+  // For baseline keyword, we use a special Length value
+  // In WebF, we'll use Length::Auto() to represent baseline
+  state.StyleBuilder().SetVerticalAlign(Length::Auto());
+}
+
+void VerticalAlign::ApplyValue(webf::StyleResolverState& state, const webf::CSSValue& value, webf::CSSProperty::ValueMode) const {
+  // Handle keyword values
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    switch (identifier_value->GetValueID()) {
+      case CSSValueID::kBaseline:
+      case CSSValueID::kSub:
+      case CSSValueID::kSuper:
+      case CSSValueID::kTextTop:
+      case CSSValueID::kTextBottom:
+      case CSSValueID::kMiddle:
+      case CSSValueID::kTop:
+      case CSSValueID::kBottom:
+      case CSSValueID::kWebkitBaselineMiddle:
+        // For keyword values, we use Length::Auto() as a placeholder
+        // The actual keyword handling should be done in the layout engine
+        state.StyleBuilder().SetVerticalAlign(Length::Auto());
+        break;
+      default:
+        state.StyleBuilder().SetVerticalAlign(Length::Auto());
+        break;
+    }
+  } else {
+    // Handle length/percentage values
+    state.StyleBuilder().SetVerticalAlign(StyleBuilderConverter::ConvertLength(state, value));
+  }
+}
 
 void OutlineStyle::ApplyInherit(webf::StyleResolverState&) const {}
 void OutlineStyle::ApplyInitial(webf::StyleResolverState&) const {}
@@ -3437,6 +3265,44 @@ void TextIndent::ApplyValue(webf::StyleResolverState&, const webf::CSSValue&, we
 
 void FontFamily::ApplyInitial(webf::StyleResolverState&) const {}
 void FontFamily::ApplyInherit(webf::StyleResolverState&) const {}
+
+// All property implementation
+void All::ApplyInitial(webf::StyleResolverState& state) const {
+  // The 'all' property is a shorthand that resets all CSS properties except
+  // direction and unicode-bidi. This is handled by the style resolver.
+  // No-op here as the style resolver handles this specially.
+}
+
+void All::ApplyInherit(webf::StyleResolverState& state) const {
+  // The 'all' property inheritance is handled by the style resolver.
+  // No-op here as the style resolver handles this specially.
+}
+
+void All::ApplyValue(webf::StyleResolverState& state, const webf::CSSValue& value, webf::CSSProperty::ValueMode) const {
+  // The 'all' property values are handled by the style resolver.
+  // No-op here as the style resolver handles this specially.
+}
+
+// Width implementation
+void Width::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetWidth(Length::Auto());
+}
+
+void Width::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetWidth(state.ParentStyle()->Width());
+}
+
+void Width::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    if (ident_value.GetValueID() == CSSValueID::kAuto) {
+      state.StyleBuilder().SetWidth(Length::Auto());
+    }
+  } else if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetWidth(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
 
 }  // namespace css_longhand
 }  // namespace webf

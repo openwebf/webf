@@ -36,8 +36,6 @@ namespace webf {
 
 ComputedStyle::ComputedStyle() = default;
 
-ComputedStyle::ComputedStyle(const ComputedStyle& other) = default;
-
 const ComputedStyle& ComputedStyle::GetInitialStyle() {
   static std::shared_ptr<ComputedStyle> initial_style;
   if (!initial_style) {

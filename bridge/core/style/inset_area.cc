@@ -6,7 +6,7 @@
 
 #include "core/style/inset_area.h"
 
-#include "core/geometry/calculation_value.h"
+#include "core/platform/geometry/calculation_value.h"
 #include "core/layout/geometry/axis.h"
 #include "core/platform/static_constructors.h"
 #include "core/style/anchor_specifier_value.h"

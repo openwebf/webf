@@ -7,8 +7,8 @@
 #include "bindings/qjs/converter_impl.h"
 #include "core/executing_context.h"
 #include "core/frame/module_manager.h"
-#include "core/geometry/dom_matrix.h"
-#include "core/geometry/dom_point.h"
+#include "core/platform/geometry/dom_matrix.h"
+#include "core/platform/geometry/dom_point.h"
 #include "native_value_converter.h"
 
 namespace webf {

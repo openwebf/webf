@@ -24,7 +24,7 @@
 
 #ifndef WEBF_CORE_CSS_RESOLVER_CSS_TO_STYLE_MAP_H_
 #define WEBF_CORE_CSS_RESOLVER_CSS_TO_STYLE_MAP_H_
-/*
+
 #include "core/animation/css/css_animation_data.h"
 #include "core/animation/css/css_transition_data.h"
 #include "core/animation/effect_model.h"
@@ -121,5 +121,5 @@ class CSSToStyleMap {
 };
 
 }  // namespace webf
-*/
+
 #endif  // WEBF_CORE_CSS_RESOLVER_CSS_TO_STYLE_MAP_H_

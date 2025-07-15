@@ -255,6 +255,25 @@ inline TransformOperations EmptyTransformOperations() {
 // Constants for RespectImageOrientation  
 constexpr RespectImageOrientationEnum kRespectImageOrientation = RespectImageOrientationEnum::kNone;
 
+// Transform operation classes
+class RotateTransformOperation {
+  WEBF_DISALLOW_NEW();
+ public:
+  RotateTransformOperation() = default;
+  static RotateTransformOperation* CreateDefault() { return nullptr; }
+  bool operator==(const RotateTransformOperation&) const { return true; }
+  bool operator!=(const RotateTransformOperation&) const { return false; }
+};
+
+class ScaleTransformOperation {
+  WEBF_DISALLOW_NEW();
+ public:
+  ScaleTransformOperation() = default;
+  static ScaleTransformOperation* CreateDefault() { return nullptr; }
+  bool operator==(const ScaleTransformOperation&) const { return true; }
+  bool operator!=(const ScaleTransformOperation&) const { return false; }
+};
+
 }  // namespace webf
 
 #endif  // WEBF_CORE_STYLE_STYLE_STUBS_H_

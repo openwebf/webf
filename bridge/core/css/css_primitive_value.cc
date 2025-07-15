@@ -1022,4 +1022,30 @@ std::shared_ptr<CSSPrimitiveValue> CSSPrimitiveValue::Divide(double value, UnitT
                                   CSSMathOperator::kDivide);
 }
 
+// Template specializations for ConvertTo
+template <>
+float CSSPrimitiveValue::ConvertTo(const CSSLengthResolver& resolver) const {
+  if (IsNumber())
+    return GetFloatValue();
+  if (IsPercentage())
+    return GetFloatValue() / 100.0f;
+  // TODO: Handle other unit types properly
+  return GetFloatValue();
+}
+
+template <>
+int CSSPrimitiveValue::ConvertTo(const CSSLengthResolver& resolver) const {
+  return static_cast<int>(ConvertTo<float>(resolver));
+}
+
+template <>
+short CSSPrimitiveValue::ConvertTo(const CSSLengthResolver& resolver) const {
+  return static_cast<short>(ConvertTo<float>(resolver));
+}
+
+template <>
+unsigned short CSSPrimitiveValue::ConvertTo(const CSSLengthResolver& resolver) const {
+  return static_cast<unsigned short>(ConvertTo<float>(resolver));
+}
+
 }  // namespace webf

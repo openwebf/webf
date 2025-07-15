@@ -7,7 +7,7 @@
 #ifndef WEBF_CORE_ANIMATION_TIMELINE_INSET_H_
 #define WEBF_CORE_ANIMATION_TIMELINE_INSET_H_
 
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 
 namespace webf {
 

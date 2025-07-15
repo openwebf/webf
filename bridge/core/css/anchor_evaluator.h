@@ -13,7 +13,7 @@
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/css/css_anchor_query_enums.h"
-#include "core/geometry/layout_unit.h"
+#include "core/platform/geometry/layout_unit.h"
 #include "core/style/inset_area.h"
 #include "css_property_names.h"
 #include "foundation/macros.h"

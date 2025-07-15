@@ -37,7 +37,7 @@
 
 #include "core/animation/animation_time_delta.h"
 #include "core/animation/property_handle.h"
-#include "core/css/css_property_names.h"
+#include "code_gen/css_property_names.h"
 #include "core/platform/animation/timing_function.h"
 
 namespace webf {

@@ -1199,14 +1199,14 @@
         /* "CSSValueFromComputedStyleInternal", */
         "InitialValue"
       ],
-      typedom_types: [
-        "Keyword"
-      ],
-      separator: ",",
       style_builder_template: "transition",
       style_builder_template_args: {
         attribute: "Behavior",
       },
+      typedom_types: [
+        "Keyword"
+      ],
+      separator: ",",
       valid_for_marker: true,
       is_animation_property: true,
       // Animation properites are never incremental.
@@ -4441,8 +4441,8 @@
       include_paths: [
         "third_party/blink/renderer/core/style/grid_track_list.h"
       ],
-      default_value: "NGGridTrackList(GridTrackSize(Length::Auto()))",
-      type_name: "NGGridTrackList",
+      default_value: "ComputedGridTrackList::CreateDefault()",
+      type_name: "ComputedGridTrackList",
       converter: "ConvertGridTrackSizeList",
       keywords: [
         "auto",
@@ -4502,8 +4502,8 @@
       include_paths: [
         "third_party/blink/renderer/core/style/grid_track_list.h"
       ],
-      default_value: "NGGridTrackList(GridTrackSize(Length::Auto()))",
-      type_name: "NGGridTrackList",
+      default_value: "ComputedGridTrackList::CreateDefault()",
+      type_name: "ComputedGridTrackList",
       converter: "ConvertGridTrackSizeList",
       keywords: [
         "auto",
@@ -6820,7 +6820,7 @@
       ],
       default_value: "none",
       type_name: "TextDecorationLine",
-      converter: "ConvertFlags<blink::TextDecorationLine>",
+      converter: "ConvertFlags<webf::TextDecorationLine>",
       valid_for_first_letter: true,
       valid_for_first_line: true,
       valid_for_cue: true,
@@ -7231,7 +7231,7 @@
       ],
       default_value: "TouchAction::kAuto",
       type_name: "TouchAction",
-      converter: "ConvertFlags<blink::TouchAction>",
+      converter: "ConvertFlags<webf::TouchAction>",
       keywords: [
         "auto",
         "none",
@@ -7427,7 +7427,8 @@
       ],
       interpolable: true,
       style_builder_custom_functions: [
-        "inherit",
+        "initial",
+        "inherit", 
         "value"
       ],
       typedom_types: [
@@ -7517,8 +7518,8 @@
       include_paths: [
         "third_party/blink/renderer/platform/geometry/length.h"
       ],
-      default_value: "std::nullopt",
-      type_name: "std::optional<Length>",
+      default_value: "Length::Normal()",
+      type_name: "Length",
       converter: "ConvertGapLength",
       keywords: [
         "normal"
@@ -7987,6 +7988,11 @@
       layout_dependent: false,
       field_group: "box",
       field_template: "<length>",
+      style_builder_custom_functions: [
+        "initial",
+        "inherit",
+        "value"
+      ],
       keywords: [
         "auto",
         "fit-content",
@@ -8000,6 +8006,11 @@
         "Percentage"
       ],
       converter: "ConvertLengthSizing",
+      style_builder_custom_functions: [
+        "initial",
+        "inherit",
+        "value"
+      ],
       anchor_mode: "size",
       logical_property_group: {
         name: "size",
@@ -8075,7 +8086,6 @@
       computed_style_custom_functions: [
         "setter"
       ],
-      style_builder_template: "auto",
       converter: "ConvertInteger",
       keywords: [
         "auto"

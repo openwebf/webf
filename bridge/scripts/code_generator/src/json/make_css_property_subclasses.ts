@@ -212,7 +212,7 @@ function styleBuilderFunction(property: PropertyBase) {
     BorderImageLength(1.0)))
     return;`;
       }
-      let str3 = 'NinePieceImage image(current_image)';
+      let str3 = 'NinePieceImage image(current_image);';
       let str4 = '';
 
       if (modifierType == 'Outset') {
@@ -220,40 +220,21 @@ function styleBuilderFunction(property: PropertyBase) {
       } else if (modifierType == 'Repeat') {
         str4 = `
   image.SetHorizontalRule(kStretchImageRule);
-  image.SetVerticalRule(kStretchImageRule)  
+  image.SetVerticalRule(kStretchImageRule);
 `
       } else if (modifierType == 'Slice' && isMaskBox) {
         str4 = `
-  image.SetImageSlices(LengthBox({{ (['Length::Fixed(0)']*4) | join(', ') }}));
+  image.SetImageSlices(LengthBox(Length::Fixed(0), Length::Fixed(0), Length::Fixed(0), Length::Fixed(0)));
   image.SetFill(true);
 `;
       } else if (modifierType == 'Slice' && !isMaskBox) {
         str4 = `
-  image.SetImageSlices(LengthBox({{ (['Length::Percent(100)']*4) | join(', ') }}));
-  image.SetFill(false);
-`;
-      } else if (modifierType == 'Outset') {
-        str4 = `
-  image.SetOutset(0);
-`;
-      } else if (modifierType == 'Repeat') {
-        str4 = `
-  image.SetHorizontalRule(kStretchImageRule);
-  image.SetVerticalRule(kStretchImageRule)
-`
-      } else if (modifierType == 'Slice' && isMaskBox) {
-        str4 = `
-  image.SetImageSlices(LengthBox({{ (['Length::Fixed(0)']*4) | join(', ') }}));
-  image.SetFill(true);
-        `
-      } else if (modifierType == 'Slice' && !isMaskBox) {
-        str4 = `
-  image.SetImageSlices(LengthBox({{ (['Length::Percent(100)']*4) | join(', ') }}));
+  image.SetImageSlices(LengthBox(Length::Percent(100), Length::Percent(100), Length::Percent(100), Length::Percent(100)));
   image.SetFill(false);
 `;
       } else if (modifierType == 'Width') {
         str4 = `
-  image.SetBorderSlices({{ 'Length::Auto()' if is_mask_box else '1.0' }});
+  image.SetBorderSlices(BorderImageLength(${isMaskBox ? '0' : '1'}));
 `;
       }
       let str5: string = `state.StyleBuilder().${setter}(image);`;
@@ -275,7 +256,7 @@ function styleBuilderFunction(property: PropertyBase) {
       applyInherit(property, () => {
         return `const CSS${animation}Data* parent_data = state.ParentStyle()->${animation}s();
   if (!parent_data)
-    ApplyInitial{{property_id}}(state);
+    ApplyInitial(state);
   else
     state.StyleBuilder().Access${animation}s().${vector} = parent_data->${vector};`;
       }),
@@ -284,14 +265,14 @@ function styleBuilderFunction(property: PropertyBase) {
   CSS${animation}Data& data = state.StyleBuilder().Access${animation}s();
   data.${vector}.clear();
   data.${vector}.reserve(list.length());
-  for (const CSSValue* list_value : list) {
+  for (const auto& list_value : list) {
     const auto& item = *list_value;
     data.${vector}.push_back(CSSToStyleMap::MapAnimation${attribute}(state, item));
   }`;
       })
     );
   } else if (['color', 'visited_color'].includes(property.style_builder_template)) {
-    const initialColor = property.style_builder_template_args!['initial_color'];
+    const initialColor = property.style_builder_template_args?.['initial_color'] || `ComputedStyleInitialValues::${property.initial}`;
     const isVisited = property.style_builder_template == 'visited_color';
     const mainGetter = isVisited && property.unvisited_property!['getter'] || property['getter'];
     return concat(

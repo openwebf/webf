@@ -341,6 +341,11 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_element.cc
     core/css/style_color.cc
     core/css/style_engine.cc
+    
+    ## CSS Animation
+    core/animation/animation_time_delta.cc
+    core/animation/css/css_transition_data.cc
+    core/animation/css/css_timing_data.cc
     core/css/if_condition.cc
     core/css/style_sheet_contents.cc
     core/css/css_style_sheet.cc
@@ -359,6 +364,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/resolver/element_resolve_context.cc
     core/css/resolver/style_adjuster.cc
     core/css/resolver/style_builder_converter.cc
+    core/css/resolver/css_to_style_map_minimal.cc
     core/css/element_rule_collector.cc
     core/css/rule_set.cc
     core/css/selector_filter.cc

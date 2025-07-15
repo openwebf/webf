@@ -11,6 +11,10 @@
 #include "core/css/white_space.h"
 #include "css_value_id_mappings_generated.h"
 #include "css_value_keywords.h"
+#include "core/platform/fonts/font_description.h"
+#include "core/style/style_stubs.h"
+#include "core/style/computed_style_constants.h"
+#include "core/platform/geometry/path_types.h"
 
 namespace webf {
 
@@ -397,6 +401,101 @@ inline CSSValueID PlatformEnumToCSSValueID(TextWrap v) {
       return CSSValueID::kBalance;
     default:
       return CSSValueID::kNone;
+  }
+}
+
+// Font synthesis mappings
+template <>
+inline FontDescription::FontSynthesisStyle CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kAuto:
+      return FontDescription::FontSynthesisStyle::kAuto;
+    case CSSValueID::kNone:
+      return FontDescription::FontSynthesisStyle::kNone;
+    default:
+      return FontDescription::FontSynthesisStyle::kAuto;
+  }
+}
+
+template <>
+inline FontDescription::FontSynthesisWeight CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kAuto:
+      return FontDescription::FontSynthesisWeight::kAuto;
+    case CSSValueID::kNone:
+      return FontDescription::FontSynthesisWeight::kNone;
+    default:
+      return FontDescription::FontSynthesisWeight::kAuto;
+  }
+}
+
+template <>
+inline FontDescription::FontSynthesisSmallCaps CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kAuto:
+      return FontDescription::FontSynthesisSmallCaps::kAuto;
+    case CSSValueID::kNone:
+      return FontDescription::FontSynthesisSmallCaps::kNone;
+    default:
+      return FontDescription::FontSynthesisSmallCaps::kAuto;
+  }
+}
+
+template <>
+inline PageOrientation CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kUpright:
+      return PageOrientation::kUpright;
+    case CSSValueID::kRotateLeft:
+      return PageOrientation::kRotateLeft;
+    case CSSValueID::kRotateRight:
+      return PageOrientation::kRotateRight;
+    default:
+      return PageOrientation::kUpright;
+  }
+}
+
+template <>
+inline FontSmoothingMode CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kAuto:
+      return FontSmoothingMode::kAuto;
+    case CSSValueID::kNone:
+      return FontSmoothingMode::kNone;
+    case CSSValueID::kAntialiased:
+      return FontSmoothingMode::kAntialiased;
+    case CSSValueID::kSubpixelAntialiased:
+      return FontSmoothingMode::kSubpixelAntialiased;
+    default:
+      return FontSmoothingMode::kAuto;
+  }
+}
+
+template <>
+inline TextRenderingMode CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kAuto:
+      return TextRenderingMode::kAuto;
+    case CSSValueID::kOptimizespeed:
+      return TextRenderingMode::kOptimizeSpeed;
+    case CSSValueID::kOptimizelegibility:
+      return TextRenderingMode::kOptimizeLegibility;
+    case CSSValueID::kGeometricprecision:
+      return TextRenderingMode::kGeometricPrecision;
+    default:
+      return TextRenderingMode::kAuto;
+  }
+}
+
+template <>
+inline WindRule CssValueIDToPlatformEnum(CSSValueID v) {
+  switch (v) {
+    case CSSValueID::kNonzero:
+      return RULE_NONZERO;
+    case CSSValueID::kEvenodd:
+      return RULE_EVENODD;
+    default:
+      return RULE_NONZERO;
   }
 }
 

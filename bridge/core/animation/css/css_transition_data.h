@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "core/animation/css/css_timing_data.h"
-#include "core/css/css_property_names.h"
+#include "code_gen/css_property_names.h"
 #include "foundation/ptr_util.h"
 
 namespace webf {

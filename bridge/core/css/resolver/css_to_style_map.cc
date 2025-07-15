@@ -31,11 +31,15 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-/*
 #include "core/css/resolver/css_to_style_map.h"
 
+#include "css_value_keywords.h"
 #include "core/animation/css/css_animation_data.h"
+#include "core/animation/css/css_transition_data.h"
 #include "core/animation/effect_model.h"
+#include "core/animation/timeline_inset.h"
+#include "core/animation/timeline_offset.h"
+#include "core/animation/timing.h"
 //#include "core/css/css_border_image_slice_value.h"
 #include "core/css/css_custom_ident_value.h"
 #include "core/css/css_identifier_value.h"
@@ -57,9 +61,12 @@
 //#include "core/style/computed_style.h"
 //#include "core/style/fill_layer.h"
 #include "core/platform/animation/timing_function.h"
+#include <limits>
 
 namespace webf {
 
+// TODO: Implement FillLayer methods when FillLayer is available
+#if 0
 void CSSToStyleMap::MapFillAttachment(StyleResolverState&,
                                       FillLayer* layer,
                                       const CSSValue& value) {
@@ -312,6 +319,7 @@ void CSSToStyleMap::MapFillPositionY(StyleResolverState& state,
                                     .ConvertTo<BackgroundEdgeOrigin>());
   }
 }
+#endif  // FillLayer methods
 
 namespace {
 
@@ -545,7 +553,7 @@ CSSTransitionData::TransitionProperty CSSToStyleMap::MapAnimationProperty(
       CSSTransitionData::kTransitionNone);
 }
 
-scoped_refptr<TimingFunction> CSSToStyleMap::MapAnimationTimingFunction(
+std::shared_ptr<TimingFunction> CSSToStyleMap::MapAnimationTimingFunction(
     const CSSValue& value) {
   // FIXME: We should probably only call into this function with a valid
   // single timing function value which isn't initial or inherit. We can
@@ -598,7 +606,7 @@ scoped_refptr<TimingFunction> CSSToStyleMap::MapAnimationTimingFunction(
                                      steps_timing_function.GetStepPosition());
 }
 
-scoped_refptr<TimingFunction> CSSToStyleMap::MapAnimationTimingFunction(
+std::shared_ptr<TimingFunction> CSSToStyleMap::MapAnimationTimingFunction(
     StyleResolverState& state,
     const CSSValue& value) {
   return MapAnimationTimingFunction(value);
@@ -803,5 +811,198 @@ void CSSToStyleMap::MapNinePieceImageRepeat(StyleResolverState&,
   }
   image.SetVerticalRule(vertical_rule);
 }
-*/
+
+// Animation property mappings
+
+Timing::Delay CSSToStyleMap::MapAnimationDelayStart(StyleResolverState& state,
+                                                   const CSSValue& value) {
+  if (auto* primitive_value = DynamicTo<CSSPrimitiveValue>(&value)) {
+    return Timing::Delay(primitive_value->ComputeSeconds());
+  }
+  return Timing::Delay();
+}
+
+Timing::Delay CSSToStyleMap::MapAnimationDelayEnd(const CSSValue& value) {
+  if (auto* primitive_value = DynamicTo<CSSPrimitiveValue>(&value)) {
+    return Timing::Delay(primitive_value->ComputeSeconds());
+  }
+  return Timing::Delay();
+}
+
+Timing::Delay CSSToStyleMap::MapAnimationDelayEnd(StyleResolverState& state,
+                                                 const CSSValue& value) {
+  return MapAnimationDelayEnd(value);
+}
+
+Timing::PlaybackDirection CSSToStyleMap::MapAnimationDirection(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    switch (identifier_value->GetValueID()) {
+      case CSSValueID::kNormal:
+        return Timing::PlaybackDirection::NORMAL;
+      case CSSValueID::kReverse:
+        return Timing::PlaybackDirection::REVERSE;
+      case CSSValueID::kAlternate:
+        return Timing::PlaybackDirection::ALTERNATE;
+      case CSSValueID::kAlternateReverse:
+        return Timing::PlaybackDirection::ALTERNATE_REVERSE;
+      default:
+        break;
+    }
+  }
+  return Timing::PlaybackDirection::NORMAL;
+}
+
+std::optional<double> CSSToStyleMap::MapAnimationDuration(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    if (identifier_value->GetValueID() == CSSValueID::kAuto) {
+      return std::nullopt;
+    }
+  }
+  if (auto* primitive_value = DynamicTo<CSSPrimitiveValue>(&value)) {
+    return primitive_value->ComputeSeconds();
+  }
+  return 0.0;
+}
+
+Timing::FillMode CSSToStyleMap::MapAnimationFillMode(StyleResolverState& state,
+                                                     const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    switch (identifier_value->GetValueID()) {
+      case CSSValueID::kNone:
+        return Timing::FillMode::FILL_MODE_NONE;
+      case CSSValueID::kForwards:
+        return Timing::FillMode::FILL_MODE_FORWARDS;
+      case CSSValueID::kBackwards:
+        return Timing::FillMode::FILL_MODE_BACKWARDS;
+      case CSSValueID::kBoth:
+        return Timing::FillMode::FILL_MODE_BOTH;
+      default:
+        break;
+    }
+  }
+  return Timing::FillMode::FILL_MODE_NONE;
+}
+
+double CSSToStyleMap::MapAnimationIterationCount(StyleResolverState& state,
+                                                const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    if (identifier_value->GetValueID() == CSSValueID::kInfinite) {
+      return std::numeric_limits<double>::infinity();
+    }
+  }
+  if (auto* primitive_value = DynamicTo<CSSPrimitiveValue>(&value)) {
+    return primitive_value->GetFloatValue();
+  }
+  return 1.0;
+}
+
+AtomicString CSSToStyleMap::MapAnimationName(StyleResolverState& state,
+                                            const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    if (identifier_value->GetValueID() == CSSValueID::kNone) {
+      return AtomicString();
+    }
+  }
+  if (auto* custom_ident = DynamicTo<CSSCustomIdentValue>(&value)) {
+    return custom_ident->Value();
+  }
+  return AtomicString();
+}
+
+CSSTransitionData::TransitionBehavior CSSToStyleMap::MapAnimationBehavior(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    switch (identifier_value->GetValueID()) {
+      case CSSValueID::kNormal:
+        return CSSTransitionData::TransitionBehavior::kNormal;
+      case CSSValueID::kAllowDiscrete:
+        return CSSTransitionData::TransitionBehavior::kAllowDiscrete;
+      default:
+        break;
+    }
+  }
+  return CSSTransitionData::TransitionBehavior::kNormal;
+}
+
+StyleTimeline CSSToStyleMap::MapAnimationTimeline(StyleResolverState& state,
+                                                  const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    if (identifier_value->GetValueID() == CSSValueID::kAuto ||
+        identifier_value->GetValueID() == CSSValueID::kNone) {
+      return StyleTimeline();
+    }
+  }
+  // TODO: Implement proper timeline parsing
+  return StyleTimeline();
+}
+
+EAnimPlayState CSSToStyleMap::MapAnimationPlayState(StyleResolverState& state,
+                                                    const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    switch (identifier_value->GetValueID()) {
+      case CSSValueID::kRunning:
+        return EAnimPlayState::kPlaying;
+      case CSSValueID::kPaused:
+        return EAnimPlayState::kPaused;
+      default:
+        break;
+    }
+  }
+  return EAnimPlayState::kPlaying;
+}
+
+std::optional<TimelineOffset> CSSToStyleMap::MapAnimationRangeStart(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  // TODO: Implement animation range parsing
+  return std::nullopt;
+}
+
+std::optional<TimelineOffset> CSSToStyleMap::MapAnimationRangeEnd(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  // TODO: Implement animation range parsing
+  return std::nullopt;
+}
+
+EffectModel::CompositeOperation CSSToStyleMap::MapAnimationComposition(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    switch (identifier_value->GetValueID()) {
+      case CSSValueID::kReplace:
+        return EffectModel::CompositeOperation::kCompositeReplace;
+      case CSSValueID::kAdd:
+        return EffectModel::CompositeOperation::kCompositeAdd;
+      case CSSValueID::kAccumulate:
+        return EffectModel::CompositeOperation::kCompositeAccumulate;
+      default:
+        break;
+    }
+  }
+  return EffectModel::CompositeOperation::kCompositeReplace;
+}
+
+CSSTransitionData::TransitionProperty CSSToStyleMap::MapAnimationProperty(
+    StyleResolverState& state,
+    const CSSValue& value) {
+  if (auto* identifier_value = DynamicTo<CSSIdentifierValue>(&value)) {
+    if (identifier_value->GetValueID() == CSSValueID::kAll) {
+      return CSSTransitionData::InitialProperty();
+    }
+    if (identifier_value->GetValueID() == CSSValueID::kNone) {
+      CSSTransitionData::TransitionProperty property;
+      property.property_type = CSSTransitionData::kTransitionNone;
+      return property;
+    }
+  }
+  // TODO: Parse specific property names
+  return CSSTransitionData::InitialProperty();
+}
+
 }  // namespace webf

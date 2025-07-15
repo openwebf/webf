@@ -77,7 +77,7 @@ class CSSAnimationData final : public CSSTimingData {
   static const AtomicString& InitialName();
   static const StyleTimeline& InitialTimeline();
   static Timing::PlaybackDirection InitialDirection() { return Timing::PlaybackDirection::NORMAL; }
-  static Timing::FillMode InitialFillMode() { return Timing::FillMode::NONE; }
+  static Timing::FillMode InitialFillMode() { return Timing::FillMode::FILL_MODE_NONE; }
   static double InitialIterationCount() { return 1.0; }
   static EAnimPlayState InitialPlayState() { return EAnimPlayState::kPlaying; }
   static std::optional<TimelineOffset> InitialRangeStart() { return std::nullopt; }

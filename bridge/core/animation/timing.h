@@ -34,27 +34,54 @@
 #define WEBF_CORE_ANIMATION_TIMING_H_
 
 #include <optional>
-#include "cc/animation/keyframe_model.h"
+// #include "cc/animation/keyframe_model.h"
 #include "core/animation/animation_time_delta.h"
 #include "core/base/memory/values_equivalent.h"
 #include "core/css/css_value.h"
-#include "core/geometry/length.h"
+#include "core/platform/geometry/length.h"
 #include "core/platform/animation/timing_function.h"
 #include "core/platform/math_extras.h"
-#include "foundation/webf_malloc.h"
-#include "third_party/blink/renderer/bindings/core/v8/v8_timeline_range.h"
-#include "third_party/blink/renderer/bindings/core/v8/v8_typedefs.h"
-#include "third_party/blink/renderer/bindings/core/v8/v8_union_cssnumericvalue_double.h"
-#include "third_party/blink/renderer/bindings/core/v8/v8_union_string_timelinerangeoffset.h"
+// #include "foundation/webf_malloc.h"
+// #include "third_party/blink/renderer/bindings/core/v8/v8_timeline_range.h"
+// #include "third_party/blink/renderer/bindings/core/v8/v8_typedefs.h"
+// #include "third_party/blink/renderer/bindings/core/v8/v8_union_cssnumericvalue_double.h"
+// #include "third_party/blink/renderer/bindings/core/v8/v8_union_string_timelinerangeoffset.h"
 
 namespace webf {
+
+// Stub for cc::KeyframeModel::FillMode and Direction
+namespace cc {
+class KeyframeModel {
+ public:
+  enum FillMode {
+    FILL_MODE_NONE,
+    FILL_MODE_FORWARDS,
+    FILL_MODE_BACKWARDS,
+    FILL_MODE_BOTH,
+    FILL_MODE_AUTO
+  };
+  
+  enum Direction {
+    NORMAL,
+    REVERSE,
+    ALTERNATE,
+    ALTERNATE_REVERSE
+  };
+};
+}  // namespace cc
+
+// V8 type stubs
+class V8CSSNumberish {};
+class V8UnionCSSNumericValueOrDouble {};
+
+// Use the ValuesEquivalent from core/base/memory/values_equivalent.h instead
 
 class EffectTiming;
 class ComputedEffectTiming;
 enum class TimelinePhase;
 
 struct Timing {
-  USING_FAST_MALLOC(Timing);
+  // USING_FAST_MALLOC(Timing);
 
  public:
   // Note that logic in CSSAnimations depends on the order of these values.
@@ -164,7 +191,7 @@ struct Timing {
 
   Delay start_delay;
   Delay end_delay;
-  FillMode fill_mode = FillMode::AUTO;
+  FillMode fill_mode = FillMode::FILL_MODE_AUTO;
   double iteration_start = 0;
   double iteration_count = 1;
   // If empty, indicates the 'auto' value.

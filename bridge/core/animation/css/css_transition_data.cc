@@ -26,7 +26,7 @@ Timing CSSTransitionData::ConvertToTiming(size_t index) const {
   assert(index < property_list_.size());
   // Note that the backwards fill part is required for delay to work.
   Timing timing = CSSTimingData::ConvertToTiming(index);
-  timing.fill_mode = Timing::FillMode::BACKWARDS;
+  timing.fill_mode = Timing::FillMode::FILL_MODE_BACKWARDS;
   return timing;
 }
 
