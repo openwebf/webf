@@ -10,6 +10,7 @@ import '../../setup.dart';
 import '../widget/test_utils.dart';
 import '../css/flex_direction_test.dart' as flex_direction_test;
 import '../css/flex_wrap_test.dart' as flex_wrap_test;
+import '../css/flex_grow_test.dart' as flex_grow_test;
 
 void main() {
   setUpAll(() {
@@ -21,6 +22,9 @@ void main() {
   
   // Run flex-wrap specific tests
   flex_wrap_test.main();
+  
+  // Run flex-grow specific tests
+  flex_grow_test.main();
 
   setUp(() {
     WebFControllerManager.instance.initialize(
