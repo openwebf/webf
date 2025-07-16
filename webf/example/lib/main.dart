@@ -130,20 +130,20 @@ void main() async {
   //     });
   //
   // // Add react use cases controller with preloading for image preload test
-  // WebFControllerManager.instance.addWithPreload(
-  //     name: 'react_use_cases',
-  //     createController: () => WebFController(
-  //           routeObserver: routeObserver,
-  //           // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-  //         ),
-  //     bundle: WebFBundle.fromUrl('assets:///react_use_cases/build/index.html'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //
-  //       // Set up method call handler for FlutterInteractionPage using dedicated handler
-  //       controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
-  //     });
+  WebFControllerManager.instance.addWithPreload(
+      name: 'react_use_cases',
+      createController: () => WebFController(
+            routeObserver: routeObserver,
+            // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+          ),
+      bundle: WebFBundle.fromUrl('http://localhost:3000/'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+
+        // Set up method call handler for FlutterInteractionPage using dedicated handler
+        controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
+      });
 
   WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
 
