@@ -504,12 +504,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     RouterLinkElement? routerLinkElement =
         widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
-
-    if (routerLinkElement?.attachedRenderer != null) {
-      routerLinkElement?.dispatchEventUtilAdded(event);
-    } else {
-      routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
-    }
+    routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
   }
 
   @override
@@ -530,12 +525,7 @@ class WebFState extends State<WebF> with RouteAware {
 
     RouterLinkElement? routerLinkElement =
         widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
-
-    if (routerLinkElement?.attachedRenderer != null) {
-      routerLinkElement?.dispatchEventUtilAdded(event);
-    } else {
-      routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
-    }
+    routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
   }
 
   void requestForUpdate(AdapterUpdateReason reason) {
