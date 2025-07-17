@@ -26,7 +26,7 @@ class SVGGraphicsElement extends SVGElement {
 
   @override
   flutter.Widget toWidget({flutter.Key? key}) {
-    return WebFReplacedElementWidget(webFElement: this,);
+    return WebFRenderReplacedRenderObjectWidget(webFElement: this,);
   }
 
   SVGGraphicsElement([BindingContext? context]) : super(context);

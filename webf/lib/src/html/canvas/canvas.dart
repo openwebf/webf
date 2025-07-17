@@ -34,11 +34,9 @@ class RenderCanvasPaint extends RenderCustomPaint {
   @override
   CanvasPainter? get painter => super.painter as CanvasPainter;
 
-  RenderCanvasPaint({required CustomPainter painter, required Size preferredSize, required this.pixelRatio})
+  RenderCanvasPaint({required CustomPainter super.painter, required super.preferredSize, required this.pixelRatio})
       : super(
-          painter: painter,
-          foregroundPainter: null, // Ignore foreground painter
-          preferredSize: preferredSize,
+          foregroundPainter: null,
         );
 
   Future<Image> toImage(Size size) {
@@ -56,6 +54,13 @@ class RenderCanvasPaint extends RenderCustomPaint {
 }
 
 class CanvasElement extends Element {
+  final Set<WebFCanvasState> _canvasState = {};
+
+  WebFCanvasState? get state {
+    final stateFinder = _canvasState.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.last;
+  }
+
   final ChangeNotifier repaintNotifier = ChangeNotifier();
 
   /// The painter that paints before the children.
@@ -66,15 +71,13 @@ class CanvasElement extends Element {
   // The custom paint render object.
   RenderCanvasPaint? renderCustomPaint;
 
-  CanvasElement([BindingContext? context]) : super(context) {
+  CanvasElement([super.context]) {
     painter = CanvasPainter(repaint: repaintNotifier);
   }
 
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
-    flutter.Widget child =
-        WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFCanvas(this, key: canvasKey));
-    return WebFEventListener(ownerElement: this, child: child, hasEvent: true);
+    return WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFCanvas(this, key: canvasKey));
   }
 
   @override
@@ -106,11 +109,6 @@ class CanvasElement extends Element {
 
   @override
   List<StaticDefinedBindingPropertyMap> get properties => [...super.properties, _canvasProperties];
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-    super.initializeProperties(properties);
-  }
 
   @override
   RenderObject willAttachRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
@@ -189,8 +187,7 @@ class CanvasElement extends Element {
   }
 
   void resize() {
-    // https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-set-bitmap-dimensions
-    renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+    state?.requestStateUpdate();
   }
 
   /// Element property width.
@@ -290,7 +287,27 @@ class CanvasElement extends Element {
   }
 }
 
-class _WebFCanvasState extends flutter.State<WebFCanvas> {
+class WebFCanvasState extends flutter.State<WebFCanvas> {
+  CanvasElement get canvasElement => widget.canvasElement;
+
+  void requestStateUpdate() {
+    setState(() {
+
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    canvasElement._canvasState.add(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    canvasElement._canvasState.remove(this);
+  }
+
   @override
   flutter.Widget build(flutter.BuildContext context) {
     return WebFCanvasPaint(
@@ -308,7 +325,7 @@ class WebFCanvas extends flutter.StatefulWidget {
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
-    return _WebFCanvasState();
+    return WebFCanvasState();
   }
 }
 
@@ -318,17 +335,17 @@ class WebFCanvasPaint extends flutter.SingleChildRenderObjectWidget {
   final double pixelRatio;
   final CanvasElement canvasElement;
 
-  WebFCanvasPaint(
-      {flutter.Key? key,
+  const WebFCanvasPaint(
+      {super.key,
       required this.canvasElement,
       required this.preferredSize,
       required this.painter,
-      required this.pixelRatio})
-      : super(key: key);
+      required this.pixelRatio});
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderCanvasPaint canvasPaint = RenderCanvasPaint(painter: painter, preferredSize: preferredSize, pixelRatio: pixelRatio);
+    RenderCanvasPaint canvasPaint =
+        RenderCanvasPaint(painter: painter, preferredSize: preferredSize, pixelRatio: pixelRatio);
     updateCanvasPainterSize(preferredSize, canvasPaint);
     return canvasPaint;
   }

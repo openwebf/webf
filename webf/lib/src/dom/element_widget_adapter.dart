@@ -323,11 +323,78 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   bool get wantKeepAlive => true;
 }
 
-class WebFReplacedElementWidget extends flutter.SingleChildRenderObjectWidget {
+class WebFReplacedElementWidget extends flutter.StatefulWidget {
+  WebFReplacedElementWidget({required this.webFElement, required this.child, super.key});
+
+  final Element webFElement;
+  final flutter.Widget child;
+
+  @override
+  flutter.State<flutter.StatefulWidget> createState() {
+    return WebFReplacedElementWidgetState();
+  }
+}
+
+class WebFReplacedElementWidgetState extends flutter.State<WebFReplacedElementWidget>
+    with flutter.AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    webFElement.addState(this);
+  }
+
+  Element get webFElement => widget.webFElement;
+
+  void requestForChildNodeUpdate(AdapterUpdateReason reason) {
+    if (reason is UpdateChildNodeUpdateReason) return;
+
+    setState(() {});
+  }
+
+  @override
+  flutter.Widget build(flutter.BuildContext context) {
+    super.build(context);
+
+    print('build $this');
+    if (webFElement.renderStyle.display == CSSDisplay.none) {
+      return flutter.SizedBox.shrink();
+    }
+
+    flutter.Widget child = WebFEventListener(
+      ownerElement: webFElement,
+      hasEvent: true,
+      child: WebFRenderReplacedRenderObjectWidget(webFElement: webFElement, child: widget.child, key: webFElement.key,),
+    );
+
+    return child;
+  }
+
+  @override
+  void deactivate() {
+    super.deactivate();
+    webFElement.removeState(this);
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    webFElement.addState(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    webFElement.removeState(this);
+  }
+}
+
+class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObjectWidget {
   final Element webFElement;
 
-  WebFReplacedElementWidget({required this.webFElement, flutter.Key? key, flutter.Widget? child})
-      : super(key: key, child: child);
+  const WebFRenderReplacedRenderObjectWidget({required this.webFElement, super.key, super.child});
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
@@ -348,17 +415,16 @@ class WebFReplacedElementWidget extends flutter.SingleChildRenderObjectWidget {
 class WebFRenderReplacedRenderObjectElement extends flutter.SingleChildRenderObjectElement {
   WebFRenderReplacedRenderObjectElement(super.widget);
 
+
   @override
-  WebFReplacedElementWidget get widget => super.widget as WebFReplacedElementWidget;
+  WebFRenderReplacedRenderObjectWidget get widget => super.widget as WebFRenderReplacedRenderObjectWidget;
 
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
     if (reason is UpdateChildNodeUpdateReason) return;
 
-    visitChildElements((flutter.Element childElement) {
-      if (childElement is flutter.StatefulElement) {
-        childElement.markNeedsBuild();
-      }
+    widget.webFElement.forEachState((state) {
+      (state as WebFReplacedElementWidgetState).requestForChildNodeUpdate(reason);
     });
   }
 
@@ -477,7 +543,7 @@ abstract class WebRenderLayoutRenderObjectElement extends flutter.MultiChildRend
   // The renderObjects held by this adapter needs to be upgrade, from the requirements of the DOM tree style changes.
   void requestForBuild(AdapterUpdateReason reason) {
     webFElement.forEachState((state) {
-      state.requestForChildNodeUpdate(reason);
+      (state as WebFElementWidgetState).requestForChildNodeUpdate(reason);
     });
   }
 
