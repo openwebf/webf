@@ -59,7 +59,7 @@ mixin ElementBase on Node {
   late CSSRenderStyle renderStyle;
 }
 
-typedef ForeachStateFunction = void Function(WebFElementWidgetState state);
+typedef ForeachStateFunction = void Function(flutter.State state);
 typedef BeforeRendererAttach = RenderObject Function();
 typedef GetTargetId = int Function();
 typedef GetRootElementFontSize = double Function();
@@ -124,7 +124,7 @@ abstract class Element extends ContainerNode
 
   /// The StatefulElements that holding the reference of this elements
   @flutter.protected
-  final Set<WebFElementWidgetState> _states = {};
+  final Set<flutter.State> _states = {};
 
   @pragma('vm:prefer-inline')
   flutter.Key key = flutter.UniqueKey();
@@ -136,20 +136,20 @@ abstract class Element extends ContainerNode
 
   @nonVirtual
   void forEachState(ForeachStateFunction fn) {
-    _states.forEach((state) {
+    for (var state in _states) {
       if (state.mounted) {
         fn(state);
       }
-    });
+    }
   }
 
   @nonVirtual
-  void addState(WebFElementWidgetState state) {
+  void addState(flutter.State state) {
     _states.add(state);
   }
 
   @nonVirtual
-  void removeState(WebFElementWidgetState state) {
+  void removeState(flutter.State state) {
     _states.remove(state);
   }
 
@@ -849,7 +849,7 @@ abstract class Element extends ContainerNode
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
     _connectedCompleter = null;
-    
+
     // Notify controller that this element was removed (for LCP tracking)
     ownerDocument.controller.notifyElementRemoved(this);
   }

@@ -37,6 +37,13 @@ const Map<String, dynamic> _defaultStyle = {
 
 // The HTMLImageElement.
 class ImageElement extends Element {
+  final Set<ImageState> _imageState = {};
+
+  ImageState? get state {
+    final stateFinder = _imageState.where((state) => state.mounted == true);
+    return stateFinder.isEmpty ? null : stateFinder.last;
+  }
+
   BoxFitImage? _currentImageProvider;
   ImageConfiguration? _currentImageConfig;
 
@@ -108,8 +115,7 @@ class ImageElement extends Element {
 
   @override
   flutter.Widget toWidget({Key? key, bool positioned = false}) {
-    flutter.Widget child = WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
-    return WebFEventListener(ownerElement: this, child: child, hasEvent: true);
+    return WebFReplacedElementWidget(webFElement: this, key: key ?? this.key, child: WebFImage(this));
   }
 
   @override
@@ -426,9 +432,8 @@ class ImageElement extends Element {
     self.naturalHeight = height;
     self._resizeImage();
 
-    // Multi frame image should wrap a repaint boundary for better composite performance.
-    if (frameCount > 1 && !self.isRepaintBoundary) {
-      self.forceToRepaintBoundary = true;
+    if (frameCount > 1) {
+      element.state?.requestStateUpdate(ToRepaintBoundaryUpdateReason());
       self._watchAnimatedImageWhenVisible();
     }
 
@@ -445,7 +450,7 @@ class ImageElement extends Element {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
     }
 
-    renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+    state?.requestStateUpdate();
 
     // Fire the load event at first frame come.
     if (!_loaded) {
@@ -695,14 +700,35 @@ class WebFImage extends flutter.StatefulWidget {
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {
-    return _ImageState(imageElement);
+    return ImageState();
   }
 }
 
-class _ImageState extends flutter.State<WebFImage> {
-  final ImageElement imageElement;
+class ImageState extends flutter.State<WebFImage> {
+  ImageElement get imageElement => widget.imageElement;
+  ImageState();
 
-  _ImageState(this.imageElement);
+  bool isRepaintBoundary = false;
+
+  void requestStateUpdate([AdapterUpdateReason? reason]) {
+    if (reason is ToRepaintBoundaryUpdateReason) {
+      isRepaintBoundary = true;
+    }
+
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    imageElement._imageState.add(this);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    imageElement._imageState.remove(this);
+  }
 
   @override
   flutter.Widget build(flutter.BuildContext context) {
@@ -719,7 +745,9 @@ class _ImageState extends flutter.State<WebFImage> {
         imageElement._svgBytes!,
       );
     }
-
+    if (isRepaintBoundary) {
+      child = flutter.RepaintBoundary(child: child);
+    }
     return child;
   }
 }

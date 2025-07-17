@@ -84,23 +84,23 @@ void main() async {
   WebF.defineModule((context) => DeepLinkModule(context));
 
   // Add home controller with preloading
-  WebFControllerManager.instance.addWithPreload(
-      name: 'html/css',
-      createController: () => WebFController(
-            routeObserver: routeObserver,
-            initialRoute: '/',
-            onLCP: (time, isEvaluated) {
-              print('LCP time: $time, evaluated: $isEvaluated');
-            },
-            onLCPContentVerification: (contentInfo, routePath) {
-              print('contentInfo: $contentInfo');
-            },
-          ),
-      bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-      });
+  // WebFControllerManager.instance.addWithPreload(
+  //     name: 'html/css',
+  //     createController: () => WebFController(
+  //           routeObserver: routeObserver,
+  //           initialRoute: '/',
+  //           onLCP: (time, isEvaluated) {
+  //             print('LCP time: $time, evaluated: $isEvaluated');
+  //           },
+  //           onLCPContentVerification: (contentInfo, routePath) {
+  //             print('contentInfo: $contentInfo');
+  //           },
+  //         ),
+  //     bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //     });
 
   // // Add vue controller with preloading
   // WebFControllerManager.instance.addWithPrerendering(
@@ -129,20 +129,20 @@ void main() async {
   //     });
   //
   // // Add react use cases controller with preloading for image preload test
-  WebFControllerManager.instance.addWithPreload(
-      name: 'react_use_cases',
-      createController: () => WebFController(
-            routeObserver: routeObserver,
-            // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
-          ),
-      bundle: WebFBundle.fromUrl('http://localhost:3000/'),
-      setup: (controller) {
-        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-        controller.darkModeOverride = savedThemeMode?.isDark;
-
-        // Set up method call handler for FlutterInteractionPage using dedicated handler
-        controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
-      });
+  // WebFControllerManager.instance.addWithPreload(
+  //     name: 'react_use_cases',
+  //     createController: () => WebFController(
+  //           routeObserver: routeObserver,
+  //           // devToolsService: kDebugMode ? ChromeDevToolsService() : null,
+  //         ),
+  //     bundle: WebFBundle.fromUrl('http://localhost:3000/'),
+  //     setup: (controller) {
+  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+  //       controller.darkModeOverride = savedThemeMode?.isDark;
+  //
+  //       // Set up method call handler for FlutterInteractionPage using dedicated handler
+  //       controller.javascriptChannel.onMethodCall = FlutterInteractionHandler().handleMethodCall;
+  //     });
 
   WebF.overrideCustomElement('webf-listview', (context) => CustomWebFListView(context));
 
@@ -580,7 +580,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'vuejs':
       return WebFBundle.fromUrl('assets:///vue_project/dist/index.html');
     case 'reactjs':
-      return WebFBundle.fromUrl('assets:///react_project/build/index.html');
+      return WebFBundle.fromUrl('http://localhost:3000/react_project/build');
     case 'miracle_plus':
       return WebFBundle.fromUrl('https://miracleplus.openwebf.com/');
     case 'hybrid_router':
