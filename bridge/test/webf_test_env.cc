@@ -184,7 +184,10 @@ void TEST_LoadNativeLibrary(double context_id,
                             void* initialize_data,
                             void* import_data,
                             LoadNativeLibraryCallback callback) {}
-
+void TEST_fetchJavaScriptESMModule(void* callback_context,
+                                   double context_id,
+                                   SharedNativeString* module_url,
+                                   FetchJavaScriptESMModuleCallback callback) {}
 void TEST_GetWidgetElementShape() {}
 
 void TEST_onJsLog(double contextId, int32_t level, const char*) {}
@@ -199,8 +202,7 @@ std::once_flag testInitOnceFlag;
 double contextId = -1;
 
 WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPage* page)
-    : page_(page), isolate_context_(owner_isolate_context) {
-}
+    : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
   delete isolate_context_;
@@ -347,7 +349,10 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_toBlob),
                                     reinterpret_cast<uint64_t>(TEST_flushUICommand),
                                     reinterpret_cast<uint64_t>(TEST_CreateBindingObject),
-                                    reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary)};
+                                    reinterpret_cast<uint64_t>(TEST_LoadNativeLibrary),
+                                    reinterpret_cast<uint64_t>(TEST_fetchJavaScriptESMModule)
+
+  };
 
   WEBF_LOG(VERBOSE) << " ON JS ERROR" << onJSError;
   mockMethods.emplace_back(reinterpret_cast<uint64_t>(onJSError));

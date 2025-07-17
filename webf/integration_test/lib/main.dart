@@ -1,125 +1,244 @@
-import 'package:flutter/material.dart';
+/*
+ * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
 
-void main() {
-  runApp(const MyApp());
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/webf.dart';
+import 'package:webf/devtools.dart';
+import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Widget buildSplashScreen() {
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF6B5B95),
+          Color(0xFF88B0D3),
+        ],
+      ),
+    ),
+    child: Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // WebF Logo or Icon
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                'WebF',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6B5B95),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 40),
+          // Loading indicator
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Loading WebF Application',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Please wait...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.8),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  installWebFCupertinoUI();
 
-  // This widget is the root of your application.
+  // Initialize the controller manager
+  WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
+    maxAliveInstances: 4,
+    maxAttachedInstances: 2,
+    onControllerDisposed: (String name, WebFController controller) {
+      print('controller disposed: $name $controller');
+    },
+    onControllerDetached: (String name, WebFController controller) {
+      print('controller detached: $name $controller');
+    },
+  ));
+
+  // Add default test controller with preloading
+  WebFControllerManager.instance.addWithPreload(
+    name: 'react_use_case',
+    createController: () => WebFController(
+      routeObserver: routeObserver,
+      initialRoute: '/',
+    ),
+    bundle: WebFBundle.fromUrl('https://usecase.openwebf.com/'),
+  );
+
+  runApp(MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return MyAppState();
+  }
+}
+
+class MyAppState extends State<MyApp> {
+  final ValueNotifier<String> webfPageName = ValueNotifier('react_use_case');
+
+  Route<dynamic>? handleOnGenerateRoute(RouteSettings settings) {
+    return MaterialPageRoute(
+      settings: settings,
+      builder: (context) {
+        return WebFRouterView.fromControllerName(
+            controllerName: webfPageName.value,
+            path: settings.name!,
+            builder: (context, controller) {
+              return WebFSubView(
+                  controller: controller,
+                  path: settings.name!,
+                  onAppBarCreated: (title, routeLinkElement) => AppBar(title: Text(title)));
+            },
+            loadingWidget: buildSplashScreen());
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'WebF Integration Test',
+      initialRoute: '/',
+      theme: ThemeData.light(useMaterial3: true),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      navigatorKey: navigatorKey,
+      navigatorObservers: [routeObserver],
+      onGenerateRoute: handleOnGenerateRoute,
+      themeMode: ThemeMode.system,
+      home: TestHomePage(webfPageName: webfPageName),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class TestHomePage extends StatefulWidget {
+  const TestHomePage({Key? key, required this.webfPageName}) : super(key: key);
+  final ValueNotifier<String> webfPageName;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<StatefulWidget> createState() {
+    return TestHomePageState();
+  }
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
+class TestHomePageState extends State<TestHomePage> {
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('WebF Integration Test Home'),
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    widget.webfPageName.value = 'react_use_case';
+                    Navigator.push(context, MaterialPageRoute(builder: (context) {
+                      return WebFTestPage(
+                        webfPageName: 'react_use_case',
+                        initialRoute: '/',
+                      );
+                    }));
+                  },
+                  child: Text('Open React Show Case'),
+                )
+              ],
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
+          ),
+          if (kDebugMode) WebFInspectorFloatingPanel(),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class WebFTestPage extends StatefulWidget {
+  final String webfPageName;
+  final String initialRoute;
+  final Map<String, dynamic>? initialState;
+
+  WebFTestPage({
+    required this.webfPageName,
+    this.initialRoute = '/',
+    this.initialState,
+  });
+
+  @override
+  _WebFTestPageState createState() => _WebFTestPageState();
+}
+
+class _WebFTestPageState extends State<WebFTestPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('WebF Show Case'),
+      ),
+      body: Stack(
+        children: [
+          WebF.fromControllerName(
+            controllerName: widget.webfPageName,
+            loadingWidget: buildSplashScreen(),
+          ),
+          if (kDebugMode) WebFInspectorFloatingPanel(),
+        ],
+      ),
     );
   }
 }

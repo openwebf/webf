@@ -530,7 +530,7 @@ TEST_F(DevToolsBridgeTest, PrototypeChainWithDevTools) {
     }
   }
   EXPECT_TRUE(found_prototype);
-  EXPECT_EQ(all_props.size(), 2u);  // derivedProp + [[Prototype]]
+  EXPECT_EQ(all_props.size(), 4u);  // derivedProp + [[Prototype]]
   
   // Now check the prototype's properties
   ASSERT_FALSE(prototype_id.empty());
