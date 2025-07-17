@@ -30,12 +30,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  webf:
-    path: ../
+  webf: ^0.22.1
   path: ^1.8.1
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  webf_cupertino_ui:
+    path: ../../webf_cupertino_ui
+
+dependency_overrides:
+  webf:
+    path: ../
 
 dev_dependencies:
   flutter_test:
