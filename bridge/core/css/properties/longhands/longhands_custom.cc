@@ -1194,15 +1194,11 @@ std::shared_ptr<const CSSValue> Display::ParseSingleValue(CSSParserTokenStream& 
 }
 
 void Display::ApplyInitial(StyleResolverState& state) const {
-  //  ComputedStyleBuilder& builder = state.StyleBuilder();
-  //  builder.SetDisplay(ComputedStyleInitialValues::InitialDisplay());
-  //  builder.SetDisplayLayoutCustomName(ComputedStyleInitialValues::InitialDisplayLayoutCustomName());
+  state.StyleBuilder().SetDisplay(EDisplay::kInline);
 }
 
 void Display::ApplyInherit(StyleResolverState& state) const {
-  //  ComputedStyleBuilder& builder = state.StyleBuilder();
-  //  builder.SetDisplay(state.ParentStyle()->Display());
-  //  builder.SetDisplayLayoutCustomName(state.ParentStyle()->DisplayLayoutCustomName());
+  state.StyleBuilder().SetDisplay(state.ParentStyle()->Display());
 }
 
 void Display::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
@@ -3301,6 +3297,31 @@ void Width::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMo
   } else if (value.IsPrimitiveValue()) {
     const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
     state.StyleBuilder().SetWidth(primitive_value.ConvertToLength(state.CssToLengthConversionData()));
+  }
+}
+
+// ZIndex implementation
+void ZIndex::ApplyInitial(StyleResolverState& state) const {
+  state.StyleBuilder().SetZIndex(0);
+  state.StyleBuilder().SetHasAutoZIndex(true);
+}
+
+void ZIndex::ApplyInherit(StyleResolverState& state) const {
+  state.StyleBuilder().SetZIndex(state.ParentStyle()->ZIndex());
+  state.StyleBuilder().SetHasAutoZIndex(state.ParentStyle()->HasAutoZIndex());
+}
+
+void ZIndex::ApplyValue(StyleResolverState& state, const CSSValue& value, ValueMode) const {
+  if (value.IsIdentifierValue()) {
+    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
+    if (ident_value.GetValueID() == CSSValueID::kAuto) {
+      state.StyleBuilder().SetZIndex(0);
+      state.StyleBuilder().SetHasAutoZIndex(true);
+    }
+  } else if (value.IsPrimitiveValue()) {
+    const auto& primitive_value = static_cast<const CSSPrimitiveValue&>(value);
+    state.StyleBuilder().SetZIndex(primitive_value.GetIntValue());
+    state.StyleBuilder().SetHasAutoZIndex(false);
   }
 }
 

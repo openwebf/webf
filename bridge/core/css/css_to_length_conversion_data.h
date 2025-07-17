@@ -297,7 +297,9 @@ class CSSToLengthConversionData : public CSSLengthResolver {
 
   void SetFontSizes(const FontSizes& font_sizes) { font_sizes_ = font_sizes; }
   void SetLineHeightSize(const LineHeightSize& line_height_size) { line_height_size_ = line_height_size; }
-  void SetZoom(float zoom) { /* TODO: Implement zoom setting */ }
+  void SetZoom(float zoom) { 
+    CSSLengthResolver::SetZoom(zoom);
+  }
 
  private:
   void SetFlag(Flag flag) const {

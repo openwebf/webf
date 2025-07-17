@@ -8086,6 +8086,11 @@
       computed_style_custom_functions: [
         "setter"
       ],
+      style_builder_custom_functions: [
+        "initial",
+        "inherit",
+        "value"
+      ],
       converter: "ConvertInteger",
       keywords: [
         "auto"
