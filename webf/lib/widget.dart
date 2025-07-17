@@ -4,6 +4,7 @@
  */
 
 export 'src/widget/webf.dart';
+export 'src/widget/webf_subview.dart';
 export 'src/widget/widget_element.dart';
 export 'src/widget/webf_element.dart';
 export 'src/widget/event_listener.dart';
