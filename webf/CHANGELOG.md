@@ -1,3 +1,25 @@
+## 0.22.2
+
+## Features
+
+CSS Flexbox Enhancements
+
+- Flex Gap Support: Implemented CSS flex gap property for better spacing control between flex items
+- Flex Order Support: Implemented CSS flex order property allowing flexible reordering of flex items
+
+Navigation & UI Components
+
+- WebFSubView Widget: Added new widget for hybrid navigation support, enabling seamless integration of WebF views within Flutter navigation stacks
+- Enhanced Router Navigation: Ensure didPush/didPushNext events fire after widgets are onscreen
+- Showcase Screen: Added ShowcaseScreen and integrated it with WebFScreen for navigation in playground_app
+
+## Bug Fixes
+
+Critical Fixes
+
+- Text Layout: Fixed text constraints calculation in flex containers with percentage-based max-width values
+- Image Elements: Fixed dynamic style and DOM node updates for image elements, resolving loading and rendering issues
+
 ## 0.22.1
 
 ## Bug Fixes
