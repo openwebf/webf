@@ -538,7 +538,7 @@ class ImageElement extends Element {
       _resizeImage();
       _isSVGImage = true;
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        renderStyle.requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
+        state?.requestStateUpdate();
         // Report FP first (if not already reported)
         ownerDocument.controller.reportFP();
         // Report FCP when SVG image is first painted
