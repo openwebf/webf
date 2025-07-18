@@ -358,7 +358,6 @@ class WebFReplacedElementWidgetState extends flutter.State<WebFReplacedElementWi
   flutter.Widget build(flutter.BuildContext context) {
     super.build(context);
 
-    print('build $this');
     if (webFElement.renderStyle.display == CSSDisplay.none) {
       return flutter.SizedBox.shrink();
     }
@@ -366,7 +365,7 @@ class WebFReplacedElementWidgetState extends flutter.State<WebFReplacedElementWi
     flutter.Widget child = WebFEventListener(
       ownerElement: webFElement,
       hasEvent: true,
-      child: WebFRenderReplacedRenderObjectWidget(webFElement: webFElement, child: widget.child, key: webFElement.key,),
+      child: WebFRenderReplacedRenderObjectWidget(webFElement: webFElement, key: webFElement.key, child: widget.child),
     );
 
     return child;
