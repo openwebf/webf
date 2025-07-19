@@ -93,10 +93,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
 
-    widget.controller.view.document.dispatchEvent(event);
-
     RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
-    routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    routerLinkElement?.addPostEventListener(dom.EVENT_ON_SCREEN, (_) async {
+      widget.controller.view.document.dispatchEvent(event);
+    });
   }
 
   @override
@@ -107,10 +107,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
 
-    widget.controller.view.document.dispatchEvent(event);
-
     RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
-    routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    routerLinkElement?.addPostEventListener(dom.EVENT_ON_SCREEN, (_) async {
+      widget.controller.view.document.dispatchEvent(event);
+    });
   }
 }
 
