@@ -1232,7 +1232,7 @@ abstract class Element extends ContainerNode
       }
 
       if (renderStyle.isBoxModelHaveSize()) {
-        Offset offset = renderStyle.getOffset(ancestorRenderBox: getRootRenderBoxModel(), excludeScrollOffset: true);
+        Offset offset = renderStyle.getOffset(ancestorRenderBox: getRootRenderBoxModel(), excludeScrollOffset: false);
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
@@ -1263,7 +1263,75 @@ abstract class Element extends ContainerNode
     if (offsetParent?.hasScroll == true) {
       ancestor = offsetParent?.attachedRendererWrapper;
     }
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor);
+    
+    // For sticky positioned elements with body as offsetParent, 
+    // we need to account for scroll position
+    if (renderStyle.position == CSSPositionType.sticky && offsetParent is BodyElement) {
+      // For sticky elements, we need to calculate their position including scroll
+      // Get total scroll offset by checking all scroll containers
+      double totalScrollX = 0.0;
+      
+      // Check if documentElement has scroll
+      Element? docElement = ownerDocument.documentElement;
+      if (docElement != null && docElement.attachedRenderer != null) {
+        totalScrollX = docElement.scrollLeft;
+      }
+      
+      // If no scroll on documentElement, check body
+      if (totalScrollX == 0.0) {
+        Element? body = ownerDocument.documentElement?.querySelector(['body']);
+        if (body != null && body.attachedRenderer != null) {
+          totalScrollX = body.scrollLeft;
+        }
+      }
+      
+      // Get the sticky element's current position relative to the viewport
+      RenderBoxModel? renderer = attachedRenderer;
+      if (renderer != null && renderer.hasSize) {
+        // For sticky elements, we need to calculate their actual visual position
+        // Get the position placeholder to find original position
+        RenderPositionPlaceholder? placeholder = renderStyle.getSelfPositionPlaceHolder();
+        if (placeholder != null && placeholder.attached) {
+          // Get the placeholder's position (original position before sticky)
+          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!, 
+              excludeScrollOffset: true);
+          
+          // Calculate where the element should be without sticky
+          double naturalPosition = placeholderOffset.dx - totalScrollX;
+          
+          // Get sticky constraints
+          double stickyLeft = renderStyle.left.computedValue;
+          
+          // Check if element should be stuck
+          if (naturalPosition < stickyLeft) {
+            // Element should be stuck at sticky position
+            return totalScrollX + stickyLeft;
+          } else {
+            // Element is in its natural position
+            return placeholderOffset.dx;
+          }
+        }
+        
+        // Fallback: calculate based on current visual position
+        RenderBox? viewport = getRootViewport();
+        if (viewport != null) {
+          // Get position relative to viewport
+          Offset viewportOffset = renderer.localToGlobal(Offset.zero, ancestor: viewport);
+          
+          // For sticky elements, we need to handle the case where they're stuck
+          // If the element is at its sticky position (e.g., left: 50px), it's stuck
+          if (viewportOffset.dx == renderStyle.left.computedValue) {
+            // Element is stuck at its sticky position
+            return totalScrollX + viewportOffset.dx;
+          } else {
+            // Element is not stuck, calculate its natural position
+            return viewportOffset.dx + totalScrollX;
+          }
+        }
+      }
+    }
+    
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor, excludeScrollOffset: true);
     offset += relative.dx;
     return offset;
   }
@@ -1292,7 +1360,74 @@ abstract class Element extends ContainerNode
       ancestor = offsetParent?.attachedRendererWrapper;
     }
 
-    Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor);
+    // For sticky positioned elements with body as offsetParent, 
+    // we need to account for scroll position
+    if (renderStyle.position == CSSPositionType.sticky && offsetParent is BodyElement) {
+      // For sticky elements, we need to calculate their position including scroll
+      // Get total scroll offset by checking all scroll containers
+      double totalScrollY = 0.0;
+      
+      // Check if documentElement has scroll
+      Element? docElement = ownerDocument.documentElement;
+      if (docElement != null && docElement.attachedRenderer != null) {
+        totalScrollY = docElement.scrollTop;
+      }
+      
+      // If no scroll on documentElement, check body
+      if (totalScrollY == 0.0) {
+        Element? body = ownerDocument.documentElement?.querySelector(['body']);
+        if (body != null && body.attachedRenderer != null) {
+          totalScrollY = body.scrollTop;
+        }
+      }
+      
+      // Get the sticky element's current position relative to the viewport
+      RenderBoxModel? renderer = attachedRenderer;
+      if (renderer != null && renderer.hasSize) {
+        // For sticky elements, we need to calculate their actual visual position
+        // Get the position placeholder to find original position
+        RenderPositionPlaceholder? placeholder = renderStyle.getSelfPositionPlaceHolder();
+        if (placeholder != null && placeholder.attached) {
+          // Get the placeholder's position (original position before sticky)
+          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!, 
+              excludeScrollOffset: true);
+          
+          // Calculate where the element should be without sticky
+          double naturalPosition = placeholderOffset.dy - totalScrollY;
+          
+          // Get sticky constraints
+          double stickyTop = renderStyle.top.computedValue;
+          
+          // Check if element should be stuck
+          if (naturalPosition < stickyTop) {
+            // Element should be stuck at sticky position
+            return totalScrollY + stickyTop;
+          } else {
+            // Element is in its natural position
+            return placeholderOffset.dy;
+          }
+        }
+        
+        // Fallback: calculate based on current visual position
+        RenderBox? viewport = getRootViewport();
+        if (viewport != null) {
+          // Get position relative to viewport
+          Offset viewportOffset = renderer.localToGlobal(Offset.zero, ancestor: viewport);
+          
+          // For sticky elements, we need to handle the case where they're stuck
+          // If the element is at its sticky position (50px from top), it's stuck
+          if (viewportOffset.dy == renderStyle.top.computedValue) {
+            // Element is stuck at its sticky position
+            return totalScrollY + viewportOffset.dy;
+          } else {
+            // Element is not stuck, calculate its natural position
+            return viewportOffset.dy + totalScrollY;
+          }
+        }
+      }
+    }
+
+    Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor, excludeScrollOffset: true);
     offset += relative.dy;
     return offset;
   }

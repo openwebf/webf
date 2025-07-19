@@ -26,6 +26,7 @@ import 'custom_elements/custom_listview_cupertino.dart';
 import 'custom_elements/custom_listview_material.dart';
 import 'custom_elements/form.dart';
 import 'custom_elements/gesture_detector.dart';
+import 'custom_elements/flutter_sliver_listview.dart';
 import 'keyboard_case/popup.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 
@@ -40,6 +41,7 @@ import 'modules/share.dart';
 import 'modules/deeplink.dart';
 import 'flutter_ui_handler.dart';
 import 'flutter_interaction_handler.dart';
+import 'custom_elements/nested_scrollable.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -80,6 +82,11 @@ void main() async {
   WebF.defineCustomElement('flutter-webf-form', (context) => FlutterWebFForm(context));
   WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
   WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
+
+  WebF.defineCustomElement('flutter-nest-scroller-skeleton', (context) => FlutterNestScrollerSkeleton(context));
+  WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
+  WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header', (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
+  WebF.defineCustomElement('flutter-sliver-listview', (context) => FlutterSliverListview(context));
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));
@@ -574,6 +581,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
   switch (controllerName) {
     case 'html/css':
       return WebFBundle.fromUrl('assets:///assets/bundle.html');
+      // return WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js');
     case 'esm_demo':
       return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
     case 'import_meta_demo':
