@@ -11,6 +11,8 @@
 #include "plugin_api/document.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
+#include "qjs_element_creation_options.h"
+#include "qjs_unionelement_creation_options_dom_string.h"
 
 namespace webf {
 
@@ -50,6 +52,8 @@ class Document : public ContainerNode, public TreeScope {
 
   HTMLElement* createElement(const AtomicString& name, ExceptionState& exception_state);
   HTMLElement* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);
+  HTMLElement* createElement(const AtomicString& name, const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options, ExceptionState& exception_state);
+  HTMLElement* createElement(const AtomicString& name, const std::shared_ptr<ElementCreationOptions>& options, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri,
                            const AtomicString& name,

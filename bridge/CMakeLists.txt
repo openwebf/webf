@@ -481,6 +481,8 @@ list(APPEND BRIDGE_SOURCE
     code_gen/binding_call_methods.cc
     code_gen/qjs_scroll_options.cc
     code_gen/qjs_scroll_to_options.cc
+    code_gen/qjs_element_creation_options.cc
+    code_gen/qjs_unionelement_creation_options_dom_string.cc
     code_gen/qjs_html_element.cc
     code_gen/qjs_html_all_collection.cc
     code_gen/qjs_html_collection.cc

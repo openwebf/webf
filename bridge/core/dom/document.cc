@@ -82,6 +82,18 @@ HTMLElement* Document::createElement(const AtomicString& name,
   return createElement(name, exception_state);
 }
 
+HTMLElement* Document::createElement(const AtomicString& name,
+                                 const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options,
+                                 ExceptionState& exception_state) {
+  return createElement(name, exception_state);
+}
+
+HTMLElement* Document::createElement(const AtomicString& name,
+                                 const std::shared_ptr<ElementCreationOptions>& options,
+                                 ExceptionState& exception_state) {
+  return createElement(name, exception_state);
+}
+
 Element* Document::createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state) {
   // Empty string '' is the same as null
   const AtomicString& _uri = uri.IsEmpty() ? AtomicString::Null() : uri;

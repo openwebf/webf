@@ -14,6 +14,7 @@ import {IDLEventHandler} from "../frame/window_event_handlers";
 import {Window} from "../frame/window";
 import {ParentNode} from "./parent_node";
 import {GlobalEventHandlers} from "./global_event_handlers";
+import {ElementCreationOptions} from './element_creation_options';
 
 interface Document extends Node, ParentNode, GlobalEventHandlers {
   readonly all: HTMLAllCollection;
@@ -35,6 +36,7 @@ interface Document extends Node, ParentNode, GlobalEventHandlers {
   readonly currentScript: HTMLScriptElement | null;
 
   createElement(tagName: string): HTMLElement;
+  createElement(tagName: string, options: ElementCreationOptions | string | null): HTMLElement;
   createElementNS(uri: string | null, tagName: string): Element;
   createTextNode(value: string): Text;
   createDocumentFragment(): DocumentFragment;
