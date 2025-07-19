@@ -27,11 +27,12 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   @protected
   final Map<String, List<EventHandler>> _eventCaptureHandlers = {};
 
+  @protected
+  final Map<String, List<EventHandler>> _eventPostHandlers = {};
+
   Map<String, List<EventHandler>> getEventHandlers() => _eventHandlers;
 
   Map<String, List<EventHandler>> getCaptureEventHandlers() => _eventCaptureHandlers;
-
-  final Map<String, List<Event>> _eventDeps = {};
 
   // Track pending dispatchEvent futures to ensure safe disposal
   final List<Future<void>> _pendingDispatchEvents = [];
@@ -129,13 +130,6 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
   }
 
-  Future<void> dispatchEventByDeps(Event event, String dep) async {
-    if (!_eventDeps.containsKey(dep)) {
-      _eventDeps[dep] = [];
-    }
-    _eventDeps[dep]!.add(event);
-  }
-
   @mustCallSuper
   Future<void> dispatchEvent(Event event) async {
     if (_disposed) return;
@@ -180,12 +174,8 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     await _handlerCaptureEvent(event);
     await _dispatchEventInDOM(event);
 
-    if (_eventDeps.containsKey(event.type)) {
-      _eventDeps[event.type]!.forEach((e) {
-        dispatchEventUtilAdded(e);
-      });
-      _eventDeps.clear();
-    }
+    // Execute post-handlers after all regular handlers are done
+    await _executePostHandlers(event);
   }
   Future<void> _handlerCaptureEvent(Event event) async {
     // Avoid dispatch event to JS when the node was created by Flutter widgets.
@@ -240,13 +230,52 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
   }
 
+  Future<void> _executePostHandlers(Event event) async {
+    // Execute post-handlers for the specific event type
+    String eventType = event.type;
+    List<EventHandler>? postHandlers = _eventPostHandlers[eventType];
+    if (postHandlers != null) {
+      event.currentTarget = this;
+      List<EventHandler> handlers = [...postHandlers];
+      for (final handler in handlers) {
+        await handler(event);
+      }
+      event.currentTarget = null;
+    }
+  }
+
+  /// Add a post-handler that executes after all regular event handlers
+  void addPostEventListener(String eventType, EventHandler postHandler) {
+    if (_disposed) return;
+
+    List<EventHandler>? existingHandlers = _eventPostHandlers[eventType];
+    if (existingHandlers == null) {
+      _eventPostHandlers[eventType] = existingHandlers = [];
+    }
+    existingHandlers.add(postHandler);
+  }
+
+  /// Remove a post-handler
+  void removePostEventListener(String eventType, EventHandler postHandler) {
+    if (_disposed) return;
+
+    List<EventHandler>? currentHandlers = _eventPostHandlers[eventType];
+    if (currentHandlers != null) {
+      currentHandlers.remove(postHandler);
+      if (currentHandlers.isEmpty) {
+        _eventPostHandlers.remove(eventType);
+      }
+    }
+  }
+
   @override
   @mustCallSuper
   void dispose() async {
     _disposed = true;
     _eventHandlers.clear();
+    _eventCaptureHandlers.clear();
+    _eventPostHandlers.clear();
     _eventWaitingCompleter.clear();
-    _eventDeps.clear();
     _pendingDispatchEvents.clear(); // Clear pending events tracking
     super.dispose();
   }

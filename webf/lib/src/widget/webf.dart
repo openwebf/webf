@@ -496,7 +496,6 @@ class WebFState extends State<WebF> with RouteAware {
     await widget.controller.controlledInitCompleter.future;
 
     Event event = HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPush', path: path);
-    widget.controller.view.document.dispatchEventUtilAdded(event);
 
     if (widget.controller.initialRoute != null) {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
@@ -504,7 +503,9 @@ class WebFState extends State<WebF> with RouteAware {
 
     RouterLinkElement? routerLinkElement =
         widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
-    routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    routerLinkElement?.addPostEventListener(EVENT_ON_SCREEN, (_) async {
+      widget.controller.view.document.dispatchEventUtilAdded(event);
+    });
   }
 
   @override
@@ -517,7 +518,6 @@ class WebFState extends State<WebF> with RouteAware {
 
     Event event =
         HybridRouterChangeEvent(state: state ?? widget.controller.initialState, kind: 'didPushNext', path: path);
-    widget.controller.view.document.dispatchEventUtilAdded(event);
 
     if (widget.controller.initialRoute != null) {
       await widget.controller.view.awaitForHybridRouteLoaded(widget.controller.initialRoute!);
@@ -525,7 +525,9 @@ class WebFState extends State<WebF> with RouteAware {
 
     RouterLinkElement? routerLinkElement =
         widget.controller.view.getHybridRouterView(widget.controller.initialRoute ?? '/');
-    routerLinkElement?.dispatchEventByDeps(event, 'onscreen');
+    routerLinkElement?.addPostEventListener(EVENT_ON_SCREEN, (_) async {
+      widget.controller.view.document.dispatchEventUtilAdded(event);
+    });
   }
 
   void requestForUpdate(AdapterUpdateReason reason) {
