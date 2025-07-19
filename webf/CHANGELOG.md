@@ -1,3 +1,10 @@
+## 0.22.2+1
+
+## Bug Fixes
+
+- Router Event Ordering: Fixed an issue where router events could fire before onscreen events, ensuring proper event sequence for navigation handling
+- SVG Image Loading: Resolved SVG image loading failures that were preventing SVG assets from rendering correctly
+
 ## 0.22.2
 
 ## Features
