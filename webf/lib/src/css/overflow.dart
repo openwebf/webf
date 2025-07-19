@@ -114,8 +114,8 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get scrollTop {
     ownerDocument.forceRebuild();
-    if (scrollControllerY != null) {
-      return scrollControllerY?.position.pixels ?? 0;
+    if (scrollControllerY != null && scrollControllerY!.hasClients) {
+      return scrollControllerY!.position.pixels;
     }
 
     return 0.0;
@@ -148,8 +148,10 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get scrollLeft {
     ownerDocument.forceRebuild();
-
-    return scrollControllerX?.position.pixels ?? 0;
+    if (scrollControllerX != null && scrollControllerX!.hasClients) {
+      return scrollControllerX!.position.pixels;
+    }
+    return 0.0;
   }
 
   set scrollLeft(double value) {
@@ -165,7 +167,7 @@ mixin ElementOverflowMixin on ElementBase {
 
     flutter.ScrollController? scrollController = scrollControllerY;
 
-    if (scrollController != null) {
+    if (scrollController != null && scrollController.hasClients) {
       // Viewport height + maxScrollExtent
       return renderStyle.clientHeight()! + scrollController.position.maxScrollExtent;
     }
@@ -182,7 +184,7 @@ mixin ElementOverflowMixin on ElementBase {
     _ensureRenderObjectHasLayout();
     flutter.ScrollController? scrollController = scrollControllerX;
 
-    if (scrollController != null) {
+    if (scrollController != null && scrollController.hasClients) {
       return renderStyle.clientWidth()! + scrollController.position.maxScrollExtent;
     }
     Size scrollContainerSize = renderStyle.scrollableSize()!;
@@ -263,10 +265,17 @@ mixin ElementOverflowMixin on ElementBase {
     assert(isRendererAttached, 'Overflow can only be added to a RenderBox.');
     RendererBinding.instance.rootPipelineOwner.flushLayout();
 
-    scrollController.position.moveTo(
-      distance,
-      duration: withAnimation == true ? SCROLL_DURATION : null,
-      curve: withAnimation == true ? Curves.easeOut : null,
-    );
+    if (scrollController.hasClients) {
+      // Ensure the distance is within valid scroll range
+      final position = scrollController.position;
+      final clampedDistance = distance.clamp(position.minScrollExtent, position.maxScrollExtent);
+      
+      
+      position.moveTo(
+        clampedDistance,
+        duration: withAnimation == true ? SCROLL_DURATION : null,
+        curve: withAnimation == true ? Curves.easeOut : null,
+      );
+    }
   }
 }

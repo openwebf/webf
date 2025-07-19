@@ -60,14 +60,18 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
     } else if (childRenderer is RenderIndexedSemantics && childRenderer.parentData is SliverMultiBoxAdaptorParentData) {
       assert(childRenderer.parent == parentRenderer);
 
+      // For sliver elements in a ListView, the layoutOffset from SliverMultiBoxAdaptorParentData
+      // is already viewport-relative and accounts for scroll position.
+      double layoutOffset = (childRenderer.parentData as SliverMultiBoxAdaptorParentData).layoutOffset ?? 0.0;
+      
+      // Determine scroll direction - default to vertical
       Axis scrollDirection = Axis.vertical;
-
       if (ancestor is RenderWidget && ancestor.renderStyle.target is WebFListViewElement) {
         scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).scrollDirection;
       }
-
-      double layoutOffset = (childRenderer.parentData as SliverMultiBoxAdaptorParentData).layoutOffset ?? 0.0;
-      Offset sliverScrollOffset = scrollDirection == Axis.vertical ? Offset(0, layoutOffset) : Offset(layoutOffset, 0);
+      
+      Offset sliverScrollOffset = scrollDirection == Axis.vertical ? 
+          Offset(0, layoutOffset) : Offset(layoutOffset, 0);
 
       stackOffsets.add(sliverScrollOffset);
     } else if (parentRenderer is RenderBox) {
@@ -897,7 +901,7 @@ class RenderBoxModel extends RenderBox
       minConstraintWidth = minConstraintWidth < minWidth ? minWidth : minConstraintWidth;
       maxConstraintWidth = maxConstraintWidth < minWidth ? minWidth : maxConstraintWidth;
     }
-    
+
     // Apply maxWidth constraint for all elements (including inline)
     if (maxWidth != null) {
       // Ensure maxConstraintWidth respects maxWidth, but don't reduce minConstraintWidth below border+padding
@@ -911,7 +915,7 @@ class RenderBoxModel extends RenderBox
         minConstraintWidth = minConstraintWidth > maxWidth ? maxWidth : minConstraintWidth;
       }
     }
-    
+
     // Apply min/max height constraints when display is not inline
     if (!isDisplayInline) {
       if (minHeight != null) {
@@ -1087,7 +1091,7 @@ class RenderBoxModel extends RenderBox
     assert(child.parentData is BoxParentData);
     final BoxParentData childParentData = child.parentData! as BoxParentData;
     Offset offset = childParentData.offset;
-    if (excludeScrollOffset) {
+    if (!excludeScrollOffset) {
       if (this is RenderWidget) {
         offset -= Offset(renderStyle.target.scrollLeft, renderStyle.target.scrollTop);
       } else {

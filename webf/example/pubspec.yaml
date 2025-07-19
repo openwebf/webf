@@ -40,6 +40,7 @@ dependencies:
   image_picker: ^1.1.2
   file_picker: ^10.2.0
   shared_preferences: ^2.5.3
+  visibility_detector: ^0.4.0+2
 
 # When depending on this package from a real application,
 # you should remove the following overrides.

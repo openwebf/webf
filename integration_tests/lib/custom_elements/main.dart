@@ -15,6 +15,8 @@ import 'event_container.dart';
 import 'event_container_unpoped.dart';
 import 'flutter_constraint_container.dart';
 import 'flutter_constraint_container_2.dart';
+import 'flutter_sliver_listview.dart';
+import 'flutter_nested_scroller.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -38,4 +40,8 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-constraint-container', (context) => FlutterConstraintContainer(context));
   WebF.defineCustomElement('flutter-constraint-container-2', (context) => FlutterConstraintContainer2(context));
   WebF.defineCustomElement('flutter-constraint-container-2-item', (context) => FlutterConstraintContainer2Item(context));
+  WebF.defineCustomElement('flutter-sliver-listview', (context) => FlutterSliverListviewElement(context));
+  WebF.defineCustomElement('flutter-nest-scroller-skeleton', (context) => FlutterNestScrollerSkeleton(context));
+  WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
+  WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header', (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
 }
