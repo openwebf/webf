@@ -87,6 +87,7 @@ void main() async {
   WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
   WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header', (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
   WebF.defineCustomElement('flutter-sliver-listview', (context) => FlutterSliverListview(context));
+  WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));
