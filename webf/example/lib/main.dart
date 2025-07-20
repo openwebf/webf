@@ -79,6 +79,7 @@ void main() async {
   WebF.defineCustomElement('webf-listview-material', (context) => CustomWebFListViewWithMeterialRefreshIndicator(context));
   WebF.defineCustomElement('flutter-webf-form', (context) => FlutterWebFForm(context));
   WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
+  WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));

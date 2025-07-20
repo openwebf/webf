@@ -7,5 +7,11 @@
   "files": ["index.d.ts"],
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "devDependencies": {
+    "vue": "^3.0.0"
+  }
 }

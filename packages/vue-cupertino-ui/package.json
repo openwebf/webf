@@ -1,0 +1,22 @@
+  {
+    "name": "@openwebf/vue-cupertino-ui",
+    "version": "0.1.0",
+    "description": "iOS-style UI components for WebF applications. This package provides Flutter's Cupertino widgets wrapped as HTML custom elements for use in WebF.",
+    "main": "",
+    "types": "index.d.ts",
+    "files": [
+      "index.d.ts"
+    ],
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "peerDependencies": {
+      "vue": "^3.0.0"
+    },
+    "devDependencies": {
+      "vue": "^3.5.17"
+    },
+    "dependencies": {
+      "@openwebf/webf-enterprise-typings": "^0.22.1"
+    }
+  }

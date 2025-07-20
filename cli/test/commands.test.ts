@@ -284,10 +284,10 @@ describe('Commands', () => {
           { cwd: target, stdio: 'inherit' }
         );
 
-        // Should install Vue types as dev dependency
+        // Should install Vue 3 as dev dependency
         expect(mockSpawnSync).toHaveBeenCalledWith(
           expect.stringMatching(/npm(\.cmd)?/),
-          ['install', '@types/vue', '-D'],
+          ['install', 'vue', '-D'],
           { cwd: target, stdio: 'inherit' }
         );
       });
