@@ -60,20 +60,3 @@ abstract class UIInspectorModule extends _InspectorModule {
     }
   }
 }
-
-// Inspector modules working on dart isolates
-abstract class IsolateInspectorModule extends _InspectorModule {
-  IsolateInspectorModule(this.server);
-
-  final IsolateInspectorServer server;
-
-  @override
-  void sendToFrontend(int? id, JSONEncodable? result) {
-    server.sendToFrontend(id, result?.toJson());
-  }
-
-  @override
-  void sendEventToFrontend(InspectorEvent event) {
-    server.sendEventToFrontend(event);
-  }
-}
