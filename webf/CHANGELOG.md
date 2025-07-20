@@ -1,3 +1,12 @@
+## 0.22.2+2
+
+## Bug Fixes
+
+- Fix crash when elements in modal popups call getBoundingClientRect
+- Fix ScrollController.hasClients checks to prevent accessing position when not attached
+- Fix getBoundingClientRect to include scroll offset (excludeScrollOffset: false)
+- Add special handling for sticky positioned elements when calculating offsetTop/offsetLeft
+
 ## 0.22.2+1
 
 ## Bug Fixes
