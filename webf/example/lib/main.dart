@@ -87,7 +87,6 @@ void main() async {
   WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
   WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header', (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
   WebF.defineCustomElement('flutter-sliver-listview', (context) => FlutterSliverListview(context));
-  WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));
@@ -598,7 +597,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'tailwind_react':
       return WebFBundle.fromUrl('assets:///tailwind_react/build/index.html');
     case 'cupertino_gallery':
-      return WebFBundle.fromUrl('https://vue-cupertino-gallery.openwebf.com/');
+      return WebFBundle.fromUrl('http://localhost:8080/');
     case 'use_cases':
       return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
     case 'react_use_cases':
