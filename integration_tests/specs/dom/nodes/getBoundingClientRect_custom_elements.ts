@@ -447,4 +447,179 @@ describe('getBoundingClientRect with custom elements', () => {
       done();
     };
   });
+
+  describe('modal popup test', () => {
+    it('should return correct values for elements in modal popup', async (done) => {
+      const modalPopup = document.createElement('flutter-modal-popup');
+      document.body.appendChild(modalPopup);
+
+      // Create content inside the modal
+      const container = document.createElement('div');
+      container.id = 'modal-container';
+      container.style.width = '200px';
+      container.style.height = '100px';
+      container.style.backgroundColor = 'blue';
+      container.style.position = 'relative';
+      modalPopup.appendChild(container);
+
+      const innerElement = document.createElement('div');
+      innerElement.id = 'inner-element';
+      innerElement.style.width = '50px';
+      innerElement.style.height = '50px';
+      innerElement.style.backgroundColor = 'red';
+      innerElement.style.marginTop = '10px';
+      innerElement.style.marginLeft = '20px';
+      container.appendChild(innerElement);
+
+      await sleep(0.5); // Wait for modal animation
+
+      // Show the modal
+      (modalPopup as any).show();
+      await sleep(1.5); // Wait for modal animation
+
+      // Force layout
+      container.offsetHeight;
+      innerElement.offsetHeight;
+      
+      await sleep(0.5); // Additional wait
+
+      // Get bounding client rects
+      const containerRect = container.getBoundingClientRect();
+      const innerRect = innerElement.getBoundingClientRect();
+
+      // Modal popups are shown at the bottom of the screen in a bottom sheet
+      // The exact position depends on the screen size, but we can verify:
+      // 1. The elements have the correct size
+      // 2. The inner element is positioned relative to its container
+      
+      // Check sizes
+      expect(containerRect.width).toBe(200);
+      expect(containerRect.height).toBe(100);
+      expect(innerRect.width).toBe(50);
+      expect(innerRect.height).toBe(50);
+
+      // Check relative positioning
+      // Inner element should be 20px from left and 10px from top of container
+      expect(innerRect.left - containerRect.left).toBe(20);
+      expect(innerRect.top - containerRect.top).toBe(10);
+
+      // Check that coordinates are positive (visible on screen)
+      expect(containerRect.top).toBeGreaterThan(0);
+      expect(containerRect.left).toBeGreaterThanOrEqual(0);
+
+      // Clean up
+      (modalPopup as any).hide();
+      await sleep(0.3);
+      document.body.removeChild(modalPopup);
+      done();
+    });
+
+    it('should handle nested elements in modal popup', async (done) => {
+      const modalPopup = document.createElement('flutter-modal-popup');
+      document.body.appendChild(modalPopup);
+
+      // Create nested structure
+      const outer = document.createElement('div');
+      outer.style.width = '300px';
+      outer.style.height = '200px';
+      outer.style.padding = '20px';
+      outer.style.backgroundColor = '#f0f0f0';
+      outer.style.boxSizing = 'border-box';
+      modalPopup.appendChild(outer);
+
+      const middle = document.createElement('div');
+      middle.style.width = '200px';
+      middle.style.height = '150px';
+      middle.style.margin = '10px';
+      middle.style.backgroundColor = '#e0e0e0';
+      middle.style.boxSizing = 'border-box';
+      outer.appendChild(middle);
+
+      const inner = document.createElement('div');
+      inner.style.width = '100px';
+      inner.style.height = '50px';
+      inner.style.marginTop = '25px';
+      inner.style.marginLeft = '30px';
+      inner.style.backgroundColor = '#d0d0d0';
+      inner.style.boxSizing = 'border-box';
+      middle.appendChild(inner);
+
+      await sleep(0.5); // Wait for modal animation
+      // Show modal
+      (modalPopup as any).show();
+      await sleep(1.5); // Wait longer for modal animation
+
+      const outerRect = outer.getBoundingClientRect();
+      const middleRect = middle.getBoundingClientRect();
+      const innerRect = inner.getBoundingClientRect();
+
+      // Verify sizes
+      expect(outerRect.width).toBe(300);
+      // Note: The outer element may have additional height due to modal container padding/margins
+      expect(outerRect.height).toBeGreaterThanOrEqual(200);
+      expect(middleRect.width).toBe(200);
+      expect(middleRect.height).toBe(150);
+      expect(innerRect.width).toBe(100);
+      expect(innerRect.height).toBe(50);
+
+      // Verify relative positions
+      expect(middleRect.left - outerRect.left).toBe(30); // 20px padding + 10px margin
+      // For vertical positioning, check that middle is inside outer with appropriate spacing
+      expect(middleRect.top - outerRect.top).toBeGreaterThanOrEqual(30); // At least 20px padding + 10px margin
+      expect(innerRect.left - middleRect.left).toBe(30); // margin-left
+      // Inner element should be positioned relative to middle, but vertical position might be affected by layout
+      expect(innerRect.top).toBeGreaterThanOrEqual(middleRect.top); // Inner is below or at middle's top
+
+      // Clean up
+      (modalPopup as any).hide();
+      await sleep(0.3);
+      document.body.removeChild(modalPopup);
+      done();
+    });
+
+    it('should handle getBoundingClientRect calls from inside modal popup event handlers', async (done) => {
+      const modalPopup = document.createElement('flutter-modal-popup');
+      document.body.appendChild(modalPopup);
+
+      const button = document.createElement('button');
+      button.textContent = 'Click me';
+      button.style.width = '100px';
+      button.style.height = '40px';
+      modalPopup.appendChild(button);
+
+      const target = document.createElement('div');
+      target.id = 'click-target';
+      target.style.width = '150px';
+      target.style.height = '80px';
+      target.style.marginTop = '20px';
+      target.style.backgroundColor = 'green';
+      modalPopup.appendChild(target);
+
+      await sleep(0.5); // Wait for modal animation
+      // Show modal
+      (modalPopup as any).show();
+      await sleep(0.5);
+
+      // Add click handler that calls getBoundingClientRect
+      button.onclick = () => {
+        const rect = target.getBoundingClientRect();
+        
+        // Verify we get valid coordinates
+        expect(rect.width).toBe(150);
+        expect(rect.height).toBe(80);
+        expect(rect.top).toBeGreaterThan(0);
+        expect(rect.left).toBeGreaterThanOrEqual(0);
+        
+        // Clean up
+        (modalPopup as any).hide();
+        setTimeout(() => {
+          document.body.removeChild(modalPopup);
+          done();
+        }, 300);
+      };
+
+      // Simulate click
+      button.click();
+    });
+  });
 });

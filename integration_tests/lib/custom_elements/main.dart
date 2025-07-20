@@ -17,6 +17,7 @@ import 'flutter_constraint_container.dart';
 import 'flutter_constraint_container_2.dart';
 import 'flutter_sliver_listview.dart';
 import 'flutter_nested_scroller.dart';
+import 'flutter_modal_popup.dart';
 
 void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-button',
@@ -44,4 +45,5 @@ void defineWebFCustomElements() {
   WebF.defineCustomElement('flutter-nest-scroller-skeleton', (context) => FlutterNestScrollerSkeleton(context));
   WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));
   WebF.defineCustomElement('flutter-nest-scroller-item-persistent-header', (context) => FlutterNestScrollerSkeletonItemPersistentHeader(context));
+  WebF.defineCustomElement('flutter-modal-popup', (context) => FlutterModalPopup(context));
 }

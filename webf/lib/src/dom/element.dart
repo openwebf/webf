@@ -1232,7 +1232,40 @@ abstract class Element extends ContainerNode
       }
 
       if (renderStyle.isBoxModelHaveSize()) {
-        Offset offset = renderStyle.getOffset(ancestorRenderBox: getRootRenderBoxModel(), excludeScrollOffset: false);
+        RenderBoxModel? currentRenderBox = renderStyle.attachedRenderBoxModel;
+        Offset offset = Offset.zero;
+        
+        if (currentRenderBox != null) {
+          // Get the WebF viewport
+          RenderBox? viewport = getRootViewport();
+          
+          // First, try to get offset using the normal ancestor-based approach
+          // This will work for elements in the main document tree
+          RenderBoxModel? rootRenderBox = getRootRenderBoxModel();
+          if (rootRenderBox != null) {
+            try {
+              offset = renderStyle.getOffset(ancestorRenderBox: rootRenderBox, excludeScrollOffset: false);
+            } catch (e) {
+              // If getOffset fails (e.g., for elements in modal popups),
+              // fall back to global coordinate calculation
+              if (viewport != null) {
+                // Get global positions of both the element and viewport
+                Offset elementGlobal = currentRenderBox.localToGlobal(Offset.zero);
+                Offset viewportGlobal = viewport.localToGlobal(Offset.zero);
+                
+                // Calculate relative position
+                offset = elementGlobal - viewportGlobal;
+              }
+            }
+          } else if (viewport != null) {
+            // No root render box (shouldn't happen normally)
+            // Use global coordinate calculation
+            Offset elementGlobal = currentRenderBox.localToGlobal(Offset.zero);
+            Offset viewportGlobal = viewport.localToGlobal(Offset.zero);
+            offset = elementGlobal - viewportGlobal;
+          }
+        }
+
         Size size = renderStyle.boxSize()!;
         boundingClientRect = BoundingClientRect(
             context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
@@ -1263,20 +1296,20 @@ abstract class Element extends ContainerNode
     if (offsetParent?.hasScroll == true) {
       ancestor = offsetParent?.attachedRendererWrapper;
     }
-    
-    // For sticky positioned elements with body as offsetParent, 
+
+    // For sticky positioned elements with body as offsetParent,
     // we need to account for scroll position
     if (renderStyle.position == CSSPositionType.sticky && offsetParent is BodyElement) {
       // For sticky elements, we need to calculate their position including scroll
       // Get total scroll offset by checking all scroll containers
       double totalScrollX = 0.0;
-      
+
       // Check if documentElement has scroll
       Element? docElement = ownerDocument.documentElement;
       if (docElement != null && docElement.attachedRenderer != null) {
         totalScrollX = docElement.scrollLeft;
       }
-      
+
       // If no scroll on documentElement, check body
       if (totalScrollX == 0.0) {
         Element? body = ownerDocument.documentElement?.querySelector(['body']);
@@ -1284,7 +1317,7 @@ abstract class Element extends ContainerNode
           totalScrollX = body.scrollLeft;
         }
       }
-      
+
       // Get the sticky element's current position relative to the viewport
       RenderBoxModel? renderer = attachedRenderer;
       if (renderer != null && renderer.hasSize) {
@@ -1293,15 +1326,15 @@ abstract class Element extends ContainerNode
         RenderPositionPlaceholder? placeholder = renderStyle.getSelfPositionPlaceHolder();
         if (placeholder != null && placeholder.attached) {
           // Get the placeholder's position (original position before sticky)
-          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!, 
+          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!,
               excludeScrollOffset: true);
-          
+
           // Calculate where the element should be without sticky
           double naturalPosition = placeholderOffset.dx - totalScrollX;
-          
+
           // Get sticky constraints
           double stickyLeft = renderStyle.left.computedValue;
-          
+
           // Check if element should be stuck
           if (naturalPosition < stickyLeft) {
             // Element should be stuck at sticky position
@@ -1311,13 +1344,13 @@ abstract class Element extends ContainerNode
             return placeholderOffset.dx;
           }
         }
-        
+
         // Fallback: calculate based on current visual position
         RenderBox? viewport = getRootViewport();
         if (viewport != null) {
           // Get position relative to viewport
           Offset viewportOffset = renderer.localToGlobal(Offset.zero, ancestor: viewport);
-          
+
           // For sticky elements, we need to handle the case where they're stuck
           // If the element is at its sticky position (e.g., left: 50px), it's stuck
           if (viewportOffset.dx == renderStyle.left.computedValue) {
@@ -1330,7 +1363,7 @@ abstract class Element extends ContainerNode
         }
       }
     }
-    
+
     Offset relative = renderStyle.getOffset(ancestorRenderBox: ancestor, excludeScrollOffset: true);
     offset += relative.dx;
     return offset;
@@ -1360,19 +1393,19 @@ abstract class Element extends ContainerNode
       ancestor = offsetParent?.attachedRendererWrapper;
     }
 
-    // For sticky positioned elements with body as offsetParent, 
+    // For sticky positioned elements with body as offsetParent,
     // we need to account for scroll position
     if (renderStyle.position == CSSPositionType.sticky && offsetParent is BodyElement) {
       // For sticky elements, we need to calculate their position including scroll
       // Get total scroll offset by checking all scroll containers
       double totalScrollY = 0.0;
-      
+
       // Check if documentElement has scroll
       Element? docElement = ownerDocument.documentElement;
       if (docElement != null && docElement.attachedRenderer != null) {
         totalScrollY = docElement.scrollTop;
       }
-      
+
       // If no scroll on documentElement, check body
       if (totalScrollY == 0.0) {
         Element? body = ownerDocument.documentElement?.querySelector(['body']);
@@ -1380,7 +1413,7 @@ abstract class Element extends ContainerNode
           totalScrollY = body.scrollTop;
         }
       }
-      
+
       // Get the sticky element's current position relative to the viewport
       RenderBoxModel? renderer = attachedRenderer;
       if (renderer != null && renderer.hasSize) {
@@ -1389,15 +1422,15 @@ abstract class Element extends ContainerNode
         RenderPositionPlaceholder? placeholder = renderStyle.getSelfPositionPlaceHolder();
         if (placeholder != null && placeholder.attached) {
           // Get the placeholder's position (original position before sticky)
-          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!, 
+          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!,
               excludeScrollOffset: true);
-          
+
           // Calculate where the element should be without sticky
           double naturalPosition = placeholderOffset.dy - totalScrollY;
-          
+
           // Get sticky constraints
           double stickyTop = renderStyle.top.computedValue;
-          
+
           // Check if element should be stuck
           if (naturalPosition < stickyTop) {
             // Element should be stuck at sticky position
@@ -1407,13 +1440,13 @@ abstract class Element extends ContainerNode
             return placeholderOffset.dy;
           }
         }
-        
+
         // Fallback: calculate based on current visual position
         RenderBox? viewport = getRootViewport();
         if (viewport != null) {
           // Get position relative to viewport
           Offset viewportOffset = renderer.localToGlobal(Offset.zero, ancestor: viewport);
-          
+
           // For sticky elements, we need to handle the case where they're stuck
           // If the element is at its sticky position (50px from top), it's stuck
           if (viewportOffset.dy == renderStyle.top.computedValue) {

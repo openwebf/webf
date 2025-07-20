@@ -63,14 +63,14 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       // For sliver elements in a ListView, the layoutOffset from SliverMultiBoxAdaptorParentData
       // is already viewport-relative and accounts for scroll position.
       double layoutOffset = (childRenderer.parentData as SliverMultiBoxAdaptorParentData).layoutOffset ?? 0.0;
-      
+
       // Determine scroll direction - default to vertical
       Axis scrollDirection = Axis.vertical;
       if (ancestor is RenderWidget && ancestor.renderStyle.target is WebFListViewElement) {
         scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).scrollDirection;
       }
-      
-      Offset sliverScrollOffset = scrollDirection == Axis.vertical ? 
+
+      Offset sliverScrollOffset = scrollDirection == Axis.vertical ?
           Offset(0, layoutOffset) : Offset(layoutOffset, 0);
 
       stackOffsets.add(sliverScrollOffset);
