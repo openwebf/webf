@@ -242,7 +242,7 @@ void Performance::measure(const AtomicString& measure_name,
     } else {
       exception_state.ThrowException(
           ctx(), ErrorType::TypeError,
-          "Failed to execute 'measure' on 'Performance': The mark " + start_mark.ToStdString(ctx()) + " does not exist.");
+          "Failed to execute 'measure' on 'Performance': The mark " + start_mark.ToStdString() + " does not exist.");
       return;
     }
   }
@@ -255,7 +255,7 @@ void Performance::measure(const AtomicString& measure_name,
 
   if (end_mark_count == 0) {
     // Try to parse end_mark as int64_t timestamp
-    std::string end_str = end_mark.ToStdString(ctx());
+    std::string end_str = end_mark.ToStdString();
     char* end_ptr = nullptr;
     end_timestamp = std::strtoll(end_str.c_str(), &end_ptr, 10);
 
@@ -265,7 +265,7 @@ void Performance::measure(const AtomicString& measure_name,
     } else {
       exception_state.ThrowException(
           ctx(), ErrorType::TypeError,
-          "Failed to execute 'measure' on 'Performance': The mark " + end_mark.ToStdString(ctx()) + " does not exist.");
+          "Failed to execute 'measure' on 'Performance': The mark " + end_mark.ToStdString() + " does not exist.");
       return;
     }
   }

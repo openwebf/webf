@@ -79,20 +79,20 @@ HTMLElement* Document::createElement(const AtomicString& name, ExceptionState& e
 }
 
 HTMLElement* Document::createElement(const AtomicString& name,
-                                 const ScriptValue& options,
-                                 ExceptionState& exception_state) {
+                                     const ScriptValue& options,
+                                     ExceptionState& exception_state) {
   return createElement(name, exception_state);
 }
 
 HTMLElement* Document::createElement(const AtomicString& name,
-                                 const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options,
-                                 ExceptionState& exception_state) {
+                                     const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options,
+                                     ExceptionState& exception_state) {
   return createElement(name, exception_state);
 }
 
 HTMLElement* Document::createElement(const AtomicString& name,
-                                 const std::shared_ptr<ElementCreationOptions>& options,
-                                 ExceptionState& exception_state) {
+                                     const std::shared_ptr<ElementCreationOptions>& options,
+                                     ExceptionState& exception_state) {
   return createElement(name, exception_state);
 }
 
@@ -191,15 +191,15 @@ bool Document::ChildTypeAllowed(NodeType type) const {
   return false;
 }
 
-// Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
-//  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
-//  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
-//                                           FlushUICommandReason::kDependentsAll, exception_state);
-//  if (exception_state.HasException()) {
-//    return nullptr;
-//  }
-//  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
-//}
+Element* Document::querySelector(const AtomicString& selectors, ExceptionState& exception_state) {
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
+  NativeValue result = InvokeBindingMethod(binding_call_methods::kquerySelector, 1, arguments,
+                                           FlushUICommandReason::kDependentsAll, exception_state);
+  if (exception_state.HasException()) {
+    return nullptr;
+  }
+  return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
+}
 
 std::vector<Element*> Document::querySelectorAll(const AtomicString& selectors, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), selectors)};
