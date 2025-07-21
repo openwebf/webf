@@ -15,6 +15,8 @@ export interface URLInterface {
   search: string;
   hash: string;
   origin: string;
+  username: string;
+  password: string;
   readonly searchParams: URLSearchParams;
   
   toString(): string;
@@ -67,6 +69,18 @@ function percentEscapeQuery(c: string) {
   return encodeURIComponent(c);
 }
 
+function percentEscapeUserInfo(c: string) {
+  var unicode = c.charCodeAt(0);
+  if (unicode > 0x20 &&
+     unicode < 0x7F &&
+     // " # < > ? ` @ : / \ [ ]
+     [0x22, 0x23, 0x3C, 0x3E, 0x3F, 0x60, 0x40, 0x3A, 0x2F, 0x5C, 0x5B, 0x5D].indexOf(unicode) == -1
+  ) {
+    return c;
+  }
+  return encodeURIComponent(c);
+}
+
 const EOF = undefined;
 const ALPHA = /[a-zA-Z]/;
 const ALPHANUMERIC = /[a-zA-Z0-9\+\-\.]/;
@@ -80,6 +94,8 @@ export class URL implements URLInterface {
   _isRelative: boolean;
   _username: string;
   _password: null | string;
+  _usernameInput: string;
+  _passwordInput: null | string;
   _scheme: string;
   _query: string;
   _fragment: string;
@@ -651,6 +667,36 @@ export class URL implements URLInterface {
       return '';
     }
     return this._scheme + '://' + host;
+  }
+
+  get username() {
+    return this._username;
+  }
+  
+  set username(username) {
+    if (this._isInvalid || !this._isRelative)
+      return;
+    // Encode special characters in username
+    let encodedUsername = '';
+    for (let i = 0; i < username.length; i++) {
+      encodedUsername += percentEscapeUserInfo(username[i]);
+    }
+    this._username = encodedUsername;
+  }
+
+  get password() {
+    return this._password || '';
+  }
+  
+  set password(password) {
+    if (this._isInvalid || !this._isRelative)
+      return;
+    // Encode special characters in password
+    let encodedPassword = '';
+    for (let i = 0; i < password.length; i++) {
+      encodedPassword += percentEscapeUserInfo(password[i]);
+    }
+    this._password = encodedPassword;
   }
 
   toString() {
