@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10.0)
+cmake_minimum_required(VERSION 3.20.0)
 project(WebF)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
@@ -54,7 +54,7 @@ else()
 endif()
 
 if(NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     include(CheckIPOSupported)
     check_ipo_supported(RESULT supported OUTPUT error)
     if( supported )
@@ -1086,7 +1086,7 @@ target_include_directories(webf PRIVATE
 target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
-  if (${CMAKE_BUILD_TYPE} STREQUAL "Release" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+  if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
