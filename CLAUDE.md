@@ -47,6 +47,7 @@
 - Run Flutter dart tests: `cd webf && flutter test`
 - Run a single Flutter test: `cd webf && flutter test test/path/to/test_file.dart`
 - Run integration tests: `cd integration_tests && npm run integration`
+- Run CSS unittests: `cmake -S bridge -B bridge/build/css -DENABLE_TEST=1 -DENABLE_ASAN=1 -GNinja && cmake --build bridge/build/css -t webf_css_unittests && ./bridge/build/css/webf_css_unittests` 
 
 ## Lint Commands
 
