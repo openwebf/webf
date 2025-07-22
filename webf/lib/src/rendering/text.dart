@@ -14,6 +14,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
+import 'package:webf/src/rendering/paragraph.dart' show NormalizedLineMetrics;
 
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
@@ -249,7 +250,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   List<double>? getLineAscent(int lineNum) {
-    LineMetrics lineMetrics = _renderParagraph.getLineMetricsByLineNum(lineNum);
+    NormalizedLineMetrics lineMetrics = _renderParagraph.getLineMetricsByLineNum(lineNum);
     double lineHeight = _lineHeight ?? 0;
     double leading = 0;
     if (lineHeight > 0) {
