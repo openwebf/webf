@@ -712,6 +712,10 @@ void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_wi
   }
 }
 
+void ExecutingContext::EnableBlinkEngine() {
+  enable_blink_engine_ = true;
+}
+
 void ExecutingContext::FlushUICommand(const BindingObject* self, uint32_t reason) {
   std::vector<NativeBindingObject*> deps;
   FlushUICommand(self, reason, deps);

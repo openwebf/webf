@@ -26,7 +26,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/executing_context_test.cc
   ./core/frame/console_test.cc
   ./core/frame/module_manager_test.cc
-#  ./core/dom/events/event_target_test.cc
+  ./core/dom/events/event_target_test.cc
 #  ./core/dom/document_test.cc
 #  ./core/dom/legacy/element_attribute_test.cc
 #  ./core/dom/node_test.cc

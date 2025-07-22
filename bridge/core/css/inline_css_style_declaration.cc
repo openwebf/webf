@@ -45,7 +45,9 @@ CSSStyleSheet* InlineCssStyleDeclaration::ParentStyleSheet() const {
   return parent_element_ ? &parent_element_->GetDocument().ElementSheet() : nullptr;
 }
 
-void InlineCssStyleDeclaration::Trace(webf::GCVisitor*) const {}
+void InlineCssStyleDeclaration::Trace(webf::GCVisitor* visitor) const {
+  visitor->TraceMember(parent_element_);
+}
 
 bool InlineCssStyleDeclaration::IsInlineCssStyleDeclaration() const {
   return true;

@@ -93,9 +93,10 @@ class ElementRareDataVector final : public NodeRareData {
                 "field in FieldId.");
 
   template <typename T, typename... Args>
-  T& EnsureWrappedField(FieldId field_id, Args&&... args) {
+  T& EnsureWrappedField(Element* element, FieldId field_id, Args&&... args) {
     T* field = static_cast<T*>(GetScriptWrappableField(field_id));
     if (!field) {
+      field = MakeGarbageCollected<T>(element, std::forward<Args>(args)...);
       SetScriptWrappableField(field_id, field);
     }
 
@@ -113,8 +114,8 @@ class ElementRareDataVector final : public NodeRareData {
   }
 
   template <typename T, typename U>
-  void SetWrappedField(FieldId field_id, U data) {
-    EnsureWrappedField<T>(field_id, data);
+  void SetWrappedField(Element* element, FieldId field_id, U data) {
+    EnsureWrappedField<T>(element, field_id, data);
   }
 
   template <typename T>
@@ -163,13 +164,13 @@ class ElementRareDataVector final : public NodeRareData {
 
   CSSStyleDeclaration& EnsureInlineCSSStyleDeclaration(Element* owner_element);
 
+  DOMTokenList& EnsureClassList(Element* owner_element, const AtomicString& attr);
   DOMTokenList* GetClassList() const {
     return static_cast<DOMTokenList*>(GetWrappedField<DOMTokenList>(FieldId::kClassList));
   }
-  void SetClassList(DOMTokenList* class_list) { SetWrappedField<DOMTokenList>(FieldId::kClassList, class_list); }
 
-  DOMStringMap* Dataset() const { return GetWrappedField<DOMStringMap>(FieldId::kDataset); }
-  void SetDataset(DOMStringMap* dataset) { SetWrappedField<DOMTokenList>(FieldId::kDataset, dataset); }
+  DOMStringMap& EnsureDataset(Element* owner_element);
+  DOMStringMap* GetDataset() const { return GetWrappedField<DOMStringMap>(FieldId::kDataset); }
 
   bool HasElementFlag(ElementFlags mask) const { return element_flags_ & static_cast<uint16_t>(mask); }
   void SetElementFlag(ElementFlags mask, bool value) {
@@ -185,6 +186,9 @@ class ElementRareDataVector final : public NodeRareData {
 
  private:
 };
+
+
+
 
 }  // namespace webf
 

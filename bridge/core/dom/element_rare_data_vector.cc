@@ -18,7 +18,15 @@ ElementRareDataVector::~ElementRareDataVector() {
 }
 
 CSSStyleDeclaration& ElementRareDataVector::EnsureInlineCSSStyleDeclaration(Element* owner_element) {
-  return EnsureWrappedField<InlineCssStyleDeclaration>(FieldId::kCssomWrapper, owner_element);
+  return EnsureWrappedField<InlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);
+}
+
+DOMTokenList& ElementRareDataVector::EnsureClassList(Element* owner_element, const AtomicString& attr) {
+  return EnsureWrappedField<DOMTokenList>(owner_element, FieldId::kClassList, attr);
+}
+
+DOMStringMap& ElementRareDataVector::EnsureDataset(webf::Element* owner_element) {
+  return EnsureWrappedField<DOMStringMap>(owner_element, FieldId::kDataset);
 }
 
 unsigned ElementRareDataVector::GetFieldIndex(FieldId field_id) const {
@@ -40,7 +48,7 @@ void ElementRareDataVector::SetElementRareDataField(webf::ElementRareDataVector:
   } else if (field) {
     fields_bitfield_ = fields_bitfield_ | (static_cast<BitfieldType>(1) << field_id_int);
     unsigned offset = GetFieldIndex(field_id);
-    if (offset > element_rare_data_fields_.size()) {
+    if (offset >= element_rare_data_fields_.size()) {
       element_rare_data_fields_.resize(field_id_int + 1);
     }
 
@@ -61,7 +69,7 @@ void ElementRareDataVector::SetScriptWrappableField(webf::ElementRareDataVector:
   } else if (field) {
     fields_bitfield_ = fields_bitfield_ | (static_cast<BitfieldType>(1) << field_id_int);
     unsigned offset = GetFieldIndex(field_id);
-    if (offset > script_wrappable_fields_.size()) {
+    if (offset >= script_wrappable_fields_.size()) {
       script_wrappable_fields_.resize(field_id_int + 1);
     }
 

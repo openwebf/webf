@@ -388,21 +388,19 @@ InlineCssStyleDeclaration* Element::style() {
 DOMTokenList* Element::classList() {
   ElementRareDataVector& rare_data = EnsureElementRareData();
   if (rare_data.GetClassList() == nullptr) {
-    auto* class_list = MakeGarbageCollected<DOMTokenList>(this, html_names::kClassAttr);
+    auto&& class_list = rare_data.EnsureClassList(this, html_names::kClassAttr);
     AtomicString classValue = getAttribute(html_names::kClassAttr, ASSERT_NO_EXCEPTION());
-    class_list->DidUpdateAttributeValue(g_null_atom, classValue);
-    rare_data.SetClassList(class_list);
+    class_list.DidUpdateAttributeValue(g_null_atom, classValue);
   }
   return rare_data.GetClassList();
 }
 
 DOMStringMap* Element::dataset() {
   ElementRareDataVector& rare_data = EnsureElementRareData();
-  if (rare_data.Dataset() == nullptr) {
-    auto* data_set = MakeGarbageCollected<DOMStringMap>(this);
-    rare_data.SetDataset(data_set);
+  if (rare_data.GetClassList() == nullptr) {
+    rare_data.EnsureDataset(this);
   }
-  return rare_data.Dataset();
+  return rare_data.GetDataset();
 }
 
 Element& Element::CloneWithChildren(CloneChildrenFlag flag, Document* document) const {

@@ -531,7 +531,6 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/style_scope_data.cc
     core/css/style_scope_frame.cc
 
-
     core/style/scoped_css_name.cc
     core/style/grid_area.h
 

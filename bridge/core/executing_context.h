@@ -194,6 +194,7 @@ class ExecutingContext {
   FORCE_INLINE ExecutingContextWebFMethods* publicMethodPtr() const { return public_method_ptr_.get(); }
   FORCE_INLINE bool isDedicated() { return is_dedicated_; }
   FORCE_INLINE std::chrono::time_point<std::chrono::system_clock> timeOrigin() const { return time_origin_; }
+  FORCE_INLINE bool isBlinkEnabled() { return enable_blink_engine_; }
 
   // Get RemoteObjectRegistry for this context
   RemoteObjectRegistry* GetRemoteObjectRegistry();
@@ -201,6 +202,8 @@ class ExecutingContext {
   const WidgetElementShape* GetWidgetElementShape(const AtomicString& key);
   bool HasWidgetElementShape(const AtomicString& key) const;
   void SetWidgetElementShape(NativeWidgetElementShape* native_widget_element_shape, size_t len);
+
+  void EnableBlinkEngine();
 
   // Force dart side to execute the pending ui commands.
   void FlushUICommand(const BindingObject* self, uint32_t reason);
@@ -288,6 +291,7 @@ class ExecutingContext {
   bool is_dedicated_;
   int8_t use_legacy_ui_command_;
   std::unique_ptr<RemoteObjectRegistry> remote_object_registry_;
+  bool enable_blink_engine_ = false;
 
   // Rust methods ptr should keep alive when ExecutingContext is disposing.
   const std::unique_ptr<ExecutingContextWebFMethods> public_method_ptr_ = nullptr;
