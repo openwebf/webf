@@ -52,6 +52,14 @@ Color::ColorSpace ColorSpaceFromFunctionName(CSSValueID id) {
       return Color::ColorSpace::kHSL;
     case CSSValueID::kHwb:
       return Color::ColorSpace::kHWB;
+    case CSSValueID::kLab:
+      return Color::ColorSpace::kLab;
+    case CSSValueID::kOklab:
+      return Color::ColorSpace::kOklab;
+    case CSSValueID::kLch:
+      return Color::ColorSpace::kLch;
+    case CSSValueID::kOklch:
+      return Color::ColorSpace::kOklch;
     default:
       return Color::ColorSpace::kNone;
   }
@@ -62,6 +70,21 @@ Color::ColorSpace ColorSpaceFromColorSpaceArgument(CSSValueID id) {
   switch (id) {
     case CSSValueID::kSrgb:
       return Color::ColorSpace::kSRGB;
+    case CSSValueID::kRec2020:
+      return Color::ColorSpace::kRec2020;
+    case CSSValueID::kSrgbLinear:
+      return Color::ColorSpace::kSRGBLinear;
+    case CSSValueID::kDisplayP3:
+      return Color::ColorSpace::kDisplayP3;
+    case CSSValueID::kA98Rgb:
+      return Color::ColorSpace::kA98RGB;
+    case CSSValueID::kProphotoRgb:
+      return Color::ColorSpace::kProPhotoRGB;
+    case CSSValueID::kXyzD50:
+      return Color::ColorSpace::kXYZD50;
+    case CSSValueID::kXyz:
+    case CSSValueID::kXyzD65:
+      return Color::ColorSpace::kXYZD65;
     default:
       return Color::ColorSpace::kNone;
   }

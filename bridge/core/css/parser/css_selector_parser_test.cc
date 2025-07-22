@@ -974,19 +974,18 @@ class ScopeActivationTest : public ::testing::TestWithParam<ScopeActivationData>
  protected:
   void SetUp() override {
     env_ = TEST_init();
-    document_ = env_->page()->executingContext()->document();
   }
 
   void TearDown() override {
-    document_ = nullptr;
     env_.reset();
   }
 
-  Document* document() { return document_; }
+  Document* document() { 
+    return env_ ? env_->page()->executingContext()->document() : nullptr;
+  }
 
  private:
   std::unique_ptr<WebFTestEnv> env_;
-  Document* document_ = nullptr;
 };
 
 INSTANTIATE_TEST_SUITE_P(CSSSelectorParserTest, ScopeActivationTest, testing::ValuesIn(scope_activation_data));
@@ -1118,19 +1117,18 @@ class ScopeActivationCountTest : public ::testing::TestWithParam<ScopeActivation
  protected:
   void SetUp() override {
     env_ = TEST_init();
-    document_ = env_->page()->executingContext()->document();
   }
 
   void TearDown() override {
-    document_ = nullptr;
     env_.reset();
   }
 
-  Document* document() { return document_; }
+  Document* document() { 
+    return env_ ? env_->page()->executingContext()->document() : nullptr;
+  }
 
  private:
   std::unique_ptr<WebFTestEnv> env_;
-  Document* document_ = nullptr;
 };
 
 INSTANTIATE_TEST_SUITE_P(CSSSelectorParserTest,

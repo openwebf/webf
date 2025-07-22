@@ -94,10 +94,9 @@ class CSSParserToken {
         padding_(0)  // Don't care.
   {}
 
-  CSSParserToken(CSSParserTokenType type, std::string_view value, BlockType block_type = kNotBlock)
-      : type_(type), block_type_(block_type) {
+  CSSParserToken(CSSParserTokenType type, std::string_view value, BlockType block_type = kNotBlock, int id = -1)
+      : type_(type), block_type_(block_type), id_(id) {
     InitValueFromStringView(value);
-    id_ = -1;
   }
   CSSParserToken(CSSParserTokenType, int32_t,
                  int32_t);  // for UnicodeRangeToken

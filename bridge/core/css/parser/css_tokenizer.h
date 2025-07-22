@@ -117,6 +117,7 @@ class CSSTokenizer {
 
   CSSParserToken BlockStart(CSSParserTokenType);
   CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, std::string_view);
+  CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, std::string_view, CSSValueID);
   CSSParserToken BlockEnd(CSSParserTokenType, CSSParserTokenType start_type);
 
   CSSParserToken WhiteSpace(char);

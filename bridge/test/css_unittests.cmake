@@ -59,6 +59,9 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/parser/sizes_math_function_parser_test.cc
   ./core/css/parser/css_parser_comprehensive_test.cc
   ./core/css/parser/css_parser_shorthand_test.cc
+  ./core/css/parser/css_tokenizer_comprehensive_test.cc
+  ./core/css/parser/css_property_parser_simple_test.cc
+  ./core/css/parser/css_selector_parser_comprehensive_test.cc
   ./core/css/properties/css_bitset_test.cc
   ./core/css/properties/css_parsing_utils_test.cc
 )

@@ -85,6 +85,18 @@ class Color {
     // to 6.0, and the rest are in the rance from 0.0 to 1.0.
     // interval.
     kHWB,
+    // Modern color spaces from CSS Color 4
+    kLab,
+    kOklab,
+    kLch,
+    kOklch,
+    kRec2020,
+    kSRGBLinear,
+    kDisplayP3,
+    kA98RGB,
+    kProPhotoRGB,
+    kXYZD50,
+    kXYZD65,
     // An uninitialized color.
     kNone,
   };

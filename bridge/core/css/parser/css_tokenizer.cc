@@ -9,6 +9,7 @@
 #include "css_tokenizer.h"
 #include "css_parser_idioms.h"
 #include "css_parser_token.h"
+#include "css_property_parser.h"
 #include "foundation/ascii_types.h"
 
 #ifdef __SSE2__
@@ -124,6 +125,11 @@ CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType type) {
 CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, std::string_view name) {
   block_stack_.push_back(block_type);
   return CSSParserToken(type, name, CSSParserToken::kBlockStart);
+}
+
+CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, std::string_view name, CSSValueID id) {
+  block_stack_.push_back(block_type);
+  return CSSParserToken(type, name, CSSParserToken::kBlockStart, static_cast<int>(id));
 }
 
 CSSParserToken CSSTokenizer::BlockEnd(CSSParserTokenType type, CSSParserTokenType start_type) {
@@ -518,7 +524,7 @@ CSSParserToken CSSTokenizer::ConsumeIdentLikeToken() {
         return ConsumeUrlToken();
       }
     }
-    return BlockStart(kLeftParenthesisToken, kFunctionToken, name);
+    return BlockStart(kLeftParenthesisToken, kFunctionToken, name, CssValueKeywordID(name));
   }
   return CSSParserToken(kIdentToken, name);
 }
