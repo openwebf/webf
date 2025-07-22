@@ -38,6 +38,7 @@ class MatchResult {
     const StylePropertySet* properties;
     CascadeOrigin origin;
     CascadeLayerLevel layer_level;
+    bool is_inline_style = false;
   };
 
   MatchResult() = default;
@@ -52,6 +53,18 @@ class MatchResult {
     matched.properties = properties;
     matched.origin = origin;
     matched.layer_level = layer_level;
+    matched.is_inline_style = false;
+    matched_properties_.push_back(matched);
+  }
+  
+  void AddInlineStyleProperties(const StylePropertySet* properties) {
+    if (!properties) return;
+    
+    MatchedProperties matched;
+    matched.properties = properties;
+    matched.origin = CascadeOrigin::kAuthor;
+    matched.layer_level = 0;
+    matched.is_inline_style = true;
     matched_properties_.push_back(matched);
   }
 

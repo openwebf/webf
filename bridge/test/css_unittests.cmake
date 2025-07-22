@@ -8,6 +8,9 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/resolver/style_resolver_simple_test.cc
   ./core/css/resolver/style_builder_test.cc
   ./core/css/resolver/style_builder_unit_test.cc
+  ./core/css/resolver/style_cascade_test.cc
+  ./core/css/resolver/selector_specificity_test.cc
+  ./core/css/inline_style_test.cc
   ./core/css/selector_test.cc
   ./core/css/css_initial_test.cc
   ./core/css/css_default_style_sheets_test.cc
@@ -82,6 +85,8 @@ target_link_libraries(webf_css_unittests
 target_compile_definitions(webf_css_unittests PUBLIC -DFLUTTER_BACKEND=0)
 target_compile_definitions(webf_css_unittests PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(webf_css_unittests PUBLIC -DUNIT_TEST=1)
+# Set minimum log level to INFO to suppress VERBOSE logs (including Dispatcher logs)
+target_compile_definitions(webf_css_unittests PUBLIC -DWEBF_MIN_LOG_LEVEL=::webf::INFO)
 
 # Set output directory if specified
 if (DEFINED ENV{LIBRARY_OUTPUT_DIR})

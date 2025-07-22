@@ -49,13 +49,13 @@ void* initDartIsolateContextSync(int64_t dart_port,
   auto dispatcher = std::make_unique<webf::multi_threading::Dispatcher>(dart_port);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: initDartIsolateContextSync Call BEGIN";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: initDartIsolateContextSync Call BEGIN";
 #endif
   auto* dart_isolate_context = new webf::DartIsolateContext(dart_methods, dart_methods_len);
   dart_isolate_context->SetDispatcher(std::move(dispatcher));
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: initDartIsolateContextSync Call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: initDartIsolateContextSync Call END";
 #endif
 
   return dart_isolate_context;
@@ -63,7 +63,7 @@ void* initDartIsolateContextSync(int64_t dart_port,
 
 void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget_element_shapes, int32_t shape_len) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call BEGIN";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPageSync Call BEGIN";
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
@@ -71,7 +71,7 @@ void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget
   void* result = static_cast<webf::DartIsolateContext*>(dart_isolate_context)
                      ->AddNewPageSync(thread_identity, native_widget_element_shapes, shape_len);
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPageSync Call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPageSync Call END";
 #endif
 
   return result;
@@ -86,7 +86,7 @@ void allocateNewPage(double thread_identity,
                      Dart_Handle dart_handle,
                      AllocateNewPageCallback result_callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPage Call BEGIN";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPage Call BEGIN";
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   assert(dart_isolate_context != nullptr);
@@ -96,7 +96,7 @@ void allocateNewPage(double thread_identity,
       ->AddNewPage(thread_identity, sync_buffer_size, use_legacy_ui_command, native_widget_element_shapes, shape_len, persistent_handle,
                    result_callback);
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: allocateNewPage Call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPage Call END";
 #endif
 }
 
@@ -106,7 +106,7 @@ void disposePage(double thread_identity,
                  Dart_Handle dart_handle,
                  DisposePageCallback result_callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: disposePage Call BEGIN";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: disposePage Call BEGIN";
 #endif
 
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
@@ -116,19 +116,19 @@ void disposePage(double thread_identity,
   ((webf::DartIsolateContext*)dart_isolate_context)
       ->RemovePage(thread_identity, static_cast<webf::WebFPage*>(page_), persistent_handle, result_callback);
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: disposePage Call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: disposePage Call END";
 #endif
 }
 
 void disposePageSync(double thread_identity, void* ptr, void* page_) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: disposePageSync Call BEGIN";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: disposePageSync Call BEGIN";
 #endif
   auto* dart_isolate_context = (webf::DartIsolateContext*)ptr;
   ((webf::DartIsolateContext*)dart_isolate_context)
       ->RemovePageSync(thread_identity, static_cast<webf::WebFPage*>(page_));
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher]: disposePageSync Call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher]: disposePageSync Call END";
 #endif
 }
 

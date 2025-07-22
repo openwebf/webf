@@ -60,6 +60,9 @@
 #include "qjs_html_template_element.h"
 #include "qjs_html_textarea_element.h"
 #include "qjs_html_unknown_element.h"
+#include "qjs_html_ulist_element.h"
+#include "qjs_html_olist_element.h"
+#include "qjs_html_li_element.h"
 #include "qjs_hybrid_router_change_event.h"
 #include "qjs_idle_deadline.h"
 #include "qjs_image.h"
@@ -175,6 +178,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSImage::Install(context);
   QJSHTMLScriptElement::Install(context);
   QJSHTMLLinkElement::Install(context);
+  QJSHTMLUListElement::Install(context);
+  QJSHTMLOListElement::Install(context);
+  QJSHTMLLIElement::Install(context);
 
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);

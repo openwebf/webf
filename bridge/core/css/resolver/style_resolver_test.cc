@@ -119,12 +119,6 @@ TEST_F(StyleResolverTest, ResolveStyleForElement) {
   // Connect element to document
   GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
   
-  // Debug: Print actual tag name and expected
-  fprintf(stderr, "Expected tag name: 'div'\n");
-  fprintf(stderr, "Actual tag name: '%s'\n", element->tagName().GetString().c_str());
-  fprintf(stderr, "Actual local name: '%s'\n", element->localName().GetString().c_str());
-  fprintf(stderr, "Element is HTMLElement: %d\n", element->IsHTMLElement());
-  fflush(stderr);
   
   // Check element tag name
   EXPECT_EQ(element->tagName(), AtomicString("div")) << "Element tag name should be div";
@@ -141,8 +135,6 @@ TEST_F(StyleResolverTest, ResolveStyleForElement) {
   
   ASSERT_NE(computed_style, nullptr);
   // With UA stylesheet, div elements should have display: block
-  fprintf(stderr, "DIV computed display value: %d (expected %d for kBlock)\n", 
-          static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
   EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
 }
 
@@ -225,8 +217,6 @@ TEST_F(StyleResolverTest, UAStylesheetBodyDisplay) {
   
   ASSERT_NE(computed_style, nullptr);
   // Body should have display: block from UA stylesheet
-  fprintf(stderr, "BODY computed display value: %d (expected %d for kBlock)\n", 
-          static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
   EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
 }
 
@@ -254,8 +244,6 @@ TEST_F(StyleResolverTest, UAStylesheetParagraphDisplay) {
   
   ASSERT_NE(computed_style, nullptr);
   // Paragraph should have display: block from UA stylesheet
-  fprintf(stderr, "P computed display value: %d (expected %d for kBlock)\n", 
-          static_cast<int>(computed_style->Display()), static_cast<int>(EDisplay::kBlock));
   EXPECT_EQ(computed_style->Display(), EDisplay::kBlock);
   
 }

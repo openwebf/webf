@@ -8,6 +8,8 @@
 
 #include "core/css/style_element.h"
 #include "html_element.h"
+#include "html_names.h"
+#include "foundation/casting.h"
 
 namespace webf {
 
@@ -32,6 +34,9 @@ class HTMLStyleElement : public HTMLElement, private StyleElement {
 
   AtomicString type() const;
   bool IsSameObject(const Node& node) const override { return this == &node; }
+  
+  // Expose sheet() from StyleElement
+  CSSStyleSheet* sheet() const { return StyleElement::sheet(); }
 
   void Trace(webf::GCVisitor* visitor) const override;
 

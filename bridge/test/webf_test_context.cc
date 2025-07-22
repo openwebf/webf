@@ -392,6 +392,25 @@ WebFTestContext::~WebFTestContext() {
       // Force all pending finalizers to run before cleanup
       JS_RunGC(context_->dartIsolateContext()->runtime());
       
+      // Explicitly delete the test functions that were installed
+      const char* test_functions[] = {
+          "__webf_execute_test__",
+          "__webf_match_image_snapshot__", 
+          "__webf_environment__",
+          "__webf_simulate_pointer__",
+          "__webf_simulate_inputtext__",
+          "__webf_sync_buffer__",
+          "__webf_trigger_global_error__",
+          "__webf_change_dark_mode__",
+          "__webf_parse_html__"
+      };
+      
+      for (const char* func_name : test_functions) {
+        JSAtom atom = JS_NewAtom(context_->ctx(), func_name);
+        JS_DeleteProperty(context_->ctx(), global, atom, 0);
+        JS_FreeAtom(context_->ctx(), atom);
+      }
+      
       // Clear all enumerable properties from the global object
       // This removes the polyfill functions that were installed
       JSPropertyEnum* props = nullptr;

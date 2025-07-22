@@ -282,8 +282,7 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, Exceptio
   if (native_binding_object == nullptr)
     return nullptr;
 
-  //  return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
-  return nullptr;
+  return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
 
 ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,

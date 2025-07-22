@@ -1,73 +1,75 @@
-// Copyright 2021 The Chromium Authors
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 /*
+ * Copyright (C) 2021 Google Inc. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef WEBF_CASCADE_LAYER_H
-#define WEBF_CASCADE_LAYER_H
+#ifndef WEBF_CORE_CSS_CASCADE_LAYER_H_
+#define WEBF_CORE_CSS_CASCADE_LAYER_H_
 
+#include <optional>
+#include <unordered_map>
+#include <vector>
+#include "foundation/atomic_string.h"
 #include "core/css/style_rule.h"
+#include "foundation/macros.h"
 
 namespace webf {
 
+// Forward declaration to avoid circular dependency
 class CascadeLayer;
 
-struct CascadeLayerKeyHasher {
-  std::size_t operator()(const std::shared_ptr<const CascadeLayer>& k) const {
-    return std::hash<const CascadeLayer*>()(k.get());
-  }
-};
-
-struct CascadeLayerKeyEqual {
-  bool operator()(const std::shared_ptr<const CascadeLayer>& lhs,
-                  const std::shared_ptr<const CascadeLayer>& rhs) const {
-    return lhs.get() == rhs.get();
-  }
-};
-
-// Mapping from one layer to another (obviously). This is used in two places:
-//
-//  - When building superrulesets, we merge the RuleSets' layers
-//    to new CascadeLayer objects in the superruleset. Normally,
-//    we also map values in the RuleSet::Intervals, but occasionally,
-//    we need to look up @page rule etc. in the original RuleSets
-//    (which are not mapped), so we need to also be able to look up
-//    by the old layers, so we store and use the mapping.
-//
-//  - When building CascadeLayerMap (cascade_layer_map.h), we similarly combine
-//    layers from all active RuleSets (the superruleset's layers
-//    will be used in place of the layers of all RuleSets it is
-//    subsuming), into one grouping so give them a canonical numbering.
-//    For clarity, we use the typedef CanonicalLayerMap there.
-using LayerMap = std::unordered_map<std::shared_ptr<const CascadeLayer>,
-                                    std::shared_ptr<CascadeLayer>,
-                                    CascadeLayerKeyHasher,
-                                    CascadeLayerKeyEqual>;
+// Mapping from one layer to another. This is used when building
+// CascadeLayerMap to combine layers from all active RuleSets
+// into one grouping to give them a canonical numbering.
+using LayerMap = std::unordered_map<const CascadeLayer*, std::shared_ptr<CascadeLayer>>;
 
 // A CascadeLayer object represents a node in the ordered tree of cascade layers
 // in the sorted layer ordering.
 // https://www.w3.org/TR/css-cascade-5/#layer-ordering
-class CascadeLayer final {
+class CascadeLayer final : public std::enable_shared_from_this<CascadeLayer> {
  public:
-  explicit CascadeLayer(const std::string& name = "") : name_(name) {}
+  explicit CascadeLayer(const AtomicString& name = AtomicString::Empty())
+      : name_(name) {}
   ~CascadeLayer() = default;
 
-  const std::string& GetName() const { return name_; }
-  const std::vector<std::shared_ptr<CascadeLayer>>& GetDirectSubLayers() const { return direct_sub_layers_; }
+  const AtomicString& GetName() const { return name_; }
+  const std::vector<std::shared_ptr<CascadeLayer>>& GetDirectSubLayers() const {
+    return direct_sub_layers_;
+  }
 
   // Getting or setting the order of a layer is only valid for canonical cascade
   // layers i.e. the unique layer representation for a particular tree scope.
-  const std::optional<unsigned> GetOrder() const { return order_; }
-  void SetOrder(unsigned order) { order_ = order; }
+  const std::optional<uint16_t> GetOrder() const { return order_; }
+  void SetOrder(uint16_t order) { order_ = order; }
 
-  std::shared_ptr<CascadeLayer> GetOrAddSubLayer(const StyleRuleBase::LayerName& name);
+  CascadeLayer* GetOrAddSubLayer(const std::vector<AtomicString>& name);
 
-  // Recursive merge, used during creation of superrulesets.
-  // The hash set gets filled/appended with a map from the old to the new
-  // layers, where applicable (no sub-CascadeLayer objects from “other”
+  // Recursive merge, used during creation of CascadeLayerMap.
+  // The hash map gets filled/appended with a map from the old to the new
+  // layers, where applicable (no sub-CascadeLayer objects from "other"
   // are ever reused, so that they are unchanged even after future merges).
   //
   // This merges only the sub-layer structure and creates the mapping;
@@ -75,22 +77,25 @@ class CascadeLayer final {
   // CascadeLayerMap.
   void Merge(const CascadeLayer& other, LayerMap& mapping);
 
-  void Trace(GCVisitor*) const;
 
  private:
   friend class CascadeLayerTest;
   friend class RuleSetCascadeLayerTest;
 
   std::string ToStringForTesting() const;
-  void ToStringInternal(StringBuilder&, const std::string&) const;
+  void ToStringInternal(std::string& result, const std::string& prefix) const;
 
-  std::shared_ptr<CascadeLayer> FindDirectSubLayer(const std::string&) const;
+  CascadeLayer* FindDirectSubLayer(const AtomicString& name) const;
+  void ComputeLayerOrderInternal(unsigned* next);
 
-  std::optional<unsigned> order_;
-  std::string name_;
+  std::optional<uint16_t> order_;
+  AtomicString name_;
   std::vector<std::shared_ptr<CascadeLayer>> direct_sub_layers_;
+  
+  CascadeLayer(const CascadeLayer&) = delete;
+  CascadeLayer& operator=(const CascadeLayer&) = delete;
 };
 
 }  // namespace webf
 
-#endif  // WEBF_CASCADE_LAYER_H
+#endif  // WEBF_CORE_CSS_CASCADE_LAYER_H_

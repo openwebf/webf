@@ -38,12 +38,15 @@
 #include "core/css/css_default_style_sheets.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_property_value_set.h"
+#include "core/css/inline_css_style_declaration.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/css_selector.h"
 #include "core/css/css_style_rule.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/element_rule_collector.h"
+#include "core/css/style_rule.h"
 #include "core/css/media_query_evaluator.h"
+#include "bindings/qjs/exception_state.h"
 #include "core/css/resolver/match_request.h"
 #include "core/css/resolver/style_builder.h"
 #include "core/css/resolver/style_cascade.h"
@@ -56,6 +59,8 @@
 #include "core/dom/element.h"
 #include "core/dom/shadow_root.h"
 #include "core/dom/text.h"
+#include "core/html/html_style_element.h"
+#include "core/html/html_head_element.h"
 #include "core/style/computed_style.h"
 #include "core/style/computed_style_constants.h"
 
@@ -292,6 +297,15 @@ void StyleResolver::MatchAllRules(
   
   // Match author rules
   MatchAuthorRules(element, 0, collector);
+  
+  // Match inline style (highest priority)
+  if (element.IsStyledElement()) {
+    auto inline_style_set = const_cast<Element&>(element).EnsureMutableInlineStyle();
+    if (inline_style_set && inline_style_set->PropertyCount() > 0) {
+      collector.AddElementStyleProperties(inline_style_set,
+                                         PropertyAllowedInMode::kAll);
+    }
+  }
 }
 
 void StyleResolver::MatchUARules(ElementRuleCollector& collector) {
@@ -347,8 +361,67 @@ void StyleResolver::MatchAuthorRules(
     Element& element,
     ScopeOrdinal scope_ordinal,
     ElementRuleCollector& collector) {
-  // TODO: Implement author rules matching
-  // This would match rules from author stylesheets
+  // Match rules from author stylesheets (style elements, link elements)
+  Document& document = element.GetDocument();
+  
+  // Get all style elements in the document
+  // Note: getElementsByTagName might not work in test environment, so we'll manually find style elements
+  std::vector<Element*> style_elements;
+  
+  // Helper function to recursively find style elements
+  std::function<void(Node*)> findStyleElements = [&](Node* node) {
+    if (!node) return;
+    
+    if (node->IsElementNode()) {
+      Element* elem = static_cast<Element*>(node);
+      if (elem->tagName() == html_names::kStyle) {
+        style_elements.push_back(elem);
+      }
+    }
+    
+    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+      findStyleElements(child);
+    }
+  };
+  
+  // Start from document element
+  findStyleElements(document.documentElement());
+  
+  if (style_elements.empty()) {
+    return;
+  }
+  
+  // Create a media query evaluator for the current document
+  MediaQueryEvaluator media_evaluator("screen");
+  
+  for (auto* style_element : style_elements) {
+    if (!style_element) {
+      continue;
+    }
+    
+    // Check if this is a style element
+    if (style_element->tagName() != html_names::kStyle) {
+      continue;
+    }
+    
+    // Cast to HTMLStyleElement - safe because we checked the tag name
+    auto* html_style = static_cast<HTMLStyleElement*>(style_element);
+    if (!html_style) {
+      continue;
+    }
+    
+    CSSStyleSheet* sheet = html_style->sheet();
+    if (!sheet || !sheet->Contents()) {
+      continue;
+    }
+    
+    // Get or create the RuleSet from the style sheet contents
+    auto rule_set_ptr = sheet->Contents()->EnsureRuleSet(media_evaluator);
+    
+    // Create a match request for this style sheet
+    MatchRequest match_request(rule_set_ptr);
+    collector.CollectMatchingRules(match_request);
+  }
 }
 
 // Old method - can be removed as it's replaced by ApplyBaseStyleNoCache flow

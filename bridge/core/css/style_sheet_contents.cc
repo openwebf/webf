@@ -32,7 +32,10 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/style_rule_import.h"
+#include "core/css/rule_set.h"
+#include "core/css/media_query_evaluator.h"
 #include "element_namespace_uris.h"
+#include "foundation/logging.h"
 // #include "core/css/parser/css_"
 
 namespace webf {
@@ -350,5 +353,34 @@ void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& pr
 }
 
 void StyleSheetContents::NotifyRemoveFontFaceRule(const webf::StyleRuleFontFace*) {}
+
+std::shared_ptr<RuleSet> StyleSheetContents::EnsureRuleSet(const MediaQueryEvaluator& medium) {
+  
+  if (!rule_set_) {
+    rule_set_ = std::make_shared<RuleSet>();
+    
+    
+    // Add all style rules from child_rules_ to the rule set
+    for (const auto& rule : child_rules_) {
+      if (rule->IsStyleRule()) {
+        // Since we can't use dynamic_pointer_cast without RTTI, use static_pointer_cast
+        // after we've already checked the type with IsStyleRule()
+        auto style_rule_ptr = std::static_pointer_cast<StyleRule>(rule);
+        rule_set_->AddStyleRule(style_rule_ptr, kRuleHasNoSpecialState);
+      }
+      // TODO: Handle other rule types like @media, @supports, etc.
+    }
+    
+    // Also process imported stylesheets
+    for (const auto& import_rule : import_rules_) {
+      // TODO: Handle @import rules
+    }
+  }
+  return rule_set_;
+}
+
+void StyleSheetContents::ClearRuleSet() {
+  rule_set_.reset();
+}
 
 }  // namespace webf

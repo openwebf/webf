@@ -275,8 +275,23 @@ WebFTestEnv::~WebFTestEnv() {
     }
   }
   
+  // Force final garbage collection and cleanup
+  if (isolate_context_ && isolate_context_->runtime()) {
+    // Run GC multiple times to ensure all cycles are broken
+    for (int i = 0; i < 5; i++) {
+      JS_RunGC(isolate_context_->runtime());
+    }
+  }
+  
   // Reset CSS default style sheets before disposing isolate context
   CSSDefaultStyleSheets::Reset();
+  
+  // Clear the global test context map for this page
+  if (page_) {
+    double page_id = page_->contextId();
+    test_context_map.erase(page_id);
+  }
+  
   
   // Dispose isolate context following WebF pattern
   isolate_context_->Dispose([]() {});
@@ -293,14 +308,9 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementS
     test_context_map.clear();
   }
   
-  // Log current context count for debugging
+  // Track initialization count
   static int init_count = 0;
   init_count++;
-  if (init_count % 25 == 0) {
-    fprintf(stderr, "TEST_init called %d times, test_context_map size: %zu, contextId: %f\n", 
-            init_count, test_context_map.size(), contextId);
-    fflush(stderr);
-  }
   
   // Prevent infinite context creation - hard limit at 500
   if (init_count > 500) {

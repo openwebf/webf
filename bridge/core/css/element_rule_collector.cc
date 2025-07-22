@@ -175,7 +175,8 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     }
     
     SelectorChecker::MatchResult match_result;
-    if (selector_checker_.Match(context, match_result)) {
+    bool matched = selector_checker_.Match(context, match_result);
+    if (matched) {
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
   }
@@ -297,9 +298,8 @@ void ElementRuleCollector::AddElementStyleProperties(
     return;
   }
   
-  result_.AddMatchedProperties(property_set.get(),
-                              CascadeOrigin::kAuthor,
-                              0);
+  // Use the new method for inline styles
+  result_.AddInlineStyleProperties(property_set.get());
 }
 
 void ElementRuleCollector::SetPseudoElementStyleRequest(

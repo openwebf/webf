@@ -970,7 +970,24 @@ ScopeActivationData scope_activation_data[] = {
     {"& & &", 2},
     {"& & &", 4},
 };
-class ScopeActivationTest : public ::testing::TestWithParam<ScopeActivationData> {};
+class ScopeActivationTest : public ::testing::TestWithParam<ScopeActivationData> {
+ protected:
+  void SetUp() override {
+    env_ = TEST_init();
+    document_ = env_->page()->executingContext()->document();
+  }
+
+  void TearDown() override {
+    document_ = nullptr;
+    env_.reset();
+  }
+
+  Document* document() { return document_; }
+
+ private:
+  std::unique_ptr<WebFTestEnv> env_;
+  Document* document_ = nullptr;
+};
 
 INSTANTIATE_TEST_SUITE_P(CSSSelectorParserTest, ScopeActivationTest, testing::ValuesIn(scope_activation_data));
 
@@ -978,10 +995,7 @@ TEST_P(ScopeActivationTest, All) {
   ScopeActivationData param = GetParam();
   SCOPED_TRACE(param.inner_rule);
 
-  auto env = TEST_init();
-  auto* document = env->page()->executingContext()->document();
-
-  std::shared_ptr<CSSSelectorList> list = ParseNested(document, param.inner_rule, CSSNestingType::kScope);
+  std::shared_ptr<CSSSelectorList> list = ParseNested(document(), param.inner_rule, CSSNestingType::kScope);
   ASSERT_TRUE(list);
   ASSERT_TRUE(list->First());
   const CSSSelector* selector = NthSimpleSelector(*list->First(), param.index);
@@ -1101,52 +1115,59 @@ ScopeActivationCountData scope_activation_count_data[] = {
 };
 
 class ScopeActivationCountTest : public ::testing::TestWithParam<ScopeActivationCountData> {
+ protected:
+  void SetUp() override {
+    env_ = TEST_init();
+    document_ = env_->page()->executingContext()->document();
+  }
+
+  void TearDown() override {
+    document_ = nullptr;
+    env_.reset();
+  }
+
+  Document* document() { return document_; }
+
  private:
+  std::unique_ptr<WebFTestEnv> env_;
+  Document* document_ = nullptr;
 };
 
 INSTANTIATE_TEST_SUITE_P(CSSSelectorParserTest,
                          ScopeActivationCountTest,
                          testing::ValuesIn(scope_activation_count_data));
 
-TEST_P(ScopeActivationCountTest, Scope) {
+TEST_P(ScopeActivationCountTest, All) {
   ScopeActivationCountData param = GetParam();
-  SCOPED_TRACE(param.selector_text);
+  
+  // Test Scope type
+  {
+    SCOPED_TRACE(std::string(param.selector_text) + " (Scope)");
+    // We expect :true and kScopeActivation to only occur ever occur together.
+    EXPECT_EQ(param.pseudo_count, CountPseudoTrue(document(), param.selector_text, CSSNestingType::kScope));
+    EXPECT_EQ(param.pseudo_count, CountScopeActivations(document(), param.selector_text, CSSNestingType::kScope));
+    EXPECT_EQ(param.pseudo_count,
+              CountPseudoTrueWithScopeActivation(document(), param.selector_text, CSSNestingType::kScope));
+  }
 
-  auto env = TEST_init();
-  auto* document = env->page()->executingContext()->document();
+  // Test Nesting type
+  {
+    SCOPED_TRACE(std::string(param.selector_text) + " (Nesting)");
+    // We do not expect any inserted :true/kScopeActivation for kNesting.
+    EXPECT_EQ(0u, CountPseudoTrue(document(), param.selector_text, CSSNestingType::kNesting));
+    EXPECT_EQ(0u, CountScopeActivations(document(), param.selector_text, CSSNestingType::kNesting));
+    EXPECT_EQ(0u, CountPseudoTrueWithScopeActivation(document(), param.selector_text, CSSNestingType::kNesting));
+  }
 
-  // We expect :true and kScopeActivation to only occur ever occur together.
-  EXPECT_EQ(param.pseudo_count, CountPseudoTrue(document, param.selector_text, CSSNestingType::kScope));
-  EXPECT_EQ(param.pseudo_count, CountScopeActivations(document, param.selector_text, CSSNestingType::kScope));
-  EXPECT_EQ(param.pseudo_count,
-            CountPseudoTrueWithScopeActivation(document, param.selector_text, CSSNestingType::kScope));
-}
-
-TEST_P(ScopeActivationCountTest, Nesting) {
-  ScopeActivationCountData param = GetParam();
-  SCOPED_TRACE(param.selector_text);
-
-  auto env = TEST_init();
-  auto* document = env->page()->executingContext()->document();
-
-  // We do not expect any inserted :true/kScopeActivation for kNesting.
-  EXPECT_EQ(0u, CountPseudoTrue(document, param.selector_text, CSSNestingType::kNesting));
-  EXPECT_EQ(0u, CountScopeActivations(document, param.selector_text, CSSNestingType::kNesting));
-  EXPECT_EQ(0u, CountPseudoTrueWithScopeActivation(document, param.selector_text, CSSNestingType::kNesting));
-}
-
-TEST_P(ScopeActivationCountTest, None) {
-  ScopeActivationCountData param = GetParam();
-  SCOPED_TRACE(param.selector_text);
-
-  auto env = TEST_init();
-  auto* document = env->page()->executingContext()->document();
-
-  // We do not expect any inserted :true/kScopeActivation for kNone. Note that
-  // relative selectors do not parse for kNone.
-  EXPECT_EQ(0u, CountPseudoTrue(document, param.selector_text, CSSNestingType::kNone).value_or(0));
-  EXPECT_EQ(0u, CountScopeActivations(document, param.selector_text, CSSNestingType::kNone).value_or(0));
-  EXPECT_EQ(0u, CountPseudoTrueWithScopeActivation(document, param.selector_text, CSSNestingType::kNone).value_or(0));
+  // Test None type
+  {
+    SCOPED_TRACE(std::string(param.selector_text) + " (None)");
+    // We do not expect any inserted :true/kScopeActivation for kNone. Note that
+    // relative selectors do not parse for kNone.
+    EXPECT_EQ(0u, CountPseudoTrue(document(), param.selector_text, CSSNestingType::kNone).value_or(0));
+    EXPECT_EQ(0u, CountScopeActivations(document(), param.selector_text, CSSNestingType::kNone).value_or(0));
+    EXPECT_EQ(0u, CountPseudoTrueWithScopeActivation(document(), param.selector_text, CSSNestingType::kNone).value_or(0));
+  }
 }
 
 }  // namespace webf

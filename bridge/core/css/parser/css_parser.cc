@@ -19,6 +19,7 @@
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_sheet_contents.h"
 #include "css_parser_impl.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -75,7 +76,8 @@ ParseSheetResult CSSParser::ParseSheet(std::shared_ptr<CSSParserContext> context
                                        const std::string& text,
                                        CSSDeferPropertyParsing defer_property_parsing,
                                        bool allow_import_rules) {
-  return CSSParserImpl::ParseStyleSheet(text, context, style_sheet, defer_property_parsing, allow_import_rules);
+  auto result = CSSParserImpl::ParseStyleSheet(text, context, style_sheet, defer_property_parsing, allow_import_rules);
+  return result;
 }
 
 MutableCSSPropertyValueSet::SetResult CSSParser::ParseValue(MutableCSSPropertyValueSet* declaration,

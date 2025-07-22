@@ -3097,6 +3097,35 @@ void Color::ApplyValue(webf::StyleResolverState& state, const webf::CSSValue& va
     if (ident_value.GetValueID() == CSSValueID::kCurrentcolor) {
       // For currentColor, we should use the inherited color
       state.StyleBuilder().SetColor(state.ParentStyle()->Color());
+    } else {
+      // Handle common color keywords
+      webf::Color color;
+      bool converted = false;
+      
+      switch (ident_value.GetValueID()) {
+        case CSSValueID::kBlue:
+          color = webf::Color(0, 0, 255);
+          converted = true;
+          break;
+        case CSSValueID::kPurple:
+          color = webf::Color(128, 0, 128);
+          converted = true;
+          break;
+        case CSSValueID::kRed:
+          color = webf::Color(255, 0, 0);
+          converted = true;
+          break;
+        case CSSValueID::kGreen:
+          color = webf::Color(0, 128, 0);
+          converted = true;
+          break;
+        default:
+          break;
+      }
+      
+      if (converted) {
+        state.StyleBuilder().SetColor(color);
+      }
     }
   }
 }

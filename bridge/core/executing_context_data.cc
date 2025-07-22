@@ -75,13 +75,16 @@ JSValue ExecutionContextData::constructorForIdSlowCase(const WrapperTypeInfo* ty
 }
 
 void ExecutionContextData::Dispose() {
-  for (auto& entry : prototype_map_) {
-    JS_FreeValueRT(m_context->dartIsolateContext()->runtime(), entry.second);
+  if (disposed_) {
+    return;
   }
-
-  for (auto& entry : constructor_map_) {
-    JS_FreeValueRT(m_context->dartIsolateContext()->runtime(), entry.second);
-  }
+  disposed_ = true;
+  
+  // The constructors and prototypes are JavaScript objects that will be
+  // freed by the QuickJS garbage collector when the runtime is destroyed.
+  // We just need to clear our references to them.
+  prototype_map_.clear();
+  constructor_map_.clear();
 }
 
 }  // namespace webf

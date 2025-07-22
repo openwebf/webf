@@ -34,6 +34,7 @@
 // #include "foundation/string_builder.h"
 // #include "foundation/atomic_string.h"
 // #include "core/css/pending_sheet_type.h"
+#include "foundation/logging.h"
 
 namespace webf {
 
@@ -84,7 +85,8 @@ StyleElement::ProcessingResult StyleElement::Process(Element& element) {
   if (!element.isConnected()) {
     return kProcessingSuccessful;
   }
-  return CreateSheet(element, element.innerHTML());
+  std::string content = element.innerHTML();
+  return CreateSheet(element, content);
 }
 
 void StyleElement::ClearSheet(Element& owner_element) {
@@ -97,6 +99,7 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
   assert(IsSameObject(element));
   Document& document = element.GetDocument();
 
+
   // Use a strong reference to keep the cache entry (which is a weak reference)
   // alive after ClearSheet().
   CSSStyleSheet* old_sheet = sheet_;
@@ -108,6 +111,7 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
 
   auto* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);
   sheet_ = new_sheet;
+  
 
   return kProcessingSuccessful;
 }

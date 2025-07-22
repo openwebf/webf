@@ -843,7 +843,15 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
   }
 }
 
-void Element::ParseAttribute(const webf::Element::AttributeModificationParams&) {}
+void Element::ParseAttribute(const webf::Element::AttributeModificationParams& params) {
+  if (params.name == html_names::kIdAttr) {
+    // Update the ID for style resolution
+    EnsureUniqueElementData().SetIdForStyleResolution(params.new_value);
+  } else if (params.name == html_names::kStyleAttr) {
+    // Update inline style from style attribute
+    StyleAttributeChanged(params.new_value, params.reason);
+  }
+}
 
 void Element::StyleAttributeChanged(const AtomicString& new_style_string,
                                     AttributeModificationReason modification_reason) {

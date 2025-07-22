@@ -32,6 +32,8 @@
 namespace webf {
 
 class StyleRuleImport;
+class RuleSet;
+class MediaQueryEvaluator;
 enum class ParseSheetResult;
 
 class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContents> {
@@ -181,13 +183,13 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   bool DidLoadErrorOccur() const { return did_load_error_occur_; }
   void SetDidLoadErrorOccur(bool did_error) { did_load_error_occur_ = did_error; }
 
-  //  RuleSet& GetRuleSet() {
-  //    DCHECK(rule_set_);
-  //    return *rule_set_.Get();
-  //  }
-  //  bool HasRuleSet() { return rule_set_.Get(); }
-  //  RuleSet& EnsureRuleSet(const MediaQueryEvaluator&);
-  //  void ClearRuleSet();
+  RuleSet* GetRuleSet() {
+    DCHECK(rule_set_);
+    return rule_set_.get();
+  }
+  bool HasRuleSet() { return rule_set_ != nullptr; }
+  std::shared_ptr<RuleSet> EnsureRuleSet(const MediaQueryEvaluator&);
+  void ClearRuleSet();
 
   void Trace(GCVisitor*) const;
 
@@ -219,6 +221,8 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
 
   std::unordered_set<CSSStyleSheet*> loading_clients_;
   std::unordered_set<CSSStyleSheet*> completed_clients_;
+  
+  std::shared_ptr<RuleSet> rule_set_;
 };
 
 }  // namespace webf

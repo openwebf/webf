@@ -28,6 +28,7 @@
 
 #include "core/css/resolver/style_cascade.h"
 
+#include "core/css/cascade_layer_map.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/css_value.h"
@@ -114,8 +115,10 @@ const CSSValue* StyleCascade::Resolve(const CSSPropertyName& name,
     style_origin = StyleCascadeOrigin::kUser;
   }
   
+  // Use implicit outer layer order (max value) as in Blink.
+  // This ensures cascade priorities are properly ordered.
   const CSSValue* resolved = Resolve(ResolveSurrogate(property), value,
-                                     CascadePriority(style_origin, false, 0, 0),
+                                     CascadePriority(style_origin, false, CascadeLayerMap::kImplicitOuterLayerOrder, 0),
                                      origin, resolver);
   
   DCHECK(resolved);
@@ -191,8 +194,8 @@ void StyleCascade::AnalyzeMatchResult() {
       // Build cascade priority
       // CascadePriority(origin, is_inline_style, layer_order, position, tree_order)
       CascadePriority priority(style_origin, 
-                               false,  // is_inline_style
-                               0,      // layer_order
+                               entry.is_inline_style,  // is_inline_style
+                               CascadeLayerMap::kImplicitOuterLayerOrder,      // layer_order
                                position++);  // position
       
       // Add to cascade map
@@ -295,15 +298,10 @@ void StyleCascade::LookupAndApplyDeclaration(const CSSProperty& property,
   
   const CSSValue* value = ValueAt(match_result_, priority->GetPosition());
   if (value) {
-    // WEBF_LOG(VERBOSE) << "Applying property " << property.PropertyID() << " with value: " << value->CssText() 
-    //                   << " origin: " << static_cast<int>(priority->GetOrigin());
-    
     resolver.CollectFlags(property, priority->GetOrigin());
     
     // Apply the value
     StyleBuilder::ApplyProperty(property.PropertyID(), state_, *value);
-  } else {
-    // WEBF_LOG(VERBOSE) << "No value found for property " << property.PropertyID() << " at position " << priority->GetPosition();
   }
 }
 

@@ -1,36 +1,58 @@
-// Copyright 2021 The Chromium Authors
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 /*
+ * Copyright (C) 2021 Google Inc. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cascade_layer.h"
-#include "foundation/string_builder.h"
+#include "core/css/cascade_layer.h"
+#include <sstream>
 
 namespace webf {
 
-std::shared_ptr<CascadeLayer> CascadeLayer::FindDirectSubLayer(const std::string& name) const {
+CascadeLayer* CascadeLayer::FindDirectSubLayer(const AtomicString& name) const {
   // Anonymous layers are all distinct.
-  if (name.empty()) {
+  if (name == AtomicString::Empty()) {
     return nullptr;
   }
   for (const auto& sub_layer : direct_sub_layers_) {
     if (sub_layer->GetName() == name) {
-      return sub_layer;
+      return sub_layer.get();
     }
   }
   return nullptr;
 }
 
-std::shared_ptr<CascadeLayer> CascadeLayer::GetOrAddSubLayer(const StyleRuleBase::LayerName& name) {
-  std::shared_ptr<CascadeLayer> layer = std::make_shared<CascadeLayer>(*this);
-  for (const std::optional<std::string>& name_part : name) {
-    std::shared_ptr<CascadeLayer> direct_sub_layer = layer->FindDirectSubLayer(name_part.value_or(""));
+CascadeLayer* CascadeLayer::GetOrAddSubLayer(
+    const std::vector<AtomicString>& name) {
+  CascadeLayer* layer = this;
+  for (const AtomicString& name_part : name) {
+    CascadeLayer* direct_sub_layer = layer->FindDirectSubLayer(name_part);
     if (!direct_sub_layer) {
-      direct_sub_layer = std::make_shared<CascadeLayer>(name_part.value_or(""));
-      layer->direct_sub_layers_.push_back(direct_sub_layer);
+      auto new_layer = std::make_shared<CascadeLayer>(name_part);
+      layer->direct_sub_layers_.push_back(new_layer);
+      direct_sub_layer = new_layer.get();
     }
     layer = direct_sub_layer;
   }
@@ -38,29 +60,31 @@ std::shared_ptr<CascadeLayer> CascadeLayer::GetOrAddSubLayer(const StyleRuleBase
 }
 
 std::string CascadeLayer::ToStringForTesting() const {
-  StringBuilder result;
+  std::string result;
   ToStringInternal(result, "");
-  return result.ReleaseString();
+  return result;
 }
 
-void CascadeLayer::ToStringInternal(StringBuilder& result, const std::string& prefix) const {
+void CascadeLayer::ToStringInternal(std::string& result,
+                                   const std::string& prefix) const {
   for (const auto& sub_layer : direct_sub_layers_) {
-    std::string name = sub_layer->name_.length() ? sub_layer->name_ : "(anonymous)";
-    if (result.length()) {
-      result.Append(",");
+    std::string name = sub_layer->name_.IsNull() ? "(anonymous)" : sub_layer->name_.GetString();
+    if (!result.empty()) {
+      result.append(",");
     }
-    result.Append(prefix);
-    result.Append(name);
+    result.append(prefix);
+    result.append(name);
     sub_layer->ToStringInternal(result, prefix + name + ".");
   }
 }
 
 void CascadeLayer::Merge(const CascadeLayer& other, LayerMap& mapping) {
-  mapping.insert({std::shared_ptr<const CascadeLayer>(&other), std::shared_ptr<CascadeLayer>(this)});
-  for (std::shared_ptr<CascadeLayer> sub_layer : other.direct_sub_layers_) {
+  // Can't use shared_from_this in non-shared_ptr context
+  // This would need to be refactored if we need this functionality
+  // mapping.insert({&other, shared_from_this()});
+  for (const auto& sub_layer : other.direct_sub_layers_) {
     GetOrAddSubLayer({sub_layer->GetName()})->Merge(*sub_layer, mapping);
   }
 }
 
-void CascadeLayer::Trace(GCVisitor* visitor) const {}
 }  // namespace webf

@@ -465,6 +465,12 @@ mixin StyleElementMixin on Element {
 
   void _recalculateStyle() {
     String? text = collectElementChildText();
+
+    // TODO(CGQAQ): Dispatch an event to notify C++ blink side to recalculate style if we are in Blink css mode.
+    // Question1: How to know if we are in Blink css mode?
+    // Question2: Pass the text to C++ blink side through UICommand? Do we already have the style text on c++ side?
+    // Question3: Animation timeline should send a command to c++ side to recalculate style or we just do it in dart side?
+
     if (text != null) {
       if (_styleSheet != null) {
         _styleSheet!.replaceSync(text,

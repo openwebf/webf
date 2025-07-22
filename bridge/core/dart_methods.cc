@@ -52,7 +52,7 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
                                              const char* errmsg,
                                              AsyncModuleCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::invokeModule callSync START";
 #endif
   NativeValue* result = dart_isolate_context_->dispatcher()->PostToDartSync(
       is_dedicated, context_id,
@@ -66,7 +66,7 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
       callback_context, context_id, moduleName, method, params, errmsg, callback);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::invokeModule callSync END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::invokeModule callSync END";
 #endif
 
   return result;
@@ -74,7 +74,7 @@ NativeValue* DartMethodPointer::invokeModule(bool is_dedicated,
 
 void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestBatchUpdate Call";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestBatchUpdate Call";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_batch_update_, context_id);
@@ -82,7 +82,7 @@ void DartMethodPointer::requestBatchUpdate(bool is_dedicated, double context_id)
 
 void DartMethodPointer::reloadApp(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::reloadApp Call";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::reloadApp Call";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, reload_app_, context_id);
@@ -94,7 +94,7 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
                                       AsyncCallback callback,
                                       int32_t timeout) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::setTimeout callSync START";
 #endif
 
   int32_t new_timer_id = start_timer_id++;
@@ -103,7 +103,7 @@ int32_t DartMethodPointer::setTimeout(bool is_dedicated,
                                                   context_id, callback, timeout);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setTimeout callSync END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::setTimeout callSync END";
 #endif
 
   return new_timer_id;
@@ -115,7 +115,7 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
                                        AsyncCallback callback,
                                        int32_t timeout) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::setInterval callSync START";
 #endif
 
   int32_t new_timer_id = start_timer_id++;
@@ -123,7 +123,7 @@ int32_t DartMethodPointer::setInterval(bool is_dedicated,
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, set_interval_, new_timer_id, callback_context,
                                                   context_id, callback, timeout);
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::setInterval callSync END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::setInterval callSync END";
 #endif
   return new_timer_id;
 }
@@ -141,7 +141,7 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                  double context_id,
                                                  AsyncRAFCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
 #endif
 
   int32_t new_frame_id = start_timer_id++;
@@ -150,7 +150,7 @@ int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
                                                   callback_context, context_id, callback);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
 #endif
   return new_frame_id;
 }
@@ -162,7 +162,7 @@ int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,
                                                int32_t ui_command_size,
                                                webf::AsyncIdelCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
 #endif
 
   int32_t new_idle_id = start_idle_id++;
@@ -171,7 +171,7 @@ int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,
                                                   context_id, timeout, ui_command_size, callback);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
 #endif
 
   return new_idle_id;
@@ -179,7 +179,7 @@ int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,
 
 void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, double context_id, int32_t id) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, cancel_animation_frame_, context_id, id);
@@ -187,7 +187,7 @@ void DartMethodPointer::cancelAnimationFrame(bool is_dedicated, double context_i
 
 void DartMethodPointer::cancelIdleCallback(bool is_dedicated, double context_id, int32_t id) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::cancelAnimationFrame call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, cancel_idle_callback_, context_id, id);
@@ -200,7 +200,7 @@ void DartMethodPointer::toBlob(bool is_dedicated,
                                void* element_ptr,
                                double devicePixelRatio) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::toBlob call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::toBlob call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, to_blob_, callback_context, context_id, blobCallback,
@@ -209,7 +209,7 @@ void DartMethodPointer::toBlob(bool is_dedicated,
 
 void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id, void* native_binding_object) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDartSync(
@@ -223,7 +223,7 @@ void DartMethodPointer::flushUICommand(bool is_dedicated, double context_id, voi
       context_id, native_binding_object);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::flushUICommand SYNC call END";
 #endif
 }
 
@@ -234,7 +234,7 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
                                             void* args,
                                             int32_t argc) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDartSync(
@@ -247,7 +247,7 @@ void DartMethodPointer::createBindingObject(bool is_dedicated,
       context_id, native_binding_object, type, args, argc);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::createBindingObject SYNC call END";
 #endif
 }
 
@@ -258,14 +258,14 @@ void DartMethodPointer::loadNativeLibrary(bool is_dedicated,
                                           void* import_data,
                                           LoadNativeLibraryCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, load_native_library_, context_id, lib_name,
                                                   initialize_data, import_data, callback);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::loadNativeLibrary SYNC call END";
 #endif
 }
 
@@ -275,14 +275,14 @@ void DartMethodPointer::fetchJavaScriptESMModule(bool is_dedicated,
                                                  webf::SharedNativeString* module_url,
                                                  FetchJavaScriptESMModuleCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, fetch_javascript_esm_module_, callback_context,
                                                   context_id, module_url, callback);
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::fetchJavaScriptESMModule ASYNC call END";
 #endif
 }
 
@@ -323,7 +323,7 @@ void DartMethodPointer::matchImageSnapshot(bool is_dedicated,
                                            SharedNativeString* name,
                                            MatchImageSnapshotCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::createBindingObject call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::createBindingObject call START";
 #endif
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_, callback_context, context_id,
                                                   bytes, length, name, callback);
@@ -338,7 +338,7 @@ void DartMethodPointer::matchImageSnapshotBytes(bool is_dedicated,
                                                 int32_t image_b_size,
                                                 MatchImageSnapshotCallback callback) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::matchImageSnapshotBytes call START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::matchImageSnapshotBytes call START";
 #endif
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, match_image_snapshot_bytes_, callback_context,
                                                   context_id, image_a_bytes, image_a_size, image_b_bytes, image_b_size,
@@ -347,7 +347,7 @@ void DartMethodPointer::matchImageSnapshotBytes(bool is_dedicated,
 
 const char* DartMethodPointer::environment(bool is_dedicated, double context_id) {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::environment callSync START";
 #endif
   const char* result =
       dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, [&](bool cancel) -> const char* {
@@ -357,7 +357,7 @@ const char* DartMethodPointer::environment(bool is_dedicated, double context_id)
       });
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::environment callSync END";
 #endif
 
   return result;
@@ -365,7 +365,7 @@ const char* DartMethodPointer::environment(bool is_dedicated, double context_id)
 
 void DartMethodPointer::simulateChangeDarkMode(bool is_dedicated, double context_id, bool is_dark_mode) const {
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync START";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::environment callSync START";
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDartSync(is_dedicated, context_id, [&](bool cancel) -> void {
@@ -375,7 +375,7 @@ void DartMethodPointer::simulateChangeDarkMode(bool is_dedicated, double context
   });
 
 #if ENABLE_LOG
-  WEBF_LOG(INFO) << "[Dispatcher] DartMethodPointer::environment callSync END";
+  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::environment callSync END";
 #endif
 }
 

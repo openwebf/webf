@@ -18,6 +18,7 @@ class ExecutingContext;
 class ExecutionContextData final {
  public:
   explicit ExecutionContextData(ExecutingContext* context) : m_context(context){};
+  ~ExecutionContextData() { Dispose(); }
   ExecutionContextData(const ExecutionContextData&) = delete;
   ExecutionContextData& operator=(const ExecutionContextData&) = delete;
 
@@ -34,6 +35,7 @@ class ExecutionContextData final {
   std::unordered_map<const WrapperTypeInfo*, JSValue> prototype_map_;
 
   ExecutingContext* m_context;
+  bool disposed_ = false;
 };
 
 }  // namespace webf

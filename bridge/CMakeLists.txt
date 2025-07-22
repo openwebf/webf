@@ -414,6 +414,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/media_values.cc
     core/css/style_scope.cc
     core/css/cascade_layer.cc
+    core/css/cascade_layer_map.cc
     core/css/container_selector.cc
     core/css/container_query.cc
     core/css/media_query_exp.cc
