@@ -41,6 +41,12 @@ class RenderEventListener extends RenderBoxModel
   GestureDispatcher? get gestureDispatcher => _gestureDispatcher;
 
   @override
+  void applyPaintTransform(RenderObject child, Matrix4 transform) {
+    final BoxParentData childParentData = child.parentData as BoxParentData;
+    transform.translate(childParentData.offset.dx, childParentData.offset.dy);
+  }
+
+  @override
   void markNeedsLayout() {
     super.markNeedsLayout();
     parent?.markNeedsLayout();
