@@ -19,7 +19,12 @@
 #include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
 #include "qjs_css_rule.h"
+#include "qjs_css_rule_list.h"
+#include "qjs_css_import_rule.h"
+#include "qjs_css_keyframe_rule.h"
+#include "qjs_css_keyframes_rule.h"
 #include "qjs_css_style_declaration.h"
+#include "qjs_style_sheet.h"
 #include "qjs_css_style_sheet.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
@@ -63,6 +68,30 @@
 #include "qjs_html_ulist_element.h"
 #include "qjs_html_olist_element.h"
 #include "qjs_html_li_element.h"
+#include "qjs_html_span_element.h"
+#include "qjs_html_pre_element.h"
+#include "qjs_html_code_element.h"
+#include "qjs_html_strong_element.h"
+#include "qjs_html_em_element.h"
+#include "qjs_html_section_element.h"
+#include "qjs_html_article_element.h"
+#include "qjs_html_nav_element.h"
+#include "qjs_html_header_element.h"
+#include "qjs_html_footer_element.h"
+#include "qjs_html_main_element.h"
+#include "qjs_html_aside_element.h"
+#include "qjs_html_time_element.h"
+#include "qjs_html_mark_element.h"
+#include "qjs_html_meta_element.h"
+#include "qjs_html_title_element.h"
+#include "qjs_html_label_element.h"
+#include "qjs_html_hr_element.h"
+#include "qjs_html_quote_element.h"
+#include "qjs_html_dl_element.h"
+#include "qjs_html_dt_element.h"
+#include "qjs_html_dd_element.h"
+#include "qjs_html_heading_element.h"
+#include "qjs_html_small_element.h"
 #include "qjs_hybrid_router_change_event.h"
 #include "qjs_idle_deadline.h"
 #include "qjs_image.h"
@@ -74,6 +103,7 @@
 #include "qjs_media_list.h"
 #include "qjs_message_event.h"
 #include "qjs_module_manager.h"
+#include "qjs_file.h"
 #include "qjs_mouse_event.h"
 #include "qjs_mutation_observer.h"
 #include "qjs_mutation_observer_registration.h"
@@ -181,6 +211,30 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLUListElement::Install(context);
   QJSHTMLOListElement::Install(context);
   QJSHTMLLIElement::Install(context);
+  QJSHTMLSpanElement::Install(context);
+  QJSHTMLPreElement::Install(context);
+  QJSHTMLCodeElement::Install(context);
+  QJSHTMLStrongElement::Install(context);
+  QJSHTMLEmElement::Install(context);
+  QJSHTMLSectionElement::Install(context);
+  QJSHTMLArticleElement::Install(context);
+  QJSHTMLNavElement::Install(context);
+  QJSHTMLHeaderElement::Install(context);
+  QJSHTMLFooterElement::Install(context);
+  QJSHTMLMainElement::Install(context);
+  QJSHTMLAsideElement::Install(context);
+  QJSHTMLTimeElement::Install(context);
+  QJSHTMLMarkElement::Install(context);
+  QJSHTMLMetaElement::Install(context);
+  QJSHTMLTitleElement::Install(context);
+  QJSHTMLLabelElement::Install(context);
+  QJSHTMLHRElement::Install(context);
+  QJSHTMLQuoteElement::Install(context);
+  QJSHTMLDLElement::Install(context);
+  QJSHTMLDTElement::Install(context);
+  QJSHTMLDDElement::Install(context);
+  QJSHTMLHeadingElement::Install(context);
+  QJSHTMLSmallElement::Install(context);
 
   QJSHTMLUnknownElement::Install(context);
   QJSHTMLTemplateElement::Install(context);
@@ -202,9 +256,16 @@ void InstallBindings(ExecutingContext* context) {
   QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
+  QJSStyleSheet::Install(context);
   QJSCSSStyleSheet::Install(context);
+  QJSCSSRule::Install(context);
+  QJSCSSRuleList::Install(context);
+  QJSCSSImportRule::Install(context);
+  QJSCSSKeyframeRule::Install(context);
+  QJSCSSKeyframesRule::Install(context);
   QJSMediaList::Install(context);
   QJSBlob::Install(context);
+  QJSFile::Install(context);
   QJSFormData::Install(context);
   QJSTouch::Install(context);
   QJSTouchList::Install(context);

@@ -380,53 +380,18 @@ WebFTestContext::WebFTestContext(ExecutingContext* context)
 }
 
 WebFTestContext::~WebFTestContext() {
-  // Follow Blink's pattern for complete JavaScript context cleanup
+  // Clean up test-specific resources
   if (context_ && context_->IsCtxValid()) {
-    // Free the execute test proxy object first
-    JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
+    // Clear the execute test callback first to release any references
+    execute_test_callback_ = nullptr;
     
-    // Clear the global object to remove all polyfill functions
-    // This is critical to prevent JavaScript function leaks
-    JSValue global = context_->Global();
-    if (JS_IsObject(global)) {
-      // Force all pending finalizers to run before cleanup
-      JS_RunGC(context_->dartIsolateContext()->runtime());
-      
-      // Explicitly delete the test functions that were installed
-      const char* test_functions[] = {
-          "__webf_execute_test__",
-          "__webf_match_image_snapshot__", 
-          "__webf_environment__",
-          "__webf_simulate_pointer__",
-          "__webf_simulate_inputtext__",
-          "__webf_sync_buffer__",
-          "__webf_trigger_global_error__",
-          "__webf_change_dark_mode__",
-          "__webf_parse_html__"
-      };
-      
-      for (const char* func_name : test_functions) {
-        JSAtom atom = JS_NewAtom(context_->ctx(), func_name);
-        JS_DeleteProperty(context_->ctx(), global, atom, 0);
-        JS_FreeAtom(context_->ctx(), atom);
-      }
-      
-      // Clear all enumerable properties from the global object
-      // This removes the polyfill functions that were installed
-      JSPropertyEnum* props = nullptr;
-      uint32_t prop_count = 0;
-      if (JS_GetOwnPropertyNames(context_->ctx(), &props, &prop_count, global, JS_GPN_STRING_MASK | JS_GPN_ENUM_ONLY) == 0) {
-        for (uint32_t i = 0; i < prop_count; i++) {
-          // Delete all non-essential global properties
-          JS_DeleteProperty(context_->ctx(), global, props[i].atom, 0);
-          JS_FreeAtom(context_->ctx(), props[i].atom);
-        }
-        js_free(context_->ctx(), props);
-      }
+    // Free the execute test proxy object if it exists
+    if (!JS_IsNull(execute_test_proxy_object_)) {
+      JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
+      execute_test_proxy_object_ = JS_NULL;
     }
     
-    // Force garbage collection again to clean up the freed objects
-    JS_RunGC(context_->dartIsolateContext()->runtime());
+    // Run garbage collection to clean up any freed objects
     JS_RunGC(context_->dartIsolateContext()->runtime());
   }
 }
