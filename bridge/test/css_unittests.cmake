@@ -70,6 +70,9 @@ add_executable(webf_css_unittests
   ./test/webf_test_env.h
 )
 
+include(GoogleTest)
+gtest_discover_tests(webf_css_unittests)
+
 target_include_directories(webf_css_unittests PUBLIC 
   ./third_party/googletest/googletest/include 
   ${BRIDGE_INCLUDE} 
