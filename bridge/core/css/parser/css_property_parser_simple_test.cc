@@ -33,7 +33,8 @@ class CSSPropertyParserSimpleTest : public ::testing::Test {
   std::shared_ptr<const CSSValue> ParsePropertyValue(CSSPropertyID property, 
                                                      const std::string& value) {
     auto props = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
-    CSSParser::ParseValue(props.get(), property, value, false, nullptr);
+    ExecutingContext* exec_context = env_->page()->executingContext();
+    CSSParser::ParseValue(props.get(), property, value, false, exec_context);
     
     auto* value_ptr = props->GetPropertyCSSValue(property);
     if (!value_ptr || !*value_ptr) {
@@ -45,7 +46,9 @@ class CSSPropertyParserSimpleTest : public ::testing::Test {
   // Helper to check if parsing succeeds
   bool CanParseValue(CSSPropertyID property, const std::string& value) {
     auto props = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
-    auto result = CSSParser::ParseValue(props.get(), property, value, false, nullptr);
+    // Use the ExecutingContext from the test environment for proper URL parsing
+    ExecutingContext* exec_context = env_->page()->executingContext();
+    auto result = CSSParser::ParseValue(props.get(), property, value, false, exec_context);
     
     // For shorthands, check if parsing succeeded rather than looking for the value
     if (result != MutableCSSPropertyValueSet::kParseError) {

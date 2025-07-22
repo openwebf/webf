@@ -11,7 +11,7 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/resolver/style_resolver.h"
-#include "core/css/resolver/style_recalc_context.h"
+#include "core/css/style_recalc_context.h"
 #include "core/css/style_engine.h"
 #include "core/css/rule_set.h"
 #include "core/style/computed_style.h"
@@ -108,7 +108,8 @@ TEST_F(StyleCascadeTest, LaterDeclarationsWin) {
   // Note: In WebF, we don't need to force style recalc like in Blink
   
   // Resolve style
-  StyleRecalcContext context;
+  // Use proper initialization to avoid stack buffer overflow
+  StyleRecalcContext context{};
   auto computed_style = resolver->ResolveStyle(p, context);
   
   ASSERT_NE(computed_style, nullptr);
@@ -148,10 +149,9 @@ TEST_F(StyleCascadeTest, SpecificityOrdering) {
   StyleResolver* resolver = GetStyleEngine().GetStyleResolver();
   ASSERT_NE(resolver, nullptr);
   
-  StyleRecalcContext context;
-  
   // Check li1 - should be blue (ul li has higher specificity than li)
-  auto computed_style1 = resolver->ResolveStyle(li1, context);
+  StyleRecalcContext context1{};
+  auto computed_style1 = resolver->ResolveStyle(li1, context1);
   ASSERT_NE(computed_style1, nullptr);
   Color color1 = computed_style1->Color();
   
@@ -161,7 +161,8 @@ TEST_F(StyleCascadeTest, SpecificityOrdering) {
   EXPECT_EQ(color1.Blue(), 255);
   
   // Check li2 - should be green (ul li#gre has highest specificity)
-  auto computed_style2 = resolver->ResolveStyle(li2, context);
+  StyleRecalcContext context2{};
+  auto computed_style2 = resolver->ResolveStyle(li2, context2);
   ASSERT_NE(computed_style2, nullptr);
   Color color2 = computed_style2->Color();
   
@@ -193,10 +194,9 @@ TEST_F(StyleCascadeTest, DISABLED_ImportantDeclarations) {
   StyleResolver* resolver = GetStyleEngine().GetStyleResolver();
   ASSERT_NE(resolver, nullptr);
   
-  StyleRecalcContext context;
-  
   // Check p1 - should be green due to !important
-  auto computed_style1 = resolver->ResolveStyle(p1, context);
+  StyleRecalcContext context1{};
+  auto computed_style1 = resolver->ResolveStyle(p1, context1);
   ASSERT_NE(computed_style1, nullptr);
   Color color1 = computed_style1->Color();
   // Green is rgb(0, 128, 0)
@@ -205,7 +205,8 @@ TEST_F(StyleCascadeTest, DISABLED_ImportantDeclarations) {
   EXPECT_EQ(color1.Blue(), 0);
   
   // Check p2 - should also be green (!important beats ID selector)
-  auto computed_style2 = resolver->ResolveStyle(p2, context);
+  StyleRecalcContext context2{};
+  auto computed_style2 = resolver->ResolveStyle(p2, context2);
   ASSERT_NE(computed_style2, nullptr);
   Color color2 = computed_style2->Color();
   EXPECT_EQ(color2.Red(), 0);
@@ -233,7 +234,7 @@ TEST_F(StyleCascadeTest, DISABLED_InlineStyleSpecificity) {
   StyleResolver* resolver = GetStyleEngine().GetStyleResolver();
   ASSERT_NE(resolver, nullptr);
   
-  StyleRecalcContext context;
+  StyleRecalcContext context{};
   auto computed_style = resolver->ResolveStyle(p, context);
   
   ASSERT_NE(computed_style, nullptr);
@@ -271,7 +272,7 @@ TEST_F(StyleCascadeTest, MultipleStylesheets) {
   
   // Note: In WebF, we don't need to force style recalc
   
-  StyleRecalcContext context;
+  StyleRecalcContext context{};
   auto computed_style = resolver->ResolveStyle(p, context);
   
   ASSERT_NE(computed_style, nullptr);

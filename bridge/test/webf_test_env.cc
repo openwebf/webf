@@ -5,6 +5,7 @@
 
 #include <chrono>
 #include <vector>
+#include <unordered_map>
 
 #include "bindings/qjs/native_string_utils.h"
 #include "core/css/css_default_style_sheets.h"
@@ -304,16 +305,36 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len) {
   // Clean up old contexts more aggressively to prevent resource exhaustion
-  if (test_context_map.size() > 50) {
+  if (test_context_map.size() > 10) {
+    // Force cleanup of all existing contexts
+    for (auto& pair : test_context_map) {
+      if (pair.second && pair.second->page()) {
+        auto* page = pair.second->page();
+        if (page->executingContext() && page->executingContext()->IsCtxValid()) {
+          // Force GC on old contexts
+          JS_RunGC(page->executingContext()->dartIsolateContext()->runtime());
+        }
+      }
+    }
     test_context_map.clear();
   }
   
-  // Track initialization count
+  // Track initialization count per test run
   static int init_count = 0;
+  static auto start_time = std::chrono::steady_clock::now();
+  auto current_time = std::chrono::steady_clock::now();
+  auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
+  
+  // Reset counter if more than 10 seconds have passed (new test run)
+  if (elapsed > 10) {
+    init_count = 0;
+    start_time = current_time;
+  }
+  
   init_count++;
   
-  // Prevent infinite context creation - hard limit at 500
-  if (init_count > 500) {
+  // Prevent infinite context creation - hard limit at 1000 per test run
+  if (init_count > 1000) {
     fprintf(stderr, "ERROR: Too many TEST_init calls (%d), possible infinite loop!\n", init_count);
     exit(1);
   }

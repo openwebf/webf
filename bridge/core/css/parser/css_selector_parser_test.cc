@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string_view>
+#include <mutex>
 #include "core/css/css_test_helpers.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_stream.h"
@@ -970,14 +971,109 @@ ScopeActivationData scope_activation_data[] = {
     {"& & &", 2},
     {"& & &", 4},
 };
+// Helper class to manage test environment lifecycle with pooling
+class TestEnvironmentPool {
+ public:
+  static TestEnvironmentPool& GetInstance() {
+    static TestEnvironmentPool instance;
+    return instance;
+  }
+  
+  std::unique_ptr<WebFTestEnv> GetEnvironment() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    // Clean up if we have too many environments
+    if (total_created_ >= 100) {
+      // Force cleanup of all environments
+      CleanupAllEnvironments();
+      total_created_ = 0;
+    }
+    
+    // Try to reuse an available environment
+    if (!available_.empty()) {
+      auto env = std::move(available_.back());
+      available_.pop_back();
+      return env;
+    }
+    
+    // Create a new environment
+    total_created_++;
+    return TEST_init();
+  }
+  
+  void ReturnEnvironment(std::unique_ptr<WebFTestEnv> env) {
+    if (!env) return;
+    
+    std::lock_guard<std::mutex> lock(mutex_);
+    
+    // Clean up the environment before returning to pool
+    if (env->page() && env->page()->executingContext()) {
+      auto* context = env->page()->executingContext();
+      if (context->IsCtxValid()) {
+        // Clear any pending exceptions
+        JSValue exception = JS_GetException(context->ctx());
+        JS_FreeValue(context->ctx(), exception);
+        
+        // Drain microtasks
+        context->DrainMicrotasks();
+        
+        // Force GC
+        JS_RunGC(context->dartIsolateContext()->runtime());
+      }
+    }
+    
+    // Don't keep too many in the pool
+    if (available_.size() < 5) {
+      available_.push_back(std::move(env));
+    }
+  }
+  
+  void CleanupAllEnvironments() {
+    // Explicitly clear all environments while the system is still valid
+    available_.clear();
+    in_use_.clear();
+  }
+  
+  ~TestEnvironmentPool() {
+    // Clear vectors to release unique_ptrs before static destruction issues
+    // This prevents accessing thread_local variables that may already be destroyed
+    available_.clear();
+    in_use_.clear();
+  }
+  
+ private:
+  TestEnvironmentPool() = default;
+  std::mutex mutex_;
+  std::vector<std::unique_ptr<WebFTestEnv>> available_;
+  std::vector<std::unique_ptr<WebFTestEnv>> in_use_;
+  size_t total_created_ = 0;
+};
+
 class ScopeActivationTest : public ::testing::TestWithParam<ScopeActivationData> {
  protected:
+  static void SetUpTestSuite() {
+    // Ensure pool is initialized
+    TestEnvironmentPool::GetInstance();
+  }
+  
+  static void TearDownTestSuite() {
+    // Clean up all environments before static destruction
+    TestEnvironmentPool::GetInstance().CleanupAllEnvironments();
+  }
+  
   void SetUp() override {
-    env_ = TEST_init();
+    // Get an environment from the pool
+    env_ = TestEnvironmentPool::GetInstance().GetEnvironment();
+    
+    // Ensure the environment is properly initialized
+    ASSERT_TRUE(env_);
+    ASSERT_TRUE(env_->page());
+    ASSERT_TRUE(env_->page()->executingContext());
   }
 
   void TearDown() override {
-    env_.reset();
+    // Return the environment to the pool
+    TestEnvironmentPool::GetInstance().ReturnEnvironment(std::move(env_));
   }
 
   Document* document() { 
@@ -1115,12 +1211,29 @@ ScopeActivationCountData scope_activation_count_data[] = {
 
 class ScopeActivationCountTest : public ::testing::TestWithParam<ScopeActivationCountData> {
  protected:
+  static void SetUpTestSuite() {
+    // Ensure pool is initialized
+    TestEnvironmentPool::GetInstance();
+  }
+  
+  static void TearDownTestSuite() {
+    // Clean up all environments before static destruction
+    TestEnvironmentPool::GetInstance().CleanupAllEnvironments();
+  }
+  
   void SetUp() override {
-    env_ = TEST_init();
+    // Get an environment from the pool
+    env_ = TestEnvironmentPool::GetInstance().GetEnvironment();
+    
+    // Ensure the environment is properly initialized
+    ASSERT_TRUE(env_);
+    ASSERT_TRUE(env_->page());
+    ASSERT_TRUE(env_->page()->executingContext());
   }
 
   void TearDown() override {
-    env_.reset();
+    // Return the environment to the pool
+    TestEnvironmentPool::GetInstance().ReturnEnvironment(std::move(env_));
   }
 
   Document* document() { 
