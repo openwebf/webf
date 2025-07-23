@@ -87,7 +87,7 @@ class ElementRareDataVector final : public NodeRareData {
   std::vector<std::shared_ptr<ElementRareDataField>> element_rare_data_fields_;
   std::vector<Member<ScriptWrappable>> script_wrappable_fields_;
   using BitfieldType = uint32_t;
-  BitfieldType fields_bitfield_;
+  BitfieldType fields_bitfield_{};
   static_assert(sizeof(fields_bitfield_) * 8 >= static_cast<unsigned>(FieldId::kNumFields),
                 "field_bitfield_ must be big enough to have a bit for each "
                 "field in FieldId.");

@@ -84,8 +84,13 @@ std::shared_ptr<ElementRareDataField> ElementRareDataVector::GetElementRareDataF
 }
 
 ScriptWrappable* ElementRareDataVector::GetScriptWrappableField(FieldId field_id) const {
-  if (fields_bitfield_ & (static_cast<BitfieldType>(1) << static_cast<unsigned>(field_id)))
-    return script_wrappable_fields_[GetFieldIndex(field_id)];
+  if (fields_bitfield_ & (static_cast<BitfieldType>(1) << static_cast<unsigned>(field_id))) {
+    auto field_index = GetFieldIndex(field_id);
+    if (script_wrappable_fields_.size() <= field_index) {
+      return nullptr;
+    }
+    return script_wrappable_fields_[field_index];
+  }
   return nullptr;
 }
 
