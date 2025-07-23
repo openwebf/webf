@@ -864,6 +864,29 @@ class RenderBoxModel extends RenderBox
       if (parent is RenderFlexLayout && (parent as RenderFlexLayout).isFlexNone(this)) {
         parentBoxContentConstraintsWidth = null;
       }
+    } else if (isDisplayInline && parent is RenderFlowLayout) {
+      // For inline elements inside a flow layout, check if we should inherit parent's constraints
+      RenderFlowLayout parentFlow = parent as RenderFlowLayout;
+
+      // Skip constraint inheritance if parent is a flex item with flex: none (flex-grow: 0, flex-shrink: 0)
+      if (parentFlow.renderStyle.isParentRenderFlexLayout()) {
+        RenderFlexLayout flexParent = parentFlow.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
+        if (flexParent.isFlexNone(parentFlow)) {
+          // Don't inherit constraints for flex: none items
+          parentBoxContentConstraintsWidth = null;
+        } else {
+          double parentContentWidth = parentFlow.renderStyle.contentMaxConstraintsWidth;
+          if (parentContentWidth != double.infinity) {
+            parentBoxContentConstraintsWidth = parentContentWidth;
+          }
+        }
+      } else {
+        // Not in a flex context, inherit parent's content width constraint normally
+        double parentContentWidth = parentFlow.renderStyle.contentMaxConstraintsWidth;
+        if (parentContentWidth != double.infinity) {
+          parentBoxContentConstraintsWidth = parentContentWidth;
+        }
+      }
     }
 
     double maxConstraintWidth =
