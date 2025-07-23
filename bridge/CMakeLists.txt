@@ -1129,6 +1129,7 @@ add_definitions(-DAPP_REV="${GIT_HEAD}") # Read from git head sha1
 if (${ENABLE_TEST})
   add_compile_definitions(IS_TEST=true)
   include(./test/test.cmake)
+  include(./test/css_unittests.cmake)
 endif ()
 
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
