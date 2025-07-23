@@ -268,6 +268,23 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
     }
   }
 
+  /// Add a post-handler that executes after all regular event handlers and removes itself after firing
+  void addPostEventListenerOnce(String eventType, EventHandler postHandler) {
+    if (_disposed) return;
+
+    // Create a wrapper that removes itself after execution
+    late EventHandler onceWrapper;
+    onceWrapper = (Event event) async {
+      // Execute the original handler
+      postHandler(event);
+      // Remove this wrapper after execution
+      removePostEventListener(eventType, onceWrapper);
+    };
+
+    // Add the wrapper instead of the original handler
+    addPostEventListener(eventType, onceWrapper);
+  }
+
   @override
   @mustCallSuper
   void dispose() async {
