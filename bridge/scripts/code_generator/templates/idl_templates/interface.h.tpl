@@ -33,7 +33,7 @@ Native<%= parentClassName %> native_event;
 #endif
 <% } %>
 
-class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <%= className%>> {
+class QJS<%= className %> : public QJSInterfaceBridge<QJS<%= className %>, <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className%>> {
  public:
   static void Install(ExecutingContext* context);
   static WrapperTypeInfo* GetWrapperTypeInfo() {

@@ -524,6 +524,15 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/css/anchor_query.h
     core/css/css_length_resolver.cc
 
+    ## CSS Legacy Impls
+    core/css/legacy/legacy_css_style_declaration.cc
+    core/css/legacy/legacy_inline_css_style_declaration.cc
+    core/css/legacy/legacy_computed_css_style_declaration.cc
+    code_gen/qjs_legacy_css_style_declaration.cc
+    code_gen/qjs_legacy_inline_css_style_declaration.cc
+    code_gen/qjs_legacy_computed_css_style_declaration.cc
+
+
     ## CSS Selector
     core/css/selector_query.cc
     core/css/part_names.cc

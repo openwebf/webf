@@ -28,6 +28,10 @@ import {
 
 const dictionaryClasses: string[] = [];
 
+function getClassNameWithNamespace(className: string): string {
+  return className.startsWith('Legacy') ? `legacy::${className}` : className;
+}
+
 function generateMethodArgumentsCheck(m: FunctionDeclaration) {
   if (m.args.length == 0) return '';
 
@@ -362,7 +366,7 @@ function generateDartImplCallCode(blob: IDLBlob, declare: FunctionDeclaration, i
   }
 
   return `
-auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
 }` : 'NativeValue* arguments = nullptr;'};
@@ -383,7 +387,7 @@ function generateAsyncDartImplCallCode(blob: IDLBlob, declare: FunctionDeclarati
   }
 
   return `
-auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
 }` : 'NativeValue* arguments = nullptr;'};
@@ -404,7 +408,7 @@ function generateReturnPromiseCallCode(blob: IDLBlob, declare: FunctionDeclarati
   }
 
   return `
-auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${nativeArguments.length > 0 ? `NativeValue arguments[] = {
   ${nativeArguments.join(',\n')}
 }` : 'NativeValue* arguments = nullptr;'};
@@ -429,10 +433,10 @@ function generateOptionalInitBody(blob: IDLBlob, declare: FunctionDeclaration, a
   } else if(declare.returnTypeMode?.supportAsync && !declare.returnTypeMode?.supportAsyncManual) {
     call = generateReturnPromiseCallCode(blob, declare, declare.args.slice(0, argsIndex + 1));
   } else if (options.isInstanceMethod) {
-    call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+    call = `auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
   ${returnValueAssignment} self->${generateCallMethodName(declare.name, declare.returnTypeMode)}(${[...previousArguments, `args_${argument.name}`, 'exception_state'].join(',')});`;
   } else {
-    call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declare.name, declare.returnTypeMode)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
+    call = `${returnValueAssignment} ${getClassNameWithNamespace(getClassName(blob))}::${generateCallMethodName(declare.name, declare.returnTypeMode)}(context, ${[...previousArguments, `args_${argument.name}`].join(',')}, exception_state);`;
   }
 
 
@@ -498,10 +502,10 @@ function generateFunctionCallBody(blob: IDLBlob, declaration: FunctionDeclaratio
   } else if (declaration.returnTypeMode?.supportAsync && !declaration.returnTypeMode?.supportAsyncManual ) {
     call = generateReturnPromiseCallCode(blob, declaration, declaration.args.slice(0, minimalRequiredArgc))
   } else if (options.isInstanceMethod) {
-    call = `auto* self = toScriptWrappable<${getClassName(blob)}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
+    call = `auto* self = toScriptWrappable<${getClassNameWithNamespace(getClassName(blob))}>(JS_IsUndefined(this_val) ? context->Global() : this_val);
 ${returnValueAssignment} self->${generateCallMethodName(declaration.name, declaration.returnTypeMode)}(${minimalRequiredArgc > 0 ? `${requiredArguments.join(',')}` : 'exception_state'});`;
   } else {
-    call = `${returnValueAssignment} ${getClassName(blob)}::${generateCallMethodName(declaration.name, declaration.returnTypeMode)}(context, ${requiredArguments.join(',')});`;
+    call = `${returnValueAssignment} ${getClassNameWithNamespace(getClassName(blob))}::${generateCallMethodName(declaration.name, declaration.returnTypeMode)}(context, ${requiredArguments.join(',')});`;
   }
 
   let minimalRequiredCall = (declaration.args.length == 0 || (declaration.args.some(v => v.isDotDotDot))) ? call : `if (argc <= ${minimalRequiredArgc}) {
@@ -565,7 +569,7 @@ function generateReturnValueInit(blob: IDLBlob, declare: FunctionDeclaration, op
   }
 
   if (options.isConstructor) {
-    return `${getClassName(blob)}* return_value = nullptr;`
+    return `${getClassNameWithNamespace(getClassName(blob))}* return_value = nullptr;`
   }
   if (isUnionType(type) && Array.isArray(type.value)) {
     return `std::shared_ptr<${generateUnionTypeClassName(type.value)}> return_value = nullptr;`;
@@ -691,7 +695,7 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
         let wrapperTypeRegisterList = [
           `JS_CLASS_${getWrapperTypeInfoNameOfClassName(className)}`,                        // ClassId
           `"${className}"`,                                                          // ClassName
-          object.parent != null ? `${object.parent}::GetStaticWrapperTypeInfo()` : 'nullptr', // parentClassWrapper
+          object.parent != null ? `${getClassNameWithNamespace(object.parent)}::GetStaticWrapperTypeInfo()` : 'nullptr', // parentClassWrapper
           object.construct ? `QJS${className}::ConstructorCallback` : 'nullptr',     // ConstructorCallback
         ];
 
@@ -738,9 +742,10 @@ export function generateCppSource(blob: IDLBlob, options: GenerateOptions) {
           });
         }
 
+        const classNameWithNamespace = className.startsWith('Legacy') ? `legacy::${className}` : className;
         options.wrapperTypeInfoInit = `
 const WrapperTypeInfo QJS${className}::wrapper_type_info_ {${wrapperTypeRegisterList.join(', ')}};
-const WrapperTypeInfo& ${className}::wrapper_type_info_ = QJS${className}::wrapper_type_info_;`;
+const WrapperTypeInfo& ${classNameWithNamespace}::wrapper_type_info_ = QJS${className}::wrapper_type_info_;`;
         return _.template(readTemplate('interface'))({
           className,
           blob: blob,

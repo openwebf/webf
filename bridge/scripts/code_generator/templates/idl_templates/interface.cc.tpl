@@ -6,7 +6,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
 
 <% if (object.indexedProp) { %>
   bool QJS<%= className %>::PropertyCheckerCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
-    auto* self = toScriptWrappable<<%= className %>>(obj);
+    auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return false;
@@ -21,7 +21,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     return result;
   }
   int QJS<%= className %>::PropertyEnumerateCallback(JSContext* ctx, JSPropertyEnum** ptab, uint32_t* plen, JSValue obj) {
-    auto* self = toScriptWrappable<<%= className %>>(obj);
+    auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return 0;
@@ -46,7 +46,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return JS_NULL;
     MemberMutationScope scope{context};
-    auto* self = toScriptWrappable<<%= className %>>(obj);
+    auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
     if (index >= self->length()) {
       return JS_UNDEFINED;
     }
@@ -59,7 +59,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
   };
   <% } else { %>
   JSValue QJS<%= className %>::StringPropertyGetterCallback(JSContext* ctx, JSValue obj, JSAtom key) {
-    auto* self = toScriptWrappable<<%= className %>>(obj);
+    auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return JS_NULL;
@@ -74,7 +74,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
   <% if (!object.indexedProp.readonly) { %>
     <% if (object.indexedProp.indexKeyType == 'number') { %>
   bool QJS<%= className %>::IndexedPropertySetterCallback(JSContext* ctx, JSValueConst obj, uint32_t index, JSValueConst value) {
-    auto* self = toScriptWrappable<<%= className %>>(obj);
+    auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return false;
@@ -91,7 +91,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
   };
     <% } else { %>
   bool QJS<%= className %>::StringPropertySetterCallback(JSContext* ctx, JSValueConst obj, JSAtom key, JSValueConst value) {
-    auto* self = toScriptWrappable<<%= className %>>(obj);
+    auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return false;
@@ -108,7 +108,7 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
   };
     <% } %>
      bool QJS<%= className %>::StringPropertyDeleterCallback(JSContext* ctx, JSValueConst obj, JSAtom key) {
-      auto* self = toScriptWrappable<<%= className %>>(obj);
+      auto* self = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(obj);
       ExceptionState exception_state;
       ExecutingContext* context = ExecutingContext::From(ctx);
       if (!context->IsContextValid()) return false;
@@ -164,7 +164,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 
 }
 <% } else { %>
-  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
+  auto* <%= blob.filename %> = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
@@ -192,10 +192,10 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
   auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, v);
   return result;
   <% } else if (prop.typeMode && prop.typeMode.static) { %>
-  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>);
+  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>::<%= prop.name %>);
   return result;
   <% } else if (prop.typeMode && prop.typeMode.staticMethod) { %>
-  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <%= className %>::<%= prop.name %>());
+  auto result = Converter<<%= generateIDLTypeConverter(prop.type, prop.optional) %>>::ToValue(ctx, <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>::<%= prop.name %>());
   return result;
   <% } else { %>
   <% if(prop.async_type) { %>
@@ -213,7 +213,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 }
 <% if (!prop.readonly) { %>
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
- auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
+ auto* <%= blob.filename %> = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(this_val);
   ExceptionState exception_state;
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
@@ -260,7 +260,7 @@ static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst
 
 <% _.forEach(object.props, function(prop, index) { %>
 static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
-  auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
+  auto* <%= blob.filename %> = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(this_val);
   assert(<%= blob.filename %> != nullptr);
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
@@ -269,7 +269,7 @@ static JSValue <%= prop.name %>AttributeGetCallback(JSContext* ctx, JSValueConst
 }
 <% if (!prop.readonly) { %>
 static JSValue <%= prop.name %>AttributeSetCallback(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
- auto* <%= blob.filename %> = toScriptWrappable<<%= className %>>(this_val);
+ auto* <%= blob.filename %> = toScriptWrappable<<% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>>(this_val);
   ExceptionState exception_state;
   ExecutingContext* context = ExecutingContext::From(ctx);
   if (!context->IsContextValid()) return JS_NULL;
