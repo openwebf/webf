@@ -167,6 +167,10 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
 }
 
 JSValue AtomicString::ToQuickJS(JSContext* ctx) const {
+  if (string_ == nullptr) {
+    return JS_NewString(ctx, "");
+  }
+
   return JS_NewStringLen(ctx, string_->Characters8(), string_->length());
 }
 

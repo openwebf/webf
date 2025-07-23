@@ -1665,7 +1665,6 @@ TEST(RemoteObject, CommentNodeDisplaysContent) {
 }
 
 // Test that Element objects show their child nodes instead of properties
-// TODO: This test is temporarily disabled due to a hang issue that needs investigation
 TEST(RemoteObject, ElementShowsChildNodes) {
   auto env = TEST_init();
   auto context = env->page()->executingContext();
@@ -1803,8 +1802,7 @@ TEST(RemoteObject, NonElementShowsProperties) {
 }
 
 // Test that Element with mixed content shows child nodes properly
-// TODO: This test is temporarily disabled due to a hang issue that needs investigation
-TEST(RemoteObject, DISABLED_ElementWithMixedContent) {
+TEST(RemoteObject, ElementWithMixedContent) {
   auto env = TEST_init();
   auto context = env->page()->executingContext();
   auto* registry = context->GetRemoteObjectRegistry();
