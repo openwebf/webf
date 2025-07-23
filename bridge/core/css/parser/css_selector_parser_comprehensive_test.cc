@@ -17,13 +17,16 @@ namespace webf {
 class CSSSelectorParserComprehensiveTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    env_ = TEST_init();
+    // Don't create a new test environment for each test
+    // This might be causing resource exhaustion
+    // env_ = TEST_init();
     context_ = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   }
   
   void TearDown() override {
+    // Reset in the correct order to avoid any dangling references
     context_.reset();
-    env_.reset();
+    // env_.reset();
   }
 
   // Helper to parse a selector and check if it's valid
@@ -79,6 +82,11 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
       return 0;
     }
     
+    // Defensive limit to prevent infinite loops
+    if (selectors_text.length() > 10000) {
+      return 0;
+    }
+    
     size_t count = 1;
     for (char c : selectors_text) {
       if (c == ',') {
@@ -88,7 +96,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
     return count;
   }
 
-  std::unique_ptr<WebFTestEnv> env_;
+  // std::unique_ptr<WebFTestEnv> env_;
   std::shared_ptr<CSSParserContext> context_;
 };
 

@@ -390,9 +390,6 @@ WebFTestContext::~WebFTestContext() {
       JS_FreeValue(context_->ctx(), execute_test_proxy_object_);
       execute_test_proxy_object_ = JS_NULL;
     }
-    
-    // Run garbage collection to clean up any freed objects
-    JS_RunGC(context_->dartIsolateContext()->runtime());
   }
 }
 

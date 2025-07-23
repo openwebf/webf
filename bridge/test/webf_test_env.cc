@@ -207,96 +207,51 @@ WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPa
     : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
-  // Proper cleanup following Blink patterns - clean up in reverse order
+  // Simplified cleanup to avoid hangs
   
   // First, clean up the page and its execution context properly
   if (page_ && page_->executingContext()) {
     auto* ctx = page_->executingContext();
     
-    // Check for any pending exceptions and clear them like WebF does
+    // Check for any pending exceptions and clear them
     if (ctx->IsCtxValid()) {
       JSValue exception = JS_GetException(ctx->ctx());
       if (JS_IsObject(exception) || JS_IsException(exception)) {
-        // Clear the exception without reporting in test cleanup
         JS_FreeValue(ctx->ctx(), exception);
       }
       
       // Drain microtasks to complete any pending operations
       ctx->DrainMicrotasks();
-      
-      // Clear global object properties that might contain function references
-      // This is necessary to clean up polyfill functions that were installed
-      JSValue global = ctx->Global();
-      if (JS_IsObject(global)) {
-        // Force finalization of any pending finalizers
-        JS_RunGC(isolate_context_->runtime());
-        
-        // Get all property names and clear test-related globals
-        JSPropertyEnum* props = nullptr;
-        uint32_t prop_count = 0;
-        if (JS_GetOwnPropertyNames(ctx->ctx(), &props, &prop_count, global, JS_GPN_STRING_MASK) == 0) {
-          for (uint32_t i = 0; i < prop_count; i++) {
-            JSAtom prop_atom = props[i].atom;
-            const char* prop_name = JS_AtomToCString(ctx->ctx(), prop_atom);
-            if (prop_name) {
-              // Clear test framework specific properties
-              if (strstr(prop_name, "test") || strstr(prop_name, "done") || strstr(prop_name, "expect") || 
-                  strstr(prop_name, "describe") || strstr(prop_name, "it") || strstr(prop_name, "jasmine")) {
-                JS_DeleteProperty(ctx->ctx(), global, prop_atom, 0);
-              }
-              JS_FreeCString(ctx->ctx(), prop_name);
-            }
-            JS_FreeAtom(ctx->ctx(), prop_atom);
-          }
-          js_free(ctx->ctx(), props);
-        }
-      }
     }
   }
   
   // Clean up test context map entry
-  for (auto it = test_context_map.begin(); it != test_context_map.end(); ) {
-    if (it->second && it->second->page() == page_) {
-      it = test_context_map.erase(it);
-    } else {
-      ++it;
-    }
+  if (page_) {
+    double page_id = page_->contextId();
+    test_context_map.erase(page_id);
   }
   
-  // Force garbage collection before disposing runtime
+  // Don't reset CSS default style sheets - they're shared across all tests
+  // CSSDefaultStyleSheets::Reset();
+  
+  // Simple cleanup without excessive GC runs
   if (isolate_context_ && isolate_context_->runtime()) {
-    JS_RunGC(isolate_context_->runtime());
-    JS_RunGC(isolate_context_->runtime());
-    
     // Clean up JSThreadState
     JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(isolate_context_->runtime()));
     if (ts) {
       delete ts;
       JS_SetRuntimeOpaque(isolate_context_->runtime(), nullptr);
     }
+    
+    // Single GC run
+    JS_RunGC(isolate_context_->runtime());
   }
   
-  // Force final garbage collection and cleanup
-  if (isolate_context_ && isolate_context_->runtime()) {
-    // Run GC multiple times to ensure all cycles are broken
-    for (int i = 0; i < 5; i++) {
-      JS_RunGC(isolate_context_->runtime());
-    }
+  // Dispose isolate context
+  if (isolate_context_) {
+    isolate_context_->Dispose([]() {});
+    delete isolate_context_;
   }
-  
-  // Reset CSS default style sheets before disposing isolate context
-  CSSDefaultStyleSheets::Reset();
-  
-  // Clear the global test context map for this page
-  if (page_) {
-    double page_id = page_->contextId();
-    test_context_map.erase(page_id);
-  }
-  
-  
-  // Dispose isolate context following WebF pattern
-  isolate_context_->Dispose([]() {});
-  delete isolate_context_;
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
@@ -305,7 +260,8 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len) {
   // Clean up old contexts more aggressively to prevent resource exhaustion
-  if (test_context_map.size() > 10) {
+  // Increased limit to avoid cleanup during test runs
+  if (test_context_map.size() > 100) {
     // Force cleanup of all existing contexts
     for (auto& pair : test_context_map) {
       if (pair.second && pair.second->page()) {
