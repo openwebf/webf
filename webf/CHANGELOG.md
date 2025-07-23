@@ -1,3 +1,55 @@
+## 0.22.3
+
+## New Features
+
+### Web Platform APIs
+
+- **TextEncoder/TextDecoder API** - Full implementation of the WHATWG Encoding Standard
+  - Support for UTF-8, ASCII, and Latin1 encodings
+  - Fatal and non-fatal error modes
+  - BOM (Byte Order Mark) handling
+  - Comprehensive test coverage for edge cases
+
+- **Web Streams API** - Initial implementation for streaming data handling
+
+- **URL API Enhancements**
+  - Added `username` and `password` properties with proper percent-encoding
+  - Full compliance with WHATWG URL standard
+
+- **Document API**
+  - Added `document.currentScript` property for accessing the currently executing script element
+  - Shadow DOM polyfill with `element.attachShadow()` support
+
+### Framework Support
+
+- **Vite Vue Apps** - Added support for Vue applications deployed on Vercel
+- **Next.js** - Fixed import issues and added example project
+
+### Platform Support
+
+- **Android 16** - Added support for Android 16 page size requirements
+
+## Bug Fixes
+
+### Layout and Rendering
+
+- **Text Wrapping in Inline Elements** ⭐
+  - Fixed critical issue where inline elements (like `<span>`) inside parents with `max-width` were not wrapping text properly
+  - Text now correctly respects parent width constraints
+  - Special handling for flex items with `flex: none`
+
+- **CJK Font Baseline Alignment** ⭐
+  - Normalized CJK (Chinese, Japanese, Korean) font metrics for proper baseline alignment with Latin text
+  - Implemented interpolated normalization based on CJK content ratio
+  - Ensures consistent vertical alignment in mixed-language content
+
+- **getBoundingClientRect Improvements**
+  - Fixed offset values for elements in nested scroll views
+  - Proper handling of elements in modal popups and separate render trees
+  - Consistent viewport-relative coordinate calculation
+
+- **Performance.measure()** - Fixed timestamp parameter support
+
 ## 0.22.2+2
 
 ## Bug Fixes
