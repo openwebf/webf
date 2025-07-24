@@ -1071,12 +1071,35 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-add_library(webf SHARED ${BRIDGE_SOURCE})
-
-target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
-
+# Create static library for gumbo parser
 add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
 list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
+
+# Create webf_core static library containing all bridge sources
+# This avoids recompiling the same sources for each test executable
+add_library(webf_core STATIC ${BRIDGE_SOURCE})
+target_include_directories(webf_core PUBLIC ${BRIDGE_INCLUDE})
+target_link_libraries(webf_core PUBLIC ${BRIDGE_LINK_LIBS})
+
+# Set position independent code for static library to be used in shared libraries
+set_property(TARGET webf_core PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+# Apply compile options to webf_core that were previously applied to individual targets
+if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
+  if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    target_compile_options(webf_core PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+  else ()
+    target_compile_options(webf_core PRIVATE -fno-exceptions -fno-rtti)
+  endif ()
+endif ()
+
+# webf shared library now just links to webf_core
+# Create a dummy source file for the shared library (CMake requires at least one source)
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/webf_dummy.cc "// Dummy file for webf shared library\n")
+add_library(webf SHARED ${CMAKE_CURRENT_BINARY_DIR}/webf_dummy.cc)
+target_link_libraries(webf PRIVATE webf_core)
+target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
+target_include_directories(webf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
 
 if (${IS_ANDROID})
   find_library(log-lib log)
@@ -1095,19 +1118,10 @@ elseif(${IS_IOS})
 endif()
 
 
-## webf
-target_include_directories(webf PRIVATE
-  ${BRIDGE_INCLUDE}
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
-target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
-
+# QuickJS compile options
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
-  else ()
-    ### remove dynamic_cast and exceptions
-    target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
   endif ()
 endif ()
 
