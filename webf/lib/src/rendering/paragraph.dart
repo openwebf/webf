@@ -94,11 +94,13 @@ class WebFRenderParagraph extends RenderBox
     ui.TextHeightBehavior? textHeightBehavior,
     List<RenderBox>? children,
     TextPainterCallback? foregroundCallback,
+    double? forcedCjkRatio,
   })  : assert(text.debugAssertIsValid()),
         assert(maxLines == null || maxLines > 0),
         _softWrap = softWrap,
         _overflow = overflow,
         _foregroundCallback = foregroundCallback,
+        _forcedCjkRatio = forcedCjkRatio,
         _textPainter = WebFTextPainter(
             text: text,
             textAlign: textAlign,
@@ -117,6 +119,17 @@ class WebFRenderParagraph extends RenderBox
   }
 
   final WebFTextPainter _textPainter;
+  
+  // External CJK ratio to force consistent normalization
+  double? _forcedCjkRatio;
+  
+  double? get forcedCjkRatio => _forcedCjkRatio;
+  
+  set forcedCjkRatio(double? value) {
+    if (_forcedCjkRatio != value) {
+      _forcedCjkRatio = value;
+    }
+  }
 
   // The line metrics of paragraph
   late List<NormalizedLineMetrics> _lineMetrics;
@@ -502,7 +515,8 @@ class WebFRenderParagraph extends RenderBox
         }
       }
       
-      double cjkRatio = TextScriptDetector.getCJKRatio(lineText);
+      // Use forced ratio if provided, otherwise calculate per line
+      double cjkRatio = _forcedCjkRatio ?? TextScriptDetector.getCJKRatio(lineText);
       
       // Normalize the metrics based on CJK content
       _lineMetrics.add(_normalizeMetricsForCJK(rawMetrics[i], cjkRatio));
@@ -546,6 +560,7 @@ class WebFRenderParagraph extends RenderBox
     }
   }
 
+  
   // Normalize font metrics for CJK text to match Latin baseline alignment
   NormalizedLineMetrics _normalizeMetricsForCJK(ui.LineMetrics originalMetrics, double cjkRatio) {
     if (cjkRatio == 0) {
@@ -558,13 +573,17 @@ class WebFRenderParagraph extends RenderBox
     
     double fontHeight = originalMetrics.height;
     
-    // Latin-style metrics: typical Latin fonts have ascent ~75% and descent ~25%
-    double latinAscent = fontHeight * 0.75;
-    double latinDescent = fontHeight * 0.25;
+    // Use fixed metrics for mixed CJK/Latin text to ensure consistent baseline
+    // This provides a middle ground that works well for both pure and mixed text
+    double targetAscentRatio = 0.85; // Between typical CJK (0.9) and Latin (0.75)
+    double targetDescentRatio = 0.15;
     
-    // Interpolate based on CJK content ratio
-    double newAscent = originalMetrics.ascent * (1 - cjkRatio) + latinAscent * cjkRatio;
-    double newDescent = originalMetrics.descent * (1 - cjkRatio) + latinDescent * cjkRatio;
+    double targetAscent = fontHeight * targetAscentRatio;
+    double targetDescent = fontHeight * targetDescentRatio;
+    
+    // Apply CJK normalization with the middle-ground metrics
+    double newAscent = originalMetrics.ascent * (1 - cjkRatio) + targetAscent * cjkRatio;
+    double newDescent = originalMetrics.descent * (1 - cjkRatio) + targetDescent * cjkRatio;
     
     // Create normalized metrics with adjusted ascent/descent
     return NormalizedLineMetrics(

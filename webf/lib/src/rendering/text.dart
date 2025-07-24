@@ -48,12 +48,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   late WebFRenderParagraph _renderParagraph;
   double _lastFirstLineIndent = 0;
   String _data;
+  
 
   set data(String value) {
     _data = value;
   }
 
   String get data => _data;
+  
 
   bool isEndWithSpace(String str) {
     return str.endsWith(WHITE_SPACE_CHAR) ||
@@ -472,6 +474,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     WebFRenderParagraph? paragraph = child as WebFRenderParagraph?;
     lineBoxes.clear();
     if (paragraph != null) {
+      
       paragraph.overflow = renderStyle.effectiveTextOverflow;
       paragraph.textAlign = renderStyle.textAlign;
 
