@@ -1,3 +1,7 @@
+## 0.22.3+2
+
+Fix compile error with Android NDK r22
+
 ## 0.22.3+1
 
 Major Features Added
