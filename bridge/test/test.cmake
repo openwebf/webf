@@ -57,7 +57,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
 ### webf_unit_test executable
 add_executable(webf_unit_test
   ${WEBF_UNIT_TEST_SOURCE}
-#  $<TARGET_OBJECTS:webf_css_unit_test_lib>
+  $<TARGET_OBJECTS:webf_css_unit_test_lib>
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
 )
