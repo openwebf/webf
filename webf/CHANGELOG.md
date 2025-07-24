@@ -1,3 +1,37 @@
+## 0.22.3+1
+
+Major Features Added
+
+1. 🔍 Loading State Dump API - A comprehensive debugging tool that tracks and visualizes the entire WebFController loading lifecycle:
+   - Tracks 19+ lifecycle phases with detailed timing
+   - Individual script element monitoring (load/execute times, errors)
+   - Network request metrics
+   - ASCII timeline visualization
+   - Full API documentation and examples
+2. 📜 Enhanced Script Tracking - Individual script elements now report:
+   - Loading phases (queue → load → execute)
+   - Script types and loading modes
+   - Execution duration and data sizes
+   - Error states with context
+
+Bug Fixes
+
+1. 🇨🇳 CJK Font Alignment - Fixed baseline alignment issues between CJK and Latin text:
+   - Adjusted normalization ratio from 0.75/0.25 to 0.85/0.15
+   - Added forced CJK ratio for consistent rendering
+   - 10 new visual regression tests
+2. 🖼️ Image Loading Race Condition - Fixed images disappearing during widget mount/unmount:
+   - Added pending update tracking
+   - Deferred updates with next frame callback
+   - Ensures reliable image display
+3. 🔄 Hybrid Router Events - Fixed multiple event triggers:
+   - New addPostEventListenerOnce method
+   - Auto-removes listeners after first execution
+   - Prevents duplicate navigation events
+4. 📱 Android 16 Support - Temporarily disabled:
+   - Commented out page size configuration
+   - Downgraded NDK from 28.2 to 22.1
+
 ## 0.22.3
 
 ## New Features
