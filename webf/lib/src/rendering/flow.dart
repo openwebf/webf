@@ -706,8 +706,30 @@ class RenderFlowLayout extends RenderLayoutBox {
     double runMaxMainSize = happenLineJoin() ? lineBoxes.maxMainAxisSize : lineBoxes.maxMainAxisSizeWithoutLineJoin;
     double runCrossSize = lineBoxes.crossAxisSize;
 
+    // For block elements with max-width style and inline content that wraps,
+    // use the constraint width rather than shrinking to content width
+    double contentWidth = runMaxMainSize + adjustWidth;
+    
+    // Check if this is a block element with max-width style applied
+    // Only apply this fix when max-width is explicitly set in styles AND
+    // content has wrapped to multiple lines (indicating width constraint was reached) AND
+    // white-space allows wrapping (not nowrap)
+    if (renderStyle.effectiveDisplay == CSSDisplay.block && 
+        renderStyle.maxWidth.isNotNone &&
+        lineBoxes.lines.length > 1 &&
+        renderStyle.whiteSpace != WhiteSpace.nowrap &&
+        contentWidth < constraints.maxWidth) {
+      // Use the constraint width which comes from max-width style
+      BoxConstraints? contentConstraints = renderStyle.contentConstraints();
+      if (contentConstraints != null && 
+          contentConstraints.maxWidth != double.infinity &&
+          contentConstraints.maxWidth > contentWidth) {
+        contentWidth = contentConstraints.maxWidth;
+      }
+    }
+
     Size layoutContentSize = getContentSize(
-      contentWidth: runMaxMainSize + adjustWidth,
+      contentWidth: contentWidth,
       contentHeight: runCrossSize + adjustHeight,
     );
 
