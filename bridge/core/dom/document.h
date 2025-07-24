@@ -141,7 +141,7 @@ class Document : public ContainerNode, public TreeScope {
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
-  Member<HTMLScriptElement> current_script_{nullptr};
+  Member<HTMLScriptElement> current_script_;
 };
 
 template <>
