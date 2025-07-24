@@ -598,46 +598,98 @@ class WebFState extends State<WebF> with RouteAware {
   }
 
   Widget buildRootView(String initialRoute) {
-    if (initialRoute != '/') {
-      RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
-      if (child == null) {
-        debugPrint('WebF Loading Error: the route path for $initialRoute was not found');
-        if (widget.loadingWidget != null) {
-          return widget.loadingWidget!;
+    // Record the buildRootView phase
+    widget.controller.loadingStateDumper.recordPhase(LoadingStateDumper.phaseBuildRootView, parameters: {
+      'initialRoute': initialRoute,
+      'hasHybridRoute': initialRoute != '/',
+    });
+    
+    try {
+      if (initialRoute != '/') {
+        RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
+        if (child == null) {
+          final error = 'The route path for $initialRoute was not found';
+          widget.controller.loadingStateDumper.recordError(
+            LoadingStateDumper.phaseBuildRootView, 
+            error,
+            context: {
+              'initialRoute': initialRoute,
+              'errorType': 'RouteNotFoundError',
+            }
+          );
+          debugPrint('WebF Loading Error: $error');
+          if (widget.loadingWidget != null) {
+            return widget.loadingWidget!;
+          }
+          return WebFHTMLElement(
+              tagName: 'DIV',
+              controller: widget.controller,
+              parentElement: null,
+              children: [Text('Loading Error: $error')]);
+        }
+
+        return child.toWidget();
+      }
+
+      if (widget.controller.disposed) {
+        final error = '${widget.controller} was disposed';
+        widget.controller.loadingStateDumper.recordError(
+          LoadingStateDumper.phaseBuildRootView, 
+          error,
+          context: {
+            'errorType': 'ControllerDisposedError',
+          }
+        );
+        debugPrint('WebF Loading Error: $error');
+        if (widget.errorBuilder != null) {
+          return widget.errorBuilder!(context, widget.controller.loadingError);
+        }
+        return Center(
+          child: Text(error),
+        );
+      }
+
+      if (widget.controller.view.document.documentElement == null) {
+        final error = 'The documentElement is null';
+        widget.controller.loadingStateDumper.recordError(
+          LoadingStateDumper.phaseBuildRootView, 
+          error,
+          context: {
+            'errorType': 'DocumentElementNullError',
+          }
+        );
+        debugPrint('WebF Loading Error: $error');
+        if (widget.errorBuilder != null) {
+          return widget.errorBuilder!(context, widget.controller.loadingError);
         }
         return WebFHTMLElement(
             tagName: 'DIV',
             controller: widget.controller,
             parentElement: null,
-            children: [Text('Loading Error: the route path for $initialRoute was not found')]);
+            children: [Text('Loading Error: $error')]);
       }
 
-      return child.toWidget();
-    }
-
-    if (widget.controller.disposed) {
-      debugPrint('WebF Loading Error: ${widget.controller} was disposed');
+      return widget.controller.view.document.documentElement!.toWidget();
+    } catch (e, stack) {
+      // Record any unexpected errors during buildRootView
+      widget.controller.loadingStateDumper.recordError(
+        LoadingStateDumper.phaseBuildRootView,
+        e,
+        stackTrace: stack,
+        context: {
+          'initialRoute': initialRoute,
+          'errorType': e.runtimeType.toString(),
+        }
+      );
+      
       if (widget.errorBuilder != null) {
-        return widget.errorBuilder!(context, widget.controller.loadingError);
+        return widget.errorBuilder!(context, e);
       }
+      
       return Center(
-        child: Text('${widget.controller} was disposed'),
+        child: Text('Error building root view: ${e.toString()}'),
       );
     }
-
-    if (widget.controller.view.document.documentElement == null) {
-      debugPrint('WebF Loading Error: the documentElement is Null ');
-      if (widget.errorBuilder != null) {
-        return widget.errorBuilder!(context, widget.controller.loadingError);
-      }
-      return WebFHTMLElement(
-          tagName: 'DIV',
-          controller: widget.controller,
-          parentElement: null,
-          children: [Text('Loading Error: the documentElement is Null')]);
-    }
-
-    return widget.controller.view.document.documentElement!.toWidget();
   }
 
   @override

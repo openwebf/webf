@@ -1,0 +1,632 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:webf/launcher.dart';
+
+void main() {
+  group('LoadingStateDumper', () {
+    late LoadingStateDumper dumper;
+
+    setUp(() {
+      dumper = LoadingStateDumper();
+    });
+
+    test('should record phases with timestamps', () {
+      // Record some phases
+      dumper.recordPhase('test-phase-1', parameters: {'key': 'value1'});
+      dumper.recordPhase('test-phase-2', parameters: {'key': 'value2'});
+
+      // Verify phases were recorded
+      expect(dumper.phases.length, 2);
+      expect(dumper.phases[0].name, 'test-phase-1');
+      expect(dumper.phases[0].parameters['key'], 'value1');
+      expect(dumper.phases[1].name, 'test-phase-2');
+      expect(dumper.phases[1].parameters['key'], 'value2');
+    });
+
+    test('should calculate duration between phases', () async {
+      dumper.recordPhase('phase1');
+      
+      // Add a small delay
+      await Future.delayed(Duration(milliseconds: 10));
+      
+      dumper.recordPhase('phase2');
+
+      // The second phase should have a duration
+      expect(dumper.phases[1].duration, isNotNull);
+      expect(dumper.phases[1].duration!.inMilliseconds, greaterThanOrEqualTo(10));
+    });
+
+    test('should format dump output correctly', () {
+      dumper.recordPhase(LoadingStateDumper.phaseConstructor, parameters: {
+        'bundle': 'test.html',
+        'enableDebug': true,
+      });
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      dumper.recordPhase(LoadingStateDumper.phaseLoadStart);
+
+      final output = dumper.dump();
+
+      // Check that output contains expected sections
+      expect(output, contains('WebFController Loading State Dump'));
+      expect(output, contains('Total Duration:'));
+      expect(output, contains('Phases: 3'));
+      expect(output, contains('Timeline:'));
+      expect(output, contains('constructor'));
+      expect(output, contains('init'));
+      expect(output, contains('loadStart'));
+    });
+
+    test('should include parameters in verbose mode', () {
+      dumper.recordPhase('test-phase', parameters: {
+        'param1': 'value1',
+        'param2': 42,
+      });
+
+      final verboseOutput = dumper.dump(verbose: true);
+      final normalOutput = dumper.dump(verbose: false);
+
+      // Verbose output should contain parameters
+      expect(verboseOutput, contains('param1: value1'));
+      expect(verboseOutput, contains('param2: 42'));
+
+      // Normal output should not contain parameters
+      expect(normalOutput, isNot(contains('param1: value1')));
+      expect(normalOutput, isNot(contains('param2: 42')));
+    });
+
+    test('should handle phase start/end recording', () async {
+      final endCallback = dumper.recordPhaseStart('async-operation', parameters: {
+        'input': 'test',
+      });
+
+      await Future.delayed(Duration(milliseconds: 20));
+      
+      endCallback();
+
+      // Should have recorded both start and end phases
+      expect(dumper.phases.length, 2);
+      expect(dumper.phases[0].name, 'async-operation.start');
+      expect(dumper.phases[1].name, 'async-operation.end');
+      
+      // End phase should include duration
+      expect(dumper.phases[1].parameters['duration'], isNotNull);
+      expect(dumper.phases[1].parameters['duration'] as int, greaterThanOrEqualTo(20));
+    });
+
+    test('should calculate total duration correctly', () async {
+      dumper.recordPhase('start');
+      await Future.delayed(Duration(milliseconds: 50));
+      dumper.recordPhase('end');
+
+      final totalDuration = dumper.totalDuration;
+      expect(totalDuration, isNotNull);
+      expect(totalDuration!.inMilliseconds, greaterThanOrEqualTo(50));
+    });
+
+    test('should reset dumper state', () {
+      dumper.recordPhase('phase1');
+      dumper.recordPhase('phase2');
+      
+      expect(dumper.phases.length, 2);
+
+      dumper.reset();
+
+      expect(dumper.phases.length, 0);
+      expect(dumper.totalDuration, isNull);
+    });
+
+    test('should show visual timeline for key phases', () {
+      // Record some key phases
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      dumper.recordPhase(LoadingStateDumper.phaseLoadStart);
+      dumper.recordPhase(LoadingStateDumper.phaseParseHTML);
+      dumper.recordPhase(LoadingStateDumper.phaseEvaluateScripts);
+      dumper.recordPhase(LoadingStateDumper.phaseDOMContentLoaded);
+      dumper.recordPhase(LoadingStateDumper.phaseFirstPaint);
+      dumper.recordPhase(LoadingStateDumper.phaseWindowLoad);
+
+      final output = dumper.dump();
+
+      // Check visual timeline section
+      expect(output, contains('Visual Timeline:'));
+      expect(output, contains('▼')); // Timeline markers
+      expect(output, contains('─')); // Timeline line
+    });
+
+    test('should handle empty phases gracefully', () {
+      final output = dumper.dump();
+      expect(output, equals('No loading phases recorded'));
+    });
+
+    test('should format durations correctly', () {
+      // Test milliseconds formatting
+      dumper.recordPhase('phase1');
+      final output1 = dumper.dump();
+      expect(RegExp(r'\d+ms').hasMatch(output1), isTrue);
+
+      // For testing seconds/minutes formatting, we'd need to mock the duration
+      // but this at least tests the basic millisecond case
+    });
+
+    test('should track network requests', () {
+      // Record a network request
+      dumper.recordNetworkRequestStart('https://example.com/api/data', method: 'GET');
+      
+      // Verify network request is tracked
+      expect(dumper.networkRequests.length, 1);
+      expect(dumper.networkRequests[0].url, 'https://example.com/api/data');
+      expect(dumper.networkRequests[0].method, 'GET');
+      expect(dumper.networkRequests[0].isComplete, false);
+      
+      // Complete the request
+      dumper.recordNetworkRequestComplete(
+        'https://example.com/api/data',
+        statusCode: 200,
+        responseSize: 1024,
+        contentType: 'application/json',
+      );
+      
+      // Verify completion
+      expect(dumper.networkRequests[0].isComplete, true);
+      expect(dumper.networkRequests[0].statusCode, 200);
+      expect(dumper.networkRequests[0].responseSize, 1024);
+      expect(dumper.networkRequests[0].isSuccessful, true);
+    });
+
+    test('should track network request errors', () {
+      dumper.recordNetworkRequestStart('https://example.com/api/error');
+      dumper.recordNetworkRequestError('https://example.com/api/error', 'Connection timeout');
+      
+      final request = dumper.networkRequests[0];
+      expect(request.isComplete, true);
+      expect(request.error, 'Connection timeout');
+      expect(request.isSuccessful, false);
+    });
+
+    test('should include network statistics in dump', () {
+      // Add some network requests
+      dumper.recordNetworkRequestStart('https://example.com/api/1');
+      dumper.recordNetworkRequestComplete('https://example.com/api/1', 
+        statusCode: 200, responseSize: 2048);
+      
+      dumper.recordNetworkRequestStart('https://example.com/api/2');
+      dumper.recordNetworkRequestComplete('https://example.com/api/2', 
+        statusCode: 404, responseSize: 512);
+      
+      dumper.recordNetworkRequestStart('https://example.com/api/3');
+      dumper.recordNetworkRequestError('https://example.com/api/3', 'Network error');
+      
+      // Add a phase to have something in the timeline
+      dumper.recordPhase('test-phase');
+      
+      final output = dumper.dump(verbose: true);
+      
+      // Check network statistics in header
+      expect(output, contains('Network Requests: 3'));
+      expect(output, contains('Total Downloaded:'));
+      expect(output, contains('Network Activity:'));
+      
+      // Check individual requests are shown
+      expect(output, contains('https://example.com/api/1'));
+      expect(output, contains('200'));
+      expect(output, contains('404'));
+      expect(output, contains('ERROR'));
+    });
+
+    test('should format bytes correctly', () {
+      dumper.recordNetworkRequestStart('https://example.com/small');
+      dumper.recordNetworkRequestComplete('https://example.com/small', responseSize: 512);
+      
+      dumper.recordNetworkRequestStart('https://example.com/medium');
+      dumper.recordNetworkRequestComplete('https://example.com/medium', responseSize: 2048);
+      
+      dumper.recordNetworkRequestStart('https://example.com/large');
+      dumper.recordNetworkRequestComplete('https://example.com/large', responseSize: 2097152); // 2MB
+      
+      dumper.recordPhase('test');
+      final output = dumper.dump(verbose: true);
+      
+      expect(output, contains('512B'));
+      expect(output, contains('2.0KB'));
+      expect(output, contains('2.0MB'));
+    });
+
+    test('should track buildRootView phase', () {
+      // Record some phases including buildRootView
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      dumper.recordPhase(LoadingStateDumper.phaseDOMContentLoaded);
+      dumper.recordPhase(LoadingStateDumper.phaseBuildRootView, parameters: {
+        'initialRoute': '/home',
+        'hasHybridRoute': true,
+      });
+      dumper.recordPhase(LoadingStateDumper.phaseWindowLoad);
+
+      final output = dumper.dump(verbose: true);
+
+      // Check that buildRootView is recorded
+      expect(output, contains('buildRootView'));
+      
+      // In verbose mode, check parameters
+      expect(output, contains('initialRoute: /home'));
+      expect(output, contains('hasHybridRoute: true'));
+      
+      // Check visual timeline includes buildRootView
+      expect(output, contains('Visual Timeline:'));
+      final phases = dumper.phases;
+      expect(phases.any((p) => p.name == LoadingStateDumper.phaseBuildRootView), isTrue);
+    });
+
+    test('should track errors during loading', () {
+      // Record some phases
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      dumper.recordPhase(LoadingStateDumper.phaseResolveEntrypoint);
+      
+      // Record an error
+      dumper.recordError(
+        LoadingStateDumper.phaseResolveEntrypoint,
+        Exception('Failed to resolve bundle'),
+        context: {
+          'bundle': 'https://example.com/app.js',
+          'errorType': 'NetworkError',
+        }
+      );
+      
+      // Continue with more phases
+      dumper.recordPhase(LoadingStateDumper.phaseEvaluateStart);
+      
+      // Check error tracking
+      expect(dumper.hasErrors, isTrue);
+      expect(dumper.errors.length, 1);
+      expect(dumper.errors[0].phase, LoadingStateDumper.phaseResolveEntrypoint);
+      expect(dumper.errors[0].error.toString(), contains('Failed to resolve bundle'));
+      
+      // Check dump output
+      final output = dumper.dump(verbose: true);
+      expect(output, contains('⚠️  Errors: 1'));
+      expect(output, contains('⚠️  Errors and Exceptions:'));
+      expect(output, contains('ERROR at'));
+      expect(output, contains('Type: _Exception'));
+      expect(output, contains('Message: Exception: Failed to resolve bundle'));
+      expect(output, contains('bundle: https://example.com/app.js'));
+      expect(output, contains('errorType: NetworkError'));
+    });
+
+    test('should track multiple errors', () {
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      
+      // Record multiple errors
+      dumper.recordError(
+        LoadingStateDumper.phaseResolveEntrypoint,
+        Exception('Network timeout'),
+      );
+      
+      dumper.recordError(
+        LoadingStateDumper.phaseEvaluateScripts,
+        'Script evaluation failed',
+      );
+      
+      dumper.recordCurrentPhaseError(
+        Exception('Unexpected error'),
+        context: {'detail': 'some context'},
+      );
+      
+      expect(dumper.errors.length, 3);
+      expect(dumper.hasErrors, isTrue);
+      
+      final output = dumper.dump();
+      expect(output, contains('⚠️  Errors: 3'));
+    });
+
+    test('should include stack trace in verbose mode', () {
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      
+      // Create a stack trace
+      try {
+        throw Exception('Test error');
+      } catch (e, stack) {
+        dumper.recordError(
+          LoadingStateDumper.phaseInit,
+          e,
+          stackTrace: stack,
+        );
+      }
+      
+      final verboseOutput = dumper.dump(verbose: true);
+      final normalOutput = dumper.dump(verbose: false);
+      
+      // Stack trace should only appear in verbose mode
+      expect(verboseOutput, contains('Stack trace:'));
+      expect(normalOutput, isNot(contains('Stack trace:')));
+    });
+
+    test('should reset errors when reset is called', () {
+      dumper.recordPhase(LoadingStateDumper.phaseInit);
+      dumper.recordError(LoadingStateDumper.phaseInit, Exception('Error'));
+      
+      expect(dumper.hasErrors, isTrue);
+      
+      dumper.reset();
+      
+      expect(dumper.hasErrors, isFalse);
+      expect(dumper.errors.length, 0);
+    });
+
+    test('should track parseHTML phase with duration', () async {
+      final endCallback = dumper.recordPhaseStart(LoadingStateDumper.phaseParseHTML, parameters: {
+        'dataSize': 1024,
+      });
+      
+      await Future.delayed(Duration(milliseconds: 50));
+      
+      endCallback();
+      
+      expect(dumper.phases.length, 2);
+      expect(dumper.phases[0].name, '${LoadingStateDumper.phaseParseHTML}.start');
+      expect(dumper.phases[1].name, '${LoadingStateDumper.phaseParseHTML}.end');
+      expect(dumper.phases[1].parameters['duration'], greaterThanOrEqualTo(50));
+      
+      final output = dumper.dump(verbose: true);
+      expect(output, contains('parseHTML'));
+      expect(output, contains('dataSize: 1024'));
+    });
+
+    test('should track evaluateScripts phase with parameters', () async {
+      final endCallback = dumper.recordPhaseStart(LoadingStateDumper.phaseEvaluateScripts, parameters: {
+        'url': 'https://example.com/script.js',
+        'loadedFromCache': true,
+        'dataSize': 2048,
+      });
+      
+      await Future.delayed(Duration(milliseconds: 30));
+      
+      endCallback();
+      
+      expect(dumper.phases.length, 2);
+      expect(dumper.phases[0].name, '${LoadingStateDumper.phaseEvaluateScripts}.start');
+      expect(dumper.phases[1].name, '${LoadingStateDumper.phaseEvaluateScripts}.end');
+      
+      final output = dumper.dump(verbose: true);
+      expect(output, contains('evaluateScripts'));
+      expect(output, contains('url: https://example.com/script.js'));
+      expect(output, contains('loadedFromCache: true'));
+      expect(output, contains('dataSize: 2048'));
+    });
+
+    test('should track bytecode evaluation', () async {
+      final endCallback = dumper.recordPhaseStart(LoadingStateDumper.phaseEvaluateScripts, parameters: {
+        'type': 'bytecode',
+        'dataSize': 4096,
+      });
+      
+      await Future.delayed(Duration(milliseconds: 20));
+      
+      endCallback();
+      
+      final output = dumper.dump(verbose: true);
+      expect(output, contains('evaluateScripts'));
+      expect(output, contains('type: bytecode'));
+      expect(output, contains('dataSize: 4096'));
+    });
+
+    test('should track script element loading', () {
+      // Queue a script
+      final script = dumper.recordScriptElementQueue(
+        source: 'https://example.com/script.js',
+        isInline: false,
+        isModule: false,
+        isAsync: true,
+        isDefer: false,
+      );
+      
+      // Verify script was recorded
+      expect(dumper.scriptElements.length, 1);
+      expect(dumper.scriptElements[0].source, 'https://example.com/script.js');
+      expect(dumper.scriptElements[0].isAsync, true);
+      expect(dumper.scriptElements[0].readyState, 'loading');
+      
+      // Record loading start
+      dumper.recordScriptElementLoadStart('https://example.com/script.js');
+      expect(dumper.scriptElements[0].readyState, 'interactive');
+      
+      // Record loading complete
+      dumper.recordScriptElementLoadComplete('https://example.com/script.js', dataSize: 2048);
+      expect(dumper.scriptElements[0].dataSize, 2048);
+      
+      // Record execution start
+      dumper.recordScriptElementExecuteStart('https://example.com/script.js');
+      
+      // Record execution complete
+      dumper.recordScriptElementExecuteComplete('https://example.com/script.js');
+      expect(dumper.scriptElements[0].readyState, 'complete');
+      expect(dumper.scriptElements[0].isComplete, true);
+      expect(dumper.scriptElements[0].isSuccessful, true);
+    });
+
+    test('should track script element errors', () {
+      // Queue a script
+      dumper.recordScriptElementQueue(
+        source: 'https://example.com/error.js',
+        isInline: false,
+        isModule: false,
+        isAsync: false,
+        isDefer: false,
+      );
+      
+      // Record loading start
+      dumper.recordScriptElementLoadStart('https://example.com/error.js');
+      
+      // Record error
+      dumper.recordScriptElementError('https://example.com/error.js', 'Network timeout');
+      
+      expect(dumper.scriptElements[0].error, 'Network timeout');
+      expect(dumper.scriptElements[0].readyState, 'error');
+      expect(dumper.scriptElements[0].isComplete, true);
+      expect(dumper.scriptElements[0].isSuccessful, false);
+    });
+
+    test('should track inline scripts', () {
+      // Queue an inline script
+      dumper.recordScriptElementQueue(
+        source: '<inline>',
+        isInline: true,
+        isModule: false,
+        isAsync: false,
+        isDefer: false,
+      );
+      
+      // Record phases
+      dumper.recordScriptElementLoadStart('<inline>');
+      dumper.recordScriptElementLoadComplete('<inline>', dataSize: 256);
+      dumper.recordScriptElementExecuteStart('<inline>');
+      dumper.recordScriptElementExecuteComplete('<inline>');
+      
+      expect(dumper.scriptElements[0].isInline, true);
+      expect(dumper.scriptElements[0].source, '<inline>');
+      expect(dumper.scriptElements[0].isSuccessful, true);
+    });
+
+    test('should show script elements in dump', () {
+      // Add some phases first
+      dumper.recordPhase('test');
+      
+      // Add multiple scripts
+      dumper.recordScriptElementQueue(
+        source: 'https://example.com/app.js',
+        isInline: false,
+        isModule: false,
+        isAsync: true,
+        isDefer: false,
+      );
+      dumper.recordScriptElementLoadComplete('https://example.com/app.js', dataSize: 1024);
+      dumper.recordScriptElementExecuteComplete('https://example.com/app.js');
+      
+      dumper.recordScriptElementQueue(
+        source: '<inline>',
+        isInline: true,
+        isModule: true,
+        isAsync: false,
+        isDefer: false,
+      );
+      dumper.recordScriptElementExecuteComplete('<inline>');
+      
+      dumper.recordScriptElementQueue(
+        source: 'https://example.com/broken.js',
+        isInline: false,
+        isModule: false,
+        isAsync: false,
+        isDefer: true,
+      );
+      dumper.recordScriptElementError('https://example.com/broken.js', 'Syntax error');
+      
+      // Check verbose dump
+      final output = dumper.dump(verbose: true);
+      
+      // Check header
+      expect(output, contains('Script Elements: 3 (2 successful, 1 failed)'));
+      
+      // Check script elements section
+      expect(output, contains('Script Elements:'));
+      expect(output, contains('app.js'));
+      expect(output, contains('module'));
+      expect(output, contains('async'));
+      expect(output, contains('defer'));
+      expect(output, contains('<inline script>'));
+      expect(output, contains('ERROR'));
+      expect(output, contains('Syntax error'));
+    });
+
+    test('should calculate script durations correctly', () async {
+      dumper.recordScriptElementQueue(
+        source: 'test.js',
+        isInline: false,
+        isModule: false,
+        isAsync: true,
+        isDefer: false,
+      );
+      
+      await Future.delayed(Duration(milliseconds: 10));
+      dumper.recordScriptElementLoadStart('test.js');
+      
+      await Future.delayed(Duration(milliseconds: 20));
+      dumper.recordScriptElementLoadComplete('test.js', dataSize: 512);
+      
+      await Future.delayed(Duration(milliseconds: 15));
+      dumper.recordScriptElementExecuteStart('test.js');
+      
+      await Future.delayed(Duration(milliseconds: 25));
+      dumper.recordScriptElementExecuteComplete('test.js');
+      
+      final script = dumper.scriptElements[0];
+      expect(script.loadDuration, isNotNull);
+      expect(script.loadDuration!.inMilliseconds, greaterThanOrEqualTo(20));
+      expect(script.executeDuration, isNotNull);
+      expect(script.executeDuration!.inMilliseconds, greaterThanOrEqualTo(25));
+      expect(script.totalDuration, isNotNull);
+      expect(script.totalDuration!.inMilliseconds, greaterThanOrEqualTo(70));
+    });
+
+    test('should count script statistics correctly', () {
+      // Add successful scripts
+      dumper.recordScriptElementQueue(
+        source: 'success1.js',
+        isInline: false,
+        isModule: false,
+        isAsync: true,
+        isDefer: false,
+      );
+      dumper.recordScriptElementExecuteComplete('success1.js');
+      
+      dumper.recordScriptElementQueue(
+        source: 'success2.js',
+        isInline: false,
+        isModule: false,
+        isAsync: false,
+        isDefer: false,
+      );
+      dumper.recordScriptElementExecuteComplete('success2.js');
+      
+      // Add failed scripts
+      dumper.recordScriptElementQueue(
+        source: 'fail1.js',
+        isInline: false,
+        isModule: false,
+        isAsync: false,
+        isDefer: false,
+      );
+      dumper.recordScriptElementError('fail1.js', 'Network error');
+      
+      dumper.recordScriptElementQueue(
+        source: 'fail2.js',
+        isInline: false,
+        isModule: false,
+        isAsync: false,
+        isDefer: false,
+      );
+      dumper.recordScriptElementError('fail2.js', 'Parse error');
+      
+      expect(dumper.scriptElements.length, 4);
+      expect(dumper.successfulScriptsCount, 2);
+      expect(dumper.failedScriptsCount, 2);
+    });
+
+    test('should reset script elements when reset is called', () {
+      dumper.recordPhase('test');
+      dumper.recordScriptElementQueue(
+        source: 'test.js',
+        isInline: false,
+        isModule: false,
+        isAsync: true,
+        isDefer: false,
+      );
+      
+      expect(dumper.scriptElements.length, 1);
+      
+      dumper.reset();
+      
+      expect(dumper.scriptElements.length, 0);
+    });
+  });
+}
