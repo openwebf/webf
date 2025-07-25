@@ -7,6 +7,7 @@
 #include <core/css/parser/css_selector_parser.h>
 
 #include <utility>
+#include "core/dom/element_rare_data_vector.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
@@ -19,6 +20,7 @@
 #include "core/css/style_engine.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/style_scope_data.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/document_fragment.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
@@ -253,7 +255,7 @@ AtomicString Element::nodeValue() const {
 }
 
 std::string Element::nodeName() const {
-  return tagName().ToStdString();
+  return tagName().UpperASCII().ToStdString();
 }
 
 AtomicString Element::className() const {
@@ -378,11 +380,11 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
   }
 }
 
-InlineCssStyleDeclaration* Element::style() {
+legacy::LegacyInlineCssStyleDeclaration* Element::style() {
   if (!IsStyledElement())
     return nullptr;
-  CSSStyleDeclaration& style = EnsureElementRareData().EnsureInlineCSSStyleDeclaration(this);
-  return To<InlineCssStyleDeclaration>(&style);
+  legacy::LegacyCssStyleDeclaration& style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
+  return To<legacy::LegacyInlineCssStyleDeclaration>(&style);
 }
 
 DOMTokenList* Element::classList() {
@@ -424,6 +426,29 @@ Element& Element::CloneWithoutChildren(Document* document) const {
 }
 
 void Element::NotifyInlineStyleMutation() {}
+
+void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
+  // Clone the inline style from the legacy style declaration
+  if (other.IsStyledElement() && this->IsStyledElement()) {
+    // Get the source element's style
+    auto* other_style = const_cast<Element&>(other).style();
+    if (other_style && !other_style->cssText().empty()) {
+      // Get or create this element's style and copy the CSS text
+      auto* this_style = this->style();
+      if (this_style) {
+        this_style->CopyWith(other_style);
+      }
+    }
+  }
+  
+  // Also clone the inline style from element_data_ if it exists
+  if (other.element_data_ && other.element_data_->InlineStyle()) {
+    if (element_data_ && element_data_->IsUnique()) {
+      auto* unique_data = static_cast<UniqueElementData*>(element_data_.get());
+      unique_data->inline_style_ = other.element_data_->InlineStyle()->MutableCopy();
+    }
+  }
+}
 
 std::shared_ptr<const MutableCSSPropertyValueSet> Element::EnsureMutableInlineStyle() {
   DCHECK(IsStyledElement());
@@ -556,13 +581,6 @@ const AtomicString Element::getUppercasedQualifiedName() const {
   }
 
   return name;
-}
-
-ElementData& Element::EnsureElementData() {
-  if (element_data_ == nullptr) {
-    element_data_ = std::make_shared<ElementData>();
-  }
-  return *element_data_;
 }
 
 Node* Element::Clone(Document& factory, CloneChildrenFlag flag) const {
@@ -771,7 +789,7 @@ void Element::SynchronizeStyleAttributeInternal() {
   assert(GetElementData()->style_attribute_is_dirty());
   GetElementData()->SetStyleAttributeIsDirty(false);
 
-  InlineCssStyleDeclaration* inline_style = style();
+  legacy::LegacyInlineCssStyleDeclaration* inline_style = style();
   SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
                        AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
 }
@@ -813,7 +831,7 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
     return;
   }
 
-  if (UNLIKELY(name == html_names::kStyleAttr && EnsureElementData().style_attribute_is_dirty())) {
+  if (UNLIKELY(name == html_names::kStyleAttr && GetElementData()->style_attribute_is_dirty())) {
     assert(IsStyledElement());
     SynchronizeStyleAttributeInternal();
     return;
@@ -821,16 +839,22 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
 }
 
 void Element::InvalidateStyleAttribute(bool only_changed_independent_properties) {
-  DCHECK(HasElementData());
-  GetElementData()->SetStyleAttributeIsDirty(true);
-  SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
-                      StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
-  //  GetDocument().GetStyleEngine().AttributeChangedForElement(
-  //      html_names::kStyleAttr, *this);
+  if (GetExecutingContext()->isBlinkEnabled()) {
+     DCHECK(HasElementData());
+     GetElementData()->SetStyleAttributeIsDirty(true);
+     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
+                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
+     //  GetDocument().GetStyleEngine().AttributeChangedForElement(
+     //      html_names::kStyleAttr, *this);
+  } else {
+    EnsureUniqueElementData().SetStyleAttributeIsDirty(true);
+  }
 }
 
 void Element::AttributeChanged(const AttributeModificationParams& params) {
-  ParseAttribute(params);
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    ParseAttribute(params);
+  }
 
   const AtomicString& name = params.name;
 
@@ -863,27 +887,32 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
 }
 
 void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
-  DCHECK(IsStyledElement());
-  std::shared_ptr<const CSSPropertyValueSet>& inline_style = EnsureElementData().inline_style_;
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    DCHECK(IsStyledElement());
+    std::shared_ptr<const CSSPropertyValueSet>& inline_style = GetElementData()->inline_style_;
 
-  // Avoid redundant work if we're using shared attribute data with already
-  // parsed inline style.
-  if (inline_style && !GetElementData()->IsUnique()) {
-    return;
-  }
+    // Avoid redundant work if we're using shared attribute data with already
+    // parsed inline style.
+    if (inline_style && !GetElementData()->IsUnique()) {
+      return;
+    }
 
-  // We reconstruct the property set instead of mutating if there is no CSSOM
-  // wrapper.  This makes wrapperless property sets immutable and so cacheable.
-  if (inline_style && !inline_style->IsMutable()) {
-    inline_style = nullptr;
-  }
+    // We reconstruct the property set instead of mutating if there is no CSSOM
+    // wrapper.  This makes wrapperless property sets immutable and so cacheable.
+    if (inline_style && !inline_style->IsMutable()) {
+      inline_style = nullptr;
+    }
 
-  if (!inline_style) {
-    inline_style = CSSParser::ParseInlineStyleDeclaration(new_style_string.ToStdString(), this);
+    if (!inline_style) {
+      inline_style = CSSParser::ParseInlineStyleDeclaration(new_style_string.ToStdString(), this);
+    } else {
+      DCHECK(inline_style->IsMutable());
+      static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
+          ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
+    }
   } else {
-    DCHECK(inline_style->IsMutable());
-    static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
-        ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
+    auto&& legacy_inline_style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
+    To<legacy::LegacyInlineCssStyleDeclaration>(legacy_inline_style).SetCSSTextInternal(new_style_string);
   }
 }
 
@@ -895,7 +924,7 @@ std::string Element::outerHTML() {
   if (attributes_ != nullptr) {
     s += " " + attributes_->ToString();
   }
-  if (EnsureElementData().inline_style_ != nullptr) {
+  if (GetElementRareData() && GetElementData()->inline_style_ != nullptr) {
     s += " style=\"" + GetElementData()->inline_style_->AsText();
   }
 

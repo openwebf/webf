@@ -25,6 +25,9 @@ namespace webf {
 
 class ShadowRoot;
 class StyleScopeData;
+namespace legacy {
+class LegacyInlineCssStyleDeclaration;
+}
 
 enum class ElementFlags {
   kTabIndexWasSetExplicitly = 1 << 0,
@@ -187,7 +190,8 @@ class Element : public ContainerNode {
 
   Element* insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state);
 
-  InlineCssStyleDeclaration* style();
+//  InlineCssStyleDeclaration* style();
+  legacy::LegacyInlineCssStyleDeclaration* style();
   DOMTokenList* classList();
   DOMStringMap* dataset();
 
@@ -208,7 +212,7 @@ class Element : public ContainerNode {
   bool HasEquivalentAttributes(const Element& other) const;
 
   // Step 5 of https://dom.spec.whatwg.org/#concept-node-clone
-  virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag) {}
+  virtual void CloneNonAttributePropertiesFrom(const Element&, CloneChildrenFlag);
   virtual bool IsWidgetElement() const;
   virtual bool IsWebFTouchAreaElement() const;
   virtual void FinishParsingChildren();
@@ -341,7 +345,6 @@ class Element : public ContainerNode {
 
   const AtomicString& getQualifiedName() const { return local_name_; }
   const AtomicString getUppercasedQualifiedName() const;
-  ElementData& EnsureElementData();
   AtomicString namespace_uri_ = AtomicString::Null();
   AtomicString prefix_ = AtomicString::Null();
   AtomicString local_name_ = AtomicString::Empty();
