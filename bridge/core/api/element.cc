@@ -6,15 +6,16 @@
 #include "core/api/exception_state.h"
 #include "core/dom/container_node.h"
 #include "core/dom/element.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h"
 
 namespace webf {
 
-WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods> ElementPublicMethods::Style(Element* ptr) {
+WebFValue<legacy::LegacyCssStyleDeclaration, CSSStyleDeclarationPublicMethods> ElementPublicMethods::Style(Element* ptr) {
   auto* element = static_cast<webf::Element*>(ptr);
   MemberMutationScope member_mutation_scope{element->GetExecutingContext()};
   auto style = element->style();
   WebFValueStatus* status_block = style->KeepAlive();
-  return WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods>(
+  return WebFValue<legacy::LegacyCssStyleDeclaration, CSSStyleDeclarationPublicMethods>(
       style, style->cssStyleDeclarationPublicMethods(), status_block);
 }
 

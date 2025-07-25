@@ -9,16 +9,19 @@
 
 namespace webf {
 
+namespace legacy {
+class LegacyCssStyleDeclaration;
+}
+
 class EventTarget;
 class SharedExceptionState;
 class ExecutingContext;
 class Element;
 class Document;
 typedef struct WebFNativeFunctionContext WebFNativeFunctionContext;
-class CSSStyleDeclaration;
 typedef struct CSSStyleDeclarationPublicMethods CSSStyleDeclarationPublicMethods;
 
-using PublicElementGetStyle = WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods> (*)(Element*);
+using PublicElementGetStyle = WebFValue<legacy::LegacyCssStyleDeclaration, CSSStyleDeclarationPublicMethods> (*)(Element*);
 using PublicElementToBlob = void (*)(Element*, WebFNativeFunctionContext*, SharedExceptionState*);
 using PublicElementToBlobWithDevicePixelRatio = void (*)(Element*,
                                                          double,
@@ -26,7 +29,7 @@ using PublicElementToBlobWithDevicePixelRatio = void (*)(Element*,
                                                          SharedExceptionState*);
 
 struct ElementPublicMethods : WebFPublicMethods {
-  static WebFValue<CSSStyleDeclaration, CSSStyleDeclarationPublicMethods> Style(Element* element);
+  static WebFValue<legacy::LegacyCssStyleDeclaration, CSSStyleDeclarationPublicMethods> Style(Element* element);
   static void ToBlob(Element* element, WebFNativeFunctionContext* context, SharedExceptionState* exception_state);
   static void ToBlobWithDevicePixelRatio(Element* element,
                                          double device_pixel_ratio,
