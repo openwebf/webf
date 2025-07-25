@@ -35,11 +35,11 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./core/frame/console_test.cc
   ./core/frame/module_manager_test.cc
   ./core/dom/events/event_target_test.cc
-#  ./core/dom/document_test.cc
-#  ./core/dom/legacy/element_attribute_test.cc
-#  ./core/dom/node_test.cc
+  ./core/dom/document_test.cc
+  ./core/dom/legacy/element_attribute_test.cc
+  ./core/dom/node_test.cc
 #  ./core/html/html_collection_test.cc
-#  ./core/dom/element_test.cc
+  ./core/dom/element_test.cc
   ./core/frame/dom_timer_test.cc
   ./core/frame/window_test.cc
 #  ./core/css/inline_css_style_declaration_test.cc
@@ -57,7 +57,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
 ### webf_unit_test executable
 add_executable(webf_unit_test
   ${WEBF_UNIT_TEST_SOURCE}
-  $<TARGET_OBJECTS:webf_css_unit_test_lib>
+#  $<TARGET_OBJECTS:webf_css_unit_test_lib>
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
 )
