@@ -20,6 +20,13 @@ TEST(AtomicString, Empty) {
   EXPECT_EQ(*atomic_string.Impl(), "");
 }
 
+TEST(AtomicString, HashShouldNotEqual8bitAnd16bit) {
+  TEST_init();
+  AtomicString atomic_string = AtomicString("helloworld");
+  AtomicString atomic_string2 = AtomicString(u"helloworld");
+  EXPECT_NE(atomic_string.Hash(), atomic_string2.Hash());
+}
+
 TEST(AtomicString, FromNativeString) {
   TEST_init();
   auto nativeString = stringToNativeString("helloworld");
@@ -31,7 +38,7 @@ TEST(AtomicString, FromNativeString) {
 
 TEST(AtomicString, CreateFromStdString) {
   TEST_init();
-  AtomicString&& value = AtomicString("helloworld");
+  AtomicString value = AtomicString("helloworld");
   EXPECT_EQ(std::string(value.Impl()->Characters8(), value.Impl()->length()), "helloworld");
 }
 
@@ -57,6 +64,7 @@ TEST(AtomicString, ToQuickJS) {
 }
 
 TEST(AtomicString, ToNativeString) {
+  TEST_init();
   AtomicString&& value = AtomicString("helloworld");
   auto native_string = value.ToNativeString();
   const uint16_t* p = native_string->string();
@@ -69,6 +77,7 @@ TEST(AtomicString, ToNativeString) {
 }
 
 TEST(AtomicString, CopyAssignment) {
+  TEST_init();
   AtomicString str = AtomicString("helloworld");
   struct P {
     AtomicString str;
@@ -79,12 +88,14 @@ TEST(AtomicString, CopyAssignment) {
 }
 
 TEST(AtomicString, MoveAssignment) {
-  auto&& str = AtomicString("helloworld");
-  auto&& str2 = AtomicString(std::move(str));
+  TEST_init();
+  auto str = AtomicString("helloworld");
+  auto str2 = AtomicString(std::move(str));
   EXPECT_EQ(str2.ToStdString(), "helloworld");
 }
 
 TEST(AtomicString, CopyToRightReference) {
+  TEST_init();
   AtomicString str = AtomicString::Empty();
   if (1 + 1 == 2) {
     str = AtomicString("helloworld");

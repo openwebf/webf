@@ -207,51 +207,7 @@ WebFTestEnv::WebFTestEnv(DartIsolateContext* owner_isolate_context, webf::WebFPa
     : page_(page), isolate_context_(owner_isolate_context) {}
 
 WebFTestEnv::~WebFTestEnv() {
-  // Simplified cleanup to avoid hangs
-  
-  // First, clean up the page and its execution context properly
-  if (page_ && page_->executingContext()) {
-    auto* ctx = page_->executingContext();
-    
-    // Check for any pending exceptions and clear them
-    if (ctx->IsCtxValid()) {
-      JSValue exception = JS_GetException(ctx->ctx());
-      if (JS_IsObject(exception) || JS_IsException(exception)) {
-        JS_FreeValue(ctx->ctx(), exception);
-      }
-      
-      // Drain microtasks to complete any pending operations
-      ctx->DrainMicrotasks();
-    }
-  }
-  
-  // Clean up test context map entry
-  if (page_) {
-    double page_id = page_->contextId();
-    test_context_map.erase(page_id);
-  }
-  
-  // Don't reset CSS default style sheets - they're shared across all tests
-  // CSSDefaultStyleSheets::Reset();
-  
-  // Simple cleanup without excessive GC runs
-  if (isolate_context_ && isolate_context_->runtime()) {
-    // Clean up JSThreadState
-    JSThreadState* ts = static_cast<JSThreadState*>(JS_GetRuntimeOpaque(isolate_context_->runtime()));
-    if (ts) {
-      delete ts;
-      JS_SetRuntimeOpaque(isolate_context_->runtime(), nullptr);
-    }
-    
-    // Single GC run
-    JS_RunGC(isolate_context_->runtime());
-  }
-  
-  // Dispose isolate context
-  if (isolate_context_) {
-    isolate_context_->Dispose([]() {});
-    delete isolate_context_;
-  }
+  delete isolate_context_;
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
@@ -259,42 +215,6 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError) {
 }
 
 std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementShape* shape, size_t shape_len) {
-  // Clean up old contexts more aggressively to prevent resource exhaustion
-  // Increased limit to avoid cleanup during test runs
-  if (test_context_map.size() > 100) {
-    // Force cleanup of all existing contexts
-    for (auto& pair : test_context_map) {
-      if (pair.second && pair.second->page()) {
-        auto* page = pair.second->page();
-        if (page->executingContext() && page->executingContext()->IsCtxValid()) {
-          // Force GC on old contexts
-          JS_RunGC(page->executingContext()->dartIsolateContext()->runtime());
-        }
-      }
-    }
-    test_context_map.clear();
-  }
-  
-  // Track initialization count per test run
-  static int init_count = 0;
-  static auto start_time = std::chrono::steady_clock::now();
-  auto current_time = std::chrono::steady_clock::now();
-  auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - start_time).count();
-  
-  // Reset counter if more than 10 seconds have passed (new test run)
-  if (elapsed > 10) {
-    init_count = 0;
-    start_time = current_time;
-  }
-  
-  init_count++;
-  
-  // Prevent infinite context creation - hard limit at 1000 per test run
-  if (init_count > 1000) {
-    fprintf(stderr, "ERROR: Too many TEST_init calls (%d), possible infinite loop!\n", init_count);
-    exit(1);
-  }
-  
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto* dart_isolate_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
   double pageContextId = contextId -= 1;

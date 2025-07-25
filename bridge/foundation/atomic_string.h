@@ -23,6 +23,8 @@ class AtomicString {
 
   explicit AtomicString(const char* chars)
       : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
+  explicit AtomicString(const char16_t* chars)
+    : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}
 
   AtomicString(std::string_view string_view);
   AtomicString(const char* chars, size_t length);
@@ -34,6 +36,7 @@ class AtomicString {
   AtomicString(JSContext* ctx, JSAtom qjs_atom);
   AtomicString(const std::string& s) : AtomicString(s.c_str(), s.length()){};
   AtomicString(const std::unique_ptr<AutoFreeNativeString>& native_string);
+  AtomicString(const AtomicString&) = default;
   ~AtomicString() = default;
 
   // Returns a lowercase/uppercase version of the string.

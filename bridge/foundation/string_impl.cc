@@ -54,7 +54,7 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t le
 
 std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_t length) {
   if (!characters || !length)
-    return empty_shared();
+    return empty16_shared();
 
   char16_t* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
@@ -81,7 +81,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*
 std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char16_t*& data) {
   if (!length) {
     data = nullptr;
-    return empty_shared();
+    return empty16_shared();
   }
 
   // Allocate a single buffer large enough to contain the StringImpl

@@ -33,38 +33,14 @@ class StyleCascadeTest : public ::testing::Test {
   void SetUp() override {
     env_ = TEST_init();
     context_ = env_->page()->executingContext();
+    context_->EnableBlinkEngine();
     document_ = context_->document();
   }
 
   void TearDown() override {
-    // Clean up DOM tree to prevent leaks
-    if (context_ && document_ && document_->body()) {
-      // Create mutation scope for DOM cleanup
-      MemberMutationScope mutation_scope{context_};
-      
-      // Remove all children from body
-      while (document_->body()->firstChild()) {
-        ExceptionState exception_state;
-        document_->body()->removeChild(document_->body()->firstChild(), exception_state);
-      }
-    }
-    
-    // Force garbage collection before cleanup
-    if (context_ && context_->dartIsolateContext()) {
-      context_->DrainMicrotasks();
-      // Force JS garbage collection
-      if (context_->IsCtxValid()) {
-        JS_RunGC(context_->dartIsolateContext()->runtime());
-      }
-    }
-    
-    // Clear references
-    document_ = nullptr;
+    env_ = nullptr;
     context_ = nullptr;
-    env_.reset();
-    
-    // Clear the AtomicStringTable to prevent atom leaks
-    AtomicStringTable::Instance().Clear();
+    document_ = nullptr;
   }
 
   Document* GetDocument() { return document_; }
@@ -140,12 +116,16 @@ TEST_F(StyleCascadeTest, SpecificityOrdering) {
   auto* li2 = GetDocument()->createElement(AtomicString("li"), ASSERT_NO_EXCEPTION());
   li2->setId(AtomicString("gre"), ASSERT_NO_EXCEPTION());
   
+  // Verify ID was set
+  EXPECT_EQ(li2->id().GetString(), "gre");
+  EXPECT_TRUE(li2->HasID()) << "Element should have ID after setId";
   
   ul->appendChild(li2, ASSERT_NO_EXCEPTION());
   
   GetDocument()->body()->appendChild(ul, ASSERT_NO_EXCEPTION());
   
-  // Create style resolver
+  // Ensure style resolver exists and styles are updated
+  GetStyleEngine().EnsureStyleResolver();
   StyleResolver* resolver = GetStyleEngine().GetStyleResolver();
   ASSERT_NE(resolver, nullptr);
   

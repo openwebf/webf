@@ -38,6 +38,10 @@ class CSSValueListTest : public ::testing::Test {
     env_ = TEST_init();
   }
 
+  void TearDown() override {
+    env_ = nullptr;
+  }
+
  protected:
   std::shared_ptr<WebFTestEnv> env_;
 };

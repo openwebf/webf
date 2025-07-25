@@ -135,7 +135,9 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
     DCHECK(length_);
   }
 
-  StringImpl(size_t length) : length_(length), hash_and_flags_(LengthToAsciiFlags(length)) { DCHECK(length_); }
+  StringImpl(size_t length) : length_(length), hash_and_flags_(LengthToAsciiFlags(length)) {
+    DCHECK(length_);
+  }
 
   enum StaticStringTag { kStaticString };
   StringImpl(size_t length, size_t hash, StaticStringTag)
@@ -162,7 +164,10 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
   // Hash value is 24 bits.
   constexpr static int kHashShift = (sizeof(unsigned) * 8) - 24;
 
-  unsigned GetHashRaw() const { return hash_and_flags_.load(std::memory_order_relaxed) >> kHashShift; }
+  unsigned GetHashRaw() const {
+    auto flags = hash_and_flags_.load(std::memory_order_relaxed);
+    return flags >> (kHashShift - 1) | (flags & kIs8Bit);
+  }
 
   size_t GetHash() const {
     if (size_t hash = GetHashRaw())
