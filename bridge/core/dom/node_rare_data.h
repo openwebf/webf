@@ -125,9 +125,6 @@ class NodeRareData {
   void ClearRestyleFlags() { restyle_flags_ = 0u; }
   virtual void Trace(GCVisitor*) const;
 
-  ChildNodeList* EnsureChildNodeList(ContainerNode& node);
-  EmptyNodeList* EnsureEmptyChildNodeList(Node& node);
-
  protected:
   uint32_t restyle_flags_;
   uint32_t connected_frame_count_;
@@ -139,13 +136,6 @@ class NodeRareData {
   std::shared_ptr<NodeListsNodeData> node_lists_;
   std::shared_ptr<NodeMutationObserverData> mutation_observer_data_;
   std::shared_ptr<FlatTreeNodeData> flat_tree_node_data_;
-
-  // An ordered set of DOM Parts for this Node, in order of construction. This
-  // order is important, since `getParts()` returns a tree-ordered set of parts,
-  // with parts on the same `Node` returned in `Part` construction order.
-  // Member<PartsList> dom_parts_;
-
-  Member<NodeList> node_list_;
 };
 
 }  // namespace webf

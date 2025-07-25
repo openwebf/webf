@@ -42,7 +42,11 @@
 
 namespace webf {
 
-void NodeMutationObserverData::Trace(GCVisitor* visitor) const {}
+void NodeMutationObserverData::Trace(GCVisitor* visitor) const {
+  for(auto&& item : registry_) {
+    visitor->TraceMember(item);
+  }
+}
 
 void NodeMutationObserverData::AddTransientRegistration(MutationObserverRegistration* registration) {
   transient_registry_.insert(registration);
@@ -62,7 +66,14 @@ void NodeMutationObserverData::RemoveRegistration(MutationObserverRegistration* 
   registry_.erase_at(registry_.find(registration));
 }
 
-void NodeRareData::Trace(GCVisitor* visitor) const {}
+void NodeRareData::Trace(GCVisitor* visitor) const {
+  if (node_lists_ != nullptr) {
+    node_lists_->Trace(visitor);
+  }
+  if (mutation_observer_data_ != nullptr) {
+    mutation_observer_data_->Trace(visitor);
+  }
+}
 
 void NodeRareData::IncrementConnectedSubframeCount() {
   assert((connected_frame_count_ + 1) <= WebFPage::MaxNumberOfFrames());
@@ -78,22 +89,6 @@ FlatTreeNodeData& NodeRareData::EnsureFlatTreeNodeData() {
   if (!flat_tree_node_data_)
     flat_tree_node_data_ = std::make_shared<FlatTreeNodeData>();
   return *flat_tree_node_data_;
-}
-
-ChildNodeList* NodeRareData::EnsureChildNodeList(ContainerNode& node) {
-  if (node_list_)
-    return To<ChildNodeList>(node_list_.Get());
-  auto* list = MakeGarbageCollected<ChildNodeList>(&node);
-  node_list_ = list;
-  return list;
-}
-
-EmptyNodeList* NodeRareData::EnsureEmptyChildNodeList(Node& node) {
-  if (node_list_)
-    return To<EmptyNodeList>(node_list_.Get());
-  auto* list = MakeGarbageCollected<EmptyNodeList>(&node);
-  node_list_ = list;
-  return list;
 }
 
 static_assert(static_cast<int>(NodeRareData::kNumberOfElementFlags) ==
