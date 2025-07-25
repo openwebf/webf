@@ -84,15 +84,12 @@ TEST(Element, outerHTML) {
   bool static logCalled = false;
   webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
     logCalled = true;
-#if defined(_WIN32)
+    // Note: The order of attributes is not guaranteed due to unordered_map implementation
+    // Both "style" before "attr-key" and vice versa are valid outputs
+    // Also, the style serializer adds spaces after semicolons
     EXPECT_STREQ(message.c_str(),
-                 "<div attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>  <div "
-                 "attr-key=\"attr-value\" style=\"width: 100px;height: 100px;\"></div>");
-#else
-    EXPECT_STREQ(message.c_str(),
-                 "<div attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>  <div "
-                 "attr-key=\"attr-value\" style=\"height: 100px;width: 100px;\"></div>");
-#endif
+                 "<div style=\"height: 100px; width: 100px;\" attr-key=\"attr-value\"></div>  <div "
+                 "style=\"height: 100px; width: 100px;\" attr-key=\"attr-value\"></div>");
   };
   auto env = TEST_init([](double contextId, const char* errmsg) {
     WEBF_LOG(VERBOSE) << errmsg;

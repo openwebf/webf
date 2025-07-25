@@ -917,15 +917,20 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
 }
 
 std::string Element::outerHTML() {
+  // Synchronize style attribute if needed
+  if (HasElementData() && GetElementData()->style_attribute_is_dirty()) {
+    SynchronizeStyleAttributeInternal();
+  }
+
   std::string tagname = local_name_.ToStdString();
   std::string s = "<" + tagname;
 
-  // Read attributes
+  // Read attributes (including style if it's been synchronized)
   if (attributes_ != nullptr) {
-    s += " " + attributes_->ToString();
-  }
-  if (GetElementRareData() && GetElementData()->inline_style_ != nullptr) {
-    s += " style=\"" + GetElementData()->inline_style_->AsText();
+    std::string attrs = attributes_->ToString();
+    if (!attrs.empty()) {
+      s += " " + attrs;
+    }
   }
 
   s += ">";

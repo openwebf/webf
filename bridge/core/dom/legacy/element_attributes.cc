@@ -111,10 +111,15 @@ void ElementAttributes::CopyWith(ElementAttributes* attributes) {
 
 std::string ElementAttributes::ToString() {
   std::string s;
+  bool first = true;
 
   for (auto& attr : attributes_) {
+    if (!first) {
+      s += " ";
+    }
     s += attr.first.ToStdString() + "=";
     s += "\"" + attr.second.ToStdString() + "\"";
+    first = false;
   }
 
   return s;
