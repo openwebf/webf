@@ -84,8 +84,8 @@ LegacyInlineCssStyleDeclaration* LegacyInlineCssStyleDeclaration::Create(Executi
   return nullptr;
 }
 
-LegacyInlineCssStyleDeclaration::LegacyInlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_)
-    : LegacyCssStyleDeclaration(context->ctx(), nullptr), owner_element_(owner_element_) {}
+LegacyInlineCssStyleDeclaration::LegacyInlineCssStyleDeclaration(Element* owner_element_)
+    : LegacyCssStyleDeclaration(owner_element_->ctx(), nullptr), owner_element_(owner_element_) {}
 
 ScriptValue LegacyInlineCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   if (webf::IsPrototypeMethods(key)) {

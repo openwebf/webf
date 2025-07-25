@@ -24,7 +24,7 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
  public:
   using ImplType = LegacyInlineCssStyleDeclaration*;
   static LegacyInlineCssStyleDeclaration* Create(ExecutingContext* context, ExceptionState& exception_state);
-  explicit LegacyInlineCssStyleDeclaration(ExecutingContext* context, Element* owner_element_);
+  explicit LegacyInlineCssStyleDeclaration(Element* owner_element_);
 
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
