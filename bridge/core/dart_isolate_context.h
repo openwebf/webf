@@ -13,6 +13,9 @@
 
 namespace webf {
 
+// Forward declaration
+class DartMethodPointer;
+
 class WebFPage;
 class DartIsolateContext;
 class NativeWidgetElementShape;

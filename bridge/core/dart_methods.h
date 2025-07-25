@@ -15,7 +15,6 @@
 #include "foundation/native_string.h"
 #include "foundation/native_value.h"
 #include "include/dart_api.h"
-#include "plugin_api/executing_context.h"
 
 #if defined(_WIN32)
 #define WEBF_EXPORT_C extern "C" __declspec(dllexport)
@@ -26,6 +25,11 @@
 #endif
 
 namespace webf {
+
+// Forward declarations
+struct ExecutingContextWebFMethods;
+class ExecutingContext;
+template<typename T, typename M> struct WebFValue;
 
 using InvokeModuleResultCallback = void (*)(Dart_PersistentHandle persistent_handle, NativeValue* result);
 using AsyncCallback = void (*)(void* callback_context, double context_id, char* errmsg);
