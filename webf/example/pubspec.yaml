@@ -11,8 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  example_app:
-    path: rust_builder
+#  example_app:
+#    path: rust_builder
   webf: ^0.10.0
   #  webf:
   #    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/

@@ -1097,6 +1097,39 @@ endif ()
 # Create a dummy source file for the shared library (CMake requires at least one source)
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/webf_dummy.cc "// Dummy file for webf shared library\n")
 add_library(webf SHARED ${CMAKE_CURRENT_BINARY_DIR}/webf_dummy.cc)
+
+# Force inclusion of all symbols from the static library into the shared library
+if(APPLE)
+  target_link_options(webf PRIVATE 
+    -Wl,-force_load,$<TARGET_FILE:webf_core>
+  )
+  # Also force load other static libraries
+  target_link_options(webf PRIVATE 
+    -Wl,-force_load,$<TARGET_FILE:gumbo_parse_static>
+    -Wl,-force_load,$<TARGET_FILE:double_conversion>
+  )
+  if(${WEBF_JS_ENGINE} MATCHES "quickjs")
+    target_link_options(webf PRIVATE 
+      -Wl,-force_load,$<TARGET_FILE:modb>
+    )
+  endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_options(webf PRIVATE 
+    -Wl,--whole-archive
+    $<TARGET_FILE:webf_core>
+    $<TARGET_FILE:gumbo_parse_static>
+    $<TARGET_FILE:double_conversion>
+    -Wl,--no-whole-archive
+  )
+  if(${WEBF_JS_ENGINE} MATCHES "quickjs")
+    target_link_options(webf PRIVATE 
+      -Wl,--whole-archive
+      $<TARGET_FILE:modb>
+      -Wl,--no-whole-archive
+    )
+  endif()
+endif()
+
 target_link_libraries(webf PRIVATE webf_core)
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
 target_include_directories(webf PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
