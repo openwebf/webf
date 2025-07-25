@@ -196,12 +196,20 @@ export function isDictionary(type: ParameterType): boolean {
 
 export function getPointerType(type: ParameterType): string {
   if (typeof type.value === 'string') {
+    // Add legacy:: prefix for Legacy classes
+    if (type.value.startsWith('Legacy')) {
+      return `legacy::${type.value}`;
+    }
     return type.value;
   }
   if (Array.isArray(type.value)) {
     for (let i = 0; i < type.value.length; i++) {
       let childValue = type.value[i];
       if (typeof childValue.value === 'string') {
+        // Add legacy:: prefix for Legacy classes
+        if (childValue.value.startsWith('Legacy')) {
+          return `legacy::${childValue.value}`;
+        }
         return childValue.value;
       }
     }
