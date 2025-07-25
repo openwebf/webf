@@ -148,6 +148,9 @@
 #include "qjs_window.h"
 #include "qjs_window_or_worker_global_scope.h"
 #include "qjs_form_data.h"
+#include "qjs_legacy_inline_css_style_declaration.h"
+#include "qjs_legacy_css_style_declaration.h"
+#include "qjs_legacy_computed_css_style_declaration.h"
 
 namespace webf {
 
@@ -301,6 +304,9 @@ void InstallBindings(ExecutingContext* context) {
 
   // Legacy bindings, not standard.
   QJSElementAttributes::Install(context);
+  QJSLegacyCssStyleDeclaration::Install(context);
+  QJSLegacyComputedCssStyleDeclaration::Install(context);
+  QJSLegacyInlineCssStyleDeclaration::Install(context);
 }
 
 }  // namespace webf
