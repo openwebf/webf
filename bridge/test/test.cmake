@@ -15,16 +15,6 @@ list(APPEND WEBF_TEST_SOURCE
         test/webf_test_context.h
         )
 
-# Create webf_test_common static library to avoid recompiling test sources
-add_library(webf_test_common STATIC ${WEBF_TEST_SOURCE})
-target_include_directories(webf_test_common PUBLIC 
-  ./third_party/googletest/googletest/include 
-  ${BRIDGE_INCLUDE} 
-  ./test
-)
-# Set position independent code for static library
-set_property(TARGET webf_test_common PROPERTY POSITION_INDEPENDENT_CODE ON)
-
 list(APPEND WEBF_UNIT_TEST_SOURCE
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
@@ -56,9 +46,8 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
 ### webf_unit_test executable
 add_executable(webf_unit_test
   ${WEBF_UNIT_TEST_SOURCE}
-  $<TARGET_OBJECTS:webf_css_unit_test_lib>
-  ./test/webf_test_env.cc
-  ./test/webf_test_env.h
+  ${WEBF_TEST_SOURCE}
+  ${BRIDGE_SOURCE}
 )
 
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
@@ -69,8 +58,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
 target_link_libraries(webf_unit_test
-  webf_core
-  webf_test_common
+  ${BRIDGE_LINK_LIBS}
   GTest::gtest_main
 )
 
@@ -94,23 +82,22 @@ endif()
 
 # Run webf integration without flutter.
 add_executable(webf_integration_test
+  ${WEBF_TEST_SOURCE}
+  ${BRIDGE_SOURCE}
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
   ./test/run_integration_test.cc
   )
 target_include_directories(webf_integration_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_integration_test 
-  webf_core
-  webf_test_common
-  gtest 
-  gtest_main
-)
+target_link_libraries(webf_integration_test gtest gtest_main ${BRIDGE_LINK_LIBS})
 target_compile_definitions(webf_integration_test PUBLIC -DFLUTTER_BACKEND=0)
 target_compile_definitions(webf_integration_test PUBLIC -DUNIT_TEST=1)
 target_compile_definitions(webf_integration_test PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 
 # Benchmark test
 add_executable(webf_benchmark
+  ${WEBF_TEST_SOURCE}
+  ${BRIDGE_SOURCE}
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
   ./test/benchmark/create_element.cc
@@ -120,19 +107,13 @@ target_include_directories(webf_benchmark PUBLIC
   ./third_party/benchmark/include/
   ${BRIDGE_INCLUDE}
   ./test)
-target_link_libraries(webf_benchmark 
-  webf_core
-  webf_test_common
-  gtest 
-  gtest_main 
-  benchmark::benchmark
-)
+target_link_libraries(webf_benchmark gtest gtest_main benchmark::benchmark  ${BRIDGE_LINK_LIBS})
 target_compile_definitions(webf_benchmark PUBLIC -DFLUTTER_BACKEND=0)
 target_compile_definitions(webf_benchmark PUBLIC -DUNIT_TEST=1)
 
 # Built libwebf_test.dylib library for integration test with flutter.
 add_library(webf_test SHARED ${WEBF_TEST_SOURCE})
-target_link_libraries(webf_test PRIVATE webf_core webf)
+target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
 target_include_directories(webf_test PRIVATE
   ${BRIDGE_INCLUDE}
   ./test

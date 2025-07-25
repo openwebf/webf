@@ -1,5 +1,5 @@
 # CSS Unit Tests for WebF
-# This file contains all CSS-related unit tests that are merged into webf_unit_test
+# This file contains all CSS-related unit tests extracted from test.cmake
 
 list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   # CSS Core Tests
@@ -66,34 +66,17 @@ list(APPEND WEBF_CSS_UNIT_TEST_SOURCE
   ./core/css/properties/css_parsing_utils_test.cc
 )
 
-# Create object library from CSS unit test sources to avoid duplicate compilation
-# Object libraries ensure all symbols are properly included
-add_library(webf_css_unit_test_lib OBJECT
-  ${WEBF_CSS_UNIT_TEST_SOURCE}
-)
-
-# Set include directories for the static library
-target_include_directories(webf_css_unit_test_lib PUBLIC 
-  ./third_party/googletest/googletest/include 
-  ${BRIDGE_INCLUDE} 
-  ./test
-)
-
-# Set position independent code for static library
-set_property(TARGET webf_css_unit_test_lib PROPERTY POSITION_INDEPENDENT_CODE ON)
-
-# Apply compile definitions to the static library
-target_compile_definitions(webf_css_unit_test_lib PUBLIC -DFLUTTER_BACKEND=0)
-target_compile_definitions(webf_css_unit_test_lib PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
-target_compile_definitions(webf_css_unit_test_lib PUBLIC -DUNIT_TEST=1)
-target_compile_definitions(webf_css_unit_test_lib PUBLIC -DWEBF_MIN_LOG_LEVEL=::webf::INFO)
-
-# Create webf_css_unittests executable for running CSS tests standalone
+# webf_css_unittests executable
 add_executable(webf_css_unittests
-  $<TARGET_OBJECTS:webf_css_unit_test_lib>
+  ${WEBF_CSS_UNIT_TEST_SOURCE}
+  ${WEBF_TEST_SOURCE}
+  ${BRIDGE_SOURCE}
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
 )
+
+include(GoogleTest)
+gtest_discover_tests(webf_css_unittests)
 
 target_include_directories(webf_css_unittests PUBLIC 
   ./third_party/googletest/googletest/include 
@@ -102,12 +85,16 @@ target_include_directories(webf_css_unittests PUBLIC
 )
 
 target_link_libraries(webf_css_unittests
-  webf_core
-  webf_test_common
+  ${BRIDGE_LINK_LIBS}
   GTest::gtest_main
 )
 
-# Compile definitions are inherited from webf_css_unit_test_lib
+# Apply the same compile definitions as webf_unit_test
+target_compile_definitions(webf_css_unittests PUBLIC -DFLUTTER_BACKEND=0)
+target_compile_definitions(webf_css_unittests PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(webf_css_unittests PUBLIC -DUNIT_TEST=1)
+# Set minimum log level to INFO to suppress VERBOSE logs (including Dispatcher logs)
+target_compile_definitions(webf_css_unittests PUBLIC -DWEBF_MIN_LOG_LEVEL=::webf::INFO)
 
 # Set output directory if specified
 if (DEFINED ENV{LIBRARY_OUTPUT_DIR})

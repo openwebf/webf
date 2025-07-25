@@ -109,6 +109,7 @@ void requestExecuteCallback(message) {
       _workingCompleter = Completer();
     }
 
+    print('exec native callback');
     final int workAddress = data[1];
     final work = Pointer<NativeWork>.fromAddress(workAddress);
     _executeNativeCallback(work);
