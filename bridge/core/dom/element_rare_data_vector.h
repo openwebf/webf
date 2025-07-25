@@ -12,6 +12,12 @@
 
 namespace webf {
 
+namespace legacy {
+
+class LegacyCssStyleDeclaration;
+
+}
+
 class CSSStyleDeclaration;
 class Element;
 class StyleScopeData;
@@ -162,7 +168,8 @@ class ElementRareDataVector final : public NodeRareData {
   ElementRareDataVector();
   ~ElementRareDataVector();
 
-  CSSStyleDeclaration& EnsureInlineCSSStyleDeclaration(Element* owner_element);
+//  CSSStyleDeclaration& EnsureInlineCSSStyleDeclaration(Element* owner_element);
+  legacy::LegacyCssStyleDeclaration& EnsureLegacyInlineCSSStyleDeclaration(Element* owner_element);
 
   DOMTokenList& EnsureClassList(Element* owner_element, const AtomicString& attr);
   DOMTokenList* GetClassList() const {

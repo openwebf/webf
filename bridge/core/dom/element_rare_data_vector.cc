@@ -6,6 +6,7 @@
 #include <bit>
 #include "core/css/inline_css_style_declaration.h"
 #include "core/css/style_scope_data.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/element.h"
 #include "core/dom/element_rare_data_field.h"
 
@@ -17,8 +18,12 @@ ElementRareDataVector::~ElementRareDataVector() {
   DCHECK(!GetElementRareDataField(FieldId::kPseudoElementData));
 }
 
-CSSStyleDeclaration& ElementRareDataVector::EnsureInlineCSSStyleDeclaration(Element* owner_element) {
-  return EnsureWrappedField<InlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);
+//CSSStyleDeclaration& ElementRareDataVector::EnsureInlineCSSStyleDeclaration(Element* owner_element) {
+//  return EnsureWrappedField<InlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);
+//}
+
+legacy::LegacyCssStyleDeclaration& ElementRareDataVector::EnsureLegacyInlineCSSStyleDeclaration(Element* owner_element) {
+  return EnsureWrappedField<legacy::LegacyInlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);
 }
 
 DOMTokenList& ElementRareDataVector::EnsureClassList(Element* owner_element, const AtomicString& attr) {
