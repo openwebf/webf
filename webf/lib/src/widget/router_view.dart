@@ -61,7 +61,10 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPop() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String path = route.settings.name ?? '';
+    
+    // CRITICAL FIX: Use widget.path instead of route.settings.name for consistency
+    String path = widget.path;
+
 
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPop', path: path);
 
@@ -75,8 +78,9 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPopNext() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String path = route.settings.name ?? '';
-
+    
+    // CRITICAL FIX: Use widget.path instead of route.settings.name for consistency
+    String path = widget.path;
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPopNext', path: path);
 
     widget.controller.view.document.dispatchEvent(event);
@@ -89,28 +93,39 @@ class WebFRouterViewState extends State<WebFRouterView> with RouteAware {
   void didPush() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String path = route.settings.name ?? '';
+    
+    // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name 
+    // because go_router's universal catch-all route always returns 'universal-webf-route' as the name
+    String path = widget.path;
 
+    // Create event with the actual navigation path (widget.path)
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPush', path: path);
 
     RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
-    routerLinkElement?.addPostEventListener(dom.EVENT_ON_SCREEN, (_) async {
-      widget.controller.view.document.dispatchEvent(event);
-    });
+    if (routerLinkElement != null) {
+      routerLinkElement.addPostEventListener(dom.EVENT_ON_SCREEN, (_) async {
+        widget.controller.view.document.dispatchEvent(event);
+      });
+    }
   }
 
   @override
   void didPushNext() {
     ModalRoute route = ModalRoute.of(context)!;
     var state = route.settings.arguments;
-    String path = route.settings.name ?? '';
-
+    
+    // CRITICAL FIX: Use widget.path (the actual route path) instead of route.settings.name 
+    // because go_router's universal catch-all route always returns 'universal-webf-route' as the name
+    String path = widget.path;
+    // Create event with the actual navigation path (widget.path)
     dom.Event event = dom.HybridRouterChangeEvent(state: state, kind: 'didPushNext', path: path);
 
     RouterLinkElement? routerLinkElement = widget.controller.view.getHybridRouterView(widget.path);
-    routerLinkElement?.addPostEventListener(dom.EVENT_ON_SCREEN, (_) async {
-      widget.controller.view.document.dispatchEvent(event);
-    });
+    if (routerLinkElement != null) {
+      routerLinkElement.addPostEventListener(dom.EVENT_ON_SCREEN, (_) async {
+        widget.controller.view.document.dispatchEvent(event);
+      });
+    }
   }
 }
 
@@ -168,7 +183,11 @@ class _WebFRouterViewElement extends StatefulElement {
 
   @override
   void unmount() {
-    widget.controller.popBuildContext(context: this, routePath: widget.path);
+    // Store widget reference before unmounting to avoid null access
+    final path = widget.path;
+    final controller = widget.controller;
+    
+    controller.popBuildContext(context: this, routePath: path);
     super.unmount();
   }
 

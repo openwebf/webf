@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:playground_app/main.dart';
 import 'package:webf/webf.dart';
-import 'qr_scanner_screen.dart';
-import 'showcase_screen.dart';
+import 'go_router_hybrid_history_delegate.dart';
+import 'router_config.dart';
+import 'package:go_router/go_router.dart';
 
 class WebFScreen extends StatefulWidget {
   const WebFScreen({super.key});
@@ -76,6 +76,7 @@ class _WebFScreenState extends State<WebFScreen> {
           ),
           bundle: WebFBundle.fromUrl(url),
           setup: (controller) {
+            controller.hybridHistory.delegate = GoRouterHybridHistoryDelegate();
             // controller.onLoadError = (FlutterError error, stack) {
             //   if (mounted) {
             //     setState(() {
@@ -117,10 +118,7 @@ class _WebFScreenState extends State<WebFScreen> {
   }
 
   Future<void> _scanQRCode() async {
-    final result = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (context) => const QRScannerScreen()),
-    );
+    final result = await context.push<String>('/qr-scanner');
 
     if (result != null && result.isNotEmpty) {
       _urlController.text = result;
@@ -140,25 +138,15 @@ class _WebFScreenState extends State<WebFScreen> {
     final targetUrl = url ?? currentUrl;
     final controllerName = url != null ? 'direct_access_${DateTime.now().millisecondsSinceEpoch}' : currentControllerName;
     
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => WebFViewScreen(
-          controllerName: controllerName,
-          url: targetUrl,
-          isDirect: url != null,
-        ),
-      ),
+    AppRouterConfig.navigateToWebFController(
+      controllerName,
+      url: targetUrl,
+      isDirect: url != null,
     );
   }
 
   void _navigateToShowcase() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const ShowcaseScreen(),
-      ),
-    );
+    context.push('/showcase');
   }
 
   @override
@@ -631,15 +619,10 @@ class WebFViewScreen extends StatelessWidget {
             onPressed: () async {
               if (isDirect) {
                 // For direct access, just reload the current page
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WebFViewScreen(
-                      controllerName: 'direct_access_${DateTime.now().millisecondsSinceEpoch}',
-                      url: url,
-                      isDirect: true,
-                    ),
-                  ),
+                AppRouterConfig.navigateToWebFController(
+                  'direct_access_${DateTime.now().millisecondsSinceEpoch}',
+                  url: url,
+                  isDirect: true,
                 );
               } else {
                 final controller = await WebFControllerManager.instance.getController(controllerName);
@@ -653,6 +636,12 @@ class WebFViewScreen extends StatelessWidget {
         ? WebF.fromControllerName(
             controllerName: controllerName,
             bundle: WebFBundle.fromUrl(url),
+            createController: () => WebFController(
+              routeObserver: routeObserver,
+            ),
+            setup: (controller) {
+              controller.hybridHistory.delegate = GoRouterHybridHistoryDelegate();
+            },
           )
         : WebF.fromControllerName(
             controllerName: controllerName,

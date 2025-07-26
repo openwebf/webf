@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:go_router/go_router.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -209,7 +210,7 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
+              context.pop();
               setState(() {
                 result = null;
               });
@@ -219,8 +220,8 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(data);
+              context.pop(); // Close dialog
+              context.pop(data); // Return to previous screen with result
             },
             child: const Text('Done'),
           ),

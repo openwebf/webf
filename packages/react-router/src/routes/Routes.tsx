@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, Children, isValidElement, useState, useEffect } from 'react';
 import { Route } from './Route';
-import { WebFRouter } from './utils';
+import { WebFRouter, RouteParams, matchPath } from './utils';
 import { HybridRouterChangeEvent } from '../utils/RouterLink';
 
 /**
@@ -22,6 +22,10 @@ interface RouteContext<S = any> {
    */
   params: S | undefined
   /**
+   * Route parameters extracted from dynamic routes (e.g., :userId in /user/:userId)
+   */
+  routeParams: RouteParams | undefined
+  /**
    * Current active path from router
    */
   activePath: string | undefined
@@ -37,6 +41,7 @@ interface RouteContext<S = any> {
 const RouteContext = createContext<RouteContext>({
   path: undefined,
   params: undefined,
+  routeParams: undefined,
   activePath: undefined,
   routeEventKind: undefined
 });
@@ -96,6 +101,7 @@ export interface Location {
  *   const location = useLocation();
  *   
  *   console.log('Current path:', location.pathname);
+
  *   console.log('Location state:', location.state);
  *   console.log('Is active:', location.isActive);
  *   
@@ -108,26 +114,52 @@ export function useLocation(): Location & { isActive: boolean } {
 
   // Create location object from context
   const location = useMemo(() => {
-    // For active routes, return the current location with state
-    if (context.isActive) {
-      return {
-        pathname: context.path || context.activePath || WebFRouter.path,
-        state: context.params,
-        isActive: true,
-        key: `${context.path}-active-${Date.now()}`
-      };
-    }
+    const currentPath = context.path || context.activePath || WebFRouter.path;
+    let pathname = currentPath;
 
-    // For inactive routes, return the global location without state
+    
+    // Check if the current component's route matches the active path
+    const isCurrentRoute = context.path === context.activePath;
+    
+    // Get state - prioritize context params, fallback to WebFRouter.state
+    const state = (context.isActive || isCurrentRoute) 
+      ? (context.params || WebFRouter.state)
+      : WebFRouter.state;
+    
     return {
-      pathname: context.activePath || WebFRouter.path,
-      state: undefined,
-      isActive: false,
-      key: `${context.activePath}-inactive`
+      pathname,
+      state,
+      isActive: context.isActive,
+      key: `${pathname}-${Date.now()}`
     };
   }, [context.isActive, context.path, context.activePath, context.params]);
 
   return location;
+}
+
+/**
+ * Hook to get route parameters from dynamic routes
+ * 
+ * @returns Route parameters object with parameter names as keys and values as strings
+ * 
+ * @example
+ * ```tsx
+ * // For route pattern "/user/:userId" and actual path "/user/123"
+ * function UserPage() {
+ *   const params = useParams();
+ *   
+ *   console.log(params.userId); // "123"
+ *   
+ *   return <div>User ID: {params.userId}</div>;
+ * }
+ * ```
+ */
+export function useParams(): RouteParams {
+  const context = useRouteContext();
+  
+  return useMemo(() => {
+    return context.routeParams || {};
+  }, [context.routeParams]);
 }
 
 /**
@@ -182,11 +214,20 @@ function RouteContextProvider({ path, children }: { path: string, children: Reac
 
   // Create a route-specific context that only updates when this route is active
   const routeSpecificContext = useMemo(() => {
-    // Only update if this route is the active one
-    if (globalContext.activePath === path) {
+    // Check if this route pattern matches the active path
+    const match = globalContext.activePath ? matchPath(path, globalContext.activePath) : null;
+    
+    if (match) {
+      // Use route params from Flutter event if available, otherwise from local matching
+      const effectiveRouteParams = globalContext.routeParams || match.params;
+      
+      // For matching routes, always try to get state from WebFRouter if params is undefined
+      const effectiveParams = globalContext.params !== undefined ? globalContext.params : WebFRouter.state;
+      
       return {
         path,
-        params: globalContext.params,
+        params: effectiveParams,
+        routeParams: effectiveRouteParams,
         activePath: globalContext.activePath,
         routeEventKind: globalContext.routeEventKind
       };
@@ -195,10 +236,11 @@ function RouteContextProvider({ path, children }: { path: string, children: Reac
     return {
       path,
       params: undefined,
+      routeParams: undefined,
       activePath: globalContext.activePath,
       routeEventKind: undefined
     };
-  }, [path, globalContext.activePath, globalContext.params, globalContext.routeEventKind]);
+  }, [path, globalContext.activePath, globalContext.params, globalContext.routeParams, globalContext.routeEventKind]);
 
   return (
     <RouteContext.Provider value={routeSpecificContext}>
@@ -211,25 +253,51 @@ export function Routes({ children }: RoutesProps) {
   // State to track current route information
   const [routeState, setRouteState] = useState<RouteContext>({
     path: undefined,
-    activePath: undefined,
+    activePath: WebFRouter.path, // Initialize with current path
     params: undefined,
+    routeParams: undefined,
     routeEventKind: undefined
   });
-
+  
   // Listen to hybridrouterchange event
   useEffect(() => {
     const handleRouteChange = (event: Event) => {
+      const timestamp = Date.now();
       const routeEvent = event as unknown as HybridRouterChangeEvent;
+      
+      // Check for new event detail structure with params
+      const eventDetail = (event as any).detail;
+      
       // Only update activePath for push events
       const newActivePath = (routeEvent.kind === 'didPushNext' || routeEvent.kind === 'didPush')
         ? routeEvent.path
         : routeState.activePath;
 
+      // For dynamic routes, extract parameters from the path using registered route patterns
+      let routeParams = eventDetail?.params || undefined;
+      if (!routeParams && newActivePath) {
+        // Try to extract parameters from registered route patterns
+        const registeredRoutes = Array.from(document.querySelectorAll('webf-router-link'));
+        for (const routeElement of registeredRoutes) {
+          const routePath = routeElement.getAttribute('path');
+          if (routePath && routePath.includes(':')) {
+            const match = matchPath(routePath, newActivePath);
+            if (match) {
+              routeParams = match.params;
+              break;
+            }
+          }
+        }
+      }
+      
+      const eventState = eventDetail?.state || routeEvent.state;
+
       // Update state based on event kind
       setRouteState({
         path: routeEvent.path,
         activePath: newActivePath,
-        params: routeEvent.state,
+        params: eventState,
+        routeParams: routeParams, // Use params from Flutter if available
         routeEventKind: routeEvent.kind
       });
     };
@@ -247,9 +315,10 @@ export function Routes({ children }: RoutesProps) {
   const globalContextValue = useMemo(() => ({
     path: undefined,
     params: routeState.params,
+    routeParams: routeState.routeParams, // Pass through route params from Flutter
     activePath: routeState.activePath,
     routeEventKind: routeState.routeEventKind
-  }), [routeState.activePath, routeState.params, routeState.routeEventKind]);
+  }), [routeState.activePath, routeState.params, routeState.routeParams, routeState.routeEventKind]);
 
   // Wrap each Route component with its own context provider
   const wrappedChildren = useMemo(() => {
