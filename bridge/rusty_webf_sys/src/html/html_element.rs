@@ -21,7 +21,7 @@ pub struct HTMLElement {
 pub trait HTMLElementMethods: ElementMethods {}
 
 impl ElementMethods for HTMLElement {
-  fn style(&self) -> CSSStyleDeclaration {
+  fn style(&self) -> LegacyCssStyleDeclaration {
     self.element.style()
   }
 
