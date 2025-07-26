@@ -170,7 +170,7 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
 
   unsigned GetHashRaw() const {
     auto flags = hash_and_flags_.load(std::memory_order_relaxed);
-    return flags >> (kHashShift - 1) | (flags & kIs8Bit);
+    return flags >> (kHashShift);
   }
 
   size_t GetHash() const {

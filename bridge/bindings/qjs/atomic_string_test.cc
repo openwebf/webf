@@ -20,11 +20,11 @@ TEST(AtomicString, Empty) {
   EXPECT_EQ(*atomic_string.Impl(), "");
 }
 
-TEST(AtomicString, HashShouldNotEqual8bitAnd16bit) {
+TEST(AtomicString, HashShouldEqual8bitAnd16bit) {
   TEST_init();
   AtomicString atomic_string = AtomicString("helloworld");
   AtomicString atomic_string2 = AtomicString(u"helloworld");
-  EXPECT_NE(atomic_string.Hash(), atomic_string2.Hash());
+  EXPECT_EQ(atomic_string.Hash(), atomic_string2.Hash());
 }
 
 TEST(AtomicString, FromNativeString) {
@@ -33,7 +33,7 @@ TEST(AtomicString, FromNativeString) {
   std::unique_ptr<AutoFreeNativeString> str =
       std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release()));
   AtomicString value = AtomicString(str);
-  EXPECT_EQ(std::u16string(value.Impl()->Characters16(), value.Impl()->length()), std::u16string(u"helloworld"));
+  EXPECT_EQ(value, AtomicString("helloworld"));
 }
 
 TEST(AtomicString, CreateFromStdString) {
