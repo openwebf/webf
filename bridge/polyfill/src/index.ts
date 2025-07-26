@@ -23,6 +23,8 @@ import { WebSocket } from './websocket'
 import { ResizeObserver } from './resize-observer';
 import { _AbortController, _AbortSignal } from './abort-signal';
 import { BroadcastChannel } from './broadcast-channel';
+import { TextDecoder, TextEncoder } from './text-codec';
+import { ReadableStream, WritableStream, TransformStream } from './streams';
 
 defineGlobalProperty('console', console);
 defineGlobalProperty('Request', Request);
@@ -47,6 +49,50 @@ defineGlobalProperty('ResizeObserver', ResizeObserver);
 defineGlobalProperty('AbortSignal', _AbortSignal);
 defineGlobalProperty('AbortController', _AbortController);
 defineGlobalProperty('BroadcastChannel', BroadcastChannel);
+defineGlobalProperty('TextDecoder', TextDecoder);
+defineGlobalProperty('TextEncoder', TextEncoder);
+defineGlobalProperty('ReadableStream', ReadableStream);
+defineGlobalProperty('WritableStream', WritableStream);
+defineGlobalProperty('TransformStream', TransformStream);
+
+// @ts-expect-error
+globalThis.Element.prototype.attachShadow = function (init) {
+  return document.createElement('shadow-root');
+}
+
+globalThis.Element.prototype.getRootNode = function (init) {
+  return document;
+}
+
+// @ts-expect-error
+document.activeElement = document.body;
+
+document.hasFocus = function () {
+  return true;
+}
+
+globalThis.HTMLElement.prototype.focus = function () {
+  // No-op for now.
+}
+
+globalThis.HTMLElement.prototype.blur = function () {
+  // No-op for now.
+}
+
+class ShadowRoot {
+  constructor() {
+    throw new Error('ShadowRoot is not supported in WebF.');
+  }
+}
+
+defineGlobalProperty('ShadowRoot', ShadowRoot, false);
+
+globalThis.HTMLImageElement.prototype.decode = function () {
+  return new Promise((resolve, reject) => {
+    // No-op for now.
+    resolve();
+  });
+}
 
 export type PolyFillGlobal = {
   console: Console,
@@ -66,7 +112,12 @@ export type PolyFillGlobal = {
   WebSocket: WebSocket,
   ResizeObserver: ResizeObserver,
   AbortSignal: _AbortSignal,
-  AbortController: _AbortController
+  AbortController: _AbortController,
+  TextDecoder: TextDecoder,
+  TextEncoder: TextEncoder,
+  ReadableStream: ReadableStream,
+  WritableStream: WritableStream,
+  TransformStream: TransformStream
 };
 
 export {
@@ -90,7 +141,12 @@ export {
   webf,
   Webf,
   WebSocket,
-  ResizeObserver
+  ResizeObserver,
+  TextDecoder,
+  TextEncoder,
+  ReadableStream,
+  WritableStream,
+  TransformStream
 }
 
 function defineGlobalProperty(key: string, value: any, isEnumerable: boolean = true) {

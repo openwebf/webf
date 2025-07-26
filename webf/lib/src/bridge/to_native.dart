@@ -217,6 +217,7 @@ typedef NativeEvaluateScripts = Void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     Int32 startLine,
+    Pointer<NativeBindingObject>,
     Handle object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 typedef DartEvaluateScripts = void Function(
@@ -227,6 +228,7 @@ typedef DartEvaluateScripts = void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     int startLine,
+    Pointer<NativeBindingObject>,
     Object object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 
@@ -252,6 +254,7 @@ typedef NativeEvaluateModule = Void Function(
     Pointer<Uint64> bytecodeLen,
     Pointer<Utf8> url,
     Int32 startLine,
+    Pointer<NativeBindingObject>,
     Handle object,
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback);
 
@@ -310,7 +313,7 @@ void handleEvaluateScriptsResult(Object handle, int result) {
 }
 
 Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
-    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0}) async {
+    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0, ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -337,12 +340,12 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   if (QuickJSByteCodeCacheObject.cacheMode == ByteCodeCacheMode.DEFAULT &&
       cacheObject.valid &&
       cacheObject.bytes != null) {
-    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!);
+    bool result = await evaluateQuickjsByteCode(contextId, cacheObject.bytes!, scriptElement: scriptElement);
     // If the bytecode evaluate failed, remove the cached file and fallback to raw javascript mode.
     if (!result) {
       await cacheObject.remove();
       // Fallback to normal script mode.
-      return evaluateScripts(contextId, codeBytes);
+      return evaluateScripts(contextId, codeBytes, scriptElement: scriptElement);
     }
     return result;
   } else {
@@ -353,6 +356,8 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
     _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, urlPtr, cacheKey);
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
         Pointer.fromFunction(handleEvaluateScriptsResult);
+
+    Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
 
     try {
       assert(_allocatedPages.containsKey(contextId));
@@ -365,10 +370,10 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
         context.bytecodeLen = bytecodeLen;
 
         _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line,
-            context, resultCallback);
+            scriptElementPtr, context, resultCallback);
       } else {
-        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, context,
-            resultCallback);
+        _evaluateScripts(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
+            context, resultCallback);
       }
       return completer.future;
     } catch (e, stack) {
@@ -379,9 +384,9 @@ Future<bool> evaluateScripts(double contextId, Uint8List codeBytes,
   }
 }
 
-typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen, Handle object,
+typedef NativeEvaluateQuickjsByteCode = Void Function(Pointer<Void>, Pointer<Uint8> bytes, Int32 byteLen, Pointer<NativeBindingObject>, Handle object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
-typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen, Object object,
+typedef DartEvaluateQuickjsByteCode = void Function(Pointer<Void>, Pointer<Uint8> bytes, int byteLen, Pointer<NativeBindingObject>, Object object,
     Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> callback);
 
 typedef NativeEvaluateQuickjsByteCodeCallback = Void Function(Handle object, Int8 result);
@@ -403,7 +408,7 @@ void handleEvaluateQuickjsByteCodeResult(Object handle, int result) {
   context.completer.complete(result == 1);
 }
 
-Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
+Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes, {ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -417,13 +422,15 @@ Future<bool> evaluateQuickjsByteCode(double contextId, Uint8List bytes) async {
   Pointer<NativeFunction<NativeEvaluateQuickjsByteCodeCallback>> nativeCallback =
       Pointer.fromFunction(handleEvaluateQuickjsByteCodeResult);
 
-  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, context, nativeCallback);
+  Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
+
+  _evaluateQuickjsByteCode(_allocatedPages[contextId]!, byteData, bytes.length, scriptElementPtr, context, nativeCallback);
 
   return completer.future;
 }
 
 Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
-    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0}) async {
+    {String? url, String? cacheKey, bool loadedFromCache = false, int line = 0, ScriptElement? scriptElement}) async {
   if (WebFController.getControllerOfJSContextId(contextId) == null) {
     return false;
   }
@@ -441,6 +448,7 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
     _EvaluateScriptsContext context = _EvaluateScriptsContext(completer, codeBytes, codePtr, urlPtr, cacheKey);
     Pointer<NativeFunction<NativeEvaluateJavaScriptCallback>> resultCallback =
         Pointer.fromFunction(handleEvaluateScriptsResult);
+    Pointer<NativeBindingObject> scriptElementPtr = scriptElement?.pointer! ?? nullptr;
 
     try {
       assert(_allocatedPages.containsKey(contextId));
@@ -452,11 +460,11 @@ Future<bool> evaluateModule(double contextId, Uint8List codeBytes,
         context.bytecodes = bytecodes;
         context.bytecodeLen = bytecodeLen;
 
-        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line,
+        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, bytecodes, bytecodeLen, urlPtr, line, scriptElementPtr,
             context, resultCallback);
       } else {
-        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, context,
-            resultCallback);
+        _evaluateModule(_allocatedPages[contextId]!, codePtr, codeBytes.length, nullptr, nullptr, urlPtr, line, scriptElementPtr,
+            context, resultCallback);
       }
       return completer.future;
     } catch (e, stack) {

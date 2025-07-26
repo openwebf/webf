@@ -11,12 +11,15 @@
 #include "plugin_api/document.h"
 #include "scripted_animation_controller.h"
 #include "tree_scope.h"
+#include "qjs_element_creation_options.h"
+#include "qjs_unionelement_creation_options_dom_string.h"
 
 namespace webf {
 
 class HTMLBodyElement;
 class HTMLHeadElement;
 class HTMLHtmlElement;
+class HTMLScriptElement;
 class HTMLAllCollection;
 class Text;
 class Comment;
@@ -49,6 +52,8 @@ class Document : public ContainerNode, public TreeScope {
 
   HTMLElement* createElement(const AtomicString& name, ExceptionState& exception_state);
   HTMLElement* createElement(const AtomicString& name, const ScriptValue& options, ExceptionState& exception_state);
+  HTMLElement* createElement(const AtomicString& name, const std::shared_ptr<QJSUnionElementCreationOptionsDomString>& options, ExceptionState& exception_state);
+  HTMLElement* createElement(const AtomicString& name, const std::shared_ptr<ElementCreationOptions>& options, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri, const AtomicString& name, ExceptionState& exception_state);
   Element* createElementNS(const AtomicString& uri,
                            const AtomicString& name,
@@ -99,6 +104,8 @@ class Document : public ContainerNode, public TreeScope {
   void setBody(HTMLBodyElement* body, ExceptionState& exception_state);
   [[nodiscard]] HTMLHeadElement* head() const;
   void setHead(HTMLHeadElement* head, ExceptionState& exception_state);
+  [[nodiscard]] HTMLScriptElement* currentScript() const;
+  void setCurrentScript(HTMLScriptElement* script);
 
   ScriptValue location() const;
 
@@ -134,6 +141,7 @@ class Document : public ContainerNode, public TreeScope {
   int node_count_{0};
   ScriptAnimationController script_animation_controller_;
   MutationObserverOptions mutation_observer_types_;
+  Member<HTMLScriptElement> current_script_;
 };
 
 template <>

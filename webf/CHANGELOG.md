@@ -1,3 +1,93 @@
+## 0.22.3+2
+
+Fix compile error with Android NDK r22
+
+## 0.22.3+1
+
+Major Features Added
+
+1. 🔍 Loading State Dump API - A comprehensive debugging tool that tracks and visualizes the entire WebFController loading lifecycle:
+   - Tracks 19+ lifecycle phases with detailed timing
+   - Individual script element monitoring (load/execute times, errors)
+   - Network request metrics
+   - ASCII timeline visualization
+   - Full API documentation and examples
+2. 📜 Enhanced Script Tracking - Individual script elements now report:
+   - Loading phases (queue → load → execute)
+   - Script types and loading modes
+   - Execution duration and data sizes
+   - Error states with context
+
+Bug Fixes
+
+1. 🇨🇳 CJK Font Alignment - Fixed baseline alignment issues between CJK and Latin text:
+   - Adjusted normalization ratio from 0.75/0.25 to 0.85/0.15
+   - Added forced CJK ratio for consistent rendering
+   - 10 new visual regression tests
+2. 🖼️ Image Loading Race Condition - Fixed images disappearing during widget mount/unmount:
+   - Added pending update tracking
+   - Deferred updates with next frame callback
+   - Ensures reliable image display
+3. 🔄 Hybrid Router Events - Fixed multiple event triggers:
+   - New addPostEventListenerOnce method
+   - Auto-removes listeners after first execution
+   - Prevents duplicate navigation events
+4. 📱 Android 16 Support - Temporarily disabled:
+   - Commented out page size configuration
+   - Downgraded NDK from 28.2 to 22.1
+
+## 0.22.3
+
+## New Features
+
+### Web Platform APIs
+
+- **TextEncoder/TextDecoder API** - Full implementation of the WHATWG Encoding Standard
+  - Support for UTF-8, ASCII, and Latin1 encodings
+  - Fatal and non-fatal error modes
+  - BOM (Byte Order Mark) handling
+  - Comprehensive test coverage for edge cases
+
+- **Web Streams API** - Initial implementation for streaming data handling
+
+- **URL API Enhancements**
+  - Added `username` and `password` properties with proper percent-encoding
+  - Full compliance with WHATWG URL standard
+
+- **Document API**
+  - Added `document.currentScript` property for accessing the currently executing script element
+  - Shadow DOM polyfill with `element.attachShadow()` support
+
+### Framework Support
+
+- **Vite Vue Apps** - Added support for Vue applications deployed on Vercel
+- **Next.js** - Fixed import issues and added example project
+
+### Platform Support
+
+- **Android 16** - Added support for Android 16 page size requirements
+
+## Bug Fixes
+
+### Layout and Rendering
+
+- **Text Wrapping in Inline Elements** ⭐
+  - Fixed critical issue where inline elements (like `<span>`) inside parents with `max-width` were not wrapping text properly
+  - Text now correctly respects parent width constraints
+  - Special handling for flex items with `flex: none`
+
+- **CJK Font Baseline Alignment** ⭐
+  - Normalized CJK (Chinese, Japanese, Korean) font metrics for proper baseline alignment with Latin text
+  - Implemented interpolated normalization based on CJK content ratio
+  - Ensures consistent vertical alignment in mixed-language content
+
+- **getBoundingClientRect Improvements**
+  - Fixed offset values for elements in nested scroll views
+  - Proper handling of elements in modal popups and separate render trees
+  - Consistent viewport-relative coordinate calculation
+
+- **Performance.measure()** - Fixed timestamp parameter support
+
 ## 0.22.2+2
 
 ## Bug Fixes

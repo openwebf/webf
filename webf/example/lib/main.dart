@@ -3,6 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -658,6 +660,11 @@ class _WebFDemoState extends State<WebFDemo> {
               createController: () => WebFController(
                 routeObserver: routeObserver,
                 initialRoute: widget.initialRoute,
+                onControllerInit: (controller) async {
+                  Timer(Duration(seconds: 5), () {
+                    print(controller.dumpLoadingState(verbose: true));
+                  });
+                },
                 onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
                   print('contentInfo: $contentInfo $routePath');
                 },

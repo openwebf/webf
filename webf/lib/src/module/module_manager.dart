@@ -8,6 +8,7 @@ import 'package:webf/webf.dart';
 import 'local_storage.dart';
 import 'session_storage.dart';
 import 'websocket.dart';
+import 'text_codec.dart';
 
 @Deprecated('Use WebFBaseModule instead')
 abstract class BaseModule {
@@ -57,6 +58,7 @@ void _defineModuleCreator() {
   _defineModule((ModuleManager? moduleManager) => WebSocketModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => DOMMatrixModule(moduleManager));
   _defineModule((ModuleManager? moduleManager) => DOMPointModule(moduleManager));
+  _defineModule((ModuleManager? moduleManager) => TextCodecModule(moduleManager));
 }
 
 final Map<String, ModuleCreator> _creatorMap = {};

@@ -6,6 +6,7 @@
 #include "performance.h"
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include "bindings/qjs/converter_impl.h"
 #include "bindings/qjs/script_value.h"
 #include "core/executing_context.h"
@@ -226,20 +227,61 @@ void Performance::measure(const AtomicString& measure_name,
   size_t start_mark_count = std::count_if(entries_.begin(), entries_.end(),
                                           [&start_mark](auto&& entry) -> bool { return entry->name() == start_mark; });
 
+  int64_t start_timestamp = 0;
+  bool start_is_timestamp = false;
+  
   if (start_mark_count == 0) {
-    exception_state.ThrowException(
-        ctx(), ErrorType::TypeError,
-        "Failed to execute 'measure' on 'Performance': The mark " + start_mark.ToStdString(ctx()) + " does not exist.");
-    return;
+    // Try to parse start_mark as int64_t timestamp
+    std::string start_str = start_mark.ToStdString(ctx());
+    char* end_ptr = nullptr;
+    start_timestamp = std::strtoll(start_str.c_str(), &end_ptr, 10);
+    
+    // Check if parsing was successful (entire string was consumed and no overflow)
+    if (end_ptr == start_str.c_str() + start_str.length() && start_str.length() > 0) {
+      start_is_timestamp = true;
+    } else {
+      exception_state.ThrowException(
+          ctx(), ErrorType::TypeError,
+          "Failed to execute 'measure' on 'Performance': The mark " + start_mark.ToStdString(ctx()) + " does not exist.");
+      return;
+    }
   }
 
   size_t end_mark_count = std::count_if(entries_.begin(), entries_.end(),
                                         [end_mark](auto&& entry) -> bool { return entry->name() == end_mark; });
 
+  int64_t end_timestamp = 0;
+  bool end_is_timestamp = false;
+  
   if (end_mark_count == 0) {
-    exception_state.ThrowException(
-        ctx(), ErrorType::TypeError,
-        "Failed to execute 'measure' on 'Performance': The mark " + end_mark.ToStdString(ctx()) + " does not exist.");
+    // Try to parse end_mark as int64_t timestamp
+    std::string end_str = end_mark.ToStdString(ctx());
+    char* end_ptr = nullptr;
+    end_timestamp = std::strtoll(end_str.c_str(), &end_ptr, 10);
+    
+    // Check if parsing was successful (entire string was consumed and no overflow)
+    if (end_ptr == end_str.c_str() + end_str.length() && end_str.length() > 0) {
+      end_is_timestamp = true;
+    } else {
+      exception_state.ThrowException(
+          ctx(), ErrorType::TypeError,
+          "Failed to execute 'measure' on 'Performance': The mark " + end_mark.ToStdString(ctx()) + " does not exist.");
+      return;
+    }
+  }
+
+  // If both are timestamps, create a single measure directly
+  if (start_is_timestamp && end_is_timestamp) {
+    auto* measure = PerformanceMeasure::Create(GetExecutingContext(), measure_name, start_timestamp, end_timestamp,
+                                               ScriptValue::Empty(ctx()), exception_state);
+    entries_.emplace_back(measure);
+    return;
+  }
+
+  // If only one is a timestamp, we can't proceed with the normal logic
+  if (start_is_timestamp || end_is_timestamp) {
+    exception_state.ThrowException(ctx(), ErrorType::TypeError,
+                                   "Failed to execute 'measure' on 'Performance': Cannot mix timestamp and mark references.");
     return;
   }
 

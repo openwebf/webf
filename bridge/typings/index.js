@@ -1,4 +1,4 @@
-const webf = window.webf;
+const webf = globalThis.webf;
 
 export {
   webf

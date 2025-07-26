@@ -87,4 +87,79 @@ describe('URL', () => {
     expect(url.search).toEqual('?wd=Hello%F0%9F%91%BFWorld');
   });
 
+  it('should get username from URL', () => {
+    var url = new URL('https://user:pass@www.example.com/');
+    expect(url.username).toBe('user');
+    
+    var url2 = new URL('https://user@www.example.com/');
+    expect(url2.username).toBe('user');
+    
+    var url3 = new URL('https://www.example.com/');
+    expect(url3.username).toBe('');
+  });
+
+  it('should set username', () => {
+    var url = new URL('https://www.example.com/');
+    url.username = 'newuser';
+    expect(url.username).toBe('newuser');
+    expect(url.href).toBe('https://newuser@www.example.com/');
+    
+    // Test setting username when password exists
+    var url2 = new URL('https://user:pass@www.example.com/');
+    url2.username = 'newuser';
+    expect(url2.username).toBe('newuser');
+    expect(url2.href).toBe('https://newuser:pass@www.example.com/');
+  });
+
+  it('should handle username with special characters', () => {
+    var url = new URL('https://user%40name:pass@www.example.com/');
+    expect(url.username).toBe('user%40name');
+    
+    var url2 = new URL('https://www.example.com/');
+    url2.username = 'user@name';
+    expect(url2.username).toBe('user%40name'); // Should return encoded form
+    expect(url2.href).toBe('https://user%40name@www.example.com/');
+  });
+
+  it('should not set username for non-relative URLs', () => {
+    var url = new URL('data:text/plain,hello');
+    url.username = 'user';
+    expect(url.username).toBe('');
+    expect(url.href).toBe('data:text/plain,hello');
+  });
+
+  it('should get password from URL', () => {
+    var url = new URL('https://user:pass@www.example.com/');
+    expect(url.password).toBe('pass');
+    
+    var url2 = new URL('https://user@www.example.com/');
+    expect(url2.password).toBe('');
+    
+    var url3 = new URL('https://www.example.com/');
+    expect(url3.password).toBe('');
+  });
+
+  it('should set password', () => {
+    var url = new URL('https://user@www.example.com/');
+    url.password = 'newpass';
+    expect(url.password).toBe('newpass');
+    expect(url.href).toBe('https://user:newpass@www.example.com/');
+    
+    // Test setting password when no username exists
+    var url2 = new URL('https://www.example.com/');
+    url2.password = 'pass';
+    expect(url2.password).toBe('pass');
+    expect(url2.href).toBe('https://:pass@www.example.com/');
+  });
+
+  it('should handle password with special characters', () => {
+    var url = new URL('https://user:pass%40word@www.example.com/');
+    expect(url.password).toBe('pass%40word');
+    
+    var url2 = new URL('https://user@www.example.com/');
+    url2.password = 'pass@word';
+    expect(url2.password).toBe('pass%40word');
+    expect(url2.href).toBe('https://user:pass%40word@www.example.com/');
+  });
+
 });

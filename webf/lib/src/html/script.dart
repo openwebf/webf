@@ -40,7 +40,7 @@ class ScriptRunner {
   // Indicate the sync pending scripts.
   int _resolvingCount = 0;
 
-  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle,
+  static Future<void> _evaluateScriptBundle(double contextId, WebFBundle bundle, ScriptElement scriptElement,
       {bool async = false, bool isModule = false}) async {
     // Evaluate bundle.
     if (bundle.isJavascript) {
@@ -48,16 +48,16 @@ class ScriptRunner {
       bool result;
       if (isModule) {
         result = await evaluateModule(contextId, bundle.data!,
-            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache, scriptElement: scriptElement);
       } else {
         result = await evaluateScripts(contextId, bundle.data!,
-            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache);
+            url: bundle.url, cacheKey: bundle.cacheKey, loadedFromCache: bundle.loadedFromCache, scriptElement: scriptElement);
       }
       if (!result) {
         throw FlutterError('Script code are not valid to evaluate.');
       }
     } else if (bundle.isBytecode) {
-      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!);
+      bool result = await evaluateQuickjsByteCode(contextId, bundle.data!, scriptElement: scriptElement);
       if (!result) {
         throw FlutterError('Bytecode are not valid to execute.');
       }
@@ -97,6 +97,7 @@ class ScriptRunner {
     bool isInPreLoading = _document.controller.mode == WebFLoadingMode.preloading &&
         _document.controller.preloadStatus != PreloadingStatus.done;
 
+    String scriptSource;
     if (isInline) {
       String? scriptCode = element.collectElementChildText();
       if (scriptCode == null) {
@@ -110,13 +111,25 @@ class ScriptRunner {
       // Use document URL as base for inline scripts instead of 'about:blank'
       // This ensures that relative imports in inline modules resolve correctly
       bundle = WebFBundle.fromContent(scriptCode, url: _document.controller.url);
+      scriptSource = '<inline>';
     } else {
       String url = element.src.toString();
       bundle = _document.controller.getPreloadBundleFromUrl(url) ?? WebFBundle.fromUrl(url);
+      scriptSource = url;
     }
 
     // Check if this is an ES module
     bool isModule = element.type == _JAVASCRIPT_MODULE;
+
+    // Record script element queuing
+    final dumper = _document.controller.loadingStateDumper;
+    dumper.recordScriptElementQueue(
+      source: scriptSource,
+      isInline: isInline,
+      isModule: isModule,
+      isAsync: element.async,
+      isDefer: element.defer,
+    );
 
     element.readyState = ScriptReadyState.interactive;
     // The bundle execution task.
@@ -124,18 +137,26 @@ class ScriptRunner {
       // If bundle is not resolved, should wait for it resolve to prevent the next script running.
       assert(bundle.isResolved, '${bundle.url} is not resolved');
 
+      // Record script execution start
+      dumper.recordScriptElementExecuteStart(scriptSource);
+
       try {
-        await _evaluateScriptBundle(_contextId, bundle, async: async, isModule: isModule);
+        await _evaluateScriptBundle(_contextId, bundle, element, async: async, isModule: isModule);
       } catch (err, stack) {
         debugPrint('$err\n$stack');
         _document.decrementDOMContentLoadedEventDelayCount();
         await WebFBundle.invalidateCache(bundle.url);
+        // Record script error
+        dumper.recordScriptElementError(scriptSource, err.toString());
         return;
       } finally {
         bundle.dispose();
       }
 
       element.readyState = ScriptReadyState.complete;
+      // Record script execution complete
+      dumper.recordScriptElementExecuteComplete(scriptSource);
+      
       // Dispatch the load event.
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_LOAD));
@@ -163,6 +184,10 @@ class ScriptRunner {
     // Script loading phrase.
     // Increment count when request.
     _document.incrementDOMContentLoadedEventDelayCount();
+    
+    // Record script load start
+    dumper.recordScriptElementLoadStart(scriptSource);
+    
     try {
       await bundle.resolve(baseUrl: _document.controller.url, uriParser: _document.controller.uriParser);
       await bundle.obtainData(_contextId);
@@ -170,9 +195,17 @@ class ScriptRunner {
       if (!bundle.isResolved) {
         throw FlutterError('Network error.');
       }
+      
+      // Record script load complete with data size
+      final dataSize = bundle.data?.length ?? 0;
+      dumper.recordScriptElementLoadComplete(scriptSource, dataSize: dataSize);
     } catch (e, st) {
       // A load error occurred.
-      debugPrint('Failed to load: $url, reason: $e\n$st');
+      debugPrint('Failed to load: ${isInline ? scriptSource : element.src}, reason: $e\n$st');
+      
+      // Record script error
+      dumper.recordScriptElementError(scriptSource, e.toString());
+      
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_ERROR));
         _document.decrementDOMContentLoadedEventDelayCount();

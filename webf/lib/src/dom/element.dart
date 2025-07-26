@@ -1234,29 +1234,16 @@ abstract class Element extends ContainerNode
       if (renderStyle.isBoxModelHaveSize()) {
         RenderBoxModel? currentRenderBox = renderStyle.attachedRenderBoxModel;
         Offset offset = Offset.zero;
-        
+
         if (currentRenderBox != null) {
           // Get the WebF viewport
           RenderBox? viewport = getRootViewport();
-          
+
           // First, try to get offset using the normal ancestor-based approach
           // This will work for elements in the main document tree
           RenderBoxModel? rootRenderBox = getRootRenderBoxModel();
           if (rootRenderBox != null) {
-            try {
-              offset = renderStyle.getOffset(ancestorRenderBox: rootRenderBox, excludeScrollOffset: false);
-            } catch (e) {
-              // If getOffset fails (e.g., for elements in modal popups),
-              // fall back to global coordinate calculation
-              if (viewport != null) {
-                // Get global positions of both the element and viewport
-                Offset elementGlobal = currentRenderBox.localToGlobal(Offset.zero);
-                Offset viewportGlobal = viewport.localToGlobal(Offset.zero);
-                
-                // Calculate relative position
-                offset = elementGlobal - viewportGlobal;
-              }
-            }
+            offset = currentRenderBox.localToGlobal(Offset.zero, ancestor: rootRenderBox);
           } else if (viewport != null) {
             // No root render box (shouldn't happen normally)
             // Use global coordinate calculation

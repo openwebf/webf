@@ -14,6 +14,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
+import 'package:webf/src/rendering/paragraph.dart' show NormalizedLineMetrics;
 
 // White space processing in CSS affects only the document white space characters:
 // spaces (U+0020), tabs (U+0009), and segment breaks.
@@ -47,12 +48,14 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   late WebFRenderParagraph _renderParagraph;
   double _lastFirstLineIndent = 0;
   String _data;
+  
 
   set data(String value) {
     _data = value;
   }
 
   String get data => _data;
+  
 
   bool isEndWithSpace(String str) {
     return str.endsWith(WHITE_SPACE_CHAR) ||
@@ -249,7 +252,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   }
 
   List<double>? getLineAscent(int lineNum) {
-    LineMetrics lineMetrics = _renderParagraph.getLineMetricsByLineNum(lineNum);
+    NormalizedLineMetrics lineMetrics = _renderParagraph.getLineMetricsByLineNum(lineNum);
     double lineHeight = _lineHeight ?? 0;
     double leading = 0;
     if (lineHeight > 0) {
@@ -471,6 +474,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     WebFRenderParagraph? paragraph = child as WebFRenderParagraph?;
     lineBoxes.clear();
     if (paragraph != null) {
+      
       paragraph.overflow = renderStyle.effectiveTextOverflow;
       paragraph.textAlign = renderStyle.textAlign;
 

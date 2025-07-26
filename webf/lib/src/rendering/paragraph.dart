@@ -19,14 +19,33 @@ import 'package:webf/src/css/text_script_detector.dart';
 
 const String _kEllipsis = '\u2026';
 
+// Wrapper class to store normalized metrics for CJK text
+class NormalizedLineMetrics {
+  final ui.LineMetrics original;
+  final double ascent;
+  final double descent;
+  
+  NormalizedLineMetrics({
+    required this.original,
+    required this.ascent,
+    required this.descent,
+  });
+  
+  double get height => original.height;
+  double get width => original.width;
+  int get lineNumber => original.lineNumber;
+  double get baseline => original.baseline;
+  double get left => original.left;
+  bool get hardBreak => original.hardBreak;
+  double get unscaledAscent => original.unscaledAscent;
+}
+
 class WebFRenderTextLine {
   late Rect lineRect = Rect.zero;
   late WebFTextPainter textPainter;
   late Offset paintOffset = Offset.zero;
   late double fontHeight = 0;
   late double leading = 0;
-  late double baselineAdjustment = 0; // Adjustment for CJK baseline
-  late bool containsCJK = false;
 
   WebFRenderTextLine();
 
@@ -37,8 +56,7 @@ class WebFRenderTextLine {
     } else {
       top = lineRect.top + leading/2;
     }
-    // Apply baseline adjustment for CJK text
-    return top + baselineAdjustment;
+    return top;
   }
 
   double get paintLeft {
@@ -76,11 +94,13 @@ class WebFRenderParagraph extends RenderBox
     ui.TextHeightBehavior? textHeightBehavior,
     List<RenderBox>? children,
     TextPainterCallback? foregroundCallback,
+    double? forcedCjkRatio,
   })  : assert(text.debugAssertIsValid()),
         assert(maxLines == null || maxLines > 0),
         _softWrap = softWrap,
         _overflow = overflow,
         _foregroundCallback = foregroundCallback,
+        _forcedCjkRatio = forcedCjkRatio,
         _textPainter = WebFTextPainter(
             text: text,
             textAlign: textAlign,
@@ -99,11 +119,22 @@ class WebFRenderParagraph extends RenderBox
   }
 
   final WebFTextPainter _textPainter;
+  
+  // External CJK ratio to force consistent normalization
+  double? _forcedCjkRatio;
+  
+  double? get forcedCjkRatio => _forcedCjkRatio;
+  
+  set forcedCjkRatio(double? value) {
+    if (_forcedCjkRatio != value) {
+      _forcedCjkRatio = value;
+    }
+  }
 
   // The line metrics of paragraph
-  late List<ui.LineMetrics> _lineMetrics;
+  late List<NormalizedLineMetrics> _lineMetrics;
 
-  List<ui.LineMetrics> get lineMetrics => _lineMetrics;
+  List<NormalizedLineMetrics> get lineMetrics => _lineMetrics;
 
   late List<WebFRenderTextLine> _lineRenders;
 
@@ -145,7 +176,7 @@ class WebFRenderParagraph extends RenderBox
     _textPainter.textAlign = value;
   }
 
-  ui.LineMetrics getLineMetricsByLineNum(int index) {
+  NormalizedLineMetrics getLineMetricsByLineNum(int index) {
     return _lineMetrics[index];
   }
 
@@ -293,9 +324,9 @@ class WebFRenderParagraph extends RenderBox
   double computeDistanceToFirstLineBaseline() {
     if (_lineRenders.isEmpty) return 0.0;
     double firstLineOffset = _lineRenders[0].lineRect.top;
-    ui.LineMetrics firstLineMetrics = _lineMetrics[0];
+    NormalizedLineMetrics firstLineMetrics = _lineMetrics[0];
 
-    // Use the baseline of the last line as paragraph baseline.
+    // Use the baseline of the first line as paragraph baseline.
     return text.text == '' ? 0.0 : (firstLineOffset + firstLineMetrics.ascent);
   }
 
@@ -305,7 +336,7 @@ class WebFRenderParagraph extends RenderBox
       return 0.0;
     }
     double lastLineOffset = _lineRenders[_lineRenders.length - 1].lineRect.top;
-    ui.LineMetrics lastLineMetrics = _lineMetrics[_lineMetrics.length - 1];
+    NormalizedLineMetrics lastLineMetrics = _lineMetrics[_lineMetrics.length - 1];
 
     // Use the baseline of the last line as paragraph baseline.
     return text.text == '' ? 0.0 : (lastLineOffset + lastLineMetrics.ascent);
@@ -387,7 +418,7 @@ class WebFRenderParagraph extends RenderBox
     for (int i = 0; i < _lineMetrics.length; i++) {
       TextRange range = _textPainter.getLineBoundary(TextPosition(offset: checkOffset));
       Rect old = _lineRenders[i].lineRect;
-      ui.LineMetrics metrics = _lineMetrics[i];
+      NormalizedLineMetrics metrics = _lineMetrics[i];
       bool isLastLine = i == _lineMetrics.length - 1;
       if(isLastLine && range != TextRange.empty) {
         range = TextRange(start:range.start, end: (textSpan as WebFTextSpan).contentLength);
@@ -414,7 +445,7 @@ class WebFRenderParagraph extends RenderBox
   void clearFirstLine() {
     List<double> _lineLeading = [];
     for (int i = 1; i < _lineMetrics.length; i++) {
-      ui.LineMetrics lineMetric = _lineMetrics[i];
+      NormalizedLineMetrics lineMetric = _lineMetrics[i];
       double leading = 0;
       if (lineHeight != null && lineMetric.height != 0) {
         leading = lineHeight! - lineMetric.height;
@@ -433,7 +464,7 @@ class WebFRenderParagraph extends RenderBox
     _lineRenders.removeAt(0);
   }
 
-  List<Object> _updateLineRectFromMetrics(TextRange range, WebFTextSpan textSpan, Rect old, ui.LineMetrics metrics,
+  List<Object> _updateLineRectFromMetrics(TextRange range, WebFTextSpan textSpan, Rect old, NormalizedLineMetrics metrics,
       {bool isLastLine = false}) {
     List<Object> content = textSpan.subContent(range.start, range.end);
     List<WebFTextPlaceHolderSpan> placeHolder = content.whereType<WebFTextPlaceHolderSpan>().toList();
@@ -465,7 +496,35 @@ class WebFRenderParagraph extends RenderBox
   // Compute line metrics and line offset according to line-height spec.
   // https://www.w3.org/TR/css-inline-3/#inline-height
   void _computeLineMetrics() {
-    _lineMetrics = _textPainter.computeLineMetrics();
+    List<ui.LineMetrics> rawMetrics = _textPainter.computeLineMetrics();
+    
+    // Normalize metrics for CJK content
+    _lineMetrics = [];
+    int checkOffset = 0;
+    String fullText = text.toPlainText();
+    
+    for (int i = 0; i < rawMetrics.length; i++) {
+      // Get the text for this line to check CJK content
+      TextRange range = _textPainter.getLineBoundary(TextPosition(offset: checkOffset));
+      String lineText = '';
+      
+      if (range.start < fullText.length) {
+        int endOffset = math.min(range.end, fullText.length);
+        if (endOffset > range.start) {
+          lineText = fullText.substring(range.start, endOffset);
+        }
+      }
+      
+      // Use forced ratio if provided, otherwise calculate per line
+      double cjkRatio = _forcedCjkRatio ?? TextScriptDetector.getCJKRatio(lineText);
+      
+      // Normalize the metrics based on CJK content
+      _lineMetrics.add(_normalizeMetricsForCJK(rawMetrics[i], cjkRatio));
+      
+      // Move to next line
+      checkOffset = range.end + 1;
+    }
+    
     // Leading of each line
     List<double> _lineLeading = [];
 
@@ -477,7 +536,7 @@ class WebFRenderParagraph extends RenderBox
     // create WebFRenderTextLines for each line as lineRenders
     _lineRenders = _lineMetrics.map((element) => WebFRenderTextLine()).toList();
     for (int i = 0; i < _lineMetrics.length; i++) {
-      ui.LineMetrics lineMetric = _lineMetrics[i];
+      NormalizedLineMetrics lineMetric = _lineMetrics[i];
 
       // Do not add line height in the case of textOverflow ellipsis
       // cause height of line metric equals to 0.
@@ -501,12 +560,45 @@ class WebFRenderParagraph extends RenderBox
     }
   }
 
+  
+  // Normalize font metrics for CJK text to match Latin baseline alignment
+  NormalizedLineMetrics _normalizeMetricsForCJK(ui.LineMetrics originalMetrics, double cjkRatio) {
+    if (cjkRatio == 0) {
+      return NormalizedLineMetrics(
+        original: originalMetrics,
+        ascent: originalMetrics.ascent,
+        descent: originalMetrics.descent,
+      );
+    }
+    
+    double fontHeight = originalMetrics.height;
+    
+    // Use fixed metrics for mixed CJK/Latin text to ensure consistent baseline
+    // This provides a middle ground that works well for both pure and mixed text
+    double targetAscentRatio = 0.85; // Between typical CJK (0.9) and Latin (0.75)
+    double targetDescentRatio = 0.15;
+    
+    double targetAscent = fontHeight * targetAscentRatio;
+    double targetDescent = fontHeight * targetDescentRatio;
+    
+    // Apply CJK normalization with the middle-ground metrics
+    double newAscent = originalMetrics.ascent * (1 - cjkRatio) + targetAscent * cjkRatio;
+    double newDescent = originalMetrics.descent * (1 - cjkRatio) + targetDescent * cjkRatio;
+    
+    // Create normalized metrics with adjusted ascent/descent
+    return NormalizedLineMetrics(
+      original: originalMetrics,
+      ascent: newAscent,
+      descent: newDescent,
+    );
+  }
+
   // Compute paragraph height according to line metrics.
   double _getParagraphHeight() {
     double paragraphHeight = 0;
     // Height of paragraph
     for (int i = 0; i < _lineMetrics.length; i++) {
-      ui.LineMetrics lineMetric = _lineMetrics[i];
+      NormalizedLineMetrics lineMetric = _lineMetrics[i];
 
       // Do not add line height in the case of textOverflow ellipsis
       // cause height of line metric equals to 0.
@@ -565,8 +657,6 @@ class WebFRenderParagraph extends RenderBox
         maxWidth: widthMatters ? constraints.maxWidth : double.infinity,
       );
 
-      // Calculate baseline adjustment for CJK text
-      _calculateBaselineAdjustment(i, lineText);
     }
   }
 
@@ -587,7 +677,7 @@ class WebFRenderParagraph extends RenderBox
   }
 
   void _pollyFillSizeForOneLine() {
-    ui.LineMetrics lineMetric = _lineMetrics[0];
+    NormalizedLineMetrics lineMetric = _lineMetrics[0];
     Rect oldRect = _lineRenders[0].lineRect;
     TextRange range = _textPainter.getLineBoundary(TextPosition(offset: 0));
     _lineRenders[0].textPainter = _textPainter;
@@ -595,44 +685,8 @@ class WebFRenderParagraph extends RenderBox
     _updateLineRectFromMetrics(range, _textPainter.text as WebFTextSpan, oldRect, lineMetric, isLastLine: true);
     _lineRenders[0].lineRect = oldRect = result[0] as Rect;
 
-    // Calculate baseline adjustment for single line
-    String lineText = (result[1] as String);
-    _calculateBaselineAdjustment(0, lineText);
   }
 
-  void _calculateBaselineAdjustment(int lineIndex, String lineText) {
-    if (lineIndex >= _lineRenders.length) return;
-
-    // Check if the line contains CJK characters
-    _lineRenders[lineIndex].containsCJK = TextScriptDetector.containsCJK(lineText);
-
-    if (_lineRenders[lineIndex].containsCJK) {
-      // Get the CJK ratio to determine how much adjustment is needed
-      double cjkRatio = TextScriptDetector.getCJKRatio(lineText);
-
-      // Get line metrics
-      if (lineIndex < _lineMetrics.length) {
-        ui.LineMetrics metrics = _lineMetrics[lineIndex];
-
-        // Calculate the baseline adjustment
-        // CJK fonts typically have different ascent/descent ratios
-        // We adjust based on the difference between expected and actual baseline position
-        double fontHeight = metrics.height;
-        double ascent = metrics.ascent;
-        double descent = metrics.descent;
-
-        // For CJK text, we want to slightly lower the baseline to align better with Latin text
-        // The adjustment is proportional to the CJK content ratio
-        // Typical adjustment is about 10-15% of the descent value
-        double adjustmentFactor = 0.15; // This can be tuned based on font metrics
-        double baseAdjustment = descent * adjustmentFactor * cjkRatio;
-
-        _lineRenders[lineIndex].baselineAdjustment = baseAdjustment;
-      }
-    } else {
-      _lineRenders[lineIndex].baselineAdjustment = 0;
-    }
-  }
 
   @override
   void performLayout() {

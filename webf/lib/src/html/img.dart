@@ -39,6 +39,9 @@ const Map<String, dynamic> _defaultStyle = {
 class ImageElement extends Element {
   final Set<ImageState> _imageState = {};
 
+  // Flag to track if an image update is pending but couldn't be delivered
+  bool _hasPendingImageUpdate = false;
+
   ImageState? get state {
     final stateFinder = _imageState.where((state) => state.mounted == true);
     return stateFinder.isEmpty ? null : stateFinder.last;
@@ -450,7 +453,24 @@ class ImageElement extends Element {
       _currentRequest?.state = _ImageRequestState.completelyAvailable;
     }
 
-    state?.requestStateUpdate();
+    // Option 1: Store pending update if no mounted state exists
+    final currentState = state;
+    if (currentState != null) {
+      currentState.requestStateUpdate();
+      _hasPendingImageUpdate = false;
+    } else if (_imageState.isNotEmpty) {
+      // There are states but none are mounted yet, mark update as pending
+      _hasPendingImageUpdate = true;
+
+      // Option 2: Also schedule update for next frame as a fallback
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (_hasPendingImageUpdate) {
+          state?.requestStateUpdate();
+          _hasPendingImageUpdate = false;
+        }
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    }
 
     // Fire the load event at first frame come.
     if (!_loaded) {
@@ -538,7 +558,24 @@ class ImageElement extends Element {
       _resizeImage();
       _isSVGImage = true;
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        state?.requestStateUpdate();
+        // Apply the same fix for SVG images
+        final currentState = state;
+        if (currentState != null) {
+          currentState.requestStateUpdate();
+          _hasPendingImageUpdate = false;
+        } else if (_imageState.isNotEmpty) {
+          // There are states but none are mounted yet, mark update as pending
+          _hasPendingImageUpdate = true;
+
+          // Also schedule update for next frame as a fallback
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            if (_hasPendingImageUpdate) {
+              state?.requestStateUpdate();
+              _hasPendingImageUpdate = false;
+            }
+          });
+          SchedulerBinding.instance.scheduleFrame();
+        }
         // Report FP first (if not already reported)
         ownerDocument.controller.reportFP();
         // Report FCP when SVG image is first painted
@@ -722,6 +759,26 @@ class ImageState extends flutter.State<WebFImage> {
   void initState() {
     super.initState();
     imageElement._imageState.add(this);
+
+    // Option 1: Check if there's a pending update that couldn't be delivered
+    if (imageElement._hasPendingImageUpdate && imageElement._cachedImageInfo != null) {
+      imageElement._hasPendingImageUpdate = false;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    }
+    // Also check if the image has already loaded (original check)
+    else if (imageElement._cachedImageInfo != null) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    }
   }
 
   @override

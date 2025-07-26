@@ -481,6 +481,8 @@ list(APPEND BRIDGE_SOURCE
     code_gen/binding_call_methods.cc
     code_gen/qjs_scroll_options.cc
     code_gen/qjs_scroll_to_options.cc
+    code_gen/qjs_element_creation_options.cc
+    code_gen/qjs_unionelement_creation_options_dom_string.cc
     code_gen/qjs_html_element.cc
     code_gen/qjs_html_all_collection.cc
     code_gen/qjs_html_collection.cc
@@ -622,6 +624,8 @@ list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
 
 if (${IS_ANDROID})
   find_library(log-lib log)
+
+#  add_link_options("-Wl,-z,max-page-size=16384")
 
   if (${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
     add_definitions(-DANDROID_32_BIT=1)
