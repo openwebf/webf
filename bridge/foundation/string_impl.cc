@@ -73,7 +73,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  auto* string = static_cast<StringImpl*>(malloc(AllocationSize<char>(length)));
+  auto* string = static_cast<StringImpl*>(malloc(AllocationSize<char>(length) + 1));
   data = reinterpret_cast<char*>(string + 1);
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length, kForce8BitConstructor));
 }
@@ -87,7 +87,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char1
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<char16_t>(length)));
+  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<char16_t>(length) + 1));
   data = reinterpret_cast<char16_t*>(string + 1);
 
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length));
@@ -214,6 +214,134 @@ size_t StringImpl::HashSlowCase() const {
   else
     SetHash(StringHasher::ComputeHashAndMaskTop8Bits(Characters16(), length_));
   return ExistingHash();
+}
+
+// Helper function to decode UTF-8 character
+static inline uint32_t DecodeUTF8Char(const uint8_t*& p, const uint8_t* end) {
+  uint32_t c = *p++;
+  
+  if (c < 0x80) {
+    // ASCII character
+    return c;
+  }
+  
+  if ((c & 0xE0) == 0xC0) {
+    // 2-byte sequence
+    if (p >= end || (*p & 0xC0) != 0x80) return 0xFFFD;
+    c = ((c & 0x1F) << 6) | (*p++ & 0x3F);
+    if (c < 0x80) return 0xFFFD;  // Overlong encoding
+    return c;
+  }
+  
+  if ((c & 0xF0) == 0xE0) {
+    // 3-byte sequence
+    if (p + 1 >= end || (*p & 0xC0) != 0x80 || (*(p+1) & 0xC0) != 0x80) return 0xFFFD;
+    c = ((c & 0x0F) << 12) | ((*p++ & 0x3F) << 6) | (*p++ & 0x3F);
+    if (c < 0x800 || (c >= 0xD800 && c <= 0xDFFF)) return 0xFFFD;  // Overlong or surrogate
+    return c;
+  }
+  
+  if ((c & 0xF8) == 0xF0) {
+    // 4-byte sequence
+    if (p + 2 >= end || (*p & 0xC0) != 0x80 || (*(p+1) & 0xC0) != 0x80 || (*(p+2) & 0xC0) != 0x80) return 0xFFFD;
+    c = ((c & 0x07) << 18) | ((*p++ & 0x3F) << 12) | ((*p++ & 0x3F) << 6) | (*p++ & 0x3F);
+    if (c < 0x10000 || c > 0x10FFFF) return 0xFFFD;  // Overlong or out of range
+    return c;
+  }
+  
+  // Invalid UTF-8 sequence
+  return 0xFFFD;
+}
+
+// Count ASCII characters at the beginning of a UTF-8 string
+static inline size_t CountASCII(const uint8_t* p, size_t len) {
+  size_t count = 0;
+  while (count < len && p[count] < 0x80) {
+    count++;
+  }
+  return count;
+}
+
+std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const char* utf8_data, size_t byte_length) {
+  if (!utf8_data || !byte_length)
+    return empty_shared();
+  
+  const uint8_t* p = reinterpret_cast<const uint8_t*>(utf8_data);
+  const uint8_t* end = p + byte_length;
+  
+  // First, check if it's pure ASCII
+  size_t ascii_length = CountASCII(p, byte_length);
+  if (ascii_length == byte_length) {
+    // Pure ASCII - use 8-bit string
+    return Create(utf8_data, byte_length);
+  }
+  
+  // Count characters and check if we need 16-bit
+  const uint8_t* scan = p + ascii_length;
+  size_t char_count = ascii_length;
+  bool needs_16bit = false;
+  
+  while (scan < end) {
+    uint32_t c = DecodeUTF8Char(scan, end);
+    if (c >= 0x100) {
+      needs_16bit = true;
+    }
+    if (c > 0xFFFF) {
+      // Surrogate pair needed
+      char_count += 2;
+    } else {
+      char_count += 1;
+    }
+  }
+  
+  if (!needs_16bit) {
+    // All characters fit in 8-bit
+    char* data;
+    std::shared_ptr<StringImpl> string = CreateUninitialized(char_count, data);
+    
+    // Copy ASCII portion
+    memcpy(data, utf8_data, ascii_length);
+    
+    // Decode remaining UTF-8
+    scan = p + ascii_length;
+    size_t i = ascii_length;
+    while (scan < end) {
+      uint32_t c = DecodeUTF8Char(scan, end);
+      data[i++] = static_cast<char>(c);
+    }
+    data[char_count] = 0;
+    
+    unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, char_count);
+    string->SetHash(hash);
+    return string;
+  } else {
+    // Need 16-bit string
+    char16_t* data;
+    std::shared_ptr<StringImpl> string = CreateUninitialized(char_count, data);
+    
+    // Copy ASCII portion
+    for (size_t i = 0; i < ascii_length; i++) {
+      data[i] = p[i];
+    }
+    
+    // Decode remaining UTF-8
+    scan = p + ascii_length;
+    size_t i = ascii_length;
+    while (scan < end) {
+      uint32_t c = DecodeUTF8Char(scan, end);
+      if (c > 0xFFFF) {
+        // Encode as surrogate pair
+        data[i++] = 0xD800 + ((c - 0x10000) >> 10);
+        data[i++] = 0xDC00 + ((c - 0x10000) & 0x3FF);
+      } else {
+        data[i++] = static_cast<char16_t>(c);
+      }
+    }
+    
+    unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, char_count);
+    string->SetHash(hash);
+    return string;
+  }
 }
 
 }  // namespace webf

@@ -46,6 +46,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
 ### webf_unit_test executable
 add_executable(webf_unit_test
   ${WEBF_UNIT_TEST_SOURCE}
+  ${WEBF_CSS_UNIT_TEST_SOURCE}
   ${WEBF_TEST_SOURCE}
   ${BRIDGE_SOURCE}
 )

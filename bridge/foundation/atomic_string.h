@@ -49,8 +49,8 @@ class AtomicString {
 
   std::unique_ptr<SharedNativeString> ToNativeString() const;
 
-  std::string ToStdString() const { return std::string(string_->Characters8(), string_->length()); }
-  std::string_view ToStringView() const { return std::string_view(Characters8(), length()); }
+  std::string ToStdString() const;
+  std::string_view ToStringView() const { return Is8Bit() ? std::string_view(Characters8(), length()) : std::string_view(); }
 
   JSValue ToQuickJS(JSContext* ctx) const;
 
@@ -69,7 +69,7 @@ class AtomicString {
 
   const char* Characters8() const;
   const char16_t* Characters16() const;
-  std::string GetString() const { return std::string(string_->Characters8(), string_->length()); }
+  std::string GetString() const { return ToStdString(); }
 
   AtomicString RemoveCharacters(CharacterMatchFunctionPtr);
 

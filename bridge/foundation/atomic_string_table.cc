@@ -33,6 +33,16 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> s
   return string;
 }
 
+static size_t count_ascii(const uint8_t *buf, size_t len)
+{
+  const uint8_t *p, *p_end;
+  p = buf;
+  p_end = buf + len;
+  while (p < p_end && *p < 128)
+    p++;
+  return p - buf;
+}
+
 std::shared_ptr<StringImpl> AtomicStringTable::Add(const char* chars, unsigned int length) {
   if (!chars)
     return nullptr;
@@ -40,7 +50,7 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(const char* chars, unsigned i
   if (!length)
     return StringImpl::empty_shared();
 
-  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
+  std::shared_ptr<StringImpl> ptr = StringImpl::CreateFromUTF8(chars, length);
 
   auto result = table_.insert(ptr);
 

@@ -158,6 +158,10 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
 
   static std::shared_ptr<StringImpl> Create(const char*, size_t length);
   static std::shared_ptr<StringImpl> Create(const char16_t*, size_t length);
+  
+  // Create a StringImpl from UTF-8 encoded data, converting to UTF-16 if necessary
+  // Similar to QuickJS's JS_NewStringLen function
+  static std::shared_ptr<StringImpl> CreateFromUTF8(const char* utf8_data, size_t byte_length);
 
   static void InitStatics();
 

@@ -39,7 +39,7 @@ class AtomicStringTable final {
   // convert the string to save memory if possible.
   std::shared_ptr<StringImpl> Add(std::shared_ptr<StringImpl>);
   std::shared_ptr<StringImpl> Add(const char* chars, unsigned length);
-  std::shared_ptr<StringImpl> Add(const char16_t* chars, unsigned length);
+  std::shared_ptr<StringImpl> Add(const char16_t* chars, uint32_t length);
   std::shared_ptr<StringImpl> Add(const std::string_view& string_view);
 
   //  // Adding UTF8.
