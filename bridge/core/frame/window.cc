@@ -75,11 +75,37 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
       // slows down the "happy" path. Since any whitespace will fail normal
       // decoding from modp_b64_decode, just try again if we detect a failure.
       // This shouldn't be much slower for whitespace inputs.
-      //
-      // TODO(csharrison): Most callers use String inputs so ToString() should
-      // be fast. Still, we should add a RemoveCharacters method to StringView
-      // to avoid a double allocation for non-String-backed StringViews.
-      return Base64DecodeRaw(in, out, policy) || Base64DecodeRaw(in.RemoveCharacters(&IsAsciiWhitespace), out, policy);
+      
+      // First try decoding as-is
+      if (Base64DecodeRaw(in, out, policy)) {
+        return true;
+      }
+      
+      // If that fails, manually remove whitespace characters
+      std::string cleaned;
+      cleaned.reserve(in.length());
+      
+      if (in.Is8Bit()) {
+        const char* chars = in.Characters8();
+        for (size_t i = 0; i < in.length(); i++) {
+          if (!IsAsciiWhitespace(chars[i])) {
+            cleaned += chars[i];
+          }
+        }
+      } else {
+        const char16_t* chars = in.Characters16();
+        for (size_t i = 0; i < in.length(); i++) {
+          if (!IsAsciiWhitespace(chars[i])) {
+            // Only add if it's a valid Latin-1 character
+            if (chars[i] <= 0xFF) {
+              cleaned += static_cast<char>(chars[i]);
+            }
+          }
+        }
+      }
+      
+      AtomicString cleaned_str(cleaned.c_str(), cleaned.length());
+      return Base64DecodeRaw(cleaned_str, out, policy);
     }
     case ModpDecodePolicy::kNoPaddingValidation: {
       return Base64DecodeRaw(in, out, policy);
@@ -106,7 +132,14 @@ AtomicString Window::atob(const AtomicString& source, ExceptionState& exception_
     return AtomicString::Empty();
   }
 
-  JSValue str = JS_NewRawUTF8String(ctx(), buffer.data(), buffer.size());
+  // Convert Latin-1 bytes to UTF-16 for JavaScript string
+  // Each byte becomes a Unicode character with the same code point value
+  std::vector<uint16_t> utf16_buffer(buffer.size());
+  for (size_t i = 0; i < buffer.size(); i++) {
+    utf16_buffer[i] = buffer[i];
+  }
+
+  JSValue str = JS_NewUnicodeString(ctx(), utf16_buffer.data(), utf16_buffer.size());
   AtomicString result = {ctx(), str};
   JS_FreeValue(ctx(), str);
   return result;

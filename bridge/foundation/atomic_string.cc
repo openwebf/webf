@@ -128,7 +128,7 @@ AtomicString AtomicString::UpperASCII() const {
 
 std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
   if (string_ == nullptr) {
-    return nullptr;
+    return AtomicString::Empty().ToNativeString();
   }
 
   if (string_->Is8Bit()) {

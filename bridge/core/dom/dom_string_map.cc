@@ -34,9 +34,18 @@ static bool IsValidAttributeName(const AtomicString& name) {
 
 static bool IsValidPropertyName(const AtomicString& name) {
   const int64_t length = name.length();
-  for (unsigned i = 0; i < length; ++i) {
-    if (name.Characters8()[i] == '-' && (i + 1 < length) && IsASCIILower(name.Characters8()[i + 1]))
-      return false;
+  if (name.Is8Bit()) {
+    const char* chars = name.Characters8();
+    for (unsigned i = 0; i < length; ++i) {
+      if (chars[i] == '-' && (i + 1 < length) && IsASCIILower(chars[i + 1]))
+        return false;
+    }
+  } else {
+    const char16_t* chars = name.Characters16();
+    for (unsigned i = 0; i < length; ++i) {
+      if (chars[i] == '-' && (i + 1 < length) && IsASCIILower(chars[i + 1]))
+        return false;
+    }
   }
   return true;
 }
@@ -48,13 +57,26 @@ static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
   unsigned a = 5;
   unsigned p = 0;
   bool word_boundary = false;
+  
+  // Helper lambda to get character at index for both 8-bit and 16-bit strings
+  auto getChar = [](const AtomicString& str, unsigned index) -> char16_t {
+    if (str.Is8Bit()) {
+      return static_cast<unsigned char>(str.Characters8()[index]);
+    } else {
+      return str.Characters16()[index];
+    }
+  };
+  
   while (a < attribute_length && p < property_length) {
-    if (attribute_name.Characters8()[a] == '-' && a + 1 < attribute_length &&
-        IsASCIILower(attribute_name.Characters8()[a + 1])) {
+    char16_t attr_char = getChar(attribute_name, a);
+    char16_t prop_char = getChar(property_name, p);
+    
+    if (attr_char == '-' && a + 1 < attribute_length &&
+        IsASCIILower(getChar(attribute_name, a + 1))) {
       word_boundary = true;
     } else {
-      if ((word_boundary ? ToASCIIUpper(attribute_name.Characters8()[a])
-                         : std::tolower(attribute_name.Characters8()[a])) != (property_name.Characters8()[p]))
+      char16_t expected_char = word_boundary ? ToASCIIUpper(attr_char) : std::tolower(attr_char);
+      if (expected_char != prop_char)
         return false;
       p++;
       word_boundary = false;

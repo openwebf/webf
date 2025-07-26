@@ -255,7 +255,13 @@ AtomicString Element::nodeValue() const {
 }
 
 std::string Element::nodeName() const {
-  return tagName().UpperASCII().ToStdString();
+  // For HTML elements in HTML namespace, return uppercased tagName
+  // For all other elements (including those created with createElementNS), preserve original case
+  if (IsHTMLElement()) {
+    return tagName().UpperASCII().ToStdString();
+  }
+  // For elements created with createElementNS or non-HTML elements, preserve original case
+  return tagName().ToStdString();
 }
 
 AtomicString Element::className() const {

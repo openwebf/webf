@@ -155,8 +155,24 @@ std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(CharacterMatchFunctionP
 }
 
 bool StringImpl::IsDigit() const {
-  std::string str = std::string(Characters8());
-  return std::all_of(str.begin(), str.end(), ::isdigit);
+  if (Is8Bit()) {
+    const char* chars = Characters8();
+    for (size_t i = 0; i < length_; i++) {
+      if (!::isdigit(chars[i])) {
+        return false;
+      }
+    }
+    return true;
+  } else {
+    const char16_t* chars = Characters16();
+    for (size_t i = 0; i < length_; i++) {
+      // Check if character is in ASCII digit range
+      if (chars[i] < '0' || chars[i] > '9') {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 size_t StringImpl::Find(CharacterMatchFunctionPtr match_function, size_t start) {
