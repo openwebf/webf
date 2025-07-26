@@ -139,7 +139,35 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   }
 
   RouterLinkElement? getHybridRouterView(String path) {
-    return _hybridRouterViews[path] as RouterLinkElement?;
+    // First try exact match (for static routes)
+    if (_hybridRouterViews.containsKey(path)) {
+      return _hybridRouterViews[path] as RouterLinkElement?;
+    }
+    
+    // Then try pattern matching for dynamic routes
+    for (String pattern in _hybridRouterViews.keys) {
+      if (pattern.contains(':')) {
+        // This is a dynamic route pattern like "/user/:userId"
+        if (_matchesPattern(pattern, path)) {
+          return _hybridRouterViews[pattern] as RouterLinkElement?;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Helper method to match dynamic route patterns
+  bool _matchesPattern(String pattern, String path) {
+    // Convert pattern like "/user/:userId" to regex like "^/user/([^/]+)$"
+    String regexPattern = pattern.replaceAllMapped(
+      RegExp(r':([^/]+)'), 
+      (match) => r'([^/]+)'
+    );
+    regexPattern = '^${regexPattern.replaceAll('/', r'\/')}\$';
+    
+    RegExp regex = RegExp(regexPattern);
+    return regex.hasMatch(path);
   }
 
   void removeHybridRouterView(String path) {

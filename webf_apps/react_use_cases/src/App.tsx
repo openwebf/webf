@@ -29,8 +29,12 @@ import { FormAdvancedPage } from './pages/FormAdvancedPage';
 import { QRCodePage } from './pages/QRCodePage';
 import { TablePage } from './pages/TablePage';
 import { GesturePage } from './pages/GesturePage';
+import { UserDetailsPage } from './pages/routeDemo/UserDetailsPage';
+import { ReportDetailsPage } from './pages/routeDemo/ReportDetailsPage';
+import { ProfileEditPage } from './pages/routeDemo/ProfileEditPage';
 
 function App() {
+
   return (
     <div className="App">
       <Routes>
@@ -61,6 +65,11 @@ function App() {
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+        
+        {/* Dynamic Routes */}
+        <Route path="/user/:userId" title="User Details" element={<UserDetailsPage />} />
+        <Route path="/dashboard/:year/:month/reports/:reportId" title="Report Details" element={<ReportDetailsPage />} />
+        <Route path="/profile/edit" title="Edit Profile" element={<ProfileEditPage />} />
       </Routes>
     </div>
   );

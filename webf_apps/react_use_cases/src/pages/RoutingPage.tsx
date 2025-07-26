@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { FlutterCupertinoTabBar, FlutterCupertinoTabBarItem } from '@openwebf/react-cupertino-ui';
 import { RoutingDemo } from '../components/RoutingDemo';
+import { EnhancedRoutingDemo } from '../components/EnhancedRoutingDemo';
 import TabBarManager from '../utils/tabBarManager';
 
 
@@ -8,21 +9,17 @@ export const RoutingPage: React.FC = () => {
   const tabBar = useRef<any>(null);
   
   useEffect(() => {
-    // 设置TabBar引用和路径信息
     if (tabBar.current) {
       TabBarManager.setTabBarRef(tabBar.current);
     }
-    TabBarManager.setTabBarPath('/routing'); // 设置TabBar所在页面路径
-    TabBarManager.setCurrentPath('/routing'); // 设置当前路径
+    TabBarManager.setTabBarPath('/routing');
+    TabBarManager.setCurrentPath('/routing');
     
-    // 清理函数
     return () => {
-      // 组件卸载时清理状态
       console.log('RoutingPage: Component unmounting, resetting TabBarManager');
     };
   }, []);
 
-  // TabBar引用更新时的处理
   useEffect(() => {
     if (tabBar.current) {
       TabBarManager.setTabBarRef(tabBar.current);
@@ -36,9 +33,9 @@ export const RoutingPage: React.FC = () => {
         <RoutingDemo />
       </FlutterCupertinoTabBarItem>
       <FlutterCupertinoTabBarItem title="Search" icon="search" path="/search">
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <h3>Search Page</h3>
-          <p>This is the search tab content.</p>
+        <div style={{ padding: '20px', textAlign: 'center', backgroundColor: 'var(--background-color)' }}>
+          <h3 style={{ color: 'var(--font-color-primary)' }}>Search Page</h3>
+          <p style={{ color: 'var(--secondary-font-color)' }}>This is the search tab content.</p>
           <button 
             onClick={() => {
               console.log('Search page: Switching to /my tab');
@@ -46,8 +43,6 @@ export const RoutingPage: React.FC = () => {
             }}
             style={{
               padding: '10px 20px',
-              backgroundColor: '#007AFF',
-              color: 'white',
               border: 'none',
               borderRadius: '8px',
               cursor: 'pointer',
@@ -59,9 +54,9 @@ export const RoutingPage: React.FC = () => {
         </div>
       </FlutterCupertinoTabBarItem>
       <FlutterCupertinoTabBarItem title="My" icon="person" path="/my">
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <h3>My Page</h3>
-          <p>This is the my tab content.</p>
+        <div style={{ padding: '20px', textAlign: 'center', backgroundColor: 'var(--background-color)' }}>
+          <h3 style={{ color: 'var(--font-color-primary)' }}>My Page</h3>
+          <p style={{ color: 'var(--secondary-font-color)' }}>This is the my tab content.</p>
           <button 
             onClick={() => {
               console.log('My page: Navigating to /animation');
@@ -80,6 +75,9 @@ export const RoutingPage: React.FC = () => {
             Go to Animation Page
           </button>
         </div>
+      </FlutterCupertinoTabBarItem>
+      <FlutterCupertinoTabBarItem title="Enhanced" icon="gear" path="/enhanced">
+        <EnhancedRoutingDemo />
       </FlutterCupertinoTabBarItem>      
     </FlutterCupertinoTabBar>
   );

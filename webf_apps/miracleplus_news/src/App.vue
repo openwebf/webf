@@ -39,7 +39,7 @@
     <router-view path="/topic" title="话题">
       <topic-page></topic-page>
     </router-view>
-    <router-view path="/home" title="首页">
+    <router-view path="/" title="首页">
       <flutter-cupertino-tab-bar ref="tabBar" class="tab-bar" :currentIndex="currentIndex" @tabchange="handleTabChange">
         <flutter-cupertino-tab-bar-item title="首页" icon="home" path="/home">
           <home-page v-if="enableHomePage"></home-page>
