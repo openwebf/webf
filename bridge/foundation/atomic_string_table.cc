@@ -28,9 +28,10 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> s
   if (!string->length())
     return StringImpl::empty_shared();
 
-  table_.insert(string);
-
-  return string;
+  auto result = table_.insert(string);
+  
+  // Return the existing string if it was already in the table
+  return *result.first;
 }
 
 static size_t count_ascii(const uint8_t *buf, size_t len)

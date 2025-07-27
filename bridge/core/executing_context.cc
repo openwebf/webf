@@ -692,8 +692,9 @@ static void DispatchPromiseRejectionEvent(const AtomicString& event_type,
 }
 
 const WidgetElementShape* ExecutingContext::GetWidgetElementShape(const AtomicString& key) {
-  if (widget_element_shapes_.count(key) > 0) {
-    return widget_element_shapes_[key].get();
+  auto it = widget_element_shapes_.find(key);
+  if (it != widget_element_shapes_.end()) {
+    return it->second.get();
   }
   return nullptr;
 }
