@@ -81,6 +81,10 @@ void StringCache::Dispose() {
   for (auto&& item : atom_to_string_cache) {
     JS_FreeAtomRT(runtime_, item.first);
   }
+  
+  // Clear the maps to release all StringImpl references
+  string_cache_.clear();
+  atom_to_string_cache.clear();
 }
 
 }  // namespace webf

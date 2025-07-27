@@ -5,6 +5,7 @@
 
 #include "string_impl.h"
 #include <algorithm>
+#include <cassert>
 #include <string>
 #include "ascii_fast_path.h"
 #include "string_buffer.h"
@@ -97,37 +98,51 @@ class StringImplAllocator {
  public:
   using ResultStringType = std::shared_ptr<StringImpl>;
 
+  StringImplAllocator(const std::shared_ptr<StringImpl>& original) : original_(original) {}
+
   template <typename CharType>
   std::shared_ptr<StringImpl> Alloc(size_t length, CharType*& buffer) {
     return StringImpl::CreateUninitialized(length, buffer);
   }
 
   std::shared_ptr<StringImpl> CoerceOriginal(const StringImpl& string) {
-    return std::shared_ptr<StringImpl>(const_cast<StringImpl*>(&string));
+    // Return the original shared_ptr if the StringImpl hasn't changed
+    if (&string == original_.get()) {
+      return original_;
+    }
+    // This should not happen in practice
+    assert(false);
+    return nullptr;
   }
+
+ private:
+  std::shared_ptr<StringImpl> original_;
 };
 
-std::shared_ptr<StringImpl> StringImpl::LowerASCII() {
-  return ConvertASCIICase(*this, LowerConverter(), StringImplAllocator());
+std::shared_ptr<StringImpl> StringImpl::LowerASCII(const std::shared_ptr<StringImpl>& str) {
+  return ConvertASCIICase(*str, LowerConverter(), StringImplAllocator(str));
 }
 
-std::shared_ptr<StringImpl> StringImpl::UpperASCII() {
-  return ConvertASCIICase(*this, UpperConverter(), StringImplAllocator());
+std::shared_ptr<StringImpl> StringImpl::UpperASCII(const std::shared_ptr<StringImpl>& str) {
+  return ConvertASCIICase(*str, UpperConverter(), StringImplAllocator(str));
 }
 
 template <typename CharType>
-ALWAYS_INLINE std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(const CharType* characters,
+ALWAYS_INLINE std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(const std::shared_ptr<StringImpl>& str,
+                                                                       const CharType* characters,
                                                                        CharacterMatchFunctionPtr find_match) {
   const CharType* from = characters;
-  const CharType* fromend = from + length_;
+  const CharType* fromend = from + str->length_;
 
   // Assume the common case will not remove any characters
   while (from != fromend && !find_match(*from))
     ++from;
-  if (from == fromend)
-    return shared_from_this();
+  if (from == fromend) {
+    // No characters need to be removed, return the original string
+    return str;
+  }
 
-  StringBuffer<CharType> data(length_);
+  StringBuffer<CharType> data(str->length_);
   CharType* to = data.Characters();
   size_t outc = static_cast<size_t>(from - characters);
 
@@ -148,10 +163,11 @@ ALWAYS_INLINE std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(const Cha
   return data.Release();
 }
 
-std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(CharacterMatchFunctionPtr find_match) {
-  if (Is8Bit())
-    return RemoveCharacters(Characters8(), find_match);
-  return RemoveCharacters(Characters16(), find_match);
+std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(const std::shared_ptr<StringImpl>& str,
+                                                         CharacterMatchFunctionPtr find_match) {
+  if (str->Is8Bit())
+    return RemoveCharacters(str, str->Characters8(), find_match);
+  return RemoveCharacters(str, str->Characters16(), find_match);
 }
 
 bool StringImpl::IsDigit() const {
@@ -194,23 +210,24 @@ bool StringImpl::StartsWith(const std::string_view& prefix) const {
   return Equal(Characters16(), prefix.data(), prefix.length());
 }
 
-std::shared_ptr<StringImpl> StringImpl::Substring(size_t start, size_t length) const {
-  if (start >= length_)
+std::shared_ptr<StringImpl> StringImpl::Substring(const std::shared_ptr<StringImpl>& str,
+                                                  size_t start, size_t length) {
+  if (start >= str->length_)
     return empty_shared();
-  size_t max_length = length_ - start;
+  size_t max_length = str->length_ - start;
   if (length >= max_length) {
-    // RefPtr has trouble dealing with const arguments. It should be updated
-    // so this const_cast is not necessary.
-    if (!start)
-      return std::const_pointer_cast<StringImpl>(shared_from_this());
+    if (!start) {
+      // Taking the full string, return the original
+      return str;
+    }
     length = max_length;
   }
-  if (Is8Bit()) {
-    tcb::span<const char> s = Span8().subspan(start, length);
+  if (str->Is8Bit()) {
+    tcb::span<const char> s = str->Span8().subspan(start, length);
     return Create(s.data(), s.size());
   }
 
-  tcb::span<const char16_t> s = Span16().subspan(start, length);
+  tcb::span<const char16_t> s = str->Span16().subspan(start, length);
   return Create(s.data(), s.size());
 }
 

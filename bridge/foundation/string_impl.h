@@ -76,7 +76,7 @@ inline size_t Find(const char16_t* characters,
 
 }  // namespace internal
 
-class StringImpl : public std::enable_shared_from_this<StringImpl> {
+class StringImpl {
  public:
   struct StringImplHasher {
     size_t operator()(const std::shared_ptr<StringImpl>& string_impl) const { return string_impl->GetHash(); }
@@ -215,11 +215,11 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
   static std::shared_ptr<StringImpl> CreateUninitialized(size_t length, char*& data);
   static std::shared_ptr<StringImpl> CreateUninitialized(size_t length, char16_t*& data);
 
-  std::shared_ptr<StringImpl> LowerASCII();
-  std::shared_ptr<StringImpl> UpperASCII();
-  std::shared_ptr<StringImpl> RemoveCharacters(CharacterMatchFunctionPtr);
+  static std::shared_ptr<StringImpl> LowerASCII(const std::shared_ptr<StringImpl>& str);
+  static std::shared_ptr<StringImpl> UpperASCII(const std::shared_ptr<StringImpl>& str);
+  static std::shared_ptr<StringImpl> RemoveCharacters(const std::shared_ptr<StringImpl>& str, CharacterMatchFunctionPtr);
   template <typename CharType>
-  ALWAYS_INLINE std::shared_ptr<StringImpl> RemoveCharacters(const CharType* characters, CharacterMatchFunctionPtr);
+  ALWAYS_INLINE static std::shared_ptr<StringImpl> RemoveCharacters(const std::shared_ptr<StringImpl>& str, const CharType* characters, CharacterMatchFunctionPtr);
 
   bool ContainsOnlyASCIIOrEmpty() const;
 
@@ -237,7 +237,7 @@ class StringImpl : public std::enable_shared_from_this<StringImpl> {
   bool StartsWith(char) const;
   bool StartsWith(const std::string_view&) const;
 
-  std::shared_ptr<StringImpl> Substring(size_t pos, size_t len = UINT_MAX) const;
+  static std::shared_ptr<StringImpl> Substring(const std::shared_ptr<StringImpl>& str, size_t pos, size_t len = UINT_MAX);
 
   // The high bits of 'hash' are always empty, but we prefer to store our
   // flags in the low bits because it makes them slightly more efficient to

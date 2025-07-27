@@ -111,7 +111,7 @@ AtomicString AtomicString::LowerASCII(AtomicString source) {
   std::shared_ptr<StringImpl> impl = source.Impl();
   // if impl is null, then IsLowerASCII() should have returned true.
   DCHECK(impl);
-  std::shared_ptr<StringImpl> new_impl = impl->LowerASCII();
+  std::shared_ptr<StringImpl> new_impl = StringImpl::LowerASCII(impl);
   return {std::move(new_impl)};
 }
 
@@ -123,7 +123,7 @@ AtomicString AtomicString::UpperASCII() const {
   std::shared_ptr<StringImpl> impl = Impl();
   if (UNLIKELY(!impl))
     return *this;
-  return AtomicString(impl->UpperASCII());
+  return AtomicString(StringImpl::UpperASCII(impl));
 }
 
 std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
@@ -203,7 +203,7 @@ const char16_t* AtomicString::Characters16() const {
 }
 
 AtomicString AtomicString::RemoveCharacters(webf::CharacterMatchFunctionPtr ptr) {
-  return string_->RemoveCharacters(ptr);
+  return StringImpl::RemoveCharacters(string_, ptr);
 }
 
 std::shared_ptr<StringImpl> AtomicString::AddSlowCase(std::shared_ptr<StringImpl>&& string) {

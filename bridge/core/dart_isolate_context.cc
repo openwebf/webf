@@ -96,7 +96,6 @@ void DartIsolateContext::FinalizeJSRuntime() {
 
   string_cache_->Dispose();
   string_cache_ = nullptr;
-  AtomicStringTable::Instance().Clear();
   // Prebuilt strings stored in JSRuntime. Only needs to dispose when runtime disposed.
   names_installer::Dispose();
   HTMLElementFactory::Dispose();
@@ -105,6 +104,7 @@ void DartIsolateContext::FinalizeJSRuntime() {
   ClearUpWires(runtime_);
   JS_TurnOnGC(runtime_);
   JS_FreeRuntime(runtime_);
+  AtomicStringTable::Instance().Clear();
   runtime_ = nullptr;
   is_core_global_initialized = false;
 }
