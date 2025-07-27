@@ -152,433 +152,358 @@ class _WebFScreenState extends State<WebFScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(8),
+              // Minimalist Header
+              const Text(
+                'WebF',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.black87,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Enter a URL to preview',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF666666),
+                  letterSpacing: 0.2,
+                ),
+              ),
+              
+              const SizedBox(height: 48),
+
+              // URL Input Section
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFE5E5E5),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _urlController,
+                        decoration: const InputDecoration(
+                          hintText: 'https://example.com',
+                          hintStyle: TextStyle(
+                            color: Color(0xFFBBBBBB),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        onSubmitted: isLoadingComplete ? null : (url) => _loadUrl(url, withPrerendering: true),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.explore,
-                      color: Colors.white,
-                      size: 20,
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: isLoading ? null : _scanQRCode,
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(12),
+                          bottomRight: Radius.circular(12),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          height: 56,
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              left: BorderSide(
+                                color: Color(0xFFE5E5E5),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.qr_code_scanner_rounded,
+                            color: isLoading ? const Color(0xFFCCCCCC) : const Color(0xFF666666),
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Action Buttons
+              Column(
+                children: [
+                  // Primary Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: isLoading 
+                        ? null 
+                        : isLoadingComplete
+                          ? _navigateToWebFPage
+                          : () => _loadUrl(_urlController.text, withPrerendering: true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black87,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: isLoading 
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            isLoadingComplete ? 'View Page' : 'Prerender',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'WebF Explorer',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                  const SizedBox(height: 12),
+                  // Reset Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: TextButton(
+                      onPressed: _resetState,
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF666666),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: const BorderSide(
+                            color: Color(0xFFE5E5E5),
+                            width: 1,
+                          ),
+                        ),
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: const Text(
+                        'Reset',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-              
-              const SizedBox(height: 40),
 
-              // URL Input Card
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
+              const SizedBox(height: 24),
+
+              // Status Indicators
+              if (isLoading || isLoadingComplete || loadingError != null) ...[
+                const SizedBox(height: 32),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: loadingError != null 
+                      ? const Color(0xFFFEF2F2)
+                      : isLoadingComplete 
+                        ? const Color(0xFFF0FDF4)
+                        : const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: loadingError != null 
+                        ? const Color(0xFFFEE2E2)
+                        : isLoadingComplete 
+                          ? const Color(0xFFDCFCE7)
+                          : const Color(0xFFE5E5E5),
+                      width: 1,
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Card URL',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _urlController,
-                              decoration: const InputDecoration(
-                                hintText: 'Enter Card URL',
-                                hintStyle: TextStyle(
-                                  color: Color(0xFFB0B0B0),
-                                  fontSize: 16,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.zero,
+                      if (isLoading) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF666666)),
                               ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Prerendering...',
                               style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.black,
-                              ),
-                              onSubmitted: (url) => _loadUrl(url),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F8F8),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: IconButton(
-                              onPressed: isLoading ? null : _scanQRCode,
-                              icon: const Icon(
-                                Icons.qr_code_scanner,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                                 color: Color(0xFF666666),
-                                size: 20,
                               ),
-                              tooltip: 'Scan QR Code',
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      
-                      // Two action buttons - vertical layout
-                      Column(
-                        children: [
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: (isLoading || isLoadingComplete)
-                                ? null 
-                                : () => _loadUrl(_urlController.text),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4CAF50),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Go',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
+                          ],
+                        ),
+                      ] else if (loadingError != null) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              size: 20,
+                              color: Color(0xFFDC2626),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                loadingError!,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFFDC2626),
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: ElevatedButton(
-                              onPressed: (isLoading || isLoadingComplete)
-                                ? null 
-                                : () => _loadUrl(_urlController.text, withPrerendering: true),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF4444),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: isLoading 
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Prerender',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                          ],
+                        ),
+                      ] else if (isLoadingComplete) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              size: 20,
+                              color: Color(0xFF16A34A),
                             ),
-                          ),
-                        ],
-                      ),
-                      
-                      // Helper text when buttons are disabled
-                      if (isLoadingComplete) ...[
-                        const SizedBox(height: 12),
-                        const Text(
-                          'Page is ready! Use "View Page" below or "Reset" to try another URL.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF888888),
-                          ),
-                          textAlign: TextAlign.center,
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Page ready! Click View Page to continue',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF16A34A),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],
                   ),
                 ),
+              ],
+
+              const SizedBox(height: 48),
+              
+              // Divider
+              Container(
+                height: 1,
+                color: const Color(0xFFE5E5E5),
               ),
-
-              const SizedBox(height: 24),
-
-              // Prerendering Status Card - only show when there's actual loading/result
-              if (isLoading || isLoadingComplete || loadingError != null)
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
+              
+              const SizedBox(height: 48),
+              
+              // Quick Links
+              const Text(
+                'Quick Links',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF666666),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Showcase Link
+              Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: _navigateToShowcase,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFFE5E5E5),
+                        width: 1,
                       ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
                       children: [
-                        if (isLoading) ...[
-                          const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              color: Color(0xFFFF4444),
-                              strokeWidth: 2,
-                            ),
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F5F5),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Prerendering... ${(loadingProgress * 100).toInt()}%',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
+                          child: const Icon(
+                            Icons.apps_rounded,
+                            color: Color(0xFF666666),
+                            size: 18,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            currentUrl,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ] else if (loadingError != null) ...[
-                          const Icon(
-                            Icons.error_outline,
-                            size: 32,
-                            color: Color(0xFFFF4444),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Loading Failed',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            loadingError!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 44,
-                            child: ElevatedButton(
-                              onPressed: _resetState,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFFF4444),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              child: const Text(
-                                'Reset',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ] else if (isLoadingComplete) ...[
-                          const Icon(
-                            Icons.check_circle,
-                            size: 32,
-                            color: Color(0xFF4CAF50),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Page Ready!',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'The page has been prerendered successfully',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF666666),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          Column(
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              SizedBox(
-                                width: double.infinity,
-                                height: 44,
-                                child: ElevatedButton(
-                                  onPressed: _navigateToWebFPage,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF4CAF50),
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'View Page',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                              Text(
+                                'Showcase',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.black87,
                                 ),
                               ),
-                              const SizedBox(height: 12),
-                              SizedBox(
-                                width: double.infinity,
-                                height: 44,
-                                child: ElevatedButton(
-                                  onPressed: _resetState,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFFF8F8F8),
-                                    foregroundColor: const Color(0xFF666666),
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Reset',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Browse example applications',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF999999),
                                 ),
                               ),
                             ],
                           ),
-                        ],
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Color(0xFFCCCCCC),
+                          size: 14,
+                        ),
                       ],
-                    ),
-                  ),
-                ),
-
-              if (isLoading || isLoadingComplete || loadingError != null)
-                const SizedBox(height: 24),
-
-              // Showcase Option
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: _navigateToShowcase,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.star,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          const Text(
-                            'Showcase',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            color: Color(0xFFB0B0B0),
-                            size: 16,
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
               ),
               
-              const SizedBox(height: 40), // Add some bottom padding
+              const SizedBox(height: 24), // Add some bottom padding
             ],
           ),
         ),
