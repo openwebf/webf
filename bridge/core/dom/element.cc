@@ -583,7 +583,7 @@ const AtomicString Element::getUppercasedQualifiedName() const {
   auto name = getQualifiedName();
 
   if (namespace_uri_ == element_namespace_uris::khtml) {
-    return name.LowerASCII();
+    return name.UpperASCII();
   }
 
   return name;
