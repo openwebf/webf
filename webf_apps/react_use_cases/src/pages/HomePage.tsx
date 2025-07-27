@@ -211,6 +211,32 @@ export const HomePage: React.FC = () => {
               <div className={styles.itemArrow}>&gt;</div>
             </div>
           </div>
+
+          {/* Advanced Web APIs */}
+          <div className={styles.sectionTitle}>Advanced Web APIs</div>
+          <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
+            <div className={styles.componentItem} onClick={() => navigateTo('/resize-observer')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>ResizeObserver API</div>
+                <div className={styles.itemDesc}>Monitor element size changes with responsive canvas drawing and real-time dimension tracking.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/mutation-observer')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>MutationObserver API</div>
+                <div className={styles.itemDesc}>Track DOM tree changes including attributes, child nodes, and character data mutations.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/web-storage')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Web Storage API</div>
+                <div className={styles.itemDesc}>Manage localStorage and sessionStorage with JSON data handling and storage analytics.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+          </div>
         </div> {/* End of main component-section */}
       </WebFListView>
     </div>

@@ -29,6 +29,9 @@ import { FormAdvancedPage } from './pages/FormAdvancedPage';
 import { QRCodePage } from './pages/QRCodePage';
 import { TablePage } from './pages/TablePage';
 import { GesturePage } from './pages/GesturePage';
+import { ResizeObserverPage } from './pages/ResizeObserverPage';
+import { MutationObserverPage } from './pages/MutationObserverPage';
+import { WebStoragePage } from './pages/WebStoragePage';
 import { UserDetailsPage } from './pages/routeDemo/UserDetailsPage';
 import { ReportDetailsPage } from './pages/routeDemo/ReportDetailsPage';
 import { ProfileEditPage } from './pages/routeDemo/ProfileEditPage';
@@ -65,6 +68,11 @@ function App() {
         <Route path="/image-preload" title="Image Preload" element={<ImagePreloadPage />} />
         <Route path="/theme-toggle" title="Theme Toggle" element={<ThemeTogglePage />} />
         <Route path="/gesture" title="Gesture Detection" element={<GesturePage />} />
+        
+        {/* Advanced Web APIs */}
+        <Route path="/resize-observer" title="ResizeObserver API" element={<ResizeObserverPage />} />
+        <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
+        <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
         
         {/* Dynamic Routes */}
         <Route path="/user/:userId" title="User Details" element={<UserDetailsPage />} />

@@ -1,0 +1,505 @@
+/* WebStorage page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+  margin-bottom: 100px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.componentBlock > * {
+  margin-bottom: 32px;
+}
+
+.componentBlock > *:last-child {
+  margin-bottom: 0;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Add Form */
+.addForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.addForm > * {
+  margin-bottom: 16px;
+}
+
+.addForm > *:last-child {
+  margin-bottom: 0;
+}
+
+.formRow {
+  display: flex;
+  align-items: flex-start;
+}
+
+.formRow > * {
+  margin-right: 12px;
+}
+
+.formRow > *:last-child {
+  margin-right: 0;
+}
+
+.textInput {
+  flex: 1;
+  color: white;
+  padding: 10px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.textInput:focus {
+  border-color: #2196F3;
+}
+
+.storageTypeButtons {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.typeButton {
+  padding: 10px 16px;
+  border: none;
+  background: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-right: 1px solid #e0e0e0;
+  color: #666;
+}
+
+.typeButton:last-child {
+  border-right: none;
+}
+
+.typeButton:hover {
+  background: #f8f9fa;
+}
+
+.typeButton.active {
+  background: #2196F3;
+  color: white;
+}
+
+.textArea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Courier New', monospace;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.textArea:focus {
+  border-color: #2196F3;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.formActions > * {
+  margin-right: 12px;
+  margin-bottom: 8px;
+}
+
+.formActions > *:last-child {
+  margin-right: 0;
+}
+
+.actionButton {
+  padding: 10px 16px;
+  background: #2196F3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.actionButton:hover {
+  background: #1976D2;
+}
+
+/* JSON Form */
+.jsonForm {
+  display: flex;
+  flex-direction: column;
+}
+
+.jsonForm > * {
+  margin-bottom: 16px;
+}
+
+.jsonForm > *:last-child {
+  margin-bottom: 0;
+}
+
+.jsonTextArea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Courier New', monospace;
+  outline: none;
+  resize: vertical;
+  background: #f8f9fa;
+  transition: border-color 0.2s ease;
+}
+
+.jsonTextArea:focus {
+  border-color: #2196F3;
+  background: white;
+}
+
+/* Search */
+.searchContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.searchContainer > * {
+  margin-bottom: 12px;
+}
+
+.searchContainer > *:last-child {
+  margin-bottom: 0;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.searchInput:focus {
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.searchResults {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.searchSummary {
+  font-size: 14px;
+  color: #495057;
+  font-weight: 500;
+}
+
+.clearSearchButton {
+  padding: 6px 12px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clearSearchButton:hover {
+  background: #5a6268;
+}
+
+/* Storage Section */
+.storageSection {
+  margin-bottom: 32px;
+}
+
+.storageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.storageTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  font-family: 'Courier New', monospace;
+}
+
+.storageUsage {
+  font-size: 14px;
+  color: #666;
+}
+
+.clearButton {
+  padding: 8px 12px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clearButton:hover {
+  background: #d32f2f;
+}
+
+/* Storage Table */
+.storageTable {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+}
+
+.emptyState {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  background: #fafafa;
+}
+
+.storageRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr auto;
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  align-items: flex-start;
+}
+
+.storageRow:last-child {
+  border-bottom: none;
+}
+
+.storageRow:hover {
+  background: #f8f9fa;
+}
+
+.storageKey {
+  display: flex;
+  flex-direction: column;
+  margin-right: 16px;
+}
+
+.storageKey > * {
+  margin-bottom: 4px;
+}
+
+.storageKey > *:last-child {
+  margin-bottom: 0;
+}
+
+.keyText {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: #333;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.keySize {
+  font-size: 11px;
+  color: #999;
+  font-weight: 500;
+}
+
+.storageValue {
+  max-height: 120px;
+  overflow: auto;
+  margin-right: 16px;
+}
+
+.valueText {
+  margin: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: #495057;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #f8f9fa;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.storageActions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.removeButton {
+  padding: 6px 10px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.removeButton:hover {
+  background: #d32f2f;
+}
+
+/* Info Grid */
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.infoGrid > * {
+  margin: 10px;
+}
+
+.infoCard {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.infoTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  font-family: 'Courier New', monospace;
+}
+
+.infoContent {
+  display: flex;
+  flex-direction: column;
+}
+
+.infoContent > * {
+  margin-bottom: 8px;
+}
+
+.infoContent > *:last-child {
+  margin-bottom: 0;
+}
+
+.infoStat {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.infoDesc {
+  font-size: 12px;
+  color: #6c757d;
+  line-height: 1.4;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .formRow {
+    flex-direction: column;
+  }
+  
+  .formRow > * {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+  
+  .formRow > *:last-child {
+    margin-bottom: 0;
+  }
+  
+  .storageRow {
+    grid-template-columns: 1fr;
+  }
+  
+  .storageKey,
+  .storageValue {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+  
+  .storageActions {
+    margin-bottom: 0;
+  }
+  
+  .storageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .storageHeader > * {
+    margin-bottom: 8px;
+  }
+  
+  .storageHeader > *:last-child {
+    margin-bottom: 0;
+  }
+}
