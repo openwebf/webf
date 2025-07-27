@@ -32,6 +32,7 @@ import { GesturePage } from './pages/GesturePage';
 import { ResizeObserverPage } from './pages/ResizeObserverPage';
 import { MutationObserverPage } from './pages/MutationObserverPage';
 import { WebStoragePage } from './pages/WebStoragePage';
+import { DOMBoundingRectPage } from './pages/DOMBoundingRectPage';
 import { UserDetailsPage } from './pages/routeDemo/UserDetailsPage';
 import { ReportDetailsPage } from './pages/routeDemo/ReportDetailsPage';
 import { ProfileEditPage } from './pages/routeDemo/ProfileEditPage';
@@ -73,6 +74,7 @@ function App() {
         <Route path="/resize-observer" title="ResizeObserver API" element={<ResizeObserverPage />} />
         <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
         <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
+        <Route path="/dom-bounding-rect" title="DOM Measurements API" element={<DOMBoundingRectPage />} />
         
         {/* Dynamic Routes */}
         <Route path="/user/:userId" title="User Details" element={<UserDetailsPage />} />

@@ -236,6 +236,13 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/dom-bounding-rect')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>DOM Measurements API</div>
+                <div className={styles.itemDesc}>Real-time element positioning and size tracking with getBoundingClientRect() demonstrations.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
           </div>
         </div> {/* End of main component-section */}
       </WebFListView>
