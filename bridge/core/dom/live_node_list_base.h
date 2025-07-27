@@ -40,7 +40,7 @@ class Document;
 class ContainerNode;
 class Node;
 
-class LiveNodeListBase : public GarbageCollectedMixin {
+class LiveNodeListBase : public ScriptWrappable {
  public:
   explicit LiveNodeListBase(ContainerNode& owner_node,
                             NodeListSearchRoot search_root,
@@ -49,7 +49,8 @@ class LiveNodeListBase : public GarbageCollectedMixin {
       : owner_node_(&owner_node),
         search_root_(static_cast<unsigned>(search_root)),
         invalidation_type_(invalidation_type),
-        collection_type_(collection_type) {
+        collection_type_(collection_type),
+        ScriptWrappable(owner_node.ctx()) {
     assert(search_root_ == static_cast<unsigned>(search_root));
     assert(invalidation_type_ == static_cast<unsigned>(invalidation_type));
     assert(collection_type_ == static_cast<unsigned>(collection_type));

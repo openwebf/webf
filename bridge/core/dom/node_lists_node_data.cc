@@ -48,6 +48,10 @@ void NodeListsNodeData::InvalidateCaches(const QualifiedName* attr_name) {
 
 void NodeListsNodeData::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(child_node_list_);
+
+  for (const auto& entry : atomic_name_caches_) {
+    visitor->TraceMember(entry.second);
+  }
   // visitor->Trace(atomic_name_caches_);
 
   for (const auto& entry : tag_collection_ns_caches_) {

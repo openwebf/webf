@@ -63,7 +63,7 @@ class HTMLCollectionIterator {
 };
 
 // blink::HTMLCollection implements HTMLCollection IDL interface.
-class HTMLCollection : public ScriptWrappable, public LiveNodeListBase {
+class HTMLCollection : public LiveNodeListBase {
   DEFINE_WRAPPERTYPEINFO();
 
  public:

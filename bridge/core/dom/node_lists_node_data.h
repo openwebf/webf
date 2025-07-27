@@ -78,7 +78,7 @@ class NodeListsNodeData final {
   };
 
   typedef std::unordered_map<NamedNodeListKey,
-                             std::shared_ptr<LiveNodeListBase>,
+                             Member<LiveNodeListBase>,
                              NodeListAtomicCacheMapEntryHashTraits::Hash,
                              NodeListAtomicCacheMapEntryHashTraits::Equal>
       NodeListAtomicNameCacheMap;
@@ -89,7 +89,7 @@ class NodeListsNodeData final {
     NamedNodeListKey key(collection_type, name);
     auto result = atomic_name_caches_.insert({key, nullptr});
     if (!result.second) {
-      return static_cast<T*>(result.first->second.get());
+      return static_cast<T*>(result.first->second);
     }
 
     auto* list = MakeGarbageCollected<T>(node, collection_type, name);
@@ -100,20 +100,19 @@ class NodeListsNodeData final {
   template <typename T>
   T* AddCache(ContainerNode& node, CollectionType collection_type) {
     NamedNodeListKey key(collection_type, CSSSelector::UniversalSelectorAtom());
-    auto result = atomic_name_caches_.insert({key, nullptr});
-    if (!result.second) {
-      return static_cast<T*>(result.first->second.get());
+    if (atomic_name_caches_.count(key) > 0) {
+      return static_cast<T*>(atomic_name_caches_[key].Get());
     }
 
-    auto list = std::make_shared<T>(node, collection_type);
-    result.first->second = list;
-    return list.get();
+    auto list = MakeGarbageCollected<T>(node, collection_type);
+    auto result = atomic_name_caches_.insert({key, list});
+    return list;
   }
 
   template <typename T>
   T* Cached(CollectionType collection_type) {
     auto it = atomic_name_caches_.find(NamedNodeListKey(collection_type, CSSSelector::UniversalSelectorAtom()));
-    return static_cast<T*>(it != atomic_name_caches_.end() ? it->second.get() : nullptr);
+    return static_cast<T*>(it != atomic_name_caches_.end() ? it->second : nullptr);
   }
 
   TagCollectionNS* AddCache(ContainerNode& node, const AtomicString& namespace_uri, const AtomicString& local_name) {
@@ -144,7 +143,7 @@ class NodeListsNodeData final {
     NodeListAtomicNameCacheMap::const_iterator atomic_name_cache_end = atomic_name_caches_.end();
     for (NodeListAtomicNameCacheMap::const_iterator it = atomic_name_caches_.begin(); it != atomic_name_cache_end;
          ++it) {
-      LiveNodeListBase* list = it->second.get();
+      LiveNodeListBase* list = it->second;
       list->DidMoveToDocument(old_document, new_document);
     }
 

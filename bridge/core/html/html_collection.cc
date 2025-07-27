@@ -157,8 +157,7 @@ HTMLCollection::HTMLCollection(ContainerNode& owner_node,
                        InvalidationTypeExcludingIdAndNameAttributes(type),
                        type),
       overrides_item_after_(item_after_override_type == kOverridesItemAfter),
-      should_only_include_direct_children_(ShouldTypeOnlyIncludeDirectChildren(type)),
-      ScriptWrappable(owner_node.ctx()) {
+      should_only_include_direct_children_(ShouldTypeOnlyIncludeDirectChildren(type)) {
   // Keep this in the child class because |registerNodeList| requires wrapper
   // tracing and potentially calls virtual methods which is not allowed in a
   // base class constructor.
