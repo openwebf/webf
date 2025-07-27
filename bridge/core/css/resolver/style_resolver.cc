@@ -374,7 +374,8 @@ void StyleResolver::MatchAuthorRules(
     
     if (node->IsElementNode()) {
       Element* elem = static_cast<Element*>(node);
-      if (elem->tagName() == html_names::kStyle) {
+      // Use localName() instead of tagName() since tagName() returns uppercase for HTML
+      if (elem->localName() == html_names::kStyle) {
         style_elements.push_back(elem);
       }
     }
@@ -400,7 +401,8 @@ void StyleResolver::MatchAuthorRules(
     }
     
     // Check if this is a style element
-    if (style_element->tagName() != html_names::kStyle) {
+    // Note: tagName() returns uppercase for HTML elements
+    if (style_element->localName() != html_names::kStyle) {
       continue;
     }
     

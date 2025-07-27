@@ -48,6 +48,7 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t le
   char* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
   memcpy(data, characters, length * sizeof(char));
+  data[length] = '\0';  // Add null termination
   unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(characters, length);
   string->SetHash(hash);
   return string;
@@ -60,6 +61,7 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_
   char16_t* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
   memcpy(data, characters, length * sizeof(char16_t));
+  data[length] = '\0';  // Add null termination
   unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(characters, length);
   string->SetHash(hash);
   return string;
@@ -88,7 +90,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char1
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<char16_t>(length) + 1));
+  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<char16_t>(length) + sizeof(char16_t)));
   data = reinterpret_cast<char16_t*>(string + 1);
 
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length));
@@ -269,7 +271,9 @@ static inline uint32_t DecodeUTF8Char(const uint8_t*& p, const uint8_t* end) {
   if ((c & 0xF0) == 0xE0) {
     // 3-byte sequence
     if (p + 1 >= end || (*p & 0xC0) != 0x80 || (*(p+1) & 0xC0) != 0x80) return 0xFFFD;
-    c = ((c & 0x0F) << 12) | ((*p++ & 0x3F) << 6) | (*p++ & 0x3F);
+    uint8_t b1 = *p++;
+    uint8_t b2 = *p++;
+    c = ((c & 0x0F) << 12) | ((b1 & 0x3F) << 6) | (b2 & 0x3F);
     if (c < 0x800 || (c >= 0xD800 && c <= 0xDFFF)) return 0xFFFD;  // Overlong or surrogate
     return c;
   }
@@ -277,7 +281,10 @@ static inline uint32_t DecodeUTF8Char(const uint8_t*& p, const uint8_t* end) {
   if ((c & 0xF8) == 0xF0) {
     // 4-byte sequence
     if (p + 2 >= end || (*p & 0xC0) != 0x80 || (*(p+1) & 0xC0) != 0x80 || (*(p+2) & 0xC0) != 0x80) return 0xFFFD;
-    c = ((c & 0x07) << 18) | ((*p++ & 0x3F) << 12) | ((*p++ & 0x3F) << 6) | (*p++ & 0x3F);
+    uint8_t b1 = *p++;
+    uint8_t b2 = *p++;
+    uint8_t b3 = *p++;
+    c = ((c & 0x07) << 18) | ((b1 & 0x3F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
     if (c < 0x10000 || c > 0x10FFFF) return 0xFFFD;  // Overlong or out of range
     return c;
   }
@@ -342,7 +349,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const char* utf8_data, si
       uint32_t c = DecodeUTF8Char(scan, end);
       data[i++] = static_cast<char>(c);
     }
-    data[char_count] = 0;
+    data[char_count] = '\0';  // Add null termination
     
     unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, char_count);
     string->SetHash(hash);
@@ -370,6 +377,7 @@ std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const char* utf8_data, si
         data[i++] = static_cast<char16_t>(c);
       }
     }
+    data[char_count] = '\0';  // Add null termination
     
     unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, char_count);
     string->SetHash(hash);

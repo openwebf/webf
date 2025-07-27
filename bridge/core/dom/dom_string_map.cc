@@ -8,10 +8,9 @@
 
 namespace webf {
 
-bool startsWith(const char* str, const char* prefix) {
-  size_t len_str = strlen(str);
+bool startsWith(const char* str, size_t str_len, const char* prefix) {
   size_t len_prefix = strlen(prefix);
-  if (len_str < len_prefix)
+  if (str_len < len_prefix)
     return false;
   return strncmp(str, prefix, len_prefix) == 0;
 }
@@ -20,7 +19,7 @@ static bool IsValidAttributeName(const AtomicString& name) {
   if (!name.Is8Bit())
     return false;
 
-  if (!startsWith((const char*)name.Characters8(), "data-"))
+  if (!startsWith((const char*)name.Characters8(), name.length(), "data-"))
     return false;
 
   const int64_t length = name.length();

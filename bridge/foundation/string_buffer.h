@@ -74,9 +74,11 @@ class StringBuffer {
 template <typename CharType>
 void StringBuffer<CharType>::Shrink(unsigned new_length) {
   DCHECK(data_);
-  if (data_->length() == new_length)
+  if (!data_ || data_->length() == new_length)
     return;
-  data_ = data_->Substring(0, new_length);
+  // Create a copy of the shared_ptr to ensure it's not null during the call
+  auto current_data = data_;
+  data_ = StringImpl::Substring(current_data, 0, new_length);
 }
 
 }  // namespace webf

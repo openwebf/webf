@@ -18,6 +18,7 @@
 #include "core/html/html_element.h"
 #include "core/html/html_div_element.h"
 #include "core/html/html_paragraph_element.h"
+#include "html_names.h"
 #include "core/style/computed_style.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
@@ -121,8 +122,10 @@ TEST_F(StyleResolverTest, ResolveStyleForElement) {
   
   
   // Check element tag name
-  EXPECT_EQ(element->tagName(), AtomicString("div")) << "Element tag name should be div";
-  EXPECT_EQ(element->localName(), AtomicString("div")) << "Element local name should be div";
+  // Note: tagName() returns uppercase for HTML elements
+  auto tag_name = element->tagName();
+  EXPECT_EQ(tag_name.ToStdString(), "DIV") << "Element tag name should be DIV";
+  EXPECT_EQ(element->localName(), html_names::kDiv) << "Element local name should be div";
   
   // Create style resolver
   StyleResolver resolver(*GetDocument());
@@ -203,8 +206,10 @@ TEST_F(StyleResolverTest, UAStylesheetBodyDisplay) {
   ASSERT_NE(body, nullptr);
   
   // Check body element tag name
-  EXPECT_EQ(body->tagName(), AtomicString("body")) << "Body tag name should be body";
-  EXPECT_EQ(body->localName(), AtomicString("body")) << "Body local name should be body";
+  // Note: tagName() returns uppercase for HTML elements
+  auto body_tag_name = body->tagName();
+  EXPECT_EQ(body_tag_name.ToStdString(), "BODY") << "Body tag name should be BODY";
+  EXPECT_EQ(body->localName(), html_names::kBody) << "Body local name should be body";
   
   // Create style resolver
   StyleResolver resolver(*GetDocument());
@@ -230,8 +235,10 @@ TEST_F(StyleResolverTest, UAStylesheetParagraphDisplay) {
   GetDocument()->body()->appendChild(paragraph, ASSERT_NO_EXCEPTION());
   
   // Check paragraph tag name
-  EXPECT_EQ(paragraph->tagName(), AtomicString("p")) << "Paragraph tag name should be p";
-  EXPECT_EQ(paragraph->localName(), AtomicString("p")) << "Paragraph local name should be p";
+  // Note: tagName() returns uppercase for HTML elements
+  auto p_tag_name = paragraph->tagName();
+  EXPECT_EQ(p_tag_name.ToStdString(), "P") << "Paragraph tag name should be P";
+  EXPECT_EQ(paragraph->localName(), html_names::kP) << "Paragraph local name should be p";
   
   // Create style resolver
   StyleResolver resolver(*GetDocument());
