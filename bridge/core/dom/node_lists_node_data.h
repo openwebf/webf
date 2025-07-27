@@ -100,12 +100,13 @@ class NodeListsNodeData final {
   template <typename T>
   T* AddCache(ContainerNode& node, CollectionType collection_type) {
     NamedNodeListKey key(collection_type, CSSSelector::UniversalSelectorAtom());
-    if (atomic_name_caches_.count(key) > 0) {
-      return static_cast<T*>(atomic_name_caches_[key].Get());
+    auto it = atomic_name_caches_.find(key);
+    if (it != atomic_name_caches_.end()) {
+      return static_cast<T*>(it->second.Get());
     }
 
-    auto list = MakeGarbageCollected<T>(node, collection_type);
-    auto result = atomic_name_caches_.insert({key, list});
+    auto* list = MakeGarbageCollected<T>(node, collection_type);
+    atomic_name_caches_.insert({key, list});
     return list;
   }
 

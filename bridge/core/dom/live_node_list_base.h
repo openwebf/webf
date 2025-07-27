@@ -46,11 +46,11 @@ class LiveNodeListBase : public ScriptWrappable {
                             NodeListSearchRoot search_root,
                             NodeListInvalidationType invalidation_type,
                             CollectionType collection_type)
-      : owner_node_(&owner_node),
+      : ScriptWrappable(owner_node.ctx()),
+        owner_node_(&owner_node),
         search_root_(static_cast<unsigned>(search_root)),
         invalidation_type_(invalidation_type),
-        collection_type_(collection_type),
-        ScriptWrappable(owner_node.ctx()) {
+        collection_type_(collection_type) {
     assert(search_root_ == static_cast<unsigned>(search_root));
     assert(invalidation_type_ == static_cast<unsigned>(invalidation_type));
     assert(collection_type_ == static_cast<unsigned>(collection_type));
