@@ -151,19 +151,22 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
     return std::make_unique<SharedNativeString>(buffer, string_->length());
 #else
     uint32_t len = string_->length();
-    uint16_t* u16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * len);
+    uint16_t* u16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * (len + 1));
     for (size_t i = 0; i < len; i++) {
-      u16_buffer[i] = p[i];
+      u16_buffer[i] = static_cast<uint8_t>(p[i]);
     }
+    u16_buffer[len] = 0;  // Null terminate
 
-    return std::make_unique<SharedNativeString>(reinterpret_cast<uint16_t*>(u16_buffer), len);
+    return std::make_unique<SharedNativeString>(u16_buffer, len);
 #endif
   } else {
     const char16_t* p = string_->Characters16();
-    uint16_t* buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * string_->length());
-    memcpy(buffer, p, sizeof(uint16_t) * string_->length());
+    uint32_t len = string_->length();
+    uint16_t* buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * (len + 1));
+    memcpy(buffer, p, sizeof(uint16_t) * len);
+    buffer[len] = 0;  // Null terminate
 
-    return std::make_unique<SharedNativeString>(buffer, string_->length());
+    return std::make_unique<SharedNativeString>(buffer, len);
   }
 }
 

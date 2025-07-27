@@ -51,7 +51,7 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(const char* chars, unsigned i
   if (!length)
     return StringImpl::empty_shared();
 
-  std::shared_ptr<StringImpl> ptr = StringImpl::CreateFromUTF8(chars, length);
+  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
 
   auto result = table_.insert(ptr);
 
