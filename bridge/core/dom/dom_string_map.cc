@@ -16,16 +16,30 @@ bool startsWith(const char* str, size_t str_len, const char* prefix) {
 }
 
 static bool IsValidAttributeName(const AtomicString& name) {
-  if (!name.Is8Bit())
+  // Check if name starts with "data-"
+  if (name.length() < 5)
     return false;
-
-  if (!startsWith((const char*)name.Characters8(), name.length(), "data-"))
-    return false;
-
-  const int64_t length = name.length();
-  for (unsigned i = 5; i < length; ++i) {
-    if (IsASCIIUpper(name.Characters8()[i]))
+    
+  if (name.Is8Bit()) {
+    if (!startsWith((const char*)name.Characters8(), name.length(), "data-"))
       return false;
+      
+    const int64_t length = name.length();
+    for (unsigned i = 5; i < length; ++i) {
+      if (IsASCIIUpper(name.Characters8()[i]))
+        return false;
+    }
+  } else {
+    // For 16-bit strings, check prefix manually
+    const char16_t* chars = name.Characters16();
+    if (chars[0] != 'd' || chars[1] != 'a' || chars[2] != 't' || chars[3] != 'a' || chars[4] != '-')
+      return false;
+      
+    const int64_t length = name.length();
+    for (unsigned i = 5; i < length; ++i) {
+      if (IsASCIIUpper(chars[i]))
+        return false;
+    }
   }
 
   return true;
@@ -88,23 +102,48 @@ static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
 
 // This returns an AtomicString because attribute names are always stored
 // as AtomicString types in Element (see setAttribute()).
-static std::string ConvertPropertyNameToAttributeName(const std::string& name) {
+static AtomicString ConvertPropertyNameToAttributeName(const AtomicString& name) {
   std::string result;
-  result.reserve(name.size() + 5);  // For performance optimization, reserve enough space beforehand
+  result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
   result.append("data-");
 
-  unsigned length = name.length();
-  for (unsigned i = 0; i < length; ++i) {
-    char character = name[i];
-    if (std::isupper(character)) {
-      result.push_back('-');
-      result.push_back(std::tolower(character));
-    } else {
-      result.push_back(character);
+  if (name.Is8Bit()) {
+    const char* chars = name.Characters8();
+    unsigned length = name.length();
+    for (unsigned i = 0; i < length; ++i) {
+      unsigned char character = chars[i];
+      if (std::isupper(character)) {
+        result.push_back('-');
+        result.push_back(std::tolower(character));
+      } else {
+        result.push_back(character);
+      }
+    }
+  } else {
+    // Handle 16-bit strings by converting to UTF-8
+    const char16_t* chars = name.Characters16();
+    unsigned length = name.length();
+    for (unsigned i = 0; i < length; ++i) {
+      char16_t ch = chars[i];
+      if (ch < 0x80 && std::isupper(ch)) {
+        result.push_back('-');
+        result.push_back(std::tolower(ch));
+      } else if (ch < 0x80) {
+        result.push_back(static_cast<char>(ch));
+      } else if (ch < 0x800) {
+        // 2-byte UTF-8
+        result.push_back(static_cast<char>(0xC0 | (ch >> 6)));
+        result.push_back(static_cast<char>(0x80 | (ch & 0x3F)));
+      } else {
+        // 3-byte UTF-8
+        result.push_back(static_cast<char>(0xE0 | (ch >> 12)));
+        result.push_back(static_cast<char>(0x80 | ((ch >> 6) & 0x3F)));
+        result.push_back(static_cast<char>(0x80 | (ch & 0x3F)));
+      }
     }
   }
 
-  return result;
+  return AtomicString(result);
 }
 
 std::string ConvertAttributeNameToPropertyName(const std::string& name) {
@@ -170,13 +209,13 @@ bool DOMStringMap::SetItem(const webf::AtomicString& key,
     return false;
   }
 
-  auto attribute_name = AtomicString(ConvertPropertyNameToAttributeName(key.ToStdString()));
+  auto attribute_name = ConvertPropertyNameToAttributeName(key);
   return owner_element_->attributes()->setAttribute(attribute_name, value, exception_state);
 }
 
 bool DOMStringMap::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
   if (IsValidPropertyName(key)) {
-    auto attribute_name = AtomicString(ConvertPropertyNameToAttributeName(key.ToStdString()));
+    auto attribute_name = ConvertPropertyNameToAttributeName(key);
     owner_element_->attributes()->removeAttribute(attribute_name, exception_state);
     return true;
   }

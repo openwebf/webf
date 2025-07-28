@@ -129,7 +129,7 @@ describe('Dataset set', function () {
   test(function() { assert_true(testSet('\xE0', 'data-\xE0')); },
     "Setting element.dataset['\xE0'] should also change the value of element.getAttribute('data-\xE0')");
   test(function() { assert_true(testSet('\u0BC6foo', 'data-\u0BC6foo')); },
-    "Setting element.dataset['\u0BC6foo'] should also change the value of element.getAttribute('\u0BC6foo')");
+    "Setting element.dataset['\u0BC6foo'] should also change the value of element.getAttribute('data-\u0BC6foo')");
 });
 
 describe('DataSet', function () {
