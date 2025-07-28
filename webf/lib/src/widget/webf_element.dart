@@ -16,11 +16,11 @@ class WebFHTMLElement extends WebFRenderLayoutWidgetAdaptor {
   WebFHTMLElement({
     required this.tagName,
     required this.controller,
-    Key? key,
+    super.key,
     required this.parentElement,
-    required List<Widget> children,
+    required super.children,
     this.inlineStyle,
-  }) : super(key: key, children: children);
+  });
 
   @override
   RenderObject createRenderObject(BuildContext context) {
@@ -82,8 +82,7 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
   @override
   void mount(Element? parent, Object? newSlot) {
     dom.Element element = dom.createElement(
-        tagName,
-        BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
+        tagName, BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
     element.managedByFlutterWidget = true;
     element.parentOrShadowHostNode = widget.parentElement;
     element.isConnected = true;

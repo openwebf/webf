@@ -88,7 +88,7 @@ class GestureDispatcher {
         });
       }
 
-      if (targetBoxModel != null) {
+      if (targetBoxModel != null && !targetBoxModel!.renderStyle.isSelfAnonymousFlowLayout()) {
         target = targetBoxModel?.renderStyle.target as EventTarget;
       }
     }

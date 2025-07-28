@@ -9,7 +9,6 @@ import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/logic_box.dart';
 
 /// RenderBox of a replaced element whose content is outside the scope of the CSS formatting model,
 /// such as an image or embedded document.
@@ -163,11 +162,6 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       return hitTestIntrinsicChild(result, child, position!);
     }
     return super.hitTestChildren(result, position: position!);
-  }
-
-  @override
-  LogicInlineBox createLogicInlineBox() {
-    return LogicInlineBox(renderObject: this);
   }
 }
 

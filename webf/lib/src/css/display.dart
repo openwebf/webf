@@ -25,9 +25,6 @@ mixin CSSDisplayMixin on RenderStyle {
     if (_display != value) {
       _display = value;
       markNeedsLayout();
-
-      // The display changes of the node may affect the whitespace of the nextSibling and previousSibling text node so prev and next node require layout.
-      markAdjacentRenderParagraphNeedsLayout();
     }
   }
 
@@ -60,36 +57,51 @@ mixin CSSDisplayMixin on RenderStyle {
   CSSDisplay get effectiveDisplay {
     CSSDisplay transformedDisplay = display;
 
-    // Must take `position` from style because it inited before flush pending properties.
-    // Display as inline-block when element is positioned
-    if (position == CSSPositionType.absolute || position == CSSPositionType.fixed) {
-      return CSSDisplay.inlineBlock;
+    // Helper function to blockify display values
+    CSSDisplay blockifyDisplay(CSSDisplay display) {
+      switch (display) {
+        case CSSDisplay.inline:
+          return CSSDisplay.block;
+        case CSSDisplay.inlineBlock:
+          return CSSDisplay.block;
+        case CSSDisplay.inlineFlex:
+          return CSSDisplay.flex;
+      // Note: inline-grid and inline-table would go here when supported
+        default:
+        // Block-level elements remain unchanged
+          return display;
+      }
     }
 
+    // 1. Absolutely positioned elements are blockified
+    // https://www.w3.org/TR/css-display-3/#transformations
+    if (position == CSSPositionType.absolute || position == CSSPositionType.fixed) {
+      return blockifyDisplay(transformedDisplay);
+    }
 
-    if (hasRenderBox()) {
-      if (!isParentRenderBoxModel()) {
-        return transformedDisplay;
-      } else if (isParentRenderFlexLayout()) {
-        // Margin change in flex layout may affect transformed display
-        // https://www.w3.org/TR/css-display-3/#transformations
+    // 2. Floated elements are blockified
+    // https://www.w3.org/TR/css-display-3/#transformations
+    // TODO: Implement when float property is supported in WebF
+    // if (float == CSSFloat.left || float == CSSFloat.right) {
+    //   return blockifyDisplay(transformedDisplay);
+    // }
 
-        // Display as inline-block if parent node is flex
-        transformedDisplay = CSSDisplay.inlineBlock;
-        RenderStyle parentRenderStyle = getParentRenderStyle()!;
-
-        bool isVerticalDirection = parentRenderStyle.flexDirection == FlexDirection.column ||
-            parentRenderStyle.flexDirection == FlexDirection.columnReverse;
-        // Flex item will not stretch in stretch alignment when flex wrap is set to wrap or wrap-reverse
-        bool isFlexNoWrap = parentRenderStyle.flexWrap == FlexWrap.nowrap;
-        bool isStretchSelf = alignSelf != AlignSelf.auto
-            ? alignSelf == AlignSelf.stretch
-            : parentRenderStyle.alignItems == AlignItems.stretch;
-
-        // Display as block if flex vertical layout children and stretch children
-        if (!marginLeft.isAuto && !marginRight.isAuto && isVerticalDirection && isFlexNoWrap && isStretchSelf) {
-          transformedDisplay = CSSDisplay.block;
+    // 3. Flex items are blockified (children of flex containers)
+    // https://www.w3.org/TR/css-display-3/#transformations
+    if (hasRenderBox() && isParentRenderBoxModel()) {
+      RenderStyle? parentRenderStyle = getParentRenderStyle();
+      if (parentRenderStyle != null) {
+        // Check if parent is a flex container
+        if (parentRenderStyle.display == CSSDisplay.flex ||
+            parentRenderStyle.display == CSSDisplay.inlineFlex) {
+          transformedDisplay = blockifyDisplay(transformedDisplay);
         }
+
+        // 4. Grid items would be blockified here when grid is supported
+        // if (parentRenderStyle.display == CSSDisplay.grid ||
+        //     parentRenderStyle.display == CSSDisplay.inlineGrid) {
+        //   transformedDisplay = blockifyDisplay(transformedDisplay);
+        // }
       }
     }
 

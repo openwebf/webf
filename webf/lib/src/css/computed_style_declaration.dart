@@ -802,6 +802,9 @@ extension VisibilityText on Visibility {
   }
 }
 
+enum WhiteSpace { normal, nowrap, pre, preWrap, preLine, breakSpaces }
+
+
 extension WhiteSpaceText on WhiteSpace {
   String cssText() {
     switch (this) {

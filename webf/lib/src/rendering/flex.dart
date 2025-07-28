@@ -620,8 +620,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       } else {
         return child.getConstraints();
       }
-    } else if (child is RenderTextBox) {
-      return child.getConstraints(webfTextMaxLines);
     } else {
       return BoxConstraints();
     }
@@ -2095,9 +2093,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     void iterateRunChildren(int? hashCode, _RunChild runChild) {
       RenderBox child = runChild.child;
       double runChildMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
-      if (child is RenderTextBox) {
-        runChildMainSize = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
-      }
       // Should add main axis margin of child to the main axis auto size of parent.
       if (child is RenderBoxModel) {
         double childMarginTop = child.renderStyle.marginTop.computedValue;
@@ -2143,9 +2138,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     void iterateRunChildren(int? hashCode, _RunChild runChild) {
       RenderBox child = runChild.child;
       double runChildCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
-      if (child is RenderTextBox) {
-        runChildCrossSize = _isHorizontalFlexDirection ? child.minContentHeight : child.minContentWidth;
-      }
       runChildrenCrossSize.add(runChildCrossSize);
     }
 
@@ -2831,8 +2823,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     double? childBaseLineDistance = 0;
     if (child is RenderBoxModel) {
       childBaseLineDistance = child.computeDistanceToBaseline();
-    } else if (child is RenderTextBox) {
-      childBaseLineDistance = child.computeDistanceToFirstLineBaseline();
     }
 
     // Baseline of relative positioned element equals its original position
@@ -2858,8 +2848,6 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (child is RenderBoxModel) {
       childSize = child.boxSize;
     } else if (child is RenderPositionPlaceholder) {
-      childSize = child.boxSize;
-    } else if (child is RenderTextBox) {
       childSize = child.boxSize;
     } else if (child != null && child.hasSize) {
       // child is WidgetElement.
@@ -2967,11 +2955,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       case FlexDirection.columnReverse:
         return false;
     }
-  }
-
-  @override
-  LogicInlineBox createLogicInlineBox() {
-    return LogicInlineBox(renderObject: this);
   }
 }
 

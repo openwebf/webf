@@ -50,7 +50,7 @@ void main() {
       final container = prepared.getElementById('container');
       final text = prepared.getElementById('text');
       final rect = text.getBoundingClientRect();
-      
+
       // In left alignment, text should start near the left edge
       expect(rect.left, lessThan(10), reason: 'Text should be near left edge');
       expect(text.offsetWidth, greaterThan(0), reason: 'Text should be rendered');
@@ -73,11 +73,11 @@ void main() {
 
       final container = prepared.getElementById('container');
       final text = prepared.getElementById('text');
-      
+
       // The text element itself should span the full container width
       expect(text.offsetWidth, equals(container.offsetWidth - 2), // minus borders
         reason: 'P element should span container width');
-      
+
       // For center alignment, we mainly verify through visual testing
       // since text metrics are complex to calculate precisely
     });
@@ -98,7 +98,7 @@ void main() {
       );
 
       final text = prepared.getElementById('text');
-      
+
       // P element should still span full width
       expect(text.offsetWidth, greaterThan(280), reason: 'P element should span most of container');
     });
@@ -119,7 +119,7 @@ void main() {
       );
 
       final child = prepared.getElementById('child');
-      
+
       // Child should inherit text-align from parent
       // We can't directly check computed style in WebF, but the layout should reflect it
       expect(child.offsetWidth, greaterThan(0), reason: 'Child should be rendered');
@@ -143,7 +143,7 @@ void main() {
 
       final override = prepared.getElementById('override');
       final inherit = prepared.getElementById('inherit');
-      
+
       // Both paragraphs should be rendered
       expect(override.offsetWidth, greaterThan(0));
       expect(inherit.offsetWidth, greaterThan(0));
@@ -167,7 +167,7 @@ void main() {
       );
 
       final text = prepared.getElementById('text');
-      
+
       // Line height should affect the element's height
       expect(text.offsetHeight, greaterThan(30), reason: 'Line height should increase element height');
     });
@@ -195,12 +195,12 @@ void main() {
       final container = prepared.getElementById('container');
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
-      
+
       // Verify container and flex items are rendered
       expect(container.offsetWidth, equals(300), reason: 'Container should be 300px wide');
       expect(item1.offsetWidth, greaterThan(0), reason: 'First flex item should have width');
       expect(item2.offsetWidth, greaterThan(0), reason: 'Second flex item should have width');
-      
+
       // Text-align should work within the flex items
       // The actual width distribution depends on content and WebF's flex implementation
     });
@@ -225,11 +225,11 @@ void main() {
       final container = prepared.getElementById('container');
       final block = prepared.getElementById('block');
       final inlineBlock = prepared.getElementById('inline-block');
-      
+
       // Block element should not be centered (stays at left edge)
       final blockRect = block.getBoundingClientRect();
       expect(blockRect.left, lessThan(10), reason: 'Block element should stay at left edge');
-      
+
       // Inline-block should be affected by text-align: center
       final inlineBlockRect = inlineBlock.getBoundingClientRect();
       // In WebF, centering behavior might be different
@@ -259,20 +259,20 @@ void main() {
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
       final item3 = prepared.getElementById('item3');
-      
+
       // With baseline alignment, items should be positioned so their text baselines align
       // We can verify they have different top positions due to different font sizes
       final rect1 = item1.getBoundingClientRect();
       final rect2 = item2.getBoundingClientRect();
       final rect3 = item3.getBoundingClientRect();
-      
+
       // With baseline alignment, items align along their text baselines
       // The actual positioning depends on WebF's implementation
       // We can verify all items are rendered and positioned
       expect(rect1.height, greaterThan(0), reason: 'Item 1 should be rendered');
       expect(rect2.height, greaterThan(0), reason: 'Item 2 should be rendered');
       expect(rect3.height, greaterThan(0), reason: 'Item 3 should be rendered');
-      
+
       // Items should be within the container
       expect(rect1.top, greaterThanOrEqualTo(0));
       expect(rect2.top, greaterThanOrEqualTo(0));
@@ -302,18 +302,18 @@ void main() {
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
       final item3 = prepared.getElementById('item3');
-      
+
       // First and third items should be centered vertically
       // Second item with align-self: baseline might behave differently
       final rect1 = item1.getBoundingClientRect();
       final rect2 = item2.getBoundingClientRect();
       final rect3 = item3.getBoundingClientRect();
-      
+
       // All items should be rendered with proper dimensions
       expect(rect1.height, greaterThan(0), reason: 'Item 1 should have height');
       expect(rect2.height, greaterThan(0), reason: 'Item 2 should have height');
       expect(rect3.height, greaterThan(0), reason: 'Item 3 should have height');
-      
+
       // Verify items exist and have dimensions
       expect(item1.offsetHeight, greaterThan(0));
       expect(item2.offsetHeight, greaterThan(0));
@@ -344,7 +344,7 @@ void main() {
       final item1 = prepared.getElementById('item1');
       final item2 = prepared.getElementById('item2');
       final item3 = prepared.getElementById('item3');
-      
+
       // Empty inline-flex elements should synthesize a baseline
       // They should have their specified dimensions
       expect(item1.offsetWidth, equals(50), reason: 'Item 1 should have 50px width');
@@ -375,16 +375,16 @@ void main() {
 
       final img = prepared.getElementById('img');
       final text = prepared.getElementById('text');
-      
+
       // Image and text should both be rendered
       expect(img.offsetWidth, equals(30));
       expect(img.offsetHeight, equals(30));
       expect(text.offsetHeight, greaterThan(0));
-      
+
       // Image baseline is typically at the bottom edge
       final imgRect = img.getBoundingClientRect();
       final textRect = text.getBoundingClientRect();
-      
+
       // Both elements should be aligned somehow (complex to verify exact baseline)
       expect(imgRect.top, greaterThanOrEqualTo(0));
       expect(textRect.top, greaterThanOrEqualTo(0));
@@ -415,7 +415,7 @@ void main() {
       final nested1 = prepared.getElementById('nested1');
       final nested2 = prepared.getElementById('nested2');
       final outerText = prepared.getElementById('outer-text');
-      
+
       // All elements should be rendered
       expect(outer.offsetHeight, greaterThan(0));
       expect(inner.offsetHeight, greaterThan(0));

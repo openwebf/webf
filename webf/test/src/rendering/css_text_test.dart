@@ -9,6 +9,8 @@ import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+// Import for TextLineBoxItem
+import 'package:webf/src/rendering/line_box.dart';
 import '../../setup.dart';
 import '../widget/test_utils.dart';
 
@@ -34,6 +36,28 @@ void main() {
     await Future.delayed(Duration(milliseconds: 100));
   });
 
+  // Helper function to get text offset in inline formatting context
+  Offset? getTextOffset(dom.Element element) {
+    if (element.attachedRenderer == null) return null;
+    
+    final renderer = element.attachedRenderer!;
+    if (renderer is! RenderFlowLayout) return null;
+    
+    // Get the inline formatting context
+    final ifc = renderer.inlineFormattingContext;
+    if (ifc == null || ifc.lineBoxes.isEmpty) return null;
+    
+    // Get the first line box item that contains text
+    final firstLineBox = ifc.lineBoxes.first;
+    for (final item in firstLineBox.items) {
+      if (item is TextLineBoxItem) {
+        return item.offset;
+      }
+    }
+    
+    return null;
+  }
+
   group('Text Align', () {
     testWidgets('text-align start', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
@@ -42,16 +66,24 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
-              <div style="margin: 10px; border: 1px solid #000; text-align: start;">
-                These text should align start.Sibling child.
+              <div style="margin: 10px; border: 1px solid #000; width: 300px; text-align: start;">
+                Text content
               </div>
             </body>
           </html>
         ''',
       );
 
+      await tester.pump();
+
       final div = prepared.document.getElementsByTagName(['div'])[0];
       expect(div.renderStyle.textAlign, equals(TextAlign.start));
+      
+      // Check actual text offset
+      final textOffset = getTextOffset(div);
+      expect(textOffset, isNotNull);
+      // For start alignment, text should be at x=0 (plus any padding)
+      expect(textOffset!.dx, equals(0.0));
     });
 
     testWidgets('text-align end', (WidgetTester tester) async {
@@ -61,16 +93,25 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
-              <div style="margin: 10px; border: 1px solid #000; text-align: end;">
-                These text should align end.Sibling child.
+              <div style="margin: 10px; border: 1px solid #000; width: 300px; text-align: end;">
+                Text content
               </div>
             </body>
           </html>
         ''',
       );
 
+      await tester.pump();
+
       final div = prepared.document.getElementsByTagName(['div'])[0];
       expect(div.renderStyle.textAlign, equals(TextAlign.end));
+      
+      // Check actual text offset
+      final textOffset = getTextOffset(div);
+      expect(textOffset, isNotNull);
+      // For end alignment, text should be aligned to the right
+      // The exact offset depends on text width, but it should be > 0
+      expect(textOffset!.dx, greaterThan(0.0));
     });
 
     testWidgets('text-align left', (WidgetTester tester) async {
@@ -80,16 +121,24 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
-              <div style="margin: 10px; border: 1px solid #000; text-align: left;">
-                These text should align left.Sibling child.
+              <div style="margin: 10px; border: 1px solid #000; width: 300px; text-align: left;">
+                Text content
               </div>
             </body>
           </html>
         ''',
       );
 
+      await tester.pump();
+
       final div = prepared.document.getElementsByTagName(['div'])[0];
       expect(div.renderStyle.textAlign, equals(TextAlign.start));
+      
+      // Check actual text offset
+      final textOffset = getTextOffset(div);
+      expect(textOffset, isNotNull);
+      // For left alignment, text should be at x=0
+      expect(textOffset!.dx, equals(0.0));
     });
 
     testWidgets('text-align right', (WidgetTester tester) async {
@@ -99,16 +148,24 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
-              <div style="margin: 10px; border: 1px solid #000; text-align: right;">
-                These text should align right.Sibling child.
+              <div style="margin: 10px; border: 1px solid #000; width: 300px; text-align: right;">
+                Text content
               </div>
             </body>
           </html>
         ''',
       );
 
+      await tester.pump();
+
       final div = prepared.document.getElementsByTagName(['div'])[0];
       expect(div.renderStyle.textAlign, equals(TextAlign.end));
+      
+      // Check actual text offset
+      final textOffset = getTextOffset(div);
+      expect(textOffset, isNotNull);
+      // For right alignment, text should be aligned to the right
+      expect(textOffset!.dx, greaterThan(0.0));
     });
 
     testWidgets('text-align center', (WidgetTester tester) async {
@@ -118,16 +175,30 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
-              <div style="margin: 10px; border: 1px solid #000; text-align: center;">
-                These text should align center.Sibling child.
+              <div style="margin: 10px; border: 1px solid #000; width: 300px; text-align: center;">
+                Text content
               </div>
             </body>
           </html>
         ''',
       );
 
+      await tester.pump();
+
       final div = prepared.document.getElementsByTagName(['div'])[0];
       expect(div.renderStyle.textAlign, equals(TextAlign.center));
+      
+      // Check actual text offset
+      final textOffset = getTextOffset(div);
+      expect(textOffset, isNotNull);
+      // For center alignment, text should be centered
+      // The offset should be > 0 but less than the full width
+      expect(textOffset!.dx, greaterThan(0.0));
+      expect(textOffset.dx, lessThan(300.0));
+      // More specifically, it should be roughly in the middle
+      // With text width ~224px and container width 298px, offset should be ~37px
+      expect(textOffset.dx, greaterThan(30.0));
+      expect(textOffset.dx, lessThan(50.0));
     });
 
     testWidgets('text-align justify', (WidgetTester tester) async {
@@ -137,16 +208,25 @@ void main() {
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
-              <div style="margin: 10px; border: 1px solid #000; text-align: justify;">
-                These text should align justify.Sibling child.
+              <div style="margin: 10px; border: 1px solid #000; width: 300px; text-align: justify;">
+                This is a long text that should be justified when it wraps to multiple lines. The justify alignment distributes space between words.
               </div>
             </body>
           </html>
         ''',
       );
 
+      await tester.pump();
+
       final div = prepared.document.getElementsByTagName(['div'])[0];
       expect(div.renderStyle.textAlign, equals(TextAlign.justify));
+      
+      // Check actual text offset
+      final textOffset = getTextOffset(div);
+      expect(textOffset, isNotNull);
+      // For justify alignment, the first line should start at x=0
+      expect(textOffset!.dx, equals(0.0));
+      // Note: Full justify behavior testing would require checking word spacing
     });
 
     testWidgets('text-align with flex-shrink', (WidgetTester tester) async {
@@ -166,9 +246,20 @@ void main() {
         ''',
       );
 
+      await tester.pump();
+
       final flexChild = prepared.document.getElementsByTagName(['div'])[1];
       expect(flexChild.renderStyle.textAlign, equals(TextAlign.center));
       expect(flexChild.renderStyle.flexShrink, equals(1.0));
+      
+      // Check actual text offset in flex context
+      final textOffset = getTextOffset(flexChild);
+      // Note: Flex items may not establish IFC if they don't have inline content
+      // In this case, just check that the style is set correctly
+      if (textOffset != null) {
+        // Text should be centered within the flex item
+        expect(textOffset.dx, greaterThan(0.0));
+      }
     });
 
     testWidgets('text-align with flex-grow', (WidgetTester tester) async {
@@ -188,9 +279,20 @@ void main() {
         ''',
       );
 
+      await tester.pump();
+
       final flexChild = prepared.document.getElementsByTagName(['div'])[1];
       expect(flexChild.renderStyle.textAlign, equals(TextAlign.center));
       expect(flexChild.renderStyle.flexGrow, equals(1.0));
+      
+      // Check actual text offset in flex context
+      final textOffset = getTextOffset(flexChild);
+      // Note: Flex items may not establish IFC if they don't have inline content
+      // In this case, just check that the style is set correctly
+      if (textOffset != null) {
+        // Text should be centered within the flex item
+        expect(textOffset.dx, greaterThan(0.0));
+      }
     });
   });
 

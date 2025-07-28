@@ -2375,8 +2375,9 @@ class CSSRenderStyle extends RenderStyle
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
       } else if (parentStyle != null) {
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
-        // Replaced element also stretch in flex layout if align-items is stretch.
-        if (!renderStyle.isSelfRenderReplaced() || renderStyle.isParentRenderFlexLayout()) {
+        // But NOT in flex layout - flex items do not stretch to parent width by default.
+        // Replaced element can stretch in flex layout if align-items is stretch (handled elsewhere).
+        if (!renderStyle.isSelfRenderReplaced() && !renderStyle.isParentRenderFlexLayout()) {
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
@@ -2817,18 +2818,19 @@ class CSSRenderStyle extends RenderStyle
   }
 
   // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
-  RenderLayoutBox createRenderLayout({bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
+  RenderBoxModel createRenderLayout(
+      {bool isRepaintBoundary = false}) {
     CSSDisplay display = this.display;
-    RenderLayoutBox? nextRenderLayoutBox;
+    RenderBoxModel nextRenderLayoutBox;
 
     if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
       if (isRepaintBoundary) {
         nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
-          renderStyle: cssRenderStyle ?? this,
+          renderStyle: this,
         );
       } else {
         nextRenderLayoutBox = RenderFlexLayout(
-          renderStyle: cssRenderStyle ?? this,
+          renderStyle: this,
         );
       }
     } else if (display == CSSDisplay.block ||
@@ -2836,19 +2838,19 @@ class CSSRenderStyle extends RenderStyle
         display == CSSDisplay.inline ||
         display == CSSDisplay.inlineBlock) {
       if (isRepaintBoundary) {
-        nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
-          renderStyle: cssRenderStyle ?? this,
+        nextRenderLayoutBox = RenderRepaintBoundaryFlowLayoutNext(
+          renderStyle: this,
         );
       } else {
         nextRenderLayoutBox = RenderFlowLayout(
-          renderStyle: cssRenderStyle ?? this,
+          renderStyle: this,
         );
       }
     } else {
       throw FlutterError('Not supported display type $display');
     }
 
-    return nextRenderLayoutBox!;
+    return nextRenderLayoutBox;
   }
 
   RenderReplaced _createRenderReplaced({RenderReplaced? previousReplaced, bool isRepaintBoundary = false}) {
@@ -2866,7 +2868,162 @@ class CSSRenderStyle extends RenderStyle
     return nextReplaced;
   }
 
-  RenderBoxModel updateOrCreateRenderBoxModel() {
+
+  /// Check if anonymous block boxes should be created for inline elements.
+  /// According to CSS spec, anonymous block boxes are needed when:
+  /// 1. A block-level element is a child of an inline element
+  /// 2. Inline content needs to be wrapped to maintain proper formatting context
+  ///
+  /// This function helps determine when the layout engine should generate
+  /// anonymous block boxes to properly handle mixed inline/block content.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// if (renderStyle.shouldCreateAnonymousBlockBoxForInlineElements()) {
+  ///   // Create anonymous block boxes to wrap inline content
+  ///   // before and after the block-level children
+  /// }
+  /// ```
+  ///
+  /// Returns true if anonymous block boxes are needed, false otherwise.
+  bool shouldCreateAnonymousBlockBoxForInlineElements() {
+    // Only check for inline elements
+    if (display != CSSDisplay.inline) {
+      return false;
+    }
+
+    // Check if this inline element contains any block-level children
+    final element = target;
+    bool hasBlockLevelChild = false;
+
+    for (var child in element.childNodes) {
+      if (child is Element) {
+        final childDisplay = child.renderStyle.display;
+        final childPosition = child.renderStyle.position;
+
+        // Skip positioned elements (they're out of flow)
+        if (childPosition == CSSPositionType.absolute ||
+            childPosition == CSSPositionType.fixed) {
+          continue;
+        }
+
+        // Check if child is block-level
+        if (childDisplay == CSSDisplay.block ||
+            childDisplay == CSSDisplay.flex) {
+          hasBlockLevelChild = true;
+          break;
+        }
+      }
+    }
+
+    // Anonymous block boxes are needed when inline elements contain block-level children
+    return hasBlockLevelChild;
+  }
+
+  /// Check if this element should establish an inline formatting context.
+  /// This method checks from the RenderObject perspective to properly handle
+  /// anonymous blocks that may wrap inline elements.
+  bool shouldEstablishInlineFormattingContext() {
+    // Block and inline-block containers can establish inline formatting contexts
+    if (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.inlineBlock) {
+      return false;
+    }
+
+    // Body and HTML elements should not establish inline formatting contexts
+    // They should use normal flow layout
+    if (target is BodyElement || target is HTMLElement) {
+      return false;
+    }
+
+    // Positioned elements should not establish inline formatting contexts
+    // They are taken out of normal flow and need special layout handling
+    if (position == CSSPositionType.absolute || position == CSSPositionType.fixed) {
+      return false;
+    }
+
+    // If parent is a flex layout, this shouldn't establish IFC
+    if (isParentRenderFlexLayout() is RenderFlexLayout) {
+      return false;
+    }
+
+    // If parent is using inline formatting, this block should participate
+    // in the parent's IFC rather than establishing its own
+    if (isParentRenderFlowLayout() && getParentRenderStyle()!.display == CSSDisplay.inline) {
+      return false;
+    }
+
+    // Check children from RenderObject perspective
+    // This properly accounts for anonymous blocks
+    return _shouldEstablishIFCFromRenderObject();
+  }
+
+  /// Check render objects to determine if inline formatting context is needed
+  /// This accounts for anonymous blocks that may have been created
+  bool _shouldEstablishIFCFromRenderObject() {
+    if (!isSelfRenderFlowLayout()) {
+      return false;
+    }
+
+    final renderBoxModel = attachedRenderBoxModel as RenderFlowLayout;
+
+    bool hasInlineContent = false;
+    bool hasBlockContent = false;
+
+    // Check actual render children instead of DOM nodes
+    RenderBox? child = renderBoxModel.firstChild;
+    while (child != null) {
+      // Check for text content
+      if (child is RenderTextBox) {
+        // Text nodes indicate inline content
+        if (child.data.trim().isNotEmpty) {
+          hasInlineContent = true;
+        }
+      } else if (child is RenderBoxModel) {
+        final childRenderStyle = child.renderStyle;
+        final childDisplay = childRenderStyle.display;
+        final childPosition = childRenderStyle.position;
+
+        // Skip positioned elements (out of flow)
+        if (childPosition == CSSPositionType.absolute ||
+            childPosition == CSSPositionType.fixed) {
+          child = renderBoxModel.childAfter(child);
+          continue;
+        }
+
+        // Check for anonymous blocks using the built-in method
+        if (child.renderStyle.isSelfAnonymousFlowLayout()) {
+          // Anonymous blocks contain inline content
+          hasInlineContent = true;
+        } else if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+          // Regular block-level content
+          hasBlockContent = true;
+        } else if (childDisplay == CSSDisplay.inline ||
+                   childDisplay == CSSDisplay.inlineBlock ||
+                   childDisplay == CSSDisplay.inlineFlex) {
+          // Inline-level content
+          hasInlineContent = true;
+        }
+      } else if (child is RenderPositionPlaceholder) {
+        // Position placeholders don't affect IFC decision
+        child = renderBoxModel.childAfter(child);
+        continue;
+      }
+
+      // If we have both inline and block content, we should NOT establish IFC
+      // because anonymous blocks should have already been created to handle this
+      if (hasInlineContent && hasBlockContent) {
+        return false;
+      }
+
+      child = renderBoxModel.childAfter(child);
+    }
+
+    // Establish IFC if we have inline content (including anonymous blocks)
+    // and no regular block content
+    return hasInlineContent && !hasBlockContent;
+  }
+
+  RenderBoxModel createRenderBoxModel() {
     RenderBoxModel nextRenderBoxModel;
     if (target.isWidgetElement) {
       nextRenderBoxModel = _createRenderWidget(isRepaintBoundary: target.isRepaintBoundary);

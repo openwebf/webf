@@ -202,10 +202,6 @@ abstract class Element extends ContainerNode
   @override
   bool get isRendererAttached => renderStyle.isSelfRenderBoxAttached();
 
-  @pragma('vm:prefer-inline')
-  @override
-  bool get isRendererAttachedToSegmentTree => renderStyle.isSelfRenderBoxAttachedToSegmentTree();
-
   bool _forceToRepaintBoundary = false;
 
   @pragma('vm:prefer-inline')
@@ -280,7 +276,7 @@ abstract class Element extends ContainerNode
 
   @override
   RenderBox createRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    return updateOrCreateRenderBoxModel(flutterWidgetElement: flutterWidgetElement)!;
+    return createRenderBoxModel(flutterWidgetElement: flutterWidgetElement)!;
   }
 
   String? collectElementChildText() {
@@ -436,8 +432,8 @@ abstract class Element extends ContainerNode
     return query_selector.closest(this, args.first);
   }
 
-  RenderBoxModel? updateOrCreateRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
-    RenderBoxModel nextRenderBoxModel = renderStyle.updateOrCreateRenderBoxModel();
+  RenderBoxModel? createRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
+    RenderBoxModel nextRenderBoxModel = renderStyle.createRenderBoxModel();
 
     if (managedByFlutterWidget) {
       assert(flutterWidgetElement != null);

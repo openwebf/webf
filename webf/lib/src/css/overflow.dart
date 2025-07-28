@@ -3,11 +3,14 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:math' as math;
 import 'package:flutter/animation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart';
+import 'package:webf/src/rendering/line_box.dart';
 
 // CSS Overflow: https://drafts.csswg.org/css-overflow-3/
 
@@ -210,12 +213,24 @@ mixin ElementOverflowMixin on ElementBase {
 
   double get offsetWidth {
     _ensureRenderObjectHasLayout();
+    
+    // For inline elements, calculate width from inline formatting context
+    if (renderStyle.display == CSSDisplay.inline && isRendererAttached) {
+      return _getInlineElementWidth();
+    }
+    
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
     _ensureRenderObjectHasLayout();
+    
+    // For inline elements, calculate height from inline formatting context
+    if (renderStyle.display == CSSDisplay.inline && isRendererAttached) {
+      return _getInlineElementHeight();
+    }
+    
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);
   }
@@ -263,5 +278,95 @@ mixin ElementOverflowMixin on ElementBase {
         curve: withAnimation == true ? Curves.easeOut : null,
       );
     }
+  }
+  
+  double _getInlineElementWidth() {
+    // For inline elements, we need to calculate width based on the content they contain
+    // First check if this element itself has a renderer with size
+    if (attachedRenderer != null && attachedRenderer!.hasSize) {
+      final size = attachedRenderer!.size;
+      if (size.width > 0) return size.width;
+    }
+    
+    // Otherwise, look in parent's inline formatting context
+    final parent = parentNode;
+    if (parent == null || parent is! Element) return 0;
+    
+    final parentRenderer = parent.attachedRenderer;
+    if (parentRenderer == null || parentRenderer is! RenderFlowLayout) return 0;
+    
+    final ifc = parentRenderer.inlineFormattingContext;
+    if (ifc == null || ifc.lineBoxes.isEmpty) return 0;
+    
+    // For inline elements, we need to find the text content between open and close tags
+    double totalWidth = 0;
+    bool insideElement = false;
+    
+    for (final lineBox in ifc.lineBoxes) {
+      double lineWidth = 0;
+      for (final item in lineBox.items) {
+        // Check for open/close tags
+        if (item is BoxLineBoxItem) {
+          if (item.renderBox == attachedRenderer) {
+            // Toggle when we find our element's tags
+            insideElement = !insideElement;
+          }
+        } else if (insideElement && item is TextLineBoxItem) {
+          // Accumulate text width while inside our element
+          lineWidth += item.size.width;
+        }
+      }
+      totalWidth = math.max(totalWidth, lineWidth);
+    }
+    
+    return totalWidth;
+  }
+  
+  double _getInlineElementHeight() {
+    // For inline elements, we need to calculate height based on the line boxes they occupy
+    // First check if this element itself has a renderer with size
+    if (attachedRenderer != null && attachedRenderer!.hasSize) {
+      final size = attachedRenderer!.size;
+      if (size.height > 0) return size.height;
+    }
+    
+    // Otherwise, look in parent's inline formatting context
+    final parent = parentNode;
+    if (parent == null || parent is! Element) return 0;
+    
+    final parentRenderer = parent.attachedRenderer;
+    if (parentRenderer == null || parentRenderer is! RenderFlowLayout) return 0;
+    
+    final ifc = parentRenderer.inlineFormattingContext;
+    if (ifc == null || ifc.lineBoxes.isEmpty) return 0;
+    
+    // For inline elements, find which line boxes contain our content
+    double maxHeight = 0;
+    bool insideElement = false;
+    
+    for (final lineBox in ifc.lineBoxes) {
+      bool foundInLine = false;
+      for (final item in lineBox.items) {
+        // Check for open/close tags
+        if (item is BoxLineBoxItem) {
+          if (item.renderBox == attachedRenderer) {
+            // Toggle when we find our element's tags
+            insideElement = !insideElement;
+            if (insideElement) {
+              foundInLine = true;
+            }
+          }
+        } else if (insideElement && (item is TextLineBoxItem || item is BoxLineBoxItem)) {
+          // We have content in this line
+          foundInLine = true;
+        }
+      }
+      
+      if (foundInLine) {
+        maxHeight = math.max(maxHeight, lineBox.height);
+      }
+    }
+    
+    return maxHeight;
   }
 }

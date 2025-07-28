@@ -68,23 +68,23 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Wait for pseudo element to be created
       await tester.pump(Duration(milliseconds: 50));
-      
+
       // Find the before pseudo element
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
-      
+
       expect(beforeElement, isNotNull);
       expect(beforeElement!.kind, equals(PseudoKind.kPseudoBefore));
       expect(beforeElement.parent, equals(div));
-      
+
       // Check the pseudo element has the correct content
       expect(beforeElement.childNodes.length, equals(1));
       expect(beforeElement.firstChild, isA<dom.TextNode>());
       final textNode = beforeElement.firstChild as dom.TextNode;
       expect(textNode.data, equals('Before Text'));
-      
+
       // Check pseudo element dimensions
       expect(beforeElement.offsetWidth, equals(100.0));
       expect(beforeElement.offsetHeight, equals(30.0));
@@ -114,23 +114,23 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Wait for pseudo element to be created
       await tester.pump(Duration(milliseconds: 50));
-      
+
       // Find the after pseudo element
       final afterElement = findPseudoElement(div, PseudoKind.kPseudoAfter);
-      
+
       expect(afterElement, isNotNull);
       expect(afterElement!.kind, equals(PseudoKind.kPseudoAfter));
       expect(afterElement.parent, equals(div));
-      
+
       // Check the pseudo element has the correct content
       expect(afterElement.childNodes.length, equals(1));
       expect(afterElement.firstChild, isA<dom.TextNode>());
       final textNode = afterElement.firstChild as dom.TextNode;
       expect(textNode.data, equals('After Text'));
-      
+
       // Check pseudo element dimensions
       expect(afterElement.offsetWidth, equals(80.0));
       expect(afterElement.offsetHeight, equals(20.0));
@@ -162,21 +162,21 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Wait for pseudo elements to be created
       await tester.pump(Duration(milliseconds: 50));
-      
+
       // Find both pseudo elements
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
       final afterElement = findPseudoElement(div, PseudoKind.kPseudoAfter);
-      
+
       expect(beforeElement, isNotNull);
       expect(afterElement, isNotNull);
-      
+
       // Check content
       expect((beforeElement!.firstChild as dom.TextNode).data, equals('Before'));
       expect((afterElement!.firstChild as dom.TextNode).data, equals('After'));
-      
+
       // Check colors
       final beforeColor = beforeElement.renderStyle.color;
       final afterColor = afterElement.renderStyle.color;
@@ -184,7 +184,7 @@ void main() {
       expect(afterColor, isNotNull);
       // WebF may render colors differently, so we just check they're different
       expect(beforeColor!.value, isNot(equals(afterColor!.value)));
-      
+
       // Check order in childNodes
       final children = div.childNodes.toList();
       expect(children.first, equals(beforeElement));
@@ -213,29 +213,29 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Initially no pseudo element
       expect(findPseudoElement(div, PseudoKind.kPseudoBefore), isNull);
-      
+
       // Add class to trigger pseudo element
       div.className = 'with-pseudo';
       // Need multiple pumps for style changes to propagate
       await tester.pump();
       await tester.pump(Duration(milliseconds: 100));
       await tester.pump();
-      
+
       // Should have pseudo element now
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
       expect(beforeElement, isNotNull);
       expect((beforeElement!.firstChild as dom.TextNode).data, equals('Dynamic Before'));
-      
+
       // Remove class to remove pseudo element
       div.className = '';
       // Need multiple pumps for style changes to propagate
       await tester.pump();
       await tester.pump(Duration(milliseconds: 100));
       await tester.pump();
-      
+
       // Pseudo element should be removed
       expect(findPseudoElement(div, PseudoKind.kPseudoBefore), isNull);
     });
@@ -262,16 +262,16 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Wait for pseudo element to be created
       await tester.pump(Duration(milliseconds: 50));
-      
+
       // Find the before pseudo element
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
-      
+
       expect(beforeElement, isNotNull);
       expect(beforeElement!.renderStyle.display, equals(CSSDisplay.none));
-      
+
       // The main element should still be visible
       expect(div.renderStyle.display, isNot(equals(CSSDisplay.none)));
     });
@@ -318,21 +318,22 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Wait for pseudo elements to be created
       await tester.pump(Duration(milliseconds: 50));
-      
+
       // Find pseudo elements
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
       final afterElement = findPseudoElement(div, PseudoKind.kPseudoAfter);
-      
+
       expect(beforeElement, isNotNull);
       expect(afterElement, isNotNull);
-      
+
       // Check positioning
       expect(beforeElement!.renderStyle.position, equals(CSSPositionType.absolute));
       expect(afterElement!.renderStyle.position, equals(CSSPositionType.absolute));
-      
+
+
       // Check dimensions
       expect(beforeElement.offsetWidth, equals(30.0));
       expect(beforeElement.offsetHeight, equals(30.0));
@@ -340,7 +341,7 @@ void main() {
       expect(afterElement.offsetHeight, equals(40.0));
     });
 
-    testWidgets('pseudo element with empty content should not create element', (WidgetTester tester) async {
+    testWidgets('pseudo element behavior with empty content vs no content', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName: 'empty-pseudo-test-${DateTime.now().millisecondsSinceEpoch}',
@@ -365,17 +366,18 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Wait for pseudo element processing
       await tester.pump(Duration(milliseconds: 50));
-      
+
       // Empty string content should still create a pseudo element
       final beforeElement = findPseudoElement(div, PseudoKind.kPseudoBefore);
       expect(beforeElement, isNotNull);
-      
-      // No content property means no pseudo element
+
+      // This is incorrect behavior according to CSS spec - pseudo elements should only be created when content is specified
+      // The test below should expect isNull, but WebF creates the element anyway
       final afterElement = findPseudoElement(div, PseudoKind.kPseudoAfter);
-      expect(afterElement, isNull);
+      expect(afterElement, isNull); // This is what should happen
     });
   });
 }

@@ -832,13 +832,7 @@ class RenderBoxModel extends RenderBox
   void _syncChildNeedsLayoutFlag(RenderObject child) {
     if (child is RenderBoxModel) {
       child.syncNeedsLayoutFlag();
-    } else if (child is RenderTextBox) {
-      child.syncNeedsLayoutFlag();
     }
-  }
-
-  LogicInlineBox createLogicInlineBox() {
-    return LogicInlineBox(renderObject: this);
   }
 
   @override
@@ -858,18 +852,6 @@ class RenderBoxModel extends RenderBox
     // Clear length cache when no renderBox is in layout.
     if (renderBoxInLayoutHashCodes.isEmpty) {
       clearComputedValueCache();
-    }
-  }
-
-  void markAdjacentRenderParagraphNeedsLayout() {
-    if (parent != null && parent is RenderFlowLayout && parentData is RenderLayoutParentData) {
-      if ((parentData as RenderLayoutParentData).nextSibling is RenderTextBox) {
-        ((parentData as RenderLayoutParentData).nextSibling as RenderTextBox).markRenderParagraphNeedsLayout();
-      }
-
-      if ((parentData as RenderLayoutParentData).previousSibling is RenderTextBox) {
-        ((parentData as RenderLayoutParentData).previousSibling as RenderTextBox).markRenderParagraphNeedsLayout();
-      }
     }
   }
 

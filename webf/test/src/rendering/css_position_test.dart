@@ -143,9 +143,8 @@ void main() {
 
       final absolute = prepared.getElementById('absolute');
 
-      // Should stretch to fill container minus 10px on each side
-      expect(absolute.offsetWidth, equals(280.0));
-      expect(absolute.offsetHeight, equals(280.0));
+      expect(absolute.offsetWidth, equals(280.0)); // 300 - 10 - 10
+      expect(absolute.offsetHeight, equals(280.0)); // 300 - 10 - 10
     });
 
     testWidgets('absolute with margin', (WidgetTester tester) async {
@@ -165,7 +164,8 @@ void main() {
                   position: absolute;
                   top: 20px;
                   left: 20px;
-                  margin: 10px;
+                  margin-top: 10px;
+                  margin-left: 10px;
                   width: 100px;
                   height: 100px;
                   background-color: red;
@@ -178,8 +178,8 @@ void main() {
 
       final absolute = prepared.getElementById('absolute');
       final rect = absolute.getBoundingClientRect();
-
-      // Position should include margin
+      
+      // Check margin affects position
       expect(rect.top, equals(30.0)); // 20 + 10 margin
       expect(rect.left, equals(30.0)); // 20 + 10 margin
     });

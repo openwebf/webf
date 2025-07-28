@@ -331,9 +331,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   // Is child renderObject attached.
   bool get isRendererAttached;
 
-  // Is child renderObject attached to the render object tree segment, and may be this segment are not attached to flutter.
-  bool get isRendererAttachedToSegmentTree;
-
   bool isDescendantOf(Node? other) {
     // Return true if other is an ancestor of this, otherwise false
     if (other == null || isConnected != other.isConnected) {
@@ -357,9 +354,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
   void dispose() async {
     if (isConnected) {
       parentNode?.removeChild(this);
-    }
-    if (this is! Document && !managedByFlutterWidget) {
-      assert(!isRendererAttachedToSegmentTree, 'Should unmount $this before calling dispose.');
     }
     super.dispose();
   }
@@ -478,7 +472,6 @@ abstract class Node extends EventTarget implements RenderObjectNode, LifecycleCa
     properties.add(DiagnosticsProperty('managedByFlutterWidget', managedByFlutterWidget));
     properties.add(DiagnosticsProperty('isConnected', isConnected));
     properties.add(DiagnosticsProperty('isRendererAttached', isRendererAttached));
-    properties.add(DiagnosticsProperty('isRendererAttachedToSegmentTree', isRendererAttachedToSegmentTree));
     properties.add(DiagnosticsProperty('renderObjectManagerType', renderObjectManagerType));
   }
 

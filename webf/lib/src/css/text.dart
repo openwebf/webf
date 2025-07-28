@@ -404,9 +404,6 @@ mixin CSSTextMixin on RenderStyle {
           if (child.renderStyle.target.style[styleProperty].isEmpty) {
             _markNestChildrenTextAndLayoutNeedsLayout(child.renderStyle, styleProperty);
           }
-        } else if (child is RenderTextBox) {
-          WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-          renderParagraph.markNeedsLayout();
         } else {
           child.visitChildren(visitor);
         }
@@ -422,8 +419,7 @@ mixin CSSTextMixin on RenderStyle {
   void _markTextNeedsLayout() {
     visitor(RenderObject child) {
       if (child is RenderTextBox) {
-        WebFRenderParagraph renderParagraph = child.child as WebFRenderParagraph;
-        renderParagraph.markNeedsLayout();
+        child.renderStyle.markNeedsLayout();
       } else {
         child.visitChildren(visitor);
       }
@@ -438,9 +434,7 @@ mixin CSSTextMixin on RenderStyle {
   void _markChildrenTextNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     visitor(dom.Node child) {
       if (child is dom.TextNode) {
-        RenderTextBox? renderTextBox = child.attachedRenderer as RenderTextBox?;
-        WebFRenderParagraph? renderParagraph = renderTextBox?.child as WebFRenderParagraph?;
-        renderParagraph?.markNeedsLayout();
+        child.parentElement!.attachedRenderer?.markNeedsLayout();
       }
 
       if (child is dom.Element && child.style[styleProperty].isEmpty) {

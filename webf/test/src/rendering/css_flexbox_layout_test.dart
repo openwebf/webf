@@ -176,7 +176,7 @@ void main() {
                 <div id="item1" style="
                   flex-shrink: 1;
                   flex-basis: 150px;
-                  min-width:0;
+                  min-width: 0;
                   height: 50px;
                   background-color: red;
                 ">Shrink 1</div>

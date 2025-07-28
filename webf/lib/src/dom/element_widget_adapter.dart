@@ -177,36 +177,42 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     if (webFElement.childNodes.isEmpty) {
       children = [];
     } else {
-      for (final node in webFElement.childNodes) {
-        if (node is Element &&
-            (node.renderStyle.position == CSSPositionType.absolute ||
-                node.renderStyle.position == CSSPositionType.sticky)) {
-          if (node.holderAttachedPositionedElement != null) {
+      // Check if we need to create anonymous block boxes for inline content
+      // Case 2: Inline content needs to be wrapped to maintain proper formatting context
+      if (_shouldWrapInlineContentInAnonymousBlocks()) {
+        children = _wrapInlineContentInAnonymousBlocks(webFElement.childNodes);
+      } else {
+        for (var node in webFElement.childNodes) {
+          if (node is Element &&
+              (node.renderStyle.position == CSSPositionType.absolute ||
+                  node.renderStyle.position == CSSPositionType.sticky)) {
+            if (node.holderAttachedPositionedElement != null) {
+              children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+            }
+
+            children.add(node.toWidget());
+            continue;
+          } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
             children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-          }
+          } else if (node is RouterLinkElement) {
+            webFState ??= context.findAncestorStateOfType<WebFState>();
+            String routerPath = node.path;
+            if (webFState != null && (webFState.widget.controller.initialRoute ?? '/') == routerPath) {
+              children.add(node.toWidget());
+              continue;
+            }
 
-          children.add(node.toWidget());
-          continue;
-        } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
-          children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-        } else if (node is RouterLinkElement) {
-          webFState ??= context.findAncestorStateOfType<WebFState>();
-          String routerPath = node.path;
-          if (webFState != null && (webFState.widget.controller.initialRoute ?? '/') == routerPath) {
-            children.add(node.toWidget());
+            routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
+            if (routerViewState != null) {
+              children.add(node.toWidget());
+              continue;
+            }
+
+            children.add(flutter.SizedBox.shrink());
             continue;
-          }
-
-          routerViewState ??= context.findAncestorStateOfType<WebFRouterViewState>();
-          if (routerViewState != null) {
+          } else {
             children.add(node.toWidget());
-            continue;
           }
-
-          children.add(flutter.SizedBox.shrink());
-          continue;
-        } else {
-          children.add(node.toWidget());
         }
       }
       for (final positionedElement in webFElement.fixedPositionElements) {
@@ -344,6 +350,203 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
   @override
   bool get wantKeepAlive => true;
+
+  /// Check if this element needs to wrap inline content in anonymous blocks
+  /// Case 2: When a block container has mixed inline and block-level children
+  /// Case 3: When a flex container has text nodes or inline content as direct children
+  bool _shouldWrapInlineContentInAnonymousBlocks() {
+    final display = webFElement.renderStyle.display;
+
+    // Flex containers need to wrap text nodes in anonymous flex items
+    if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
+      // Check if there's any text content that needs wrapping
+      for (var node in webFElement.childNodes) {
+        if (node is TextNode && node.data.trim().isNotEmpty) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Only block containers can create anonymous block boxes for mixed content
+    if (display != CSSDisplay.block) {
+      return false;
+    }
+
+    bool hasInlineContent = false;
+    bool hasBlockContent = false;
+
+    for (var node in webFElement.childNodes) {
+      if (node is TextNode && node.data.trim().isNotEmpty) {
+        hasInlineContent = true;
+      } else if (node is Element) {
+        final childDisplay = node.renderStyle.display;
+        final position = node.renderStyle.position;
+
+        // Skip positioned elements as they're out of flow
+        if (position == CSSPositionType.absolute || position == CSSPositionType.fixed) {
+          continue;
+        }
+
+        if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+          hasBlockContent = true;
+        } else if (childDisplay == CSSDisplay.inline || childDisplay == CSSDisplay.inlineBlock) {
+          hasInlineContent = true;
+        }
+      }
+
+      // If we have both, we need anonymous blocks
+      if (hasInlineContent && hasBlockContent) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /// Wrap inline content in anonymous block boxes
+  /// This maintains proper block formatting context when mixing inline and block content
+  /// For flex containers, creates anonymous flex items
+  List<flutter.Widget> _wrapInlineContentInAnonymousBlocks(NodeList nodes) {
+    List<flutter.Widget> result = [];
+    List<flutter.Widget> currentInlineGroup = [];
+
+    final isFlexContainer = webFElement.renderStyle.display == CSSDisplay.flex ||
+                           webFElement.renderStyle.display == CSSDisplay.inlineFlex;
+
+    void flushInlineGroup() {
+      if (currentInlineGroup.isNotEmpty) {
+        // For flex containers, create anonymous flex items
+        // For block containers, create anonymous block boxes
+        final anonymousDisplay = isFlexContainer ? 'block' : 'block';
+
+        // Create anonymous box for inline content group
+        final anonymousBlock = WebFHTMLElement(
+          tagName: 'Anonymous',
+          controller: webFElement.ownerDocument.controller,
+          parentElement: webFElement,
+          inlineStyle: {
+            'display': anonymousDisplay,
+            // Anonymous boxes should not have any other styles
+          },
+          children: currentInlineGroup, // Pass the collected widgets as children
+        );
+        result.add(anonymousBlock);
+        currentInlineGroup = [];
+      }
+    }
+
+    for (var node in nodes) {
+      if (node is Element) {
+        final display = node.renderStyle.display;
+        final position = node.renderStyle.position;
+
+        // Handle positioned elements specially
+        if (position == CSSPositionType.absolute || position == CSSPositionType.sticky) {
+          if (node.holderAttachedPositionedElement != null) {
+            // For flex containers, positioned elements are not flex items
+            // Add them directly without wrapping
+            if (isFlexContainer) {
+              flushInlineGroup();
+              result.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+              result.add(node.toWidget());
+            } else {
+              currentInlineGroup.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+              currentInlineGroup.add(node.toWidget());
+            }
+          } else {
+            // For flex containers, absolutely positioned elements don't participate in flex layout
+            if (isFlexContainer) {
+              flushInlineGroup();
+              result.add(node.toWidget());
+            } else {
+              currentInlineGroup.add(node.toWidget());
+            }
+          }
+          continue;
+        } else if (position == CSSPositionType.fixed) {
+          // Fixed positioned elements are always out of flow
+          if (isFlexContainer) {
+            flushInlineGroup();
+            result.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+          } else {
+            currentInlineGroup.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
+          }
+          continue;
+        }
+
+        // For flex containers, all non-positioned children become flex items
+        if (isFlexContainer) {
+          // In flex containers, ALL elements (inline, inline-block, block) become direct flex items
+          // Only text nodes need to be wrapped in anonymous flex items
+          flushInlineGroup();
+          if (node is RouterLinkElement) {
+            final widget = _handleRouterLinkElement(node);
+            if (widget != null) {
+              result.add(widget);
+            }
+          } else {
+            result.add(node.toWidget());
+          }
+        } else {
+          // For block containers, handle mixed content
+          if (display == CSSDisplay.block || display == CSSDisplay.flex) {
+            // Flush any pending inline content before adding block
+            flushInlineGroup();
+
+            // Add block element directly (not in anonymous block)
+            if (node is RouterLinkElement) {
+              final widget = _handleRouterLinkElement(node);
+              if (widget != null) {
+                result.add(widget);
+              }
+            } else {
+              result.add(node.toWidget());
+            }
+          } else {
+            // Inline or inline-block element
+            if (node is RouterLinkElement) {
+              final widget = _handleRouterLinkElement(node);
+              if (widget != null) {
+                currentInlineGroup.add(widget);
+              }
+            } else {
+              currentInlineGroup.add(node.toWidget());
+            }
+          }
+        }
+      } else {
+        // Text nodes are always inline content
+        if (node is TextNode && node.data.trim().isNotEmpty) {
+          currentInlineGroup.add(node.toWidget());
+        } else if (node is! TextNode) {
+          // Non-text, non-element nodes (comments, etc.)
+          currentInlineGroup.add(node.toWidget());
+        }
+      }
+    }
+
+    // Flush any remaining inline content
+    flushInlineGroup();
+
+    return result;
+  }
+
+  /// Handle RouterLinkElement rendering logic
+  flutter.Widget? _handleRouterLinkElement(RouterLinkElement node) {
+    final webFState = context.findAncestorStateOfType<WebFState>();
+    String routerPath = node.path;
+    if (webFState != null && (webFState.widget.controller.initialRoute ?? '/') == routerPath) {
+      return node.toWidget();
+    }
+
+    final routerViewState = context.findAncestorStateOfType<WebFRouterViewState>();
+    if (routerViewState != null) {
+      return node.toWidget();
+    }
+
+    return flutter.SizedBox.shrink();
+  }
 }
 
 class WebFReplacedElementWidget extends flutter.StatefulWidget {
