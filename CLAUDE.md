@@ -1,17 +1,24 @@
 # WebF Development Guide
 
+This is the main development guide for WebF. Content has been organized into folder-specific guides for better maintainability.
+
+## Folder-Specific Guides
+- **[C++ Development Guide](bridge/CLAUDE.md)**: C++ development, build commands, FFI patterns, iOS troubleshooting
+- **[Dart/Flutter Development Guide](webf/CLAUDE.md)**: Dart development, widget testing, Flutter patterns
+- **[Integration Testing Guide](integration_tests/CLAUDE.md)**: Writing and running integration tests
+- **[Memory & Performance](docs/MEMORY_PERFORMANCE.md)**: Performance optimization, caching, memory management
+- **[Architecture Overview](docs/ARCHITECTURE.md)**: WebF architecture pipeline and design patterns
+
 ## Table of Contents
 1. [Repository Structure](#repository-structure)
 2. [Search and Navigation Strategy](#search-and-navigation-strategy)
-3. [C++ Development Guide (bridge/)](#c-development-guide-bridge)
-4. [Dart/Flutter Development Guide (webf/)](#dartflutter-development-guide-webf)
-5. [Cross-Platform Development](#cross-platform-development)
-6. [Memory and Performance](#memory-and-performance-1)
-7. [Testing Guidelines](#testing-guidelines)
-8. [WebF CLI Code Generator](#webf-cli-code-generator)
-9. [Git Submodule Operations](#git-submodule-operations)
-10. [Enterprise Software Handling](#enterprise-software-handling)
-11. [Technical Documentation Guidelines](#technical-documentation-guidelines)
+3. [Cross-Platform Development](#cross-platform-development)
+4. [Testing Guidelines](#testing-guidelines)
+5. [WebF CLI Code Generator](#webf-cli-code-generator)
+6. [Git Submodule Operations](#git-submodule-operations)
+7. [Enterprise Software Handling](#enterprise-software-handling)
+8. [Technical Documentation Guidelines](#technical-documentation-guidelines)
+9. [WebF Dart MCP Server Guide](#webf-dart-mcp-server-guide)
 
 ## Quick Reference
 
@@ -52,99 +59,6 @@
   - Class definition: `class ClassName`
   - FFI exports: `WEBF_EXPORT_C`
 
-# C++ Development Guide (bridge/)
-
-This section covers C++ development in the `bridge/` directory, which contains the JavaScript runtime, DOM API implementations, and HTML parsing logic.
-
-## Build Commands
-- Build for macOS: `npm run build:bridge:macos` (debug) or `npm run build:bridge:macos:release` (release)
-- Build for iOS: `npm run build:bridge:ios` (debug) or `npm run build:bridge:ios:release` (release)
-- Build for Android: `npm run build:bridge:android` (debug) or `npm run build:bridge:android:release` (release)
-- Clean build: `npm run build:clean`
-
-## Build Error Resolution
-- When encountering build errors:
-  - Read the full error message to identify the specific issue (missing includes, type mismatches, undefined symbols)
-  - For C++ errors, check:
-    - Missing header includes
-    - Namespace qualifications
-    - Template instantiation issues
-    - FFI type compatibility (Handle vs Dart_Handle)
-  - Build incrementally after each fix
-  - Use `npm run build:bridge:macos` for quick iteration on macOS
-- Common C++ build issues:
-  - `Handle` should be `Dart_Handle` in FFI contexts
-  - Lambda signatures must match expected function signatures
-  - Include necessary headers for all used types
-
-## C++ Code Style
-- Based on Chromium style (.clang-format)
-- Standard: C++17
-- Column limit: 120 characters
-- Use 2-space indentation
-
-## C++ Testing
-- Run bridge unit tests: `node scripts/run_bridge_unit_test.js`
-- See Bridge Unit Tests section for detailed guide
-
-## Important C++ Files and Patterns
-- `webf_bridge.cc`: Main bridge entry point
-- `executing_context.cc`: JavaScript context management
-- `binding_object.h`: Base class for JS bindings
-- `WEBF_EXPORT_C`: Macro for exporting C functions to Dart FFI
-
-# Dart/Flutter Development Guide (webf/)
-
-This section covers Dart/Flutter development in the `webf/` directory, which implements DOM/CSS and layout/painting on top of Flutter.
-
-## Development Workflow
-- No build needed for Dart-only changes
-- Use widget unit tests to verify rendering changes: `cd webf && flutter test test/src/rendering/`
-- Use integration tests for end-to-end verification: `cd webf && flutter test integration_test/`
-
-## Dart Code Style
-- Follow rules in webf/analysis_options.yaml
-- Use single quotes for strings
-- File names must use snake_case
-- Class names must use PascalCase
-- Variables/functions use camelCase
-- Prefer final fields when applicable
-- Lines should be max 120 characters
-
-## Lint and Format Commands
-- Lint: `npm run lint` (runs flutter analyze in webf directory)
-- Format: `npm run format` (formats with 120 char line length)
-
-## Dart/Flutter Testing
-- Run Flutter dart tests: `cd webf && flutter test`
-- Run a single Flutter test: `cd webf && flutter test test/path/to/test_file.dart`
-- Run widget unit tests: `cd webf && flutter test test/src/rendering/`
-- Run integration tests: `cd webf && flutter test integration_test/`
-- See Unit Tests (webf/test) section for detailed guide
-
-## Verifying Changes Without Running the App
-Since you cannot directly launch Flutter examples, use these approaches:
-1. **Widget Unit Tests**: Best for testing rendering, layout, and CSS properties
-   - Use `WebFWidgetTestUtils.prepareWidgetTest()` to test HTML/CSS rendering
-   - Access render objects to verify layout calculations
-   - Example: `test/src/rendering/flow_layout_test.dart`
-   
-2. **Integration Tests**: Best for end-to-end functionality
-   - Located in `webf/integration_test/`
-   - Test complete features like performance metrics, gestures, etc.
-   
-3. **Snapshot Tests**: Visual regression testing
-   - Located in `integration_tests/specs/`
-   - Use `await snapshot()` to capture visual output
-   - Compare against baseline images
-
-## Important Dart Files and Patterns
-- `lib/bridge.dart`: FFI bindings to C++ bridge
-- `lib/src/dom/`: DOM element implementations
-- `lib/src/css/`: CSS property implementations
-- `lib/src/rendering/`: Layout and rendering logic
-- `RenderBoxModel`: Base class for layout
-- `CSSRenderStyle`: Style computation and storage
 
 # Cross-Platform Development
 
@@ -231,10 +145,6 @@ When implementing TypeScript analysis:
 
 # Memory and Performance
 
-## Memory
-
-### Bridge Unit Tests
-Guide for running and debugging bridge unit tests.
 
 #### Running Bridge Unit Tests
 ```bash
@@ -1783,46 +1693,14 @@ class ChartElement extends WidgetElement {
 ## Testing Guidelines
 
 ### Unit Tests (webf/test)
-- Always call `setupTest()` in the `setUpAll()` method for one-time setup
-- When testing with WebFController, wait for initialization: `await controller.controlledInitCompleter.future;`
-- Use mock bundles from `test/src/foundation/mock_bundle.dart` for testing
-- Use WebFWidgetTestUtils for widget unit testing (see WebF Widget Unit Test Guide section)
+- See [Dart/Flutter Development Guide](webf/CLAUDE.md) for WebF widget unit testing with WebFWidgetTestUtils
+- See [Integration Testing Guide](integration_tests/CLAUDE.md) for integration test patterns
 
-#### Example: Verifying a CSS Change
-```dart
-testWidgets('should apply new CSS property correctly', (WidgetTester tester) async {
-  final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-    tester: tester,
-    controllerName: 'css-test-${DateTime.now().millisecondsSinceEpoch}',
-    html: '''
-      <div id="test" style="width: 100px; height: 100px; background-color: red;">
-        Test Content
-      </div>
-    ''',
-  );
-  
-  final element = prepared.getElementById('test');
-  final renderBox = element.attachedRenderer as RenderBoxModel;
-  
-  // Verify the property was applied
-  expect(renderBox.renderStyle.backgroundColor, equals(Color(0xFFFF0000)));
-  expect(renderBox.size, equals(Size(100, 100)));
-});
-
-### Integration Tests (integration_tests/specs)
-- Place tests in appropriate directories under `specs/`
-- Use TypeScript (.ts extension)
-- Use `done()` callback for async tests
-- Use `snapshot()` for visual regression tests
-- Test assets should reference files in `assets/` directory
-- Use `fdescribe()` instead of `describe()` to run only specific test specs (Jasmine feature)
-- Use `fit()` instead of `it()` to run only specific test cases
+### Integration Tests
+- See [Integration Testing Guide](integration_tests/CLAUDE.md) for writing and running integration tests
 
 ### Flutter Integration Tests (webf/integration_test)
-- LCP integration tests: `webf/integration_test/integration_test/lcp_integration_test.dart`
-- FCP integration tests: `webf/integration_test/integration_test/fcp_integration_test.dart`
-- FP integration tests: `webf/integration_test/integration_test/fp_integration_test.dart`
-- Run with: `cd webf && flutter test integration_test/integration_test/test_name.dart`
+- See [Dart/Flutter Development Guide](webf/CLAUDE.md) for Flutter integration test details
 
 
 ### Test-Driven Development Workflow
@@ -1890,68 +1768,8 @@ final controller = WebFController(
 await controller.controlledInitCompleter.future;
 ```
 
-## Performance Optimization Guidelines
-
-### Caching Strategies
-1. **Identify Repeated Operations**: Look for operations that:
-   - Parse the same files multiple times
-   - Perform identical type conversions
-   - Read file contents repeatedly
-
-2. **Implement Caching**:
-   ```typescript
-   // File content cache
-   const cache = new Map<string, CachedType>();
-
-   // Cache with validation
-   if (cache.has(key)) {
-     return cache.get(key);
-   }
-   const result = expensiveOperation();
-   cache.set(key, result);
-   ```
-
-3. **Provide Cache Clearing**: Always implement a clear function:
-   ```typescript
-   export function clearCaches() {
-     cache.clear();
-   }
-   ```
-
-### Batch Processing
-For file operations, process in batches to maximize parallelism:
-```typescript
-async function processFilesInBatch<T>(
-  items: T[],
-  batchSize: number,
-  processor: (item: T) => Promise<void>
-): Promise<void> {
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    await Promise.all(batch.map(processor));
-  }
-}
-```
-
-### Implementation Review Checklist
-Before marking any FFI/cross-language task as complete, verify:
-- [ ] Memory management: All allocated memory has corresponding free calls
-- [ ] Dart handles: Persistent handles used for async operations
-- [ ] String lifetime: Strings copied when crossing thread boundaries
-- [ ] Error paths: All error conditions handled gracefully
-- [ ] Thread safety: No shared mutable state without synchronization
-- [ ] Build success: Code compiles without warnings
-- [ ] Existing patterns: Implementation follows codebase conventions
-
-### Incremental Development Approach
-1. Make one logical change at a time
-2. Build after each change: `npm run build`
-3. Run relevant tests after each change
-4. Commit working states before moving to the next feature
-5. When debugging complex issues:
-   - Create minimal reproduction scripts
-   - Use console.log or debugger strategically
-   - Clean up debug code before finalizing
+## Performance Optimization
+- See [Memory & Performance Guide](docs/MEMORY_PERFORMANCE.md) for optimization strategies and guidelines
 
 ## Enterprise Software Handling
 
@@ -2043,100 +1861,8 @@ When writing documentation for Flutter packages that use web technologies:
 - For WebF: Always show WebFControllerManager setup
 - Test all code examples before including in documentation
 
-## WebF Architecture Pipeline
-
-### UICommand → Element → Widget → RenderObject Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                   C++ Bridge Layer                                  │
-│  ┌─────────────────┐                                                               │
-│  │   JavaScript    │  DOM Mutations                                                │
-│  │   Runtime       ├──────────────┐                                                │
-│  │  (QuickJS)      │              │                                                │
-│  └─────────────────┘              ▼                                                │
-│                           ┌─────────────────┐                                      │
-│                           │   UICommand     │                                      │
-│                           │   Generator     │                                      │
-│                           └────────┬────────┘                                      │
-│                                    │                                                │
-│                                    │ UICommand[]                                    │
-└────────────────────────────────────┼───────────────────────────────────────────────┘
-                                     │
-                                     │ FFI (ui_command.dart)
-                                     ▼
-┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                                 Dart/Flutter Layer                                  │
-│                                                                                     │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐  │
-│  │                          WebFViewController                                  │  │
-│  │  ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐        │  │
-│  │  │ execUICommands()│───▶│ createElement() │    │ setInlineStyle()│        │  │
-│  │  └─────────────────┘    └────────┬────────┘    └────────┬────────┘        │  │
-│  └────────────────────────────────────┼─────────────────────┼──────────────────┘  │
-│                                       │                     │                       │
-│                                       ▼                     ▼                       │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐  │
-│  │                              DOM Layer                                       │  │
-│  │  ┌──────────────┐         ┌──────────────┐         ┌──────────────┐       │  │
-│  │  │   Element    │◀────────│   Document   │────────▶│   TextNode   │       │  │
-│  │  │              │         └──────────────┘         └──────────────┘       │  │
-│  │  │ ┌──────────┐ │                                                          │  │
-│  │  │ │renderStyle│ │         CSS Processing                                  │  │
-│  │  │ └──────────┘ │         ┌──────────────┐                               │  │
-│  │  └───────┬──────┘         │CSSRenderStyle│                               │  │
-│  │          │                └───────┬──────┘                               │  │
-│  │          └────────────────────────┘                                       │  │
-│  └─────────────────────────────────────────────────────────────────────────┘  │
-│                                       │                                           │
-│                                       │ toWidget()                                │
-│                                       ▼                                           │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐  │
-│  │                          Widget Adapter Layer                                │  │
-│  │  ┌──────────────────┐      ┌────────────────────┐      ┌─────────────────┐ │  │
-│  │  │ElementAdapterMixin│     │ WebFElementWidget  │      │WebFElementWidget│ │  │
-│  │  │                   │────▶│   (StatefulWidget) │────▶│      State      │ │  │
-│  │  └──────────────────┘      └────────────────────┘      └────────┬────────┘ │  │
-│  └───────────────────────────────────────────────────────────────────┼──────────┘  │
-│                                                                       │              │
-│                                                                       │ build()      │
-│                                                                       ▼              │
-│  ┌─────────────────────────────────────────────────────────────────────────────┐  │
-│  │                           RenderObject Layer                                 │  │
-│  │  ┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐ │  │
-│  │  │  RenderBoxModel  │      │ RenderFlowLayout │      │ RenderFlexLayout │ │  │
-│  │  │  (Base Class)    │◀─────┤  (Block/Inline)  │      │   (Flexbox)      │ │  │
-│  │  │                  │      └──────────────────┘      └──────────────────┘ │  │
-│  │  │ ┌─────────────┐  │                                                      │  │
-│  │  │ │ Box Model   │  │      ┌──────────────────┐      ┌──────────────────┐ │  │
-│  │  │ │ ┌─────────┐ │  │      │  RenderReplaced  │      │   RenderWidget   │ │  │
-│  │  │ │ │ margin  │ │  │◀─────┤   (img, video)   │      │ (Custom Widgets) │ │  │
-│  │  │ │ │ border  │ │  │      └──────────────────┘      └──────────────────┘ │  │
-│  │  │ │ │ padding │ │  │                                                      │  │
-│  │  │ │ └─────────┘ │  │      ┌──────────────────┐                          │  │
-│  │  │ └─────────────┘  │      │   Flutter Render  │                          │  │
-│  │  └──────────────────┘      │      Tree         │                          │  │
-│  │                             └──────────────────┘                          │  │
-│  └─────────────────────────────────────────────────────────────────────────┘  │
-│                                                                                   │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-Key Components:
-
-1. UICommand: Bridge layer commands (createElement, setStyle, setAttribute)
-2. WebFViewController: Processes commands and manages DOM updates
-3. Element/CSSRenderStyle: DOM tree and computed styles
-4. ElementAdapterMixin: Bridges DOM elements to Flutter widgets
-5. WebFElementWidget: StatefulWidget wrapper for elements
-6. RenderBoxModel: Base render object implementing CSS box model
-7. Specialized RenderObjects: Flow, Flex, Replaced, Widget variants
-
-Data Flow:
-- Commands flow from C++ → Dart via FFI
-- Elements maintain DOM structure and styles
-- Widget adapters convert elements to Flutter widgets
-- RenderObjects handle layout and painting in Flutter's render tree
-```
+## WebF Architecture
+- See [Architecture Overview](docs/ARCHITECTURE.md) for the complete WebF architecture pipeline diagram and explanation
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
