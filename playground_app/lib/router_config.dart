@@ -10,9 +10,6 @@ import 'package:playground_app/qr_scanner_screen.dart';
 import 'package:webf/webf.dart';
 
 class AppRouterConfig {
-  // Cache for WebF route widgets to prevent rebuilds
-  static final Map<String, Widget> _webfRouteCache = {};
-  
   static final GoRouter _router = GoRouter(
     initialLocation: '/',
     routes: [
@@ -65,7 +62,11 @@ class AppRouterConfig {
           
           return NoTransitionPage(
             key: ValueKey('webf-page-$path'),
-            child: _getCachedWebFRouteView(path, state.extra),
+            child: _WebFRouteWrapper(
+              key: ValueKey('webf-route-$path'),
+              path: path,
+              extra: state.extra,
+            ),
           );
         },
       ),
@@ -112,31 +113,6 @@ class AppRouterConfig {
   );
 
   static GoRouter get router => _router;
-  
-  /// Get cached WebF route view to prevent rebuilds
-  static Widget _getCachedWebFRouteView(String path, Object? extra) {
-    final cacheKey = path;
-    
-    // Check if we already have this route cached
-    if (_webfRouteCache.containsKey(cacheKey)) {
-      return _webfRouteCache[cacheKey]!;
-    }
-    
-    // Create new widget and cache it
-    final widget = _WebFRouteWrapper(
-      key: ValueKey('webf-route-$path'),
-      path: path,
-      extra: extra,
-    );
-    
-    _webfRouteCache[cacheKey] = widget;
-    return widget;
-  }
-  
-  /// Clear cache when needed (e.g., when disposing)
-  static void clearWebFRouteCache() {
-    _webfRouteCache.clear();
-  }
 
 
 
@@ -177,8 +153,8 @@ class AppRouterConfig {
   }
 }
 
-/// Wrapper widget that maintains state for WebF routes to prevent rebuilds
-class _WebFRouteWrapper extends StatefulWidget {
+/// Wrapper widget for WebF routes using proper Flutter keys for optimization
+class _WebFRouteWrapper extends StatelessWidget {
   final String path;
   final Object? extra;
   
@@ -189,24 +165,8 @@ class _WebFRouteWrapper extends StatefulWidget {
   });
   
   @override
-  State<_WebFRouteWrapper> createState() => _WebFRouteWrapperState();
-}
-
-class _WebFRouteWrapperState extends State<_WebFRouteWrapper> 
-    with AutomaticKeepAliveClientMixin {
-  Widget? _cachedChild;
-  
-  @override
-  bool get wantKeepAlive => true; // Keep this widget alive
-  
-  @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-    
-    // Only build once and cache the result
-    _cachedChild ??= _buildWebFRouteView(widget.path, widget.extra);
-    
-    return _cachedChild!;
+    return _buildWebFRouteView(path, extra);
   }
   
   Widget _buildWebFRouteView(String path, Object? extra) {
@@ -253,11 +213,13 @@ class _WebFRouteWrapperState extends State<_WebFRouteWrapper>
         ),
       ),
       body: WebFRouterView.fromControllerName(
+        key: ValueKey('webf-router-view-$controllerName-$path'),
         controllerName: controllerName,
         path: path,
         builder: (context, controller) {
           print('[_WebFRouteWrapper] [$timestamp] WebFRouterView builder called for path: $path');
           return WebFRouterView(
+            key: ValueKey('webf-inner-view-${controller.hashCode}-$path'),
             controller: controller,
             path: path,
           );
@@ -274,10 +236,5 @@ class _WebFRouteWrapperState extends State<_WebFRouteWrapper>
         ),
       ),
     );
-  }
-  
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
