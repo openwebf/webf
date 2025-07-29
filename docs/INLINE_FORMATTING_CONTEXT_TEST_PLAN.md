@@ -90,6 +90,244 @@ it('should support unicode-bidi: isolate', async () => {
 });
 ```
 
+#### RTL Box Model Tests
+
+##### 1.7 RTL Margin Direction
+```typescript
+it('should apply margins correctly in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; border: 1px solid black;">
+      <div style="margin-left: 20px; margin-right: 40px; background: lightblue;">
+        RTL: margin-left should be on physical left (end)
+      </div>
+      <div style="margin-inline-start: 20px; margin-inline-end: 40px; background: lightgreen;">
+        RTL: logical margins should adapt to direction
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.8 RTL Padding Direction
+```typescript
+it('should apply padding correctly in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px;">
+      <div style="padding-left: 20px; padding-right: 40px; background: lightblue; border: 1px solid blue;">
+        RTL: padding-left (20px) on physical left
+      </div>
+      <div style="padding-inline-start: 20px; padding-inline-end: 40px; background: lightgreen; border: 1px solid green;">
+        RTL: logical padding adapts to direction
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.9 RTL Border Direction
+```typescript
+it('should apply borders correctly in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px;">
+      <div style="border-left: 5px solid red; border-right: 10px solid blue; padding: 10px;">
+        Physical borders: left=red(5px), right=blue(10px)
+      </div>
+      <div style="border-inline-start: 5px solid red; border-inline-end: 10px solid blue; padding: 10px; margin-top: 10px;">
+        Logical borders: start=red, end=blue
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.10 RTL Text Alignment with Box Model
+```typescript
+it('should handle text-align with RTL box model', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; border: 1px solid black;">
+      <div style="text-align: left; padding: 10px; background: #f0f0f0;">
+        text-align: left (physical left)
+      </div>
+      <div style="text-align: right; padding: 10px; background: #e0e0e0;">
+        text-align: right (physical right)
+      </div>
+      <div style="text-align: start; padding: 10px; background: #d0d0d0;">
+        text-align: start (logical - should be right in RTL)
+      </div>
+      <div style="text-align: end; padding: 10px; background: #c0c0c0;">
+        text-align: end (logical - should be left in RTL)
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.11 RTL Positioning
+```typescript
+it('should handle positioned elements in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; height: 200px; position: relative; border: 2px solid black;">
+      <div style="position: absolute; left: 10px; top: 10px; background: red; width: 50px; height: 50px;">
+        left: 10px
+      </div>
+      <div style="position: absolute; right: 10px; top: 10px; background: blue; width: 50px; height: 50px;">
+        right: 10px
+      </div>
+      <div style="position: absolute; inset-inline-start: 10px; top: 70px; background: green; width: 50px; height: 50px;">
+        inset-inline-start
+      </div>
+      <div style="position: absolute; inset-inline-end: 10px; top: 70px; background: orange; width: 50px; height: 50px;">
+        inset-inline-end
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.12 RTL Float Behavior
+```typescript
+it('should handle float direction in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; border: 1px solid black;">
+      <div style="float: left; width: 100px; height: 50px; background: red; margin: 5px;">
+        float: left
+      </div>
+      <div style="float: right; width: 100px; height: 50px; background: blue; margin: 5px;">
+        float: right
+      </div>
+      <p style="clear: both;">RTL text flows from right to left around floats</p>
+      <div style="float: inline-start; width: 100px; height: 50px; background: green; margin: 5px;">
+        float: inline-start
+      </div>
+      <div style="float: inline-end; width: 100px; height: 50px; background: orange; margin: 5px;">
+        float: inline-end
+      </div>
+      <p style="clear: both;">Logical float values adapt to direction</p>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.13 RTL Inline Box Model
+```typescript
+it('should handle inline element box model in RTL', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; font-size: 16px;">
+      <p>
+        RTL text with 
+        <span style="margin-left: 10px; margin-right: 20px; padding: 5px; background: yellow;">
+          physical margins
+        </span>
+        and
+        <span style="margin-inline-start: 10px; margin-inline-end: 20px; padding: 5px; background: lightblue;">
+          logical margins
+        </span>
+      </p>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.14 RTL Nested Direction Changes with Box Model
+```typescript
+it('should handle nested direction changes with box model', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; padding: 20px; border: 2px solid black;">
+      RTL container with padding
+      <div style="direction: ltr; margin: 10px; padding: 10px; border: 1px solid blue;">
+        LTR nested with margins
+        <span style="direction: rtl; display: inline-block; margin: 5px; padding: 5px; background: yellow;">
+          RTL inline-block
+        </span>
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.15 RTL Overflow and Scrolling
+```typescript
+it('should handle overflow scrolling in RTL', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 300px; height: 100px; overflow: auto; border: 1px solid black;">
+      <div style="width: 500px; padding: 10px;">
+        محتوى عربي طويل جداً يتجاوز عرض الحاوية ويحتاج إلى التمرير الأفقي
+        Long Arabic content that exceeds container width and needs horizontal scrolling
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.16 RTL Logical Properties Complex Example
+```typescript
+it('should handle all logical properties in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px;">
+      <div style="
+        margin-block-start: 10px;
+        margin-block-end: 10px;
+        margin-inline-start: 20px;
+        margin-inline-end: 30px;
+        padding-block-start: 5px;
+        padding-block-end: 5px;
+        padding-inline-start: 15px;
+        padding-inline-end: 25px;
+        border-block-start: 2px solid red;
+        border-block-end: 2px solid blue;
+        border-inline-start: 3px solid green;
+        border-inline-end: 4px solid orange;
+        background: #f0f0f0;
+      ">
+        Full logical box model in RTL
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.17 RTL Width and Height Calculations
+```typescript
+it('should calculate box dimensions correctly in RTL', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px;">
+      <div style="width: 200px; padding-left: 20px; padding-right: 30px; border-left: 5px solid red; border-right: 10px solid blue; margin-left: 10px; margin-right: 15px; background: lightgray;">
+        Total width = 200 + 20 + 30 + 5 + 10 = 265px
+        With margins: 265 + 10 + 15 = 290px
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
+##### 1.18 RTL Transform Origin
+```typescript
+it('should handle transform-origin in RTL context', async () => {
+  document.body.innerHTML = `
+    <div style="direction: rtl; width: 400px; height: 200px; position: relative;">
+      <div style="position: absolute; left: 50px; top: 50px; width: 100px; height: 50px; background: red; transform: rotate(45deg); transform-origin: left center;">
+        Physical left origin
+      </div>
+      <div style="position: absolute; right: 50px; top: 50px; width: 100px; height: 50px; background: blue; transform: rotate(45deg); transform-origin: right center;">
+        Physical right origin
+      </div>
+    </div>
+  `;
+  await snapshot();
+});
+```
+
 ### Phase 2: Typography Features (Medium Priority)
 
 Typography features are essential for proper text rendering and design flexibility.
@@ -1132,36 +1370,57 @@ This comprehensive test plan includes the following CSS properties for inline te
 
 ### High Priority Features to Implement:
 1. **Bidirectional text**: direction, unicode-bidi properties
-2. **CJK text support**: Proper line breaking and layout for Chinese, Japanese, Korean
+2. **RTL Box Model Support**: 
+   - Physical properties behavior in RTL (margin-left/right, padding-left/right, border-left/right)
+   - Logical properties (margin-inline-start/end, padding-inline-start/end, border-inline-start/end)
+   - Positioning in RTL (left/right vs inset-inline-start/end)
+   - Float behavior in RTL contexts
+   - Text alignment (start/end vs left/right)
+   - Overflow and scrolling direction
+3. **CJK text support**: Proper line breaking and layout for Chinese, Japanese, Korean
 
 ### Medium Priority Features to Implement:
-3. **letter-spacing**: Character spacing control
-4. **word-spacing**: Word spacing control
-5. **text-overflow**: ellipsis support
-6. **word-break**: break-all, keep-all
-7. **overflow-wrap**: break-word behavior
-8. **text-shadow**: Shadow effects on text (included in Phase 6.5)
-9. **text-decoration-style**: solid, double, dotted, dashed, wavy (Phase 6.6)
-10. **text-decoration-color**: Color of text decorations (Phase 6.7)
-11. **text-decoration-thickness**: Thickness of decorations (Phase 6.8)
-12. **text-underline-position**: Position of underlines (Phase 6.9)
+4. **letter-spacing**: Character spacing control
+5. **word-spacing**: Word spacing control
+6. **text-overflow**: ellipsis support
+7. **word-break**: break-all, keep-all
+8. **overflow-wrap**: break-word behavior
+9. **text-shadow**: Shadow effects on text (included in Phase 6.5)
+10. **text-decoration-style**: solid, double, dotted, dashed, wavy (Phase 6.6)
+11. **text-decoration-color**: Color of text decorations (Phase 6.7)
+12. **text-decoration-thickness**: Thickness of decorations (Phase 6.8)
+13. **text-underline-position**: Position of underlines (Phase 6.9)
 
 ### Additional Features:
-13. **text-transform**: uppercase, lowercase, capitalize
-14. **tab-size**: Control tab character width
-15. **line-break**: CJK-specific line breaking rules
-16. **quotes**: Custom quotation marks
-17. **text-size-adjust**: Mobile text size adjustment
-18. **initial-letter**: Drop caps
-19. **text-combine-upright**: Vertical text combinations
-20. **text-orientation**: Text orientation in vertical writing
-21. **box-decoration-break**: How decorations break across lines
-22. **text-rendering**: Rendering optimization hints
-23. **font-stretch**: Font width variations
-24. **text-indent**: First line indentation
-25. **text-align-last**: Last line alignment in justified text
-26. **hyphens**: Hyphenation control
-27. **ruby**: Ruby annotations for CJK
+14. **text-transform**: uppercase, lowercase, capitalize
+15. **tab-size**: Control tab character width
+16. **line-break**: CJK-specific line breaking rules
+17. **quotes**: Custom quotation marks
+18. **text-size-adjust**: Mobile text size adjustment
+19. **initial-letter**: Drop caps
+20. **text-combine-upright**: Vertical text combinations
+21. **text-orientation**: Text orientation in vertical writing
+22. **box-decoration-break**: How decorations break across lines
+23. **text-rendering**: Rendering optimization hints
+24. **font-stretch**: Font width variations
+25. **text-indent**: First line indentation
+26. **text-align-last**: Last line alignment in justified text
+27. **hyphens**: Hyphenation control
+28. **ruby**: Ruby annotations for CJK
+
+### RTL-Specific CSS Properties:
+29. **margin-inline-start/end**: Logical margin properties
+30. **padding-inline-start/end**: Logical padding properties
+31. **border-inline-start/end**: Logical border properties
+32. **margin-block-start/end**: Block-axis margin properties
+33. **padding-block-start/end**: Block-axis padding properties
+34. **border-block-start/end**: Block-axis border properties
+35. **inset-inline-start/end**: Logical positioning properties
+36. **inset-block-start/end**: Block-axis positioning properties
+37. **text-align: start/end**: Logical text alignment
+38. **float: inline-start/inline-end**: Logical float values
+39. **clear: inline-start/inline-end**: Logical clear values
+40. **resize: inline/block**: Logical resize directions
 
 ## Conclusion
 
