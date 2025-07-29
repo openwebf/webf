@@ -29,7 +29,7 @@ void HTMLStyleElement::ParseAttribute(const webf::Element::AttributeModification
 
 Node::InsertionNotificationRequest HTMLStyleElement::InsertedInto(webf::ContainerNode& insertion_point) {
   HTMLElement::InsertedInto(insertion_point);
-  if (isConnected()) {
+  if (isConnected() && GetExecutingContext()->isBlinkEnabled()) {
     StyleElement::ProcessStyleSheet(GetDocument(), *this);
   }
   return kInsertionDone;
