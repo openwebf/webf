@@ -84,6 +84,13 @@ class InlineItem {
   /// Whether this item should create a box fragment.
   bool get shouldCreateBoxFragment {
     if (renderBox == null) return false;
+
+    // Don't create box fragments for EventListener wrappers
+    // They share styles with their children but shouldn't paint backgrounds
+    if (renderBox is RenderEventListener) {
+      return false;
+    }
+
     final renderStyle = (renderBox as RenderBoxModel?)?.renderStyle;
     if (renderStyle == null) return false;
 
