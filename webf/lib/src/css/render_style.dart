@@ -232,6 +232,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   TextAlign get textAlign;
 
+  TextDirection get direction;
+
   int? get lineClamp;
 
   CSSLengthValue get lineHeight;
@@ -1503,6 +1505,8 @@ class CSSRenderStyle extends RenderStyle
         return verticalAlign;
       case TEXT_ALIGN:
         return textAlign;
+      case DIRECTION:
+        return direction;
       // Transform
       case TRANSFORM:
         return transform;
@@ -1868,6 +1872,9 @@ class CSSRenderStyle extends RenderStyle
       case TEXT_ALIGN:
         textAlign = value;
         break;
+      case DIRECTION:
+        direction = value;
+        break;
       // Transform
       case TRANSFORM:
         transform = value;
@@ -2183,6 +2190,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case TEXT_ALIGN:
         value = CSSTextMixin.resolveTextAlign(propertyValue);
+        break;
+      case DIRECTION:
+        value = CSSTextMixin.resolveDirection(propertyValue);
         break;
       case BACKGROUND_ATTACHMENT:
         value = CSSBackground.resolveBackgroundAttachment(propertyValue);

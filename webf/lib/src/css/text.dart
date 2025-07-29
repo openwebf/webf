@@ -373,6 +373,25 @@ mixin CSSTextMixin on RenderStyle {
     _markNestFlowLayoutNeedsLayout(this, TEXT_ALIGN);
   }
 
+  TextDirection? _direction;
+
+  @override
+  TextDirection get direction {
+    // Get style from self or closest parent if specified style property is not set
+    // due to style inheritance.
+    if (_direction == null && getParentRenderStyle() != null) {
+      return getParentRenderStyle()!.direction;
+    }
+    return _direction ?? TextDirection.ltr;
+  }
+
+  set direction(TextDirection? value) {
+    if (_direction == value) return;
+    _direction = value;
+    // Update all the children text and flow layout with specified style property not set due to style inheritance.
+    _markNestChildrenTextAndLayoutNeedsLayout(this, DIRECTION);
+  }
+
   // Mark flow layout and all the children flow layout with specified style property not set needs layout.
   void _markNestFlowLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     if (renderStyle.isSelfRenderFlowLayout()) {
@@ -468,6 +487,17 @@ mixin CSSTextMixin on RenderStyle {
     }
 
     return alignment;
+  }
+
+  static TextDirection? resolveDirection(String value) {
+    switch (value) {
+      case 'rtl':
+        return TextDirection.rtl;
+      case 'ltr':
+        return TextDirection.ltr;
+      default:
+        return null;
+    }
   }
 
   static TextSpan createTextSpan(

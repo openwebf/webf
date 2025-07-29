@@ -146,6 +146,9 @@ const String ALIGN_ITEMS = 'alignItems';
 const String ALIGN_SELF = 'alignSelf';
 const String ALIGN_CONTENT = 'alignContent';
 
+const String DIRECTION = 'direction';
+const String UNICODE_BIDI = 'unicodeBidi';
+
 const String SLIVER_DIRECTION = 'sliverDirection';
 
 const String TRANSFORM = 'transform';

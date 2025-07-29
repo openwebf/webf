@@ -52,7 +52,7 @@ class InlineFormattingContext {
       // Debug: Log preparation
       // print('InlineFormattingContext: prepareLayout - collecting inlines');
       _collectInlines();
-      // _resolveBidi();
+      _resolveBidi();
       _shapeText();
       _needsCollectInlines = false;
     }
@@ -61,7 +61,7 @@ class InlineFormattingContext {
   /// Collect inline items from the render tree.
   void _collectInlines() {
     final builder = InlineItemsBuilder(
-      direction: TextDirection.ltr,
+      direction: container.renderStyle.direction,
     );
 
     builder.build(container);
@@ -76,7 +76,7 @@ class InlineFormattingContext {
 
     final resolver = BidiResolver(
       text: _textContent,
-      baseDirection: TextDirection.ltr,
+      baseDirection: container.renderStyle.direction,
       items: _items,
     );
 
@@ -117,7 +117,7 @@ class InlineFormattingContext {
     final textSpan = CSSTextMixin.createTextSpan(text, style);
     final textPainter = TextPainter(
       text: textSpan,
-      textDirection: TextDirection.ltr,
+      textDirection: style.direction,
     );
 
     // Layout to get metrics

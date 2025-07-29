@@ -377,8 +377,18 @@ class InlineLayoutAlgorithm {
     final containerStyle = (context.container as RenderBoxModel).renderStyle;
 
     double offset = 0;
+    
+    // Determine the effective text alignment
+    TextAlign effectiveAlign = containerStyle.textAlign;
+    
+    // Handle TextAlign.start based on text direction
+    if (effectiveAlign == TextAlign.start) {
+      effectiveAlign = containerStyle.direction == TextDirection.rtl 
+          ? TextAlign.right 
+          : TextAlign.left;
+    }
 
-    switch (containerStyle.textAlign) {
+    switch (effectiveAlign) {
       case TextAlign.center:
         offset = (availableWidth - lineWidth) / 2;
         break;
@@ -389,6 +399,8 @@ class InlineLayoutAlgorithm {
       case TextAlign.justify:
         // TODO: Implement justify alignment
         break;
+      case TextAlign.left:
+      case TextAlign.start:
       default:
         // Left alignment, no offset needed
         break;
