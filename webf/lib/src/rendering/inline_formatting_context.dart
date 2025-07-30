@@ -115,9 +115,14 @@ class InlineFormattingContext {
 
     // Create text painter for measurement using unified text rendering from CSSTextMixin
     final textSpan = CSSTextMixin.createTextSpan(text, style);
+    // Use the item's direction if set, otherwise fall back to style direction
+    final textDirection = item.direction ?? style.direction;
+    
+    // For RTL text, we need to use Paragraph API for proper bidi handling
     final textPainter = TextPainter(
       text: textSpan,
-      textDirection: style.direction,
+      textDirection: textDirection,
+      textWidthBasis: TextWidthBasis.parent,
     );
 
     // Layout to get metrics
@@ -130,8 +135,6 @@ class InlineFormattingContext {
     // Use the text painter's height which includes line height
     final height = textPainter.height;
 
-    // Debug: Check if line height is being applied
-    print('Text: "${text}" fontSize: ${style.fontSize.computedValue} height: $height');
 
     // If baseline is null, estimate it as 80% of height (common for alphabetic baseline)
     final baseline = baselineDistance ?? (height * 0.8);

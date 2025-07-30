@@ -11,6 +11,7 @@ class LineBox {
     required this.height,
     required this.baseline,
     required this.items,
+    this.alignmentOffset = 0.0,
   });
 
   /// Width of the line box.
@@ -24,11 +25,16 @@ class LineBox {
 
   /// Items in this line box.
   final List<LineBoxItem> items;
+  
+  /// Horizontal offset for text alignment.
+  final double alignmentOffset;
 
   /// Paint this line box.
   void paint(PaintingContext context, Offset offset) {
+    // Apply alignment offset to the entire line
+    final alignedOffset = offset.translate(alignmentOffset, 0);
     for (final item in items) {
-      item.paint(context, offset);
+      item.paint(context, alignedOffset);
     }
   }
 

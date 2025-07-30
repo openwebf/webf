@@ -167,8 +167,15 @@ class InlineLayoutAlgorithm {
     _currentX = 0;
     _boxStack.clear();
 
+    // Check if we need to reverse the visual order for RTL base direction
+    final shouldReverseOrder = context.container.renderStyle.direction == TextDirection.rtl;
+    
     // Second pass: create line box items
-    for (final itemResult in lineItems) {
+    final List<InlineItemResult> orderedItems = shouldReverseOrder 
+        ? _reorderLineItemsForRTL(lineItems)
+        : lineItems;
+    
+    for (final itemResult in orderedItems) {
       final item = itemResult.item;
 
       if (item.isOpenTag) {
@@ -187,14 +194,15 @@ class InlineLayoutAlgorithm {
       _closeBox(_boxStack.removeLast(), lineBoxItems, baseline, lineHeight);
     }
 
-    // Apply text alignment
-    _applyTextAlign(lineBoxItems, lineWidth, constraints.maxWidth);
+    // Calculate text alignment offset
+    final alignmentOffset = _calculateTextAlignOffset(lineWidth, constraints.maxWidth);
 
     return LineBox(
       width: lineWidth,
       height: lineHeight,
       baseline: baseline,
       items: lineBoxItems,
+      alignmentOffset: alignmentOffset,
     );
   }
 
@@ -371,10 +379,56 @@ class InlineLayoutAlgorithm {
     _currentX += itemResult.inlineSize;
   }
 
-  /// Apply text alignment to line box items.
-  void _applyTextAlign(List<LineBoxItem> items, double lineWidth, double availableWidth) {
-    if (items.isEmpty) return;
+  /// Reorder line items for RTL visual order.
+  List<InlineItemResult> _reorderLineItemsForRTL(List<InlineItemResult> items) {
+    // For RTL base direction, we need to reverse the order of top-level runs
+    // while preserving the internal structure of nested elements
+    
+    final reordered = <InlineItemResult>[];
+    final segments = <List<InlineItemResult>>[];
+    List<InlineItemResult> currentSegment = [];
+    int depth = 0;
+    
+    // Split items into segments based on nesting depth
+    for (final item in items) {
+      if (item.item.isOpenTag) {
+        if (depth == 0 && currentSegment.isNotEmpty) {
+          segments.add(currentSegment);
+          currentSegment = [];
+        }
+        currentSegment.add(item);
+        depth++;
+      } else if (item.item.isCloseTag) {
+        currentSegment.add(item);
+        depth--;
+        if (depth == 0) {
+          segments.add(currentSegment);
+          currentSegment = [];
+        }
+      } else {
+        currentSegment.add(item);
+        if (depth == 0) {
+          segments.add(currentSegment);
+          currentSegment = [];
+        }
+      }
+    }
+    
+    // Add any remaining segment
+    if (currentSegment.isNotEmpty) {
+      segments.add(currentSegment);
+    }
+    
+    // Reverse the segments for RTL visual order
+    for (int i = segments.length - 1; i >= 0; i--) {
+      reordered.addAll(segments[i]);
+    }
+    
+    return reordered;
+  }
 
+  /// Calculate text alignment offset.
+  double _calculateTextAlignOffset(double lineWidth, double availableWidth) {
     final containerStyle = (context.container as RenderBoxModel).renderStyle;
 
     double offset = 0;
@@ -407,10 +461,6 @@ class InlineLayoutAlgorithm {
         break;
     }
 
-    if (offset > 0) {
-      for (final item in items) {
-        item.offset = item.offset.translate(offset, 0);
-      }
-    }
+    return offset;
   }
 }

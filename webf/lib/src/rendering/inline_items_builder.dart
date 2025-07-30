@@ -22,6 +22,13 @@ class InlineItemsBuilder {
 
   /// Stack of open inline boxes.
   final List<RenderBoxModel> _boxStack = [];
+  
+  /// Stack of directions for nested elements.
+  final List<TextDirection> _directionStack = [];
+  
+  /// Get current direction from stack or base direction.
+  TextDirection get _currentDirection => 
+      _directionStack.isNotEmpty ? _directionStack.last : direction;
 
   /// Current text offset.
   int get _currentOffset => _textContent.length;
@@ -31,6 +38,7 @@ class InlineItemsBuilder {
     items.clear();
     _textContent.clear();
     _boxStack.clear();
+    _directionStack.clear();
 
     _collectInlines(container);
 
@@ -105,12 +113,15 @@ class InlineItemsBuilder {
 
       // print('InlineItemsBuilder: Adding text "${processedText}" with font-size: ${style.fontSize.computedValue}');
 
-      items.add(InlineItem(
+      final item = InlineItem(
         type: InlineItemType.text,
         startOffset: startOffset,
         endOffset: _currentOffset,
         style: style,
-      ));
+      );
+      // Set the direction from the current context
+      item.direction = _currentDirection;
+      items.add(item);
     }
   }
 
@@ -118,9 +129,17 @@ class InlineItemsBuilder {
   void _addInlineBox(RenderBoxModel box) {
     // Add open tag
     _addOpenTag(box);
+    
+    // Push direction for this element
+    _directionStack.add(box.renderStyle.direction);
 
     // Collect children
     _collectInlines(box);
+    
+    // Pop direction when leaving element
+    if (_directionStack.isNotEmpty) {
+      _directionStack.removeLast();
+    }
 
     // Add close tag
     _addCloseTag(box);
@@ -147,13 +166,15 @@ class InlineItemsBuilder {
   void _addOpenTag(RenderBoxModel box) {
     _boxStack.add(box);
 
-    items.add(InlineItem(
+    final item = InlineItem(
       type: InlineItemType.openTag,
       startOffset: _currentOffset,
       endOffset: _currentOffset,
       renderBox: box,
       style: box.renderStyle,
-    ));
+    );
+    item.direction = box.renderStyle.direction;
+    items.add(item);
   }
 
   /// Add close tag for inline box.

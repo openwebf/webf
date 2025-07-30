@@ -167,6 +167,7 @@ Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
       throw FlutterError('This spec did not have corresponding snapshot file $filename.png.');
     }
 
+    print('Warn: can not found matched snapshot images, now save the snapshot image --> $filename');
     await snap.writeAsBytes(currentPixels);
     return true;
   }

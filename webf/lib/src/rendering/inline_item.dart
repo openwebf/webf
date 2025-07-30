@@ -51,6 +51,9 @@ class InlineItem {
 
   /// Bidi level for this item.
   int bidiLevel;
+  
+  /// Text direction for this item (used for element-level direction changes).
+  TextDirection? direction;
 
   /// Shaping results for text items.
   ShapeResult? shapeResult;

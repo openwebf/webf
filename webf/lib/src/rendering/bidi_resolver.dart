@@ -38,39 +38,80 @@ class BidiResolver {
       return [];
     }
 
-    // For now, use Flutter's built-in BiDi support through Paragraph
-    final paragraphBuilder = ui.ParagraphBuilder(ui.ParagraphStyle(
-      textDirection: baseDirection,
-    ));
+    // Create runs based on element-level direction changes
+    final List<BidiRun> runs = _createRunsFromItems();
     
-    paragraphBuilder.addText(text);
-    final paragraph = paragraphBuilder.build();
+    // Update inline items with BiDi levels
+    _updateItemsWithBidiLevels(runs);
     
-    // Layout with infinite width to get BiDi information
-    paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
+    return runs;
+  }
+
+  /// Create bidi runs from inline items considering element-level direction changes.
+  List<BidiRun> _createRunsFromItems() {
+    final runs = <BidiRun>[];
     
-    // Get bidi regions from the paragraph
-    final List<BidiRun> runs = [];
+    // Base paragraph level - 1 for RTL, 0 for LTR
+    final int baseLevel = baseDirection == TextDirection.rtl ? 1 : 0;
     
-    // For now, create a simple implementation that respects base direction
-    // In a full implementation, we would analyze the text using the Unicode
-    // Bidirectional Algorithm and create runs based on character properties
+    // Process all text items to create runs
+    int currentStart = 0;
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      
+      if (item.type == InlineItemType.text) {
+        final itemDirection = item.direction ?? baseDirection;
+        final itemText = text.substring(item.startOffset, item.endOffset);
+        
+        // Check if this text item contains RTL characters
+        bool hasRtlChars = _containsRtlCharacters(itemText);
+        
+        // Determine the level for this run
+        int level;
+        TextDirection runDirection;
+        
+        if (baseDirection == TextDirection.rtl) {
+          // Base is RTL (level 1)
+          if (itemDirection == TextDirection.ltr && !hasRtlChars) {
+            // Embedded LTR in RTL context gets level 2 (even)
+            level = 2;
+            runDirection = TextDirection.ltr;
+          } else {
+            // RTL text stays at level 1
+            level = 1;
+            runDirection = TextDirection.rtl;
+          }
+        } else {
+          // Base is LTR (level 0)
+          if (itemDirection == TextDirection.rtl || hasRtlChars) {
+            // Embedded RTL in LTR context gets level 1 (odd)
+            level = 1;
+            runDirection = TextDirection.rtl;
+          } else {
+            // LTR text stays at level 0
+            level = 0;
+            runDirection = TextDirection.ltr;
+          }
+        }
+        
+        runs.add(BidiRun(
+          startOffset: item.startOffset,
+          endOffset: item.endOffset,
+          direction: runDirection,
+          level: level,
+        ));
+      }
+    }
     
-    if (_containsRtlCharacters(text)) {
-      // If text contains RTL characters, we need to analyze it more carefully
-      runs.addAll(_analyzeTextForBidi());
-    } else {
-      // Simple case: all LTR
+    // If no runs were created, create a default run
+    if (runs.isEmpty) {
       runs.add(BidiRun(
         startOffset: 0,
         endOffset: text.length,
         direction: baseDirection,
-        level: 0,
+        level: baseLevel,
       ));
     }
-    
-    // Update inline items with BiDi levels
-    _updateItemsWithBidiLevels(runs);
     
     return runs;
   }
@@ -88,6 +129,44 @@ class BidiResolver {
       }
     }
     return false;
+  }
+
+  /// Analyze a text segment for character-level bidi changes.
+  void _analyzeTextSegment(List<BidiRun> runs, int startOffset, int endOffset, TextDirection baseDir) {
+    int currentStart = startOffset;
+    TextDirection? currentDirection;
+    
+    for (int i = startOffset; i < endOffset; i++) {
+      final codeUnit = text.codeUnitAt(i);
+      final isRtl = (codeUnit >= 0x0600 && codeUnit <= 0x06FF) ||
+                    (codeUnit >= 0x0590 && codeUnit <= 0x05FF);
+      
+      final charDirection = isRtl ? TextDirection.rtl : baseDir;
+      
+      if (currentDirection == null) {
+        currentDirection = charDirection;
+      } else if (currentDirection != charDirection) {
+        // Direction change, create a run
+        runs.add(BidiRun(
+          startOffset: currentStart,
+          endOffset: i,
+          direction: currentDirection,
+          level: currentDirection == TextDirection.rtl ? 1 : 0,
+        ));
+        currentStart = i;
+        currentDirection = charDirection;
+      }
+    }
+    
+    // Add the last run
+    if (currentDirection != null && currentStart < endOffset) {
+      runs.add(BidiRun(
+        startOffset: currentStart,
+        endOffset: endOffset,
+        direction: currentDirection,
+        level: currentDirection == TextDirection.rtl ? 1 : 0,
+      ));
+    }
   }
 
   /// Analyze text for BiDi runs (simplified implementation).
@@ -168,9 +247,10 @@ class BidiResolver {
     final reordered = List<InlineItem>.from(items);
     
     // Process levels from highest to lowest
+    // The algorithm reverses runs at odd levels
     for (int level = maxLevel; level >= 1; level--) {
       if (level % 2 == 1) {
-        // Odd levels (RTL) - reverse sequences at this level
+        // Odd levels (RTL) - reverse sequences at this level or higher
         int start = -1;
         for (int i = 0; i <= reordered.length; i++) {
           if (i < reordered.length && reordered[i].bidiLevel >= level) {
