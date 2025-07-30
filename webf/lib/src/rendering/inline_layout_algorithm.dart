@@ -174,7 +174,7 @@ class InlineLayoutAlgorithm {
       if (item.isOpenTag) {
         _handleOpenTag(item);
       } else if (item.isCloseTag) {
-        _handleCloseTag(item, lineBoxItems, baseline);
+        _handleCloseTag(item, lineBoxItems, baseline, lineHeight);
       } else if (item.isText) {
         _addTextItem(itemResult, lineBoxItems, baseline);
       } else if (item.isAtomicInline) {
@@ -184,7 +184,7 @@ class InlineLayoutAlgorithm {
 
     // Close any remaining open boxes
     while (_boxStack.isNotEmpty) {
-      _closeBox(_boxStack.removeLast(), lineBoxItems, baseline);
+      _closeBox(_boxStack.removeLast(), lineBoxItems, baseline, lineHeight);
     }
 
     // Apply text alignment
@@ -239,25 +239,26 @@ class InlineLayoutAlgorithm {
   }
 
   /// Handle close tag.
-  void _handleCloseTag(InlineItem item, List<LineBoxItem> lineBoxItems, double baseline) {
+  void _handleCloseTag(InlineItem item, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
     // Find matching open box in stack
     for (int i = _boxStack.length - 1; i >= 0; i--) {
       if (_boxStack[i].renderBox == item.renderBox) {
         final boxState = _boxStack.removeAt(i);
-        _closeBox(boxState, lineBoxItems, baseline);
+        _closeBox(boxState, lineBoxItems, baseline, lineHeight);
         break;
       }
     }
   }
 
   /// Close an inline box.
-  void _closeBox(InlineBoxState boxState, List<LineBoxItem> lineBoxItems, double baseline) {
+  void _closeBox(InlineBoxState boxState, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
     final width = _currentX - boxState.startX;
 
     if (width > 0) {
-      // For inline boxes, position at baseline
-      final height = baseline * defaultLineHeightMultiplier; // Chrome-like line height
-      final y = baseline - height;
+      // Use the actual line height for the box
+      final height = lineHeight;
+      // Position the box so its bottom aligns with the baseline + descent
+      final y = 0.0; // Top of line box
 
       lineBoxItems.add(BoxLineBoxItem(
         offset: Offset(boxState.startX, y),
