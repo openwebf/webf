@@ -8,6 +8,22 @@ import 'inline_box_state.dart';
 import 'line_box.dart';
 import 'line_breaker.dart';
 
+/// Helper class for tracking runs during bidi reordering
+class _RunInfo {
+  final int start;
+  final int end;
+  _RunInfo(this.start, this.end);
+}
+
+/// Helper class for tracking segments during RTL base direction processing
+class _Segment {
+  final int start;
+  final int end;
+  final int level;
+  _Segment(this.start, this.end, this.level);
+}
+
+
 /// Performs inline layout algorithm.
 /// Based on Blink's InlineLayoutAlgorithm.
 class InlineLayoutAlgorithm {
@@ -167,13 +183,9 @@ class InlineLayoutAlgorithm {
     _currentX = 0;
     _boxStack.clear();
 
-    // Check if we need to reverse the visual order for RTL base direction
-    final shouldReverseOrder = context.container.renderStyle.direction == TextDirection.rtl;
-    
-    // Second pass: create line box items
-    final List<InlineItemResult> orderedItems = shouldReverseOrder 
-        ? _reorderLineItemsForRTL(lineItems)
-        : lineItems;
+    // Always apply bidi reordering based on resolved levels
+    // This handles both RTL and LTR base directions with mixed content
+    final List<InlineItemResult> orderedItems = _reorderLineItemsForBidi(lineItems);
     
     for (final itemResult in orderedItems) {
       final item = itemResult.item;
@@ -379,52 +391,116 @@ class InlineLayoutAlgorithm {
     _currentX += itemResult.inlineSize;
   }
 
-  /// Reorder line items for RTL visual order.
-  List<InlineItemResult> _reorderLineItemsForRTL(List<InlineItemResult> items) {
-    // For RTL base direction, we need to reverse the order of top-level runs
-    // while preserving the internal structure of nested elements
+  /// Reorder line items based on bidi levels for visual order.
+  List<InlineItemResult> _reorderLineItemsForBidi(List<InlineItemResult> items) {
+    // Apply the Unicode Bidirectional Algorithm reordering based on resolved bidi levels
     
-    final reordered = <InlineItemResult>[];
-    final segments = <List<InlineItemResult>>[];
-    List<InlineItemResult> currentSegment = [];
-    int depth = 0;
+    if (items.isEmpty) return items;
     
-    // Split items into segments based on nesting depth
+    
+    // Find the highest bidi level
+    int maxLevel = 0;
+    int minLevel = 999;
     for (final item in items) {
-      if (item.item.isOpenTag) {
-        if (depth == 0 && currentSegment.isNotEmpty) {
-          segments.add(currentSegment);
-          currentSegment = [];
+      if (item.item.bidiLevel > maxLevel) {
+        maxLevel = item.item.bidiLevel;
+      }
+      if (item.item.bidiLevel < minLevel) {
+        minLevel = item.item.bidiLevel;
+      }
+    }
+    
+    // If all items are at level 0 (LTR), no reordering needed
+    if (maxLevel == 0) {
+      return items;
+    }
+    
+    final reordered = List<InlineItemResult>.from(items);
+    
+    // The key insight: we need to reverse sequences at each odd level,
+    // processing from the highest level down to level 1
+    for (int level = maxLevel; level >= minLevel; level--) {
+      // For odd levels, find and reverse contiguous sequences at that level
+      if (level % 2 == 1) {
+        // Find all runs at this exact level
+        List<_RunInfo> runs = [];
+        int? runStart;
+        
+        for (int i = 0; i <= reordered.length; i++) {
+          bool isAtLevel = i < reordered.length && reordered[i].item.bidiLevel == level;
+          
+          if (isAtLevel) {
+            runStart ??= i;
+          } else if (runStart != null) {
+            runs.add(_RunInfo(runStart, i - 1));
+            runStart = null;
+          }
         }
-        currentSegment.add(item);
-        depth++;
-      } else if (item.item.isCloseTag) {
-        currentSegment.add(item);
-        depth--;
-        if (depth == 0) {
-          segments.add(currentSegment);
-          currentSegment = [];
-        }
-      } else {
-        currentSegment.add(item);
-        if (depth == 0) {
-          segments.add(currentSegment);
-          currentSegment = [];
+        
+        // Reverse each run
+        for (final run in runs) {
+          _reverseItemRange(reordered, run.start, run.end);
         }
       }
     }
     
-    // Add any remaining segment
-    if (currentSegment.isNotEmpty) {
-      segments.add(currentSegment);
+    // For RTL base direction, the entire line needs to be processed as RTL
+    if (context.container.renderStyle.direction == TextDirection.rtl) {
+      // Group items by their level to maintain proper nesting
+      // The trick is that we need to reverse the top-level structure
+      _applyRTLBaseDirection(reordered);
     }
     
-    // Reverse the segments for RTL visual order
-    for (int i = segments.length - 1; i >= 0; i--) {
-      reordered.addAll(segments[i]);
-    }
     
     return reordered;
+  }
+  
+  void _applyRTLBaseDirection(List<InlineItemResult> items) {
+    // For RTL base direction, we need to reverse the visual order of
+    // top-level runs while preserving the internal structure of embedded runs
+    
+    // Find continuous segments at each level
+    List<_Segment> segments = [];
+    int currentStart = 0;
+    int currentLevel = items.isEmpty ? 0 : items[0].item.bidiLevel;
+    
+    for (int i = 1; i <= items.length; i++) {
+      int level = i < items.length ? items[i].item.bidiLevel : -1;
+      
+      if (level != currentLevel) {
+        segments.add(_Segment(currentStart, i - 1, currentLevel));
+        currentStart = i;
+        currentLevel = level;
+      }
+    }
+    
+    
+    // Reverse the segments array to get RTL visual order
+    segments = segments.reversed.toList();
+    
+    // Rebuild the items array with segments in reversed order
+    final newItems = <InlineItemResult>[];
+    for (final segment in segments) {
+      for (int i = segment.start; i <= segment.end; i++) {
+        newItems.add(items[i]);
+      }
+    }
+    
+    // Copy back to original array
+    for (int i = 0; i < newItems.length; i++) {
+      items[i] = newItems[i];
+    }
+  }
+  
+  /// Helper to reverse a range of items
+  void _reverseItemRange(List<InlineItemResult> items, int start, int end) {
+    while (start < end) {
+      final temp = items[start];
+      items[start] = items[end];
+      items[end] = temp;
+      start++;
+      end--;
+    }
   }
 
   /// Calculate text alignment offset.

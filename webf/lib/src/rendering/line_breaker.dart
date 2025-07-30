@@ -47,10 +47,8 @@ class LineBreaker {
     _currentWidth = 0;
 
     // Debug: Print all items
-    print('LineBreaker: Breaking ${items.length} items, availableWidth=$availableWidth');
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      print('  Item $i: type=${item.type}, text="${item.getText(textContent)}", renderBox=${item.renderBox?.runtimeType}');
     }
 
     while (_itemIndex < items.length) {
@@ -80,12 +78,6 @@ class LineBreaker {
     // Add remaining line
     if (_currentLine.isNotEmpty) {
       _commitLine();
-    }
-
-    // Debug: Print line results
-    print('LineBreaker: Created ${_lines.length} lines');
-    for (int i = 0; i < _lines.length; i++) {
-      print('  Line $i: ${_lines[i].length} items, total width=${_lines[i].fold(0.0, (sum, item) => sum + item.inlineSize)}');
     }
 
     return _lines;
@@ -196,14 +188,11 @@ class LineBreaker {
     // Add margins to the width for RenderBoxModel
     double totalWidth = width;
     if (renderBox is RenderBoxModel) {
-      totalWidth += renderBox.renderStyle.marginLeft.computedValue + 
+      totalWidth += renderBox.renderStyle.marginLeft.computedValue +
                     renderBox.renderStyle.marginRight.computedValue;
     }
 
-    // Check if it fits
-    print('  Atomic item: width=$width, totalWidth=$totalWidth, currentWidth=$_currentWidth, availableWidth=$availableWidth');
     if (_currentWidth + totalWidth > availableWidth && _currentLine.isNotEmpty) {
-      print('  Breaking line - atomic item doesn\'t fit');
       _commitLine();
     }
 
@@ -242,7 +231,7 @@ class LineBreaker {
         textDirection: TextDirection.ltr,
       );
       fullTextPainter.layout();
-      
+
       if (fullTextPainter.width <= availableWidth) {
         return text.length;
       }

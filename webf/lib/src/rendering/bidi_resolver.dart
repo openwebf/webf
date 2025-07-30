@@ -41,6 +41,9 @@ class BidiResolver {
     // Create runs based on element-level direction changes
     final List<BidiRun> runs = _createRunsFromItems();
     
+    // Split inline items based on bidi runs
+    _splitItemsByBidiRuns(runs);
+    
     // Update inline items with BiDi levels
     _updateItemsWithBidiLevels(runs);
     
@@ -62,44 +65,10 @@ class BidiResolver {
       if (item.type == InlineItemType.text) {
         final itemDirection = item.direction ?? baseDirection;
         final itemText = text.substring(item.startOffset, item.endOffset);
+        final itemLevel = item.bidiLevel;
         
-        // Check if this text item contains RTL characters
-        bool hasRtlChars = _containsRtlCharacters(itemText);
-        
-        // Determine the level for this run
-        int level;
-        TextDirection runDirection;
-        
-        if (baseDirection == TextDirection.rtl) {
-          // Base is RTL (level 1)
-          if (itemDirection == TextDirection.ltr && !hasRtlChars) {
-            // Embedded LTR in RTL context gets level 2 (even)
-            level = 2;
-            runDirection = TextDirection.ltr;
-          } else {
-            // RTL text stays at level 1
-            level = 1;
-            runDirection = TextDirection.rtl;
-          }
-        } else {
-          // Base is LTR (level 0)
-          if (itemDirection == TextDirection.rtl || hasRtlChars) {
-            // Embedded RTL in LTR context gets level 1 (odd)
-            level = 1;
-            runDirection = TextDirection.rtl;
-          } else {
-            // LTR text stays at level 0
-            level = 0;
-            runDirection = TextDirection.ltr;
-          }
-        }
-        
-        runs.add(BidiRun(
-          startOffset: item.startOffset,
-          endOffset: item.endOffset,
-          direction: runDirection,
-          level: level,
-        ));
+        // For mixed content, analyze character by character
+        _analyzeTextSegment(runs, item.startOffset, item.endOffset, itemDirection, itemLevel);
       }
     }
     
@@ -132,29 +101,58 @@ class BidiResolver {
   }
 
   /// Analyze a text segment for character-level bidi changes.
-  void _analyzeTextSegment(List<BidiRun> runs, int startOffset, int endOffset, TextDirection baseDir) {
+  void _analyzeTextSegment(List<BidiRun> runs, int startOffset, int endOffset, TextDirection baseDir, int baseLevel) {
     int currentStart = startOffset;
     TextDirection? currentDirection;
+    int? currentLevel;
+    
     
     for (int i = startOffset; i < endOffset; i++) {
       final codeUnit = text.codeUnitAt(i);
       final isRtl = (codeUnit >= 0x0600 && codeUnit <= 0x06FF) ||
                     (codeUnit >= 0x0590 && codeUnit <= 0x05FF);
       
-      final charDirection = isRtl ? TextDirection.rtl : baseDir;
+      TextDirection charDirection;
+      int level;
+      
+      if (isRtl) {
+        // RTL character
+        if (baseLevel % 2 == 0) {
+          // In LTR context (even level), RTL gets next odd level
+          charDirection = TextDirection.rtl;
+          level = baseLevel + 1;
+        } else {
+          // In RTL context (odd level), RTL stays at same level
+          charDirection = TextDirection.rtl;
+          level = baseLevel;
+        }
+      } else {
+        // Latin characters
+        if (baseLevel % 2 == 1) {
+          // In RTL context (odd level), Latin gets next even level
+          charDirection = TextDirection.ltr;
+          level = baseLevel + 1;
+        } else {
+          // In LTR context (even level), Latin stays at same level
+          charDirection = TextDirection.ltr;
+          level = baseLevel;
+        }
+      }
       
       if (currentDirection == null) {
         currentDirection = charDirection;
-      } else if (currentDirection != charDirection) {
-        // Direction change, create a run
+        currentLevel = level;
+      } else if (currentDirection != charDirection || currentLevel != level) {
+        // Direction or level change, create a run
         runs.add(BidiRun(
           startOffset: currentStart,
           endOffset: i,
           direction: currentDirection,
-          level: currentDirection == TextDirection.rtl ? 1 : 0,
+          level: currentLevel!,
         ));
         currentStart = i;
         currentDirection = charDirection;
+        currentLevel = level;
       }
     }
     
@@ -164,7 +162,7 @@ class BidiResolver {
         startOffset: currentStart,
         endOffset: endOffset,
         direction: currentDirection,
-        level: currentDirection == TextDirection.rtl ? 1 : 0,
+        level: currentLevel!,
       ));
     }
   }
@@ -210,19 +208,58 @@ class BidiResolver {
     return runs;
   }
 
-  /// Update inline items with BiDi levels from runs.
-  void _updateItemsWithBidiLevels(List<BidiRun> runs) {
+  /// Split inline items based on bidi runs.
+  void _splitItemsByBidiRuns(List<BidiRun> runs) {
+    final newItems = <InlineItem>[];
+    
     for (final item in items) {
       if (item.type == InlineItemType.text) {
-        // Find the run that contains this item
+        // Find all runs that overlap with this text item
+        bool itemSplit = false;
+        
         for (final run in runs) {
-          if (item.startOffset >= run.startOffset && item.endOffset <= run.endOffset) {
-            item.bidiLevel = run.level;
-            break;
+          // Check if this run overlaps with the item
+          if (run.startOffset < item.endOffset && run.endOffset > item.startOffset) {
+            // Calculate the overlap
+            final overlapStart = run.startOffset > item.startOffset ? run.startOffset : item.startOffset;
+            final overlapEnd = run.endOffset < item.endOffset ? run.endOffset : item.endOffset;
+            
+            if (overlapStart < overlapEnd) {
+              // Create a new item for this overlap
+              final newItem = InlineItem(
+                type: InlineItemType.text,
+                startOffset: overlapStart,
+                endOffset: overlapEnd,
+                style: item.style,
+              );
+              newItem.direction = item.direction;
+              newItem.bidiLevel = run.level;
+              newItems.add(newItem);
+              itemSplit = true;
+              
+            }
           }
         }
+        
+        if (!itemSplit) {
+          // No split needed, keep the original item
+          newItems.add(item);
+        }
+      } else {
+        // Non-text items are kept as-is
+        newItems.add(item);
       }
     }
+    
+    // Replace the items list
+    items.clear();
+    items.addAll(newItems);
+  }
+  
+  /// Update inline items with BiDi levels from runs.
+  void _updateItemsWithBidiLevels(List<BidiRun> runs) {
+    // Items should already have bidi levels set from _splitItemsByBidiRuns
+    // This method is kept for compatibility but the work is already done
   }
 
   /// Reorder items for visual order based on BiDi levels.

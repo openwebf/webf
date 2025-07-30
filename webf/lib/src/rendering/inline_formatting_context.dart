@@ -82,9 +82,9 @@ class InlineFormattingContext {
 
     // Resolve BiDi levels
     resolver.resolve();
-
-    // Reorder items for visual order if needed
-    _items = BidiResolver.reorderItemsForVisualOrder(_items);
+    
+    // Note: Visual reordering happens at the line level in InlineLayoutAlgorithm,
+    // not here at the item collection level
   }
 
   /// Shape text items using Flutter's text layout.

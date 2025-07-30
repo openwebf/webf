@@ -26,9 +26,16 @@ class InlineItemsBuilder {
   /// Stack of directions for nested elements.
   final List<TextDirection> _directionStack = [];
   
+  /// Stack of embedding levels for nested elements.
+  final List<int> _levelStack = [];
+  
   /// Get current direction from stack or base direction.
   TextDirection get _currentDirection => 
       _directionStack.isNotEmpty ? _directionStack.last : direction;
+      
+  /// Get current embedding level.
+  int get _currentLevel => 
+      _levelStack.isNotEmpty ? _levelStack.last : (direction == TextDirection.rtl ? 1 : 0);
 
   /// Current text offset.
   int get _currentOffset => _textContent.length;
@@ -39,12 +46,29 @@ class InlineItemsBuilder {
     _textContent.clear();
     _boxStack.clear();
     _directionStack.clear();
+    _levelStack.clear();
+
+    // Initialize direction stack with container's direction if it has one
+    if (container is RenderBoxModel) {
+      _directionStack.add(container.renderStyle.direction);
+      _levelStack.add(container.renderStyle.direction == TextDirection.rtl ? 1 : 0);
+    }
 
     _collectInlines(container);
 
     // Add final close tags for any unclosed boxes
     while (_boxStack.isNotEmpty) {
       _addCloseTag(_boxStack.removeLast());
+    }
+    
+    // Clean up the initial direction from stack
+    if (container is RenderBoxModel) {
+      if (_directionStack.isNotEmpty) {
+        _directionStack.removeLast();
+      }
+      if (_levelStack.isNotEmpty) {
+        _levelStack.removeLast();
+      }
     }
   }
 
@@ -121,6 +145,7 @@ class InlineItemsBuilder {
       );
       // Set the direction from the current context
       item.direction = _currentDirection;
+      item.bidiLevel = _currentLevel;
       items.add(item);
     }
   }
@@ -130,15 +155,30 @@ class InlineItemsBuilder {
     // Add open tag
     _addOpenTag(box);
     
-    // Push direction for this element
-    _directionStack.add(box.renderStyle.direction);
+    // Calculate embedding level for this element
+    final newDirection = box.renderStyle.direction;
+    final parentLevel = _currentLevel;
+    int newLevel;
+    
+    if (newDirection != _currentDirection) {
+      // Direction change - increase embedding level
+      newLevel = parentLevel + 1;
+    } else {
+      // Same direction - keep same level
+      newLevel = parentLevel;
+    }
+    
+    // Push direction and level for this element
+    _directionStack.add(newDirection);
+    _levelStack.add(newLevel);
 
     // Collect children
     _collectInlines(box);
     
-    // Pop direction when leaving element
+    // Pop direction and level when leaving element
     if (_directionStack.isNotEmpty) {
       _directionStack.removeLast();
+      _levelStack.removeLast();
     }
 
     // Add close tag

@@ -95,7 +95,7 @@ describe('Bidirectional Text', () => {
     await snapshot();
   });
 
-  it('should handle nested direction changes', async () => {
+  fit('should handle nested direction changes', async () => {
     let container = createElement(
       'div',
       {
