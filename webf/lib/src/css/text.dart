@@ -507,6 +507,14 @@ mixin CSSTextMixin on RenderStyle {
     double? height,
     TextSpan? oldTextSpan,
   }) {
+    // Ensure font is loaded for the specific weight before creating TextStyle
+    List<String>? fontFamilies = renderStyle.fontFamily;
+    if (fontFamilies != null && fontFamilies.isNotEmpty) {
+      String primaryFontFamily = fontFamilies[0];
+      // Fire and forget - the font will be available for the next frame
+      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight);
+    }
+    
     // Creates a new TextStyle object.
     //   color: The color to use when painting the text. If this is specified, foreground must be null.
     //   decoration: The decorations to paint near the text (e.g., an underline).

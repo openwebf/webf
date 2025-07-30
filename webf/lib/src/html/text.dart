@@ -133,6 +133,38 @@ class WebFTextState extends WebFWidgetElementState {
   WebFTextElement get widgetElement => super.widgetElement as WebFTextElement;
 
   @override
+  void initState() {
+    super.initState();
+    _ensureFontsLoaded();
+  }
+  
+  void _ensureFontsLoaded() async {
+    // Ensure fonts are loaded for the text element and its children
+    await _loadFontsForElement(widgetElement);
+  }
+  
+  Future<void> _loadFontsForElement(dom.Element element) async {
+    // Load font for this element
+    List<String>? fontFamilies = element.renderStyle.fontFamily;
+    if (fontFamilies != null && fontFamilies.isNotEmpty) {
+      String primaryFontFamily = fontFamilies[0];
+      await CSSFontFace.ensureFontLoaded(primaryFontFamily, element.renderStyle.fontWeight);
+    }
+    
+    // Load fonts for child elements
+    element.childNodes.forEach((node) async {
+      if (node is dom.Element && node is WebFTextElement) {
+        await _loadFontsForElement(node);
+      }
+    });
+    
+    // Trigger a rebuild if fonts were loaded
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     double lineHeight =
         widgetElement.renderStyle.lineHeight.computedValue / widgetElement.renderStyle.fontSize.computedValue;
