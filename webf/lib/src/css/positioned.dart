@@ -75,7 +75,6 @@ class CSSPositionedLayout {
   static void applyRelativeOffset(Offset? relativeOffset, RenderBox renderBox) {
     RenderLayoutParentData? boxParentData = renderBox.parentData as RenderLayoutParentData?;
 
-    print('apply $relativeOffset $renderBox');
     if (boxParentData != null) {
       Offset? styleOffset;
       // Text node does not have relative offset

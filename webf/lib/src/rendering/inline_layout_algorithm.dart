@@ -43,6 +43,9 @@ class InlineLayoutAlgorithm {
 
   /// Stack of open inline boxes.
   final List<InlineBoxState> _boxStack = [];
+  
+  /// Map to track which items belong to which inline box.
+  final Map<RenderBox, List<LineBoxItem>> _boxToItems = {};
 
   /// Perform layout and return line boxes.
   List<LineBox> layout() {
@@ -182,29 +185,62 @@ class InlineLayoutAlgorithm {
     // Reset position for this line
     _currentX = 0;
     _boxStack.clear();
+    _boxToItems.clear();
 
     // Always apply bidi reordering based on resolved levels
     // This handles both RTL and LTR base directions with mixed content
     final List<InlineItemResult> orderedItems = _reorderLineItemsForBidi(lineItems);
     
+    // Track which inline boxes are open for each item
+    final Map<InlineItemResult, Set<RenderBox>> itemToBoxes = {};
+    final List<RenderBox> currentBoxes = [];
+    
+    // First pass: determine which boxes each item belongs to
+    // This is done in logical order before bidi reordering
+    for (final itemResult in lineItems) {
+      final item = itemResult.item;
+      
+      if (item.isOpenTag && item.renderBox != null) {
+        currentBoxes.add(item.renderBox!);
+      } else if (item.isCloseTag && item.renderBox != null) {
+        currentBoxes.remove(item.renderBox!);
+      }
+      
+      // Record which boxes this item is inside
+      if (currentBoxes.isNotEmpty) {
+        itemToBoxes[itemResult] = Set.from(currentBoxes);
+      }
+    }
+    
+    // Second pass: layout items in visual order and track positions
     for (final itemResult in orderedItems) {
       final item = itemResult.item;
 
       if (item.isOpenTag) {
         _handleOpenTag(item);
       } else if (item.isCloseTag) {
-        _handleCloseTag(item, lineBoxItems, baseline, lineHeight);
+        // Skip close tags for now - we'll create boxes after all items are positioned
       } else if (item.isText) {
-        _addTextItem(itemResult, lineBoxItems, baseline);
+        final textItem = _addTextItem(itemResult, lineBoxItems, baseline);
+        // Track this item for any boxes it belongs to
+        if (itemToBoxes.containsKey(itemResult)) {
+          for (final box in itemToBoxes[itemResult]!) {
+            _boxToItems.putIfAbsent(box, () => []).add(textItem);
+          }
+        }
       } else if (item.isAtomicInline) {
-        _addAtomicItem(itemResult, lineBoxItems, baseline, maxAscent, maxDescent, lineHeight);
+        final atomicItem = _addAtomicItem(itemResult, lineBoxItems, baseline, maxAscent, maxDescent, lineHeight);
+        // Track this item for any boxes it belongs to
+        if (itemToBoxes.containsKey(itemResult)) {
+          for (final box in itemToBoxes[itemResult]!) {
+            _boxToItems.putIfAbsent(box, () => []).add(atomicItem);
+          }
+        }
       }
     }
 
-    // Close any remaining open boxes
-    while (_boxStack.isNotEmpty) {
-      _closeBox(_boxStack.removeLast(), lineBoxItems, baseline, lineHeight);
-    }
+    // Third pass: create box items with correct visual bounds
+    _createInlineBoxes(lineItems, lineBoxItems, baseline, lineHeight);
 
     // Calculate text alignment offset
     final alignmentOffset = _calculateTextAlignOffset(lineWidth, constraints.maxWidth);
@@ -264,7 +300,7 @@ class InlineLayoutAlgorithm {
     for (int i = _boxStack.length - 1; i >= 0; i--) {
       if (_boxStack[i].renderBox == item.renderBox) {
         final boxState = _boxStack.removeAt(i);
-        _closeBox(boxState, lineBoxItems, baseline, lineHeight);
+        // Don't create box item here - it will be created in _createInlineBoxes
         break;
       }
     }
@@ -272,28 +308,24 @@ class InlineLayoutAlgorithm {
 
   /// Close an inline box.
   void _closeBox(InlineBoxState boxState, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
-    final width = _currentX - boxState.startX;
-
-    if (width > 0) {
-      // Use the actual line height for the box
-      final height = lineHeight;
-      // Position the box so its bottom aligns with the baseline + descent
-      final y = 0.0; // Top of line box
-
-      lineBoxItems.add(BoxLineBoxItem(
-        offset: Offset(boxState.startX, y),
-        size: Size(width, height),
-        renderBox: boxState.renderBox,
-        style: boxState.style,
-        children: boxState.children,
-      ));
-    }
+    // This method is now only called for unclosed boxes at the end of the line
+    // Don't create box item here - it will be created in _createInlineBoxes
   }
 
   /// Add text item to line box.
-  void _addTextItem(InlineItemResult itemResult, List<LineBoxItem> lineBoxItems, double baseline) {
+  LineBoxItem _addTextItem(InlineItemResult itemResult, List<LineBoxItem> lineBoxItems, double baseline) {
     final item = itemResult.item;
-    if (itemResult.shapeResult == null) return;
+    if (itemResult.shapeResult == null) {
+      // Return a dummy item if no shape result
+      return TextLineBoxItem(
+        offset: Offset.zero,
+        size: Size.zero,
+        text: '',
+        style: context.container.renderStyle,
+        textPainter: TextPainter(),
+        inlineItem: item,
+      );
+    }
 
     final text = context.textContent.substring(itemResult.startOffset, itemResult.endOffset);
 
@@ -312,21 +344,25 @@ class InlineLayoutAlgorithm {
       inlineItem: item,
     );
 
-    // Add to current box if any
-    if (_boxStack.isNotEmpty) {
-      _boxStack.last.children.add(textItem);
-    } else {
-      lineBoxItems.add(textItem);
-    }
+    // Always add to line box items (not to box stack)
+    lineBoxItems.add(textItem);
 
     _currentX += itemResult.inlineSize;
+    return textItem;
   }
 
   /// Add atomic inline item to line box.
-  void _addAtomicItem(InlineItemResult itemResult, List<LineBoxItem> lineBoxItems, double baseline, double maxAscent,
+  LineBoxItem _addAtomicItem(InlineItemResult itemResult, List<LineBoxItem> lineBoxItems, double baseline, double maxAscent,
       double maxDescent, double lineHeight) {
     final item = itemResult.item;
-    if (item.renderBox == null) return;
+    if (item.renderBox == null) {
+      // Return a dummy item if no render box
+      return AtomicLineBoxItem(
+        offset: Offset.zero,
+        size: Size.zero,
+        renderBox: context.container,
+      );
+    }
 
     final renderBox = item.renderBox!;
 
@@ -335,7 +371,14 @@ class InlineLayoutAlgorithm {
         ? (renderBox.boxSize?.height ?? 0.0)
         : (renderBox.hasSize ? renderBox.size.height : 0.0);
 
-    if (height == 0) return; // Skip if no valid size
+    if (height == 0) {
+      // Return a dummy item if no valid size
+      return AtomicLineBoxItem(
+        offset: Offset.zero,
+        size: Size.zero,
+        renderBox: renderBox,
+      );
+    }
 
     // Get the item's baseline if available
     final itemBaseline = renderBox is RenderBoxModel
@@ -389,6 +432,73 @@ class InlineLayoutAlgorithm {
 
     lineBoxItems.add(atomicItem);
     _currentX += itemResult.inlineSize;
+    return atomicItem;
+  }
+
+  /// Create inline box items with correct visual bounds after bidi reordering.
+  /// This solves the issue where inline box backgrounds were positioned incorrectly
+  /// after bidi reordering, especially for nested LTR spans in RTL context.
+  void _createInlineBoxes(List<InlineItemResult> lineItems, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
+    // Find all unique boxes that need background/border rendering
+    final Set<RenderBox> boxesWithContent = {};
+    for (final entry in _boxToItems.entries) {
+      if (entry.value.isNotEmpty) {
+        boxesWithContent.add(entry.key);
+      }
+    }
+    
+    // For each box, calculate its visual bounds based on its content
+    for (final box in boxesWithContent) {
+      final items = _boxToItems[box]!;
+      if (items.isEmpty) continue;
+      
+      // Find the leftmost and rightmost positions of the box's content
+      // This gives us the actual visual bounds after bidi reordering
+      double minX = double.infinity;
+      double maxX = double.negativeInfinity;
+      
+      for (final item in items) {
+        minX = math.min(minX, item.offset.dx);
+        maxX = math.max(maxX, item.offset.dx + item.size.width);
+      }
+      
+      if (minX < double.infinity && maxX > double.negativeInfinity) {
+        final width = maxX - minX;
+        
+        // Get the style for this box
+        CSSRenderStyle? style;
+        if (box is RenderBoxModel) {
+          style = box.renderStyle;
+        }
+        
+        if (style != null && _shouldCreateBoxFragment(style)) {
+          // Create box item at the correct visual position
+          final boxItem = BoxLineBoxItem(
+            offset: Offset(minX, 0.0),
+            size: Size(width, lineHeight),
+            renderBox: box,
+            style: style,
+            children: items,
+          );
+          
+          // Insert the box item at the beginning so it renders behind text
+          lineBoxItems.insert(0, boxItem);
+        }
+      }
+    }
+  }
+  
+  /// Check if a box should create a box fragment (has background, border, or padding).
+  bool _shouldCreateBoxFragment(CSSRenderStyle style) {
+    return (style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) ||
+           (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) ||
+           (style.borderRightWidth?.value != null && style.borderRightWidth!.value! > 0) ||
+           (style.borderBottomWidth?.value != null && style.borderBottomWidth!.value! > 0) ||
+           (style.paddingLeft?.value != null && style.paddingLeft!.value! > 0) ||
+           (style.paddingTop?.value != null && style.paddingTop!.value! > 0) ||
+           (style.paddingRight?.value != null && style.paddingRight!.value! > 0) ||
+           (style.paddingBottom?.value != null && style.paddingBottom!.value! > 0) ||
+           (style.backgroundColor?.value != null);
   }
 
   /// Reorder line items based on bidi levels for visual order.
