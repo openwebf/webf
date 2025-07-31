@@ -2,6 +2,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_next.dart';
+import 'package:webf/src/rendering/event_listener.dart';
 import 'inline_item.dart';
 
 /// Builds a flat list of InlineItems from render tree.
@@ -94,7 +95,13 @@ class InlineItemsBuilder {
         if (display == CSSDisplay.inline) {
           // This case should not happen anymore as inline elements now use RenderInlineBox
           // But keep it for backward compatibility
-          _addInlineBox(child);
+          // Skip RenderEventListener wrappers - they're just for event handling
+          // and shouldn't create separate inline boxes
+          if (child is RenderEventListener && child.child != null) {
+            _collectInlines(child);
+          } else {
+            _addInlineBox(child);
+          }
         } else if (display == CSSDisplay.inlineBlock || display == CSSDisplay.inlineFlex) {
           _addAtomicInline(child);
         } else if (child.renderStyle.position == CSSPositionType.fixed ||
