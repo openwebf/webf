@@ -57,6 +57,8 @@ class ContentVerification {
 
   /// Determines if a specific render object represents visible content
   static bool _isVisibleContent(RenderObject renderObject) {
+    if (renderObject is RenderBox && !renderObject.hasSize) return false;
+
     // Check size - must have meaningful dimensions
     if (renderObject is RenderBox) {
       if (!renderObject.hasSize || renderObject.size.isEmpty) {
@@ -198,7 +200,7 @@ class ContentVerification {
   /// Verifies if a specific element has rendered visible content
   static bool elementHasVisibleContent(Element element) {
     final renderer = element.attachedRenderer;
-    if (renderer == null) {
+    if (renderer == null || !renderer.hasSize) {
       return false;
     }
 
