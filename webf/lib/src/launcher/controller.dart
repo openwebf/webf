@@ -1832,41 +1832,43 @@ class WebFController with Diagnosticable {
   void finalizeLCP() {
     if (_currentRouteMetrics == null) return;
 
-    final metrics = _currentRouteMetrics!;
-    // Cancel the auto-finalization timer if it's still running
-    metrics.lcpAutoFinalizeTimer?.cancel();
-    metrics.lcpAutoFinalizeTimer = null;
+    try {
+      final metrics = _currentRouteMetrics!;
+      // Cancel the auto-finalization timer if it's still running
+      metrics.lcpAutoFinalizeTimer?.cancel();
+      metrics.lcpAutoFinalizeTimer = null;
 
-    if (!metrics.lcpReported && metrics.navigationStartTime != null) {
-      // Record LCP finalization phase
-      _loadingStateDumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
-        'timeSinceNavigationStart': metrics.lastReportedLCPTime,
-        'largestContentSize': metrics.largestContentfulPaintSize,
-        'elementTag': metrics.currentLCPElement?.target?.tagName ?? 'null',
-        'routePath': metrics.routePath,
-      });
+      if (!metrics.lcpReported && metrics.navigationStartTime != null) {
+        // Record LCP finalization phase
+        _loadingStateDumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
+          'timeSinceNavigationStart': metrics.lastReportedLCPTime,
+          'largestContentSize': metrics.largestContentfulPaintSize,
+          'elementTag': metrics.currentLCPElement?.target?.tagName ?? 'null',
+          'routePath': metrics.routePath,
+        });
 
-      // Use the last reported LCP time instead of calculating a new time
-      // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
-      if (onLCPFinal != null) {
-        onLCPFinal!(metrics.lastReportedLCPTime, metrics.initialEvaluatedState);
+        // Use the last reported LCP time instead of calculating a new time
+        // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
+        if (onLCPFinal != null) {
+          onLCPFinal!(metrics.lastReportedLCPTime, metrics.initialEvaluatedState);
+        }
+
+        // Fire the route-aware callback
+        if (onRouteLCPFinal != null) {
+          onRouteLCPFinal!(metrics.lastReportedLCPTime, metrics.routePath);
+        }
+
+        // Perform content verification when LCP is finalized
+        final contentInfo = ContentVerification.getContentInfo(this);
+        metrics.lcpContentInfo = contentInfo;
+
+        // Fire the content verification callback
+        if (onLCPContentVerification != null) {
+          onLCPContentVerification!(contentInfo, metrics.routePath);
+        }
       }
-
-      // Fire the route-aware callback
-      if (onRouteLCPFinal != null) {
-        onRouteLCPFinal!(metrics.lastReportedLCPTime, metrics.routePath);
-      }
-
-      // Perform content verification when LCP is finalized
-      final contentInfo = ContentVerification.getContentInfo(this);
-      metrics.lcpContentInfo = contentInfo;
-
-      // Fire the content verification callback
-      if (onLCPContentVerification != null) {
-        onLCPContentVerification!(contentInfo, metrics.routePath);
-      }
-    }
-    metrics.lcpReported = true;
+      metrics.lcpReported = true;
+    } catch(_) {}
   }
 
   /// Reports First Contentful Paint (FCP) when the first content is rendered.
