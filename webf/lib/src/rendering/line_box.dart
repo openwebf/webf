@@ -25,7 +25,7 @@ class LineBox {
 
   /// Items in this line box.
   final List<LineBoxItem> items;
-  
+
   /// Horizontal offset for text alignment.
   final double alignmentOffset;
 
@@ -55,7 +55,7 @@ class LineBox {
     properties.add(DoubleProperty('baseline', baseline));
     properties.add(DoubleProperty('alignmentOffset', alignmentOffset));
     properties.add(IntProperty('itemCount', items.length));
-    
+
     // Add item details
     if (items.isNotEmpty) {
       final itemTypes = <String, int>{};
@@ -177,14 +177,14 @@ class BoxLineBoxItem extends LineBoxItem {
 
   void _paintBoxDecorations(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
-    
+
     // For inline elements, the background and border should extend to include padding
     // Calculate the padding-extended rect
     final paddingLeft = style.paddingLeft.computedValue;
     final paddingRight = style.paddingRight.computedValue;
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
-    
+
     // The painted rect should include padding
     // Note: For inline elements, vertical padding doesn't affect layout (line height)
     // but it does affect the painted background/border area
@@ -245,7 +245,26 @@ class BoxLineBoxItem extends LineBoxItem {
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    if (!contains(position)) return false;
+    // For inline elements, we need to check against the padded area
+    final paddingLeft = style.paddingLeft.computedValue;
+    final paddingRight = style.paddingRight.computedValue;
+    final paddingTop = style.paddingTop.computedValue;
+    final paddingBottom = style.paddingBottom.computedValue;
+
+    // Check if position is within the padded bounds
+    final paddedBounds = Rect.fromLTRB(
+      offset.dx - paddingLeft,
+      offset.dy - paddingTop,
+      offset.dx + size.width + paddingRight,
+      offset.dy + size.height + paddingBottom,
+    );
+
+    // Debug logging
+    // print('BoxLineBoxItem.hitTest: position=$position, offset=$offset, size=$size');
+    // print('  paddedBounds=$paddedBounds, contains=${paddedBounds.contains(position)}');
+    // print('  renderBox=$renderBox');
+
+    if (!paddedBounds.contains(position)) return false;
 
     // Check children first
     for (final child in children) {
@@ -255,7 +274,8 @@ class BoxLineBoxItem extends LineBoxItem {
     }
 
     // Add this box to hit test
-    result.add(BoxHitTestEntry(renderBox, position - offset));
+    final localPosition = position - offset;
+    result.add(BoxHitTestEntry(renderBox, localPosition));
     return true;
   }
 }
