@@ -27,6 +27,7 @@ public:
  //  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
  unsigned length() const override;
 
+ ScriptValue item(const AtomicString& key, ExceptionState& exception_state);
  AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
  AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 

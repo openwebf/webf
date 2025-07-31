@@ -17,22 +17,22 @@ ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* conte
                                                         NativeBindingObject* native_binding_object)
    : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
 
-//ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
-//  if (IsPrototypeMethods(key)) {
-//    return ScriptValue::Undefined(ctx());
-//  }
-//
-//  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
-//
-//  NativeValue result = InvokeBindingMethod(
-//      binding_call_methods::kgetPropertyValue, 1, arguments,
-//      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
-//  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
-//}
+ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
+  if (IsPrototypeMethods(key)) {
+    return ScriptValue::Undefined(ctx());
+  }
 
-//bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-//  return true;
-//}
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
+
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetPropertyValue, 1, arguments,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
+}
+
+// bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
+//   return true;
+// }
 
 unsigned ComputedCssStyleDeclaration::length() const {
  NativeValue result = GetBindingProperty(
@@ -77,7 +77,11 @@ bool ComputedCssStyleDeclaration::IsComputedCssStyleDeclaration() const {
 }
 
 AtomicString ComputedCssStyleDeclaration::cssText() const {
- return AtomicString::Empty();
+  NativeValue result = GetBindingProperty(
+    binding_call_methods::kcssText,
+    FlushUICommandReason::kDependentsOnElement, ASSERT_NO_EXCEPTION()
+    );
+ return AtomicString(NativeValueConverter<NativeTypeString>::FromNativeValue(result));
 }
 
 void ComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}

@@ -61,10 +61,13 @@ class ComputedCSSStyleDeclaration extends CSSStyleDeclaration {
 
     StringBuffer result = StringBuffer();
     ComputedProperties.forEach((id) {
+      final name = propertyMap[id] ?? '';
+      final value = getPropertyValue(name);
+
       result.write(' ');
       result.write(propertyMap[id]);
       result.write(': ');
-      result.write(propertyMap[id]);
+      result.write(value);
       result.write(';');
     });
     return result.toString();
