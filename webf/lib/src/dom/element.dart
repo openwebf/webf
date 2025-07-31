@@ -1210,6 +1210,49 @@ abstract class Element extends ContainerNode
         return boundingClientRect;
       }
 
+      // Special handling for inline elements that participate in inline formatting context
+      if (renderStyle.display == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
+        // Check if this element participates in an inline formatting context
+        RenderBox? parent = renderStyle.attachedRenderBoxModel?.parent as RenderBox?;
+        while (parent != null) {
+          if (parent is RenderFlowLayout && parent.establishIFC && parent.inlineFormattingContext != null) {
+            // Get bounds from the inline formatting context
+            final ifcBounds = parent.inlineFormattingContext!.getBoundsForRenderBox(renderStyle.attachedRenderBoxModel!);
+            if (ifcBounds != null) {
+              // Convert IFC-relative bounds to viewport-relative bounds
+              RenderBoxModel? rootRenderBox = getRootRenderBoxModel();
+              Offset containerOffset = Offset.zero;
+              if (rootRenderBox != null) {
+                containerOffset = parent.localToGlobal(Offset.zero, ancestor: rootRenderBox);
+              }
+
+              // Add container's content offset (padding and border)
+              final contentOffset = Offset(
+                parent.renderStyle.paddingLeft.computedValue + parent.renderStyle.effectiveBorderLeftWidth.computedValue,
+                parent.renderStyle.paddingTop.computedValue + parent.renderStyle.effectiveBorderTopWidth.computedValue,
+              );
+
+              final absoluteOffset = containerOffset + contentOffset + ifcBounds.topLeft;
+
+              boundingClientRect = BoundingClientRect(
+                  context: BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()),
+                  x: absoluteOffset.dx,
+                  y: absoluteOffset.dy,
+                  width: ifcBounds.width,
+                  height: ifcBounds.height,
+                  top: absoluteOffset.dy,
+                  right: absoluteOffset.dx + ifcBounds.width,
+                  bottom: absoluteOffset.dy + ifcBounds.height,
+                  left: absoluteOffset.dx);
+              return boundingClientRect;
+            }
+            break;
+          }
+          parent = parent.parent as RenderBox?;
+        }
+      }
+
+      // Default handling for block elements and replaced elements
       if (renderStyle.isBoxModelHaveSize()) {
         RenderBoxModel? currentRenderBox = renderStyle.attachedRenderBoxModel;
         Offset offset = Offset.zero;

@@ -539,6 +539,7 @@ mixin CSSTextMixin on RenderStyle {
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
+        fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty) ? renderStyle.fontFamily!.first : null,
         fontFamilyFallback: renderStyle.fontFamily,
         fontSize: renderStyle.fontSize.computedValue,
         letterSpacing: renderStyle.letterSpacing?.computedValue,

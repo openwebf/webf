@@ -212,6 +212,63 @@ class InlineFormattingContext {
     return _lineBoxes.first.baseline;
   }
 
+  /// Get the bounding rectangle for a specific inline element across all line fragments.
+  Rect? getBoundsForRenderBox(RenderBox targetBox) {
+    if (_lineBoxes.isEmpty) return null;
+
+    double? minX, minY, maxX, maxY;
+    double currentY = 0;
+
+    // Search through all line boxes
+    for (final lineBox in _lineBoxes) {
+      // Check each item in the line box
+      for (final item in lineBox.items) {
+        // Check if this item belongs to the target box
+        bool belongsToTarget = false;
+        
+        if (item is BoxLineBoxItem && item.renderBox == targetBox) {
+          belongsToTarget = true;
+        } else if (item is TextLineBoxItem && item.inlineItem.renderBox == targetBox) {
+          belongsToTarget = true;
+        }
+
+        if (belongsToTarget) {
+          // Calculate absolute position including line offset and alignment
+          final itemX = lineBox.alignmentOffset + item.offset.dx;
+          final itemY = currentY + item.offset.dy;
+          
+          // For BoxLineBoxItem, include padding in the bounds
+          double left = itemX;
+          double top = itemY;
+          double right = itemX + item.size.width;
+          double bottom = itemY + item.size.height;
+          
+          if (item is BoxLineBoxItem) {
+            final style = item.style;
+            left -= style.paddingLeft.computedValue;
+            top -= style.paddingTop.computedValue;
+            right += style.paddingRight.computedValue;
+            bottom += style.paddingBottom.computedValue;
+          }
+
+          // Update min/max bounds
+          minX = minX == null ? left : math.min(minX, left);
+          minY = minY == null ? top : math.min(minY, top);
+          maxX = maxX == null ? right : math.max(maxX, right);
+          maxY = maxY == null ? bottom : math.max(maxY, bottom);
+        }
+      }
+      currentY += lineBox.height;
+    }
+
+    // If we found any fragments, return the bounding rectangle
+    if (minX != null && minY != null && maxX != null && maxY != null) {
+      return Rect.fromLTRB(minX, minY, maxX, maxY);
+    }
+
+    return null;
+  }
+
   /// Update child RenderBox parentData offsets based on line box layout.
   void _updateChildOffsets() {
     double lineY = 0;
@@ -270,7 +327,7 @@ class InlineFormattingContext {
   /// Get a description of the element from a RenderBoxModel.
   String _getElementDescription(RenderBoxModel? renderBox) {
     if (renderBox == null) return 'unknown';
-    
+
     // Try to get element tag from the RenderBoxModel
     final element = renderBox.renderStyle.target;
     if (element != null) {
@@ -279,20 +336,20 @@ class InlineFormattingContext {
       if (tagName.isNotEmpty && tagName != 'DIV') {
         return tagName.toLowerCase();
       }
-      
+
       // For elements with specific classes or IDs, include them
       final id = element.id;
       final className = element.className;
-      
+
       if (id != null && id.isNotEmpty) {
         return '${tagName.toLowerCase()}#$id';
       } else if (className.isNotEmpty) {
         return '${tagName.toLowerCase()}.$className';
       }
-      
+
       return tagName.toLowerCase();
     }
-    
+
     // Fallback to a short description
     final typeStr = renderBox.runtimeType.toString();
     if (typeStr.startsWith('Render')) {
