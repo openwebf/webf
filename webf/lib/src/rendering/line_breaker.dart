@@ -55,13 +55,31 @@ class LineBreaker {
       final item = items[_itemIndex];
 
       if (item.isOpenTag || item.isCloseTag) {
-        // Tags don't affect line breaking but need to be included
+        // For inline elements with padding, we need to account for the padding width
+        double paddingSize = 0;
+        if (item.shouldCreateBoxFragment && item.style != null) {
+          if (item.isOpenTag) {
+            // Add left padding width
+            paddingSize = item.style!.paddingLeft.computedValue;
+          } else if (item.isCloseTag) {
+            // Add right padding width
+            paddingSize = item.style!.paddingRight.computedValue;
+          }
+        }
+        
+        // Check if adding padding would exceed line width
+        if (_currentWidth + paddingSize > availableWidth && _currentLine.isNotEmpty) {
+          // Need to break line before this tag
+          _commitLine();
+        }
+        
         _addToCurrentLine(InlineItemResult(
           item: item,
-          inlineSize: 0,
+          inlineSize: paddingSize,
           startOffset: item.startOffset,
           endOffset: item.endOffset,
         ));
+        _currentWidth += paddingSize;
         _itemIndex++;
       } else if (item.isText) {
         _breakTextItem(item);

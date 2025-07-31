@@ -219,7 +219,7 @@ class InlineLayoutAlgorithm {
       if (item.isOpenTag) {
         _handleOpenTag(item);
       } else if (item.isCloseTag) {
-        // Skip close tags for now - we'll create boxes after all items are positioned
+        _handleCloseTag(item);
       } else if (item.isText) {
         final textItem = _addTextItem(itemResult, lineBoxItems, baseline);
         // Track this item for any boxes it belongs to
@@ -286,16 +286,45 @@ class InlineLayoutAlgorithm {
   /// Handle open tag.
   void _handleOpenTag(InlineItem item) {
     if (item.renderBox != null && item.shouldCreateBoxFragment) {
+      final style = item.style!;
+      
+      // Apply left padding for inline elements
+      // This affects the layout position of subsequent content
+      final paddingLeft = style.paddingLeft.computedValue;
+      _currentX += paddingLeft;
+      
       _boxStack.add(InlineBoxState(
         renderBox: item.renderBox!,
-        style: item.style!,
-        startX: _currentX,
+        style: style,
+        startX: _currentX - paddingLeft, // Store the position before padding
       ));
     }
   }
 
-  /// Handle close tag.
-  void _handleCloseTag(InlineItem item, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
+  /// Handle close tag (without line box parameters for use during layout).
+  void _handleCloseTag(InlineItem item) {
+    if (item.renderBox != null && item.shouldCreateBoxFragment) {
+      // Find the matching open box in the stack
+      for (int i = _boxStack.length - 1; i >= 0; i--) {
+        if (_boxStack[i].renderBox == item.renderBox) {
+          final boxState = _boxStack[i];
+          
+          // Apply right padding for inline elements
+          // This affects the layout position of subsequent content
+          final paddingRight = boxState.style.paddingRight.computedValue;
+          _currentX += paddingRight;
+          
+          // Remove from stack but don't create box item here
+          // Box items are created in _createInlineBoxes
+          _boxStack.removeAt(i);
+          break;
+        }
+      }
+    }
+  }
+  
+  /// Handle close tag at line end.
+  void _handleCloseTagAtLineEnd(InlineItem item, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
     // Find matching open box in stack
     for (int i = _boxStack.length - 1; i >= 0; i--) {
       if (_boxStack[i].renderBox == item.renderBox) {
@@ -473,6 +502,8 @@ class InlineLayoutAlgorithm {
         
         if (style != null && _shouldCreateBoxFragment(style)) {
           // Create box item at the correct visual position
+          // Note: The minX already includes left padding from _handleOpenTag
+          // and maxX includes right padding from _handleCloseTag
           final boxItem = BoxLineBoxItem(
             offset: Offset(minX, 0.0),
             size: Size(width, lineHeight),

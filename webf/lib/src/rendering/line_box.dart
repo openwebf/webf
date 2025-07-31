@@ -177,21 +177,37 @@ class BoxLineBoxItem extends LineBoxItem {
 
   void _paintBoxDecorations(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
-    final rect = offset & size;
+    
+    // For inline elements, the background and border should extend to include padding
+    // Calculate the padding-extended rect
+    final paddingLeft = style.paddingLeft.computedValue;
+    final paddingRight = style.paddingRight.computedValue;
+    final paddingTop = style.paddingTop.computedValue;
+    final paddingBottom = style.paddingBottom.computedValue;
+    
+    // The painted rect should include padding
+    // Note: For inline elements, vertical padding doesn't affect layout (line height)
+    // but it does affect the painted background/border area
+    final paintRect = Rect.fromLTRB(
+      offset.dx - paddingLeft,
+      offset.dy - paddingTop,
+      offset.dx + size.width + paddingRight,
+      offset.dy + size.height + paddingBottom,
+    );
 
     // Paint background
     if (style.backgroundColor?.value != null) {
       final paint = Paint()
         ..color = style.backgroundColor!.value;
-      canvas.drawRect(rect, paint);
+      canvas.drawRect(paintRect, paint);
     }
 
-    // Paint borders
+    // Paint borders on the padding box
     if ((style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) ||
         (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) ||
         (style.borderRightWidth?.value != null && style.borderRightWidth!.value! > 0 ) ||
         (style.borderBottomWidth?.value != null && style.borderBottomWidth!.value! > 0)) {
-      _paintBorder(canvas, rect);
+      _paintBorder(canvas, paintRect);
     }
   }
 
