@@ -205,7 +205,6 @@ std::string LegacyInlineCssStyleDeclaration::ToString() const {
     s += attr.first + ": " + attr.second.ToStdString() + ";";
   }
 
-  s += "\"";
   return s;
 }
 

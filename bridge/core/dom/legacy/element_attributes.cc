@@ -5,6 +5,7 @@
 
 #include "element_attributes.h"
 #include "bindings/qjs/exception_state.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/element.h"
 #include "core/html/custom/widget_element.h"
 #include "foundation/native_value_converter.h"
@@ -118,7 +119,16 @@ std::string ElementAttributes::ToString() {
       s += " ";
     }
     s += attr.first.ToStdString() + "=";
-    s += "\"" + attr.second.ToStdString() + "\"";
+
+    if (attr.first != html_names::kStyleAttr) {
+      s += "\"" + attr.second.ToStdString() + "\"";
+    } else {
+      if (element_ != nullptr && element_->style() != nullptr) {
+        s += "\"" + element_->style()->ToString() +  "\"";
+      } else {
+        WEBF_LOG(WARN) << "Style not available inside ElementAttributes::ToString()";
+      }
+    }
     first = false;
   }
 
