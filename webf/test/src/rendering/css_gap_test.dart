@@ -65,7 +65,7 @@ void main() {
       final container = prepared.getElementById('container');
       
       // Container should exist and have correct dimensions
-      expect(container.offsetWidth, equals(300.0));
+      expect(container.offsetWidth, equals(300.0)); // Flex container keeps its explicit width, gaps are internal
       expect(container.offsetHeight, equals(100.0));
       
       // TODO: Verify gap property is parsed correctly
@@ -105,7 +105,7 @@ void main() {
       final container = prepared.getElementById('container');
       
       // Container should exist and have correct dimensions
-      expect(container.offsetWidth, equals(300.0));
+      expect(container.offsetWidth, equals(300.0)); // Flex container keeps its explicit width, gaps are internal
       expect(container.offsetHeight, equals(100.0));
       
       // TODO: Verify gap property with two values is parsed correctly
@@ -186,7 +186,7 @@ void main() {
       final container = prepared.getElementById('container');
       
       // Container should exist and have correct dimensions
-      expect(container.offsetWidth, equals(300.0));
+      expect(container.offsetWidth, equals(300.0)); // Flex container keeps its explicit width, gaps are internal
       expect(container.offsetHeight, equals(100.0));
       
       // TODO: Verify column-gap property is parsed correctly
@@ -931,7 +931,7 @@ void main() {
       
       // Container should exist and work with both prefixed and unprefixed properties
       expect(container, isNotNull);
-      expect(container.offsetWidth, equals(300.0));
+      expect(container.offsetWidth, equals(300.0)); // Flex container keeps its explicit width, gaps are internal
       expect(container.offsetHeight, equals(100.0));
       
       // TODO: When gap is implemented, verify compatibility with legacy flexbox syntax
@@ -1015,9 +1015,9 @@ void main() {
       
       // Container should exist
       expect(container, isNotNull);
-      expect(container.offsetWidth, equals(300.0));
+      expect(container.offsetWidth, equals(300.0)); // WebF may not yet support percentage-based gaps in offsetWidth calculation
       
-      // 15% of 300px = 45px column gap should be computed correctly
+      // TODO: 15% of 300px = 45px column gap should be computed correctly when percentage gaps are fully implemented
     });
 
     testWidgets('percentage row-gap in column direction', (WidgetTester tester) async {

@@ -292,7 +292,7 @@ void main() {
 
       final container = prepared.getElementById('container');
       
-      expect(container.offsetWidth, equals(200.0));
+      expect(container.offsetWidth, equals(200.0)); // Flex container keeps its explicit width, gaps are internal
       // Test passes if no error occurs with gap and wrap
     });
 

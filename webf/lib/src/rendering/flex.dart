@@ -1910,6 +1910,23 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runMaxMainSize = _getRunsMaxMainSize(_runMetrics);
     double runCrossSize = _getRunsCrossSize(_runMetrics);
 
+    // Include gaps in the main axis size calculation ONLY for inline-flex containers
+    // Regular flex containers are block-level and should not size to content
+    CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
+    if (effectiveDisplay == CSSDisplay.inlineFlex) {
+      double mainAxisGap = _getMainAxisGap();
+      if (_runMetrics.isNotEmpty && mainAxisGap > 0) {
+        _RunMetrics maxMainSizeMetrics = _runMetrics.reduce((_RunMetrics curr, _RunMetrics next) {
+          return curr.mainAxisExtent > next.mainAxisExtent ? curr : next;
+        });
+        int childCount = maxMainSizeMetrics.runChildren.length;
+        if (childCount > 1) {
+          double totalGaps = (childCount - 1) * mainAxisGap;
+          runMaxMainSize += totalGaps;
+        }
+      }
+    }
+
     double contentWidth = _isHorizontalFlexDirection ? runMaxMainSize : runCrossSize;
     double contentHeight = _isHorizontalFlexDirection ? runCrossSize : runMaxMainSize;
 
@@ -2183,8 +2200,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       // But it may change in cases of the cross size of replaced flex item tranferred from
       // its flexed main size.
       bool isCrossSizeDefinite = _isHorizontalFlexDirection
-          ? renderStyle.contentBoxLogicalHeight != null
-          : renderStyle.contentBoxLogicalWidth != null;
+          ? (renderStyle.contentBoxLogicalHeight != null || renderStyle.minHeight.isNotAuto)
+          : (renderStyle.contentBoxLogicalWidth != null || renderStyle.minWidth.isNotAuto);
       if (_needToStretchChildCrossSize(child) && !isCrossSizeDefinite) {
         return runCrossAxisExtent;
       } else {
@@ -2544,6 +2561,17 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
     if (maxCrossSize != null) {
       childStretchedCrossSize = childStretchedCrossSize > maxCrossSize ? maxCrossSize : childStretchedCrossSize;
+    }
+
+    // Constrain stretched size by min-width/min-height.
+    double? minCrossSize;
+    if (_isHorizontalFlexDirection && child.renderStyle.minHeight.isNotAuto) {
+      minCrossSize = child.renderStyle.minHeight.computedValue;
+    } else if (!_isHorizontalFlexDirection && child.renderStyle.minWidth.isNotAuto) {
+      minCrossSize = child.renderStyle.minWidth.computedValue;
+    }
+    if (minCrossSize != null) {
+      childStretchedCrossSize = childStretchedCrossSize < minCrossSize ? minCrossSize : childStretchedCrossSize;
     }
 
     return childStretchedCrossSize;

@@ -393,7 +393,7 @@ void main() {
       final container = prepared.getElementById('container');
       final item3 = prepared.getElementById('item3');
       
-      expect(container.offsetWidth, equals(300.0));
+      expect(container.offsetWidth, equals(300.0)); // Flex container keeps its explicit width, gaps are internal
       
       // Item3 should keep its original width
       expect(item3.offsetWidth, equals(50.0));
