@@ -52,10 +52,10 @@ class FontFaceDescriptor {
 class CSSFontFace {
   // Store font face descriptors indexed by font family
   static final Map<String, List<FontFaceDescriptor>> _fontFaceRegistry = {};
-  
+
   // Cache loaded font combinations
   static final Set<String> _loadedFonts = {};
-  
+
   static String _getFontKey(String fontFamily, FontWeight fontWeight) {
     return '${fontFamily}_${fontWeight.index}';
   }
@@ -75,14 +75,14 @@ class CSSFontFace {
     String url = declaration.getPropertyValue('src');
     String fontWeightStr = declaration.getPropertyValue('fontWeight');
     String fontStyleStr = declaration.getPropertyValue('fontStyle');
-    
+
     if (fontFamily.isNotEmpty && url.isNotEmpty && CSSFunction.isFunction(url)) {
       // Parse font weight
       FontWeight fontWeight = _parseFontWeight(fontWeightStr);
-      
+
       // Parse font style
       FontStyle fontStyle = fontStyleStr == 'italic' ? FontStyle.italic : FontStyle.normal;
-      
+
       List<CSSFunctionalNotation> functions = CSSFunction.parseFunction(url);
       List<_Font> fonts = [];
 
@@ -126,15 +126,15 @@ class CSSFontFace {
         contextId: contextId,
         baseHref: baseHref,
       );
-      
+
       _fontFaceRegistry.putIfAbsent(cleanFontFamily, () => []).add(descriptor);
     }
   }
-  
+
   // Parse font weight from CSS value
   static FontWeight _parseFontWeight(String? weight) {
     if (weight == null || weight.isEmpty) return FontWeight.w400;
-    
+
     switch (weight) {
       case '100':
       case 'thin':
@@ -180,51 +180,51 @@ class CSSFontFace {
         return FontWeight.w400;
     }
   }
-  
+
   // Track fonts that are currently being loaded to prevent duplicate loads
   static final Map<String, Future<void>> _loadingFonts = {};
-  
+
   // Load font on demand when it's actually used
   static Future<void> ensureFontLoaded(String fontFamily, FontWeight fontWeight) async {
     String fontKey = _getFontKey(fontFamily, fontWeight);
-    
+
     // Already loaded
     if (_loadedFonts.contains(fontKey)) {
       return;
     }
-    
+
     // Already loading - wait for existing load to complete
     if (_loadingFonts.containsKey(fontKey)) {
       return _loadingFonts[fontKey]!;
     }
-    
+
     // Find matching font descriptor
     List<FontFaceDescriptor>? descriptors = _fontFaceRegistry[fontFamily];
     if (descriptors == null || descriptors.isEmpty) {
       return;
     }
-    
+
     // Find exact weight match or closest fallback
     FontFaceDescriptor? descriptor = _findBestMatchingDescriptor(descriptors, fontWeight);
-    
+
     if (descriptor == null || descriptor.isLoaded) {
       return;
     }
-    
+
     // Mark as loaded immediately to prevent race conditions
     descriptor.isLoaded = true;
     _loadedFonts.add(fontKey);
-    
+
     // Also mark the actual font weight as loaded to prevent duplicate loads
     // when the exact weight is requested later
     String actualFontKey = _getFontKey(descriptor.fontFamily, descriptor.fontWeight);
     _loadedFonts.add(actualFontKey);
-    
+
     // Start loading and track the future
     final loadFuture = _loadFont(descriptor);
     _loadingFonts[fontKey] = loadFuture;
     _loadingFonts[actualFontKey] = loadFuture;
-    
+
     try {
       await loadFuture;
     } finally {
@@ -235,7 +235,7 @@ class CSSFontFace {
       }
     }
   }
-  
+
   // Separate method to handle the actual font loading
   static Future<void> _loadFont(FontFaceDescriptor descriptor) async {
     try {
@@ -246,22 +246,24 @@ class CSSFontFace {
         FontLoader loader = FontLoader(descriptor.fontFamily);
         loader.addFont(bytes);
         await loader.load();
+        SchedulerBinding.instance.scheduleFrame();
       } else {
         // Load from URL
         Uri? uri = _resolveFontSource(descriptor.contextId, descriptor.font.src, descriptor.baseHref);
         if (uri == null) return;
-        
+
         final WebFController? controller = WebFController.getControllerOfJSContextId(descriptor.contextId);
         if (controller == null) return;
-        
+
         WebFBundle bundle = controller.getPreloadBundleFromUrl(uri.toString()) ?? WebFBundle.fromUrl(uri.toString());
         await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
         await bundle.obtainData(controller.view.contextId);
-        
+
         FontLoader loader = FontLoader(descriptor.fontFamily);
         Future<ByteData> bytes = Future.value(bundle.data?.buffer.asByteData());
         loader.addFont(bytes);
         await loader.load();
+        SchedulerBinding.instance.scheduleFrame();
       }
     } catch(e, stack) {
       // On error, mark as not loaded so it can be retried
@@ -270,7 +272,7 @@ class CSSFontFace {
       print('Failed to load font: $e\n$stack');
     }
   }
-  
+
   // Find best matching font descriptor based on weight
   static FontFaceDescriptor? _findBestMatchingDescriptor(List<FontFaceDescriptor> descriptors, FontWeight targetWeight) {
     // First try exact match
@@ -278,10 +280,10 @@ class CSSFontFace {
       (d) => d.fontWeight == targetWeight
     );
     if (exactMatch != null) return exactMatch;
-    
+
     // If not found, use CSS font-weight fallback algorithm
     int targetIndex = targetWeight.index;
-    
+
     // For weights 400-500, prefer lighter weights
     if (targetIndex >= 3 && targetIndex <= 4) {
       // Try weights in order: exact -> lighter -> heavier
@@ -312,11 +314,11 @@ class CSSFontFace {
         if (match != null) return match;
       }
     }
-    
+
     // Return any available font as last resort
     return descriptors.firstOrNull;
   }
-  
+
   // Clear font cache (useful for testing or memory management)
   static void clearFontCache() {
     _fontFaceRegistry.clear();
