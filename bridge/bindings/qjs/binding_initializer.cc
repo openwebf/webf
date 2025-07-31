@@ -8,6 +8,7 @@
 
 #include "qjs_animation_event.h"
 #include "qjs_blob.h"
+#include "qjs_html_bold_element.h"
 #include "qjs_bounding_client_rect.h"
 #include "qjs_canvas_gradient.h"
 #include "qjs_canvas_pattern.h"
@@ -200,6 +201,7 @@ void InstallBindings(ExecutingContext* context) {
   QJSHTMLHtmlElement::Install(context);
   QJSHTMLIFrameElement::Install(context);
   QJSHTMLAnchorElement::Install(context);
+  QJSHTMLBoldElement::Install(context);
   QJSHTMLImageElement::Install(context);
   QJSHTMLInputElement::Install(context);
   QJSHTMLParagraphElement::Install(context);
