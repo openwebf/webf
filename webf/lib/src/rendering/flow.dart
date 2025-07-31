@@ -1032,7 +1032,14 @@ class RenderFlowLayout extends RenderLayoutBox {
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
-    properties.add(DiagnosticsProperty('enableIFC', _inlineFormattingContext != null));
+    properties.add(FlagProperty('establishIFC',
+        value: establishIFC,
+        ifTrue: 'inline formatting context',
+        ifFalse: 'block layout'));
+    
+    if (_inlineFormattingContext != null) {
+      _inlineFormattingContext!.debugFillProperties(properties);
+    }
   }
 }
 

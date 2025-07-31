@@ -47,6 +47,29 @@ class LineBox {
     }
     return false;
   }
+
+  /// Add debugging information for the line box.
+  void debugFillProperties(DiagnosticPropertiesBuilder properties) {
+    properties.add(DoubleProperty('width', width));
+    properties.add(DoubleProperty('height', height));
+    properties.add(DoubleProperty('baseline', baseline));
+    properties.add(DoubleProperty('alignmentOffset', alignmentOffset));
+    properties.add(IntProperty('itemCount', items.length));
+    
+    // Add item details
+    if (items.isNotEmpty) {
+      final itemTypes = <String, int>{};
+      for (final item in items) {
+        final typeName = item.runtimeType.toString();
+        itemTypes[typeName] = (itemTypes[typeName] ?? 0) + 1;
+      }
+      properties.add(DiagnosticsProperty<Map<String, int>>(
+        'itemTypes',
+        itemTypes,
+        style: DiagnosticsTreeStyle.sparse,
+      ));
+    }
+  }
 }
 
 /// Base class for items in a line box.

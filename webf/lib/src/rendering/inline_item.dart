@@ -113,6 +113,42 @@ class InlineItem {
   String toString() {
     return 'InlineItem(type: $type, offset: $startOffset-$endOffset)';
   }
+
+  /// Add debugging information for the inline item.
+  void debugFillProperties(DiagnosticPropertiesBuilder properties, String textContent) {
+    properties.add(EnumProperty<InlineItemType>('type', type));
+    properties.add(IntProperty('startOffset', startOffset));
+    properties.add(IntProperty('endOffset', endOffset));
+    properties.add(IntProperty('length', length));
+    properties.add(IntProperty('bidiLevel', bidiLevel));
+    
+    if (direction != null) {
+      properties.add(EnumProperty<TextDirection>('direction', direction));
+    }
+    
+    if (isText && textContent.isNotEmpty) {
+      final text = getText(textContent);
+      final displayText = text.length > 30 ? '${text.substring(0, 30)}...' : text;
+      properties.add(StringProperty('text', displayText, quoted: true));
+    }
+    
+    if (renderBox != null) {
+      properties.add(DiagnosticsProperty<RenderBoxModel>('renderBox', renderBox));
+    }
+    
+    if (shapeResult != null) {
+      properties.add(DiagnosticsProperty<ShapeResult>('shapeResult', shapeResult,
+          description: 'w=${shapeResult!.width.toStringAsFixed(1)}, '
+              'h=${shapeResult!.height.toStringAsFixed(1)}, '
+              'ascent=${shapeResult!.ascent.toStringAsFixed(1)}'));
+    }
+    
+    if (shouldCreateBoxFragment) {
+      properties.add(FlagProperty('shouldCreateBoxFragment',
+          value: true,
+          ifTrue: 'creates box fragment'));
+    }
+  }
 }
 
 /// Result of shaping text.
