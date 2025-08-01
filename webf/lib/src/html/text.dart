@@ -148,7 +148,7 @@ class WebFTextState extends WebFWidgetElementState {
     List<String>? fontFamilies = element.renderStyle.fontFamily;
     if (fontFamilies != null && fontFamilies.isNotEmpty) {
       String primaryFontFamily = fontFamilies[0];
-      await CSSFontFace.ensureFontLoaded(primaryFontFamily, element.renderStyle.fontWeight);
+      await CSSFontFace.ensureFontLoaded(primaryFontFamily, element.renderStyle.fontWeight, element.renderStyle);
     }
 
     // Load fonts for child elements

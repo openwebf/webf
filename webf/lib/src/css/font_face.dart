@@ -185,7 +185,7 @@ class CSSFontFace {
   static final Map<String, Future<void>> _loadingFonts = {};
 
   // Load font on demand when it's actually used
-  static Future<void> ensureFontLoaded(String fontFamily, FontWeight fontWeight) async {
+  static Future<void> ensureFontLoaded(String fontFamily, FontWeight fontWeight, CSSRenderStyle renderStyle) async {
     String fontKey = _getFontKey(fontFamily, fontWeight);
 
     // Already loaded
@@ -233,6 +233,7 @@ class CSSFontFace {
       if (actualFontKey != fontKey) {
         _loadingFonts.remove(actualFontKey);
       }
+      renderStyle.markNeedsLayout();
     }
   }
 

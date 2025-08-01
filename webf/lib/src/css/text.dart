@@ -512,9 +512,7 @@ mixin CSSTextMixin on RenderStyle {
     if (fontFamilies != null && fontFamilies.isNotEmpty) {
       String primaryFontFamily = fontFamilies[0];
       // Fire and forget - the font will be available for the next frame
-      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight).then((_) {
-        renderStyle.markNeedsLayout();
-      });
+      CSSFontFace.ensureFontLoaded(primaryFontFamily, renderStyle.fontWeight, renderStyle);
     }
 
     // Creates a new TextStyle object.
@@ -539,8 +537,8 @@ mixin CSSTextMixin on RenderStyle {
         decorationStyle: renderStyle.textDecorationStyle,
         fontWeight: renderStyle.fontWeight,
         fontStyle: renderStyle.fontStyle,
-        fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty) ? renderStyle.fontFamily!.first : null,
-        fontFamilyFallback: renderStyle.fontFamily,
+        // fontFamily: (renderStyle.fontFamily != null && renderStyle.fontFamily!.isNotEmpty) ? renderStyle.fontFamily!.first : null,
+        // fontFamilyFallback: renderStyle.fontFamily,
         fontSize: renderStyle.fontSize.computedValue,
         letterSpacing: renderStyle.letterSpacing?.computedValue,
         wordSpacing: renderStyle.wordSpacing?.computedValue,
@@ -554,7 +552,7 @@ mixin CSSTextMixin on RenderStyle {
     if (oldTextSpan != null && oldTextSpan.text == text && oldTextSpan.style == textStyle) {
       return oldTextSpan;
     }
-    return WebFTextSpan(text: text, style: textStyle, children: []);
+    return TextSpan(text: text, style: textStyle, children: []);
   }
 }
 
