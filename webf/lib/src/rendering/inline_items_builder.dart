@@ -23,19 +23,19 @@ class InlineItemsBuilder {
 
   /// Stack of open inline boxes.
   final List<RenderBoxModel> _boxStack = [];
-  
+
   /// Stack of directions for nested elements.
   final List<TextDirection> _directionStack = [];
-  
+
   /// Stack of embedding levels for nested elements.
   final List<int> _levelStack = [];
-  
+
   /// Get current direction from stack or base direction.
-  TextDirection get _currentDirection => 
+  TextDirection get _currentDirection =>
       _directionStack.isNotEmpty ? _directionStack.last : direction;
-      
+
   /// Get current embedding level.
-  int get _currentLevel => 
+  int get _currentLevel =>
       _levelStack.isNotEmpty ? _levelStack.last : (direction == TextDirection.rtl ? 1 : 0);
 
   /// Current text offset.
@@ -61,7 +61,7 @@ class InlineItemsBuilder {
     while (_boxStack.isNotEmpty) {
       _addCloseTag(_boxStack.removeLast());
     }
-    
+
     // Clean up the initial direction from stack
     if (container is RenderBoxModel) {
       if (_directionStack.isNotEmpty) {
@@ -161,12 +161,12 @@ class InlineItemsBuilder {
   void _addInlineBox(RenderBoxModel box) {
     // Add open tag
     _addOpenTag(box);
-    
+
     // Calculate embedding level for this element
     final newDirection = box.renderStyle.direction;
     final parentLevel = _currentLevel;
     int newLevel;
-    
+
     if (newDirection != _currentDirection) {
       // Direction change - increase embedding level
       newLevel = parentLevel + 1;
@@ -174,14 +174,14 @@ class InlineItemsBuilder {
       // Same direction - keep same level
       newLevel = parentLevel;
     }
-    
+
     // Push direction and level for this element
     _directionStack.add(newDirection);
     _levelStack.add(newLevel);
 
     // Collect children
     _collectInlines(box);
-    
+
     // Pop direction and level when leaving element
     if (_directionStack.isNotEmpty) {
       _directionStack.removeLast();
@@ -226,6 +226,9 @@ class InlineItemsBuilder {
 
   /// Add close tag for inline box.
   void _addCloseTag(RenderBoxModel box) {
+    // Remove from stack to mark as closed
+    _boxStack.remove(box);
+
     items.add(InlineItem(
       type: InlineItemType.closeTag,
       startOffset: _currentOffset,

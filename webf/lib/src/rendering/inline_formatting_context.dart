@@ -10,6 +10,35 @@ import 'bidi_resolver.dart';
 import 'inline_layout_algorithm.dart';
 import 'inline_layout_debugger.dart';
 
+/// Debug flag to enable inline layout visualization.
+/// When true, paints debug information for line boxes, margins, padding, etc.
+///
+/// To enable debug painting:
+/// ```dart
+/// import 'package:webf/rendering.dart';
+///
+/// // Enable debug paint
+/// debugPaintInlineLayoutEnabled = true;
+///
+/// // Your WebF widget will now show debug visualizations
+/// ```
+///
+/// Debug visualizations include:
+/// - Green outline: Line box bounds
+/// - Red line: Text baseline
+/// - Blue outline: Text item bounds
+/// - Magenta outline: Inline box bounds (span, etc.)
+/// - Red semi-transparent fill: Left margin area
+/// - Green semi-transparent fill: Right margin area
+/// - Blue semi-transparent fill: Padding area
+///
+/// This is useful for debugging inline layout issues such as:
+/// - Margin gaps not appearing correctly
+/// - Text alignment problems
+/// - Line box height calculations
+/// - Padding and border rendering
+bool debugPaintInlineLayoutEnabled = false;
+
 /// Default line-height multiplier for "normal" line-height value.
 /// Matches Chrome's default behavior (approximately 1.146).
 /// Chrome uses 18.33px for 16px font-size: 18.33/16 ≈ 1.145833
@@ -185,7 +214,166 @@ class InlineFormattingContext {
 
     for (final lineBox in _lineBoxes) {
       lineBox.paint(context, Offset(offset.dx, y));
+
+      // Debug paint if enabled
+      if (debugPaintInlineLayoutEnabled) {
+        _debugPaintLineBox(context, lineBox, Offset(offset.dx, y));
+      }
+
       y += lineBox.height;
+    }
+  }
+
+  /// Debug paint a line box to visualize its layout.
+  void _debugPaintLineBox(PaintingContext context, LineBox lineBox, Offset offset) {
+    final canvas = context.canvas;
+
+    // Paint line box bounds
+    final lineBoxPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..color = const Color(0xFF00FF00); // Green for line box
+
+    canvas.drawRect(
+      Rect.fromLTWH(offset.dx, offset.dy, lineBox.width, lineBox.height),
+      lineBoxPaint,
+    );
+
+    // Paint baseline
+    final baselinePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0
+      ..color = const Color(0xFFFF0000); // Red for baseline
+
+    canvas.drawLine(
+      Offset(offset.dx, offset.dy + lineBox.baseline),
+      Offset(offset.dx + lineBox.width, offset.dy + lineBox.baseline),
+      baselinePaint,
+    );
+
+    // Debug paint individual items
+    for (final item in lineBox.items) {
+      if (item is TextLineBoxItem) {
+        // Paint text item bounds
+        final textPaint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.5
+          ..color = const Color(0xFF0000FF); // Blue for text
+
+        canvas.drawRect(
+          Rect.fromLTWH(
+            offset.dx + item.offset.dx,
+            offset.dy + item.offset.dy,
+            item.size.width,
+            item.size.height,
+          ),
+          textPaint,
+        );
+      } else if (item is BoxLineBoxItem) {
+        // Paint inline box bounds (includes margins in WebF)
+        final boxPaint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0
+          ..color = const Color(0xFFFF00FF); // Magenta for inline boxes
+
+        canvas.drawRect(
+          Rect.fromLTWH(
+            offset.dx + item.offset.dx,
+            offset.dy + item.offset.dy,
+            item.size.width,
+            item.size.height,
+          ),
+          boxPaint,
+        );
+
+        // Paint margin areas if present
+        final marginLeft = item.style.marginLeft.computedValue;
+        final marginRight = item.style.marginRight.computedValue;
+
+        if (marginLeft > 0) {
+          final marginPaint = Paint()
+            ..style = PaintingStyle.fill
+            ..color = const Color(0x30FF0000); // Semi-transparent red for left margin
+
+          canvas.drawRect(
+            Rect.fromLTWH(
+              offset.dx + item.offset.dx,
+              offset.dy + item.offset.dy,
+              marginLeft,
+              item.size.height,
+            ),
+            marginPaint,
+          );
+        }
+
+        if (marginRight > 0) {
+          final marginPaint = Paint()
+            ..style = PaintingStyle.fill
+            ..color = const Color(0x3000FF00); // Semi-transparent green for right margin
+
+          canvas.drawRect(
+            Rect.fromLTWH(
+              offset.dx + item.offset.dx + item.size.width - marginRight,
+              offset.dy + item.offset.dy,
+              marginRight,
+              item.size.height,
+            ),
+            marginPaint,
+          );
+        }
+
+        // Paint padding areas
+        final paddingLeft = item.style.paddingLeft.computedValue;
+        final paddingRight = item.style.paddingRight.computedValue;
+
+        if (paddingLeft > 0 || paddingRight > 0) {
+          final paddingPaint = Paint()
+            ..style = PaintingStyle.fill
+            ..color = const Color(0x300000FF); // Semi-transparent blue for padding
+
+          // Left padding
+          if (paddingLeft > 0) {
+            canvas.drawRect(
+              Rect.fromLTWH(
+                offset.dx + item.offset.dx + marginLeft,
+                offset.dy + item.offset.dy,
+                paddingLeft,
+                item.size.height,
+              ),
+              paddingPaint,
+            );
+          }
+
+          // Right padding
+          if (paddingRight > 0) {
+            canvas.drawRect(
+              Rect.fromLTWH(
+                offset.dx + item.offset.dx + item.size.width - marginRight - paddingRight,
+                offset.dy + item.offset.dy,
+                paddingRight,
+                item.size.height,
+              ),
+              paddingPaint,
+            );
+          }
+        }
+      } else if (item is AtomicLineBoxItem) {
+        // Paint atomic inline item bounds (inline-block, images, etc.)
+        final atomicPaint = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0
+          ..color = const Color(0xFFFF8800); // Orange for atomic inlines
+
+        canvas.drawRect(
+          Rect.fromLTWH(
+            offset.dx + item.offset.dx,
+            offset.dy + item.offset.dy,
+            item.size.width,
+            item.size.height,
+          ),
+          atomicPaint,
+        );
+      }
     }
   }
 
@@ -225,7 +413,7 @@ class InlineFormattingContext {
       for (final item in lineBox.items) {
         // Check if this item belongs to the target box
         bool belongsToTarget = false;
-        
+
         if (item is BoxLineBoxItem && item.renderBox == targetBox) {
           belongsToTarget = true;
         } else if (item is TextLineBoxItem && item.inlineItem.renderBox == targetBox) {
@@ -236,13 +424,13 @@ class InlineFormattingContext {
           // Calculate absolute position including line offset and alignment
           final itemX = lineBox.alignmentOffset + item.offset.dx;
           final itemY = currentY + item.offset.dy;
-          
+
           // For BoxLineBoxItem, include padding in the bounds
           double left = itemX;
           double top = itemY;
           double right = itemX + item.size.width;
           double bottom = itemY + item.size.height;
-          
+
           if (item is BoxLineBoxItem) {
             final style = item.style;
             left -= style.paddingLeft.computedValue;
