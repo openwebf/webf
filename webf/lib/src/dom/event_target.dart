@@ -168,14 +168,13 @@ abstract class EventTarget extends DynamicBindingObject with StaticDefinedBindin
   }
 
   Future<void> _executeDispatchEvent(Event event) async {
-    // Finalize LCP on user interaction
-    _finalizeLCPOnUserInteraction(event);
-
     await _handlerCaptureEvent(event);
     await _dispatchEventInDOM(event);
 
     // Execute post-handlers after all regular handlers are done
     await _executePostHandlers(event);
+    // Finalize LCP on user interaction
+    _finalizeLCPOnUserInteraction(event);
   }
   Future<void> _handlerCaptureEvent(Event event) async {
     // Avoid dispatch event to JS when the node was created by Flutter widgets.

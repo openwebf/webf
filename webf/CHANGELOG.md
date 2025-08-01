@@ -1,3 +1,11 @@
+## 0.22.4
+
+Bug Fixes
+
+- Fix event dispatcher to properly handle null event targets
+- Improve content verification with better error handling and logging
+- Update controller to handle verification exceptions gracefully
+
 ## 0.22.3+2
 
 Fix compile error with Android NDK r22
