@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFShare } from '@openwebf/webf-share';
 import styles from './NativeInteractionPage.module.css';
 
 export const NativeInteractionPage: React.FC = () => {
@@ -27,21 +28,20 @@ export const NativeInteractionPage: React.FC = () => {
       console.warn('URL.createObjectURL and FileReader not available, trying native save for preview');
       try {
         const arrayBuffer = await blob.arrayBuffer();
-        if (window.webf?.invokeModuleAsync) {
-          const result = await window.webf.invokeModuleAsync(
-            'Screenshot',
-            'saveForPreview',
-            arrayBuffer,
-            `${fallbackPrefix}_${Date.now()}`
-          ) as { filePath?: string };
-          if (result && result.filePath) {
-            return result.filePath;
-          } else {
-            console.log('Image saved but no preview path returned');
-            return '';
-          }
+        if (!WebFShare.isAvailable()) {
+          return '';
         }
-        return '';
+        const result = await WebFShare.saveForPreview({
+          imageData: arrayBuffer,
+          filename: `${fallbackPrefix}_${Date.now()}`
+        });
+
+        if (result && result.filePath) {
+          return result.filePath;
+        } else {
+          console.log('Image saved but no preview path returned');
+          return '';
+        }
       } catch (error) {
         console.error('Failed to save image for preview:', error);
         return '';
@@ -78,36 +78,21 @@ export const NativeInteractionPage: React.FC = () => {
       // Convert to arrayBuffer for native method
       const arrayBuffer = await blob.arrayBuffer();
 
-      // Check if WebF and invokeModuleAsync are available
-      if (!window.webf?.invokeModuleAsync) {
-        throw new Error('WebF native module not available');
-      }
-
       const filename = 'Screenshot_' + Date.now();
+      if (!WebFShare.isAvailable()) {
+        return;
+      }
+      const result = await WebFShare.saveScreenshot({
+        imageData: arrayBuffer,
+        filename: filename
+      });
       
-      // Call native screenshot save module
-      const result = await window.webf.invokeModuleAsync(
-        'Share',
-        'save',
-        arrayBuffer,
-        filename
-      ) as { success?: string; filePath?: string; message?: string } | boolean;
-
-      console.log('Save screenshot result:', result);
-      
-      if (result === true || (typeof result === 'object' && result.success === 'true')) {
-        if (typeof result === 'object' && result.filePath) {
-          resultSetter(`Screenshot saved successfully!\nPath: ${result.filePath}`);
-          // Display the saved screenshot using Flutter's file protocol
-          setScreenshotImage(`file://${result.filePath}`);
-        } else {
-          resultSetter(`Screenshot saved successfully as: ${filename}.png`);
-        }
+      if (result.success && result.filePath) {
+        resultSetter(`Screenshot saved successfully!\nPath: ${result.filePath}`);
+        // Display the saved screenshot using Flutter's file protocol
+        setScreenshotImage(`file://${result.filePath}`);
       } else {
-        const errorMsg = typeof result === 'object' && result.message 
-          ? result.message 
-          : 'Failed to save screenshot to device';
-        resultSetter(errorMsg);
+        resultSetter(result.message || 'Failed to save screenshot to device');
       }
     } catch (error) {
       console.error('Save screenshot failed:', error);
@@ -148,24 +133,17 @@ export const NativeInteractionPage: React.FC = () => {
       // Convert to arrayBuffer for native method
       const arrayBuffer = await blob.arrayBuffer();
 
-      // Check if WebF and invokeModuleAsync are available
-      if (!window.webf?.invokeModuleAsync) {
-        // If no native module, show the image
-        resultSetter('Image captured for sharing (displayed below)');
+      const text = 'WebF React Demo';
+      const subject = 'Check out this awesome WebF demo! Built with React and WebF for seamless native integration.';
+      if (!WebFShare.isAvailable()) {
         return;
       }
-
-      const title = 'WebF React Demo';
-      const subject = 'Check out this awesome WebF demo! Built with React and WebF for seamless native integration.';
-      
       // Call native share module
-      const result = await window.webf.invokeModuleAsync(
-        'Share',
-        'share',
-        arrayBuffer,
-        title,
+      const result = await WebFShare.shareImage({
+        imageData: arrayBuffer,
+        text,
         subject
-      );
+      });
 
       console.log('Share result:', result);
       resultSetter('Content shared successfully');
@@ -180,19 +158,17 @@ export const NativeInteractionPage: React.FC = () => {
   const shareTextOnly = async () => {
     setIsProcessing(prev => ({...prev, textShare: true}));
     try {
-      if (!window.webf?.invokeModuleAsync) {
-        throw new Error('WebF native module not available');
+      if (!WebFShare.isAvailable()) {
+        return;
       }
 
       const title = 'WebF React Demo';
       const text = 'This is a text-only share from the WebF React demo application. WebF enables seamless integration between React and Flutter native capabilities. Visit: https://github.com/openwebf/webf';
       
-      const result = await window.webf.invokeModuleAsync(
-        'Share',
-        'shareText',
+      const result = await WebFShare.shareText({
         title,
         text
-      );
+      });
 
       console.log('Text share result:', result);
       if (result) {

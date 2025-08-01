@@ -1,0 +1,38 @@
+{
+  "name": "@openwebf/webf-deeplink",
+  "version": "0.1.0-beta.0",
+  "description": "Ready-to-use WebF DeepLink integration library with TypeScript support",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "webf",
+    "typescript",
+    "deeplink",
+    "url-schemes",
+    "flutter",
+    "native"
+  ],
+  "author": "OpenWebF Team",
+  "license": "ISC",
+  "homepage": "https://openwebf.com",
+  "dependencies": {
+    "@openwebf/webf-enterprise-typings": "^0.22.1"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

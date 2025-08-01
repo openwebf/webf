@@ -43,9 +43,10 @@ dependencies:
   webf: ^0.22.0
   webf_cupertino_ui:
     path: ../webf_cupertino_ui
+  webf_deeplink: ^0.1.0-beta
+  webf_share: ^0.1.0-beta
 
   vibration: ^3.1.3
-  url_launcher: ^6.3.1
   go_router: ^16.0.0
   image_picker: ^1.1.2
   file_picker: ^10.2.0
@@ -57,9 +58,7 @@ dependencies:
   day_night_switcher: ^0.2.0+1
   adaptive_theme: ^3.3.0
   flutter_svg: ^2.0.17
-  share_plus: ^10.0.0
   showcaseview: ^4.0.1
-  path_provider: ^2.1.5
   easy_refresh: ^3.4.0
   collection: ^1.18.0
   auto_size_text: ^3.0.0
@@ -67,6 +66,10 @@ dependencies:
 dependency_overrides:
   webf:
     path: ../webf
+  webf_deeplink:
+    path: ../webf_modules/deeplink
+  webf_share:
+    path: ../webf_modules/share
 
 dev_dependencies:
   flutter_test:

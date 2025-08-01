@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFDeepLink } from '@openwebf/webf-deeplink';
 import styles from './DeepLinkPage.module.css';
 
 export const DeepLinkPage: React.FC = () => {
@@ -28,18 +29,13 @@ export const DeepLinkPage: React.FC = () => {
   const testCustomScheme = async (scheme: string) => {
     setIsProcessing(prev => ({...prev, customScheme: true}));
     try {
-      if (!window.webf?.invokeModuleAsync) {
-        throw new Error('WebF native module not available');
+      if (!WebFDeepLink.isAvailable()) {
+        return;
       }
-
-      const result = await window.webf.invokeModuleAsync(
-        'DeepLink',
-        'openDeepLink',
-        {
-          url: scheme,
-          fallbackUrl: window.location.href
-        }
-      );
+      const result = await WebFDeepLink.openDeepLink({
+        url: scheme,
+        fallbackUrl: window.location.href
+      });
       
       console.log('Open deep link result:', result);
       setCustomSchemeResult(`Custom scheme result: ${JSON.stringify(result)}`);
