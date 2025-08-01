@@ -43,7 +43,7 @@ class InlineLayoutAlgorithm {
 
   /// Stack of open inline boxes.
   final List<InlineBoxState> _boxStack = [];
-  
+
   /// Map to track which items belong to which inline box.
   final Map<RenderBox, List<LineBoxItem>> _boxToItems = {};
 
@@ -190,36 +190,36 @@ class InlineLayoutAlgorithm {
     // Always apply bidi reordering based on resolved levels
     // This handles both RTL and LTR base directions with mixed content
     final List<InlineItemResult> orderedItems = _reorderLineItemsForBidi(lineItems);
-    
+
     // Track which inline boxes are open for each item
     final Map<InlineItemResult, Set<RenderBox>> itemToBoxes = {};
     final List<RenderBox> currentBoxes = [];
-    
+
     // First pass: determine which boxes each item belongs to
     // This is done in logical order before bidi reordering
     for (final itemResult in lineItems) {
       final item = itemResult.item;
-      
+
       if (item.isOpenTag && item.renderBox != null) {
         currentBoxes.add(item.renderBox!);
       } else if (item.isCloseTag && item.renderBox != null) {
         currentBoxes.remove(item.renderBox!);
       }
-      
+
       // Record which boxes this item is inside
       if (currentBoxes.isNotEmpty) {
         itemToBoxes[itemResult] = Set.from(currentBoxes);
       }
     }
-    
+
     // Second pass: layout items in visual order and track positions
     for (final itemResult in orderedItems) {
       final item = itemResult.item;
 
       if (item.isOpenTag) {
-        _handleOpenTag(item);
+        _handleOpenTag(item, itemResult);
       } else if (item.isCloseTag) {
-        _handleCloseTag(item);
+        _handleCloseTag(item, itemResult);
       } else if (item.isText) {
         final textItem = _addTextItem(itemResult, lineBoxItems, baseline);
         // Track this item for any boxes it belongs to
@@ -284,45 +284,75 @@ class InlineLayoutAlgorithm {
   }
 
   /// Handle open tag.
-  void _handleOpenTag(InlineItem item) {
+  void _handleOpenTag(InlineItem item, InlineItemResult itemResult) {
     if (item.renderBox != null && item.shouldCreateBoxFragment) {
       final style = item.style!;
-      
-      // Apply left padding for inline elements
-      // This affects the layout position of subsequent content
-      final paddingLeft = style.paddingLeft.computedValue;
-      _currentX += paddingLeft;
-      
+
+      // The inlineSize from LineBreaker already includes margin and padding
+      // We need to track where the actual box content starts (after margin but before padding)
+      final leftMargin = style.marginLeft.computedValue;
+      final leftPadding = style.paddingLeft.computedValue;
+
+      // Advance by margin first
+      _currentX += leftMargin;
+
+      // Store the position after margin (where the box visual area starts)
+      final boxStartX = _currentX;
+
+      // Debug logging when enabled
+      if (debugPaintInlineLayoutEnabled) {
+        print('[IFC] Open tag: margin=$leftMargin, padding=$leftPadding, X=$_currentX');
+      }
+
       _boxStack.add(InlineBoxState(
         renderBox: item.renderBox!,
         style: style,
-        startX: _currentX - paddingLeft, // Store the position before padding
+        startX: boxStartX,
       ));
+
+      // Then advance by padding
+      _currentX += leftPadding;
+    } else if (item.renderBox != null) {
+      // This is an open tag without box fragment - still advance by its size
+      _currentX += itemResult.inlineSize;
     }
   }
 
-  /// Handle close tag (without line box parameters for use during layout).
-  void _handleCloseTag(InlineItem item) {
+  /// Handle close tag.
+  void _handleCloseTag(InlineItem item, InlineItemResult itemResult) {
     if (item.renderBox != null && item.shouldCreateBoxFragment) {
+      final style = item.style!;
+
+      // Handle right padding and margin
+      final rightPadding = style.paddingRight.computedValue;
+      final rightMargin = style.marginRight.computedValue;
+
+
       // Find the matching open box in the stack
       for (int i = _boxStack.length - 1; i >= 0; i--) {
         if (_boxStack[i].renderBox == item.renderBox) {
-          final boxState = _boxStack[i];
-          
-          // Apply right padding for inline elements
-          // This affects the layout position of subsequent content
-          final paddingRight = boxState.style.paddingRight.computedValue;
-          _currentX += paddingRight;
-          
           // Remove from stack but don't create box item here
           // Box items are created in _createInlineBoxes
           _boxStack.removeAt(i);
           break;
         }
       }
+
+      // Advance by padding first, then margin
+      _currentX += rightPadding;
+      _currentX += rightMargin;
+
+      // Debug logging when enabled
+      if (debugPaintInlineLayoutEnabled) {
+        print('[IFC] Close tag: padding=$rightPadding, margin=$rightMargin, X=$_currentX');
+      }
+
+    } else if (item.renderBox != null) {
+      // This is a close tag without box fragment - still advance by its size
+      _currentX += itemResult.inlineSize;
     }
   }
-  
+
   /// Handle close tag at line end.
   void _handleCloseTagAtLineEnd(InlineItem item, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
     // Find matching open box in stack
@@ -363,6 +393,7 @@ class InlineLayoutAlgorithm {
 
     // Calculate vertical position - text baseline should align with line baseline
     final y = baseline - itemResult.shapeResult!.ascent;
+
 
     final textItem = TextLineBoxItem(
       offset: Offset(_currentX, y),
@@ -475,51 +506,59 @@ class InlineLayoutAlgorithm {
         boxesWithContent.add(entry.key);
       }
     }
-    
+
     // For each box, calculate its visual bounds based on its content
     for (final box in boxesWithContent) {
       final items = _boxToItems[box]!;
       if (items.isEmpty) continue;
-      
+
       // Find the leftmost and rightmost positions of the box's content
       // This gives us the actual visual bounds after bidi reordering
       double minX = double.infinity;
       double maxX = double.negativeInfinity;
-      
+
       for (final item in items) {
         minX = math.min(minX, item.offset.dx);
         maxX = math.max(maxX, item.offset.dx + item.size.width);
       }
-      
+
       if (minX < double.infinity && maxX > double.negativeInfinity) {
         final width = maxX - minX;
-        
+
         // Get the style for this box
         CSSRenderStyle? style;
         if (box is RenderBoxModel) {
           style = box.renderStyle;
         }
-        
+
         if (style != null && _shouldCreateBoxFragment(style)) {
-          // Create box item at the correct visual position
-          // Note: The minX already includes left padding from _handleOpenTag
-          // and maxX includes right padding from _handleCloseTag
+          // Calculate box bounds - only include padding, not margins
+          // Margins create space in layout but aren't part of the visual box
+          final paddingLeft = style.paddingLeft.computedValue;
+          final paddingRight = style.paddingRight.computedValue;
+
+          // The box starts at the content minus padding
+          final boxStartX = minX - paddingLeft;
+          // The width includes content and padding only
+          final boxWidth = width + paddingLeft + paddingRight;
+
+
           final boxItem = BoxLineBoxItem(
-            offset: Offset(minX, 0.0),
-            size: Size(width, lineHeight),
+            offset: Offset(boxStartX, 0.0),
+            size: Size(boxWidth, lineHeight),
             renderBox: box,
             style: style,
             children: items,
           );
-          
+
           // Insert the box item at the beginning so it renders behind text
           lineBoxItems.insert(0, boxItem);
         }
       }
     }
   }
-  
-  /// Check if a box should create a box fragment (has background, border, or padding).
+
+  /// Check if a box should create a box fragment (has background, border, padding, or margin).
   bool _shouldCreateBoxFragment(CSSRenderStyle style) {
     return (style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) ||
            (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) ||
@@ -529,16 +568,20 @@ class InlineLayoutAlgorithm {
            (style.paddingTop?.value != null && style.paddingTop!.value! > 0) ||
            (style.paddingRight?.value != null && style.paddingRight!.value! > 0) ||
            (style.paddingBottom?.value != null && style.paddingBottom!.value! > 0) ||
+           (style.marginLeft?.value != null && style.marginLeft!.value! > 0) ||
+           (style.marginTop?.value != null && style.marginTop!.value! > 0) ||
+           (style.marginRight?.value != null && style.marginRight!.value! > 0) ||
+           (style.marginBottom?.value != null && style.marginBottom!.value! > 0) ||
            (style.backgroundColor?.value != null);
   }
 
   /// Reorder line items based on bidi levels for visual order.
   List<InlineItemResult> _reorderLineItemsForBidi(List<InlineItemResult> items) {
     // Apply the Unicode Bidirectional Algorithm reordering based on resolved bidi levels
-    
+
     if (items.isEmpty) return items;
-    
-    
+
+
     // Find the highest bidi level
     int maxLevel = 0;
     int minLevel = 999;
@@ -550,14 +593,14 @@ class InlineLayoutAlgorithm {
         minLevel = item.item.bidiLevel;
       }
     }
-    
+
     // If all items are at level 0 (LTR), no reordering needed
     if (maxLevel == 0) {
       return items;
     }
-    
+
     final reordered = List<InlineItemResult>.from(items);
-    
+
     // The key insight: we need to reverse sequences at each odd level,
     // processing from the highest level down to level 1
     for (int level = maxLevel; level >= minLevel; level--) {
@@ -566,10 +609,10 @@ class InlineLayoutAlgorithm {
         // Find all runs at this exact level
         List<_RunInfo> runs = [];
         int? runStart;
-        
+
         for (int i = 0; i <= reordered.length; i++) {
           bool isAtLevel = i < reordered.length && reordered[i].item.bidiLevel == level;
-          
+
           if (isAtLevel) {
             runStart ??= i;
           } else if (runStart != null) {
@@ -577,48 +620,48 @@ class InlineLayoutAlgorithm {
             runStart = null;
           }
         }
-        
+
         // Reverse each run
         for (final run in runs) {
           _reverseItemRange(reordered, run.start, run.end);
         }
       }
     }
-    
+
     // For RTL base direction, the entire line needs to be processed as RTL
     if (context.container.renderStyle.direction == TextDirection.rtl) {
       // Group items by their level to maintain proper nesting
       // The trick is that we need to reverse the top-level structure
       _applyRTLBaseDirection(reordered);
     }
-    
-    
+
+
     return reordered;
   }
-  
+
   void _applyRTLBaseDirection(List<InlineItemResult> items) {
     // For RTL base direction, we need to reverse the visual order of
     // top-level runs while preserving the internal structure of embedded runs
-    
+
     // Find continuous segments at each level
     List<_Segment> segments = [];
     int currentStart = 0;
     int currentLevel = items.isEmpty ? 0 : items[0].item.bidiLevel;
-    
+
     for (int i = 1; i <= items.length; i++) {
       int level = i < items.length ? items[i].item.bidiLevel : -1;
-      
+
       if (level != currentLevel) {
         segments.add(_Segment(currentStart, i - 1, currentLevel));
         currentStart = i;
         currentLevel = level;
       }
     }
-    
-    
+
+
     // Reverse the segments array to get RTL visual order
     segments = segments.reversed.toList();
-    
+
     // Rebuild the items array with segments in reversed order
     final newItems = <InlineItemResult>[];
     for (final segment in segments) {
@@ -626,13 +669,13 @@ class InlineLayoutAlgorithm {
         newItems.add(items[i]);
       }
     }
-    
+
     // Copy back to original array
     for (int i = 0; i < newItems.length; i++) {
       items[i] = newItems[i];
     }
   }
-  
+
   /// Helper to reverse a range of items
   void _reverseItemRange(List<InlineItemResult> items, int start, int end) {
     while (start < end) {
@@ -649,14 +692,14 @@ class InlineLayoutAlgorithm {
     final containerStyle = (context.container as RenderBoxModel).renderStyle;
 
     double offset = 0;
-    
+
     // Determine the effective text alignment
     TextAlign effectiveAlign = containerStyle.textAlign;
-    
+
     // Handle TextAlign.start based on text direction
     if (effectiveAlign == TextAlign.start) {
-      effectiveAlign = containerStyle.direction == TextDirection.rtl 
-          ? TextAlign.right 
+      effectiveAlign = containerStyle.direction == TextDirection.rtl
+          ? TextAlign.right
           : TextAlign.left;
     }
 

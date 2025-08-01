@@ -178,20 +178,17 @@ class BoxLineBoxItem extends LineBoxItem {
   void _paintBoxDecorations(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
 
-    // For inline elements, the background and border should extend to include padding
-    // Calculate the padding-extended rect
+    // Paint the padding box area (background/border)
     final paddingLeft = style.paddingLeft.computedValue;
     final paddingRight = style.paddingRight.computedValue;
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
 
-    // The painted rect should include padding
-    // Note: For inline elements, vertical padding doesn't affect layout (line height)
-    // but it does affect the painted background/border area
+    // The painted rect is the full box area
     final paintRect = Rect.fromLTRB(
-      offset.dx - paddingLeft,
+      offset.dx,
       offset.dy - paddingTop,
-      offset.dx + size.width + paddingRight,
+      offset.dx + size.width,
       offset.dy + size.height + paddingBottom,
     );
 
@@ -245,7 +242,7 @@ class BoxLineBoxItem extends LineBoxItem {
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // For inline elements, we need to check against the padded area
+    // Check against the padded area
     final paddingLeft = style.paddingLeft.computedValue;
     final paddingRight = style.paddingRight.computedValue;
     final paddingTop = style.paddingTop.computedValue;
@@ -253,9 +250,9 @@ class BoxLineBoxItem extends LineBoxItem {
 
     // Check if position is within the padded bounds
     final paddedBounds = Rect.fromLTRB(
-      offset.dx - paddingLeft,
+      offset.dx,
       offset.dy - paddingTop,
-      offset.dx + size.width + paddingRight,
+      offset.dx + size.width,
       offset.dy + size.height + paddingBottom,
     );
 

@@ -1036,7 +1036,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         value: establishIFC,
         ifTrue: 'inline formatting context',
         ifFalse: 'block layout'));
-    
+
     if (_inlineFormattingContext != null) {
       _inlineFormattingContext!.debugFillProperties(properties);
     }

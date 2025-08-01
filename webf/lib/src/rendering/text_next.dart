@@ -37,7 +37,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
     // Text nodes don't have their own size - they are measured and laid out by the parent's IFC
     size = constraints.constrain(Size.zero);
   }
-  
+
   @override
   void performLayout() {
     // Layout any child if present (though text nodes typically don't have children)
@@ -45,10 +45,10 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
       child!.layout(constraints, parentUsesSize: true);
     }
   }
-  
+
   @override
   bool get sizedByParent => true;
-  
+
   @override
   Size computeDryLayout(BoxConstraints constraints) {
     return constraints.constrain(Size.zero);

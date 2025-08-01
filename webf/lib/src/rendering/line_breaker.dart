@@ -46,40 +46,37 @@ class LineBreaker {
     _textOffset = 0;
     _currentWidth = 0;
 
-    // Debug: Print all items
-    for (int i = 0; i < items.length; i++) {
-      final item = items[i];
-    }
 
     while (_itemIndex < items.length) {
       final item = items[_itemIndex];
 
       if (item.isOpenTag || item.isCloseTag) {
-        // For inline elements with padding, we need to account for the padding width
-        double paddingSize = 0;
+        // For inline elements with padding and margins, we need to account for their width
+        double inlineSize = 0;
         if (item.shouldCreateBoxFragment && item.style != null) {
           if (item.isOpenTag) {
-            // Add left padding width
-            paddingSize = item.style!.paddingLeft.computedValue;
+            // Add left padding and margin width
+            inlineSize = item.style!.paddingLeft.computedValue +
+                        item.style!.marginLeft.computedValue;
           } else if (item.isCloseTag) {
-            // Add right padding width
-            paddingSize = item.style!.paddingRight.computedValue;
+            // Add right padding and margin width
+            inlineSize = item.style!.paddingRight.computedValue +
+                        item.style!.marginRight.computedValue;
           }
         }
-        
-        // Check if adding padding would exceed line width
-        if (_currentWidth + paddingSize > availableWidth && _currentLine.isNotEmpty) {
+
+        // Check if adding padding/margin would exceed line width
+        if (_currentWidth + inlineSize > availableWidth && _currentLine.isNotEmpty) {
           // Need to break line before this tag
           _commitLine();
         }
-        
+
         _addToCurrentLine(InlineItemResult(
           item: item,
-          inlineSize: paddingSize,
+          inlineSize: inlineSize,
           startOffset: item.startOffset,
           endOffset: item.endOffset,
         ));
-        _currentWidth += paddingSize;
         _itemIndex++;
       } else if (item.isText) {
         _breakTextItem(item);
