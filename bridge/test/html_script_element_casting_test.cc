@@ -115,7 +115,8 @@ TEST_F(HTMLScriptElementCastingTest, InvalidCastingReturnsNull) {
   // The casting chain still works mechanically, but it's not type-safe
   // In production code, DynamicTo would return null for wrong types
   auto script_element = DynamicTo<HTMLScriptElement>(binding_object);
-  EXPECT_NE(script_element, nullptr); // The cast succeeds but object is not actually HTMLScriptElement
+  // Expect null since we created a div, not a script element
+  EXPECT_EQ(script_element, nullptr);
 }
 
 TEST_F(HTMLScriptElementCastingTest, NullPointerHandling) {
