@@ -7,21 +7,13 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/widget.dart';
+import 'package:webf/src/css/whitespace_processor.dart';
 import 'text_bindings_generated.dart';
 
 const String WHITE_SPACE_CHAR = ' ';
 const String NEW_LINE_CHAR = '\n';
 const String RETURN_CHAR = '\r';
 const String TAB_CHAR = '\t';
-
-// White space processing in CSS affects only the document white space characters:
-// spaces (U+0020), tabs (U+0009), and segment breaks.
-// Carriage returns (U+000D) are treated identically to spaces (U+0020) in all respects.
-// https://drafts.csswg.org/css-text/#white-space-rules
-final String _documentWhiteSpace = '\u0020\u0009\u000A\u000D';
-final RegExp _collapseWhiteSpaceReg = RegExp(r'[' + _documentWhiteSpace + r']+');
-final RegExp _trimLeftWhitespaceReg = RegExp(r'^[' + _documentWhiteSpace + r']([^' + _documentWhiteSpace + r']+)');
-final RegExp _trimRightWhitespaceReg = RegExp(r'([^' + _documentWhiteSpace + r']+)[' + _documentWhiteSpace + r']$');
 
 const TEXT = 'TEXT';
 
@@ -56,21 +48,6 @@ class WebFTextElement extends WebFTextBindings {
   void childrenChanged(dom.ChildrenChange change) {
     super.childrenChanged(change);
     notifyRootTextElement();
-  }
-
-  // '  a b  c   \n' => ' a b c '
-  static String _collapseWhitespace(String string) {
-    return string.replaceAll(_collapseWhiteSpaceReg, WHITE_SPACE_CHAR);
-  }
-
-  // '   a b c' => 'a b c'
-  static String _trimLeftWhitespace(String string) {
-    return string.replaceAllMapped(_trimLeftWhitespaceReg, (Match m) => '${m[1]}');
-  }
-
-  // 'a b c    ' => 'a b c'
-  static String _trimRightWhitespace(String string) {
-    return string.replaceAllMapped(_trimRightWhitespaceReg, (Match m) => '${m[1]}');
   }
 
   static TextStyle createTextStyle(CSSRenderStyle renderStyle) {
@@ -114,7 +91,9 @@ class WebFTextElement extends WebFTextBindings {
 
     childNodes.forEach((node) {
       if (node is dom.TextNode) {
-        textSpanChildren.add(TextSpan(text: _collapseWhitespace(node.data)));
+        // Process whitespace according to the parent element's white-space property
+        final processedText = WhitespaceProcessor.processPhaseOne(node.data, renderStyle.whiteSpace);
+        textSpanChildren.add(TextSpan(text: processedText));
       } else if (node is dom.Element && node is WebFTextElement) {
         textSpanChildren.add(node.createTextSpan(node.childNodes));
       }

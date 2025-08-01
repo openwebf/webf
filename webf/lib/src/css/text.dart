@@ -392,6 +392,28 @@ mixin CSSTextMixin on RenderStyle {
     _markNestChildrenTextAndLayoutNeedsLayout(this, DIRECTION);
   }
 
+  double? _tabSize;
+
+  double get tabSize {
+    // Get style from self or closest parent if specified style property is not set
+    // due to style inheritance.
+    if (_tabSize == null && getParentRenderStyle() != null) {
+      final parent = getParentRenderStyle();
+      if (parent is CSSTextMixin) {
+        return (parent as CSSTextMixin).tabSize;
+      }
+    }
+    // Default tab size is 8 space characters
+    return _tabSize ?? 8.0;
+  }
+
+  set tabSize(double? value) {
+    if (_tabSize == value) return;
+    _tabSize = value;
+    // Update all the children text with specified style property not set due to style inheritance.
+    _markChildrenTextNeedsLayout(this, TAB_SIZE);
+  }
+
   // Mark flow layout and all the children flow layout with specified style property not set needs layout.
   void _markNestFlowLayoutNeedsLayout(RenderStyle renderStyle, String styleProperty) {
     if (renderStyle.isSelfRenderFlowLayout()) {

@@ -3,6 +3,7 @@ import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_next.dart';
 import 'package:webf/src/rendering/event_listener.dart';
+import 'package:webf/src/css/whitespace_processor.dart';
 import 'inline_item.dart';
 
 /// Builds a flat list of InlineItems from render tree.
@@ -240,28 +241,8 @@ class InlineItemsBuilder {
 
   /// Process white space according to CSS rules.
   String _processWhiteSpace(String text, CSSRenderStyle style) {
-    switch (style.whiteSpace) {
-      case WhiteSpace.normal:
-      case WhiteSpace.nowrap:
-        // Collapse sequences of white space
-        return text.replaceAll(RegExp(r'\s+'), ' ');
-
-      case WhiteSpace.pre:
-      case WhiteSpace.preWrap:
-        // Preserve white space
-        return text;
-
-      case WhiteSpace.preLine:
-        // Preserve line breaks, collapse other white space
-        return text.replaceAll(RegExp(r'[^\S\n]+'), ' ');
-
-      case WhiteSpace.breakSpaces:
-        // Convert spaces to non-breaking spaces
-        return text.replaceAll(' ', '\u00A0');
-
-      default:
-        return text;
-    }
+    // Use the new WhitespaceProcessor for Phase I processing
+    return WhitespaceProcessor.processPhaseOne(text, style.whiteSpace);
   }
 
   /// Add line break opportunity.
