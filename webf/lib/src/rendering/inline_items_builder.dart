@@ -142,6 +142,7 @@ class InlineItemsBuilder {
 
     final style = textBox.renderStyle;
     var processedText = _processWhiteSpace(text, style);
+    // Process whitespace
 
     if (processedText.isNotEmpty) {
       // Handle adjacent text node whitespace collapsing
@@ -166,7 +167,7 @@ class InlineItemsBuilder {
       final startOffset = _currentOffset;
       _textContent.write(processedText);
 
-      // Add text with computed font size
+      // Add text item
 
       final item = InlineItem(
         type: InlineItemType.text,

@@ -98,6 +98,8 @@ class InlineFormattingContext {
 
     _items = builder.items;
     _textContent = builder.textContent;
+    
+    // Text content and items collected
   }
 
   /// Resolve bidirectional text.

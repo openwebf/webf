@@ -103,6 +103,9 @@ class LineBreaker {
   void _breakTextItem(InlineItem item) {
     final text = item.getText(textContent);
     final style = item.style;
+    
+
+    // Break text
 
     if (style == null || text.isEmpty) {
       _itemIndex++;
@@ -127,6 +130,7 @@ class LineBreaker {
         style,
         textPainter,
       );
+      
 
 
       if (breakPoint <= startOffset) {
@@ -144,7 +148,7 @@ class LineBreaker {
               textDirection: TextDirection.ltr,
             );
             firstWordPainter.layout();
-            
+
             // If the first word would fit on a new line, break before this item
             if (firstWordPainter.width <= availableWidth) {
               _commitLine();
@@ -162,7 +166,8 @@ class LineBreaker {
 
       // Measure text segment
       final segment = text.substring(startOffset, breakPoint);
-      
+      // Create segment
+
       // Create text painter for the segment
       final segmentTextSpan = CSSTextMixin.createTextSpan(segment, style);
       final segmentPainter = TextPainter(
@@ -170,15 +175,13 @@ class LineBreaker {
         textDirection: TextDirection.ltr,
       );
       segmentPainter.layout();
-      
+
       // Use full width for measurement - trailing spaces should NOT be excluded
       // when determining if text fits on a line. They are only visually removed
       // at the end of lines but still contribute to line breaking decisions.
       final measureWidth = segmentPainter.width;
-      
-      // Measure segment
-      
 
+      // Measure segment
 
       // Create item result with the adjusted width
       final itemResult = InlineItemResult(
@@ -206,8 +209,18 @@ class LineBreaker {
       _addToCurrentLine(itemResult);
 
       if (breakPoint < text.length) {
-        // Need to break line
-        _commitLine();
+        // We didn't process all the text
+        // For pre-wrap, only break if we actually hit the width limit
+        if (style.whiteSpace == WhiteSpace.preWrap) {
+          // Check if the break was due to width limit or just a word boundary
+          // If we can still fit more text, continue on the same line
+          if (_currentWidth >= availableWidth * 0.9) { // Allow some tolerance
+            _commitLine();
+          }
+        } else {
+          // For other modes, commit the line
+          _commitLine();
+        }
       }
 
       startOffset = breakPoint;
@@ -260,34 +273,34 @@ class LineBreaker {
     CSSRenderStyle style,
     TextPainter painter,
   ) {
+    // Calculate the actual available width for this text segment
+    final remainingWidth = availableWidth - _currentWidth;
     // Handle white-space property
     if (style.whiteSpace == WhiteSpace.nowrap) {
       // No breaking within this text
       return text.length;
     }
 
-    // If we're at the start of a line and the entire text fits, return full length
-    if (_currentWidth == 0) {
-      final fullText = text.substring(startOffset);
-      final fullTextPainter = TextPainter(
-        text: TextSpan(
-          text: fullText,
-          style: painter.text?.style,
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      fullTextPainter.layout();
+    // Check if the entire remaining text fits
+    final fullText = text.substring(startOffset);
+    final fullTextPainter = TextPainter(
+      text: TextSpan(
+        text: fullText,
+        style: painter.text?.style,
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    fullTextPainter.layout();
 
-      if (fullTextPainter.width <= availableWidth) {
-        return text.length;
-      }
+    if (fullTextPainter.width <= remainingWidth) {
+      return text.length;
     }
 
     // Binary search for break point
     int low = startOffset;
     int high = text.length + 1; // Include one past the end to test full string
     int lastGood = startOffset;
-    
+
     // Find break point
 
     while (low < high) {
@@ -298,7 +311,7 @@ class LineBreaker {
 
       // Measure text up to mid point
       final segment = text.substring(startOffset, testEnd);
-      
+
       final segmentPainter = TextPainter(
         text: TextSpan(
           text: segment,
@@ -308,7 +321,7 @@ class LineBreaker {
       );
       segmentPainter.layout();
 
-      if (_currentWidth + segmentPainter.width <= availableWidth) {
+      if (segmentPainter.width <= remainingWidth) {
         lastGood = testEnd;
         low = mid + 1;
         // Segment fits
@@ -322,14 +335,32 @@ class LineBreaker {
     if (lastGood > startOffset && lastGood < text.length) {
       // Only look for word boundary if we're actually breaking the line
       // Binary search found break point
-      final breakPoint = _findWordBoundary(text, startOffset, lastGood);
+      
+      // For pre-wrap, check if we actually need to break
+      // If lastGood equals text.length, we can fit the entire remaining text
+      if (style.whiteSpace == WhiteSpace.preWrap && lastGood == text.length) {
+        return lastGood;
+      }
+      
+      final breakPoint = _findWordBoundary(text, startOffset, lastGood, style.whiteSpace);
       if (breakPoint > startOffset) {
         return breakPoint;
-      } else if (breakPoint == startOffset && startOffset == 0) {
-        // We can't break anywhere in this text item
-        // Return 0 to indicate we should break before this entire item
-        // Cannot break in this text item, should break before it
-        return 0;
+      } else if (breakPoint == startOffset) {
+        // We can't break in this segment
+        if (startOffset == 0) {
+          // This is the beginning of the text item
+          // If we're not at the start of a line, break before this item
+          if (_currentWidth > 0) {
+            return 0;
+          }
+          // Otherwise, we must include at least some text
+          // Return lastGood to force break in the middle of the word
+          return lastGood;
+        } else {
+          // We're in the middle of the text item
+          // Return startOffset to indicate no progress
+          return startOffset;
+        }
       }
     }
 
@@ -337,7 +368,36 @@ class LineBreaker {
   }
 
   /// Find word boundary for breaking.
-  int _findWordBoundary(String text, int start, int end) {
+  int _findWordBoundary(String text, int start, int end, [WhiteSpace? whiteSpace]) {
+    // For break-spaces and pre-wrap modes, we can break at space characters
+    if (whiteSpace == WhiteSpace.breakSpaces || whiteSpace == WhiteSpace.preWrap) {
+      // Look backwards from end to find the last space that fits
+      // We want to break after a space, not in the middle of a word
+      
+      // Check if we're at the end of the text
+      if (end >= text.length) {
+        return end;
+      }
+      
+      // Check if the position is already at a space
+      if (text[end - 1] == ' ') {
+        return end;
+      }
+      
+      // We're in the middle of a word, look for the last space before this position
+      for (int i = end - 1; i > start; i--) {
+        if (text[i - 1] == ' ') {
+          // Found space, break after it
+          return i;
+        }
+      }
+      
+      // No space found in this segment
+      // This means the entire segment is one word that doesn't fit
+      // Return start to indicate we should break before this segment
+      return start;
+    }
+
     // Check if we're dealing with CJK text
     // For CJK text, we can break at any character boundary
     bool hasCJK = false;
@@ -347,50 +407,50 @@ class LineBreaker {
         break;
       }
     }
-    
+
     if (hasCJK) {
       // For CJK text, we can break at any character boundary
       // But prefer breaking before or after CJK characters rather than in the middle of English words
-      
+
       // First, check if we're at a CJK/non-CJK boundary
       if (end < text.length) {
         final charBefore = text.codeUnitAt(end - 1);
         final charAfter = text.codeUnitAt(end);
         final isBeforeCJK = _isCJKCharacter(charBefore);
         final isAfterCJK = _isCJKCharacter(charAfter);
-        
+
         // If we're at a script boundary, this is a good break point
         if (isBeforeCJK != isAfterCJK) {
           return end;
         }
       }
-      
+
       // Look backwards for a good break point
       for (int i = end; i > start; i--) {
         // Check for space (always a good break point)
         if (text[i - 1] == ' ') {
           return i;
         }
-        
+
         // Check for CJK/non-CJK boundary
         if (i > 1 && i < text.length) {
           final charBefore = text.codeUnitAt(i - 1);
           final charAfter = text.codeUnitAt(i);
           final isBeforeCJK = _isCJKCharacter(charBefore);
           final isAfterCJK = _isCJKCharacter(charAfter);
-          
+
           // Break at script boundaries
           if (isBeforeCJK != isAfterCJK) {
             return i;
           }
-          
+
           // For consecutive CJK characters, we can break anywhere
           if (isBeforeCJK && isAfterCJK) {
             return i;
           }
         }
       }
-      
+
       // If no better break point found, break at the end
       return end;
     } else {
@@ -407,30 +467,30 @@ class LineBreaker {
               break;
             }
           }
-          
+
           if (!onlySpaces) {
             lastSpace = i;
             break;
           }
         }
       }
-      
+
       if (lastSpace > start) {
         return lastSpace;
       }
-      
+
       // No space found - check if we're in the middle of a word
       // If we are, we should not break here
       if (end < text.length && text[end - 1] != ' ' && text[end] != ' ') {
         // We're in the middle of a word, return start to indicate no break
         return start;
       }
-      
+
       // Otherwise break at character boundary
       return end;
     }
   }
-  
+
   /// Find the end of the first word in text
   int _findFirstWordEnd(String text, int start) {
     for (int i = start; i < text.length; i++) {
@@ -440,7 +500,7 @@ class LineBreaker {
     }
     return text.length;
   }
-  
+
   /// Check if a character is CJK (Chinese, Japanese, Korean)
   bool _isCJKCharacter(int codePoint) {
     return (codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // CJK Unified Ideographs

@@ -387,18 +387,66 @@ class InlineLayoutAlgorithm {
     }
 
     final text = context.textContent.substring(itemResult.startOffset, itemResult.endOffset);
+    
+    // Apply Phase II: trim leading spaces at line start for normal/nowrap
+    String processedText = text;
+    if (item.style != null && 
+        (item.style!.whiteSpace == WhiteSpace.normal || 
+         item.style!.whiteSpace == WhiteSpace.nowrap ||
+         item.style!.whiteSpace == WhiteSpace.preLine)) {
+      // Check if this is the first text item on the line
+      bool isFirstTextOnLine = true;
+      for (final existingItem in lineBoxItems) {
+        if (existingItem is TextLineBoxItem) {
+          isFirstTextOnLine = false;
+          break;
+        }
+      }
+      
+      if (isFirstTextOnLine) {
+        // Trim leading spaces
+        processedText = text.trimLeft();
+        
+        // If all text was trimmed, skip this item
+        if (processedText.isEmpty && text.isNotEmpty) {
+          return TextLineBoxItem(
+            offset: Offset.zero,
+            size: Size.zero,
+            text: '',
+            style: context.container.renderStyle,
+            textPainter: TextPainter(),
+            inlineItem: item,
+          );
+        }
+      }
+    }
 
-    // Create text painter
-    final textPainter = itemResult.shapeResult!.glyphData as TextPainter;
+    // Create text painter with processed text
+    TextPainter textPainter;
+    if (processedText != text) {
+      // Need to create a new text painter with trimmed text
+      final textSpan = CSSTextMixin.createTextSpan(processedText, item.style!);
+      textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+    } else {
+      // Use the existing text painter
+      textPainter = itemResult.shapeResult!.glyphData as TextPainter;
+    }
 
     // Calculate vertical position - text baseline should align with line baseline
     final y = baseline - itemResult.shapeResult!.ascent;
 
 
+    // Use the actual width of the processed text
+    final actualWidth = processedText != text ? textPainter.width : itemResult.inlineSize;
+    
     final textItem = TextLineBoxItem(
       offset: Offset(_currentX, y),
-      size: Size(itemResult.inlineSize, itemResult.shapeResult!.height),
-      text: text,
+      size: Size(actualWidth, itemResult.shapeResult!.height),
+      text: processedText,
       style: item.style!,
       textPainter: textPainter,
       inlineItem: item,
@@ -407,7 +455,7 @@ class InlineLayoutAlgorithm {
     // Always add to line box items (not to box stack)
     lineBoxItems.add(textItem);
 
-    _currentX += itemResult.inlineSize;
+    _currentX += actualWidth;
     return textItem;
   }
 
