@@ -177,7 +177,9 @@ enum ResourceType {
 }
 
 class InspectPageModule extends UIInspectorModule {
-  Document get document => devtoolsService.controller!.view.document;
+  Document get document => (devtoolsService is ChromeDevToolsService) 
+      ? ChromeDevToolsService.unifiedService.currentController!.view.document 
+      : devtoolsService.controller!.view.document;
 
   InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
 
@@ -232,7 +234,10 @@ class InspectPageModule extends UIInspectorModule {
   int _devToolsMaxHeight = 0;
 
   void _frameScreenCast(Duration timeStamp) {
-    if (!devtoolsService.controller!.isComplete) {
+    final controller = (devtoolsService is ChromeDevToolsService) 
+        ? ChromeDevToolsService.unifiedService.currentController 
+        : devtoolsService.controller;
+    if (controller == null || !controller.isComplete) {
       return;
     }
     Element root = document.documentElement!;
@@ -275,6 +280,23 @@ class InspectPageModule extends UIInspectorModule {
 
   void stopScreenCast() {
     _isFramingScreenCast = false;
+  }
+
+  /// Gets whether screencast is currently active
+  bool get isScreencastActive => _isFramingScreenCast;
+
+  /// Transfers screencast state from another Page module (used during controller switch)
+  void transferScreencastState(InspectPageModule fromModule) {
+    if (fromModule._isFramingScreenCast) {
+      _isFramingScreenCast = true;
+      _devToolsMaxWidth = fromModule._devToolsMaxWidth;
+      _devToolsMaxHeight = fromModule._devToolsMaxHeight;
+      _lastSentSessionID = fromModule._lastSentSessionID;
+      
+      // Start screencast on the new controller
+      SchedulerBinding.instance.addPostFrameCallback(_frameScreenCast);
+      SchedulerBinding.instance.scheduleFrame();
+    }
   }
 
   /// Avoiding frame blocking, confirm frontend has ack last frame,

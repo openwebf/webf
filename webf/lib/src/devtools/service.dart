@@ -22,6 +22,7 @@ import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
+import 'modules/page.dart';
 
 /// Abstract base class for implementing DevTools debugging services for WebF content.
 ///
@@ -247,8 +248,19 @@ class UnifiedChromeDevToolsService {
   void _selectController(WebFController controller) {
     if (!_controllerServices.containsKey(controller)) return;
 
+    // Get the old Page module to transfer screencast state
+    InspectPageModule? oldPageModule = _currentService?.uiInspector?.moduleRegistrar['Page'] as InspectPageModule?;
+    
     _currentController = controller;
     _currentService = _controllerServices[controller];
+
+    // Transfer screencast state to new Page module if screencast was active
+    if (oldPageModule != null && _currentService?.uiInspector != null) {
+      InspectPageModule? newPageModule = _currentService!.uiInspector!.moduleRegistrar['Page'] as InspectPageModule?;
+      if (newPageModule != null && oldPageModule.isScreencastActive) {
+        newPageModule.transferScreencastState(oldPageModule);
+      }
+    }
 
     // Notify all modules about controller change
     _runtimeModule?.onControllerChanged(controller);
