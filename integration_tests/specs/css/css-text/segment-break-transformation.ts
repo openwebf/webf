@@ -8,7 +8,7 @@ that is broken into multiple lines
 in the source code so that it can
 be more easily read and edited.`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -20,7 +20,7 @@ be more easily read and edited.`;
 在一行寫不行。最好
 用三行寫。`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -32,7 +32,7 @@ be more easily read and edited.`;
 "你好，
 世界！"`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -45,7 +45,7 @@ be more easily read and edited.`;
 cross-platform
 渲染引擎。`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -57,7 +57,7 @@ cross-platform
 段落です。改行が
 自動的に削除されます。`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -69,7 +69,7 @@ cross-platform
 단락입니다. 줄바꿈이
 자동으로 제거됩니다.`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -82,7 +82,7 @@ cross-platform
 保留了
 所有換行符。`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -94,7 +94,7 @@ cross-platform
 換行符但是
 空格被壓縮了。`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -108,7 +108,7 @@ cross-platform
 "像這樣"
 都不會有多餘空格。`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 
@@ -119,7 +119,7 @@ cross-platform
     div.innerHTML = `한글 자모 ᄀ
 다른 텍스트`;
     document.body.appendChild(div);
-    
+
     await snapshot();
   });
 });

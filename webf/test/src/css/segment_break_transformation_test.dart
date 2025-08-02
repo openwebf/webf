@@ -118,6 +118,7 @@ void main() {
       );
       expect(result2, isNull);
     });
+    
   });
 
   group('WhitespaceProcessor with language context', () {
@@ -132,6 +133,12 @@ void main() {
       final result = WhitespaceProcessor.processPhaseOne(input, WhiteSpace.normal, 'zh');
       expect(result, equals('你好世界来自 WebF')); // Space before Latin text
     });
+    
+    test('should handle CJK text with punctuation and line breaks', () {
+      final input = '在一行寫不行。最好\n用三行寫。';
+      final result = WhitespaceProcessor.processPhaseOne(input, WhiteSpace.normal, 'zh');
+      expect(result, equals('在一行寫不行。最好用三行寫。')); // No space - both are CJK
+    });
 
     test('should handle mixed English and Chinese text', () {
       final input = 'Hello\n你好\nworld\n世界';
@@ -142,7 +149,7 @@ void main() {
     test('should handle Chinese text with quotation marks', () {
       final input = '他说：\n"你好\n世界"';
       final result = WhitespaceProcessor.processPhaseOne(input, WhiteSpace.normal, 'zh');
-      expect(result, equals('他说："你好世界"'));
+      expect(result, equals('他说："你好世界"')); // No space - colon and quote are both treated as CJK
     });
 
     test('should handle Japanese text with line breaks', () {

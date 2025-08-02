@@ -67,7 +67,7 @@ This is the main guide for WebF development. Detailed content is organized into 
 
 ### Test Types
 - **Unit Tests**: See folder-specific guides
-- **Integration Tests**: `cd integration_tests && npm test`
+- **Integration Tests**: See [Integration Development Guide](integration_tests/CLAUDE.md)
 - **Flutter Widget Tests**: See [Dart Development Guide](webf/CLAUDE.md)
 
 ### Running Tests
@@ -76,7 +76,7 @@ This is the main guide for WebF development. Detailed content is organized into 
 npm test
 
 # Specific integration test
-cd integration_tests && npm test specs/css/css-display/display.ts
+cd integration_tests && npm run integration -- specs/css/css-display/display.ts 
 
 # Flutter tests
 cd webf && flutter test
