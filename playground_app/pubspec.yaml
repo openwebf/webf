@@ -31,10 +31,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-
   # QR code scanning
   qr_code_scanner_plus: ^2.0.0
   permission_handler: ^11.3.1
@@ -45,6 +41,7 @@ dependencies:
     path: ../webf_cupertino_ui
   webf_deeplink: ^0.1.0-beta
   webf_share: ^0.1.0-beta
+  webf_ui_kit: ^0.1.0-beta
 
   vibration: ^3.1.3
   go_router: ^16.0.0
@@ -53,14 +50,9 @@ dependencies:
   shared_preferences: ^2.5.3
   flutter_form_builder: ^9.7.0
   form_builder_validators: ^11.1.2
-  dropdown_button2: ^2.3.9
   dynamic_tabbar: ^1.0.9
   day_night_switcher: ^0.2.0+1
   adaptive_theme: ^3.3.0
-  flutter_svg: ^2.0.17
-  showcaseview: ^4.0.1
-  easy_refresh: ^3.4.0
-  collection: ^1.18.0
   auto_size_text: ^3.0.0
 
 dependency_overrides:
@@ -70,6 +62,8 @@ dependency_overrides:
     path: ../webf_modules/deeplink
   webf_share:
     path: ../webf_modules/share
+  webf_ui_kit:
+    path: ../webf_modules/ui_kit
 
 dev_dependencies:
   flutter_test:

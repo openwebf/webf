@@ -1,5 +1,5 @@
-name: webf_share
-description: WebF Share module for sharing content, text, and images
+name: webf_ui_kit
+description: A collection of Flutter UI components for WebF applications
 version: 0.1.0-beta
 homepage: https://openwebf.com
 
@@ -13,8 +13,14 @@ dependencies:
   webf: 
     hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
     version: ^0.22.0
-  share_plus: ^10.0.0
-  path_provider: ^2.1.0
+  cupertino_icons: ^1.0.8
+  collection: ^1.18.0
+  easy_refresh: ^3.4.0
+  dropdown_button2: ^2.3.9
+
+
+  flutter_svg: ^2.0.17
+  showcaseview: ^4.0.1
 
 dev_dependencies:
   flutter_test:
@@ -22,12 +28,14 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
+  uses-material-design: true
 
 # Information used by the publishing tool.
-publish_to: https://dart.cloudsmith.io/openwebf/webf-share/
+publish_to: https://dart.cloudsmith.io/openwebf/webf-ui-kit/
 
 topics:
   - webf
-  - share
-  - screenshot
-  - social
+  - ui
+  - components
+  - flutter
+  - widgets
