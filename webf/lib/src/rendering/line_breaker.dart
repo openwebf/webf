@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -49,6 +48,7 @@ class LineBreaker {
 
     while (_itemIndex < items.length) {
       final item = items[_itemIndex];
+      // Process item
 
       if (item.isOpenTag || item.isCloseTag) {
         // For inline elements with padding and margins, we need to account for their width
@@ -79,6 +79,7 @@ class LineBreaker {
         ));
         _itemIndex++;
       } else if (item.isText) {
+        // Process text item
         _breakTextItem(item);
       } else if (item.isAtomicInline) {
         _breakAtomicItem(item);
@@ -129,8 +130,28 @@ class LineBreaker {
 
 
       if (breakPoint <= startOffset) {
-        // Can't fit any text, force break
+        // Can't fit any text from this item
         if (_currentLine.isNotEmpty) {
+          // Check if we should break before this entire text item
+          // This happens when we're at the start of a word that doesn't fit
+          if (startOffset == 0) {
+            // We're at the beginning of this text item
+            // Try measuring if the entire first word would fit on a new line
+            final firstWordEnd = _findFirstWordEnd(text, 0);
+            final firstWord = text.substring(0, firstWordEnd);
+            final firstWordPainter = TextPainter(
+              text: TextSpan(text: firstWord, style: textPainter.text?.style),
+              textDirection: TextDirection.ltr,
+            );
+            firstWordPainter.layout();
+            
+            // If the first word would fit on a new line, break before this item
+            if (firstWordPainter.width <= availableWidth) {
+              _commitLine();
+              continue;
+            }
+          }
+          // Otherwise just break the line and try again
           _commitLine();
           continue;
         } else {
@@ -141,23 +162,33 @@ class LineBreaker {
 
       // Measure text segment
       final segment = text.substring(startOffset, breakPoint);
+      
+      // Create text painter for the segment
       final segmentTextSpan = CSSTextMixin.createTextSpan(segment, style);
       final segmentPainter = TextPainter(
         text: segmentTextSpan,
         textDirection: TextDirection.ltr,
       );
       segmentPainter.layout();
+      
+      // Use full width for measurement - trailing spaces should NOT be excluded
+      // when determining if text fits on a line. They are only visually removed
+      // at the end of lines but still contribute to line breaking decisions.
+      final measureWidth = segmentPainter.width;
+      
+      // Measure segment
+      
 
 
-      // Create item result
+      // Create item result with the adjusted width
       final itemResult = InlineItemResult(
         item: item,
-        inlineSize: segmentPainter.width,
+        inlineSize: measureWidth,
         startOffset: item.startOffset + startOffset,
         endOffset: item.startOffset + breakPoint,
       );
 
-      // Store shape result
+      // Store shape result with the actual segment painter
       // Get the actual baseline
       final baseline = segmentPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
 
@@ -256,7 +287,8 @@ class LineBreaker {
     int low = startOffset;
     int high = text.length + 1; // Include one past the end to test full string
     int lastGood = startOffset;
-
+    
+    // Find break point
 
     while (low < high) {
       final mid = (low + high) ~/ 2;
@@ -266,6 +298,7 @@ class LineBreaker {
 
       // Measure text up to mid point
       final segment = text.substring(startOffset, testEnd);
+      
       final segmentPainter = TextPainter(
         text: TextSpan(
           text: segment,
@@ -275,22 +308,28 @@ class LineBreaker {
       );
       segmentPainter.layout();
 
-
       if (_currentWidth + segmentPainter.width <= availableWidth) {
         lastGood = testEnd;
         low = mid + 1;
+        // Segment fits
       } else {
         high = mid;
+        // Segment does not fit
       }
     }
-
 
     // Find actual break opportunity
     if (lastGood > startOffset && lastGood < text.length) {
       // Only look for word boundary if we're actually breaking the line
+      // Binary search found break point
       final breakPoint = _findWordBoundary(text, startOffset, lastGood);
       if (breakPoint > startOffset) {
         return breakPoint;
+      } else if (breakPoint == startOffset && startOffset == 0) {
+        // We can't break anywhere in this text item
+        // Return 0 to indicate we should break before this entire item
+        // Cannot break in this text item, should break before it
+        return 0;
       }
     }
 
@@ -356,15 +395,50 @@ class LineBreaker {
       return end;
     } else {
       // For non-CJK text, look for space
+      // But we need to find the last space that would leave a meaningful word on the line
+      int lastSpace = -1;
       for (int i = end; i > start; i--) {
         if (text[i - 1] == ' ') {
-          return i;
+          // Check if breaking here would leave only spaces on the current line
+          bool onlySpaces = true;
+          for (int j = start; j < i - 1; j++) {
+            if (text[j] != ' ') {
+              onlySpaces = false;
+              break;
+            }
+          }
+          
+          if (!onlySpaces) {
+            lastSpace = i;
+            break;
+          }
         }
       }
       
-      // No space found, break at character boundary
+      if (lastSpace > start) {
+        return lastSpace;
+      }
+      
+      // No space found - check if we're in the middle of a word
+      // If we are, we should not break here
+      if (end < text.length && text[end - 1] != ' ' && text[end] != ' ') {
+        // We're in the middle of a word, return start to indicate no break
+        return start;
+      }
+      
+      // Otherwise break at character boundary
       return end;
     }
+  }
+  
+  /// Find the end of the first word in text
+  int _findFirstWordEnd(String text, int start) {
+    for (int i = start; i < text.length; i++) {
+      if (text[i] == ' ') {
+        return i;
+      }
+    }
+    return text.length;
   }
   
   /// Check if a character is CJK (Chinese, Japanese, Korean)
@@ -384,6 +458,7 @@ class LineBreaker {
   void _addToCurrentLine(InlineItemResult itemResult) {
     _currentLine.add(itemResult);
     _currentWidth += itemResult.inlineSize;
+    // Item added
   }
 
   /// Commit current line.

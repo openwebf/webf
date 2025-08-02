@@ -30,6 +30,9 @@ class InlineItemsBuilder {
 
   /// Stack of embedding levels for nested elements.
   final List<int> _levelStack = [];
+  
+  /// Track if the previous text ended with collapsible whitespace
+  bool _endsWithCollapsibleSpace = false;
 
   /// Get current direction from stack or base direction.
   TextDirection get _currentDirection =>
@@ -49,6 +52,7 @@ class InlineItemsBuilder {
     _boxStack.clear();
     _directionStack.clear();
     _levelStack.clear();
+    _endsWithCollapsibleSpace = false;
 
     // Initialize direction stack with container's direction if it has one
     if (container is RenderBoxModel) {
@@ -137,13 +141,32 @@ class InlineItemsBuilder {
     if (text.isEmpty) return;
 
     final style = textBox.renderStyle;
-    final processedText = _processWhiteSpace(text, style);
+    var processedText = _processWhiteSpace(text, style);
 
     if (processedText.isNotEmpty) {
+      // Handle adjacent text node whitespace collapsing
+      if (style.whiteSpace == WhiteSpace.normal || 
+          style.whiteSpace == WhiteSpace.nowrap ||
+          style.whiteSpace == WhiteSpace.preLine) {
+        // Check if we need to collapse leading space with previous trailing space
+        if (_endsWithCollapsibleSpace && processedText.startsWith(' ')) {
+          processedText = processedText.substring(1);
+        }
+        
+        // Update whether we end with collapsible space
+        _endsWithCollapsibleSpace = processedText.endsWith(' ');
+      } else {
+        // For pre, pre-wrap, break-spaces, spaces are not collapsible
+        _endsWithCollapsibleSpace = false;
+      }
+      
+      // Skip if the text became empty after collapsing
+      if (processedText.isEmpty) return;
+      
       final startOffset = _currentOffset;
       _textContent.write(processedText);
 
-      // print('InlineItemsBuilder: Adding text "${processedText}" with font-size: ${style.fontSize.computedValue}');
+      // Add text with computed font size
 
       final item = InlineItem(
         type: InlineItemType.text,
@@ -196,6 +219,9 @@ class InlineItemsBuilder {
   /// Add atomic inline (inline-block, replaced element).
   void _addAtomicInline(RenderBoxModel box) {
     assert(box.renderStyle.display == CSSDisplay.inlineBlock || box.renderStyle.display == CSSDisplay.inlineFlex);
+    
+    // Atomic inline elements break the text flow
+    _endsWithCollapsibleSpace = false;
 
     // Insert object replacement character
     const objectReplacementChar = '\uFFFC';
