@@ -259,6 +259,15 @@ class UnifiedChromeDevToolsService {
     _broadcastTargetListUpdate();
   }
 
+  /// Switch DevTools to a specific controller (called when controller is attached)
+  void switchToController(WebFController controller) {
+    if (_controllerServices.containsKey(controller)) {
+      _selectController(controller);
+      // Send DOM update event to force frontend refresh
+      sendEventToFrontend(DOMUpdatedEvent());
+    }
+  }
+
   /// Start the DevTools server
   Future<void> start({String? address, int? port}) async {
     if (_isRunning) return;
