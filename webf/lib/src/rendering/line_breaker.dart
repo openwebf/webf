@@ -299,15 +299,85 @@ class LineBreaker {
 
   /// Find word boundary for breaking.
   int _findWordBoundary(String text, int start, int end) {
-    // Simple word breaking: look for space
-    for (int i = end; i > start; i--) {
-      if (text[i - 1] == ' ') {
-        return i;
+    // Check if we're dealing with CJK text
+    // For CJK text, we can break at any character boundary
+    bool hasCJK = false;
+    for (int i = start; i < end; i++) {
+      if (_isCJKCharacter(text.codeUnitAt(i))) {
+        hasCJK = true;
+        break;
       }
     }
-
-    // No space found, break at character boundary
-    return end;
+    
+    if (hasCJK) {
+      // For CJK text, we can break at any character boundary
+      // But prefer breaking before or after CJK characters rather than in the middle of English words
+      
+      // First, check if we're at a CJK/non-CJK boundary
+      if (end < text.length) {
+        final charBefore = text.codeUnitAt(end - 1);
+        final charAfter = text.codeUnitAt(end);
+        final isBeforeCJK = _isCJKCharacter(charBefore);
+        final isAfterCJK = _isCJKCharacter(charAfter);
+        
+        // If we're at a script boundary, this is a good break point
+        if (isBeforeCJK != isAfterCJK) {
+          return end;
+        }
+      }
+      
+      // Look backwards for a good break point
+      for (int i = end; i > start; i--) {
+        // Check for space (always a good break point)
+        if (text[i - 1] == ' ') {
+          return i;
+        }
+        
+        // Check for CJK/non-CJK boundary
+        if (i > 1 && i < text.length) {
+          final charBefore = text.codeUnitAt(i - 1);
+          final charAfter = text.codeUnitAt(i);
+          final isBeforeCJK = _isCJKCharacter(charBefore);
+          final isAfterCJK = _isCJKCharacter(charAfter);
+          
+          // Break at script boundaries
+          if (isBeforeCJK != isAfterCJK) {
+            return i;
+          }
+          
+          // For consecutive CJK characters, we can break anywhere
+          if (isBeforeCJK && isAfterCJK) {
+            return i;
+          }
+        }
+      }
+      
+      // If no better break point found, break at the end
+      return end;
+    } else {
+      // For non-CJK text, look for space
+      for (int i = end; i > start; i--) {
+        if (text[i - 1] == ' ') {
+          return i;
+        }
+      }
+      
+      // No space found, break at character boundary
+      return end;
+    }
+  }
+  
+  /// Check if a character is CJK (Chinese, Japanese, Korean)
+  bool _isCJKCharacter(int codePoint) {
+    return (codePoint >= 0x4E00 && codePoint <= 0x9FFF) || // CJK Unified Ideographs
+           (codePoint >= 0x3400 && codePoint <= 0x4DBF) || // CJK Extension A
+           (codePoint >= 0x3040 && codePoint <= 0x309F) || // Hiragana
+           (codePoint >= 0x30A0 && codePoint <= 0x30FF) || // Katakana
+           (codePoint >= 0xAC00 && codePoint <= 0xD7AF) || // Hangul Syllables
+           (codePoint >= 0x1100 && codePoint <= 0x11FF) || // Hangul Jamo
+           (codePoint >= 0x3130 && codePoint <= 0x318F) || // Hangul Compatibility Jamo
+           (codePoint >= 0xA960 && codePoint <= 0xA97F) || // Hangul Jamo Extended-A
+           (codePoint >= 0xD7B0 && codePoint <= 0xD7FF);   // Hangul Jamo Extended-B
   }
 
   /// Add item result to current line.
