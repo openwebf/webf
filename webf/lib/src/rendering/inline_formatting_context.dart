@@ -98,7 +98,7 @@ class InlineFormattingContext {
 
     _items = builder.items;
     _textContent = builder.textContent;
-    
+
     // Text content and items collected
   }
 
@@ -384,11 +384,12 @@ class InlineFormattingContext {
     double y = 0;
 
     for (final lineBox in _lineBoxes) {
-      if (position.dy >= y && position.dy < y + lineBox.height) {
-        return lineBox.hitTest(
-          result,
-          position: Offset(position.dx, position.dy - y),
-        );
+      bool isHit = lineBox.hitTest(
+        result,
+        position: Offset(position.dx, position.dy - y),
+      );
+      if (isHit) {
+        return true;
       }
       y += lineBox.height;
     }
@@ -435,10 +436,10 @@ class InlineFormattingContext {
 
           if (item is BoxLineBoxItem) {
             final style = item.style;
-            left -= style.paddingLeft.computedValue;
             top -= style.paddingTop.computedValue;
-            right += style.paddingRight.computedValue;
+            top -= style.borderTopWidth?.computedValue ?? 0.0;
             bottom += style.paddingBottom.computedValue;
+            bottom += style.borderBottomWidth?.computedValue ?? 0.0;
           }
 
           // Update min/max bounds

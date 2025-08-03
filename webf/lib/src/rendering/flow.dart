@@ -991,14 +991,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         position.dy - renderStyle.paddingTop.computedValue - renderStyle.effectiveBorderTopWidth.computedValue,
       );
 
-      // Check if the position is within content bounds
-      if (adjustedPosition.dx >= 0 &&
-          adjustedPosition.dy >= 0 &&
-          adjustedPosition.dx <= contentSize.width &&
-          adjustedPosition.dy <= contentSize.height) {
-        return _inlineFormattingContext!.hitTest(result, position: adjustedPosition);
-      }
-      return false;
+      return _inlineFormattingContext!.hitTest(result, position: adjustedPosition);
     }
 
     // Otherwise use default hit testing
