@@ -2,9 +2,86 @@ import 'package:flutter/material.dart';
 import 'package:playground_app/main.dart';
 import 'package:webf/webf.dart';
 import 'webf_screen.dart';
+import 'go_router_hybrid_history_delegate.dart';
 
-class ShowcaseScreen extends StatelessWidget {
+class ShowcaseScreen extends StatefulWidget {
   const ShowcaseScreen({super.key});
+
+  @override
+  State<ShowcaseScreen> createState() => _ShowcaseScreenState();
+}
+
+class _ShowcaseScreenState extends State<ShowcaseScreen> {
+  // Fixed controller names for each showcase item
+  static const String miraclePlusController = 'showcase_miracle_plus';
+  static const String reactUseCasesController = 'showcase_react_use_cases';
+  static const String vueCupertinoController = 'showcase_vue_cupertino';
+  static const String viteVueController = 'showcase_vite_vue';
+
+  // URLs for each showcase item
+  static const String miraclePlusUrl = 'https://miracleplus.openwebf.com/';
+  static const String reactUseCasesUrl = 'https://usecase.openwebf.com/';
+  static const String vueCupertinoUrl = 'https://vue-cupertino-gallery.openwebf.com/';
+  static const String viteVueUrl = 'https://vite-vue-demo-ten.vercel.app/';
+
+  final Map<String, bool> _prerenderingStatus = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _startPrerendering();
+  }
+
+  Future<void> _startPrerendering() async {
+    // Start prerendering all showcase URLs in parallel
+    final futures = <Future<void>>[
+      _prerenderUrl(miraclePlusController, miraclePlusUrl),
+      _prerenderUrl(reactUseCasesController, reactUseCasesUrl),
+      _prerenderUrl(vueCupertinoController, vueCupertinoUrl),
+      _prerenderUrl(viteVueController, viteVueUrl),
+    ];
+
+    // Wait for all prerendering to complete
+    await Future.wait(futures);
+  }
+
+  Future<void> _prerenderUrl(String controllerName, String url) async {
+    try {
+      setState(() {
+        _prerenderingStatus[controllerName] = false; // In progress
+      });
+
+      await WebFControllerManager.instance.addWithPrerendering(
+        name: controllerName,
+        createController: () => WebFController(
+          initialRoute: '/home',
+          routeObserver: routeObserver,
+        ),
+        bundle: WebFBundle.fromUrl(url),
+        setup: (controller) {
+          controller.hybridHistory.delegate = GoRouterHybridHistoryDelegate();
+        },
+      );
+
+      setState(() {
+        _prerenderingStatus[controllerName] = true; // Completed
+      });
+    } catch (e) {
+      print('Prerendering failed for $controllerName: $e');
+      setState(() {
+        _prerenderingStatus.remove(controllerName); // Failed
+      });
+    }
+  }
+
+  bool _isPrerendered(String controllerName) {
+    return _prerenderingStatus[controllerName] == true;
+  }
+
+  bool _isPrerendering(String controllerName) {
+    return _prerenderingStatus.containsKey(controllerName) && 
+           _prerenderingStatus[controllerName] == false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,92 +99,38 @@ class ShowcaseScreen extends StatelessWidget {
           const SizedBox(height: 8),
           _buildShowcaseCard(
             context,
-            title: 'MiraclePlus Demo',
-            description: 'Official WebF showcase with modern UI components',
-            url: 'https://miracleplus.openwebf.com/',
+            title: 'MiraclePlus News App',
+            description: 'MiraclePlus App Built with WebF',
+            url: miraclePlusUrl,
+            controllerName: miraclePlusController,
             color: const Color(0xFF4CAF50),
-            icon: Icons.star,
           ),
           const SizedBox(height: 16),
           _buildShowcaseCard(
             context,
             title: 'React Use Cases',
             description: 'Various React component examples and use cases',
-            url: 'https://webf.openwebf.com/react-use-cases/',
+            url: reactUseCasesUrl,
+            controllerName: reactUseCasesController,
             color: const Color(0xFF2196F3),
-            icon: Icons.web,
           ),
           const SizedBox(height: 16),
           _buildShowcaseCard(
             context,
-            title: 'Vue Gallery',
+            title: 'Vue Cupertino Gallery',
             description: 'Vue.js components and Cupertino UI gallery',
-            url: 'https://webf.openwebf.com/vue-gallery/',
+            url: vueCupertinoUrl,
+            controllerName: vueCupertinoController,
             color: const Color(0xFF4CAF50),
-            icon: Icons.view_module,
-          ),
-          const SizedBox(height: 16),
-          _buildShowcaseCard(
-            context,
-            title: 'Tailwind React',
-            description: 'Modern UI with Tailwind CSS and React',
-            url: 'https://webf.openwebf.com/tailwind-react/',
-            color: const Color(0xFF06B6D4),
-            icon: Icons.design_services,
-          ),
-          const SizedBox(height: 16),
-          _buildShowcaseCard(
-            context,
-            title: 'ECharts Demo',
-            description: 'Data visualization with ECharts integration',
-            url: 'https://webf.openwebf.com/echarts/',
-            color: const Color(0xFFFF9800),
-            icon: Icons.analytics,
-          ),
-          const SizedBox(height: 16),
-          _buildShowcaseCard(
-            context,
-            title: 'Hybrid Router',
-            description: 'Navigation and routing examples',
-            url: 'https://webf.openwebf.com/hybrid-router/',
-            color: const Color(0xFF9C27B0),
-            icon: Icons.route,
-          ),
-          const SizedBox(height: 16),
-          _buildShowcaseCard(
-            context,
-            title: 'BN Showcase',
-            description: 'Business network components showcase',
-            url: 'https://webf.openwebf.com/bn-showcase/',
-            color: const Color(0xFFF44336),
-            icon: Icons.business,
-          ),
-          const SizedBox(height: 16),
-          _buildShowcaseCard(
-            context,
-            title: 'Vite React App',
-            description: 'Fast development with Vite and React',
-            url: 'https://webf.openwebf.com/vite-react/',
-            color: const Color(0xFF646CFF),
-            icon: Icons.flash_on,
           ),
           const SizedBox(height: 16),
           _buildShowcaseCard(
             context,
             title: 'Vite Vue Project',
             description: 'Vite + Vue.js modern development stack',
-            url: 'https://webf.openwebf.com/vite-vue/',
+            url: viteVueUrl,
+            controllerName: viteVueController,
             color: const Color(0xFF4FC08D),
-            icon: Icons.speed,
-          ),
-          const SizedBox(height: 16),
-          _buildShowcaseCard(
-            context,
-            title: 'Vue Project',
-            description: 'Traditional Vue.js application example',
-            url: 'https://webf.openwebf.com/vue-project/',
-            color: const Color(0xFF34495E),
-            icon: Icons.code,
           ),
           const SizedBox(height: 32),
         ],
@@ -120,9 +143,11 @@ class ShowcaseScreen extends StatelessWidget {
     required String title,
     required String description,
     required String url,
+    required String controllerName,
     required Color color,
-    required IconData icon,
   }) {
+    final isPrerendered = _isPrerendered(controllerName);
+    final isPrerendering = _isPrerendering(controllerName);
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -138,7 +163,7 @@ class ShowcaseScreen extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _openWebFPage(context, title, url),
+          onTap: () => _openWebFPage(context, title, url, controllerName),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -151,10 +176,15 @@ class ShowcaseScreen extends StatelessWidget {
                     color: color,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 24,
+                  child: Center(
+                    child: Text(
+                      title.substring(0, 1).toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -178,14 +208,69 @@ class ShowcaseScreen extends StatelessWidget {
                           color: Color(0xFF666666),
                         ),
                       ),
+                      if (isPrerendering) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF999999)),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Prerendering...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF999999),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ] else if (isPrerendered) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 12,
+                              color: Color(0xFF16A34A),
+                            ),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Ready',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF16A34A),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.arrow_forward_ios,
-                  color: Color(0xFFB0B0B0),
-                  size: 16,
-                ),
+                isPrerendering
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF999999)),
+                      ),
+                    )
+                  : Icon(
+                      Icons.arrow_forward_ios,
+                      color: isPrerendered 
+                        ? const Color(0xFF16A34A) 
+                        : const Color(0xFFB0B0B0),
+                      size: 16,
+                    ),
               ],
             ),
           ),
@@ -194,8 +279,8 @@ class ShowcaseScreen extends StatelessWidget {
     );
   }
 
-  void _openWebFPage(BuildContext context, String title, String url) {
-    final controllerName = 'showcase_${title.toLowerCase().replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}';
+  void _openWebFPage(BuildContext context, String title, String url, String controllerName) {
+    final isPrerendered = _isPrerendered(controllerName);
     
     Navigator.push(
       context,
@@ -203,7 +288,7 @@ class ShowcaseScreen extends StatelessWidget {
         builder: (context) => WebFViewScreen(
           controllerName: controllerName,
           url: url,
-          isDirect: true,
+          isDirect: !isPrerendered, // Use direct mode if not prerendered
         ),
       ),
     );
