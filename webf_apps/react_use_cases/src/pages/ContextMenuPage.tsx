@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoIcon, FlutterCupertinoSwitch, FlutterCupertinoContextMenu } from '@openwebf/react-cupertino-ui';
 import styles from './ContextMenuPage.module.css';
@@ -18,13 +18,13 @@ export const ContextMenuPage: React.FC = () => {
     { text: 'Delete (menu1)', icon: 'delete', event: 'delete', destructive: true }
   ];
 
-  const setMenu1Actions = () => {
+  const setMenu1Actions = useCallback(() => {
     if (menu1Ref.current) {
       const actionsToSet = menu1HasActions ? menu1DefaultActions : [];
       console.log(`Setting actions for menu1 (hasActions: ${menu1HasActions}):`, actionsToSet);
       menu1Ref.current.setActions(actionsToSet);
     }
-  };
+  }, [menu1HasActions]);
 
   const handleMenu1SwitchChange = (event: any) => {
     const newValue = event.detail;
@@ -34,7 +34,7 @@ export const ContextMenuPage: React.FC = () => {
 
   useEffect(() => {
     setMenu1Actions();
-  }, [menu1HasActions]);
+  }, [setMenu1Actions]);
 
   useEffect(() => {
     const setupMenus = () => {
@@ -80,7 +80,7 @@ export const ContextMenuPage: React.FC = () => {
     // Setup menus after component mounts
     const timer = setTimeout(setupMenus, 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [setMenu1Actions]);
 
   // Event Handler
   const onSelect = (e: any) => console.log('Select event', e.detail);

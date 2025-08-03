@@ -1,3 +1,5 @@
+import { WebFRouter } from '@openwebf/react-router';
+
 class TabBarManager {
     private static instance: TabBarManager | null = null;
     private tabBarRef: any = null;
@@ -46,13 +48,13 @@ class TabBarManager {
       
       if (!isInTabBar) {
         console.log('TabBarManager: Not in TabBar page, navigating to', this.tabBarPath);
-        window.webf.hybridHistory.replaceState({}, this.tabBarPath);
+        WebFRouter.replaceState({}, this.tabBarPath);
         this.currentPath = this.tabBarPath;
       }
     }
 
     navigateToTab(targetPath: string): void {
-      window.webf.hybridHistory.pushState({}, this.tabBarPath);
+      WebFRouter.pushState({}, this.tabBarPath);
       this.currentPath = this.tabBarPath;
 
       setTimeout(() => {

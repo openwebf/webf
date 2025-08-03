@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useLocation } from '@openwebf/react-router';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFRouter } from '@openwebf/react-router';
 
 export const UserDetailsPage: React.FC = () => {
   
@@ -108,7 +109,7 @@ export const UserDetailsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => window.webf.hybridHistory.pushState({}, '/')}
+          onClick={() => WebFRouter.pushState({}, '/')}
           style={{
             background: '#007aff',
             color: 'white',
@@ -122,7 +123,7 @@ export const UserDetailsPage: React.FC = () => {
           Back to Home
         </button>
         <button
-          onClick={() => window.webf.hybridHistory.pushState({}, '/user/888')}
+          onClick={() => WebFRouter.pushState({}, '/user/888')}
           style={{
             background: '#007aff',
             color: 'white',

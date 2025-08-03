@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { FlutterCupertinoTabBar, FlutterCupertinoTabBarItem } from '@openwebf/react-cupertino-ui';
 import { RoutingDemo } from '../components/RoutingDemo';
 import { EnhancedRoutingDemo } from '../components/EnhancedRoutingDemo';
+import { WebFRouter } from '@openwebf/react-router';
 import TabBarManager from '../utils/tabBarManager';
 
 
@@ -60,7 +61,7 @@ export const RoutingPage: React.FC = () => {
           <button 
             onClick={() => {
               console.log('My page: Navigating to /animation');
-              window.webf.hybridHistory.pushState({}, '/animation');
+              WebFRouter.pushState({}, '/animation');
             }}
             style={{
               padding: '10px 20px',

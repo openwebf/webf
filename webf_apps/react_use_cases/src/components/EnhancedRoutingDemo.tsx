@@ -1,11 +1,12 @@
 import React from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFRouter } from '@openwebf/react-router';
 
 export const EnhancedRoutingDemo: React.FC = () => {
   const testDynamicRoutes = () => {
     const userId = Math.floor(Math.random() * 1000);
     
-    window.webf.hybridHistory.pushState({
+    WebFRouter.pushState({
       userId: userId,
       userType: 'premium'
     }, `/user/${userId}`);
@@ -15,7 +16,7 @@ export const EnhancedRoutingDemo: React.FC = () => {
     const year = new Date().getFullYear();
     const month = String(new Date().getMonth() + 1).padStart(2, '0');
     const reportId = `report-${Math.floor(Math.random() * 1000)}`;
-    window.webf.hybridHistory.pushState({
+    WebFRouter.pushState({
       year,
       month,
       reportId,
@@ -29,7 +30,7 @@ export const EnhancedRoutingDemo: React.FC = () => {
   };
 
   const testDirectNavigation = () => {
-    window.webf.hybridHistory.pushState({
+    WebFRouter.pushState({
       formData: {
         name: 'John Doe',
         email: 'john@example.com',
