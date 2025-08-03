@@ -758,6 +758,11 @@ class WebFControllerManager {
     if (_devToolsEnabled && !_controllerDevTools.containsKey(controller)) {
       _enableDevToolsForController(controller);
     }
+    
+    // Switch DevTools to this newly attached controller
+    if (_devToolsEnabled) {
+      ChromeDevToolsService.unifiedService.switchToController(controller);
+    }
   }
 
   /// Detaches a named controller from a Flutter BuildContext.

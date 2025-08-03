@@ -8,11 +8,39 @@ import 'package:webf/foundation.dart';
 import 'package:webf/dom.dart' as dom;
 import '../../setup.dart';
 import '../widget/test_utils.dart';
+import '../css/flex_direction_test.dart' as flex_direction_test;
+import '../css/flex_wrap_test.dart' as flex_wrap_test;
+import '../css/flex_grow_test.dart' as flex_grow_test;
+import '../css/flex_shrink_test.dart' as flex_shrink_test;
+import '../css/flex_basis_test.dart' as flex_basis_test;
+import '../css/justify_content_test.dart' as justify_content_test;
+import '../css/display_flex_test.dart' as display_flex_test;
 
 void main() {
   setUpAll(() {
     setupTest();
   });
+  
+  // Run flex-direction specific tests
+  flex_direction_test.main();
+  
+  // Run flex-wrap specific tests
+  flex_wrap_test.main();
+  
+  // Run flex-grow specific tests
+  flex_grow_test.main();
+  
+  // Run flex-shrink specific tests
+  flex_shrink_test.main();
+  
+  // Run flex-basis specific tests
+  flex_basis_test.main();
+  
+  // Run justify-content specific tests
+  justify_content_test.main();
+  
+  // Run display flex specific tests
+  display_flex_test.main();
 
   setUp(() {
     WebFControllerManager.instance.initialize(

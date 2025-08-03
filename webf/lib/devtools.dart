@@ -3,7 +3,6 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-export 'src/devtools/server.dart';
 export 'src/devtools/service.dart';
 export 'src/devtools/module.dart';
 export 'src/devtools/overlay.dart';

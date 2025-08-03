@@ -2,6 +2,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:ui' as ui;
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/foundation.dart';
@@ -36,6 +38,9 @@ class WebFWidgetTestUtils {
   }) async {
     final name = controllerName ?? 'test-${DateTime.now().millisecondsSinceEpoch}';
     WebFController? controller;
+
+    tester.view.physicalSize = ui.Size(360, 640);
+    tester.view.devicePixelRatio = 1;
 
     await tester.runAsync(() async {
       controller = await WebFControllerManager.instance.addWithPreload(
