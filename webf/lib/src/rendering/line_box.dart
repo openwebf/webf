@@ -151,6 +151,8 @@ class BoxLineBoxItem extends LineBoxItem {
     required this.renderBox,
     required this.style,
     this.children = const [],
+    this.isFirstFragment = true,
+    this.isLastFragment = true,
   });
 
   /// The render box.
@@ -161,6 +163,12 @@ class BoxLineBoxItem extends LineBoxItem {
 
   /// Child items within this box.
   final List<LineBoxItem> children;
+
+  /// Whether this is the first fragment of a multi-line inline element.
+  final bool isFirstFragment;
+
+  /// Whether this is the last fragment of a multi-line inline element.
+  final bool isLastFragment;
 
   @override
   void paint(PaintingContext context, Offset lineOffset) {
@@ -209,34 +217,55 @@ class BoxLineBoxItem extends LineBoxItem {
   }
 
   void _paintBorder(Canvas canvas, Rect rect) {
-    final paint = Paint()..style = PaintingStyle.stroke;
+    final paint = Paint()..style = PaintingStyle.fill;
+    
 
     // Top border
     if (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) {
       paint.color = style.borderTopColor?.value ?? const Color(0xFF000000);
-      paint.strokeWidth = style.borderTopWidth!.value!;
-      canvas.drawLine(rect.topLeft, rect.topRight, paint);
+      final borderRect = Rect.fromLTRB(
+        rect.left,
+        rect.top,
+        rect.right,
+        rect.top + style.borderTopWidth!.value!
+      );
+      canvas.drawRect(borderRect, paint);
     }
 
-    // Right border
-    if (style.borderRightWidth?.value != null && style.borderRightWidth!.value! > 0) {
+    // Right border - only paint if this is the last fragment
+    if (isLastFragment && style.borderRightWidth?.value != null && style.borderRightWidth!.value! > 0) {
       paint.color = style.borderRightColor?.value ?? const Color(0xFF000000);
-      paint.strokeWidth = style.borderRightWidth!.value!;
-      canvas.drawLine(rect.topRight, rect.bottomRight, paint);
+      final borderRect = Rect.fromLTRB(
+        rect.right - style.borderRightWidth!.value!,
+        rect.top,
+        rect.right,
+        rect.bottom
+      );
+      canvas.drawRect(borderRect, paint);
     }
 
     // Bottom border
     if (style.borderBottomWidth?.value != null && style.borderBottomWidth!.value! > 0) {
       paint.color = style.borderBottomColor?.value ?? const Color(0xFF000000);
-      paint.strokeWidth = style.borderBottomWidth!.value!;
-      canvas.drawLine(rect.bottomLeft, rect.bottomRight, paint);
+      final borderRect = Rect.fromLTRB(
+        rect.left,
+        rect.bottom - style.borderBottomWidth!.value!,
+        rect.right,
+        rect.bottom
+      );
+      canvas.drawRect(borderRect, paint);
     }
 
-    // Left border
-    if (style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) {
+    // Left border - only paint if this is the first fragment
+    if (isFirstFragment && style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) {
       paint.color = style.borderLeftColor?.value ?? const Color(0xFF000000);
-      paint.strokeWidth = style.borderLeftWidth!.value!;
-      canvas.drawLine(rect.topLeft, rect.bottomLeft, paint);
+      final borderRect = Rect.fromLTRB(
+        rect.left,
+        rect.top,
+        rect.left + style.borderLeftWidth!.value!,
+        rect.bottom
+      );
+      canvas.drawRect(borderRect, paint);
     }
   }
 

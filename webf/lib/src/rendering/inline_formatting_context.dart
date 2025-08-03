@@ -214,7 +214,10 @@ class InlineFormattingContext {
   void paint(PaintingContext context, Offset offset) {
     double y = offset.dy;
 
-    for (final lineBox in _lineBoxes) {
+    for (int i = 0; i < _lineBoxes.length; i++) {
+      final lineBox = _lineBoxes[i];
+      
+      
       lineBox.paint(context, Offset(offset.dx, y));
 
       // Debug paint if enabled

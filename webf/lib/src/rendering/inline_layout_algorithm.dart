@@ -64,10 +64,58 @@ class InlineLayoutAlgorithm {
     // Break into lines
     final lines = lineBreaker.breakLines();
 
-    // Create line boxes
-    for (final line in lines) {
-      final lineBox = _createLineBox(line);
+    // Track which boxes appear on which lines
+    final boxToLines = <RenderBox, List<int>>{};
+    final Set<RenderBox> openBoxes = {}; // Track currently open boxes
+    
+    // Global map to track all items for each box across all lines
+    final globalBoxToItems = <RenderBox, List<LineBoxItem>>{};
+    
+    for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      final line = lines[lineIndex];
+      final Set<RenderBox> boxesInLine = Set.from(openBoxes); // Start with boxes open from previous line
+      
+      for (final itemResult in line) {
+        final item = itemResult.item;
+        
+        if (item.isOpenTag && item.renderBox != null) {
+          openBoxes.add(item.renderBox!);
+          boxesInLine.add(item.renderBox!);
+        } else if (item.isCloseTag && item.renderBox != null) {
+          openBoxes.remove(item.renderBox!);
+          boxesInLine.add(item.renderBox!);
+        } else if (item.isText && item.renderBox != null) {
+          boxesInLine.add(item.renderBox!);
+        }
+      }
+      
+      // Record all boxes that appear on this line
+      for (final box in boxesInLine) {
+        boxToLines.putIfAbsent(box, () => []).add(lineIndex);
+      }
+      
+    }
+
+    // Create line boxes with fragment information
+    // Track which boxes are currently open as we process lines
+    final Set<RenderBox> activeBoxes = {};
+    
+    for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      final line = lines[lineIndex];
+      
+      // Pass current active boxes to line creation
+      final lineBox = _createLineBox(line, lineIndex, boxToLines, globalBoxToItems, Set.from(activeBoxes));
       lineBoxes.add(lineBox);
+      
+      // Update active boxes AFTER creating the line box
+      for (final itemResult in line) {
+        final item = itemResult.item;
+        if (item.isOpenTag && item.renderBox != null) {
+          activeBoxes.add(item.renderBox!);
+        } else if (item.isCloseTag && item.renderBox != null) {
+          activeBoxes.remove(item.renderBox!);
+        }
+      }
     }
 
     return lineBoxes;
@@ -92,7 +140,7 @@ class InlineLayoutAlgorithm {
   }
 
   /// Create a line box from line items.
-  LineBox _createLineBox(List<InlineItemResult> lineItems) {
+  LineBox _createLineBox(List<InlineItemResult> lineItems, int lineIndex, Map<RenderBox, List<int>> boxToLines, Map<RenderBox, List<LineBoxItem>> globalBoxToItems, Set<RenderBox> activeBoxes) {
     final lineBoxItems = <LineBoxItem>[];
 
     // Calculate line metrics
@@ -185,7 +233,7 @@ class InlineLayoutAlgorithm {
     // Reset position for this line
     _currentX = 0;
     _boxStack.clear();
-    _boxToItems.clear();
+    // Don't clear _boxToItems - we'll use globalBoxToItems instead
 
     // Always apply bidi reordering based on resolved levels
     // This handles both RTL and LTR base directions with mixed content
@@ -193,7 +241,7 @@ class InlineLayoutAlgorithm {
 
     // Track which inline boxes are open for each item
     final Map<InlineItemResult, Set<RenderBox>> itemToBoxes = {};
-    final List<RenderBox> currentBoxes = [];
+    final List<RenderBox> currentBoxes = List.from(activeBoxes); // Start with already active boxes
 
     // First pass: determine which boxes each item belongs to
     // This is done in logical order before bidi reordering
@@ -202,13 +250,18 @@ class InlineLayoutAlgorithm {
 
       if (item.isOpenTag && item.renderBox != null) {
         currentBoxes.add(item.renderBox!);
-      } else if (item.isCloseTag && item.renderBox != null) {
-        currentBoxes.remove(item.renderBox!);
       }
 
       // Record which boxes this item is inside
       if (currentBoxes.isNotEmpty) {
         itemToBoxes[itemResult] = Set.from(currentBoxes);
+      } else if (item.isCloseTag && item.renderBox != null) {
+        // Special case for close tags when no boxes are open
+        itemToBoxes[itemResult] = {item.renderBox!};
+      }
+      
+      if (item.isCloseTag && item.renderBox != null) {
+        currentBoxes.remove(item.renderBox!);
       }
     }
 
@@ -225,7 +278,7 @@ class InlineLayoutAlgorithm {
         // Track this item for any boxes it belongs to
         if (itemToBoxes.containsKey(itemResult)) {
           for (final box in itemToBoxes[itemResult]!) {
-            _boxToItems.putIfAbsent(box, () => []).add(textItem);
+            globalBoxToItems.putIfAbsent(box, () => []).add(textItem);
           }
         }
       } else if (item.isAtomicInline) {
@@ -233,14 +286,14 @@ class InlineLayoutAlgorithm {
         // Track this item for any boxes it belongs to
         if (itemToBoxes.containsKey(itemResult)) {
           for (final box in itemToBoxes[itemResult]!) {
-            _boxToItems.putIfAbsent(box, () => []).add(atomicItem);
+            globalBoxToItems.putIfAbsent(box, () => []).add(atomicItem);
           }
         }
       }
     }
 
     // Third pass: create box items with correct visual bounds
-    _createInlineBoxes(lineItems, lineBoxItems, baseline, lineHeight);
+    _createInlineBoxes(lineItems, lineBoxItems, baseline, lineHeight, lineIndex, boxToLines, globalBoxToItems);
 
     // Calculate text alignment offset
     final alignmentOffset = _calculateTextAlignOffset(lineWidth, constraints.maxWidth);
@@ -299,10 +352,6 @@ class InlineLayoutAlgorithm {
       // Store the position after margin (where the box visual area starts)
       final boxStartX = _currentX;
 
-      // Debug logging when enabled
-      if (debugPaintInlineLayoutEnabled) {
-        print('[IFC] Open tag: margin=$leftMargin, padding=$leftPadding, X=$_currentX');
-      }
 
       _boxStack.add(InlineBoxState(
         renderBox: item.renderBox!,
@@ -342,10 +391,6 @@ class InlineLayoutAlgorithm {
       _currentX += rightPadding;
       _currentX += rightMargin;
 
-      // Debug logging when enabled
-      if (debugPaintInlineLayoutEnabled) {
-        print('[IFC] Close tag: padding=$rightPadding, margin=$rightMargin, X=$_currentX');
-      }
 
     } else if (item.renderBox != null) {
       // This is a close tag without box fragment - still advance by its size
@@ -546,18 +591,29 @@ class InlineLayoutAlgorithm {
   /// Create inline box items with correct visual bounds after bidi reordering.
   /// This solves the issue where inline box backgrounds were positioned incorrectly
   /// after bidi reordering, especially for nested LTR spans in RTL context.
-  void _createInlineBoxes(List<InlineItemResult> lineItems, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight) {
-    // Find all unique boxes that need background/border rendering
-    final Set<RenderBox> boxesWithContent = {};
-    for (final entry in _boxToItems.entries) {
-      if (entry.value.isNotEmpty) {
-        boxesWithContent.add(entry.key);
+  void _createInlineBoxes(List<InlineItemResult> lineItems, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight, int lineIndex, Map<RenderBox, List<int>> boxToLines, Map<RenderBox, List<LineBoxItem>> globalBoxToItems) {
+    // For this specific line, find which boxes need to be rendered
+    final Set<RenderBox> boxesOnThisLine = {};
+    
+    // Check which boxes appear on this line according to boxToLines
+    for (final entry in boxToLines.entries) {
+      if (entry.value.contains(lineIndex)) {
+        boxesOnThisLine.add(entry.key);
       }
     }
+    
 
-    // For each box, calculate its visual bounds based on its content
-    for (final box in boxesWithContent) {
-      final items = _boxToItems[box]!;
+    // For each box on this line, calculate its visual bounds based on its content
+    for (final box in boxesOnThisLine) {
+      final allItems = globalBoxToItems[box] ?? [];
+      
+      // Filter items that belong to this line
+      final items = <LineBoxItem>[];
+      for (final item in lineBoxItems) {
+        if (allItems.contains(item)) {
+          items.add(item);
+        }
+      }
       if (items.isEmpty) continue;
 
       // Find the leftmost and rightmost positions of the box's content
@@ -591,12 +647,20 @@ class InlineLayoutAlgorithm {
           final boxWidth = width + paddingLeft + paddingRight;
 
 
+          // Determine if this is the first/last fragment of a multi-line inline element
+          final lines = boxToLines[box] ?? [];
+          final isFirstFragment = lines.isEmpty || lines.first == lineIndex;
+          final isLastFragment = lines.isEmpty || lines.last == lineIndex;
+          
+
           final boxItem = BoxLineBoxItem(
             offset: Offset(boxStartX, 0.0),
             size: Size(boxWidth, lineHeight),
             renderBox: box,
             style: style,
             children: items,
+            isFirstFragment: isFirstFragment,
+            isLastFragment: isLastFragment,
           );
 
           // Insert the box item at the beginning so it renders behind text
