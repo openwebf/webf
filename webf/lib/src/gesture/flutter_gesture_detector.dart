@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/dom.dart' as dom;
 
+const String FLUTTER_GESTURE_DETECTOR = 'FLUTTER-GESTURE-DETECTOR';
+
 // Custom gesture detector element
 class FlutterGestureDetector extends WidgetElement {
   FlutterGestureDetector(super.context);
@@ -115,8 +117,6 @@ class FlutterGestureDetectorState extends WebFWidgetElementState {
           _dispatchGestureEvent('panend', {
             'deltaX': delta.dx,
             'deltaY': delta.dy,
-            'velocityX': 0.0, // Scale gestures don't provide velocity
-            'velocityY': 0.0,
             'timestamp': DateTime.now().millisecondsSinceEpoch,
           });
         }

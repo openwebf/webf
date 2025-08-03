@@ -5,8 +5,6 @@ import 'package:webf_deeplink/webf_deeplink.dart';
 import 'package:webf_share/webf_share.dart';
 import 'package:webf_ui_kit/webf_ui_kit.dart';
 import 'router_config.dart';
-import 'custom_elements/form.dart';
-import 'custom_elements/gesture_detector.dart';
 import 'modules/test_array_buffer.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
@@ -29,11 +27,6 @@ void main() async {
     },
   ));
 
-  // Register remaining custom elements that are not in webf_ui_kit
-  WebF.defineCustomElement('flutter-webf-form', (context) => FlutterWebFForm(context));
-  WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
-  WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
-  
   WebF.defineModule((context) => TestModule(context));
   WebF.defineModule((context) => ShareModule(context));
   WebF.defineModule((context) => DeepLinkModule(context));

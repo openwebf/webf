@@ -70,9 +70,11 @@ class ValidationRule {
   }
 }
 
+const FLUTTER_FORM = 'FLUTTER-FORM';
+
 // Define form element class
-class FlutterWebFForm extends WidgetElement {
-  FlutterWebFForm(super.context);
+class FlutterForm extends WidgetElement {
+  FlutterForm(super.context);
 
   // Form key
   final _formKey = GlobalKey<FormBuilderState>();
@@ -129,21 +131,21 @@ class FlutterWebFForm extends WidgetElement {
   static StaticDefinedSyncBindingObjectMethodMap formSyncMethods = {
     'validateAndSubmit': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
-        final formElement = castToType<FlutterWebFForm>(element);
+        final formElement = castToType<FlutterForm>(element);
         formElement.validateAndSubmit();
         return null;
       },
     ),
     'resetForm': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
-        final formElement = castToType<FlutterWebFForm>(element);
+        final formElement = castToType<FlutterForm>(element);
         formElement.resetForm();
         return null;
       },
     ),
     'getFormValues': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
-        final formElement = castToType<FlutterWebFForm>(element);
+        final formElement = castToType<FlutterForm>(element);
         return formElement.getFormValues();
       },
     ),
@@ -192,17 +194,17 @@ class FlutterWebFForm extends WidgetElement {
   }
 
   @override
-  FlutterWebFFormState? get state => super.state as FlutterWebFFormState?;
+  FlutterFormState? get state => super.state as FlutterFormState?;
 
   @override
-  WebFWidgetElementState createState() => FlutterWebFFormState(this);
+  WebFWidgetElementState createState() => FlutterFormState(this);
 }
 
-class FlutterWebFFormState extends WebFWidgetElementState {
-  FlutterWebFFormState(super.widgetElement);
+class FlutterFormState extends WebFWidgetElementState {
+  FlutterFormState(super.widgetElement);
 
   @override
-  FlutterWebFForm get widgetElement => super.widgetElement as FlutterWebFForm;
+  FlutterForm get widgetElement => super.widgetElement as FlutterForm;
 
   @override
   Widget build(BuildContext context) {
@@ -243,7 +245,7 @@ class FlutterWebFFormState extends WebFWidgetElementState {
   List<Widget> _buildChildren() {
     return widgetElement.childNodes.map<Widget>((node) {
       // Pass the current form layout type to child elements
-      if (node is FlutterWebFFormField) {
+      if (node is FlutterFormField) {
         node.formLayout = widgetElement.layout;
       }
       return node.toWidget();
@@ -251,9 +253,11 @@ class FlutterWebFFormState extends WebFWidgetElementState {
   }
 }
 
+const FLUTTER_FORM_FIELD = 'FLUTTER-FORM-FIELD';
+
 // Form field wrapper for unified validation handling
-class FlutterWebFFormField extends WidgetElement {
-  FlutterWebFFormField(super.context);
+class FlutterFormField extends WidgetElement {
+  FlutterFormField(super.context);
 
   String _name = '';
   bool _isRequired = false;
@@ -314,7 +318,7 @@ class FlutterWebFFormField extends WidgetElement {
   static StaticDefinedSyncBindingObjectMethodMap formFieldSyncMethods = {
     'setRules': StaticDefinedSyncBindingObjectMethod(
       call: (element, args) {
-        final formField = castToType<FlutterWebFFormField>(element);
+        final formField = castToType<FlutterFormField>(element);
         if (args.isNotEmpty && args[0] is List) {
           final List<dynamic> rulesData = args[0] as List<dynamic>;
           final List<Map<String, dynamic>> rules = rulesData
@@ -350,17 +354,17 @@ class FlutterWebFFormField extends WidgetElement {
   FormLayout get formLayout => _formLayout;
 
   @override
-  FlutterWebFFormFieldState? get state => super.state as FlutterWebFFormFieldState?;
+  FlutterFormFieldState? get state => super.state as FlutterFormFieldState?;
 
   @override
-  WebFWidgetElementState createState() => FlutterWebFFormFieldState(this);
+  WebFWidgetElementState createState() => FlutterFormFieldState(this);
 }
 
-class FlutterWebFFormFieldState extends WebFWidgetElementState {
-  FlutterWebFFormFieldState(super.widgetElement);
+class FlutterFormFieldState extends WebFWidgetElementState {
+  FlutterFormFieldState(super.widgetElement);
 
   @override
-  FlutterWebFFormField get widgetElement => super.widgetElement as FlutterWebFFormField;
+  FlutterFormField get widgetElement => super.widgetElement as FlutterFormField;
 
   dom.Node? _getFirstChildNode() {
     return widgetElement.childNodes.isNotEmpty ? widgetElement.childNodes.first : null;

@@ -10,6 +10,7 @@ import 'package:webf/src/html/table_header.dart';
 import 'package:webf/src/html/table_row.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/svg.dart';
+import 'package:webf/gesture.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
 
@@ -195,6 +196,8 @@ void defineBuiltInElements() {
   defineElement(BUTTON, (context) => ButtonElement(context));
   defineElement(INPUT, (context) => FlutterInputElement(context));
   defineElement(TEXTAREA, (context) => FlutterTextAreaElement(context));
+  defineWidgetElement(FLUTTER_FORM, (context) => FlutterForm(context));
+  defineWidgetElement(FLUTTER_FORM_FIELD, (context) => FlutterFormField(context));
   // Edits
   defineElement(DEL, (context) => DelElement(context));
   defineElement(INS, (context) => InsElement(context));
@@ -228,6 +231,7 @@ void defineBuiltInElements() {
   //
   // Gesture Elements
   defineElement(TOUCH_AREA, (context) => WebFTouchAreaElement(context));
+  defineWidgetElement(FLUTTER_GESTURE_DETECTOR, (context) => FlutterGestureDetector(context));
 
   // Hybrid Routers
   defineElement(ROUTER_LINK, (context) => RouterLinkElement(context));

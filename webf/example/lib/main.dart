@@ -26,8 +26,6 @@ import 'custom_elements/svg_img.dart';
 import 'custom_elements/show_case_view.dart';
 import 'custom_elements/custom_listview_cupertino.dart';
 import 'custom_elements/custom_listview_material.dart';
-import 'custom_elements/form.dart';
-import 'custom_elements/gesture_detector.dart';
 import 'custom_elements/flutter_sliver_listview.dart';
 import 'keyboard_case/popup.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
@@ -81,9 +79,6 @@ void main() async {
   WebF.defineCustomElement('flutter-showcase-description', (context) => FlutterShowCaseDescription(context));
   WebF.defineCustomElement('webf-listview-cupertino', (context) => CustomWebFListViewWithCupertinoRefreshIndicator(context));
   WebF.defineCustomElement('webf-listview-material', (context) => CustomWebFListViewWithMeterialRefreshIndicator(context));
-  WebF.defineCustomElement('flutter-webf-form', (context) => FlutterWebFForm(context));
-  WebF.defineCustomElement('flutter-webf-form-field', (context) => FlutterWebFFormField(context));
-  WebF.defineCustomElement('flutter-gesture-detector', (context) => FlutterGestureDetector(context));
 
   WebF.defineCustomElement('flutter-nest-scroller-skeleton', (context) => FlutterNestScrollerSkeleton(context));
   WebF.defineCustomElement('flutter-nest-scroller-item-top-area', (context) => FlutterNestScrollerSkeletonItemTopArea(context));

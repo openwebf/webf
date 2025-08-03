@@ -1,25 +1,6 @@
 import React, { useState } from 'react';
-import { WebFListView } from '@openwebf/react-core-ui';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListView, FlutterGestureDetector } from '@openwebf/react-core-ui';
 import styles from './GesturePage.module.css';
-
-// Create Flutter gesture detector component
-const FlutterGestureDetector = createComponent({
-  tagName: 'flutter-gesture-detector',
-  displayName: 'FlutterGestureDetector',
-  events: {
-    onTap: 'tap',
-    onDoubleTap: 'doubletap',
-    onLongPress: 'longpress',
-    onLongPressEnd: 'longpressend',
-    onPanStart: 'panstart',
-    onPanUpdate: 'panupdate',
-    onPanEnd: 'panend',
-    onScaleStart: 'scalestart',
-    onScaleUpdate: 'scaleupdate',
-    onScaleEnd: 'scaleend'
-  }
-});
 
 interface GestureState {
   // Tap gestures
@@ -200,15 +181,15 @@ export const GesturePage: React.FC = () => {
           <div className={styles.gestureArea}>
             <FlutterGestureDetector
               onTap={handleFlutterTap}
-              onDoubleTap={handleFlutterDoubleTap}
-              onLongPress={handleFlutterLongPress}
-              onLongPressEnd={handleFlutterLongPressEnd}
-              onPanStart={handleFlutterPanStart}
-              onPanUpdate={handleFlutterPanUpdate}
-              onPanEnd={handleFlutterPanEnd}
-              onScaleStart={handleFlutterScaleStart}
-              onScaleUpdate={handleFlutterScaleUpdate}
-              onScaleEnd={handleFlutterScaleEnd}
+              onDoubletap={handleFlutterDoubleTap}
+              onLongpress={handleFlutterLongPress}
+              onLongpressend={handleFlutterLongPressEnd}
+              onPanstart={handleFlutterPanStart}
+              onPanupdate={handleFlutterPanUpdate}
+              onPanend={handleFlutterPanEnd}
+              onScalestart={handleFlutterScaleStart}
+              onScaleupdate={handleFlutterScaleUpdate}
+              onScaleend={handleFlutterScaleEnd}
             />
           </div>
           <div className={styles.gestureStatus}>

@@ -24,6 +24,8 @@ dependencies:
   archive: ^3.3.7 # Pure dart module.
   web_socket_channel: ^3.0.1
   flutter_svg: ^2.0.17
+  flutter_form_builder: ^9.7.0
+  form_builder_validators: ^11.1.2
   easy_refresh: ^3.4.0
   http_parser: ^4.1.2
   shelf: ^1.4.2

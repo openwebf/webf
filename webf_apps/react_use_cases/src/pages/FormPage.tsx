@@ -1,21 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createComponent } from '../utils/CreateComponent';
+import { FlutterForm, FlutterFormField } from '@openwebf/react-core-ui';
 import { FlutterCupertinoSwitch } from '@openwebf/react-cupertino-ui';
 import styles from './FormPage.module.css';
-
-const FlutterWebFForm = createComponent({
-  tagName: 'flutter-webf-form',
-  displayName: 'FlutterWebFForm',
-  events: {
-    onSubmit: 'submit',
-    onValidationError: 'validation-error'
-  }
-});
-
-const FlutterWebFFormField = createComponent({
-  tagName: 'flutter-webf-form-field',
-  displayName: 'FlutterWebFFormField'
-});
 
 export const FormPage: React.FC = () => {
   const [formResult, setFormResult] = useState<string | null>(null);
@@ -171,7 +157,7 @@ export const FormPage: React.FC = () => {
           </div>
         )}
         
-        <FlutterWebFForm 
+        <FlutterForm 
           ref={demoFormRef} 
           layout={currentLayout} 
           validateOnSubmit
@@ -179,8 +165,9 @@ export const FormPage: React.FC = () => {
           onValidationError={handleValidationError}
         >
           {/* Username Field - Required + Length Validation */}
-          <FlutterWebFFormField 
+          <FlutterFormField 
             id="username-field"
+            className={styles.formField}
             ref={usernameFieldRef}
             name="username" 
             label="Username" 
@@ -189,10 +176,11 @@ export const FormPage: React.FC = () => {
               type="text" 
               placeholder="Enter username"
             />
-          </FlutterWebFFormField>
+          </FlutterFormField>
           
           {/* Email Field - Email Format Validation */}
-          <FlutterWebFFormField 
+          <FlutterFormField 
+            className={styles.formField}
             ref={emailFieldRef}
             name="email" 
             label="Email" 
@@ -201,10 +189,11 @@ export const FormPage: React.FC = () => {
               type="email" 
               placeholder="Enter email address" 
             />
-          </FlutterWebFFormField>
+          </FlutterFormField>
           
           {/* Age Field - Number Range Validation */}
-          <FlutterWebFFormField 
+          <FlutterFormField 
+            className={styles.formField}
             ref={ageFieldRef}
             name="age" 
             label="Age" 
@@ -214,10 +203,11 @@ export const FormPage: React.FC = () => {
               type="number" 
               placeholder="Enter age" 
             />
-          </FlutterWebFFormField>
+          </FlutterFormField>
           
           {/* Website Field - URL Validation */}
-          <FlutterWebFFormField 
+          <FlutterFormField 
+            className={styles.formField}
             ref={websiteFieldRef}
             name="website" 
             label="Website" 
@@ -227,10 +217,11 @@ export const FormPage: React.FC = () => {
               type="url" 
               placeholder="Enter website URL" 
             />
-          </FlutterWebFFormField>
+          </FlutterFormField>
           
           {/* Password Field - Required + Length Validation */}
-          <FlutterWebFFormField 
+          <FlutterFormField 
+            className={styles.formField}
             ref={passwordFieldRef}
             name="password" 
             label="Password"
@@ -240,7 +231,7 @@ export const FormPage: React.FC = () => {
               type="password" 
               placeholder="Enter password" 
             />
-          </FlutterWebFFormField>
+          </FlutterFormField>
           
           <div className={styles.formActions}>
             {/* Using regular button instead of specific submit button component */}
@@ -251,7 +242,7 @@ export const FormPage: React.FC = () => {
             >Submit</button>
             <button type="button" onClick={resetForm}>Reset</button>
           </div>
-        </FlutterWebFForm>
+        </FlutterForm>
         
         {formResult && (
           <div className={styles.formResult}>
