@@ -177,10 +177,8 @@ class BoxLineBoxItem extends LineBoxItem {
     // Paint background and borders
     _paintBoxDecorations(context, paintOffset);
 
-    // Paint children
-    for (final child in children) {
-      child.paint(context, lineOffset);
-    }
+    // Don't paint children here - they're painted as part of the line items
+    // This avoids painting text twice
   }
 
   void _paintBoxDecorations(PaintingContext context, Offset offset) {

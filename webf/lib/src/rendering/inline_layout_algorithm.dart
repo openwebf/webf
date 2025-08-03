@@ -602,6 +602,8 @@ class InlineLayoutAlgorithm {
       }
     }
     
+    // Store box items temporarily to sort by nesting level
+    final List<BoxLineBoxItem> boxItems = [];
 
     // For each box on this line, calculate its visual bounds based on its content
     for (final box in boxesOnThisLine) {
@@ -614,6 +616,7 @@ class InlineLayoutAlgorithm {
           items.add(item);
         }
       }
+      
       if (items.isEmpty) continue;
 
       // Find the leftmost and rightmost positions of the box's content
@@ -651,7 +654,6 @@ class InlineLayoutAlgorithm {
           final lines = boxToLines[box] ?? [];
           final isFirstFragment = lines.isEmpty || lines.first == lineIndex;
           final isLastFragment = lines.isEmpty || lines.last == lineIndex;
-          
 
           final boxItem = BoxLineBoxItem(
             offset: Offset(boxStartX, 0.0),
@@ -663,10 +665,58 @@ class InlineLayoutAlgorithm {
             isLastFragment: isLastFragment,
           );
 
-          // Insert the box item at the beginning so it renders behind text
-          lineBoxItems.insert(0, boxItem);
+
+          // Collect box items to sort later by nesting depth
+          boxItems.add(boxItem);
         }
       }
+    }
+    
+    // Sort box items by their containment relationship
+    // We need to ensure parent boxes are painted before nested boxes
+    // so that nested box backgrounds appear on top
+    
+    // Build a dependency graph to determine painting order
+    final Map<BoxLineBoxItem, Set<BoxLineBoxItem>> containedBy = {};
+    
+    for (final boxItem in boxItems) {
+      containedBy[boxItem] = {};
+      
+      // Check which other boxes contain this box
+      for (final otherBox in boxItems) {
+        if (otherBox == boxItem) continue;
+        
+        // If all of this box's items are also in the other box's items,
+        // then this box is nested inside the other box
+        bool isContained = true;
+        for (final item in boxItem.children) {
+          if (!otherBox.children.contains(item)) {
+            isContained = false;
+            break;
+          }
+        }
+        
+        if (isContained) {
+          containedBy[boxItem]!.add(otherBox);
+        }
+      }
+    }
+    
+    // Sort boxes so that containers come before their contents
+    boxItems.sort((a, b) {
+      // If a contains b, a should come first (painted first)
+      if (containedBy[b]!.contains(a)) return -1;
+      // If b contains a, b should come first
+      if (containedBy[a]!.contains(b)) return 1;
+      // Otherwise, sort by number of containers (most nested last)
+      return containedBy[a]!.length.compareTo(containedBy[b]!.length);
+    });
+    
+    // Insert all box items at the beginning in the correct order
+    // This ensures parent boxes are painted before nested boxes
+    // Insert in reverse order because we're inserting at position 0
+    for (int i = boxItems.length - 1; i >= 0; i--) {
+      lineBoxItems.insert(0, boxItems[i]);
     }
   }
 
