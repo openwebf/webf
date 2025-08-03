@@ -1,21 +1,8 @@
 import React, { useRef } from 'react';
-import { createComponent } from '../utils/CreateComponent';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { FlutterShowcaseView, FlutterShowcaseDescription } from '@openwebf/react-ui-kit';
 import { FlutterCupertinoButton, FlutterCupertinoIcon } from '@openwebf/react-cupertino-ui';
 import styles from './ShowCasePage.module.css';
-
-const FlutterShowcaseView = createComponent({
-  tagName: 'flutter-showcase-view',
-  displayName: 'FlutterShowcaseView',
-  events: {
-    onFinish: 'finish'
-  }
-});
-
-const FlutterShowcaseDescription = createComponent({
-  tagName: 'flutter-showcase-description',
-  displayName: 'FlutterShowcaseDescription'
-});
 
 export const ShowCasePage: React.FC = () => {
   const basicShowcaseRef = useRef<any>(null);

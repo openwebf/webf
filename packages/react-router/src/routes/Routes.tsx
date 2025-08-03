@@ -262,7 +262,6 @@ export function Routes({ children }: RoutesProps) {
   // Listen to hybridrouterchange event
   useEffect(() => {
     const handleRouteChange = (event: Event) => {
-      const timestamp = Date.now();
       const routeEvent = event as unknown as HybridRouterChangeEvent;
       
       // Check for new event detail structure with params

@@ -1,25 +1,10 @@
 import React, { useState } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
 import { FlutterCupertinoListSection, FlutterCupertinoListSectionHeader } from '@openwebf/react-cupertino-ui';
-import { createComponent } from '../utils/CreateComponent';
+import { WebFListviewCupertino, WebFListviewMaterial } from '@openwebf/react-ui-kit';
 import styles from './ListviewPage.module.css';
 
 
-const WebFListViewCupertino = createComponent({
-  tagName: 'webf-listview-cupertino',
-  displayName: 'WebFListViewCupertino',
-  events: {
-    onRefresh: 'refresh'
-  }
-});
-
-const WebFListViewMaterial = createComponent({
-  tagName: 'webf-listview-material',
-  displayName: 'WebFListViewMaterial',
-  events: {
-    onRefresh: 'refresh'
-  }
-});
 
 export const ListviewPage: React.FC = () => {
   const [items] = useState(Array.from({ length: 20 }, (_, i) => i + 1)); // Initial items for standard lists
@@ -78,11 +63,11 @@ export const ListviewPage: React.FC = () => {
             Cupertino Refresh Style
             <p className={styles.description}>Forced Cupertino style.</p>
           </FlutterCupertinoListSectionHeader>
-          <WebFListViewCupertino className={styles.listviewContainer} onRefresh={() => handleRefresh('cupertino')}>
+          <WebFListviewCupertino className={styles.listviewContainer} onRefresh={() => handleRefresh('cupertino')}>
             {items.map(item => (
               <div key={item} className={styles.listItem}>Item {item}</div>
             ))}
-          </WebFListViewCupertino>
+          </WebFListviewCupertino>
         </FlutterCupertinoListSection>
 
         {/* Example 3: Material Refresh Style */}
@@ -91,11 +76,11 @@ export const ListviewPage: React.FC = () => {
             Material Refresh Style
             <p className={styles.description}>Forced Material style.</p>
           </FlutterCupertinoListSectionHeader>
-          <WebFListViewMaterial className={styles.listviewContainer} onRefresh={() => handleRefresh('material')}>
+          <WebFListviewMaterial className={styles.listviewContainer} onRefresh={() => handleRefresh('material')}>
             {items.map(item => (
               <div key={item} className={styles.listItem}>Item {item}</div>
             ))}
-          </WebFListViewMaterial>
+          </WebFListviewMaterial>
         </FlutterCupertinoListSection>
       </WebFListView>
     </div>
