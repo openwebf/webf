@@ -369,30 +369,32 @@ class LineBreaker {
 
   /// Find word boundary for breaking.
   int _findWordBoundary(String text, int start, int end, [WhiteSpace? whiteSpace]) {
-    // For break-spaces and pre-wrap modes, we can break at space characters
+    // For break-spaces and pre-wrap modes, we can break at space characters or hyphens
     if (whiteSpace == WhiteSpace.breakSpaces || whiteSpace == WhiteSpace.preWrap) {
-      // Look backwards from end to find the last space that fits
-      // We want to break after a space, not in the middle of a word
+      // Look backwards from end to find the last space or hyphen that fits
+      // We want to break after a space or hyphen, not in the middle of a word
       
       // Check if we're at the end of the text
       if (end >= text.length) {
         return end;
       }
       
-      // Check if the position is already at a space
-      if (text[end - 1] == ' ') {
+      // Check if the position is already at a space or hyphen
+      final charBeforeEnd = text[end - 1];
+      if (charBeforeEnd == ' ' || charBeforeEnd == '-') {
         return end;
       }
       
-      // We're in the middle of a word, look for the last space before this position
+      // We're in the middle of a word, look for the last space or hyphen before this position
       for (int i = end - 1; i > start; i--) {
-        if (text[i - 1] == ' ') {
-          // Found space, break after it
+        final char = text[i - 1];
+        if (char == ' ' || char == '-') {
+          // Found space or hyphen, break after it
           return i;
         }
       }
       
-      // No space found in this segment
+      // No space or hyphen found in this segment
       // This means the entire segment is one word that doesn't fit
       // Return start to indicate we should break before this segment
       return start;
@@ -454,11 +456,15 @@ class LineBreaker {
       // If no better break point found, break at the end
       return end;
     } else {
-      // For non-CJK text, look for space
-      // But we need to find the last space that would leave a meaningful word on the line
-      int lastSpace = -1;
+      // For non-CJK text, look for space or hyphen
+      // But we need to find the last space/hyphen that would leave a meaningful word on the line
+      int lastBreak = -1;
       for (int i = end; i > start; i--) {
-        if (text[i - 1] == ' ') {
+        final char = text[i - 1];
+        if (char == ' ' || char == '-') {
+          // For hyphen, we want to break after it
+          // For space, we want to break after it
+          
           // Check if breaking here would leave only spaces on the current line
           bool onlySpaces = true;
           for (int j = start; j < i - 1; j++) {
@@ -469,19 +475,20 @@ class LineBreaker {
           }
 
           if (!onlySpaces) {
-            lastSpace = i;
+            lastBreak = i;
             break;
           }
         }
       }
 
-      if (lastSpace > start) {
-        return lastSpace;
+      if (lastBreak > start) {
+        return lastBreak;
       }
 
-      // No space found - check if we're in the middle of a word
+      // No space or hyphen found - check if we're in the middle of a word
       // If we are, we should not break here
-      if (end < text.length && text[end - 1] != ' ' && text[end] != ' ') {
+      if (end < text.length && text[end - 1] != ' ' && text[end] != ' ' && 
+          text[end - 1] != '-' && text[end] != '-') {
         // We're in the middle of a word, return start to indicate no break
         return start;
       }
