@@ -103,11 +103,10 @@ static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
 // This returns an AtomicString because attribute names are always stored
 // as AtomicString types in Element (see setAttribute()).
 static AtomicString ConvertPropertyNameToAttributeName(const AtomicString& name) {
-  std::string result;
-  result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
-  result.append("data-");
-
   if (name.Is8Bit()) {
+    std::string result;
+    result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
+    result.append("data-");
     const char* chars = name.Characters8();
     unsigned length = name.length();
     for (unsigned i = 0; i < length; ++i) {
@@ -119,31 +118,25 @@ static AtomicString ConvertPropertyNameToAttributeName(const AtomicString& name)
         result.push_back(character);
       }
     }
+    return AtomicString(result);
   } else {
+    std::u16string result;
+    result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
+    result.append(u"data-");
     // Handle 16-bit strings by converting to UTF-8
-    const char16_t* chars = name.Characters16();
+    const auto* chars = name.Characters16();
     unsigned length = name.length();
     for (unsigned i = 0; i < length; ++i) {
-      char16_t ch = chars[i];
-      if (ch < 0x80 && std::isupper(ch)) {
+      auto character = chars[i];
+      if (std::isupper(character)) {
         result.push_back('-');
-        result.push_back(std::tolower(ch));
-      } else if (ch < 0x80) {
-        result.push_back(static_cast<char>(ch));
-      } else if (ch < 0x800) {
-        // 2-byte UTF-8
-        result.push_back(static_cast<char>(0xC0 | (ch >> 6)));
-        result.push_back(static_cast<char>(0x80 | (ch & 0x3F)));
+        result.push_back(std::tolower(character));
       } else {
-        // 3-byte UTF-8
-        result.push_back(static_cast<char>(0xE0 | (ch >> 12)));
-        result.push_back(static_cast<char>(0x80 | ((ch >> 6) & 0x3F)));
-        result.push_back(static_cast<char>(0x80 | (ch & 0x3F)));
+        result.push_back(character);
       }
     }
+    return AtomicString(result);
   }
-
-  return AtomicString(result);
 }
 
 std::string ConvertAttributeNameToPropertyName(const std::string& name) {
