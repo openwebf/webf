@@ -721,6 +721,7 @@ class ImageElement extends Element {
     if (naturalWidth > 0 &&
         naturalHeight > 0 &&
         renderStyle.attachedRenderBoxModel != null &&
+        renderStyle.attachedRenderBoxModel!.hasSize &&
         !renderStyle.attachedRenderBoxModel!.size.isEmpty) {
       double visibleArea = renderStyle.attachedRenderBoxModel!.calculateVisibleArea();
       if (visibleArea > 0) {
