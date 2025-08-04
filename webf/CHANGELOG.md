@@ -1,3 +1,13 @@
+## 0.22.5
+
+Bug Fixes
+
+- Fixed exceptions when reporting LCP (Largest Contentful Paint) information on img elements. This
+  ensures more reliable performance metric collection for image-heavy pages.
+- Removed the maxConnectionsPerHost limits for each HTTP client. This improvement allows for better
+  concurrent connection handling and improved network performance, especially for applications
+  making multiple simultaneous requests.
+
 ## 0.22.4
 
 Bug Fixes
