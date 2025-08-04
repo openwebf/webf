@@ -24,6 +24,8 @@ NativeValue HTMLLinkElement::HandleCallFromDartSide(const webf::AtomicString& me
     return HandleParseAuthorStyleSheet(argc, argv, dart_object);
   }
 
+  EventTarget::HandleCallFromDartSide(method, argc, argv, dart_object);
+
   return Native_NewNull();
 };
 
