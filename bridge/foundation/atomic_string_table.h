@@ -38,15 +38,16 @@ class AtomicStringTable final {
   // a UChar string may be an LChar string as the table will attempt to
   // convert the string to save memory if possible.
   std::shared_ptr<StringImpl> Add(std::shared_ptr<StringImpl>);
-  std::shared_ptr<StringImpl> Add(const char* chars, unsigned length);
+  std::shared_ptr<StringImpl> AddLatin1(const char* chars, unsigned length);
+  std::shared_ptr<StringImpl> AddUTF8(const char* chars, unsigned length);
   std::shared_ptr<StringImpl> Add(const char16_t* chars, uint32_t length);
   std::shared_ptr<StringImpl> Add(const std::string_view& string_view);
 
   //  // Adding UTF8.
   //  // Returns null if the characters contain invalid utf8 sequences.
   //  // Pass null for the charactersEnd to automatically detect the length.
-  //  std::shared_ptr<std::string> AddUTF8(const char* characters_start,
-  //                                    const char* characters_end);
+  // std::shared_ptr<StringImpl> AddUTF8(const char* characters_start,
+  //                                   const char* characters_end);
   //
   //  // Returned as part of the WeakFind*() APIs below. Represents the result of
   //  // the non-creating lookup within the AtomicStringTable. See the WeakFind*()

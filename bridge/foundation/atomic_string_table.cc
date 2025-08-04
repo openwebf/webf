@@ -44,7 +44,21 @@ static size_t count_ascii(const uint8_t *buf, size_t len)
   return p - buf;
 }
 
-std::shared_ptr<StringImpl> AtomicStringTable::Add(const char* chars, unsigned int length) {
+std::shared_ptr<StringImpl> AtomicStringTable::AddLatin1(const char* chars, unsigned int length) {
+  if (!chars)
+    return nullptr;
+
+  if (!length)
+    return StringImpl::empty_shared();
+
+  std::shared_ptr<StringImpl> ptr = StringImpl::Create(chars, length);
+
+  auto result = table_.insert(ptr);
+
+  return *result.first;
+}
+
+std::shared_ptr<StringImpl> AtomicStringTable::AddUTF8(const char* chars, unsigned length) {
   if (!chars)
     return nullptr;
 

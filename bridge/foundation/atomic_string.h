@@ -21,20 +21,28 @@ class AtomicString {
   static AtomicString Null() { return AtomicString(); }
   static AtomicString Empty() { return AtomicString(""); }
 
+  /**
+   * @see {AtomicString::CreateFromUTF8} if you want to create AtomicString from utf8 buffers.
+   * @param chars the chars are Latin1(iso-8859-1) encoded
+   */
   explicit AtomicString(const char* chars)
       : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
+  AtomicString(std::string_view string_view);
+  AtomicString(const std::string& s) : AtomicString(s.c_str(), s.length()){};
+
   explicit AtomicString(const char16_t* chars)
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}
 
-  AtomicString(std::string_view string_view);
+  AtomicString(std::u16string string_view);
   AtomicString(const char* chars, size_t length);
+  static AtomicString CreateFromUTF8(const char* chars, size_t length);
+  static AtomicString CreateFromUTF8(std::string chars);
   AtomicString(const uint16_t* str, size_t length);
   AtomicString(const char16_t* str, size_t length);
   AtomicString(std::shared_ptr<StringImpl> string_impl);
 
   AtomicString(JSContext* ctx, JSValue qjs_value);
   AtomicString(JSContext* ctx, JSAtom qjs_atom);
-  AtomicString(const std::string& s) : AtomicString(s.c_str(), s.length()){};
   AtomicString(const std::unique_ptr<AutoFreeNativeString>& native_string);
   AtomicString(const AtomicString&) = default;
   ~AtomicString() = default;
