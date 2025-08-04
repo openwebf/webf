@@ -8,6 +8,7 @@ class InlineBoxState {
     required this.renderBox,
     required this.style,
     required this.startX,
+    this.contentStartX,
   });
 
   /// The render box.
@@ -16,8 +17,11 @@ class InlineBoxState {
   /// Box style.
   final CSSRenderStyle style;
 
-  /// Start X position.
+  /// Start X position (includes padding area).
   final double startX;
+  
+  /// Content start X position (after padding).
+  final double? contentStartX;
 
   /// Children of this box.
   final List<LineBoxItem> children = [];

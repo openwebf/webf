@@ -153,6 +153,9 @@ class BoxLineBoxItem extends LineBoxItem {
     this.children = const [],
     this.isFirstFragment = true,
     this.isLastFragment = true,
+    required this.baseline,
+    required this.contentAscent,
+    required this.contentDescent,
   });
 
   /// The render box.
@@ -169,6 +172,15 @@ class BoxLineBoxItem extends LineBoxItem {
 
   /// Whether this is the last fragment of a multi-line inline element.
   final bool isLastFragment;
+  
+  /// Baseline position within the line box.
+  final double baseline;
+  
+  /// Content ascent (from font metrics).
+  final double contentAscent;
+  
+  /// Content descent (from font metrics).
+  final double contentDescent;
 
   @override
   void paint(PaintingContext context, Offset lineOffset) {
@@ -184,18 +196,24 @@ class BoxLineBoxItem extends LineBoxItem {
   void _paintBoxDecorations(PaintingContext context, Offset offset) {
     final canvas = context.canvas;
 
-    // Paint the padding box area (background/border)
-    final paddingLeft = style.paddingLeft.computedValue;
-    final paddingRight = style.paddingRight.computedValue;
+    // Get padding values
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
 
-    // The painted rect is the full box area
-    final paintRect = Rect.fromLTRB(
+    // For inline elements, the background covers the content area plus padding
+    // The content height is based on font metrics, not line height
+    final contentHeight = contentAscent + contentDescent;
+    
+    // Calculate where the content top is based on the baseline
+    // The baseline position is relative to the line box top
+    final contentTop = offset.dy + baseline - contentAscent;
+
+    // The painted rect includes padding around the content
+    final paintRect = Rect.fromLTWH(
       offset.dx,
-      offset.dy - paddingTop,
-      offset.dx + size.width,
-      offset.dy + size.height + paddingBottom,
+      contentTop - paddingTop,  // Extend upward by padding from actual content top
+      size.width,
+      contentHeight + paddingTop + paddingBottom,  // Content height plus padding
     );
 
     // Paint background
@@ -216,7 +234,7 @@ class BoxLineBoxItem extends LineBoxItem {
 
   void _paintBorder(Canvas canvas, Rect rect) {
     final paint = Paint()..style = PaintingStyle.fill;
-    
+
 
     // Top border
     if (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) {
@@ -269,26 +287,23 @@ class BoxLineBoxItem extends LineBoxItem {
 
   @override
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // Check against the padded area
-    final paddingLeft = style.paddingLeft.computedValue;
-    final paddingRight = style.paddingRight.computedValue;
+    // Get padding values
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
 
-    // Check if position is within the padded bounds
-    final paddedBounds = Rect.fromLTRB(
+    // Use the same bounds calculation as paint
+    final contentHeight = contentAscent + contentDescent;
+    final contentTop = offset.dy + baseline - contentAscent;
+
+    // Check against the actual painted bounds
+    final bounds = Rect.fromLTWH(
       offset.dx,
-      offset.dy - paddingTop,
-      offset.dx + size.width,
-      offset.dy + size.height + paddingBottom,
+      contentTop - paddingTop,
+      size.width,
+      contentHeight + paddingTop + paddingBottom,
     );
 
-    // Debug logging
-    // print('BoxLineBoxItem.hitTest: position=$position, offset=$offset, size=$size');
-    // print('  paddedBounds=$paddedBounds, contains=${paddedBounds.contains(position)}');
-    // print('  renderBox=$renderBox');
-
-    if (!paddedBounds.contains(position)) return false;
+    if (!bounds.contains(position)) return false;
 
     // Check children first
     for (final child in children) {

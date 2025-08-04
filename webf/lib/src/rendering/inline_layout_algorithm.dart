@@ -228,7 +228,7 @@ class InlineLayoutAlgorithm {
     }
 
     // Debug line box metrics
-    // print('LineBox: maxAscent=$maxAscent maxDescent=$maxDescent lineHeight=$lineHeight');
+    // print('LineBox: maxAscent=$maxAscent maxDescent=$maxDescent lineHeight=$lineHeight baseline=$baseline');
 
     // Reset position for this line
     _currentX = 0;
@@ -293,7 +293,7 @@ class InlineLayoutAlgorithm {
     }
 
     // Third pass: create box items with correct visual bounds
-    _createInlineBoxes(lineItems, lineBoxItems, baseline, lineHeight, lineIndex, boxToLines, globalBoxToItems);
+    _createInlineBoxes(lineItems, lineBoxItems, baseline, lineHeight, lineIndex, boxToLines, globalBoxToItems, maxAscent, maxDescent);
 
     // Calculate text alignment offset
     final alignmentOffset = _calculateTextAlignOffset(lineWidth, constraints.maxWidth);
@@ -350,8 +350,8 @@ class InlineLayoutAlgorithm {
       _currentX += leftMargin;
 
       // Store the position after margin (where the box visual area starts)
+      // This includes the padding area
       final boxStartX = _currentX;
-
 
       _boxStack.add(InlineBoxState(
         renderBox: item.renderBox!,
@@ -591,7 +591,7 @@ class InlineLayoutAlgorithm {
   /// Create inline box items with correct visual bounds after bidi reordering.
   /// This solves the issue where inline box backgrounds were positioned incorrectly
   /// after bidi reordering, especially for nested LTR spans in RTL context.
-  void _createInlineBoxes(List<InlineItemResult> lineItems, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight, int lineIndex, Map<RenderBox, List<int>> boxToLines, Map<RenderBox, List<LineBoxItem>> globalBoxToItems) {
+  void _createInlineBoxes(List<InlineItemResult> lineItems, List<LineBoxItem> lineBoxItems, double baseline, double lineHeight, int lineIndex, Map<RenderBox, List<int>> boxToLines, Map<RenderBox, List<LineBoxItem>> globalBoxToItems, double maxAscent, double maxDescent) {
     // For this specific line, find which boxes need to be rendered
     final Set<RenderBox> boxesOnThisLine = {};
     
@@ -625,9 +625,13 @@ class InlineLayoutAlgorithm {
       double maxX = double.negativeInfinity;
 
       for (final item in items) {
-        minX = math.min(minX, item.offset.dx);
-        maxX = math.max(maxX, item.offset.dx + item.size.width);
+        // Only consider actual content items (text and atomic), not box decorations
+        if (item is TextLineBoxItem || item is AtomicLineBoxItem) {
+          minX = math.min(minX, item.offset.dx);
+          maxX = math.max(maxX, item.offset.dx + item.size.width);
+        }
       }
+      
 
       if (minX < double.infinity && maxX > double.negativeInfinity) {
         final width = maxX - minX;
@@ -644,11 +648,12 @@ class InlineLayoutAlgorithm {
           final paddingLeft = style.paddingLeft.computedValue;
           final paddingRight = style.paddingRight.computedValue;
 
-          // The box starts at the content minus padding
+          // The box visual area starts where the padding starts
+          // Since content is positioned after left padding, we subtract it
           final boxStartX = minX - paddingLeft;
-          // The width includes content and padding only
+          // The box width is content width plus both paddings
           final boxWidth = width + paddingLeft + paddingRight;
-
+          
 
           // Determine if this is the first/last fragment of a multi-line inline element
           final lines = boxToLines[box] ?? [];
@@ -663,6 +668,9 @@ class InlineLayoutAlgorithm {
             children: items,
             isFirstFragment: isFirstFragment,
             isLastFragment: isLastFragment,
+            baseline: baseline,
+            contentAscent: maxAscent,
+            contentDescent: maxDescent,
           );
 
 
