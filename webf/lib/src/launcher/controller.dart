@@ -146,10 +146,10 @@ class WebFController with Diagnosticable {
   final Map<String, RoutePerformanceMetrics> _routeMetrics = {};
 
   // Loading state dumper for tracking lifecycle phases
-  final LoadingStateDumper _loadingStateDumper = LoadingStateDumper();
+  final LoadingState _loadingState = LoadingState();
 
   /// Get the loading state dumper for tracking lifecycle phases
-  LoadingStateDumper get loadingStateDumper => _loadingStateDumper;
+  LoadingState get loadingState => _loadingState;
 
   // Get current route metrics based on the current route in buildContextStack
   RoutePerformanceMetrics? get _currentRouteMetrics {
@@ -727,7 +727,7 @@ class WebFController with Diagnosticable {
   })  : _entrypoint = bundle,
         runningThread = runningThread ?? DedicatedThread() {
     // Record constructor phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseConstructor, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseConstructor, parameters: {
       'bundle': bundle?.url ?? 'null',
       'enableDebug': enableDebug,
       'runningThread': runningThread.runtimeType.toString(),
@@ -747,13 +747,13 @@ class WebFController with Diagnosticable {
         initialCookies: initialCookies);
 
     _view!.initialize().then((_) async {
-      _loadingStateDumper.recordPhase(LoadingStateDumper.phaseInit, parameters: {
+      _loadingState.recordPhase(LoadingState.phaseInit, parameters: {
         'contextId': view.contextId,
       });
 
       final double contextId = view.contextId;
       // Register the loading state dumper for this context
-      LoadingStateRegistry.instance.register(contextId, _loadingStateDumper);
+      LoadingStateRegistry.instance.register(contextId, _loadingState);
 
       _module = WebFModuleController(this, contextId);
 
@@ -918,7 +918,7 @@ class WebFController with Diagnosticable {
     if (currentPageId == null) return null;
 
     // Record load start phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseLoadStart, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseLoadStart, parameters: {
       'bundle': bundle.url ?? 'null',
       'currentPageId': currentPageId,
     });
@@ -992,7 +992,7 @@ class WebFController with Diagnosticable {
     if (_preRenderingStatus != PreRenderingStatus.none) return;
 
     // Record preload phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phasePreload, parameters: {
+    _loadingState.recordPhase(LoadingState.phasePreload, parameters: {
       'bundle': bundle.url ?? 'null',
       'viewportSize': viewportSize?.toString() ?? 'null',
       'timeout': timeout?.inMilliseconds ?? 'default',
@@ -1042,7 +1042,7 @@ class WebFController with Diagnosticable {
           controllerPreloadingCompleter.complete();
         } else if (_entrypoint!.isHTML) {
           // Evaluate the HTML entry point, and loading the stylesheets and scripts.
-          final parseEndCallback = _loadingStateDumper.recordPhaseStart(LoadingStateDumper.phaseParseHTML, parameters: {
+          final parseEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
             'dataSize': _entrypoint!.data!.length,
             'preload': true,
           });
@@ -1093,7 +1093,7 @@ class WebFController with Diagnosticable {
 
   void _handlingLoadingError(Object error, StackTrace stack) {
     // Record the error in the loading state dumper
-    _loadingStateDumper.recordCurrentPhaseError(error, stackTrace: stack);
+    _loadingState.recordCurrentPhaseError(error, stackTrace: stack);
 
     if (onLoadError != null) {
       onLoadError!(FlutterError(error.toString()), stack);
@@ -1135,7 +1135,7 @@ class WebFController with Diagnosticable {
     if (_preloadStatus != PreloadingStatus.none) return;
 
     // Record prerendering phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phasePreRender, parameters: {
+    _loadingState.recordPhase(LoadingState.phasePreRender, parameters: {
       'bundle': bundle.url ?? 'null',
       'timeout': timeout?.inMilliseconds ?? 'default',
     });
@@ -1285,7 +1285,7 @@ class WebFController with Diagnosticable {
   /// the controller is no longer needed to prevent memory leaks.
   Future<void> dispose() async {
     // Record dispose phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseDispose, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseDispose, parameters: {
       'contextId': _view?.contextId ?? 'null',
     });
 
@@ -1293,7 +1293,7 @@ class WebFController with Diagnosticable {
     if (_view != null) {
       LoadingStateRegistry.instance.unregister(_view!.contextId);
     }
-    
+
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     removeHttpOverrides(contextId: _view!.contextId);
     await _view?.dispose();
@@ -1357,7 +1357,7 @@ class WebFController with Diagnosticable {
     }
 
     // Record resolve entrypoint phase
-    final endResolve = _loadingStateDumper.recordPhaseStart(LoadingStateDumper.phaseResolveEntrypoint, parameters: {
+    final endResolve = _loadingState.recordPhaseStart(LoadingState.phaseResolveEntrypoint, parameters: {
       'bundle': bundleToLoad.url ?? 'null',
       'baseUrl': url,
     });
@@ -1378,7 +1378,7 @@ class WebFController with Diagnosticable {
       // Network error tracking is also handled by NetworkBundle
 
       // Record the error with context
-      _loadingStateDumper.recordError(LoadingStateDumper.phaseResolveEntrypoint, e,
+      _loadingState.recordError(LoadingState.phaseResolveEntrypoint, e,
         stackTrace: stack,
         context: {
           'bundle': bundleToLoad.url ?? 'null',
@@ -1403,7 +1403,7 @@ class WebFController with Diagnosticable {
   /// and interactions. Must be called before content can be displayed.
   void attachToFlutter(BuildContext context) {
     // Record attach to flutter phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseAttachToFlutter, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseAttachToFlutter, parameters: {
       'routePath': initialRoute ?? '/',
       'hasInitialState': initialState != null,
     });
@@ -1421,7 +1421,7 @@ class WebFController with Diagnosticable {
   /// Should be called when the WebF content is no longer displayed or needed.
   void detachFromFlutter(BuildContext? context) {
     // Record detach from flutter phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseDetachFromFlutter, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseDetachFromFlutter, parameters: {
       'routePath': initialRoute ?? '/',
     });
 
@@ -1453,7 +1453,7 @@ class WebFController with Diagnosticable {
       assert(entrypoint.isResolved, 'The webf bundle $entrypoint is not resolved to evaluate.');
 
       // Record evaluate start phase
-      final endEvaluate = _loadingStateDumper.recordPhaseStart(LoadingStateDumper.phaseEvaluateStart, parameters: {
+      final endEvaluate = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateStart, parameters: {
         'entrypoint': entrypoint.url ?? 'null',
         'contentType': entrypoint.contentType.toString(),
         'isJavascript': entrypoint.isJavascript,
@@ -1468,7 +1468,7 @@ class WebFController with Diagnosticable {
       if (entrypoint.isJavascript) {
         assert(isValidUTF8String(data), 'The JavaScript codes should be in UTF-8 encoding format');
         // Prefer sync decode in loading entrypoint.
-        final scriptEndCallback = _loadingStateDumper.recordPhaseStart(LoadingStateDumper.phaseEvaluateScripts, parameters: {
+        final scriptEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateScripts, parameters: {
           'url': url,
           'loadedFromCache': entrypoint.loadedFromCache,
           'cacheKey': entrypoint.cacheKey ?? 'null',
@@ -1485,7 +1485,7 @@ class WebFController with Diagnosticable {
           rethrow;
         }
       } else if (entrypoint.isBytecode) {
-        final bytecodeEndCallback = _loadingStateDumper.recordPhaseStart(LoadingStateDumper.phaseEvaluateScripts, parameters: {
+        final bytecodeEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseEvaluateScripts, parameters: {
           'type': 'bytecode',
           'dataSize': data.length,
         });
@@ -1498,7 +1498,7 @@ class WebFController with Diagnosticable {
         }
       } else if (entrypoint.isHTML) {
         assert(isValidUTF8String(data), 'The HTML codes should be in UTF-8 encoding format');
-        final parseEndCallback = _loadingStateDumper.recordPhaseStart(LoadingStateDumper.phaseParseHTML, parameters: {
+        final parseEndCallback = _loadingState.recordPhaseStart(LoadingState.phaseParseHTML, parameters: {
           'dataSize': data.length,
         });
         try {
@@ -1530,7 +1530,7 @@ class WebFController with Diagnosticable {
 
       // Record evaluate complete
       endEvaluate();
-      _loadingStateDumper.recordPhase(LoadingStateDumper.phaseEvaluateComplete, parameters: {
+      _loadingState.recordPhase(LoadingState.phaseEvaluateComplete, parameters: {
         'parsing': false,
       });
 
@@ -1631,7 +1631,7 @@ class WebFController with Diagnosticable {
     _domContentLoadedEventDispatched = true;
 
     // Record DOM content loaded phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseDOMContentLoaded, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseDOMContentLoaded, parameters: {
       'readyState': _view!.document.readyState.toString(),
     });
 
@@ -1661,7 +1661,7 @@ class WebFController with Diagnosticable {
     _loadEventDispatched = true;
 
     // Record window load phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseWindowLoad, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseWindowLoad, parameters: {
       'readyState': _view!.document.readyState.toString(),
       'isComplete': _isComplete,
     });
@@ -1817,9 +1817,9 @@ class WebFController with Diagnosticable {
       if (onRouteLCP != null) {
         onRouteLCP!(lcpTime, metrics.routePath);
       }
-      
+
       // Record LCP candidate as a phase
-      _loadingStateDumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
+      _loadingState.recordPhase(LoadingState.phaseLargestContentfulPaint, parameters: {
         'timeSinceNavigationStart': lcpTime,
         'largestContentSize': contentSize,
         'elementTag': element.tagName,
@@ -1842,13 +1842,7 @@ class WebFController with Diagnosticable {
 
       if (!metrics.lcpReported && metrics.navigationStartTime != null) {
         // Record LCP finalization phase
-        _loadingStateDumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
-          'timeSinceNavigationStart': metrics.lastReportedLCPTime,
-          'largestContentSize': metrics.largestContentfulPaintSize,
-          'elementTag': metrics.currentLCPElement?.target?.tagName ?? 'null',
-          'routePath': metrics.routePath,
-          'isFinal': true,  // Mark this as the final LCP, not a candidate
-        });
+        _loadingState.finalizeLCP();
 
         // Use the last reported LCP time instead of calculating a new time
         // This ensures onLCPFinal reports the actual LCP candidate time, not the finalization time
@@ -1884,7 +1878,7 @@ class WebFController with Diagnosticable {
     if (metrics.fcpReported || metrics.navigationStartTime == null) return;
 
     // Record first contentful paint phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseFirstContentfulPaint, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseFirstContentfulPaint, parameters: {
       'timeSinceNavigationStart': DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds,
     });
 
@@ -1913,7 +1907,7 @@ class WebFController with Diagnosticable {
     if (metrics.fpReported || metrics.navigationStartTime == null) return;
 
     // Record first paint phase
-    _loadingStateDumper.recordPhase(LoadingStateDumper.phaseFirstPaint, parameters: {
+    _loadingState.recordPhase(LoadingState.phaseFirstPaint, parameters: {
       'timeSinceNavigationStart': DateTime.now().difference(metrics.navigationStartTime!).inMilliseconds,
     });
 
@@ -1939,7 +1933,7 @@ class WebFController with Diagnosticable {
   /// @param verbose If true, includes detailed parameters for each phase.
   /// @return A LoadingStateDump object containing the loading state data.
   LoadingStateDump dumpLoadingState({bool verbose = true}) {
-    return _loadingStateDumper.dump(verbose: verbose);
+    return _loadingState.dump(verbose: verbose);
   }
 }
 
