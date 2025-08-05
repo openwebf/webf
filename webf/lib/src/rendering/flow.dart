@@ -964,10 +964,15 @@ class RenderFlowLayout extends RenderLayoutBox {
             case VerticalAlign.bottom:
               childLineExtent = (lineBoxHeight ?? usefulRunCrossAxisExtent) - childSize!.height;
               break;
-            // @TODO: Vertical align middle needs to calculate the baseline of the parent box plus
-            //  half the x-height of the parent from W3C spec currently flutter lack the api to calculate x-height of glyph.
-            //  case VerticalAlign.middle:
-            //  break;
+            case VerticalAlign.middle:
+              // @TODO: Vertical align middle needs to calculate the baseline of the parent box plus
+              //  half the x-height of the parent from W3C spec currently flutter lack the api to calculate x-height of glyph.
+              // For now, use a simple center alignment
+              childLineExtent = ((lineBoxHeight ?? usefulRunCrossAxisExtent) - childSize!.height) / 2;
+              break;
+            case VerticalAlign.textTop:
+              childLineExtent = 0;
+              break;
             case VerticalAlign.textBottom:
               childLineExtent = (lineBoxHeight ?? usefulRunCrossAxisExtent) - childAscent;
               break;

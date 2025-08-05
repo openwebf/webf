@@ -8,7 +8,7 @@ import 'dart:ui';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
 
-class ScreenData extends Struct {
+final class ScreenData extends Struct {
   @Int64()
   external int availWidth;
 

@@ -92,6 +92,8 @@ class CSSLengthValue {
         return '${value?.cssText()}vmax';
       case CSSLengthType.PERCENTAGE:
         return '${(value! * 100).cssText()}%';
+      case CSSLengthType.RPX:
+        return '${value?.cssText()}rpx';
       case CSSLengthType.UNKNOWN:
       case CSSLengthType.AUTO:
         return 'auto';
