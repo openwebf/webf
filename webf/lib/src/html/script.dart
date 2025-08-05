@@ -122,7 +122,7 @@ class ScriptRunner {
     bool isModule = element.type == _JAVASCRIPT_MODULE;
 
     // Record script element queuing
-    final dumper = _document.controller.loadingStateDumper;
+    final dumper = _document.controller.loadingState;
     dumper.recordScriptElementQueue(
       source: scriptSource,
       isInline: isInline,
@@ -156,7 +156,7 @@ class ScriptRunner {
       element.readyState = ScriptReadyState.complete;
       // Record script execution complete
       dumper.recordScriptElementExecuteComplete(scriptSource);
-      
+
       // Dispatch the load event.
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_LOAD));
@@ -184,10 +184,10 @@ class ScriptRunner {
     // Script loading phrase.
     // Increment count when request.
     _document.incrementDOMContentLoadedEventDelayCount();
-    
+
     // Record script load start
     dumper.recordScriptElementLoadStart(scriptSource);
-    
+
     try {
       await bundle.resolve(baseUrl: _document.controller.url, uriParser: _document.controller.uriParser);
       await bundle.obtainData(_contextId);
@@ -195,17 +195,17 @@ class ScriptRunner {
       if (!bundle.isResolved) {
         throw FlutterError('Network error.');
       }
-      
+
       // Record script load complete with data size
       final dataSize = bundle.data?.length ?? 0;
       dumper.recordScriptElementLoadComplete(scriptSource, dataSize: dataSize);
     } catch (e, st) {
       // A load error occurred.
       debugPrint('Failed to load: ${isInline ? scriptSource : element.src}, reason: $e\n$st');
-      
+
       // Record script error
       dumper.recordScriptElementError(scriptSource, e.toString());
-      
+
       Timer.run(() {
         element.dispatchEvent(Event(EVENT_ERROR));
         _document.decrementDOMContentLoadedEventDelayCount();

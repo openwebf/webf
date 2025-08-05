@@ -256,62 +256,62 @@ class NetworkBundle extends WebFBundle {
   @override
   Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
-    
+
     // Get the loading state dumper for this context
     final dumper = LoadingStateRegistry.instance.getDumper(contextId);
     final startTime = DateTime.now();
-    
+
     // Track network request start
     dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
-    
+
     // Track DNS lookup stage
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageDnsLookupStart, metadata: {
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageDnsLookupStart, metadata: {
       'host': _uri!.host,
     });
-    
+
     final HttpClientRequest request = await sharedHttpClient.getUrl(_uri!);
-    
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageDnsLookupEnd);
-    
+
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageDnsLookupEnd);
+
     // Track TCP connection stage
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTcpConnectStart, metadata: {
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageTcpConnectStart, metadata: {
       'host': _uri!.host,
       'port': _uri!.port.toString(),
     });
-    
+
     // For HTTPS, track TLS handshake
     if (_uri!.isScheme('https')) {
-      dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTlsHandshakeStart);
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageTlsHandshakeStart);
     }
-    
+
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
     WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
     (request as ProxyHttpClientRequest).ownerBundle = this;
-    
+
     if (_uri!.isScheme('https')) {
-      dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTlsHandshakeEnd);
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageTlsHandshakeEnd);
     }
-    
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTcpConnectEnd);
-    
+
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageTcpConnectEnd);
+
     // Track request sent stage
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageRequestSent, metadata: {
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageRequestSent, metadata: {
       'method': 'GET',
       'headers': additionalHttpHeaders ?? {},
     });
-    
+
     final HttpClientResponse response = await request.close();
     (request).ownerBundle = null;
 
     // Track response started stage
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageResponseStarted, metadata: {
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
       'statusCode': response.statusCode,
       'contentLength': response.contentLength,
     });
-    
+
     if (response.statusCode != HttpStatus.ok) {
       // Track error completion
       dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: {
@@ -324,21 +324,21 @@ class NetworkBundle extends WebFBundle {
     }
 
     hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
-    
+
     // Track cache info if hit cache
     if (_hitCache) {
-      dumper?.recordNetworkRequestCacheInfo(url, 
+      dumper?.recordNetworkRequestCacheInfo(url,
         cacheHit: true,
         cacheType: response is HttpClientCachedResponse ? 'disk' : 'memory',
         cacheHeaders: {},
       );
     }
-    
+
     // Track downloading stage
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
-    
+
     // Track response fully received
-    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageResponseReceived, metadata: {
+    dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
       'responseSize': bytes.length,
     });
 
@@ -355,13 +355,13 @@ class NetworkBundle extends WebFBundle {
 
     data = bytes.buffer.asUint8List();
     _contentType = response.headers.contentType ?? ContentType.binary;
-    
+
     // Track completion
     final responseHeaders = <String, String>{};
     response.headers.forEach((name, values) {
       responseHeaders[name] = values.join(', ');
     });
-    
+
     dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: responseHeaders);
   }
 }

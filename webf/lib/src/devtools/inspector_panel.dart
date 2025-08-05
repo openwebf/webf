@@ -63,7 +63,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
   @override
   Widget build(BuildContext context) {
-    final dumper = widget.controller.loadingStateDumper;
+    final dumper = widget.controller.loadingState;
     final phases = dumper.phases;
     final errors = dumper.errors;
     final networkRequests = dumper.networkRequests;
@@ -269,22 +269,22 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                 ],
               ),
             ),
-            
+
             SizedBox(height: 12),
-            
+
             // Key Loading Phases Table
             _buildPhasesTable('Key Loading Phases', keyPhases, Colors.green),
-            
+
             if (additionalPhases.isNotEmpty) ...[
               SizedBox(height: 16),
               _buildPhasesTable('Additional Phases', additionalPhases, Colors.orange),
             ],
-            
+
             if (errors.isNotEmpty) ...[
               SizedBox(height: 16),
               _buildErrorsSection(errors),
             ],
-            
+
             if (networkRequests.isNotEmpty) ...[
               SizedBox(height: 16),
               _buildNetworkSummary(networkRequests),
@@ -921,7 +921,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               ),
             ),
           ],
-          
+
           // Show cache info if available
           if (request.cacheInfo != null && request.cacheInfo!.cacheHit) ...[
             SizedBox(height: 12),
@@ -1320,7 +1320,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   }
 
 
-  Widget _buildStatisticsBar(LoadingStateDumper dumper) {
+  Widget _buildStatisticsBar(LoadingState dumper) {
     final successfulRequests = dumper.networkRequests.where((r) => r.isSuccessful).length;
     final failedRequests = dumper.networkRequests.where((r) => r.error != null).length;
 
@@ -1453,28 +1453,28 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       return '${duration.inMilliseconds}ms';
     }
   }
-  
+
   String _formatPhaseName(String phaseName) {
     // Format known phase names
-    if (phaseName == LoadingStateDumper.phaseInit) return 'Initialize';
-    else if (phaseName == LoadingStateDumper.phaseLoadStart) return 'Load Start';
-    else if (phaseName == LoadingStateDumper.phasePreload) return 'Preload';
-    else if (phaseName == LoadingStateDumper.phaseResolveEntrypoint) return 'Resolve Entrypoint';
-    else if (phaseName == LoadingStateDumper.phaseEvaluateStart) return 'Evaluate Start';
-    else if (phaseName == LoadingStateDumper.phaseParseHTML) return 'Parse HTML';
-    else if (phaseName == LoadingStateDumper.phaseEvaluateScripts) return 'Evaluate Scripts';
-    else if (phaseName == LoadingStateDumper.phaseEvaluateComplete) return 'Evaluate Complete';
-    else if (phaseName == LoadingStateDumper.phaseDOMContentLoaded) return 'DOM Content Loaded';
-    else if (phaseName == LoadingStateDumper.phaseWindowLoad) return 'Window Load';
-    else if (phaseName == LoadingStateDumper.phaseBuildRootView) return 'Build Root View';
-    else if (phaseName == LoadingStateDumper.phaseFirstPaint) return 'First Paint (FP)';
-    else if (phaseName == LoadingStateDumper.phaseFirstContentfulPaint) return 'First Contentful Paint (FCP)';
-    else if (phaseName == LoadingStateDumper.phaseLargestContentfulPaint) return 'Largest Contentful Paint (LCP)';
-    else if (phaseName == LoadingStateDumper.phaseAttachToFlutter) return 'Attach to Flutter';
-    else if (phaseName == LoadingStateDumper.phaseDetachFromFlutter) return 'Detach from Flutter';
-    else if (phaseName == LoadingStateDumper.phaseDispose) return 'Dispose';
-    else if (phaseName == LoadingStateDumper.phaseConstructor) return 'Constructor';
-    
+    if (phaseName == LoadingState.phaseInit) return 'Initialize';
+    else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
+    else if (phaseName == LoadingState.phasePreload) return 'Preload';
+    else if (phaseName == LoadingState.phaseResolveEntrypoint) return 'Resolve Entrypoint';
+    else if (phaseName == LoadingState.phaseEvaluateStart) return 'Evaluate Start';
+    else if (phaseName == LoadingState.phaseParseHTML) return 'Parse HTML';
+    else if (phaseName == LoadingState.phaseEvaluateScripts) return 'Evaluate Scripts';
+    else if (phaseName == LoadingState.phaseEvaluateComplete) return 'Evaluate Complete';
+    else if (phaseName == LoadingState.phaseDOMContentLoaded) return 'DOM Content Loaded';
+    else if (phaseName == LoadingState.phaseWindowLoad) return 'Window Load';
+    else if (phaseName == LoadingState.phaseBuildRootView) return 'Build Root View';
+    else if (phaseName == LoadingState.phaseFirstPaint) return 'First Paint (FP)';
+    else if (phaseName == LoadingState.phaseFirstContentfulPaint) return 'First Contentful Paint (FCP)';
+    else if (phaseName == LoadingState.phaseLargestContentfulPaint) return 'Largest Contentful Paint (LCP)';
+    else if (phaseName == LoadingState.phaseAttachToFlutter) return 'Attach to Flutter';
+    else if (phaseName == LoadingState.phaseDetachFromFlutter) return 'Detach from Flutter';
+    else if (phaseName == LoadingState.phaseDispose) return 'Dispose';
+    else if (phaseName == LoadingState.phaseConstructor) return 'Constructor';
+
     // Handle network phases
     if (phaseName.startsWith('networkStart:')) {
       return 'Network Request';
@@ -1483,13 +1483,13 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     } else if (phaseName.startsWith('networkError:')) {
       return 'Network Error';
     }
-    
+
     // Handle specific .start and .end phases
     if (phaseName == 'resolveEntrypoint.start') return 'Resolve Entrypoint Start';
     else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
     else if (phaseName == 'parseHTML.start') return 'Parse HTML Start';
     else if (phaseName == 'parseHTML.end') return 'Parse HTML End';
-    
+
     // Handle other .start and .end phases
     if (phaseName.endsWith('.start')) {
       final baseName = phaseName.substring(0, phaseName.length - 6);
@@ -1498,7 +1498,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       final baseName = phaseName.substring(0, phaseName.length - 4);
       return _formatPhaseName(baseName) + ' End';
     }
-    
+
     // Default: capitalize words
     return phaseName
         .split(RegExp(r'(?=[A-Z])'))
@@ -1514,38 +1514,38 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   List<LoadingPhase> _getKeyPhases(List<LoadingPhase> phases) {
     // Find windowLoad phase timestamp to use as divider
     final windowLoadPhase = phases.firstWhere(
-      (p) => p.name == LoadingStateDumper.phaseWindowLoad,
+      (p) => p.name == LoadingState.phaseWindowLoad,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime(9999)),
     );
     final windowLoadTimestamp = windowLoadPhase.name.isNotEmpty ? windowLoadPhase.timestamp : null;
-    
+
     // Return phases before windowLoad (inclusive) that are not network or substep phases
     return phases.where((p) {
       // Skip network phases
-      if (p.name.startsWith('networkStart:') || 
+      if (p.name.startsWith('networkStart:') ||
           p.name.startsWith('networkComplete:') ||
           p.name.startsWith('networkError:')) {
         return false;
       }
-      
+
       // Skip .start and .end phases except for specific ones we want to show
-      if ((p.name.contains('.start') || p.name.contains('.end')) && 
+      if ((p.name.contains('.start') || p.name.contains('.end')) &&
           !p.name.startsWith('resolveEntrypoint') &&
           !p.name.startsWith('parseHTML')) {
         return false;
       }
-      
+
       // Always include paint phases in main phases regardless of windowLoad timing
-      if (p.name == LoadingStateDumper.phaseFirstPaint || 
-          p.name == LoadingStateDumper.phaseFirstContentfulPaint ||
-          p.name == LoadingStateDumper.phaseLargestContentfulPaint ||
-          p.name == LoadingStateDumper.phaseBuildRootView) {
+      if (p.name == LoadingState.phaseFirstPaint ||
+          p.name == LoadingState.phaseFirstContentfulPaint ||
+          p.name == LoadingState.phaseLargestContentfulPaint ||
+          p.name == LoadingState.phaseBuildRootView) {
         return true;
       }
-      
+
       // Include if before or at windowLoad
-      return windowLoadTimestamp == null || 
-             p.timestamp.isBefore(windowLoadTimestamp) || 
+      return windowLoadTimestamp == null ||
+             p.timestamp.isBefore(windowLoadTimestamp) ||
              p.timestamp == windowLoadTimestamp;
     }).toList();
   }
@@ -1557,7 +1557,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
   Widget _buildPhasesTable(String title, List<LoadingPhase> phases, Color color) {
     if (phases.isEmpty) return SizedBox.shrink();
-    
+
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: color.withOpacity(0.3)),
@@ -1587,7 +1587,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             final index = entry.key;
             final phase = entry.value;
             final isLast = index == phases.length - 1;
-            
+
             return _buildPhaseRow(phase, isLast);
           }),
         ],
@@ -1598,7 +1598,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   Widget _buildPhaseRow(LoadingPhase phase, bool isLast) {
     final hasSubsteps = phase.substeps.isNotEmpty;
     final isExpanded = _expandedPhases.contains(phase.name);
-    
+
     return Column(
       children: [
         InkWell(
@@ -1689,7 +1689,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   Widget _buildSubstepRow(LoadingPhase substep) {
     // Extract the substep name without the parent prefix
     String substepName = substep.name;
-    
+
     // Handle network stage names that include the URL
     if (substepName.startsWith('networkStart:')) {
       // Extract just the stage name from patterns like "networkStart:https://example.com/:dns_lookup_start"
@@ -1704,7 +1704,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       // Handle regular substep format
       substepName = substepName.split(': ').last;
     }
-    
+
     return Container(
       padding: EdgeInsets.only(left: 32, right: 12, top: 6, bottom: 6),
       decoration: BoxDecoration(
@@ -1752,7 +1752,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
 
   String _formatParameters(Map<String, dynamic> params) {
     if (params.isEmpty) return '';
-    
+
     final entries = params.entries.take(2).map((e) => '${e.key}: ${e.value}').join(', ');
     if (params.length > 2) {
       return '$entries...';
@@ -1785,8 +1785,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
         // Fallback: capitalize and replace underscores with spaces
         return stageName
             .split('_')
-            .map((word) => word.isNotEmpty 
-                ? '${word[0].toUpperCase()}${word.substring(1)}' 
+            .map((word) => word.isNotEmpty
+                ? '${word[0].toUpperCase()}${word.substring(1)}'
                 : word)
             .join(' ');
     }
@@ -1860,7 +1860,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     final successCount = requests.where((r) => r.isSuccessful).length;
     final cachedCount = requests.where((r) => r.isFromCache).length;
     final failedCount = requests.where((r) => r.error != null).length;
-    
+
     return Container(
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
