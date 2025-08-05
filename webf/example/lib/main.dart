@@ -675,6 +675,13 @@ class _WebFDemoState extends State<WebFDemo> {
                       print('LCP element: ${dump.lcpElementTag}');
                       print('LCP content size: ${dump.lcpContentSize}px');
                     }
+                    
+                    // Example of using the toJson method
+                    print('\n=== JSON Export Example ===');
+                    final jsonData = dump.toJson();
+                    print('Summary: ${jsonData['summary']}');
+                    print('Total duration: ${jsonData['totalDuration']}ms');
+                    print('Phase count: ${jsonData['summary']['totalPhases']}');
                   });
                 },
                 onLCPContentVerification: (ContentInfo contentInfo, String routePath) {

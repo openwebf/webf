@@ -319,6 +319,10 @@ class LoadingStateDump {
       };
     }
 
+    // Calculate network stats  
+    final cachedRequests = networkRequests.where((r) => r.isFromCache).toList();
+    final totalResponseSize = networkRequests.fold<int>(0, (sum, r) => sum + (r.responseSize ?? 0));
+
     return {
       'startTime': startTime.toIso8601String(),
       'totalDuration': totalDuration.inMilliseconds,
@@ -330,8 +334,16 @@ class LoadingStateDump {
         'successfulRequests': networkRequests.where((r) => r.isSuccessful).length,
         'failedRequests': networkRequests.where((r) => !r.isSuccessful && r.error == null).length,
         'errorRequests': networkRequests.where((r) => r.error != null).length,
-        'cachedRequests': networkRequests.where((r) => r.isFromCache).length,
-        'totalResponseSize': networkRequests.fold<int>(0, (sum, r) => sum + (r.responseSize ?? 0)),
+        'cachedRequests': cachedRequests.length,
+        'totalResponseSize': totalResponseSize,
+        // Add performance metrics
+        'hasReachedFP': hasReachedFP,
+        'hasReachedFCP': hasReachedFCP,
+        'hasReachedLCP': hasReachedLCP,
+        'hasLCPFinalized': hasLCPFinalized,
+        'lcpTime': lcpTime,
+        'lcpElementTag': lcpElementTag,
+        'lcpContentSize': lcpContentSize,
       },
       'phases': phases.map((p) => phaseToJson(p)).toList(),
       'networkRequests': networkRequests.map((r) => {
