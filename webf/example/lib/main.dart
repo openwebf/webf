@@ -687,6 +687,86 @@ class _WebFDemoState extends State<WebFDemo> {
               setup: (controller) {
                 controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
                 controller.darkModeOverride = darkModeOverride;
+                
+                // Register event listeners for all main phases
+                controller.loadingStateDumper.onConstructor((event) {
+                  print('🏗️ Constructor at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onInit((event) {
+                  print('🚀 Initialize at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onPreload((event) {
+                  print('📦 Preload at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onResolveEntrypointStart((event) {
+                  print('🔍 Resolve Entrypoint Start at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onResolveEntrypointEnd((event) {
+                  print('✅ Resolve Entrypoint End at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onParseHTMLStart((event) {
+                  print('📄 Parse HTML Start at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onParseHTMLEnd((event) {
+                  print('✅ Parse HTML End at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onScriptQueue((event) {
+                  print('📋 Script Queue at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onScriptLoadStart((event) {
+                  print('📥 Script Load Start at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onScriptLoadComplete((event) {
+                  print('✅ Script Load Complete at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onAttachToFlutter((event) {
+                  print('🔗 Attach to Flutter at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onScriptExecuteStart((event) {
+                  print('▶️ Script Execute Start at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onScriptExecuteComplete((event) {
+                  print('✅ Script Execute Complete at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onDOMContentLoaded((event) {
+                  print('📄 DOM Content Loaded at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onWindowLoad((event) {
+                  print('🪟 Window Load at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onBuildRootView((event) {
+                  print('🏗️ Build Root View at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onFirstPaint((event) {
+                  print('🎨 First Paint (FP) at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onFirstContentfulPaint((event) {
+                  print('🖼️ First Contentful Paint (FCP) at ${event.elapsed.inMilliseconds}ms');
+                });
+                
+                controller.loadingStateDumper.onLargestContentfulPaint((event) {
+                  final isCandidate = event.parameters['isCandidate'] ?? false;
+                  final isFinal = event.parameters['isFinal'] ?? false;
+                  final status = isFinal ? 'FINAL' : (isCandidate ? 'CANDIDATE' : 'UNKNOWN');
+                  print('📊 Largest Contentful Paint (LCP) ($status) at ${event.parameters['timeSinceNavigationStart']}ms');
+                });
               }
             ),
             WebFInspectorFloatingPanel(),
