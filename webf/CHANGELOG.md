@@ -1,3 +1,96 @@
+## 0.22.6
+
+## Overview
+
+This patch release brings Dart 3.0 compatibility and introduces a powerful event listener system for
+the LoadingStateDumper, enabling developers to monitor and react to WebF's loading lifecycle phases
+in real-time.
+
+## 🚀 New Features
+
+#### Formatted String Output
+The `toString()` method now provides a beautifully formatted table view with:
+- **Summary Section**: Total duration, phase count, errors, network requests, and script elements
+- **Main Phases Table**: Shows all loading phases with timing, elapsed time, and percentages
+- **Network Requests Table**: Detailed network activity with status, size, and timing
+- **Script Elements Table**: Script loading and execution details
+- **Performance Metrics Section**: Separate tables for paint metrics (FP, FCP, LCP)
+- **Error Details**: Clear error reporting with timestamps and stack traces
+
+Example output:
+```
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                        WebFController Loading State Dump                      ║
+╠══════════════════════════════════════════════════════════════════════════════╣
+║ Total Duration: 2.38s
+║ Phases: 19
+║ Network Requests: 5 (4 successful, 1 failed, 0 errors)
+║ Total Network Time: 1.2s
+║ Total Downloaded: 245.3KB
+╚══════════════════════════════════════════════════════════════════════════════╝
+```
+
+#### JSON Export with toJson()
+Enhanced `toJson()` method exports the complete loading state as structured data:
+
+```dart
+final dump = controller.dumpLoadingState();
+final jsonData = dump.toJson();
+
+// Access structured data
+print(jsonData['summary']['totalDuration']); // 2380
+print(jsonData['network']['successfulRequests']); // 4
+print(jsonData['phases'][0]['name']); // "constructor"
+```
+
+JSON structure includes:
+- **summary**: High-level metrics and performance indicators
+- **network**: Network request statistics and totals
+- **scripts**: Script loading and execution statistics
+- **phases**: Detailed phase timeline with elapsed times
+- **networkRequests**: Complete network request details
+- **scriptElements**: Script element tracking data
+- **errors**: Error details with timestamps and stack traces
+
+### Event Listener System for LoadingStateDumper
+
+Added comprehensive event callbacks for all main loading phases, allowing developers to monitor the
+WebF loading process with precise timing information.
+
+#### Available Event Listeners:
+- `onConstructor()` - WebF controller construction
+- `onInit()` - Initialization phase
+- `onPreload()` - Preloading resources
+- `onResolveEntrypointStart/End()` - Entry point resolution
+- `onParseHTMLStart/End()` - HTML parsing
+- `onScriptQueue()` - Script queuing
+- `onScriptLoadStart/Complete()` - Script loading
+- `onScriptExecuteStart/Complete()` - Script execution
+- `onAttachToFlutter()` - Flutter widget attachment
+- `onDOMContentLoaded()` - DOM ready state
+- `onWindowLoad()` - Window load complete
+- `onBuildRootView()` - Root view construction
+- `onFirstPaint()` - First paint (FP)
+- `onFirstContentfulPaint()` - First contentful paint (FCP)
+- `onLargestContentfulPaint()` - Largest contentful paint (LCP)
+
+#### Usage Example:
+```dart
+controller.loadingStateDumper.onFirstPaint((event) {
+  print('First Paint at ${event.elapsed.inMilliseconds}ms');
+});
+
+controller.loadingStateDumper.onLargestContentfulPaint((event) {
+  final isFinal = event.parameters['isFinal'] ?? false;
+  if (isFinal) {
+    print('LCP finalized at ${event.elapsed.inMilliseconds}ms');
+  }
+});
+```
+### Others
+
+- **Minimum SDK**: Updated from Dart 2.18.0 to 3.0.0
+
 ## 0.22.5
 
 Bug Fixes
