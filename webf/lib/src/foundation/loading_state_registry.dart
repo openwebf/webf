@@ -9,28 +9,28 @@ import 'package:webf/launcher.dart';
 /// loading state without direct access to the controller.
 class LoadingStateRegistry {
   static final LoadingStateRegistry _instance = LoadingStateRegistry._internal();
-  
+
   LoadingStateRegistry._internal();
-  
+
   static LoadingStateRegistry get instance => _instance;
-  
-  final Map<double, LoadingStateDumper> _dumpers = {};
-  
+
+  final Map<double, LoadingState> _dumpers = {};
+
   /// Register a LoadingStateDumper for a specific contextId
-  void register(double contextId, LoadingStateDumper dumper) {
+  void register(double contextId, LoadingState dumper) {
     _dumpers[contextId] = dumper;
   }
-  
+
   /// Unregister a LoadingStateDumper when the context is disposed
   void unregister(double contextId) {
     _dumpers.remove(contextId);
   }
-  
+
   /// Get the LoadingStateDumper for a specific contextId
-  LoadingStateDumper? getDumper(double contextId) {
+  LoadingState? getDumper(double contextId) {
     return _dumpers[contextId];
   }
-  
+
   /// Clear all registered dumpers
   void clear() {
     _dumpers.clear();

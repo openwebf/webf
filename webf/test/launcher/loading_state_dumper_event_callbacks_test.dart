@@ -9,9 +9,9 @@ import 'package:webf/launcher.dart';
 void main() {
   group('LoadingStateDumper Event Callbacks', () {
     test('convenience methods should register and trigger event callbacks', () {
-      final dumper = LoadingStateDumper();
+      final dumper = LoadingState();
       final phaseEvents = <String>[];
-      
+
       // Register callbacks using convenience methods
       dumper.onConstructor((event) => phaseEvents.add('constructor:${event.elapsed.inMilliseconds}'));
       dumper.onInit((event) => phaseEvents.add('init:${event.elapsed.inMilliseconds}'));
@@ -32,11 +32,11 @@ void main() {
       dumper.onFirstPaint((event) => phaseEvents.add('firstPaint:${event.elapsed.inMilliseconds}'));
       dumper.onFirstContentfulPaint((event) => phaseEvents.add('firstContentfulPaint:${event.elapsed.inMilliseconds}'));
       dumper.onLargestContentfulPaint((event) => phaseEvents.add('largestContentfulPaint:${event.elapsed.inMilliseconds}'));
-      
+
       // Record phases
-      dumper.recordPhase(LoadingStateDumper.phaseConstructor);
-      dumper.recordPhase(LoadingStateDumper.phaseInit);
-      dumper.recordPhase(LoadingStateDumper.phasePreload);
+      dumper.recordPhase(LoadingState.phaseConstructor);
+      dumper.recordPhase(LoadingState.phaseInit);
+      dumper.recordPhase(LoadingState.phasePreload);
       dumper.recordPhase('resolveEntrypoint.start');
       dumper.recordPhase('resolveEntrypoint.end');
       dumper.recordPhase('parseHTML.start');
@@ -44,16 +44,16 @@ void main() {
       dumper.recordPhase('scriptQueue');
       dumper.recordPhase('scriptLoadStart');
       dumper.recordPhase('scriptLoadComplete');
-      dumper.recordPhase(LoadingStateDumper.phaseAttachToFlutter);
+      dumper.recordPhase(LoadingState.phaseAttachToFlutter);
       dumper.recordPhase('scriptExecuteStart');
       dumper.recordPhase('scriptExecuteComplete');
-      dumper.recordPhase(LoadingStateDumper.phaseDOMContentLoaded);
-      dumper.recordPhase(LoadingStateDumper.phaseWindowLoad);
-      dumper.recordPhase(LoadingStateDumper.phaseBuildRootView);
-      dumper.recordPhase(LoadingStateDumper.phaseFirstPaint);
-      dumper.recordPhase(LoadingStateDumper.phaseFirstContentfulPaint);
-      dumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint);
-      
+      dumper.recordPhase(LoadingState.phaseDOMContentLoaded);
+      dumper.recordPhase(LoadingState.phaseWindowLoad);
+      dumper.recordPhase(LoadingState.phaseBuildRootView);
+      dumper.recordPhase(LoadingState.phaseFirstPaint);
+      dumper.recordPhase(LoadingState.phaseFirstContentfulPaint);
+      dumper.recordPhase(LoadingState.phaseLargestContentfulPaint);
+
       // Verify all events were triggered
       expect(phaseEvents.length, equals(19));
       expect(phaseEvents[0], startsWith('constructor:'));
@@ -76,34 +76,34 @@ void main() {
       expect(phaseEvents[17], startsWith('firstContentfulPaint:'));
       expect(phaseEvents[18], startsWith('largestContentfulPaint:'));
     });
-    
+
     test('should handle LCP parameters correctly', () {
-      final dumper = LoadingStateDumper();
+      final dumper = LoadingState();
       LoadingPhaseEvent? capturedEvent;
-      
+
       dumper.onLargestContentfulPaint((event) {
         capturedEvent = event;
       });
-      
+
       // Record LCP with candidate status
-      dumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
+      dumper.recordPhase(LoadingState.phaseLargestContentfulPaint, parameters: {
         'isCandidate': true,
         'isFinal': false,
         'timeSinceNavigationStart': 1500,
       });
-      
+
       expect(capturedEvent, isNotNull);
       expect(capturedEvent!.parameters['isCandidate'], isTrue);
       expect(capturedEvent!.parameters['isFinal'], isFalse);
       expect(capturedEvent!.parameters['timeSinceNavigationStart'], equals(1500));
-      
+
       // Record final LCP
-      dumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
+      dumper.recordPhase(LoadingState.phaseLargestContentfulPaint, parameters: {
         'isCandidate': false,
         'isFinal': true,
         'timeSinceNavigationStart': 2000,
       });
-      
+
       expect(capturedEvent!.parameters['isCandidate'], isFalse);
       expect(capturedEvent!.parameters['isFinal'], isTrue);
       expect(capturedEvent!.parameters['timeSinceNavigationStart'], equals(2000));
