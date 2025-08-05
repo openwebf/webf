@@ -13,7 +13,7 @@ import 'package:webf/src/html/canvas/canvas_context.dart';
 import 'package:webf/src/html/canvas/canvas_text_metrics.dart';
 import 'package:webf/webf.dart';
 
-class NativeValue extends Struct {
+final class NativeValue extends Struct {
   @Int64()
   external int u;
 

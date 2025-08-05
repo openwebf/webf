@@ -4,7 +4,7 @@
 
 import 'package:webf/dom.dart';
 
-class HTMLCollectionIterator extends Iterator<Element> {
+class HTMLCollectionIterator implements Iterator<Element> {
   final HTMLCollection collection;
   HTMLCollectionIterator(this.collection);
   Element? _current;

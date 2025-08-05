@@ -9,7 +9,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/bridge.dart';
 
-class WidgetElementShape extends Struct {
+final class WidgetElementShape extends Struct {
   external Pointer<Utf8> name;
   external Pointer<NativeValue> properties;
   external Pointer<NativeValue> methods;

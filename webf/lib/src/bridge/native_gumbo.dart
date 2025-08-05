@@ -181,20 +181,20 @@ class GumboTag {
   static const LAST = 151;
 }
 
-class NativeGumboOutput extends Struct {
+final class NativeGumboOutput extends Struct {
   external Pointer<NativeGumboNode> document;
   external Pointer<NativeGumboNode> root;
   external NativeGumboVector errors;
 }
 
-class NativeGumboStringPiece extends Struct {
+final class NativeGumboStringPiece extends Struct {
   external Pointer<Utf8> data;
 
   @Size()
   external int length;
 }
 
-class NativeGumboVector extends Struct {
+final class NativeGumboVector extends Struct {
   external Pointer<Pointer<Void>> data;
 
   @Uint32()
@@ -204,7 +204,7 @@ class NativeGumboVector extends Struct {
   external int capacity;
 }
 
-class NativeGumboSourcePosition extends Struct {
+final class NativeGumboSourcePosition extends Struct {
   @Uint32()
   external int line;
   @Uint32()
@@ -213,7 +213,7 @@ class NativeGumboSourcePosition extends Struct {
   external int offset;
 }
 
-class NativeGumboNode extends Struct {
+final class NativeGumboNode extends Struct {
   @Int32()
   external int type;
 
@@ -228,7 +228,7 @@ class NativeGumboNode extends Struct {
   external NativeGumboNodeUnionValue v;
 }
 
-class NativeGumboNodeUnionValue extends Union {
+final class NativeGumboNodeUnionValue extends Union {
   external NativeGumboDocument document;
 
   external NativeGumboElement element;
@@ -236,7 +236,7 @@ class NativeGumboNodeUnionValue extends Union {
   external NativeGumboText text;
 }
 
-class NativeGumboDocument extends Struct {
+final class NativeGumboDocument extends Struct {
   external NativeGumboVector children;
 
   @Bool()
@@ -252,7 +252,7 @@ class NativeGumboDocument extends Struct {
   external int doc_type_quirks_mode;
 }
 
-class NativeGumboElement extends Struct {
+final class NativeGumboElement extends Struct {
   external NativeGumboVector children;
   @Int32()
   external int tag;
@@ -271,7 +271,7 @@ class NativeGumboElement extends Struct {
   external NativeGumboVector attributes;
 }
 
-class NativeGumboText extends Struct {
+final class NativeGumboText extends Struct {
   external Pointer<Utf8> text;
 
   external NativeGumboStringPiece original_text;
@@ -279,7 +279,7 @@ class NativeGumboText extends Struct {
   external NativeGumboSourcePosition start_pos;
 }
 
-class NativeGumboAttribute extends Struct {
+final class NativeGumboAttribute extends Struct {
   @Int32()
   external int attr_namespace;
 

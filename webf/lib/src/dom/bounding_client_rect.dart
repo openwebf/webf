@@ -7,7 +7,7 @@ import 'package:ffi/ffi.dart';
 
 import 'package:webf/bridge.dart';
 
-class BindingClientRectData extends Struct {
+final class BindingClientRectData extends Struct {
   @Double()
   external double x;
 

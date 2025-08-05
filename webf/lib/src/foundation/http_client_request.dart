@@ -23,7 +23,7 @@ final _requestQueue = Queue(parallel: 10);
 // Global counter for unique request IDs
 int _requestIdCounter = 0;
 
-class ProxyHttpClientRequest extends HttpClientRequest {
+class ProxyHttpClientRequest implements HttpClientRequest {
   final WebFHttpOverrides _httpOverrides;
   final HttpClient _nativeHttpClient;
   final String _method;
@@ -46,6 +46,56 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         _uri = uri,
         _httpOverrides = httpOverrides,
         _nativeHttpClient = nativeHttpClient;
+
+  @override
+  bool get bufferOutput => _backendRequest?.bufferOutput ?? true;
+
+  @override
+  set bufferOutput(bool value) {
+    if (_backendRequest != null) {
+      _backendRequest!.bufferOutput = value;
+    }
+  }
+
+  @override
+  int get contentLength => _backendRequest?.contentLength ?? -1;
+
+  @override
+  set contentLength(int value) {
+    if (_backendRequest != null) {
+      _backendRequest!.contentLength = value;
+    }
+  }
+
+  @override
+  bool get followRedirects => _backendRequest?.followRedirects ?? true;
+
+  @override
+  set followRedirects(bool value) {
+    if (_backendRequest != null) {
+      _backendRequest!.followRedirects = value;
+    }
+  }
+
+  @override
+  int get maxRedirects => _backendRequest?.maxRedirects ?? 5;
+
+  @override
+  set maxRedirects(int value) {
+    if (_backendRequest != null) {
+      _backendRequest!.maxRedirects = value;
+    }
+  }
+
+  @override
+  bool get persistentConnection => _backendRequest?.persistentConnection ?? true;
+
+  @override
+  set persistentConnection(bool value) {
+    if (_backendRequest != null) {
+      _backendRequest!.persistentConnection = value;
+    }
+  }
 
   @override
   Encoding get encoding => _backendRequest?.encoding ?? utf8;
