@@ -60,7 +60,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
   LoadingError? _selectedError;
   LoadingNetworkRequest? _selectedNetworkRequest;
   bool _showDetails = false;
-  
+
   @override
   Widget build(BuildContext context) {
     final dumper = widget.controller.loadingStateDumper;
@@ -68,7 +68,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     final errors = dumper.errors;
     final networkRequests = dumper.networkRequests;
     final totalDuration = dumper.totalDuration;
-    
+
     return Dialog(
       backgroundColor: Color(0xFF1E1E1E),
       shape: RoundedRectangleBorder(
@@ -124,16 +124,35 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () {
                       final loadingDump = widget.controller.dumpLoadingState(verbose: true);
-                      Clipboard.setData(ClipboardData(text: loadingDump));
+                      Clipboard.setData(ClipboardData(text: loadingDump.toString()));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Copied to clipboard', style: TextStyle(fontSize: 12)),
+                          content: Text('Copied text to clipboard', style: TextStyle(fontSize: 12)),
                           duration: Duration(seconds: 1),
                           backgroundColor: Colors.green,
                         ),
                       );
                     },
-                    tooltip: 'Copy dump',
+                    tooltip: 'Copy as text',
+                  ),
+                  SizedBox(width: 4),
+                  IconButton(
+                    icon: Icon(Icons.code, color: Colors.white70, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () {
+                      final loadingDump = widget.controller.dumpLoadingState(verbose: true);
+                      final jsonString = JsonEncoder.withIndent('  ').convert(loadingDump.toJson());
+                      Clipboard.setData(ClipboardData(text: jsonString));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Copied JSON to clipboard', style: TextStyle(fontSize: 12)),
+                          duration: Duration(seconds: 1),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    tooltip: 'Copy as JSON',
                   ),
                   SizedBox(width: 4),
                   IconButton(
@@ -145,7 +164,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                 ],
               ),
             ),
-            
+
             // Error banner
             if (errors.isNotEmpty && !_showDetails)
               Container(
@@ -167,14 +186,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                   ],
                 ),
               ),
-            
+
             // Main content area
             Expanded(
-              child: _showDetails 
-                ? _buildDetailsView() 
+              child: _showDetails
+                ? _buildDetailsView()
                 : _buildTimelineView(phases, errors, networkRequests, totalDuration),
             ),
-            
+
             // Statistics bar
             Container(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -197,8 +216,8 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
-  Widget _buildTimelineView(List<LoadingPhase> phases, List<LoadingError> errors, 
+
+  Widget _buildTimelineView(List<LoadingPhase> phases, List<LoadingError> errors,
                            List<LoadingNetworkRequest> networkRequests, Duration? totalDuration) {
     if (phases.isEmpty) {
       return Center(
@@ -208,74 +227,80 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
         ),
       );
     }
-    
-    final startTime = phases.first.timestamp;
-    final maxDuration = totalDuration?.inMilliseconds ?? 1000;
-    
+
+    final keyPhases = _getKeyPhases(phases);
+    final keyPhaseNames = keyPhases.map((p) => p.name).toSet();
+    final additionalPhases = phases.where((p) => !keyPhaseNames.contains(p.name)).toList();
+
     return Container(
       padding: EdgeInsets.all(8),
       child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Phase entries
-            ...phases.map((phase) => _buildCompactPhaseEntry(phase, startTime, maxDuration, errors)),
-            
-            // Network requests section
-            if (networkRequests.isNotEmpty) ...[
-              SizedBox(height: 12),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Network Activity',
-                  style: TextStyle(
-                    color: Colors.blue,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+            // Header
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
               ),
-              SizedBox(height: 8),
-              ...networkRequests.map((request) => _buildCompactNetworkEntry(request, startTime, maxDuration)),
+              child: Row(
+                children: [
+                  Icon(Icons.assessment, color: Colors.blue, size: 14),
+                  SizedBox(width: 6),
+                  Text(
+                    'Loading State Timeline',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Spacer(),
+                  if (totalDuration != null)
+                    Text(
+                      'Total: ${totalDuration.inMilliseconds}ms',
+                      style: TextStyle(
+                        color: Colors.blue.shade300,
+                        fontSize: 11,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            
+            SizedBox(height: 12),
+            
+            // Key Loading Phases Table
+            _buildPhasesTable('Key Loading Phases', keyPhases, Colors.green),
+            
+            if (additionalPhases.isNotEmpty) ...[
+              SizedBox(height: 16),
+              _buildPhasesTable('Additional Phases', additionalPhases, Colors.orange),
             ],
             
-            // Errors section
             if (errors.isNotEmpty) ...[
-              SizedBox(height: 12),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Errors',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(height: 8),
-              ...errors.map((error) => _buildCompactErrorEntry(error, startTime)),
+              SizedBox(height: 16),
+              _buildErrorsSection(errors),
+            ],
+            
+            if (networkRequests.isNotEmpty) ...[
+              SizedBox(height: 16),
+              _buildNetworkSummary(networkRequests),
             ],
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildPhaseEntry(LoadingPhase phase, DateTime startTime, int maxDuration, List<LoadingError> errors) {
     final offset = phase.timestamp.difference(startTime).inMilliseconds;
     final position = (offset / maxDuration).clamp(0.0, 1.0);
     final hasError = errors.any((e) => e.phase == phase.name);
     final isSelected = _selectedPhase == phase;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -340,14 +365,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildNetworkEntry(LoadingNetworkRequest request, DateTime startTime, int maxDuration) {
     final startOffset = request.startTime.difference(startTime).inMilliseconds;
     final endOffset = request.endTime?.difference(startTime).inMilliseconds ?? startOffset;
     final startPosition = (startOffset / maxDuration).clamp(0.0, 1.0);
     final endPosition = (endOffset / maxDuration).clamp(0.0, 1.0);
     final isSelected = _selectedNetworkRequest == request;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -374,7 +399,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               child: Row(
                 children: [
                   Icon(
-                    request.error != null ? Icons.error : 
+                    request.error != null ? Icons.error :
                     request.isSuccessful ? Icons.check_circle : Icons.pending,
                     color: request.error != null ? Colors.red :
                            request.isSuccessful ? Colors.green : Colors.orange,
@@ -427,7 +452,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                       height: 20,
                       decoration: BoxDecoration(
                         color: request.error != null ? Colors.red.withOpacity(0.5) :
-                               request.isSuccessful ? Colors.green.withOpacity(0.5) : 
+                               request.isSuccessful ? Colors.green.withOpacity(0.5) :
                                Colors.orange.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -455,7 +480,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildDetailsPanel() {
     if (_selectedPhase != null) {
       return _buildPhaseDetails(_selectedPhase!);
@@ -464,7 +489,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     } else if (_selectedNetworkRequest != null) {
       return _buildNetworkDetails(_selectedNetworkRequest!);
     }
-    
+
     return Center(
       child: Text(
         'Click on a phase or network request to see details',
@@ -476,7 +501,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildPhaseDetails(LoadingPhase phase) {
     return SingleChildScrollView(
       child: Column(
@@ -515,7 +540,58 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
           _buildCompactDetailRow('Time', _formatTimestamp(phase.timestamp)),
           if (phase.duration != null)
             _buildCompactDetailRow('Duration', '${phase.duration!.inMilliseconds}ms'),
-          
+
+          // Show substeps if any
+          if (phase.substeps.isNotEmpty) ...[
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Substeps',
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  ...phase.substeps.map((substep) => Padding(
+                    padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.subdirectory_arrow_right, color: Colors.blue.shade300, size: 12),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            substep.name,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        if (substep.duration != null)
+                          Text(
+                            '${substep.duration!.inMilliseconds}ms',
+                            style: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 10,
+                            ),
+                          ),
+                      ],
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
           if (phase.parameters.isNotEmpty) ...[
             SizedBox(height: 12),
             Container(
@@ -536,7 +612,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...phase.parameters.entries.map((entry) => 
+                  ...phase.parameters.entries.map((entry) =>
                     _buildCompactDetailRow(entry.key, entry.value.toString()),
                   ),
                 ],
@@ -547,7 +623,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildErrorDetails(LoadingError error) {
     return SingleChildScrollView(
       child: Column(
@@ -613,7 +689,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               ],
             ),
           ),
-          
+
           if (error.context != null && error.context!.isNotEmpty) ...[
             SizedBox(height: 8),
             Container(
@@ -634,14 +710,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...error.context!.entries.map((entry) => 
+                  ...error.context!.entries.map((entry) =>
                     _buildCompactDetailRow(entry.key, entry.value.toString()),
                   ),
                 ],
               ),
             ),
           ],
-          
+
           if (error.stackTrace != null) ...[
             SizedBox(height: 12),
             Container(
@@ -683,11 +759,11 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildNetworkDetails(LoadingNetworkRequest request) {
-    final statusColor = request.error != null ? Colors.red : 
+    final statusColor = request.error != null ? Colors.red :
                        request.isSuccessful ? Colors.green : Colors.orange;
-    
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -702,7 +778,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             child: Row(
               children: [
                 Icon(
-                  request.error != null ? Icons.error : 
+                  request.error != null ? Icons.error :
                   request.isSuccessful ? Icons.check_circle : Icons.pending,
                   color: statusColor,
                   size: 16,
@@ -722,7 +798,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
             ),
           ),
           SizedBox(height: 12),
-          
+
           // URL section
           Container(
             padding: EdgeInsets.all(8),
@@ -753,7 +829,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
               ],
             ),
           ),
-          
+
           SizedBox(height: 8),
           _buildCompactDetailRow('Method', request.method),
           if (request.statusCode != null)
@@ -794,7 +870,90 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                 ],
               ),
             ),
+
+          // Show network stages if any
+          if (request.stages != null && request.stages!.isNotEmpty) ...[
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Network Stages',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  ...request.stages!.map((stage) => Padding(
+                    padding: EdgeInsets.only(left: 12, top: 4, bottom: 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.circle, color: Colors.orange.shade300, size: 8),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            stage.name,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _formatTimestamp(stage.timestamp),
+                          style: TextStyle(
+                            color: Colors.white54,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
           
+          // Show cache info if available
+          if (request.cacheInfo != null && request.cacheInfo!.cacheHit) ...[
+            SizedBox(height: 12),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cache Information',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  if (request.cacheInfo!.cacheType != null)
+                    _buildCompactDetailRow('Cache Type', request.cacheInfo!.cacheType!),
+                  if (request.cacheInfo!.cacheAge != null)
+                    _buildCompactDetailRow('Cache Age', _formatDuration(request.cacheInfo!.cacheAge!)),
+                  if (request.cacheInfo!.cacheSize != null)
+                    _buildCompactDetailRow('Cache Size', _formatBytes(request.cacheInfo!.cacheSize!)),
+                ],
+              ),
+            ),
+          ],
+
           if (request.headers != null && request.headers!.isNotEmpty) ...[
             SizedBox(height: 12),
             Container(
@@ -815,7 +974,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     ),
                   ),
                   SizedBox(height: 6),
-                  ...request.headers!.entries.map((entry) => 
+                  ...request.headers!.entries.map((entry) =>
                     _buildCompactDetailRow(entry.key, entry.value),
                   ),
                 ],
@@ -826,7 +985,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildCompactDetailRow(String label, String value) {
     return Padding(
       padding: EdgeInsets.only(bottom: 6),
@@ -859,14 +1018,14 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   String _formatTimestamp(DateTime timestamp) {
     return '${timestamp.hour.toString().padLeft(2, '0')}:'
            '${timestamp.minute.toString().padLeft(2, '0')}:'
            '${timestamp.second.toString().padLeft(2, '0')}.'
            '${timestamp.millisecond.toString().padLeft(3, '0')}';
   }
-  
+
   Widget _buildDetailRow(String label, String value, {bool isError = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
@@ -894,12 +1053,12 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildCompactPhaseEntry(LoadingPhase phase, DateTime startTime, int maxDuration, List<LoadingError> errors) {
     final offset = phase.timestamp.difference(startTime).inMilliseconds;
     final hasError = errors.any((e) => e.phase == phase.name);
     final isSelected = _selectedPhase == phase;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -955,12 +1114,12 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildCompactNetworkEntry(LoadingNetworkRequest request, DateTime startTime, int maxDuration) {
     final offset = request.startTime.difference(startTime).inMilliseconds;
     final duration = request.duration?.inMilliseconds ?? 0;
     final isSelected = _selectedNetworkRequest == request;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -984,7 +1143,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
           children: [
             // Status icon
             Icon(
-              request.error != null ? Icons.error : 
+              request.error != null ? Icons.error :
               request.isSuccessful ? Icons.check_circle : Icons.pending,
               color: request.error != null ? Colors.red :
                      request.isSuccessful ? Colors.green : Colors.orange,
@@ -1063,11 +1222,11 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildCompactErrorEntry(LoadingError error, DateTime startTime) {
     final offset = error.timestamp.difference(startTime).inMilliseconds;
     final isSelected = _selectedError == error;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -1127,7 +1286,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildDetailsView() {
     return Container(
       padding: EdgeInsets.all(12),
@@ -1136,7 +1295,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
@@ -1159,19 +1318,19 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ],
     );
   }
-  
+
 
   Widget _buildStatisticsBar(LoadingStateDumper dumper) {
     final successfulRequests = dumper.networkRequests.where((r) => r.isSuccessful).length;
     final failedRequests = dumper.networkRequests.where((r) => r.error != null).length;
-    
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildStatCard(
           icon: Icons.timer,
           label: 'Total Duration',
-          value: dumper.totalDuration != null 
+          value: dumper.totalDuration != null
               ? '${dumper.totalDuration!.inMilliseconds}ms'
               : 'N/A',
           color: Colors.blue,
@@ -1198,7 +1357,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ],
     );
   }
-  
+
   Widget _buildStatCard({
     required IconData icon,
     required String label,
@@ -1236,7 +1395,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       ),
     );
   }
-  
+
   IconData _getPhaseIcon(String phaseName) {
     if (phaseName.contains('constructor')) return Icons.build;
     if (phaseName.contains('init')) return Icons.play_arrow;
@@ -1253,7 +1412,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     if (phaseName.contains('dispose')) return Icons.delete;
     return Icons.circle;
   }
-  
+
   Color _getPhaseColor(String phaseName) {
     if (phaseName.contains('constructor')) return Colors.purple;
     if (phaseName.contains('init')) return Colors.blue;
@@ -1270,7 +1429,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
     if (phaseName.contains('dispose')) return Colors.grey;
     return Colors.white70;
   }
-  
+
   String _formatBytes(int bytes) {
     if (bytes < 1024) {
       return '$bytes B';
@@ -1280,6 +1439,494 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
   }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}d ${duration.inHours.remainder(24)}h';
+    } else if (duration.inHours > 0) {
+      return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}m ${duration.inSeconds.remainder(60)}s';
+    } else if (duration.inSeconds > 0) {
+      return '${duration.inSeconds}.${(duration.inMilliseconds.remainder(1000) / 100).round()}s';
+    } else {
+      return '${duration.inMilliseconds}ms';
+    }
+  }
+  
+  String _formatPhaseName(String phaseName) {
+    // Format known phase names
+    if (phaseName == LoadingStateDumper.phaseInit) return 'Initialize';
+    else if (phaseName == LoadingStateDumper.phaseLoadStart) return 'Load Start';
+    else if (phaseName == LoadingStateDumper.phasePreload) return 'Preload';
+    else if (phaseName == LoadingStateDumper.phaseResolveEntrypoint) return 'Resolve Entrypoint';
+    else if (phaseName == LoadingStateDumper.phaseEvaluateStart) return 'Evaluate Start';
+    else if (phaseName == LoadingStateDumper.phaseParseHTML) return 'Parse HTML';
+    else if (phaseName == LoadingStateDumper.phaseEvaluateScripts) return 'Evaluate Scripts';
+    else if (phaseName == LoadingStateDumper.phaseEvaluateComplete) return 'Evaluate Complete';
+    else if (phaseName == LoadingStateDumper.phaseDOMContentLoaded) return 'DOM Content Loaded';
+    else if (phaseName == LoadingStateDumper.phaseWindowLoad) return 'Window Load';
+    else if (phaseName == LoadingStateDumper.phaseBuildRootView) return 'Build Root View';
+    else if (phaseName == LoadingStateDumper.phaseFirstPaint) return 'First Paint (FP)';
+    else if (phaseName == LoadingStateDumper.phaseFirstContentfulPaint) return 'First Contentful Paint (FCP)';
+    else if (phaseName == LoadingStateDumper.phaseLargestContentfulPaint) return 'Largest Contentful Paint (LCP)';
+    else if (phaseName == LoadingStateDumper.phaseAttachToFlutter) return 'Attach to Flutter';
+    else if (phaseName == LoadingStateDumper.phaseDetachFromFlutter) return 'Detach from Flutter';
+    else if (phaseName == LoadingStateDumper.phaseDispose) return 'Dispose';
+    else if (phaseName == LoadingStateDumper.phaseConstructor) return 'Constructor';
+    
+    // Handle network phases
+    if (phaseName.startsWith('networkStart:')) {
+      return 'Network Request';
+    } else if (phaseName.startsWith('networkComplete:')) {
+      return 'Network Complete';
+    } else if (phaseName.startsWith('networkError:')) {
+      return 'Network Error';
+    }
+    
+    // Handle specific .start and .end phases
+    if (phaseName == 'resolveEntrypoint.start') return 'Resolve Entrypoint Start';
+    else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
+    else if (phaseName == 'parseHTML.start') return 'Parse HTML Start';
+    else if (phaseName == 'parseHTML.end') return 'Parse HTML End';
+    
+    // Handle other .start and .end phases
+    if (phaseName.endsWith('.start')) {
+      final baseName = phaseName.substring(0, phaseName.length - 6);
+      return _formatPhaseName(baseName) + ' Start';
+    } else if (phaseName.endsWith('.end')) {
+      final baseName = phaseName.substring(0, phaseName.length - 4);
+      return _formatPhaseName(baseName) + ' End';
+    }
+    
+    // Default: capitalize words
+    return phaseName
+        .split(RegExp(r'(?=[A-Z])'))
+        .join(' ')
+        .split('_')
+        .map((word) => word.isNotEmpty
+            ? word[0].toUpperCase() + word.substring(1).toLowerCase()
+            : '')
+        .join(' ')
+        .trim();
+  }
+
+  List<LoadingPhase> _getKeyPhases(List<LoadingPhase> phases) {
+    // Find windowLoad phase timestamp to use as divider
+    final windowLoadPhase = phases.firstWhere(
+      (p) => p.name == LoadingStateDumper.phaseWindowLoad,
+      orElse: () => LoadingPhase(name: '', timestamp: DateTime(9999)),
+    );
+    final windowLoadTimestamp = windowLoadPhase.name.isNotEmpty ? windowLoadPhase.timestamp : null;
+    
+    // Return phases before windowLoad (inclusive) that are not network or substep phases
+    return phases.where((p) {
+      // Skip network phases
+      if (p.name.startsWith('networkStart:') || 
+          p.name.startsWith('networkComplete:') ||
+          p.name.startsWith('networkError:')) {
+        return false;
+      }
+      
+      // Skip .start and .end phases except for specific ones we want to show
+      if ((p.name.contains('.start') || p.name.contains('.end')) && 
+          !p.name.startsWith('resolveEntrypoint') &&
+          !p.name.startsWith('parseHTML')) {
+        return false;
+      }
+      
+      // Always include paint phases in main phases regardless of windowLoad timing
+      if (p.name == LoadingStateDumper.phaseFirstPaint || 
+          p.name == LoadingStateDumper.phaseFirstContentfulPaint ||
+          p.name == LoadingStateDumper.phaseLargestContentfulPaint ||
+          p.name == LoadingStateDumper.phaseBuildRootView) {
+        return true;
+      }
+      
+      // Include if before or at windowLoad
+      return windowLoadTimestamp == null || 
+             p.timestamp.isBefore(windowLoadTimestamp) || 
+             p.timestamp == windowLoadTimestamp;
+    }).toList();
+  }
+
+  bool _isKeyPhase(String phaseName) {
+    // This method is no longer used but kept for backward compatibility
+    return true;
+  }
+
+  Widget _buildPhasesTable(String title, List<LoadingPhase> phases, Color color) {
+    if (phases.isEmpty) return SizedBox.shrink();
+    
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Table header
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+            ),
+            child: Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Table rows
+          ...phases.asMap().entries.map((entry) {
+            final index = entry.key;
+            final phase = entry.value;
+            final isLast = index == phases.length - 1;
+            
+            return _buildPhaseRow(phase, isLast);
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhaseRow(LoadingPhase phase, bool isLast) {
+    final hasSubsteps = phase.substeps.isNotEmpty;
+    final isExpanded = _expandedPhases.contains(phase.name);
+    
+    return Column(
+      children: [
+        InkWell(
+          onTap: hasSubsteps ? () {
+            setState(() {
+              if (isExpanded) {
+                _expandedPhases.remove(phase.name);
+              } else {
+                _expandedPhases.add(phase.name);
+              }
+            });
+          } : null,
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.white.withOpacity(0.1),
+                  width: isLast && !isExpanded ? 0 : 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                // Expand icon
+                SizedBox(
+                  width: 20,
+                  child: hasSubsteps
+                    ? Icon(
+                        isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                        size: 16,
+                        color: Colors.white54,
+                      )
+                    : null,
+                ),
+                // Phase name
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    _formatPhaseName(phase.name),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                // Duration
+                if (phase.duration != null)
+                  Container(
+                    width: 80,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${phase.duration!.inMilliseconds}ms',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                SizedBox(width: 12),
+                // Parameters
+                if (phase.parameters.isNotEmpty)
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      _formatParameters(phase.parameters),
+                      style: TextStyle(
+                        color: Colors.white54,
+                        fontSize: 10,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  )
+                else
+                  Expanded(flex: 2, child: SizedBox()),
+              ],
+            ),
+          ),
+        ),
+        // Substeps
+        if (hasSubsteps && isExpanded)
+          ...phase.substeps.map((substep) => _buildSubstepRow(substep)),
+      ],
+    );
+  }
+
+  Widget _buildSubstepRow(LoadingPhase substep) {
+    // Extract the substep name without the parent prefix
+    String substepName = substep.name;
+    
+    // Handle network stage names that include the URL
+    if (substepName.startsWith('networkStart:')) {
+      // Extract just the stage name from patterns like "networkStart:https://example.com/:dns_lookup_start"
+      final parts = substepName.split(':');
+      if (parts.length >= 3) {
+        // Get the last part which should be the stage name
+        substepName = parts.last;
+        // Convert underscore format to readable format
+        substepName = _formatStageName(substepName);
+      }
+    } else if (substepName.contains(': ')) {
+      // Handle regular substep format
+      substepName = substepName.split(': ').last;
+    }
+    
+    return Container(
+      padding: EdgeInsets.only(left: 32, right: 12, top: 6, bottom: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.02),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withOpacity(0.05),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.subdirectory_arrow_right, size: 12, color: Colors.white38),
+          SizedBox(width: 8),
+          Expanded(
+            flex: 3,
+            child: Text(
+              substepName,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 10,
+              ),
+            ),
+          ),
+          if (substep.duration != null)
+            Container(
+              width: 80,
+              alignment: Alignment.centerRight,
+              child: Text(
+                '${substep.duration!.inMilliseconds}ms',
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 10,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+          SizedBox(width: 12),
+          Expanded(flex: 2, child: SizedBox()),
+        ],
+      ),
+    );
+  }
+
+  String _formatParameters(Map<String, dynamic> params) {
+    if (params.isEmpty) return '';
+    
+    final entries = params.entries.take(2).map((e) => '${e.key}: ${e.value}').join(', ');
+    if (params.length > 2) {
+      return '$entries...';
+    }
+    return entries;
+  }
+
+  String _formatStageName(String stageName) {
+    // Convert stage names from underscore format to readable format
+    switch (stageName) {
+      case 'dns_lookup_start':
+        return 'DNS Lookup Start';
+      case 'dns_lookup_end':
+        return 'DNS Lookup End';
+      case 'tcp_connect_start':
+        return 'TCP Connect Start';
+      case 'tcp_connect_end':
+        return 'TCP Connect End';
+      case 'tls_handshake_start':
+        return 'TLS Handshake Start';
+      case 'tls_handshake_end':
+        return 'TLS Handshake End';
+      case 'request_sent':
+        return 'Request Sent';
+      case 'response_started':
+        return 'Response Started';
+      case 'response_received':
+        return 'Response Received';
+      default:
+        // Fallback: capitalize and replace underscores with spaces
+        return stageName
+            .split('_')
+            .map((word) => word.isNotEmpty 
+                ? '${word[0].toUpperCase()}${word.substring(1)}' 
+                : word)
+            .join(' ');
+    }
+  }
+
+  Widget _buildErrorsSection(List<LoadingError> errors) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, size: 14, color: Colors.red),
+                SizedBox(width: 6),
+                Text(
+                  'Errors (${errors.length})',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...errors.map((error) => Container(
+            padding: EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  error.phase,
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 4),
+                Text(
+                  error.error.toString(),
+                  style: TextStyle(
+                    color: Colors.red.shade300,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkSummary(List<LoadingNetworkRequest> requests) {
+    final successCount = requests.where((r) => r.isSuccessful).length;
+    final cachedCount = requests.where((r) => r.isFromCache).length;
+    final failedCount = requests.where((r) => r.error != null).length;
+    
+    return Container(
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.cloud_download, size: 14, color: Colors.blue),
+              SizedBox(width: 6),
+              Text(
+                'Network Summary',
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            children: [
+              _buildNetworkStat('Total', requests.length, Colors.blue),
+              _buildNetworkStat('Success', successCount, Colors.green),
+              _buildNetworkStat('Cached', cachedCount, Colors.orange),
+              _buildNetworkStat('Failed', failedCount, Colors.red),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworkStat(String label, int count, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 4),
+        Text(
+          '$label: $count',
+          style: TextStyle(
+            color: Colors.white70,
+            fontSize: 11,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Add this field at the class level
+  final Set<String> _expandedPhases = {};
 }
 
 class _WebFInspectorFloatingPanelState extends State<WebFInspectorFloatingPanel> {

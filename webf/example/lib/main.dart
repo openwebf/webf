@@ -505,7 +505,7 @@ class FirstPageState extends State<FirstPage> {
               Navigator.push(context, MaterialPageRoute(builder: (context) {
                 return WebFDemo(
                   webfPageName: 'miracle_plus',
-                  initialRoute: '/home',
+                  initialRoute: '/',
                   initialState: {'name': 1},
                 );
               }));
@@ -661,7 +661,20 @@ class _WebFDemoState extends State<WebFDemo> {
                 initialRoute: widget.initialRoute,
                 onControllerInit: (controller) async {
                   Timer(Duration(seconds: 5), () {
-                    print(controller.dumpLoadingState(verbose: true));
+                    LoadingStateDump dump = controller.dumpLoadingState(verbose: true);
+                    print(dump.toString());
+                    
+                    // Example of using the helper functions
+                    print('\n=== Loading State Analysis ===');
+                    print('Has reached FP: ${dump.hasReachedFP}');
+                    print('Has reached FCP: ${dump.hasReachedFCP}');
+                    print('Has reached LCP: ${dump.hasReachedLCP}');
+                    print('LCP finalized: ${dump.hasLCPFinalized}');
+                    if (dump.hasReachedLCP) {
+                      print('LCP time: ${dump.lcpTime}ms');
+                      print('LCP element: ${dump.lcpElementTag}');
+                      print('LCP content size: ${dump.lcpContentSize}px');
+                    }
                   });
                 },
                 onLCPContentVerification: (ContentInfo contentInfo, String routePath) {

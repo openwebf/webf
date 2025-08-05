@@ -46,6 +46,9 @@ typedef LoadImage = Future<ImageLoadResponse> Function(Element ownerElement, Uri
 typedef OnImageLoad = void Function(Element ownerElement, int naturalWidth, int naturalHeight, int frameCount);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
+  // Static cache to prevent duplicate loads of the same URL
+  static final Map<String, Future<Codec>> _loadingFutures = {};
+  
   BoxFitImage({
     required LoadImage loadImage,
     required this.url,
@@ -73,6 +76,29 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   }
 
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
+    // Use URL as the deduplication key since that's what matters for network requests
+    final String dedupeKey = url.toString();
+    
+    // Check if this URL is already being loaded
+    final existingFuture = _loadingFutures[dedupeKey];
+    if (existingFuture != null) {
+      // Reuse the existing future
+      return existingFuture;
+    }
+    
+    // Create a new future for this URL
+    final future = _performLoad(key);
+    _loadingFutures[dedupeKey] = future;
+    
+    // Clean up when done (whether success or failure)
+    future.whenComplete(() {
+      _loadingFutures.remove(dedupeKey);
+    });
+    
+    return future;
+  }
+  
+  Future<Codec> _performLoad(BoxFitImageKey key) async {
     ImageLoadResponse response;
     WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
     try {
@@ -128,6 +154,7 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
 
   @override
   ImageStreamCompleter loadImage(BoxFitImageKey key, ImageDecoderCallback decode) {
+    // Create a completer that will load the image
     return _imageStreamCompleter = DimensionedMultiFrameImageStreamCompleter(
       codec: _loadAsync(key),
       scale: 1.0,
