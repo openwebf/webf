@@ -807,8 +807,26 @@ class LoadingStateDump {
   }
 }
 
+/// Represents a phase event with additional timing information
+class LoadingPhaseEvent {
+  final LoadingPhase phase;
+  final Duration elapsed;
+  
+  LoadingPhaseEvent({
+    required this.phase,
+    required this.elapsed,
+  });
+  
+  String get name => phase.name;
+  DateTime get timestamp => phase.timestamp;
+  Map<String, dynamic> get parameters => phase.parameters;
+  Duration? get duration => phase.duration;
+  List<LoadingPhase> get substeps => phase.substeps;
+  String? get parentPhase => phase.parentPhase;
+}
+
 /// Callback type for phase events
-typedef PhaseEventCallback = void Function(LoadingPhase phase);
+typedef PhaseEventCallback = void Function(LoadingPhaseEvent event);
 
 /// Tracks and records the loading state across the WebFController lifecycle
 class LoadingStateDumper {
@@ -898,12 +916,17 @@ class LoadingStateDumper {
   }
   
   // Convenience methods for main phase listeners
+  void onConstructor(PhaseEventCallback callback) => addPhaseListener(phaseConstructor, callback);
   void onInit(PhaseEventCallback callback) => addPhaseListener(phaseInit, callback);
   void onLoadStart(PhaseEventCallback callback) => addPhaseListener(phaseLoadStart, callback);
   void onPreload(PhaseEventCallback callback) => addPhaseListener(phasePreload, callback);
   void onResolveEntrypoint(PhaseEventCallback callback) => addPhaseListener(phaseResolveEntrypoint, callback);
+  void onResolveEntrypointStart(PhaseEventCallback callback) => addPhaseListener('resolveEntrypoint.start', callback);
+  void onResolveEntrypointEnd(PhaseEventCallback callback) => addPhaseListener('resolveEntrypoint.end', callback);
   void onEvaluateStart(PhaseEventCallback callback) => addPhaseListener(phaseEvaluateStart, callback);
   void onParseHTML(PhaseEventCallback callback) => addPhaseListener(phaseParseHTML, callback);
+  void onParseHTMLStart(PhaseEventCallback callback) => addPhaseListener('parseHTML.start', callback);
+  void onParseHTMLEnd(PhaseEventCallback callback) => addPhaseListener('parseHTML.end', callback);
   void onEvaluateScripts(PhaseEventCallback callback) => addPhaseListener(phaseEvaluateScripts, callback);
   void onEvaluateComplete(PhaseEventCallback callback) => addPhaseListener(phaseEvaluateComplete, callback);
   void onDOMContentLoaded(PhaseEventCallback callback) => addPhaseListener(phaseDOMContentLoaded, callback);
@@ -916,14 +939,31 @@ class LoadingStateDumper {
   void onDetachFromFlutter(PhaseEventCallback callback) => addPhaseListener(phaseDetachFromFlutter, callback);
   void onDispose(PhaseEventCallback callback) => addPhaseListener(phaseDispose, callback);
   
+  // Script-related phase listeners
+  void onScriptQueue(PhaseEventCallback callback) => addPhaseListener('scriptQueue', callback);
+  void onScriptLoadStart(PhaseEventCallback callback) => addPhaseListener('scriptLoadStart', callback);
+  void onScriptLoadComplete(PhaseEventCallback callback) => addPhaseListener('scriptLoadComplete', callback);
+  void onScriptExecuteStart(PhaseEventCallback callback) => addPhaseListener('scriptExecuteStart', callback);
+  void onScriptExecuteComplete(PhaseEventCallback callback) => addPhaseListener('scriptExecuteComplete', callback);
+  
   /// Dispatches a phase event to registered listeners
   void _dispatchPhaseEvent(LoadingPhase phase) {
+    // Calculate elapsed time from start
+    final startTime = _phases.values.isEmpty ? phase.timestamp : _phases.values.first.timestamp;
+    final elapsed = phase.timestamp.difference(startTime);
+    
+    // Create the event with elapsed time
+    final event = LoadingPhaseEvent(
+      phase: phase,
+      elapsed: elapsed,
+    );
+    
     // Dispatch to specific phase listeners
     final specificListeners = _phaseListeners[phase.name];
     if (specificListeners != null) {
       for (final listener in List.from(specificListeners)) {
         try {
-          listener(phase);
+          listener(event);
         } catch (e) {
           // Prevent listener errors from affecting the loading process
           print('Error in phase listener for ${phase.name}: $e');
@@ -934,7 +974,7 @@ class LoadingStateDumper {
     // Dispatch to generic listeners
     for (final listener in List.from(_anyPhaseListeners)) {
       try {
-        listener(phase);
+        listener(event);
       } catch (e) {
         // Prevent listener errors from affecting the loading process
         print('Error in generic phase listener: $e');
