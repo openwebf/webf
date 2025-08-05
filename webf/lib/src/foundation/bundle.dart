@@ -11,6 +11,8 @@ import 'package:flutter/services.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/bridge.dart';
+import 'package:webf/launcher.dart';
+import 'loading_state_registry.dart';
 
 const String DEFAULT_URL = 'about:blank';
 const String UTF_8 = 'utf-8';
@@ -254,24 +256,91 @@ class NetworkBundle extends WebFBundle {
   @override
   Future<void> obtainData([double contextId = 0]) async {
     if (data != null) return;
+    
+    // Get the loading state dumper for this context
+    final dumper = LoadingStateRegistry.instance.getDumper(contextId);
+    final startTime = DateTime.now();
+    
+    // Track network request start
+    dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
+    
+    // Track DNS lookup stage
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageDnsLookupStart, metadata: {
+      'host': _uri!.host,
+    });
+    
     final HttpClientRequest request = await sharedHttpClient.getUrl(_uri!);
+    
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageDnsLookupEnd);
+    
+    // Track TCP connection stage
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTcpConnectStart, metadata: {
+      'host': _uri!.host,
+      'port': _uri!.port.toString(),
+    });
+    
+    // For HTTPS, track TLS handshake
+    if (_uri!.isScheme('https')) {
+      dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTlsHandshakeStart);
+    }
+    
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
     additionalHttpHeaders?.forEach(request.headers.set);
     WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
     (request as ProxyHttpClientRequest).ownerBundle = this;
+    
+    if (_uri!.isScheme('https')) {
+      dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTlsHandshakeEnd);
+    }
+    
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageTcpConnectEnd);
+    
+    // Track request sent stage
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageRequestSent, metadata: {
+      'method': 'GET',
+      'headers': additionalHttpHeaders ?? {},
+    });
+    
     final HttpClientResponse response = await request.close();
     (request).ownerBundle = null;
 
-    if (response.statusCode != HttpStatus.ok)
+    // Track response started stage
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageResponseStarted, metadata: {
+      'statusCode': response.statusCode,
+      'contentLength': response.contentLength,
+    });
+    
+    if (response.statusCode != HttpStatus.ok) {
+      // Track error completion
+      dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: {
+        'error': 'HTTP ${response.statusCode}',
+      });
       throw FlutterError.fromParts(<DiagnosticsNode>[
         ErrorSummary('Unable to load asset: $url'),
         IntProperty('HTTP status code', response.statusCode),
       ]);
+    }
 
     hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
+    
+    // Track cache info if hit cache
+    if (_hitCache) {
+      dumper?.recordNetworkRequestCacheInfo(url, 
+        cacheHit: true,
+        cacheType: response is HttpClientCachedResponse ? 'disk' : 'memory',
+        cacheHeaders: {},
+      );
+    }
+    
+    // Track downloading stage
     Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+    
+    // Track response fully received
+    dumper?.recordNetworkRequestStage(url, LoadingStateDumper.stageResponseReceived, metadata: {
+      'responseSize': bytes.length,
+    });
 
     // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
     // and decode them if they are in gzip format.
@@ -286,6 +355,14 @@ class NetworkBundle extends WebFBundle {
 
     data = bytes.buffer.asUint8List();
     _contentType = response.headers.contentType ?? ContentType.binary;
+    
+    // Track completion
+    final responseHeaders = <String, String>{};
+    response.headers.forEach((name, values) {
+      responseHeaders[name] = values.join(', ');
+    });
+    
+    dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: responseHeaders);
   }
 }
 

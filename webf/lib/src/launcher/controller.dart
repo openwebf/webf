@@ -33,6 +33,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/src/foundation/loading_state_registry.dart';
 
 import 'loading_state_dumper.dart';
 
@@ -751,6 +752,8 @@ class WebFController with Diagnosticable {
       });
 
       final double contextId = view.contextId;
+      // Register the loading state dumper for this context
+      LoadingStateRegistry.instance.register(contextId, _loadingStateDumper);
 
       _module = WebFModuleController(this, contextId);
 
@@ -1286,6 +1289,11 @@ class WebFController with Diagnosticable {
       'contextId': _view?.contextId ?? 'null',
     });
 
+    // Unregister the loading state dumper
+    if (_view != null) {
+      LoadingStateRegistry.instance.unregister(_view!.contextId);
+    }
+    
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);
     removeHttpOverrides(contextId: _view!.contextId);
     await _view?.dispose();
@@ -1354,35 +1362,20 @@ class WebFController with Diagnosticable {
       'baseUrl': url,
     });
 
-    // Record network request start if it's a network bundle
-    if (bundleToLoad.url?.startsWith('http') == true || bundleToLoad.url?.startsWith('https') == true) {
-      _loadingStateDumper.recordNetworkRequestStart(bundleToLoad.url!);
-    }
+    // Network request tracking is handled by NetworkBundle itself in obtainData()
+    // to avoid duplicate entries and to capture more detailed stages
 
     // Resolve the bundle, including network download or other fetching ways.
     try {
       await bundleToLoad.resolve(baseUrl: url, uriParser: uriParser);
 
-      final dataStartTime = DateTime.now();
       await bundleToLoad.obtainData(view.contextId);
-      final dataEndTime = DateTime.now();
 
-      // Record network request completion
-      if (bundleToLoad.url?.startsWith('http') == true || bundleToLoad.url?.startsWith('https') == true) {
-        _loadingStateDumper.recordNetworkRequestComplete(
-          bundleToLoad.url!,
-          statusCode: 200, // Successful if we got here
-          responseSize: bundleToLoad.data?.length,
-          contentType: bundleToLoad.contentType?.toString(),
-        );
-      }
+      // NetworkBundle handles its own request tracking with detailed stages
 
       endResolve();
     } catch (e, stack) {
-      // Record network error if applicable
-      if (bundleToLoad.url?.startsWith('http') == true || bundleToLoad.url?.startsWith('https') == true) {
-        _loadingStateDumper.recordNetworkRequestError(bundleToLoad.url!, e.toString());
-      }
+      // Network error tracking is also handled by NetworkBundle
 
       // Record the error with context
       _loadingStateDumper.recordError(LoadingStateDumper.phaseResolveEntrypoint, e,
@@ -1824,6 +1817,15 @@ class WebFController with Diagnosticable {
       if (onRouteLCP != null) {
         onRouteLCP!(lcpTime, metrics.routePath);
       }
+      
+      // Record LCP candidate as a phase
+      _loadingStateDumper.recordPhase(LoadingStateDumper.phaseLargestContentfulPaint, parameters: {
+        'timeSinceNavigationStart': lcpTime,
+        'largestContentSize': contentSize,
+        'elementTag': element.tagName,
+        'routePath': metrics.routePath,
+        'isCandidate': true,  // Mark this as a candidate, not final
+      });
     }
   }
 
@@ -1845,6 +1847,7 @@ class WebFController with Diagnosticable {
           'largestContentSize': metrics.largestContentfulPaintSize,
           'elementTag': metrics.currentLCPElement?.target?.tagName ?? 'null',
           'routePath': metrics.routePath,
+          'isFinal': true,  // Mark this as the final LCP, not a candidate
         });
 
         // Use the last reported LCP time instead of calculating a new time
@@ -1934,8 +1937,8 @@ class WebFController with Diagnosticable {
   /// through evaluation, including timestamps and parameters for each phase.
   ///
   /// @param verbose If true, includes detailed parameters for each phase.
-  /// @return A formatted string containing the loading state timeline.
-  String dumpLoadingState({bool verbose = true}) {
+  /// @return A LoadingStateDump object containing the loading state data.
+  LoadingStateDump dumpLoadingState({bool verbose = true}) {
     return _loadingStateDumper.dump(verbose: verbose);
   }
 }

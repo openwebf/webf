@@ -16,6 +16,7 @@ import 'http_client.dart';
 import 'http_client_interceptor.dart';
 import 'http_overrides.dart';
 import 'queue.dart';
+import 'loading_state_registry.dart';
 
 final _requestQueue = Queue(parallel: 10);
 
@@ -117,6 +118,18 @@ class ProxyHttpClientRequest extends HttpClientRequest {
     _requestIdCounter++;
     String requestId = '${_requestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
 
+    // Get the loading state dumper for tracking
+    final dumper = contextId != null ? LoadingStateRegistry.instance.getDumper(contextId) : null;
+
+    // Track request start if not already tracked by NetworkBundle
+    if (dumper != null && ownerBundle == null) {
+      final requestHeaders = <String, String>{};
+      headers.forEach((name, values) {
+        requestHeaders[name] = values.join(', ');
+      });
+      dumper.recordNetworkRequestStart(_uri.toString(), method: _method, headers: requestHeaders);
+    }
+
     if (contextId != null) {
       // Standard reference: https://datatracker.ietf.org/doc/html/rfc7231#section-5.5.2
       //   Most general-purpose user agents do not send the
@@ -160,6 +173,14 @@ class ProxyHttpClientRequest extends HttpClientRequest {
           HttpClientResponse? cacheResponse = await cacheObject.toHttpClientResponse(_nativeHttpClient);
           ownerBundle?.setLoadingFromCache();
           if (cacheResponse != null) {
+            // Track cache hit
+            dumper?.recordNetworkRequestCacheInfo(_uri.toString(),
+              cacheHit: true,
+              cacheType: 'disk',
+              cacheEntryTime: cacheObject.lastUsed,
+              cacheHeaders: {},
+            );
+
             // Step 5: Lifecycle of afterResponse for cached responses.
             if (clientInterceptor != null) {
               final HttpClientResponse? interceptorResponse = await _afterResponse(requestId, clientInterceptor, request, cacheResponse);
@@ -167,6 +188,14 @@ class ProxyHttpClientRequest extends HttpClientRequest {
                 return interceptorResponse;
               }
             }
+
+            // Track completion for cache hit
+            final responseHeaders = <String, String>{};
+            cacheResponse.headers.forEach((name, values) {
+              responseHeaders[name] = values.join(', ');
+            });
+            dumper?.recordNetworkRequestComplete(_uri.toString(), statusCode: cacheResponse.statusCode, responseHeaders: responseHeaders);
+
             return cacheResponse;
           }
         }
@@ -202,6 +231,9 @@ class ProxyHttpClientRequest extends HttpClientRequest {
 
       // If cache only, but no cache hit, throw error directly.
       if (HttpCacheController.mode == HttpCacheMode.CACHE_ONLY && response == null) {
+        dumper?.recordNetworkRequestComplete(_uri.toString(), statusCode: 0, responseHeaders: {
+          'error': 'CACHE_ONLY mode but no cache hit',
+        });
         throw FlutterError('HttpCacheMode is CACHE_ONLY, but no cache hit for $uri');
       }
 
@@ -228,9 +260,23 @@ class ProxyHttpClientRequest extends HttpClientRequest {
               rethrow;
             }
           });
+
+          // Track redirects if any occurred
+          if (rawResponse.redirects.isNotEmpty && dumper != null && ownerBundle == null) {
+            for (final redirect in rawResponse.redirects) {
+              dumper.recordNetworkRequestRedirect(
+                _uri.toString(),
+                redirect.location.toString(),
+                statusCode: redirect.statusCode,
+              );
+            }
+          }
         } catch (e) {
           // If still failing, log and rethrow
           print('Error closing HTTP request for $uri: $e');
+          dumper?.recordNetworkRequestComplete(_uri.toString(), statusCode: 0, responseHeaders: {
+            'error': e.toString(),
+          });
           rethrow;
         }
         response = cacheObject == null
@@ -249,6 +295,35 @@ class ProxyHttpClientRequest extends HttpClientRequest {
         }
       }
       await CookieManager.saveFromResponseRaw(uri, response.headers[HttpHeaders.setCookieHeader]);
+
+      // Track 304 Not Modified response
+      if (hitNegotiateCache && response.statusCode == HttpStatus.notModified) {
+        dumper?.recordNetworkRequestCacheInfo(_uri.toString(),
+          cacheHit: true,
+          cacheType: 'network_validated',
+          cacheHeaders: {},
+        );
+      }
+
+      // Track redirects from the final response if any occurred
+      if (response.redirects.isNotEmpty && dumper != null && ownerBundle == null) {
+        for (final redirect in response.redirects) {
+          dumper.recordNetworkRequestRedirect(
+            _uri.toString(),
+            redirect.location.toString(),
+            statusCode: redirect.statusCode,
+          );
+        }
+      }
+
+      // Track final response
+      if (dumper != null && ownerBundle == null) {
+        final responseHeaders = <String, String>{};
+        response.headers.forEach((name, values) {
+          responseHeaders[name] = values.join(', ');
+        });
+        dumper.recordNetworkRequestComplete(_uri.toString(), statusCode: response.statusCode, responseHeaders: responseHeaders);
+      }
 
       // Check match cache, and then return cache.
       if (hitInterceptorResponse || hitNegotiateCache) {
@@ -288,9 +363,35 @@ class ProxyHttpClientRequest extends HttpClientRequest {
 
   Future<HttpClientRequest> _createBackendClientRequest() async {
     HttpClientRequest backendRequest;
-    
+
+    // Track connection stages
+    final contextId = WebFHttpOverrides.getContextHeader(headers);
+    final dumper = contextId != null ? LoadingStateRegistry.instance.getDumper(contextId) : null;
+
     try {
+      // Track DNS and TCP stages for new connections
+      if (dumper != null && ownerBundle == null) {
+        dumper.recordNetworkRequestStage(_uri.toString(), 'dns_lookup', metadata: {
+          'host': _uri.host,
+        });
+      }
+
       backendRequest = await _nativeHttpClient.openUrl(_method, _uri);
+
+      if (dumper != null && ownerBundle == null) {
+        dumper.recordNetworkRequestStage(_uri.toString(), 'tcp_connection', metadata: {
+          'host': _uri.host,
+          'port': _uri.port.toString(),
+          'scheme': _uri.scheme,
+        });
+
+        // Track TLS handshake for HTTPS
+        if (_uri.scheme == 'https') {
+          dumper.recordNetworkRequestStage(_uri.toString(), 'tls_handshake', metadata: {
+            'host': _uri.host,
+          });
+        }
+      }
     } catch (e) {
       // Handle "Bad file descriptor" and other socket errors
       if (e is SocketException || e.toString().contains('Bad file descriptor')) {
