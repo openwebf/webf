@@ -221,6 +221,7 @@ class LoadingStateDump {
   final List<LoadingError> errors;
   final List<LoadingScriptElement> scriptElements;
   final bool verbose;
+  final LoadingState? dumper;
 
   LoadingStateDump({
     required this.startTime,
@@ -230,45 +231,46 @@ class LoadingStateDump {
     required this.errors,
     required this.scriptElements,
     this.verbose = false,
+    this.dumper,
   });
 
   /// Checks if the loading has reached the FP (First Paint) stage
   bool get hasReachedFP {
-    return phases.any((phase) => phase.name == LoadingStateDumper.phaseFirstPaint);
+    return phases.any((phase) => phase.name == LoadingState.phaseFirstPaint);
   }
-  
+
   /// Checks if the loading has reached the FCP (First Contentful Paint) stage
   bool get hasReachedFCP {
-    return phases.any((phase) => phase.name == LoadingStateDumper.phaseFirstContentfulPaint);
+    return phases.any((phase) => phase.name == LoadingState.phaseFirstContentfulPaint);
   }
-  
+
   /// Checks if the loading has reached the LCP (Largest Contentful Paint) stage
   bool get hasReachedLCP {
-    return phases.any((phase) => phase.name == LoadingStateDumper.phaseLargestContentfulPaint);
+    return phases.any((phase) => phase.name == LoadingState.phaseLargestContentfulPaint);
   }
-  
+
   /// Checks if LCP has been finalized (not just a candidate)
   bool get hasLCPFinalized {
     final lcpPhase = phases.firstWhere(
-      (phase) => phase.name == LoadingStateDumper.phaseLargestContentfulPaint,
+      (phase) => phase.name == LoadingState.phaseLargestContentfulPaint,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime.now()),
     );
-    
+
     if (lcpPhase.name.isEmpty) return false;
-    
+
     // Check if this is the final LCP (not a candidate)
     return lcpPhase.parameters['isFinal'] == true;
   }
-  
+
   /// Gets the LCP time in milliseconds if available
   double? get lcpTime {
     final lcpPhase = phases.firstWhere(
-      (phase) => phase.name == LoadingStateDumper.phaseLargestContentfulPaint,
+      (phase) => phase.name == LoadingState.phaseLargestContentfulPaint,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime.now()),
     );
-    
+
     if (lcpPhase.name.isEmpty) return null;
-    
+
     // Return the time since navigation start
     final timeSinceNavStart = lcpPhase.parameters['timeSinceNavigationStart'];
     if (timeSinceNavStart is num) {
@@ -276,33 +278,43 @@ class LoadingStateDump {
     }
     return null;
   }
-  
+
   /// Gets the LCP element tag if available
   String? get lcpElementTag {
     final lcpPhase = phases.firstWhere(
-      (phase) => phase.name == LoadingStateDumper.phaseLargestContentfulPaint,
+      (phase) => phase.name == LoadingState.phaseLargestContentfulPaint,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime.now()),
     );
-    
+
     if (lcpPhase.name.isEmpty) return null;
-    
+
     return lcpPhase.parameters['elementTag'] as String?;
   }
-  
+
   /// Gets the size of the largest contentful element if available
   double? get lcpContentSize {
     final lcpPhase = phases.firstWhere(
-      (phase) => phase.name == LoadingStateDumper.phaseLargestContentfulPaint,
+      (phase) => phase.name == LoadingState.phaseLargestContentfulPaint,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime.now()),
     );
-    
+
     if (lcpPhase.name.isEmpty) return null;
-    
+
     final size = lcpPhase.parameters['largestContentSize'];
     if (size is num) {
       return size.toDouble();
     }
     return null;
+  }
+  
+  /// Determines if the loading should be displayed as two separate parts
+  /// Returns true if in preload mode and pause is significant (> 100ms)
+  bool get shouldDisplayAsTwoParts {
+    if (dumper == null) return false;
+    
+    final pauseDuration = dumper!._getPauseDuration();
+    // Consider it two parts if pause is more than 100ms
+    return pauseDuration.inMilliseconds > 100;
   }
 
   Map<String, dynamic> toJson() {
@@ -311,7 +323,7 @@ class LoadingStateDump {
       return {
         'name': phase.name,
         'timestamp': phase.timestamp.toIso8601String(),
-        'elapsed': phase.timestamp.difference(startTime).inMilliseconds,
+        'elapsed': dumper?._getAdjustedElapsedTime(phase).inMilliseconds ?? phase.timestamp.difference(startTime).inMilliseconds,
         'duration': phase.duration?.inMilliseconds,
         'parameters': phase.parameters,
         if (phase.substeps.isNotEmpty)
@@ -319,7 +331,7 @@ class LoadingStateDump {
       };
     }
 
-    // Calculate network stats  
+    // Calculate network stats
     final cachedRequests = networkRequests.where((r) => r.isFromCache).toList();
     final totalResponseSize = networkRequests.fold<int>(0, (sum, r) => sum + (r.responseSize ?? 0));
 
@@ -398,7 +410,7 @@ class LoadingStateDump {
   @override
   String toString() {
     final buffer = StringBuffer();
-    
+
     // Calculate statistics
     final completedRequests = networkRequests.where((r) => r.isComplete).toList();
     final successfulRequests = completedRequests.where((r) => r.isSuccessful).toList();
@@ -446,35 +458,35 @@ class LoadingStateDump {
 
     // Find windowLoad phase timestamp to use as divider
     final windowLoadPhase = phases.firstWhere(
-      (p) => p.name == LoadingStateDumper.phaseWindowLoad,
+      (p) => p.name == LoadingState.phaseWindowLoad,
       orElse: () => LoadingPhase(name: '', timestamp: DateTime(9999)),
     );
     final windowLoadTimestamp = windowLoadPhase.name.isNotEmpty ? windowLoadPhase.timestamp : null;
-    
+
     // Separate phases into main (before windowLoad) and additional (after windowLoad)
     final mainPhases = <LoadingPhase>[];
     final additionalPhasesAfterWindow = <LoadingPhase>[];
-    
+
     for (final phase in phases) {
       // Skip network phases for main table
-      if (phase.name.startsWith('networkStart:') || 
+      if (phase.name.startsWith('networkStart:') ||
           phase.name.startsWith('networkComplete:') ||
           phase.name.startsWith('networkError:')) {
         continue;
       }
-      
+
       // Skip .start and .end phases except for specific ones we want to show
-      if ((phase.name.contains('.start') || phase.name.contains('.end')) && 
+      if ((phase.name.contains('.start') || phase.name.contains('.end')) &&
           !phase.name.startsWith('resolveEntrypoint') &&
           !phase.name.startsWith('parseHTML')) {
         continue;
       }
-      
+
       // Always include paint phases in main phases regardless of windowLoad timing
-      if (phase.name == LoadingStateDumper.phaseFirstPaint || 
-          phase.name == LoadingStateDumper.phaseFirstContentfulPaint ||
-          phase.name == LoadingStateDumper.phaseLargestContentfulPaint ||
-          phase.name == LoadingStateDumper.phaseBuildRootView) {
+      if (phase.name == LoadingState.phaseFirstPaint ||
+          phase.name == LoadingState.phaseFirstContentfulPaint ||
+          phase.name == LoadingState.phaseLargestContentfulPaint ||
+          phase.name == LoadingState.phaseBuildRootView) {
         mainPhases.add(phase);
       } else if (windowLoadTimestamp == null || phase.timestamp.isBefore(windowLoadTimestamp) || phase.timestamp == windowLoadTimestamp) {
         mainPhases.add(phase);
@@ -482,82 +494,181 @@ class LoadingStateDump {
         additionalPhasesAfterWindow.add(phase);
       }
     }
-    
-    // Main Loading Phases Table
-    buffer.writeln('║ Loading Phases:');
-    buffer.writeln('║');
-    buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
-    buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
-    buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
-    
-    // Display main phases
-    DateTime? previousTime = startTime;
-    for (final phase in mainPhases) {
-      final elapsed = phase.timestamp.difference(startTime);
-      final percentage = totalDuration.inMilliseconds > 0
-          ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
-          : '0.0';
+
+    // Check if we should display as two parts
+    if (shouldDisplayAsTwoParts) {
+      // Split phases into Part I (up to scriptLoadComplete) and Part II (from attachToFlutter onwards)
+      final part1Phases = <LoadingPhase>[];
+      final part2Phases = <LoadingPhase>[];
       
-      final timeSincePrev = previousTime != null 
-          ? phase.timestamp.difference(previousTime)
-          : Duration.zero;
-      previousTime = phase.timestamp;
+      LoadingPhase? scriptLoadCompletePhase;
+      LoadingPhase? attachToFlutterPhase;
       
-      // Get display name for phase
-      String displayName = phase.name;
-      if (phase.name == LoadingStateDumper.phaseInit) displayName = 'Initialize';
-      else if (phase.name == LoadingStateDumper.phaseLoadStart) displayName = 'Load Start';
-      else if (phase.name == LoadingStateDumper.phasePreload) displayName = 'Preload';
-      else if (phase.name == LoadingStateDumper.phaseResolveEntrypoint) displayName = 'Resolve Entrypoint';
-      else if (phase.name == 'resolveEntrypoint.start') displayName = 'Resolve Entrypoint Start';
-      else if (phase.name == 'resolveEntrypoint.end') displayName = 'Resolve Entrypoint End';
-      else if (phase.name == LoadingStateDumper.phaseEvaluateStart) displayName = 'Evaluate Start';
-      else if (phase.name == LoadingStateDumper.phaseParseHTML) displayName = 'Parse HTML';
-      else if (phase.name == 'parseHTML.start') displayName = 'Parse HTML Start';
-      else if (phase.name == 'parseHTML.end') displayName = 'Parse HTML End';
-      else if (phase.name == LoadingStateDumper.phaseEvaluateScripts) displayName = 'Evaluate Scripts';
-      else if (phase.name == LoadingStateDumper.phaseEvaluateComplete) displayName = 'Evaluate Complete';
-      else if (phase.name == LoadingStateDumper.phaseDOMContentLoaded) displayName = 'DOM Content Loaded';
-      else if (phase.name == LoadingStateDumper.phaseWindowLoad) displayName = 'Window Load';
-      else if (phase.name == LoadingStateDumper.phaseBuildRootView) displayName = 'Build Root View';
-      else if (phase.name == LoadingStateDumper.phaseFirstPaint) displayName = 'First Paint (FP)';
-      else if (phase.name == LoadingStateDumper.phaseFirstContentfulPaint) displayName = 'First Contentful Paint (FCP)';
-      else if (phase.name == LoadingStateDumper.phaseLargestContentfulPaint) displayName = 'Largest Contentful Paint (LCP)';
-      
-      final phaseDisplay = displayName.padRight(31);
-      final timeDisplay = _formatDuration(timeSincePrev).padLeft(12);
-      final elapsedDisplay = _formatDuration(elapsed).padLeft(8);
-      final percentDisplay = '$percentage%'.padLeft(10);
-      
-      buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
-      
-      // Display substeps if any
-      if (phase.substeps.isNotEmpty && verbose) {
-        for (final substep in phase.substeps) {
-          final substepElapsed = substep.timestamp.difference(startTime);
-          final substepPercentage = totalDuration.inMilliseconds > 0
-              ? (substepElapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
-              : '0.0';
-          
-          final substepName = substep.name.split(':').last;
-          final substepDisplay = '  └─ $substepName'.padRight(31);
-          final substepTimeDisplay = _formatDuration(substep.duration ?? Duration.zero).padLeft(12);
-          final substepElapsedDisplay = _formatDuration(substepElapsed).padLeft(8);
-          final substepPercentDisplay = '$substepPercentage%'.padLeft(10);
-          
-          buffer.writeln('║ │ $substepDisplay │ $substepTimeDisplay │ $substepElapsedDisplay │ $substepPercentDisplay │');
+      // Find key phases
+      for (final phase in phases) {
+        if (phase.name == LoadingState.phaseScriptLoadComplete) {
+          scriptLoadCompletePhase = phase;
+        }
+        if (phase.name == LoadingState.phaseAttachToFlutter) {
+          attachToFlutterPhase = phase;
         }
       }
+      
+      // Categorize phases
+      for (final phase in mainPhases) {
+        // Skip network phases for main table
+        if (phase.name.startsWith('networkStart:') ||
+            phase.name.startsWith('networkComplete:') ||
+            phase.name.startsWith('networkError:')) {
+          continue;
+        }
+        
+        // Skip .start and .end phases except for specific ones
+        if ((phase.name.contains('.start') || phase.name.contains('.end')) &&
+            !phase.name.startsWith('resolveEntrypoint') &&
+            !phase.name.startsWith('parseHTML')) {
+          continue;
+        }
+        
+        if (scriptLoadCompletePhase != null && attachToFlutterPhase != null) {
+          if (!phase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+            part1Phases.add(phase);
+          } else if (!phase.timestamp.isBefore(attachToFlutterPhase.timestamp)) {
+            part2Phases.add(phase);
+          }
+        } else {
+          part1Phases.add(phase);
+        }
+      }
+      
+      // Display Part I
+      buffer.writeln('║ Loading Phases - Part I (Preloading):');
+      buffer.writeln('║');
+      buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
+      buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
+      buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
+      
+      DateTime? previousTime = startTime;
+      for (final phase in part1Phases) {
+        final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
+        final percentage = totalDuration.inMilliseconds > 0
+            ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
+            : '0.0';
+        
+        final timeSincePrev = previousTime != null
+            ? phase.timestamp.difference(previousTime)
+            : Duration.zero;
+        previousTime = phase.timestamp;
+        
+        // Get display name
+        final displayName = _getPhaseDisplayName(phase.name);
+        final phaseDisplay = displayName.padRight(31);
+        final timeDisplay = _formatDuration(timeSincePrev).padLeft(12);
+        final elapsedDisplay = _formatDuration(elapsed).padLeft(8);
+        final percentDisplay = '$percentage%'.padLeft(10);
+        
+        buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
+      }
+      
+      buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
+      
+      // Display pause duration
+      final pauseDuration = dumper?._getPauseDuration() ?? Duration.zero;
+      buffer.writeln('║');
+      buffer.writeln('║                        ⏸️  Paused for ${_formatDuration(pauseDuration)}');
+      buffer.writeln('║                                  │');
+      buffer.writeln('║                                  ▼');
+      buffer.writeln('║');
+      
+      // Display Part II
+      buffer.writeln('║ Loading Phases - Part II (Rendering):');
+      buffer.writeln('║');
+      buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
+      buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
+      buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
+      
+      previousTime = attachToFlutterPhase?.timestamp;
+      for (final phase in part2Phases) {
+        final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
+        final percentage = totalDuration.inMilliseconds > 0
+            ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
+            : '0.0';
+        
+        final timeSincePrev = previousTime != null
+            ? phase.timestamp.difference(previousTime)
+            : Duration.zero;
+        previousTime = phase.timestamp;
+        
+        // Get display name
+        final displayName = _getPhaseDisplayName(phase.name);
+        final phaseDisplay = displayName.padRight(31);
+        final timeDisplay = _formatDuration(timeSincePrev).padLeft(12);
+        final elapsedDisplay = _formatDuration(elapsed).padLeft(8);
+        final percentDisplay = '$percentage%'.padLeft(10);
+        
+        buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
+      }
+      
+      buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
+    } else {
+      // Display as single table (original logic)
+      buffer.writeln('║ Loading Phases:');
+      buffer.writeln('║');
+      buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
+      buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
+      buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
+      
+      // Display main phases
+      DateTime? previousTime = startTime;
+      for (final phase in mainPhases) {
+        final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
+        final percentage = totalDuration.inMilliseconds > 0
+            ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
+            : '0.0';
+
+        final timeSincePrev = previousTime != null
+            ? phase.timestamp.difference(previousTime)
+            : Duration.zero;
+        previousTime = phase.timestamp;
+
+        // Get display name for phase
+        final displayName = _getPhaseDisplayName(phase.name);
+
+        final phaseDisplay = displayName.padRight(31);
+        final timeDisplay = _formatDuration(timeSincePrev).padLeft(12);
+        final elapsedDisplay = _formatDuration(elapsed).padLeft(8);
+        final percentDisplay = '$percentage%'.padLeft(10);
+
+        buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
+
+        // Display substeps if any
+        if (phase.substeps.isNotEmpty && verbose) {
+          for (final substep in phase.substeps) {
+            final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
+            final substepPercentage = totalDuration.inMilliseconds > 0
+                ? (substepElapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
+                : '0.0';
+
+            final substepName = substep.name.split(':').last;
+            final substepDisplay = '  └─ $substepName'.padRight(31);
+            final substepTimeDisplay = _formatDuration(substep.duration ?? Duration.zero).padLeft(12);
+            final substepElapsedDisplay = _formatDuration(substepElapsed).padLeft(8);
+            final substepPercentDisplay = '$substepPercentage%'.padLeft(10);
+
+            buffer.writeln('║ │ $substepDisplay │ $substepTimeDisplay │ $substepElapsedDisplay │ $substepPercentDisplay │');
+          }
+        }
+      }
+
+      buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
     }
-    
-    buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
 
     // Show additional phases in verbose mode
     if (verbose) {
       // Collect all other phases not shown in main table
       final shownPhaseNames = mainPhases.map((p) => p.name).toSet();
       final additionalPhases = phases.where((p) => !shownPhaseNames.contains(p.name)).toList();
-      
+
       if (additionalPhases.isNotEmpty) {
         buffer.writeln('║');
         buffer.writeln('║ Additional Phases:');
@@ -565,17 +676,17 @@ class LoadingStateDump {
         buffer.writeln('║ ┌─────────────────────────────────────────────────┬──────────────┬────────────┐');
         buffer.writeln('║ │ Phase                                           │ Elapsed      │ Percentage │');
         buffer.writeln('║ ├─────────────────────────────────────────────────┼──────────────┼────────────┤');
-        
+
         for (final phase in additionalPhases) {
-          final elapsed = phase.timestamp.difference(startTime);
+          final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
           final percentage = totalDuration.inMilliseconds > 0
               ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
               : '0.0';
-          
+
           // Special handling for network phases that have substeps
           if (phase.name.startsWith('networkStart:')) {
             final url = phase.name.substring('networkStart:'.length);
-            
+
             // Find the corresponding network request to get additional info
             final request = networkRequests.firstWhere(
               (r) => r.url == url,
@@ -585,7 +696,7 @@ class LoadingStateDump {
                 startTime: phase.timestamp,
               ),
             );
-            
+
             // Build status string
             String statusInfo = '';
             if (request.error != null) {
@@ -595,19 +706,19 @@ class LoadingStateDump {
             } else if (request.statusCode != null) {
               statusInfo = ' [${request.statusCode}]';
             }
-            
+
             // Add response size if available
             if (request.responseSize != null) {
               statusInfo += ' ${_formatBytes(request.responseSize!)}';
             }
-            
+
             final networkLabel = 'Network:$statusInfo';
             final phaseDisplay = networkLabel.padRight(47);
             final elapsedDisplay = _formatDuration(elapsed).padLeft(12);
             final percentDisplay = '$percentage%'.padLeft(10);
-            
+
             buffer.writeln('║ │ $phaseDisplay │ $elapsedDisplay │ $percentDisplay │');
-            
+
             // Show full URL as the first substep
             final urlDisplay = '  └─ URL: $url';
             if (urlDisplay.length > 47) {
@@ -629,56 +740,56 @@ class LoadingStateDump {
             } else {
               buffer.writeln('║ │ ${urlDisplay.padRight(47)} │              │            │');
             }
-            
+
             // Show substeps (network stages)
             if (phase.substeps.isNotEmpty) {
               for (final substep in phase.substeps) {
-                final substepElapsed = substep.timestamp.difference(startTime);
+                final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
                 final substepPercentage = totalDuration.inMilliseconds > 0
                     ? (substepElapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
                     : '0.0';
-                
+
                 final substepName = substep.name.split(':').last;
                 final substepDisplay = '  └─ ${substepName.replaceAll('_', ' ')}';
                 final paddedSubstepDisplay = substepDisplay.padRight(47);
                 final substepElapsedDisplay = _formatDuration(substepElapsed).padLeft(12);
                 final substepPercentDisplay = '$substepPercentage%'.padLeft(10);
-                
+
                 buffer.writeln('║ │ $paddedSubstepDisplay │ $substepElapsedDisplay │ $substepPercentDisplay │');
               }
             }
           } else {
             // Regular phase
             final phaseName = phase.name;
-            final displayName = phaseName.length > 47 
+            final displayName = phaseName.length > 47
                 ? '${phaseName.substring(0, 44)}...'
                 : phaseName.padRight(47);
-            
+
             final elapsedDisplay = _formatDuration(elapsed).padLeft(12);
             final percentDisplay = '$percentage%'.padLeft(10);
-            
+
             buffer.writeln('║ │ $displayName │ $elapsedDisplay │ $percentDisplay │');
-            
+
             // Show parameters as substeps if any
             if (phase.parameters.isNotEmpty) {
               phase.parameters.forEach((key, value) {
                 final paramDisplay = '  └─ $key: $value';
-                
+
                 // Special handling for URL-like parameters - show full URL
                 final valueStr = value.toString();
                 final isUrlLike = (key == 'url' || key == 'source' || valueStr.contains('://'));
-                
+
                 if (isUrlLike && valueStr.length > 40) {
                   buffer.writeln('║ │ ${'  └─ $key:'.padRight(47)} │              │            │');
-                  
+
                   // Split long URL into multiple lines
                   final urlParts = valueStr.split('/');
                   var currentLine = '       ';
-                  
+
                   for (int i = 0; i < urlParts.length; i++) {
                     final part = urlParts[i];
                     final separator = i < urlParts.length - 1 ? '/' : '';
-                    
+
                     if (currentLine.length + part.length + separator.length > 47) {
                       if (currentLine.trim().isNotEmpty) {
                         buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
@@ -687,7 +798,7 @@ class LoadingStateDump {
                     }
                     currentLine += part + separator;
                   }
-                  
+
                   if (currentLine.trim().isNotEmpty) {
                     buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
                   }
@@ -702,7 +813,7 @@ class LoadingStateDump {
             }
           }
         }
-        
+
         buffer.writeln('║ └─────────────────────────────────────────────────┴──────────────┴────────────┘');
       }
     }
@@ -759,7 +870,7 @@ class LoadingStateDump {
       buffer.writeln('║');
 
       for (final error in errors) {
-        final errorOffset = error.timestamp.difference(startTime);
+        final errorOffset = dumper?._getAdjustedElapsedTime(LoadingPhase(name: '', timestamp: error.timestamp)) ?? error.timestamp.difference(startTime);
         final errorType = error.error.runtimeType.toString();
 
         buffer.writeln(
@@ -788,7 +899,7 @@ class LoadingStateDump {
         buffer.writeln('║');
       }
     }
-    
+
     // Footer
     buffer.writeln(
         '╚══════════════════════════════════════════════════════════════════════════════╝');
@@ -817,18 +928,47 @@ class LoadingStateDump {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
     }
   }
+  
+  String _getPhaseDisplayName(String phaseName) {
+    if (phaseName == LoadingState.phaseConstructor) return 'Constructor';
+    else if (phaseName == LoadingState.phaseInit) return 'Initialize';
+    else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
+    else if (phaseName == LoadingState.phasePreload) return 'Preload';
+    else if (phaseName == LoadingState.phaseResolveEntrypoint) return 'Resolve Entrypoint';
+    else if (phaseName == 'resolveEntrypoint.start') return 'Resolve Entrypoint Start';
+    else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
+    else if (phaseName == LoadingState.phaseEvaluateStart) return 'Evaluate Start';
+    else if (phaseName == LoadingState.phaseParseHTML) return 'Parse HTML';
+    else if (phaseName == 'parseHTML.start') return 'Parse HTML Start';
+    else if (phaseName == 'parseHTML.end') return 'Parse HTML End';
+    else if (phaseName == LoadingState.phaseEvaluateScripts) return 'Evaluate Scripts';
+    else if (phaseName == LoadingState.phaseEvaluateComplete) return 'Evaluate Complete';
+    else if (phaseName == LoadingState.phaseDOMContentLoaded) return 'DOM Content Loaded';
+    else if (phaseName == LoadingState.phaseWindowLoad) return 'Window Load';
+    else if (phaseName == LoadingState.phaseBuildRootView) return 'Build Root View';
+    else if (phaseName == LoadingState.phaseFirstPaint) return 'First Paint (FP)';
+    else if (phaseName == LoadingState.phaseFirstContentfulPaint) return 'First Contentful Paint (FCP)';
+    else if (phaseName == LoadingState.phaseLargestContentfulPaint) return 'Largest Contentful Paint (LCP)';
+    else if (phaseName == LoadingState.phaseAttachToFlutter) return 'Attach to Flutter';
+    else if (phaseName == LoadingState.phaseScriptQueue) return 'Script Queue';
+    else if (phaseName == LoadingState.phaseScriptLoadStart) return 'Script Load Start';
+    else if (phaseName == LoadingState.phaseScriptLoadComplete) return 'Script Load Complete';
+    else if (phaseName == LoadingState.phaseScriptExecuteStart) return 'Script Execute Start';
+    else if (phaseName == LoadingState.phaseScriptExecuteComplete) return 'Script Execute Complete';
+    else return phaseName;
+  }
 }
 
 /// Represents a phase event with additional timing information
 class LoadingPhaseEvent {
   final LoadingPhase phase;
   final Duration elapsed;
-  
+
   LoadingPhaseEvent({
     required this.phase,
     required this.elapsed,
   });
-  
+
   String get name => phase.name;
   DateTime get timestamp => phase.timestamp;
   Map<String, dynamic> get parameters => phase.parameters;
@@ -841,7 +981,7 @@ class LoadingPhaseEvent {
 typedef PhaseEventCallback = void Function(LoadingPhaseEvent event);
 
 /// Tracks and records the loading state across the WebFController lifecycle
-class LoadingStateDumper {
+class LoadingState {
   final LinkedHashMap<String, LoadingPhase> _phases = LinkedHashMap();
   final List<LoadingNetworkRequest> _networkRequests = [];
   final Map<String, LoadingNetworkRequest> _pendingRequests = {};
@@ -850,10 +990,14 @@ class LoadingStateDumper {
   final Map<String, LoadingScriptElement> _pendingScripts = {};
   DateTime? _startTime;
   DateTime? _lastPhaseTime;
-  
+
+  // Track LCP candidates
+  LoadingPhase? _lastLcpCandidate;
+  bool _lcpFinalized = false;
+
   // Event listeners for phase events
   final Map<String, List<PhaseEventCallback>> _phaseListeners = {};
-  
+
   // Generic phase event listeners (called for any phase)
   final List<PhaseEventCallback> _anyPhaseListeners = [];
 
@@ -878,6 +1022,14 @@ class LoadingStateDumper {
   static const String phaseDetachFromFlutter = 'detachFromFlutter';
   static const String phaseDispose = 'dispose';
 
+  // Script phase names
+  static const String phaseScriptQueue = 'scriptQueue';
+  static const String phaseScriptLoadStart = 'scriptLoadStart';
+  static const String phaseScriptLoadComplete = 'scriptLoadComplete';
+  static const String phaseScriptExecuteStart = 'scriptExecuteStart';
+  static const String phaseScriptExecuteComplete = 'scriptExecuteComplete';
+  static const String phaseScriptError = 'scriptError';
+
   // Network phase names
   static const String phaseNetworkStart = 'networkStart';
   static const String phaseNetworkComplete = 'networkComplete';
@@ -896,37 +1048,37 @@ class LoadingStateDumper {
   static const String stageResponseStarted = 'response_started';
   static const String stageResponseReceived = 'response_received';
 
-  LoadingStateDumper() {
+  LoadingState() {
     _startTime = DateTime.now();
     _lastPhaseTime = _startTime;
   }
-  
+
   /// Registers a listener for a specific phase
   void addPhaseListener(String phaseName, PhaseEventCallback callback) {
     _phaseListeners.putIfAbsent(phaseName, () => []).add(callback);
   }
-  
+
   /// Removes a listener for a specific phase
   void removePhaseListener(String phaseName, PhaseEventCallback callback) {
     _phaseListeners[phaseName]?.remove(callback);
   }
-  
+
   /// Registers a listener for all phases
   void addAnyPhaseListener(PhaseEventCallback callback) {
     _anyPhaseListeners.add(callback);
   }
-  
+
   /// Removes a listener for all phases
   void removeAnyPhaseListener(PhaseEventCallback callback) {
     _anyPhaseListeners.remove(callback);
   }
-  
+
   /// Clears all listeners
   void clearAllListeners() {
     _phaseListeners.clear();
     _anyPhaseListeners.clear();
   }
-  
+
   // Convenience methods for main phase listeners
   void onConstructor(PhaseEventCallback callback) => addPhaseListener(phaseConstructor, callback);
   void onInit(PhaseEventCallback callback) => addPhaseListener(phaseInit, callback);
@@ -947,29 +1099,29 @@ class LoadingStateDumper {
   void onFirstPaint(PhaseEventCallback callback) => addPhaseListener(phaseFirstPaint, callback);
   void onFirstContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseFirstContentfulPaint, callback);
   void onLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseLargestContentfulPaint, callback);
+  void onFinalLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener('finalLargestContentfulPaint', callback);
   void onAttachToFlutter(PhaseEventCallback callback) => addPhaseListener(phaseAttachToFlutter, callback);
   void onDetachFromFlutter(PhaseEventCallback callback) => addPhaseListener(phaseDetachFromFlutter, callback);
   void onDispose(PhaseEventCallback callback) => addPhaseListener(phaseDispose, callback);
-  
+
   // Script-related phase listeners
-  void onScriptQueue(PhaseEventCallback callback) => addPhaseListener('scriptQueue', callback);
-  void onScriptLoadStart(PhaseEventCallback callback) => addPhaseListener('scriptLoadStart', callback);
-  void onScriptLoadComplete(PhaseEventCallback callback) => addPhaseListener('scriptLoadComplete', callback);
-  void onScriptExecuteStart(PhaseEventCallback callback) => addPhaseListener('scriptExecuteStart', callback);
-  void onScriptExecuteComplete(PhaseEventCallback callback) => addPhaseListener('scriptExecuteComplete', callback);
-  
+  void onScriptQueue(PhaseEventCallback callback) => addPhaseListener(phaseScriptQueue, callback);
+  void onScriptLoadStart(PhaseEventCallback callback) => addPhaseListener(phaseScriptLoadStart, callback);
+  void onScriptLoadComplete(PhaseEventCallback callback) => addPhaseListener(phaseScriptLoadComplete, callback);
+  void onScriptExecuteStart(PhaseEventCallback callback) => addPhaseListener(phaseScriptExecuteStart, callback);
+  void onScriptExecuteComplete(PhaseEventCallback callback) => addPhaseListener(phaseScriptExecuteComplete, callback);
+
   /// Dispatches a phase event to registered listeners
   void _dispatchPhaseEvent(LoadingPhase phase) {
     // Calculate elapsed time from start
-    final startTime = _phases.values.isEmpty ? phase.timestamp : _phases.values.first.timestamp;
-    final elapsed = phase.timestamp.difference(startTime);
-    
+    final elapsed = _getAdjustedElapsedTime(phase);
+
     // Create the event with elapsed time
     final event = LoadingPhaseEvent(
       phase: phase,
       elapsed: elapsed,
     );
-    
+
     // Dispatch to specific phase listeners
     final specificListeners = _phaseListeners[phase.name];
     if (specificListeners != null) {
@@ -982,7 +1134,7 @@ class LoadingStateDumper {
         }
       }
     }
-    
+
     // Dispatch to generic listeners
     for (final listener in List.from(_anyPhaseListeners)) {
       try {
@@ -1008,7 +1160,11 @@ class LoadingStateDumper {
       parentPhase: parentPhase,
     );
 
-    if (parentPhase != null && _phases.containsKey(parentPhase)) {
+    // Special handling for LCP candidates
+    if (phaseName == phaseLargestContentfulPaint && !_lcpFinalized) {
+      _lastLcpCandidate = phase;
+      // Don't add to phases yet, just track as candidate
+    } else if (parentPhase != null && _phases.containsKey(parentPhase)) {
       // Add as substep to parent phase
       _phases[parentPhase]!.addSubstep(phase);
     } else {
@@ -1017,7 +1173,7 @@ class LoadingStateDumper {
     }
 
     _lastPhaseTime = now;
-    
+
     // Dispatch the phase event
     _dispatchPhaseEvent(phase);
   }
@@ -1273,7 +1429,7 @@ class LoadingStateDumper {
     _scriptElements.add(script);
     _pendingScripts[source] = script;
 
-    recordPhase('scriptQueue', parameters: {
+    recordPhase(phaseScriptQueue, parameters: {
       'source': isInline ? '<inline>' : source,
       'type': isModule ? 'module' : 'script',
       'async': isAsync,
@@ -1291,7 +1447,7 @@ class LoadingStateDumper {
       script.loadStartTime = DateTime.now();
       script.readyState = 'interactive';
 
-      recordPhase('scriptLoadStart', parameters: {
+      recordPhase(phaseScriptLoadStart, parameters: {
         'source': script.isInline ? '<inline>' : source,
         'type': script.isModule ? 'module' : 'script',
       });
@@ -1305,7 +1461,7 @@ class LoadingStateDumper {
       script.loadEndTime = DateTime.now();
       script.dataSize = dataSize;
 
-      recordPhase('scriptLoadComplete', parameters: {
+      recordPhase(phaseScriptLoadComplete, parameters: {
         'source': script.isInline ? '<inline>' : source,
         'loadDuration': script.loadDuration?.inMilliseconds,
         'dataSize': dataSize,
@@ -1319,7 +1475,7 @@ class LoadingStateDumper {
     if (script != null) {
       script.executeStartTime = DateTime.now();
 
-      recordPhase('scriptExecuteStart', parameters: {
+      recordPhase(phaseScriptExecuteStart, parameters: {
         'source': script.isInline ? '<inline>' : source,
         'type': script.isModule ? 'module' : 'script',
       });
@@ -1334,7 +1490,7 @@ class LoadingStateDumper {
       script.readyState = 'complete';
       _pendingScripts.remove(source);
 
-      recordPhase('scriptExecuteComplete', parameters: {
+      recordPhase(phaseScriptExecuteComplete, parameters: {
         'source': script.isInline ? '<inline>' : source,
         'executeDuration': script.executeDuration?.inMilliseconds,
         'totalDuration': script.totalDuration?.inMilliseconds,
@@ -1350,10 +1506,41 @@ class LoadingStateDumper {
       script.readyState = 'error';
       _pendingScripts.remove(source);
 
-      recordPhase('scriptError', parameters: {
+      recordPhase(phaseScriptError, parameters: {
         'source': script.isInline ? '<inline>' : source,
         'error': error,
       });
+    }
+  }
+
+  /// Finalizes the LCP phase, marking the last candidate as final
+  void finalizeLCP() {
+    if (_lastLcpCandidate != null && !_lcpFinalized) {
+      _lcpFinalized = true;
+      // Add the last candidate to phases with isFinal flag
+      final finalLcpPhase = LoadingPhase(
+        name: phaseLargestContentfulPaint,
+        timestamp: _lastLcpCandidate!.timestamp, // Use the candidate's timestamp
+        parameters: {
+          ..._lastLcpCandidate!.parameters,
+          'isFinal': true,
+        },
+        duration: _lastLcpCandidate!.duration,
+        parentPhase: _lastLcpCandidate!.parentPhase,
+      );
+      _phases[phaseLargestContentfulPaint] = finalLcpPhase;
+
+      // Dispatch the final LCP event
+      _dispatchPhaseEvent(finalLcpPhase);
+
+      // Also dispatch a specific finalLargestContentfulPaint event
+      final finalLcpEvent = LoadingPhase(
+        name: 'finalLargestContentfulPaint',
+        timestamp: _lastLcpCandidate!.timestamp,
+        parameters: finalLcpPhase.parameters,
+        duration: finalLcpPhase.duration,
+      );
+      _dispatchPhaseEvent(finalLcpEvent);
     }
   }
 
@@ -1372,7 +1559,7 @@ class LoadingStateDumper {
   /// Dumps the loading state as a LoadingStateDump object that can be formatted as text or JSON
   LoadingStateDump dump({bool verbose = false}) {
     final totalDuration = this.totalDuration ?? Duration.zero;
-    
+
     return LoadingStateDump(
       startTime: _startTime ?? DateTime.now(),
       totalDuration: totalDuration,
@@ -1381,14 +1568,15 @@ class LoadingStateDumper {
       errors: errors,
       scriptElements: scriptElements,
       verbose: verbose,
+      dumper: this,
     );
   }
-  
+
   /// Legacy method for backward compatibility - returns formatted string
   String dumpAsString({bool verbose = false}) {
     return dump(verbose: verbose).toString();
   }
-  
+
   // Helper method to format the dump as string (moved to LoadingStateDump.toString)
   String _formatDump({bool verbose = false}) {
     if (_phases.isEmpty) {
@@ -1802,6 +1990,8 @@ class LoadingStateDumper {
     _errors.clear();
     _scriptElements.clear();
     _pendingScripts.clear();
+    _lastLcpCandidate = null;
+    _lcpFinalized = false;
     _startTime = DateTime.now();
     _lastPhaseTime = _startTime;
   }
@@ -1819,9 +2009,149 @@ class LoadingStateDumper {
   /// Checks if there are any errors
   bool get hasErrors => _errors.isNotEmpty;
 
+  /// Calculates the total duration according to the formula:
+  /// Part 1: Time between 'init' and 'scriptLoadComplete'
+  /// Part 2: Time between 'attachToFlutter' and 'largestContentfulPaint'
+  /// Total Duration = Part 1 + Part 2
+  Duration? _calculateTotalDuration() {
+    if (_phases.isEmpty || _startTime == null) return null;
+
+    Duration totalDuration = Duration.zero;
+
+    // Part 1: Time from init to scriptLoadComplete
+    // Find init phase
+    LoadingPhase? initPhase;
+    for (final phase in _phases.values) {
+      if (phase.name == phaseInit) {
+        initPhase = phase;
+        break;
+      }
+    }
+
+    // Find scriptLoadComplete phase
+    LoadingPhase? scriptLoadCompletePhase;
+    for (final phase in _phases.values) {
+      if (phase.name == phaseScriptLoadComplete) {
+        scriptLoadCompletePhase = phase;
+      }
+    }
+
+    // Calculate Part 1
+    if (initPhase != null && scriptLoadCompletePhase != null) {
+      totalDuration += scriptLoadCompletePhase.timestamp.difference(initPhase.timestamp);
+    }
+
+    // Part 2: Time from attachToFlutter to LCP
+    // Find attachToFlutter phase
+    LoadingPhase? attachToFlutterPhase;
+    for (final phase in _phases.values) {
+      if (phase.name == phaseAttachToFlutter) {
+        attachToFlutterPhase = phase;
+        break;
+      }
+    }
+
+    // Find LCP phase
+    LoadingPhase? lcpPhase;
+    for (final phase in _phases.values) {
+      if (phase.name == phaseLargestContentfulPaint) {
+        lcpPhase = phase;
+      }
+    }
+
+    // Calculate Part 2
+    if (attachToFlutterPhase != null && lcpPhase != null) {
+      totalDuration += lcpPhase.timestamp.difference(attachToFlutterPhase.timestamp);
+    }
+
+    // If we couldn't calculate using the new method, fall back to the old calculation
+    if (totalDuration == Duration.zero) {
+      return _phases.values.last.timestamp.difference(_startTime!);
+    }
+
+    return totalDuration;
+  }
+
+  /// Calculates the pause duration between scriptLoadComplete and attachToFlutter
+  /// This is used to adjust elapsed times for phases after the pause
+  Duration _getPauseDuration() {
+    LoadingPhase? scriptLoadCompletePhase;
+    LoadingPhase? attachToFlutterPhase;
+
+    for (final phase in _phases.values) {
+      if (phase.name == phaseScriptLoadComplete) {
+        scriptLoadCompletePhase = phase;
+      }
+      if (phase.name == phaseAttachToFlutter) {
+        attachToFlutterPhase = phase;
+      }
+    }
+
+    if (scriptLoadCompletePhase != null && attachToFlutterPhase != null &&
+        attachToFlutterPhase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+      return attachToFlutterPhase.timestamp.difference(scriptLoadCompletePhase.timestamp);
+    }
+
+    return Duration.zero;
+  }
+
+  /// Calculates the adjusted elapsed time for a phase, accounting for the pause
+  /// and reset between scriptLoadComplete and attachToFlutter in preload mode
+  Duration _getAdjustedElapsedTime(LoadingPhase phase) {
+    if (_startTime == null) return Duration.zero;
+
+    // Find key phases
+    LoadingPhase? initPhase;
+    LoadingPhase? scriptLoadCompletePhase;
+    LoadingPhase? attachToFlutterPhase;
+
+    for (final p in _phases.values) {
+      if (p.name == phaseInit) {
+        initPhase = p;
+      }
+      if (p.name == phaseScriptLoadComplete) {
+        scriptLoadCompletePhase = p;
+      }
+      if (p.name == phaseAttachToFlutter) {
+        attachToFlutterPhase = p;
+      }
+    }
+
+    // If we don't have the required phases for preload mode, use raw elapsed time
+    if (scriptLoadCompletePhase == null || attachToFlutterPhase == null ||
+        !attachToFlutterPhase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+      return phase.timestamp.difference(_startTime!);
+    }
+
+    // Special handling for constructor phase - always show elapsed from start
+    if (phase.name == phaseConstructor) {
+      return phase.timestamp.difference(_startTime!);
+    }
+
+    // For phases before or at scriptLoadComplete, calculate elapsed from init
+    if (!phase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+      if (initPhase != null && phase.name != phaseInit) {
+        return phase.timestamp.difference(initPhase.timestamp);
+      }
+      // For init phase itself, show 0
+      if (phase.name == phaseInit) {
+        return Duration.zero;
+      }
+      return phase.timestamp.difference(_startTime!);
+    }
+
+    // For attachToFlutter phase, the elapsed time is 0 (timer resets here)
+    if (phase.name == phaseAttachToFlutter) {
+      return Duration.zero;
+    }
+
+    // For phases after attachToFlutter, calculate elapsed from attachToFlutter
+    // This gives us the time since the timer was reset
+    return phase.timestamp.difference(attachToFlutterPhase.timestamp);
+  }
+
   /// Gets the total duration from start to the last recorded phase
   Duration? get totalDuration {
-    if (_phases.isEmpty || _startTime == null) return null;
-    return _phases.values.last.timestamp.difference(_startTime!);
+    return _calculateTotalDuration();
   }
 }
