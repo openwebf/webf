@@ -69,6 +69,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
 
+
     _contextId = await initBridge(this, runningThread);
 
     _inited = true;
