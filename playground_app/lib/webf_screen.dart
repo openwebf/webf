@@ -278,12 +278,14 @@ class _WebFScreenState extends State<WebFScreen> {
               
               const SizedBox(height: 24),
               
-              // Action Buttons
-              Column(
-                children: [
-                  // Primary Button
-                  SizedBox(
-                    width: double.infinity,
+              // Action Buttons - Responsive Layout
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Use single row layout when width > 600
+                  final bool useRowLayout = constraints.maxWidth > 600;
+                  
+                  final primaryButton = SizedBox(
+                    width: useRowLayout ? null : double.infinity,
                     height: 48,
                     child: ElevatedButton(
                       onPressed: isLoading 
@@ -300,29 +302,31 @@ class _WebFScreenState extends State<WebFScreen> {
                         ),
                         padding: EdgeInsets.zero,
                       ),
-                      child: isLoading 
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: isLoading 
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              isLoadingComplete ? 'View Page' : 'Prerender',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.3,
+                              ),
                             ),
-                          )
-                        : Text(
-                            isLoadingComplete ? 'View Page' : 'Prerender',
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                              letterSpacing: 0.3,
-                            ),
-                          ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  // Reset Button
-                  SizedBox(
-                    width: double.infinity,
+                  );
+                  
+                  final resetButton = SizedBox(
+                    width: useRowLayout ? null : double.infinity,
                     height: 48,
                     child: TextButton(
                       onPressed: _resetState,
@@ -337,17 +341,40 @@ class _WebFScreenState extends State<WebFScreen> {
                         ),
                         padding: EdgeInsets.zero,
                       ),
-                      child: const Text(
-                        'Reset',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.3,
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        child: Text(
+                          'Reset',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  );
+                  
+                  if (useRowLayout) {
+                    // Wide screen: buttons in a row
+                    return Row(
+                      children: [
+                        Expanded(child: primaryButton),
+                        const SizedBox(width: 12),
+                        Expanded(child: resetButton),
+                      ],
+                    );
+                  } else {
+                    // Narrow screen: buttons in a column
+                    return Column(
+                      children: [
+                        primaryButton,
+                        const SizedBox(height: 12),
+                        resetButton,
+                      ],
+                    );
+                  }
+                },
               ),
 
               const SizedBox(height: 24),
@@ -513,7 +540,7 @@ class _WebFScreenState extends State<WebFScreen> {
                               ),
                               SizedBox(height: 2),
                               Text(
-                                'Browse example applications',
+                                'Browse User Cases',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF999999),
