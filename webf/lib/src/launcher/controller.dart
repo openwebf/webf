@@ -35,7 +35,7 @@ import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/foundation/loading_state_registry.dart';
 
-import 'loading_state_dumper.dart';
+import 'loading_state.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -1039,6 +1039,7 @@ class WebFController with Diagnosticable {
           if (isTimeout) return;
 
           _preloadStatus = PreloadingStatus.done;
+          _loadingState.recordPhase(LoadingState.phasePreloadEnd);
           controllerPreloadingCompleter.complete();
         } else if (_entrypoint!.isHTML) {
           // Evaluate the HTML entry point, and loading the stylesheets and scripts.
@@ -1064,10 +1065,12 @@ class WebFController with Diagnosticable {
               if (isTimeout) return;
 
               _preloadStatus = PreloadingStatus.done;
+              _loadingState.recordPhase(LoadingState.phasePreloadEnd);
               controllerPreloadingCompleter.complete();
             };
           } else {
             _preloadStatus = PreloadingStatus.done;
+            _loadingState.recordPhase(LoadingState.phasePreloadEnd);
             controllerPreloadingCompleter.complete();
           }
         }

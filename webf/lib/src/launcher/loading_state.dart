@@ -776,9 +776,11 @@ class LoadingStateDump {
       }
 
       // Skip .start and .end phases except for specific ones we want to show
+      // Note: preloadEnd is a complete phase name, not a sub-phase ending
       if ((phase.name.contains('.start') || phase.name.contains('.end')) &&
           !phase.name.startsWith('resolveEntrypoint') &&
-          !phase.name.startsWith('parseHTML')) {
+          !phase.name.startsWith('parseHTML') &&
+          phase.name != LoadingState.phasePreloadEnd) {
         continue;
       }
 
@@ -797,17 +799,17 @@ class LoadingStateDump {
 
     // Check if we should display as two parts
     if (shouldDisplayAsTwoParts) {
-      // Split phases into Part I (up to scriptLoadComplete) and Part II (from attachToFlutter onwards)
+      // Split phases into Part I (up to preloadEnd) and Part II (from attachToFlutter onwards)
       final part1Phases = <LoadingPhase>[];
       final part2Phases = <LoadingPhase>[];
 
-      LoadingPhase? scriptLoadCompletePhase;
+      LoadingPhase? preloadEndPhase;
       LoadingPhase? attachToFlutterPhase;
 
       // Find key phases
       for (final phase in phases) {
-        if (phase.name == LoadingState.phaseScriptLoadComplete) {
-          scriptLoadCompletePhase = phase;
+        if (phase.name == LoadingState.phasePreloadEnd) {
+          preloadEndPhase = phase;
         }
         if (phase.name == LoadingState.phaseAttachToFlutter) {
           attachToFlutterPhase = phase;
@@ -824,14 +826,16 @@ class LoadingStateDump {
         }
 
         // Skip .start and .end phases except for specific ones
+        // Note: preloadEnd is a complete phase name, not a sub-phase ending
         if ((phase.name.contains('.start') || phase.name.contains('.end')) &&
             !phase.name.startsWith('resolveEntrypoint') &&
-            !phase.name.startsWith('parseHTML')) {
+            !phase.name.startsWith('parseHTML') &&
+            phase.name != LoadingState.phasePreloadEnd) {
           continue;
         }
 
-        if (scriptLoadCompletePhase != null && attachToFlutterPhase != null) {
-          if (!phase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+        if (preloadEndPhase != null && attachToFlutterPhase != null) {
+          if (!phase.timestamp.isAfter(preloadEndPhase.timestamp)) {
             part1Phases.add(phase);
           } else if (!phase.timestamp.isBefore(attachToFlutterPhase.timestamp)) {
             part2Phases.add(phase);
@@ -870,30 +874,30 @@ class LoadingStateDump {
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
 
         // Show network requests for resolveEntrypoint phase in Part I
-        if ((phase.name == 'resolveEntrypoint.end' || phase.name == LoadingState.phaseResolveEntrypoint) && 
+        if ((phase.name == 'resolveEntrypoint.end' || phase.name == LoadingState.phaseResolveEntrypoint) &&
             options.showNetworkDetails) {
           // Find the start and end times for resolveEntrypoint
           DateTime? resolveStartTime;
           DateTime? resolveEndTime = phase.timestamp;
-          
+
           // Look for resolveEntrypoint.start or the main resolveEntrypoint phase
           final resolveStartPhase = phases.firstWhere(
             (p) => p.name == 'resolveEntrypoint.start' || p.name == LoadingState.phaseResolveEntrypoint,
             orElse: () => phase,
           );
           resolveStartTime = resolveStartPhase.timestamp;
-          
+
           // Find network requests that occurred during resolveEntrypoint
           final resolveNetworkRequests = networkRequests.where((req) {
             return req.startTime.isAfter(resolveStartTime!.subtract(Duration(milliseconds: 10))) &&
                    req.startTime.isBefore(resolveEndTime!.add(Duration(milliseconds: 10)));
           }).toList();
-          
+
           if (resolveNetworkRequests.isNotEmpty) {
             buffer.writeln('║ │   └─ Network requests:');
             for (final req in resolveNetworkRequests) {
               String reqUrl = req.url;
-              
+
               // Status string
               String statusStr = '';
               if (req.error != null) {
@@ -908,14 +912,14 @@ class LoadingStateDump {
               } else {
                 statusStr = 'PENDING';
               }
-              
+
               // Duration string
               String durationStr = '';
               if (req.endTime != null) {
                 final duration = req.endTime!.difference(req.startTime);
                 durationStr = _formatDuration(duration);
               }
-              
+
               // Display URL and status on separate lines for clarity
               buffer.writeln('║ │       • URL: $reqUrl');
               buffer.writeln('║ │         Status: $statusStr, Duration: $durationStr');
@@ -997,30 +1001,30 @@ class LoadingStateDump {
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
 
         // Show network requests for resolveEntrypoint phase
-        if ((phase.name == 'resolveEntrypoint.end' || phase.name == LoadingState.phaseResolveEntrypoint) && 
+        if ((phase.name == 'resolveEntrypoint.end' || phase.name == LoadingState.phaseResolveEntrypoint) &&
             options.showNetworkDetails) {
           // Find the start and end times for resolveEntrypoint
           DateTime? resolveStartTime;
           DateTime? resolveEndTime = phase.timestamp;
-          
+
           // Look for resolveEntrypoint.start or the main resolveEntrypoint phase
           final resolveStartPhase = phases.firstWhere(
             (p) => p.name == 'resolveEntrypoint.start' || p.name == LoadingState.phaseResolveEntrypoint,
             orElse: () => phase,
           );
           resolveStartTime = resolveStartPhase.timestamp;
-          
+
           // Find network requests that occurred during resolveEntrypoint
           final resolveNetworkRequests = networkRequests.where((req) {
             return req.startTime.isAfter(resolveStartTime!.subtract(Duration(milliseconds: 10))) &&
                    req.startTime.isBefore(resolveEndTime!.add(Duration(milliseconds: 10)));
           }).toList();
-          
+
           if (resolveNetworkRequests.isNotEmpty) {
             buffer.writeln('║ │   └─ Network requests:');
             for (final req in resolveNetworkRequests) {
               String reqUrl = req.url;
-              
+
               // Status string
               String statusStr = '';
               if (req.error != null) {
@@ -1035,14 +1039,14 @@ class LoadingStateDump {
               } else {
                 statusStr = 'PENDING';
               }
-              
+
               // Duration string
               String durationStr = '';
               if (req.endTime != null) {
                 final duration = req.endTime!.difference(req.startTime);
                 durationStr = _formatDuration(duration);
               }
-              
+
               // Display URL and status on separate lines for clarity
               buffer.writeln('║ │       • URL: $reqUrl');
               buffer.writeln('║ │         Status: $statusStr, Duration: $durationStr');
@@ -1076,58 +1080,58 @@ class LoadingStateDump {
     // Show additional phases in verbose mode
     // Collect all other phases not shown in main table
     final shownPhaseNames = mainPhases.map((p) => p.name).toSet();
-    final additionalPhases = phases.where((p) => !shownPhaseNames.contains(p.name) && 
+    final additionalPhases = phases.where((p) => !shownPhaseNames.contains(p.name) &&
                                                !p.name.startsWith('networkStart:')).toList();
 
     // Display network requests grouped by type
     // Show network activity if any network-related options are enabled
-    final showNetworkActivity = options.showMainEntrypoint || 
-                                options.showScriptRequests || 
-                                options.showStylesheets || 
-                                options.showXHRRequests || 
-                                options.showImageRequests || 
+    final showNetworkActivity = options.showMainEntrypoint ||
+                                options.showScriptRequests ||
+                                options.showStylesheets ||
+                                options.showXHRRequests ||
+                                options.showImageRequests ||
                                 options.showOtherRequests;
-    
+
     if (showNetworkActivity && networkRequests.isNotEmpty) {
       buffer.writeln('║');
       buffer.writeln('║ Network Activity:');
       buffer.writeln('║');
-      
+
       final categorized = categorizedNetworkRequests;
-      
+
       // Display Main Entrypoint
       if (options.showMainEntrypoint && categorized['mainEntrypoint']!.isNotEmpty) {
-        _displayNetworkCategory(buffer, 'Main Entrypoint (HTML)', categorized['mainEntrypoint']!, 
+        _displayNetworkCategory(buffer, 'Main Entrypoint (HTML)', categorized['mainEntrypoint']!,
                                 totalDuration, startTime);
       }
-      
+
       // Display Scripts
       if (options.showScriptRequests && categorized['scripts']!.isNotEmpty) {
-        _displayNetworkCategory(buffer, 'Scripts', categorized['scripts']!, 
+        _displayNetworkCategory(buffer, 'Scripts', categorized['scripts']!,
                                 totalDuration, startTime);
       }
-      
+
       // Display Stylesheets
       if (options.showStylesheets && categorized['stylesheets']!.isNotEmpty) {
-        _displayNetworkCategory(buffer, 'Stylesheets (CSS)', categorized['stylesheets']!, 
+        _displayNetworkCategory(buffer, 'Stylesheets (CSS)', categorized['stylesheets']!,
                                 totalDuration, startTime);
       }
-      
+
       // Display XHR/Fetch
       if (options.showXHRRequests && categorized['xhr']!.isNotEmpty) {
-        _displayNetworkCategory(buffer, 'XHR/API Requests', categorized['xhr']!, 
+        _displayNetworkCategory(buffer, 'XHR/API Requests', categorized['xhr']!,
                                 totalDuration, startTime);
       }
-      
+
       // Display Images
       if (options.showImageRequests && categorized['images']!.isNotEmpty) {
-        _displayNetworkCategory(buffer, 'Images', categorized['images']!, 
+        _displayNetworkCategory(buffer, 'Images', categorized['images']!,
                                 totalDuration, startTime);
       }
-      
+
       // Display Other
       if (options.showOtherRequests && categorized['other']!.isNotEmpty) {
-        _displayNetworkCategory(buffer, 'Other Resources', categorized['other']!, 
+        _displayNetworkCategory(buffer, 'Other Resources', categorized['other']!,
                                 totalDuration, startTime);
       }
     }
@@ -1319,7 +1323,8 @@ class LoadingStateDump {
     if (phaseName == LoadingState.phaseConstructor) return 'Constructor';
     else if (phaseName == LoadingState.phaseInit) return 'Initialize';
     else if (phaseName == LoadingState.phaseLoadStart) return 'Load Start';
-    else if (phaseName == LoadingState.phasePreload) return 'Preload';
+    else if (phaseName == LoadingState.phasePreload) return 'Preload Start';
+    else if (phaseName == LoadingState.phasePreloadEnd) return 'Preload End';
     else if (phaseName == LoadingState.phaseResolveEntrypoint) return 'Resolve Entrypoint';
     else if (phaseName == 'resolveEntrypoint.start') return 'Resolve Entrypoint Start';
     else if (phaseName == 'resolveEntrypoint.end') return 'Resolve Entrypoint End';
@@ -1471,7 +1476,8 @@ class LoadingState {
   static const String phaseAttachToFlutter = 'attachToFlutter';
   static const String phaseLoadStart = 'loadStart';
   static const String phaseResolveEntrypoint = 'resolveEntrypoint';
-  static const String phasePreload = 'preload';
+  static const String phasePreload = 'preloadStart';
+  static const String phasePreloadEnd = 'preloadEnd';
   static const String phasePreRender = 'preRender';
   static const String phaseEvaluateStart = 'evaluateStart';
   static const String phaseParseHTML = 'parseHTML';
@@ -2157,45 +2163,45 @@ class LoadingState {
     return totalDuration;
   }
 
-  /// Calculates the pause duration between scriptLoadComplete and attachToFlutter
+  /// Calculates the pause duration between preloadEnd and attachToFlutter
   /// This is used to adjust elapsed times for phases after the pause
   Duration _getPauseDuration() {
-    LoadingPhase? scriptLoadCompletePhase;
+    LoadingPhase? preloadEndPhase;
     LoadingPhase? attachToFlutterPhase;
 
     for (final phase in _phases.values) {
-      if (phase.name == phaseScriptLoadComplete) {
-        scriptLoadCompletePhase = phase;
+      if (phase.name == phasePreloadEnd) {
+        preloadEndPhase = phase;
       }
       if (phase.name == phaseAttachToFlutter) {
         attachToFlutterPhase = phase;
       }
     }
 
-    if (scriptLoadCompletePhase != null && attachToFlutterPhase != null &&
-        attachToFlutterPhase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
-      return attachToFlutterPhase.timestamp.difference(scriptLoadCompletePhase.timestamp);
+    if (preloadEndPhase != null && attachToFlutterPhase != null &&
+        attachToFlutterPhase.timestamp.isAfter(preloadEndPhase.timestamp)) {
+      return attachToFlutterPhase.timestamp.difference(preloadEndPhase.timestamp);
     }
 
     return Duration.zero;
   }
 
   /// Calculates the adjusted elapsed time for a phase, accounting for the pause
-  /// and reset between scriptLoadComplete and attachToFlutter in preload mode
+  /// and reset between preloadEnd and attachToFlutter in preload mode
   Duration _getAdjustedElapsedTime(LoadingPhase phase) {
     if (_startTime == null) return Duration.zero;
 
     // Find key phases
     LoadingPhase? initPhase;
-    LoadingPhase? scriptLoadCompletePhase;
+    LoadingPhase? preloadEndPhase;
     LoadingPhase? attachToFlutterPhase;
 
     for (final p in _phases.values) {
       if (p.name == phaseInit) {
         initPhase = p;
       }
-      if (p.name == phaseScriptLoadComplete) {
-        scriptLoadCompletePhase = p;
+      if (p.name == phasePreloadEnd) {
+        preloadEndPhase = p;
       }
       if (p.name == phaseAttachToFlutter) {
         attachToFlutterPhase = p;
@@ -2203,8 +2209,8 @@ class LoadingState {
     }
 
     // If we don't have the required phases for preload mode, use raw elapsed time
-    if (scriptLoadCompletePhase == null || attachToFlutterPhase == null ||
-        !attachToFlutterPhase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+    if (preloadEndPhase == null || attachToFlutterPhase == null ||
+        !attachToFlutterPhase.timestamp.isAfter(preloadEndPhase.timestamp)) {
       return phase.timestamp.difference(_startTime!);
     }
 
@@ -2213,8 +2219,8 @@ class LoadingState {
       return phase.timestamp.difference(_startTime!);
     }
 
-    // For phases before or at scriptLoadComplete, calculate elapsed from init
-    if (!phase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
+    // For phases before or at preloadEnd, calculate elapsed from init
+    if (!phase.timestamp.isAfter(preloadEndPhase.timestamp)) {
       if (initPhase != null && phase.name != phaseInit) {
         return phase.timestamp.difference(initPhase.timestamp);
       }

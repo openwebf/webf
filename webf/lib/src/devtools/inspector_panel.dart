@@ -17,7 +17,7 @@ import 'package:webf/src/devtools/remote_object_service.dart';
 import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
-import 'package:webf/src/launcher/loading_state_dumper.dart';
+import 'package:webf/src/launcher/loading_state.dart';
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
