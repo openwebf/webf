@@ -125,7 +125,11 @@ void main() async {
 
             controller.loadingState.onFinalLargestContentfulPaint((_) {
               if (!hasReported) {
-                LoadingStateDump dump = controller.dumpLoadingState(options: LoadingStateDumpOptions.full);
+                LoadingStateDump dump = controller.dumpLoadingState(
+                    options: LoadingStateDumpOptions.html |
+                        LoadingStateDumpOptions.api |
+                        LoadingStateDumpOptions.scripts |
+                        LoadingStateDumpOptions.networkDetailed);
                 print(dump.toString());
               }
               hasReported = true;
