@@ -212,6 +212,44 @@ class LoadingScriptElement {
   bool get isSuccessful => isComplete && error == null;
 }
 
+/// Options for controlling what to display in the loading state dump
+class LoadingStateDumpOptions {
+  final bool showMainPhases;
+  final bool showAdditionalPhases;
+  final bool showScripts;
+  final bool showErrors;
+  final bool showMainEntrypoint;
+  final bool showScriptRequests;
+  final bool showXHRRequests;
+  final bool showImageRequests;
+  final bool showOtherRequests;
+  final bool showNetworkDetails;
+
+  const LoadingStateDumpOptions({
+    this.showMainPhases = true,
+    this.showAdditionalPhases = true,
+    this.showScripts = true,
+    this.showErrors = true,
+    this.showMainEntrypoint = true,
+    this.showScriptRequests = true,
+    this.showXHRRequests = true,
+    this.showImageRequests = true,
+    this.showOtherRequests = true,
+    this.showNetworkDetails = false,
+  });
+
+  // Preset configurations
+  static const LoadingStateDumpOptions minimal = LoadingStateDumpOptions(
+    showAdditionalPhases: false,
+    showScripts: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions full = LoadingStateDumpOptions(
+    showNetworkDetails: true,
+  );
+}
+
 /// Represents the complete loading state dump with both text and JSON representations
 class LoadingStateDump {
   final DateTime startTime;
@@ -220,7 +258,7 @@ class LoadingStateDump {
   final List<LoadingNetworkRequest> networkRequests;
   final List<LoadingError> errors;
   final List<LoadingScriptElement> scriptElements;
-  final bool verbose;
+  final LoadingStateDumpOptions options;
   final LoadingState? dumper;
 
   LoadingStateDump({
@@ -230,7 +268,7 @@ class LoadingStateDump {
     required this.networkRequests,
     required this.errors,
     required this.scriptElements,
-    this.verbose = false,
+    this.options = const LoadingStateDumpOptions(),
     this.dumper,
   });
 
@@ -306,15 +344,74 @@ class LoadingStateDump {
     }
     return null;
   }
-  
+
   /// Determines if the loading should be displayed as two separate parts
   /// Returns true if in preload mode and pause is significant (> 100ms)
   bool get shouldDisplayAsTwoParts {
     if (dumper == null) return false;
-    
+
     final pauseDuration = dumper!._getPauseDuration();
     // Consider it two parts if pause is more than 100ms
     return pauseDuration.inMilliseconds > 100;
+  }
+
+  /// Categorizes network requests by type
+  Map<String, List<LoadingNetworkRequest>> get categorizedNetworkRequests {
+    final Map<String, List<LoadingNetworkRequest>> categorized = {
+      'mainEntrypoint': [],
+      'scripts': [],
+      'xhr': [],
+      'images': [],
+      'other': [],
+    };
+
+    for (final request in networkRequests) {
+      final url = request.url.toLowerCase();
+      final contentType = (request.contentType ?? '').toLowerCase();
+
+      // Check if it's the main entrypoint (HTML file)
+      if (contentType.contains('text/html') ||
+          (url.endsWith('.html') || url.endsWith('.htm')) ||
+          (request.method == 'GET' && phases.any((p) =>
+            p.name == LoadingState.phaseLoadStart &&
+            p.parameters['bundle'] == request.url))) {
+        categorized['mainEntrypoint']!.add(request);
+      }
+      // Check if it's a script
+      else if (contentType.contains('javascript') ||
+               contentType.contains('ecmascript') ||
+               url.endsWith('.js') ||
+               url.endsWith('.mjs') ||
+               url.endsWith('.ts')) {
+        categorized['scripts']!.add(request);
+      }
+      // Check if it's an image
+      else if (contentType.contains('image/') ||
+               url.endsWith('.png') ||
+               url.endsWith('.jpg') ||
+               url.endsWith('.jpeg') ||
+               url.endsWith('.gif') ||
+               url.endsWith('.webp') ||
+               url.endsWith('.svg') ||
+               url.endsWith('.ico')) {
+        categorized['images']!.add(request);
+      }
+      // Check if it's an XHR/Fetch request (typically API calls)
+      else if (contentType.contains('application/json') ||
+               contentType.contains('application/xml') ||
+               contentType.contains('text/xml') ||
+               request.method != 'GET' ||
+               url.contains('/api/') ||
+               url.contains('/graphql')) {
+        categorized['xhr']!.add(request);
+      }
+      // Everything else
+      else {
+        categorized['other']!.add(request);
+      }
+    }
+
+    return categorized;
   }
 
   Map<String, dynamic> toJson() {
@@ -500,10 +597,10 @@ class LoadingStateDump {
       // Split phases into Part I (up to scriptLoadComplete) and Part II (from attachToFlutter onwards)
       final part1Phases = <LoadingPhase>[];
       final part2Phases = <LoadingPhase>[];
-      
+
       LoadingPhase? scriptLoadCompletePhase;
       LoadingPhase? attachToFlutterPhase;
-      
+
       // Find key phases
       for (final phase in phases) {
         if (phase.name == LoadingState.phaseScriptLoadComplete) {
@@ -513,7 +610,7 @@ class LoadingStateDump {
           attachToFlutterPhase = phase;
         }
       }
-      
+
       // Categorize phases
       for (final phase in mainPhases) {
         // Skip network phases for main table
@@ -522,14 +619,14 @@ class LoadingStateDump {
             phase.name.startsWith('networkError:')) {
           continue;
         }
-        
+
         // Skip .start and .end phases except for specific ones
         if ((phase.name.contains('.start') || phase.name.contains('.end')) &&
             !phase.name.startsWith('resolveEntrypoint') &&
             !phase.name.startsWith('parseHTML')) {
           continue;
         }
-        
+
         if (scriptLoadCompletePhase != null && attachToFlutterPhase != null) {
           if (!phase.timestamp.isAfter(scriptLoadCompletePhase.timestamp)) {
             part1Phases.add(phase);
@@ -540,38 +637,38 @@ class LoadingStateDump {
           part1Phases.add(phase);
         }
       }
-      
+
       // Display Part I
       buffer.writeln('║ Loading Phases - Part I (Preloading):');
       buffer.writeln('║');
       buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
       buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
       buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
-      
+
       DateTime? previousTime = startTime;
       for (final phase in part1Phases) {
         final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
         final percentage = totalDuration.inMilliseconds > 0
             ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
             : '0.0';
-        
+
         final timeSincePrev = previousTime != null
             ? phase.timestamp.difference(previousTime)
             : Duration.zero;
         previousTime = phase.timestamp;
-        
+
         // Get display name
         final displayName = _getPhaseDisplayName(phase.name);
         final phaseDisplay = displayName.padRight(31);
         final timeDisplay = _formatDuration(timeSincePrev).padLeft(12);
         final elapsedDisplay = _formatDuration(elapsed).padLeft(8);
         final percentDisplay = '$percentage%'.padLeft(10);
-        
+
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
       }
-      
+
       buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
-      
+
       // Display pause duration
       final pauseDuration = dumper?._getPauseDuration() ?? Duration.zero;
       buffer.writeln('║');
@@ -579,36 +676,36 @@ class LoadingStateDump {
       buffer.writeln('║                                  │');
       buffer.writeln('║                                  ▼');
       buffer.writeln('║');
-      
+
       // Display Part II
       buffer.writeln('║ Loading Phases - Part II (Rendering):');
       buffer.writeln('║');
       buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
       buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
       buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
-      
+
       previousTime = attachToFlutterPhase?.timestamp;
       for (final phase in part2Phases) {
         final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
         final percentage = totalDuration.inMilliseconds > 0
             ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
             : '0.0';
-        
+
         final timeSincePrev = previousTime != null
             ? phase.timestamp.difference(previousTime)
             : Duration.zero;
         previousTime = phase.timestamp;
-        
+
         // Get display name
         final displayName = _getPhaseDisplayName(phase.name);
         final phaseDisplay = displayName.padRight(31);
         final timeDisplay = _formatDuration(timeSincePrev).padLeft(12);
         final elapsedDisplay = _formatDuration(elapsed).padLeft(8);
         final percentDisplay = '$percentage%'.padLeft(10);
-        
+
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
       }
-      
+
       buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
     } else {
       // Display as single table (original logic)
@@ -617,7 +714,7 @@ class LoadingStateDump {
       buffer.writeln('║ ┌─────────────────────────────────┬──────────────┬──────────┬────────────┐');
       buffer.writeln('║ │ Phase                           │ Time         │ Elapsed  │ Percentage │');
       buffer.writeln('║ ├─────────────────────────────────┼──────────────┼──────────┼────────────┤');
-      
+
       // Display main phases
       DateTime? previousTime = startTime;
       for (final phase in mainPhases) {
@@ -642,7 +739,7 @@ class LoadingStateDump {
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
 
         // Display substeps if any
-        if (phase.substeps.isNotEmpty && verbose) {
+        if (phase.substeps.isNotEmpty && options.showNetworkDetails) {
           for (final substep in phase.substeps) {
             final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
             final substepPercentage = totalDuration.inMilliseconds > 0
@@ -664,162 +761,160 @@ class LoadingStateDump {
     }
 
     // Show additional phases in verbose mode
-    if (verbose) {
-      // Collect all other phases not shown in main table
-      final shownPhaseNames = mainPhases.map((p) => p.name).toSet();
-      final additionalPhases = phases.where((p) => !shownPhaseNames.contains(p.name)).toList();
+    // Collect all other phases not shown in main table
+    final shownPhaseNames = mainPhases.map((p) => p.name).toSet();
+    final additionalPhases = phases.where((p) => !shownPhaseNames.contains(p.name)).toList();
 
-      if (additionalPhases.isNotEmpty) {
-        buffer.writeln('║');
-        buffer.writeln('║ Additional Phases:');
-        buffer.writeln('║');
-        buffer.writeln('║ ┌─────────────────────────────────────────────────┬──────────────┬────────────┐');
-        buffer.writeln('║ │ Phase                                           │ Elapsed      │ Percentage │');
-        buffer.writeln('║ ├─────────────────────────────────────────────────┼──────────────┼────────────┤');
+    if (additionalPhases.isNotEmpty) {
+      buffer.writeln('║');
+      buffer.writeln('║ Additional Phases:');
+      buffer.writeln('║');
+      buffer.writeln('║ ┌─────────────────────────────────────────────────┬──────────────┬────────────┐');
+      buffer.writeln('║ │ Phase                                           │ Elapsed      │ Percentage │');
+      buffer.writeln('║ ├─────────────────────────────────────────────────┼──────────────┼────────────┤');
 
-        for (final phase in additionalPhases) {
-          final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
-          final percentage = totalDuration.inMilliseconds > 0
-              ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
-              : '0.0';
+      for (final phase in additionalPhases) {
+        final elapsed = dumper?._getAdjustedElapsedTime(phase) ?? phase.timestamp.difference(startTime);
+        final percentage = totalDuration.inMilliseconds > 0
+            ? (elapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
+            : '0.0';
 
-          // Special handling for network phases that have substeps
-          if (phase.name.startsWith('networkStart:')) {
-            final url = phase.name.substring('networkStart:'.length);
+        // Special handling for network phases that have substeps
+        if (phase.name.startsWith('networkStart:')) {
+          final url = phase.name.substring('networkStart:'.length);
 
-            // Find the corresponding network request to get additional info
-            final request = networkRequests.firstWhere(
-              (r) => r.url == url,
-              orElse: () => LoadingNetworkRequest(
-                url: url,
-                method: 'GET',
-                startTime: phase.timestamp,
-              ),
-            );
+          // Find the corresponding network request to get additional info
+          final request = networkRequests.firstWhere(
+                (r) => r.url == url,
+            orElse: () => LoadingNetworkRequest(
+              url: url,
+              method: 'GET',
+              startTime: phase.timestamp,
+            ),
+          );
 
-            // Build status string
-            String statusInfo = '';
-            if (request.error != null) {
-              statusInfo = request.error == 'Superseded by new request' ? ' [REPLACED]' : ' [ERROR]';
-            } else if (request.isFromCache) {
-              statusInfo = ' [CACHED]';
-            } else if (request.statusCode != null) {
-              statusInfo = ' [${request.statusCode}]';
-            }
+          // Build status string
+          String statusInfo = '';
+          if (request.error != null) {
+            statusInfo = request.error == 'Superseded by new request' ? ' [REPLACED]' : ' [ERROR]';
+          } else if (request.isFromCache) {
+            statusInfo = ' [CACHED]';
+          } else if (request.statusCode != null) {
+            statusInfo = ' [${request.statusCode}]';
+          }
 
-            // Add response size if available
-            if (request.responseSize != null) {
-              statusInfo += ' ${_formatBytes(request.responseSize!)}';
-            }
+          // Add response size if available
+          if (request.responseSize != null) {
+            statusInfo += ' ${_formatBytes(request.responseSize!)}';
+          }
 
-            final networkLabel = 'Network:$statusInfo';
-            final phaseDisplay = networkLabel.padRight(47);
-            final elapsedDisplay = _formatDuration(elapsed).padLeft(12);
-            final percentDisplay = '$percentage%'.padLeft(10);
+          final networkLabel = 'Network:$statusInfo';
+          final phaseDisplay = networkLabel.padRight(47);
+          final elapsedDisplay = _formatDuration(elapsed).padLeft(12);
+          final percentDisplay = '$percentage%'.padLeft(10);
 
-            buffer.writeln('║ │ $phaseDisplay │ $elapsedDisplay │ $percentDisplay │');
+          buffer.writeln('║ │ $phaseDisplay │ $elapsedDisplay │ $percentDisplay │');
 
-            // Show full URL as the first substep
-            final urlDisplay = '  └─ URL: $url';
-            if (urlDisplay.length > 47) {
-              // Split long URLs into multiple lines
-              final words = url.split('/');
-              var currentLine = '  └─ URL: ';
-              for (int i = 0; i < words.length; i++) {
-                final word = words[i];
-                final separator = i < words.length - 1 ? '/' : '';
-                if (currentLine.length + word.length + separator.length > 47) {
-                  buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
-                  currentLine = '       ';
-                }
-                currentLine += word + separator;
-              }
-              if (currentLine.trim().isNotEmpty) {
+          // Show full URL as the first substep
+          final urlDisplay = '  └─ URL: $url';
+          if (urlDisplay.length > 47) {
+            // Split long URLs into multiple lines
+            final words = url.split('/');
+            var currentLine = '  └─ URL: ';
+            for (int i = 0; i < words.length; i++) {
+              final word = words[i];
+              final separator = i < words.length - 1 ? '/' : '';
+              if (currentLine.length + word.length + separator.length > 47) {
                 buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
+                currentLine = '       ';
               }
-            } else {
-              buffer.writeln('║ │ ${urlDisplay.padRight(47)} │              │            │');
+              currentLine += word + separator;
             }
-
-            // Show substeps (network stages)
-            if (phase.substeps.isNotEmpty) {
-              for (final substep in phase.substeps) {
-                final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
-                final substepPercentage = totalDuration.inMilliseconds > 0
-                    ? (substepElapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
-                    : '0.0';
-
-                final substepName = substep.name.split(':').last;
-                final substepDisplay = '  └─ ${substepName.replaceAll('_', ' ')}';
-                final paddedSubstepDisplay = substepDisplay.padRight(47);
-                final substepElapsedDisplay = _formatDuration(substepElapsed).padLeft(12);
-                final substepPercentDisplay = '$substepPercentage%'.padLeft(10);
-
-                buffer.writeln('║ │ $paddedSubstepDisplay │ $substepElapsedDisplay │ $substepPercentDisplay │');
-              }
+            if (currentLine.trim().isNotEmpty) {
+              buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
             }
           } else {
-            // Regular phase
-            final phaseName = phase.name;
-            final displayName = phaseName.length > 47
-                ? '${phaseName.substring(0, 44)}...'
-                : phaseName.padRight(47);
+            buffer.writeln('║ │ ${urlDisplay.padRight(47)} │              │            │');
+          }
 
-            final elapsedDisplay = _formatDuration(elapsed).padLeft(12);
-            final percentDisplay = '$percentage%'.padLeft(10);
+          // Show substeps (network stages)
+          if (phase.substeps.isNotEmpty) {
+            for (final substep in phase.substeps) {
+              final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
+              final substepPercentage = totalDuration.inMilliseconds > 0
+                  ? (substepElapsed.inMilliseconds / totalDuration.inMilliseconds * 100).toStringAsFixed(1)
+                  : '0.0';
 
-            buffer.writeln('║ │ $displayName │ $elapsedDisplay │ $percentDisplay │');
+              final substepName = substep.name.split(':').last;
+              final substepDisplay = '  └─ ${substepName.replaceAll('_', ' ')}';
+              final paddedSubstepDisplay = substepDisplay.padRight(47);
+              final substepElapsedDisplay = _formatDuration(substepElapsed).padLeft(12);
+              final substepPercentDisplay = '$substepPercentage%'.padLeft(10);
 
-            // Show parameters as substeps if any
-            if (phase.parameters.isNotEmpty) {
-              phase.parameters.forEach((key, value) {
-                final paramDisplay = '  └─ $key: $value';
-
-                // Special handling for URL-like parameters - show full URL
-                final valueStr = value.toString();
-                final isUrlLike = (key == 'url' || key == 'source' || valueStr.contains('://'));
-
-                if (isUrlLike && valueStr.length > 40) {
-                  buffer.writeln('║ │ ${'  └─ $key:'.padRight(47)} │              │            │');
-
-                  // Split long URL into multiple lines
-                  final urlParts = valueStr.split('/');
-                  var currentLine = '       ';
-
-                  for (int i = 0; i < urlParts.length; i++) {
-                    final part = urlParts[i];
-                    final separator = i < urlParts.length - 1 ? '/' : '';
-
-                    if (currentLine.length + part.length + separator.length > 47) {
-                      if (currentLine.trim().isNotEmpty) {
-                        buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
-                      }
-                      currentLine = '       ';
-                    }
-                    currentLine += part + separator;
-                  }
-
-                  if (currentLine.trim().isNotEmpty) {
-                    buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
-                  }
-                } else {
-                  // Regular parameter display
-                  final paddedParamDisplay = paramDisplay.length > 47
-                      ? '${paramDisplay.substring(0, 44)}...'
-                      : paramDisplay.padRight(47);
-                  buffer.writeln('║ │ $paddedParamDisplay │              │            │');
-                }
-              });
+              buffer.writeln('║ │ $paddedSubstepDisplay │ $substepElapsedDisplay │ $substepPercentDisplay │');
             }
           }
-        }
+        } else {
+          // Regular phase
+          final phaseName = phase.name;
+          final displayName = phaseName.length > 47
+              ? '${phaseName.substring(0, 44)}...'
+              : phaseName.padRight(47);
 
-        buffer.writeln('║ └─────────────────────────────────────────────────┴──────────────┴────────────┘');
+          final elapsedDisplay = _formatDuration(elapsed).padLeft(12);
+          final percentDisplay = '$percentage%'.padLeft(10);
+
+          buffer.writeln('║ │ $displayName │ $elapsedDisplay │ $percentDisplay │');
+
+          // Show parameters as substeps if any
+          if (phase.parameters.isNotEmpty) {
+            phase.parameters.forEach((key, value) {
+              final paramDisplay = '  └─ $key: $value';
+
+              // Special handling for URL-like parameters - show full URL
+              final valueStr = value.toString();
+              final isUrlLike = (key == 'url' || key == 'source' || valueStr.contains('://'));
+
+              if (isUrlLike && valueStr.length > 40) {
+                buffer.writeln('║ │ ${'  └─ $key:'.padRight(47)} │              │            │');
+
+                // Split long URL into multiple lines
+                final urlParts = valueStr.split('/');
+                var currentLine = '       ';
+
+                for (int i = 0; i < urlParts.length; i++) {
+                  final part = urlParts[i];
+                  final separator = i < urlParts.length - 1 ? '/' : '';
+
+                  if (currentLine.length + part.length + separator.length > 47) {
+                    if (currentLine.trim().isNotEmpty) {
+                      buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
+                    }
+                    currentLine = '       ';
+                  }
+                  currentLine += part + separator;
+                }
+
+                if (currentLine.trim().isNotEmpty) {
+                  buffer.writeln('║ │ ${currentLine.padRight(47)} │              │            │');
+                }
+              } else {
+                // Regular parameter display
+                final paddedParamDisplay = paramDisplay.length > 47
+                    ? '${paramDisplay.substring(0, 44)}...'
+                    : paramDisplay.padRight(47);
+                buffer.writeln('║ │ $paddedParamDisplay │              │            │');
+              }
+            });
+          }
+        }
       }
+
+      buffer.writeln('║ └─────────────────────────────────────────────────┴──────────────┴────────────┘');
     }
 
     // Add script elements timeline if there are scripts
-    if (scriptElements.isNotEmpty && verbose) {
+    if (scriptElements.isNotEmpty) {
       buffer.writeln('║');
       buffer.writeln('║ Script Elements:');
       buffer.writeln('║');
@@ -857,7 +952,7 @@ class LoadingStateDump {
             '║ $displaySource │ $typeStr │ $asyncStr │ $statusStr │ ${sizeStr.padLeft(10)} │ ${durationStr.padLeft(8)}');
 
         // Show error details if any
-        if (script.error != null && verbose) {
+        if (script.error != null) {
           buffer.writeln('║   └─ Error: ${script.error}');
         }
       }
@@ -878,14 +973,14 @@ class LoadingStateDump {
         buffer.writeln('║   Type: $errorType');
         buffer.writeln('║   Message: ${error.error.toString()}');
 
-        if (verbose && error.context != null && error.context!.isNotEmpty) {
+        if (error.context != null && error.context!.isNotEmpty) {
           buffer.writeln('║   Context:');
           error.context!.forEach((key, value) {
             buffer.writeln('║     $key: $value');
           });
         }
 
-        if (verbose && error.stackTrace != null) {
+        if (error.stackTrace != null) {
           buffer.writeln('║   Stack trace:');
           final stackLines = error.stackTrace.toString().split('\n').take(5);
           for (final line in stackLines) {
@@ -928,7 +1023,7 @@ class LoadingStateDump {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
     }
   }
-  
+
   String _getPhaseDisplayName(String phaseName) {
     if (phaseName == LoadingState.phaseConstructor) return 'Constructor';
     else if (phaseName == LoadingState.phaseInit) return 'Initialize';
@@ -956,6 +1051,83 @@ class LoadingStateDump {
     else if (phaseName == LoadingState.phaseScriptExecuteStart) return 'Script Execute Start';
     else if (phaseName == LoadingState.phaseScriptExecuteComplete) return 'Script Execute Complete';
     else return phaseName;
+  }
+
+  void _displayNetworkCategory(StringBuffer buffer, String categoryName, List<LoadingNetworkRequest> requests,
+      Duration totalDuration, DateTime startTime) {
+    buffer.writeln('║');
+    buffer.writeln('║ $categoryName:');
+    buffer.writeln('║ ┌─────────────────────────────────────────────────┬──────────────┬────────────┐');
+    buffer.writeln('║ │ URL                                             │ Duration     │ Status     │');
+    buffer.writeln('║ ├─────────────────────────────────────────────────┼──────────────┼────────────┤');
+
+    for (final request in requests) {
+      // Format URL to fit
+      String displayUrl = request.url;
+      if (displayUrl.length > 47) {
+        // Try to show domain and end of path
+        final uri = Uri.tryParse(displayUrl);
+        if (uri != null) {
+          final domain = uri.host;
+          final path = uri.path;
+          if (domain.length + path.length > 44) {
+            displayUrl = '$domain...${path.substring(path.length - (44 - domain.length - 3))}';
+          } else {
+            displayUrl = '$domain$path';
+          }
+        } else {
+          displayUrl = '...${displayUrl.substring(displayUrl.length - 44)}';
+        }
+      }
+      displayUrl = displayUrl.padRight(47);
+
+      // Format duration
+      String durationStr = '-'.padLeft(12);
+      if (request.endTime != null) {
+        final duration = request.endTime!.difference(request.startTime);
+        durationStr = _formatDuration(duration).padLeft(12);
+      }
+
+      // Format status
+      String statusStr;
+      if (request.error != null) {
+        statusStr = 'ERROR';
+      } else if (request.isFromCache) {
+        statusStr = 'CACHED';
+      } else if (request.statusCode != null) {
+        statusStr = '${request.statusCode}';
+        if (request.responseSize != null) {
+          statusStr += ' ${_formatBytes(request.responseSize!)}';
+        }
+      } else {
+        statusStr = 'PENDING';
+      }
+      statusStr = statusStr.padLeft(10);
+
+      buffer.writeln('║ │ $displayUrl │ $durationStr │ $statusStr │');
+
+      // Show detailed network stages if requested
+      if (options.showNetworkDetails) {
+        // Find the corresponding phase for this request
+        final networkPhase = phases.firstWhere(
+          (p) => p.name == 'networkStart:${request.url}',
+          orElse: () => LoadingPhase(name: '', timestamp: DateTime.now()),
+        );
+
+        if (networkPhase.name.isNotEmpty && networkPhase.substeps.isNotEmpty) {
+          for (final substep in networkPhase.substeps) {
+            final substepName = substep.name.split(':').last.replaceAll('_', ' ');
+            final substepDisplay = '  └─ $substepName'.padRight(47);
+            final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
+            final substepDuration = _formatDuration(substepElapsed).padLeft(12);
+
+            buffer.writeln('║ │ $substepDisplay │ $substepDuration │            │');
+          }
+        }
+      }
+    }
+
+    buffer.writeln('║ └─────────────────────────────────────────────────┴──────────────┴────────────┘');
   }
 }
 
@@ -1567,7 +1739,6 @@ class LoadingState {
       networkRequests: networkRequests,
       errors: errors,
       scriptElements: scriptElements,
-      verbose: verbose,
       dumper: this,
     );
   }
