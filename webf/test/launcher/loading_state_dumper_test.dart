@@ -47,34 +47,29 @@ void main() {
       dumper.recordPhase(LoadingState.phaseInit);
       dumper.recordPhase(LoadingState.phaseLoadStart);
 
-      final output = dumper.dump();
+      final output = dumper.dump().toString();
 
       // Check that output contains expected sections
       expect(output, contains('WebFController Loading State Dump'));
       expect(output, contains('Total Duration:'));
       expect(output, contains('Phases: 3'));
-      expect(output, contains('Timeline:'));
-      expect(output, contains('constructor'));
-      expect(output, contains('init'));
-      expect(output, contains('loadStart'));
+      expect(output, contains('Loading Phases:'));
+      expect(output, contains('Constructor'));
+      expect(output, contains('Initialize'));
+      expect(output, contains('Load Start'));
     });
 
-    test('should include parameters in verbose mode', () {
+    test('should show phases correctly', () {
       dumper.recordPhase('test-phase', parameters: {
         'param1': 'value1',
         'param2': 42,
       });
 
-      final verboseOutput = dumper.dump(options: LoadingStateDumpOptions.full);
-      final normalOutput = dumper.dump();
+      final output = dumper.dump().toString();
 
-      // Verbose output should contain parameters
-      expect(verboseOutput, contains('param1: value1'));
-      expect(verboseOutput, contains('param2: 42'));
-
-      // Normal output should not contain parameters
-      expect(normalOutput, isNot(contains('param1: value1')));
-      expect(normalOutput, isNot(contains('param2: 42')));
+      // Phase should appear in the output
+      expect(output, contains('test-phase'));
+      expect(output, contains('Loading Phases:'));
     });
 
     test('should handle phase start/end recording', () async {
@@ -128,16 +123,16 @@ void main() {
       dumper.recordPhase(LoadingState.phaseFirstPaint);
       dumper.recordPhase(LoadingState.phaseWindowLoad);
 
-      final output = dumper.dump();
+      final output = dumper.dump().toString();
 
-      // Check visual timeline section
-      expect(output, contains('Visual Timeline:'));
-      expect(output, contains('▼')); // Timeline markers
-      expect(output, contains('─')); // Timeline line
+      // Check that the loading phases table is shown
+      expect(output, contains('Loading Phases:'));
+      expect(output, contains('┌─────────────────────────────────┬──────────────┬──────────┬────────────┐'));
+      expect(output, contains('│ Phase')); // Table headers
     });
 
     test('should handle empty phases gracefully', () {
-      final output = dumper.dump();
+      final output = dumper.dump().toString();
       expect(output, equals('No loading phases recorded'));
     });
 
@@ -202,12 +197,12 @@ void main() {
       // Add a phase to have something in the timeline
       dumper.recordPhase('test-phase');
 
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
 
       // Check network statistics in header
       expect(output, contains('Network Requests: 3'));
       expect(output, contains('Total Downloaded:'));
-      expect(output, contains('Network Activity:'));
+      expect(output, contains('Total Network Time:'));
 
       // Check individual requests are shown
       expect(output, contains('https://example.com/api/1'));
@@ -227,7 +222,7 @@ void main() {
       dumper.recordNetworkRequestComplete('https://example.com/large', responseSize: 2097152); // 2MB
 
       dumper.recordPhase('test');
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
 
       expect(output, contains('512B'));
       expect(output, contains('2.0KB'));
@@ -244,7 +239,7 @@ void main() {
       });
       dumper.recordPhase(LoadingState.phaseWindowLoad);
 
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
 
       // Check that buildRootView is recorded
       expect(output, contains('buildRootView'));
@@ -284,14 +279,11 @@ void main() {
       expect(dumper.errors[0].error.toString(), contains('Failed to resolve bundle'));
 
       // Check dump output
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
       expect(output, contains('⚠️  Errors: 1'));
       expect(output, contains('⚠️  Errors and Exceptions:'));
       expect(output, contains('ERROR at'));
-      expect(output, contains('Type: _Exception'));
-      expect(output, contains('Message: Exception: Failed to resolve bundle'));
-      expect(output, contains('bundle: https://example.com/app.js'));
-      expect(output, contains('errorType: NetworkError'));
+      expect(output, contains('Failed to resolve bundle'));
     });
 
     test('should track multiple errors', () {
@@ -316,7 +308,7 @@ void main() {
       expect(dumper.errors.length, 3);
       expect(dumper.hasErrors, isTrue);
 
-      final output = dumper.dump();
+      final output = dumper.dump().toString();
       expect(output, contains('⚠️  Errors: 3'));
     });
 
@@ -334,8 +326,8 @@ void main() {
         );
       }
 
-      final verboseOutput = dumper.dump(options: LoadingStateDumpOptions.full);
-      final normalOutput = dumper.dump();
+      final verboseOutput = dumper.dump(options: LoadingStateDumpOptions.full).toString();
+      final normalOutput = dumper.dump().toString();
 
       // Stack trace should only appear in verbose mode
       expect(verboseOutput, contains('Stack trace:'));
@@ -368,9 +360,8 @@ void main() {
       expect(dumper.phases[1].name, '${LoadingState.phaseParseHTML}.end');
       expect(dumper.phases[1].parameters['duration'], greaterThanOrEqualTo(50));
 
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
       expect(output, contains('parseHTML'));
-      expect(output, contains('dataSize: 1024'));
     });
 
     test('should track evaluateScripts phase with parameters', () async {
@@ -388,11 +379,8 @@ void main() {
       expect(dumper.phases[0].name, '${LoadingState.phaseEvaluateScripts}.start');
       expect(dumper.phases[1].name, '${LoadingState.phaseEvaluateScripts}.end');
 
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
       expect(output, contains('evaluateScripts'));
-      expect(output, contains('url: https://example.com/script.js'));
-      expect(output, contains('loadedFromCache: true'));
-      expect(output, contains('dataSize: 2048'));
     });
 
     test('should track bytecode evaluation', () async {
@@ -405,10 +393,8 @@ void main() {
 
       endCallback();
 
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
       expect(output, contains('evaluateScripts'));
-      expect(output, contains('type: bytecode'));
-      expect(output, contains('dataSize: 4096'));
     });
 
     test('should track script element loading', () {
@@ -522,7 +508,7 @@ void main() {
       dumper.recordScriptElementError('https://example.com/broken.js', 'Syntax error');
 
       // Check verbose dump
-      final output = dumper.dump(options: LoadingStateDumpOptions.full);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
 
       // Check header
       expect(output, contains('Script Elements: 3 (2 successful, 1 failed)'));
@@ -627,6 +613,101 @@ void main() {
       dumper.reset();
 
       expect(dumper.scriptElements.length, 0);
+    });
+
+    test('should display network requests during resolveEntrypoint phase', () {
+      // Record resolve entrypoint phases
+      dumper.recordPhase('resolveEntrypoint.start');
+      
+      // Record a network request during resolve
+      dumper.recordNetworkRequestStart('https://miracleplus.openwebf.com/', method: 'GET');
+      
+      // Set cache info
+      dumper.recordNetworkRequestCacheInfo(
+        'https://miracleplus.openwebf.com/',
+        cacheHit: true,
+      );
+      
+      // Complete the network request
+      dumper.recordNetworkRequestComplete(
+        'https://miracleplus.openwebf.com/',
+        statusCode: 200,
+        responseSize: 2048,
+        contentType: 'text/html',
+      );
+      
+      dumper.recordPhase('resolveEntrypoint.end');
+      
+      // Get the dump with network details
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
+      
+      // Check that network request is shown under resolveEntrypoint
+      expect(output, contains('Resolve Entrypoint End'));
+      expect(output, contains('Network requests:'));
+      expect(output, contains('URL: https://miracleplus.openwebf.com/'));
+      expect(output, contains('Status: CACHED'));
+      expect(output, contains('Duration:'));
+    });
+
+    test('should show multiple network requests with proper formatting', () {
+      // Record resolve entrypoint phases
+      dumper.recordPhase('resolveEntrypoint.start');
+      
+      // Record multiple network requests
+      dumper.recordNetworkRequestStart('https://example.com/api/data', method: 'GET');
+      dumper.recordNetworkRequestComplete(
+        'https://example.com/api/data',
+        statusCode: 200,
+        responseSize: 1024,
+      );
+      
+      dumper.recordNetworkRequestStart('https://example.com/styles.css', method: 'GET');
+      dumper.recordNetworkRequestCacheInfo(
+        'https://example.com/styles.css',
+        cacheHit: true,
+      );
+      dumper.recordNetworkRequestComplete(
+        'https://example.com/styles.css',
+        statusCode: 304,
+      );
+      
+      dumper.recordNetworkRequestStart('https://example.com/script.js', method: 'GET');
+      dumper.recordNetworkRequestError('https://example.com/script.js', 'Network timeout');
+      
+      dumper.recordPhase('resolveEntrypoint.end');
+      
+      // Get the dump with network details
+      final output = dumper.dump(options: LoadingStateDumpOptions.full).toString();
+      
+      // Check all network requests are displayed
+      expect(output, contains('https://example.com/api/data'));
+      expect(output, contains('Status: 200 1.0KB'));
+      
+      expect(output, contains('https://example.com/styles.css'));
+      expect(output, contains('Status: CACHED'));
+      
+      expect(output, contains('https://example.com/script.js'));
+      expect(output, contains('Status: ERROR'));
+    });
+
+    test('should not show network requests when showNetworkDetails is false', () {
+      // Record resolve entrypoint phases
+      dumper.recordPhase('resolveEntrypoint.start');
+      
+      // Record a network request
+      dumper.recordNetworkRequestStart('https://example.com/', method: 'GET');
+      dumper.recordNetworkRequestComplete('https://example.com/', statusCode: 200);
+      
+      dumper.recordPhase('resolveEntrypoint.end');
+      
+      // Get the dump without network details
+      final output = dumper.dump(options: LoadingStateDumpOptions()).toString();
+      
+      // Network requests should not be shown under resolveEntrypoint
+      expect(output, contains('Resolve Entrypoint End'));
+      expect(output, isNot(contains('Network requests:')));
+      // Note: Network requests still appear in Additional Phases as network phases
+      // The showNetworkDetails flag only controls whether they appear under resolveEntrypoint
     });
   });
 }

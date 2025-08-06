@@ -3,6 +3,7 @@
  */
 
 import 'dart:collection';
+import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 
 /// Represents a single phase in the WebFController loading lifecycle
@@ -665,6 +666,61 @@ class LoadingStateDump {
         final percentDisplay = '$percentage%'.padLeft(10);
 
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
+
+        // Show network requests for resolveEntrypoint phase in Part I
+        if ((phase.name == 'resolveEntrypoint.end' || phase.name == LoadingState.phaseResolveEntrypoint) && 
+            options.showNetworkDetails) {
+          // Find the start and end times for resolveEntrypoint
+          DateTime? resolveStartTime;
+          DateTime? resolveEndTime = phase.timestamp;
+          
+          // Look for resolveEntrypoint.start or the main resolveEntrypoint phase
+          final resolveStartPhase = phases.firstWhere(
+            (p) => p.name == 'resolveEntrypoint.start' || p.name == LoadingState.phaseResolveEntrypoint,
+            orElse: () => phase,
+          );
+          resolveStartTime = resolveStartPhase.timestamp;
+          
+          // Find network requests that occurred during resolveEntrypoint
+          final resolveNetworkRequests = networkRequests.where((req) {
+            return req.startTime.isAfter(resolveStartTime!.subtract(Duration(milliseconds: 10))) &&
+                   req.startTime.isBefore(resolveEndTime!.add(Duration(milliseconds: 10)));
+          }).toList();
+          
+          if (resolveNetworkRequests.isNotEmpty) {
+            buffer.writeln('║ │   └─ Network requests:');
+            for (final req in resolveNetworkRequests) {
+              String reqUrl = req.url;
+              
+              // Status string
+              String statusStr = '';
+              if (req.error != null) {
+                statusStr = 'ERROR';
+              } else if (req.isFromCache) {
+                statusStr = 'CACHED';
+              } else if (req.statusCode != null) {
+                statusStr = '${req.statusCode}';
+                if (req.responseSize != null) {
+                  statusStr += ' ${_formatBytes(req.responseSize!)}';
+                }
+              } else {
+                statusStr = 'PENDING';
+              }
+              
+              // Duration string
+              String durationStr = '';
+              if (req.endTime != null) {
+                final duration = req.endTime!.difference(req.startTime);
+                durationStr = _formatDuration(duration);
+              }
+              
+              // Display URL and status on separate lines for clarity
+              buffer.writeln('║ │       • URL: $reqUrl');
+              buffer.writeln('║ │         Status: $statusStr, Duration: $durationStr');
+              buffer.writeln('║ │');
+            }
+          }
+        }
       }
 
       buffer.writeln('║ └─────────────────────────────────┴──────────────┴──────────┴────────────┘');
@@ -737,6 +793,61 @@ class LoadingStateDump {
         final percentDisplay = '$percentage%'.padLeft(10);
 
         buffer.writeln('║ │ $phaseDisplay │ $timeDisplay │ $elapsedDisplay │ $percentDisplay │');
+
+        // Show network requests for resolveEntrypoint phase
+        if ((phase.name == 'resolveEntrypoint.end' || phase.name == LoadingState.phaseResolveEntrypoint) && 
+            options.showNetworkDetails) {
+          // Find the start and end times for resolveEntrypoint
+          DateTime? resolveStartTime;
+          DateTime? resolveEndTime = phase.timestamp;
+          
+          // Look for resolveEntrypoint.start or the main resolveEntrypoint phase
+          final resolveStartPhase = phases.firstWhere(
+            (p) => p.name == 'resolveEntrypoint.start' || p.name == LoadingState.phaseResolveEntrypoint,
+            orElse: () => phase,
+          );
+          resolveStartTime = resolveStartPhase.timestamp;
+          
+          // Find network requests that occurred during resolveEntrypoint
+          final resolveNetworkRequests = networkRequests.where((req) {
+            return req.startTime.isAfter(resolveStartTime!.subtract(Duration(milliseconds: 10))) &&
+                   req.startTime.isBefore(resolveEndTime!.add(Duration(milliseconds: 10)));
+          }).toList();
+          
+          if (resolveNetworkRequests.isNotEmpty) {
+            buffer.writeln('║ │   └─ Network requests:');
+            for (final req in resolveNetworkRequests) {
+              String reqUrl = req.url;
+              
+              // Status string
+              String statusStr = '';
+              if (req.error != null) {
+                statusStr = 'ERROR';
+              } else if (req.isFromCache) {
+                statusStr = 'CACHED';
+              } else if (req.statusCode != null) {
+                statusStr = '${req.statusCode}';
+                if (req.responseSize != null) {
+                  statusStr += ' ${_formatBytes(req.responseSize!)}';
+                }
+              } else {
+                statusStr = 'PENDING';
+              }
+              
+              // Duration string
+              String durationStr = '';
+              if (req.endTime != null) {
+                final duration = req.endTime!.difference(req.startTime);
+                durationStr = _formatDuration(duration);
+              }
+              
+              // Display URL and status on separate lines for clarity
+              buffer.writeln('║ │       • URL: $reqUrl');
+              buffer.writeln('║ │         Status: $statusStr, Duration: $durationStr');
+              buffer.writeln('║ │');
+            }
+          }
+        }
 
         // Display substeps if any
         if (phase.substeps.isNotEmpty && options.showNetworkDetails) {
@@ -1729,7 +1840,8 @@ class LoadingState {
       _scriptElements.where((s) => s.error != null).length;
 
   /// Dumps the loading state as a LoadingStateDump object that can be formatted as text or JSON
-  LoadingStateDump dump({bool verbose = false}) {
+  LoadingStateDump dump({LoadingStateDumpOptions? options}) {
+    final opts = options ?? LoadingStateDumpOptions();
     final totalDuration = this.totalDuration ?? Duration.zero;
 
     return LoadingStateDump(
@@ -1740,12 +1852,13 @@ class LoadingState {
       errors: errors,
       scriptElements: scriptElements,
       dumper: this,
+      options: opts,
     );
   }
 
   /// Legacy method for backward compatibility - returns formatted string
-  String dumpAsString({bool verbose = false}) {
-    return dump(verbose: verbose).toString();
+  String dumpAsString({LoadingStateDumpOptions? options}) {
+    return dump(options: options).toString();
   }
 
   // Helper method to format the dump as string (moved to LoadingStateDump.toString)

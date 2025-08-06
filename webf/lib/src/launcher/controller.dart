@@ -1930,10 +1930,10 @@ class WebFController with Diagnosticable {
   /// Returns a formatted ASCII timeline showing critical loading phases from initialization
   /// through evaluation, including timestamps and parameters for each phase.
   ///
-  /// @param verbose If true, includes detailed parameters for each phase.
+  /// @param options Controls what information to include in the dump.
   /// @return A LoadingStateDump object containing the loading state data.
-  LoadingStateDump dumpLoadingState({bool verbose = true}) {
-    return _loadingState.dump(verbose: verbose);
+  LoadingStateDump dumpLoadingState({LoadingStateDumpOptions? options}) {
+    return _loadingState.dump(options: options);
   }
 }
 
