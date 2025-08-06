@@ -65,8 +65,8 @@ void main() {
         'param2': 42,
       });
 
-      final verboseOutput = dumper.dump(verbose: true);
-      final normalOutput = dumper.dump(verbose: false);
+      final verboseOutput = dumper.dump(options: LoadingStateDumpOptions.full);
+      final normalOutput = dumper.dump();
 
       // Verbose output should contain parameters
       expect(verboseOutput, contains('param1: value1'));
@@ -144,7 +144,7 @@ void main() {
     test('should format durations correctly', () {
       // Test milliseconds formatting
       dumper.recordPhase('phase1');
-      final output1 = dumper.dump();
+      final output1 = dumper.dump().toString();
       expect(RegExp(r'\d+ms').hasMatch(output1), isTrue);
 
       // For testing seconds/minutes formatting, we'd need to mock the duration
@@ -202,7 +202,7 @@ void main() {
       // Add a phase to have something in the timeline
       dumper.recordPhase('test-phase');
 
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
 
       // Check network statistics in header
       expect(output, contains('Network Requests: 3'));
@@ -227,7 +227,7 @@ void main() {
       dumper.recordNetworkRequestComplete('https://example.com/large', responseSize: 2097152); // 2MB
 
       dumper.recordPhase('test');
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
 
       expect(output, contains('512B'));
       expect(output, contains('2.0KB'));
@@ -244,7 +244,7 @@ void main() {
       });
       dumper.recordPhase(LoadingState.phaseWindowLoad);
 
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
 
       // Check that buildRootView is recorded
       expect(output, contains('buildRootView'));
@@ -284,7 +284,7 @@ void main() {
       expect(dumper.errors[0].error.toString(), contains('Failed to resolve bundle'));
 
       // Check dump output
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
       expect(output, contains('⚠️  Errors: 1'));
       expect(output, contains('⚠️  Errors and Exceptions:'));
       expect(output, contains('ERROR at'));
@@ -334,8 +334,8 @@ void main() {
         );
       }
 
-      final verboseOutput = dumper.dump(verbose: true);
-      final normalOutput = dumper.dump(verbose: false);
+      final verboseOutput = dumper.dump(options: LoadingStateDumpOptions.full);
+      final normalOutput = dumper.dump();
 
       // Stack trace should only appear in verbose mode
       expect(verboseOutput, contains('Stack trace:'));
@@ -368,7 +368,7 @@ void main() {
       expect(dumper.phases[1].name, '${LoadingState.phaseParseHTML}.end');
       expect(dumper.phases[1].parameters['duration'], greaterThanOrEqualTo(50));
 
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
       expect(output, contains('parseHTML'));
       expect(output, contains('dataSize: 1024'));
     });
@@ -388,7 +388,7 @@ void main() {
       expect(dumper.phases[0].name, '${LoadingState.phaseEvaluateScripts}.start');
       expect(dumper.phases[1].name, '${LoadingState.phaseEvaluateScripts}.end');
 
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
       expect(output, contains('evaluateScripts'));
       expect(output, contains('url: https://example.com/script.js'));
       expect(output, contains('loadedFromCache: true'));
@@ -405,7 +405,7 @@ void main() {
 
       endCallback();
 
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
       expect(output, contains('evaluateScripts'));
       expect(output, contains('type: bytecode'));
       expect(output, contains('dataSize: 4096'));
@@ -522,7 +522,7 @@ void main() {
       dumper.recordScriptElementError('https://example.com/broken.js', 'Syntax error');
 
       // Check verbose dump
-      final output = dumper.dump(verbose: true);
+      final output = dumper.dump(options: LoadingStateDumpOptions.full);
 
       // Check header
       expect(output, contains('Script Elements: 3 (2 successful, 1 failed)'));
