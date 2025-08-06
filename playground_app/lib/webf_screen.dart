@@ -16,6 +16,8 @@ class WebFScreen extends StatefulWidget {
 class _WebFScreenState extends State<WebFScreen> {
   static const String initialControllerName = 'miracle_plus_demo';
   static const String initialUrl = 'https://miracleplus.openwebf.com/';
+  static const String showcaseControllerName = 'react_use_cases';
+  static const String showcaseUrl = 'http://localhost:3000';
 
   final TextEditingController _urlController = TextEditingController();
 
@@ -29,8 +31,28 @@ class _WebFScreenState extends State<WebFScreen> {
   @override
   void initState() {
     super.initState();
-    // Remove the unnecessary initial controller check
-    // _checkInitialController();
+    // Preload React use cases on app startup
+    _preloadShowcase();
+  }
+
+  Future<void> _preloadShowcase() async {
+    try {
+      // Add showcase controller with prerendering
+      await WebFControllerManager.instance.addWithPreload(
+        name: showcaseControllerName,
+        createController: () => WebFController(
+          initialRoute: '/',
+          routeObserver: routeObserver,
+        ),
+        bundle: WebFBundle.fromUrl(showcaseUrl),
+        setup: (controller) {
+          controller.hybridHistory.delegate = GoRouterHybridHistoryDelegate();
+        },
+      );
+      print('React use cases preloaded successfully');
+    } catch (e) {
+      print('Failed to preload React use cases: $e');
+    }
   }
 
   Future<void> _loadUrl(String url, {bool withPrerendering = false}) async {
@@ -69,7 +91,7 @@ class _WebFScreenState extends State<WebFScreen> {
 
       try {
         // Add new controller with prerendering
-        await WebFControllerManager.instance.addWithPrerendering(
+        await WebFControllerManager.instance.addWithPreload(
           name: newControllerName,
           createController: () => WebFController(
             initialRoute: '/home',
@@ -147,7 +169,12 @@ class _WebFScreenState extends State<WebFScreen> {
   }
 
   void _navigateToShowcase() {
-    context.push('/showcase');
+    // Navigate to the preloaded React use cases
+    AppRouterConfig.navigateToWebFController(
+      showcaseControllerName,
+      url: showcaseUrl,
+      isDirect: false,
+    );
   }
 
   @override
