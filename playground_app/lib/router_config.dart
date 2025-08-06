@@ -5,7 +5,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:playground_app/webf_screen.dart';
-import 'package:playground_app/showcase_screen.dart';
 import 'package:playground_app/qr_scanner_screen.dart';
 import 'package:webf/webf.dart';
 
@@ -21,13 +20,6 @@ class AppRouterConfig {
         path: '/',
         name: 'home',
         builder: (context, state) => const WebFScreen(),
-      ),
-      
-      // Showcase route
-      GoRoute(
-        path: '/showcase',
-        name: 'showcase',
-        builder: (context, state) => const ShowcaseScreen(),
       ),
       
       // QR Scanner route
