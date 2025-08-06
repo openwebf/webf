@@ -123,7 +123,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () {
-                      final loadingDump = widget.controller.dumpLoadingState(verbose: true);
+                      final loadingDump = widget.controller.dumpLoadingState(options: LoadingStateDumpOptions.full);
                       Clipboard.setData(ClipboardData(text: loadingDump.toString()));
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -141,7 +141,7 @@ class _LoadingStateTimelineDialogState extends State<_LoadingStateTimelineDialog
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(minWidth: 32, minHeight: 32),
                     onPressed: () {
-                      final loadingDump = widget.controller.dumpLoadingState(verbose: true);
+                      final loadingDump = widget.controller.dumpLoadingState(options: LoadingStateDumpOptions.full);
                       final jsonString = JsonEncoder.withIndent('  ').convert(loadingDump.toJson());
                       Clipboard.setData(ClipboardData(text: jsonString));
                       ScaffoldMessenger.of(context).showSnackBar(
