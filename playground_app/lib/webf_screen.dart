@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:playground_app/main.dart';
 import 'package:webf/webf.dart';
 import 'go_router_hybrid_history_delegate.dart';
@@ -215,33 +216,35 @@ class _WebFScreenState extends State<WebFScreen> {
                         onSubmitted: isLoadingComplete ? null : (url) => _loadUrl(url, withPrerendering: true),
                       ),
                     ),
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: isLoading ? null : _scanQRCode,
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(12),
-                          bottomRight: Radius.circular(12),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          height: 56,
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: Color(0xFFE5E5E5),
-                                width: 1,
+                    // Only show QR scanner button on mobile platforms
+                    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android))
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: isLoading ? null : _scanQRCode,
+                          borderRadius: const BorderRadius.only(
+                            topRight: Radius.circular(12),
+                            bottomRight: Radius.circular(12),
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            height: 56,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                left: BorderSide(
+                                  color: Color(0xFFE5E5E5),
+                                  width: 1,
+                                ),
                               ),
                             ),
-                          ),
-                          child: Icon(
-                            Icons.qr_code_scanner_rounded,
-                            color: isLoading ? const Color(0xFFCCCCCC) : const Color(0xFF666666),
-                            size: 22,
+                            child: Icon(
+                              Icons.qr_code_scanner_rounded,
+                              color: isLoading ? const Color(0xFFCCCCCC) : const Color(0xFF666666),
+                              size: 22,
+                            ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),
