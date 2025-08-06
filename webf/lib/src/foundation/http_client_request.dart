@@ -241,10 +241,19 @@ class ProxyHttpClientRequest implements HttpClientRequest {
 
             // Track completion for cache hit
             final responseHeaders = <String, String>{};
+            String? contentType;
             cacheResponse.headers.forEach((name, values) {
-              responseHeaders[name] = values.join(', ');
+              final headerValue = values.join(', ');
+              responseHeaders[name] = headerValue;
+              if (name.toLowerCase() == 'content-type') {
+                contentType = headerValue;
+              }
             });
-            dumper?.recordNetworkRequestComplete(_uri.toString(), statusCode: cacheResponse.statusCode, responseHeaders: responseHeaders);
+            dumper?.recordNetworkRequestComplete(_uri.toString(), 
+              statusCode: cacheResponse.statusCode, 
+              responseHeaders: responseHeaders,
+              contentType: contentType,
+            );
 
             return cacheResponse;
           }
@@ -369,10 +378,19 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       // Track final response
       if (dumper != null && ownerBundle == null) {
         final responseHeaders = <String, String>{};
+        String? contentType;
         response.headers.forEach((name, values) {
-          responseHeaders[name] = values.join(', ');
+          final headerValue = values.join(', ');
+          responseHeaders[name] = headerValue;
+          if (name.toLowerCase() == 'content-type') {
+            contentType = headerValue;
+          }
         });
-        dumper.recordNetworkRequestComplete(_uri.toString(), statusCode: response.statusCode, responseHeaders: responseHeaders);
+        dumper.recordNetworkRequestComplete(_uri.toString(), 
+          statusCode: response.statusCode, 
+          responseHeaders: responseHeaders,
+          contentType: contentType,
+        );
       }
 
       // Check match cache, and then return cache.

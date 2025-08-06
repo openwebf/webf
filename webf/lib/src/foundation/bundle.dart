@@ -358,11 +358,20 @@ class NetworkBundle extends WebFBundle {
 
     // Track completion
     final responseHeaders = <String, String>{};
+    String? contentType;
     response.headers.forEach((name, values) {
-      responseHeaders[name] = values.join(', ');
+      final headerValue = values.join(', ');
+      responseHeaders[name] = headerValue;
+      if (name.toLowerCase() == 'content-type') {
+        contentType = headerValue;
+      }
     });
 
-    dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: responseHeaders);
+    dumper?.recordNetworkRequestComplete(url, 
+      statusCode: response.statusCode, 
+      responseHeaders: responseHeaders,
+      contentType: contentType,
+    );
   }
 }
 
