@@ -370,45 +370,70 @@ class LoadingStateDump {
       final url = request.url.toLowerCase();
       final contentType = (request.contentType ?? '').toLowerCase();
 
-      // Check if it's the main entrypoint (HTML file)
-      if (contentType.contains('text/html') ||
-          (url.endsWith('.html') || url.endsWith('.htm')) ||
-          (request.method == 'GET' && phases.any((p) =>
-            p.name == LoadingState.phaseLoadStart &&
-            p.parameters['bundle'] == request.url))) {
-        categorized['mainEntrypoint']!.add(request);
+      // If we have a content type from the response, use it as the primary indicator
+      if (contentType.isNotEmpty) {
+        // Check if it's the main entrypoint (HTML file)
+        if (contentType.contains('text/html')) {
+          categorized['mainEntrypoint']!.add(request);
+        }
+        // Check if it's a script
+        else if (contentType.contains('javascript') ||
+                 contentType.contains('ecmascript')) {
+          categorized['scripts']!.add(request);
+        }
+        // Check if it's an image
+        else if (contentType.startsWith('image/')) {
+          categorized['images']!.add(request);
+        }
+        // Check if it's an XHR/Fetch request (typically API calls)
+        else if (contentType.contains('application/json') ||
+                 contentType.contains('application/xml') ||
+                 contentType.contains('text/xml') ||
+                 contentType.contains('application/x-www-form-urlencoded')) {
+          categorized['xhr']!.add(request);
+        }
+        // Everything else with content type
+        else {
+          categorized['other']!.add(request);
+        }
       }
-      // Check if it's a script
-      else if (contentType.contains('javascript') ||
-               contentType.contains('ecmascript') ||
-               url.endsWith('.js') ||
-               url.endsWith('.mjs') ||
-               url.endsWith('.ts')) {
-        categorized['scripts']!.add(request);
-      }
-      // Check if it's an image
-      else if (contentType.contains('image/') ||
-               url.endsWith('.png') ||
-               url.endsWith('.jpg') ||
-               url.endsWith('.jpeg') ||
-               url.endsWith('.gif') ||
-               url.endsWith('.webp') ||
-               url.endsWith('.svg') ||
-               url.endsWith('.ico')) {
-        categorized['images']!.add(request);
-      }
-      // Check if it's an XHR/Fetch request (typically API calls)
-      else if (contentType.contains('application/json') ||
-               contentType.contains('application/xml') ||
-               contentType.contains('text/xml') ||
-               request.method != 'GET' ||
-               url.contains('/api/') ||
-               url.contains('/graphql')) {
-        categorized['xhr']!.add(request);
-      }
-      // Everything else
+      // Fall back to URL patterns only if no content type is available
       else {
-        categorized['other']!.add(request);
+        // Check if it's the main entrypoint (HTML file)
+        if ((url.endsWith('.html') || url.endsWith('.htm')) ||
+            (request.method == 'GET' && phases.any((p) =>
+              p.name == LoadingState.phaseLoadStart &&
+              p.parameters['bundle'] == request.url))) {
+          categorized['mainEntrypoint']!.add(request);
+        }
+        // Check if it's a script based on URL
+        else if (url.endsWith('.js') ||
+                 url.endsWith('.mjs') ||
+                 url.endsWith('.ts')) {
+          categorized['scripts']!.add(request);
+        }
+        // Check if it's an image based on URL
+        else if (url.endsWith('.png') ||
+                 url.endsWith('.jpg') ||
+                 url.endsWith('.jpeg') ||
+                 url.endsWith('.gif') ||
+                 url.endsWith('.webp') ||
+                 url.endsWith('.svg') ||
+                 url.endsWith('.ico')) {
+          categorized['images']!.add(request);
+        }
+        // Check if it's an XHR/Fetch request based on URL patterns
+        else if (request.method != 'GET' ||
+                 url.contains('/api/') ||
+                 url.contains('/graphql') ||
+                 url.endsWith('.json') ||
+                 url.endsWith('.xml')) {
+          categorized['xhr']!.add(request);
+        }
+        // Everything else without content type
+        else {
+          categorized['other']!.add(request);
+        }
       }
     }
 
