@@ -221,6 +221,7 @@ class LoadingStateDumpOptions {
   final bool showErrors;
   final bool showMainEntrypoint;
   final bool showScriptRequests;
+  final bool showStylesheets;
   final bool showXHRRequests;
   final bool showImageRequests;
   final bool showOtherRequests;
@@ -233,20 +234,187 @@ class LoadingStateDumpOptions {
     this.showErrors = true,
     this.showMainEntrypoint = true,
     this.showScriptRequests = true,
+    this.showStylesheets = true,
     this.showXHRRequests = true,
     this.showImageRequests = true,
     this.showOtherRequests = true,
     this.showNetworkDetails = false,
   });
 
-  // Preset configurations
-  static const LoadingStateDumpOptions minimal = LoadingStateDumpOptions(
+  // Combine multiple options using the | operator
+  LoadingStateDumpOptions operator |(LoadingStateDumpOptions other) {
+    return LoadingStateDumpOptions(
+      showMainPhases: showMainPhases || other.showMainPhases,
+      showAdditionalPhases: showAdditionalPhases || other.showAdditionalPhases,
+      showScripts: showScripts || other.showScripts,
+      showErrors: showErrors || other.showErrors,
+      showMainEntrypoint: showMainEntrypoint || other.showMainEntrypoint,
+      showScriptRequests: showScriptRequests || other.showScriptRequests,
+      showStylesheets: showStylesheets || other.showStylesheets,
+      showXHRRequests: showXHRRequests || other.showXHRRequests,
+      showImageRequests: showImageRequests || other.showImageRequests,
+      showOtherRequests: showOtherRequests || other.showOtherRequests,
+      showNetworkDetails: showNetworkDetails || other.showNetworkDetails,
+    );
+  }
+
+  // Preset configurations - all start with nothing enabled
+  static const LoadingStateDumpOptions none = LoadingStateDumpOptions(
+    showMainPhases: false,
     showAdditionalPhases: false,
     showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions minimal = LoadingStateDumpOptions(
+    showMainPhases: true,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: true,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
     showNetworkDetails: false,
   );
 
   static const LoadingStateDumpOptions full = LoadingStateDumpOptions(
+    showNetworkDetails: true,
+  );
+
+  // Individual option presets for combining
+  static const LoadingStateDumpOptions phases = LoadingStateDumpOptions(
+    showMainPhases: true,
+    showAdditionalPhases: true,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions errors = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: true,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions html = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: true,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions scripts = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: true,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: true,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions css = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: true,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions api = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: true,
+    showImageRequests: false,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions images = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: true,
+    showOtherRequests: false,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions network = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: true,
+    showScriptRequests: true,
+    showStylesheets: true,
+    showXHRRequests: true,
+    showImageRequests: true,
+    showOtherRequests: true,
+    showNetworkDetails: false,
+  );
+
+  static const LoadingStateDumpOptions networkDetailed = LoadingStateDumpOptions(
+    showMainPhases: false,
+    showAdditionalPhases: false,
+    showScripts: false,
+    showErrors: false,
+    showMainEntrypoint: false,
+    showScriptRequests: false,
+    showStylesheets: false,
+    showXHRRequests: false,
+    showImageRequests: false,
+    showOtherRequests: false,
     showNetworkDetails: true,
   );
 }
@@ -361,6 +529,7 @@ class LoadingStateDump {
     final Map<String, List<LoadingNetworkRequest>> categorized = {
       'mainEntrypoint': [],
       'scripts': [],
+      'stylesheets': [],
       'xhr': [],
       'images': [],
       'other': [],
@@ -375,6 +544,10 @@ class LoadingStateDump {
         // Check if it's the main entrypoint (HTML file)
         if (contentType.contains('text/html')) {
           categorized['mainEntrypoint']!.add(request);
+        }
+        // Check if it's a CSS stylesheet
+        else if (contentType.contains('text/css')) {
+          categorized['stylesheets']!.add(request);
         }
         // Check if it's a script
         else if (contentType.contains('javascript') ||
@@ -405,6 +578,10 @@ class LoadingStateDump {
               p.name == LoadingState.phaseLoadStart &&
               p.parameters['bundle'] == request.url))) {
           categorized['mainEntrypoint']!.add(request);
+        }
+        // Check if it's a CSS file based on URL
+        else if (url.endsWith('.css')) {
+          categorized['stylesheets']!.add(request);
         }
         // Check if it's a script based on URL
         else if (url.endsWith('.js') ||
@@ -903,7 +1080,15 @@ class LoadingStateDump {
                                                !p.name.startsWith('networkStart:')).toList();
 
     // Display network requests grouped by type
-    if (options.showAdditionalPhases && networkRequests.isNotEmpty) {
+    // Show network activity if any network-related options are enabled
+    final showNetworkActivity = options.showMainEntrypoint || 
+                                options.showScriptRequests || 
+                                options.showStylesheets || 
+                                options.showXHRRequests || 
+                                options.showImageRequests || 
+                                options.showOtherRequests;
+    
+    if (showNetworkActivity && networkRequests.isNotEmpty) {
       buffer.writeln('║');
       buffer.writeln('║ Network Activity:');
       buffer.writeln('║');
@@ -919,6 +1104,12 @@ class LoadingStateDump {
       // Display Scripts
       if (options.showScriptRequests && categorized['scripts']!.isNotEmpty) {
         _displayNetworkCategory(buffer, 'Scripts', categorized['scripts']!, 
+                                totalDuration, startTime);
+      }
+      
+      // Display Stylesheets
+      if (options.showStylesheets && categorized['stylesheets']!.isNotEmpty) {
+        _displayNetworkCategory(buffer, 'Stylesheets (CSS)', categorized['stylesheets']!, 
                                 totalDuration, startTime);
       }
       
