@@ -1218,7 +1218,8 @@ class LoadingStateDump {
           for (final substep in networkPhase.substeps) {
             final substepName = substep.name.split(':').last.replaceAll('_', ' ');
             final substepDisplay = '  └─ $substepName'.padRight(47);
-            final substepElapsed = dumper?._getAdjustedElapsedTime(substep) ?? substep.timestamp.difference(startTime);
+            // Calculate elapsed time from the request's start time, not the loading process start time
+            final substepElapsed = substep.timestamp.difference(request.startTime);
             final substepDuration = _formatDuration(substepElapsed).padLeft(12);
 
             buffer.writeln('║ │ $substepDisplay │ $substepDuration │            │');
