@@ -68,6 +68,9 @@ if(NOT MSVC)
       set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
       add_compile_options(-flto)
     endif()
+  else ()
+    # debug
+    add_compile_options(-g3 -O0)
   endif()
 endif()
 
@@ -228,6 +231,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
 
   if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
     add_definitions(-DDDEBUG)
+    add_compile_options(-g3 -O0)
   endif ()
 
   if(${STATIC_QUICKJS})
@@ -342,9 +346,9 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
     core/core_initializer.cc
 
     ## CSS
-    core/css/css_style_declaration.cc
-    core/css/inline_css_style_declaration.cc
-    core/css/computed_css_style_declaration.cc
+#    core/css/css_style_declaration.cc
+#    core/css/inline_css_style_declaration.cc
+#    core/css/computed_css_style_declaration.cc
     core/css/style_element.cc
     core/css/style_color.cc
     core/css/style_engine.cc
@@ -853,9 +857,9 @@ list(APPEND BRIDGE_SOURCE
     code_gen/qjs_comment.cc
     code_gen/qjs_document_fragment.cc
     code_gen/qjs_bounding_client_rect.cc
-    code_gen/qjs_css_style_declaration.cc
-    code_gen/qjs_inline_css_style_declaration.cc
-    code_gen/qjs_computed_css_style_declaration.cc
+#    code_gen/qjs_css_style_declaration.cc
+#    code_gen/qjs_inline_css_style_declaration.cc
+#    code_gen/qjs_computed_css_style_declaration.cc
     code_gen/qjs_native_loader.cc
     code_gen/qjs_text.cc
     code_gen/qjs_screen.cc
@@ -1028,8 +1032,8 @@ list(APPEND BRIDGE_SOURCE
     code_gen/plugin_api_animation_event.cc
     code_gen/plugin_api_bounding_client_rect.cc
     code_gen/plugin_api_close_event.cc
-    code_gen/plugin_api_computed_css_style_declaration.cc
-    code_gen/plugin_api_css_style_declaration.cc
+#    code_gen/plugin_api_computed_css_style_declaration.cc
+#    code_gen/plugin_api_css_style_declaration.cc
     code_gen/plugin_api_custom_event.cc
     code_gen/plugin_api_dom_string_map.cc
     code_gen/plugin_api_element_attributes.cc
@@ -1039,9 +1043,12 @@ list(APPEND BRIDGE_SOURCE
     code_gen/plugin_api_gesture_event.cc
     code_gen/plugin_api_hashchange_event.cc
     code_gen/plugin_api_hybrid_router_change_event.cc
-    code_gen/plugin_api_inline_css_style_declaration.cc
+#    code_gen/plugin_api_inline_css_style_declaration.cc
     code_gen/plugin_api_input_event.cc
     code_gen/plugin_api_intersection_change_event.cc
+    code_gen/plugin_api_legacy_computed_css_style_declaration.cc
+    code_gen/plugin_api_legacy_css_style_declaration.cc
+    code_gen/plugin_api_legacy_inline_css_style_declaration.cc
     code_gen/plugin_api_pop_state_event.cc
     code_gen/plugin_api_message_event.cc
     code_gen/plugin_api_mouse_event.cc
