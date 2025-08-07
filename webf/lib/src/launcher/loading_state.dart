@@ -228,6 +228,7 @@ class LoadingStateDumpOptions {
   final bool showImageRequests;
   final bool showOtherRequests;
   final bool showNetworkDetails;
+  final bool showStackTrace;
 
   const LoadingStateDumpOptions({
     this.showMainPhases = true,
@@ -241,6 +242,7 @@ class LoadingStateDumpOptions {
     this.showImageRequests = true,
     this.showOtherRequests = true,
     this.showNetworkDetails = false,
+    this.showStackTrace = false,
   });
 
   // Combine multiple options using the | operator
@@ -257,6 +259,7 @@ class LoadingStateDumpOptions {
       showImageRequests: showImageRequests || other.showImageRequests,
       showOtherRequests: showOtherRequests || other.showOtherRequests,
       showNetworkDetails: showNetworkDetails || other.showNetworkDetails,
+      showStackTrace: showStackTrace || other.showStackTrace,
     );
   }
 
@@ -273,6 +276,7 @@ class LoadingStateDumpOptions {
     showImageRequests: false,
     showOtherRequests: false,
     showNetworkDetails: false,
+    showStackTrace: false,
   );
 
   static const LoadingStateDumpOptions minimal = LoadingStateDumpOptions(
@@ -291,6 +295,7 @@ class LoadingStateDumpOptions {
 
   static const LoadingStateDumpOptions full = LoadingStateDumpOptions(
     showNetworkDetails: true,
+    showStackTrace: true,
   );
 
   // Individual option presets for combining
@@ -1281,7 +1286,7 @@ class LoadingStateDump {
           });
         }
 
-        if (error.stackTrace != null) {
+        if (error.stackTrace != null && options.showStackTrace) {
           buffer.writeln('║   Stack trace:');
           final stackLines = error.stackTrace.toString().split('\n').take(5);
           for (final line in stackLines) {
