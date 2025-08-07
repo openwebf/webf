@@ -1534,6 +1534,7 @@ class LoadingState {
   static const String phaseFirstPaint = 'firstPaint';
   static const String phaseFirstContentfulPaint = 'firstContentfulPaint';
   static const String phaseLargestContentfulPaint = 'largestContentfulPaint';
+  static const String phaseFinalLargestContentfulPaint = 'finalLargestContentfulPaint';
   static const String phaseBuildRootView = 'buildRootView';
   static const String phaseDetachFromFlutter = 'detachFromFlutter';
   static const String phaseDispose = 'dispose';
@@ -1635,7 +1636,7 @@ class LoadingState {
     onLoadingError({}, callback);
   }
   void onLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseLargestContentfulPaint, callback);
-  void onFinalLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener('finalLargestContentfulPaint', callback);
+  void onFinalLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseFinalLargestContentfulPaint, callback);
   void onAttachToFlutter(PhaseEventCallback callback) => addPhaseListener(phaseAttachToFlutter, callback);
   void onDetachFromFlutter(PhaseEventCallback callback) => addPhaseListener(phaseDetachFromFlutter, callback);
   void onDispose(PhaseEventCallback callback) => addPhaseListener(phaseDispose, callback);
@@ -1699,7 +1700,13 @@ class LoadingState {
     // Special handling for LCP candidates
     if (phaseName == phaseLargestContentfulPaint && !_lcpFinalized) {
       _lastLcpCandidate = phase;
-      // Don't add to phases yet, just track as candidate
+      // Check if this is marked as final
+      if (parameters?['isFinal'] == true) {
+        // Auto-finalize if marked as final
+        _lcpFinalized = true;
+        _phases[phaseName] = phase;
+      }
+      // Otherwise, don't add to phases yet, just track as candidate
     } else if (parentPhase != null && _phases.containsKey(parentPhase)) {
       // Add as substep to parent phase
       _phases[parentPhase]!.addSubstep(phase);
