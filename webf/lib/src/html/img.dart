@@ -322,7 +322,14 @@ class ImageElement extends Element {
     return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
 
-  bool get _isSVGMode => _resolvedUri?.path.endsWith('.svg') ?? false;
+  bool get _isSVGMode {
+    String path = _resolvedUri?.path ?? '';
+    if ((_resolvedUri?.scheme == 'data' && _resolvedUri!.path.substring(0, 9) == 'image/svg') ||
+        path.endsWith('.svg')) {
+      return true;
+    }
+    return false;
+  }
 
   // Read the original image width of loaded image.
   // The getter must be called after image had loaded, otherwise will return 0.

@@ -1,3 +1,21 @@
+## 0.22.7
+
+### Features
+- Added comprehensive loading error callbacks with typed error events (Bundle, Script, Network, Parse, Runtime)
+- Introduced `LoadingStateDumpOptions` for granular display control
+- Enhanced network request grouping by content type
+- Added preload mode support with Part I/Part II phase separation
+
+### Fixes
+- Fixed LCP auto-finalization when marked as final
+- Resolved loading_state_dumper_test failures
+- Corrected network request timing calculations
+- Fixed networkDetailed option to only control timing display
+
+### Refactoring
+- Renamed `LoadingStateDumper` to `LoadingState` for clarity
+
+
 ## 0.22.6
 
 ## Overview

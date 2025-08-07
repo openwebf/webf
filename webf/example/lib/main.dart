@@ -109,20 +109,6 @@ void main() async {
             print('contentInfo: $contentInfo');
           },
           onControllerInit: (controller) async {
-            bool hasReported = false;
-
-            // Timer initialTimer = Timer(Duration(seconds: 10), () {
-            //   if (!hasReported) {
-            //     LoadingStateDump dump = controller.dumpLoadingState(verbose: true);
-            //     print(dump.toString());
-            //   }
-            //   hasReported = true;
-            // });
-            //
-            // controller.loadingStateDumper.onScriptLoadComplete((event) {
-            //   initialTimer.cancel();
-            // });
-
             controller.loadingState.onAnyLoadingError((event) {
               switch (event.type) {
                 case LoadingErrorType.entrypoint:
@@ -708,30 +694,6 @@ class _WebFDemoState extends State<WebFDemo> {
                       routeObserver: routeObserver,
                       initialRoute: widget.initialRoute,
                       onControllerInit: (controller) async {
-                        // Timer(Duration(seconds: 10), () {
-                        //   LoadingStateDump dump = controller.dumpLoadingState(verbose: true);
-                        //   print(dump.toString());
-                        //
-                        //   // Example of using the helper functions
-                        //   print('\n=== Loading State Analysis ===');
-                        //   print('Has reached FP: ${dump.hasReachedFP}');
-                        //   print('Has reached FCP: ${dump.hasReachedFCP}');
-                        //   print('Has reached LCP: ${dump.hasReachedLCP}');
-                        //   print('LCP finalized: ${dump.hasLCPFinalized}');
-                        //
-                        //   if (dump.hasReachedLCP) {
-                        //     print('LCP time: ${dump.lcpTime}ms');
-                        //     print('LCP element: ${dump.lcpElementTag}');
-                        //     print('LCP content size: ${dump.lcpContentSize}px');
-                        //   }
-                        //
-                        //   // Example of using the toJson method
-                        //   print('\n=== JSON Export Example ===');
-                        //   final jsonData = dump.toJson();
-                        //   print('Summary: ${jsonData['summary']}');
-                        //   print('Total duration: ${jsonData['totalDuration']}ms');
-                        //   print('Phase count: ${jsonData['summary']['totalPhases']}');
-                        // });
                       },
                       onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
                         print('contentInfo: $contentInfo $routePath');
