@@ -104,7 +104,6 @@ class FetchModule extends BaseModule {
 
   @override
   dynamic invoke(String method, List<dynamic> params) {
-    print('[FetchModule] invoke called with method=$method');
     if (method == 'abortRequest') {
       _abortRequest();
       return '';

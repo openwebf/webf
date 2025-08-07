@@ -629,7 +629,7 @@ class FirstPageState extends State<FirstPage> {
 WebFBundle? _getBundleForControllerName(String controllerName) {
   switch (controllerName) {
     case 'html/css':
-      return WebFBundle.fromUrl('assets:///assets/bundle.html');
+      return WebFBundle.fromUrl('http://localhost:3000/tailwind_react/build');
     // return WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js');
     case 'esm_demo':
       return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
