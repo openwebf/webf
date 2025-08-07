@@ -65,11 +65,17 @@ function genCodeFromTypeDefine() {
     cwd: source,
   });
 
-  let blobs = typeFiles.map(file => {
-    let filename = 'qjs_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
-    let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
-    return new IDLBlob(path.join(source, file), dist, filename, implement);
-  });
+  let blobs = typeFiles
+    .filter(file => {
+      // Skip files that start with '_'
+      const fileName = file.split('/').slice(-1)[0];
+      return !fileName.startsWith('_');
+    })
+    .map(file => {
+      let filename = 'qjs_' + file.split('/').slice(-1)[0].replace('.d.ts', '');
+      let implement = file.replace(path.join(__dirname, '../../')).replace('.d.ts', '');
+      return new IDLBlob(path.join(source, file), dist, filename, implement);
+    });
 
   ClassObject.globalClassMap = Object.create(null);
 
