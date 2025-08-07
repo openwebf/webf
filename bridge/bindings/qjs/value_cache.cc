@@ -53,24 +53,28 @@ JSAtom StringCache::CreateStringAndInsertIntoCache(JSContext* ctx, std::shared_p
 }
 
 std::shared_ptr<StringImpl> StringCache::GetStringFromJSAtom(JSContext* ctx, JSAtom atom) {
-  if (atom_to_string_cache.find(atom) == atom_to_string_cache.end()) {
-    bool is_wide_char = !JS_AtomIsTaggedInt(atom) && JS_IsAtomWideChar(JS_GetRuntime(ctx), atom);
-    if (LIKELY(!is_wide_char)) {
-      uint32_t slen;
-      const char* str = reinterpret_cast<const char*>(JS_AtomRawCharacter8(JS_GetRuntime(ctx), atom, &slen));
-      std::shared_ptr<StringImpl> string_impl = AtomicStringTable::Instance().Add(str, slen);
-      atom_to_string_cache[JS_DupAtom(ctx, atom)] = string_impl;
-      return string_impl;
-    } else {
-      uint32_t slen;
-      const char16_t* wstrs = reinterpret_cast<const char16_t*>(JS_AtomRawCharacter16(JS_GetRuntime(ctx), atom, &slen));
-      std::shared_ptr<StringImpl> string_impl = AtomicStringTable::Instance().Add(wstrs, slen);
-      atom_to_string_cache[JS_DupAtom(ctx, atom)] = string_impl;
-      return string_impl;
-    }
+  auto it = atom_to_string_cache.find(atom);
+  if (it != atom_to_string_cache.end()) {
+    return it->second;
   }
-
-  return atom_to_string_cache[atom];
+  
+  // Atom not in cache, create StringImpl and cache it
+  bool is_wide_char = JS_IsAtomWideChar(JS_GetRuntime(ctx), atom);
+  std::shared_ptr<StringImpl> string_impl;
+  
+  if (LIKELY(!is_wide_char)) {
+    uint32_t slen;
+    const char* str = reinterpret_cast<const char*>(JS_AtomRawCharacter8(JS_GetRuntime(ctx), atom, &slen));
+    string_impl = AtomicStringTable::Instance().AddLatin1(str, slen);
+  } else {
+    uint32_t slen;
+    const char16_t* wstrs = reinterpret_cast<const char16_t*>(JS_AtomRawCharacter16(JS_GetRuntime(ctx), atom, &slen));
+    string_impl = AtomicStringTable::Instance().Add(wstrs, slen);
+  }
+  
+  // Cache the mapping - duplicate the atom since we're storing it
+  atom_to_string_cache[JS_DupAtom(ctx, atom)] = string_impl;
+  return string_impl;
 }
 
 void StringCache::Dispose() {
