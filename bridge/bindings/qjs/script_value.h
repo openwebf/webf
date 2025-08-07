@@ -40,7 +40,7 @@ class ScriptValue final {
   // Wrap an Quickjs JSValue to ScriptValue.
   explicit ScriptValue(JSContext* ctx, JSValue value) : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const AtomicString& value)
-      : value_(value.IsNull() ? JS_NULL : JS_NewStringLen(ctx, value.Characters8(), value.Impl()->length())), runtime_(JS_GetRuntime(ctx)){};
+      : value_(value.IsNull() ? JS_NULL : value.ToQuickJS(ctx)) , runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const SharedNativeString* string)
       : value_(JS_NewUnicodeString(ctx, string->string(), string->length())), runtime_(JS_GetRuntime(ctx)) {}
   explicit ScriptValue(JSContext* ctx, double v) : value_(JS_NewFloat64(ctx, v)), runtime_(JS_GetRuntime(ctx)) {}

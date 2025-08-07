@@ -9,7 +9,8 @@
 #include <core/html/canvas/canvas_gradient.h>
 #include <core/html/canvas/canvas_pattern.h>
 #include <core/html/canvas/text_metrics.h>
-#include "core/css/computed_css_style_declaration.h"
+// #include "core/css/computed_css_style_declaration.h"
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 #include <quickjs/quickjs.h>
 #include <vector>
 #include "bindings/qjs/converter_impl.h"
@@ -115,7 +116,7 @@ static JSValue FromNativeValue(ExecutingContext* context,
           return MakeGarbageCollected<TextMetrics>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::ComputedCSSStyleDeclaration: {
-          return MakeGarbageCollected<ComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
+          return MakeGarbageCollected<LegacyComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::DOMPoint: {
           return MakeGarbageCollected<DOMPoint>(context, ptr)->ToQuickJS();
@@ -167,7 +168,7 @@ ScriptValue ScriptValue::Undefined(JSContext* ctx) {
 
 ScriptValue::ScriptValue(const ScriptValue& value) {
   if (&value != this) {
-    value_ = JS_DupValueRT(runtime_, value.value_);
+    value_ = JS_DupValueRT(value.runtime_, value.value_);
   }
   runtime_ = value.runtime_;
 }
@@ -180,18 +181,16 @@ ScriptValue& ScriptValue::operator=(const ScriptValue& value) {
   return *this;
 }
 
-ScriptValue::ScriptValue(ScriptValue&& value) noexcept {
-  if (&value != this) {
-    value_ = JS_DupValueRT(runtime_, value.value_);
-  }
-  runtime_ = value.runtime_;
+ScriptValue::ScriptValue(ScriptValue&& value) noexcept : value_(value.value_), runtime_(value.runtime_)  {
+  value.value_ = JS_NULL;
 }
 ScriptValue& ScriptValue::operator=(ScriptValue&& value) noexcept {
   if (&value != this) {
     JS_FreeValueRT(runtime_, value_);
-    value_ = JS_DupValueRT(runtime_, value.value_);
+    value_ = value.value_;
+    runtime_ = value.runtime_;
+    value.value_ = JS_NULL;
   }
-  runtime_ = value.runtime_;
   return *this;
 }
 
