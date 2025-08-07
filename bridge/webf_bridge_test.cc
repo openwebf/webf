@@ -14,12 +14,15 @@
 
 std::unordered_map<int, webf::WebFTestContext*> testContextPool = std::unordered_map<int, webf::WebFTestContext*>();
 
+
+#define MAX_BACKTRACE_SIZE 50
+
 void handler(int sig) {
- void* array[10];
+ void* array[MAX_BACKTRACE_SIZE];
  size_t size;
 
  // get void*'s for all entries on the stack
- size = backtrace(array, 10);
+ size = backtrace(array, MAX_BACKTRACE_SIZE);
 
  // print out all the frames to stderr
  fprintf(stderr, "Error: signal %d:\n", sig);
