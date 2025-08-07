@@ -259,30 +259,11 @@ class NetworkBundle extends WebFBundle {
 
     // Get the loading state dumper for this context
     final dumper = LoadingStateRegistry.instance.getDumper(contextId);
-    final startTime = DateTime.now();
 
     // Track network request start
     dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
 
-    // Track DNS lookup stage
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageDnsLookupStart, metadata: {
-      'host': _uri!.host,
-    });
-
     final HttpClientRequest request = await sharedHttpClient.getUrl(_uri!);
-
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageDnsLookupEnd);
-
-    // Track TCP connection stage
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageTcpConnectStart, metadata: {
-      'host': _uri!.host,
-      'port': _uri!.port.toString(),
-    });
-
-    // For HTTPS, track TLS handshake
-    if (_uri!.isScheme('https')) {
-      dumper?.recordNetworkRequestStage(url, LoadingState.stageTlsHandshakeStart);
-    }
 
     // Prepare request headers.
     request.headers.set('Accept', _acceptHeader());
@@ -290,12 +271,6 @@ class NetworkBundle extends WebFBundle {
     WebFHttpOverrides.setContextHeader(request.headers, contextId);
 
     (request as ProxyHttpClientRequest).ownerBundle = this;
-
-    if (_uri!.isScheme('https')) {
-      dumper?.recordNetworkRequestStage(url, LoadingState.stageTlsHandshakeEnd);
-    }
-
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageTcpConnectEnd);
 
     // Track request sent stage
     dumper?.recordNetworkRequestStage(url, LoadingState.stageRequestSent, metadata: {
@@ -367,8 +342,8 @@ class NetworkBundle extends WebFBundle {
       }
     });
 
-    dumper?.recordNetworkRequestComplete(url, 
-      statusCode: response.statusCode, 
+    dumper?.recordNetworkRequestComplete(url,
+      statusCode: response.statusCode,
       responseHeaders: responseHeaders,
       contentType: contentType,
     );

@@ -18,8 +18,6 @@ import 'http_overrides.dart';
 import 'queue.dart';
 import 'loading_state_registry.dart';
 
-final _requestQueue = Queue(parallel: 10);
-
 // Global counter for unique request IDs
 int _requestIdCounter = 0;
 
@@ -177,7 +175,9 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       headers.forEach((name, values) {
         requestHeaders[name] = values.join(', ');
       });
-      dumper.recordNetworkRequestStart(_uri.toString(), method: _method, headers: requestHeaders);
+      // Check if this is a Fetch/XHR request by looking for the marker header
+      final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
+      dumper.recordNetworkRequestStart(_uri.toString(), method: _method, headers: requestHeaders, isXHR: isFetchRequest);
     }
 
     if (contextId != null) {
@@ -249,8 +249,8 @@ class ProxyHttpClientRequest implements HttpClientRequest {
                 contentType = headerValue;
               }
             });
-            dumper?.recordNetworkRequestComplete(_uri.toString(), 
-              statusCode: cacheResponse.statusCode, 
+            dumper?.recordNetworkRequestComplete(_uri.toString(),
+              statusCode: cacheResponse.statusCode,
               responseHeaders: responseHeaders,
               contentType: contentType,
             );
@@ -290,9 +290,10 @@ class ProxyHttpClientRequest implements HttpClientRequest {
 
       // If cache only, but no cache hit, throw error directly.
       if (HttpCacheController.mode == HttpCacheMode.CACHE_ONLY && response == null) {
-        dumper?.recordNetworkRequestComplete(_uri.toString(), statusCode: 0, responseHeaders: {
-          'error': 'CACHE_ONLY mode but no cache hit',
-        });
+        final errorMsg = 'CACHE_ONLY mode but no cache hit';
+        // Check if this is a Fetch/XHR request by looking for the marker header
+        final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
+        dumper?.recordNetworkRequestError(_uri.toString(), errorMsg, isXHR: isFetchRequest);
         throw FlutterError('HttpCacheMode is CACHE_ONLY, but no cache hit for $uri');
       }
 
@@ -301,25 +302,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
         // Handle 304 here.
         HttpClientResponse rawResponse;
         try {
-          rawResponse = await _requestQueue.add(() async {
-            try {
-              return await request.close();
-            } catch (e) {
-              // Handle "Cannot add event after closing" error gracefully
-              if (e.toString().contains('Cannot add event after closing')) {
-                print('Warning: Stream already closed for request to $uri - retrying with new request');
-                // Create a new request and try again
-                final newRequest = await _createBackendClientRequest();
-                if (_data.isNotEmpty) {
-                  await newRequest.addStream(Stream.value(_data));
-                  _data.clear();
-                }
-                return await newRequest.close();
-              }
-              rethrow;
-            }
-          });
-
+          rawResponse = await request.close();
           // Track redirects if any occurred
           if (rawResponse.redirects.isNotEmpty && dumper != null && ownerBundle == null) {
             for (final redirect in rawResponse.redirects) {
@@ -333,9 +316,9 @@ class ProxyHttpClientRequest implements HttpClientRequest {
         } catch (e) {
           // If still failing, log and rethrow
           print('Error closing HTTP request for $uri: $e');
-          dumper?.recordNetworkRequestComplete(_uri.toString(), statusCode: 0, responseHeaders: {
-            'error': e.toString(),
-          });
+          // Check if this is a Fetch/XHR request by looking for the marker header
+          final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
+          dumper?.recordNetworkRequestError(_uri.toString(), e.toString(), isXHR: isFetchRequest);
           rethrow;
         }
         response = cacheObject == null
@@ -386,8 +369,8 @@ class ProxyHttpClientRequest implements HttpClientRequest {
             contentType = headerValue;
           }
         });
-        dumper.recordNetworkRequestComplete(_uri.toString(), 
-          statusCode: response.statusCode, 
+        dumper.recordNetworkRequestComplete(_uri.toString(),
+          statusCode: response.statusCode,
           responseHeaders: responseHeaders,
           contentType: contentType,
         );
@@ -415,18 +398,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       }
     }
 
-    return _requestQueue.add(() async {
-      try {
-        return await request.close();
-      } catch (e) {
-        // Handle "Cannot add event after closing" error gracefully
-        if (e.toString().contains('Cannot add event after closing')) {
-          print('Warning: Stream already closed for request to $_uri - cannot retry without data');
-          rethrow;
-        }
-        rethrow;
-      }
-    });
+    return await request.close();
   }
 
   Future<HttpClientRequest> _createBackendClientRequest() async {
@@ -464,10 +436,8 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       // Handle "Bad file descriptor" and other socket errors
       if (e is SocketException || e.toString().contains('Bad file descriptor')) {
         print('Warning: Socket error when opening URL $_uri: $e');
-        // Try to recover by creating a new HTTP client
-        final newClient = _httpOverrides.createHttpClient(null);
         try {
-          backendRequest = await newClient.openUrl(_method, _uri);
+          backendRequest = await _nativeHttpClient.openUrl(_method, _uri);
           print('Successfully recovered with new HTTP client for $_uri');
         } catch (retryError) {
           print('Failed to recover with new HTTP client: $retryError');

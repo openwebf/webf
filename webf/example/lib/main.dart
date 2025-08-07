@@ -123,17 +123,37 @@ void main() async {
             //   initialTimer.cancel();
             // });
 
-            controller.loadingState.onFinalLargestContentfulPaint((_) {
-              if (!hasReported) {
-                LoadingStateDump dump = controller.dumpLoadingState(
-                    options: LoadingStateDumpOptions.html |
-                        LoadingStateDumpOptions.api |
-                        LoadingStateDumpOptions.scripts |
-                        LoadingStateDumpOptions.networkDetailed);
-                print(dump.toString());
+            controller.loadingState.onAnyLoadingError((event) {
+              switch (event.type) {
+                case LoadingErrorType.entrypoint:
+                case LoadingErrorType.script:
+                case LoadingErrorType.css:
+                case LoadingErrorType.fetch:
+                  LoadingStateDump dump = controller.dumpLoadingState(
+                      options: LoadingStateDumpOptions.html |
+                          LoadingStateDumpOptions.api |
+                          LoadingStateDumpOptions.scripts |
+                          LoadingStateDumpOptions.networkDetailed);
+                  print(dump.toString());
+                  break;
+                case LoadingErrorType.image: {
+                  print('\n\n');
+                  break;
+                }
               }
-              hasReported = true;
             });
+
+            // controller.loadingState.onFinalLargestContentfulPaint((_) {
+            //   if (!hasReported) {
+            //     LoadingStateDump dump = controller.dumpLoadingState(
+            //         options: LoadingStateDumpOptions.html |
+            //             LoadingStateDumpOptions.api |
+            //             LoadingStateDumpOptions.scripts |
+            //             LoadingStateDumpOptions.networkDetailed);
+            //     print(dump.toString());
+            //   }
+            //   hasReported = true;
+            // });
           }),
       bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
       setup: (controller) {

@@ -1078,6 +1078,11 @@ class WebFController with Diagnosticable {
         if (isTimeout) return;
 
         _preloadStatus = PreloadingStatus.fail;
+        // Record the preloadError phase with error details
+        _loadingState.recordPhase(LoadingState.phasePreloadError, parameters: {
+          'error': e.toString(),
+          'stackTrace': stack.toString(),
+        });
         _handlingLoadingError(e, stack);
         controllerPreloadingCompleter.completeError(e, stack);
       }
