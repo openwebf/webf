@@ -187,53 +187,86 @@ class _WebFScreenState extends State<WebFScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Minimalist Header
-              const Text(
-                'WebF',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.black87,
-                  letterSpacing: -0.5,
-                ),
+              // Header with logo
+              Row(
+                children: [
+                  // WebF Logo
+                  Image.network(
+                    'https://openwebf.com/img/openwebf.png',
+                    width: 32,
+                    height: 32,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.web,
+                          size: 20,
+                          color: Colors.grey,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 12),
+                  // Title
+                  const Text(
+                    'WebF Explorer',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Enter a URL to preview',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF666666),
-                  letterSpacing: 0.2,
-                ),
-              ),
-              
-              const SizedBox(height: 48),
+              const SizedBox(height: 28),
 
-              // URL Input Section
+              // Main Card Container
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFFE5E5E5),
-                    width: 1,
-                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Row(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // URL Input Section
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: const Color(0xFFE8E8E8),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _urlController,
                         decoration: const InputDecoration(
-                          hintText: 'https://example.com',
+                          hintText: 'Enter a URL to preview',
                           hintStyle: TextStyle(
                             color: Color(0xFFBBBBBB),
                             fontSize: 16,
                             fontWeight: FontWeight.w400,
                           ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         ),
                         style: const TextStyle(
                           fontSize: 16,
@@ -274,10 +307,35 @@ class _WebFScreenState extends State<WebFScreen> {
                       ),
                   ],
                 ),
-              ),
-              
-              const SizedBox(height: 24),
-              
+              ),      
+              // Error message inline display
+              if (loadingError != null) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      size: 16,
+                      color: Color(0xFFDC2626),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        loadingError!,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFFDC2626),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+                      
+              const SizedBox(height: 20),
+                      
               // Action Buttons - Responsive Layout
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -286,7 +344,7 @@ class _WebFScreenState extends State<WebFScreen> {
                   
                   final primaryButton = SizedBox(
                     width: useRowLayout ? null : double.infinity,
-                    height: 48,
+                    height: 40,
                     child: ElevatedButton(
                       onPressed: isLoading 
                         ? null 
@@ -303,7 +361,7 @@ class _WebFScreenState extends State<WebFScreen> {
                         padding: EdgeInsets.zero,
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: isLoading 
                           ? const SizedBox(
                               height: 18,
@@ -314,11 +372,11 @@ class _WebFScreenState extends State<WebFScreen> {
                               ),
                             )
                           : Text(
-                              isLoadingComplete ? 'View Page' : 'Prerender',
+                              isLoadingComplete ? 'Ready, go!' : 'Prerender',
                               style: const TextStyle(
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                letterSpacing: 0.3,
+                                letterSpacing: 0.2,
                               ),
                             ),
                       ),
@@ -327,7 +385,7 @@ class _WebFScreenState extends State<WebFScreen> {
                   
                   final resetButton = SizedBox(
                     width: useRowLayout ? null : double.infinity,
-                    height: 48,
+                    height: 40,
                     child: TextButton(
                       onPressed: _resetState,
                       style: TextButton.styleFrom(
@@ -342,13 +400,13 @@ class _WebFScreenState extends State<WebFScreen> {
                         padding: EdgeInsets.zero,
                       ),
                       child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24),
+                        padding: EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
                           'Reset',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            letterSpacing: 0.3,
+                            letterSpacing: 0.2,
                           ),
                         ),
                       ),
@@ -376,123 +434,12 @@ class _WebFScreenState extends State<WebFScreen> {
                   }
                 },
               ),
-
-              const SizedBox(height: 24),
-
-              // Status Indicators
-              if (isLoading || isLoadingComplete || loadingError != null) ...[
-                const SizedBox(height: 32),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: loadingError != null 
-                      ? const Color(0xFFFEF2F2)
-                      : isLoadingComplete 
-                        ? const Color(0xFFF0FDF4)
-                        : const Color(0xFFF5F5F5),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: loadingError != null 
-                        ? const Color(0xFFFEE2E2)
-                        : isLoadingComplete 
-                          ? const Color(0xFFDCFCE7)
-                          : const Color(0xFFE5E5E5),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      if (isLoading) ...[
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              height: 16,
-                              width: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF666666)),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Prerendering...',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF666666),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ] else if (loadingError != null) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline_rounded,
-                              size: 20,
-                              color: Color(0xFFDC2626),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                loadingError!,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFFDC2626),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ] else if (isLoadingComplete) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle_rounded,
-                              size: 20,
-                              color: Color(0xFF16A34A),
-                            ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'Page ready! Click View Page to continue',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF16A34A),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
                     ],
                   ),
                 ),
-              ],
+              ),
 
-              const SizedBox(height: 48),
-              
-              // Divider
-              Container(
-                height: 1,
-                color: const Color(0xFFE5E5E5),
-              ),
-              
-              const SizedBox(height: 48),
-              
-              // Quick Links
-              const Text(
-                'Quick Links',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF666666),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               
               // Showcase Link
               Material(
