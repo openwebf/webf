@@ -15,7 +15,10 @@ class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
+namespace legacy {
 class LegacyComputedCssStyleDeclaration;
+}
+using LegacyComputedCssStyleDeclaration = legacy::LegacyComputedCssStyleDeclaration;
 using PublicLegacyComputedCssStyleDeclarationGetCssText = AtomicStringRef (*)(LegacyComputedCssStyleDeclaration*);
 using PublicLegacyComputedCssStyleDeclarationSetCssText = void (*)(LegacyComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicLegacyComputedCssStyleDeclarationGetLength = int64_t (*)(LegacyComputedCssStyleDeclaration*);

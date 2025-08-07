@@ -116,7 +116,7 @@ static JSValue FromNativeValue(ExecutingContext* context,
           return MakeGarbageCollected<TextMetrics>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::ComputedCSSStyleDeclaration: {
-          return MakeGarbageCollected<LegacyComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
+          return MakeGarbageCollected<legacy::LegacyComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::DOMPoint: {
           return MakeGarbageCollected<DOMPoint>(context, ptr)->ToQuickJS();

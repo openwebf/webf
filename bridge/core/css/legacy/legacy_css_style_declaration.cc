@@ -4,6 +4,7 @@
  */
 
 #include "legacy_css_style_declaration.h"
+#include "plugin_api/legacy_css_style_declaration.h"
 
 namespace webf {
 namespace legacy {
@@ -21,8 +22,8 @@ bool LegacyCssStyleDeclaration::IsInlineCssStyleDeclaration() const {
   return false;
 }
 
-const CSSStyleDeclarationPublicMethods* LegacyCssStyleDeclaration::cssStyleDeclarationPublicMethods() {
-  static CSSStyleDeclarationPublicMethods css_style_declaration_public_methods;
+const LegacyCssStyleDeclarationPublicMethods* LegacyCssStyleDeclaration::legacyCssStyleDeclarationPublicMethods() {
+  static LegacyCssStyleDeclarationPublicMethods css_style_declaration_public_methods;
   return &css_style_declaration_public_methods;
 }
 

@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "legacy_inline_css_style_declaration.h"
+#include "plugin_api/legacy_inline_css_style_declaration.h"
 #include <vector>
 #include "core/dom/mutation_observer_interest_group.h"
 #include "core/executing_context.h"
@@ -115,7 +116,7 @@ bool LegacyInlineCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, 
   return true;
 }
 
-int64_t LegacyInlineCssStyleDeclaration::length() const {
+unsigned LegacyInlineCssStyleDeclaration::length() const {
   return properties_.size();
 }
 
@@ -243,7 +244,7 @@ AtomicString LegacyInlineCssStyleDeclaration::InternalGetPropertyValue(std::stri
     return properties_[name];
   }
 
-  return AtomicString::Null();
+  return g_empty_atom;
 }
 
 bool LegacyInlineCssStyleDeclaration::InternalSetProperty(std::string& name, const AtomicString& value) {
@@ -294,8 +295,8 @@ bool LegacyInlineCssStyleDeclaration::IsInlineCssStyleDeclaration() const {
   return true;
 }
 
-const InlineCssStyleDeclarationPublicMethods* LegacyInlineCssStyleDeclaration::inlineCssStyleDeclarationPublicMethods() {
-  static InlineCssStyleDeclarationPublicMethods inline_css_style_declaration_public_methods;
+const LegacyInlineCssStyleDeclarationPublicMethods* LegacyInlineCssStyleDeclaration::legacyInlineCssStyleDeclarationPublicMethods() {
+  static LegacyInlineCssStyleDeclarationPublicMethods inline_css_style_declaration_public_methods;
   return &inline_css_style_declaration_public_methods;
 }
 

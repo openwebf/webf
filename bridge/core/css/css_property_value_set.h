@@ -294,7 +294,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
 
   bool RemovePropertiesInSet(const CSSProperty* const set[], unsigned length);
   void RemoveEquivalentProperties(const CSSPropertyValueSet*);
-  void RemoveEquivalentProperties(const CSSStyleDeclaration*);
+  void RemoveEquivalentProperties(const legacy::LegacyCssStyleDeclaration*);
 
   void MergeAndOverrideOnConflict(const CSSPropertyValueSet*);
 
@@ -302,7 +302,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   void ParseDeclarationList(const AtomicString& style_declaration,
                             std::shared_ptr<StyleSheetContents> context_style_sheet);
 
-  CSSStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
+  legacy::LegacyCssStyleDeclaration* EnsureCSSStyleDeclaration(ExecutingContext* execution_context);
 
   template <typename T>  // CSSPropertyID or std::string
   int FindPropertyIndex(const T& property) const;

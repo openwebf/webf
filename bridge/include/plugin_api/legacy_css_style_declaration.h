@@ -15,7 +15,10 @@ class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
+namespace legacy {
 class LegacyCssStyleDeclaration;
+}
+using LegacyCssStyleDeclaration = legacy::LegacyCssStyleDeclaration;
 enum class LegacyCssStyleDeclarationType {
   kLegacyCssStyleDeclaration = 0,
   kLegacyComputedCssStyleDeclaration = 1,

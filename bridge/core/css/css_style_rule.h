@@ -49,11 +49,9 @@ class CSSStyleRule : public CSSRule {
   CSSRule::Type GetType() const override { return CSSRule::Type::kStyleRule; }
 
   AtomicString selectorText() const;
-  void setSelectorText(const ExecutingContext* context,
-                       const AtomicString& selector_text,
-                       ExceptionState&);
+  void setSelectorText(const ExecutingContext* context, const AtomicString& selector_text, ExceptionState&);
 
-  CSSStyleDeclaration* style() const;
+  legacy::LegacyCssStyleDeclaration* style() const;
 
   // FIXME: Not CSSOM. Remove.
   std::shared_ptr<StyleRule> GetStyleRule() const { return style_rule_; }

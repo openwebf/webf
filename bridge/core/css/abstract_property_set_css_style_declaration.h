@@ -32,6 +32,7 @@
 
 #include "core/css/css_style_declaration.h"
 #include "core/executing_context.h"
+#include "legacy/legacy_css_style_declaration.h"
 
 namespace webf {
 
@@ -42,11 +43,11 @@ class ExceptionState;
 class MutableCSSPropertyValueSet;
 class StyleSheetContents;
 
-class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
+class AbstractPropertySetCSSStyleDeclaration : public LegacyCssStyleDeclaration {
  public:
   virtual Element* ParentElement() const { return nullptr; }
   std::shared_ptr<StyleSheetContents> ContextStyleSheet() const;
-  explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context) : CSSStyleDeclaration(context->ctx()) {}
+  explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context) : LegacyCssStyleDeclaration(context->ctx()) {}
 
   // Some subclasses only allow a subset of the properties, for example
   // CSSPositionTryDescriptors only allows inset and sizing properties.

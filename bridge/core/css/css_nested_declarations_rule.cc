@@ -22,7 +22,7 @@ CSSNestedDeclarationsRule::CSSNestedDeclarationsRule(
     CSSStyleSheet* parent)
     : CSSRule(parent), nested_declarations_rule_(std::move(nested_declarations_rule)) {}
 
-CSSStyleDeclaration* CSSNestedDeclarationsRule::style() const {
+LegacyCssStyleDeclaration* CSSNestedDeclarationsRule::style() const {
   if (!properties_cssom_wrapper_) {
     // TODO: StyleRuleCSSStyleDeclaration needs proper shared_ptr handling for properties
     // For now, return nullptr as the CSSOM wrapper would need architectural changes

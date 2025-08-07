@@ -15,6 +15,9 @@
 #include "screen.h"
 
 namespace webf {
+namespace legacy {
+class LegacyComputedCssStyleDeclaration;
+}
 
 class Element;
 
@@ -60,8 +63,8 @@ class Window : public EventTargetWithInlineData {
   void postMessage(const ScriptValue& message, ExceptionState& exception_state);
   void postMessage(const ScriptValue& message, const AtomicString& target_origin, ExceptionState& exception_state);
 
-  ComputedCssStyleDeclaration* getComputedStyle(Element* element, ExceptionState& exception_state);
-  ComputedCssStyleDeclaration* getComputedStyle(Element* element,
+  legacy::LegacyComputedCssStyleDeclaration* getComputedStyle(Element* element, ExceptionState& exception_state);
+  legacy::LegacyComputedCssStyleDeclaration* getComputedStyle(Element* element,
                                                 const AtomicString& pseudo_elt,
                                                 ExceptionState& exception_state);
 

@@ -11,6 +11,7 @@
 #include "plugin_api/computed_css_style_declaration.h"
 
 namespace webf {
+struct LegacyComputedCssStyleDeclarationPublicMethods;
 
 class Element;
 
@@ -28,7 +29,7 @@ class LegacyComputedCssStyleDeclaration : public LegacyCssStyleDeclaration {
   ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
   bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   bool DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) override;
-  int64_t length() const override;
+  unsigned length() const override;
   ScriptPromise length_async(ExceptionState& exception_state);
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
@@ -46,12 +47,22 @@ class LegacyComputedCssStyleDeclaration : public LegacyCssStyleDeclaration {
   void setCssText(const AtomicString& value, ExceptionState& exception_state) override;
   ScriptPromise setCssText_async(const AtomicString& value, ExceptionState& exception_state);
 
-  const ComputedCssStyleDeclarationPublicMethods* computedCssStyleDeclarationPublicMethods();
+  const LegacyComputedCssStyleDeclarationPublicMethods* legacyComputedCssStyleDeclarationPublicMethods();
 
  private:
 };
 
 }  // namespace legacy
+
+
+using legacy::LegacyComputedCssStyleDeclaration;
+
+template <>
+struct DowncastTraits<LegacyComputedCssStyleDeclaration> {
+  static bool AllowFrom(const legacy::LegacyCssStyleDeclaration& decl) {
+    return decl.IsComputedCssStyleDeclaration();
+  }
+};
 
 }  // namespace webf
 

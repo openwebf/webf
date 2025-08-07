@@ -21,7 +21,14 @@ class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
+<% if (className.startsWith('Legacy')) { %>
+namespace legacy {
 class <%= className %>;
+}
+using <%= className %> = legacy::<%= className %>;
+<% } else { %>
+class <%= className %>;
+<% } %>
 
 <% if (!object.parent) { %>
 enum class <%= className %>Type {

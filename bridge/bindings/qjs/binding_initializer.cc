@@ -16,14 +16,13 @@
 #include "qjs_character_data.h"
 #include "qjs_close_event.h"
 #include "qjs_comment.h"
-#include "qjs_computed_css_style_declaration.h"
 #include "qjs_console.h"
 #include "qjs_css_import_rule.h"
 #include "qjs_css_keyframe_rule.h"
 #include "qjs_css_keyframes_rule.h"
 #include "qjs_css_rule.h"
 #include "qjs_css_rule_list.h"
-#include "qjs_css_style_declaration.h"
+
 #include "qjs_css_style_sheet.h"
 #include "qjs_custom_event.h"
 #include "qjs_document.h"
@@ -99,10 +98,12 @@
 #include "qjs_hybrid_router_change_event.h"
 #include "qjs_idle_deadline.h"
 #include "qjs_image.h"
-#include "qjs_inline_css_style_declaration.h"
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
+// #include "qjs_computed_css_style_declaration.h"
+// #include "qjs_css_style_declaration.h"
+// #include "qjs_inline_css_style_declaration.h"
 #include "qjs_legacy_computed_css_style_declaration.h"
 #include "qjs_legacy_css_style_declaration.h"
 #include "qjs_legacy_inline_css_style_declaration.h"
@@ -260,9 +261,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSDOMMatrix::Install(context);
   QJSDOMPointReadOnly::Install(context);
   QJSDOMPoint::Install(context);
-  QJSCSSStyleDeclaration::Install(context);
-  QJSInlineCssStyleDeclaration::Install(context);
-  QJSComputedCssStyleDeclaration::Install(context);
+  // QJSCSSStyleDeclaration::Install(context);
+  // QJSInlineCssStyleDeclaration::Install(context);
+  // QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
   QJSStyleSheet::Install(context);

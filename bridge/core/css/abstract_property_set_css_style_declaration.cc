@@ -287,7 +287,7 @@ bool AbstractPropertySetCSSStyleDeclaration::CssPropertyMatches(CSSPropertyID pr
 }
 
 void AbstractPropertySetCSSStyleDeclaration::Trace(GCVisitor* visitor) const {
-  CSSStyleDeclaration::Trace(visitor);
+  legacy::LegacyCssStyleDeclaration::Trace(visitor);
 }
 
 }  // namespace webf

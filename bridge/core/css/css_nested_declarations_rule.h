@@ -15,7 +15,6 @@
 
 namespace webf {
 
-class CSSStyleDeclaration;
 class StyleRuleNestedDeclarations;
 class StyleRuleCSSStyleDeclaration;
 
@@ -29,7 +28,7 @@ class CSSNestedDeclarationsRule final : public CSSRule {
   AtomicString cssText() const override;
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
 
-  CSSStyleDeclaration* style() const;
+  legacy::LegacyCssStyleDeclaration* style() const;
 
   StyleRuleNestedDeclarations* NestedDeclarationsRule() const {
     return nested_declarations_rule_.get();

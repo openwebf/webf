@@ -138,6 +138,12 @@ class AtomicString {
 // It is used to pass an AtomicString's string data without copying the string data.
 struct AtomicStringRef {
   AtomicStringRef(const AtomicString& atomic_string) {
+    if (atomic_string.IsNull()) {
+      is_8bit = false;
+      data.characters16 = nullptr;
+      length = 0;
+      return;
+    }
     is_8bit = atomic_string.Is8Bit();
     if (is_8bit) {
       data.characters8 = reinterpret_cast<const uint8_t*>(atomic_string.Characters8());

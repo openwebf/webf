@@ -7,6 +7,10 @@
  */
 
 #include "plugin_api/<%= blob.filename.replace('plugin_api_', '') %>.h"
+<% if (blob.filename.includes('legacy_css_style_declaration')) { %>
+#include "plugin_api/legacy_computed_css_style_declaration.h"
+#include "plugin_api/legacy_inline_css_style_declaration.h"
+<% } %>
 #include "plugin_api/event_target.h"
 #include "plugin_api/exception_state.h"
 #include "plugin_api/executing_context.h"
@@ -30,6 +34,11 @@
 #include "core/dom/legacy/element_attributes.h"
 #include "core/css/inline_css_style_declaration.h"
 #include "core/css/computed_css_style_declaration.h"
+<% if (blob.filename.includes('legacy_css_style_declaration') || blob.filename.includes('legacy_computed_css_style_declaration') || blob.filename.includes('legacy_inline_css_style_declaration')) { %>
+#include "core/css/legacy/legacy_css_style_declaration.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h" 
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
+<% } %>
 #include "core/dom/legacy/bounding_client_rect.h"
 #include "core/dom/dom_string_map.h"
 #include "core/timing/performance_mark.h"
@@ -44,4 +53,5 @@
 #include "core/timing/performance.h"
 #include "core/native/vector_value_ref.h"
 #include "include/plugin_api/performance_mark_options.h"
+#include "foundation/atomic_string.h"
 <%= content %>

@@ -26,6 +26,7 @@ static void ExecuteNativeLibrary(PluginLibraryEntryPoint entry_point,
     JS_FreeValue(context->ctx(), exception_value);
     native_library_load_context->context->UnRegisterActiveScriptPromise(
         native_library_load_context->promise_resolver.get());
+    delete native_library_load_context;
   } else {
     auto* meta_data = new NativeLibraryMetaData{lib_name, native_library_load_context};
     auto entry_data = WebFValue<ExecutingContext, ExecutingContextWebFMethods>{

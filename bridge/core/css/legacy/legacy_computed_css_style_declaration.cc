@@ -8,6 +8,7 @@
 //#include "core/dom/element.h"
 #include "foundation/native_value.h"
 #include "foundation/native_value_converter.h"
+#include "plugin_api/legacy_computed_css_style_declaration.h"
 
 namespace webf {
 namespace legacy {
@@ -46,7 +47,7 @@ bool LegacyComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key
   return true;
 }
 
-int64_t LegacyComputedCssStyleDeclaration::length() const {
+unsigned LegacyComputedCssStyleDeclaration::length() const {
   NativeValue result = GetBindingProperty(
       binding_call_methods::klength,
       FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, ASSERT_NO_EXCEPTION());
@@ -117,9 +118,9 @@ ScriptPromise LegacyComputedCssStyleDeclaration::cssText_async(ExceptionState& e
 
 void LegacyComputedCssStyleDeclaration::setCssText(const webf::AtomicString& value, webf::ExceptionState& exception_state) {}
 
-const ComputedCssStyleDeclarationPublicMethods*
-LegacyComputedCssStyleDeclaration::computedCssStyleDeclarationPublicMethods() {
-  static ComputedCssStyleDeclarationPublicMethods computed_css_style_declaration_public_methods;
+const LegacyComputedCssStyleDeclarationPublicMethods*
+LegacyComputedCssStyleDeclaration::legacyComputedCssStyleDeclarationPublicMethods() {
+  static LegacyComputedCssStyleDeclarationPublicMethods computed_css_style_declaration_public_methods;
   return &computed_css_style_declaration_public_methods;
 }
 

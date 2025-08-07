@@ -25,6 +25,7 @@
 #include "core/dom/document_fragment.h"
 #include "core/dom/comment.h"
 #include "core/css/legacy/legacy_inline_css_style_declaration.h"
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 #include "core/html/canvas/text_metrics.h"
 #include "core/platform/geometry/dom_matrix.h"
 #include "core/platform/geometry/dom_point.h"

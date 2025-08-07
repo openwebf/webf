@@ -10,13 +10,13 @@
 
 namespace webf {
 
-WebFValue<legacy::LegacyCssStyleDeclaration, CSSStyleDeclarationPublicMethods> ElementPublicMethods::Style(Element* ptr) {
+WebFValue<LegacyCssStyleDeclaration, LegacyCssStyleDeclarationPublicMethods> ElementPublicMethods::Style(Element* ptr) {
   auto* element = static_cast<webf::Element*>(ptr);
   MemberMutationScope member_mutation_scope{element->GetExecutingContext()};
   auto style = element->style();
   WebFValueStatus* status_block = style->KeepAlive();
-  return WebFValue<legacy::LegacyCssStyleDeclaration, CSSStyleDeclarationPublicMethods>(
-      style, style->cssStyleDeclarationPublicMethods(), status_block);
+  return WebFValue<LegacyCssStyleDeclaration, LegacyCssStyleDeclarationPublicMethods>(
+      style, style->legacyCssStyleDeclarationPublicMethods(), status_block);
 }
 
 void ElementPublicMethods::ToBlob(Element* ptr,

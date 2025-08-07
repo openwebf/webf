@@ -7,7 +7,6 @@
 #include <modp_b64/modp_b64.h>
 #include "binding_call_methods.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
-#include "core/css/computed_css_style_declaration.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/events/message_event.h"
@@ -15,6 +14,7 @@
 #include "core/frame/window_idle_tasks.h"
 #include "event_type_names.h"
 #include "foundation/native_value_converter.h"
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 
 namespace webf {
 
@@ -303,7 +303,7 @@ void Window::postMessage(const ScriptValue& message,
   dispatchEvent(message_event, exception_state);
 }
 
-ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
+legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Element>>::ToNativeValue(element)};
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetComputedStyle, 1, arguments,
@@ -315,10 +315,10 @@ ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, Exceptio
   if (native_binding_object == nullptr)
     return nullptr;
 
-  return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
+  return MakeGarbageCollected<legacy::LegacyComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
 
-ComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
+legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
                                                       const AtomicString& pseudo_elt,
                                                       ExceptionState& exception_state) {
   return getComputedStyle(element, exception_state);

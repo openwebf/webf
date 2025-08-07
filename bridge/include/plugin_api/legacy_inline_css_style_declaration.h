@@ -15,7 +15,10 @@ class SharedExceptionState;
 class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
+namespace legacy {
 class LegacyInlineCssStyleDeclaration;
+}
+using LegacyInlineCssStyleDeclaration = legacy::LegacyInlineCssStyleDeclaration;
 struct LegacyInlineCssStyleDeclarationPublicMethods : public WebFPublicMethods {
   double version{1.0};
   LegacyCssStyleDeclarationPublicMethods legacy_css_style_declaration;

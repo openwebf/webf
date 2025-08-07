@@ -27,6 +27,7 @@
 
 #include "css_property_value_set.h"
 #include <span>
+
 #include "core/base/memory/shared_ptr.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
@@ -35,6 +36,7 @@
 #include "core/css/property_set_css_style_declaration.h"
 #include "core/css/style_property_serializer.h"
 #include "core/css/style_sheet_contents.h"
+#include "css_style_rule.h"
 #include "foundation/macros.h"
 #include "property_bitsets.h"
 #include "style_property_shorthand.h"
@@ -503,7 +505,7 @@ void MutableCSSPropertyValueSet::RemoveEquivalentProperties(const CSSPropertyVal
   }
 }
 
-void MutableCSSPropertyValueSet::RemoveEquivalentProperties(const CSSStyleDeclaration* style) {
+void MutableCSSPropertyValueSet::RemoveEquivalentProperties(const LegacyCssStyleDeclaration* style) {
   std::vector<CSSPropertyID> properties_to_remove;
   unsigned size = property_vector_.size();
   for (unsigned i = 0; i < size; ++i) {
@@ -546,7 +548,7 @@ void MutableCSSPropertyValueSet::ParseDeclarationList(const AtomicString& style_
   CSSParser::ParseDeclarationList(std::move(context), this, style_declaration.ToStdString());
 }
 
-CSSStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {
+LegacyCssStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {
   // FIXME: get rid of this weirdness of a CSSStyleDeclaration inside of a
   // style property set.
   if (cssom_wrapper_) {
