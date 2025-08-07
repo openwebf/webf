@@ -72,6 +72,7 @@ class LoadingNetworkRequest {
   Map<String, String>? requestHeaders;
   Map<String, String>? responseHeaders;
   String? error;
+  bool isXHR; // Flag to indicate if this is an XHR/Fetch request
 
   // Network stages tracking
   final List<NetworkRequestStage> _stages = [];
@@ -110,6 +111,7 @@ class LoadingNetworkRequest {
     this.requestHeaders,
     this.responseHeaders,
     this.error,
+    this.isXHR = false,
     this.protocol,
     this.remoteAddress,
     this.remotePort,
@@ -539,8 +541,12 @@ class LoadingStateDump {
       final url = request.url.toLowerCase();
       final contentType = (request.contentType ?? '').toLowerCase();
 
+      // Check if it's explicitly marked as XHR/Fetch request first
+      if (request.isXHR) {
+        categorized['xhr']!.add(request);
+      }
       // If we have a content type from the response, use it as the primary indicator
-      if (contentType.isNotEmpty) {
+      else if (contentType.isNotEmpty) {
         // Check if it's the main entrypoint (HTML file)
         if (contentType.contains('text/html')) {
           categorized['mainEntrypoint']!.add(request);
@@ -1449,6 +1455,34 @@ class LoadingPhaseEvent {
 /// Callback type for phase events
 typedef PhaseEventCallback = void Function(LoadingPhaseEvent event);
 
+/// Types of resources that can fail to load
+enum LoadingErrorType {
+  entrypoint,  // Main HTML/JS bundle
+  script,      // External script files
+  css,         // Stylesheets
+  image,       // Images
+  fetch,       // XHR/Fetch API requests
+}
+
+/// Event data for loading errors
+class LoadingErrorEvent {
+  final LoadingErrorType type;
+  final String url;
+  final String error;
+  final DateTime timestamp;
+  final Map<String, dynamic>? metadata;
+
+  LoadingErrorEvent({
+    required this.type,
+    required this.url,
+    required this.error,
+    required this.timestamp,
+    this.metadata,
+  });
+}
+
+typedef LoadingErrorCallback = void Function(LoadingErrorEvent event);
+
 /// Tracks and records the loading state across the WebFController lifecycle
 class LoadingState {
   final LinkedHashMap<String, LoadingPhase> _phases = LinkedHashMap();
@@ -1470,6 +1504,12 @@ class LoadingState {
   // Generic phase event listeners (called for any phase)
   final List<PhaseEventCallback> _anyPhaseListeners = [];
 
+  // Error event listeners with type filtering
+  final Map<LoadingErrorType, List<LoadingErrorCallback>> _errorListeners = {};
+
+  // Generic error listeners (called for any error type)
+  final List<LoadingErrorCallback> _allErrorListeners = [];
+
   // Common phase names
   static const String phaseConstructor = 'constructor';
   static const String phaseInit = 'init';
@@ -1478,6 +1518,7 @@ class LoadingState {
   static const String phaseResolveEntrypoint = 'resolveEntrypoint';
   static const String phasePreload = 'preloadStart';
   static const String phasePreloadEnd = 'preloadEnd';
+  static const String phasePreloadError = 'preloadError';
   static const String phasePreRender = 'preRender';
   static const String phaseEvaluateStart = 'evaluateStart';
   static const String phaseParseHTML = 'parseHTML';
@@ -1504,16 +1545,11 @@ class LoadingState {
   static const String phaseNetworkStart = 'networkStart';
   static const String phaseNetworkComplete = 'networkComplete';
   static const String phaseNetworkError = 'networkError';
+  static const String phaseFetchError = 'fetchError';
   static const String phaseNetworkCacheHit = 'networkCacheHit';
   static const String phaseNetworkRedirect = 'networkRedirect';
 
   // Network stage names
-  static const String stageDnsLookupStart = 'dns_lookup_start';
-  static const String stageDnsLookupEnd = 'dns_lookup_end';
-  static const String stageTcpConnectStart = 'tcp_connect_start';
-  static const String stageTcpConnectEnd = 'tcp_connect_end';
-  static const String stageTlsHandshakeStart = 'tls_handshake_start';
-  static const String stageTlsHandshakeEnd = 'tls_handshake_end';
   static const String stageRequestSent = 'request_sent';
   static const String stageResponseStarted = 'response_started';
   static const String stageResponseReceived = 'response_received';
@@ -1554,6 +1590,11 @@ class LoadingState {
   void onInit(PhaseEventCallback callback) => addPhaseListener(phaseInit, callback);
   void onLoadStart(PhaseEventCallback callback) => addPhaseListener(phaseLoadStart, callback);
   void onPreload(PhaseEventCallback callback) => addPhaseListener(phasePreload, callback);
+  void onPreloadEnd(PhaseEventCallback callback) => addPhaseListener(phasePreloadEnd, callback);
+  void onPreloadError(PhaseEventCallback callback) => addPhaseListener(phasePreloadError, callback);
+  void onScriptError(PhaseEventCallback callback) => addPhaseListener(phaseScriptError, callback);
+  void onNetworkError(PhaseEventCallback callback) => addPhaseListener(phaseNetworkError, callback);
+  void onFetchError(PhaseEventCallback callback) => addPhaseListener(phaseFetchError, callback);
   void onResolveEntrypoint(PhaseEventCallback callback) => addPhaseListener(phaseResolveEntrypoint, callback);
   void onResolveEntrypointStart(PhaseEventCallback callback) => addPhaseListener('resolveEntrypoint.start', callback);
   void onResolveEntrypointEnd(PhaseEventCallback callback) => addPhaseListener('resolveEntrypoint.end', callback);
@@ -1568,6 +1609,26 @@ class LoadingState {
   void onBuildRootView(PhaseEventCallback callback) => addPhaseListener(phaseBuildRootView, callback);
   void onFirstPaint(PhaseEventCallback callback) => addPhaseListener(phaseFirstPaint, callback);
   void onFirstContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseFirstContentfulPaint, callback);
+
+  /// Register a callback for loading errors of specific types
+  /// @param types Set of error types to listen for. If empty, listens to all error types.
+  /// @param callback The callback to invoke when matching errors occur
+  void onLoadingError(Set<LoadingErrorType> types, LoadingErrorCallback callback) {
+    if (types.isEmpty) {
+      // Listen to all error types
+      _allErrorListeners.add(callback);
+    } else {
+      // Register for specific error types
+      for (final type in types) {
+        _errorListeners.putIfAbsent(type, () => []).add(callback);
+      }
+    }
+  }
+
+  /// Convenience method to listen for all loading errors
+  void onAnyLoadingError(LoadingErrorCallback callback) {
+    onLoadingError({}, callback);
+  }
   void onLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseLargestContentfulPaint, callback);
   void onFinalLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener('finalLargestContentfulPaint', callback);
   void onAttachToFlutter(PhaseEventCallback callback) => addPhaseListener(phaseAttachToFlutter, callback);
@@ -1669,6 +1730,7 @@ class LoadingState {
     String url, {
     String method = 'GET',
     Map<String, String>? headers,
+    bool isXHR = false,
     String? protocol,
     String? remoteAddress,
     int? remotePort,
@@ -1687,6 +1749,7 @@ class LoadingState {
       method: method,
       startTime: DateTime.now(),
       requestHeaders: headers,
+      isXHR: isXHR,
       protocol: protocol,
       remoteAddress: remoteAddress,
       remotePort: remotePort,
@@ -1738,11 +1801,12 @@ class LoadingState {
   }
 
   /// Records a network request error
-  void recordNetworkRequestError(String url, String error) {
+  void recordNetworkRequestError(String url, String error, {bool isXHR = false}) {
     final request = _pendingRequests[url];
     if (request != null) {
       request.endTime = DateTime.now();
       request.error = error;
+      request.isXHR = isXHR; // Set the XHR flag
       _pendingRequests.remove(url);
 
       // Record error as a substep of the network phase
@@ -1751,6 +1815,59 @@ class LoadingState {
         'error': error,
         'duration': request.duration?.inMilliseconds,
       }, parentPhase: networkPhaseName);
+
+      // Determine error type based on content type or request nature
+      LoadingErrorType? errorType;
+      if (isXHR) {
+        errorType = LoadingErrorType.fetch;
+        // Also record for the specific Fetch error callback
+        recordPhase(phaseFetchError, parameters: {
+          'url': url,
+          'error': error,
+          'method': request.method,
+          'duration': request.duration?.inMilliseconds,
+        });
+      } else if (request.contentType != null) {
+        final contentType = request.contentType!.toLowerCase();
+        if (contentType.contains('image/')) {
+          errorType = LoadingErrorType.image;
+        } else if (contentType.contains('text/css')) {
+          errorType = LoadingErrorType.css;
+        } else if (contentType.contains('javascript') || contentType.contains('ecmascript')) {
+          errorType = LoadingErrorType.script;
+        }
+      }
+
+      // Dispatch loading error event if type was determined
+      if (errorType != null) {
+        _dispatchLoadingError(LoadingErrorEvent(
+          type: errorType,
+          url: url,
+          error: error,
+          timestamp: DateTime.now(),
+          metadata: {
+            'method': request.method,
+            'duration': request.duration?.inMilliseconds,
+            'statusCode': request.statusCode,
+          },
+        ));
+      }
+    } else {
+      // Even without a pending request, handle XHR errors for callbacks
+      if (isXHR) {
+        recordPhase(phaseFetchError, parameters: {
+          'url': url,
+          'error': error,
+        });
+
+        _dispatchLoadingError(LoadingErrorEvent(
+          type: LoadingErrorType.fetch,
+          url: url,
+          error: error,
+          timestamp: DateTime.now(),
+          metadata: {},
+        ));
+      }
     }
   }
 
@@ -1764,24 +1881,6 @@ class LoadingState {
       // Update timing based on stage
       final now = DateTime.now();
       switch (stageName) {
-        case stageDnsLookupStart:
-          request.dnsStart = now;
-          break;
-        case stageDnsLookupEnd:
-          request.dnsEnd = now;
-          break;
-        case stageTcpConnectStart:
-          request.connectStart = now;
-          break;
-        case stageTcpConnectEnd:
-          request.connectEnd = now;
-          break;
-        case stageTlsHandshakeStart:
-          request.tlsStart = now;
-          break;
-        case stageTlsHandshakeEnd:
-          request.tlsEnd = now;
-          break;
         case stageRequestSent:
           request.requestStart = now;
           break;
@@ -1869,6 +1968,17 @@ class LoadingState {
       stackTrace: stackTrace,
       context: context,
     ));
+
+    // Check if this is an entrypoint error and dispatch LoadingErrorEvent
+    if (phase == phaseResolveEntrypoint || phase.contains('resolveEntrypoint')) {
+      _dispatchLoadingError(LoadingErrorEvent(
+        type: LoadingErrorType.entrypoint,
+        url: context?['bundle']?.toString() ?? 'unknown',
+        error: error.toString(),
+        timestamp: DateTime.now(),
+        metadata: context,
+      ));
+    }
   }
 
   /// Records an error with the current phase context
@@ -1968,6 +2078,57 @@ class LoadingState {
     }
   }
 
+  /// Records an entrypoint loading error
+  void recordEntrypointError(String url, String error, {Map<String, dynamic>? metadata}) {
+    recordPhase('entrypointError', parameters: {
+      'url': url,
+      'error': error,
+      ...?metadata,
+    });
+
+    _dispatchLoadingError(LoadingErrorEvent(
+      type: LoadingErrorType.entrypoint,
+      url: url,
+      error: error,
+      timestamp: DateTime.now(),
+      metadata: metadata,
+    ));
+  }
+
+  /// Records a CSS loading error
+  void recordCSSError(String url, String error, {Map<String, dynamic>? metadata}) {
+    recordPhase('cssError', parameters: {
+      'url': url,
+      'error': error,
+      ...?metadata,
+    });
+
+    _dispatchLoadingError(LoadingErrorEvent(
+      type: LoadingErrorType.css,
+      url: url,
+      error: error,
+      timestamp: DateTime.now(),
+      metadata: metadata,
+    ));
+  }
+
+  /// Records an image loading error
+  void recordImageError(String url, String error, {Map<String, dynamic>? metadata}) {
+    recordPhase('imageError', parameters: {
+      'url': url,
+      'error': error,
+      ...?metadata,
+    });
+
+    _dispatchLoadingError(LoadingErrorEvent(
+      type: LoadingErrorType.image,
+      url: url,
+      error: error,
+      timestamp: DateTime.now(),
+      metadata: metadata,
+    ));
+  }
+
   /// Records a script loading error
   void recordScriptElementError(String source, String error) {
     final script = _pendingScripts[source];
@@ -1980,6 +2141,34 @@ class LoadingState {
         'source': script.isInline ? '<inline>' : source,
         'error': error,
       });
+
+      // Dispatch loading error event for script
+      _dispatchLoadingError(LoadingErrorEvent(
+        type: LoadingErrorType.script,
+        url: source,
+        error: error,
+        timestamp: DateTime.now(),
+        metadata: {
+          'isInline': script.isInline,
+          'isModule': script.isModule,
+          'isAsync': script.isAsync,
+          'isDefer': script.isDefer,
+        },
+      ));
+    } else {
+      // Even if there's no pending script, record the error for callbacks
+      recordPhase(phaseScriptError, parameters: {
+        'source': source,
+        'error': error,
+      });
+
+      _dispatchLoadingError(LoadingErrorEvent(
+        type: LoadingErrorType.script,
+        url: source,
+        error: error,
+        timestamp: DateTime.now(),
+        metadata: {},
+      ));
     }
   }
 
@@ -2070,6 +2259,22 @@ class LoadingState {
       return '${(bytes / 1024).toStringAsFixed(1)}KB';
     } else {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
+    }
+  }
+
+  /// Dispatches a loading error event to registered listeners
+  void _dispatchLoadingError(LoadingErrorEvent event) {
+    // Notify type-specific listeners
+    final typeListeners = _errorListeners[event.type];
+    if (typeListeners != null) {
+      for (final listener in typeListeners) {
+        listener(event);
+      }
+    }
+
+    // Notify generic listeners
+    for (final listener in _allErrorListeners) {
+      listener(event);
     }
   }
 

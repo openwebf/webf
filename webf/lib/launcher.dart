@@ -7,4 +7,4 @@ export 'src/launcher/controller.dart';
 export 'src/launcher/view_controller.dart';
 export 'src/launcher/module_controller.dart';
 export 'src/launcher/controller_manager.dart';
-export 'src/launcher/loading_state.dart';
+export 'src/launcher/loading_state.dart' show LoadingState, LoadingStateDump, LoadingStateDumpOptions, LoadingErrorType, LoadingErrorEvent, LoadingErrorCallback, PhaseEventCallback, LoadingPhaseEvent;
