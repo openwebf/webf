@@ -109,25 +109,16 @@ void main() async {
             print('contentInfo: $contentInfo');
           },
           onControllerInit: (controller) async {
-            controller.loadingState.onAnyLoadingError((event) {
-              switch (event.type) {
-                case LoadingErrorType.entrypoint:
-                case LoadingErrorType.script:
-                case LoadingErrorType.css:
-                case LoadingErrorType.fetch:
-                  LoadingStateDump dump = controller.dumpLoadingState(
-                      options: LoadingStateDumpOptions.html |
-                          LoadingStateDumpOptions.api |
-                          LoadingStateDumpOptions.scripts |
-                          LoadingStateDumpOptions.networkDetailed);
-                  print(dump.toString());
-                  break;
-                case LoadingErrorType.image: {
-                  print('\n\n');
-                  break;
-                }
-              }
-            });
+            // Built-in once-only error dump with debounce and per-load reset
+            controller.loadingState.onAnyLoadingErrorOnce((event) {
+              final dump = controller.dumpLoadingState(
+                options: LoadingStateDumpOptions.html |
+                    LoadingStateDumpOptions.api |
+                    LoadingStateDumpOptions.scripts |
+                    LoadingStateDumpOptions.networkDetailed,
+              );
+              debugPrint(dump.toStringFiltered());
+            }, debounce: Duration(seconds: 5));
 
             // controller.loadingState.onFinalLargestContentfulPaint((_) {
             //   if (!hasReported) {

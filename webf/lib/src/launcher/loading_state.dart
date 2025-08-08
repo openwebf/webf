@@ -3,6 +3,7 @@
  */
 
 import 'dart:collection';
+import 'dart:async';
 import 'dart:math' as Math;
 import 'package:flutter/widgets.dart';
 
@@ -1308,6 +1309,24 @@ class LoadingStateDump {
     return buffer.toString();
   }
 
+  /// Returns the pretty string representation filtered by a simple grep keyword.
+  /// If [grep] is null or empty, returns the full string.
+  /// When [caseSensitive] is false (default), matching is case-insensitive.
+  /// If [invert] is true, returns lines that do NOT match the keyword.
+  String toStringFiltered({String? grep, bool caseSensitive = false, bool invert = false}) {
+    final full = toString();
+    if (grep == null || grep.isEmpty) return full;
+
+    final needle = caseSensitive ? grep : grep.toLowerCase();
+    final lines = full.split('\n');
+    final filtered = lines.where((line) {
+      final hay = caseSensitive ? line : line.toLowerCase();
+      final matched = hay.contains(needle);
+      return invert ? !matched : matched;
+    }).join('\n');
+    return filtered;
+  }
+
   String _formatDuration(Duration duration) {
     if (duration.inMilliseconds < 1000) {
       return '${duration.inMilliseconds}ms';
@@ -1515,6 +1534,9 @@ class LoadingState {
   // Generic error listeners (called for any error type)
   final List<LoadingErrorCallback> _allErrorListeners = [];
 
+  // Internal states for reset-aware one-time error listeners
+  final List<_LoadingErrorOnceState> _errorOnceStates = [];
+
   // Common phase names
   static const String phaseConstructor = 'constructor';
   static const String phaseInit = 'init';
@@ -1634,6 +1656,71 @@ class LoadingState {
   /// Convenience method to listen for all loading errors
   void onAnyLoadingError(LoadingErrorCallback callback) {
     onLoadingError({}, callback);
+  }
+
+  /// Register a callback that fires only once upon the first matching loading error.
+  /// Multiple errors in a short burst are coalesced using [debounce].
+  /// If [perLoad] is true (default), the one-time state resets when [reset()] is called.
+  void onLoadingErrorOnce(
+    Set<LoadingErrorType> types,
+    LoadingErrorCallback callback, {
+    Duration debounce = const Duration(milliseconds: 250),
+    bool perLoad = true,
+  }) {
+    final state = _LoadingErrorOnceState();
+    if (perLoad) _errorOnceStates.add(state);
+
+    void handler(LoadingErrorEvent event) {
+      if (state.hasCalled) return;
+      state.pendingEvent = event; // keep latest
+      state.timer ??= Timer(debounce, () {
+        final ev = state.pendingEvent;
+        state.timer = null;
+        if (ev != null && !state.hasCalled) {
+          state.hasCalled = true;
+          callback(ev);
+        }
+      });
+    }
+
+    if (types.isEmpty) {
+      _allErrorListeners.add(handler);
+    } else {
+      for (final type in types) {
+        _errorListeners.putIfAbsent(type, () => []).add(handler);
+      }
+    }
+  }
+
+  /// Convenience method: listen to any loading error once, with optional debounce and per-load reset.
+  void onAnyLoadingErrorOnce(
+    LoadingErrorCallback callback, {
+    Duration debounce = const Duration(milliseconds: 250),
+    bool perLoad = true,
+    Set<LoadingErrorType>? types,
+    String? grep,
+    bool caseSensitive = false,
+    bool invert = false,
+  }) {
+    final listenTypes = types ?? {
+      LoadingErrorType.entrypoint,
+      LoadingErrorType.script,
+      LoadingErrorType.css,
+      LoadingErrorType.fetch,
+    };
+
+    onLoadingErrorOnce(listenTypes, (event) {
+      if (grep == null || grep.isEmpty) {
+        callback(event);
+        return;
+      }
+      final hay = caseSensitive ? event.url : event.url.toLowerCase();
+      final needle = caseSensitive ? grep : grep.toLowerCase();
+      final matched = hay.contains(needle) || (event.error.isNotEmpty && (caseSensitive ? event.error : event.error.toLowerCase()).contains(needle));
+      if ((invert && !matched) || (!invert && matched)) {
+        callback(event);
+      }
+    }, debounce: debounce, perLoad: perLoad);
   }
   void onLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseLargestContentfulPaint, callback);
   void onFinalLargestContentfulPaint(PhaseEventCallback callback) => addPhaseListener(phaseFinalLargestContentfulPaint, callback);
@@ -2302,6 +2389,14 @@ class LoadingState {
     _lcpFinalized = false;
     _startTime = DateTime.now();
     _lastPhaseTime = _startTime;
+
+    // Reset one-time error listeners that opted into per-load behavior
+    for (final state in _errorOnceStates) {
+      state.timer?.cancel();
+      state.timer = null;
+      state.pendingEvent = null;
+      state.hasCalled = false;
+    }
   }
 
   /// Gets all recorded phases
@@ -2462,4 +2557,11 @@ class LoadingState {
   Duration? get totalDuration {
     return _calculateTotalDuration();
   }
+}
+
+/// Internal state holder for once-only error listeners with debounce
+class _LoadingErrorOnceState {
+  bool hasCalled = false;
+  Timer? timer;
+  LoadingErrorEvent? pendingEvent;
 }
