@@ -477,9 +477,11 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   bool someRenderBoxSatisfy(SomeRenderBoxModelHandlerCallback callback) {
     for (var renderBoxModel in widgetRenderObjectIterator) {
-      bool success = callback(renderBoxModel);
-      if (success) {
-        return success;
+      if (renderBoxModel.attached) {
+        bool success = callback(renderBoxModel);
+        if (success) {
+          return success;
+        }
       }
     }
 
@@ -632,20 +634,38 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderFlexLayout() {
-    return everyRenderObjectByTypeAndMatch(
+    return everyAttachedRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlexLayout);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderFlowLayout() {
-    return everyRenderObjectByTypeAndMatch(
+    return everyAttachedRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderFlowLayout);
   }
 
   @pragma('vm:prefer-inline')
   bool isSelfRenderSVGShape() {
-    return everyRenderObjectByTypeAndMatch(
+    return everyAttachedRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderReplaced() {
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderReplaced);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderWidget() {
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderWidget);
+  }
+
+  @pragma('vm:prefer-inline')
+  bool isSelfRenderLayoutBox() {
+    return everyAttachedRenderObjectByTypeAndMatch(
+        RenderObjectGetType.self, (renderObject, _) => renderObject is RenderLayoutBox);
   }
 
   @pragma('vm:prefer-inline')
@@ -679,21 +699,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
-  bool isSelfRenderReplaced() {
-    return someRenderBoxSatisfy((renderObject) => renderObject is RenderReplaced);
-  }
-
-  @pragma('vm:prefer-inline')
-  bool isSelfRenderWidget() {
-    return someRenderBoxSatisfy((renderObject) => renderObject is RenderWidget);
-  }
-
-  @pragma('vm:prefer-inline')
-  bool isSelfRenderLayoutBox() {
-    return someRenderBoxSatisfy((renderObject) => renderObject is RenderLayoutBox);
-  }
-
-  @pragma('vm:prefer-inline')
   bool isSelfNeedsRelayout() {
     return someRenderBoxSatisfy((renderObject) => renderObject.needsRelayout);
   }
@@ -715,8 +720,9 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   bool isParentBoxModelMatch(RenderBoxModelMatcher matcher) {
     RenderBoxModel? selfRender = attachedRenderBoxModel;
     if (selfRender == null) return false;
-    if (selfRender is RenderEventListener && selfRender.parent is RenderBoxModel)
+    if (selfRender is RenderEventListener && selfRender.parent is RenderBoxModel) {
       return matcher(selfRender.parent as RenderBoxModel, selfRender.renderStyle);
+    }
 
     if (selfRender.parent is RenderEventListener) {
       selfRender = selfRender.parent as RenderBoxModel;
@@ -884,15 +890,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   void markNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      renderObject?.markNeedsLayout();
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markNeedsLayout();
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markNeedsRelayout() {
-    everyRenderBox((element, renderObject) {
+    everyAttachedWidgetRenderBox((element, renderObject) {
       renderObject.markNeedsRelayout();
       return true;
     });
@@ -900,7 +906,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   void markNeedsBuild() {
-    everyRenderBox((element, renderObject) {
+    everyAttachedWidgetRenderBox((element, renderObject) {
       element!.markNeedsBuild();
       return true;
     });
@@ -908,25 +914,23 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   void markParentNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      renderObject?.parent?.markNeedsLayout();
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.parent?.markNeedsLayout();
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markPositionHolderParentNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is RenderBoxModel) {
-        renderObject.renderPositionPlaceholder?.parent?.markNeedsLayout();
-      }
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.renderPositionPlaceholder?.parent?.markNeedsLayout();
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markSVGShapeNeedsUpdate() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
+    everyAttachedWidgetRenderBox((element, renderObject) {
       if (renderObject is RenderSVGShape) {
         renderObject.markNeedUpdateShape();
       }
@@ -936,49 +940,58 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   void markNeedsPaint() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      renderObject?.markNeedsPaint();
-      return true;
-    });
-  }
-
-  @pragma('vm:prefer-inline')
-  void markRenderParagraphNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is RenderTextBox) {
-        renderObject.markRenderParagraphNeedsLayout();
-      }
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markNeedsPaint();
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markAdjacentRenderParagraphNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is RenderBoxModel) {
-        renderObject.markAdjacentRenderParagraphNeedsLayout();
-      }
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markAdjacentRenderParagraphNeedsLayout();
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markParentNeedsRelayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      if (renderObject is RenderBoxModel) {
-        renderObject.markParentNeedsRelayout();
-      }
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markParentNeedsRelayout();
       return true;
     });
   }
 
   @pragma('vm:prefer-inline')
   void markChildrenNeedsSort() {
-    everyRenderBox((_, renderBoxModel) {
+    everyAttachedWidgetRenderBox((_, renderBoxModel) {
       if (renderBoxModel is RenderLayoutBox) {
         renderBoxModel.markChildrenNeedsSort();
       }
 
+      return true;
+    });
+  }
+
+  // Sizing may affect parent size, mark parent as needsLayout in case
+  // renderBoxModel has tight constraints which will prevent parent from marking.
+  @pragma('vm:prefer-inline')
+  void markSelfAndParentBoxModelNeedsLayout() {
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markNeedsLayout();
+
+      if (renderObject.parent is RenderBoxModel) {
+        renderObject.parent!.markNeedsLayout();
+      }
+
+      return true;
+    });
+  }
+
+  @pragma('vm:prefer-inline')
+  void markNeedsCompositingBitsUpdate() {
+    everyAttachedWidgetRenderBox((element, renderObject) {
+      renderObject.markNeedsCompositingBitsUpdate();
       return true;
     });
   }
@@ -1019,28 +1032,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     return false;
   }
 
-  // Sizing may affect parent size, mark parent as needsLayout in case
-  // renderBoxModel has tight constraints which will prevent parent from marking.
-  @pragma('vm:prefer-inline')
-  void markSelfAndParentBoxModelNeedsLayout() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      renderObject?.markNeedsLayout();
-
-      if (renderObject?.parent is RenderBoxModel) {
-        renderObject!.parent!.markNeedsLayout();
-      }
-
-      return true;
-    });
-  }
-
-  @pragma('vm:prefer-inline')
-  void markNeedsCompositingBitsUpdate() {
-    everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
-      renderObject?.markNeedsCompositingBitsUpdate();
-      return true;
-    });
-  }
 
   void ensureEventResponderBound() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {

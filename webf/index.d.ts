@@ -1,5 +1,6 @@
 /// <reference path="./global.d.ts" />
 /// <reference path="./index.d.ts" />
+/// <reference path="./lib/src/gesture/flutter_gesture_detector.d.ts" />
 /// <reference path="./lib/src/html/listview.d.ts" />
 /// <reference path="./lib/src/html/table.d.ts" />
 /// <reference path="./lib/src/html/table_cell.d.ts" />
@@ -18,6 +19,7 @@
  */
 
 export * from './index';
+export * from './lib/src/gesture/flutter_gesture_detector';
 export * from './lib/src/html/listview';
 export * from './lib/src/html/table';
 export * from './lib/src/html/table_cell';
