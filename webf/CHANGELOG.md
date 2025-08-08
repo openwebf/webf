@@ -1,3 +1,12 @@
+## 0.22.7+2
+
+**Bug Fixed**
+
+reset LoadingState on controller detachFromFlutter
+
+- Call loadingState.reset() when WebFController detaches from Flutter
+- Ensures a clean slate per attachment and re-arms per-load once listeners
+
 ## 0.22.7+1
 
 **Features**
