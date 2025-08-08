@@ -1438,6 +1438,11 @@ class WebFController with Diagnosticable {
     _isFlutterAttached = false;
     _ownerFlutterView = null;
     popBuildContext(context: context, routePath: initialRoute ?? '/');
+
+    // Reset loading state when controller is detached from Flutter so that
+    // subsequent attachments start with a clean slate. This also re-arms
+    // per-load once-only listeners.
+    _loadingState.reset();
   }
 
   // Execute the content from entrypoint bundle.
