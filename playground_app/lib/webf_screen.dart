@@ -138,6 +138,8 @@ class _WebFScreenState extends State<WebFScreen> {
       loadingProgress = 0.0;
       currentUrl = initialUrl;
     });
+    // Clear the input field
+    _urlController.clear();
   }
 
   Future<void> _scanQRCode() async {
