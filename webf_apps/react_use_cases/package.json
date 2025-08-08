@@ -5,7 +5,7 @@
   "dependencies": {
     "@openwebf/react-core-ui": "^0.2.7",
     "@openwebf/react-cupertino-ui": "^0.2.5",
-    "@openwebf/react-router": "^0.3.0",
+    "@openwebf/react-router": "^0.3.3",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
