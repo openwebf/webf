@@ -5,3 +5,4 @@
 
 export 'src/gesture/gesture_dispatcher.dart';
 export 'src/gesture/raw_pointer_listener.dart';
+export 'src/gesture/flutter_gesture_detector.dart';

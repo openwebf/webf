@@ -62,8 +62,8 @@ src/
 - `webf-listview` - Custom scrollable lists
 - `flutter-cupertino-button` - iOS-style buttons
 - `flutter-showcase-view` - Highlight/tooltip components
-- `flutter-webf-form` - Form validation wrapper
-- `flutter-webf-form-field` - Individual form fields
+- `flutter-form` - Form validation wrapper
+- `flutter-form-field` - Individual form fields
 - `flutter-cupertino-switch` - iOS-style toggle switches
 - `flutter-cupertino-list-section` - List section headers
 

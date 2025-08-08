@@ -7,6 +7,11 @@ export { FlutterShimmerText, FlutterShimmerTextElement } from "./lib/src/html/sh
 export { FlutterShimmerButton, FlutterShimmerButtonElement } from "./lib/src/html/shimmer/shimmer_button";
 export { FlutterShimmerAvatar, FlutterShimmerAvatarElement } from "./lib/src/html/shimmer/shimmer_avatar";
 export { FlutterShimmer, FlutterShimmerElement } from "./lib/src/html/shimmer/shimmer";
+export { FlutterForm, FlutterFormElement } from "./lib/src/html/form/flutter_form";
+export { FlutterFormField, FlutterFormFieldElement } from "./lib/src/html/form/flutter_form";
+export { FlutterGestureDetector, FlutterGestureDetectorElement } from "./lib/src/gesture/flutter_gesture_detector";
+
+// Manual exports - these need to be added back after CLI generation
 export * from './utils/createWebFComponent';
 export * from './components/WebFTouchArea';
 export { WebFTable, WebFTableElement } from "./lib/src/html/table";

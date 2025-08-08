@@ -50,6 +50,10 @@ function generateEventHandlerType(type: ParameterType) {
   if (pointerType === 'CustomEvent') {
     return 'CustomEvent';
   }
+  // Handle generic types like CustomEvent<T>
+  if (pointerType.startsWith('CustomEvent<')) {
+    return pointerType;
+  }
   throw new Error('Unknown event type: ' + pointerType);
 }
 
@@ -66,6 +70,11 @@ function generateMethodDeclaration(method: FunctionDeclaration) {
 
 function generateVueComponent(blob: IDLBlob) {
   const classObjects = blob.objects as ClassObject[];
+  
+  // Skip if no class objects
+  if (!classObjects || classObjects.length === 0) {
+    return '';
+  }
   const classObjectDictionary = Object.fromEntries(
     classObjects.map(object => {
       return [object.name, object];
@@ -85,6 +94,9 @@ function generateVueComponent(blob: IDLBlob) {
   });
 
   const dependencies = others.map(object => {
+    if (!object || !object.props) {
+      return '';
+    }
     const props = object.props.map(prop => {
       if (prop.optional) {
         return `${prop.name}?: ${generateReturnType(prop.type)};`;
@@ -96,7 +108,7 @@ function generateVueComponent(blob: IDLBlob) {
 interface ${object.name} {
   ${props}
 }`;
-  }).join('\n\n');
+  }).filter(dep => dep.trim() !== '').join('\n\n');
 
   const componentProperties = properties.length > 0 ? properties[0] : undefined;
   const componentEvents = events.length > 0 ? events[0] : undefined;
@@ -165,7 +177,11 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     return component.length > 0;
   }).join('\n\n');
 
-  const content = _.template(readTemplate('vue.components.d.ts'))({
+  const content = _.template(readTemplate('vue.components.d.ts'), {
+    interpolate: /<%=([\s\S]+?)%>/g,
+    evaluate: /<%([\s\S]+?)%>/g,
+    escape: /<%-([\s\S]+?)%>/g
+  })({
     componentNames,
     components,
   });

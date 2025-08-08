@@ -332,7 +332,7 @@ function createCommand(target: string, options: { framework: string; packageName
       stdio: 'inherit'
     });
 
-    spawnSync(NPM, ['install', '@types/vue', '-D'], {
+    spawnSync(NPM, ['install', 'vue', '-D'], {
       cwd: target,
       stdio: 'inherit'
     });
