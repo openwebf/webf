@@ -16,6 +16,9 @@ import 'package:flutter/foundation.dart';
 class LocalHttpServer {
   static LocalHttpServer? _instance;
 
+  // Get from environment variable.
+  static String _kWebFTestPath = Platform.environment['WEBF_TEST_DIR'] ?? '';
+
   LocalHttpServer._() {
     _startServer();
   }
@@ -80,7 +83,7 @@ class LocalHttpServer {
               String path = String.fromCharCodes(pathBuilder.takeBytes());
 
               // Example: GET_foo.txt represents `GET /foo`
-              File file = File('$basePath/${method}_${path.substring(1)}');
+              File file = File('$_kWebFTestPath/$basePath/${method}_${path.substring(1)}');
               if (!file.existsSync()) {
                 throw FlutterError('Reading local http data, but file not exists: \n${file.absolute.path}');
               }
