@@ -77,7 +77,7 @@ final interactiveCppRequests = RawReceivePort((message) {
 
 final int nativePort = interactiveCppRequests.sendPort.nativePort;
 
-class NativeWork extends Opaque {}
+final class NativeWork extends Opaque {}
 
 final _executeNativeCallback = WebFDynamicLibrary.ref
     .lookupFunction<Void Function(Pointer<NativeWork>), void Function(Pointer<NativeWork>)>('executeNativeCallback');
@@ -771,7 +771,7 @@ enum UICommandType {
   finishRecordingCommand,
 }
 
-class UICommandItem extends Struct {
+final class UICommandItem extends Struct {
   @Int64()
   external int type;
 

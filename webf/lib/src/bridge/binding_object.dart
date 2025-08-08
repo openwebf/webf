@@ -15,7 +15,7 @@ import 'package:webf/launcher.dart';
 typedef NativeBindingObjectAsyncCallCallback = Void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
 typedef DartBindingObjectAsyncCallCallback = void Function(Pointer<Void> resolver, Pointer<NativeValue> successResult, Pointer<Utf8> errorMsg);
 
-class BindingObjectAsyncCallContext extends Struct {
+final class BindingObjectAsyncCallContext extends Struct {
   external Pointer<NativeValue> methodName;
   @Int32()
   external int argc;

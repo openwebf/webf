@@ -5,7 +5,7 @@
 import 'node_list.dart';
 import 'node.dart';
 
-class EmptyIterator extends Iterator<Node> {
+class EmptyIterator implements Iterator<Node> {
   @override
   Node get current => throw UnsupportedError('Empty child nodes have no value.');
 

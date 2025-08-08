@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from '@openwebf/react-router';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFRouter } from '@openwebf/react-router';
 
 export const ProfileEditPage: React.FC = () => {
   const location = useLocation();
@@ -126,7 +127,7 @@ export const ProfileEditPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => window.webf.hybridHistory.pushState({}, '/')}
+          onClick={() => WebFRouter.pushState({}, '/')}
           style={{
             background: '#007aff',
             color: 'white',

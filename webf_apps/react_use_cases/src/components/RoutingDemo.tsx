@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WebFListView } from '@openwebf/react-core-ui';
+import { WebFRouter } from '@openwebf/react-router';
 import TabBarManager from '../utils/tabBarManager';
 import styles from './RoutingDemo.module.css';
 
@@ -51,9 +52,9 @@ export const RoutingDemo: React.FC = () => {
       };
 
       if (options?.replace) {
-        window.webf.hybridHistory.replaceState(newState, path);
+        WebFRouter.replaceState(newState, path);
       } else {
-        window.webf.hybridHistory.pushState(newState, path);
+        WebFRouter.pushState(newState, path);
       }
     } catch (error) {
     } finally {
@@ -64,7 +65,7 @@ export const RoutingDemo: React.FC = () => {
   const goBack = async () => {
     setIsNavigating(prev => ({...prev, back: true}));
     try {
-      window.webf.hybridHistory.back();
+      WebFRouter.back();
     } catch (error) {
     } finally {
       setIsNavigating(prev => ({...prev, back: false}));
@@ -79,7 +80,7 @@ export const RoutingDemo: React.FC = () => {
         source: 'forward_demo',
         timestamp: Date.now()
       };
-      window.webf.hybridHistory.pushState(forwardState, '/animation');
+      WebFRouter.pushState(forwardState, '/animation');
       
       // Update local route state for display
     } catch (error) {
@@ -97,7 +98,7 @@ export const RoutingDemo: React.FC = () => {
           return;
         }
         for (let i = 0; i < stepsToGo; i++) {
-          window.webf.hybridHistory.back();
+          WebFRouter.back();
         }
       } else if (delta > 0) {
         // Navigate to showcase and animation pages as forward examples
@@ -110,7 +111,7 @@ export const RoutingDemo: React.FC = () => {
             step: i + 1,
             timestamp: Date.now()
           };
-          window.webf.hybridHistory.pushState(stateParams, forwardPages[i]);          
+          WebFRouter.pushState(stateParams, forwardPages[i]);          
         }
       }
     } catch (error) {
@@ -127,7 +128,7 @@ export const RoutingDemo: React.FC = () => {
         source: 'routing_demo',
         timestamp: Date.now()
       };
-      window.webf.hybridHistory.pushNamed('/flutter-interaction', { arguments: stateParams });
+      await WebFRouter.push('/flutter-interaction', stateParams);
     } catch (error) {
     } finally {
       setIsNavigating(prev => ({...prev, pushNamed: false}));
@@ -141,7 +142,7 @@ export const RoutingDemo: React.FC = () => {
         source: 'routing_demo',
         timestamp: Date.now()
       };
-      window.webf.hybridHistory.pushReplacementNamed('/network', { arguments: stateParams });
+      await WebFRouter.replace('/network', stateParams);
     } catch (error) {
     } finally {
       setIsNavigating(prev => ({...prev, pushReplacement: false}));
@@ -155,7 +156,7 @@ export const RoutingDemo: React.FC = () => {
         source: 'routing_demo',
         timestamp: Date.now()
       };
-      window.webf.hybridHistory.popAndPushNamed('/video', { arguments: stateParams });
+      await WebFRouter.popAndPushNamed('/video', stateParams);
     } catch (error) {
     } finally {
       setIsNavigating(prev => ({...prev, popAndPush: false}));
@@ -165,9 +166,9 @@ export const RoutingDemo: React.FC = () => {
   const testCanPopAndMaybePop = async () => {
     setIsNavigating(prev => ({...prev, canPop: true}));
     try {
-      const canPop = window.webf.hybridHistory.canPop();
+      const canPop = WebFRouter.canPop();
       console.log('canPop', canPop);
-      const didPop = window.webf.hybridHistory.maybePop({ cancelled: false });
+      const didPop = WebFRouter.maybePop({ cancelled: false });
       console.log('didPop', didPop);
     } catch (error) {
     } finally {
@@ -182,7 +183,7 @@ export const RoutingDemo: React.FC = () => {
         source: 'routing_demo',
         timestamp: Date.now()
       };
-      const restorationId = window.webf.hybridHistory.restorablePopAndPushNamed('/image', { arguments: stateParams });
+      const restorationId = await WebFRouter.restorablePopAndPushNamed('/image', stateParams);
       setHybridHistoryState(prev => ({...prev, lastRestorationId: restorationId}));
     } catch (error) {
     } finally {

@@ -46,6 +46,9 @@ typedef LoadImage = Future<ImageLoadResponse> Function(Element ownerElement, Uri
 typedef OnImageLoad = void Function(Element ownerElement, int naturalWidth, int naturalHeight, int frameCount);
 
 class BoxFitImage extends ImageProvider<BoxFitImageKey> {
+  // Static cache to prevent duplicate loads of the same URL
+  static final Map<String, Future<Codec>> _loadingFutures = {};
+
   BoxFitImage({
     required LoadImage loadImage,
     required this.url,
@@ -73,6 +76,29 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
   }
 
   Future<Codec> _loadAsync(BoxFitImageKey key) async {
+    // Use URL as the deduplication key since that's what matters for network requests
+    final String dedupeKey = url.toString();
+
+    // Check if this URL is already being loaded
+    final existingFuture = _loadingFutures[dedupeKey];
+    if (existingFuture != null) {
+      // Reuse the existing future
+      return existingFuture;
+    }
+
+    // Create a new future for this URL
+    final future = _performLoad(key);
+    _loadingFutures[dedupeKey] = future;
+
+    // Clean up when done (whether success or failure)
+    future.whenComplete(() {
+      _loadingFutures.remove(dedupeKey);
+    });
+
+    return future;
+  }
+
+  Future<Codec> _performLoad(BoxFitImageKey key) async {
     ImageLoadResponse response;
     WebFController? controller = WebFController.getControllerOfJSContextId(contextId);
     try {
@@ -80,6 +106,39 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
         throw StateError('Could not load the image, controller: $contextId were not exist');
       }
       response = await _loadImage(controller.view.getBindingObject<Element>(targetElementPtr)!, url);
+
+      final bytes = response.bytes;
+      if (bytes.isEmpty) {
+        PaintingBinding.instance.imageCache.evict(key);
+        throw StateError('Unable to read data');
+      }
+
+      final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
+      final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+
+      int? preferredWidth;
+      int? preferredHeight;
+      if (key.configuration?.size != null) {
+        preferredWidth = (key.configuration!.size!.width * devicePixelRatio).toInt();
+        preferredHeight = (key.configuration!.size!.height * devicePixelRatio).toInt();
+      }
+
+      final Codec codec = await _instantiateImageCodec(
+        descriptor,
+        boxFit: boxFit,
+        preferredWidth: preferredWidth,
+        preferredHeight: preferredHeight,
+      );
+
+      // Fire image on load after codec created.
+      scheduleMicrotask(() {
+        if (!controller.disposed && onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
+          onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
+              codec.frameCount);
+        }
+        _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height, codec.frameCount));
+      });
+      return codec;
     } on FlutterError {
       // Depending on where the exception was thrown, the image cache may not
       // have had a chance to track the key in the cache at all.
@@ -89,45 +148,13 @@ class BoxFitImage extends ImageProvider<BoxFitImageKey> {
       });
       rethrow;
     }
-
-    final bytes = response.bytes;
-    if (bytes.isEmpty) {
-      PaintingBinding.instance.imageCache.evict(key);
-      throw StateError('Unable to read data');
-    }
-
-    final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(bytes);
-    final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
-
-    int? preferredWidth;
-    int? preferredHeight;
-    if (key.configuration?.size != null) {
-      preferredWidth = (key.configuration!.size!.width * devicePixelRatio).toInt();
-      preferredHeight = (key.configuration!.size!.height * devicePixelRatio).toInt();
-    }
-
-    final Codec codec = await _instantiateImageCodec(
-      descriptor,
-      boxFit: boxFit,
-      preferredWidth: preferredWidth,
-      preferredHeight: preferredHeight,
-    );
-
-    // Fire image on load after codec created.
-    scheduleMicrotask(() {
-      if (!controller.disposed && onImageLoad != null && controller.view.getBindingObject(targetElementPtr) != null) {
-        onImageLoad!(controller.view.getBindingObject<Element>(targetElementPtr)!, descriptor.width, descriptor.height,
-            codec.frameCount);
-      }
-      _imageStreamCompleter!.setDimension(Dimension(descriptor.width, descriptor.height, codec.frameCount));
-    });
-    return codec;
   }
 
   DimensionedMultiFrameImageStreamCompleter? _imageStreamCompleter;
 
   @override
   ImageStreamCompleter loadImage(BoxFitImageKey key, ImageDecoderCallback decode) {
+    // Create a completer that will load the image
     return _imageStreamCompleter = DimensionedMultiFrameImageStreamCompleter(
       codec: _loadAsync(key),
       scale: 1.0,

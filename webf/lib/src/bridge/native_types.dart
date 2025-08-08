@@ -13,7 +13,7 @@ import 'package:webf/bridge.dart';
 // All the class which extends Struct class has a corresponding struct in C++ code.
 // All class members include variables and functions must be follow the same order with C++ struct, to keep the same memory layout cross dart and C++ code.
 
-class NativeWebFInfo extends Struct {
+final class NativeWebFInfo extends Struct {
   external Pointer<Utf8> appName;
   external Pointer<Utf8> appVersion;
   external Pointer<Utf8> appRevision;
@@ -21,7 +21,7 @@ class NativeWebFInfo extends Struct {
 }
 
 // An native struct can be directly convert to javaScript String without any conversion cost.
-class NativeString extends Struct {
+final class NativeString extends Struct {
   external Pointer<Uint16> string;
 
   @Uint32()
@@ -32,7 +32,7 @@ class NativeString extends Struct {
 // We choose to make all this structs have same memory layout. But dart lang did't provide semantically syntax to achieve this (like inheritance a class which extends Struct
 // or declare struct memory by value).
 // The only worked ways is use raw bytes to store NativeEvent members.
-class RawEvent extends Struct {
+final class RawEvent extends Struct {
 // Raw bytes represent the NativeEvent fields.
   external Pointer<Uint64> bytes;
   @Int64()
@@ -41,7 +41,7 @@ class RawEvent extends Struct {
   external int isCustomEvent;
 }
 
-class EventDispatchResult extends Struct {
+final class EventDispatchResult extends Struct {
   @Bool()
   external bool canceled;
 
@@ -52,7 +52,7 @@ class EventDispatchResult extends Struct {
   external bool preventDefaulted;
 }
 
-class AddEventListenerOptions extends Struct {
+final class AddEventListenerOptions extends Struct {
   @Bool()
   external bool capture;
 
@@ -63,13 +63,13 @@ class AddEventListenerOptions extends Struct {
   external bool once;
 }
 
-class NativeTouchList extends Struct {
+final class NativeTouchList extends Struct {
   @Int64()
   external int length;
   external Pointer<NativeTouch> touches;
 }
 
-class NativeTouch extends Struct {
+final class NativeTouch extends Struct {
   @Int64()
   external int identifier;
 
@@ -138,7 +138,7 @@ typedef DartInvokeBindingMethodsFromDart = void Function(
     Object bindingDartObject,
     Pointer<NativeFunction<NativeInvokeResultCallback>> resultCallback);
 
-class NativeBindingObject extends Struct {
+final class NativeBindingObject extends Struct {
   external Pointer<Void> instance;
   external Pointer<NativeFunction<InvokeBindingMethodsFromDart>> invokeBindingMethodFromDart;
   // Shared method called by JS side.
@@ -171,7 +171,7 @@ bool isBindingObjectDisposed(Pointer<NativeBindingObject>? nativeBindingObject) 
   return _isNativeBindingObjectDisposed(nativeBindingObject);
 }
 
-class NativePerformanceEntry extends Struct {
+final class NativePerformanceEntry extends Struct {
   external Pointer<Utf8> name;
   external Pointer<Utf8> entryType;
 
@@ -181,7 +181,7 @@ class NativePerformanceEntry extends Struct {
   external double duration;
 }
 
-class NativePerformanceEntryList extends Struct {
+final class NativePerformanceEntryList extends Struct {
   external Pointer<Uint64> entries;
 
   @Int32()

@@ -9,7 +9,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 // Class that maps to the C++ struct memory layout
-class NativeByteDataStruct extends Struct {
+final class NativeByteDataStruct extends Struct {
   /// Pointer to the byte array
   external Pointer<Uint8> bytes;
 

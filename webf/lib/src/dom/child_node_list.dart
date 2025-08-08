@@ -9,7 +9,7 @@ import 'node_list.dart';
 import 'container_node.dart';
 import 'collection_index_cache.dart';
 
-class _ChildNodeListIterator extends Iterator<Node> {
+class _ChildNodeListIterator implements Iterator<Node> {
   final ChildNodeList collection;
   int _index = -1;
   Node? _current;

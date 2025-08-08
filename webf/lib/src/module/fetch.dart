@@ -12,7 +12,9 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/html.dart';
+import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
+import 'package:webf/src/foundation/loading_state_registry.dart';
 
 String EMPTY_STRING = '';
 
@@ -77,6 +79,9 @@ class FetchModule extends BaseModule {
         request.headers.set(HttpHeaderContext, moduleManager!.contextId.toString());
       }
 
+      // Mark this as a Fetch/XHR request
+      request.headers.set('X-WebF-Request-Type', 'fetch');
+
       if (data is Stream<List<int>>) {
         request.addStream(data);
       } else if (data is List<int>) {
@@ -124,13 +129,24 @@ class FetchModule extends BaseModule {
       requestBody = body;
     }
 
-    _handleError(Object error, StackTrace? stackTrace) {
+    handleError(Object error, StackTrace? stackTrace) {
+      // Record the fetch error in LoadingState
+      if (moduleManager != null) {
+        final contextId = moduleManager!.contextId;
+        final dumper = LoadingStateRegistry.instance.getDumper(contextId);
+        // Use the resolved URI for error reporting
+        dumper?.recordNetworkRequestError(
+          uri.toString(),  // Use the resolved URI
+          error.toString(),
+          isXHR: true  // Mark as XHR/Fetch request
+        );
+      }
       completer.completeError(error, stackTrace);
     }
 
     if (uri.host.isEmpty) {
       // No host specified in URI.
-      _handleError('Failed to parse URL from $uri.', null);
+      handleError('Failed to parse URL from $uri.', null);
     } else {
       HttpClientResponse? response;
 
@@ -151,7 +167,7 @@ class FetchModule extends BaseModule {
         } else {
           throw FlutterError('Failed to read response.');
         }
-      }).catchError(_handleError);
+      }).catchError(handleError);
     }
 
     return completer.future;

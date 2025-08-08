@@ -26,7 +26,7 @@ class UICommand {
   }
 }
 
-class UICommandBufferPack extends Struct {
+final class UICommandBufferPack extends Struct {
   external Pointer<Void> head;
   external Pointer<Void> data;
 
@@ -35,7 +35,7 @@ class UICommandBufferPack extends Struct {
 }
 
 // FFI struct matching C++ UICommandItem structure
-class UICommandItemFFI extends Struct {
+final class UICommandItemFFI extends Struct {
   @Int32()
   external int type;
 

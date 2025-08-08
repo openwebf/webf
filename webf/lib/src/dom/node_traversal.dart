@@ -4,7 +4,7 @@
 
 import 'package:webf/dom.dart';
 
-class InclusiveDescendantsOfIterator<T extends Node> extends Iterator<T> {
+class InclusiveDescendantsOfIterator<T extends Node> implements Iterator<T> {
   T? _current;
   final T? _root;
 
@@ -41,7 +41,7 @@ class InclusiveDescendantsOfIterable<T extends Node> extends Iterable<T> {
   Iterator<T> get iterator => InclusiveDescendantsOfIterator(_root);
 }
 
-class AncestorsOfTraversal<T extends Node> extends Iterator<T> {
+class AncestorsOfTraversal<T extends Node> implements Iterator<T> {
   T? _current;
 
   AncestorsOfTraversal(this._current);
@@ -64,7 +64,7 @@ class AncestorOfIterable<T extends Node> extends Iterable<T> {
   Iterator<T> get iterator => AncestorsOfTraversal<T>(_root);
 }
 
-class ChildrenOfIterator<T extends Node> extends Iterator<T> {
+class ChildrenOfIterator<T extends Node> implements Iterator<T> {
   final T? _root;
   T? _current;
 

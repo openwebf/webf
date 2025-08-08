@@ -6,7 +6,7 @@ import 'package:ffi/ffi.dart';
 
 import 'package:webf/bridge.dart';
 
-class TextMetricsData extends Struct {
+final class TextMetricsData extends Struct {
   @Double()
   external double width;
   // @Double()

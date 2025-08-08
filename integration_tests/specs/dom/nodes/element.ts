@@ -11,6 +11,7 @@
  * - Element.prototype.firstElementChild
  * - Element.prototype.lastElementChild
  * - Element.prototype.parentElement
+ * - Element.prototype.insertAdjacentElement
  */
 describe('DOM Element API', () => {
   it('should work', () => {
@@ -252,12 +253,12 @@ describe('DOM Element API', () => {
     container.ononscreen = () => {
       const clickBox = document.querySelector('#box');
       const rect = clickBox?.getBoundingClientRect();
-  
+
       // @ts-ignore
       const offset1 = clickBox?.___testGlobalToLocal__(rect.x, rect.y + 10);
-  
+
       window.scrollTo(0, 200);
-  
+
       // @ts-ignore
       const offset2 = clickBox?.___testGlobalToLocal__(rect?.x, rect.y + 10);
       expect(JSON.stringify(offset1)).toEqual(JSON.stringify(offset2));
@@ -371,6 +372,59 @@ describe('DOM Element API', () => {
     expect(childDiv.parentElement).toEqual(null);
 
     expect(document.documentElement.parentElement).toEqual(null);
+  });
+
+  it('should work with insertAdjacentElement', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+
+    const existingElement = document.createElement('p');
+    existingElement.textContent = 'existing';
+    container.appendChild(existingElement);
+
+    // Test beforebegin position
+    const beforeElement = document.createElement('span');
+    beforeElement.textContent = 'before';
+    const insertedBefore = existingElement.insertAdjacentElement('beforebegin', beforeElement);
+    expect(insertedBefore).toBe(beforeElement);
+    expect(container.children.length).toBe(2);
+    expect(container.children[0]).toBe(beforeElement);
+    expect(container.children[1]).toBe(existingElement);
+
+    // Test afterbegin position
+    const afterBeginElement = document.createElement('span');
+    afterBeginElement.textContent = 'afterbegin';
+    const insertedAfterBegin = existingElement.insertAdjacentElement('afterbegin', afterBeginElement);
+    expect(insertedAfterBegin).toBe(afterBeginElement);
+    expect(existingElement.children.length).toBe(1);
+    expect(existingElement.children[0]).toBe(afterBeginElement);
+
+    // Test beforeend position
+    const beforeEndElement = document.createElement('span');
+    beforeEndElement.textContent = 'beforeend';
+    const insertedBeforeEnd = existingElement.insertAdjacentElement('beforeend', beforeEndElement);
+    expect(insertedBeforeEnd).toBe(beforeEndElement);
+    expect(existingElement.children.length).toBe(2);
+    expect(existingElement.children[1]).toBe(beforeEndElement);
+
+    // Test afterend position
+    const afterElement = document.createElement('span');
+    afterElement.textContent = 'after';
+    const insertedAfter = existingElement.insertAdjacentElement('afterend', afterElement);
+    expect(insertedAfter).toBe(afterElement);
+    expect(container.children.length).toBe(3);
+    expect(container.children[2]).toBe(afterElement);
+
+    // Test invalid position
+    const invalidElement = document.createElement('span');
+    expect(() => {
+      existingElement.insertAdjacentElement('invalid' as any, invalidElement);
+    }).toThrow();
+
+    // Test with null element
+    expect(() => {
+      existingElement.insertAdjacentElement('beforebegin', null as any);
+    }).toThrow();
   });
 });
 

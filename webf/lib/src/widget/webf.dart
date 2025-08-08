@@ -599,18 +599,18 @@ class WebFState extends State<WebF> with RouteAware {
 
   Widget buildRootView(String initialRoute) {
     // Record the buildRootView phase
-    widget.controller.loadingStateDumper.recordPhase(LoadingStateDumper.phaseBuildRootView, parameters: {
+    widget.controller.loadingState.recordPhase(LoadingState.phaseBuildRootView, parameters: {
       'initialRoute': initialRoute,
       'hasHybridRoute': initialRoute != '/',
     });
-    
+
     try {
       if (initialRoute != '/') {
         RouterLinkElement? child = widget.controller.view.getHybridRouterView(initialRoute);
         if (child == null) {
           final error = 'The route path for $initialRoute was not found';
-          widget.controller.loadingStateDumper.recordError(
-            LoadingStateDumper.phaseBuildRootView, 
+          widget.controller.loadingState.recordError(
+            LoadingState.phaseBuildRootView,
             error,
             context: {
               'initialRoute': initialRoute,
@@ -633,8 +633,8 @@ class WebFState extends State<WebF> with RouteAware {
 
       if (widget.controller.disposed) {
         final error = '${widget.controller} was disposed';
-        widget.controller.loadingStateDumper.recordError(
-          LoadingStateDumper.phaseBuildRootView, 
+        widget.controller.loadingState.recordError(
+          LoadingState.phaseBuildRootView,
           error,
           context: {
             'errorType': 'ControllerDisposedError',
@@ -651,8 +651,8 @@ class WebFState extends State<WebF> with RouteAware {
 
       if (widget.controller.view.document.documentElement == null) {
         final error = 'The documentElement is null';
-        widget.controller.loadingStateDumper.recordError(
-          LoadingStateDumper.phaseBuildRootView, 
+        widget.controller.loadingState.recordError(
+          LoadingState.phaseBuildRootView,
           error,
           context: {
             'errorType': 'DocumentElementNullError',
@@ -672,8 +672,8 @@ class WebFState extends State<WebF> with RouteAware {
       return widget.controller.view.document.documentElement!.toWidget();
     } catch (e, stack) {
       // Record any unexpected errors during buildRootView
-      widget.controller.loadingStateDumper.recordError(
-        LoadingStateDumper.phaseBuildRootView,
+      widget.controller.loadingState.recordError(
+        LoadingState.phaseBuildRootView,
         e,
         stackTrace: stack,
         context: {
@@ -681,11 +681,11 @@ class WebFState extends State<WebF> with RouteAware {
           'errorType': e.runtimeType.toString(),
         }
       );
-      
+
       if (widget.errorBuilder != null) {
         return widget.errorBuilder!(context, e);
       }
-      
+
       return Center(
         child: Text('Error building root view: ${e.toString()}'),
       );

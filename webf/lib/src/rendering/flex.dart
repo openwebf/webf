@@ -734,8 +734,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get gap spacing for main axis (between flex items)
   double _getMainAxisGap() {
-    CSSLengthValue gap = _isHorizontalFlexDirection 
-      ? renderStyle.columnGap 
+    CSSLengthValue gap = _isHorizontalFlexDirection
+      ? renderStyle.columnGap
       : renderStyle.rowGap;
     if (gap.type == CSSLengthType.NORMAL) return 0;
     double? computedValue = gap.computedValue;
@@ -744,8 +744,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get gap spacing for cross axis (between flex lines)
   double _getCrossAxisGap() {
-    CSSLengthValue gap = _isHorizontalFlexDirection 
-      ? renderStyle.rowGap 
+    CSSLengthValue gap = _isHorizontalFlexDirection
+      ? renderStyle.rowGap
       : renderStyle.columnGap;
     if (gap.type == CSSLengthType.NORMAL) return 0;
     double? computedValue = gap.computedValue;
@@ -767,14 +767,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (b is RenderBoxModel) {
         orderB = b.renderStyle.order;
       }
-      
+
       // If orders are equal, maintain document order (stable sort)
       if (orderA == orderB) {
         return 0;
       }
       return orderA.compareTo(orderB);
     });
-    
+
     return sortedChildren;
   }
 
@@ -1913,7 +1913,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Include gaps in the main axis size calculation ONLY for inline-flex containers
     // Regular flex containers are block-level and should not size to content
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
-    if (effectiveDisplay == CSSDisplay.inlineFlex) {
+    if (effectiveDisplay == CSSDisplay.inlineFlex || effectiveDisplay == CSSDisplay.flex) {
       double mainAxisGap = _getMainAxisGap();
       if (_runMetrics.isNotEmpty && mainAxisGap > 0) {
         _RunMetrics maxMainSizeMetrics = _runMetrics.reduce((_RunMetrics curr, _RunMetrics next) {
