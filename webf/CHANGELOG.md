@@ -1,3 +1,20 @@
+## 0.22.7+1
+
+**Features**
+
+- LoadingState: once-only error listeners
+- Added onLoadingErrorOnce(types, callback, {debounce, perLoad})
+- Added onAnyLoadingErrorOnce(callback, {debounce, perLoad, types, grep, caseSensitive, invert})
+- Defaults to types {entrypoint, script, css, fetch}
+- Supports debounce coalescing and per-load rearming
+- Optional grep filter on URL/error to reduce noise
+- LoadingStateDump: greppable output
+- Added toStringFiltered({grep, caseSensitive, invert}) to filter dump lines
+
+Example updates
+
+• Use onAnyLoadingErrorOnce to dump once for entrypoint/script/css/fetch errors, debounced by 5s from first hit.
+
 ## 0.22.7
 
 ### Features
