@@ -73,6 +73,10 @@ add_executable(webf_css_unittests
   ${BRIDGE_SOURCE}
   ./test/webf_test_env.cc
   ./test/webf_test_env.h
+  ./webf_bridge_test.cc
+  ./include/webf_bridge_test.h
+  ./test/webf_test_context.cc
+  ./test/webf_test_context.h
 )
 
 include(GoogleTest)
