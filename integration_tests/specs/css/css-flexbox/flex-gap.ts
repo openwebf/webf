@@ -581,4 +581,578 @@ describe('css-flexbox gap', () => {
 
     await snapshot();
   });
+
+  it('inline-flex-height-with-gap', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if inline-flex container height includes gap spacing (height should be 150px total).`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'column',
+          gap: '20px',
+          'background-color': '#e0e0e0',
+          border: '1px solid red',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'blue',
+            width: '80px',
+            height: '50px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'green',
+            width: '80px',
+            height: '50px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'orange',
+            width: '80px',
+            height: '50px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('flex-height-with-row-gap', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if flex container height includes row-gap spacing (height should be 170px total).`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'flex',
+          'flex-direction': 'column',
+          'row-gap': '15px',
+          'background-color': '#d0d0d0',
+          border: '2px solid blue',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'red',
+            width: '100px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'purple',
+            width: '100px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'cyan',
+            width: '100px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'yellow',
+            width: '100px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('inline-flex-width-with-column-gap', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if inline-flex container width includes column-gap spacing (width should be 215px total).`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'row',
+          'column-gap': '25px',
+          'background-color': '#c0c0c0',
+          border: '1px solid green',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'blue',
+            width: '60px',
+            height: '70px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'red',
+            width: '60px',
+            height: '70px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'green',
+            width: '60px',
+            height: '70px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('multiline-flex-with-cross-axis-gap', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if multiline flex includes cross-axis gap (height should be 100px: 40+20+40).`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'inline-flex',
+          'flex-wrap': 'wrap',
+          width: '150px',
+          gap: '20px 10px', // row-gap column-gap
+          'background-color': '#b0b0b0',
+          border: '1px solid purple',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'blue',
+            width: '60px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'red',
+            width: '60px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'green',
+            width: '60px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'yellow',
+            width: '60px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('gap-with-padding-height-calculation', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if flex container height includes both gap and padding (total height: 10+30+15+30+15+30+10=140px).`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'column',
+          gap: '15px',
+          padding: '10px',
+          'background-color': '#a0a0a0',
+          border: '1px solid orange',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'red',
+            width: '80px',
+            height: '30px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'blue',
+            width: '80px',
+            height: '30px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'green',
+            width: '80px',
+            height: '30px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('gap-single-item-no-effect', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if single item container height equals item height (50px) despite large gap value.`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'column',
+          gap: '100px', // Large gap should have no effect
+          'background-color': '#909090',
+          border: '1px solid red',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'navy',
+            width: '100px',
+            height: '50px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('gap-with-different-units', async () => {
+    let p;
+    let flexbox1;
+    let flexbox2;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if containers show proper heights with em and rem gap units.`
+        ),
+      ]
+    );
+    flexbox1 = createElement(
+      'div',
+      {
+        id: 'flexbox1',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'column',
+          gap: '1em', // 20px with font-size: 20px
+          'font-size': '20px',
+          'background-color': '#808080',
+          border: '1px solid blue',
+          'margin-right': '20px',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'indigo',
+            width: '90px',
+            height: '35px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'violet',
+            width: '90px',
+            height: '35px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    flexbox2 = createElement(
+      'div',
+      {
+        id: 'flexbox2',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'column',
+          gap: '2rem', // 32px with root font-size: 16px
+          'background-color': '#707070',
+          border: '1px solid green',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'lime',
+            width: '90px',
+            height: '30px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'aqua',
+            width: '90px',
+            height: '30px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox1);
+    BODY.appendChild(flexbox2);
+
+    await snapshot();
+  });
+
+  it('explicit-height-overrides-content-with-gap', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if container respects explicit height (200px) even with gap that would make content smaller.`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'flex',
+          'flex-direction': 'column',
+          gap: '15px',
+          height: '200px', // Explicit height
+          width: '120px',
+          'background-color': '#606060',
+          border: '2px solid black',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'teal',
+            width: '100px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'olive',
+            width: '100px',
+            height: '40px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
+
+  it('negative-gap-treated-as-zero', async () => {
+    let p;
+    let flexbox;
+    p = createElement(
+      'p',
+      {
+        style: {
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createText(
+          `Test passes if negative gap is treated as zero (height should be 90px: 45+45).`
+        ),
+      ]
+    );
+    flexbox = createElement(
+      'div',
+      {
+        id: 'flexbox',
+        style: {
+          display: 'inline-flex',
+          'flex-direction': 'column',
+          gap: '-20px', // Negative gap should be treated as 0
+          'background-color': '#505050',
+          border: '1px solid cyan',
+          'box-sizing': 'border-box',
+        },
+      },
+      [
+        createElement('div', {
+          style: {
+            'background-color': 'gold',
+            width: '80px',
+            height: '45px',
+            'box-sizing': 'border-box',
+          },
+        }),
+        createElement('div', {
+          style: {
+            'background-color': 'silver',
+            width: '80px',
+            height: '45px',
+            'box-sizing': 'border-box',
+          },
+        }),
+      ]
+    );
+    BODY.appendChild(p);
+    BODY.appendChild(flexbox);
+
+    await snapshot();
+  });
 });

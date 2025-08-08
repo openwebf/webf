@@ -1060,4 +1060,638 @@ void main() {
       // 12% of 250px = 30px row gap should be computed correctly
     });
   });
+
+  group('Flex Height Calculation with Gap', () {
+    testWidgets('inline-flex container height includes gap in column direction', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-height-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 20px;
+                background-color: #eee;
+              ">
+                <div id="item1" style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: blue;
+                ">1</div>
+                <div id="item2" style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: red;
+                ">2</div>
+                <div id="item3" style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: green;
+                ">3</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Expected height: 50 + 20 + 50 + 20 + 50 = 190px
+      expect(container.offsetHeight, equals(190.0));
+    });
+
+    testWidgets('regular flex container height includes gap in column direction', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-height-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                row-gap: 15px;
+                background-color: #ddd;
+              ">
+                <div id="item1" style="
+                  width: 150px;
+                  height: 40px;
+                  background-color: purple;
+                ">1</div>
+                <div id="item2" style="
+                  width: 150px;
+                  height: 40px;
+                  background-color: orange;
+                ">2</div>
+                <div id="item3" style="
+                  width: 150px;
+                  height: 40px;
+                  background-color: cyan;
+                ">3</div>
+                <div id="item4" style="
+                  width: 150px;
+                  height: 40px;
+                  background-color: yellow;
+                ">4</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Expected height: 40 + 15 + 40 + 15 + 40 + 15 + 40 = 205px
+      expect(container.offsetHeight, equals(205.0));
+    });
+
+    testWidgets('inline-flex container width includes gap in row direction', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-width-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: row;
+                column-gap: 25px;
+                background-color: #ccc;
+              ">
+                <div id="item1" style="
+                  width: 60px;
+                  height: 80px;
+                  background-color: blue;
+                ">1</div>
+                <div id="item2" style="
+                  width: 60px;
+                  height: 80px;
+                  background-color: red;
+                ">2</div>
+                <div id="item3" style="
+                  width: 60px;
+                  height: 80px;
+                  background-color: green;
+                ">3</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Expected width: 60 + 25 + 60 + 25 + 60 = 230px
+      expect(container.offsetWidth, equals(230.0));
+    });
+
+    testWidgets('gap shorthand property works for both directions', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'gap-shorthand-height-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 30px;
+                background-color: #bbb;
+              ">
+                <div style="
+                  width: 120px;
+                  height: 60px;
+                  background-color: brown;
+                ">1</div>
+                <div style="
+                  width: 120px;
+                  height: 60px;
+                  background-color: pink;
+                ">2</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Expected height: 60 + 30 + 60 = 150px
+      expect(container.offsetHeight, equals(150.0));
+    });
+
+    testWidgets('multi-line flex container includes cross-axis gap', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'multi-line-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-wrap: wrap;
+                width: 150px;
+                gap: 20px 10px;
+                background-color: #aaa;
+              ">
+                <div style="
+                  width: 60px;
+                  height: 40px;
+                  background-color: blue;
+                ">1</div>
+                <div style="
+                  width: 60px;
+                  height: 40px;
+                  background-color: red;
+                ">2</div>
+                <div style="
+                  width: 60px;
+                  height: 40px;
+                  background-color: green;
+                ">3</div>
+                <div style="
+                  width: 60px;
+                  height: 40px;
+                  background-color: yellow;
+                ">4</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Items 1&2 on first line, items 3&4 on second line
+      // Height: 40 (first line) + 20 (row gap) + 40 (second line) = 100px
+      expect(container.offsetHeight, equals(100.0));
+    });
+
+    testWidgets('flex container with single item has no gap effect', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'single-item-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 50px;
+                background-color: #999;
+              ">
+                <div style="
+                  width: 100px;
+                  height: 70px;
+                  background-color: navy;
+                ">Only Item</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // With only one item, gap should have no effect
+      expect(container.offsetHeight, equals(70.0));
+    });
+
+    testWidgets('empty flex container has zero height even with gap', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'empty-container-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 100px;
+                background-color: #888;
+              ">
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Empty container should have zero height
+      expect(container.offsetHeight, equals(0.0));
+    });
+
+    testWidgets('flex container respects explicit height over content with gap', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'explicit-height-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                height: 300px;
+                background-color: #777;
+              ">
+                <div style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: teal;
+                ">1</div>
+                <div style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: olive;
+                ">2</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Explicit height should override content height
+      expect(container.offsetHeight, equals(300.0));
+    });
+
+    testWidgets('percentage gap calculates based on container dimension', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'percentage-gap-height-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                row-gap: 10%;
+                width: 200px;
+                background-color: #666;
+              ">
+                <div style="
+                  width: 150px;
+                  height: 30px;
+                  background-color: coral;
+                ">1</div>
+                <div style="
+                  width: 150px;
+                  height: 30px;
+                  background-color: crimson;
+                ">2</div>
+                <div style="
+                  width: 150px;
+                  height: 30px;
+                  background-color: darkblue;
+                ">3</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Without explicit height, percentage gap might be treated as 0 or computed differently
+      // This test verifies that percentage gaps are handled without errors
+      expect(container.offsetHeight, greaterThanOrEqualTo(90.0)); // At least the sum of item heights
+    });
+
+    testWidgets('negative gap values are treated as zero', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'negative-gap-height-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: -20px;
+                background-color: #555;
+              ">
+                <div style="
+                  width: 80px;
+                  height: 45px;
+                  background-color: gold;
+                ">1</div>
+                <div style="
+                  width: 80px;
+                  height: 45px;
+                  background-color: silver;
+                ">2</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Negative gap should be treated as 0
+      expect(container.offsetHeight, equals(90.0)); // 45 + 45
+    });
+
+    testWidgets('gap with different units (em, rem) in height calculation', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'gap-units-height-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0; font-size: 16px;">
+              <div id="em-container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 1em;
+                font-size: 20px;
+                background-color: #444;
+              ">
+                <div style="
+                  width: 100px;
+                  height: 40px;
+                  background-color: indigo;
+                ">1</div>
+                <div style="
+                  width: 100px;
+                  height: 40px;
+                  background-color: violet;
+                ">2</div>
+              </div>
+              
+              <div id="rem-container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 2rem;
+                background-color: #333;
+                margin-top: 10px;
+              ">
+                <div style="
+                  width: 100px;
+                  height: 35px;
+                  background-color: lime;
+                ">1</div>
+                <div style="
+                  width: 100px;
+                  height: 35px;
+                  background-color: aqua;
+                ">2</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final emContainer = prepared.getElementById('em-container');
+      final remContainer = prepared.getElementById('rem-container');
+      
+      // em container: 1em = 20px (container font-size), height = 40 + 20 + 40 = 100px
+      expect(emContainer.offsetHeight, equals(100.0));
+      
+      // rem container: 2rem = 32px (root font-size 16px), height = 35 + 32 + 35 = 102px
+      expect(remContainer.offsetHeight, equals(102.0));
+    });
+
+    testWidgets('flex-grow items with gap height calculation', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-grow-gap-height-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                height: 200px;
+                background-color: #222;
+              ">
+                <div style="
+                  width: 100px;
+                  flex-grow: 1;
+                  background-color: darkgreen;
+                ">1</div>
+                <div style="
+                  width: 100px;
+                  flex-grow: 2;
+                  background-color: darkred;
+                ">2</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Container has explicit height
+      expect(container.offsetHeight, equals(200.0));
+      
+      // Available space for items: 200px - 20px (gap) = 180px
+      // Item 1 gets 1/3 of 180px = 60px
+      // Item 2 gets 2/3 of 180px = 120px
+    });
+
+    testWidgets('inline-flex with padding and gap height calculation', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'padding-gap-height-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 15px;
+                padding: 10px;
+                background-color: #111;
+              ">
+                <div style="
+                  width: 90px;
+                  height: 25px;
+                  background-color: maroon;
+                ">1</div>
+                <div style="
+                  width: 90px;
+                  height: 25px;
+                  background-color: navy;
+                ">2</div>
+                <div style="
+                  width: 90px;
+                  height: 25px;
+                  background-color: olive;
+                ">3</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Height: padding-top (10) + item1 (25) + gap (15) + item2 (25) + gap (15) + item3 (25) + padding-bottom (10) = 125px
+      expect(container.offsetHeight, equals(125.0));
+    });
+
+    testWidgets('align-items stretch with gap in column direction', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'align-stretch-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                width: 200px;
+                background-color: #000;
+              ">
+                <div style="
+                  height: 30px;
+                  background-color: fuchsia;
+                ">1</div>
+                <div style="
+                  height: 40px;
+                  background-color: turquoise;
+                ">2</div>
+                <div style="
+                  height: 35px;
+                  background-color: tomato;
+                ">3</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // Height: 30 + 10 + 40 + 10 + 35 = 125px
+      expect(container.offsetHeight, equals(125.0));
+    });
+
+    testWidgets('min-height constraint with gap', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'min-height-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: flex;
+                flex-direction: column;
+                gap: 25px;
+                min-height: 150px;
+                background-color: #0a0a0a;
+              ">
+                <div style="
+                  width: 80px;
+                  height: 20px;
+                  background-color: wheat;
+                ">1</div>
+                <div style="
+                  width: 80px;
+                  height: 20px;
+                  background-color: tan;
+                ">2</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // min-height should be respected
+      expect(container.offsetHeight, equals(150.0));
+    });
+
+    testWidgets('max-height constraint with gap overflow', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'max-height-gap-test-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="container" style="
+                display: inline-flex;
+                flex-direction: column;
+                gap: 30px;
+                max-height: 100px;
+                overflow: hidden;
+                background-color: #1a1a1a;
+              ">
+                <div style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: plum;
+                ">1</div>
+                <div style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: peachpuff;
+                ">2</div>
+                <div style="
+                  width: 100px;
+                  height: 50px;
+                  background-color: palegreen;
+                ">3</div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      
+      // max-height should limit the container height
+      expect(container.offsetHeight, equals(100.0));
+    });
+  });
 }
