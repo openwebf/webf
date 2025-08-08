@@ -12,6 +12,9 @@ class AppRouterConfig {
   // Cache for WebF route widgets to prevent rebuilds
   static final Map<String, Widget> _webfRouteCache = {};
   
+  // Track the currently active WebF controller for routing
+  static String? _activeWebFController;
+  
   static final GoRouter _router = GoRouter(
     initialLocation: '/',
     routes: [
@@ -146,6 +149,9 @@ class AppRouterConfig {
   
   /// Navigate to a specific WebF controller view with improved URL building
   static void navigateToWebFController(String controllerName, {String? url, bool isDirect = false}) {
+    // Set the active controller when navigating to it
+    _activeWebFController = controllerName;
+    
     final queryParams = <String, String>{};
     if (url != null) queryParams['url'] = url;
     if (isDirect) queryParams['direct'] = 'true';
@@ -156,6 +162,11 @@ class AppRouterConfig {
     );
     
     _router.push(uri.toString());
+  }
+  
+  /// Get the currently active WebF controller
+  static String? getActiveWebFController() {
+    return _activeWebFController;
   }
   
   /// Get current route location - useful for debugging
@@ -227,9 +238,19 @@ class _WebFRouteWrapperState extends State<_WebFRouteWrapper>
       );
     }
     
-    // Use the first available controller for routing
-    final controllerName = controllerNames.first;
-     
+    // Smart controller selection using active controller tracking
+    String controllerName;
+    
+    final activeController = AppRouterConfig.getActiveWebFController();
+    
+    if (activeController != null && controllerNames.contains(activeController)) {
+      // Use the tracked active controller if it still exists
+      controllerName = activeController;
+    } else {
+      // Fallback to most recent controller
+      controllerName = controllerNames.last;
+    }
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(path),

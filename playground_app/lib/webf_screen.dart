@@ -17,7 +17,7 @@ class _WebFScreenState extends State<WebFScreen> {
   static const String initialControllerName = 'miracle_plus_demo';
   static const String initialUrl = 'https://miracleplus.openwebf.com/';
   static const String showcaseControllerName = 'react_use_cases';
-  static const String showcaseUrl = 'http://localhost:3000';
+  static const String showcaseUrl = 'https://usecase.openwebf.com/';
 
   final TextEditingController _urlController = TextEditingController();
 
@@ -94,7 +94,7 @@ class _WebFScreenState extends State<WebFScreen> {
         await WebFControllerManager.instance.addWithPreload(
           name: newControllerName,
           createController: () => WebFController(
-            initialRoute: '/home',
+            initialRoute: '/',
             routeObserver: routeObserver,
           ),
           bundle: WebFBundle.fromUrl(url),
