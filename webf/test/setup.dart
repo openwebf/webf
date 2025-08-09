@@ -33,5 +33,15 @@ Directory setupTest() {
     }
     throw FlutterError('Not implemented for method ${methodCall.method}.');
   });
+  
+  // Mock path_provider channel for dio_cache_interceptor_hive_store
+  const MethodChannel pathProviderChannel = MethodChannel('plugins.flutter.io/path_provider');
+  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(pathProviderChannel, (MethodCall methodCall) async {
+    if (methodCall.method == 'getTemporaryDirectory') {
+      return tempDirectory.path;
+    }
+    throw FlutterError('Not implemented for method ${methodCall.method}.');
+  });
+  
   return tempDirectory;
 }

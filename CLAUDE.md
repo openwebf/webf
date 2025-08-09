@@ -1,588 +1,150 @@
 # WebF Development Guide
 
-## Repository Structure
-- `bridge/`: C++ code providing JavaScript runtime and DOM API implementations, HTML parsing
-- `webf/`: Dart code implementing DOM/CSS and layout/painting on top of Flutter
-- `integration_tests/`: Integration tests (most test cases in integration_tests/specs)
+This is the main guide for WebF development. Detailed content is organized into folder-specific guides.
 
-## Search and Navigation Strategy
-- When searching for implementations:
-  - Start with `Grep` for specific function/class names
-  - Use `Glob` for file patterns when you know the structure
-  - Batch related searches in parallel when possible
-- For cross-language features:
-  - Search both C++ (.cc/.h) and Dart (.dart) files
-  - Look for FFI bindings in bridge.dart and related files
-  - Check for typedef patterns to understand the API flow
-- Example search patterns:
-  - Function usage: `FunctionName\(`
-  - Class definition: `class ClassName`
-  - FFI exports: `WEBF_EXPORT_C`
+## 📚 Folder-Specific Guides
 
-## Build Commands
-- Build for macOS: `npm run build:bridge:macos` (debug) or `npm run build:bridge:macos:release` (release)
-- Build for iOS: `npm run build:bridge:ios` (debug) or `npm run build:bridge:ios:release` (release)
-- Build for Android: `npm run build:bridge:android` (debug) or `npm run build:bridge:android:release` (release)
-- Clean build: `npm run build:clean`
-- Run example: `npm run start` (flutter run in webf/example)
+| Guide | Description |
+|-------|-------------|
+| **[C++ Development](bridge/CLAUDE.md)** | C++ bridge development, build commands, FFI patterns, iOS troubleshooting |
+| **[Dart/Flutter Development](webf/CLAUDE.md)** | Dart code, widget testing, Flutter patterns, render object system |
+| **[Integration Testing](integration_tests/CLAUDE.md)** | Writing and running integration tests, snapshot testing |
+| **[CLI Development](cli/CLAUDE.md)** | WebF CLI code generator for React/Vue bindings |
+| **[Scripts](scripts/CLAUDE.md)** | Build scripts and utility tools |
+| **[Architecture](docs/ARCHITECTURE.md)** | WebF architecture pipeline and design patterns |
+| **[Memory & Performance](docs/MEMORY_PERFORMANCE.md)** | Performance optimization, caching, memory management |
 
-### Build Error Resolution
-- When encountering build errors:
-  - Read the full error message to identify the specific issue (missing includes, type mismatches, undefined symbols)
-  - For C++ errors, check:
-    - Missing header includes
-    - Namespace qualifications
-    - Template instantiation issues
-    - FFI type compatibility (Handle vs Dart_Handle)
-  - Build incrementally after each fix
-  - Use `npm run build:bridge:macos` for quick iteration on macOS
-- Common C++ build issues:
-  - `Handle` should be `Dart_Handle` in FFI contexts
-  - Lambda signatures must match expected function signatures
-  - Include necessary headers for all used types
+## 🚀 Quick Start
 
-## Test Commands
-- Run all tests: `npm run test` (includes bridge, Flutter, and integration tests)
-- Run bridge unit tests: `node scripts/run_bridge_unit_test.js`
-- Run Flutter dart tests: `cd webf && flutter test`
-- Run a single Flutter test: `cd webf && flutter test test/path/to/test_file.dart`
-- Run integration tests: `cd integration_tests && npm run integration`
-- Run CSS unittests: `cmake -S bridge -B bridge/build/css -DENABLE_TEST=1 -DENABLE_ASAN=0 -GNinja && cmake --build bridge/build/css -t webf_css_unittests && ./bridge/build/css/webf_css_unittests` 
+### Repository Structure
+- `bridge/`: C++ code providing JavaScript runtime and DOM API implementations
+- `webf/`: Dart code implementing DOM/CSS and layout/painting on Flutter
+- `integration_tests/`: Integration tests and visual regression tests
+- `cli/`: WebF CLI for generating React/Vue bindings
+- `scripts/`: Build and utility scripts
 
-## Lint Commands
+### Common Commands
 
-- Lint: `npm run lint` (runs flutter analyze in webf directory)
-- Format: `npm run format` (formats with 120 char line length)
+| Task | Command |
+|------|---------|
+| Build C++ (macOS) | `npm run build:bridge:macos` |
+| Build C++ (all platforms) | `npm run build:bridge:all` |
+| Run all tests | `npm test` |
+| Run integration tests | `cd integration_tests && npm run integration` |
+| Run Dart tests | `cd webf && flutter test` |
+| Lint code | `npm run lint` |
+| Format code | `npm run format` |
+| Clean build | `npm run build:clean` |
 
-## Code Style Guidelines
+## 🔍 Code Navigation
 
-### Dart (webf/)
-- Follow rules in webf/analysis_options.yaml
-- Use single quotes for strings
-- File names must use snake_case
-- Class names must use PascalCase
-- Variables/functions use camelCase
-- Prefer final fields when applicable
-- Lines should be max 120 characters
+### Search Strategies
+- Use `Grep` for specific function/class names
+- Use `Glob` for file patterns
+- Batch related searches in parallel
+- For cross-language features, search both C++ (.cc/.h) and Dart (.dart) files
 
-### C++ (bridge/)
-- Based on Chromium style (.clang-format)
-- Standard: C++17
-- Column limit: 120 characters
-- Use 2-space indentation
+### Common Patterns
+- Function usage: `FunctionName\(`
+- Class definition: `class ClassName`
+- FFI exports: `WEBF_EXPORT_C`
 
-### Memory Management in FFI
-- Always free allocated memory in Dart FFI:
-  - Use `malloc.free()` for `toNativeUtf8()` allocations
-  - Free in `finally` blocks to ensure cleanup on exceptions
-  - Track ownership of allocated pointers in callbacks
-- For async callbacks:
-  - Consider when to free memory (in callback or after future completes)
-  - Document memory ownership clearly
-  - Use RAII patterns in C++ where possible
-- Native value handling:
-  - Free NativeValue pointers after converting with `fromNativeValue`
-  - Be careful with pointer lifetime across thread boundaries
-- **Dart Handle Persistence**:
-  - For async operations, use `Dart_NewPersistentHandle_DL` to keep Dart objects alive
-  - Convert back with `Dart_HandleFromPersistent_DL` before use
-  - Always call `Dart_DeletePersistentHandle_DL` after the async operation completes
-  - Example pattern:
-    ```cpp
-    Dart_PersistentHandle persistent = Dart_NewPersistentHandle_DL(dart_handle);
-    // ... async operation ...
-    Dart_Handle handle = Dart_HandleFromPersistent_DL(persistent);
-    callback(handle, result);
-    Dart_DeletePersistentHandle_DL(persistent);
-    ```
+## 🌉 Cross-Platform Development
 
-## Cross-Language Integration Patterns
-
-### C++ to Dart FFI
-- Function naming conventions:
-  - C++ exports: `GetObjectPropertiesFromDart`
-  - Dart typedefs: `NativeGetObjectPropertiesFunc`
-  - Dart functions: `GetObjectPropertiesFunc`
-- Async callback patterns:
-  - Use `Dart_Handle` for object handles
-  - Pass callbacks as function pointers
-  - Return results via callback, not return value
-- String handling:
-  - Copy strings that might be freed: `std::string(const_char_ptr)`
-  - Use `toNativeUtf8()` and remember to free
-
-### TypeScript Type Handling in Analyzer
-When implementing TypeScript analysis:
-- `null` can appear as both `NullKeyword` in basic types and as a `LiteralType` containing `NullKeyword`
-- Always check for literal types: `if (type.kind === ts.SyntaxKind.LiteralType)`
-- Handle null literals specifically:
-  ```typescript
-  const literalType = type as ts.LiteralTypeNode;
-  if (literalType.literal.kind === ts.SyntaxKind.NullKeyword) {
-    return FunctionArgumentType.null;
-  }
-  ```
+### FFI Best Practices
+- Always free allocated memory in Dart FFI
+- Use `malloc.free()` for `toNativeUtf8()` allocations
+- Track pointer ownership in callbacks
+- Document memory ownership clearly
+- Use RAII patterns in C++ where possible
 
 ### Thread Communication
-- PostToJs: Execute on JS thread from other threads
-- PostToDart: Return results to Dart isolate
-- PostToJsSync: Synchronous execution (use sparingly, can cause deadlocks)
+- `PostToJs`: Execute on JS thread
+- `PostToDart`: Return results to Dart isolate
+- `PostToJsSync`: Synchronous execution (avoid when possible)
 
-### Error Handling in Async FFI
-- For async callbacks with potential errors:
-  - Always provide error path in callbacks (e.g., `callback(object, nullptr)`)
-  - Handle cancellation cases in async operations
-  - Propagate errors through callback parameters, not exceptions
-- Thread-safe error reporting:
-  - Copy error messages before crossing thread boundaries
-  - Use `std::string` to ensure string lifetime
-  - Consider error callback separate from result callback
+## 🧪 Testing
 
-### Common FFI Pitfalls to Avoid
-- **Handle lifetime**: Regular Dart_Handle becomes invalid after crossing threads
-- **String ownership**: `const char*` from Dart may be freed after call
-- **Callback lifetime**: Ensure callbacks aren't invoked after context destruction
-- **Type mismatches**: `Handle` vs `Dart_Handle` in different contexts
-- **Lambda captures**: Be explicit about what's captured and its lifetime
-- **Synchronous deadlocks**: Avoid PostToJsSync when threads may interdepend
+### Test Types
+- **Unit Tests**: See folder-specific guides
+- **Integration Tests**: See [Integration Development Guide](integration_tests/CLAUDE.md)
+- **Flutter Widget Tests**: See [Dart Development Guide](webf/CLAUDE.md)
 
-## Memory
-
-- [Bridge Unit Tests](./claude_memory/bridge_unit_tests.md) - Guide for running and debugging bridge unit tests
-- [CSS Variable Display None Fix](./claude_memory/css_variable_display_none_fix.md) - Fix for CSS variables in display:none elements
-- [HTTP Cache Invalidation Fix](./claude_memory/http_cache_invalidation.md) - Cache invalidation mechanism for handling corrupt image cache files
-- [Image Loading Fallback](./claude_memory/image_loading_fallback.md) - Fallback mechanism for image loading failures
-- [iOS Build Troubleshooting](./claude_memory/ios_build_troubleshooting.md) - Guide for fixing iOS undefined symbol errors and understanding the build structure
-- [iOS WebF Source Compilation](./claude_memory/ios_webf_source_compilation.md) - iOS-specific source compilation details
-- [Network Panel Implementation](./claude_memory/network_panel_implementation.md) - DevTools network panel implementation details
-- [UI Command Ring Buffer Design](./claude_memory/ui_command_ring_buffer_design.md) - Design documentation for the UI command ring buffer
-- [UI Command Ring Buffer README](./claude_memory/ui_command_ring_buffer_readme.md) - Usage guide for the UI command ring buffer
-- [WebF DevTools Improvements](./claude_memory/webf_devtools_improvements.md) - Recent improvements to WebF DevTools
-- [WebF Integration Testing Guide](./claude_memory/webf_integration_testing_guide.md) - Guide for writing and running integration tests
-- [WebF Package Preparation](./claude_memory/webf_package_preparation.md) - Steps for preparing WebF packages
-- [WebF Text Element Update Fix](./claude_memory/webf_text_element_update_fix.md) - Fix for text element update issues
-- [LCP (Largest Contentful Paint) Implementation](./claude_memory/lcp_implementation.md) - Implementation of LCP performance metric callbacks for WebFController
-- [FCP (First Contentful Paint) Implementation](./claude_memory/fcp_implementation.md) - Implementation of FCP performance metric tracking for WebFController
-- [FP (First Paint) Implementation](./claude_memory/fp_implementation.md) - Implementation of FP performance metric tracking for visual changes
-- [Contentful Widget Detection](./claude_memory/contentful_widget_detection.md) - Detection system for ensuring FCP/LCP are only reported for widgets with actual visual content
-- [DevTools Performance Metrics Display](./claude_memory/devtools_performance_metrics.md) - Unified display implementation for FP/FCP/LCP metrics in WebF DevTools
-- [CSS C++ Implementation](./claude_memory/css_cpp_implementation.md) - Detailed architecture and implementation of CSS in bridge/ (400+ properties, 500+ keywords, Blink/Chromium-based)
-- [CSS3 Parsing Migration Plan](./claude_memory/css3_parsing_migration.md) - Comprehensive plan for migrating CSS3 parsing features from Blink to WebF (2025-01-17)
-- **CSS Implementation Structure**: WebF has dual CSS implementations - newer C++ in bridge/ and older Dart in webf/
-- **Common Analysis Patterns**:
-  - For feature analysis: Check bridge/ for C++ implementations, webf/ for Dart, and integration_tests/specs for test coverage
-  - JSON5 files in bridge/core/css/ contain property and value definitions
-  - Generated files (css_property_names.h, css_value_keywords.h) enumerate all supported features
-
-
-## Testing Guidelines
-
-### Unit Tests (webf/test)
-- Always call `setupTest()` in the `setUp()` method, not directly in `main()`
-- When testing with WebFController, wait for initialization: `await controller.controlledInitCompleter.future;`
-- Import tests in `webf_test.dart` and add them to the appropriate test group
-- Use mock bundles from `test/src/foundation/mock_bundle.dart` for testing
-
-### Integration Tests (integration_tests/specs)
-- Place tests in appropriate directories under `specs/`
-- Use TypeScript (.ts extension)
-- Use `done()` callback for async tests
-- Use `snapshot()` for visual regression tests
-- Test assets should reference files in `assets/` directory
-- Use `fdescribe()` instead of `describe()` to run only specific test specs (Jasmine feature)
-- Use `fit()` instead of `it()` to run only specific test cases
-
-### Flutter Integration Tests (webf/integration_test)
-- LCP integration tests: `webf/integration_test/integration_test/lcp_integration_test.dart`
-- FCP integration tests: `webf/integration_test/integration_test/fcp_integration_test.dart`
-- FP integration tests: `webf/integration_test/integration_test/fp_integration_test.dart`
-- Run with: `cd webf && flutter test integration_test/integration_test/test_name.dart`
-
-
-### Test-Driven Development Workflow
-1. Run tests frequently during development: `npm test`
-2. When fixing failing tests:
-   - Run specific test files: `npm test -- test/analyzer.test.ts`
-   - Fix one test at a time and verify before moving to the next
-   - Use focused debugging scripts when needed to understand behavior
-3. For modules that read files at load time:
-   - Mock fs before importing the module
-   - Set up default mocks in the test file before any imports that use them
-
-### Module Mocking Patterns
-When testing modules that read files at load time:
-```typescript
-// Mock fs BEFORE importing the module
-jest.mock('fs');
-import fs from 'fs';
-const mockFs = fs as jest.Mocked<typeof fs>;
-
-// Set up file reading mocks
-mockFs.readFileSync = jest.fn().mockImplementation((path) => {
-  // Return appropriate content based on path
-});
-
-// NOW import the module that uses fs
-import { moduleUnderTest } from './module';
-```
-
-### Threading and Async Patterns
-- When working with cross-thread communication (UI thread, JS thread, Dart thread):
-  - Identify potential deadlocks from sync calls between threads
-  - Prefer async patterns with callbacks over sync blocking calls
-  - Use PostToJs/PostToDart for async thread communication
-  - Document thread ownership clearly in comments
-- For Dart FFI async patterns:
-  - Follow the invokeModuleEvent pattern for async callbacks
-  - Use Completer<T> for async return values
-  - Ensure proper cleanup of native resources in callbacks
-
-### DevTools Integration
-- When working with DevTools/debugging features:
-  - Remote object inspection may require async patterns to avoid deadlocks
-  - Use RemoteObjectRegistry for object tracking
-  - Consider thread context when accessing JS objects from DevTools
-  - Test with actual DevTools UI interactions, not just unit tests
-- Common patterns:
-  - GetObjectProperties operations should be async
-  - Property evaluation may trigger cross-thread calls
-  - Always validate context IDs before operations
-
-### Common Testing Patterns
-```dart
-// Unit test setup
-setUp(() {
-  setupTest();
-});
-
-// Controller initialization
-final controller = WebFController(
-  viewportWidth: 360,
-  viewportHeight: 640,
-  bundle: WebFBundle.fromContent('<html></html>', contentType: ContentType.html),
-);
-await controller.controlledInitCompleter.future;
-```
-
-## Technical Analysis Tasks
-When asked to analyze codebase features or conduct technical audits:
-- Use the Task tool for comprehensive searches across multiple directories
-- Structure findings with clear categories and counts
-- Include file paths and specific examples when relevant
-- For web technologies (CSS, HTML, JS), check for:
-  - Implementation files (parsers, handlers, definitions)
-  - Configuration files (JSON, YAML with specifications)
-  - Test files that demonstrate supported features
-- Present results in a scannable format with headers and bullet points
-
-## Performance Optimization Guidelines
-
-### Caching Strategies
-1. **Identify Repeated Operations**: Look for operations that:
-   - Parse the same files multiple times
-   - Perform identical type conversions
-   - Read file contents repeatedly
-
-2. **Implement Caching**:
-   ```typescript
-   // File content cache
-   const cache = new Map<string, CachedType>();
-
-   // Cache with validation
-   if (cache.has(key)) {
-     return cache.get(key);
-   }
-   const result = expensiveOperation();
-   cache.set(key, result);
-   ```
-
-3. **Provide Cache Clearing**: Always implement a clear function:
-   ```typescript
-   export function clearCaches() {
-     cache.clear();
-   }
-   ```
-
-### Batch Processing
-For file operations, process in batches to maximize parallelism:
-```typescript
-async function processFilesInBatch<T>(
-  items: T[],
-  batchSize: number,
-  processor: (item: T) => Promise<void>
-): Promise<void> {
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    await Promise.all(batch.map(processor));
-  }
-}
-```
-
-### Implementation Review Checklist
-Before marking any FFI/cross-language task as complete, verify:
-- [ ] Memory management: All allocated memory has corresponding free calls
-- [ ] Dart handles: Persistent handles used for async operations
-- [ ] String lifetime: Strings copied when crossing thread boundaries
-- [ ] Error paths: All error conditions handled gracefully
-- [ ] Thread safety: No shared mutable state without synchronization
-- [ ] Build success: Code compiles without warnings
-- [ ] Existing patterns: Implementation follows codebase conventions
-
-### Incremental Development Approach
-1. Make one logical change at a time
-2. Build after each change: `npm run build`
-3. Run relevant tests after each change
-4. Commit working states before moving to the next feature
-5. When debugging complex issues:
-   - Create minimal reproduction scripts
-   - Use console.log or debugger strategically
-   - Clean up debug code before finalizing
-
-## Enterprise Software Handling
-
-### WebF Enterprise Dependencies
-- WebF Enterprise is a closed-source product requiring subscription
-- Dependency configuration:
-  ```yaml
-  dependencies:
-    webf:
-      hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      version: ^0.22.0
-  ```
-- For local development, use path dependencies
-- Always clarify subscription requirements in documentation
-- Use logger libraries instead of print statements in production code
-
-### Documentation Patterns
-- Clearly distinguish between open source and enterprise features
-- Include WebF Enterprise badges/notices in README files
-- Explain that WebF builds Flutter apps, not web applications
-- When referencing demos that require WebF, clarify they're not traditional web demos
-
-## WebF CLI Code Generator
-
-### Overview
-The WebF CLI (`cli/`) is a powerful code generation tool that creates type-safe bindings between Flutter/Dart and JavaScript frameworks (React, Vue). It analyzes TypeScript definition files and generates corresponding Dart classes and JavaScript/TypeScript components.
-
-### Usage
+### Running Tests
 ```bash
-# Generate code with auto-creation of project if needed
-webf codegen [output-dir] --flutter-package-src=<path> [--framework=react|vue] [--package-name=<name>] [--publish-to-npm] [--npm-registry=<url>]
+# All tests
+npm test
 
-# Examples
-webf codegen my-typings --flutter-package-src=../webf_cupertino_ui
-webf codegen --flutter-package-src=../webf_cupertino_ui  # Uses temporary directory
-webf codegen my-typings --flutter-package-src=../webf_cupertino_ui --publish-to-npm
-webf codegen --flutter-package-src=../webf_cupertino_ui --publish-to-npm --npm-registry=https://custom.registry.com/
+# Specific integration test
+cd integration_tests && npm run integration -- specs/css/css-display/display.ts 
 
-# Interactive publishing (prompts after generation)
-webf codegen my-typings --flutter-package-src=../webf_cupertino_ui
-# CLI will ask: "Would you like to publish this package to npm?"
-# If yes, CLI will ask: "NPM registry URL (leave empty for default npm registry):"
+# Flutter tests
+cd webf && flutter test
+
+# Bridge unit tests
+node scripts/run_bridge_unit_test.js
 ```
+
+## 📦 WebF CLI
+
+The CLI generates type-safe bindings between Flutter/Dart and JavaScript frameworks.
+
+```bash
+# Basic usage
+webf codegen my-typings --flutter-package-src=../webf_package
+
+# With auto-publish
+webf codegen --flutter-package-src=../webf_package --publish-to-npm
+
+# Custom registry
+webf codegen --flutter-package-src=../webf_package --publish-to-npm --npm-registry=https://custom.registry.com/
+```
+
+## 🏢 Enterprise Features
+
+WebF Enterprise is a closed-source product requiring subscription:
+
+```yaml
+dependencies:
+  webf:
+    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    version: ^0.22.0
+```
+
+## 📊 WebF MCP Server
+
+The MCP server provides dependency graph analysis:
 
 ### Key Features
-1. **Auto-creation**: Automatically detects if a project needs to be created
-2. **Interactive prompts**: Asks for framework and package name when not provided
-3. **Metadata synchronization**: Reads version and description from Flutter package's pubspec.yaml
-4. **Automatic build**: Runs `npm run build` automatically after code generation
-5. **NPM publishing**: Supports automatic publishing to npm registries with `--publish-to-npm`
-6. **Custom registries**: Use `--npm-registry` to specify custom npm registries
-7. **Framework detection**: Auto-detects framework from existing package.json dependencies
+- 8,244+ nodes across multiple languages
+- Dependency analysis and impact assessment
+- Code quality metrics
+- Cross-language FFI analysis
+- Architecture validation
 
-### Development
-- See `cli/CLAUDE.md` for detailed CLI development guidelines
-- Run CLI tests: `cd cli && npm test`
-- Build CLI: `cd cli && npm run build`
+### Example Usage
+```bash
+# Find a class
+mcp__webf__get_node_by_name(name="WebFController")
 
-## Git Submodule Operations
+# Analyze dependencies
+mcp__webf__get_dependencies(node_name="RenderStyle", max_depth=2)
 
-### Migrating to Submodules
-When converting a directory to a git submodule:
-1. Clone the destination repository to a temporary location outside the current repo
-2. Copy all files from the source directory to the cloned repository
-3. Commit and push changes to the remote repository
-4. Remove the original directory from the main repository
-5. Add as submodule: `git submodule add <repository-url> <path>`
-6. Use `git -C` for operations on external repositories when needed
-
-### Working with Submodules
-- Update submodules: `git submodule update --init --recursive`
-- Work within submodule: Changes are tracked separately
-- Commit submodule pointer changes in parent repository
-- Always verify `.gitmodules` file is correctly configured
-
-## Technical Documentation Guidelines
-
-### README Optimization
-When writing documentation for Flutter packages that use web technologies:
-1. **Clarify the technology stack**: Explain that WebF enables building Flutter apps with web tech, not web apps
-2. **Set clear expectations**: If examples require WebF to run, state this prominently
-3. **Provide complete quick-start examples**: Include WebFControllerManager initialization
-4. **Structure information hierarchically**: Most important info (requirements, limitations) first
-5. **Use clear section headers**: "What is WebF?", "Prerequisites", etc.
-
-### Code Examples in Documentation
-- Always show complete, runnable examples
-- Include necessary imports and initialization code
-- For WebF: Always show WebFControllerManager setup
-- Test all code examples before including in documentation
-
-# important-instruction-reminders
-Do what has been asked; nothing more, nothing less.
-NEVER create files unless they're absolutely necessary for achieving your goal.
-ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
-
-# WebF Dart MCP Server Guide
-
-## Overview
-The webf_dart MCP server provides a comprehensive dependency graph analysis system for the WebF codebase. It maintains a graph of code entities (nodes) and their relationships (edges) across multiple programming languages.
-
-## Core Statistics (as of current snapshot)
-- **Total Nodes**: 8,244 (representing classes, methods, functions, files, etc.)
-- **Total Edges**: 14,570 (representing relationships between entities)
-- **Languages Supported**: Dart, C++, JavaScript, TypeScript, Swift, Java, Kotlin
-- **Extraction Quality Score**: 75%
-
-## Key MCP Tools Categories
-
-### 1. Search and Navigation
-- `mcp__webf_dart__get_node_by_name`: Find nodes by name pattern
-- `mcp__webf_dart__get_nodes_by_directory`: Get all nodes in a directory
-- `mcp__webf_dart__search_graph`: Advanced search with filters
-- `mcp__webf_dart__search_by_pattern`: Structural pattern search (e.g., `class:*Controller`)
-- `mcp__webf_dart__find_similar_nodes`: Find nodes similar to a given node
-
-### 2. Dependency Analysis
-- `mcp__webf_dart__get_dependencies`: Get what a node depends on
-- `mcp__webf_dart__get_dependents`: Get what depends on a node
-- `mcp__webf_dart__analyze_impact`: Analyze impact of changes to a file
-- `mcp__webf_dart__get_call_chain`: Find function call paths between nodes
-- `mcp__webf_dart__analyze_circular_dependencies`: Detect circular dependencies
-
-### 3. Cross-Language Support
-- `mcp__webf_dart__get_ffi_bindings`: Get FFI bindings between languages
-- `mcp__webf_dart__trace_ffi_call_chain`: Trace calls across language boundaries
-- `mcp__webf_dart__analyze_cross_language_dependencies`: Analyze dependencies between languages
-- `mcp__webf_dart__analyze_ffi_interfaces`: Analyze FFI struct and function mappings
-
-### 4. Code Quality Analysis
-- `mcp__webf_dart__analyze_code_smells`: Detect god classes, feature envy, etc.
-- `mcp__webf_dart__suggest_refactoring_candidates`: Identify refactoring opportunities
-- `mcp__webf_dart__find_unused_code`: Find dead code
-- `mcp__webf_dart__analyze_naming_consistency`: Check naming conventions
-- `mcp__webf_dart__analyze_test_coverage`: Map test coverage
-
-### 5. Architecture Analysis
-- `mcp__webf_dart__analyze_architectural_layers`: Validate layer boundaries
-- `mcp__webf_dart__analyze_coupling_metrics`: Calculate coupling between modules
-- `mcp__webf_dart__suggest_module_boundaries`: Recommend better organization
-- `mcp__webf_dart__get_module_metrics`: Get comprehensive module metrics
-
-### 6. Performance Analysis
-- `mcp__webf_dart__analyze_hot_paths`: Find frequently called code
-- `mcp__webf_dart__find_n_plus_one_patterns`: Detect N+1 query patterns
-- `mcp__webf_dart__analyze_memory_patterns`: Find potential memory issues
-
-### 7. Type and Inheritance Analysis
-- `mcp__webf_dart__get_overrides`: Find method override chains
-- `mcp__webf_dart__analyze_inheritance_hierarchy`: Analyze class hierarchies
-- `mcp__webf_dart__get_type_relationships`: Find TYPE_OF relationships
-- `mcp__webf_dart__search_mixins`: Search for Dart mixins
-- `mcp__webf_dart__search_structs`: Search for struct definitions
-
-### 8. Project Insights
-- `mcp__webf_dart__get_metrics`: Get overall project metrics
-- `mcp__webf_dart__get_extraction_metrics`: Get extraction statistics
-- `mcp__webf_dart__validate_extraction`: Validate graph quality
-- `mcp__webf_dart__analyze_framework_usage`: Analyze framework usage patterns
-
-## Usage Patterns
-
-### Finding Code
-```
-# Find a specific class or function
-mcp__webf_dart__get_node_by_name(name="WebFController")
-
-# Search with patterns
-mcp__webf_dart__search_by_pattern(structural_pattern="class:*Controller")
-
-# Explore a directory
-mcp__webf_dart__get_nodes_by_directory(directory="/webf/lib/src/css")
-```
-
-### Analyzing Dependencies
-```
-# Get dependencies of a node
-mcp__webf_dart__get_dependencies(node_name="RenderStyle", max_depth=2)
-
-# Analyze impact of changes
-mcp__webf_dart__analyze_impact(file_path="/webf/lib/src/css/render_style.dart")
-
-# Find circular dependencies
-mcp__webf_dart__analyze_circular_dependencies(granularity="class")
-```
-
-### Code Quality
-```
 # Find code smells
-mcp__webf_dart__analyze_code_smells(god_class_threshold=20)
-
-# Suggest refactoring
-mcp__webf_dart__suggest_refactoring_candidates(complexity_threshold=10)
-
-# Check naming consistency
-mcp__webf_dart__analyze_naming_consistency()
+mcp__webf__analyze_code_smells(god_class_threshold=20)
 ```
 
-## Key Insights
+## 📝 Documentation Guidelines
 
-### Most Complex Files
-1. `/webf/lib/src/css/render_style.dart` - 206 nodes
-2. `/webf/lib/src/rendering/box_model.dart` - 166 nodes
-3. `/webf/lib/src/bridge/to_native.dart` - 165 nodes
-4. `/webf/lib/src/html/html.dart` - 137 nodes
-5. `/webf/lib/src/css/style_declaration.dart` - 124 nodes
+### Writing Good Docs
+1. Clarify that WebF builds Flutter apps, not web apps
+2. Provide complete, runnable examples
+3. Include WebFControllerManager setup in examples
+4. Structure information hierarchically
+5. Test all code examples
 
-### Language Distribution
-- **Dart**: 6,681 nodes (81.1%) with highest edge density (18.65 edges/node)
-- **JavaScript**: 1,018 nodes (12.3%)
-- **C++**: 464 nodes (5.6%)
-- **TypeScript**: 81 nodes (1.0%)
-
-### Common Methods
-Most frequently called: `add`, `toString`, `assert`, `remove`, `clear`, `contains`, `call`, `hasProperty`
-
-## Important Notes
-
-1. **FFI Analysis**: The system supports FFI analysis but currently shows no active FFI bindings. This might indicate:
-   - FFI relationships need explicit extraction
-   - The codebase uses a different Dart-C++ communication mechanism
-   - The graph needs regeneration with FFI support enabled
-
-2. **Circular Dependencies**: 577 circular dependencies detected, which may need attention
-
-3. **Node Types**: The system tracks various node types including:
-   - Classes, Methods, Functions
-   - Files, Modules, Packages
-   - Virtual nodes (framework components)
-   - Structs, Mixins, Interfaces
-
-4. **Extraction Quality**: 75% quality score indicates room for improvement in graph extraction
-
-## Best Practices
-
-1. **Start with search**: Use search tools to find relevant nodes before analysis
-2. **Use appropriate depth**: Limit traversal depth to avoid overwhelming results
-3. **Check extraction quality**: Validate that the graph accurately represents your code
-4. **Combine tools**: Use multiple analysis tools together for comprehensive insights
-5. **Monitor metrics**: Regular metric checks help maintain code quality
-
-## Common Use Cases
-
-1. **Understanding a feature**: Find the main class, analyze its dependencies
-2. **Refactoring planning**: Identify impact, find circular dependencies, suggest boundaries
-3. **Code review**: Check naming consistency, find code smells, analyze complexity
-4. **Performance optimization**: Find hot paths, analyze memory patterns
-5. **Documentation**: Generate outlines, find incomplete implementations
+### Important Reminders
+- Do what has been asked; nothing more, nothing less
+- NEVER create files unless absolutely necessary
+- ALWAYS prefer editing existing files
+- Only create documentation when explicitly requested
