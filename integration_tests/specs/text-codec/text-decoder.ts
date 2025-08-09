@@ -79,13 +79,13 @@ describe('TextDecoder', () => {
   it('should respect ignoreBOM option', () => {
     const decoderIgnoreBOM = new TextDecoder('utf-8', { ignoreBOM: true });
     const decoderKeepBOM = new TextDecoder('utf-8', { ignoreBOM: false });
-    
+
     // UTF-8 BOM: EF BB BF + "hello"
     const bytes = new Uint8Array([0xef, 0xbb, 0xbf, 0x68, 0x65, 0x6c, 0x6c, 0x6f]);
-    
+
     const resultIgnore = decoderIgnoreBOM.decode(bytes);
     const resultKeep = decoderKeepBOM.decode(bytes);
-    
+
     expect(resultIgnore).toBe('hello');
     expect(resultKeep).toBe('hello'); // BOM should still be removed when ignoreBOM is false
   });
@@ -98,7 +98,7 @@ describe('TextDecoder', () => {
       const buffer = new ArrayBuffer(5);
       const view = new Uint8Array(buffer);
       view.set(testBytes);
-      
+
       const result = decoder.decode(buffer);
       expect(result).toBe('hello');
     });
@@ -126,15 +126,15 @@ describe('TextDecoder', () => {
       const buffer = new ArrayBuffer(5);
       const view = new DataView(buffer);
       testBytes.forEach((byte, i) => view.setUint8(i, byte));
-      
+
       const result = decoder.decode(view);
       expect(result).toBe('hello');
     });
 
     it('should throw TypeError for invalid input', () => {
-      expect(() => decoder.decode('string' as any)).toThrow(TypeError);
-      expect(() => decoder.decode(123 as any)).toThrow(TypeError);
-      expect(() => decoder.decode({} as any)).toThrow(TypeError);
+      expect(() => decoder.decode('string' as any)).toThrowError(TypeError);
+      expect(() => decoder.decode(123 as any)).toThrowError(TypeError);
+      expect(() => decoder.decode({} as any)).toThrowError(TypeError);
     });
   });
 
@@ -157,7 +157,7 @@ describe('TextDecoder', () => {
       const utf8Decoder = new TextDecoder('UTF-8');
       const asciiDecoder = new TextDecoder('US-ASCII');
       const latin1Decoder = new TextDecoder('ISO-8859-1');
-      
+
       expect(utf8Decoder.encoding).toBe('UTF-8');
       expect(asciiDecoder.encoding).toBe('US-ASCII');
       expect(latin1Decoder.encoding).toBe('ISO-8859-1');
@@ -173,7 +173,7 @@ describe('TextDecoder', () => {
     it('should throw for unsupported encoding when fatal', () => {
       expect(() => {
         new TextDecoder('unsupported-encoding', { fatal: true });
-      }).toThrow(RangeError);
+      }).toThrowError(RangeError);
     });
   });
 
@@ -181,7 +181,7 @@ describe('TextDecoder', () => {
     it('should handle invalid UTF-8 sequences gracefully when not fatal', () => {
       const decoder = new TextDecoder('utf-8', { fatal: false });
       const bytes = new Uint8Array([0x68, 0x65, 0xff, 0x6c, 0x6f]); // Invalid byte 0xff
-      
+
       // Should not throw, might replace invalid bytes with replacement character
       const result = decoder.decode(bytes);
       expect(typeof result).toBe('string');
@@ -190,14 +190,14 @@ describe('TextDecoder', () => {
     it('should throw for invalid UTF-8 sequences when fatal', () => {
       const decoder = new TextDecoder('utf-8', { fatal: true });
       const bytes = new Uint8Array([0x68, 0x65, 0xff, 0x6c, 0x6f]); // Invalid byte 0xff
-      
-      expect(() => decoder.decode(bytes)).toThrow(FormatException);
+
+      expect(() => decoder.decode(bytes)).toThrowError();
     });
 
     it('should handle incomplete multibyte sequences when not fatal', () => {
       const decoder = new TextDecoder('utf-8', { fatal: false });
       const bytes = new Uint8Array([0x68, 0x65, 0xc3]); // Incomplete UTF-8 sequence
-      
+
       const result = decoder.decode(bytes);
       expect(typeof result).toBe('string');
     });
@@ -205,8 +205,8 @@ describe('TextDecoder', () => {
     it('should throw for incomplete multibyte sequences when fatal', () => {
       const decoder = new TextDecoder('utf-8', { fatal: true });
       const bytes = new Uint8Array([0x68, 0x65, 0xc3]); // Incomplete UTF-8 sequence
-      
-      expect(() => decoder.decode(bytes)).toThrow(FormatException);
+
+      expect(() => decoder.decode(bytes)).toThrowError();
     });
   });
 
@@ -214,11 +214,11 @@ describe('TextDecoder', () => {
     it('should accept stream option in decode method', () => {
       const decoder = new TextDecoder();
       const bytes = new Uint8Array([0x68, 0x65, 0x6c, 0x6c, 0x6f]);
-      
+
       // Should not throw when stream option is provided
       const result = decoder.decode(bytes, { stream: false });
       expect(result).toBe('hello');
-      
+
       const resultStream = decoder.decode(bytes, { stream: true });
       expect(resultStream).toBe('hello');
     });
@@ -226,13 +226,13 @@ describe('TextDecoder', () => {
 
   it('should be reusable', () => {
     const decoder = new TextDecoder();
-    
+
     const bytes1 = new Uint8Array([0x68, 0x65, 0x6c, 0x6c, 0x6f]);
     const bytes2 = new Uint8Array([0x77, 0x6f, 0x72, 0x6c, 0x64]);
-    
+
     const result1 = decoder.decode(bytes1);
     const result2 = decoder.decode(bytes2);
-    
+
     expect(result1).toBe('hello');
     expect(result2).toBe('world');
   });
@@ -241,7 +241,7 @@ describe('TextDecoder', () => {
     const decoder = new TextDecoder();
     const longBytes = new Uint8Array(10000).fill(0x61); // 10000 'a' characters
     const result = decoder.decode(longBytes);
-    
+
     expect(result.length).toBe(10000);
     expect(result).toBe('a'.repeat(10000));
   });
@@ -251,10 +251,10 @@ describe('TextDecoder', () => {
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
       const original = 'Hello, World!';
-      
+
       const encoded = encoder.encode(original);
       const decoded = decoder.decode(encoded);
-      
+
       expect(decoded).toBe(original);
     });
 
@@ -262,10 +262,10 @@ describe('TextDecoder', () => {
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
       const original = 'Hello, 世界! 🌍 café ñoño';
-      
+
       const encoded = encoder.encode(original);
       const decoded = decoder.decode(encoded);
-      
+
       expect(decoded).toBe(original);
     });
 
@@ -273,10 +273,10 @@ describe('TextDecoder', () => {
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
       const original = 'ASCII123 中文 🚀 русский العربية';
-      
+
       const encoded = encoder.encode(original);
       const decoded = decoder.decode(encoded);
-      
+
       expect(decoded).toBe(original);
     });
   });

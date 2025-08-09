@@ -145,5 +145,11 @@
     "specs": [
       "specs/rust/**/*.{js,jsx,ts,tsx,html}"
     ]
+  },
+  {
+    "name": "TextCodec",
+    "specs": [
+      "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
+    ]
   }
 ]
