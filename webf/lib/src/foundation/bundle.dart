@@ -13,6 +13,8 @@ import 'package:webf/module.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/launcher.dart';
 import 'loading_state_registry.dart';
+import 'dio_client.dart';
+import 'package:dio/dio.dart';
 
 const String DEFAULT_URL = 'about:blank';
 const String UTF_8 = 'utf-8';
@@ -262,6 +264,90 @@ class NetworkBundle extends WebFBundle {
 
     // Get the loading state dumper for this context
     final dumper = LoadingStateRegistry.instance.getDumper(contextId);
+
+    // If globally enabled, use Dio path
+    if (WebFControllerManager.instance.useDioForNetwork) {
+      // Track network request start
+      dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
+
+      final dio = await createWebFDio(
+        contextId: contextId,
+        ownerBundle: this,
+        isXHR: false,
+        // Accept 200 OK and 304 Not Modified (cache validation)
+        validateStatus: (s) => s == HttpStatus.ok || s == HttpStatus.notModified,
+      );
+
+      final resp = await dio.requestUri(
+        _uri!,
+        options: Options(
+          method: 'GET',
+          responseType: ResponseType.bytes,
+          headers: {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
+          followRedirects: true,
+          validateStatus: (_) => true,
+        ),
+      );
+
+      // Response started
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
+        'statusCode': resp.statusCode,
+        'contentLength': resp.data?.length ?? 0,
+      });
+
+      if (resp.statusCode != HttpStatus.ok) {
+        dumper?.recordNetworkRequestComplete(url, statusCode: resp.statusCode ?? 0, responseHeaders: {
+          'error': 'HTTP ${resp.statusCode}',
+        });
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('Unable to load asset: $url'),
+          IntProperty('HTTP status code', resp.statusCode ?? 0),
+        ]);
+      }
+
+      // Track cache hit from interceptor
+      final cacheHit = resp.requestOptions.extra['webf_cache_hit'] == true;
+      hitCache = cacheHit;
+      if (cacheHit) {
+        dumper?.recordNetworkRequestCacheInfo(url,
+          cacheHit: true,
+          cacheType: 'disk',
+          cacheHeaders: {},
+        );
+      }
+
+      final bytes = resp.data ?? Uint8List(0);
+      // Response fully received
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
+        'responseSize': bytes.length,
+      });
+
+      if (bytes.isEmpty) {
+        await WebFBundle.invalidateCache(url);
+        return;
+      }
+
+      data = bytes;
+      final contentTypeHeader = resp.headers.value(HttpHeaders.contentTypeHeader);
+      _contentType = contentTypeHeader != null ? ContentType.parse(contentTypeHeader) : ContentType.binary;
+
+      // Completion
+      final responseHeaders = <String, String>{};
+      String? contentType;
+      resp.headers.forEach((name, values) {
+        final headerValue = values.join(', ');
+        responseHeaders[name] = headerValue;
+        if (name.toLowerCase() == 'content-type') {
+          contentType = headerValue;
+        }
+      });
+      dumper?.recordNetworkRequestComplete(url,
+        statusCode: resp.statusCode ?? 0,
+        responseHeaders: responseHeaders,
+        contentType: contentType,
+      );
+      return;
+    }
 
     // Track network request start
     dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});

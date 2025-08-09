@@ -53,7 +53,7 @@ class HttpCacheController {
     }
 
     final String appTemporaryPath = await getWebFTemporaryPath();
-    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
+    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches2'));
     bool isThere = await cacheDirectory.exists();
     if (!isThere) {
       await cacheDirectory.create(recursive: true);
@@ -159,7 +159,14 @@ class HttpCacheController {
       writeFuture.whenComplete(() => _pendingCacheWrites.remove(writeFuture));
 
       // Add to cache after write completes successfully
-      writeFuture.then((_) {
+      writeFuture.then((_) async {
+        try {
+          // Update checksum and persist index with checksum
+          await cacheObject.updateContentChecksum();
+          await cacheObject.writeIndex();
+        } catch (e) {
+          print('Warning: Failed to finalize cache index for ${request.uri}: $e');
+        }
         // Cache the object if it's valid after writing
         if (cacheObject.valid) {
           putObject(request.uri, cacheObject);

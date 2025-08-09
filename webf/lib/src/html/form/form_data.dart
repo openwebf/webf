@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:dio/dio.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 
