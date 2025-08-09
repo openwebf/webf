@@ -16,7 +16,7 @@ void main() {
   var server = LocalHttpServer.getInstance();
   group('HttpClientInterceptor', () {
     setupHttpOverrides(TestHttpClientInterceptor(), contextId: contextId);
-    HttpClient httpClient = HttpClient();
+    HttpClient httpClient = createWebFHttpClient();
 
     test('beforeRequest', () async {
       var request = await httpClient.openUrl('GET', server.getUri('json_with_content_length'));
