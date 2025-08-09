@@ -7,12 +7,11 @@
 #define BRIDGE_NATIVE_STRING_UTILS_H
 
 #include <quickjs/quickjs.h>
-#include <codecvt>
-#include <locale>
 #include <memory>
 #include <string>
 
 #include "foundation/native_string.h"
+#include "core/base/strings/utf_string_conversion_utils.h"
 
 namespace webf {
 
@@ -26,18 +25,45 @@ std::string nativeStringToStdString(const SharedNativeString* native_string);
 
 template <typename T>
 std::string toUTF8(const std::basic_string<T, std::char_traits<T>, std::allocator<T>>& source) {
+  static_assert(sizeof(T) == sizeof(char16_t), "toUTF8 only supports UTF-16 input");
+  const char16_t* src = reinterpret_cast<const char16_t*>(source.data());
+  const size_t src_len = source.size();
+
   std::string result;
+  base::PrepareForUTF8Output(src, src_len, &result);
 
-  std::wstring_convert<std::codecvt_utf8_utf16<T>, T> convertor;
-  result = convertor.to_bytes(source);
-
+  size_t index = 0;
+  while (index < src_len) {
+    int32_t code_point = 0;
+    if (!base::ReadUnicodeCharacter(src, src_len, &index, &code_point)) {
+      // Use replacement character on invalid sequence.
+      code_point = 0xFFFD;
+    }
+    base::WriteUnicodeCharacter(code_point, &result);
+    ++index;
+  }
   return result;
 }
 
 template <typename T>
 void fromUTF8(const std::string& source, std::basic_string<T, std::char_traits<T>, std::allocator<T>>& result) {
-  std::wstring_convert<std::codecvt_utf8_utf16<T>, T> convertor;
-  result = convertor.from_bytes(source);
+  static_assert(sizeof(T) == sizeof(char16_t), "fromUTF8 only supports UTF-16 output");
+  const char* src = source.data();
+  const size_t src_len = source.size();
+
+  result.clear();
+  base::PrepareForUTF16Or32Output(src, src_len, &result);
+
+  size_t index = 0;
+  while (index < src_len) {
+    int32_t code_point = 0;
+    if (!base::ReadUnicodeCharacter(src, src_len, &index, &code_point)) {
+      // Use replacement character on invalid sequence.
+      code_point = 0xFFFD;
+    }
+    base::WriteUnicodeCharacter(code_point, &result);
+    ++index;
+  }
 }
 
 }  // namespace webf

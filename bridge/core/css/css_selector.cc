@@ -217,6 +217,7 @@ inline unsigned CSSSelector::SpecificityForOneSelector() const {
           DCHECK(SelectorList()->HasOneSelector());
           return kTagSpecificity + SelectorList()->First()->Specificity();
         case kPseudoViewTransitionGroup:
+        case kPseudoViewTransitionGroupChildren:
         case kPseudoViewTransitionImagePair:
         case kPseudoViewTransitionOld:
         case kPseudoViewTransitionNew: {
@@ -465,6 +466,10 @@ PseudoId CSSSelector::GetPseudoId(PseudoType type) {
     case kPseudoWhere:
     case kPseudoWindowInactive:
     case kPseudoXrOverlay:
+    case kPseudoPermissionIcon:
+    case kPseudoPickerIcon:
+    case kPseudoPicker:
+    case kPseudoScrollButton:
       return kPseudoIdNone;
   }
 
@@ -773,6 +778,11 @@ void CSSSelector::UpdatePseudoType(const AtomicString& value,
     case kPseudoViewTransitionImagePair:
     case kPseudoViewTransitionOld:
     case kPseudoViewTransitionNew:
+    case kPseudoScrollButton:
+    case kPseudoPermissionIcon:
+    case kPseudoPickerIcon:
+    case kPseudoPicker:
+    case kPseudoViewTransitionGroupChildren:
     case kPseudoDetailsContent:
     case kPseudoColumn:
     case kPseudoTargetCurrent:

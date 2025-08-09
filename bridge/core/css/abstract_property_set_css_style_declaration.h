@@ -68,7 +68,7 @@ class AbstractPropertySetCSSStyleDeclaration : public LegacyCssStyleDeclaration 
   bool IsAbstractPropertySet() const final { return true; }
   CSSRule* parentRule() const override { return nullptr; }
   unsigned length() const final;
-  AtomicString item(unsigned index) const;
+  AtomicString item(unsigned index) const override;
 
   AtomicString getPropertyValue(const AtomicString& property_name, ExceptionState& exception_state) override;
   AtomicString getPropertyPriority(const AtomicString& property_name) final;

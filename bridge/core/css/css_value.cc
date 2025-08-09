@@ -91,6 +91,7 @@ std::shared_ptr<const CSSValue> CSSValue::Create(const webf::Length& value, floa
     case Length::kFitContent:
     case Length::kContent:
     case Length::kExtendToZoom:
+    case Length::kNormal:
       return CSSIdentifierValue::Create(value);
     case Length::kPercent:
     case Length::kFixed:

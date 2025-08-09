@@ -25,6 +25,7 @@
 #else
 #  include <strings.h>
 #endif
+#include <stdint.h>
 
 #include "attribute.h"
 #include "error.h"
@@ -674,7 +675,7 @@ static GumboError* parser_add_parse_error(
     assert(
         node->type == GUMBO_NODE_ELEMENT || node->type == GUMBO_NODE_TEMPLATE);
     gumbo_vector_add(
-        parser, (void*) node->v.element.tag, &extra_data->tag_stack);
+        parser, (void*)(uintptr_t) node->v.element.tag, &extra_data->tag_stack);
   }
   return error;
 }
@@ -733,8 +734,8 @@ static bool node_html_tag_is(const GumboNode* node, GumboTag tag) {
 
 static void push_template_insertion_mode(
     GumboParser* parser, GumboInsertionMode mode) {
-  gumbo_vector_add(
-      parser, (void*) mode, &parser->_parser_state->_template_insertion_modes);
+  gumbo_vector_add(parser, (void*)(uintptr_t) mode,
+      &parser->_parser_state->_template_insertion_modes);
 }
 
 static void pop_template_insertion_mode(GumboParser* parser) {
@@ -750,7 +751,7 @@ static GumboInsertionMode get_current_template_insertion_mode(
   if (template_insertion_modes->length == 0) {
     return GUMBO_INSERTION_MODE_INITIAL;
   }
-  return (GumboInsertionMode)
+  return (GumboInsertionMode)(uintptr_t)
       template_insertion_modes->data[(template_insertion_modes->length - 1)];
 }
 

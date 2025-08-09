@@ -41,7 +41,7 @@ class CSSBracketedValueList : public CSSValueList {
 
   std::string CustomCSSText() const override;
 
-  void TraceAfterDispatch(GCVisitor* visitor) const { CSSValueList::TraceAfterDispatch(visitor); }
+  void TraceAfterDispatch(GCVisitor* visitor) const override { CSSValueList::TraceAfterDispatch(visitor); }
 };
 
 template <>

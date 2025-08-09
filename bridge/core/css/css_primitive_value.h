@@ -454,6 +454,20 @@ struct DowncastTraits<CSSPrimitiveValue> {
   static bool AllowFrom(const CSSValue& value) { return value.IsPrimitiveValue(); }
 };
 
+// Declare explicit specializations of ConvertTo so callers don't
+// instantiate the (intentionally undefined) primary template.
+template <>
+float CSSPrimitiveValue::ConvertTo(const CSSLengthResolver&) const;
+
+template <>
+int CSSPrimitiveValue::ConvertTo(const CSSLengthResolver&) const;
+
+template <>
+short CSSPrimitiveValue::ConvertTo(const CSSLengthResolver&) const;
+
+template <>
+unsigned short CSSPrimitiveValue::ConvertTo(const CSSLengthResolver&) const;
+
 template <>
 int CSSPrimitiveValue::ComputeLength(const CSSLengthResolver&) const;
 
