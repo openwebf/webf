@@ -187,6 +187,7 @@ HttpHeaders createHttpHeaders({Map<String, List<String>>? initialHeaders}) {
 
 class _HttpHeaders implements HttpHeaders {
   final Map<String, List<String>> _headers = <String, List<String>>{};
+
   _HttpHeaders({Map<String, List<String>>? initialHeaders}) {
     if (initialHeaders != null) {
       _headers.addAll(initialHeaders);

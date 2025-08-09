@@ -9,7 +9,7 @@ import 'package:webf/webf.dart';
 // TODO: Don't use header to mark context.
 const String HttpHeaderContext = 'x-context';
 
-class WebFHttpOverrides extends HttpOverrides {
+class WebFHttpOverrides {
   static WebFHttpOverrides? _instance;
 
   WebFHttpOverrides._();
@@ -31,7 +31,6 @@ class WebFHttpOverrides extends HttpOverrides {
     headers.set(HttpHeaderContext, contextId.toString());
   }
 
-  final HttpOverrides? parentHttpOverrides = HttpOverrides.current;
   final Map<double, HttpClientInterceptor> _contextIdToHttpClientInterceptorMap = <double, HttpClientInterceptor>{};
 
   void registerWebFContext(double contextId, HttpClientInterceptor httpClientInterceptor) {
@@ -54,33 +53,6 @@ class WebFHttpOverrides extends HttpOverrides {
   void clearInterceptors() {
     _contextIdToHttpClientInterceptorMap.clear();
   }
-
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    HttpClient nativeHttpClient;
-    if (parentHttpOverrides != null) {
-      nativeHttpClient = parentHttpOverrides!.createHttpClient(context);
-    } else {
-      nativeHttpClient = super.createHttpClient(context);
-    }
-
-    // Configure connection management to prevent stale connections
-    nativeHttpClient
-      ..maxConnectionsPerHost = 30
-      ..connectionTimeout = Duration(seconds: 30);  // Timeout for establishing connections
-
-
-    return ProxyHttpClient(nativeHttpClient, this);
-  }
-
-  @override
-  String findProxyFromEnvironment(Uri url, Map<String, String>? environment) {
-    if (parentHttpOverrides != null) {
-      return parentHttpOverrides!.findProxyFromEnvironment(url, environment);
-    } else {
-      return super.findProxyFromEnvironment(url, environment);
-    }
-  }
 }
 
 WebFHttpOverrides setupHttpOverrides(HttpClientInterceptor? httpClientInterceptor, {required double contextId}) {
@@ -89,14 +61,23 @@ WebFHttpOverrides setupHttpOverrides(HttpClientInterceptor? httpClientIntercepto
   if (httpClientInterceptor != null) {
     httpOverrides.registerWebFContext(contextId, httpClientInterceptor);
   }
-
-  HttpOverrides.global = httpOverrides;
   return httpOverrides;
 }
 
 void removeHttpOverrides({required double contextId}) {
   final WebFHttpOverrides httpOverrides = WebFHttpOverrides.instance();
   httpOverrides.unregisterWebFContext(contextId);
+}
+
+/// Creates a WebF-aware HttpClient without modifying global HttpOverrides.
+/// The returned client wraps a native HttpClient with ProxyHttpClient and applies
+/// consistent connection settings.
+HttpClient createWebFHttpClient() {
+  final WebFHttpOverrides httpOverrides = WebFHttpOverrides.instance();
+  final HttpClient nativeHttpClient = HttpClient()
+    ..maxConnectionsPerHost = 30
+    ..connectionTimeout = Duration(seconds: 30);
+  return ProxyHttpClient(nativeHttpClient, httpOverrides);
 }
 
 // Returns the origin of the URI in the form scheme://host:port

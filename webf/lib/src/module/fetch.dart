@@ -31,7 +31,11 @@ class FetchModule extends BaseModule {
     _disposed = true;
   }
 
-  static final HttpClient _sharedHttpClient = HttpClient()..userAgent = NavigatorModule.getUserAgent();
+  static final HttpClient _sharedHttpClient = (() {
+    final client = createWebFHttpClient();
+    client.userAgent = NavigatorModule.getUserAgent();
+    return client;
+  })();
   HttpClient get httpClient => _sharedHttpClient;
 
   Uri _resolveUri(String input) {

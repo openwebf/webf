@@ -246,8 +246,11 @@ class DataBundle extends WebFBundle {
 // The bundle that source from http or https.
 class NetworkBundle extends WebFBundle {
   // Do not access this field directly; use [_httpClient] instead.
-  static final HttpClient sharedHttpClient = HttpClient()
-    ..userAgent = NavigatorModule.getUserAgent();
+  static final HttpClient sharedHttpClient = (() {
+    final client = createWebFHttpClient();
+    client.userAgent = NavigatorModule.getUserAgent();
+    return client;
+  })();
 
   NetworkBundle(String url, {this.additionalHttpHeaders, ContentType? contentType}) : super(url, contentType: contentType);
 

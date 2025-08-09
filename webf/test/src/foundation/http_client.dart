@@ -64,7 +64,7 @@ void main() {
     double contextId = 3;
     HttpOverrides.global = null;
     setupHttpOverrides(null, contextId: contextId);
-    HttpClient httpClient = HttpClient();
+    HttpClient httpClient = createWebFHttpClient();
 
     test('Origin', () async {
       var request = await httpClient.openUrl('POST', server.getUri('plain_text'));

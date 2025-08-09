@@ -20,7 +20,7 @@ void main() {
   double contextId = 1;
   HttpOverrides.global = null;
   setupHttpOverrides(null, contextId: contextId);
-  HttpClient httpClient = HttpClient();
+  HttpClient httpClient = createWebFHttpClient();
 
   setUp(() {
     setupTest();
