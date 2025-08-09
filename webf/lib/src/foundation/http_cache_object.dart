@@ -59,11 +59,19 @@ class HttpCacheObject {
   // Lock file for concurrent access protection
   final File _lockFile;
 
+  // Handle for OS-level file lock when available
+  RandomAccessFile? _lockHandle;
+
   // The blob.
   HttpCacheObjectBlob _blob;
 
   // Whether cache object is sync with file.
   bool _valid = false;
+
+  // Throttled persistence of lastUsed to disk
+  static const Duration defaultLastUsedPersistThrottle = Duration(minutes: 5);
+  DateTime? _lastUsedPersistedAt;
+  bool _isPersistingLastUsed = false;
 
   bool get valid => _valid;
 
@@ -117,10 +125,16 @@ class HttpCacheObject {
 
     while (stopwatch.elapsed < timeout) {
       try {
-        // Try to create lock file exclusively
-        final lockSink = _lockFile.openWrite(mode: FileMode.writeOnly);
-        lockSink.write('${DateTime.now().millisecondsSinceEpoch}\n$pid');
-        await lockSink.close();
+        // Create/open the lock file and attempt to acquire an OS-level exclusive lock
+        _lockHandle = await _lockFile.open(mode: FileMode.write);
+        try {
+          await _lockHandle!.lock(FileLock.exclusive);
+        } catch (_) {
+          // Some platforms may not support file locks; proceed with timestamp marker
+        }
+        await _lockHandle!.setPosition(0);
+        await _lockHandle!.writeString('${DateTime.now().millisecondsSinceEpoch}\n$pid');
+        await _lockHandle!.flush();
         return true;
       } catch (e) {
         // Lock file exists, check if it's stale
@@ -151,12 +165,19 @@ class HttpCacheObject {
 
   // Release the lock
   Future<void> _releaseLock() async {
+    try {
+      if (_lockHandle != null) {
+        try {
+          await _lockHandle!.unlock();
+        } catch (_) {}
+        await _lockHandle!.close();
+        _lockHandle = null;
+      }
+    } catch (_) {}
     if (await _lockFile.exists()) {
       try {
         await _lockFile.delete();
-      } catch (_) {
-        // Ignore errors when releasing lock
-      }
+      } catch (_) {}
     }
   }
 
@@ -216,12 +237,13 @@ class HttpCacheObject {
   // This method write bytes in [Endian.little] order.
   // Reference: https://en.wikipedia.org/wiki/Endianness
   static void writeString(BytesBuilder bytesBuilder, String str, int size) {
-    final int strLength = str.length;
+    // Encode as UTF-8 and write byte length followed by bytes
+    final List<int> utf8Bytes = utf8.encode(str);
+    final int byteLength = utf8Bytes.length;
     for (int i = 0; i < size; i++) {
-      bytesBuilder.addByte(strLength >> (i * 8) & 0xff);
+      bytesBuilder.addByte(byteLength >> (i * 8) & 0xff);
     }
-
-    bytesBuilder.add(str.codeUnits);
+    bytesBuilder.add(utf8Bytes);
   }
 
   static void writeInteger(BytesBuilder bytesBuilder, int data, int size) {
@@ -233,7 +255,21 @@ class HttpCacheObject {
   bool isDateTimeValid() => expiredTime != null && expiredTime!.isAfter(DateTime.now());
 
   // Validate the cache-control and expires.
+  // Honor request directives that force revalidation.
   bool hitLocalCache(HttpClientRequest request) {
+    // Respect request Cache-Control: no-cache / no-store and Pragma: no-cache
+    final String? reqCacheControl = request.headers.value(HttpHeaders.cacheControlHeader);
+    if (reqCacheControl != null) {
+      final cc = reqCacheControl.toLowerCase();
+      if (cc.contains('no-cache') || cc.contains('no-store') || cc.contains('max-age=0')) {
+        return false;
+      }
+    }
+    final String? pragma = request.headers.value('pragma');
+    if (pragma != null && pragma.toLowerCase().contains('no-cache')) {
+      return false;
+    }
+
     return valid && isDateTimeValid();
   }
 
@@ -366,6 +402,9 @@ class HttpCacheObject {
         _valid = false;
         await remove();
       }
+
+      // Initialize persisted timestamp baseline
+      _lastUsedPersistedAt = lastUsed;
     } on FormatException catch (e, stackTrace) {
       // Format errors indicate corrupted cache data
       print('Cache format error for $url: $e');
@@ -447,6 +486,8 @@ class HttpCacheObject {
       await _writeFileAtomically(_file, bytesBuilder.takeBytes());
 
       _valid = true;
+      // Update persisted timestamp after successful write
+      _lastUsedPersistedAt = lastUsed;
     } finally {
       // Always release lock
       await _releaseLock();
@@ -652,14 +693,42 @@ class HttpCacheObject {
       int blobLength = await _blob.length;
       if (contentLength != blobLength) {
         contentLength = blobLength;
+        // Keep the exposed Content-Length header in sync with the actual blob length
+        responseHeaders.set(HttpHeaders.contentLengthHeader, blobLength);
       }
     }
+
+    // Touch lastUsed and persist on a throttle for on-disk LRU semantics
+    _touchLastUsedAndMaybePersist();
 
     return HttpClientStreamResponse(
       _blob.openRead(),
       statusCode: HttpStatus.ok,
       initialHeaders: responseHeaders,
     )..compressionState = _getCompressionState(httpClient, responseHeaders);
+  }
+
+  void _touchLastUsedAndMaybePersist({Duration? throttle}) {
+    final now = DateTime.now();
+    lastUsed = now;
+    final Duration effectiveThrottle = throttle ?? defaultLastUsedPersistThrottle;
+    final bool shouldPersist = _lastUsedPersistedAt == null ||
+        now.difference(_lastUsedPersistedAt!).abs() >= effectiveThrottle;
+
+    if (!shouldPersist || _isPersistingLastUsed) return;
+
+    _isPersistingLastUsed = true;
+    // Fire-and-forget persistence to avoid blocking response
+    // Best-effort: ignore errors here
+    Future<void>(() async {
+      try {
+        await writeIndex();
+      } catch (_) {
+        // Ignore persistence errors for lastUsed
+      } finally {
+        _isPersistingLastUsed = false;
+      }
+    });
   }
 
   static HttpClientResponseCompressionState _getCompressionState(HttpClient? httpClient, HttpHeaders responseHeaders) {
@@ -676,6 +745,9 @@ class HttpCacheObject {
     if (!await _exists) {
       return null;
     }
+
+    // Update last-used timestamp and persist on throttle when binary content is read
+    _touchLastUsedAndMaybePersist();
 
     // Open read.
     Stream<List<int>> blobStream = _blob.openRead();
@@ -728,7 +800,7 @@ class HttpCacheObject {
     if (indexChanged) {
       int retries = 0;
       const maxRetries = 3;
-      
+
       while (retries < maxRetries) {
         try {
           await writeIndex();
@@ -738,7 +810,7 @@ class HttpCacheObject {
           if (e.toString().contains('Failed to acquire lock')) {
             return;
           }
-          
+
           // For other errors, retry with exponential backoff
           retries++;
           if (retries < maxRetries) {

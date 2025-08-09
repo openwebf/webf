@@ -10,7 +10,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/bridge.dart';
+import 'package:dio/dio.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/foundation/dio_client.dart';
 import 'package:webf/html.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
@@ -37,6 +39,7 @@ class FetchModule extends BaseModule {
     return client;
   })();
   HttpClient get httpClient => _sharedHttpClient;
+  CancelToken? _dioCancelToken;
 
   Uri _resolveUri(String input) {
     final Uri parsedUri = Uri.parse(input);
@@ -102,12 +105,21 @@ class FetchModule extends BaseModule {
   HttpClientRequest? _currentRequest;
 
   void _abortRequest() {
-    _currentRequest?.abort();
-    _currentRequest = null;
+    if (WebFControllerManager.instance.useDioForNetwork) {
+      _dioCancelToken?.cancel('aborted');
+      _dioCancelToken = null;
+    } else {
+      _currentRequest?.abort();
+      _currentRequest = null;
+    }
   }
 
   @override
   dynamic invoke(String method, List<dynamic> params) {
+    // Use Dio path when globally enabled
+    if (WebFControllerManager.instance.useDioForNetwork) {
+      return _invokeWithDio(method, params);
+    }
     if (method == 'abortRequest') {
       _abortRequest();
       return '';
@@ -172,6 +184,65 @@ class FetchModule extends BaseModule {
           throw FlutterError('Failed to read response.');
         }
       }).catchError(handleError);
+    }
+
+    return completer.future;
+  }
+
+  Future<dynamic> _invokeWithDio(String method, List<dynamic> params) async {
+    Completer<dynamic> completer = Completer();
+
+    final Uri uri = _resolveUri(method);
+    final body = params[0];
+    final headers = Map<String, dynamic>.from(params[1] ?? {});
+    final requestMethod = (params[2] ?? 'GET') as String;
+
+    // Prepare body
+    Uint8List? bodyBytes;
+    if (body is FormDataBindings) {
+      final formData = FormData.fromMap(body.storage);
+      final stream = formData.finalize();
+      final chunks = await stream.toList();
+      bodyBytes = Uint8List.fromList(chunks.expand((e) => e).toList());
+      headers['content-type'] = 'multipart/form-data; boundary=${formData.boundary}';
+    } else if (body is NativeByteData) {
+      bodyBytes = Uint8List.fromList(body.bytes);
+    } else if (body is String) {
+      bodyBytes = Uint8List.fromList(utf8.encode(body));
+    }
+
+    try {
+      final dio = await createWebFDio(
+        contextId: moduleManager?.contextId,
+        isXHR: true,
+        // Fetch semantics: resolve with Response for all HTTP statuses
+        validateStatus: (_) => true,
+      );
+      _dioCancelToken = CancelToken();
+
+      final resp = await dio.requestUri<Uint8List>(
+        uri,
+        data: bodyBytes,
+        options: Options(
+          method: requestMethod,
+          responseType: ResponseType.bytes,
+          headers: headers,
+          followRedirects: true,
+          validateStatus: (_) => true,
+        ),
+        cancelToken: _dioCancelToken,
+      );
+
+      final bytes = resp.data ?? Uint8List(0);
+      completer.complete([EMPTY_STRING, resp.statusCode ?? 0, bytes]);
+    } catch (e, st) {
+      // Record the fetch error in LoadingState
+      if (moduleManager != null) {
+        final contextId = moduleManager!.contextId;
+        final dumper = LoadingStateRegistry.instance.getDumper(contextId);
+        dumper?.recordNetworkRequestError(uri.toString(), e.toString(), isXHR: true);
+      }
+      completer.completeError(e, st);
     }
 
     return completer.future;

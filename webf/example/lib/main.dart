@@ -56,6 +56,7 @@ void main() async {
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
       maxAliveInstances: 4,
       maxAttachedInstances: 1,
+      useDioForNetwork: true,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
       },
@@ -104,7 +105,7 @@ void main() async {
           },
           onControllerInit: (controller) async {
             // Built-in once-only error dump with debounce and per-load reset
-            controller.loadingState.onAnyLoadingErrorOnce((event) {
+            controller.loadingState.onFinalLargestContentfulPaint((event) {
               final dump = controller.dumpLoadingState(
                 options: LoadingStateDumpOptions.html |
                     LoadingStateDumpOptions.api |
@@ -112,7 +113,7 @@ void main() async {
                     LoadingStateDumpOptions.networkDetailed,
               );
               debugPrint(dump.toStringFiltered());
-            }, debounce: Duration(seconds: 5));
+            });
 
             // controller.loadingState.onFinalLargestContentfulPaint((_) {
             //   if (!hasReported) {

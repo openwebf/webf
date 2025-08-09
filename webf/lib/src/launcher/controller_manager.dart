@@ -99,6 +99,11 @@ class WebFControllerManagerConfig {
   /// connections from any network interface.
   final String devToolsAddress;
 
+  /// Use Dio for network requests (via HttpClientInterceptor)
+  /// When true, controllers without an explicit interceptor will route HTTP through Dio
+  /// while preserving WebF's cookie and HTTP cache behavior.
+  final bool useDioForNetwork;
+
   /// Creates a new configuration object for WebFControllerManager.
   ///
   /// All parameters have reasonable defaults suitable for most applications.
@@ -111,6 +116,7 @@ class WebFControllerManagerConfig {
     this.enableDevTools = kDebugMode,
     this.devToolsPort = 9222,
     this.devToolsAddress = '0.0.0.0',
+    this.useDioForNetwork = false,
   });
 }
 
@@ -277,6 +283,12 @@ class WebFControllerManager {
       });
     }
   }
+
+  // No default HttpClientInterceptor is provided when using Dio networking.
+  // Dio is integrated beside the HttpClient path via module/bundle switches.
+
+  /// Whether Dio-backed networking is enabled globally.
+  bool get useDioForNetwork => _config.useDioForNetwork;
 
   /// Gets the count of currently attached controllers.
   int get attachedControllersCount => _attachedControllers.length;

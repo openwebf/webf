@@ -33,6 +33,8 @@ dependencies:
   crypto: ^3.0.6
   logging: ^1.3.0
   dio: ^5.4.0
+  dio_cache_interceptor: ^4.0.3
+  http_cache_hive_store: ^5.0.1
 
 dev_dependencies:
   flutter_test:
