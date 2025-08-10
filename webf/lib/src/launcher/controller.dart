@@ -29,6 +29,7 @@ import 'package:flutter/widgets.dart'
         WidgetsBinding,
         WidgetsBindingObserver;
 import 'package:webf/css.dart';
+import 'package:dio/dio.dart' show Interceptor, HttpClientAdapter; // For custom Dio configuration
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
@@ -355,6 +356,27 @@ class WebFController with Diagnosticable {
   ///
   /// Allows developers to create, read, update, and delete cookies with full control.
   late CookieManager cookieManager;
+
+  /// Custom Dio adapter for this controller's networking when using Dio path.
+  ///
+  /// When `WebFControllerManager.useDioForNetwork` is true, WebF uses a shared Dio instance
+  /// per WebF context. If provided, this adapter replaces the default `IOHttpClientAdapter`
+  /// tuning used by WebF. Set this before any network request occurs (e.g. in `onControllerInit`).
+  ///
+  /// Example:
+  ///   controller.dioHttpClientAdapter = IOHttpClientAdapter(
+  ///     createHttpClient: () { final c = HttpClient(); c.findProxy = ...; return c; }
+  ///   );
+  HttpClientAdapter? dioHttpClientAdapter;
+
+  /// Additional Dio interceptors to install for this controller's Dio instance.
+  ///
+  /// Interceptors are appended after WebF's built-in cookie/cache interceptor so they can
+  /// add headers, logging, or custom behaviors. Set this before first network usage.
+  ///
+  /// Example:
+  ///   controller.dioInterceptors = [LogInterceptor(responseBody: false)];
+  List<Interceptor>? dioInterceptors;
 
   /// The default route path for the hybrid router in WebF.
   ///
@@ -724,6 +746,8 @@ class WebFController with Diagnosticable {
     this.routeObserver,
     this.routes,
     this.resizeToAvoidBottomInsets = true,
+    this.dioHttpClientAdapter,
+    this.dioInterceptors,
   })  : _entrypoint = bundle,
         runningThread = runningThread ?? DedicatedThread() {
     // Record constructor phase
