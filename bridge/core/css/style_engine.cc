@@ -48,6 +48,7 @@ StyleEngine::StyleEngine(Document& document) : document_(&document) {
 }
 
 CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& text) {
+  assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
   assert(&element.GetDocument() == &GetDocument());
   // Note: Blink allows creating sheets for disconnected elements, so we don't check isConnected()
 
@@ -97,6 +98,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
 }
 
 CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const std::string& text) {
+  assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
   // Create parser context without Document to avoid circular references
   auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto contents = std::make_shared<StyleSheetContents>(parser_context, KURL("").GetString());

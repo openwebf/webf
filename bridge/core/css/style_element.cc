@@ -61,7 +61,6 @@ void StyleElement::RemovedFrom(Element& element, ContainerNode& insertion_point)
 
   Document& document = element.GetDocument();
   if (registered_as_candidate_) {
-    // TODO(xiezuobing): 移除候选样式节点
     //    document.GetStyleEngine().RemoveStyleSheetCandidateNode(element,
     //                                                            insertion_point);
     registered_as_candidate_ = false;

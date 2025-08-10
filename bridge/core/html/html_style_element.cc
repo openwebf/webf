@@ -37,17 +37,23 @@ Node::InsertionNotificationRequest HTMLStyleElement::InsertedInto(webf::Containe
 
 void HTMLStyleElement::RemovedFrom(webf::ContainerNode& insertion_point) {
   HTMLElement::RemovedFrom(insertion_point);
-  StyleElement::RemovedFrom(*this, insertion_point);
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    StyleElement::RemovedFrom(*this, insertion_point);
+  }
 }
 
 void HTMLStyleElement::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
   HTMLElement::ChildrenChanged(change);
-  StyleElement::ChildrenChanged(*this);
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    StyleElement::ChildrenChanged(*this);
+  }
 }
 
 void HTMLStyleElement::FinishParsingChildren() {
-  StyleElement::ProcessingResult result = StyleElement::FinishParsingChildren(*this);
-  HTMLElement::FinishParsingChildren();
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    StyleElement::ProcessingResult result = StyleElement::FinishParsingChildren(*this);
+    HTMLElement::FinishParsingChildren();
+  }
 }
 
 NativeValue HTMLStyleElement::HandleParseAuthorStyleSheet(int32_t argc,
