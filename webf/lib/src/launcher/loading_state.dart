@@ -1421,8 +1421,11 @@ class LoadingStateDump {
       } else if (request.isFromCache) {
         statusStr = 'CACHED';
       } else if (request.statusCode != null) {
-        // Show only HTTP status code in the Status column for clarity
-        statusStr = '${request.statusCode}';
+        // Show HTTP status code and protocol (e.g., 200 https)
+        final proto = request.protocol ?? Uri.tryParse(request.url)?.scheme;
+        statusStr = proto != null && proto.isNotEmpty
+            ? '${request.statusCode} ${proto}'
+            : '${request.statusCode}';
       } else {
         statusStr = 'PENDING';
       }

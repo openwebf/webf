@@ -177,7 +177,14 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       });
       // Check if this is a Fetch/XHR request by looking for the marker header
       final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
-      dumper.recordNetworkRequestStart(_uri.toString(), method: _method, headers: requestHeaders, isXHR: isFetchRequest);
+      dumper.recordNetworkRequestStart(
+        _uri.toString(),
+        method: _method,
+        headers: requestHeaders,
+        isXHR: isFetchRequest,
+        protocol: _uri.scheme,
+        remotePort: _uri.hasAuthority ? _uri.port : null,
+      );
     }
 
     if (contextId != null) {
