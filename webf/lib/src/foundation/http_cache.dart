@@ -53,7 +53,7 @@ class HttpCacheController {
     }
 
     final String appTemporaryPath = await getWebFTemporaryPath();
-    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
+    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches2'));
     bool isThere = await cacheDirectory.exists();
     if (!isThere) {
       await cacheDirectory.create(recursive: true);
