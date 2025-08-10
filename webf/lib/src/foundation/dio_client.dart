@@ -65,6 +65,9 @@ class _WebFDioPool {
       };
     }
 
+    // Backward-compat adapter to reuse HttpClientInterceptor hooks with Dio
+    dio.interceptors.add(WebFDioHttpClientInterceptorAdapter(contextId: contextId));
+
     // Cookie + cache interceptor bound to this context
     dio.interceptors.add(WebFDioCacheCookieInterceptor(
       contextId: contextId,
