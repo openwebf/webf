@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
+import 'package:webf/launcher.dart';
 // import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 // import 'package:http_cache_hive_store/http_cache_hive_store.dart';
 
@@ -48,21 +49,33 @@ class _WebFDioPool {
       headers: headers,
     ));
 
-    // Tune underlying HttpClient
-    final adapter = dio.httpClientAdapter as IOHttpClientAdapter;
-    adapter.createHttpClient = () {
-      final client = HttpClient()
-        ..maxConnectionsPerHost = maxConnectionsPerHost
-        ..connectionTimeout = connectTimeout
-        ..autoUncompress = true;
-      return client;
-    };
+    // Attach custom adapter if provided on the controller; otherwise tune defaults
+    final controller = WebFController.getControllerOfJSContextId(contextId);
+    final customAdapter = controller?.dioHttpClientAdapter;
+    if (customAdapter != null) {
+      dio.httpClientAdapter = customAdapter;
+    } else {
+      final adapter = dio.httpClientAdapter as IOHttpClientAdapter;
+      adapter.createHttpClient = () {
+        final client = HttpClient()
+          ..maxConnectionsPerHost = maxConnectionsPerHost
+          ..connectionTimeout = connectTimeout
+          ..autoUncompress = true;
+        return client;
+      };
+    }
 
     // Cookie + cache interceptor bound to this context
     dio.interceptors.add(WebFDioCacheCookieInterceptor(
       contextId: contextId,
       ownerBundle: ownerBundle,
     ));
+
+    // Append user-provided interceptors (if any) after WebF's built-in interceptor
+    final extras = controller?.dioInterceptors;
+    if (extras != null && extras.isNotEmpty) {
+      dio.interceptors.addAll(extras);
+    }
 
     _instances[contextId] = dio;
     return dio;
