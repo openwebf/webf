@@ -16,11 +16,11 @@ import 'bundle.dart';
 import '../launcher/controller.dart' show WebFController; // for getEntrypointUri via http_overrides.dart
 
 class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
-  WebFDioCacheCookieInterceptor({required this.contextId, this.ownerBundle, this.isXHR = false});
+  WebFDioCacheCookieInterceptor({required this.contextId, this.ownerBundle});
 
   final double? contextId;
   final WebFBundle? ownerBundle;
-  final bool isXHR;
+  // XHR marking is determined per-request by headers or options, not per-client.
 
   static const _kCacheObjectKey = 'webf_cache_object';
   static const _kOriginKey = 'webf_origin';
@@ -45,10 +45,7 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
       }
     }
 
-    // Mark XHR requests
-    if (isXHR) {
-      options.headers['X-WebF-Request-Type'] = 'fetch';
-    }
+    // If caller marks XHR via header/extra, leave it as-is.
 
     // Load cookies
     final cookies = <Cookie>[];

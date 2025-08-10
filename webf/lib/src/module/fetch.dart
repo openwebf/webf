@@ -195,6 +195,8 @@ class FetchModule extends BaseModule {
     final Uri uri = _resolveUri(method);
     final body = params[0];
     final headers = Map<String, dynamic>.from(params[1] ?? {});
+    // Mark as XHR/fetch so downstream can treat accordingly.
+    headers['X-WebF-Request-Type'] = 'fetch';
     final requestMethod = (params[2] ?? 'GET') as String;
 
     // Prepare body
@@ -214,7 +216,6 @@ class FetchModule extends BaseModule {
     try {
       final dio = await createWebFDio(
         contextId: moduleManager?.contextId,
-        isXHR: true,
         // Fetch semantics: resolve with Response for all HTTP statuses
         validateStatus: (_) => true,
       );

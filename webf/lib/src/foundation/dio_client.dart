@@ -3,10 +3,9 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/launcher.dart';
 import 'package:webf/module.dart';
-import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
-import 'package:http_cache_hive_store/http_cache_hive_store.dart';
+// import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
+// import 'package:http_cache_hive_store/http_cache_hive_store.dart';
 
 import 'bundle.dart';
 import 'dio_interceptors.dart';
@@ -17,10 +16,69 @@ import 'dio_interceptors.dart';
 ///
 /// Options align with Dio v5 docs. Defaults aim to match WebF HttpClient behavior
 /// while allowing per-request overrides.
+class _WebFDioPool {
+  static final _instances = <double, Dio>{};
+
+  static Dio getOrCreate({
+    required double contextId,
+    WebFBundle? ownerBundle,
+    Duration connectTimeout = const Duration(seconds: 30),
+    Duration receiveTimeout = const Duration(seconds: 60),
+    Duration sendTimeout = const Duration(seconds: 60),
+    bool followRedirects = true,
+    int maxRedirects = 5,
+    int maxConnectionsPerHost = 30,
+    String? userAgent,
+  }) {
+    if (_instances.containsKey(contextId)) {
+      return _instances[contextId]!;
+    }
+
+    final headers = <String, dynamic>{
+      HttpHeaders.userAgentHeader: userAgent ?? _getDefaultUserAgent(),
+    };
+
+    final dio = Dio(BaseOptions(
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
+      sendTimeout: sendTimeout,
+      followRedirects: followRedirects,
+      maxRedirects: maxRedirects,
+      responseType: ResponseType.bytes,
+      headers: headers,
+    ));
+
+    // Tune underlying HttpClient
+    final adapter = dio.httpClientAdapter as IOHttpClientAdapter;
+    adapter.createHttpClient = () {
+      final client = HttpClient()
+        ..maxConnectionsPerHost = maxConnectionsPerHost
+        ..connectionTimeout = connectTimeout
+        ..autoUncompress = true;
+      return client;
+    };
+
+    // Cookie + cache interceptor bound to this context
+    dio.interceptors.add(WebFDioCacheCookieInterceptor(
+      contextId: contextId,
+      ownerBundle: ownerBundle,
+    ));
+
+    _instances[contextId] = dio;
+    return dio;
+  }
+
+  static void dispose(double contextId) {
+    final dio = _instances.remove(contextId);
+    dio?.close(force: true);
+  }
+}
+
+/// Get a WebF-configured Dio. Returns a shared instance per `contextId`.
+/// When `contextId` is null, creates a new ephemeral instance.
 Future<Dio> createWebFDio({
   double? contextId,
   WebFBundle? ownerBundle,
-  bool isXHR = false,
   Duration connectTimeout = const Duration(seconds: 30),
   Duration receiveTimeout = const Duration(seconds: 60),
   Duration sendTimeout = const Duration(seconds: 60),
@@ -30,6 +88,23 @@ Future<Dio> createWebFDio({
   String? userAgent,
   bool Function(int? statusCode)? validateStatus,
 }) async {
+  if (contextId != null) {
+    final dio = _WebFDioPool.getOrCreate(
+      contextId: contextId,
+      ownerBundle: ownerBundle,
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
+      sendTimeout: sendTimeout,
+      followRedirects: followRedirects,
+      maxRedirects: maxRedirects,
+      maxConnectionsPerHost: maxConnectionsPerHost,
+      userAgent: userAgent,
+    );
+    // Per-request validateStatus can still be provided via Options in request.
+    return dio;
+  }
+
+  // Fallback: create ephemeral client if no contextId provided.
   final headers = <String, dynamic>{
     HttpHeaders.userAgentHeader: userAgent ?? _getDefaultUserAgent(),
   };
@@ -41,12 +116,10 @@ Future<Dio> createWebFDio({
     followRedirects: followRedirects,
     maxRedirects: maxRedirects,
     responseType: ResponseType.bytes,
-    // If not provided, Dio's default applies (2xx only)
     validateStatus: validateStatus,
     headers: headers,
   ));
 
-  // Tune underlying HttpClient
   final adapter = dio.httpClientAdapter as IOHttpClientAdapter;
   adapter.createHttpClient = () {
     final client = HttpClient()
@@ -56,49 +129,20 @@ Future<Dio> createWebFDio({
     return client;
   };
 
-  Directory cacheDirectory = await HttpCacheController.getCacheDirectory();
-  cacheDirectory.path;
-
-  // WebF cookie + cache interceptor
-  dio.interceptors.add(WebFDioCacheCookieInterceptor(
-    contextId: contextId,
-    ownerBundle: ownerBundle,
-    isXHR: isXHR,
-  ));
-
-  // Global options
-  // final cacheOptions = CacheOptions(
-  //   // A default store is required for interceptor.
-  //   store: MemCacheStore(),
-  //
-  //   // All subsequent fields are optional to get a standard behaviour.
-  //
-  //   // Default.
-  //   policy: CachePolicy.request,
-  //   // Returns a cached response on error for given status codes.
-  //   // Defaults to `[]`.
-  //   hitCacheOnErrorCodes: [500],
-  //   // Allows to return a cached response on network errors (e.g. offline usage).
-  //   // Defaults to `false`.
-  //   hitCacheOnNetworkFailure: true,
-  //   // Overrides any HTTP directive to delete entry past this duration.
-  //   // Useful only when origin server has no cache config or custom behaviour is desired.
-  //   // Defaults to `null`.
-  //   maxStale: const Duration(days: 7),
-  //   // Default. Allows 3 cache sets and ease cleanup.
-  //   priority: CachePriority.normal,
-  //   // Default. Body and headers encryption with your own algorithm.
-  //   cipher: null,
-  //   // Default. Key builder to retrieve requests.
-  //   keyBuilder: CacheOptions.defaultCacheKeyBuilder,
-  //   // Default. Allows to cache POST requests.
-  //   // Assigning a [keyBuilder] is strongly recommended when `true`.
-  //   allowPostMethod: false,
-  // );
-  //
-  // dio.interceptors.add(DioCacheInterceptor(options: cacheOptions));
+  // For ephemeral usage, add interceptor if we still have a context for cookies/cache
+  if (ownerBundle != null) {
+    dio.interceptors.add(WebFDioCacheCookieInterceptor(
+      contextId: contextId,
+      ownerBundle: ownerBundle,
+    ));
+  }
 
   return dio;
+}
+
+/// Dispose the shared Dio for a specific WebF context when controller is torn down.
+void disposeSharedDioForContext(double contextId) {
+  _WebFDioPool.dispose(contextId);
 }
 
 String _getDefaultUserAgent() {
