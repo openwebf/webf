@@ -1421,10 +1421,8 @@ class LoadingStateDump {
       } else if (request.isFromCache) {
         statusStr = 'CACHED';
       } else if (request.statusCode != null) {
+        // Show only HTTP status code in the Status column for clarity
         statusStr = '${request.statusCode}';
-        if (request.responseSize != null) {
-          statusStr += ' ${_formatBytes(request.responseSize!)}';
-        }
       } else {
         statusStr = 'PENDING';
       }
