@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
+import 'package:dio_http2_adapter/dio_http2_adapter.dart';
+
 // import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 // import 'package:http_cache_hive_store/http_cache_hive_store.dart';
 
@@ -18,6 +21,7 @@ import 'dio_interceptors.dart';
 /// Options align with Dio v5 docs. Defaults aim to match WebF HttpClient behavior
 /// while allowing per-request overrides.
 class _WebFDioPool {
+  // Maintain a single Dio per context with a scheme-routing adapter.
   static final _instances = <double, Dio>{};
 
   static Dio getOrCreate({
@@ -39,6 +43,7 @@ class _WebFDioPool {
       HttpHeaders.userAgentHeader: userAgent ?? _getDefaultUserAgent(),
     };
 
+    // Single dio that owns interceptors; adapter will route by scheme.
     final dio = Dio(BaseOptions(
       connectTimeout: connectTimeout,
       receiveTimeout: receiveTimeout,
@@ -48,21 +53,27 @@ class _WebFDioPool {
       responseType: ResponseType.bytes,
       headers: headers,
     ));
-
-    // Attach custom adapter if provided on the controller; otherwise tune defaults
+    // Build scheme-specific adapters and install routing adapter unless a custom adapter is provided.
     final controller = WebFController.getControllerOfJSContextId(contextId);
     final customAdapter = controller?.dioHttpClientAdapter;
     if (customAdapter != null) {
       dio.httpClientAdapter = customAdapter;
     } else {
-      final adapter = dio.httpClientAdapter as IOHttpClientAdapter;
-      adapter.createHttpClient = () {
+      final httpAdapter = IOHttpClientAdapter();
+      httpAdapter.createHttpClient = () {
         final client = HttpClient()
           ..maxConnectionsPerHost = maxConnectionsPerHost
           ..connectionTimeout = connectTimeout
           ..autoUncompress = true;
         return client;
       };
+      final httpsAdapter = Http2Adapter(ConnectionManager(
+        idleTimeout: Duration(seconds: 10),
+      ));
+      dio.httpClientAdapter = _WebFSchemeRoutingAdapter(
+        httpAdapter: httpAdapter,
+        httpsAdapter: httpsAdapter,
+      );
     }
 
     // Backward-compat adapter to reuse HttpClientInterceptor hooks with Dio
@@ -100,7 +111,7 @@ Future<Dio> createWebFDio({
   Duration sendTimeout = const Duration(seconds: 60),
   bool followRedirects = true,
   int maxRedirects = 5,
-  int maxConnectionsPerHost = 30,
+  int maxConnectionsPerHost = 15,
   String? userAgent,
   bool Function(int? statusCode)? validateStatus,
 }) async {
@@ -166,5 +177,25 @@ String _getDefaultUserAgent() {
     return NavigatorModule.getUserAgent();
   } catch (_) {
     return 'WebF';
+  }
+}
+
+// Composite adapter that routes by URI scheme to avoid nested requests.
+class _WebFSchemeRoutingAdapter implements HttpClientAdapter {
+  _WebFSchemeRoutingAdapter({required this.httpAdapter, required this.httpsAdapter});
+  final HttpClientAdapter httpAdapter;
+  final HttpClientAdapter httpsAdapter;
+
+  @override
+  void close({bool force = false}) {
+    httpAdapter.close(force: force);
+    httpsAdapter.close(force: force);
+  }
+
+  @override
+  Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) {
+    final scheme = options.uri.scheme.toLowerCase();
+    final target = scheme == 'https' ? httpsAdapter : httpAdapter;
+    return target.fetch(options, requestStream, cancelFuture);
   }
 }

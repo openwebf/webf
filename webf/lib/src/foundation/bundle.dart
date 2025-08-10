@@ -268,7 +268,13 @@ class NetworkBundle extends WebFBundle {
     // If globally enabled, use Dio path
     if (WebFControllerManager.instance.useDioForNetwork) {
       // Track network request start
-      dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
+      dumper?.recordNetworkRequestStart(
+        url,
+        method: 'GET',
+        headers: {},
+        protocol: _uri!.scheme,
+        remotePort: _uri!.hasAuthority ? _uri!.port : null,
+      );
       // Track request sent stage to align with HttpClient path
       dumper?.recordNetworkRequestStage(url, LoadingState.stageRequestSent, metadata: {
         'method': 'GET',
@@ -367,7 +373,13 @@ class NetworkBundle extends WebFBundle {
     }
 
     // Track network request start
-    dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
+    dumper?.recordNetworkRequestStart(
+      url,
+      method: 'GET',
+      headers: {},
+      protocol: _uri!.scheme,
+      remotePort: _uri!.hasAuthority ? _uri!.port : null,
+    );
 
     final HttpClientRequest request = await sharedHttpClient.getUrl(_uri!);
 

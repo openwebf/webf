@@ -229,7 +229,14 @@ class FetchModule extends BaseModule {
         if (dumper != null) {
           final headerStrings = <String, String>{};
           headers.forEach((k, v) => headerStrings[k.toString()] = v?.toString() ?? '');
-          dumper.recordNetworkRequestStart(uri.toString(), method: requestMethod, headers: headerStrings, isXHR: true);
+          dumper.recordNetworkRequestStart(
+            uri.toString(),
+            method: requestMethod,
+            headers: headerStrings,
+            isXHR: true,
+            protocol: uri.scheme,
+            remotePort: uri.hasAuthority ? uri.port : null,
+          );
           dumper.recordNetworkRequestStage(uri.toString(), LoadingState.stageRequestSent, metadata: {
             'method': requestMethod,
           });
