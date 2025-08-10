@@ -33,6 +33,19 @@ import { ResizeObserverPage } from './pages/ResizeObserverPage';
 import { MutationObserverPage } from './pages/MutationObserverPage';
 import { WebStoragePage } from './pages/WebStoragePage';
 import { DOMBoundingRectPage } from './pages/DOMBoundingRectPage';
+import { CSSShowcasePage } from './pages/CSSShowcasePage';
+import { BGPage } from './pages/css/BGPage';
+import { BGGradientPage } from './pages/css/BGGradientPage';
+import { BGImagePage } from './pages/css/BGImagePage';
+import { BGRadialPage } from './pages/css/BGRadialPage';
+import { BorderPage } from './pages/css/BorderPage';
+import { BorderRadiusPage } from './pages/css/BorderRadiusPage';
+import { BoxShadowPage } from './pages/css/BoxShadowPage';
+import { FilterPage } from './pages/css/FilterPage';
+import { FlexLayoutPage } from './pages/css/FlexLayoutPage';
+import { KeyframesPage } from './pages/css/KeyframesPage';
+import { ClipPathPage } from './pages/css/ClipPathPage';
+import { BorderBackgroundShadowPage } from './pages/css/BorderBackgroundShadowPage';
 import { UserDetailsPage } from './pages/routeDemo/UserDetailsPage';
 import { ReportDetailsPage } from './pages/routeDemo/ReportDetailsPage';
 import { ProfileEditPage } from './pages/routeDemo/ProfileEditPage';
@@ -75,6 +88,21 @@ function App() {
         <Route path="/mutation-observer" title="MutationObserver API" element={<MutationObserverPage />} />
         <Route path="/web-storage" title="Web Storage API" element={<WebStoragePage />} />
         <Route path="/dom-bounding-rect" title="DOM Measurements API" element={<DOMBoundingRectPage />} />
+        
+        {/* CSS Showcase */}
+        <Route path="/css-showcase" title="CSS Showcase" element={<CSSShowcasePage />} />
+        <Route path="/css/bg" title="Background" element={<BGPage />} />
+        <Route path="/css/bg-gradient" title="Background Gradient" element={<BGGradientPage />} />
+        <Route path="/css/bg-image" title="Background Image" element={<BGImagePage />} />
+        <Route path="/css/bg-radial" title="Background Radial" element={<BGRadialPage />} />
+        <Route path="/css/border" title="Border" element={<BorderPage />} />
+        <Route path="/css/border-radius" title="Border Radius" element={<BorderRadiusPage />} />
+        <Route path="/css/box-shadow" title="Box Shadow" element={<BoxShadowPage />} />
+        <Route path="/css/filter" title="Filter" element={<FilterPage />} />
+        <Route path="/css/flex-layout" title="Flex Layout" element={<FlexLayoutPage />} />
+        <Route path="/css/keyframes" title="Keyframes" element={<KeyframesPage />} />
+        <Route path="/css/clip-path" title="Clip Path" element={<ClipPathPage />} />
+        <Route path="/css/border-background-shadow" title="Border Background Shadow" element={<BorderBackgroundShadowPage />} />
         
         {/* Dynamic Routes */}
         <Route path="/user/:userId" title="User Details" element={<UserDetailsPage />} />

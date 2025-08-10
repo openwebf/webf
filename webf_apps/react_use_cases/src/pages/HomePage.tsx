@@ -244,6 +244,18 @@ export const HomePage: React.FC = () => {
               <div className={styles.itemArrow}>&gt;</div>
             </div>
           </div>
+
+          {/* CSS Showcase */}
+          <div className={styles.sectionTitle}>CSS Showcase</div>
+          <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
+            <div className={styles.componentItem} onClick={() => navigateTo('/css-showcase')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>CSS Demonstrations</div>
+                <div className={styles.itemDesc}>Comprehensive CSS showcase with layouts, animations, and advanced styling techniques.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+          </div>
         </div> {/* End of main component-section */}
       </WebFListView>
     </div>

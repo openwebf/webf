@@ -12,6 +12,9 @@ class AppRouterConfig {
   // Cache for WebF route widgets to prevent rebuilds
   static final Map<String, Widget> _webfRouteCache = {};
 
+  // Track the currently active WebF controller for routing
+  static String? _activeWebFController;
+
   static final GoRouter _router = GoRouter(
     initialLocation: '/',
     routes: [
