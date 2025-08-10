@@ -42,6 +42,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./foundation/string_impl_unittest.cc
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
+  ./test/html_script_element_casting_test.cc
 )
 
 ### webf_unit_test executable

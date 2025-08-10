@@ -32,9 +32,9 @@ class ContainerQueryParserTest : public testing::Test {
    public:
     bool IsAllowed(const std::string& feature) const override { return feature == "width"; }
     bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
-    bool IsCaseSensitive(const std::string& feature) const { return false; }
+    bool IsCaseSensitive(const std::string& feature) const override { return false; }
 
-    bool SupportsRange() const { return true; }
+    bool SupportsRange() const override { return true; }
   };
 
   // E.g. https://drafts.csswg.org/css-contain-3/#typedef-style-query
