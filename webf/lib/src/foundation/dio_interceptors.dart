@@ -205,6 +205,11 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
 
     handler.next(response);
   }
+
+  @override
+  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+    handler.next(err);
+  }
 }
 
 /// Minimal HttpClientRequest facade for cache negotiation and write paths.

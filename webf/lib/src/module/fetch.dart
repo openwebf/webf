@@ -221,6 +221,23 @@ class FetchModule extends BaseModule {
       );
       _dioCancelToken = CancelToken();
 
+      // LoadingState tracking for fetch via Dio
+      final contextId = moduleManager?.contextId;
+      final dumper = contextId != null ? LoadingStateRegistry.instance.getDumper(contextId) : null;
+      // Record request start and request_sent stage
+      try {
+        if (dumper != null) {
+          final headerStrings = <String, String>{};
+          headers.forEach((k, v) => headerStrings[k.toString()] = v?.toString() ?? '');
+          dumper.recordNetworkRequestStart(uri.toString(), method: requestMethod, headers: headerStrings, isXHR: true);
+          dumper.recordNetworkRequestStage(uri.toString(), LoadingState.stageRequestSent, metadata: {
+            'method': requestMethod,
+          });
+        }
+      } catch (_) {}
+
+      bool responseStartedEmitted = false;
+
       final resp = await dio.requestUri<Uint8List>(
         uri,
         data: bodyBytes,
@@ -232,9 +249,59 @@ class FetchModule extends BaseModule {
           validateStatus: (_) => true,
         ),
         cancelToken: _dioCancelToken,
+        onReceiveProgress: (received, total) {
+          if (!responseStartedEmitted && received > 0) {
+            responseStartedEmitted = true;
+            try {
+              dumper?.recordNetworkRequestStage(uri.toString(), LoadingState.stageResponseStarted, metadata: {
+                'contentLength': total,
+              });
+            } catch (_) {}
+          }
+        },
       );
 
+      // Emit response_started if no progress callback fired
+      if (!responseStartedEmitted) {
+        try {
+          dumper?.recordNetworkRequestStage(uri.toString(), LoadingState.stageResponseStarted, metadata: {
+            'statusCode': resp.statusCode,
+            'contentLength': resp.data?.length ?? 0,
+          });
+        } catch (_) {}
+      }
+
+      // Cache hit info via interceptor
+      try {
+        if (resp.requestOptions.extra['webf_cache_hit'] == true) {
+          dumper?.recordNetworkRequestCacheInfo(uri.toString(), cacheHit: true, cacheType: 'disk');
+        }
+      } catch (_) {}
+
       final bytes = resp.data ?? Uint8List(0);
+
+      // Record response_received and completion
+      try {
+        dumper?.recordNetworkRequestStage(uri.toString(), LoadingState.stageResponseReceived, metadata: {
+          'responseSize': bytes.length,
+        });
+        final responseHeaders = <String, String>{};
+        String? contentType;
+        resp.headers.forEach((name, values) {
+          final headerValue = values.join(', ');
+          responseHeaders[name] = headerValue;
+          if (name.toLowerCase() == 'content-type') {
+            contentType = headerValue;
+          }
+        });
+        dumper?.recordNetworkRequestComplete(uri.toString(),
+          statusCode: resp.statusCode ?? 0,
+          responseSize: bytes.length,
+          contentType: contentType,
+          responseHeaders: responseHeaders,
+        );
+      } catch (_) {}
+
       completer.complete([EMPTY_STRING, resp.statusCode ?? 0, bytes]);
     } catch (e, st) {
       // Record the fetch error in LoadingState
