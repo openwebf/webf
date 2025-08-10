@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show consolidateHttpClientResponseBytes;
+import 'package:webf/foundation.dart';
 
 import 'cookie_jar.dart';
 import 'http_cache.dart';
@@ -28,6 +30,10 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
 
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // If present, use a ProxyHttpClientRequest prepared by the bridge to keep compatibility
+    // with HttpClientInterceptor implementations that expect ProxyHttpClientRequest.
+    ProxyHttpClientRequest? proxyRequest = options.extra[_Bridge._kProxyRequestKey] as ProxyHttpClientRequest?;
+
     final uri = options.uri;
     // Attach WebF context header
     options.headers[HttpHeaderContext] = (contextId ?? 0).toString();
@@ -93,6 +99,38 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
           options.headers[HttpHeaders.ifNoneMatchHeader] = cacheObject.eTag!;
         } else if (cacheObject.lastModified != null) {
           options.headers[HttpHeaders.ifModifiedSinceHeader] = HttpDate.format(cacheObject.lastModified!);
+        }
+      }
+    }
+
+    // If a Proxy request exists, make sure its headers mirror the final options headers for downstream hooks
+    if (proxyRequest != null) {
+      // Clear any previous headers and copy over current ones
+      final headersMap = options.headers.map((k, v) => MapEntry(k, [v.toString()]));
+      final syncHeaders = createHttpHeaders(initialHeaders: headersMap);
+      syncHeaders.forEach(proxyRequest.headers.set);
+    }
+
+    // For backward compatibility, after cache negotiation but before the network,
+    // consult HttpClientInterceptor.shouldInterceptRequest to allow short-circuiting.
+    if (contextId != null) {
+      final overrides = WebFHttpOverrides.instance();
+      if (overrides.hasInterceptor(contextId!)) {
+        final httpInterceptor = overrides.getInterceptor(contextId!);
+        final String requestId = (options.extra[_Bridge._kRequestIdKey] as String?) ?? _Bridge.generateRequestId();
+        options.extra[_Bridge._kRequestIdKey] = requestId;
+
+        // Build a minimal fallback HttpClientRequest if no proxy was prepared earlier
+        final HttpClientRequest httpRequest = proxyRequest ?? _Bridge.buildProxyFromOptions(options);
+
+        final HttpClientResponse? intercepted = await _Bridge.invokeShouldInterceptRequest(
+          requestId,
+          httpInterceptor,
+          httpRequest,
+        );
+        if (intercepted != null) {
+          final Response<Uint8List> dioResp = await _Bridge.convertHttpClientResponseToDio(options, intercepted);
+          return handler.resolve(dioResp);
         }
       }
     }
@@ -193,3 +231,208 @@ class _DummyRequest implements HttpClientRequest {
 }
 
 // NOTE: The Dio factory is defined in dio_client.dart to keep concerns separated.
+
+/// Bridge adapter to route HttpClientInterceptor hooks through Dio's interceptor lifecycle.
+///
+/// Ordering requirements:
+/// - This adapter MUST be installed before [WebFDioCacheCookieInterceptor]
+///   so that `beforeRequest` runs prior to cache negotiation and is recorded
+///   even when local cache serves the response.
+/// - `shouldInterceptRequest` is invoked inside WebFDioCacheCookieInterceptor.onRequest
+///   after cache negotiation to preserve original behavior.
+class WebFDioHttpClientInterceptorAdapter extends InterceptorsWrapper {
+  WebFDioHttpClientInterceptorAdapter({required this.contextId});
+
+  final double contextId;
+
+  @override
+  Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+    // Stash a unique request ID for correlation across hooks
+    final String requestId = _Bridge.generateRequestId();
+    options.extra[_Bridge._kRequestIdKey] = requestId;
+
+    final overrides = WebFHttpOverrides.instance();
+    if (!overrides.hasInterceptor(contextId)) {
+      return handler.next(options);
+    }
+
+    final httpInterceptor = overrides.getInterceptor(contextId);
+
+    // Build a ProxyHttpClientRequest from current options
+    final proxy = _Bridge.buildProxyFromOptions(options, contextId: contextId);
+    options.extra[_Bridge._kProxyRequestKey] = proxy;
+
+    // Run beforeRequest to allow mutation of URL/method/headers/body
+    final HttpClientRequest effectiveRequest =
+        await _Bridge.invokeBeforeRequest(requestId, httpInterceptor, proxy) ?? proxy;
+
+    // Apply possible changes back to Dio RequestOptions
+    _Bridge.applyHttpRequestToDioOptions(effectiveRequest, options);
+
+    // Do NOT run shouldInterceptRequest here; it will be called after cache negotiation
+    // inside WebFDioCacheCookieInterceptor to preserve behavior.
+    handler.next(options);
+  }
+
+  @override
+  Future<void> onResponse(Response response, ResponseInterceptorHandler handler) async {
+    final overrides = WebFHttpOverrides.instance();
+
+    if (!overrides.hasInterceptor(contextId)) {
+      return handler.next(response);
+    }
+
+    final httpInterceptor = overrides.getInterceptor(contextId);
+    final RequestOptions options = response.requestOptions;
+    final String requestId = (options.extra[_Bridge._kRequestIdKey] as String?) ?? _Bridge.generateRequestId();
+
+    // Recreate a minimal HttpClientRequest for afterResponse; prefer the saved proxy
+    final HttpClientRequest httpRequest =
+        (options.extra[_Bridge._kProxyRequestKey] as HttpClientRequest?) ?? _Bridge.buildProxyFromOptions(options);
+
+    // Convert Dio response to HttpClientResponse stream and allow mutation
+    final HttpClientResponse proxyResponse = await _Bridge.convertDioToHttpClientResponse(response);
+    final HttpClientResponse? replaced = await _Bridge.invokeAfterResponse(
+      requestId,
+      httpInterceptor,
+      httpRequest,
+      proxyResponse,
+    );
+
+    if (replaced != null) {
+      final Response<Uint8List> dioResp = await _Bridge.convertHttpClientResponseToDio(options, replaced);
+      return handler.resolve(dioResp);
+    }
+
+    handler.next(response);
+  }
+}
+
+/// Internal utilities for adapting HttpClientInterceptor to Dio.
+class _Bridge {
+  static const String _kRequestIdKey = 'webf_request_id';
+  static const String _kProxyRequestKey = 'webf_proxy_request';
+
+  static int _counter = 0;
+  static String generateRequestId() {
+    _counter++;
+    return '${_counter}_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  static ProxyHttpClientRequest buildProxyFromOptions(RequestOptions options, {double? contextId}) {
+    final proxy = ProxyHttpClientRequest(
+      options.method,
+      options.uri,
+      WebFHttpOverrides.instance(),
+      HttpClient(),
+    );
+
+    // Propagate context header to keep parity
+    if (contextId != null) {
+      WebFHttpOverrides.setContextHeader(proxy.headers, contextId);
+    }
+
+    // Headers
+    options.headers.forEach((key, value) {
+      proxy.headers.set(key, value.toString());
+    });
+
+    // Body
+    final data = options.data;
+    if (data != null) {
+      if (data is Uint8List) {
+        proxy.add(data);
+      } else if (data is List<int>) {
+        proxy.add(Uint8List.fromList(data));
+      } else if (data is String) {
+        proxy.add(Uint8List.fromList(utf8.encode(data)));
+      } else {
+        // Fallback to JSON encoding for arbitrary types
+        try {
+          final encoded = utf8.encode(jsonEncode(data));
+          proxy.add(Uint8List.fromList(encoded));
+        } catch (_) {}
+      }
+    }
+    return proxy;
+  }
+
+  static void applyHttpRequestToDioOptions(HttpClientRequest req, RequestOptions options) {
+    // Method and URL
+    options.method = req.method;
+    // Force absolute path to bypass baseUrl
+    options.path = req.uri.toString();
+
+    // Headers: clear and copy
+    final newHeaders = <String, dynamic>{};
+    req.headers.forEach((name, values) {
+      if (values.isNotEmpty) newHeaders[name] = values.join(', ');
+    });
+    options.headers
+      ..clear()
+      ..addAll(newHeaders);
+
+    // Body (only if we can read it)
+    if (req is ProxyHttpClientRequest) {
+      final body = req.data;
+      if (body is List<int> && body.isNotEmpty) {
+        options.data = Uint8List.fromList(body);
+      }
+    }
+  }
+
+  static Future<HttpClientRequest?> invokeBeforeRequest(
+      String requestId, HttpClientInterceptor interceptor, HttpClientRequest req) async {
+    try {
+      return await interceptor.beforeRequest(requestId, req);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<HttpClientResponse?> invokeShouldInterceptRequest(
+      String requestId, HttpClientInterceptor interceptor, HttpClientRequest req) async {
+    try {
+      return await interceptor.shouldInterceptRequest(requestId, req);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<HttpClientResponse?> invokeAfterResponse(String requestId, HttpClientInterceptor interceptor,
+      HttpClientRequest req, HttpClientResponse resp) async {
+    try {
+      return await interceptor.afterResponse(requestId, req, resp);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<HttpClientResponse> convertDioToHttpClientResponse(Response response) async {
+    final httpHeaders = <String, List<String>>{};
+    response.headers.forEach((k, v) => httpHeaders[k] = List<String>.from(v));
+    if (response.data is Uint8List && httpHeaders[HttpHeaders.contentLengthHeader] == null) {
+      httpHeaders[HttpHeaders.contentLengthHeader] = ['${(response.data as Uint8List).length}'];
+    }
+    final hdr = createHttpHeaders(initialHeaders: httpHeaders);
+    return HttpClientStreamResponse(
+      Stream<List<int>>.value(response.data is Uint8List ? response.data as Uint8List : Uint8List(0)),
+      statusCode: response.statusCode ?? HttpStatus.ok,
+      initialHeaders: hdr,
+    );
+  }
+
+  static Future<Response<Uint8List>> convertHttpClientResponseToDio(
+      RequestOptions options, HttpClientResponse intercepted) async {
+    final bytes = await consolidateHttpClientResponseBytes(intercepted);
+    final headers = <String, List<String>>{};
+    intercepted.headers.forEach((k, v) => headers[k] = List<String>.from(v));
+    return Response<Uint8List>(
+      requestOptions: options,
+      data: Uint8List.fromList(bytes),
+      statusCode: intercepted.statusCode,
+      statusMessage: intercepted.reasonPhrase,
+      headers: Headers.fromMap(headers),
+    );
+  }
+}

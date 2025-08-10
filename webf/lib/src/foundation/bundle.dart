@@ -312,7 +312,7 @@ class NetworkBundle extends WebFBundle {
         });
       }
 
-      if (resp.statusCode != HttpStatus.ok) {
+      if (resp.statusCode != HttpStatus.ok && resp.statusCode != HttpStatus.notModified) {
         dumper?.recordNetworkRequestComplete(url, statusCode: resp.statusCode ?? 0, responseHeaders: {
           'error': 'HTTP ${resp.statusCode}',
         });
