@@ -24,8 +24,15 @@ export const HomePage: React.FC = () => {
             </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/form')}>
               <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Forms & Input</div>
-                <div className={styles.itemDesc}>Form validation, input handling, and user interaction patterns.</div>
+                <div className={styles.itemTitle}>Form Validation</div>
+                <div className={styles.itemDesc}>Advanced form validation with Flutter components, layout switching, and error handling.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/basic-form-elements')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Basic Form Elements</div>
+                <div className={styles.itemDesc}>Basic HTML form elements: text input, radio buttons, and checkboxes.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
@@ -62,13 +69,6 @@ export const HomePage: React.FC = () => {
           {/* UI & Styling */}
           <div className={styles.sectionTitle}>UI & Styling</div>
           <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
-            <div className={styles.componentItem} onClick={() => navigateTo('/animation')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>CSS Animations</div>
-                <div className={styles.itemDesc}>CSS animations: fade, slide, scale, rotate, bounce, and pulse effects.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/typography')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Typography</div>
@@ -248,6 +248,13 @@ export const HomePage: React.FC = () => {
           {/* CSS Showcase */}
           <div className={styles.sectionTitle}>CSS Showcase</div>
           <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
+            <div className={styles.componentItem} onClick={() => navigateTo('/animation')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>CSS Animations</div>
+                <div className={styles.itemDesc}>CSS animations: fade, slide, scale, rotate, bounce, and pulse effects.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/css-showcase')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>CSS Demonstrations</div>
