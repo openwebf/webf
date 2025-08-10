@@ -273,9 +273,6 @@ class NetworkBundle extends WebFBundle {
       final dio = await createWebFDio(
         contextId: contextId,
         ownerBundle: this,
-        isXHR: false,
-        // Accept 200 OK and 304 Not Modified (cache validation)
-        validateStatus: (s) => s == HttpStatus.ok || s == HttpStatus.notModified,
       );
 
       final resp = await dio.requestUri(
@@ -285,7 +282,8 @@ class NetworkBundle extends WebFBundle {
           responseType: ResponseType.bytes,
           headers: {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
           followRedirects: true,
-          validateStatus: (_) => true,
+          // Accept 200 OK and 304 Not Modified (cache validation)
+          validateStatus: (s) => s == HttpStatus.ok || s == HttpStatus.notModified,
         ),
       );
 

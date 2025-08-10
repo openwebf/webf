@@ -19,6 +19,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/src/foundation/dio_client.dart' show disposeSharedDioForContext;
 
 // FFI binding for the C++ batch free function
 typedef NativeBatchFreeFunction = Void Function(Pointer<Void> pointers, Int32 count);
@@ -329,6 +330,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     // Also free pointers with pending events since controller is being disposed
     _batchFreePointersWithEvents();
+
+    // Dispose shared Dio client bound to this context
+    disposeSharedDioForContext(_contextId);
   }
 
   VoidCallback? _originalOnPlatformBrightnessChanged;

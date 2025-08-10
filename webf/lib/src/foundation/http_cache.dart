@@ -53,7 +53,7 @@ class HttpCacheController {
     }
 
     final String appTemporaryPath = await getWebFTemporaryPath();
-    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches2'));
+    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
     bool isThere = await cacheDirectory.exists();
     if (!isThere) {
       await cacheDirectory.create(recursive: true);
@@ -100,14 +100,15 @@ class HttpCacheController {
     // L2 cache in memory.
     final String key = getCacheKey(uri);
     if (_caches.containsKey(key)) {
-      cacheObject = _caches[key]!;
+      // Return the in-memory object directly to avoid overriding state from disk.
+      // Callers that need on-disk state should ensure it is persisted when caching.
+      return _caches[key]!;
     } else {
-      // Get cache in disk.
+      // Get cache from disk when not present in memory and attempt to read index.
       final Directory cacheDirectory = await getCacheDirectory();
       cacheObject = HttpCacheObject(key, cacheDirectory.path, origin: _origin);
+      await cacheObject.read();
     }
-
-    await cacheObject.read();
 
     return cacheObject;
   }
