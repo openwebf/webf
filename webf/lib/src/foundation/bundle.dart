@@ -269,11 +269,19 @@ class NetworkBundle extends WebFBundle {
     if (WebFControllerManager.instance.useDioForNetwork) {
       // Track network request start
       dumper?.recordNetworkRequestStart(url, method: 'GET', headers: {});
+      // Track request sent stage to align with HttpClient path
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageRequestSent, metadata: {
+        'method': 'GET',
+        'headers': {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
+      });
 
       final dio = await createWebFDio(
         contextId: contextId,
         ownerBundle: this,
       );
+
+      // Mark the moment we see the first received byte
+      bool responseStartedEmitted = false;
 
       final resp = await dio.requestUri(
         _uri!,
@@ -285,13 +293,24 @@ class NetworkBundle extends WebFBundle {
           // Accept 200 OK and 304 Not Modified (cache validation)
           validateStatus: (s) => s == HttpStatus.ok || s == HttpStatus.notModified,
         ),
+        onReceiveProgress: (received, total) {
+          if (!responseStartedEmitted && received > 0) {
+            responseStartedEmitted = true;
+            dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
+              'contentLength': total,
+            });
+          }
+        },
       );
 
-      // Response started
-      dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
-        'statusCode': resp.statusCode,
-        'contentLength': resp.data?.length ?? 0,
-      });
+      // If no progress callback fired (e.g., very small or cached responses),
+      // ensure we still emit a response_started marker here.
+      if (!responseStartedEmitted) {
+        dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
+          'statusCode': resp.statusCode,
+          'contentLength': resp.data?.length ?? 0,
+        });
+      }
 
       if (resp.statusCode != HttpStatus.ok) {
         dumper?.recordNetworkRequestComplete(url, statusCode: resp.statusCode ?? 0, responseHeaders: {

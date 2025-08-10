@@ -59,10 +59,6 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
     final origin = getOrigin(ref);
     options.extra[_kOriginKey] = origin;
 
-    if (uri.toString() == 'https://miracleplus.openwebf.com/js/chunk-vendors.8a6ffd16.js') {
-      print(1);
-    }
-
     if (HttpCacheController.mode != HttpCacheMode.NO_CACHE) {
       final controller = HttpCacheController.instance(origin);
       final cacheObject = await controller.getCacheObject(uri);
@@ -153,8 +149,20 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
         initialHeaders: hdr,
       );
       final dummyReq = _DummyRequest(options);
-      await HttpCacheController.instance(origin)
+      final intercepted = await HttpCacheController.instance(origin)
           .interceptResponse(dummyReq, httpResp, cacheObject, native, ownerBundle);
+
+      // IMPORTANT: Consume the intercepted response stream to drive cache writes.
+      // HttpCacheController.interceptResponse returns a HttpClientCachedResponse whose
+      // cache write completion future is tracked in _pendingCacheWrites. However, the
+      // actual write only happens when the stream is listened to and completes.
+      // Since Dio already provided the full bytes, we drain the intercepted stream
+      // here to ensure _onDone() fires and pending cache writes complete.
+      try {
+        await consolidateHttpClientResponseBytes(intercepted);
+      } catch (_) {
+        // Ignore draining errors; cache layer handles cleanup/logging.
+      }
     }
 
     handler.next(response);
