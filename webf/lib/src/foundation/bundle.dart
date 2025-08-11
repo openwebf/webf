@@ -283,6 +283,7 @@ class NetworkBundle extends WebFBundle {
 
       final dio = await getOrCreateWebFDio(
         contextId: contextId,
+        uri: _uri!,
         ownerBundle: this,
       );
 
