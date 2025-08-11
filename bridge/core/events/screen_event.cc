@@ -37,7 +37,6 @@ ScreenEvent::ScreenEvent(ExecutingContext* context, const AtomicString& type, Na
                                            reinterpret_cast<const char*>(native_event->state),
                                            strlen(reinterpret_cast<const char*>(native_event->state)))),
       path_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_event->path))))
 #else
       state_(ScriptValue::CreateJsonObject(context->ctx(),

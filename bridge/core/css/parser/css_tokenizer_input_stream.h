@@ -88,8 +88,6 @@ class CSSTokenizerInputStream {
     return {string_.data() + start, length};
   }
 
-  void Restore(size_t offset) { offset_ = offset; }
-
  private:
   uint32_t offset_ = 0;
   const uint32_t string_length_;

@@ -55,10 +55,8 @@ KeyboardEvent::KeyboardEvent(ExecutingContext* context,
 // char_code_(native_keyboard_event->charCode),
 #if ANDROID_32_BIT
       code_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_keyboard_event->code)))),
       key_(AtomicString(
-          ctx(),
           std::unique_ptr<AutoFreeNativeString>(reinterpret_cast<AutoFreeNativeString*>(native_keyboard_event->key))))
 #else
       code_(AtomicString(

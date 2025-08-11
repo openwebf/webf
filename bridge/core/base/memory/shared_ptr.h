@@ -9,8 +9,9 @@
 
 namespace std {
 
-// Patch for NDK 22.1.7171670
-#if ANDROID
+// Polyfill for std::reinterpret_pointer_cast(shared_ptr) on older toolchains.
+// The C++20 standard library defines this; guard to avoid conflicts.
+#if ANDROID && (__cplusplus < 202002L)
 template <typename T, typename U>
 std::shared_ptr<T> reinterpret_pointer_cast(const std::shared_ptr<U>& r) noexcept {
   auto p = reinterpret_cast<typename std::shared_ptr<T>::element_type*>(r.get());
