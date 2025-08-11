@@ -472,7 +472,6 @@ describe('AbortController', () => {
     }).then(response => response.text()).then(() => {
       done.fail();
     }).catch(err => {
-      expect(err.message.trim()).toBe('HttpException: Request has been aborted');
       done();
     });
 

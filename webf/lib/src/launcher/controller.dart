@@ -35,6 +35,7 @@ import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/foundation/loading_state_registry.dart';
+import 'package:webf/src/launcher/dio_logger_options.dart';
 
 import 'loading_state.dart';
 
@@ -377,6 +378,13 @@ class WebFController with Diagnosticable {
   /// Example:
   ///   controller.dioInterceptors = [LogInterceptor(responseBody: false)];
   List<Interceptor>? dioInterceptors;
+
+  /// Options for HTTP logging (PrettyDioLogger) when Dio networking is used.
+  ///
+  /// When provided, these options customize the PrettyDioLogger interceptor
+  /// installed on the per-context Dio instance created by WebF.
+  /// Defaults to enabled in debug mode with headers logged and bodies disabled.
+  final HttpLoggerOptions? httpLoggerOptions;
 
   /// The default route path for the hybrid router in WebF.
   ///
@@ -748,6 +756,7 @@ class WebFController with Diagnosticable {
     this.resizeToAvoidBottomInsets = true,
     this.dioHttpClientAdapter,
     this.dioInterceptors,
+    this.httpLoggerOptions,
   })  : _entrypoint = bundle,
         runningThread = runningThread ?? DedicatedThread() {
     // Record constructor phase
