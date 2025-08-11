@@ -863,7 +863,7 @@ class ImageRequest {
     await bundle.resolve(baseUrl: controller.url, uriParser: controller.uriParser);
     await bundle.obtainData(controller.view.contextId);
 
-    if (!bundle.isResolved) {
+    if (!bundle.isResolved || bundle.data == null) {
       throw FlutterError('Failed to load $currentUri');
     }
 

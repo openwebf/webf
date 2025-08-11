@@ -3,10 +3,10 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
-import 'package:dio_http2_adapter/dio_http2_adapter.dart';
 
 // import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 // import 'package:http_cache_hive_store/http_cache_hive_store.dart';
@@ -59,21 +59,8 @@ class _WebFDioPool {
     if (customAdapter != null) {
       dio.httpClientAdapter = customAdapter;
     } else {
-      final httpAdapter = IOHttpClientAdapter();
-      httpAdapter.createHttpClient = () {
-        final client = HttpClient()
-          ..maxConnectionsPerHost = maxConnectionsPerHost
-          ..connectionTimeout = connectTimeout
-          ..autoUncompress = true;
-        return client;
-      };
-      final httpsAdapter = Http2Adapter(ConnectionManager(
-        idleTimeout: Duration(seconds: 10),
-      ));
-      dio.httpClientAdapter = _WebFSchemeRoutingAdapter(
-        httpAdapter: httpAdapter,
-        httpsAdapter: httpsAdapter,
-      );
+      // Use native http client by default
+      dio.httpClientAdapter = NativeAdapter();
     }
 
     // Backward-compat adapter to reuse HttpClientInterceptor hooks with Dio
@@ -177,25 +164,5 @@ String _getDefaultUserAgent() {
     return NavigatorModule.getUserAgent();
   } catch (_) {
     return 'WebF';
-  }
-}
-
-// Composite adapter that routes by URI scheme to avoid nested requests.
-class _WebFSchemeRoutingAdapter implements HttpClientAdapter {
-  _WebFSchemeRoutingAdapter({required this.httpAdapter, required this.httpsAdapter});
-  final HttpClientAdapter httpAdapter;
-  final HttpClientAdapter httpsAdapter;
-
-  @override
-  void close({bool force = false}) {
-    httpAdapter.close(force: force);
-    httpsAdapter.close(force: force);
-  }
-
-  @override
-  Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) {
-    final scheme = options.uri.scheme.toLowerCase();
-    final target = scheme == 'https' ? httpsAdapter : httpAdapter;
-    return target.fetch(options, requestStream, cancelFuture);
   }
 }
