@@ -72,7 +72,7 @@ h3 {
   margin-bottom: 16px;
 }
 
-input {
+.formInput {
   width: 100%;
   padding: 10px;
   border: 1px solid #ddd;

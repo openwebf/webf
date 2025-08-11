@@ -174,6 +174,7 @@ export const FormPage: React.FC = () => {
           >
             <input 
               type="text" 
+              className={styles.formInput}
               placeholder="Enter username"
             />
           </FlutterFormField>
@@ -187,6 +188,7 @@ export const FormPage: React.FC = () => {
           >
             <input 
               type="email" 
+              className={styles.formInput}
               placeholder="Enter email address" 
             />
           </FlutterFormField>
@@ -201,6 +203,7 @@ export const FormPage: React.FC = () => {
           >
             <input 
               type="number" 
+              className={styles.formInput}
               placeholder="Enter age" 
             />
           </FlutterFormField>
@@ -215,6 +218,7 @@ export const FormPage: React.FC = () => {
           >
             <input 
               type="url" 
+              className={styles.formInput}
               placeholder="Enter website URL" 
             />
           </FlutterFormField>
@@ -229,6 +233,7 @@ export const FormPage: React.FC = () => {
           >
             <input 
               type="password" 
+              className={styles.formInput}
               placeholder="Enter password" 
             />
           </FlutterFormField>
