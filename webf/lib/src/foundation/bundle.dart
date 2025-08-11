@@ -281,7 +281,7 @@ class NetworkBundle extends WebFBundle {
         'headers': {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
       });
 
-      final dio = await createWebFDio(
+      final dio = await getOrCreateWebFDio(
         contextId: contextId,
         ownerBundle: this,
       );

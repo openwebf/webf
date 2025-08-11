@@ -50,7 +50,7 @@ describe('XMLHttpRequest', () => {
         done();
       }
     };
-    xhr.open('POST', 'http://h5api.m.taobao.com/h5/mtop.common.gettimestamp/1.0/?api=mtop.common.gettimestamp&v=1.0&dataType=json', true);
+    xhr.open('POST', 'https://h5api.m.taobao.com/h5/mtop.common.gettimestamp/1.0/?api=mtop.common.gettimestamp&v=1.0&dataType=json', true);
     xhr.setRequestHeader('Accept', 'application/json');
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
     xhr.send('foobar');

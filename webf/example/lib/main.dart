@@ -98,47 +98,51 @@ void main() async {
   WebF.defineModule((context) => DeepLinkModule(context));
 
   // Add home controller with preloading
-  // WebFControllerManager.instance.addWithPreload(
-  //     name: 'miracle_plus',
-  //     createController: () => WebFController(
-  //         routeObserver: routeObserver,
-  //         initialRoute: '/',
-  //         // dioHttpClientAdapter: NativeAdapter(),
-  //         onLCP: (time, isEvaluated) {
-  //           print('LCP time: $time, evaluated: $isEvaluated');
-  //         },
-  //         onLCPContentVerification: (contentInfo, routePath) {
-  //           print('contentInfo: $contentInfo');
-  //         },
-  //         onControllerInit: (controller) async {
-  //           // Built-in once-only error dump with debounce and per-load reset
-  //           controller.loadingState.onFinalLargestContentfulPaint((event) {
-  //             final dump = controller.dumpLoadingState(
-  //               options: LoadingStateDumpOptions.html |
-  //                   LoadingStateDumpOptions.api |
-  //                   LoadingStateDumpOptions.scripts |
-  //                   LoadingStateDumpOptions.networkDetailed,
-  //             );
-  //             debugPrint(dump.toStringFiltered());
-  //           });
-  //
-  //           // controller.loadingState.onFinalLargestContentfulPaint((_) {
-  //           //   if (!hasReported) {
-  //           //     LoadingStateDump dump = controller.dumpLoadingState(
-  //           //         options: LoadingStateDumpOptions.html |
-  //           //             LoadingStateDumpOptions.api |
-  //           //             LoadingStateDumpOptions.scripts |
-  //           //             LoadingStateDumpOptions.networkDetailed);
-  //           //     print(dump.toString());
-  //           //   }
-  //           //   hasReported = true;
-  //           // });
-  //         }),
-  //     bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
-  //     setup: (controller) {
-  //       controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
-  //       controller.darkModeOverride = savedThemeMode?.isDark;
-  //     });
+  WebFControllerManager.instance.addWithPreload(
+      name: 'miracle_plus',
+      createController: () => WebFController(
+          routeObserver: routeObserver,
+          initialRoute: '/',
+          // dioHttpClientAdapter: NativeAdapter(),
+          onLCP: (time, isEvaluated) {
+            print('LCP time: $time, evaluated: $isEvaluated');
+          },
+          onLCPContentVerification: (contentInfo, routePath) {
+            print('contentInfo: $contentInfo');
+          },
+          httpLoggerOptions: HttpLoggerOptions(
+            requestHeader: true,
+            requestBody: true,
+          ),
+          onControllerInit: (controller) async {
+            // Built-in once-only error dump with debounce and per-load reset
+            controller.loadingState.onFinalLargestContentfulPaint((event) {
+              final dump = controller.dumpLoadingState(
+                options: LoadingStateDumpOptions.html |
+                    LoadingStateDumpOptions.api |
+                    LoadingStateDumpOptions.scripts |
+                    LoadingStateDumpOptions.networkDetailed,
+              );
+              debugPrint(dump.toStringFiltered());
+            });
+
+            // controller.loadingState.onFinalLargestContentfulPaint((_) {
+            //   if (!hasReported) {
+            //     LoadingStateDump dump = controller.dumpLoadingState(
+            //         options: LoadingStateDumpOptions.html |
+            //             LoadingStateDumpOptions.api |
+            //             LoadingStateDumpOptions.scripts |
+            //             LoadingStateDumpOptions.networkDetailed);
+            //     print(dump.toString());
+            //   }
+            //   hasReported = true;
+            // });
+          }),
+      bundle: WebFBundle.fromUrl('https://miracleplus.openwebf.com/'),
+      setup: (controller) {
+        controller.hybridHistory.delegate = CustomHybridHistoryDelegate();
+        controller.darkModeOverride = savedThemeMode?.isDark;
+      });
 
   // // Add vue controller with preloading
   // WebFControllerManager.instance.addWithPrerendering(
@@ -608,7 +612,7 @@ class FirstPageState extends State<FirstPage> {
 WebFBundle? _getBundleForControllerName(String controllerName) {
   switch (controllerName) {
     case 'html/css':
-      return WebFBundle.fromUrl('http://localhost:3000/react_project/build');
+      return WebFBundle.fromUrl('assets:///assets/bundle.html');
     // return WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js');
     case 'esm_demo':
       return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
@@ -688,6 +692,10 @@ class _WebFDemoState extends State<WebFDemo> {
                       initialRoute: widget.initialRoute,
                       onControllerInit: (controller) async {
                       },
+                  httpLoggerOptions: HttpLoggerOptions(
+                    requestHeader: true,
+                    requestBody: true,
+                  ),
                       onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
                         print('contentInfo: $contentInfo $routePath');
                       },

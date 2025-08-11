@@ -39,7 +39,7 @@ void main() {
   group('WebF Dio headers', () {
     test('injects x-context and referer for GET', () async {
       const ctx = 7.0;
-      final dio = await createWebFDio(contextId: ctx);
+      final dio = await getOrCreateWebFDio(contextId: ctx);
       RequestOptions? seen;
       dio.interceptors.add(_CaptureOptionsInterceptor((opts) => seen = opts));
 
@@ -55,7 +55,7 @@ void main() {
 
     test('injects origin for non-GET', () async {
       const ctx = 8.0;
-      final dio = await createWebFDio(contextId: ctx);
+      final dio = await getOrCreateWebFDio(contextId: ctx);
       RequestOptions? seen;
       dio.interceptors.add(_CaptureOptionsInterceptor((opts) => seen = opts));
 
@@ -70,7 +70,7 @@ void main() {
 
     test('preserves X-WebF-Request-Type from caller', () async {
       const ctx = 9.0;
-      final dio = await createWebFDio(contextId: ctx);
+      final dio = await getOrCreateWebFDio(contextId: ctx);
       RequestOptions? seen;
       dio.interceptors.add(_CaptureOptionsInterceptor((opts) => seen = opts));
 

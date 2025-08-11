@@ -116,13 +116,14 @@ class FetchModule extends BaseModule {
 
   @override
   dynamic invoke(String method, List<dynamic> params) {
-    // Use Dio path when globally enabled
-    if (WebFControllerManager.instance.useDioForNetwork) {
-      return _invokeWithDio(method, params);
-    }
     if (method == 'abortRequest') {
       _abortRequest();
       return '';
+    }
+
+    // Use Dio path when globally enabled
+    if (WebFControllerManager.instance.useDioForNetwork) {
+      return _invokeWithDio(method, params);
     }
 
     Completer<dynamic> completer = Completer();
@@ -214,8 +215,8 @@ class FetchModule extends BaseModule {
     }
 
     try {
-      final dio = await createWebFDio(
-        contextId: moduleManager?.contextId,
+      final dio = await getOrCreateWebFDio(
+        contextId: moduleManager!.contextId,
         // Fetch semantics: resolve with Response for all HTTP statuses
         validateStatus: (_) => true,
       );
@@ -317,7 +318,11 @@ class FetchModule extends BaseModule {
         final dumper = LoadingStateRegistry.instance.getDumper(contextId);
         dumper?.recordNetworkRequestError(uri.toString(), e.toString(), isXHR: true);
       }
-      completer.completeError(e, st);
+      if (e is DioException) {
+        completer.completeError(e.error as Object);
+      } else {
+        completer.completeError(e, st);
+      }
     }
 
     return completer.future;
