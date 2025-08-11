@@ -45,20 +45,30 @@ class HttpCacheController {
     }
   }
 
-  static Directory? _cacheDirectory;
+  static final Map<String, String > _cachedDirectory = {};
 
-  static Future<Directory> getCacheDirectory() async {
-    if (_cacheDirectory != null) {
-      return _cacheDirectory!;
+  static Future<String> getCacheDirectory(Uri uri) async {
+    String url = uri.toString();
+    if (!_cachedDirectory.containsKey(url)) {
+      final String appTemporaryPath = await getWebFTemporaryPath();
+      final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches_${getCacheKey(uri)}'));
+      bool isThere = await cacheDirectory.exists();
+      if (!isThere) {
+        await cacheDirectory.create(recursive: true);
+      }
+
+      String directoryPath = cacheDirectory.path;
+
+      if (Platform.isAndroid) {
+        File file = File(directoryPath);
+        directoryPath = await file.resolveSymbolicLinks();
+      }
+
+      _cachedDirectory[url] = directoryPath;
     }
 
-    final String appTemporaryPath = await getWebFTemporaryPath();
-    final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches2'));
-    bool isThere = await cacheDirectory.exists();
-    if (!isThere) {
-      await cacheDirectory.create(recursive: true);
-    }
-    return _cacheDirectory = cacheDirectory;
+
+    return _cachedDirectory[url]!;
   }
 
   static String getCacheKey(Uri uri) {
@@ -67,7 +77,7 @@ class HttpCacheController {
     if (uriWithoutFragment.hasFragment) {
       uriWithoutFragment = uriWithoutFragment.removeFragment();
     }
-    return uriWithoutFragment.toString();
+    return uriWithoutFragment.toString().hashCode.toString();
   }
 
   factory HttpCacheController.instance(String origin) {
@@ -105,8 +115,8 @@ class HttpCacheController {
       return _caches[key]!;
     } else {
       // Get cache from disk when not present in memory and attempt to read index.
-      final Directory cacheDirectory = await getCacheDirectory();
-      cacheObject = HttpCacheObject(key, cacheDirectory.path, origin: _origin);
+      final String cacheDirectory = await getCacheDirectory(uri);
+      cacheObject = HttpCacheObject(key, cacheDirectory, origin: _origin);
       await cacheObject.read();
     }
 
@@ -130,7 +140,7 @@ class HttpCacheController {
   static void clearAllMemoryCaches() {
     _controllers.clear();
     _pendingCacheWrites.clear();
-    _cacheDirectory = null;
+    _cachedDirectory.clear();
   }
 
   Future<HttpClientResponse> interceptResponse(HttpClientRequest request, HttpClientResponse response,
@@ -149,7 +159,7 @@ class HttpCacheController {
     if (response.statusCode == HttpStatus.ok) {
       // Create cache object.
       HttpCacheObject cacheObject =
-          HttpCacheObject.fromResponse(getCacheKey(request.uri), response, (await getCacheDirectory()).path);
+          HttpCacheObject.fromResponse(getCacheKey(request.uri), response, (await getCacheDirectory(request.uri)));
 
       final cachedResponse = HttpClientCachedResponse(response, cacheObject);
       // Track the cache write future

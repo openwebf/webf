@@ -22,6 +22,7 @@ class _WebFDioPool {
 
   static Future<Dio> getOrCreate({
     required double contextId,
+    required Uri uri,
     WebFBundle? ownerBundle,
     Duration connectTimeout = const Duration(seconds: 30),
     Duration receiveTimeout = const Duration(seconds: 60),
@@ -55,7 +56,7 @@ class _WebFDioPool {
     if (customAdapter != null) {
       dio.httpClientAdapter = customAdapter;
     } else {
-      Directory cacheDirectory = await HttpCacheController.getCacheDirectory();
+      String cacheDirectory = await HttpCacheController.getCacheDirectory(uri);
 
       NativeAdapter nativeAdapter;
       if (Platform.isIOS || Platform.isMacOS) {
@@ -65,7 +66,7 @@ class _WebFDioPool {
             ..allowsConstrainedNetworkAccess = true
             ..allowsExpensiveNetworkAccess = true
             ..cache = URLCache.withCapacity(
-                memoryCapacity: 2 * 1024 * 1024, diskCapacity: 24 * 1024 * 1024, directory: cacheDirectory.uri);
+                memoryCapacity: 2 * 1024 * 1024, diskCapacity: 24 * 1024 * 1024, directory: Uri.parse(cacheDirectory));
         });
       } else if (Platform.isAndroid) {
         nativeAdapter = NativeAdapter(createCronetEngine: () {
@@ -75,7 +76,7 @@ class _WebFDioPool {
             enableBrotli: true,
             enableHttp2: true,
             enableQuic: true,
-            storagePath: cacheDirectory.uri.toString()
+            storagePath: cacheDirectory
           );
         });
       } else {
@@ -128,6 +129,7 @@ class _WebFDioPool {
 /// When `contextId` is null, creates a new ephemeral instance.
 Future<Dio> getOrCreateWebFDio({
   required double contextId,
+  required Uri uri,
   WebFBundle? ownerBundle,
   Duration connectTimeout = const Duration(seconds: 30),
   Duration receiveTimeout = const Duration(seconds: 60),
@@ -140,6 +142,7 @@ Future<Dio> getOrCreateWebFDio({
 }) async {
   final dio = await _WebFDioPool.getOrCreate(
     contextId: contextId,
+    uri: uri,
     ownerBundle: ownerBundle,
     connectTimeout: connectTimeout,
     receiveTimeout: receiveTimeout,

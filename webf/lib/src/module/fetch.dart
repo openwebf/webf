@@ -217,6 +217,7 @@ class FetchModule extends BaseModule {
     try {
       final dio = await getOrCreateWebFDio(
         contextId: moduleManager!.contextId,
+        uri: uri,
         // Fetch semantics: resolve with Response for all HTTP statuses
         validateStatus: (_) => true,
       );
