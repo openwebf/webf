@@ -71,12 +71,12 @@ class _WebFDioPool {
       } else if (Platform.isAndroid) {
         nativeAdapter = NativeAdapter(createCronetEngine: () {
           return CronetEngine.build(
-            cacheMode: CacheMode.disk,
+            cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
             cacheMaxSize: 24 * 1024 * 1024,
             enableBrotli: true,
             enableHttp2: true,
             enableQuic: true,
-            storagePath: cacheDirectory
+            storagePath: (kReleaseMode || kProfileMode) ? null : cacheDirectory
           );
         });
       } else {
