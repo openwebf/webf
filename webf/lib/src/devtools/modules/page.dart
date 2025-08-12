@@ -238,21 +238,9 @@ class InspectPageModule extends UIInspectorModule {
   double _cachedViewportWidth = 300;
   double _cachedViewportHeight = 640;
 
-  void _frameScreenCast(Duration timeStamp) {
-    final controller = (devtoolsService is ChromeDevToolsService)
-        ? ChromeDevToolsService.unifiedService.currentController
-        : devtoolsService.controller;
-    if (controller == null || !controller.isComplete) {
-      return;
-    }
-    Element root = document.documentElement!;
-    // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
-    double? devicePixelRatio;
-    double? viewportWidth = document.viewport?.viewportSize.width;
-    double? viewportHeight = document.viewport?.viewportSize.height;
-
   // Send a screencast frame to the frontend.
-  void _sendFrame(Uint8List bytes, Duration timeStamp, Element root, double deviceWidth, double deviceHeight) {
+  void _sendFrame(Uint8List bytes, Duration timeStamp, double offsetTop, double offsetLeft, double deviceWidth,
+      double deviceHeight) {
     final String encodedImage = base64Encode(bytes);
     _lastSentSessionID = timeStamp.inMilliseconds;
     final InspectorEvent event = PageScreenCastFrameEvent(
@@ -263,8 +251,8 @@ class InspectPageModule extends UIInspectorModule {
           1,
           deviceWidth,
           deviceHeight,
-          root.offsetLeft,
-          root.offsetTop,
+          offsetLeft,
+          offsetTop,
           timestamp: timeStamp.inMilliseconds,
         ),
         _lastSentSessionID!,
@@ -274,15 +262,27 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   // Generate and send a white PNG frame of the given viewport size.
-  Future<void> _sendWhiteFrame(Duration timeStamp, Element root, double deviceWidth, double deviceHeight) async {
+  Future<void> _sendWhiteFrame(Duration timeStamp, double offsetTop, double offsetLeft, double deviceWidth, double deviceHeight) async {
     final double dpr = document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0;
     final int imgW = (deviceWidth * dpr).round().clamp(1, 1000000);
     final int imgH = (deviceHeight * dpr).round().clamp(1, 1000000);
     final Uint8List blank = await _makeWhitePng(imgW, imgH);
-    _sendFrame(blank, timeStamp, root, deviceWidth, deviceHeight);
+    _sendFrame(blank, timeStamp, offsetTop, offsetLeft, deviceWidth, deviceHeight);
   }
 
   void _frameScreenCast(Duration timeStamp) {
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
+        : devtoolsService.controller;
+
+    final double deviceWidth = _cachedViewportWidth;
+    final double deviceHeight = _cachedViewportHeight;
+
+    if (controller == null || !controller.isComplete) {
+      _sendWhiteFrame(timeStamp, 0, 0, deviceWidth, deviceHeight);
+      return;
+    }
+
     Element root = document.documentElement!;
     // Find the current top-route viewport from the hybrid router.
     RenderViewportBox? routeViewport = root.getRootViewport();
@@ -293,14 +293,10 @@ class InspectPageModule extends UIInspectorModule {
 
     _cachedViewportWidth = viewportWidth ?? _cachedViewportWidth;
     _cachedViewportHeight = viewportHeight ?? _cachedViewportHeight;
-    final double deviceWidth = _cachedViewportWidth;
-    final double deviceHeight = _cachedViewportHeight;
 
     // When flutter is detached, stream a white blank frame until it reattaches.
-    if (!devtoolsService.controller!.isFlutterAttached ||
-        !devtoolsService.controller!.viewportLayoutCompleter.isCompleted ||
-        routeViewport == null) {
-      _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
+    if (!controller.isFlutterAttached || !controller.viewportLayoutCompleter.isCompleted || routeViewport == null) {
+      _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
       return;
     }
 
@@ -311,18 +307,16 @@ class InspectPageModule extends UIInspectorModule {
       devicePixelRatio = math.min(sx, sy);
       devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView!.devicePixelRatio);
     }
-    _captureViewportAsPng(routeViewport, devicePixelRatio)
-        .then((Uint8List bytes) {
-          if (!devtoolsService.controller!.isFlutterAttached) {
-            // Detached after capture started; send white frame instead.
-            return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
-          }
-          _sendFrame(bytes, timeStamp, root, deviceWidth, deviceHeight);
-        })
-        .catchError((error, stack) {
-          // If capturing failed, send a white frame to keep stream consistent.
-          return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
-        });
+    _captureViewportAsPng(routeViewport, devicePixelRatio).then((Uint8List bytes) {
+      if (!controller.isFlutterAttached) {
+        // Detached after capture started; send white frame instead.
+        return _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
+      }
+      _sendFrame(bytes, timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
+    }).catchError((error, stack) {
+      // If capturing failed, send a white frame to keep stream consistent.
+      return _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
+    });
   }
 
   Future<Uint8List> _makeWhitePng(int width, int height) async {
