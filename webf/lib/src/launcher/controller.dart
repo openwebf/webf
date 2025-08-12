@@ -329,11 +329,7 @@ class WebFController with Diagnosticable {
   JSErrorHandler? onJSError;
 
 
-  /// Interceptor for HTTP client operations initiated by JavaScript code.
-  ///
-  /// This allows you to intercept, modify, redirect or mock network requests made from JavaScript,
-  /// giving you control over the network layer of the WebF environment.
-  final HttpClientInterceptor? httpClientInterceptor;
+  // HttpClientInterceptor support removed; use Dio interceptors via `dioInterceptors` instead.
 
   /// Parser for handling and potentially transforming URIs within WebF.
   ///
@@ -743,7 +739,6 @@ class WebFController with Diagnosticable {
     this.onFCP,
     this.onFP,
     this.onLCPContentVerification,
-    this.httpClientInterceptor,
     this.uriParser,
     this.preloadedBundles,
     this.initialCookies,
@@ -796,7 +791,7 @@ class WebFController with Diagnosticable {
       assert(!_controllerMap.containsKey(contextId), 'found exist contextId of WebFController, contextId: $contextId');
       _controllerMap[contextId] = this;
 
-      setupHttpOverrides(httpClientInterceptor, contextId: contextId);
+      // HttpClientInterceptor removed; HttpOverrides setup no longer required.
 
       uriParser ??= UriParser();
 
