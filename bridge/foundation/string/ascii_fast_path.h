@@ -28,6 +28,7 @@
 #include "ascii_types.h"
 #include "core/base/compiler_specific.h"
 #include "foundation/macros.h"
+#include "string_types.h"
 
 namespace webf {
 
@@ -70,7 +71,7 @@ ALWAYS_INLINE typename Allocator::ResultStringType ConvertASCIICase(const String
       return allocator.CoerceOriginal(string);
     }
 
-    char* data8;
+    LChar* data8;
     auto new_impl = allocator.Alloc(length, data8);
 
     for (size_t i = 0; i < length; ++i) {
@@ -83,7 +84,7 @@ ALWAYS_INLINE typename Allocator::ResultStringType ConvertASCIICase(const String
     return allocator.CoerceOriginal(string);
   }
 
-  char16_t* data16;
+  UChar* data16;
   auto new_impl = allocator.Alloc(length, data16);
 
   for (size_t i = 0; i < length; ++i) {

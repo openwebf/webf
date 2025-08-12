@@ -64,8 +64,8 @@ void QualifiedName::InitAndReserveCapacityForSize(unsigned size) {
 std::string QualifiedName::ToString() const {
   AtomicString local = LocalName();
   if (HasPrefix())
-    return Prefix().ToStdString() + ":" + local.ToStdString();
-  return local.ToStdString();
+    return Prefix().ToUTF8String() + ":" + local.ToUTF8String();
+  return local.ToUTF8String();
 }
 
 unsigned QualifiedName::QualifiedNameImpl::ComputeHash() const {
@@ -75,7 +75,7 @@ unsigned QualifiedName::QualifiedNameImpl::ComputeHash() const {
 
 const std::string& QualifiedName::LocalNameUpperSlow() const {
   // Convert local name to uppercase and cache it
-  std::string local_name_str = impl_->local_name_.ToStdString();
+  std::string local_name_str = impl_->local_name_.ToUTF8String();
   std::transform(local_name_str.begin(), local_name_str.end(), 
                  local_name_str.begin(), 
                  [](unsigned char c) { return std::toupper(c); });

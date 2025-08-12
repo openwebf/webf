@@ -93,7 +93,7 @@ ScriptValue LegacyInlineCssStyleDeclaration::item(const AtomicString& key, Excep
     return ScriptValue::Undefined(ctx());
   }
 
-  std::string property_name = key.ToStdString();
+  std::string property_name = key.ToUTF8String();
   AtomicString property_value = InternalGetPropertyValue(property_name);
   return ScriptValue(ctx(), property_value);
 }
@@ -105,7 +105,7 @@ bool LegacyInlineCssStyleDeclaration::SetItem(const AtomicString& key,
     return false;
   }
 
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToUTF8String();
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
   if (success)
     InlineStyleChanged();
@@ -125,21 +125,21 @@ void LegacyInlineCssStyleDeclaration::Clear() {
 }
 
 AtomicString LegacyInlineCssStyleDeclaration::getPropertyValue(const AtomicString& key, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToUTF8String();
   return InternalGetPropertyValue(propertyName);
 }
 
 void LegacyInlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             const ScriptValue& value,
                                             ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToUTF8String();
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));
   if (success)
     InlineStyleChanged();
 }
 
 AtomicString LegacyInlineCssStyleDeclaration::removeProperty(const AtomicString& key, ExceptionState& exception_state) {
-  std::string propertyName = key.ToStdString();
+  std::string propertyName = key.ToUTF8String();
   return InternalRemoveProperty(propertyName);
 }
 
@@ -153,7 +153,7 @@ AtomicString LegacyInlineCssStyleDeclaration::cssText() const {
   std::string result;
   size_t index = 0;
   for (auto& attr : properties_) {
-    result += convertCamelCaseToKebabCase(attr.first) + ": " + attr.second.ToStdString() + ";";
+    result += convertCamelCaseToKebabCase(attr.first) + ": " + attr.second.ToUTF8String() + ";";
     index++;
     if (index < properties_.size()) {
       result += " ";
@@ -168,7 +168,7 @@ void LegacyInlineCssStyleDeclaration::setCssText(const webf::AtomicString& value
 }
 
 void LegacyInlineCssStyleDeclaration::SetCSSTextInternal(const AtomicString& value) {
-  const std::string css_text = value.ToStdString();
+  const std::string css_text = value.ToUTF8String();
   InternalClearProperty();
 
   std::vector<std::string> styles;
@@ -203,7 +203,7 @@ std::string LegacyInlineCssStyleDeclaration::ToString() const {
   std::string s;
 
   for (auto& attr : properties_) {
-    s += attr.first + ": " + attr.second.ToStdString() + ";";
+    s += attr.first + ": " + attr.second.ToUTF8String() + ";";
   }
 
   return s;
@@ -228,7 +228,7 @@ void LegacyInlineCssStyleDeclaration::InlineStyleChanged() {
 }
 
 bool LegacyInlineCssStyleDeclaration::NamedPropertyQuery(const AtomicString& key, ExceptionState&) {
-  return cssPropertyList.count(key.ToStdString()) > 0;
+  return cssPropertyList.count(key.ToUTF8String()) > 0;
 }
 
 void LegacyInlineCssStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& names, ExceptionState&) {

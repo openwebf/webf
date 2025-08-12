@@ -29,12 +29,12 @@
 #include <array>
 #include <bitset>
 
+#include "../../foundation/string/string_view.h"
 #include "core/css/css_primitive_value_mapping.h"
 #include "core/css/css_value.h"
 #include "core/platform/geometry/length.h"
 #include "core/platform/math_extras.h"
 #include "foundation/casting.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 

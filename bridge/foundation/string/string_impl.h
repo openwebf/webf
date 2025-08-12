@@ -9,14 +9,15 @@
 #include <cassert>
 #include <cinttypes>
 #include <memory>
+#include "ascii_fast_path.h"
 #include "core/base/compiler_specific.h"
 #include "core/base/containers/span.h"
 #include "core/platform/static_constructors.h"
-#include "foundation/ascii_fast_path.h"
 #include "foundation/macros.h"
-#include "foundation/string_hasher.h"
+#include "string_hasher.h"
 
 namespace webf {
+class StringView;
 
 class AtomicString;
 
@@ -36,15 +37,15 @@ const uint32_t kNotFound = UINT_MAX;
 
 namespace internal {
 
-inline size_t Find(const char* characters, size_t length, unsigned char match_character, size_t index = 0) {
+inline size_t Find(const LChar* characters, size_t length, LChar match_character, size_t index = 0) {
   // Some clients rely on being able to pass index >= length.
   if (index >= length)
     return kNotFound;
-  const char* found = static_cast<const char*>(memchr(characters + index, match_character, length - index));
+  const LChar* found = static_cast<const LChar*>(memchr(characters + index, match_character, length - index));
   return found ? static_cast<size_t>(found - characters) : kNotFound;
 }
 
-inline size_t Find(const char16_t* characters, size_t length, char16_t match_character, size_t index = 0) {
+inline size_t Find(const UChar* characters, size_t length, UChar match_character, size_t index = 0) {
   while (index < length) {
     if (characters[index] == match_character)
       return index;
@@ -53,7 +54,7 @@ inline size_t Find(const char16_t* characters, size_t length, char16_t match_cha
   return kNotFound;
 }
 
-inline size_t Find(const char* characters, size_t length, CharacterMatchFunctionPtr match_function, size_t index = 0) {
+inline size_t Find(const LChar* characters, size_t length, CharacterMatchFunctionPtr match_function, size_t index = 0) {
   while (index < length) {
     if (match_function(characters[index]))
       return index;
@@ -62,7 +63,7 @@ inline size_t Find(const char* characters, size_t length, CharacterMatchFunction
   return kNotFound;
 }
 
-inline size_t Find(const char16_t* characters,
+inline size_t Find(const UChar* characters,
                    size_t length,
                    CharacterMatchFunctionPtr match_function,
                    size_t index = 0) {
@@ -156,12 +157,13 @@ class StringImpl {
   size_t length() const { return length_; }
   bool Is8Bit() const { return hash_and_flags_.load(std::memory_order_relaxed) & kIs8Bit; }
 
-  static std::shared_ptr<StringImpl> Create(const char*, size_t length);
-  static std::shared_ptr<StringImpl> Create(const char16_t*, size_t length);
+  static std::shared_ptr<StringImpl> Create(const LChar*, size_t length);
+  static std::shared_ptr<StringImpl> Create(const UChar*, size_t length);
   
   // Create a StringImpl from UTF-8 encoded data, converting to UTF-16 if necessary
   // Similar to QuickJS's JS_NewStringLen function
   static std::shared_ptr<StringImpl> CreateFromUTF8(const char* utf8_data, size_t byte_length);
+  static std::shared_ptr<StringImpl> CreateFromUTF8(const UTF8StringView& utf8_data);
 
   static void InitStatics();
 
@@ -191,29 +193,29 @@ class StringImpl {
     return sizeof(StringImpl) + length * sizeof(CharType);
   }
 
-  ALWAYS_INLINE const char* Characters8() const {
+  ALWAYS_INLINE const LChar* Characters8() const {
     DCHECK(Is8Bit());
-    return reinterpret_cast<const char*>(this + 1);
+    return reinterpret_cast<const LChar*>(this + 1);
   }
-  ALWAYS_INLINE const char16_t* Characters16() const {
+  ALWAYS_INLINE const UChar* Characters16() const {
     DCHECK(!Is8Bit());
-    return reinterpret_cast<const char16_t*>(this + 1);
+    return reinterpret_cast<const UChar*>(this + 1);
   }
-  ALWAYS_INLINE tcb::span<const char> Span8() const {
+  ALWAYS_INLINE tcb::span<const LChar> Span8() const {
     DCHECK(Is8Bit());
-    return {reinterpret_cast<const char*>(this + 1), length_};
+    return {reinterpret_cast<const LChar*>(this + 1), length_};
   }
-  ALWAYS_INLINE tcb::span<const char16_t> Span16() const {
+  ALWAYS_INLINE tcb::span<const UChar> Span16() const {
     DCHECK(!Is8Bit());
-    return {reinterpret_cast<const char16_t*>(this + 1), length_};
+    return {reinterpret_cast<const UChar*>(this + 1), length_};
   }
   ALWAYS_INLINE const void* Bytes() const { return reinterpret_cast<const void*>(this + 1); }
 
   template <typename CharType>
   ALWAYS_INLINE const CharType* GetCharacters() const;
 
-  static std::shared_ptr<StringImpl> CreateUninitialized(size_t length, char*& data);
-  static std::shared_ptr<StringImpl> CreateUninitialized(size_t length, char16_t*& data);
+  static std::shared_ptr<StringImpl> CreateUninitialized(size_t length, LChar*& data);
+  static std::shared_ptr<StringImpl> CreateUninitialized(size_t length, UChar*& data);
 
   static std::shared_ptr<StringImpl> LowerASCII(const std::shared_ptr<StringImpl>& str);
   static std::shared_ptr<StringImpl> UpperASCII(const std::shared_ptr<StringImpl>& str);
@@ -235,7 +237,7 @@ class StringImpl {
   //                  wtf_size_t index = 0) const;
 
   bool StartsWith(char) const;
-  bool StartsWith(const std::string_view&) const;
+  bool StartsWith(const StringView& prefix) const;
 
   static std::shared_ptr<StringImpl> Substring(const std::shared_ptr<StringImpl>& str, size_t pos, size_t len = UINT_MAX);
 
@@ -246,8 +248,11 @@ class StringImpl {
   void SetHash(size_t hash) const {
     // Multiple clients assume that StringHasher is the canonical string
     // hash function.
-    DCHECK(hash == (Is8Bit() ? StringHasher::ComputeHashAndMaskTop8Bits(Characters8(), length_)
-                             : StringHasher::ComputeHashAndMaskTop8Bits(Characters16(), length_)));
+    static_assert(sizeof(char) == sizeof(uint8_t));
+    static_assert(sizeof(char16_t) == sizeof(uint16_t));
+
+    DCHECK(hash == (Is8Bit() ? StringHasher::ComputeHashAndMaskTop8Bits(reinterpret_cast<const uint8_t*>(Characters8()), length_)
+                             : StringHasher::ComputeHashForWideString(reinterpret_cast<const UChar*>(Characters16()), length_)));
     DCHECK(hash);  // Verify that 0 is a valid sentinel hash value.
     SetHashRaw(hash);
   }
@@ -327,12 +332,12 @@ inline size_t StringImpl::Find(char16_t character, size_t start) {
 }
 
 template <>
-ALWAYS_INLINE const char* StringImpl::GetCharacters<char>() const {
+ALWAYS_INLINE const LChar* StringImpl::GetCharacters<LChar>() const {
   return Characters8();
 }
 
 template <>
-ALWAYS_INLINE const char16_t* StringImpl::GetCharacters<char16_t>() const {
+ALWAYS_INLINE const UChar* StringImpl::GetCharacters<UChar>() const {
   return Characters16();
 }
 

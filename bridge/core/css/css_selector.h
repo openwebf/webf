@@ -27,6 +27,7 @@
 #ifndef WEBF_CSS_SELECTOR_H
 #define WEBF_CSS_SELECTOR_H
 
+#include "../../foundation/string/string_builder.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/bit_field.h"
 #include "core/base/strings/string_util.h"
@@ -35,7 +36,6 @@
 #include "core/dom/qualified_name.h"
 #include "core/style/computed_style_constants.h"
 #include "foundation/macros.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

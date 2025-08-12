@@ -117,7 +117,7 @@ ComputedStyleBuilder StyleResolver::InitialStyleBuilderForElement() const {
   Element* document_element = document_->documentElement();
   if (document_element) {
     // TODO: Get dir attribute properly
-    AtomicString direction("ltr");
+    AtomicString direction = AtomicString::CreateFromUTF8("ltr");
     if (direction == "rtl") {
       root_direction = TextDirection::kRtl;
     }

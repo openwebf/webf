@@ -11,9 +11,10 @@
 
 #include <cassert>
 #include <string>
+#include "../native_string.h"
 #include "ascii_types.h"
-#include "foundation/ascii_types.h"
-#include "native_string.h"
+#include "string_impl.h"
+#include "string_types.h"
 
 namespace webf {
 
@@ -37,8 +38,10 @@ class StringView final {
   explicit StringView(const StringView& view, unsigned offset) : StringView(view, offset, view.length_ - offset) {}
 
   // From a StringImpl:
-  explicit StringView(const char*);
-  explicit StringView(const unsigned char*);
+  explicit StringView(const UTF8Char*);
+  explicit StringView(const LChar*);
+  explicit StringView(const UChar*);
+  explicit StringView(const std::string_view&);
   explicit StringView(const std::string& string);
   explicit StringView(const SharedNativeString* string);
   explicit StringView(void* bytes, unsigned length, bool is_wide_char);
@@ -61,11 +64,11 @@ class StringView final {
     return webf::IsLowerASCII(Characters16(), length());
   }
 
-  const char* Characters8() const { return static_cast<const char*>(bytes_); }
+  [[nodiscard]] const LChar* Characters8() const { return static_cast<const LChar*>(bytes_); }
 
-  const char16_t* Characters16() const { return static_cast<const char16_t*>(bytes_); }
+  [[nodiscard]] const UChar* Characters16() const { return static_cast<const UChar*>(bytes_); }
 
-  size_t CharactersSizeInBytes() const { return length() * (Is8Bit() ? sizeof(char) : sizeof(char16_t)); }
+  [[nodiscard]] size_t CharactersSizeInBytes() const { return length() * (Is8Bit() ? sizeof(char) : sizeof(char16_t)); }
 
   void Clear();
 
@@ -75,8 +78,7 @@ class StringView final {
 
   AtomicString ToAtomicString() const;
 
-  // TODO(guopengfei)：just support utf-8
-  [[nodiscard]] std::string Characters8ToStdString() const;
+  [[nodiscard]] UTF8String Characters8ToUTF8String() const;
 
   char16_t operator[](unsigned i) const {
     assert(i < length());

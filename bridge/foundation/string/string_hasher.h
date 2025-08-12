@@ -7,7 +7,11 @@
 #define WEBF_FOUNDATION_STRING_HASHER_H_
 
 #include <cassert>
+
+#include "convert_to_8bit_hash_reader.h"
 #include "foundation/macros.h"
+#include "rapidhash.h"
+#include "string_types.h"
 
 namespace webf {
 
@@ -116,14 +120,28 @@ class StringHasher {
     return result;
   }
 
-  template <typename T, char16_t Converter(T)>
-  static unsigned ComputeHashAndMaskTop8Bits(const T* data, unsigned length) {
-    return ComputeHashAndMaskTop8Bits_internal<T, Converter>(reinterpret_cast<const unsigned char*>(data), length);
+  template <typename Reader = PlainHashReader>
+  static unsigned ComputeHashAndMaskTop8Bits(const LChar* data, unsigned length) {
+    return MaskTop8Bits(rapidhash<Reader>(reinterpret_cast<const uint8_t*>(data), length));
   }
 
-  template <typename T>
-  static unsigned ComputeHashAndMaskTop8Bits(const T* data, unsigned length) {
-    return ComputeHashAndMaskTop8Bits_internal<T>(reinterpret_cast<const unsigned char*>(data), length);
+  static unsigned ComputeHashForWideString(const UChar* data, unsigned length) {
+    bool is_all_latin1 = true;
+
+    for (size_t i = 0; i < length; i++) {
+      if (data[i] & 0xff00) {
+        is_all_latin1 = false;
+        break;
+      }
+    }
+
+    if (is_all_latin1) {
+      return StringHasher::ComputeHashAndMaskTop8Bits<ConvertTo8BitHashReader>(
+          reinterpret_cast<const LChar*>(data), length);
+    } else {
+      return StringHasher::ComputeHashAndMaskTop8Bits(
+          reinterpret_cast<const uint8_t*>(data), length * 2);
+    }
   }
 
   template <typename T, char16_t Converter(T)>
@@ -139,13 +157,7 @@ class StringHasher {
   }
 
   static unsigned HashMemory(const void* data, unsigned length) {
-    // FIXME: Why does this function use the version of the hash that drops the
-    // top 8 bits?  We want that for all string hashing so we can use those
-    // bits in StringImpl and hash strings consistently, but I don't see why
-    // we'd want that for general memory hashing.
-    DCHECK(!(length % 2));
-    return ComputeHashAndMaskTop8Bits_internal<char16_t>(static_cast<const unsigned char*>(data),
-                                                         length / sizeof(char16_t));
+    return rapidhash(static_cast<const std::uint8_t*>(data), length);
   }
 
   template <size_t length>
@@ -160,26 +172,20 @@ class StringHasher {
   static char16_t DefaultConverter(char16_t character) { return character; }
   static char16_t DefaultConverter(char character) { return character; }
 
-  template <typename T, char16_t Converter(T)>
-  void AddCharactersAssumingAligned_internal(const unsigned char* data, unsigned length) {
-    DCHECK(!has_pending_character_);
+  static unsigned MaskTop8Bits(uint64_t result) {
+    // Reserving space from the high bits for flags preserves most of the hash's
+    // value, since hash lookup typically masks out the high bits anyway.
+    result &= (1U << (32 - kFlagCount)) - 1;
 
-    static_assert(std::is_trivial_v<T> && std::is_standard_layout_v<T>, "we only support hashing POD types");
-    bool remainder = length & 1;
-    length >>= 1;
-
-    while (length--) {
-      T data_converted[2];
-      std::memcpy(data_converted, data, sizeof(T) * 2);
-      AddCharactersAssumingAligned(Converter(data_converted[0]), Converter(data_converted[1]));
-      data += sizeof(T) * 2;
+    // This avoids ever returning a hash code of 0, since that is used to
+    // signal "hash not computed yet". Setting the high bit maintains
+    // reasonable fidelity to a hash code of 0 because it is likely to yield
+    // exactly 0 when hash lookup masks out the high bits.
+    if (!result) {
+      result = 0x80000000 >> kFlagCount;
     }
 
-    if (remainder) {
-      T data_converted;
-      std::memcpy(&data_converted, data, sizeof(T));
-      AddCharacter(Converter(data_converted));
-    }
+    return static_cast<unsigned>(result);
   }
 
   template <typename T>
@@ -205,18 +211,6 @@ class StringHasher {
   template <typename T>
   void AddCharacters_internal(const unsigned char* data, unsigned length) {
     AddCharacters_internal<T, DefaultConverter>(data, length);
-  }
-
-  template <typename T, char16_t Converter(T)>
-  static unsigned ComputeHashAndMaskTop8Bits_internal(const unsigned char* data, unsigned length) {
-    StringHasher hasher;
-    hasher.AddCharactersAssumingAligned_internal<T, Converter>(data, length);
-    return hasher.HashWithTop8BitsMasked();
-  }
-
-  template <typename T>
-  static unsigned ComputeHashAndMaskTop8Bits_internal(const unsigned char* data, unsigned length) {
-    return ComputeHashAndMaskTop8Bits_internal<T, DefaultConverter>(data, length);
   }
 
   constexpr unsigned AvalancheBits() const {

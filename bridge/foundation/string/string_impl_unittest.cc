@@ -3,8 +3,8 @@
  */
 
 #include "string_impl.h"
-#include "atomic_string.h"
 #include <cstring>
+#include "atomic_string.h"
 #include "gtest/gtest.h"
 
 namespace webf {

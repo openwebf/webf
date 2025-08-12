@@ -5,7 +5,7 @@
 #include <atomic>
 #include <unordered_map>
 
-#include "foundation/atomic_string.h"
+#include "../foundation/string/atomic_string.h"
 #include "bindings/qjs/binding_initializer.h"
 #include "core/dart_methods.h"
 #include "core/dom/document.h"
@@ -15,10 +15,9 @@
 #include "core/html/html_script_element.h"
 #include "core/html/parser/html_parser.h"
 #include "event_factory.h"
-#include "html_element_type_helper.h"
-#include "core/html/html_script_element.h"
 #include "foundation/logging.h"
 #include "foundation/native_value_converter.h"
+#include "html_element_type_helper.h"
 #include "page.h"
 
 namespace webf {

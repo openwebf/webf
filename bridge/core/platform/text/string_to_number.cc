@@ -10,8 +10,8 @@
 #include <cassert>
 #include <cstddef>
 #include <type_traits>
-#include "foundation/ascii_types.h"
-#include "foundation/string_builder.h"
+#include "../../../foundation/string/ascii_types.h"
+#include "../../../foundation/string/string_builder.h"
 
 namespace webf {
 

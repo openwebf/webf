@@ -7,6 +7,7 @@
 #define BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
 
 #include <type_traits>
+#include "../../foundation/string/atomic_string.h"
 #include "bindings/qjs/union_base.h"
 #include "converter.h"
 #include "core/dom/events/event.h"
@@ -21,7 +22,6 @@
 #include "core/html/html_head_element.h"
 #include "core/html/html_html_element.h"
 #include "exception_message.h"
-#include "foundation/atomic_string.h"
 #include "idl_type.h"
 #include "js_event_handler.h"
 #include "js_event_listener.h"

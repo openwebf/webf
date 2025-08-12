@@ -31,7 +31,7 @@
 
 #include "core/base/containers/span.h"
 #include "foundation/macros.h"
-#include "foundation/string_impl.h"
+#include "string_impl.h"
 
 namespace webf {
 

@@ -7,7 +7,7 @@
 #define BRIDGE_SCRIPT_WRAPPABLE_H
 
 #include <quickjs/quickjs.h>
-#include "atomic_string.h"
+#include "../../foundation/string/atomic_string.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/dom/element_rare_data_field.h"
 #include "foundation/macros.h"

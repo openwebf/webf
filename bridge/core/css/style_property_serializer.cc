@@ -41,9 +41,9 @@
 #include "core/css/properties/css_property.h"
 #include "core/css/properties/longhand.h"
 // #include "core/css/resolver/css_to_style_map.h"
+#include "../../foundation/string/string_builder.h"
 #include "css_property_instance.h"
 #include "css_value_keywords.h"
-#include "foundation/string_builder.h"
 #include "longhands.h"
 #include "style_property_shorthand.h"
 
@@ -227,7 +227,7 @@ std::string StylePropertySerializer::GetCustomPropertyText(const PropertyValueFo
     result.Append(' ');
   }
   const std::shared_ptr<const CSSValue>* value = property.Value();
-  SerializeIdentifier(property.Name().ToAtomicString().ToStdString(), result, is_not_first_decl);
+  SerializeIdentifier(property.Name().ToAtomicString().ToUTF8String(), result, is_not_first_decl);
   result.Append(": ");
   result.Append(value->get()->CssText());
   if (property.IsImportant()) {
@@ -245,7 +245,7 @@ std::string StylePropertySerializer::GetPropertyText(const CSSPropertyName& name
   if (is_not_first_decl) {
     result.append(" ");
   }
-  result.append(name.ToAtomicString().ToStdString());
+  result.append(name.ToAtomicString().ToUTF8String());
   result.append(": ");
   result.append(value);
   if (is_important) {
@@ -610,7 +610,7 @@ std::string StylePropertySerializer::SerializeShorthand(CSSPropertyID property_i
     case CSSPropertyID::kWebkitColumnBreakBefore:
     case CSSPropertyID::kWebkitColumnBreakInside:
     default:
-      assert_m(false, ("Shorthand property " + (CSSPropertyName(property_id).ToAtomicString().ToStdString()) +
+      assert_m(false, ("Shorthand property " + (CSSPropertyName(property_id).ToAtomicString().ToUTF8String()) +
                        " must be handled in StylePropertySerializer::SerializeShorthand.")
                           .c_str());
       return "";

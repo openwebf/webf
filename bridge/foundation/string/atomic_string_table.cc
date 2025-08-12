@@ -4,8 +4,10 @@
  */
 
 #include "atomic_string_table.h"
+
+#include "atomic_string.h"
 #include "foundation/logging.h"
-#include "foundation/string_hasher.h"
+#include "string_hasher.h"
 
 namespace webf {
 
@@ -29,6 +31,12 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> s
     return StringImpl::empty_shared();
 
   auto result = table_.insert(string);
+
+  if (string->Is8Bit()) {
+    WEBF_LOG(WARN) << "The hash of '" << string->Characters8() << "' is " << string->GetHash();
+  } else {
+    WEBF_LOG(WARN) << "The hash of '" << AtomicString(string).ToUTF8String() << "' is " << string->GetHash();
+  }
   
   // Return the existing string if it was already in the table
   return *result.first;
@@ -44,7 +52,7 @@ static size_t count_ascii(const uint8_t *buf, size_t len)
   return p - buf;
 }
 
-std::shared_ptr<StringImpl> AtomicStringTable::AddLatin1(const char* chars, unsigned int length) {
+std::shared_ptr<StringImpl> AtomicStringTable::AddLatin1(const LChar* chars, unsigned int length) {
   if (!chars)
     return nullptr;
 
@@ -58,7 +66,7 @@ std::shared_ptr<StringImpl> AtomicStringTable::AddLatin1(const char* chars, unsi
   return *result.first;
 }
 
-std::shared_ptr<StringImpl> AtomicStringTable::AddUTF8(const char* chars, unsigned length) {
+std::shared_ptr<StringImpl> AtomicStringTable::AddUTF8(const UTF8Char* chars, unsigned length) {
   if (!chars)
     return nullptr;
 
@@ -72,7 +80,7 @@ std::shared_ptr<StringImpl> AtomicStringTable::AddUTF8(const char* chars, unsign
   return *result.first;
 }
 
-std::shared_ptr<StringImpl> AtomicStringTable::Add(const char16_t* chars, unsigned int length) {
+std::shared_ptr<StringImpl> AtomicStringTable::Add(const UChar* chars, unsigned int length) {
   if (!chars)
     return nullptr;
 
@@ -85,11 +93,11 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(const char16_t* chars, unsign
   return *result.first;
 }
 
-std::shared_ptr<StringImpl> AtomicStringTable::Add(const std::string_view& string_view) {
+std::shared_ptr<StringImpl> AtomicStringTable::Add(const UTF8StringView& string_view) {
   if (string_view.empty())
     return StringImpl::empty_shared();
 
-  std::shared_ptr<StringImpl> ptr = StringImpl::Create(string_view.data(), string_view.length());
+  std::shared_ptr<StringImpl> ptr = StringImpl::CreateFromUTF8(string_view.data(), string_view.length());
   auto result = table_.insert(ptr);
 
   return *result.first;

@@ -26,8 +26,8 @@
 #ifndef WEBF_FOUNDATION_STRING_STATICS_H_
 #define WEBF_FOUNDATION_STRING_STATICS_H_
 
+#include "atomic_string.h"
 #include "core/platform/static_constructors.h"
-#include "foundation/atomic_string.h"
 #include "foundation/macros.h"
 
 namespace webf {

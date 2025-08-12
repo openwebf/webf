@@ -6,13 +6,17 @@
 #include "core/api/exception_state.h"
 #include "core/native/script_value_ref.h"
 
+#include "string/wtf_string.h"
+
 namespace webf {
 
-const char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* script_value_ref,
-                                                  webf::SharedExceptionState* shared_exception_state) {
+// TODO(CGQAQ): this need allocate memory
+const UTF8Char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* script_value_ref,
+                                                      webf::SharedExceptionState* shared_exception_state) {
   if (script_value_ref->script_value.IsString()) {
     auto value = script_value_ref->script_value.ToString(script_value_ref->context->ctx());
-    return value.Characters8();
+    // TODO(CGQAQ): this is not right at all, UAF
+    return value.ToUTF8String().data();
   }
   shared_exception_state->exception_state.ThrowException(script_value_ref->context->ctx(), webf::ErrorType::TypeError,
                                                          "Value is not a string.");
@@ -20,9 +24,9 @@ const char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* script_v
 }
 
 void ScriptValueRefPublicMethods::SetAsString(webf::ScriptValueRef* script_value_ref,
-                                              const char* value,
+                                              const UTF8Char* value,
                                               webf::SharedExceptionState* shared_exception_state) {
-  webf::AtomicString value_atomic = webf::AtomicString(value);
+  webf::AtomicString value_atomic = webf::AtomicString::CreateFromUTF8(value);
   script_value_ref->script_value = webf::ScriptValue(script_value_ref->context->ctx(), value_atomic);
 }
 

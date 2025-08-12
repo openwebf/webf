@@ -26,6 +26,7 @@
 #ifndef WEBF_CORE_CSS_CSS_GRADIENT_VALUE_H_
 #define WEBF_CORE_CSS_CSS_GRADIENT_VALUE_H_
 
+#include "../../foundation/string/string_builder.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_image_generator_value.h"
 #include "core/css/css_primitive_value.h"
@@ -34,7 +35,6 @@
 #include "core/css/properties/css_property.h"
 #include "core/platform/graphics/color.h"
 #include "foundation/macros.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

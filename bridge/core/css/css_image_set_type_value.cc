@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "core/css/css_image_set_type_value.h"
-#include "foundation/string_builder.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 

@@ -3,12 +3,12 @@
  */
 
 #include "core_initializer.h"
+#include "../foundation/string/string_statics.h"
 #include "core/css/media_query_evaluator.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/style_change_reason.h"
 #include "core/dom/qualified_name.h"
 #include "foundation/dtoa.h"
-#include "foundation/string_statics.h"
 #include "names_installer.h"
 
 namespace webf {

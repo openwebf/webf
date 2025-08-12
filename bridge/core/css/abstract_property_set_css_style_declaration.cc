@@ -59,7 +59,7 @@ void AbstractPropertySetCSSStyleDeclaration::setCssText(const AtomicString& text
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const AtomicString& property_name,
                                                                       ExceptionState& exception_state) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
   if (!IsValidCSSPropertyID(property_id)) {
     return g_empty_atom;
   }
@@ -70,7 +70,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyValue(const Atom
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const AtomicString& property_name) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
@@ -85,7 +85,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const A
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const AtomicString& property_name) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
 
   // Custom properties don't have shorthands, so we can ignore them here.
   if (!IsValidCSSPropertyID(property_id) || !CSSProperty::Get(property_id).IsLonghand()) {
@@ -99,7 +99,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const 
 }
 
 bool AbstractPropertySetCSSStyleDeclaration::IsPropertyImplicit(const AtomicString& property_name) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
 
   // Custom properties don't have shorthands, so we can ignore them here.
   if (property_id < kFirstCSSProperty) {
@@ -113,12 +113,12 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
                                                          const AtomicString& value,
                                                          const AtomicString& priority,
                                                          ExceptionState& exception_state) {
-  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, property_name.ToStringView());
+  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, property_name.ToUTF8StringView());
   if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
     return;
   }
 
-  bool important = EqualIgnoringASCIICase(priority.ToStringView(), "important");
+  bool important = EqualIgnoringASCIICase(priority.ToUTF8StringView(), "important");
   if (!important && !priority.empty()) {
     return;
   }
@@ -128,7 +128,7 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const AtomicString& property_name,
                                                                     ExceptionState& exception_state) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
@@ -159,7 +159,7 @@ const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::G
 
 const std::shared_ptr<const CSSValue>* AbstractPropertySetCSSStyleDeclaration::GetPropertyCSSValueInternal(
     const AtomicString& custom_property_name) {
-  DCHECK_EQ(CSSPropertyID::kVariable, CssPropertyID(GetExecutingContext(), custom_property_name.ToStdString()));
+  DCHECK_EQ(CSSPropertyID::kVariable, CssPropertyID(GetExecutingContext(), custom_property_name.ToUTF8String()));
   return PropertySet().GetPropertyCSSValue(custom_property_name);
 }
 
@@ -169,7 +169,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueInternal(CS
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueWithHint(const AtomicString& property_name,
                                                                               unsigned index) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }
@@ -181,7 +181,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyValueWithHint(co
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyPriorityWithHint(const AtomicString& property_name,
                                                                                  unsigned index) {
-  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToStdString());
+  CSSPropertyID property_id = CssPropertyID(GetExecutingContext(), property_name.ToUTF8String());
   if (!IsValidCSSPropertyID(property_id)) {
     return AtomicString::Empty();
   }

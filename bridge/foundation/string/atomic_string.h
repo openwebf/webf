@@ -8,9 +8,10 @@
 
 #include <memory>
 #include <string>
+#include "../native_value.h"
 #include "core/base/hash/hash.h"
-#include "native_value.h"
 #include "string_impl.h"
+#include "string_view.h"
 
 namespace webf {
 
@@ -18,23 +19,24 @@ class AtomicString {
  public:
   AtomicString() = default;
 
-  static AtomicString Null() { return AtomicString(); }
-  static AtomicString Empty() { return AtomicString(""); }
+  static AtomicString Null() { return AtomicString{}; }
+  static AtomicString Empty() { return CreateFromUTF8(""); }
 
   /**
    * @see {AtomicString::CreateFromUTF8} if you want to create AtomicString from utf8 buffers.
    * @param chars the chars are Latin1(iso-8859-1) encoded
    */
-  explicit AtomicString(const char* chars)
+  explicit AtomicString(const LChar* chars)
       : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
-  AtomicString(std::string_view string_view);
-  AtomicString(const std::string& s) : AtomicString(s.c_str(), s.length()){};
+  AtomicString(const LChar* chars, size_t length);
 
-  explicit AtomicString(const char16_t* chars)
+  AtomicString(UTF8StringView string_view);
+  AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
+
+  explicit AtomicString(const UChar* chars)
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}
 
-  AtomicString(std::u16string string_view);
-  AtomicString(const char* chars, size_t length);
+  AtomicString(UTF16StringView string_view);
   static AtomicString CreateFromUTF8(const char* chars, size_t length);
   static AtomicString CreateFromUTF8(std::string chars);
   AtomicString(const uint16_t* str, size_t length);
@@ -57,8 +59,7 @@ class AtomicString {
 
   std::unique_ptr<SharedNativeString> ToNativeString() const;
 
-  std::string ToStdString() const;
-  std::string_view ToStringView() const { return Is8Bit() ? std::string_view(Characters8(), length()) : std::string_view(); }
+  [[nodiscard]] UTF8String ToUTF8String() const;
 
   JSValue ToQuickJS(JSContext* ctx) const;
 
@@ -75,9 +76,9 @@ class AtomicString {
   size_t length() const { return string_->length(); }
   bool Is8Bit() const { return string_->Is8Bit(); }
 
-  const char* Characters8() const;
+  const LChar* Characters8() const;
   const char16_t* Characters16() const;
-  std::string GetString() const { return ToStdString(); }
+  std::string GetString() const { return ToUTF8String(); }
 
   AtomicString RemoveCharacters(CharacterMatchFunctionPtr);
 
@@ -92,7 +93,7 @@ class AtomicString {
   }
 
   bool StartsWith(
-      const std::string_view& prefix,
+      const StringView& prefix,
       TextCaseSensitivity case_sensitivity = kTextCaseSensitive) const {
     return string_->StartsWith(prefix);
   }

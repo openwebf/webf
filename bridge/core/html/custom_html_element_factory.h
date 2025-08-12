@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_HTML_CUSTOM_HTML_ELEMENT_FACTORY_H_
 #define WEBF_CORE_HTML_CUSTOM_HTML_ELEMENT_FACTORY_H_
 
+#include "../../foundation/string/atomic_string.h"
 #include "core/dom/element.h"
-#include "foundation/atomic_string.h"
 
 namespace webf {
 

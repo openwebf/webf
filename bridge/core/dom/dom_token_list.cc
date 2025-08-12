@@ -45,7 +45,7 @@ bool CheckTokenWithWhitespace(JSContext* ctx, const AtomicString& token, Excepti
     return true;
 
   exception_state.ThrowException(ctx, ErrorType::TypeError,
-                                 "The token provided ('" + token.ToStdString() +
+                                 "The token provided ('" + token.ToUTF8String() +
                                      "') contains HTML space characters, "
                                      "which are not valid in tokens.");
   return false;
@@ -112,7 +112,7 @@ void DOMTokenList::Trace(GCVisitor* visitor) const {
 bool DOMTokenList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
   if (key.Impl()->IsDigit()) {
     int64_t index;
-    base::StringToInt64(key.ToStdString(), &index);
+    base::StringToInt64(key.ToUTF8String(), &index);
     return index < length();
   }
   return false;

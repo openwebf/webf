@@ -3,8 +3,8 @@
  */
 
 #include "dom_string_map.h"
+#include "../../foundation/string/string_view.h"
 #include "core/dom/element.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 
@@ -168,7 +168,7 @@ void DOMStringMap::NamedPropertyEnumerator(std::vector<AtomicString>& props, web
   for (auto& attribute : *attributes) {
     auto key = attribute.first;
     if (IsValidAttributeName(key)) {
-      auto v = AtomicString(ConvertAttributeNameToPropertyName(key.ToStdString()));
+      auto v = AtomicString(ConvertAttributeNameToPropertyName(key.ToUTF8String()));
       props.emplace_back(v);
     }
   }
@@ -198,7 +198,7 @@ bool DOMStringMap::SetItem(const webf::AtomicString& key,
                            webf::ExceptionState& exception_state) {
   if (!IsValidPropertyName(key)) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "'" + key.ToStdString() + "' is not a valid property name.");
+                                   "'" + key.ToUTF8String() + "' is not a valid property name.");
     return false;
   }
 

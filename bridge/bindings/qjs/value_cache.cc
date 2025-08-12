@@ -5,7 +5,7 @@
 
 #include "value_cache.h"
 #include <cassert>
-#include "foundation/atomic_string_table.h"
+#include "../../foundation/string/atomic_string_table.h"
 
 namespace webf {
 
@@ -37,8 +37,10 @@ JSAtom StringCache::CreateStringAndInsertIntoCache(JSContext* ctx, std::shared_p
   JSAtom new_string_atom;
   
   if (string_impl->Is8Bit()) {
-    // For 8-bit strings (UTF-8), use the characters directly
-    new_string_atom = JS_NewAtomLen(ctx, string_impl->Characters8(), string_impl->length());
+    // For 8-bit strings (Latin1), use the characters directly
+    auto str = JS_NewRawUTF8String(ctx, string_impl->Characters8(), string_impl->length());
+    new_string_atom = JS_ValueToAtom(ctx, str);
+    JS_FreeValue(ctx, str);
   } else {
     // For 16-bit strings (UTF-16), use QuickJS's Unicode atom function
     new_string_atom = JS_NewUnicodeAtom(ctx, reinterpret_cast<const uint16_t*>(string_impl->Characters16()), string_impl->length());
@@ -59,16 +61,16 @@ std::shared_ptr<StringImpl> StringCache::GetStringFromJSAtom(JSContext* ctx, JSA
   }
   
   // Atom not in cache, create StringImpl and cache it
-  bool is_wide_char = JS_IsAtomWideChar(JS_GetRuntime(ctx), atom);
+  bool is_wide_char = !JS_AtomIsTaggedInt(atom) && JS_IsAtomWideChar(JS_GetRuntime(ctx), atom);
   std::shared_ptr<StringImpl> string_impl;
   
   if (LIKELY(!is_wide_char)) {
     uint32_t slen;
-    const char* str = reinterpret_cast<const char*>(JS_AtomRawCharacter8(JS_GetRuntime(ctx), atom, &slen));
+    auto* str = reinterpret_cast<const LChar*>(JS_AtomRawCharacter8(JS_GetRuntime(ctx), atom, &slen));
     string_impl = AtomicStringTable::Instance().AddLatin1(str, slen);
   } else {
     uint32_t slen;
-    const char16_t* wstrs = reinterpret_cast<const char16_t*>(JS_AtomRawCharacter16(JS_GetRuntime(ctx), atom, &slen));
+    auto* wstrs = reinterpret_cast<const UChar*>(JS_AtomRawCharacter16(JS_GetRuntime(ctx), atom, &slen));
     string_impl = AtomicStringTable::Instance().Add(wstrs, slen);
   }
   

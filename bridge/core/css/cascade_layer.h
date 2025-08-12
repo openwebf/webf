@@ -32,7 +32,7 @@
 #include <optional>
 #include <unordered_map>
 #include <vector>
-#include "foundation/atomic_string.h"
+#include "../../foundation/string/atomic_string.h"
 #include "core/css/style_rule.h"
 #include "foundation/macros.h"
 

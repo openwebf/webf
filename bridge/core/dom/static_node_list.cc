@@ -35,7 +35,7 @@ void StaticNodeList::NamedPropertyEnumerator(std::vector<AtomicString>& names, w
 }
 
 bool StaticNodeList::NamedPropertyQuery(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
-  std::string str = key.ToStdString();
+  std::string str = key.ToUTF8String();
   int number = std::stoi(str);
   if (number >= nodes_.size()) {
     return false;

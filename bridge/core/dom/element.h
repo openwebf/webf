@@ -5,16 +5,16 @@
 #ifndef BRIDGE_ELEMENT_H
 #define BRIDGE_ELEMENT_H
 
+#include "../../foundation/string/atomic_string.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
-#include "core/native/native_function.h"
-#include "core/dom/element_rare_data_vector.h"
 #include "core/dom/attribute_collection.h"
+#include "core/dom/element_rare_data_vector.h"
+#include "core/native/native_function.h"
 #include "core/platform/gfx/geometry/vector2d_f.h"
 #include "element_data.h"
-#include "foundation/atomic_string.h"
 #include "legacy/bounding_client_rect.h"
 #include "legacy/element_attributes.h"
 #include "parent_node.h"

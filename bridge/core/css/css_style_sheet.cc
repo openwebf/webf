@@ -123,7 +123,7 @@ CSSStyleSheet::CSSStyleSheet(ExecutingContext* context,
       break;
     case QJSUnionDomStringMediaList::ContentType::kDomString:
       media_queries_ =
-          MediaQuerySet::Create(options->media()->GetAsDomString().ToStdString(), document.GetExecutingContext());
+          MediaQuerySet::Create(options->media()->GetAsDomString().ToUTF8String(), document.GetExecutingContext());
       break;
   }
   if (options->alternate()) {
@@ -333,12 +333,12 @@ unsigned CSSStyleSheet::insertRule(const AtomicString& rule_string, unsigned ind
 
   std::shared_ptr<StyleRuleBase> rule =
       CSSParser::ParseRule(context, contents_, CSSNestingType::kNone,
-                           /*parent_rule_for_nesting=*/nullptr, rule_string.ToStdString());
+                           /*parent_rule_for_nesting=*/nullptr, rule_string.ToUTF8String());
 
   if (!rule) {
     return 0;
     exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                   "Failed to parse the rule '" + rule_string.ToStdString() + "'.");
+                                   "Failed to parse the rule '" + rule_string.ToUTF8String() + "'.");
   }
   RuleMutationScope mutation_scope(this);
   if (rule->IsImportRule() && IsConstructed()) {
@@ -397,9 +397,9 @@ int CSSStyleSheet::addRule(const AtomicString& selector,
                            int index,
                            ExceptionState& exception_state) {
   StringBuilder text;
-  text.Append(selector.ToStdString());
+  text.Append(selector.ToUTF8String());
   text.Append(" { ");
-  text.Append(style.ToStdString());
+  text.Append(style.ToUTF8String());
   if (!style.empty()) {
     text.Append(' ');
   }
@@ -518,7 +518,7 @@ void CSSStyleSheet::SetText(const AtomicString& text, CSSImportRules import_rule
   CSSStyleSheet::RuleMutationScope mutation_scope(this);
   contents_->ClearRules();
   bool allow_imports = import_rules == CSSImportRules::kAllow;
-  if (contents_->ParseString(text.ToStdString(), allow_imports) == ParseSheetResult::kHasUnallowedImportRule &&
+  if (contents_->ParseString(text.ToUTF8String(), allow_imports) == ParseSheetResult::kHasUnallowedImportRule &&
       import_rules == CSSImportRules::kIgnoreWithWarning) {
     WEBF_LOG(VERBOSE) << "@import rules are not allowed here. See "
                          "https://github.com/WICG/construct-stylesheets/issues/"

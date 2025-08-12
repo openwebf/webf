@@ -9,7 +9,7 @@
 #include <vector>
 #include <cassert>
 #include "bindings/qjs/union_base.h"
-#include "foundation/atomic_string.h"
+#include "foundation/string/atomic_string.h"
 #include "bindings/qjs/cppgc/member.h"
 
 namespace webf {

@@ -5,7 +5,7 @@
 #ifndef WEBF_CORE_CSS_CSS_MATH_OPERATOR_H_
 #define WEBF_CORE_CSS_CSS_MATH_OPERATOR_H_
 
-#include "foundation/string_view.h"
+#include "../../foundation/string/string_view.h"
 
 namespace webf {
 

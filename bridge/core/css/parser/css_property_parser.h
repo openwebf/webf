@@ -29,6 +29,7 @@
 #ifndef WEBF_CSS_PROPERTY_PARSER_H
 #define WEBF_CSS_PROPERTY_PARSER_H
 
+#include "../../../foundation/string/string_view.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_mode.h"
 #include "core/css/parser/css_parser_token_range.h"
@@ -36,7 +37,6 @@
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/style_rule.h"
 #include "css_property_names.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 

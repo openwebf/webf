@@ -7,10 +7,10 @@
  */
 
 #include "css_tokenizer.h"
+#include "../../../foundation/string/ascii_types.h"
 #include "css_parser_idioms.h"
 #include "css_parser_token.h"
 #include "css_property_parser.h"
-#include "foundation/ascii_types.h"
 
 #ifdef __SSE2__
 #include <immintrin.h>

@@ -91,7 +91,7 @@ TEST(AtomicString, MoveAssignment) {
   TEST_init();
   auto str = AtomicString("helloworld");
   auto str2 = AtomicString(std::move(str));
-  EXPECT_EQ(str2.ToStdString(), "helloworld");
+  EXPECT_EQ(str2.ToUTF8String(), "helloworld");
 }
 
 TEST(AtomicString, CopyToRightReference) {
@@ -100,7 +100,7 @@ TEST(AtomicString, CopyToRightReference) {
   if (1 + 1 == 2) {
     str = AtomicString("helloworld");
   }
-  EXPECT_EQ(str.ToStdString(), "helloworld");
+  EXPECT_EQ(str.ToUTF8String(), "helloworld");
 }
 
 TEST(AtomicString, UTF16StringCreation) {
@@ -122,7 +122,7 @@ TEST(AtomicString, UTF16ToStdString) {
   TEST_init();
   // Test UTF-16 to UTF-8 conversion
   AtomicString utf16_str = AtomicString(u"Hello 世界 🌍");
-  std::string utf8_str = utf16_str.ToStdString();
+  std::string utf8_str = utf16_str.ToUTF8String();
   
   // The UTF-8 representation should match
   EXPECT_EQ(utf8_str, "Hello 世界 🌍");
@@ -186,8 +186,8 @@ TEST(AtomicString, MixedUTF8AndUTF16) {
   EXPECT_FALSE(utf16_str.Is8Bit());
   
   // Convert both to std::string
-  std::string str1 = utf8_str.ToStdString();
-  std::string str2 = utf16_str.ToStdString();
+  std::string str1 = utf8_str.ToUTF8String();
+  std::string str2 = utf16_str.ToUTF8String();
   
   EXPECT_EQ(str1, "Hello ASCII");
   EXPECT_EQ(str2, "Hello 世界");
@@ -203,7 +203,7 @@ TEST(AtomicString, UTF16WithSurrogatePairs) {
   EXPECT_FALSE(utf16_str.Is8Bit());
   
   // Convert to UTF-8 and verify
-  std::string utf8_result = utf16_str.ToStdString();
+  std::string utf8_result = utf16_str.ToUTF8String();
   EXPECT_EQ(utf8_result, "Hello 😀 World 🌍");
 }
 
@@ -233,7 +233,7 @@ TEST(AtomicString, EmptyUTF16String) {
   
   EXPECT_TRUE(empty_utf16.empty());
   EXPECT_EQ(empty_utf16.length(), 0);
-  EXPECT_EQ(empty_utf16.ToStdString(), "");
+  EXPECT_EQ(empty_utf16.ToUTF8String(), "");
 }
 
 TEST(StringImpl, CreateFromUTF8ASCII) {

@@ -7,10 +7,10 @@
  */
 
 #include "css_parser_idioms.h"
+#include "../../../foundation/string/ascii_types.h"
+#include "../../../foundation/string/string_builder.h"
 #include "core/base/strings/string_number_conversions.h"
 #include "css_tokenizer_input_stream.h"
-#include "foundation/ascii_types.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

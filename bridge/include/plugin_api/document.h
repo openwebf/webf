@@ -31,36 +31,36 @@ struct WebFElementCreationOptions {
 };
 
 using PublicDocumentCreateElement =
-    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const UTF8Char*, SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateElementWithElementCreationOptions =
     WebFValue<Element, ElementPublicMethods> (*)(Document*,
-                                                 const char*,
+                                                 const UTF8Char*,
                                                  WebFElementCreationOptions&,
                                                  SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateElementNS =
     WebFValue<Element, ElementPublicMethods> (*)(Document*,
-                                                 const char*,
-                                                 const char*,
+                                                 const UTF8Char*,
+                                                 const UTF8Char*,
                                                  SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateElementNSWithElementCreationOptions =
     WebFValue<Element, ElementPublicMethods> (*)(Document*,
-                                                 const char*,
-                                                 const char*,
+                                                 const UTF8Char*,
+                                                 const UTF8Char*,
                                                  WebFElementCreationOptions&,
                                                  SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateTextNode =
-    WebFValue<Text, TextNodePublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+    WebFValue<Text, TextNodePublicMethods> (*)(Document*, const UTF8Char*, SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateDocumentFragment =
     WebFValue<DocumentFragment, DocumentFragmentPublicMethods> (*)(Document*,
                                                                    SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateComment =
-    WebFValue<Comment, CommentPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+    WebFValue<Comment, CommentPublicMethods> (*)(Document*, const UTF8Char*, SharedExceptionState* shared_exception_state);
 using PublicDocumentCreateEvent =
-    WebFValue<Event, EventPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+    WebFValue<Event, EventPublicMethods> (*)(Document*, const UTF8Char*, SharedExceptionState* shared_exception_state);
 using PublicDocumentQuerySelector =
-    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const UTF8Char*, SharedExceptionState* shared_exception_state);
 using PublicDocumentGetElementById =
-    WebFValue<Element, ElementPublicMethods> (*)(Document*, const char*, SharedExceptionState* shared_exception_state);
+    WebFValue<Element, ElementPublicMethods> (*)(Document*, const UTF8Char*, SharedExceptionState* shared_exception_state);
 using PublicDocumentElementFromPoint =
     WebFValue<Element, ElementPublicMethods> (*)(Document*,
                                                  double,
@@ -70,12 +70,12 @@ using PublicDocumentGetDocumentElement = WebFValue<Element, HTMLElementPublicMet
 using PublicDocumentGetDocumentHeader = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 using PublicDocumentGetDocumentBody = WebFValue<Element, HTMLElementPublicMethods> (*)(Document*);
 using PublicDocumentGetCookie = NativeValue (*)(Document*, SharedExceptionState*);
-using PublicDocumentSetCookie = void (*)(Document*, const char*, SharedExceptionState*);
+using PublicDocumentSetCookie = void (*)(Document*, const UTF8Char*, SharedExceptionState*);
 using PublicDocumentClearCookie = void (*)(Document*, SharedExceptionState*);
 
 struct DocumentPublicMethods : public WebFPublicMethods {
   static WebFValue<Element, ElementPublicMethods> CreateElement(Document* document,
-                                                                const char* tag_name,
+                                                                const UTF8Char* tag_name,
                                                                 SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementPublicMethods> CreateElementWithElementCreationOptions(
       Document* document,
@@ -83,8 +83,8 @@ struct DocumentPublicMethods : public WebFPublicMethods {
       WebFElementCreationOptions& options,
       SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementPublicMethods> CreateElementNS(Document* document,
-                                                                  const char* uri,
-                                                                  const char* tag_name,
+                                                                  const UTF8Char* uri,
+                                                                  const UTF8Char* tag_name,
                                                                   SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementPublicMethods> CreateElementNSWithElementCreationOptions(
       Document* document,
@@ -93,22 +93,22 @@ struct DocumentPublicMethods : public WebFPublicMethods {
       WebFElementCreationOptions& options,
       SharedExceptionState* shared_exception_state);
   static WebFValue<Text, TextNodePublicMethods> CreateTextNode(Document* document,
-                                                               const char* data,
+                                                               const UTF8Char* data,
                                                                SharedExceptionState* shared_exception_state);
   static WebFValue<DocumentFragment, DocumentFragmentPublicMethods> CreateDocumentFragment(
       Document* document,
       SharedExceptionState* shared_exception_state);
   static WebFValue<Comment, CommentPublicMethods> CreateComment(Document* document,
-                                                                const char* data,
+                                                                const UTF8Char* data,
                                                                 SharedExceptionState* shared_exception_state);
   static WebFValue<Event, EventPublicMethods> CreateEvent(Document* document,
-                                                          const char* type,
+                                                          const UTF8Char* type,
                                                           SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementPublicMethods> QuerySelector(Document* document,
-                                                                const char* selectors,
+                                                                const UTF8Char* selectors,
                                                                 SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementPublicMethods> GetElementById(Document* document,
-                                                                 const char* id,
+                                                                 const UTF8Char* id,
                                                                  SharedExceptionState* shared_exception_state);
   static WebFValue<Element, ElementPublicMethods> ElementFromPoint(Document* document,
                                                                    double x,
@@ -118,7 +118,7 @@ struct DocumentPublicMethods : public WebFPublicMethods {
   static WebFValue<Element, HTMLElementPublicMethods> Head(Document* document);
   static WebFValue<Element, HTMLElementPublicMethods> Body(Document* document);
   static NativeValue Cookie(Document* document, SharedExceptionState* shared_exception_state);
-  static void SetCookie(Document* document, const char* cookie, SharedExceptionState* shared_exception_state);
+  static void SetCookie(Document* document, const UTF8Char* cookie, SharedExceptionState* shared_exception_state);
   static void ClearCookie(Document* document, SharedExceptionState* shared_exception_state);
 
   double version{1.0};

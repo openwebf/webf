@@ -80,12 +80,12 @@ using PublicWebFMatchImageSnapshot =
     void (*)(ExecutingContext*, NativeValue*, NativeValue*, WebFNativeFunctionContext*, SharedExceptionState*);
 using PublicWebFMatchImageSnapshotBytes =
     void (*)(ExecutingContext*, NativeValue*, NativeValue*, WebFNativeFunctionContext*, SharedExceptionState*);
-using PublicWebFInvokeModule = NativeValue (*)(ExecutingContext*, const char*, const char*, SharedExceptionState*);
+using PublicWebFInvokeModule = NativeValue (*)(ExecutingContext*, const UTF8Char*, const UTF8Char*, SharedExceptionState*);
 using PublicWebFInvokeModuleWithParams =
     NativeValue (*)(ExecutingContext*, const char*, const char*, NativeValue*, SharedExceptionState*);
 using PublicWebFInvokeModuleWithParamsAndCallback = NativeValue (*)(ExecutingContext*,
-                                                                    const char*,
-                                                                    const char*,
+                                                                    const UTF8Char*,
+                                                                    const UTF8Char*,
                                                                     NativeValue*,
                                                                     WebFNativeFunctionContext*,
                                                                     SharedExceptionState*);
@@ -297,13 +297,13 @@ struct ExecutingContextWebFMethods {
                                       const char* method,
                                       SharedExceptionState* shared_exception_state);
   static NativeValue WebFInvokeModuleWithParams(ExecutingContext* context,
-                                                const char* module_name,
-                                                const char* method,
+                                                const UTF8Char* module_name,
+                                                const UTF8Char* method,
                                                 NativeValue* params,
                                                 SharedExceptionState* shared_exception_state);
   static NativeValue WebFInvokeModuleWithParamsAndCallback(ExecutingContext* context,
-                                                           const char* module_name,
-                                                           const char* method,
+                                                           const UTF8Char* module_name,
+                                                           const UTF8Char* method,
                                                            NativeValue* params,
                                                            WebFNativeFunctionContext* callback_context,
                                                            SharedExceptionState* shared_exception_state);

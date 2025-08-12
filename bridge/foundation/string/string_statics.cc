@@ -24,6 +24,7 @@
  */
 
 #include "string_statics.h"
+#include "atomic_string.h"
 
 namespace webf {
 
@@ -45,13 +46,13 @@ DEFINE_GLOBAL(std::string, g_empty_string);
 void StringStatics::Init() {
   new ((void*)&g_empty_string) std::string();
   new ((void*)&g_null_atom) AtomicString();
-  new ((void*)&g_empty_atom) AtomicString("");
-  new ((void*)&g_star_atom) AtomicString("*");
-  new ((void*)&g_xml_atom) AtomicString("xml");
-  new ((void*)&g_xmlns_atom) AtomicString("xmlns");
-  new ((void*)&g_xlink_atom) AtomicString("xlink");
-  new ((void*)&g_http_atom) AtomicString("http");
-  new ((void*)&g_https_atom) AtomicString("https");
+  new ((void*)&g_empty_atom) AtomicString(AtomicString::CreateFromUTF8(""));
+  new ((void*)&g_star_atom) AtomicString(AtomicString::CreateFromUTF8("*"));
+  new ((void*)&g_xml_atom) AtomicString(AtomicString::CreateFromUTF8("xml"));
+  new ((void*)&g_xmlns_atom) AtomicString(AtomicString::CreateFromUTF8("xmlns"));
+  new ((void*)&g_xlink_atom) AtomicString(AtomicString::CreateFromUTF8("xlink"));
+  new ((void*)&g_http_atom) AtomicString(AtomicString::CreateFromUTF8("http"));
+  new ((void*)&g_https_atom) AtomicString(AtomicString::CreateFromUTF8("https"));
 }
 
 }  // namespace webf

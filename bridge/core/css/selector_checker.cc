@@ -28,34 +28,34 @@
  */
 
 #include "selector_checker.h"
+#include <algorithm>
 #include <set>
+#include "../../foundation/string/ascii_types.h"
+#include "../../foundation/string/string_view.h"
+#include "bindings/qjs/heap_vector.h"
+#include "core/base/auto_reset.h"
+#include "core/css/check_pseudo_has_argument_context.h"
+#include "core/css/check_pseudo_has_cache_scope.h"
+#include "core/css/check_pseudo_has_traversal_iterator.h"
 #include "core/css/css_selector.h"
+#include "core/css/part_names.h"
+#include "core/css/style_scope_data.h"
 #include "core/css/style_scope_frame.h"
 #include "core/dom/container_node.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/dom/element_traversal.h"
-#include "core/dom/shadow_root.h"
-#include "core/dom/tree_scope.h"
-#include "core/dom/qualified_name.h"
 #include "core/dom/nth_index_cache.h"
-#include "core/html/parser/html_parser_idioms.h"
-#include "core/css/style_scope_data.h"
-#include "foundation/atomic_string.h"
-#include "foundation/string_view.h"
-#include "foundation/ascii_types.h"
-#include "core/base/auto_reset.h"
-#include "core/css/check_pseudo_has_cache_scope.h"
-#include "core/css/check_pseudo_has_argument_context.h"
-#include "core/css/check_pseudo_has_traversal_iterator.h"
-#include "core/css/part_names.h"
-#include "core/svg/svg_element.h"
+#include "core/dom/qualified_name.h"
+#include "core/dom/shadow_root.h"
 #include "core/dom/text.h"
-#include "core/html/forms/html_input_element.h"
+#include "core/dom/tree_scope.h"
 #include "core/html/forms/html_form_control_element.h"
+#include "core/html/forms/html_input_element.h"
+#include "core/html/parser/html_parser_idioms.h"
+#include "core/svg/svg_element.h"
+#include "foundation/atomic_string.h"
 #include "foundation/casting.h"
-#include "bindings/qjs/heap_vector.h"
-#include <algorithm>
 
 namespace webf {
 
@@ -508,7 +508,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
      if (case_sensitivity == kTextCaseSensitive) {
        return selector_value == value;
      }
-     return EqualIgnoringASCIICase(selector_value.ToStringView(), value.ToStringView());
+     return EqualIgnoringASCIICase(selector_value.ToUTF8StringView(), value.ToUTF8StringView());
    case CSSSelector::kAttributeSet:
      return true;
    case CSSSelector::kAttributeList: {
@@ -608,7 +608,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
-       return value.StartsWith(selector_value.ToStringView());
+       return value.StartsWith(selector_value.ToUTF8StringView());
      } else {
        // Case-insensitive StartsWith
        if (value.length() < selector_value.length()) {
@@ -657,7 +657,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
-       if (!value.StartsWith(selector_value.ToStringView())) {
+       if (!value.StartsWith(selector_value.ToUTF8StringView())) {
          return false;
        }
      } else {
@@ -1620,7 +1620,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      // auto* vtt_element = DynamicTo<VTTElement>(element);
      AtomicString value = element.ComputeInheritedLanguage();
      const AtomicString& argument = selector.Argument();
-     if (value.empty() || !value.StartsWith(argument.ToStringView())) {
+     if (value.empty() || !value.StartsWith(argument.ToUTF8StringView())) {
        break;
      }
      if (value.length() != argument.length() && value[argument.length()] != '-') {
@@ -1634,9 +1634,9 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
        break;
      }
      TextDirection direction;
-     if (EqualIgnoringASCIICase(argument.ToStringView(), "ltr")) {
+     if (EqualIgnoringASCIICase(argument.ToUTF8StringView(), "ltr")) {
        direction = TextDirection::kLtr;
-     } else if (EqualIgnoringASCIICase(argument.ToStringView(), "rtl")) {
+     } else if (EqualIgnoringASCIICase(argument.ToUTF8StringView(), "rtl")) {
        direction = TextDirection::kRtl;
      } else {
        break;

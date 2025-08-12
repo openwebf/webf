@@ -40,13 +40,13 @@
 #include <codecvt>
 #include <string_view>
 
+#include "../../../foundation/string/ascii_types.h"
 #include "core/base/numerics/checked_math.h"
 #include "core/base/numerics/safe_conversions.h"
 #include "core/base/strings/string_number_conversions.h"
 #include "core/base/strings/string_util.h"
 #include "core/platform/math_extras.h"
 #include "core/platform/std_lib_extras.h"
-#include "foundation/ascii_types.h"
 #include "scheme_registry.h"
 #include "url_canon.h"
 #include "url_constants.h"

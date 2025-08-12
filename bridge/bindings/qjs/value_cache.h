@@ -8,8 +8,8 @@
 
 #include <quickjs/quickjs.h>
 #include <unordered_map>
+#include "../../foundation/string/string_impl.h"
 #include "foundation/macros.h"
-#include "string_impl.h"
 
 namespace webf {
 

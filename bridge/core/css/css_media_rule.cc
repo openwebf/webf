@@ -26,11 +26,11 @@
 
 #include "core/css/css_media_rule.h"
 
+#include "../../foundation/string/string_builder.h"
+#include "bindings/qjs/cppgc/garbage_collected.h"
 #include "core/css/media_list.h"
 #include "core/css/style_rule.h"
-#include "foundation/string_builder.h"
 #include "foundation/casting.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
 

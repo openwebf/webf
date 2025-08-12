@@ -25,11 +25,11 @@
 
 #include "core/platform/graphics/color.h"
 #include <sstream>
+#include "../../../foundation/string/string_builder.h"
 #include "core/platform/geometry/blend.h"
 #include "core/platform/graphics/color_conversions.h"
 #include "core/platform/hash_functions.h"
 #include "core/platform/math_extras.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

@@ -400,15 +400,15 @@ FontFamily StyleBuilderConverter::ConvertFontFamily(StyleResolverState& state, c
     const CSSIdentifierValue& ident = To<CSSIdentifierValue>(value);
     switch (ident.GetValueID()) {
       case CSSValueID::kSerif:
-        return FontFamily(AtomicString("serif"), FontFamily::Type::kGenericFamily);
+        return FontFamily(AtomicString::CreateFromUTF8("serif"), FontFamily::Type::kGenericFamily);
       case CSSValueID::kSansSerif:
-        return FontFamily(AtomicString("sans-serif"), FontFamily::Type::kGenericFamily);
+        return FontFamily(AtomicString::CreateFromUTF8("sans-serif"), FontFamily::Type::kGenericFamily);
       case CSSValueID::kMonospace:
-        return FontFamily(AtomicString("monospace"), FontFamily::Type::kGenericFamily);
+        return FontFamily(AtomicString::CreateFromUTF8("monospace"), FontFamily::Type::kGenericFamily);
       case CSSValueID::kCursive:
-        return FontFamily(AtomicString("cursive"), FontFamily::Type::kGenericFamily);
+        return FontFamily(AtomicString::CreateFromUTF8("cursive"), FontFamily::Type::kGenericFamily);
       case CSSValueID::kFantasy:
-        return FontFamily(AtomicString("fantasy"), FontFamily::Type::kGenericFamily);
+        return FontFamily(AtomicString::CreateFromUTF8("fantasy"), FontFamily::Type::kGenericFamily);
       default:
         break;
     }

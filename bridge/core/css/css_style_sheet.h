@@ -216,7 +216,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
  private:
   bool IsAlternate() const;
   bool IsCSSStyleSheet() const override { return true; }
-  AtomicString type() const override { return AtomicString("text/css"); }
+  AtomicString type() const override { return AtomicString::CreateFromUTF8("text/css"); }
 
   void SetLoadCompleted(bool);
 

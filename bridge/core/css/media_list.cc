@@ -168,7 +168,7 @@ AtomicString MediaList::mediaText(ExecutingContext* execution_context) const {
 void MediaList::setMediaText(ExecutingContext* execution_context, const AtomicString& value) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
-  Owner()->SetMediaQueries(MediaQuerySet::Create(value.ToStdString(), execution_context));
+  Owner()->SetMediaQueries(MediaQuerySet::Create(value.ToUTF8String(), execution_context));
 
   NotifyMutation();
 }
@@ -187,9 +187,9 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
   std::shared_ptr<const MediaQuerySet> new_media_queries =
-      Queries()->CopyAndRemove(medium.ToStdString(), execution_context);
+      Queries()->CopyAndRemove(medium.ToUTF8String(), execution_context);
   if (!new_media_queries) {
-    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to delete '" + medium.ToStdString() + "'.");
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to delete '" + medium.ToUTF8String() + "'.");
     return;
   }
   Owner()->SetMediaQueries(new_media_queries);
@@ -200,7 +200,7 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
 void MediaList::appendMedium(const ExecutingContext* execution_context, const AtomicString& medium) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
-  auto new_media_queries = Queries()->CopyAndAdd(medium.ToStdString(), execution_context);
+  auto new_media_queries = Queries()->CopyAndAdd(medium.ToUTF8String(), execution_context);
   if (!new_media_queries) {
     return;
   }

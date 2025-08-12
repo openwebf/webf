@@ -17,7 +17,7 @@ WidgetElement::WidgetElement(const AtomicString& tag_name, Document* document)
 
 bool WidgetElement::IsValidName(const AtomicString& name) {
   assert(Document::IsValidName(name));
-  std::string_view string_view = name.ToStringView();
+  std::string_view string_view = name.ToUTF8StringView();
 
   const char* string = string_view.data();
   for (int i = 0; i < string_view.length(); i++) {
@@ -47,7 +47,7 @@ static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
     return false;
   }
 
-  std::string_view string_view = key.ToStringView();
+  std::string_view string_view = key.ToUTF8StringView();
   const char* string = string_view.data();
 
   const char* suffix = "_async";
@@ -265,7 +265,7 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
 
 ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name) {
   auto* data = new FunctionData();
-  data->method_name = method_name.ToStdString();
+  data->method_name = method_name.ToUTF8String();
   return ScriptValue(ctx(),
                      QJSFunction::Create(ctx(), SyncDynamicFunction, 1, data, HandleJSCallbackGCMark, HandleJSFinalizer)
                          ->ToQuickJSUnsafe());
@@ -273,7 +273,7 @@ ScriptValue WidgetElement::CreateSyncMethodFunc(const AtomicString& method_name)
 
 ScriptValue WidgetElement::CreateAsyncMethodFunc(const AtomicString& method_name) {
   auto* data = new FunctionData();
-  data->method_name = method_name.ToStdString();
+  data->method_name = method_name.ToUTF8String();
   return ScriptValue(
       ctx(), QJSFunction::Create(ctx(), AsyncDynamicFunction, 1, data, HandleJSCallbackGCMark, HandleJSFinalizer)
                  ->ToQuickJSUnsafe());

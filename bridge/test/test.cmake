@@ -39,7 +39,7 @@ list(APPEND WEBF_UNIT_TEST_SOURCE
   ./foundation/shared_ui_command_test.cc
   ./foundation/ui_command_ring_buffer_test.cc
   ./foundation/ui_command_strategy_test.cc
-  ./foundation/string_impl_unittest.cc
+  ./foundation/string/string_impl_unittest.cc
   ./core/devtools/remote_object_test.cc
   ./core/devtools/devtools_bridge_test.cc
   ./test/html_script_element_casting_test.cc

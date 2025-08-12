@@ -36,7 +36,7 @@
 #define WEBF_CSS_PARSER_IDIOMS_H
 
 #include <string>
-#include "foundation/ascii_types.h"
+#include "../../../foundation/string/ascii_types.h"
 
 namespace webf {
 

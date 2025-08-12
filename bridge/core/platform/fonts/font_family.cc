@@ -47,11 +47,11 @@ bool operator==(const FontFamily& a, const FontFamily& b) {
 
 std::string FontFamily::ToString() const {
   std::string builder;
-  builder += family_name_.ToStdString();
+  builder += family_name_.ToUTF8String();
   const FontFamily* current = Next();
   while (current) {
     builder += ", ";
-    builder += current->FamilyName().ToStdString();
+    builder += current->FamilyName().ToUTF8String();
     current = current->Next();
   }
   return builder;
@@ -59,7 +59,7 @@ std::string FontFamily::ToString() const {
 
 /*static*/ FontFamily::Type FontFamily::InferredTypeFor(const AtomicString& family_name) {
   // Convert to std::string for comparison with existing constants
-  std::string family_str = family_name.ToStdString();
+  std::string family_str = family_name.ToUTF8String();
   return (family_str == font_family_names_stdstring::kcursive ||
           family_str == font_family_names_stdstring::kfantasy ||
           family_str == font_family_names_stdstring::kmonospace ||

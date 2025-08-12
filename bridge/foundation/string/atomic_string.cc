@@ -8,6 +8,7 @@
 #include "atomic_string_table.h"
 #include "bindings/qjs/native_string_utils.h"
 #include "core/executing_context.h"
+#include "utf8_codecs.h"
 
 #if defined(_WIN32)
 #include <WinSock2.h>
@@ -64,10 +65,10 @@ namespace {
 
 }
 
-AtomicString::AtomicString(std::string_view string_view)
-    : string_(AtomicStringTable::Instance().AddLatin1(string_view.data(), string_view.length())) {}
+AtomicString::AtomicString(UTF8StringView string_view)
+    : string_(AtomicStringTable::Instance().AddUTF8(string_view.data(), string_view.length())) {}
 
-AtomicString::AtomicString(std::u16string string_view)
+AtomicString::AtomicString(UTF16StringView string_view)
     : string_(AtomicStringTable::Instance().Add(string_view.data(), string_view.length())) {}
 
 /**
@@ -75,7 +76,7 @@ AtomicString::AtomicString(std::u16string string_view)
  * @param chars latin1 string buffer
  * @param length length
  */
-AtomicString::AtomicString(const char* chars, size_t length)
+AtomicString::AtomicString(const LChar* chars, size_t length)
     : string_(AtomicStringTable::Instance().AddLatin1(chars, length)) {}
 
 AtomicString AtomicString::CreateFromUTF8(const char* chars, size_t length) {
@@ -108,7 +109,10 @@ AtomicString::AtomicString(JSContext* ctx, JSValue qjs_value) {
   } else {
     size_t len;
     const char* str = JS_ToCStringLen(ctx, &len, qjs_value);
-    string_ = StringImpl::Create(str, len);
+    // TODO: remove this after we see the issue.
+    string_ = StringImpl::Create(reinterpret_cast<const LChar*>(str), len);
+    // In QuickJS, cstr really mean utf8.
+    // string_ = StringImpl::CreateFromUTF8(reinterpret_cast<const UTF8Char*>(str), len);
     JS_FreeCString(ctx, str);
   }
 }
@@ -193,32 +197,30 @@ JSValue AtomicString::ToQuickJS(JSContext* ctx) const {
   }
 
   if (string_->Is8Bit()) {
-    return JS_NewStringLen(ctx, string_->Characters8(), string_->length());
+    return JS_NewRawUTF8String(ctx, string_->Characters8(), string_->length());
   } else {
     // For 16-bit strings (UTF-16), use QuickJS's Unicode string function
     return JS_NewUnicodeString(ctx, reinterpret_cast<const uint16_t*>(string_->Characters16()), string_->length());
   }
 }
 
-std::string AtomicString::ToStdString() const {
+UTF8String AtomicString::ToUTF8String() const {
   if (!string_) {
-    return std::string();
+    return std::string{};
   }
-  
+
   if (string_->Is8Bit()) {
-    return std::string(string_->Characters8(), string_->length());
-  } else {
-    // For 16-bit strings, convert to UTF-8 using the toUTF8 utility
-    std::u16string u16str(string_->Characters16(), string_->length());
-    return toUTF8(u16str);
+    return UTF8Codecs::EncodeLatin1({string_->Characters8(), string_->length()});
   }
+
+  return UTF8Codecs::EncodeUTF16({string_->Characters16(), string_->length()});
 }
 
-const char* AtomicString::Characters8() const {
+const LChar* AtomicString::Characters8() const {
   return string_->Characters8();
 }
 
-const char16_t* AtomicString::Characters16() const {
+const UChar* AtomicString::Characters16() const {
   return string_->Characters16();
 }
 

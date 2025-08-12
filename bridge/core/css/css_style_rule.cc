@@ -25,14 +25,14 @@
 
 #include "core/css/css_style_rule.h"
 
+#include "../../foundation/string/string_builder.h"
+#include "bindings/qjs/cppgc/garbage_collected.h"
+#include "bindings/qjs/exception_state.h"
 #include "core/css/css_style_sheet.h"
+#include "core/css/parser/css_parser.h"
 #include "core/css/style_rule.h"
 #include "core/css/style_rule_css_style_declaration.h"
-#include "core/css/parser/css_parser.h"
 #include "core/executing_context.h"
-#include "bindings/qjs/exception_state.h"
-#include "foundation/string_builder.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
 

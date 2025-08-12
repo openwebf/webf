@@ -25,9 +25,9 @@
 #define WEBF_QUALIFIED_NAME_H
 
 #include <optional>
+#include "../../foundation/string/atomic_string.h"
 #include "core/base/hash/hash.h"
 #include "core/platform/static_constructors.h"
-#include "foundation/atomic_string.h"
 
 namespace webf {
 

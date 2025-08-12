@@ -30,6 +30,10 @@
 #ifndef WEBF_CORE_CSS_SELECTOR_CHECKER_H_
 #define WEBF_CORE_CSS_SELECTOR_CHECKER_H_
 
+#include <limits>
+#include <vector>
+#include "../../foundation/string/string_impl.h"
+#include "bindings/qjs/cppgc/member.h"
 #include "core/base/compiler_specific.h"
 #include "core/css/custom_scrollbar.h"
 #include "core/css/match_flags.h"
@@ -38,12 +42,8 @@
 #include "core/css/style_scope_frame.h"
 #include "core/dom/attribute.h"
 #include "core/style/computed_style_constants.h"
-#include "foundation/string_impl.h"
+#include "foundation/string/atomic_string.h"
 #include "foundation/macros.h"
-#include "foundation/atomic_string.h"
-#include "bindings/qjs/cppgc/member.h"
-#include <limits>
-#include <vector>
 
 namespace webf {
 

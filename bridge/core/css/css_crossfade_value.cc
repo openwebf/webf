@@ -24,7 +24,7 @@
  */
 
 #include "core/css/css_crossfade_value.h"
-#include "foundation/string_builder.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 namespace cssvalue {

@@ -5,7 +5,7 @@
 #ifndef WIDGET_ELEMENT_SHAPE_H
 #define WIDGET_ELEMENT_SHAPE_H
 
-#include <foundation/atomic_string.h>
+#include <../../../foundation/string/atomic_string.h>
 
 #include <unordered_set>
 #include "foundation/native_value.h"
@@ -13,7 +13,7 @@
 namespace webf {
 
 struct NativeWidgetElementShape {
-  const char* name;
+  const UTF8Char* name;
   NativeValue* properties;
   NativeValue* methods;
   NativeValue* async_methods;

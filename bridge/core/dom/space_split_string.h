@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <unordered_map>
 #include <vector>
-#include "foundation/atomic_string.h"
+#include "../../foundation/string/atomic_string.h"
 
 namespace webf {
 

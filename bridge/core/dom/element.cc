@@ -44,7 +44,7 @@ Element::Element(const AtomicString& namespace_uri,
     : ContainerNode(document, construction_type),
       local_name_(local_name),
       namespace_uri_(namespace_uri),
-      tag_name_(local_name.ToStdString()) {
+      tag_name_(local_name.ToUTF8String()) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
     buffer->AddCommand(UICommand::kCreateElement, local_name.ToNativeString(), bindingObject(), nullptr);
@@ -258,10 +258,10 @@ std::string Element::nodeName() const {
   // For HTML elements in HTML namespace, return uppercased tagName
   // For all other elements (including those created with createElementNS), preserve original case
   if (IsHTMLElement()) {
-    return tagName().UpperASCII().ToStdString();
+    return tagName().UpperASCII().ToUTF8String();
   }
   // For elements created with createElementNS or non-HTML elements, preserve original case
-  return tagName().ToStdString();
+  return tagName().ToUTF8String();
 }
 
 AtomicString Element::className() const {
@@ -381,7 +381,7 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
     }
     return element;
   } else {
-    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" + position.ToStdString() + "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
+    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" + position.ToUTF8String() + "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
     return nullptr;
   }
 }
@@ -910,7 +910,7 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
     }
 
     if (!inline_style) {
-      inline_style = CSSParser::ParseInlineStyleDeclaration(new_style_string.ToStdString(), this);
+      inline_style = CSSParser::ParseInlineStyleDeclaration(new_style_string.ToUTF8String(), this);
     } else {
       DCHECK(inline_style->IsMutable());
       static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
@@ -928,7 +928,7 @@ std::string Element::outerHTML() {
     SynchronizeStyleAttributeInternal();
   }
 
-  std::string tagname = local_name_.ToStdString();
+  std::string tagname = local_name_.ToUTF8String();
   std::string s = "<" + tagname;
 
   // Read attributes (including style if it's been synchronized)
@@ -966,9 +966,9 @@ std::string Element::innerHTML() {
     if (auto* element = DynamicTo<Element>(child)) {
       s += element->outerHTML();
     } else if (auto* text = DynamicTo<Text>(child)) {
-      s += text->data().ToStdString();
+      s += text->data().ToUTF8String();
     } else if (auto* comment = DynamicTo<Comment>(child)) {
-      s += "<!--" + comment->data().ToStdString() + "-->";
+      s += "<!--" + comment->data().ToUTF8String() + "-->";
     }
     child = child->nextSibling();
   }
@@ -981,7 +981,7 @@ AtomicString Element::TextFromChildren() {
 }
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {
-  auto html = value.ToStdString();
+  auto html = value.ToUTF8String();
   ChildListMutationScope scope{*this};
 
   if (value.empty()) {

@@ -50,7 +50,7 @@ AtomicString CSSImportRule::cssText() const {
     AtomicString layer_name = layerName();
     if (layer_name.length()) {
       result.Append("(");
-      result.Append(layer_name.ToStdString());
+      result.Append(layer_name.ToUTF8String());
       result.Append(")");
     }
   }

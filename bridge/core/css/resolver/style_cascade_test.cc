@@ -3,28 +3,28 @@
  * Based on Chromium CSS cascade tests
  */
 
-#include "gtest/gtest.h"
-#include "test/webf_test_env.h"
+#include "../../../foundation/string/atomic_string_table.h"
 #include "bindings/qjs/cppgc/mutation_scope.h"
+#include "bindings/qjs/exception_state.h"
 #include "core/css/css_style_sheet.h"
-#include "core/css/style_sheet_contents.h"
 #include "core/css/parser/css_parser.h"
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/resolver/style_resolver.h"
-#include "core/css/style_recalc_context.h"
-#include "core/css/style_engine.h"
 #include "core/css/rule_set.h"
-#include "core/style/computed_style.h"
-#include "core/platform/graphics/color.h"
+#include "core/css/style_engine.h"
+#include "core/css/style_recalc_context.h"
+#include "core/css/style_sheet_contents.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
-#include "core/html/html_head_element.h"
 #include "core/html/html_body_element.h"
+#include "core/html/html_head_element.h"
 #include "core/html/html_style_element.h"
+#include "core/platform/graphics/color.h"
+#include "core/style/computed_style.h"
 #include "foundation/logging.h"
-#include "foundation/atomic_string_table.h"
+#include "gtest/gtest.h"
+#include "test/webf_test_env.h"
 #include "third_party/quickjs/quickjs.h"
-#include "bindings/qjs/exception_state.h"
 
 namespace webf {
 

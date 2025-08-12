@@ -9,13 +9,13 @@
 #ifndef WEBF_CSS_PARSER_TOKEN_H
 #define WEBF_CSS_PARSER_TOKEN_H
 
+#include "../../../foundation/string/string_builder.h"
+#include "../../../foundation/string/string_view.h"
 #include "at_rule_descriptors.h"
 #include "core/css/css_primitive_value.h"
 #include "css_property_names.h"
 #include "css_value_keywords.h"
 #include "foundation/macros.h"
-#include "foundation/string_builder.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 

@@ -5,8 +5,8 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "core/css/css_repeat_style_value.h"
+#include "../../foundation/string/string_builder.h"
 #include "core/base/memory/values_equivalent.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

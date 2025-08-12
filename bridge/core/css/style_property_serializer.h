@@ -29,9 +29,9 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_STYLE_PROPERTY_SERIALIZER_H_
 
 #include <bitset>
+#include "../../foundation/string/string_builder.h"
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_value_list.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

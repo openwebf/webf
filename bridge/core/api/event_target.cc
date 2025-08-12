@@ -24,11 +24,11 @@
 namespace webf {
 
 void EventTargetPublicMethods::AddEventListener(EventTarget* event_target,
-                                                const char* event_name_str,
+                                                const UTF8Char* event_name_str,
                                                 WebFEventListenerContext* callback_context,
                                                 WebFAddEventListenerOptions* options,
                                                 SharedExceptionState* shared_exception_state) {
-  AtomicString event_name = AtomicString(event_name_str);
+  AtomicString event_name = AtomicString::CreateFromUTF8(event_name_str);
   std::shared_ptr<AddEventListenerOptions> event_listener_options = AddEventListenerOptions::Create();
 
   // Preparing for the event listener options.
@@ -46,7 +46,7 @@ void EventTargetPublicMethods::RemoveEventListener(EventTarget* event_target,
                                                    const char* event_name_str,
                                                    WebFEventListenerContext* callback_context,
                                                    SharedExceptionState* shared_exception_state) {
-  AtomicString event_name = AtomicString(event_name_str);
+  AtomicString event_name = AtomicString::CreateFromUTF8(event_name_str);
   auto listener_impl = WebFPublicPluginEventListener::Create(callback_context, shared_exception_state);
 
   event_target->removeEventListener(event_name, listener_impl, shared_exception_state->exception_state);

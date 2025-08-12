@@ -6,12 +6,12 @@
 #ifndef WEBF_CORE_CSS_LEGACY_CSS_STYLE_DECLARATION_H_
 #define WEBF_CORE_CSS_LEGACY_CSS_STYLE_DECLARATION_H_
 
-#include "bindings/qjs/script_wrappable.h"
+#include "../../../foundation/string/string_view.h"
 #include "bindings/qjs/script_value.h"
-#include "core/binding_object.h"
+#include "bindings/qjs/script_wrappable.h"
 #include "code_gen/css_property_names.h"
+#include "core/binding_object.h"
 #include "defined_properties.h"
-#include "foundation/string_view.h"
 #include "plugin_api/css_style_declaration.h"
 
 namespace webf {

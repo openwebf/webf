@@ -30,8 +30,8 @@
 
 #include <cstdint>
 #include <iostream>
+#include "../../../foundation/string/atomic_string.h"
 #include "foundation/macros.h"
-#include "foundation/atomic_string.h"
 
 namespace webf {
 
@@ -57,7 +57,7 @@ class FontFamily {
   // CSSValue::CssText() in order to match formatting rules from the CSSOM
   // specification.
   const AtomicString& FamilyName() const { return family_name_; }
-  std::string FamilyNameString() const { return family_name_.ToStdString(); }
+  std::string FamilyNameString() const { return family_name_.ToUTF8String(); }
   bool FamilyIsGeneric() const { return family_type_ == Type::kGenericFamily; }
 
   const FontFamily* Next() const;

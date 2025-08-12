@@ -213,7 +213,7 @@ static inline void FilterProperties(std::vector<CSSPropertyValue>& values,
   for (size_t i = values.size(); i--;) {
     const CSSPropertyValue& property = values[i];
     if (property.Id() == CSSPropertyID::kVariable) {
-      const std::string& name = property.CustomPropertyName().ToStdString();
+      const std::string& name = property.CustomPropertyName().ToUTF8String();
       if (seen_custom_properties.count(name) > 0) {
         continue;
       }

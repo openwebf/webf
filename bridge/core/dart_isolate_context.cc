@@ -5,11 +5,11 @@
 #include "dart_isolate_context.h"
 #include <algorithm>
 #include <unordered_set>
+#include "../foundation/string/atomic_string_table.h"
 #include "core/core_initializer.h"
 #include "core/html/custom/widget_element_shape.h"
 #include "defined_properties_initializer.h"
 #include "event_factory.h"
-#include "foundation/atomic_string_table.h"
 #include "html_element_factory.h"
 #include "logging.h"
 #include "multiple_threading/looper.h"

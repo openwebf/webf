@@ -23,7 +23,7 @@ static inline bool IsNumberIndex(const std::string_view& name) {
 ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element->ctx()), element_(element) {}
 
 AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  bool numberIndex = IsNumberIndex(name.ToStringView());
+  bool numberIndex = IsNumberIndex(name.ToUTF8StringView());
 
   if (numberIndex) {
     return AtomicString::Null();
@@ -49,12 +49,12 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
                                      const AtomicString& value,
                                      ExceptionState& exception_state,
                                      bool ignore_ui_command) {
-  bool numberIndex = IsNumberIndex(name.ToStringView());
+  bool numberIndex = IsNumberIndex(name.ToUTF8StringView());
 
   if (numberIndex) {
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
-        "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToStdString() + "' is not a valid attribute name.");
+        "Failed to execute 'kSetAttribute' on 'Element': '" + name.ToUTF8String() + "' is not a valid attribute name.");
     return false;
   }
 
@@ -79,7 +79,7 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 }
 
 bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  bool numberIndex = IsNumberIndex(name.ToStringView());
+  bool numberIndex = IsNumberIndex(name.ToUTF8StringView());
 
   if (numberIndex) {
     return false;
@@ -118,10 +118,10 @@ std::string ElementAttributes::ToString() {
     if (!first) {
       s += " ";
     }
-    s += attr.first.ToStdString() + "=";
+    s += attr.first.ToUTF8String() + "=";
 
     if (attr.first != html_names::kStyleAttr) {
-      s += "\"" + attr.second.ToStdString() + "\"";
+      s += "\"" + attr.second.ToUTF8String() + "\"";
     } else {
       if (element_ != nullptr && element_->style() != nullptr) {
         s += "\"" + element_->style()->ToString() +  "\"";

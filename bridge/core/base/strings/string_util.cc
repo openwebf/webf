@@ -9,7 +9,7 @@
 #include "string_util.h"
 #include <algorithm>
 #include <string_view>
-#include "foundation/ascii_types.h"
+#include "../../../foundation/string/ascii_types.h"
 
 namespace base {
 

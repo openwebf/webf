@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 #include "core/css/css_image_set_option_value.h"
+#include "../../foundation/string/string_builder.h"
 #include "core/base/memory/values_equivalent.h"
 #include "core/css/css_image_set_type_value.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

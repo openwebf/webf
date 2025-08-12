@@ -4,11 +4,11 @@
 
 #include "core/css/css_axis_value.h"
 
+#include "../../foundation/string/string_builder.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_length_resolver.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 namespace cssvalue {

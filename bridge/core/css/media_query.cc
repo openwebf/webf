@@ -33,9 +33,9 @@
 #include "media_query.h"
 
 #include <algorithm>
+#include "../../foundation/string/string_builder.h"
 #include "core/base/strings/string_util.h"
 #include "core/css/media_query_exp.h"
-#include "foundation/string_builder.h"
 #include "media_type_names.h"
 
 namespace webf {

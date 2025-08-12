@@ -136,8 +136,8 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModule(ExecutingContext* cont
                                                           const char* module_name,
                                                           const char* method,
                                                           SharedExceptionState* shared_exception_state) {
-  AtomicString module_name_atomic = AtomicString(module_name);
-  AtomicString method_atomic = webf::AtomicString(method);
+  AtomicString module_name_atomic = AtomicString::CreateFromUTF8(module_name);
+  AtomicString method_atomic = AtomicString::CreateFromUTF8(method);
 
   ScriptValue result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic,
                                                              shared_exception_state->exception_state);
@@ -151,12 +151,12 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModule(ExecutingContext* cont
 }
 
 NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParams(ExecutingContext* context,
-                                                                    const char* module_name,
-                                                                    const char* method,
+                                                                    const UTF8Char* module_name,
+                                                                    const UTF8Char* method,
                                                                     NativeValue* params,
                                                                     SharedExceptionState* shared_exception_state) {
-  AtomicString module_name_atomic = AtomicString(module_name);
-  AtomicString method_atomic = webf::AtomicString(method);
+  AtomicString module_name_atomic = AtomicString::CreateFromUTF8(module_name);
+  AtomicString method_atomic = AtomicString::CreateFromUTF8(method);
 
   const NativeValue* result = ModuleManager::__webf_invoke_module__(context, module_name_atomic, method_atomic, *params,
                                                                     nullptr, shared_exception_state->exception_state);
@@ -171,13 +171,13 @@ NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParams(ExecutingCon
 
 NativeValue ExecutingContextWebFMethods::WebFInvokeModuleWithParamsAndCallback(
     ExecutingContext* context,
-    const char* module_name,
-    const char* method,
+    const UTF8Char* module_name,
+    const UTF8Char* method,
     NativeValue* params,
     WebFNativeFunctionContext* callback_context,
     SharedExceptionState* shared_exception_state) {
-  AtomicString module_name_atomic = AtomicString(module_name);
-  AtomicString method_atomic = webf::AtomicString(method);
+  AtomicString module_name_atomic = AtomicString::CreateFromUTF8(module_name);
+  AtomicString method_atomic = webf::AtomicString::CreateFromUTF8(method);
 
   auto callback_impl = WebFNativeFunction::Create(callback_context, shared_exception_state);
 

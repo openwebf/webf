@@ -42,9 +42,9 @@
 #ifndef WEBF_CORE_DOM_ATTRIBUTE_COLLECTION_H_
 #define WEBF_CORE_DOM_ATTRIBUTE_COLLECTION_H_
 
+#include "../../foundation/string/string_view.h"
 #include "bindings/qjs/heap_vector.h"
 #include "core/dom/attribute.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 

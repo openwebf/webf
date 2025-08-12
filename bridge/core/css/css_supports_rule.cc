@@ -29,8 +29,8 @@
 
 #include "core/css/css_supports_rule.h"
 
+#include "../../foundation/string/string_builder.h"
 #include "core/css/style_rule.h"
-#include "foundation/string_builder.h"
 #include "foundation/casting.h"
 
 namespace webf {

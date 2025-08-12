@@ -3,7 +3,8 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "string_view.h"
-#include "foundation/atomic_string.h"
+#include "atomic_string.h"
+#include "utf8_codecs.h"
 
 namespace webf {
 
@@ -36,6 +37,9 @@ StringView::StringView(const AtomicString& string) : length_(string.length()), i
   }
 }
 
+StringView::StringView(const std::string_view&) {
+  // TODO: decode utf8
+}
 StringView::StringView(const std::string& string) : bytes_(string.data()), length_(string.length()), is_8bit_(true) {}
 
 StringView::StringView(const SharedNativeString* string)
@@ -56,12 +60,12 @@ AtomicString StringView::ToAtomicString() const {
   }
 }
 
-// Function to convert Characters8 to std::string
-std::string StringView::Characters8ToStdString() const {
+// Function to convert Characters8 to UTF8String
+UTF8String StringView::Characters8ToUTF8String() const {
   if (is_8bit_) {
-    return {Characters8(), length()};
+    return UTF8Codecs::EncodeLatin1({Characters8(), length()});
   } else {
-    return "";
+    return UTF8Codecs::EncodeUTF16({Characters16(), length()});
   }
 }
 

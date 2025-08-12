@@ -52,7 +52,7 @@ bool TouchList::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& 
 }
 
 bool TouchList::NamedPropertyQuery(const AtomicString& key, ExceptionState& exception_state) {
-  uint32_t index = std::stoi(key.ToStdString());
+  uint32_t index = std::stoi(key.ToUTF8String());
   return index >= 0 && index < values_.size();
 }
 

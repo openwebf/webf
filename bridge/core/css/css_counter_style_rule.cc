@@ -4,12 +4,12 @@
 
 #include "core/css/css_counter_style_rule.h"
 
+#include "../../foundation/string/string_builder.h"
+#include "bindings/qjs/exception_state.h"
 #include "core/css/css_style_sheet.h"
+#include "core/css/css_value.h"
 #include "core/css/style_rule.h"
 #include "core/css/style_rule_counter_style.h"
-#include "core/css/css_value.h"
-#include "bindings/qjs/exception_state.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

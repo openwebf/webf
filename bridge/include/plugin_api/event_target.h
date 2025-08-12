@@ -6,6 +6,7 @@
 #define WEBF_CORE_WEBF_API_EVENT_TARGET_H_
 
 #include "rust_readable.h"
+#include "string/string_types.h"
 #include "webf_value.h"
 
 namespace webf {
@@ -36,12 +37,12 @@ enum class EventTargetType {
 };
 
 using PublicEventTargetAddEventListener = void (*)(EventTarget* event_target,
-                                                   const char*,
+                                                   const UTF8Char*,
                                                    WebFEventListenerContext* callback_context,
                                                    WebFAddEventListenerOptions* options,
                                                    SharedExceptionState* shared_exception_state);
 using PublicEventTargetRemoveEventListener = void (*)(EventTarget* event_target,
-                                                      const char*,
+                                                      const UTF8Char*,
                                                       WebFEventListenerContext* callback_context,
                                                       SharedExceptionState* shared_exception_state);
 using PublicEventTargetDispatchEvent = bool (*)(EventTarget* event_target,
@@ -55,7 +56,7 @@ using PublicEventTargetDynamicTo = WebFValue<EventTarget, WebFPublicMethods> (*)
 
 struct EventTargetPublicMethods : public WebFPublicMethods {
   static void AddEventListener(EventTarget* event_target,
-                               const char* event_name_str,
+                               const UTF8Char* event_name_str,
                                WebFEventListenerContext* callback_context,
                                WebFAddEventListenerOptions* options,
                                SharedExceptionState* shared_exception_state);

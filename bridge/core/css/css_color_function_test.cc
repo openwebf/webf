@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "../../foundation/string/string_view.h"
 #include "core/css/css_color.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/parser/css_parser.h"
@@ -10,7 +11,6 @@
 #include "core/css/properties/css_color_function_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/dom/document.h"
-#include "foundation/string_view.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
 

@@ -34,12 +34,12 @@
 
 #include "core/css/css_grouping_rule.h"
 
+#include "../../foundation/string/string_builder.h"
+#include "bindings/qjs/cppgc/garbage_collected.h"
+#include "bindings/qjs/exception_state.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/css_style_sheet.h"
-#include "foundation/string_builder.h"
 #include "core/executing_context.h"
-#include "bindings/qjs/exception_state.h"
-#include "bindings/qjs/cppgc/garbage_collected.h"
 
 namespace webf {
 

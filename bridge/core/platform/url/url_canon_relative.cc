@@ -15,8 +15,8 @@
 #include <ostream>
 #include <string_view>
 
+#include "../../../foundation/string/ascii_types.h"
 #include "core/base/strings/string_util.h"
-#include "foundation/ascii_types.h"
 #include "url_canon.h"
 #include "url_canon_internal.h"
 #include "url_constants.h"

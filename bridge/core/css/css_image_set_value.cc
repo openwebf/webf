@@ -24,8 +24,8 @@
  */
 
 #include "core/css/css_image_set_value.h"
+#include "../../foundation/string/string_builder.h"
 #include "core/css/css_image_set_option_value.h"
-#include "foundation/string_builder.h"
 
 #include <algorithm>
 

@@ -9,12 +9,12 @@
 #ifndef WEBF_CORE_CSS_STYLE_RULE_COUNTER_STYLE_H_
 #define WEBF_CORE_CSS_STYLE_RULE_COUNTER_STYLE_H_
 
-#include "core/css/style_rule.h"
-#include "core/css/css_value_list.h"
-#include "core/css/css_string_value.h"
+#include "../../foundation/string/atomic_string.h"
 #include "core/css/css_custom_ident_value.h"
+#include "core/css/css_string_value.h"
+#include "core/css/css_value_list.h"
 #include "core/css/css_value_pair.h"
-#include "foundation/atomic_string.h"
+#include "core/css/style_rule.h"
 
 namespace webf {
 

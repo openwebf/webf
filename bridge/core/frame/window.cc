@@ -7,6 +7,7 @@
 #include <modp_b64/modp_b64.h>
 #include "binding_call_methods.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/events/message_event.h"
@@ -14,7 +15,7 @@
 #include "core/frame/window_idle_tasks.h"
 #include "event_type_names.h"
 #include "foundation/native_value_converter.h"
-#include "core/css/legacy/legacy_computed_css_style_declaration.h"
+#include "string/utf8_codecs.h"
 
 namespace webf {
 
@@ -37,7 +38,7 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
   std::vector<char> buffer;
   buffer.resize(encode_len + 1);
 
-  std::string source_string = source.ToStdString();
+  std::string source_string = source.ToUTF8String();
 
   const size_t output_size =
       modp_b64_encode(reinterpret_cast<char*>(buffer.data()), source_string.c_str(), source.length());
@@ -49,7 +50,7 @@ AtomicString Window::btoa(const AtomicString& source, ExceptionState& exception_
     exception_state.ThrowException(ctx(), ErrorType::TypeError, "The string encode failed.");
     return AtomicString::Empty();
   }
-  return {encode_str, encode_str_len};
+  return AtomicString::CreateFromUTF8({encode_str, encode_str_len});
 }
 
 // Invokes modp_b64 without stripping whitespace.
@@ -57,7 +58,7 @@ bool Base64DecodeRaw(const AtomicString& in, std::vector<uint8_t>& out, ModpDeco
   size_t decode_len = modp_b64_decode_len(in.length());
   out.resize(decode_len);
 
-  std::string in_string = in.ToStdString();
+  std::string in_string = in.ToUTF8String();
 
   const size_t output_size =
       modp_b64_decode(reinterpret_cast<char*>(out.data()), in_string.c_str(), in.length(), policy);
@@ -86,10 +87,10 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
       cleaned.reserve(in.length());
       
       if (in.Is8Bit()) {
-        const char* chars = in.Characters8();
+        const auto utf8 = UTF8Codecs::EncodeLatin1({in.Characters8(), in.length()});
         for (size_t i = 0; i < in.length(); i++) {
-          if (!IsAsciiWhitespace(chars[i])) {
-            cleaned += chars[i];
+          if (!IsAsciiWhitespace(utf8[i])) {
+            cleaned += utf8[i];
           }
         }
       } else {
@@ -104,7 +105,7 @@ bool Base64Decode(JSContext* ctx, AtomicString in, std::vector<uint8_t>& out, Mo
         }
       }
       
-      AtomicString cleaned_str(cleaned.c_str(), cleaned.length());
+      AtomicString cleaned_str = AtomicString::CreateFromUTF8(cleaned.c_str(), cleaned.length());
       return Base64DecodeRaw(cleaned_str, out, policy);
     }
     case ModpDecodePolicy::kNoPaddingValidation: {

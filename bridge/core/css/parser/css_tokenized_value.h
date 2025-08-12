@@ -5,8 +5,8 @@
 #ifndef WEBF_CORE_CSS_PARSER_CSS_TOKENIZED_VALUE_H_
 #define WEBF_CORE_CSS_PARSER_CSS_TOKENIZED_VALUE_H_
 
+#include "../../../foundation/string/string_view.h"
 #include "core/css/parser/css_parser_token_range.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 

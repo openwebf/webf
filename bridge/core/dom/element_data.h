@@ -7,13 +7,13 @@
 #define WEBF_CORE_DOM_ELEMENT_DATA_H_
 
 #include <core/base/bit_field.h>
+#include "../../foundation/string/ascii_types.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
 #include "core/base/strings/string_util.h"
 #include "core/dom/attribute_collection.h"
 #include "dom_string_map.h"
 #include "dom_token_list.h"
-#include "foundation/ascii_types.h"
 
 namespace webf {
 

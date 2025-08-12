@@ -34,8 +34,8 @@
 
 #include <cassert>
 #include <cstring>
+#include "../macros.h"
 #include "core/base/compiler_specific.h"
-#include "macros.h"
 
 #ifndef BRIDGE_FOUNDATION_ASCII_TYPES_H_
 #define BRIDGE_FOUNDATION_ASCII_TYPES_H_

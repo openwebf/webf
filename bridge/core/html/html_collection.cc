@@ -278,7 +278,7 @@ Element* HTMLCollection::TraverseBackwardToOffset(unsigned offset,
 }
 
 Element* HTMLCollection::namedItem(const AtomicString& name) const {
-  int32_t index = std::stoi(name.ToStdString());
+  int32_t index = std::stoi(name.ToUTF8String());
   return collection_items_cache_.NodeAt(*this, index);
 }
 

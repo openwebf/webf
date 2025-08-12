@@ -708,7 +708,7 @@ void ExecutingContext::SetWidgetElementShape(NativeWidgetElementShape* native_wi
     return;
 
   for (size_t i = 0; i < len; i++) {
-    const auto key = AtomicString(native_widget_element_shape[i].name);
+    const auto key = AtomicString::CreateFromUTF8(native_widget_element_shape[i].name);
     widget_element_shapes_[key] = std::make_unique<WidgetElementShape>(ctx(), &native_widget_element_shape[i]);
   }
 }

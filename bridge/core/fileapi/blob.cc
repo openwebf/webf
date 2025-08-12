@@ -111,7 +111,7 @@ std::string Blob::Base64Result() {
       modp_b64_encode_data(reinterpret_cast<char*>(buffer.data()), reinterpret_cast<const char*>(bytes()), size());
   assert(output_size == encode_len);
 
-  return "data:" + mime_type_.ToStdString() + ";base64," + buffer;
+  return "data:" + mime_type_.ToUTF8String() + ";base64," + buffer;
 }
 
 ArrayBufferData Blob::ArrayBufferResult() {

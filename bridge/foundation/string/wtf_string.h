@@ -1,0 +1,112 @@
+/*
+ * Copyright (C) 2022-present The WebF authors. All rights reserved.
+ */
+
+#ifndef WEBF_FOUNDATION_STRING_WTF_STRING_H_
+#define WEBF_FOUNDATION_STRING_WTF_STRING_H_
+
+#include <memory>
+#include <string>
+#include "string_impl.h"
+#include "string_view.h"
+
+namespace webf {
+
+class String {
+ public:
+  // Construct a null string, distinguishable from an empty string.
+  String() = default;
+
+  // Construct a string with UTF-16 data.
+  String(const UChar* utf16_data, size_t length);
+  String(const UChar* utf16_data);
+
+  // Construct a string with latin1 data.
+  String(const LChar* latin1_data, size_t length);
+  String(const LChar* latin1_data);
+  String(const char* characters);
+  String(const std::string& s);
+
+  // Construct a string referencing an existing StringImpl.
+  String(std::shared_ptr<StringImpl> impl) : impl_(std::move(impl)) {}
+
+  // Copying a String is relatively inexpensive, since the underlying data is
+  // immutable and refcounted.
+  String(const String&) = default;
+  String& operator=(const String&) = default;
+  String(String&&) = default;
+  String& operator=(String&&) = default;
+
+  bool IsNull() const { return !impl_; }
+  bool IsEmpty() const { return !impl_ || !impl_->length(); }
+  bool Is8Bit() const { return impl_ && impl_->Is8Bit(); }
+
+  size_t length() const { return impl_ ? impl_->length() : 0; }
+
+  const LChar* Characters8() const {
+    return impl_ ? impl_->Characters8() : nullptr;
+  }
+
+  const UChar* Characters16() const {
+    return impl_ ? impl_->Characters16() : nullptr;
+  }
+
+  // Access characters by index
+  UChar operator[](size_t index) const {
+    return impl_ ? (*impl_)[index] : 0;
+  }
+
+  // String operations
+  String Substring(size_t pos, size_t len = UINT_MAX) const;
+  String LowerASCII() const;
+  String UpperASCII() const;
+
+  // Search operations
+  size_t Find(UChar c, size_t start = 0) const;
+  size_t Find(const String& str, size_t start = 0) const;
+  
+  bool StartsWith(const String& prefix) const;
+  bool StartsWith(UChar character) const;
+  
+  bool EndsWith(const String& suffix) const;
+  bool EndsWith(UChar character) const;
+
+  // Comparison
+  bool operator==(const String& other) const;
+  bool operator!=(const String& other) const { return !(*this == other); }
+  bool operator==(const char* other) const;
+  bool operator!=(const char* other) const { return !(*this == other); }
+
+  // Conversion
+  std::string StdUtf8() const;
+  static String FromUTF8(const char* utf8_data, size_t byte_length);
+  static String FromUTF8(const char* utf8_data);
+
+  // Get the underlying implementation
+  StringImpl* Impl() const { return impl_.get(); }
+  std::shared_ptr<StringImpl> ReleaseImpl() { return std::move(impl_); }
+
+  // Static empty string
+  static const String& EmptyString();
+
+ private:
+  std::shared_ptr<StringImpl> impl_;
+};
+
+// Free functions
+inline bool operator==(const char* a, const String& b) { return b == a; }
+inline bool operator!=(const char* a, const String& b) { return b != a; }
+
+}  // namespace webf
+
+// Hashing support
+namespace std {
+template <>
+struct hash<webf::String> {
+  size_t operator()(const webf::String& string) const {
+    return string.Impl() ? string.Impl()->GetHash() : 0;
+  }
+};
+}  // namespace std
+
+#endif  // WEBF_FOUNDATION_STRING_WTF_STRING_H_

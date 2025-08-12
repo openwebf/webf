@@ -9,13 +9,15 @@
 #include <string>
 #include "ascii_fast_path.h"
 #include "string_buffer.h"
+#include "string_view.h"
+#include "utf8_codecs.h"
 
 namespace webf {
 
 DEFINE_GLOBAL(StringImpl, g_global_empty);
 DEFINE_GLOBAL(StringImpl, g_global_empty16_bit);
 
-ALWAYS_INLINE bool Equal(const char* a, const char16_t* b, size_t length) {
+ALWAYS_INLINE bool Equal(const LChar* a, const UChar* b, size_t length) {
   for (size_t i = 0; i < length; ++i) {
     if (a[i] != b[i])
       return false;
@@ -23,13 +25,29 @@ ALWAYS_INLINE bool Equal(const char* a, const char16_t* b, size_t length) {
   return true;
 }
 
-ALWAYS_INLINE bool Equal(const char16_t* a, const char* b, size_t length) {
+ALWAYS_INLINE bool Equal(const UChar* a, const LChar* b, size_t length) {
   return Equal(b, a, length);
 }
 
 template <typename CharType>
 ALWAYS_INLINE bool Equal(const CharType* a, const CharType* b, size_t length) {
   return std::equal(a, a + length, b);
+}
+
+ALWAYS_INLINE bool Equal(const LChar* a, const StringView& b, size_t length) {
+  if (b.Is8Bit()) {
+    return Equal(a, b.Characters8(), length);
+  }
+
+  return Equal(a, b.Characters16(), length);
+}
+
+ALWAYS_INLINE bool Equal(const UChar* a, const StringView& b, size_t length) {
+  if (b.Is8Bit()) {
+    return Equal(a, b.Characters8(), length);
+  }
+
+  return Equal(a, b.Characters16(), length);
 }
 
 // Callers need the global empty strings to be non-const.
@@ -41,11 +59,11 @@ void StringImpl::InitStatics() {
   new ((void*)empty16_bit_) StringImpl(kConstructEmptyString16Bit);
 }
 
-std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t length) {
+std::shared_ptr<StringImpl> StringImpl::Create(const LChar* characters, size_t length) {
   if (!characters || !length)
     return empty_shared();
 
-  char* data;
+  LChar* data;
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
   memcpy(data, characters, length * sizeof(char));
   data[length] = '\0';  // Add null termination
@@ -54,7 +72,7 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char* characters, size_t le
   return string;
 }
 
-std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_t length) {
+std::shared_ptr<StringImpl> StringImpl::Create(const UChar* characters, size_t length) {
   if (!characters || !length)
     return empty16_shared();
 
@@ -62,12 +80,12 @@ std::shared_ptr<StringImpl> StringImpl::Create(const char16_t* characters, size_
   std::shared_ptr<StringImpl> string = CreateUninitialized(length, data);
   memcpy(data, characters, length * sizeof(char16_t));
   data[length] = '\0';  // Add null termination
-  unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(characters, length);
+  unsigned hash = StringHasher::ComputeHashForWideString(characters, length);
   string->SetHash(hash);
   return string;
 }
 
-std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*& data) {
+std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, LChar*& data) {
   if (!length) {
     data = nullptr;
     return empty_shared();
@@ -76,12 +94,12 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char*
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  auto* string = static_cast<StringImpl*>(malloc(AllocationSize<char>(length) + 1));
-  data = reinterpret_cast<char*>(string + 1);
+  auto* string = static_cast<StringImpl*>(malloc(AllocationSize<LChar>(length) + 1));
+  data = reinterpret_cast<LChar*>(string + 1);
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length, kForce8BitConstructor));
 }
 
-std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char16_t*& data) {
+std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, UChar*& data) {
   if (!length) {
     data = nullptr;
     return empty16_shared();
@@ -90,8 +108,8 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, char1
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<char16_t>(length) + sizeof(char16_t)));
-  data = reinterpret_cast<char16_t*>(string + 1);
+  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<UChar>(length) + sizeof(UChar)));
+  data = reinterpret_cast<UChar*>(string + 1);
 
   return std::shared_ptr<StringImpl>(new (string) StringImpl(length));
 }
@@ -174,7 +192,7 @@ std::shared_ptr<StringImpl> StringImpl::RemoveCharacters(const std::shared_ptr<S
 
 bool StringImpl::IsDigit() const {
   if (Is8Bit()) {
-    const char* chars = Characters8();
+    const auto* chars = Characters8();
     for (size_t i = 0; i < length_; i++) {
       if (!::isdigit(chars[i])) {
         return false;
@@ -203,13 +221,13 @@ bool StringImpl::StartsWith(char character) const {
   return length_ && (*this)[0] == character;
 }
 
-bool StringImpl::StartsWith(const std::string_view& prefix) const {
+bool StringImpl::StartsWith(const StringView& prefix) const {
   if (prefix.length() > length())
     return false;
   if (Is8Bit()) {
-    return Equal(Characters8(), prefix.data(), prefix.length());
+    return Equal(Characters8(), prefix, prefix.length());
   }
-  return Equal(Characters16(), prefix.data(), prefix.length());
+  return Equal(Characters16(), prefix, prefix.length());
 }
 
 std::shared_ptr<StringImpl> StringImpl::Substring(const std::shared_ptr<StringImpl>& str,
@@ -225,7 +243,7 @@ std::shared_ptr<StringImpl> StringImpl::Substring(const std::shared_ptr<StringIm
     length = max_length;
   }
   if (str->Is8Bit()) {
-    tcb::span<const char> s = str->Span8().subspan(start, length);
+    tcb::span<const LChar> s = str->Span8().subspan(start, length);
     return Create(s.data(), s.size());
   }
 
@@ -247,7 +265,7 @@ size_t StringImpl::HashSlowCase() const {
   if (Is8Bit())
     SetHash(StringHasher::ComputeHashAndMaskTop8Bits(Characters8(), length_));
   else
-    SetHash(StringHasher::ComputeHashAndMaskTop8Bits(Characters16(), length_));
+    SetHash(StringHasher::ComputeHashForWideString(Characters16(), length_));
   return ExistingHash();
 }
 
@@ -302,84 +320,52 @@ static inline size_t CountASCII(const uint8_t* p, size_t len) {
   return count;
 }
 
-std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const char* utf8_data, size_t byte_length) {
+std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const UTF8Char* utf8_data, size_t byte_length) {
   if (!utf8_data || !byte_length)
     return empty_shared();
-  
-  const uint8_t* p = reinterpret_cast<const uint8_t*>(utf8_data);
+
+  return CreateFromUTF8({utf8_data, byte_length});
+}
+
+std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const UTF8StringView& string_view) {
+  auto byte_length = string_view.length();
+
+  const auto* p = reinterpret_cast<const uint8_t*>(string_view.data());
   const uint8_t* end = p + byte_length;
-  
+
   // First, check if it's pure ASCII
   size_t ascii_length = CountASCII(p, byte_length);
   if (ascii_length == byte_length) {
     // Pure ASCII - use 8-bit string
-    return Create(utf8_data, byte_length);
+    return Create(reinterpret_cast<const LChar*>(string_view.data()), byte_length);
   }
-  
-  // Count characters and check if we need 16-bit
-  const uint8_t* scan = p + ascii_length;
-  size_t char_count = ascii_length;
-  bool needs_16bit = false;
-  
-  while (scan < end) {
-    uint32_t c = DecodeUTF8Char(scan, end);
-    if (c >= 0x100) {
-      needs_16bit = true;
-    }
-    if (c > 0xFFFF) {
-      // Surrogate pair needed
-      char_count += 2;
-    } else {
-      char_count += 1;
-    }
-  }
-  
-  if (!needs_16bit) {
+
+
+  auto u16 = UTF8Codecs::Decode(string_view);
+
+  if (UTF8Codecs::UTF16IsLatin1(u16)) {
     // All characters fit in 8-bit
-    char* data;
-    std::shared_ptr<StringImpl> string = CreateUninitialized(char_count, data);
-    
+    LChar* data;
+    std::shared_ptr<StringImpl> string = CreateUninitialized(u16.length(), data);
+
     // Copy ASCII portion
-    memcpy(data, utf8_data, ascii_length);
-    
-    // Decode remaining UTF-8
-    scan = p + ascii_length;
-    size_t i = ascii_length;
-    while (scan < end) {
-      uint32_t c = DecodeUTF8Char(scan, end);
-      data[i++] = static_cast<char>(c);
-    }
-    data[char_count] = '\0';  // Add null termination
-    
-    unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, char_count);
+    std::memcpy(data, string_view.data(), u16.length());
+
+    // Add null termination
+    data[u16.length()] = '\0';
+
+    unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, u16.length());
     string->SetHash(hash);
     return string;
   } else {
     // Need 16-bit string
     char16_t* data;
-    std::shared_ptr<StringImpl> string = CreateUninitialized(char_count, data);
-    
-    // Copy ASCII portion
-    for (size_t i = 0; i < ascii_length; i++) {
-      data[i] = p[i];
-    }
-    
-    // Decode remaining UTF-8
-    scan = p + ascii_length;
-    size_t i = ascii_length;
-    while (scan < end) {
-      uint32_t c = DecodeUTF8Char(scan, end);
-      if (c > 0xFFFF) {
-        // Encode as surrogate pair
-        data[i++] = 0xD800 + ((c - 0x10000) >> 10);
-        data[i++] = 0xDC00 + ((c - 0x10000) & 0x3FF);
-      } else {
-        data[i++] = static_cast<char16_t>(c);
-      }
-    }
-    data[char_count] = '\0';  // Add null termination
-    
-    unsigned hash = StringHasher::ComputeHashAndMaskTop8Bits(data, char_count);
+    std::shared_ptr<StringImpl> string = CreateUninitialized(u16.length(), data);
+
+    std::memcpy(data, u16.data(), u16.length() * sizeof(UChar));
+    data[u16.length()] = '\0';  // Add null termination
+
+    unsigned hash = StringHasher::ComputeHashForWideString(data, u16.length());
     string->SetHash(hash);
     return string;
   }

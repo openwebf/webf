@@ -35,6 +35,7 @@
 
 #include <optional>
 
+#include "../../foundation/string/string_builder.h"
 #include "core/base/memory/values_equivalent.h"
 #include "core/css/css_numeric_literal_value.h"
 #include "core/css/css_primitive_value.h"
@@ -43,7 +44,6 @@
 #include "core/layout/geometry/axis.h"
 #include "foundation/casting.h"
 #include "foundation/macros.h"
-#include "foundation/string_builder.h"
 
 namespace webf {
 

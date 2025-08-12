@@ -6,10 +6,10 @@
 #ifndef WEBF_CORE_CSS_CSS_STYLE_DECLARATION_H_
 #define WEBF_CORE_CSS_CSS_STYLE_DECLARATION_H_
 
+#include "../../foundation/string/string_view.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/binding_object.h"
 #include "css_property_names.h"
-#include "foundation/string_view.h"
 #include "defined_properties.h"
 #include "plugin_api/css_style_declaration.h"
 

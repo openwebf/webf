@@ -30,6 +30,11 @@
     "foundation/decimal.cc",
     "multiple_threading/dispatcher.cc",
     "multiple_threading/looper.cc",
+    "foundation/string/rapidhash.h",
+    "foundation/string/string_types.h",
+    "foundation/string/convert_to_8bit_hash_reader.h",
+    "foundation/string/utf8_codecs.h",
+    "foundation/string/wtf_string.cc,",
 
     // Bindings
     "bindings/qjs/dictionary_base.cc",

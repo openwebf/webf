@@ -53,5 +53,5 @@
 #include "core/timing/performance.h"
 #include "core/native/vector_value_ref.h"
 #include "include/plugin_api/performance_mark_options.h"
-#include "foundation/atomic_string.h"
+#include "foundation/string/atomic_string.h"
 <%= content %>

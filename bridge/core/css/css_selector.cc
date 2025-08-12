@@ -31,6 +31,7 @@
 #include "core/css/css_selector.h"
 #include <algorithm>
 #include <memory>
+#include "../../foundation/string/string_builder.h"
 #include "core/base/strings/string_util.h"
 #include "core/css/css_markup.h"
 #include "core/css/css_selector_list.h"
@@ -39,7 +40,6 @@
 #include "core/css/parser/css_selector_parser.h"
 #include "core/dom/document.h"
 #include "core/executing_context.h"
-#include "foundation/string_builder.h"
 #include "style_rule.h"
 
 #if DCHECK_IS_ON()
@@ -686,17 +686,17 @@ void CSSSelector::Show(int indent) const {
   printf("%*sSelectorText(): %s\n", indent, "", SelectorText().c_str());
   printf("%*smatch_: %d\n", indent, "", Match());
   if (Match() != kTag && Match() != kUniversalTag) {
-    printf("%*sValue(): %s\n", indent, "", Value().ToStdString().c_str());
+    printf("%*sValue(): %s\n", indent, "", Value().ToUTF8String().c_str());
   }
   printf("%*sGetPseudoType(): %d\n", indent, "", GetPseudoType());
   if (Match() == kTag || Match() == kUniversalTag) {
-    printf("%*sTagQName().LocalName(): %s\n", indent, "", TagQName().LocalName().ToStdString().c_str());
+    printf("%*sTagQName().LocalName(): %s\n", indent, "", TagQName().LocalName().ToUTF8String().c_str());
   }
   printf("%*sIsAttributeSelector(): %d\n", indent, "", IsAttributeSelector());
   if (IsAttributeSelector()) {
-    printf("%*sAttribute(): %s\n", indent, "", Attribute().LocalName().ToStdString().c_str());
+    printf("%*sAttribute(): %s\n", indent, "", Attribute().LocalName().ToUTF8String().c_str());
   }
-  printf("%*sArgument(): %s\n", indent, "", Argument().ToStdString().c_str());
+  printf("%*sArgument(): %s\n", indent, "", Argument().ToUTF8String().c_str());
   printf("%*sSpecificity(): %u\n", indent, "", Specificity());
   if (NextSimpleSelector()) {
     printf("\n%*s--> (Relation() == %d)\n", indent, "", Relation());
@@ -952,9 +952,9 @@ void CSSSelector::SetTrue() {
 
 static void SerializeIdentifierOrAny(const AtomicString& identifier, const AtomicString& any, StringBuilder& builder) {
   if (identifier != any) {
-    SerializeIdentifier(identifier.ToStringView(), builder);
+    SerializeIdentifier(identifier.ToUTF8StringView(), builder);
   } else {
-    builder.Append(g_star_atom.ToStringView());
+    builder.Append(g_star_atom.ToUTF8StringView());
   }
 }
 
@@ -984,17 +984,17 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
   bool suppress_selector_list = false;
   if (Match() == kId) {
     builder.Append('#');
-    SerializeIdentifier(SerializingValue().ToStringView(), builder);
+    SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
   } else if (Match() == kClass) {
     builder.Append('.');
-    SerializeIdentifier(SerializingValue().ToStringView(), builder);
+    SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
   } else if (Match() == kPseudoClass || Match() == kPagePseudoClass) {
     if (GetPseudoType() == kPseudoUnparsed) {
-      builder.Append(Value().ToStringView());
+      builder.Append(Value().ToUTF8StringView());
     } else if (GetPseudoType() != kPseudoStateDeprecatedSyntax && GetPseudoType() != kPseudoParent &&
                GetPseudoType() != kPseudoTrue) {
       builder.Append(':');
-      builder.Append(SerializingValue().ToStringView());
+      builder.Append(SerializingValue().ToUTF8StringView());
     }
 
     switch (GetPseudoType()) {
@@ -1039,7 +1039,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
       case kPseudoLang:
       case kPseudoState:
         builder.Append('(');
-        SerializeIdentifier(Argument().ToStringView(), builder);
+        SerializeIdentifier(Argument().ToUTF8StringView(), builder);
         builder.Append(')');
         break;
       case kPseudoHas:
@@ -1048,7 +1048,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
       case kPseudoStateDeprecatedSyntax:
         builder.Append(':');
-        SerializeIdentifier(SerializingValue().ToStringView(), builder);
+        SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
         break;
       case kPseudoHost:
       case kPseudoHostContext:
@@ -1070,7 +1070,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (separator == "(") {
             separator = ", ";
           }
-          SerializeIdentifier(type.ToStringView(), builder);
+          SerializeIdentifier(type.ToUTF8StringView(), builder);
         }
         builder.Append(')');
         break;
@@ -1080,7 +1080,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     }
   } else if (Match() == kPseudoElement) {
     builder.Append("::");
-    SerializeIdentifier(SerializingValue().ToStringView(), builder);
+    SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
     switch (GetPseudoType()) {
       case kPseudoPart: {
         char separator = '(';
@@ -1089,14 +1089,14 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (separator == '(') {
             separator = ' ';
           }
-          SerializeIdentifier(part.ToStringView(), builder);
+          SerializeIdentifier(part.ToUTF8StringView(), builder);
         }
         builder.Append(')');
         break;
       }
       case kPseudoHighlight: {
         builder.Append('(');
-        builder.Append(Argument().ToStringView());
+        builder.Append(Argument().ToUTF8StringView());
         builder.Append(')');
         break;
       }
@@ -1115,7 +1115,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (name_or_class == UniversalSelectorAtom()) {
             builder.Append("*");
           } else {
-            SerializeIdentifier(name_or_class.ToStringView(), builder);
+            SerializeIdentifier(name_or_class.ToUTF8StringView(), builder);
           }
         }
         builder.Append(')');
@@ -1127,7 +1127,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
   } else if (IsAttributeSelector()) {
     builder.Append('[');
     SerializeNamespacePrefixIfNeeded(Attribute().Prefix(), g_star_atom, builder, IsAttributeSelector());
-    SerializeIdentifier(Attribute().LocalName().ToStdString(), builder);
+    SerializeIdentifier(Attribute().LocalName().ToUTF8String(), builder);
     switch (Match()) {
       case kAttributeExact:
         builder.Append('=');
@@ -1155,7 +1155,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
     }
     if (Match() != kAttributeSet) {
-      SerializeString(SerializingValue().ToStringView(), builder);
+      SerializeString(SerializingValue().ToUTF8StringView(), builder);
       if (AttributeMatch() == AttributeMatchType::kCaseInsensitive) {
         builder.Append(" i");
       } else if (AttributeMatch() == AttributeMatchType::kCaseSensitiveAlways) {

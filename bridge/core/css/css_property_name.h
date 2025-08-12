@@ -10,8 +10,8 @@
 #define WEBF_CSS_PROPERTY_NAME_H
 
 #include <optional>
+#include "../../foundation/string/atomic_string.h"
 #include "css_property_names.h"
-#include "foundation/atomic_string.h"
 #include "foundation/macros.h"
 
 namespace webf {

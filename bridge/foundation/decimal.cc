@@ -32,7 +32,7 @@
 #include <float.h>
 #include "core/base/strings/string_number_conversions.h"
 #include "foundation/dtoa.h"
-#include "foundation/string_builder.h"
+#include "string/string_builder.h"
 
 namespace webf {
 

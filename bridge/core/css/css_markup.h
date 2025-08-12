@@ -30,7 +30,7 @@
 #define WEBF_CORE_CSS_CSS_MARKUP_H_
 
 #include <string>
-#include "foundation/string_builder.h"
+#include "../../foundation/string/string_builder.h"
 
 // Helper functions for converting from CSSValues to text.
 

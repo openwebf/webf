@@ -20,14 +20,14 @@ void Console::__webf_print__(ExecutingContext* context,
                              const AtomicString& level,
                              ExceptionState& exception) {
   std::stringstream stream;
-  std::string buffer = log.ToStdString();
+  std::string buffer = log.ToUTF8String();
   stream << buffer;
-  printLog(context, stream, level != g_empty_atom ? level.ToStdString() : "info", nullptr);
+  printLog(context, stream, level != g_empty_atom ? level.ToUTF8String() : "info", nullptr);
 }
 
 void Console::__webf_print__(ExecutingContext* context, const AtomicString& log, ExceptionState& exception_state) {
   std::stringstream stream;
-  std::string buffer = log.ToStdString();
+  std::string buffer = log.ToUTF8String();
   stream << buffer;
   printLog(context, stream, "info", nullptr);
 }

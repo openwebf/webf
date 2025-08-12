@@ -9,11 +9,11 @@
 #ifndef WEBF_CSS_VARIABLE_PARSER_H
 #define WEBF_CSS_VARIABLE_PARSER_H
 
+#include "../../../foundation/string/string_view.h"
 #include "core/css/css_variable_data.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/executing_context.h"
-#include "foundation/string_view.h"
 
 namespace webf {
 

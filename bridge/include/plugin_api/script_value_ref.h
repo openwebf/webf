@@ -5,6 +5,7 @@
 #ifndef WEBF_INCLUDE_PLUGIN_API_SCRIPT_VALUE_REF_H_
 #define WEBF_INCLUDE_PLUGIN_API_SCRIPT_VALUE_REF_H_
 
+#include "string/atomic_string.h"
 #include "webf_value.h"
 
 namespace webf {
@@ -12,12 +13,12 @@ namespace webf {
 typedef struct ScriptValueRef ScriptValueRef;
 class SharedExceptionState;
 
-using PublicScriptValueRefToString = const char* (*)(ScriptValueRef*, SharedExceptionState*);
-using PublicScriptValueRefSetAsString = void (*)(ScriptValueRef*, const char*, SharedExceptionState*);
+using PublicScriptValueRefToString = const UTF8Char* (*)(ScriptValueRef*, SharedExceptionState*);
+using PublicScriptValueRefSetAsString = void (*)(ScriptValueRef*, const UTF8Char*, SharedExceptionState*);
 using PublicScriptValueRefRelease = void (*)(ScriptValueRef*);
 
 struct ScriptValueRefPublicMethods : WebFPublicMethods {
-  static const char* ToString(ScriptValueRef* script_value_ref, SharedExceptionState* shared_exception_state);
+  static const UTF8Char* ToString(ScriptValueRef* script_value_ref, SharedExceptionState* shared_exception_state);
   static void SetAsString(ScriptValueRef* script_value_ref,
                           const char* value,
                           SharedExceptionState* shared_exception_state);

@@ -10,147 +10,148 @@
 
 #include <optional>
 
-#include "core/css/parser/css_parser_context.h"
-#include "foundation/ascii_types.h"
-#include "foundation/string_builder.h"
 #include <cassert>
+#include "../../../foundation/string/ascii_types.h"
+#include "../../../foundation/string/string_builder.h"
+#include "core/css/parser/css_parser_context.h"
+#include "string/utf8_codecs.h"
 
 namespace webf {
 
 CSSAtRuleID CssAtRuleID(StringView name) {
   // Convert StringView to std::string_view for comparison
-  std::string_view name_view;
+  UTF8String utf8_string;
   if (!name.IsNull() && name.Is8Bit()) {
-    name_view = std::string_view(name.Characters8(), name.length());
+    utf8_string = UTF8Codecs::Encode(name);
   } else if (!name.IsNull()) {
     // For 16-bit strings, we need to convert to 8-bit first
     // For now, just return invalid for non-8bit strings
     return CSSAtRuleID::kCSSAtRuleInvalid;
   }
   
-  if (EqualIgnoringASCIICase(name_view, "view-transition")) {
+  if (EqualIgnoringASCIICase(utf8_string, "view-transition")) {
     return CSSAtRuleID::kCSSAtRuleViewTransition;
   }
-  if (EqualIgnoringASCIICase(name_view, "charset")) {
+  if (EqualIgnoringASCIICase(utf8_string, "charset")) {
     return CSSAtRuleID::kCSSAtRuleCharset;
   }
-  if (EqualIgnoringASCIICase(name_view, "font-face")) {
+  if (EqualIgnoringASCIICase(utf8_string, "font-face")) {
     return CSSAtRuleID::kCSSAtRuleFontFace;
   }
-  if (EqualIgnoringASCIICase(name_view, "font-palette-values")) {
+  if (EqualIgnoringASCIICase(utf8_string, "font-palette-values")) {
     return CSSAtRuleID::kCSSAtRuleFontPaletteValues;
   }
-  if (EqualIgnoringASCIICase(name_view, "font-feature-values")) {
+  if (EqualIgnoringASCIICase(utf8_string, "font-feature-values")) {
     return CSSAtRuleID::kCSSAtRuleFontFeatureValues;
   }
-  if (EqualIgnoringASCIICase(name_view, "stylistic")) {
+  if (EqualIgnoringASCIICase(utf8_string, "stylistic")) {
     return CSSAtRuleID::kCSSAtRuleStylistic;
   }
-  if (EqualIgnoringASCIICase(name_view, "styleset")) {
+  if (EqualIgnoringASCIICase(utf8_string, "styleset")) {
     return CSSAtRuleID::kCSSAtRuleStyleset;
   }
-  if (EqualIgnoringASCIICase(name_view, "character-variant")) {
+  if (EqualIgnoringASCIICase(utf8_string, "character-variant")) {
     return CSSAtRuleID::kCSSAtRuleCharacterVariant;
   }
-  if (EqualIgnoringASCIICase(name_view, "swash")) {
+  if (EqualIgnoringASCIICase(utf8_string, "swash")) {
     return CSSAtRuleID::kCSSAtRuleSwash;
   }
-  if (EqualIgnoringASCIICase(name_view, "ornaments")) {
+  if (EqualIgnoringASCIICase(utf8_string, "ornaments")) {
     return CSSAtRuleID::kCSSAtRuleOrnaments;
   }
-  if (EqualIgnoringASCIICase(name_view, "annotation")) {
+  if (EqualIgnoringASCIICase(utf8_string, "annotation")) {
     return CSSAtRuleID::kCSSAtRuleAnnotation;
   }
-  if (EqualIgnoringASCIICase(name_view, "import")) {
+  if (EqualIgnoringASCIICase(utf8_string, "import")) {
     return CSSAtRuleID::kCSSAtRuleImport;
   }
-  if (EqualIgnoringASCIICase(name_view, "keyframes")) {
+  if (EqualIgnoringASCIICase(utf8_string, "keyframes")) {
     return CSSAtRuleID::kCSSAtRuleKeyframes;
   }
-  if (EqualIgnoringASCIICase(name_view, "layer")) {
+  if (EqualIgnoringASCIICase(utf8_string, "layer")) {
     return CSSAtRuleID::kCSSAtRuleLayer;
   }
-  if (EqualIgnoringASCIICase(name_view, "media")) {
+  if (EqualIgnoringASCIICase(utf8_string, "media")) {
     return CSSAtRuleID::kCSSAtRuleMedia;
   }
-  if (EqualIgnoringASCIICase(name_view, "namespace")) {
+  if (EqualIgnoringASCIICase(utf8_string, "namespace")) {
     return CSSAtRuleID::kCSSAtRuleNamespace;
   }
-  if (EqualIgnoringASCIICase(name_view, "page")) {
+  if (EqualIgnoringASCIICase(utf8_string, "page")) {
     return CSSAtRuleID::kCSSAtRulePage;
   }
-  if (EqualIgnoringASCIICase(name_view, "position-try")) {
+  if (EqualIgnoringASCIICase(utf8_string, "position-try")) {
     return CSSAtRuleID::kCSSAtRulePositionTry;
   }
-  if (EqualIgnoringASCIICase(name_view, "property")) {
+  if (EqualIgnoringASCIICase(utf8_string, "property")) {
     return CSSAtRuleID::kCSSAtRuleProperty;
   }
-  if (EqualIgnoringASCIICase(name_view, "container")) {
+  if (EqualIgnoringASCIICase(utf8_string, "container")) {
     return CSSAtRuleID::kCSSAtRuleContainer;
   }
-  if (EqualIgnoringASCIICase(name_view, "counter-style")) {
+  if (EqualIgnoringASCIICase(utf8_string, "counter-style")) {
     return CSSAtRuleID::kCSSAtRuleCounterStyle;
   }
-  if (EqualIgnoringASCIICase(name_view, "scope")) {
+  if (EqualIgnoringASCIICase(utf8_string, "scope")) {
     return CSSAtRuleID::kCSSAtRuleScope;
   }
-  if (EqualIgnoringASCIICase(name_view, "supports")) {
+  if (EqualIgnoringASCIICase(utf8_string, "supports")) {
     return CSSAtRuleID::kCSSAtRuleSupports;
   }
-  if (EqualIgnoringASCIICase(name_view, "starting-style")) {
+  if (EqualIgnoringASCIICase(utf8_string, "starting-style")) {
     return CSSAtRuleID::kCSSAtRuleStartingStyle;
   }
-  if (EqualIgnoringASCIICase(name_view, "-webkit-keyframes")) {
+  if (EqualIgnoringASCIICase(utf8_string, "-webkit-keyframes")) {
     return CSSAtRuleID::kCSSAtRuleWebkitKeyframes;
   }
 
   // https://www.w3.org/TR/css-page-3/#syntax-page-selector
-  if (EqualIgnoringASCIICase(name_view, "top-left-corner")) {
+  if (EqualIgnoringASCIICase(utf8_string, "top-left-corner")) {
     return CSSAtRuleID::kCSSAtRuleTopLeftCorner;
   }
-  if (EqualIgnoringASCIICase(name_view, "top-left")) {
+  if (EqualIgnoringASCIICase(utf8_string, "top-left")) {
     return CSSAtRuleID::kCSSAtRuleTopLeft;
   }
-  if (EqualIgnoringASCIICase(name_view, "top-center")) {
+  if (EqualIgnoringASCIICase(utf8_string, "top-center")) {
     return CSSAtRuleID::kCSSAtRuleTopCenter;
   }
-  if (EqualIgnoringASCIICase(name_view, "top-right")) {
+  if (EqualIgnoringASCIICase(utf8_string, "top-right")) {
     return CSSAtRuleID::kCSSAtRuleTopRight;
   }
-  if (EqualIgnoringASCIICase(name_view, "top-right-corner")) {
+  if (EqualIgnoringASCIICase(utf8_string, "top-right-corner")) {
     return CSSAtRuleID::kCSSAtRuleTopRightCorner;
   }
-  if (EqualIgnoringASCIICase(name_view, "bottom-left-corner")) {
+  if (EqualIgnoringASCIICase(utf8_string, "bottom-left-corner")) {
     return CSSAtRuleID::kCSSAtRuleBottomLeftCorner;
   }
-  if (EqualIgnoringASCIICase(name_view, "bottom-left")) {
+  if (EqualIgnoringASCIICase(utf8_string, "bottom-left")) {
     return CSSAtRuleID::kCSSAtRuleBottomLeft;
   }
-  if (EqualIgnoringASCIICase(name_view, "bottom-center")) {
+  if (EqualIgnoringASCIICase(utf8_string, "bottom-center")) {
     return CSSAtRuleID::kCSSAtRuleBottomCenter;
   }
-  if (EqualIgnoringASCIICase(name_view, "bottom-right")) {
+  if (EqualIgnoringASCIICase(utf8_string, "bottom-right")) {
     return CSSAtRuleID::kCSSAtRuleBottomRight;
   }
-  if (EqualIgnoringASCIICase(name_view, "bottom-right-corner")) {
+  if (EqualIgnoringASCIICase(utf8_string, "bottom-right-corner")) {
     return CSSAtRuleID::kCSSAtRuleBottomRightCorner;
   }
-  if (EqualIgnoringASCIICase(name_view, "left-top")) {
+  if (EqualIgnoringASCIICase(utf8_string, "left-top")) {
     return CSSAtRuleID::kCSSAtRuleLeftTop;
   }
-  if (EqualIgnoringASCIICase(name_view, "left-middle")) {
+  if (EqualIgnoringASCIICase(utf8_string, "left-middle")) {
     return CSSAtRuleID::kCSSAtRuleLeftMiddle;
   }
-  if (EqualIgnoringASCIICase(name_view, "left-bottom")) {
+  if (EqualIgnoringASCIICase(utf8_string, "left-bottom")) {
     return CSSAtRuleID::kCSSAtRuleLeftBottom;
   }
-  if (EqualIgnoringASCIICase(name_view, "right-top")) {
+  if (EqualIgnoringASCIICase(utf8_string, "right-top")) {
     return CSSAtRuleID::kCSSAtRuleRightTop;
   }
-  if (EqualIgnoringASCIICase(name_view, "right-middle")) {
+  if (EqualIgnoringASCIICase(utf8_string, "right-middle")) {
     return CSSAtRuleID::kCSSAtRuleRightMiddle;
   }
-  if (EqualIgnoringASCIICase(name_view, "right-bottom")) {
+  if (EqualIgnoringASCIICase(utf8_string, "right-bottom")) {
     return CSSAtRuleID::kCSSAtRuleRightBottom;
   }
 

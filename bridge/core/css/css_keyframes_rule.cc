@@ -87,7 +87,7 @@ void CSSKeyframesRule::setName(const AtomicString& name) {
     parentStyleSheet()->Contents()->NotifyDiffUnrepresentable();
   }
 
-  keyframes_rule_->SetName(name.ToStdString());
+  keyframes_rule_->SetName(name.ToUTF8String());
 }
 
 void CSSKeyframesRule::appendRule(const ExecutingContext* execution_context, const std::string& rule_text) {
@@ -147,7 +147,7 @@ AtomicString CSSKeyframesRule::cssText() const {
   } else {
     result.Append("@keyframes ");
   }
-  SerializeIdentifier(name().ToStdString(), result);
+  SerializeIdentifier(name().ToUTF8String(), result);
   result.Append(" { \n");
 
   unsigned size = length();

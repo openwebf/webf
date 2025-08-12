@@ -8,6 +8,7 @@
 #include <arm_neon.h>
 #endif
 
+#include "../../../foundation/string/ascii_types.h"
 #include "core/css/css_function_value.h"
 #include "core/css/css_inherit_value.h"
 #include "core/css/css_initial_value.h"
@@ -21,7 +22,6 @@
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_color.h"
 #include "css_parser_fast_path.h"
-#include "foundation/ascii_types.h"
 #include "style_property_shorthand.h"
 
 namespace webf {

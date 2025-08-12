@@ -9,7 +9,7 @@
 #ifndef WEBF_CORE_CSS_PARSER_CSS_AT_RULE_ID_H_
 #define WEBF_CORE_CSS_PARSER_CSS_AT_RULE_ID_H_
 
-#include "foundation/string_view.h"
+#include "../../../foundation/string/string_view.h"
 
 namespace webf {
 

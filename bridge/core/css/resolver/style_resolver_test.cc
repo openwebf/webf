@@ -124,7 +124,7 @@ TEST_F(StyleResolverTest, ResolveStyleForElement) {
   // Check element tag name
   // Note: tagName() returns uppercase for HTML elements
   auto tag_name = element->tagName();
-  EXPECT_EQ(tag_name.ToStdString(), "DIV") << "Element tag name should be DIV";
+  EXPECT_EQ(tag_name.ToUTF8String(), "DIV") << "Element tag name should be DIV";
   EXPECT_EQ(element->localName(), html_names::kDiv) << "Element local name should be div";
   
   // Create style resolver
@@ -208,7 +208,7 @@ TEST_F(StyleResolverTest, UAStylesheetBodyDisplay) {
   // Check body element tag name
   // Note: tagName() returns uppercase for HTML elements
   auto body_tag_name = body->tagName();
-  EXPECT_EQ(body_tag_name.ToStdString(), "BODY") << "Body tag name should be BODY";
+  EXPECT_EQ(body_tag_name.ToUTF8String(), "BODY") << "Body tag name should be BODY";
   EXPECT_EQ(body->localName(), html_names::kBody) << "Body local name should be body";
   
   // Create style resolver
@@ -237,7 +237,7 @@ TEST_F(StyleResolverTest, UAStylesheetParagraphDisplay) {
   // Check paragraph tag name
   // Note: tagName() returns uppercase for HTML elements
   auto p_tag_name = paragraph->tagName();
-  EXPECT_EQ(p_tag_name.ToStdString(), "P") << "Paragraph tag name should be P";
+  EXPECT_EQ(p_tag_name.ToUTF8String(), "P") << "Paragraph tag name should be P";
   EXPECT_EQ(paragraph->localName(), html_names::kP) << "Paragraph local name should be p";
   
   // Create style resolver

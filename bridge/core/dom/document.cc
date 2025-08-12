@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 #include "document.h"
+#include "../../foundation/string/ascii_types.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_message.h"
 #include "core/css/css_style_sheet.h"
@@ -26,7 +27,6 @@
 #include "element_namespace_uris.h"
 #include "element_traversal.h"
 #include "event_factory.h"
-#include "foundation/ascii_types.h"
 #include "foundation/native_value_converter.h"
 #include "html_element_factory.h"
 #include "svg_element_factory.h"
@@ -51,7 +51,7 @@ HTMLElement* Document::createElement(const AtomicString& name, ExceptionState& e
   const AtomicString& local_name = name.LowerASCII();
   if (!IsValidName(local_name)) {
     exception_state.ThrowException(ctx(), ErrorType::InternalError,
-                                   "The tag name provided ('" + local_name.ToStdString() + "') is not a valid name.");
+                                   "The tag name provided ('" + local_name.ToUTF8String() + "') is not a valid name.");
     return nullptr;
   }
 
@@ -74,7 +74,7 @@ HTMLElement* Document::createElement(const AtomicString& name, ExceptionState& e
   auto* html_unknown_element = MakeGarbageCollected<HTMLUnknownElement>(local_name, this);
   // Additional patch for the quickjs object, avoid warning for unknown tag in React.js
   JS_SetProperty(ctx(), html_unknown_element->ToQuickJSUnsafe(), JS_ATOM_Symbol_toStringTag,
-                 JS_NewString(ctx(), ("HTMLUnknownElement " + local_name.ToStdString()).c_str()));
+                 JS_NewString(ctx(), ("HTMLUnknownElement " + local_name.ToUTF8String()).c_str()));
   return html_unknown_element;
 }
 
@@ -116,7 +116,7 @@ Element* Document::createElementNS(const AtomicString& uri, const AtomicString& 
   if (!IsValidName(qualified_name)) {
     exception_state.ThrowException(
         ctx(), ErrorType::InternalError,
-        "The tag name provided ('" + qualified_name.ToStdString() + "') is not a valid name.");
+        "The tag name provided ('" + qualified_name.ToUTF8String() + "') is not a valid name.");
     return nullptr;
   }
 
@@ -138,6 +138,7 @@ Element* Document::createElementNS(const AtomicString& uri,
 }
 
 Text* Document::createTextNode(const AtomicString& value, ExceptionState& exception_state) {
+  WEBF_LOG(WARN) << "Document::createTextNode: " << value.ToUTF8String();
   return Text::Create(*this, value);
 }
 
@@ -433,7 +434,7 @@ bool Document::IsValidName(const AtomicString& name) {
   if (!length)
     return false;
 
-  auto string_view = name.ToStringView();
+  auto string_view = name.ToUTF8StringView();
 
   const char* characters = string_view.data();
   if (IsValidNameASCII(characters, length)) {
@@ -493,7 +494,7 @@ void Document::setBody(HTMLBodyElement* new_body, ExceptionState& exception_stat
 
   if (!IsA<HTMLBodyElement>(*new_body)) {
     exception_state.ThrowException(ctx(), ErrorType::TypeError,
-                                   "The new body element is of type '" + new_body->tagName().ToStdString() +
+                                   "The new body element is of type '" + new_body->tagName().ToUTF8String() +
                                        "'. It must be either a 'BODY' element.");
     return;
   }
