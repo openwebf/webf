@@ -1,3 +1,20 @@
+## 0.22.8
+
+### Features
+
+- Dio networking support with pluggable adapter and interceptors; backward‑compatible with existing HTTP interceptors
+- Use CupertinoHttp as the default http adapter for iOS/macOS platform.
+- Custom network options on `WebFController` (adapter selection, cache controls, logger options)
+- LoadingState records Fetch API request lifecycle for better diagnostics
+- Add hybrid router support in Chrome DevTools.
+
+### Fixes
+- Removed global HTTP overrides to avoid unintended side effects
+- Corrected Dio request tracking and metrics collection
+- Android: ensured Cronet cache directory is created when needed in example
+- iOS: build fixes for recent changes
+- Fix the screen cast from chrome devtools.
+
 ## 0.22.7+2
 
 **Bug Fixed**
