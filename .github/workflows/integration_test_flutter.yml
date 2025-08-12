@@ -23,7 +23,7 @@ jobs:
           JSON=$(node -e "console.log(JSON.stringify(require('json5').parse(fs.readFileSync('./integration_tests/spec_group.json5')).map(j=>j.name)))")
           echo "::set-output name=value::$(echo $JSON)"
   build_bridge:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, macOS, ARM64, Integration]
     steps:
     - uses: actions/checkout@v3
       with:
@@ -42,7 +42,7 @@ jobs:
         path: bridge/build/macos/
 
   bridge_unit_test:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, macOS, ARM64, Integration]
     needs: [ setup, build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -60,7 +60,7 @@ jobs:
     - run: node scripts/run_bridge_unit_test.js
 
   webf_unit_test:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, macOS, ARM64, Integration]
     needs: [ setup, build_bridge ]
     steps:
     - uses: actions/checkout@v3
@@ -78,7 +78,7 @@ jobs:
     - run: cd webf && flutter test
 
   integration_test:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, macOS, ARM64, Integration]
     needs: [ setup, build_bridge ]
     strategy:
       fail-fast: false
