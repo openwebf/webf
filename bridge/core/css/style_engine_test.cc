@@ -48,6 +48,7 @@ class StyleEngineTest : public ::testing::Test {
 
 TEST_F(StyleEngineTest, CreateSheet) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   element->setAttribute(AtomicString("type"), AtomicString("text/css"));
@@ -70,6 +71,7 @@ TEST_F(StyleEngineTest, CreateSheet) {
 
 TEST_F(StyleEngineTest, ParseSheet) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
+  GetExecutingContext()->EnableBlinkEngine();
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   
@@ -154,7 +156,7 @@ TEST_F(StyleEngineTest, InEnsureComputedStyleScope) {
 
 TEST_F(StyleEngineTest, CachedSheet) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
-  
+  GetExecutingContext()->EnableBlinkEngine();
   auto* element1 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   auto* element2 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   
@@ -185,7 +187,7 @@ TEST_F(StyleEngineTest, CachedSheet) {
 
 TEST_F(StyleEngineTest, LargeSheetCaching) {
   MemberMutationScope mutation_scope{GetExecutingContext()};
-  
+  GetExecutingContext()->EnableBlinkEngine();
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
   
   // Connect element to document
