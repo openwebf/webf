@@ -348,6 +348,7 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
   std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final {
     assert(false);
+    return std::make_optional<double>(0.0);
   }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
     assert(false);
@@ -428,6 +429,7 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
   std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final {
     assert(false);
+    return std::make_optional<double>(0.0);
   }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
     assert(false);
@@ -648,6 +650,7 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
   std::optional<double> ComputeValueInCanonicalUnit() const final { return std::nullopt; }
   std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const final {
     assert(false);
+    return std::make_optional<double>(0.0);
   }
   double ComputeLengthPx(const CSSLengthResolver& length_resolver) const final {
     assert(false);

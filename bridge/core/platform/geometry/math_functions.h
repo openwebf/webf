@@ -184,6 +184,7 @@ ValueType EvaluateSteppedValueFunction(OperatorType op, ValueType a, ValueType b
     }
     default:
       assert(false);
+      return 0.0;
   }
 }
 

@@ -8,8 +8,8 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/rule_set.h"
 #include "foundation/logging.h"
-#include "core/css/resources/html_css.h"
-#include "core/css/resources/quirks_css.h"
+#include "code_gen/html_css.h"
+#include "code_gen/quirks_css.h"
 
 namespace webf {
 

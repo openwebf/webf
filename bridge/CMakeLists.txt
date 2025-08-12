@@ -108,7 +108,9 @@ endif()
 # Generate CSS resource headers
 # This section generates C++ header files from CSS source files
 set(CSS_RESOURCES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/core/css/resources)
-set(GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated/core/css/resources)
+
+# Output generated headers into the source tree under code_gen
+set(GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/code_gen/)
 
 # Ensure the generated directory exists
 file(MAKE_DIRECTORY ${GENERATED_DIR})
@@ -133,8 +135,8 @@ configure_file(
   @ONLY
 )
 
-# Add generated directory to include path
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/generated)
+# Ensure code_gen is in the include path for generated headers
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/code_gen)
 
 ## Load BRIDGE_SOURCE from JSON5 via Node.js if present
 set(BRIDGE_SOURCE_LOADED FALSE)

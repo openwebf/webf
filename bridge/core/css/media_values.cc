@@ -36,6 +36,7 @@ double MediaValues::CalculateViewportWidth(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return frame->View()->ViewportSizeForMediaQueries().width();
   assert(false);
+  return 0.0;
 }
 
 double MediaValues::CalculateViewportHeight(ExecutingContext* frame) {
@@ -62,6 +63,7 @@ double MediaValues::CalculateSmallViewportHeight(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return frame->View()->SmallViewportSizeForViewportUnits().height();
   assert(false);
+  return 0.0;
 }
 
 double MediaValues::CalculateLargeViewportWidth(ExecutingContext* frame) {
@@ -70,6 +72,7 @@ double MediaValues::CalculateLargeViewportWidth(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return frame->View()->LargeViewportSizeForViewportUnits().width();
   assert(false);
+  return 0.0;
 }
 
 double MediaValues::CalculateLargeViewportHeight(ExecutingContext* frame) {
@@ -78,6 +81,7 @@ double MediaValues::CalculateLargeViewportHeight(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return frame->View()->LargeViewportSizeForViewportUnits().height();
   assert(false);
+  return 0.0;
 }
 
 double MediaValues::CalculateDynamicViewportWidth(ExecutingContext* frame) {
@@ -86,6 +90,7 @@ double MediaValues::CalculateDynamicViewportWidth(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return frame->View()->DynamicViewportSizeForViewportUnits().width();
   assert(false);
+  return 0.0;
 }
 
 double MediaValues::CalculateDynamicViewportHeight(ExecutingContext* frame) {
@@ -94,6 +99,7 @@ double MediaValues::CalculateDynamicViewportHeight(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return frame->View()->DynamicViewportSizeForViewportUnits().height();
   assert(false);
+  return 0.0;
 }
 
 int MediaValues::CalculateDeviceWidth(ExecutingContext* frame) {
@@ -107,6 +113,7 @@ int MediaValues::CalculateDeviceWidth(ExecutingContext* frame) {
   //  }
   //  return device_width;
   assert(false);
+  return 0;
 }
 
 int MediaValues::CalculateDeviceHeight(ExecutingContext* frame) {
@@ -120,6 +127,7 @@ int MediaValues::CalculateDeviceHeight(ExecutingContext* frame) {
   //  }
   //  return device_height;
   assert(false);
+  return 0;
 }
 
 bool MediaValues::CalculateStrictMode(ExecutingContext* frame) {
@@ -127,11 +135,13 @@ bool MediaValues::CalculateStrictMode(ExecutingContext* frame) {
   //  DCHECK(frame->GetDocument());
   //  return !frame->GetDocument()->InQuirksMode();
   assert(false);
+  return false;
 }
 
 float MediaValues::CalculateDevicePixelRatio(ExecutingContext* frame) {
   //  return frame->DevicePixelRatio();
   assert(false);
+  return 0.0;
 }
 
 bool MediaValues::CalculateDeviceSupportsHDR(ExecutingContext* frame) {
@@ -142,6 +152,7 @@ bool MediaValues::CalculateDeviceSupportsHDR(ExecutingContext* frame) {
   //      .GetScreenInfo(*frame)
   //      .display_color_spaces.SupportsHDR();
   assert(false);
+  return false;
 }
 
 int MediaValues::CalculateColorBitsPerComponent(ExecutingContext* frame) {
@@ -154,6 +165,7 @@ int MediaValues::CalculateColorBitsPerComponent(ExecutingContext* frame) {
   //  }
   //  return screen_info.depth_per_component;
   assert(false);
+  return 0;
 }
 
 int MediaValues::CalculateMonochromeBitsPerComponent(ExecutingContext* frame) {
@@ -166,6 +178,7 @@ int MediaValues::CalculateMonochromeBitsPerComponent(ExecutingContext* frame) {
   //  }
   //  return screen_info.depth_per_component;
   assert(false);
+  return 0;
 }
 
 bool MediaValues::CalculateInvertedColors(ExecutingContext* frame) {
@@ -173,6 +186,7 @@ bool MediaValues::CalculateInvertedColors(ExecutingContext* frame) {
   //  DCHECK(frame->GetSettings());
   //  return frame->GetSettings()->GetInvertedColors();
   assert(false);
+  return false;
 }
 
 float MediaValues::CalculateEmSize(ExecutingContext* frame) {
@@ -182,6 +196,7 @@ float MediaValues::CalculateEmSize(ExecutingContext* frame) {
   //  return CSSToLengthConversionData::FontSizes(style.GetFontSizeStyle(), &style)
   //      .Em(/* zoom */ 1.0f);
   assert(false);
+  return 0.0;
 }
 
 float MediaValues::CalculateExSize(ExecutingContext* frame) {
@@ -191,6 +206,7 @@ float MediaValues::CalculateExSize(ExecutingContext* frame) {
   //  return CSSToLengthConversionData::FontSizes(style.GetFontSizeStyle(), &style)
   //      .Ex(/* zoom */ 1.0f);
   assert(false);
+  return 0.0;
 }
 
 float MediaValues::CalculateChSize(ExecutingContext* frame) {
@@ -200,6 +216,7 @@ float MediaValues::CalculateChSize(ExecutingContext* frame) {
   //  return CSSToLengthConversionData::FontSizes(style.GetFontSizeStyle(), &style)
   //      .Ch(/* zoom */ 1.0f);
   assert(false);
+  return 0.0;
 }
 
 float MediaValues::CalculateIcSize(ExecutingContext* frame) {
@@ -209,6 +226,7 @@ float MediaValues::CalculateIcSize(ExecutingContext* frame) {
   //  return CSSToLengthConversionData::FontSizes(style.GetFontSizeStyle(), &style)
   //      .Ic(/* zoom */ 1.0f);
   assert(false);
+  return 0.0;
 }
 
 float MediaValues::CalculateCapSize(ExecutingContext* frame) {
@@ -218,6 +236,7 @@ float MediaValues::CalculateCapSize(ExecutingContext* frame) {
   //  return CSSToLengthConversionData::FontSizes(style.GetFontSizeStyle(), &style)
   //      .Cap(/* zoom */ 1.0f);
   assert(false);
+  return 0.0;
 }
 
 float MediaValues::CalculateLineHeight(ExecutingContext* frame) {
@@ -226,6 +245,7 @@ float MediaValues::CalculateLineHeight(ExecutingContext* frame) {
   //  const ComputedStyle& style = frame->ContentLayoutObject()->StyleRef();
   //  return AdjustForAbsoluteZoom::AdjustFloat(style.ComputedLineHeight(), style);
   assert(false);
+  return 0.0;
 }
 
 bool MediaValues::CalculateResizable(ExecutingContext* frame) {
@@ -247,11 +267,13 @@ bool MediaValues::CalculateResizable(ExecutingContext* frame) {
   //
   //  return widget->Resizable();
   assert(false);
+  return false;
 }
 
 bool MediaValues::CalculateThreeDEnabled(ExecutingContext* frame) {
   //  return frame->GetPage()->GetSettings().GetAcceleratedCompositingEnabled();
   assert(false);
+  return false;
 }
 
 int MediaValues::CalculateAvailablePointerTypes(ExecutingContext* frame) {
@@ -259,6 +281,7 @@ int MediaValues::CalculateAvailablePointerTypes(ExecutingContext* frame) {
   //  DCHECK(frame->GetSettings());
   //  return frame->GetSettings()->GetAvailablePointerTypes();
   assert(false);
+  return 0;
 }
 
 int MediaValues::CalculateAvailableHoverTypes(ExecutingContext* frame) {
@@ -266,6 +289,7 @@ int MediaValues::CalculateAvailableHoverTypes(ExecutingContext* frame) {
   //  DCHECK(frame->GetSettings());
   //  return frame->GetSettings()->GetAvailableHoverTypes();
   assert(false);
+  return 0;
 }
 
 bool MediaValues::CalculatePrefersReducedMotion(ExecutingContext* frame) {
@@ -309,6 +333,7 @@ bool MediaValues::CalculatePrefersReducedData(ExecutingContext* frame) {
   //  return preference_override_value.value_or(
   //      GetNetworkStateNotifier().SaveDataEnabled());
   assert(false);
+  return false;
 }
 
 bool MediaValues::CalculatePrefersReducedTransparency(ExecutingContext* frame) {
@@ -331,6 +356,7 @@ bool MediaValues::CalculatePrefersReducedTransparency(ExecutingContext* frame) {
   //  return preference_override_value.value_or(
   //      frame->GetSettings()->GetPrefersReducedTransparency());
   assert(false);
+  return false;
 }
 
 int MediaValues::CalculateHorizontalViewportSegments(ExecutingContext* frame) {
@@ -348,6 +374,7 @@ int MediaValues::CalculateHorizontalViewportSegments(ExecutingContext* frame) {
   //
   //  return static_cast<int>(unique_x.size());
   assert(false);
+  return 0;
 }
 
 int MediaValues::CalculateVerticalViewportSegments(ExecutingContext* frame) {
@@ -365,6 +392,7 @@ int MediaValues::CalculateVerticalViewportSegments(ExecutingContext* frame) {
   //
   //  return static_cast<int>(unique_y.size());
   assert(false);
+  return 0;
 }
 
 bool MediaValues::ComputeLengthImpl(double value, CSSPrimitiveValue::UnitType type, double& result) const {

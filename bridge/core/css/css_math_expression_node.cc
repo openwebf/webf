@@ -147,6 +147,7 @@ CSSMathOperator CSSValueIDToCSSMathOperator(CSSValueID id) {
 #undef CONVERSION_CASE
     default:
       assert(false);
+      return CSSMathOperator::kInvalid;
   }
 }
 
@@ -1617,6 +1618,7 @@ CalculationExpressionSizingKeywordNode::Keyword CSSValueIDToSizingKeyword(CSSVal
   }
 
   assert(false);
+  return CalculationExpressionSizingKeywordNode::Keyword::kAny;
 }
 
 CSSValueID SizingKeywordToCSSValueID(CalculationExpressionSizingKeywordNode::Keyword keyword) {
@@ -1678,6 +1680,7 @@ std::shared_ptr<const CalculationExpressionNode> CSSMathExpressionKeywordLiteral
               PixelsAndPercent(length_resolver.ViewportHeight()));
         default:
           assert(false);
+          return nullptr;
       }
     }
     case CSSMathExpressionKeywordLiteral::Context::kCalcSize:
@@ -1686,6 +1689,7 @@ std::shared_ptr<const CalculationExpressionNode> CSSMathExpressionKeywordLiteral
       // TODO(crbug.com/325309578): Produce a CalculationExpressionNode-derived
       // object for color channel keywords.
       assert(false);
+      return nullptr;
   };
 }
 
@@ -1717,11 +1721,13 @@ double CSSMathExpressionKeywordLiteral::ComputeDouble(const CSSLengthResolver& l
           return length_resolver.ViewportHeight();
         default:
           assert(false);
+          return 0.0;
       }
     }
     case CSSMathExpressionKeywordLiteral::Context::kCalcSize:
     case CSSMathExpressionKeywordLiteral::Context::kColorChannel:
       assert(false);
+      return 0.0;
   };
 }
 
@@ -3547,6 +3553,7 @@ double EvaluateContainerSize(const CSSIdentifierValue* size_feature,
         return length_resolver.ContainerHeight(*name);
       default:
         assert(false);
+        return 0.0;
     }
   } else {
     switch (size_feature->GetValueID()) {
@@ -3556,6 +3563,7 @@ double EvaluateContainerSize(const CSSIdentifierValue* size_feature,
         return length_resolver.ContainerHeight();
       default:
         assert(false);
+        return 0.0;
     }
   }
 }

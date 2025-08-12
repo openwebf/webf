@@ -20,11 +20,11 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
     'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
-    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
     'CLANG_CXX_LIBRARY' => 'libc++',
     'GCC_ENABLE_CPP_EXCEPTIONS' => 'NO',
     'GCC_ENABLE_CPP_RTTI' => 'YES',
-    'OTHER_CPLUSPLUSFLAGS' => '-DNDEBUG -std=c++17 -fno-exceptions -fvisibility=hidden -fdata-sections -ffunction-sections', # Add specific C++ flags
+    'OTHER_CPLUSPLUSFLAGS' => '-DNDEBUG -std=c++20 -fno-exceptions -fvisibility=hidden -fdata-sections -ffunction-sections', # Add specific C++ flags
     "OTHER_CFLAGS" => '-DNDEBUG',
     'LLVM_LTO' => 'YES', # Enable Link Time Optimization for release builds
     'GCC_OPTIMIZATION_LEVEL' => 's', # Enable optimization for size
@@ -40,6 +40,7 @@ Pod::Spec.new do |s|
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/quickjs/include" '  +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/gumbo-parser/src" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/modp_b64/include" ' +
+      ' "${PODS_TARGET_SRCROOT}/../src/third_party/double_conversion" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/third_party/dart" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/foundation" ' +
       ' "${PODS_TARGET_SRCROOT}/../src/code_gen" ' +
