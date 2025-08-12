@@ -11,6 +11,7 @@ import 'dart:ui' as ui;
 import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/rendering.dart' show RenderViewportBox;
 import 'package:webf/launcher.dart';
 import 'package:webf/devtools.dart';
 
@@ -283,10 +284,12 @@ class InspectPageModule extends UIInspectorModule {
 
   void _frameScreenCast(Duration timeStamp) {
     Element root = document.documentElement!;
+    // Find the current top-route viewport from the hybrid router.
+    RenderViewportBox? routeViewport = root.getRootViewport();
     // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
     double? devicePixelRatio;
-    double? viewportWidth = document.viewport?.viewportSize.width;
-    double? viewportHeight = document.viewport?.viewportSize.height;
+    double? viewportWidth = routeViewport?.viewportSize.width ?? document.viewport?.viewportSize.width;
+    double? viewportHeight = routeViewport?.viewportSize.height ?? document.viewport?.viewportSize.height;
 
     _cachedViewportWidth = viewportWidth ?? _cachedViewportWidth;
     _cachedViewportHeight = viewportHeight ?? _cachedViewportHeight;
@@ -295,7 +298,8 @@ class InspectPageModule extends UIInspectorModule {
 
     // When flutter is detached, stream a white blank frame until it reattaches.
     if (!devtoolsService.controller!.isFlutterAttached ||
-        !devtoolsService.controller!.viewportLayoutCompleter.isCompleted) {
+        !devtoolsService.controller!.viewportLayoutCompleter.isCompleted ||
+        routeViewport == null) {
       _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
       return;
     }
@@ -307,14 +311,13 @@ class InspectPageModule extends UIInspectorModule {
       devicePixelRatio = math.min(sx, sy);
       devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView!.devicePixelRatio);
     }
-    root
-        .toBlob(devicePixelRatio: devicePixelRatio)
-        .then((Uint8List screenShot) {
+    _captureViewportAsPng(routeViewport, devicePixelRatio)
+        .then((Uint8List bytes) {
           if (!devtoolsService.controller!.isFlutterAttached) {
             // Detached after capture started; send white frame instead.
             return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
           }
-          _sendFrame(screenShot, timeStamp, root, deviceWidth, deviceHeight);
+          _sendFrame(bytes, timeStamp, root, deviceWidth, deviceHeight);
         })
         .catchError((error, stack) {
           // If capturing failed, send a white frame to keep stream consistent.
@@ -331,6 +334,13 @@ class InspectPageModule extends UIInspectorModule {
     final ui.Image image = await picture.toImage(width, height);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
+  }
+
+  Future<Uint8List> _captureViewportAsPng(RenderViewportBox viewport, double? devicePixelRatio) async {
+    final double dpr = (devicePixelRatio ?? document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0).toDouble();
+    final ui.Image image = await viewport.toImage(dpr);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    return data!.buffer.asUint8List();
   }
 
   void startScreenCast() {
