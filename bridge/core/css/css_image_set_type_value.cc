@@ -11,7 +11,7 @@ CSSImageSetTypeValue::CSSImageSetTypeValue(const std::string& type) : CSSValue(k
 
 CSSImageSetTypeValue::~CSSImageSetTypeValue() = default;
 
-std::string CSSImageSetTypeValue::CustomCSSText() const {
+String CSSImageSetTypeValue::CustomCSSText() const {
   StringBuilder result;
 
   result.Append("type(\"");

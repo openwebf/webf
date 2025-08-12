@@ -35,7 +35,7 @@ class CSSColor : public CSSValue {
 
   CSSColor(Color color) : CSSValue(kColorClass), color_(color) {}
 
-  std::string CustomCSSText() const { return SerializeAsCSSComponentValue(color_); }
+  String CustomCSSText() const { return SerializeAsCSSComponentValue(color_); }
 
   Color Value() const { return color_; }
 

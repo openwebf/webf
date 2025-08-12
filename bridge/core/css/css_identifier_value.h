@@ -43,7 +43,7 @@ class CSSIdentifierValue : public CSSValue {
 
   [[nodiscard]] CSSValueID GetValueID() const { return value_id_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSIdentifierValue& other) const { return value_id_ == other.value_id_; }
 

@@ -418,7 +418,7 @@ class CSSPrimitiveValue : public CSSValue {
     return StringToUnitType(reinterpret_cast<const unsigned char*>(string.data()), string.length());
   }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

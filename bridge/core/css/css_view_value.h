@@ -23,7 +23,7 @@ class CSSViewValue : public CSSValue {
   const CSSValue* Axis() const { return axis_.get(); }
   const CSSValue* Inset() const { return inset_.get(); }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSViewValue&) const;
   void TraceAfterDispatch(GCVisitor*) const;
 

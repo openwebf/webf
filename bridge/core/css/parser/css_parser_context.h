@@ -14,6 +14,7 @@
 #include "core/executing_context.h"
 #include "core/platform/url/kurl.h"
 #include "css_parser_mode.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -27,7 +28,9 @@ class CSSParserContext final {
   explicit CSSParserContext(CSSParserMode, const Document* use_counter_document = nullptr);
   explicit CSSParserContext(const CSSParserContext*, const StyleSheetContents*);
   explicit CSSParserContext(const Document&, const std::string& base_url_override);
+  explicit CSSParserContext(const Document&, const String& base_url_override);
   explicit CSSParserContext(const std::string& base_url, CSSParserMode mode, const Document* use_counter_document);
+  explicit CSSParserContext(const String& base_url, CSSParserMode mode, const Document* use_counter_document);
   explicit CSSParserContext(const ExecutingContext* context);
 
   const KURL& BaseURL() const { return base_url_; }

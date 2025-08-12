@@ -28,16 +28,16 @@
 
 namespace webf {
 
-StyleRuleImport::StyleRuleImport(const std::string& href,
+StyleRuleImport::StyleRuleImport(const String& href,
                                  LayerName&& layer,
                                  bool supported,
-                                 std::string&& supports_string,
+                                 String supports_string,
                                  std::shared_ptr<const MediaQuerySet> media)
     : StyleRuleBase(kImport),
       parent_style_sheet_(nullptr),
       str_href_(href),
       layer_(std::move(layer)),
-      supports_string_(std::move(supports_string)),
+      supports_string_(supports_string),
       media_queries_(std::move(media)),
       loading_(false),
       supported_(supported) {
@@ -58,7 +58,7 @@ bool StyleRuleImport::IsLoading() const {
 
 void StyleRuleImport::RequestStyleSheet() {}
 
-std::string StyleRuleImport::GetLayerNameAsString() const {
+String StyleRuleImport::GetLayerNameAsString() const {
   return LayerNameAsString(layer_);
 }
 

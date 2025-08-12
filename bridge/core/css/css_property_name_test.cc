@@ -31,31 +31,31 @@ TEST_F(CSSPropertyNameTest, IdStandardProperty) {
 }
 
 TEST_F(CSSPropertyNameTest, IdCustomProperty) {
-  CSSPropertyName name(AtomicString("--x"));
+  CSSPropertyName name(AtomicString::CreateFromUTF8("--x"));
   EXPECT_EQ(CSSPropertyID::kVariable, name.Id());
   EXPECT_TRUE(name.IsCustomProperty());
 }
 
 TEST_F(CSSPropertyNameTest, GetNameStandardProperty) {
   CSSPropertyName name(CSSPropertyID::kFontSize);
-  EXPECT_EQ(AtomicString("font-size"), name.ToAtomicString());
+  EXPECT_EQ(AtomicString::CreateFromUTF8("font-size"), name.ToAtomicString());
 }
 
 TEST_F(CSSPropertyNameTest, GetNameCustomProperty) {
-  CSSPropertyName name(AtomicString("--x"));
-  EXPECT_EQ(AtomicString("--x"), name.ToAtomicString());
+  CSSPropertyName name(AtomicString::CreateFromUTF8("--x"));
+  EXPECT_EQ(AtomicString::CreateFromUTF8("--x"), name.ToAtomicString());
 }
 
 TEST_F(CSSPropertyNameTest, OperatorEquals) {
-  EXPECT_EQ(CSSPropertyName(AtomicString("--x")),
-            CSSPropertyName(AtomicString("--x")));
+  EXPECT_EQ(CSSPropertyName(AtomicString::CreateFromUTF8("--x")),
+            CSSPropertyName(AtomicString::CreateFromUTF8("--x")));
   EXPECT_EQ(CSSPropertyName(CSSPropertyID::kColor),
             CSSPropertyName(CSSPropertyID::kColor));
-  EXPECT_NE(CSSPropertyName(AtomicString("--x")),
-            CSSPropertyName(AtomicString("--y")));
+  EXPECT_NE(CSSPropertyName(AtomicString::CreateFromUTF8("--x")),
+            CSSPropertyName(AtomicString::CreateFromUTF8("--y")));
   EXPECT_NE(CSSPropertyName(CSSPropertyID::kColor),
             CSSPropertyName(CSSPropertyID::kFontSize));
-  EXPECT_NE(CSSPropertyName(AtomicString("--x")),
+  EXPECT_NE(CSSPropertyName(AtomicString::CreateFromUTF8("--x")),
             CSSPropertyName(CSSPropertyID::kColor));
 }
 
@@ -73,7 +73,7 @@ TEST_F(CSSPropertyNameTest, From) {
 
 TEST_F(CSSPropertyNameTest, IsCustomPropertyMethod) {
   CSSPropertyName standard_prop(CSSPropertyID::kColor);
-  CSSPropertyName custom_prop(AtomicString("--custom"));
+  CSSPropertyName custom_prop(AtomicString::CreateFromUTF8("--custom"));
   
   EXPECT_FALSE(standard_prop.IsCustomProperty());
   EXPECT_TRUE(custom_prop.IsCustomProperty());

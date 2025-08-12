@@ -110,6 +110,11 @@ inline bool IsASCIILower(CharacterType character) {
   return character >= 'a' && character <= 'z';
 }
 
+template <typename CharType>
+inline bool IsASCIIPrintable(CharType c) {
+  return c >= ' ' && c <= '~';
+}
+
 template <typename CharacterType>
 ALWAYS_INLINE bool IsUpperASCII(const CharacterType* characters, size_t length) {
   bool contains_lower_case = false;

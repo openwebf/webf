@@ -28,7 +28,7 @@ class CSSInitialColorValue : public CSSValue {
 
   explicit CSSInitialColorValue(webf::PassKey<CSSValuePool>) : CSSValue(kInitialColorValueClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSInitialColorValue&) const { return true; }
 

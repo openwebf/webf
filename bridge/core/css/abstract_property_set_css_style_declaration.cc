@@ -113,13 +113,13 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
                                                          const AtomicString& value,
                                                          const AtomicString& priority,
                                                          ExceptionState& exception_state) {
-  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, property_name.ToUTF8StringView());
+  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, String(property_name.Impl()).ToStringView());
   if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
     return;
   }
 
-  bool important = EqualIgnoringASCIICase(priority.ToUTF8StringView(), "important");
-  if (!important && !priority.empty()) {
+  bool important = EqualIgnoringASCIICase(String(priority.Impl()).ToStringView(), "important");
+  if (!important && !priority.IsEmpty()) {
     return;
   }
 

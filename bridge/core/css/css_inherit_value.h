@@ -33,7 +33,7 @@ class CSSInheritedValue : public CSSValue {
   // Create() to get the pooled value.
   CSSInheritedValue() : CSSValue(kInheritedClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSInheritedValue&) const { return true; }
 

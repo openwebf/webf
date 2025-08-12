@@ -3251,7 +3251,7 @@ static std::shared_ptr<const CSSValue> ConsumeCrossFade(CSSParserTokenStream& st
       }
     }
   }
-  if (image_and_percentages.empty()) {
+  if (image_and_percentages.IsEmpty()) {
     return nullptr;
   }
 
@@ -4185,14 +4185,14 @@ ConsumeFamilyName(T& range) {
     return nullptr;
   }
   std::string family_name = ConcatenateFamilyName(range);
-  if (family_name.empty()) {
+  if (family_name.IsEmpty()) {
     return nullptr;
   }
   return CSSFontFamilyValue::Create(family_name);
 }
 
 // https://drafts.csswg.org/css-values-4/#css-wide-keywords
-bool IsCSSWideKeyword(const std::string_view& keyword) {
+bool IsCSSWideKeyword(StringView keyword) {
   return EqualIgnoringASCIICase(keyword, "initial") || EqualIgnoringASCIICase(keyword, "inherit") ||
          EqualIgnoringASCIICase(keyword, "unset") || EqualIgnoringASCIICase(keyword, "revert") ||
          EqualIgnoringASCIICase(keyword, "revert-layer");
@@ -4224,19 +4224,19 @@ bool IsDashedIdent(const CSSParserToken& token) {
 
 template <typename T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
-                        std::string>::type
+                        String>::type
 ConcatenateFamilyName(T& range) {
   StringBuilder builder;
   bool added_space = false;
   const CSSParserToken first_token = range.Peek();
   while (range.Peek().GetType() == kIdentToken) {
-    if (!builder.empty()) {
+    if (!builder.IsEmpty()) {
       builder.Append(' ');
       added_space = true;
     }
     builder.Append(range.ConsumeIncludingWhitespace().Value());
   }
-  if (!added_space && (IsCSSWideKeyword(first_token.Value()) || IsDefaultKeyword(first_token.Value()))) {
+  if (!added_space && (IsCSSWideKeyword(first_token.Value()) || IsDefaultKeyword(std::string_view(first_token.Value().data(), first_token.Value().length())))) {
     return "";
   }
   return builder.ReleaseString();
@@ -4907,13 +4907,13 @@ std::shared_ptr<const CSSValue> ConsumeGridTemplatesRowsOrColumns(CSSParserToken
 }
 
 std::vector<std::string> ParseGridTemplateAreasColumnNames(const std::string& grid_row_names) {
-  DCHECK(!grid_row_names.empty());
+  DCHECK(!grid_row_names.IsEmpty());
 
   StringBuilder area_name;
   std::vector<std::string> column_names;
   for (unsigned i = 0; i < grid_row_names.length(); ++i) {
     if (IsCSSSpace(grid_row_names[i])) {
-      if (!area_name.empty()) {
+      if (!area_name.IsEmpty()) {
         column_names.push_back(area_name.ReleaseString());
       }
       continue;
@@ -4922,7 +4922,7 @@ std::vector<std::string> ParseGridTemplateAreasColumnNames(const std::string& gr
       if (area_name == ".") {
         continue;
       }
-      if (!area_name.empty()) {
+      if (!area_name.IsEmpty()) {
         column_names.push_back(area_name.ReleaseString());
       }
     } else {
@@ -4936,7 +4936,7 @@ std::vector<std::string> ParseGridTemplateAreasColumnNames(const std::string& gr
     area_name.Append(grid_row_names[i]);
   }
 
-  if (!area_name.empty()) {
+  if (!area_name.IsEmpty()) {
     column_names.push_back(area_name.ReleaseString());
   }
 
@@ -4947,7 +4947,7 @@ bool ParseGridTemplateAreasRow(const std::string& grid_row_names,
                                NamedGridAreaMap& grid_area_map,
                                const size_t row_count,
                                size_t& column_count) {
-  if (grid_row_names.empty()) {
+  if (grid_row_names.IsEmpty()) {
     return false;
   }
 

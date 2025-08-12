@@ -16,11 +16,11 @@ std::string ContainerQuery::ToString() const {
   StringBuilder result;
   std::string name = selector_.Name();
   if (!name.empty()) {
-    SerializeIdentifier(name, result);
+    SerializeIdentifier(String::FromUTF8(name.c_str()), result);
     result.Append(' ');
   }
   result.Append(query_->Serialize());
-  return result.ReleaseString();
+  return result.ReleaseString().StdUtf8();
 }
 
 std::shared_ptr<ContainerQuery> ContainerQuery::CopyWithParent(std::shared_ptr<const ContainerQuery> parent) const {

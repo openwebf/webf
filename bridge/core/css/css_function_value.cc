@@ -6,7 +6,7 @@
 
 namespace webf {
 
-std::string CSSFunctionValue::CustomCSSText() const {
+String CSSFunctionValue::CustomCSSText() const {
   std::string result;
   result.append(getValueName(value_id_));
   result.append("(");

@@ -27,7 +27,7 @@ class CSSRevertLayerValue : public CSSValue {
 
   explicit CSSRevertLayerValue(webf::PassKey<CSSValuePool>) : CSSValue(kRevertLayerClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSRevertLayerValue&) const { return true; }
 

@@ -94,7 +94,7 @@ class CSSParserToken {
         padding_(0)  // Don't care.
   {}
 
-  CSSParserToken(CSSParserTokenType type, std::string_view value, BlockType block_type = kNotBlock, int id = -1)
+  CSSParserToken(CSSParserTokenType type, StringView value, BlockType block_type = kNotBlock, int id = -1)
       : type_(type), block_type_(block_type), id_(id) {
     InitValueFromStringView(value);
   }
@@ -104,24 +104,24 @@ class CSSParserToken {
   CSSParserToken(CSSParserTokenType, double, NumericValueType, NumericSign);  // for NumberToken
 
   CSSParserToken(CSSParserTokenType, unsigned char);  // for DelimiterToken
-  CSSParserToken(HashTokenType, std::string_view);
+  CSSParserToken(HashTokenType, StringView);
 
   bool operator==(const CSSParserToken& other) const;
   bool operator!=(const CSSParserToken& other) const { return !(*this == other); }
 
   // Converts NumberToken to DimensionToken.
-  void ConvertToDimensionWithUnit(std::string_view);
+  void ConvertToDimensionWithUnit(StringView);
 
   // Converts NumberToken to PercentageToken.
   void ConvertToPercentage();
 
   CSSParserTokenType GetType() const { return static_cast<CSSParserTokenType>(type_); }
 
-  std::string_view Value() const {
+  StringView Value() const {
     if (value_is_inline_) {
-      return {reinterpret_cast<const char*>(value_data_char_inline_), value_length_};
+      return StringView(reinterpret_cast<const char*>(value_data_char_inline_), value_length_);
     }
-    return {reinterpret_cast<const char*>(value_data_char_raw_), value_length_};
+    return StringView(reinterpret_cast<const char*>(value_data_char_raw_), value_length_);
   }
 
   bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
@@ -155,7 +155,7 @@ class CSSParserToken {
 
   void Serialize(StringBuilder&) const;
 
-  CSSParserToken CopyWithUpdatedString(const std::string_view&) const;
+  CSSParserToken CopyWithUpdatedString(const StringView&) const;
 
   static CSSParserTokenType ClosingTokenType(CSSParserTokenType opening_type) {
     switch (opening_type) {
@@ -186,13 +186,21 @@ class CSSParserToken {
   }
 
  private:
-  void InitValueFromStringView(std::string_view string) {
+  void InitValueFromStringView(StringView string) {
     value_length_ = string.length();
     if (value_length_ <= sizeof(value_data_char_inline_)) {
-      memcpy(value_data_char_inline_, string.data(), value_length_);
+      if (string.Is8Bit()) {
+        memcpy(value_data_char_inline_, string.Characters8(), value_length_);
+      } else {
+        // Convert UTF-16 to UTF-8 for inline storage
+        // For simplicity, we'll only inline if it's 8-bit
+        value_data_char_raw_ = string.Characters16();
+        value_is_inline_ = false;
+        return;
+      }
       value_is_inline_ = true;
     } else {
-      value_data_char_raw_ = string.data();
+      value_data_char_raw_ = string.Is8Bit() ? static_cast<const void*>(string.Characters8()) : static_cast<const void*>(string.Characters16());
       value_is_inline_ = false;
     }
   }

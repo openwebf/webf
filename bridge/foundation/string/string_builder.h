@@ -6,89 +6,92 @@
 #ifndef WEBF_FOUNDATION_STRING_BUILDER_H_
 #define WEBF_FOUNDATION_STRING_BUILDER_H_
 
-#include <codecvt>
+#include <unicode/utf16.h>
 #include <cstdarg>
-#include <iomanip>
-#include <sstream>
-#include <string>
 #include <vector>
 #include "foundation/dtoa.h"
 #include "foundation/macros.h"
+#include "atomic_string.h"
 #include "string_view.h"
+#include "wtf_string.h"
 
 #include <logging.h>
 
 namespace webf {
 
-/**
- * Is this code point a BMP code point (U+0000..U+ffff)?
- * @param c 32-bit code point
- * @return true or false
- * @stable ICU 2.8
- */
-#define U_IS_BMP(c) ((uint32_t)(c) <= 0xffff)
-
-/**
- * Get the lead surrogate (0xd800..0xdbff) for a
- * supplementary code point (0x10000..0x10ffff).
- * @param supplementary 32-bit code point (U+10000..U+10ffff)
- * @return lead surrogate (U+d800..U+dbff) for supplementary
- * @stable ICU 2.4
- */
-#define U16_LEAD(supplementary) (char16_t)(((supplementary) >> 10) + 0xd7c0)
-
-/**
- * Get the trail surrogate (0xdc00..0xdfff) for a
- * supplementary code point (0x10000..0x10ffff).
- * @param supplementary 32-bit code point (U+10000..U+10ffff)
- * @return trail surrogate (U+dc00..U+dfff) for supplementary
- * @stable ICU 2.4
- */
-#define U16_TRAIL(supplementary) (char16_t)(((supplementary)&0x3ff) | 0xdc00)
-
 class StringBuilder {
   WEBF_STACK_ALLOCATED();
 
  public:
-  void Append(char16_t c) {
-    if (c <= 0xFF) {
-      Append(static_cast<char>(c));
+  StringBuilder() : no_buffer_(0) {}
+  StringBuilder(const StringBuilder&) = delete;
+  StringBuilder& operator=(const StringBuilder&) = delete;
+  ~StringBuilder() { ClearBuffer(); }
+
+  void Append(const LChar* chars, unsigned length) {
+    if (!length)
+      return;
+    
+    if (is_8bit_) {
+      EnsureBuffer8(length);
+      buffer8_.insert(buffer8_.end(), chars, chars + length);
+      length_ += length;
       return;
     }
+
+    EnsureBuffer16(length);
+    for (unsigned i = 0; i < length; ++i) {
+      buffer16_.push_back(chars[i]);
+    }
+    length_ += length;
+  }
+
+  void Append(const UChar* chars, unsigned length) {
+    if (!length)
+      return;
+    
+    // If there's only one char we use Append(UChar) instead since it will
+    // check for latin1 and avoid converting to 16bit if possible.
+    if (length == 1) {
+      Append(chars[0]);
+      return;
+    }
+
+    EnsureBuffer16(length);
+    buffer16_.insert(buffer16_.end(), chars, chars + length);
+    length_ += length;
   }
 
   void Append(const StringBuilder& other) {
     if (!other.length_)
       return;
 
-    if (!length_ && !HasBuffer() && !other.string_.empty()) {
+    if (!length_ && !HasBuffer() && !other.string_.IsNull()) {
       string_ = other.string_;
       length_ = other.string_.length();
+      is_8bit_ = other.string_.Is8Bit();
       return;
     }
 
-    Append(other.string_);
+    if (other.Is8Bit())
+      Append(other.Characters8(), other.length());
+    else
+      Append(other.Characters16(), other.length());
   }
 
-  void Append(unsigned char c) {
-    EnsureBuffer8(1);
-    string_.push_back(c);
-    ++length_;
-  }
-
-  void Append(uint32_t c) {
-    if (U_IS_BMP(c)) {
-      Append(static_cast<char16_t>(c));
+  void Append(const StringView& string, unsigned offset, unsigned length) {
+    unsigned extent = offset + length;
+    if (extent < offset || extent > string.length())
       return;
-    }
-    Append(U16_LEAD(c));
-    Append(U16_TRAIL(c));
+
+    // We can't do this before the above check since StringView's constructor
+    // doesn't accept invalid offsets or lengths.
+    Append(StringView(string, offset, length));
   }
 
-  void Append(std::string_view view) {
-    if (view.empty()) {
+  void Append(const StringView& string) {
+    if (string.Empty())
       return;
-    }
 
     // If we're appending to an empty builder, and there is not a buffer
     // (reserveCapacity has not been called), then share the impl if
@@ -98,104 +101,208 @@ class StringBuilder {
     // Node::textContent when there's only a single Text node child, or
     // inside the parser in the common case when flushing buffered text to
     // a Text node.
-    const char* impl = view.data();
-    if (!length_ && !HasBuffer() && impl != nullptr) {
-      string_ = std::string(impl, view.length());
-      length_ = view.length();
+    // Skip the SharedImpl optimization for now as our StringView doesn't have it
+    // TODO: Add SharedImpl support to StringView
+
+    if (string.Is8Bit())
+      Append(string.Characters8(), string.length());
+    else
+      Append(string.Characters16(), string.length());
+  }
+
+  void Append(const String& string) {
+    if (string.IsNull())
+      return;
+    if (string.Is8Bit())
+      Append(string.Characters8(), string.length());
+    else
+      Append(string.Characters16(), string.length());
+  }
+
+  void Append(const AtomicString& atomicString) {
+    Append(atomicString.GetString());
+  }
+
+  void Append(UChar c) {
+    if (is_8bit_ && c <= 0xFF) {
+      Append(static_cast<LChar>(c));
       return;
     }
-
-    EnsureBuffer8(view.length());
-    string_.append(std::string(view.data(), view.length()));
-    length_ += view.length();
+    EnsureBuffer16(1);
+    buffer16_.push_back(c);
+    ++length_;
   }
 
-  void AppendFormat(const char* format, ...) {
-    va_list args;
-
-    static constexpr unsigned kDefaultSize = 256;
-    std::string buffer;
-    buffer.reserve(kDefaultSize);
-
-    va_start(args, format);
-    int length = vsnprintf(buffer.data(), kDefaultSize, format, args);
-    va_end(args);
-    DCHECK_GE(length, 0);
-
-    if (length >= static_cast<int>(kDefaultSize)) {
-      buffer.resize(length + 1);
-      va_start(args, format);
-      length = vsnprintf(buffer.data(), buffer.size(), format, args);
-      va_end(args);
+  void Append(LChar c) {
+    if (!is_8bit_) {
+      Append(static_cast<UChar>(c));
+      return;
     }
-
-    DCHECK_LT(static_cast<size_t>(length), buffer.size());
-
-    Append(buffer);
+    EnsureBuffer8(1);
+    buffer8_.push_back(c);
+    ++length_;
   }
 
-  void Append(int64_t v) { Append(std::to_string(v)); }
+  void Append(char c) { Append(static_cast<LChar>(c)); }
 
-  void Append(int32_t c) {
+  void Append(UChar32 c) {
     if (U_IS_BMP(c)) {
-      Append(static_cast<char16_t>(c));
+      Append(static_cast<UChar>(c));
       return;
     }
     Append(U16_LEAD(c));
     Append(U16_TRAIL(c));
   }
 
-  void Append(char c) {
-    EnsureBuffer8(1);
-    string_.push_back(c);
-    length_ += 1;
+  void AppendNumber(int number) {
+    char buffer[32];
+    int length = snprintf(buffer, sizeof(buffer), "%d", number);
+    Append(reinterpret_cast<const LChar*>(buffer), length);
   }
 
-  void Append(double v, unsigned precision = 6) {
-    assert(precision > 0);
-    NumberToStringBuffer buffer;
-    NumberToFixedPrecisionString(v, precision, buffer);
-    Append(std::string(buffer, strlen(buffer)));
+  void AppendNumber(unsigned number) {
+    char buffer[32];
+    int length = snprintf(buffer, sizeof(buffer), "%u", number);
+    Append(reinterpret_cast<const LChar*>(buffer), length);
   }
 
-  const char* Characters8() const {
-    if (!length_)
+  void AppendNumber(long number) {
+    char buffer[32];
+    int length = snprintf(buffer, sizeof(buffer), "%ld", number);
+    Append(reinterpret_cast<const LChar*>(buffer), length);
+  }
+
+  void AppendNumber(unsigned long number) {
+    char buffer[32];
+    int length = snprintf(buffer, sizeof(buffer), "%lu", number);
+    Append(reinterpret_cast<const LChar*>(buffer), length);
+  }
+
+  void AppendNumber(long long number) {
+    char buffer[32];
+    int length = snprintf(buffer, sizeof(buffer), "%lld", number);
+    Append(reinterpret_cast<const LChar*>(buffer), length);
+  }
+
+  void AppendNumber(unsigned long long number) {
+    char buffer[32];
+    int length = snprintf(buffer, sizeof(buffer), "%llu", number);
+    Append(reinterpret_cast<const LChar*>(buffer), length);
+  }
+
+  void AppendNumber(double number, unsigned precision = 6);
+
+  void AppendFormat(const char* format, ...);
+
+  String ReleaseString();
+  String ToString();
+  AtomicString ToAtomicString();
+
+  operator StringView() const {
+    if (Is8Bit()) {
+      return StringView(Characters8(), length_);
+    } else {
+      return StringView(Characters16(), length_);
+    }
+  }
+
+  unsigned length() const { return length_; }
+  bool empty() const { return !length_; }
+  bool IsEmpty() const { return !length_; }
+
+  unsigned Capacity() const;
+  void ReserveCapacity(unsigned new_capacity);
+  void Reserve16BitCapacity(unsigned new_capacity);
+
+  void Resize(unsigned new_size);
+
+  UChar operator[](unsigned i) const {
+    DCHECK_LT(i, length_);
+    if (is_8bit_)
+      return Characters8()[i];
+    return Characters16()[i];
+  }
+
+  const LChar* Characters8() const {
+    DCHECK(is_8bit_);
+    if (!length())
       return nullptr;
+    if (!string_.IsNull())
+      return string_.Characters8();
     DCHECK(has_buffer_);
-    return string_.data();
+    return buffer8_.data();
   }
 
-  operator StringView() const { return StringView(Characters8(), static_cast<unsigned>(length_)); }
+  const UChar* Characters16() const {
+    DCHECK(!is_8bit_);
+    if (!length())
+      return nullptr;
+    if (!string_.IsNull())
+      return string_.Characters16();
+    DCHECK(has_buffer_);
+    return buffer16_.data();
+  }
 
-  std::string ReleaseString() { return string_; }
+  bool Is8Bit() const { return is_8bit_; }
+  void Ensure16Bit();
 
-  bool empty() const { return string_.empty(); }
-
-  size_t length() const { return string_.length(); }
-
-  void Reserve(unsigned new_size);
+  void Clear();
 
  private:
-  static const size_t kInlineBufferSize = 16;
-  static size_t InitialBufferSize() { return kInlineBufferSize; }
+  static const unsigned kInlineBufferSize = 256;
+  static unsigned InitialBufferSize() { return kInlineBufferSize; }
 
-  void EnsureBuffer8(size_t added_size) {
+  typedef std::vector<LChar> Buffer8;
+  typedef std::vector<UChar> Buffer16;
+
+  void EnsureBuffer8(unsigned added_size) {
+    DCHECK(is_8bit_);
     if (!HasBuffer())
       CreateBuffer8(added_size);
   }
 
+  void EnsureBuffer16(unsigned added_size) {
+    if (is_8bit_ || !HasBuffer())
+      CreateBuffer16(added_size);
+  }
+
+  void CreateBuffer8(unsigned added_size);
+  void CreateBuffer16(unsigned added_size);
+  void ClearBuffer();
   bool HasBuffer() const { return has_buffer_; }
-  void CreateBuffer8(size_t added_size);
 
-  friend bool operator==(const StringBuilder& a, const std::string& b);
-
-  size_t length_ = 0;
-  std::string string_;
+  String string_;
+  union {
+    char no_buffer_;
+    Buffer8 buffer8_;
+    Buffer16 buffer16_;
+  };
+  unsigned length_ = 0;
+  bool is_8bit_ = true;
   bool has_buffer_ = false;
 };
 
-inline bool operator==(const StringBuilder& a, const std::string& b) {
-  return a.string_ == b;
+template <typename StringType>
+bool Equal(const StringBuilder& a, const StringType& b) {
+  if (a.length() != b.length())
+    return false;
+
+  if (!a.length())
+    return true;
+
+  if (a.Is8Bit()) {
+    if (b.Is8Bit())
+      return memcmp(a.Characters8(), b.Characters8(), a.length()) == 0;
+    return false;  // Can't compare 8-bit to 16-bit directly
+  }
+
+  if (b.Is8Bit())
+    return false;  // Can't compare 16-bit to 8-bit directly
+  return memcmp(a.Characters16(), b.Characters16(), a.length() * sizeof(UChar)) == 0;
+}
+
+inline bool operator==(const StringBuilder& a, const String& b) {
+  return Equal(a, b);
 }
 
 }  // namespace webf

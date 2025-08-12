@@ -12,7 +12,7 @@ namespace webf {
 
 class ContainerQueryParserTest : public testing::Test {
  public:
-  std::string ParseQuery(const std::string&& string) {
+  String ParseQuery(const String&& string) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     std::shared_ptr<const MediaQueryExpNode> node = ContainerQueryParser(*context).ParseCondition(string);
     if (!node) {
@@ -30,15 +30,15 @@ class ContainerQueryParserTest : public testing::Test {
     WEBF_STACK_ALLOCATED();
 
    public:
-    bool IsAllowed(const std::string& feature) const override { return feature == "width"; }
-    bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
-    bool IsCaseSensitive(const std::string& feature) const override { return false; }
+    bool IsAllowed(const String& feature) const override { return feature == "width"; }
+    bool IsAllowedWithoutValue(const String& feature) const override { return true; }
+    bool IsCaseSensitive(const String& feature) const override { return false; }
 
     bool SupportsRange() const override { return true; }
   };
 
   // E.g. https://drafts.csswg.org/css-contain-3/#typedef-style-query
-  std::string ParseFeatureQuery(std::string feature_query) {
+  String ParseFeatureQuery(String feature_query) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     CSSTokenizer tokenizer(feature_query);
     CSSParserTokenStream stream(tokenizer);
@@ -60,7 +60,7 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   
   // Test a simple failing case first
   fprintf(stderr, "\nTesting: (width) and (height)\n");
-  std::string result = ParseQuery("(width) and (height)");
+  String result = ParseQuery("(width) and (height)");
   fprintf(stderr, "Result: '%s'\n", result.c_str());
   EXPECT_EQ("(width) and (height)", result);
   
@@ -86,7 +86,7 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   };
 
   for (const char* test : tests) {
-    std::string result = ParseQuery(test);
+    String result = ParseQuery(test);
     if (result != test) {
       fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.c_str());
     }
@@ -120,7 +120,7 @@ TEST_F(ContainerQueryParserTest, ParseFeatureQuery) {
   };
 
   for (const char* test : tests) {
-    EXPECT_EQ(std::string(test), ParseFeatureQuery(test));
+    EXPECT_EQ(String(test), ParseFeatureQuery(test));
   }
 
   // Invalid:

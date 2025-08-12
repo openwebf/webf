@@ -12,15 +12,15 @@
 namespace webf {
 
 
-namespace <%= name %>_stdstring {
+namespace <%= name %>_atomicstring {
 
 <% _.forEach(data, function(name, index) { %>
   <% if (_.isArray(name)) { %>
-    const std::string& k<%= options.camelcase ? upperCamelCase(name[0]) : name[0] %> = "<%= name[1] %>";
+    const AtomicString k<%= options.camelcase ? upperCamelCase(name[0]) : name[0] %> = AtomicString::CreateFromUTF8("<%= name[1] %>");
   <% } else if (_.isObject(name)) { %>
-    const std::string& k<%= options.camelcase ? upperCamelCase(name.name) : name.name %> = "<%= name.name %>";
+    const AtomicString k<%= options.camelcase ? upperCamelCase(name.name) : name.name %> = AtomicString::CreateFromUTF8("<%= name.name %>");
   <% } else { %>
-     const std::string& k<%= options.camelcase ? upperCamelCase(name) : name %> = "<%= name %>";
+     const AtomicString k<%= options.camelcase ? upperCamelCase(name) : name %> = AtomicString::CreateFromUTF8("<%= name %>");
   <% } %>
 <% }) %>
 }

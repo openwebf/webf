@@ -82,7 +82,7 @@ class CSSValueList : public CSSValue {
   bool HasValue(const std::shared_ptr<const CSSValue>&) const;
   std::shared_ptr<const CSSValueList> Copy() const;
 
-  virtual std::string CustomCSSText() const;
+  virtual String CustomCSSText() const;
   bool Equals(const CSSValueList&) const;
 
   std::shared_ptr<const CSSValueList> PopulateWithTreeScope(const TreeScope*) const;

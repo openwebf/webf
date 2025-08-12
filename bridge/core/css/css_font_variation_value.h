@@ -20,7 +20,7 @@ class CSSFontVariationValue : public CSSValue {
 
   const std::string& Tag() const { return tag_; }
   float Value() const { return value_; }
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSFontVariationValue&) const;
 

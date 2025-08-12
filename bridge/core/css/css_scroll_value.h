@@ -21,7 +21,7 @@ class CSSScrollValue : public CSSValue {
   std::shared_ptr<const CSSValue> Scroller() const { return scroller_; }
   std::shared_ptr<const CSSValue> Axis() const { return axis_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSScrollValue&) const;
   void TraceAfterDispatch(GCVisitor*) const;
 

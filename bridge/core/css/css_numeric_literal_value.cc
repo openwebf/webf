@@ -200,7 +200,7 @@ static std::string FormatInfinityOrNaN(double number, const char* suffix) {
   return result;
 }
 
-std::string CSSNumericLiteralValue::CustomCSSText() const {
+String CSSNumericLiteralValue::CustomCSSText() const {
   std::string text;
   switch (GetType()) {
     case UnitType::kUnknown:

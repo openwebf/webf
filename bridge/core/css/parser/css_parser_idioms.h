@@ -37,6 +37,7 @@
 
 #include <string>
 #include "../../../foundation/string/ascii_types.h"
+#include "../../../foundation/string/string_types.h"
 
 namespace webf {
 
@@ -103,7 +104,7 @@ inline bool TwoCharsAreValidEscape(char first, char second) {
 void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream&);
 
 // https://drafts.csswg.org/css-syntax/#consume-an-escaped-code-point
-int32_t ConsumeEscape(CSSTokenizerInputStream&);
+UChar32 ConsumeEscape(CSSTokenizerInputStream&);
 
 // http://www.w3.org/TR/css3-syntax/#consume-a-name
 std::string ConsumeName(CSSTokenizerInputStream&);

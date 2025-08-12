@@ -76,7 +76,7 @@ class CSSNumericLiteralValue : public CSSPrimitiveValue {
   bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const;
   void AccumulateLengthUnitTypes(LengthTypeFlags& types) const;
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSNumericLiteralValue& other) const;
 
   UnitType CanonicalUnit() const;

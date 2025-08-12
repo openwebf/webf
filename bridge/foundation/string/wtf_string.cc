@@ -5,6 +5,7 @@
 #include "wtf_string.h"
 #include <cstring>
 #include "string_builder.h"
+#include "string_view.h"
 
 namespace webf {
 
@@ -17,6 +18,9 @@ const String& String::EmptyString() {
     g_empty_string = &empty_string;
   }
   return *g_empty_string;
+}
+String String::EncodeForDebugging() const  {
+  return StringView(*this).EncodeForDebugging();
 }
 
 String::String(const UChar* utf16_data, size_t length) {
@@ -65,6 +69,17 @@ String::String(const std::string& s) {
     return;
   }
   impl_ = StringImpl::Create(reinterpret_cast<const LChar*>(s.data()), s.length());
+}
+
+String::String(const StringView& view) {
+  if (view.IsNull()) {
+    return;
+  }
+  if (view.Is8Bit()) {
+    impl_ = StringImpl::Create(view.Characters8(), view.length());
+  } else {
+    impl_ = StringImpl::Create(view.Characters16(), view.length());
+  }
 }
 
 String String::Substring(size_t pos, size_t len) const {
@@ -251,6 +266,62 @@ String String::FromUTF8(const char* utf8_data) {
     return String();
   }
   return FromUTF8(utf8_data, strlen(utf8_data));
+}
+
+StringView String::ToStringView() const {
+  if (IsNull()) {
+    return StringView();
+  }
+  if (Is8Bit()) {
+    return StringView(Characters8(), length());
+  } else {
+    return StringView(Characters16(), length());
+  }
+}
+
+// String concatenation operators
+String operator+(const String& a, const String& b) {
+  if (a.IsNull())
+    return b;
+  if (b.IsNull())
+    return a;
+  
+  StringBuilder builder;
+  builder.Append(a);
+  builder.Append(b);
+  return builder.ReleaseString();
+}
+
+String operator+(const String& a, const char* b) {
+  if (!b || !*b)
+    return a;
+  if (a.IsNull())
+    return String(b);
+    
+  StringBuilder builder;
+  builder.Append(a);
+  builder.Append(b);
+  return builder.ReleaseString();
+}
+
+String operator+(const char* a, const String& b) {
+  if (!a || !*a)
+    return b;
+  if (b.IsNull())
+    return String(a);
+    
+  StringBuilder builder;
+  builder.Append(a);
+  builder.Append(b);
+  return builder.ReleaseString();
+}
+
+// Stream output operator
+std::ostream& operator<<(std::ostream& out, const String& string) {
+  if (string.IsNull()) {
+    return out << "<null>";
+  }
+  return out << StringView(string).EncodeForDebugging().StdUtf8();
 }
 
 }  // namespace webf

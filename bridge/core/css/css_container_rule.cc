@@ -27,14 +27,14 @@ AtomicString CSSContainerRule::cssText() const {
   result.Append("@container");
   
   std::string name = containerName();
-  if (!name.empty()) {
+  if (!name.IsEmpty()) {
     result.Append(" ");
     result.Append(name);
   }
   
   std::string query = containerQuery();
-  if (!query.empty()) {
-    if (!name.empty()) {
+  if (!query.IsEmpty()) {
+    if (!name.IsEmpty()) {
       result.Append(" ");
     } else {
       result.Append(" ");

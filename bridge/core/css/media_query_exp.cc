@@ -42,7 +42,7 @@
 namespace webf {
 
 static inline bool FeatureWithValidIdent(const std::string& media_feature, CSSValueID ident) {
-  if (media_feature == media_feature_names_stdstring::kVideoDynamicRange) {
+  if (media_feature == media_feature_names_atomicstring::kVideoDynamicRange.ToUTF8String()) {
     return ident == CSSValueID::kStandard || ident == CSSValueID::kHigh;
   }
 
@@ -54,23 +54,23 @@ static inline bool FeatureWithValidLength(const std::string& media_feature, cons
     return false;
   }
 
-  return media_feature == media_feature_names_stdstring::kHeight ||
-         media_feature == media_feature_names_stdstring::kMaxHeight ||
-         media_feature == media_feature_names_stdstring::kMinHeight ||
-         media_feature == media_feature_names_stdstring::kWidth ||
-         media_feature == media_feature_names_stdstring::kMaxWidth ||
-         media_feature == media_feature_names_stdstring::kMinWidth ||
-         media_feature == media_feature_names_stdstring::kMaxBlockSize ||
-         media_feature == media_feature_names_stdstring::kMinBlockSize ||
-         media_feature == media_feature_names_stdstring::kInlineSize ||
-         media_feature == media_feature_names_stdstring::kMaxInlineSize ||
-         media_feature == media_feature_names_stdstring::kMinInlineSize ||
-         media_feature == media_feature_names_stdstring::kDeviceHeight ||
-         media_feature == media_feature_names_stdstring::kMaxDeviceHeight ||
-         media_feature == media_feature_names_stdstring::kMinDeviceHeight ||
-         media_feature == media_feature_names_stdstring::kDeviceWidth ||
-         media_feature == media_feature_names_stdstring::kMinDeviceWidth ||
-         media_feature == media_feature_names_stdstring::kMaxDeviceWidth;
+  return media_feature == media_feature_names_atomicstring::kHeight.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxHeight.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinHeight.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kWidth.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxWidth.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinWidth.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxBlockSize.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinBlockSize.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kInlineSize.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxInlineSize.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinInlineSize.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kDeviceHeight.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxDeviceHeight.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinDeviceHeight.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kDeviceWidth.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinDeviceWidth.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxDeviceWidth.ToUTF8String();
 }
 
 static inline bool FeatureWithValidDensity(const std::string& media_feature, const CSSPrimitiveValue* value) {
@@ -81,16 +81,16 @@ static inline bool FeatureWithValidDensity(const std::string& media_feature, con
     return false;
   }
 
-  return media_feature == media_feature_names_stdstring::kMinResolution ||
-         media_feature == media_feature_names_stdstring::kMaxResolution;
+  return media_feature == media_feature_names_atomicstring::kMinResolution.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxResolution.ToUTF8String();
 }
 
 static inline bool FeatureExpectingInteger(const std::string& media_feature) {
-  if (media_feature == media_feature_names_stdstring::kColor ||
-      media_feature == media_feature_names_stdstring::kMaxColor ||
-      media_feature == media_feature_names_stdstring::kMinColor ||
-      media_feature == media_feature_names_stdstring::kMaxColorIndex ||
-      media_feature == media_feature_names_stdstring::kMinColorIndex) {
+  if (media_feature == media_feature_names_atomicstring::kColor.ToUTF8String() ||
+      media_feature == media_feature_names_atomicstring::kMaxColor.ToUTF8String() ||
+      media_feature == media_feature_names_atomicstring::kMinColor.ToUTF8String() ||
+      media_feature == media_feature_names_atomicstring::kMaxColorIndex.ToUTF8String() ||
+      media_feature == media_feature_names_atomicstring::kMinColorIndex.ToUTF8String()) {
     return true;
   }
 
@@ -117,68 +117,68 @@ static inline bool FeatureWithZeroOrOne(const std::string& media_feature, const 
     return false;
   }
 
-  return media_feature == media_feature_names_stdstring::kGrid;
+  return media_feature == media_feature_names_atomicstring::kGrid.ToUTF8String();
 }
 
 static inline bool FeatureWithAspectRatio(const std::string& media_feature) {
-  return media_feature == media_feature_names_stdstring::kAspectRatio ||
-         media_feature == media_feature_names_stdstring::kDeviceAspectRatio ||
-         media_feature == media_feature_names_stdstring::kMinAspectRatio ||
-         media_feature == media_feature_names_stdstring::kMaxAspectRatio ||
-         media_feature == media_feature_names_stdstring::kMinDeviceAspectRatio ||
-         media_feature == media_feature_names_stdstring::kMaxDeviceAspectRatio;
+  return media_feature == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kDeviceAspectRatio.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMinDeviceAspectRatio.ToUTF8String() ||
+         media_feature == media_feature_names_atomicstring::kMaxDeviceAspectRatio.ToUTF8String();
 }
 
 bool MediaQueryExp::IsViewportDependent() const {
-  return media_feature_ == media_feature_names_stdstring::kWidth ||
-         media_feature_ == media_feature_names_stdstring::kHeight ||
-         media_feature_ == media_feature_names_stdstring::kMinWidth ||
-         media_feature_ == media_feature_names_stdstring::kMinHeight ||
-         media_feature_ == media_feature_names_stdstring::kMaxWidth ||
-         media_feature_ == media_feature_names_stdstring::kMaxHeight ||
-         media_feature_ == media_feature_names_stdstring::kAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kMinAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kMaxAspectRatio;
+  return media_feature_ == media_feature_names_atomicstring::kWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String();
 }
 
 bool MediaQueryExp::IsDeviceDependent() const {
-  return media_feature_ == media_feature_names_stdstring::kDeviceAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kDeviceWidth ||
-         media_feature_ == media_feature_names_stdstring::kDeviceHeight ||
-         media_feature_ == media_feature_names_stdstring::kMinDeviceWidth ||
-         media_feature_ == media_feature_names_stdstring::kMinDeviceHeight ||
-         media_feature_ == media_feature_names_stdstring::kMaxDeviceWidth ||
-         media_feature_ == media_feature_names_stdstring::kMaxDeviceHeight ||
-         media_feature_ == media_feature_names_stdstring::kVideoDynamicRange;
+  return media_feature_ == media_feature_names_atomicstring::kDeviceAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kDeviceWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kDeviceHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinDeviceWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinDeviceHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxDeviceWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxDeviceHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kVideoDynamicRange.ToUTF8String();
 }
 
 bool MediaQueryExp::IsWidthDependent() const {
-  return media_feature_ == media_feature_names_stdstring::kWidth ||
-         media_feature_ == media_feature_names_stdstring::kMinWidth ||
-         media_feature_ == media_feature_names_stdstring::kMaxWidth ||
-         media_feature_ == media_feature_names_stdstring::kAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kMinAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kMaxAspectRatio;
+  return media_feature_ == media_feature_names_atomicstring::kWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxWidth.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String();
 }
 
 bool MediaQueryExp::IsHeightDependent() const {
-  return media_feature_ == media_feature_names_stdstring::kHeight ||
-         media_feature_ == media_feature_names_stdstring::kMinHeight ||
-         media_feature_ == media_feature_names_stdstring::kMaxHeight ||
-         media_feature_ == media_feature_names_stdstring::kAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kMinAspectRatio ||
-         media_feature_ == media_feature_names_stdstring::kMaxAspectRatio;
+  return media_feature_ == media_feature_names_atomicstring::kHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxHeight.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String();
 }
 
 bool MediaQueryExp::IsInlineSizeDependent() const {
-  return media_feature_ == media_feature_names_stdstring::kInlineSize ||
-         media_feature_ == media_feature_names_stdstring::kMinInlineSize ||
-         media_feature_ == media_feature_names_stdstring::kMaxInlineSize;
+  return media_feature_ == media_feature_names_atomicstring::kInlineSize.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMinInlineSize.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxInlineSize.ToUTF8String();
 }
 
 bool MediaQueryExp::IsBlockSizeDependent() const {
-  return media_feature_ == media_feature_names_stdstring::kMinBlockSize ||
-         media_feature_ == media_feature_names_stdstring::kMaxBlockSize;
+  return media_feature_ == media_feature_names_atomicstring::kMinBlockSize.ToUTF8String() ||
+         media_feature_ == media_feature_names_atomicstring::kMaxBlockSize.ToUTF8String();
 }
 
 MediaQueryExp::MediaQueryExp(const MediaQueryExp& other)
@@ -494,7 +494,7 @@ bool MediaQueryFeatureExpNode::IsBlockSizeDependent() const {
 }
 
 void MediaQueryFeatureExpNode::SerializeTo(StringBuilder& builder) const {
-  builder.Append(exp_.Serialize());
+  builder.Append(std::string_view(exp_.Serialize().StdUtf8()));
 }
 
 void MediaQueryFeatureExpNode::CollectExpressions(std::vector<MediaQueryExp>& result) const {

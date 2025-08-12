@@ -19,6 +19,7 @@
 #include "css_nesting_type.h"
 #include "css_parser_mode.h"
 #include "foundation/macros.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -171,12 +172,12 @@ class CSSParserImpl {
 
   static MutableCSSPropertyValueSet::SetResult ParseValue(MutableCSSPropertyValueSet*,
                                                           CSSPropertyID,
-                                                          const std::string&,
+                                                          const String&,
                                                           bool important,
                                                           std::shared_ptr<const CSSParserContext>);
   static MutableCSSPropertyValueSet::SetResult ParseVariableValue(MutableCSSPropertyValueSet*,
-                                                                  const std::string& property_name,
-                                                                  const std::string&,
+                                                                  const String& property_name,
+                                                                  const String&,
                                                                   bool important,
                                                                   std::shared_ptr<const CSSParserContext>,
                                                                   bool is_animation_tainted);
@@ -193,9 +194,9 @@ class CSSParserImpl {
   // declaration list with no nested rules, not a full style rule
   // (it is only used for things like inline style).
   static bool ParseDeclarationList(MutableCSSPropertyValueSet*,
-                                   const std::string&,
+                                   const String&,
                                    std::shared_ptr<const CSSParserContext>);
-  static std::shared_ptr<StyleRuleBase> ParseRule(const std::string&,
+  static std::shared_ptr<StyleRuleBase> ParseRule(const String&,
                                                   std::shared_ptr<const CSSParserContext>,
                                                   CSSNestingType,
                                                   std::shared_ptr<StyleRule> parent_rule_for_nesting,
@@ -203,14 +204,14 @@ class CSSParserImpl {
                                                   AllowedRulesType);
   
   // New overload using AllowedRules
-  static std::shared_ptr<StyleRuleBase> ParseRule(const std::string&,
+  static std::shared_ptr<StyleRuleBase> ParseRule(const String&,
                                                   std::shared_ptr<const CSSParserContext>,
                                                   CSSNestingType,
                                                   std::shared_ptr<StyleRule> parent_rule_for_nesting,
                                                   std::shared_ptr<StyleSheetContents>,
                                                   AllowedRules);
 
-  static ParseSheetResult ParseStyleSheet(const std::string&,
+  static ParseSheetResult ParseStyleSheet(const String&,
                                           const std::shared_ptr<const CSSParserContext>&,
                                           const std::shared_ptr<StyleSheetContents>&,
                                           CSSDeferPropertyParsing = CSSDeferPropertyParsing::kNo,
@@ -224,9 +225,9 @@ class CSSParserImpl {
                                                                   std::shared_ptr<const CSSParserContext> context);
 
   static std::unique_ptr<std::vector<KeyframeOffset>> ParseKeyframeKeyList(std::shared_ptr<const CSSParserContext>,
-                                                                           const std::string&);
+                                                                           const String&);
 
-  static std::shared_ptr<CSSPropertyValueSet> ParseDeclarationListForLazyStyle(const std::string&,
+  static std::shared_ptr<CSSPropertyValueSet> ParseDeclarationListForLazyStyle(const String&,
                                                                                size_t offset,
                                                                                std::shared_ptr<const CSSParserContext>);
 
@@ -254,7 +255,7 @@ class CSSParserImpl {
                                               std::shared_ptr<const StyleRule> parent_rule_for_nesting,
                                               bool semicolon_aborts_nested_selector);
 
-  std::shared_ptr<StyleRuleImport> ConsumeImportRule(const std::string& prelude_uri, CSSParserTokenStream&);
+  std::shared_ptr<StyleRuleImport> ConsumeImportRule(const String& prelude_uri, CSSParserTokenStream&);
   std::shared_ptr<StyleRuleMedia> ConsumeMediaRule(CSSParserTokenStream& stream,
                                                    CSSNestingType,
                                                    std::shared_ptr<const StyleRule> parent_rule_for_nesting);
@@ -264,7 +265,7 @@ class CSSParserImpl {
   // Finds a previously parsed MediaQuerySet for the given `prelude_string`
   // and returns it. If no MediaQuerySet is found, parses one using `prelude`,
   // and returns the result after caching it.
-  std::shared_ptr<const MediaQuerySet> CachedMediaQuerySet(std::string prelude_string,
+  std::shared_ptr<const MediaQuerySet> CachedMediaQuerySet(const String& prelude_string,
                                                            CSSParserTokenRange prelude,
                                                            const CSSParserTokenOffsets& offsets);
 
@@ -289,13 +290,13 @@ class CSSParserImpl {
   static std::unique_ptr<std::vector<KeyframeOffset>> ConsumeKeyframeKeyList(std::shared_ptr<const CSSParserContext>,
                                                                              CSSParserTokenStream&);
 
-  static std::string ParseCustomPropertyName(const std::string& name_text);
+  static String ParseCustomPropertyName(const String& name_text);
 
-  static void ParseStyleSheetForInspector(const std::string&,
+  static void ParseStyleSheetForInspector(const String&,
                                           std::shared_ptr<const CSSParserContext>,
                                           std::shared_ptr<StyleSheetContents>,
                                           CSSParserObserver&);
-  static void ParseDeclarationListForInspector(const std::string&,
+  static void ParseDeclarationListForInspector(const String&,
                                                std::shared_ptr<const CSSParserContext>,
                                                CSSParserObserver&);
 
@@ -329,8 +330,8 @@ class CSSParserImpl {
   std::shared_ptr<StyleRule> ConsumeStyleRuleContents(tcb::span<CSSSelector> selector_vector,
                                                       CSSParserTokenStream& stream);
 
-  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&, Element*);
-  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const std::string&,
+  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const String&, Element*);
+  static std::shared_ptr<const ImmutableCSSPropertyValueSet> ParseInlineStyleDeclaration(const String&,
                                                                                          CSSParserMode,
                                                                                          const Document*);
   // Creates an invisible rule containing the declarations
@@ -360,7 +361,7 @@ class CSSParserImpl {
   static CSSTokenizedValue ConsumeUnrestrictedPropertyValue(CSSParserTokenStream&);
 
   bool ConsumeVariableValue(CSSParserTokenStream& stream,
-                            const std::string& property_name,
+                            const AtomicString& property_name,
                             bool allow_important_annotation,
                             bool is_animation_tainted);
 
@@ -408,7 +409,7 @@ class CSSParserImpl {
   bool is_within_scope_ = false;
 
   CSSParserObserver* observer_{nullptr};
-  std::unordered_map<std::string, std::shared_ptr<const MediaQuerySet>> media_query_cache_;
+  std::unordered_map<String, std::shared_ptr<const MediaQuerySet>> media_query_cache_;
 };
 
 }  // namespace webf

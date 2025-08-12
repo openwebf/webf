@@ -15,7 +15,7 @@ namespace cssvalue {
 CSSFontVariationValue::CSSFontVariationValue(const std::string& tag, float value)
     : CSSValue(kFontVariationClass), tag_(tag), value_(value) {}
 
-std::string CSSFontVariationValue::CustomCSSText() const {
+String CSSFontVariationValue::CustomCSSText() const {
   StringBuilder builder;
   SerializeString(tag_, builder);
   builder.Append(' ');

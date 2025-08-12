@@ -34,7 +34,7 @@ namespace webf {
 
 namespace cssvalue {
 
-std::string CSSUnicodeRangeValue::CustomCSSText() const {
+String CSSUnicodeRangeValue::CustomCSSText() const {
   if (from_ == to_) {
     return std::format("U+{:X}", from_);
   }

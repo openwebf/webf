@@ -45,7 +45,7 @@ class CSSUnicodeRangeValue : public CSSValue {
   int32_t From() const { return from_; }
   int32_t To() const { return to_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSUnicodeRangeValue&) const;
 

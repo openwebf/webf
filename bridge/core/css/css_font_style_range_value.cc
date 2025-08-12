@@ -31,7 +31,7 @@ namespace webf {
 
 namespace cssvalue {
 
-std::string CSSFontStyleRangeValue::CustomCSSText() const {
+String CSSFontStyleRangeValue::CustomCSSText() const {
   if (!oblique_values_) {
     return font_style_value_->CssText();
   }

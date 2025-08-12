@@ -14,7 +14,7 @@ CSSAlternateValue::CSSAlternateValue(std::shared_ptr<const CSSFunctionValue>& fu
                                      std::shared_ptr<const CSSValueList>& alias_list)
     : CSSValue(kAlternateClass), function_(function), aliases_(alias_list) {}
 
-std::string CSSAlternateValue::CustomCSSText() const {
+String CSSAlternateValue::CustomCSSText() const {
   std::string builder;
   builder += getValueName(function_->FunctionType());
   builder += '(';

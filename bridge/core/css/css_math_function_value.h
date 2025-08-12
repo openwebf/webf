@@ -88,7 +88,7 @@ class CSSMathFunctionValue : public CSSPrimitiveValue {
 
   void AccumulateLengthUnitTypes(LengthTypeFlags& types) const { expression_->AccumulateLengthUnitTypes(types); }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSMathFunctionValue& other) const;
 
   bool HasComparisons() const { return expression_->HasComparisons(); }

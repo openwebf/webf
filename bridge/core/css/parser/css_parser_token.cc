@@ -20,7 +20,7 @@ CSSParserToken::CSSParserToken(CSSParserTokenType type, unsigned char c)
   assert(type_ == static_cast<unsigned>(kDelimiterToken));
 }
 
-CSSParserToken::CSSParserToken(HashTokenType type, std::string_view value)
+CSSParserToken::CSSParserToken(HashTokenType type, StringView value)
     : type_(kHashToken), block_type_(kNotBlock), value_is_inline_(false), hash_token_type_(type) {
   InitValueFromStringView(value);
 }
@@ -132,7 +132,7 @@ bool CSSParserToken::HasStringBacking() const {
          token_type == kStringToken;
 }
 
-CSSParserToken CSSParserToken::CopyWithUpdatedString(const std::string_view& string) const {
+CSSParserToken CSSParserToken::CopyWithUpdatedString(const StringView& string) const {
   CSSParserToken copy(*this);
   copy.InitValueFromStringView(string);
   return copy;
@@ -146,14 +146,31 @@ CSSPropertyID CSSParserToken::ParseAsUnresolvedCSSPropertyID(const ExecutingCont
 
 AtRuleDescriptorID CSSParserToken::ParseAsAtRuleDescriptorID() const {
   DCHECK_EQ(type_, static_cast<unsigned>(kIdentToken));
-  return AsAtRuleDescriptorID(Value());
+  StringView value = Value();
+  if (value.Is8Bit()) {
+    std::string_view str_view(reinterpret_cast<const char*>(value.Characters8()), value.length());
+    return AsAtRuleDescriptorID(str_view);
+  } else {
+    // Convert 16-bit string to UTF-8
+    String str(value);
+    std::string utf8 = str.StdUtf8();
+    return AsAtRuleDescriptorID(std::string_view(utf8));
+  }
 }
 
-void CSSParserToken::ConvertToDimensionWithUnit(std::string_view unit) {
+void CSSParserToken::ConvertToDimensionWithUnit(StringView unit) {
   assert(type_ == static_cast<unsigned>(kNumberToken));
   type_ = kDimensionToken;
   InitValueFromStringView(unit);
-  unit_ = static_cast<unsigned>(CSSPrimitiveValue::StringToUnitType(unit));
+  if (unit.Is8Bit()) {
+    std::string_view str_view(reinterpret_cast<const char*>(unit.Characters8()), unit.length());
+    unit_ = static_cast<unsigned>(CSSPrimitiveValue::StringToUnitType(str_view));
+  } else {
+    // Convert 16-bit string to UTF-8
+    String str(unit);
+    std::string utf8 = str.StdUtf8();
+    unit_ = static_cast<unsigned>(CSSPrimitiveValue::StringToUnitType(std::string_view(utf8)));
+  }
 }
 
 void CSSParserToken::ConvertToPercentage() {
@@ -185,22 +202,22 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
   // simple we handle some of the edge cases incorrectly (see comments below).
   switch (GetType()) {
     case kIdentToken:
-      SerializeIdentifier(Value(), builder);
+      SerializeIdentifier(String(Value()), builder);
       break;
     case kFunctionToken:
-      SerializeIdentifier(Value(), builder);
+      SerializeIdentifier(String(Value()), builder);
       return builder.Append('(');
     case kAtKeywordToken:
       builder.Append('@');
-      SerializeIdentifier(Value(), builder);
+      SerializeIdentifier(String(Value()), builder);
       break;
     case kHashToken:
       builder.Append('#');
-      SerializeIdentifier(Value(), builder, (GetHashTokenType() == kHashTokenUnrestricted));
+      SerializeIdentifier(String(Value()), builder, (GetHashTokenType() == kHashTokenUnrestricted));
       break;
     case kUrlToken:
       builder.Append("url(");
-      SerializeIdentifier(Value(), builder);
+      SerializeIdentifier(String(Value()), builder);
       return builder.Append(')');
     case kDelimiterToken:
       if (Delimiter() == '\\') {
@@ -209,7 +226,7 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       return builder.Append(Delimiter());
     case kNumberToken:
       if (numeric_value_type_ == kIntegerValueType) {
-        return builder.Append(ClampTo<int64_t>(NumericValue()));
+        return builder.AppendNumber(ClampTo<int64_t>(NumericValue()));
       } else {
         NumberToStringBuffer buffer;
         const char* str = NumberToString(NumericValue(), buffer);
@@ -223,7 +240,7 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
         return;
       }
     case kPercentageToken:
-      builder.Append(NumericValue());
+      builder.AppendNumber(NumericValue());
       return builder.Append('%');
     case kDimensionToken: {
       // This will incorrectly serialize e.g. 4e3e2 as 4000e2
@@ -233,7 +250,7 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       // NOTE: We don't need the same “.0” treatment as we did for
       // kNumberToken, as there are no situations where e.g. 2deg
       // would be valid but 2.0deg not.
-      SerializeIdentifier(std::string(Value()), builder);
+      SerializeIdentifier(String(Value()), builder);
       break;
     }
     case kUnicodeRangeToken:
@@ -242,7 +259,8 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       builder.Append(buffer);
       return;
     case kStringToken:
-      return SerializeString(Value(), builder);
+      SerializeString(String(Value()), builder);
+      return;
 
     case kIncludeMatchToken:
       return builder.Append("~=");

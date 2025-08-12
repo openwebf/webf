@@ -38,7 +38,7 @@ class CSSImageSetOptionValue : public CSSValue {
   const CSSPrimitiveValue& GetResolution() const;
   const CSSImageSetTypeValue* GetType() const;
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSImageSetOptionValue& other) const;
 

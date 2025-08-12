@@ -80,7 +80,7 @@ ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_st
       // The old stylesheet vector is a prefix of the new vector in terms of
       // StyleSheets. If none of the RuleSets changed, we only need to add the new
       // sheets to the ScopedStyleResolver (ActiveSheetsAppended).
-      bool rule_sets_changed_in_common_prefix = !changed_rule_sets.empty();
+      bool rule_sets_changed_in_common_prefix = !changed_rule_sets.IsEmpty();
       for (; index < new_style_sheet_count; index++) {
         if (new_style_sheets[index].second) {
           changed_rule_sets.insert(new_style_sheets[index].second);
@@ -91,7 +91,7 @@ ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_st
       if (rule_sets_changed_in_common_prefix) {
         return kActiveSheetsChanged;
       }
-      if (changed_rule_sets.empty() && !adds_non_matching_mq) {
+      if (changed_rule_sets.IsEmpty() && !adds_non_matching_mq) {
         return kNoActiveSheetsChanged;
       }
       return kActiveSheetsAppended;
@@ -106,7 +106,7 @@ ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_st
           adds_non_matching_mq = true;
         }
       }
-      return changed_rule_sets.empty() && !adds_non_matching_mq
+      return changed_rule_sets.IsEmpty() && !adds_non_matching_mq
                  ? kNoActiveSheetsChanged
                  : kActiveSheetsChanged;
     }
@@ -158,7 +158,7 @@ ActiveSheetsChange CompareActiveStyleSheets(const ActiveStyleSheetVector& old_st
         changed_rule_sets.insert(sheet2.second);
       }
     }*/
-  return changed_rule_sets.empty() && !adds_non_matching_mq ? kNoActiveSheetsChanged : kActiveSheetsChanged;
+  return changed_rule_sets.IsEmpty() && !adds_non_matching_mq ? kNoActiveSheetsChanged : kActiveSheetsChanged;
 }
 
 namespace {
@@ -168,7 +168,7 @@ bool HasMediaQueries(const ActiveStyleSheetVector& active_style_sheets) {
     for (const auto& active_sheet : active_style_sheets) {
       if (const MediaQuerySet* media_queries =
               active_sheet.first->MediaQueries()) {
-        if (!media_queries->QueryVector().empty()) {
+        if (!media_queries->QueryVector().IsEmpty()) {
           return true;
         }
       }

@@ -28,6 +28,7 @@
 
 #include "core/css/style_sheet_contents.h"
 #include "core/platform/text/text_position.h"
+#include "foundation/string/wtf_string.h"
 #include "style_rule.h"
 
 namespace webf {
@@ -37,10 +38,10 @@ class StyleSheetContents;
 
 class StyleRuleImport : public StyleRuleBase {
  public:
-  StyleRuleImport(const std::string& href,
+  StyleRuleImport(const String& href,
                   LayerName&& layer,
                   bool supported,
-                  std::string&& supports,
+                  String supports,
                   std::shared_ptr<const MediaQuerySet>);
   ~StyleRuleImport();
 
@@ -51,7 +52,7 @@ class StyleRuleImport : public StyleRuleBase {
   }
   void ClearParentStyleSheet() { parent_style_sheet_ = nullptr; }
 
-  std::string Href() const { return str_href_; }
+  String Href() const { return str_href_; }
   std::shared_ptr<StyleSheetContents> GetStyleSheet() const { return style_sheet_; }
 
   bool IsLoading() const;
@@ -64,18 +65,18 @@ class StyleRuleImport : public StyleRuleBase {
 
   bool IsLayered() const { return layer_.size(); }
   const LayerName& GetLayerName() const { return layer_; }
-  std::string GetLayerNameAsString() const;
+  String GetLayerNameAsString() const;
 
   bool IsSupported() const { return supported_; }
-  std::string GetSupportsString() const { return supports_string_; }
+  String GetSupportsString() const { return supports_string_; }
 
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
   std::shared_ptr<const StyleSheetContents> parent_style_sheet_;
-  std::string str_href_;
+  String str_href_;
   LayerName layer_;
-  std::string supports_string_;
+  String supports_string_;
   std::shared_ptr<const MediaQuerySet> media_queries_;
   std::shared_ptr<StyleSheetContents> style_sheet_;
   bool loading_;

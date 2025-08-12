@@ -61,7 +61,7 @@ class CSSQuadValue : public CSSValue {
 
   TypeForSerialization SerializationType() { return serialization_type_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSQuadValue& other) const {
     return top_ == other.top_ && right_ == other.right_ && left_ == other.left_ && bottom_ == other.bottom_;

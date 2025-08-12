@@ -30,8 +30,8 @@ class AtomicString {
       : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
   AtomicString(const LChar* chars, size_t length);
 
-  AtomicString(UTF8StringView string_view);
-  AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
+  explicit AtomicString(UTF8StringView string_view);
+  explicit AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
 
   explicit AtomicString(const UChar* chars)
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}

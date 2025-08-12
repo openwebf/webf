@@ -8,6 +8,7 @@
 #include "core/css/media_query_exp.h"
 #include "core/css/parser/media_query_parser.h"
 #include "foundation/macros.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -21,7 +22,7 @@ class ContainerQueryParser {
   explicit ContainerQueryParser(const CSSParserContext&);
 
   // https://drafts.csswg.org/css-contain-3/#typedef-container-condition
-  std::shared_ptr<const MediaQueryExpNode> ParseCondition(const std::string&);
+  std::shared_ptr<const MediaQueryExpNode> ParseCondition(const String&);
   std::shared_ptr<const MediaQueryExpNode> ParseCondition(CSSParserTokenStream&);
 
  private:

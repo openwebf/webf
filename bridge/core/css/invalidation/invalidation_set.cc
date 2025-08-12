@@ -481,7 +481,7 @@ std::string InvalidationSet::ToString() const {
     std::sort(names.begin(), names.end());
 
     for (const auto& name : names) {
-      if (!builder.empty()) {
+      if (!builder.IsEmpty()) {
         builder.append(" ");
       }
       builder.append(prefix);
@@ -498,15 +498,15 @@ std::string InvalidationSet::ToString() const {
     features.append(format_backing(Ids(), "#", ""));
   }
   if (HasClasses()) {
-    features.append(!features.empty() ? " " : "");
+    features.append(!features.IsEmpty() ? " " : "");
     features.append(format_backing(Classes(), ".", ""));
   }
   if (HasTagNames()) {
-    features.append(!features.empty() ? " " : "");
+    features.append(!features.IsEmpty() ? " " : "");
     features.append(format_backing(TagNames(), "", ""));
   }
   if (HasAttributes()) {
-    features.append(!features.empty() ? " " : "");
+    features.append(!features.IsEmpty() ? " " : "");
     features.append(format_backing(Attributes(), "[", "]"));
   }
 
@@ -538,11 +538,11 @@ std::string InvalidationSet::ToString() const {
 
   std::string main;
   main.append("{");
-  if (!features.empty()) {
+  if (!features.IsEmpty()) {
     main.append(" ");
     main.append(features);
   }
-  if (!metadata.empty()) {
+  if (!metadata.IsEmpty()) {
     main.append(" ");
     main.append(metadata);
   }

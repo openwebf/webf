@@ -434,11 +434,16 @@ bool Document::IsValidName(const AtomicString& name) {
   if (!length)
     return false;
 
-  auto string_view = name.ToUTF8StringView();
-
-  const char* characters = string_view.data();
-  if (IsValidNameASCII(characters, length)) {
-    return true;
+  if (name.Is8Bit()) {
+    const LChar* characters = name.Characters8();
+    if (IsValidNameASCII(characters, length)) {
+      return true;
+    }
+  } else {
+    const UChar* characters = name.Characters16();
+    if (IsValidNameASCII(characters, length)) {
+      return true;
+    }
   }
 
   return false;

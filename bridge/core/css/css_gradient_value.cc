@@ -287,7 +287,7 @@ void CSSGradientValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSImageGeneratorValue::TraceAfterDispatch(visitor);
 }
 
-std::string CSSLinearGradientValue::CustomCSSText() const {
+String CSSLinearGradientValue::CustomCSSText() const {
   StringBuilder result;
   if (gradient_type_ == kCSSDeprecatedLinearGradient) {
     result.Append("-webkit-gradient(linear, ");
@@ -637,7 +637,7 @@ bool CSSGradientValue::Equals(const CSSGradientValue& other) const {
   return repeating_ == other.repeating_ && stops_ == other.stops_;
 }
 
-std::string CSSRadialGradientValue::CustomCSSText() const {
+String CSSRadialGradientValue::CustomCSSText() const {
   StringBuilder result;
 
   if (gradient_type_ == kCSSDeprecatedRadialGradient) {
@@ -981,7 +981,7 @@ void CSSRadialGradientValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSGradientValue::TraceAfterDispatch(visitor);
 }
 
-std::string CSSConicGradientValue::CustomCSSText() const {
+String CSSConicGradientValue::CustomCSSText() const {
   StringBuilder result;
 
   if (repeating_) {

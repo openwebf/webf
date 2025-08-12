@@ -42,7 +42,7 @@ class CSSGridTemplateAreasValue : public CSSValue {
   CSSGridTemplateAreasValue(const NamedGridAreaMap&, size_t row_count, size_t column_count);
   ~CSSGridTemplateAreasValue() = default;
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   const NamedGridAreaMap& GridAreaMap() const { return grid_area_map_; }
   size_t RowCount() const { return row_count_; }

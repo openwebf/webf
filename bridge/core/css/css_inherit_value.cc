@@ -27,7 +27,7 @@ std::shared_ptr<const CSSInheritedValue> CSSInheritedValue::Create() {
   return CssValuePool().InheritedValue();
 }
 
-std::string CSSInheritedValue::CustomCSSText() const {
+String CSSInheritedValue::CustomCSSText() const {
   return "inherit";
 }
 

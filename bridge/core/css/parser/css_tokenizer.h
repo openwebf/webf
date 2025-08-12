@@ -12,6 +12,8 @@
 #include "css_parser_token.h"
 #include "css_tokenizer_input_stream.h"
 #include "foundation/macros.h"
+#include "foundation/string/string_view.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -24,8 +26,8 @@ class CSSTokenizer {
   // The overload with const String& holds on to a reference to the string.
   // (Most places, we probably don't need to do that, but fixing that would
   // require manual inspection.)
-  explicit CSSTokenizer(const std::string&, size_t offset = 0);
-  explicit CSSTokenizer(std::string&&, size_t offset = 0);
+  explicit CSSTokenizer(StringView, size_t offset = 0);
+  explicit CSSTokenizer(const String&, size_t offset = 0);
   CSSTokenizer(const CSSTokenizer&) = delete;
   CSSTokenizer& operator=(const CSSTokenizer&) = delete;
 
@@ -45,9 +47,9 @@ class CSSTokenizer {
 
   [[nodiscard]] uint32_t Offset() const { return input_.Offset(); }
   [[nodiscard]] uint32_t PreviousOffset() const { return prev_offset_; }
-  [[nodiscard]] std::string_view StringRangeFrom(size_t start) const;
-  [[nodiscard]] std::string_view StringRangeAt(size_t start, size_t length) const;
-  [[nodiscard]] const std::vector<std::shared_ptr<std::string>>& StringPool() const { return string_pool_; }
+  [[nodiscard]] StringView StringRangeFrom(size_t start) const;
+  [[nodiscard]] StringView StringRangeAt(size_t start, size_t length) const;
+  [[nodiscard]] const std::vector<std::shared_ptr<String>>& StringPool() const { return string_pool_; }
   CSSParserToken TokenizeSingle();
   CSSParserToken TokenizeSingleWithComments();
 
@@ -106,8 +108,8 @@ class CSSTokenizer {
   void ConsumeUntilCommentEndFound();
 
   bool ConsumeIfNext(char);
-  std::string_view ConsumeName();
-  uint32_t ConsumeEscape();
+  StringView ConsumeName();
+  UChar32 ConsumeEscape();
 
   bool NextTwoCharsAreValidEscape();
   bool NextCharsAreNumber(char);
@@ -116,8 +118,8 @@ class CSSTokenizer {
   bool NextCharsAreIdentifier();
 
   CSSParserToken BlockStart(CSSParserTokenType);
-  CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, std::string_view);
-  CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, std::string_view, CSSValueID);
+  CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, StringView);
+  CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, StringView, CSSValueID);
   CSSParserToken BlockEnd(CSSParserTokenType, CSSParserTokenType start_type);
 
   CSSParserToken WhiteSpace(char);
@@ -147,7 +149,7 @@ class CSSTokenizer {
   CSSParserToken StringStart(char);
   CSSParserToken EndOfFile(char);
 
-  std::string_view RegisterString(const std::string&);
+  StringView RegisterString(const String&);
 
   friend class CSSParserTokenStream;
 
@@ -157,7 +159,7 @@ class CSSTokenizer {
   uint32_t token_count_ = 0;
   std::vector<CSSParserTokenType> block_stack_;
   // We only allocate strings when escapes are used.
-  std::vector<std::shared_ptr<std::string>> string_pool_;
+  std::vector<std::shared_ptr<String>> string_pool_;
   bool unicode_ranges_allowed_ = false;
 };
 

@@ -27,7 +27,7 @@ CSSCustomIdentValue::CSSCustomIdentValue(const ScopedCSSName& name) : CSSCustomI
   needs_tree_scope_population_ = false;
 }
 
-std::string CSSCustomIdentValue::CustomCSSText() const {
+String CSSCustomIdentValue::CustomCSSText() const {
   if (IsKnownPropertyID()) {
     return CSSUnresolvedProperty::Get(property_id_).GetPropertyName();
   }

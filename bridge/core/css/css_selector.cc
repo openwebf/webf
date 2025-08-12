@@ -952,9 +952,9 @@ void CSSSelector::SetTrue() {
 
 static void SerializeIdentifierOrAny(const AtomicString& identifier, const AtomicString& any, StringBuilder& builder) {
   if (identifier != any) {
-    SerializeIdentifier(identifier.ToUTF8StringView(), builder);
+    SerializeIdentifier(String(identifier), builder);
   } else {
-    builder.Append(g_star_atom.ToUTF8StringView());
+    builder.Append(g_star_atom);
   }
 }
 
@@ -962,7 +962,7 @@ static void SerializeNamespacePrefixIfNeeded(const AtomicString& prefix,
                                              const AtomicString& any,
                                              StringBuilder& builder,
                                              bool is_attribute_selector) {
-  if (prefix.IsNull() || (prefix.empty() && is_attribute_selector)) {
+  if (prefix.IsNull() || (prefix == AtomicString::Empty() && is_attribute_selector)) {
     return;
   }
   SerializeIdentifierOrAny(prefix, any, builder);
@@ -984,17 +984,17 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
   bool suppress_selector_list = false;
   if (Match() == kId) {
     builder.Append('#');
-    SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
+    SerializeIdentifier(String(SerializingValue()), builder);
   } else if (Match() == kClass) {
     builder.Append('.');
-    SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
+    SerializeIdentifier(String(SerializingValue()), builder);
   } else if (Match() == kPseudoClass || Match() == kPagePseudoClass) {
     if (GetPseudoType() == kPseudoUnparsed) {
-      builder.Append(Value().ToUTF8StringView());
+      builder.Append(Value());
     } else if (GetPseudoType() != kPseudoStateDeprecatedSyntax && GetPseudoType() != kPseudoParent &&
                GetPseudoType() != kPseudoTrue) {
       builder.Append(':');
-      builder.Append(SerializingValue().ToUTF8StringView());
+      builder.Append(SerializingValue());
     }
 
     switch (GetPseudoType()) {
@@ -1008,7 +1008,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         int a = data_.rare_data_->NthAValue();
         int b = data_.rare_data_->NthBValue();
         if (a == 0) {
-          builder.Append(b);
+          builder.AppendFormat("%d", b);
         } else {
           if (a == 1) {
             builder.Append('n');
@@ -1019,7 +1019,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           }
 
           if (b < 0) {
-            builder.Append(b);
+            builder.AppendFormat("%d", b);
           } else if (b > 0) {
             builder.AppendFormat("+%d", b);
           }
@@ -1039,7 +1039,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
       case kPseudoLang:
       case kPseudoState:
         builder.Append('(');
-        SerializeIdentifier(Argument().ToUTF8StringView(), builder);
+        SerializeIdentifier(String(Argument()), builder);
         builder.Append(')');
         break;
       case kPseudoHas:
@@ -1048,7 +1048,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
       case kPseudoStateDeprecatedSyntax:
         builder.Append(':');
-        SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
+        SerializeIdentifier(String(SerializingValue()), builder);
         break;
       case kPseudoHost:
       case kPseudoHostContext:
@@ -1070,7 +1070,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (separator == "(") {
             separator = ", ";
           }
-          SerializeIdentifier(type.ToUTF8StringView(), builder);
+          SerializeIdentifier(String(type), builder);
         }
         builder.Append(')');
         break;
@@ -1080,7 +1080,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     }
   } else if (Match() == kPseudoElement) {
     builder.Append("::");
-    SerializeIdentifier(SerializingValue().ToUTF8StringView(), builder);
+    SerializeIdentifier(String(SerializingValue()), builder);
     switch (GetPseudoType()) {
       case kPseudoPart: {
         char separator = '(';
@@ -1089,14 +1089,14 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (separator == '(') {
             separator = ' ';
           }
-          SerializeIdentifier(part.ToUTF8StringView(), builder);
+          SerializeIdentifier(String(part), builder);
         }
         builder.Append(')');
         break;
       }
       case kPseudoHighlight: {
         builder.Append('(');
-        builder.Append(Argument().ToUTF8StringView());
+        builder.Append(Argument());
         builder.Append(')');
         break;
       }
@@ -1115,7 +1115,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (name_or_class == UniversalSelectorAtom()) {
             builder.Append("*");
           } else {
-            SerializeIdentifier(name_or_class.ToUTF8StringView(), builder);
+            SerializeIdentifier(String(name_or_class), builder);
           }
         }
         builder.Append(')');
@@ -1155,7 +1155,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
     }
     if (Match() != kAttributeSet) {
-      SerializeString(SerializingValue().ToUTF8StringView(), builder);
+      SerializeString(String(SerializingValue()), builder);
       if (AttributeMatch() == AttributeMatchType::kCaseInsensitive) {
         builder.Append(" i");
       } else if (AttributeMatch() == AttributeMatchType::kCaseSensitiveAlways) {
@@ -1197,7 +1197,7 @@ std::string CSSSelector::SelectorText() const {
     StringBuilder builder;
     compound = compound->SerializeCompound(builder);
     if (!compound) {
-      return builder.ReleaseString() + result;
+      return builder.ReleaseString().StdUtf8() + result;
     }
 
     RelationType relation = compound->Relation();
@@ -1222,16 +1222,16 @@ std::string CSSSelector::SelectorText() const {
 
     switch (relation) {
       case kDescendant:
-        result = " " + builder.ReleaseString() + result;
+        result = " " + builder.ReleaseString().StdUtf8() + result;
         break;
       case kChild:
-        result = " > " + builder.ReleaseString() + result;
+        result = " > " + builder.ReleaseString().StdUtf8() + result;
         break;
       case kDirectAdjacent:
-        result = " + " + builder.ReleaseString() + result;
+        result = " + " + builder.ReleaseString().StdUtf8() + result;
         break;
       case kIndirectAdjacent:
-        result = " ~ " + builder.ReleaseString() + result;
+        result = " ~ " + builder.ReleaseString().StdUtf8() + result;
         break;
       case kSubSelector:
       case kScopeActivation:
@@ -1240,16 +1240,16 @@ std::string CSSSelector::SelectorText() const {
       case kShadowPart:
       case kUAShadow:
       case kShadowSlot:
-        result = builder.ReleaseString() + result;
+        result = builder.ReleaseString().StdUtf8() + result;
         break;
       case kRelativeDescendant:
-        return builder.ReleaseString() + result;
+        return builder.ReleaseString().StdUtf8() + result;
       case kRelativeChild:
-        return "> " + builder.ReleaseString() + result;
+        return "> " + builder.ReleaseString().StdUtf8() + result;
       case kRelativeDirectAdjacent:
-        return "+ " + builder.ReleaseString() + result;
+        return "+ " + builder.ReleaseString().StdUtf8() + result;
       case kRelativeIndirectAdjacent:
-        return "~ " + builder.ReleaseString() + result;
+        return "~ " + builder.ReleaseString().StdUtf8() + result;
     }
   }
   NOTREACHED_IN_MIGRATION();

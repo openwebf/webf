@@ -77,11 +77,14 @@ class CSSVariableParser {
 
   static bool IsValidVariableName(const CSSParserToken&);
   static bool IsValidVariableName(const std::string_view&);
+  static bool IsValidVariableName(const String&);
+  static bool IsValidVariableName(const StringView&);
 
   // NOTE: We have to strip both leading and trailing whitespace (and comments)
   // from values as per spec, but we assume the tokenizer has already done the
   // leading ones for us; see comment on CSSPropertyParser::ParseValue().
   static std::string_view StripTrailingWhitespaceAndComments(std::string_view);
+  static StringView StripTrailingWhitespaceAndComments(StringView);
 };
 
 }  // namespace webf

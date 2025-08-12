@@ -76,7 +76,7 @@ TEST_F(CascadeMapTest, ImportantDeclarations) {
 }
 
 TEST_F(CascadeMapTest, CustomProperties) {
-  CSSPropertyName custom_prop(AtomicString("--my-color"));
+  CSSPropertyName custom_prop(AtomicString::CreateFromUTF8("--my-color"));
   CascadePriority priority(StyleCascadeOrigin::kAuthor, false, 0, 10);
 
   map_.Add(custom_prop, priority);
@@ -141,7 +141,7 @@ TEST_F(CascadeMapTest, FindRevertLayer) {
 
 TEST_F(CascadeMapTest, Reset) {
   CSSPropertyName color_prop(CSSPropertyID::kColor);
-  CSSPropertyName custom_prop(AtomicString("--my-var"));
+  CSSPropertyName custom_prop(AtomicString::CreateFromUTF8("--my-var"));
   
   CascadePriority priority(StyleCascadeOrigin::kAuthor, false, 0, 10);
   

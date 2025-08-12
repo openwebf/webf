@@ -44,7 +44,7 @@ const CSSImageSetTypeValue* CSSImageSetOptionValue::GetType() const {
   return type_.get();
 }
 
-std::string CSSImageSetOptionValue::CustomCSSText() const {
+String CSSImageSetOptionValue::CustomCSSText() const {
   StringBuilder result;
 
   result.Append(image_->CssText());

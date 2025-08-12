@@ -39,7 +39,7 @@ CSSCrossfadeValue::CSSCrossfadeValue(
 
 CSSCrossfadeValue::~CSSCrossfadeValue() = default;
 
-std::string CSSCrossfadeValue::CustomCSSText() const {
+String CSSCrossfadeValue::CustomCSSText() const {
   StringBuilder result;
   if (is_prefixed_variant_) {
     CHECK_EQ(2u, image_and_percentages_.size());

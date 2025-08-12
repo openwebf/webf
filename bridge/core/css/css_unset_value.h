@@ -25,7 +25,7 @@ class CSSUnsetValue : public CSSValue {
 
   explicit CSSUnsetValue(webf::PassKey<CSSValuePool>) : CSSValue(kUnsetClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSUnsetValue&) const { return true; }
 

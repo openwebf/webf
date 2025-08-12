@@ -83,7 +83,7 @@ static inline std::string trim(std::string s) {
 CSSSyntaxStringParser::CSSSyntaxStringParser(const std::string& string) : string_(trim(string)), input_(string_) {}
 
 std::optional<CSSSyntaxDefinition> CSSSyntaxStringParser::Parse() {
-  if (string_.empty()) {
+  if (string_.IsEmpty()) {
     return std::nullopt;
   }
   if (string_.length() == 1 && string_[0] == '*') {

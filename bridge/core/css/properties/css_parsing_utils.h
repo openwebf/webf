@@ -107,7 +107,7 @@ bool ConsumeAnyValue(CSSParserTokenStream&);
 bool ConsumeAnyValue(CSSParserTokenRange&); // Temporary for migration
 
 inline bool AtIdent(const CSSParserToken& token, const char* ident) {
-  return token.GetType() == kIdentToken && EqualIgnoringASCIICase(std::string(token.Value()), ident);
+  return token.GetType() == kIdentToken && EqualIgnoringASCIICase(token.Value(), ident);
 }
 
 std::shared_ptr<const CSSPrimitiveValue> ConsumeInteger(CSSParserTokenStream&,
@@ -539,7 +539,7 @@ ConsumeFamilyName(T& range);
 
 template <typename T>
 typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_same<T, CSSParserTokenRange>::value,
-                        std::string>::type
+                        String>::type
 ConcatenateFamilyName(T& range);
 
 template <typename T>
@@ -683,7 +683,7 @@ bool IsSelfPositionKeyword(CSSValueID);
 bool IsSelfPositionOrLeftOrRightKeyword(CSSValueID);
 bool IsContentPositionOrLeftOrRightKeyword(CSSValueID);
 bool IsCSSWideKeyword(CSSValueID);
-bool IsCSSWideKeyword(const std::string_view&);
+bool IsCSSWideKeyword(StringView);
 bool IsRevertKeyword(const std::string_view&);
 bool IsDefaultKeyword(const std::string_view&);
 bool IsHashIdentifier(const CSSParserToken&);

@@ -14,7 +14,7 @@ class CSSFunctionValue : public CSSValueList {
  public:
   CSSFunctionValue(CSSValueID id) : CSSValueList(kFunctionClass, kCommaSeparator), value_id_(id) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSFunctionValue& other) const {
     return value_id_ == other.value_id_ && CSSValueList::Equals(other);

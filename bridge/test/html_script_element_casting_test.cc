@@ -53,7 +53,7 @@ TEST_F(HTMLScriptElementCastingTest, VoidPointerToHTMLScriptElementCasting) {
 
   // Create an HTMLScriptElement through the document
   ExceptionState exception_state;
-  AtomicString script_tag = AtomicString("script");
+  AtomicString script_tag = AtomicString::CreateFromUTF8("script");
   HTMLElement* html_element = document_->createElement(script_tag, exception_state);
   ASSERT_FALSE(exception_state.HasException());
   ASSERT_NE(html_element, nullptr);
@@ -92,7 +92,7 @@ TEST_F(HTMLScriptElementCastingTest, InvalidCastingReturnsNull) {
 
   // Create a different type of element (not script)
   ExceptionState exception_state;
-  AtomicString div_tag = AtomicString("div");
+  AtomicString div_tag = AtomicString::CreateFromUTF8("div");
   HTMLElement* html_element = document_->createElement(div_tag, exception_state);
   ASSERT_FALSE(exception_state.HasException());
   ASSERT_NE(html_element, nullptr);

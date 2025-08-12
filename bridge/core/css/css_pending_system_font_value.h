@@ -41,7 +41,7 @@ class CSSPendingSystemFontValue : public CSSValue {
 
   bool Equals(const CSSPendingSystemFontValue& other) const { return system_font_id_ == other.system_font_id_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

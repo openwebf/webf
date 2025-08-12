@@ -228,12 +228,12 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
 
   TestCase test_cases[] = {
       {"html::view-transition-group(*)", true, g_null_atom, CSSSelector::kPseudoViewTransitionGroup},
-      {"html::view-transition-group(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroup},
-      {"html::view-transition-image-pair(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionImagePair},
-      {"html::view-transition-group-children(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroupChildren},
-      {"html::view-transition-old(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionOld},
-      {"html::view-transition-new(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionNew},
-      {"::view-transition-group(foo)", true, AtomicString("foo"), CSSSelector::kPseudoViewTransitionGroup},
+      {"html::view-transition-group(foo)", true, AtomicString::CreateFromUTF8("foo"), CSSSelector::kPseudoViewTransitionGroup},
+      {"html::view-transition-image-pair(foo)", true, AtomicString::CreateFromUTF8("foo"), CSSSelector::kPseudoViewTransitionImagePair},
+      {"html::view-transition-group-children(foo)", true, AtomicString::CreateFromUTF8("foo"), CSSSelector::kPseudoViewTransitionGroupChildren},
+      {"html::view-transition-old(foo)", true, AtomicString::CreateFromUTF8("foo"), CSSSelector::kPseudoViewTransitionOld},
+      {"html::view-transition-new(foo)", true, AtomicString::CreateFromUTF8("foo"), CSSSelector::kPseudoViewTransitionNew},
+      {"::view-transition-group(foo)", true, AtomicString::CreateFromUTF8("foo"), CSSSelector::kPseudoViewTransitionGroup},
       {"div::view-transition-group(*)", true, g_null_atom, CSSSelector::kPseudoViewTransitionGroup},
       {"::view-transition-group(*)::before", false, g_null_atom, CSSSelector::kPseudoUnknown},
       {"::view-transition-group(*):hover", false, g_null_atom, CSSSelector::kPseudoUnknown},
@@ -248,7 +248,7 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-    EXPECT_EQ(!vector.empty(), test_case.valid);
+    EXPECT_EQ(!vector.IsEmpty(), test_case.valid);
     if (!test_case.valid) {
       continue;
     }
@@ -451,7 +451,7 @@ TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-    EXPECT_TRUE(!vector.empty());
+    EXPECT_TRUE(!vector.IsEmpty());
 
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
     ASSERT_TRUE(list->HasOneSelector());
@@ -675,37 +675,37 @@ TEST(CSSSelectorParserTest, ImplicitShadowCrossingCombinators) {
       {
           "*::placeholder",
           {
-              {AtomicString("placeholder"), CSSSelector::kUAShadow},
+              {AtomicString::CreateFromUTF8("placeholder"), CSSSelector::kUAShadow},
               {g_null_atom, CSSSelector::kSubSelector},
           },
       },
       {
           "div::slotted(*)",
           {
-              {AtomicString("slotted"), CSSSelector::kShadowSlot},
-              {AtomicString("div"), CSSSelector::kSubSelector},
+              {AtomicString::CreateFromUTF8("slotted"), CSSSelector::kShadowSlot},
+              {AtomicString::CreateFromUTF8("div"), CSSSelector::kSubSelector},
           },
       },
       {
           "::slotted(*)::placeholder",
           {
-              {AtomicString("placeholder"), CSSSelector::kUAShadow},
-              {AtomicString("slotted"), CSSSelector::kShadowSlot},
+              {AtomicString::CreateFromUTF8("placeholder"), CSSSelector::kUAShadow},
+              {AtomicString::CreateFromUTF8("slotted"), CSSSelector::kShadowSlot},
               {g_null_atom, CSSSelector::kSubSelector},
           },
       },
       {
           "span::part(my-part)",
           {
-              {AtomicString("part"), CSSSelector::kShadowPart},
-              {AtomicString("span"), CSSSelector::kSubSelector},
+              {AtomicString::CreateFromUTF8("part"), CSSSelector::kShadowPart},
+              {AtomicString::CreateFromUTF8("span"), CSSSelector::kSubSelector},
           },
       },
       {
           "video::-webkit-media-controls",
           {
-              {AtomicString("-webkit-media-controls"), CSSSelector::kUAShadow},
-              {AtomicString("video"), CSSSelector::kSubSelector},
+              {AtomicString::CreateFromUTF8("-webkit-media-controls"), CSSSelector::kUAShadow},
+              {AtomicString::CreateFromUTF8("video"), CSSSelector::kSubSelector},
           },
       },
   };
@@ -851,11 +851,11 @@ static std::optional<CSSSelector::PseudoType> GetImplicitlyAddedPseudo(Document*
   // The back of `selectors` now contains the leftmost simple CSSSelector.
 
   // Ignore leading :true.
-  if (!selectors.empty() && selectors.back()->GetPseudoType() == CSSSelector::kPseudoTrue) {
+  if (!selectors.IsEmpty() && selectors.back()->GetPseudoType() == CSSSelector::kPseudoTrue) {
     selectors.pop_back();
   }
 
-  const CSSSelector* back = !selectors.empty() ? selectors.back() : nullptr;
+  const CSSSelector* back = !selectors.IsEmpty() ? selectors.back() : nullptr;
   if (!back || back->Match() != CSSSelector::kPseudoClass || !back->IsImplicit()) {
     return std::nullopt;
   }
@@ -990,7 +990,7 @@ class TestEnvironmentPool {
     }
     
     // Try to reuse an available environment
-    if (!available_.empty()) {
+    if (!available_.IsEmpty()) {
       auto env = std::move(available_.back());
       available_.pop_back();
       return env;

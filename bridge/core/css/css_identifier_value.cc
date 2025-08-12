@@ -20,7 +20,7 @@ std::shared_ptr<const CSSIdentifierValue> CSSIdentifierValue::Create(CSSValueID 
   return css_value;
 }
 
-std::string CSSIdentifierValue::CustomCSSText() const {
+String CSSIdentifierValue::CustomCSSText() const {
   return getValueName(value_id_);
 }
 

@@ -39,7 +39,7 @@ class CSSShadowValue : public CSSValue {
                  const std::shared_ptr<const CSSIdentifierValue>& style,
                  const std::shared_ptr<const CSSValue>& color);
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSShadowValue&) const;
 

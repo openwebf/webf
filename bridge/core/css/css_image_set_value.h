@@ -39,7 +39,7 @@ class CSSImageSetValue : public CSSValueList {
 
   const std::shared_ptr<const CSSImageSetOptionValue> GetBestOption(const float device_scale_factor);
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

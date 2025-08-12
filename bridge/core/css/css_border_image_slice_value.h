@@ -36,7 +36,7 @@ class CSSBorderImageSliceValue : public CSSValue {
  public:
   CSSBorderImageSliceValue(std::shared_ptr<const CSSQuadValue> slices, bool fill);
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   // TODO(sashab): Change this to a quad of CSSPrimitiveValues, or add separate
   // methods for topSlice(), leftSlice(), etc.

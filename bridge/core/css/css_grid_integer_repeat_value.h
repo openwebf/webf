@@ -27,7 +27,7 @@ class CSSGridIntegerRepeatValue : public CSSValueList {
     DCHECK_GT(repetitions, 0UL);
   }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSGridIntegerRepeatValue&) const;
 
   size_t Repetitions() const { return repetitions_; }

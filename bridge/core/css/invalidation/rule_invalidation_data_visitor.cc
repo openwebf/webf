@@ -279,13 +279,13 @@ void RuleInvalidationDataVisitor<VisitorType>::InvalidationSetFeatures::Merge(co
 
 template <RuleInvalidationDataVisitorType VisitorType>
 bool RuleInvalidationDataVisitor<VisitorType>::InvalidationSetFeatures::HasFeatures() const {
-  return !classes.empty() || !attributes.empty() || !ids.empty() || !tag_names.empty() || !emitted_tag_names.empty() ||
+  return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty() || !tag_names.IsEmpty() || !emitted_tag_names.IsEmpty() ||
          invalidation_flags.InvalidateCustomPseudo() || invalidation_flags.InvalidatesParts();
 }
 
 template <RuleInvalidationDataVisitorType VisitorType>
 bool RuleInvalidationDataVisitor<VisitorType>::InvalidationSetFeatures::HasIdClassOrAttribute() const {
-  return !classes.empty() || !attributes.empty() || !ids.empty();
+  return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty();
 }
 
 template <RuleInvalidationDataVisitorType VisitorType>

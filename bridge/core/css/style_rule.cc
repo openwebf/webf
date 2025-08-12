@@ -51,7 +51,7 @@ namespace webf {
 std::string StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& name_parts) {
   StringBuilder result;
   for (const auto& part : name_parts) {
-    if (!result.empty()) {
+    if (!result.IsEmpty()) {
       result.Append(".");
     }
     SerializeIdentifier(part.value_or(""), result);
@@ -618,9 +618,9 @@ const std::shared_ptr<const CSSValue>* StyleRuleProperty::GetInitialValue() cons
 }
 
 bool StyleRuleProperty::SetNameText(const ExecutingContext* execution_context, const std::string& name_text) {
-  DCHECK(!name_text.empty());
+  DCHECK(!name_text.IsEmpty());
   std::string name = CSSParser::ParseCustomPropertyName(name_text);
-  if (name.empty())
+  if (name.IsEmpty())
     return false;
 
   name_ = name;

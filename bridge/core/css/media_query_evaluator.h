@@ -87,7 +87,7 @@ class MediaQueryEvaluator final {
 
   const MediaValues& GetMediaValues() const { return *media_values_; }
 
-  bool MediaTypeMatch(const std::string& media_type_to_match) const;
+  bool MediaTypeMatch(const String& media_type_to_match) const;
 
   // Evaluates a list of media queries.
   bool Eval(const MediaQuerySet&) const;
@@ -114,9 +114,9 @@ class MediaQueryEvaluator final {
   KleeneValue EvalFeature(const MediaQueryFeatureExpNode&, MediaQueryResultFlags*) const;
   KleeneValue EvalStyleFeature(const MediaQueryFeatureExpNode&, MediaQueryResultFlags*) const;
 
-  const std::string MediaType() const;
+  const String MediaType() const;
 
-  std::string media_type_;
+  String media_type_;
   std::shared_ptr<const MediaValues> media_values_;
 };
 

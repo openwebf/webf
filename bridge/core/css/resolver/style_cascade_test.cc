@@ -63,7 +63,7 @@ TEST_F(StyleCascadeTest, LaterDeclarationsWin) {
   
   // Create style element and set its content before appending
   auto* style_element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  style_element->setTextContent(AtomicString("p { color: blue; } p { color: purple; }"), ASSERT_NO_EXCEPTION());
+  style_element->setTextContent(AtomicString::CreateFromUTF8("p { color: blue; } p { color: purple; }"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(style_element, ASSERT_NO_EXCEPTION());
   
   // Verify the style element has a sheet
@@ -73,7 +73,7 @@ TEST_F(StyleCascadeTest, LaterDeclarationsWin) {
   ASSERT_EQ(sheet->Contents()->RuleCount(), 2u) << "Sheet should have 2 rules";
   
   // Create a p element
-  auto* p = GetDocument()->createElement(AtomicString("p"), ASSERT_NO_EXCEPTION());
+  auto* p = GetDocument()->createElement(AtomicString::CreateFromUTF8("p"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(p, ASSERT_NO_EXCEPTION());
   
   // Ensure style resolver exists
@@ -105,16 +105,16 @@ TEST_F(StyleCascadeTest, SpecificityOrdering) {
   
   // Create style element with different specificity selectors
   auto* style_element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  style_element->setTextContent(AtomicString("li { color: purple; } ul li { color: blue; } ul li#gre { color: green; }"), ASSERT_NO_EXCEPTION());
+  style_element->setTextContent(AtomicString::CreateFromUTF8("li { color: purple; } ul li { color: blue; } ul li#gre { color: green; }"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(style_element, ASSERT_NO_EXCEPTION());
   
   // Create test elements
-  auto* ul = GetDocument()->createElement(AtomicString("ul"), ASSERT_NO_EXCEPTION());
-  auto* li1 = GetDocument()->createElement(AtomicString("li"), ASSERT_NO_EXCEPTION());
+  auto* ul = GetDocument()->createElement(AtomicString::CreateFromUTF8("ul"), ASSERT_NO_EXCEPTION());
+  auto* li1 = GetDocument()->createElement(AtomicString::CreateFromUTF8("li"), ASSERT_NO_EXCEPTION());
   ul->appendChild(li1, ASSERT_NO_EXCEPTION());
   
-  auto* li2 = GetDocument()->createElement(AtomicString("li"), ASSERT_NO_EXCEPTION());
-  li2->setId(AtomicString("gre"), ASSERT_NO_EXCEPTION());
+  auto* li2 = GetDocument()->createElement(AtomicString::CreateFromUTF8("li"), ASSERT_NO_EXCEPTION());
+  li2->setId(AtomicString::CreateFromUTF8("gre"), ASSERT_NO_EXCEPTION());
   
   // Verify ID was set
   EXPECT_EQ(li2->id().GetString(), "gre");
@@ -158,16 +158,16 @@ TEST_F(StyleCascadeTest, DISABLED_ImportantDeclarations) {
   
   // Create style element with !important
   auto* style_element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  style_element->setTextContent(AtomicString("p { color: green !important; } p { color: red; } p#id1 { color: purple; }"), ASSERT_NO_EXCEPTION());
+  style_element->setTextContent(AtomicString::CreateFromUTF8("p { color: green !important; } p { color: red; } p#id1 { color: purple; }"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(style_element, ASSERT_NO_EXCEPTION());
   
   // Test 1: Normal paragraph
-  auto* p1 = GetDocument()->createElement(AtomicString("p"), ASSERT_NO_EXCEPTION());
+  auto* p1 = GetDocument()->createElement(AtomicString::CreateFromUTF8("p"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(p1, ASSERT_NO_EXCEPTION());
   
   // Test 2: Paragraph with ID
-  auto* p2 = GetDocument()->createElement(AtomicString("p"), ASSERT_NO_EXCEPTION());
-  p2->setId(AtomicString("id1"), ASSERT_NO_EXCEPTION());
+  auto* p2 = GetDocument()->createElement(AtomicString::CreateFromUTF8("p"), ASSERT_NO_EXCEPTION());
+  p2->setId(AtomicString::CreateFromUTF8("id1"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(p2, ASSERT_NO_EXCEPTION());
   
   // Create style resolver
@@ -200,14 +200,14 @@ TEST_F(StyleCascadeTest, DISABLED_InlineStyleSpecificity) {
   
   // Create style element
   auto* style_element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  style_element->setTextContent(AtomicString("p { color: red; } p.test { color: green; } p#id1 { color: purple; }"), ASSERT_NO_EXCEPTION());
+  style_element->setTextContent(AtomicString::CreateFromUTF8("p { color: red; } p.test { color: green; } p#id1 { color: purple; }"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(style_element, ASSERT_NO_EXCEPTION());
   
   // Create paragraph with inline style
-  auto* p = GetDocument()->createElement(AtomicString("p"), ASSERT_NO_EXCEPTION());
-  p->setClassName(AtomicString("test"), ASSERT_NO_EXCEPTION());
-  p->setId(AtomicString("id1"), ASSERT_NO_EXCEPTION());
-  p->setAttribute(AtomicString("style"), AtomicString("color: blue"), ASSERT_NO_EXCEPTION());
+  auto* p = GetDocument()->createElement(AtomicString::CreateFromUTF8("p"), ASSERT_NO_EXCEPTION());
+  p->setClassName(AtomicString::CreateFromUTF8("test"), ASSERT_NO_EXCEPTION());
+  p->setId(AtomicString::CreateFromUTF8("id1"), ASSERT_NO_EXCEPTION());
+  p->setAttribute(AtomicString::CreateFromUTF8("style"), AtomicString::CreateFromUTF8("color: blue"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(p, ASSERT_NO_EXCEPTION());
   
   // Create style resolver
@@ -233,16 +233,16 @@ TEST_F(StyleCascadeTest, MultipleStylesheets) {
   
   // Create first style element
   auto* style1 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  style1->setTextContent(AtomicString("p { color: red; }"), ASSERT_NO_EXCEPTION());
+  style1->setTextContent(AtomicString::CreateFromUTF8("p { color: red; }"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(style1, ASSERT_NO_EXCEPTION());
   
   // Create second style element
   auto* style2 = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  style2->setTextContent(AtomicString("p { color: blue; }"), ASSERT_NO_EXCEPTION());
+  style2->setTextContent(AtomicString::CreateFromUTF8("p { color: blue; }"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(style2, ASSERT_NO_EXCEPTION());
   
   // Create test element
-  auto* p = GetDocument()->createElement(AtomicString("p"), ASSERT_NO_EXCEPTION());
+  auto* p = GetDocument()->createElement(AtomicString::CreateFromUTF8("p"), ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(p, ASSERT_NO_EXCEPTION());
   
   // Ensure style resolver exists

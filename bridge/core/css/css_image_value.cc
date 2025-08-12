@@ -26,7 +26,7 @@ CSSImageValue::CSSImageValue(CSSUrlData url_data, StyleImage* image)
 
 CSSImageValue::~CSSImageValue() = default;
 
-std::string CSSImageValue::CustomCSSText() const {
+String CSSImageValue::CustomCSSText() const {
   return url_data_.CssText();
 }
 

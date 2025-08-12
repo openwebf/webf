@@ -35,20 +35,20 @@
 namespace webf {
 namespace cssvalue {
 
-static std::string BuildCircleString(const std::string& radius,
-                                     const std::string& center_x,
-                                     const std::string& center_y,
-                                     bool has_explicit_center) {
+static String BuildCircleString(const String& radius,
+                                const String& center_x,
+                                const String& center_y,
+                                bool has_explicit_center) {
   char at[] = "at";
   char separator[] = " ";
   StringBuilder result;
   result.Append("circle(");
-  if (!radius.empty()) {
+  if (!radius.IsEmpty()) {
     result.Append(radius);
   }
 
   if (has_explicit_center) {
-    if (!radius.empty()) {
+    if (!radius.IsEmpty()) {
       result.Append(separator);
     }
     result.Append(at);
@@ -61,7 +61,7 @@ static std::string BuildCircleString(const std::string& radius,
   return result.ReleaseString();
 }
 
-static std::string SerializePositionOffset(const CSSValuePair& offset, const CSSValuePair& other) {
+static String SerializePositionOffset(const CSSValuePair& offset, const CSSValuePair& other) {
   if ((To<CSSIdentifierValue>(offset.First().get())->GetValueID() == CSSValueID::kLeft &&
        To<CSSIdentifierValue>(other.First().get())->GetValueID() == CSSValueID::kTop) ||
       (To<CSSIdentifierValue>(offset.First().get())->GetValueID() == CSSValueID::kTop &&
@@ -107,11 +107,11 @@ static std::shared_ptr<const CSSValuePair> BuildSerializablePositionOffset(
   return std::make_shared<CSSValuePair>(CSSIdentifierValue::Create(side), amount, CSSValuePair::kKeepIdenticalValues);
 }
 
-std::string CSSBasicShapeCircleValue::CustomCSSText() const {
+String CSSBasicShapeCircleValue::CustomCSSText() const {
   std::shared_ptr<const CSSValuePair> normalized_cx = BuildSerializablePositionOffset(center_x_, CSSValueID::kLeft);
   std::shared_ptr<const CSSValuePair> normalized_cy = BuildSerializablePositionOffset(center_y_, CSSValueID::kTop);
 
-  std::string radius;
+  String radius;
   auto* radius_identifier_value = DynamicTo<CSSIdentifierValue>(radius_.get());
   if (radius_ && !(radius_identifier_value && radius_identifier_value->GetValueID() == CSSValueID::kClosestSide)) {
     radius = radius_->CssText();
@@ -130,21 +130,21 @@ void CSSBasicShapeCircleValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-static std::string BuildEllipseString(const std::string& radius_x,
-                                      const std::string& radius_y,
-                                      const std::string& center_x,
-                                      const std::string& center_y,
-                                      bool has_explicit_center) {
+static String BuildEllipseString(const String& radius_x,
+                                 const String& radius_y,
+                                 const String& center_x,
+                                 const String& center_y,
+                                 bool has_explicit_center) {
   char at[] = "at";
   char separator[] = " ";
   StringBuilder result;
   result.Append("ellipse(");
   bool needs_separator = false;
-  if (!radius_x.empty()) {
+  if (!radius_x.IsEmpty()) {
     result.Append(radius_x);
     needs_separator = true;
   }
-  if (!radius_y.empty()) {
+  if (!radius_y.IsEmpty()) {
     if (needs_separator) {
       result.Append(separator);
     }
@@ -166,12 +166,12 @@ static std::string BuildEllipseString(const std::string& radius_x,
   return result.ReleaseString();
 }
 
-std::string CSSBasicShapeEllipseValue::CustomCSSText() const {
+String CSSBasicShapeEllipseValue::CustomCSSText() const {
   std::shared_ptr<const CSSValuePair> normalized_cx = BuildSerializablePositionOffset(center_x_, CSSValueID::kLeft);
   std::shared_ptr<const CSSValuePair> normalized_cy = BuildSerializablePositionOffset(center_y_, CSSValueID::kTop);
 
-  std::string radius_x;
-  std::string radius_y;
+  String radius_x;
+  String radius_y;
   if (radius_x_) {
     DCHECK(radius_y_);
 
@@ -202,11 +202,11 @@ void CSSBasicShapeEllipseValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-static bool BuildInsetRadii(std::vector<std::string>& radii,
-                            const std::string& top_left_radius,
-                            const std::string& top_right_radius,
-                            const std::string& bottom_right_radius,
-                            const std::string& bottom_left_radius) {
+static bool BuildInsetRadii(std::vector<String>& radii,
+                            const String& top_left_radius,
+                            const String& top_right_radius,
+                            const String& bottom_right_radius,
+                            const String& bottom_left_radius) {
   bool show_bottom_left = top_right_radius != bottom_left_radius;
   bool show_bottom_right = show_bottom_left || (bottom_right_radius != top_left_radius);
   bool show_top_right = show_bottom_right || (top_right_radius != top_left_radius);
@@ -226,22 +226,22 @@ static bool BuildInsetRadii(std::vector<std::string>& radii,
 }
 
 static void AppendRoundedCorners(const char* separator,
-                                 const std::string& top_left_radius_width,
-                                 const std::string& top_left_radius_height,
-                                 const std::string& top_right_radius_width,
-                                 const std::string& top_right_radius_height,
-                                 const std::string& bottom_right_radius_width,
-                                 const std::string& bottom_right_radius_height,
-                                 const std::string& bottom_left_radius_width,
-                                 const std::string& bottom_left_radius_height,
+                                 const String& top_left_radius_width,
+                                 const String& top_left_radius_height,
+                                 const String& top_right_radius_width,
+                                 const String& top_right_radius_height,
+                                 const String& bottom_right_radius_width,
+                                 const String& bottom_right_radius_height,
+                                 const String& bottom_left_radius_width,
+                                 const String& bottom_left_radius_height,
                                  StringBuilder& result) {
   char corners_separator[] = "round";
-  if (!top_left_radius_width.empty() && !top_left_radius_height.empty()) {
-    std::vector<std::string> horizontal_radii;
+  if (!top_left_radius_width.IsEmpty() && !top_left_radius_height.IsEmpty()) {
+    std::vector<String> horizontal_radii;
     bool are_default_corner_radii = BuildInsetRadii(horizontal_radii, top_left_radius_width, top_right_radius_width,
                                                     bottom_right_radius_width, bottom_left_radius_width);
 
-    std::vector<std::string> vertical_radii;
+    std::vector<String> vertical_radii;
     are_default_corner_radii &= BuildInsetRadii(vertical_radii, top_left_radius_height, top_right_radius_height,
                                                 bottom_right_radius_height, bottom_left_radius_height);
 
@@ -266,27 +266,27 @@ static void AppendRoundedCorners(const char* separator,
   }
 }
 
-static std::string BuildRectStringCommon(const char* opening,
+static String BuildRectStringCommon(const char* opening,
                                          bool show_left_arg,
-                                         const std::string& top,
-                                         const std::string& right,
-                                         const std::string& bottom,
-                                         const std::string& left,
-                                         const std::string& top_left_radius_width,
-                                         const std::string& top_left_radius_height,
-                                         const std::string& top_right_radius_width,
-                                         const std::string& top_right_radius_height,
-                                         const std::string& bottom_right_radius_width,
-                                         const std::string& bottom_right_radius_height,
-                                         const std::string& bottom_left_radius_width,
-                                         const std::string& bottom_left_radius_height) {
+                                         const String& top,
+                                         const String& right,
+                                         const String& bottom,
+                                         const String& left,
+                                         const String& top_left_radius_width,
+                                         const String& top_left_radius_height,
+                                         const String& top_right_radius_width,
+                                         const String& top_right_radius_height,
+                                         const String& bottom_right_radius_width,
+                                         const String& bottom_right_radius_height,
+                                         const String& bottom_left_radius_width,
+                                         const String& bottom_left_radius_height) {
   char separator[] = " ";
   StringBuilder result;
   result.Append(opening);
   result.Append(top);
-  show_left_arg |= !left.empty() && left != right;
-  bool show_bottom_arg = !bottom.empty() && (bottom != top || show_left_arg);
-  bool show_right_arg = !right.empty() && (right != top || show_bottom_arg);
+  show_left_arg |= !left.IsEmpty() && left != right;
+  bool show_bottom_arg = !bottom.IsEmpty() && (bottom != top || show_left_arg);
+  bool show_right_arg = !right.IsEmpty() && (right != top || show_bottom_arg);
   if (show_right_arg) {
     result.Append(separator);
     result.Append(right);
@@ -309,18 +309,18 @@ static std::string BuildRectStringCommon(const char* opening,
   return result.ReleaseString();
 }
 
-static std::string BuildXYWHString(const std::string& x,
-                                   const std::string& y,
-                                   const std::string& width,
-                                   const std::string& height,
-                                   const std::string& top_left_radius_width,
-                                   const std::string& top_left_radius_height,
-                                   const std::string& top_right_radius_width,
-                                   const std::string& top_right_radius_height,
-                                   const std::string& bottom_right_radius_width,
-                                   const std::string& bottom_right_radius_height,
-                                   const std::string& bottom_left_radius_width,
-                                   const std::string& bottom_left_radius_height) {
+static String BuildXYWHString(const String& x,
+                                   const String& y,
+                                   const String& width,
+                                   const String& height,
+                                   const String& top_left_radius_width,
+                                   const String& top_left_radius_height,
+                                   const String& top_right_radius_width,
+                                   const String& top_right_radius_height,
+                                   const String& bottom_right_radius_width,
+                                   const String& bottom_right_radius_height,
+                                   const String& bottom_left_radius_width,
+                                   const String& bottom_left_radius_height) {
   const char opening[] = "xywh(";
   char separator[] = " ";
   StringBuilder result;
@@ -347,8 +347,8 @@ static std::string BuildXYWHString(const std::string& x,
 }
 
 static inline void UpdateCornerRadiusWidthAndHeight(const CSSValuePair* corner_radius,
-                                                    std::string& width,
-                                                    std::string& height) {
+                                                    String& width,
+                                                    String& height) {
   if (!corner_radius) {
     return;
   }
@@ -357,15 +357,15 @@ static inline void UpdateCornerRadiusWidthAndHeight(const CSSValuePair* corner_r
   height = corner_radius->Second()->CssText();
 }
 
-std::string CSSBasicShapeInsetValue::CustomCSSText() const {
-  std::string top_left_radius_width;
-  std::string top_left_radius_height;
-  std::string top_right_radius_width;
-  std::string top_right_radius_height;
-  std::string bottom_right_radius_width;
-  std::string bottom_right_radius_height;
-  std::string bottom_left_radius_width;
-  std::string bottom_left_radius_height;
+String CSSBasicShapeInsetValue::CustomCSSText() const {
+  String top_left_radius_width;
+  String top_left_radius_height;
+  String top_right_radius_width;
+  String top_right_radius_height;
+  String bottom_right_radius_width;
+  String bottom_right_radius_height;
+  String bottom_left_radius_width;
+  String bottom_left_radius_height;
 
   UpdateCornerRadiusWidthAndHeight(TopLeftRadius(), top_left_radius_width, top_left_radius_height);
   UpdateCornerRadiusWidthAndHeight(TopRightRadius(), top_right_radius_width, top_right_radius_height);
@@ -392,15 +392,15 @@ void CSSBasicShapeInsetValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-std::string CSSBasicShapeRectValue::CustomCSSText() const {
-  std::string top_left_radius_width;
-  std::string top_left_radius_height;
-  std::string top_right_radius_width;
-  std::string top_right_radius_height;
-  std::string bottom_right_radius_width;
-  std::string bottom_right_radius_height;
-  std::string bottom_left_radius_width;
-  std::string bottom_left_radius_height;
+String CSSBasicShapeRectValue::CustomCSSText() const {
+  String top_left_radius_width;
+  String top_left_radius_height;
+  String top_right_radius_width;
+  String top_right_radius_height;
+  String bottom_right_radius_width;
+  String bottom_right_radius_height;
+  String bottom_left_radius_width;
+  String bottom_left_radius_height;
 
   UpdateCornerRadiusWidthAndHeight(TopLeftRadius(), top_left_radius_width, top_left_radius_height);
   UpdateCornerRadiusWidthAndHeight(TopRightRadius(), top_right_radius_width, top_right_radius_height);
@@ -441,15 +441,15 @@ void CSSBasicShapeRectValue::Validate() const {
   validate_length(right_);
 }
 
-std::string CSSBasicShapeXYWHValue::CustomCSSText() const {
-  std::string top_left_radius_width;
-  std::string top_left_radius_height;
-  std::string top_right_radius_width;
-  std::string top_right_radius_height;
-  std::string bottom_right_radius_width;
-  std::string bottom_right_radius_height;
-  std::string bottom_left_radius_width;
-  std::string bottom_left_radius_height;
+String CSSBasicShapeXYWHValue::CustomCSSText() const {
+  String top_left_radius_width;
+  String top_left_radius_height;
+  String top_right_radius_width;
+  String top_right_radius_height;
+  String bottom_right_radius_width;
+  String bottom_right_radius_height;
+  String bottom_left_radius_width;
+  String bottom_left_radius_height;
 
   UpdateCornerRadiusWidthAndHeight(TopLeftRadius(), top_left_radius_width, top_left_radius_height);
   UpdateCornerRadiusWidthAndHeight(TopRightRadius(), top_right_radius_width, top_right_radius_height);

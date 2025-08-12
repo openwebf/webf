@@ -16,7 +16,7 @@ CSSContentDistributionValue::CSSContentDistributionValue(CSSValueID distribution
                                                          CSSValueID overflow)
     : CSSValue(kCSSContentDistributionClass), distribution_(distribution), position_(position), overflow_(overflow) {}
 
-std::string CSSContentDistributionValue::CustomCSSText() const {
+String CSSContentDistributionValue::CustomCSSText() const {
   const std::shared_ptr<CSSValueList> list = CSSValueList::CreateSpaceSeparated();
 
   if (IsValidCSSValueID(distribution_)) {

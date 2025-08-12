@@ -21,7 +21,7 @@ class CSSImageSetTypeValue : public CSSValue {
   // Returns true if the image type is supported
   bool IsSupported() const;
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSImageSetTypeValue& other) const;
 

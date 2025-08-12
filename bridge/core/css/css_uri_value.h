@@ -31,7 +31,7 @@ class CSSURIValue : public CSSValue {
 
   const std::string& ValueForSerialization() const { return url_data_.ValueForSerialization(); }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   const CSSUrlData& UrlData() const { return url_data_; }
   bool IsLocal(const Document&) const;

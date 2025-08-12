@@ -108,7 +108,7 @@ std::shared_ptr<const CSSValue> CSSValue::Create(const webf::Length& value, floa
   return nullptr;
 }
 
-std::string CSSValue::CssText() const {
+String CSSValue::CssText() const {
   switch (GetClassType()) {
     case kAxisClass:
       return To<cssvalue::CSSAxisValue>(this)->CustomCSSText();
@@ -230,7 +230,7 @@ std::string CSSValue::CssText() const {
       return To<CSSRepeatStyleValue>(this)->CustomCSSText();
     default:
       NOTREACHED_IN_MIGRATION();
-      return "";
+      return String();
   }
 }
 

@@ -32,7 +32,7 @@
 
 namespace webf {
 
-std::string CSSBracketedValueList::CustomCSSText() const {
+String CSSBracketedValueList::CustomCSSText() const {
   return "[" + CSSValueList::CustomCSSText() + "]";
 }
 

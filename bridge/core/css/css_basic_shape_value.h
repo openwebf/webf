@@ -41,7 +41,7 @@ class CSSBasicShapeCircleValue final : public CSSValue {
  public:
   CSSBasicShapeCircleValue() : CSSValue(kBasicShapeCircleClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSBasicShapeCircleValue&) const;
 
   const CSSValue* CenterX() const { return center_x_.get(); }
@@ -65,7 +65,7 @@ class CSSBasicShapeEllipseValue final : public CSSValue {
  public:
   CSSBasicShapeEllipseValue() : CSSValue(kBasicShapeEllipseClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSBasicShapeEllipseValue&) const;
 
   const CSSValue* CenterX() const { return center_x_.get(); }
@@ -137,7 +137,7 @@ class CSSBasicShapeInsetValue final : public CSSValue {
   void SetBottomRightRadius(std::shared_ptr<CSSValuePair> radius) { bottom_right_radius_ = radius; }
   void SetBottomLeftRadius(std::shared_ptr<CSSValuePair> radius) { bottom_left_radius_ = radius; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSBasicShapeInsetValue&) const;
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -179,7 +179,7 @@ class CSSBasicShapeRectValue final : public CSSValue {
   void SetBottomRightRadius(std::shared_ptr<CSSValuePair> radius) { bottom_right_radius_ = radius; }
   void SetBottomLeftRadius(std::shared_ptr<CSSValuePair> radius) { bottom_left_radius_ = radius; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSBasicShapeRectValue&) const;
 
   void TraceAfterDispatch(GCVisitor*) const;
@@ -223,7 +223,7 @@ class CSSBasicShapeXYWHValue final : public CSSValue {
   void SetBottomRightRadius(std::shared_ptr<CSSValuePair> radius) { bottom_right_radius_ = radius; }
   void SetBottomLeftRadius(std::shared_ptr<CSSValuePair> radius) { bottom_left_radius_ = radius; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSBasicShapeXYWHValue&) const;
 
   void TraceAfterDispatch(GCVisitor*) const;

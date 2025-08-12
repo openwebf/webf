@@ -31,7 +31,7 @@ std::string CSSScopeRule::PreludeText() const {
   }
   
   if (style_scope.To()) {
-    if (!prelude.empty()) {
+    if (!prelude.IsEmpty()) {
       prelude += " to ";
     } else {
       prelude += "to ";
@@ -49,7 +49,7 @@ AtomicString CSSScopeRule::cssText() const {
   result.Append("@scope");
   std::string prelude = PreludeText();
   
-  if (!prelude.empty()) {
+  if (!prelude.IsEmpty()) {
     result.Append(" ");
     result.Append(prelude);
   }

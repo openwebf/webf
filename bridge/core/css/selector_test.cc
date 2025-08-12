@@ -65,7 +65,7 @@ TEST_F(SelectorTest, SimpleSelectorMatching) {
   rule_set->AddRulesFromSheet(sheet, evaluator, kRuleHasNoSpecialState);
   
   // Get body rules
-  const auto& body_rules = rule_set->TagRules(AtomicString("body"));
+  const auto& body_rules = rule_set->TagRules(AtomicString::CreateFromUTF8("body"));
   ASSERT_GT(body_rules.size(), 0u);
   
   // Test selector matching directly

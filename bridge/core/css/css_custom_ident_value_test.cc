@@ -48,7 +48,7 @@ TEST_F(CSSCustomIdentValueTest, CssTextWithPropertyID) {
   CSSCustomIdentValue value(CSSPropertyID::kColor);
   // Should return the property name as string
   std::string css_text = value.CustomCSSText();
-  EXPECT_FALSE(css_text.empty());
+  EXPECT_FALSE(css_text.IsEmpty());
   // The exact text depends on implementation, but it should be a valid property name
 }
 
@@ -170,7 +170,7 @@ TEST_F(CSSCustomIdentValueTest, PropertyIDValues) {
     CSSCustomIdentValue value(prop_id);
     EXPECT_TRUE(value.IsKnownPropertyID());
     EXPECT_EQ(prop_id, value.ValueAsPropertyID());
-    EXPECT_FALSE(value.CustomCSSText().empty());
+    EXPECT_FALSE(value.CustomCSSText().IsEmpty());
   }
 }
 

@@ -8,6 +8,8 @@
 
 #include "css_tokenizer.h"
 #include "../../../foundation/string/ascii_types.h"
+#include "../../../foundation/string/string_builder.h"
+#include "../../../foundation/string/wtf_string.h"
 #include "css_parser_idioms.h"
 #include "css_parser_token.h"
 #include "css_property_parser.h"
@@ -28,7 +30,7 @@ constexpr size_t kEstimatedCharactersPerToken = 3;
 
 }  // namespace
 
-CSSTokenizer::CSSTokenizer(const std::string& string, size_t offset) : input_(string) {
+CSSTokenizer::CSSTokenizer(StringView string, size_t offset) : input_(string) {
   // According to the spec, we should perform preprocessing here.
   // See: https://drafts.csswg.org/css-syntax/#input-preprocessing
   //
@@ -40,7 +42,7 @@ CSSTokenizer::CSSTokenizer(const std::string& string, size_t offset) : input_(st
   input_.Advance(offset);
 }
 
-CSSTokenizer::CSSTokenizer(std::string&& string, size_t offset) : input_(std::move(string)) {
+CSSTokenizer::CSSTokenizer(const String& string, size_t offset) : input_(string.ToStringView()) {
   input_.Advance(offset);
 }
 
@@ -76,11 +78,11 @@ std::pair<std::vector<CSSParserToken>, std::vector<size_t>> CSSTokenizer::Tokeni
   }
 }
 
-std::string_view CSSTokenizer::StringRangeFrom(size_t start) const {
+StringView CSSTokenizer::StringRangeFrom(size_t start) const {
   return input_.RangeFrom(start);
 }
 
-std::string_view CSSTokenizer::StringRangeAt(size_t start, size_t length) const {
+StringView CSSTokenizer::StringRangeAt(size_t start, size_t length) const {
   return input_.RangeAt(start, length);
 }
 
@@ -93,7 +95,7 @@ CSSParserToken CSSTokenizer::TokenizeSingleWithComments() {
 }
 
 void CSSTokenizer::PersistStrings(CSSTokenizer& destination) {
-  for (const std::shared_ptr<std::string>& s : string_pool_) {
+  for (const std::shared_ptr<String>& s : string_pool_) {
     destination.string_pool_.push_back(s);
   }
 }
@@ -122,12 +124,12 @@ CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType type) {
   return CSSParserToken(type, CSSParserToken::kBlockStart);
 }
 
-CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, std::string_view name) {
+CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, StringView name) {
   block_stack_.push_back(block_type);
   return CSSParserToken(type, name, CSSParserToken::kBlockStart);
 }
 
-CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, std::string_view name, CSSValueID id) {
+CSSParserToken CSSTokenizer::BlockStart(CSSParserTokenType block_type, CSSParserTokenType type, StringView name, CSSValueID id) {
   block_stack_.push_back(block_type);
   return CSSParserToken(type, name, CSSParserToken::kBlockStart, static_cast<int>(id));
 }
@@ -513,9 +515,9 @@ CSSParserToken CSSTokenizer::ConsumeNumericToken() {
 
 // https://drafts.csswg.org/css-syntax/#consume-ident-like-token
 CSSParserToken CSSTokenizer::ConsumeIdentLikeToken() {
-  std::string_view name = ConsumeName();
+  StringView name = ConsumeName();
   if (ConsumeIfNext('(')) {
-    if (EqualIgnoringASCIICase(std::string(name), "url")) {
+    if (EqualIgnoringASCIICase(name, "url")) {
       // The spec is slightly different so as to avoid dropping whitespace
       // tokens, but they wouldn't be used and this is easier.
       input_.AdvanceUntilNonWhitespace();
@@ -723,8 +725,8 @@ bool CSSTokenizer::ConsumeIfNext(char character) {
 // The checking for \0 is a bit odd; \0 is sometimes used as an EOF marker
 // internal to this code, so we need to call into blink::ConsumeName()
 // to escape it (into a Unicode replacement character) if we should see it.
-std::string_view CSSTokenizer::ConsumeName() {
-  std::string_view buffer = input_.Peek();
+StringView CSSTokenizer::ConsumeName() {
+  StringView buffer = input_.Peek();
 
   unsigned size = 0;
 #if defined(__SSE2__) || defined(__ARM_NEON__)
@@ -772,7 +774,7 @@ std::string_view CSSTokenizer::ConsumeName() {
       return RegisterString(webf::ConsumeName(input_));
     } else {
       input_.Advance(size);
-      return {buffer.data() + 0, size};
+      return StringView(buffer.data() + 0, size);
     }
   }
 #endif  // SIMD
@@ -788,7 +790,7 @@ std::string_view CSSTokenizer::ConsumeName() {
       } else {
         // Names without escapes get handled without allocations
         input_.Advance(size);
-        return std::string_view(buffer.data() + 0, size);
+        return StringView(buffer.data() + 0, size);
       }
     }
   }
@@ -799,7 +801,7 @@ std::string_view CSSTokenizer::ConsumeName() {
 }
 
 // https://drafts.csswg.org/css-syntax/#consume-an-escaped-code-point
-uint32_t CSSTokenizer::ConsumeEscape() {
+UChar32 CSSTokenizer::ConsumeEscape() {
   return webf::ConsumeEscape(input_);
 }
 
@@ -841,10 +843,10 @@ bool CSSTokenizer::NextCharsAreIdentifier() {
   return are_identifier;
 }
 
-std::string_view CSSTokenizer::RegisterString(const std::string& string) {
-  std::shared_ptr<std::string> buffer = std::make_shared<std::string>(string);
+StringView CSSTokenizer::RegisterString(const String& string) {
+  std::shared_ptr<String> buffer = std::make_shared<String>(string);
   string_pool_.push_back(buffer);
-  return std::string_view(buffer->data(), string.size());
+  return buffer->ToStringView();
 }
 
 }  // namespace webf

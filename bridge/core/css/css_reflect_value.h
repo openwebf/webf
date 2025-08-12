@@ -46,7 +46,7 @@ class CSSReflectValue : public CSSValue {
   const CSSPrimitiveValue* Offset() const { return offset_.get(); }
   const CSSValue* Mask() const { return mask_.get(); }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSReflectValue&) const;
 

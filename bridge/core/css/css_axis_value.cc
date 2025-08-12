@@ -67,7 +67,7 @@ CSSAxisValue::CSSAxisValue(const std::shared_ptr<const CSSPrimitiveValue>& x_val
   Append(z_value);
 }
 
-std::string CSSAxisValue::CustomCSSText() const {
+String CSSAxisValue::CustomCSSText() const {
   StringBuilder result;
   if (IsValidCSSValueID(axis_name_)) {
     result.Append(getValueName(axis_name_));

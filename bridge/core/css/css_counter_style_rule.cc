@@ -142,55 +142,55 @@ AtomicString CSSCounterStyleRule::cssText() const {
   result.Append(" { ");
   
   // Add each descriptor if present
-  if (!system().empty()) {
+  if (!system().IsEmpty()) {
     result.Append("system: ");
     result.Append(system().GetString());
     result.Append("; ");
   }
   
-  if (!symbols().empty()) {
+  if (!symbols().IsEmpty()) {
     result.Append("symbols: ");
     result.Append(symbols().GetString());
     result.Append("; ");
   }
   
-  if (!additiveSymbols().empty()) {
+  if (!additiveSymbols().IsEmpty()) {
     result.Append("additive-symbols: ");
     result.Append(additiveSymbols().GetString());
     result.Append("; ");
   }
   
-  if (!range().empty()) {
+  if (!range().IsEmpty()) {
     result.Append("range: ");
     result.Append(range().GetString());
     result.Append("; ");
   }
   
-  if (!prefix().empty()) {
+  if (!prefix().IsEmpty()) {
     result.Append("prefix: ");
     result.Append(prefix().GetString());
     result.Append("; ");
   }
   
-  if (!suffix().empty()) {
+  if (!suffix().IsEmpty()) {
     result.Append("suffix: ");
     result.Append(suffix().GetString());
     result.Append("; ");
   }
   
-  if (!pad().empty()) {
+  if (!pad().IsEmpty()) {
     result.Append("pad: ");
     result.Append(pad().GetString());
     result.Append("; ");
   }
   
-  if (!speakAs().empty()) {
+  if (!speakAs().IsEmpty()) {
     result.Append("speak-as: ");
     result.Append(speakAs().GetString());
     result.Append("; ");
   }
   
-  if (!fallback().empty()) {
+  if (!fallback().IsEmpty()) {
     result.Append("fallback: ");
     result.Append(fallback().GetString());
     result.Append("; ");

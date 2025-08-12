@@ -26,7 +26,7 @@ class CSSAlternateValue : public CSSValue {
   const CSSFunctionValue& Function() const { return *function_; }
   const CSSValueList& Aliases() const { return *aliases_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSAlternateValue&) const;
 
   void TraceAfterDispatch(GCVisitor* visitor) const {

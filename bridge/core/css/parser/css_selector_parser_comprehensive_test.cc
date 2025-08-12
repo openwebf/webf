@@ -35,7 +35,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
     std::string css = selector + " { }";
     CSSParser::ParseSheet(context_, sheet, css);
     
-    if (sheet->ChildRules().empty()) {
+    if (sheet->ChildRules().IsEmpty()) {
       return false;
     }
     
@@ -49,7 +49,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
     std::string css = selector + " { }";
     CSSParser::ParseSheet(context_, sheet, css);
     
-    if (sheet->ChildRules().empty()) {
+    if (sheet->ChildRules().IsEmpty()) {
       return "";
     }
     
@@ -67,7 +67,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
     std::string css = selector_list + " { }";
     CSSParser::ParseSheet(context_, sheet, css);
     
-    if (sheet->ChildRules().empty()) {
+    if (sheet->ChildRules().IsEmpty()) {
       return 0;
     }
     
@@ -78,7 +78,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
     
     // Count selectors by looking for commas in the selector text
     std::string selectors_text = rule->SelectorsText();
-    if (selectors_text.empty()) {
+    if (selectors_text.IsEmpty()) {
       return 0;
     }
     

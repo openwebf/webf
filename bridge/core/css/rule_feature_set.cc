@@ -2028,7 +2028,7 @@ bool RuleFeatureSet::NeedsHasInvalidationForInsertedOrRemovedElement(Element& el
     }
   }
 
-  return !attributes_in_has_argument_.empty() || NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
+  return !attributes_in_has_argument_.IsEmpty() || NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
 }
 
 bool RuleFeatureSet::NeedsHasInvalidationForPseudoClass(CSSSelector::PseudoType pseudo_type) const {
@@ -2072,12 +2072,12 @@ void RuleFeatureSet::InvalidationSetFeatures::NarrowToFeatures(const Invalidatio
 }
 
 bool RuleFeatureSet::InvalidationSetFeatures::HasFeatures() const {
-  return !classes.empty() || !attributes.empty() || !ids.empty() || !tag_names.empty() || !emitted_tag_names.empty() ||
+  return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty() || !tag_names.IsEmpty() || !emitted_tag_names.IsEmpty() ||
          invalidation_flags.InvalidateCustomPseudo() || invalidation_flags.InvalidatesParts();
 }
 
 bool RuleFeatureSet::InvalidationSetFeatures::HasIdClassOrAttribute() const {
-  return !classes.empty() || !attributes.empty() || !ids.empty();
+  return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty();
 }
 
 std::string RuleFeatureSet::ToString() const {
@@ -2194,7 +2194,7 @@ std::string RuleFeatureSet::ToString() const {
   metadata.Append(metadata_.invalidates_parts ? "P" : "");
   metadata.Append(format_max_direct_adjancent(metadata_.max_direct_adjacent_selectors));
 
-  if (!metadata.empty()) {
+  if (!metadata.IsEmpty()) {
     builder.Append("META:");
     builder.Append(metadata.ReleaseString());
   }

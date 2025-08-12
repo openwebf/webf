@@ -40,7 +40,7 @@ class CSSFontFeatureValue : public CSSValue {
 
   const std::string& Tag() const { return tag_; }
   int Value() const { return value_; }
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSFontFeatureValue&) const;
 

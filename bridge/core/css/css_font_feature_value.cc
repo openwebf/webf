@@ -34,7 +34,7 @@ namespace cssvalue {
 CSSFontFeatureValue::CSSFontFeatureValue(const std::string& tag, int value)
     : CSSValue(kFontFeatureClass), tag_(tag), value_(value) {}
 
-std::string CSSFontFeatureValue::CustomCSSText() const {
+String CSSFontFeatureValue::CustomCSSText() const {
   std::string builder;
   builder += '"';
   builder += tag_;

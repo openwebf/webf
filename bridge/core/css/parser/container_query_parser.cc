@@ -66,26 +66,26 @@ class SizeFeatureSet : public MediaQueryParser::FeatureSet {
   WEBF_STACK_ALLOCATED();
 
  public:
-  bool IsAllowed(const std::string& feature) const override {
-    return feature == media_feature_names_stdstring::kWidth || feature == media_feature_names_stdstring::kMinWidth ||
-           feature == media_feature_names_stdstring::kMaxWidth || feature == media_feature_names_stdstring::kHeight ||
-           feature == media_feature_names_stdstring::kMinHeight ||
-           feature == media_feature_names_stdstring::kMaxHeight ||
-           feature == media_feature_names_stdstring::kInlineSize ||
-           feature == media_feature_names_stdstring::kMinInlineSize ||
-           feature == media_feature_names_stdstring::kMaxInlineSize ||
-           feature == media_feature_names_stdstring::kMinBlockSize ||
-           feature == media_feature_names_stdstring::kMaxBlockSize ||
-           feature == media_feature_names_stdstring::kAspectRatio ||
-           feature == media_feature_names_stdstring::kMinAspectRatio ||
-           feature == media_feature_names_stdstring::kMaxAspectRatio;
+  bool IsAllowed(const AtomicString& feature) const override {
+    return feature == media_feature_names_atomicstring::kWidth || feature == media_feature_names_atomicstring::kMinWidth ||
+           feature == media_feature_names_atomicstring::kMaxWidth || feature == media_feature_names_atomicstring::kHeight ||
+           feature == media_feature_names_atomicstring::kMinHeight ||
+           feature == media_feature_names_atomicstring::kMaxHeight ||
+           feature == media_feature_names_atomicstring::kInlineSize ||
+           feature == media_feature_names_atomicstring::kMinInlineSize ||
+           feature == media_feature_names_atomicstring::kMaxInlineSize ||
+           feature == media_feature_names_atomicstring::kMinBlockSize ||
+           feature == media_feature_names_atomicstring::kMaxBlockSize ||
+           feature == media_feature_names_atomicstring::kAspectRatio ||
+           feature == media_feature_names_atomicstring::kMinAspectRatio ||
+           feature == media_feature_names_atomicstring::kMaxAspectRatio;
   }
-  bool IsAllowedWithoutValue(const std::string& feature) const override {
-    return feature == media_feature_names_stdstring::kWidth || feature == media_feature_names_stdstring::kHeight ||
-           feature == media_feature_names_stdstring::kInlineSize ||
-           feature == media_feature_names_stdstring::kAspectRatio;
+  bool IsAllowedWithoutValue(const AtomicString& feature) const override {
+    return feature == media_feature_names_atomicstring::kWidth || feature == media_feature_names_atomicstring::kHeight ||
+           feature == media_feature_names_atomicstring::kInlineSize ||
+           feature == media_feature_names_atomicstring::kAspectRatio;
   }
-  bool IsCaseSensitive(const std::string& feature) const override { return false; }
+  bool IsCaseSensitive(const AtomicString& feature) const override { return false; }
   bool SupportsRange() const override { return true; }
 };
 
@@ -93,12 +93,12 @@ class StyleFeatureSet : public MediaQueryParser::FeatureSet {
   WEBF_STACK_ALLOCATED();
 
  public:
-  bool IsAllowed(const std::string& feature) const override {
+  bool IsAllowed(const AtomicString& feature) const override {
     // TODO(crbug.com/1302630): Only support querying custom properties for now.
-    return CSSVariableParser::IsValidVariableName(feature);
+    return CSSVariableParser::IsValidVariableName(String(feature.GetString()));
   }
-  bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
-  bool IsCaseSensitive(const std::string& feature) const override {
+  bool IsAllowedWithoutValue(const AtomicString& feature) const override { return true; }
+  bool IsCaseSensitive(const AtomicString& feature) const override {
     // TODO(crbug.com/1302630): non-custom properties are case-insensitive.
     return true;
   }
@@ -109,9 +109,9 @@ class StateFeatureSet : public MediaQueryParser::FeatureSet {
   WEBF_STACK_ALLOCATED();
 
  public:
-  bool IsAllowed(const std::string& feature) const override { return false; }
-  bool IsAllowedWithoutValue(const std::string& feature) const override { return true; }
-  bool IsCaseSensitive(const std::string& feature) const override { return false; }
+  bool IsAllowed(const AtomicString& feature) const override { return false; }
+  bool IsAllowedWithoutValue(const AtomicString& feature) const override { return true; }
+  bool IsCaseSensitive(const AtomicString& feature) const override { return false; }
   bool SupportsRange() const override { return false; }
 };
 
@@ -124,7 +124,7 @@ ContainerQueryParser::ContainerQueryParser(const CSSParserContext& context)
                           context.GetExecutingContext(),
                           MediaQueryParser::SyntaxLevel::kLevel4) {}
 
-std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ParseCondition(const std::string& value) {
+std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ParseCondition(const String& value) {
   CSSTokenizer tokenizer(value);
   CSSParserTokenStream stream(tokenizer);
   return ParseCondition(stream);

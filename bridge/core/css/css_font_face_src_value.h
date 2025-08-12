@@ -27,6 +27,7 @@
 #define WEBF_CORE_CSS_CSS_FONT_FACE_SRC_VALUE_H_
 
 #include "core/css/css_value.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -39,23 +40,23 @@ class CSSFontFaceSrcValue : public CSSValue {
   static std::shared_ptr<CSSFontFaceSrcValue> Create(std::shared_ptr<const cssvalue::CSSURIValue> src_value) {
     return std::make_shared<CSSFontFaceSrcValue>(src_value);
   }
-  static std::shared_ptr<const CSSFontFaceSrcValue> CreateLocal(const std::string& local_resource) {
+  static std::shared_ptr<const CSSFontFaceSrcValue> CreateLocal(const String& local_resource) {
     return std::make_shared<CSSFontFaceSrcValue>(local_resource);
   }
 
-  explicit CSSFontFaceSrcValue(const std::string& local_resource)
+  explicit CSSFontFaceSrcValue(const String& local_resource)
       : CSSValue(kFontFaceSrcClass), local_resource_(local_resource) {}
   CSSFontFaceSrcValue(std::shared_ptr<const cssvalue::CSSURIValue> src_value)
       : CSSValue(kFontFaceSrcClass), src_value_(std::move(src_value)) {}
 
   // Returns the local() resource name. Only usable if IsLocal() returns true.
-  const std::string& LocalResource() const { return local_resource_; }
+  const String& LocalResource() const { return local_resource_; }
   bool IsLocal() const { return !src_value_; }
 
   /* Format is serialized as string, so we can set this to string internally. It
    * does not affect functionality downstream - i.e. the font face is handled
    * the same way whatsoever, if the format is supported. */
-  void SetFormat(const std::string& format) { format_ = format; }
+  void SetFormat(const String& format) { format_ = format; }
 
   /* Only supported technologies need to be listed here, as we can reject other
    * font face source component values, hence remove SVG and incremental for
@@ -73,7 +74,7 @@ class CSSFontFaceSrcValue : public CSSValue {
   };
   bool IsSupportedFormat() const;
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSFontFaceSrcValue&) const;
 
@@ -81,8 +82,8 @@ class CSSFontFaceSrcValue : public CSSValue {
 
  private:
   std::shared_ptr<const cssvalue::CSSURIValue> src_value_;  // Non-null if remote (src()).
-  std::string local_resource_;                              // Non-null if local (local()).
-  std::string format_;
+  String local_resource_;                              // Non-null if local (local()).
+  String format_;
 };
 
 template <>

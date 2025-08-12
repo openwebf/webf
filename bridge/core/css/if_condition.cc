@@ -50,7 +50,7 @@ void IfTestStyle::Trace() const {
 IfTestMedia::IfTestMedia(std::shared_ptr<const MediaQueryExpNode> exp_node) {
   std::vector<std::shared_ptr<const MediaQuery>> queries;
   queries.push_back(std::make_shared<MediaQuery>(
-      MediaQuery::RestrictorType::kNone, media_type_names_stdstring::kAll, exp_node));
+      MediaQuery::RestrictorType::kNone, String(media_type_names_atomicstring::kAll), exp_node));
   media_test_ = std::make_shared<MediaQuerySet>(queries);
 }
 

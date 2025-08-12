@@ -68,7 +68,7 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(const InvalidationLis
      */
   }
 
-  if (!requires_descendant_invalidation && invalidation_lists.siblings.empty()) {
+  if (!requires_descendant_invalidation && invalidation_lists.siblings.IsEmpty()) {
     return;
   }
 
@@ -114,9 +114,9 @@ void PendingInvalidations::ScheduleInvalidationSetsForNode(const InvalidationLis
 
 void PendingInvalidations::ScheduleSiblingInvalidationsAsDescendants(const InvalidationLists& invalidation_lists,
                                                                      ContainerNode& scheduling_parent) {
-  assert(invalidation_lists.descendants.empty());
+  assert(invalidation_lists.descendants.IsEmpty());
 
-  if (invalidation_lists.siblings.empty()) {
+  if (invalidation_lists.siblings.IsEmpty()) {
     return;
   }
 
@@ -169,7 +169,7 @@ void PendingInvalidations::RescheduleSiblingInvalidationsAsDescendants(Element& 
   }
   auto pending_invalidations_iterator = pending_invalidation_map_.find(&element);
   if (pending_invalidations_iterator == pending_invalidation_map_.end() ||
-      pending_invalidations_iterator->second.Siblings().empty()) {
+      pending_invalidations_iterator->second.Siblings().IsEmpty()) {
     return;
   }
   NodeInvalidationSets& pending_invalidations = pending_invalidations_iterator->second;

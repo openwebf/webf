@@ -197,7 +197,7 @@ void LegacyInlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
 }
 
 std::string LegacyInlineCssStyleDeclaration::ToString() const {
-  if (properties_.empty())
+  if (properties_.IsEmpty())
     return "";
 
   std::string s;
@@ -284,7 +284,7 @@ AtomicString LegacyInlineCssStyleDeclaration::InternalRemoveProperty(std::string
 }
 
 void LegacyInlineCssStyleDeclaration::InternalClearProperty() {
-  if (properties_.empty())
+  if (properties_.IsEmpty())
     return;
   properties_.clear();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),

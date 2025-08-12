@@ -31,6 +31,8 @@
 
 #include <string>
 #include "../../foundation/string/string_builder.h"
+#include "../../foundation/string/wtf_string.h"
+#include "../../foundation/string/atomic_string.h"
 
 // Helper functions for converting from CSSValues to text.
 
@@ -38,11 +40,11 @@ namespace webf {
 
 // Common serializing methods. See:
 // https://drafts.csswg.org/cssom/#common-serializing-idioms
-void SerializeIdentifier(const std::string_view& identifier, StringBuilder& append_to, bool skip_start_checks = false);
-void SerializeString(const std::string_view&, StringBuilder& append_to);
-std::string SerializeString(const std::string&);
-std::string SerializeURI(const std::string&);
-std::string SerializeFontFamily(const std::string&);
+void SerializeIdentifier(const String& identifier, StringBuilder& append_to, bool skip_start_checks = false);
+void SerializeString(const String&, StringBuilder& append_to);
+String SerializeString(const String&);
+String SerializeURI(const String&);
+String SerializeFontFamily(const AtomicString&);
 
 }  // namespace webf
 

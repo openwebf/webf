@@ -14,7 +14,7 @@ class CSSAppearanceAutoBaseSelectValuePair : public CSSValuePair {
   explicit CSSAppearanceAutoBaseSelectValuePair(const std::shared_ptr<const CSSValue>& first,
                                                 const std::shared_ptr<const CSSValue>& second)
       : CSSValuePair(kAppearanceAutoBaseSelectValuePairClass, first, second) {}
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   void TraceAfterDispatch(GCVisitor* visitor) const { CSSValuePair::TraceAfterDispatch(visitor); }
 };
 

@@ -32,7 +32,7 @@ class CSSCustomIdentValue : public CSSValue {
     return property_id_;
   }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   std::shared_ptr<const CSSCustomIdentValue> PopulateWithTreeScope(const TreeScope* tree_scope) const;
 

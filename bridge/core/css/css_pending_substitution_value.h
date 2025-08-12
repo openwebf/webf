@@ -29,7 +29,7 @@ class CSSPendingSubstitutionValue : public CSSValue {
   CSSPropertyID ShorthandPropertyId() const { return shorthand_property_id_; }
 
   bool Equals(const CSSPendingSubstitutionValue& other) const { return shorthand_value_ == other.shorthand_value_; }
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

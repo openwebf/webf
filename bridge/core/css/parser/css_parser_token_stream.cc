@@ -10,11 +10,11 @@
 
 namespace webf {
 
-std::string_view CSSParserTokenStream::StringRangeAt(size_t start, size_t length) const {
+StringView CSSParserTokenStream::StringRangeAt(size_t start, size_t length) const {
   return tokenizer_.StringRangeAt(start, length);
 }
 
-std::string_view CSSParserTokenStream::RemainingText() const {
+StringView CSSParserTokenStream::RemainingText() const {
   size_t start = HasLookAhead() ? LookAheadOffset() : Offset();
   return tokenizer_.StringRangeFrom(start);
 }

@@ -14,7 +14,7 @@ std::shared_ptr<const CSSRevertValue> CSSRevertValue::Create() {
   return CssValuePool().RevertValue();
 }
 
-std::string CSSRevertValue::CustomCSSText() const {
+String CSSRevertValue::CustomCSSText() const {
   return "revert";
 }
 

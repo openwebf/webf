@@ -199,6 +199,14 @@ bool CSSVariableParser::IsValidVariableName(const std::string_view& string) {
   return string.length() >= 3 && string[0] == '-' && string[1] == '-';
 }
 
+bool CSSVariableParser::IsValidVariableName(const String& string) {
+  return string.length() >= 3 && string.CharacterStartingAt(0) == '-' && string.CharacterStartingAt(1) == '-';
+}
+
+bool CSSVariableParser::IsValidVariableName(const StringView& string) {
+  return string.length() >= 3 && string[0] == '-' && string[1] == '-';
+}
+
 bool CSSVariableParser::ContainsValidVariableReferences(CSSParserTokenRange range, const ExecutingContext* context) {
   bool has_references;
   bool has_positioned_braces;
@@ -573,16 +581,24 @@ std::shared_ptr<CSSVariableData> CSSVariableParser::ConsumeUnparsedDeclaration(C
     return nullptr;
   }
 
-  std::string_view original_text = stream.StringRangeAt(value_start_offset, value_end_offset - value_start_offset);
+  StringView original_text = stream.StringRangeAt(value_start_offset, value_end_offset - value_start_offset);
 
   if (original_text.length() > CSSVariableData::kMaxVariableBytes) {
     return nullptr;
   }
   original_text = CSSVariableParser::StripTrailingWhitespaceAndComments(original_text);
 
-  return CSSVariableData::Create(original_text.data(), is_animation_tainted,
-                                 /*needs_variable_resolution=*/has_references, has_font_units, has_root_font_units,
-                                 has_line_height_units);
+  // Convert StringView to std::string_view for CSSVariableData::Create
+  // This assumes the CSS is always in 8-bit format
+  if (original_text.Is8Bit()) {
+    std::string_view str_view(reinterpret_cast<const char*>(original_text.Characters8()), original_text.length());
+    return CSSVariableData::Create(str_view, is_animation_tainted,
+                                   /*needs_variable_resolution=*/has_references, has_font_units, has_root_font_units,
+                                   has_line_height_units);
+  } else {
+    // TODO: Handle 16-bit strings properly
+    return nullptr;
+  }
 }
 
 }  // namespace webf

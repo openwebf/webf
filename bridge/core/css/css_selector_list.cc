@@ -119,7 +119,7 @@ std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
     result.Append(s->SelectorText());
   }
 
-  return result.ReleaseString();
+  return result.ReleaseString().StdUtf8();
 }
 
 void CSSSelectorList::Trace(GCVisitor* visitor) const {}

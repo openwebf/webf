@@ -332,7 +332,7 @@ CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
   return UnresolvedCSSPropertyID(context, string.data(), string.length(), mode);
 }
 
-CSSValueID CssValueKeywordID(const std::string_view& string) {
+CSSValueID CssValueKeywordID(const StringView& string) {
   unsigned length = string.length();
   if (!length) {
     return CSSValueID::kInvalid;
@@ -342,7 +342,7 @@ CSSValueID CssValueKeywordID(const std::string_view& string) {
   }
 
   char buffer[maxCSSValueKeywordLength + 1];  // 1 for null character
-  if (!QuasiLowercaseIntoBuffer(string.data(), length, buffer)) {
+  if (!QuasiLowercaseIntoBuffer(string.data() , length, buffer)) {
     return CSSValueID::kInvalid;
   }
 

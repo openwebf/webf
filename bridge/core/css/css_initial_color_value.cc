@@ -14,7 +14,7 @@ std::shared_ptr<const CSSInitialColorValue> CSSInitialColorValue::Create() {
   return CssValuePool().InitialColorValue();
 }
 
-std::string CSSInitialColorValue::CustomCSSText() const {
+String CSSInitialColorValue::CustomCSSText() const {
   return "";
 }
 

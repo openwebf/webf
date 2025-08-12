@@ -34,7 +34,7 @@ void CSSURIValue::ReResolveUrl(const Document& document) const {
   }
 }
 
-std::string CSSURIValue::CustomCSSText() const {
+String CSSURIValue::CustomCSSText() const {
   return url_data_.CssText();
 }
 

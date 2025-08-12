@@ -12,7 +12,7 @@ void CSSUnparsedDeclarationValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-std::string CSSUnparsedDeclarationValue::CustomCSSText() const {
+String CSSUnparsedDeclarationValue::CustomCSSText() const {
   // We may want to consider caching this value.
   return data_->Serialize();
 }

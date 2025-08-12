@@ -34,7 +34,7 @@ CSSRepeatStyleValue::CSSRepeatStyleValue(std::shared_ptr<const CSSIdentifierValu
 
 CSSRepeatStyleValue::~CSSRepeatStyleValue() = default;
 
-std::string CSSRepeatStyleValue::CustomCSSText() const {
+String CSSRepeatStyleValue::CustomCSSText() const {
   StringBuilder result;
 
   if (webf::ValuesEquivalent(x_, y_)) {

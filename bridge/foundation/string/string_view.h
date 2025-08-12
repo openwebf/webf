@@ -11,6 +11,7 @@
 
 #include <cassert>
 #include <string>
+#include <string_view>
 #include "../native_string.h"
 #include "ascii_types.h"
 #include "string_impl.h"
@@ -19,6 +20,7 @@
 namespace webf {
 
 class AtomicString;
+class String;
 
 // A string like object that wraps either a 8bit or 16bit byte sequence
 // and keeps track of the length and the type, it does NOT own the bytes.
@@ -38,6 +40,9 @@ class StringView final {
   explicit StringView(const StringView& view, unsigned offset) : StringView(view, offset, view.length_ - offset) {}
 
   // From a StringImpl:
+  explicit StringView(StringImpl* impl);
+  StringView(StringImpl* impl, unsigned offset);
+  StringView(StringImpl* impl, unsigned offset, unsigned length);
   explicit StringView(const UTF8Char*);
   explicit StringView(const LChar*);
   explicit StringView(const UChar*);
@@ -52,13 +57,34 @@ class StringView final {
   // From a AtomicString
   StringView(AtomicString& string);
   StringView(const AtomicString& string);
+  
+  // From a String
+  explicit StringView(const String& string);
+  StringView(const String& string, unsigned offset);
+  StringView(const String& string, unsigned offset, unsigned length);
 
-  bool Is8Bit() const { return is_8bit_; }
+  bool Is8Bit() const {
+    assert(impl_);
+    return impl_->Is8Bit();
+  }
 
   FORCE_INLINE const void* Bytes() const { return bytes_; }
+  
+  // For compatibility with std::string_view
+  const char* data() const { 
+    return reinterpret_cast<const char*>(bytes_);
+  }
+  
+  size_t size() const { return length(); }
+  
+  StringView substr(size_t pos, size_t len = std::string::npos) const {
+    if (pos > length()) return StringView();
+    size_t actual_len = (len == std::string::npos) ? length() - pos : std::min(len, length() - pos);
+    return StringView(data() + pos, actual_len);
+  }
 
   bool IsLowerASCII() const {
-    if (is_8bit_) {
+    if (Is8Bit()) {
       return webf::IsLowerASCII(Characters8(), length());
     }
     return webf::IsLowerASCII(Characters16(), length());
@@ -77,6 +103,10 @@ class StringView final {
   bool IsNull() const { return !bytes_; }
 
   AtomicString ToAtomicString() const;
+  String EncodeForDebugging() const;
+  
+  // For StringBuilder optimization - returns null since StringView doesn't own the impl
+  StringImpl* SharedImpl() const { return nullptr; }
 
   [[nodiscard]] UTF8String Characters8ToUTF8String() const;
 
@@ -86,19 +116,38 @@ class StringView final {
       return Characters8()[i];
     return Characters16()[i];
   }
+  
+  // Comparison operators
+  bool operator==(const StringView& other) const;
+  bool operator!=(const StringView& other) const { return !(*this == other); }
+  bool operator==(const char* str) const;
+  bool operator!=(const char* str) const { return !(*this == str); }
 
  private:
+  // We use the StringImpl to mark for 8bit or 16bit, even for strings where
+  // we were constructed from a char pointer. So impl_->Bytes() might have
+  // nothing to do with this view's bytes().
+  StringImpl* impl_;
   const void* bytes_;
   unsigned length_;
-  unsigned is_8bit_ : 1;
 };
 
 inline void StringView::Clear() {
   length_ = 0;
   bytes_ = nullptr;
+  impl_ = StringImpl::empty_; // mark as 8 bit.
 }
 
+// String constructors are implemented in string_view.cc to avoid circular dependency
+
 bool EqualIgnoringASCIICase(const std::string_view&, const std::string_view&);
+bool EqualIgnoringASCIICase(const StringView&, const StringView&);
+bool EqualIgnoringASCIICase(const StringView&, const char*);
+bool EqualIgnoringASCIICase(const String&, const String&);
+bool EqualIgnoringASCIICase(const String&, const AtomicString&);
+bool EqualIgnoringASCIICase(const AtomicString&, const String&);
+bool EqualIgnoringASCIICase(const String&, const char*);
+bool EqualIgnoringASCIICase(const std::string&, const char*);
 
 }  // namespace webf
 

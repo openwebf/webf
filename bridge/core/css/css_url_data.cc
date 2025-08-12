@@ -33,7 +33,7 @@ namespace webf {
 CSSUrlData::CSSUrlData(std::string unresolved_url, const KURL& resolved_url)
     : relative_url_(std::move(unresolved_url)),
       absolute_url_(resolved_url.GetString()),
-      is_local_(!unresolved_url.empty() && unresolved_url[0] == '#'),
+      is_local_(!unresolved_url.IsEmpty() && unresolved_url[0] == '#'),
       potentially_dangling_markup_(resolved_url.PotentiallyDanglingMarkup()) {}
 
 CSSUrlData::CSSUrlData(const std::string& resolved_url) : CSSUrlData(resolved_url, KURL(resolved_url)) {}
@@ -61,7 +61,7 @@ KURL CSSUrlData::ResolveUrl(const Document& document) const {
 }
 
 bool CSSUrlData::ReResolveUrl(const Document& document) const {
-  if (relative_url_.empty()) {
+  if (relative_url_.IsEmpty()) {
     return false;
   }
   KURL url = document.CompleteURL(relative_url_);
@@ -74,7 +74,7 @@ bool CSSUrlData::ReResolveUrl(const Document& document) const {
 }
 
 CSSUrlData CSSUrlData::MakeAbsolute() const {
-  if (relative_url_.empty()) {
+  if (relative_url_.IsEmpty()) {
     return *this;
   }
   return CSSUrlData(absolute_url_, KURL(absolute_url_)
@@ -83,7 +83,7 @@ CSSUrlData CSSUrlData::MakeAbsolute() const {
 }
 
 CSSUrlData CSSUrlData::MakeResolved(const KURL& base_url) const {
-  if (relative_url_.empty()) {
+  if (relative_url_.IsEmpty()) {
     return *this;
   }
   const KURL resolved_url = KURL(base_url, relative_url_);
@@ -119,7 +119,7 @@ bool CSSUrlData::operator==(const CSSUrlData& other) const {
   if (is_local_) {
     return relative_url_ == other.relative_url_;
   }
-  if (absolute_url_.empty() && other.absolute_url_.empty()) {
+  if (absolute_url_.IsEmpty() && other.absolute_url_.IsEmpty()) {
     return relative_url_ == other.relative_url_;
   }
   return absolute_url_ == other.absolute_url_;

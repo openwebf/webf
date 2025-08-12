@@ -71,7 +71,7 @@ static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet>
 template <typename T>
 std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
   std::string shorthand_serialization = SerializeShorthand(shared_from_this(), property);
-  if (!shorthand_serialization.empty()) {
+  if (!shorthand_serialization.IsEmpty()) {
     return shorthand_serialization;
   }
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValue(property);
@@ -382,7 +382,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // Setting the value to an empty string just removes the property in both IE
   // and Gecko. Setting it to null seems to produce less consistent results, but
   // we treat it just the same.
-  if (value.empty()) {
+  if (value.IsEmpty()) {
     return RemoveProperty(ResolveCSSPropertyID(unresolved_property)) ? kChangedPropertySet : kUnchanged;
   }
 
@@ -398,7 +398,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
     bool important,
     std::shared_ptr<StyleSheetContents> context_style_sheet,
     bool is_animation_tainted) {
-  if (value.empty()) {
+  if (value.IsEmpty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
   }
   return CSSParser::ParseValueForCustomProperty(this, custom_property_name.ToUTF8String(), value, important,
@@ -469,7 +469,7 @@ inline bool ContainsId(const CSSProperty* const set[], unsigned length, CSSPrope
 }
 
 bool MutableCSSPropertyValueSet::RemovePropertiesInSet(const CSSProperty* const set[], unsigned length) {
-  if (property_vector_.empty())
+  if (property_vector_.IsEmpty())
     return false;
 
   CSSPropertyValue* properties = property_vector_.data();

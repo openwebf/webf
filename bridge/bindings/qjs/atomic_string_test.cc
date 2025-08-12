@@ -22,7 +22,7 @@ TEST(AtomicString, Empty) {
 
 TEST(AtomicString, HashShouldEqual8bitAnd16bit) {
   TEST_init();
-  AtomicString atomic_string = AtomicString("helloworld");
+  AtomicString atomic_string = AtomicString::CreateFromUTF8("helloworld");
   AtomicString atomic_string2 = AtomicString(u"helloworld");
   EXPECT_EQ(atomic_string.Hash(), atomic_string2.Hash());
 }
@@ -33,12 +33,12 @@ TEST(AtomicString, FromNativeString) {
   std::unique_ptr<AutoFreeNativeString> str =
       std::unique_ptr<AutoFreeNativeString>(static_cast<AutoFreeNativeString*>(nativeString.release()));
   AtomicString value = AtomicString(str);
-  EXPECT_EQ(value, AtomicString("helloworld"));
+  EXPECT_EQ(value, AtomicString::CreateFromUTF8("helloworld"));
 }
 
 TEST(AtomicString, CreateFromStdString) {
   TEST_init();
-  AtomicString value = AtomicString("helloworld");
+  AtomicString value = AtomicString::CreateFromUTF8("helloworld");
   EXPECT_EQ(std::string(value.Impl()->Characters8(), value.Impl()->length()), "helloworld");
 }
 
@@ -54,7 +54,7 @@ TEST(AtomicString, CreateFromJSValue) {
 
 TEST(AtomicString, ToQuickJS) {
   auto env = TEST_init();
-  AtomicString value = AtomicString("helloworld");
+  AtomicString value = AtomicString::CreateFromUTF8("helloworld");
   JSContext* ctx = env->page()->executingContext()->ctx();
   JSValue qjs_value = env->page()->dartIsolateContext()->stringCache()->GetJSValueFromString(ctx, value.Impl());
   const char* buffer = JS_ToCString(ctx, qjs_value);
@@ -65,7 +65,7 @@ TEST(AtomicString, ToQuickJS) {
 
 TEST(AtomicString, ToNativeString) {
   TEST_init();
-  AtomicString&& value = AtomicString("helloworld");
+  AtomicString&& value = AtomicString::CreateFromUTF8("helloworld");
   auto native_string = value.ToNativeString();
   const uint16_t* p = native_string->string();
   EXPECT_EQ(native_string->length(), 10);
@@ -78,7 +78,7 @@ TEST(AtomicString, ToNativeString) {
 
 TEST(AtomicString, CopyAssignment) {
   TEST_init();
-  AtomicString str = AtomicString("helloworld");
+  AtomicString str = AtomicString::CreateFromUTF8("helloworld");
   struct P {
     AtomicString str;
   };
@@ -89,7 +89,7 @@ TEST(AtomicString, CopyAssignment) {
 
 TEST(AtomicString, MoveAssignment) {
   TEST_init();
-  auto str = AtomicString("helloworld");
+  auto str = AtomicString::CreateFromUTF8("helloworld");
   auto str2 = AtomicString(std::move(str));
   EXPECT_EQ(str2.ToUTF8String(), "helloworld");
 }
@@ -98,7 +98,7 @@ TEST(AtomicString, CopyToRightReference) {
   TEST_init();
   AtomicString str = AtomicString::Empty();
   if (1 + 1 == 2) {
-    str = AtomicString("helloworld");
+    str = AtomicString::CreateFromUTF8("helloworld");
   }
   EXPECT_EQ(str.ToUTF8String(), "helloworld");
 }
@@ -178,7 +178,7 @@ TEST(AtomicString, MixedUTF8AndUTF16) {
   TEST_init();
   
   // Create both UTF-8 and UTF-16 strings
-  AtomicString utf8_str = AtomicString("Hello ASCII");
+  AtomicString utf8_str = AtomicString::CreateFromUTF8("Hello ASCII");
   AtomicString utf16_str = AtomicString(u"Hello 世界");
   
   // Verify their types

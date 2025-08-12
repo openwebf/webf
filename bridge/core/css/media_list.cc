@@ -61,7 +61,7 @@ MediaQuerySet::MediaQuerySet(std::vector<std::shared_ptr<const MediaQuery>> quer
 
 std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(const std::string& media_string,
                                                      const ExecutingContext* execution_context) {
-  if (media_string.empty()) {
+  if (media_string.IsEmpty()) {
     return MediaQuerySet::Create();
   }
 

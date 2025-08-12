@@ -51,7 +51,7 @@ TEST_F(CSSParserShorthandTest, MarginShorthand) {
   
   // Check string representation
   std::string margin_value = props.GetPropertyValue(CSSPropertyID::kMargin);
-  EXPECT_FALSE(margin_value.empty()) << "Margin shorthand should have a value";
+  EXPECT_FALSE(margin_value.IsEmpty()) << "Margin shorthand should have a value";
   
   // All margins should be "10px"
   auto* top_value = props.GetPropertyCSSValue(CSSPropertyID::kMarginTop);
@@ -132,7 +132,7 @@ TEST_F(CSSParserShorthandTest, GetPropertyValueForShorthands) {
     std::string value = props.GetPropertyValue(test.shorthand);
     
     if (test.expect_non_empty) {
-      EXPECT_FALSE(value.empty()) << "Failed for: " << test.css;
+      EXPECT_FALSE(value.IsEmpty()) << "Failed for: " << test.css;
     }
   }
 }

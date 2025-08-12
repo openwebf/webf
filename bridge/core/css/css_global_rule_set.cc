@@ -44,7 +44,7 @@ void CSSGlobalRuleSet::UpdateDocumentRulesSelectorsRuleSet(Document& document) {
     document_rules_selectors_rule_set_ = nullptr;
     const HeapVector<Member<StyleRule>>& document_rules_selectors =
         DocumentSpeculationRules::From(document).selectors();
-    if (document_rules_selectors.empty()) {
+    if (document_rules_selectors.IsEmpty()) {
       return;
     }
     document_rules_selectors_rule_set_ = MakeGarbageCollected<RuleSet>();

@@ -73,7 +73,7 @@ class PropertyHandle {
 
   CSSPropertyName GetCSSPropertyName() const {
     if (handle_type_ == kHandleCSSCustomProperty)
-      return CSSPropertyName(property_name_);
+      return CSSPropertyName(AtomicString::CreateFromUTF8(property_name_));
     assert(IsCSSProperty() || IsPresentationAttribute());
     return CSSPropertyName(css_property_->PropertyID());
   }

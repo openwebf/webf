@@ -25,7 +25,7 @@ void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream& input) {
 }
 
 //// https://drafts.csswg.org/css-syntax/#consume-an-escaped-code-point
-int32_t ConsumeEscape(CSSTokenizerInputStream& input) {
+UChar32 ConsumeEscape(CSSTokenizerInputStream& input) {
   char cc = input.NextInputChar();
   input.Advance();
   DCHECK(!IsCSSNewLine(cc));
@@ -42,7 +42,7 @@ int32_t ConsumeEscape(CSSTokenizerInputStream& input) {
     ConsumeSingleWhitespaceIfNext(input);
     bool ok = false;
     uint32_t code_point;
-    ok = base::HexStringToUInt(hex_chars.ReleaseString(), &code_point);
+    ok = base::HexStringToUInt(hex_chars.ReleaseString().StdUtf8(), &code_point);
     DCHECK(ok);
     if (code_point == 0 || (0xD800 <= code_point && code_point <= 0xDFFF) || code_point > 0x10FFFF) {
       return kReplacementCharacter;
@@ -71,7 +71,7 @@ std::string ConsumeName(CSSTokenizerInputStream& input) {
       continue;
     }
     input.PushBack(cc);
-    return result.ReleaseString();
+    return result.ReleaseString().StdUtf8();
   }
 }
 

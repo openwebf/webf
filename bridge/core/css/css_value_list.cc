@@ -138,7 +138,7 @@ std::shared_ptr<const CSSValueList> CSSValueList::PopulateWithTreeScope(const Tr
   return new_list;
 }
 
-std::string CSSValueList::CustomCSSText() const {
+String CSSValueList::CustomCSSText() const {
   std::string separator("");
   switch (value_list_separator_) {
     case kSpaceSeparator:
@@ -156,7 +156,7 @@ std::string CSSValueList::CustomCSSText() const {
 
   std::string result;
   for (const auto& value : values_) {
-    if (!result.empty()) {
+    if (!result.IsEmpty()) {
       result.append(separator);
     }
     // TODO(crbug.com/1213338): value_[i] can be null by CSSMathExpressionNode

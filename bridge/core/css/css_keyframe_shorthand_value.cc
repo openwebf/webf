@@ -33,7 +33,7 @@ CSSKeyframeShorthandValue::CSSKeyframeShorthandValue(CSSPropertyID shorthand,
                                                      std::shared_ptr<ImmutableCSSPropertyValueSet>& properties)
     : CSSValue(kKeyframeShorthandClass), shorthand_(shorthand), properties_(properties) {}
 
-std::string CSSKeyframeShorthandValue::CustomCSSText() const {
+String CSSKeyframeShorthandValue::CustomCSSText() const {
 #if DCHECK_IS_ON()
   // Check that all property/value pairs belong to the same shorthand.
   for (unsigned i = 0; i < properties_->PropertyCount(); i++) {

@@ -5,12 +5,15 @@
 #ifndef WEBF_FOUNDATION_STRING_WTF_STRING_H_
 #define WEBF_FOUNDATION_STRING_WTF_STRING_H_
 
+#include <iostream>
 #include <memory>
 #include <string>
 #include "string_impl.h"
-#include "string_view.h"
 
 namespace webf {
+
+// Forward declaration to avoid circular dependency
+class StringView;
 
 class String {
  public:
@@ -29,6 +32,9 @@ class String {
 
   // Construct a string referencing an existing StringImpl.
   String(std::shared_ptr<StringImpl> impl) : impl_(std::move(impl)) {}
+  
+  // Construct from StringView
+  explicit String(const StringView& view);
 
   // Copying a String is relatively inexpensive, since the underlying data is
   // immutable and refcounted.
@@ -79,8 +85,19 @@ class String {
 
   // Conversion
   std::string StdUtf8() const;
+  std::string ToStdString(const std::string& default_value = std::string()) const {
+    return IsNull() ? default_value : StdUtf8();
+  }
   static String FromUTF8(const char* utf8_data, size_t byte_length);
   static String FromUTF8(const char* utf8_data);
+
+  // Convert to StringView
+  StringView ToStringView() const;
+  
+  // Character access for Blink compatibility
+  UChar CharacterStartingAt(size_t offset) const {
+    return (impl_ && offset < length()) ? (*impl_)[offset] : 0;
+  }
 
   // Get the underlying implementation
   StringImpl* Impl() const { return impl_.get(); }
@@ -89,6 +106,9 @@ class String {
   // Static empty string
   static const String& EmptyString();
 
+  String EncodeForDebugging() const;
+
+
  private:
   std::shared_ptr<StringImpl> impl_;
 };
@@ -96,6 +116,14 @@ class String {
 // Free functions
 inline bool operator==(const char* a, const String& b) { return b == a; }
 inline bool operator!=(const char* a, const String& b) { return b != a; }
+
+// Stream output operators
+std::ostream& operator<<(std::ostream&, const String&);
+
+// String concatenation operators
+String operator+(const String& a, const String& b);
+String operator+(const String& a, const char* b);
+String operator+(const char* a, const String& b);
 
 }  // namespace webf
 

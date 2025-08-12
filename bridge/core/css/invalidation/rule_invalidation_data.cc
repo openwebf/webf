@@ -312,7 +312,7 @@ bool RuleInvalidationData::NeedsHasInvalidationForInsertedOrRemovedElement(Eleme
     }
   }
 
-  return !attributes_in_has_argument.empty() || NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
+  return !attributes_in_has_argument.IsEmpty() || NeedsHasInvalidationForTagName(element.LocalNameForSelectorMatching());
 }
 
 bool RuleInvalidationData::NeedsHasInvalidationForPseudoClass(CSSSelector::PseudoType pseudo_type) const {
@@ -433,7 +433,7 @@ std::string RuleInvalidationData::ToString() const {
   metadata.Append(invalidates_parts ? "P" : "");
   metadata.Append(format_max_direct_adjancent(max_direct_adjacent_selectors));
 
-  if (!metadata.empty()) {
+  if (!metadata.IsEmpty()) {
     builder.Append("META:");
     builder.Append(metadata.ReleaseString());
   }

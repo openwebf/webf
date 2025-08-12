@@ -107,7 +107,7 @@ std::string CSSParserTokenRange::Serialize() const {
     }
     it->Serialize(result);
   }
-  return result.ReleaseString();
+  return result.ReleaseString().StdUtf8();
 }
 
 }  // namespace webf

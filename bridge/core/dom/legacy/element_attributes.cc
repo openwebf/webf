@@ -23,7 +23,8 @@ static inline bool IsNumberIndex(const std::string_view& name) {
 ElementAttributes::ElementAttributes(Element* element) : ScriptWrappable(element->ctx()), element_(element) {}
 
 AtomicString ElementAttributes::getAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  bool numberIndex = IsNumberIndex(name.ToUTF8StringView());
+  std::string name_str = name.ToUTF8String();
+  bool numberIndex = IsNumberIndex(std::string_view(name_str));
 
   if (numberIndex) {
     return AtomicString::Null();
@@ -49,7 +50,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
                                      const AtomicString& value,
                                      ExceptionState& exception_state,
                                      bool ignore_ui_command) {
-  bool numberIndex = IsNumberIndex(name.ToUTF8StringView());
+  std::string name_str = name.ToUTF8String();
+  bool numberIndex = IsNumberIndex(std::string_view(name_str));
 
   if (numberIndex) {
     exception_state.ThrowException(
@@ -79,7 +81,8 @@ bool ElementAttributes::setAttribute(const AtomicString& name,
 }
 
 bool ElementAttributes::hasAttribute(const AtomicString& name, ExceptionState& exception_state) {
-  bool numberIndex = IsNumberIndex(name.ToUTF8StringView());
+  std::string name_str = name.ToUTF8String();
+  bool numberIndex = IsNumberIndex(std::string_view(name_str));
 
   if (numberIndex) {
     return false;

@@ -33,7 +33,7 @@ CSSBorderImageSliceValue::CSSBorderImageSliceValue(std::shared_ptr<const CSSQuad
   DCHECK(slices_);
 }
 
-std::string CSSBorderImageSliceValue::CustomCSSText() const {
+String CSSBorderImageSliceValue::CustomCSSText() const {
   // Dump the slices first.
   std::string text = slices_->CssText();
 

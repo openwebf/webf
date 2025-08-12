@@ -9,7 +9,6 @@
 #ifndef WEBF_CSS_PARSER_TOKEN_STREAM_H
 #define WEBF_CSS_PARSER_TOKEN_STREAM_H
 
-#include <string_view>
 #include "core/base/auto_reset.h"
 #include "css_parser_token.h"
 #include "css_parser_token_range.h"
@@ -203,11 +202,11 @@ class CSSParserTokenStream {
   }
 
   // Returns a view on a range of characters in the original string.
-  std::string_view StringRangeAt(size_t start, size_t length) const;
+  StringView StringRangeAt(size_t start, size_t length) const;
 
   // Returns a view on the string that has not been yet consumed.
   // (The lookahead token, if any, does not count as consumed.)
-  std::string_view RemainingText() const;
+  StringView RemainingText() const;
 
   void ConsumeWhitespace();
   CSSParserToken ConsumeIncludingWhitespace();

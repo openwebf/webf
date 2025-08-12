@@ -919,7 +919,7 @@ const char* CSSPrimitiveValue::UnitTypeToString(UnitType type) {
   return "";
 }
 
-std::string CSSPrimitiveValue::CustomCSSText() const {
+String CSSPrimitiveValue::CustomCSSText() const {
   if (IsCalculated()) {
     return To<CSSMathFunctionValue>(this)->CustomCSSText();
   }

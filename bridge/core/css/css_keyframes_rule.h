@@ -53,6 +53,7 @@ class StyleRuleKeyframes final : public StyleRuleBase {
 
   std::string GetName() const { return name_; }
   void SetName(const std::string& name) { name_ = name; }
+  void SetName(const String& name) { name_ = name.ToStdString(); }
 
   bool IsVendorPrefixed() const { return is_prefixed_; }
   void SetVendorPrefixed(bool is_prefixed) { is_prefixed_ = is_prefixed; }

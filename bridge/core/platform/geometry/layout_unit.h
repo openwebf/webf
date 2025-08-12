@@ -44,10 +44,6 @@
 #include "foundation/logging.h"
 #include "foundation/macros.h"
 
-namespace WTF {
-class String;
-}  // namespace WTF
-
 namespace webf {
 
 #if DCHECK_IS_ON()

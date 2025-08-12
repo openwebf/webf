@@ -334,7 +334,7 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForScopeActivation(const Sele
      // Elements directly (e.g. SetChildrenOrSiblingsAffectedByHover)
      result.flags |= activations.match_flags;
    }
-   if (activations.vector.empty()) {
+   if (activations.vector.IsEmpty()) {
      return kSelectorFailsCompletely;
    }
    for (const StyleScopeActivation& activation : activations.vector) {
@@ -508,7 +508,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
      if (case_sensitivity == kTextCaseSensitive) {
        return selector_value == value;
      }
-     return EqualIgnoringASCIICase(selector_value.ToUTF8StringView(), value.ToUTF8StringView());
+     return EqualIgnoringASCIICase(String(selector_value.Impl()).ToStringView(), String(value.Impl()).ToStringView());
    case CSSSelector::kAttributeSet:
      return true;
    case CSSSelector::kAttributeList: {
@@ -519,7 +519,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        }
      }
      // Ignore empty selectors
-     if (selector_value.empty()) {
+     if (selector_value.IsEmpty()) {
        return false;
      }
      
@@ -563,7 +563,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
      return false;
    }
    case CSSSelector::kAttributeContain:
-     if (selector_value.empty()) {
+     if (selector_value.IsEmpty()) {
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
@@ -604,11 +604,11 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return false;
      }
    case CSSSelector::kAttributeBegin:
-     if (selector_value.empty()) {
+     if (selector_value.IsEmpty()) {
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
-       return value.StartsWith(selector_value.ToUTF8StringView());
+       return String(value.Impl()).StartsWith(String(selector_value.Impl()));
      } else {
        // Case-insensitive StartsWith
        if (value.length() < selector_value.length()) {
@@ -622,7 +622,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return true;
      }
    case CSSSelector::kAttributeEnd:
-     if (selector_value.empty()) {
+     if (selector_value.IsEmpty()) {
        return false;
      }
      if (value.length() < selector_value.length()) {
@@ -657,7 +657,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
-       if (!value.StartsWith(selector_value.ToUTF8StringView())) {
+       if (!String(value.Impl()).StartsWith(String(selector_value.Impl()))) {
          return false;
        }
      } else {
@@ -1286,7 +1286,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
          break;
        }
        if (auto* text_node = DynamicTo<Text>(n)) {
-         if (!text_node->data().empty()) {
+         if (!text_node->data().IsEmpty()) {
            // TODO: Implement ContainsOnlyWhitespaceOrEmpty
            // if (text_node->ContainsOnlyWhitespaceOrEmpty()) {
            //   has_whitespace = true;
@@ -1620,7 +1620,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      // auto* vtt_element = DynamicTo<VTTElement>(element);
      AtomicString value = element.ComputeInheritedLanguage();
      const AtomicString& argument = selector.Argument();
-     if (value.empty() || !value.StartsWith(argument.ToUTF8StringView())) {
+     if (value.IsEmpty() || !String(value.Impl()).StartsWith(String(argument.Impl()))) {
        break;
      }
      if (value.length() != argument.length() && value[argument.length()] != '-') {
@@ -1630,13 +1630,13 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
    }
    case CSSSelector::kPseudoDir: {
      const AtomicString& argument = selector.Argument();
-     if (argument.empty()) {
+     if (argument.IsEmpty()) {
        break;
      }
      TextDirection direction;
-     if (EqualIgnoringASCIICase(argument.ToUTF8StringView(), "ltr")) {
+     if (EqualIgnoringASCIICase(String(argument.Impl()).ToStringView(), "ltr")) {
        direction = TextDirection::kLtr;
-     } else if (EqualIgnoringASCIICase(argument.ToUTF8StringView(), "rtl")) {
+     } else if (EqualIgnoringASCIICase(String(argument.Impl()).ToStringView(), "rtl")) {
        direction = TextDirection::kRtl;
      } else {
        break;
@@ -2027,7 +2027,7 @@ bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context,
      if (selector_pseudo_id == kPseudoIdViewTransition) {
        return true;
      }
-     CHECK(!selector.IdentList().empty());
+     CHECK(!selector.IdentList().IsEmpty());
      const AtomicString& name_or_wildcard = selector.IdentList()[0];
      // note that the pseudo_ident_list_ is the class list, and
      // pseudo_argument_ is the name, while in the selector the IdentList() is
@@ -2335,7 +2335,7 @@ const StyleScopeActivations* SelectorChecker::CalculateActivations(Element& elem
    }
  }
  auto activations = std::make_shared<StyleScopeActivations>();
- if (!outer_activations.vector.empty()) {
+ if (!outer_activations.vector.IsEmpty()) {
    const StyleScopeActivations* parent_activations = nullptr;
    // Remain within the outer scope. I.e. don't look at elements above the
    // highest outer activation.

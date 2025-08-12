@@ -186,14 +186,14 @@ void CSSStyleSheet::DidMutate(Mutation mutation) {
   //  if (!document || !document->IsActive()) {
   //    return;
   //  }
-  //  if (!custom_element_tag_names_.empty()) {
+  //  if (!custom_element_tag_names_.IsEmpty()) {
   //    document->GetStyleEngine().ScheduleCustomElementInvalidations(custom_element_tag_names_);
   //  }
   //  bool invalidate_matched_properties_cache = false;
   //  if (ownerNode() && ownerNode()->isConnected()) {
   //    document->GetStyleEngine().SetNeedsActiveStyleUpdate(ownerNode()->GetTreeScope());
   //    invalidate_matched_properties_cache = true;
-  //  } else if (!adopted_tree_scopes_.empty()) {
+  //  } else if (!adopted_tree_scopes_.IsEmpty()) {
   //    for (auto tree_scope : adopted_tree_scopes_.Keys()) {
   //      // It is currently required that adopted sheets can not be moved between
   //      // documents.
@@ -400,11 +400,11 @@ int CSSStyleSheet::addRule(const AtomicString& selector,
   text.Append(selector.ToUTF8String());
   text.Append(" { ");
   text.Append(style.ToUTF8String());
-  if (!style.empty()) {
+  if (!style.Empty()) {
     text.Append(' ');
   }
   text.Append('}');
-  insertRule(AtomicString(text.ReleaseString()), index, exception_state);
+  insertRule(AtomicString(text.ReleaseString().ReleaseImpl()), index, exception_state);
 
   // As per Microsoft documentation, always return -1.
   return -1;
@@ -554,12 +554,12 @@ bool CSSStyleSheet::CanBeActivated(const AtomicString& current_preferrable_name)
   //  auto* html_link_element = DynamicTo<HTMLLinkElement>(owner_node_.Get());
   //  if (!owner_node_ || !html_link_element ||
   //      !html_link_element->IsEnabledViaScript()) {
-  //    if (!title_.empty() && title_ != current_preferrable_name) {
+  //    if (!title_.IsEmpty() && title_ != current_preferrable_name) {
   //      return false;
   //    }
   //  }
 
-  //  if (IsAlternate() && title_.empty()) {
+  //  if (IsAlternate() && title_.IsEmpty()) {
   //    return false;
   //  }
 

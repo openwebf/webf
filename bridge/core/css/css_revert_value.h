@@ -27,7 +27,7 @@ class CSSRevertValue : public CSSValue {
 
   explicit CSSRevertValue(webf::PassKey<CSSValuePool>) : CSSValue(kRevertClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSRevertValue&) const { return true; }
 

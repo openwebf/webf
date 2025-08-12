@@ -30,11 +30,11 @@
 namespace webf {
 namespace cssvalue {
 
-std::string CSSReflectValue::CustomCSSText() const {
+String CSSReflectValue::CustomCSSText() const {
   if (mask_) {
-    return direction_->CssText() + ' ' + offset_->CssText() + ' ' + mask_->CssText();
+    return direction_->CssText() + " " + offset_->CssText() + " " + mask_->CssText();
   }
-  return direction_->CssText() + ' ' + offset_->CssText();
+  return direction_->CssText() + " " + offset_->CssText();
 }
 
 bool CSSReflectValue::Equals(const CSSReflectValue& other) const {

@@ -69,7 +69,7 @@ namespace webf {
 //  typedef std::vector<Member<Element>> OutputType;
 //  static const bool kShouldOnlyMatchFirstElement = false;
 //  ALWAYS_INLINE static bool IsEmpty(const OutputType& output) {
-//    return output.empty();
+//    return output.IsEmpty();
 //  }
 //  ALWAYS_INLINE static void AppendElement(OutputType& output,
 //                                          Element& element) {
@@ -98,7 +98,7 @@ namespace webf {
 //  QUERY_STATS_RESET();
 //  CheckPseudoHasCacheScope check_pseudo_has_cache_scope(
 //      &target_element.GetDocument(), /*within_selector_checking=*/false);
-//  if (selectors_.empty()) {
+//  if (selectors_.IsEmpty()) {
 //    return nullptr;
 //  }
 //
@@ -504,7 +504,7 @@ namespace webf {
 // void SelectorQuery::Execute(
 //    ContainerNode& root_node,
 //    typename SelectorQueryTrait::OutputType& output) const {
-//  if (selectors_.empty()) {
+//  if (selectors_.IsEmpty()) {
 //    return;
 //  }
 //
@@ -609,7 +609,7 @@ namespace webf {
 // SelectorQuery* SelectorQueryCache::Add(const AtomicString& selectors,
 //                                       const Document& document,
 //                                       ExceptionState& exception_state) {
-//  if (selectors.empty()) {
+//  if (selectors.IsEmpty()) {
 //    exception_state.ThrowDOMException(DOMExceptionCode::kSyntaxError,
 //                                      "The provided selector is empty.");
 //    return nullptr;
@@ -628,7 +628,7 @@ namespace webf {
 //      CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
 //      /*is_within_scope=*/false, nullptr, selectors, arena);
 //
-//  if (selector_vector.empty()) {
+//  if (selector_vector.IsEmpty()) {
 //    exception_state.ThrowDOMException(
 //        DOMExceptionCode::kSyntaxError,
 //        "'" + selectors + "' is not a valid selector.");

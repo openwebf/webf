@@ -27,7 +27,7 @@ class CSSContentDistributionValue : public CSSValue {
 
   CSSValueID Overflow() const { return overflow_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSContentDistributionValue&) const;
 

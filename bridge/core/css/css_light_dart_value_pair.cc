@@ -6,7 +6,7 @@
 
 namespace webf {
 
-std::string CSSLightDarkValuePair::CustomCSSText() const {
+String CSSLightDarkValuePair::CustomCSSText() const {
   std::string first = First()->CssText();
   std::string second = Second()->CssText();
   return "light-dark(" + first + ", " + second + ")";

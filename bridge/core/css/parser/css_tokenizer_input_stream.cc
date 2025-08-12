@@ -14,9 +14,16 @@ namespace webf {
 
 void CSSTokenizerInputStream::AdvanceUntilNonWhitespace() {
   // Using HTML space here rather than CSS space since we don't do preprocessing
-  const char* characters = string_.data();
-  while (offset_ < string_length_ && IsHTMLSpace(characters[offset_])) {
-    ++offset_;
+  if (string_.Is8Bit()) {
+    const LChar* characters = string_.Characters8();
+    while (offset_ < string_length_ && IsHTMLSpace(characters[offset_])) {
+      ++offset_;
+    }
+  } else {
+    const UChar* characters = string_.Characters16();
+    while (offset_ < string_length_ && IsHTMLSpace(characters[offset_])) {
+      ++offset_;
+    }
   }
 }
 
@@ -25,7 +32,13 @@ double CSSTokenizerInputStream::GetDouble(unsigned start, unsigned end) const {
   bool is_result_ok = false;
   double result = 0.0;
   if (start < end) {
-    result = CharactersToDouble(string_.data() + offset_ + start, end - start, &is_result_ok);
+    if (string_.Is8Bit()) {
+      result = CharactersToDouble(reinterpret_cast<const char*>(string_.Characters8() + offset_ + start), end - start, &is_result_ok);
+    } else {
+      size_t parsed_length = 0;
+      result = CharactersToDouble(string_.Characters16() + offset_ + start, end - start, parsed_length);
+      is_result_ok = (parsed_length == end - start);
+    }
   }
   return is_result_ok ? result : 0.0;
 }
@@ -37,8 +50,8 @@ double CSSTokenizerInputStream::GetNaturalNumberAsDouble(unsigned int start, uns
   // (10^14 is at most 47 bits of mantissa), we don't need all the
   // complicated rounding machinery of CharactersToDouble(),
   // and can do with a much faster variant.
-  if (start < end && end - start <= 14) {
-    const char* ptr = string_.data() + offset_ + start;
+  if (start < end && string_.Is8Bit() && end - start <= 14) {
+    const LChar* ptr = string_.Characters8() + offset_ + start;
     double result = ptr[0] - '0';
     for (unsigned i = 1; i < end - start; ++i) {
       result = result * 10 + (ptr[i] - '0');

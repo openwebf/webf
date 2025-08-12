@@ -51,7 +51,7 @@ TEST_F(StyleEngineTest, CreateSheet) {
   GetExecutingContext()->EnableBlinkEngine();
   
   auto* element = MakeGarbageCollected<HTMLStyleElement>(*GetDocument());
-  element->setAttribute(AtomicString("type"), AtomicString("text/css"));
+  element->setAttribute(AtomicString::CreateFromUTF8("type"), AtomicString::CreateFromUTF8("text/css"));
   
   // Connect element to document
   GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());

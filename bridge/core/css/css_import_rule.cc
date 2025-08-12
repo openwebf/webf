@@ -43,7 +43,7 @@ MediaList* CSSImportRule::media() {
 AtomicString CSSImportRule::cssText() const {
   StringBuilder result;
   result.Append("@import ");
-  result.Append(SerializeURI(import_rule_->Href()));
+  result.Append(std::string_view(SerializeURI(import_rule_->Href()).StdUtf8()));
 
   if (import_rule_->IsLayered()) {
     result.Append(" layer");
@@ -63,7 +63,7 @@ AtomicString CSSImportRule::cssText() const {
 
   if (import_rule_->MediaQueries()) {
     std::string media_text = import_rule_->MediaQueries()->MediaText();
-    if (!media_text.empty()) {
+    if (!media_text.IsEmpty()) {
       result.Append(' ');
       result.Append(media_text);
     }

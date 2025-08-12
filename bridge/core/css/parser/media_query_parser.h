@@ -9,6 +9,8 @@
 #include "core/css/media_query_exp.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "foundation/macros.h"
+#include "foundation/string/atomic_string.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -21,7 +23,7 @@ class MediaQueryParser {
   WEBF_STACK_ALLOCATED();
 
  public:
-  static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(const std::string&, const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(const String&, const ExecutingContext*);
   static std::shared_ptr<MediaQuerySet> ParseMediaQuerySet(CSSParserTokenRange,
                                                            const CSSParserTokenOffsets&,
                                                            const ExecutingContext*);
@@ -43,13 +45,13 @@ class MediaQueryParser {
 
    public:
     // Returns true if the feature name is allowed in this set.
-    virtual bool IsAllowed(const std::string& feature) const = 0;
+    virtual bool IsAllowed(const AtomicString& feature) const = 0;
 
     // Returns true if the feature can be queried without a value.
-    virtual bool IsAllowedWithoutValue(const std::string& feature) const = 0;
+    virtual bool IsAllowedWithoutValue(const AtomicString& feature) const = 0;
 
     // Returns true is the feature name is case sensitive.
-    virtual bool IsCaseSensitive(const std::string& feature) const = 0;
+    virtual bool IsCaseSensitive(const AtomicString& feature) const = 0;
 
     // Whether the features support range syntax. This is typically false for
     // style container queries.
@@ -81,8 +83,8 @@ class MediaQueryParser {
   static MediaQuery::RestrictorType ConsumeRestrictor(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-media-type
-  static std::string ConsumeType(CSSParserTokenRange&);
-  static std::string ConsumeType(CSSParserTokenStream&);
+  static AtomicString ConsumeType(CSSParserTokenRange&);
+  static AtomicString ConsumeType(CSSParserTokenStream&);
 
   // https://drafts.csswg.org/mediaqueries-4/#typedef-mf-comparison
   static MediaQueryOperator ConsumeComparison(CSSParserTokenRange&);
@@ -92,13 +94,13 @@ class MediaQueryParser {
   //
   // The <mf-name> is only consumed if the name is allowed by the specified
   // FeatureSet.
-  std::string ConsumeAllowedName(CSSParserTokenRange&, const FeatureSet&);
-  std::string ConsumeAllowedName(CSSParserTokenStream&, const FeatureSet&);
+  AtomicString ConsumeAllowedName(CSSParserTokenRange&, const FeatureSet&);
+  AtomicString ConsumeAllowedName(CSSParserTokenStream&, const FeatureSet&);
 
   // Like ConsumeAllowedName, except returns null if the name has a min-
   // or max- prefix.
-  std::string ConsumeUnprefixedName(CSSParserTokenRange&, const FeatureSet&);
-  std::string ConsumeUnprefixedName(CSSParserTokenStream&, const FeatureSet&);
+  AtomicString ConsumeUnprefixedName(CSSParserTokenRange&, const FeatureSet&);
+  AtomicString ConsumeUnprefixedName(CSSParserTokenStream&, const FeatureSet&);
 
   enum class NameAffinity {
     // <mf-name> appears on the left, e.g. width < 10px.

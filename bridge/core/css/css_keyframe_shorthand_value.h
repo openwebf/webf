@@ -42,7 +42,7 @@ class CSSKeyframeShorthandValue : public CSSValue {
   // longhands for the same shorthand property/value pair.
   CSSKeyframeShorthandValue(CSSPropertyID shorthand, std::shared_ptr<ImmutableCSSPropertyValueSet>&);
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSKeyframeShorthandValue& other) const {
     return shorthand_ == other.shorthand_ && properties_ == other.properties_;

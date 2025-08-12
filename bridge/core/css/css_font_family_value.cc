@@ -24,7 +24,7 @@ std::shared_ptr<CSSFontFamilyValue> CSSFontFamilyValue::Create(const std::string
 
 CSSFontFamilyValue::CSSFontFamilyValue(const std::string& str) : CSSValue(kFontFamilyClass), string_(str) {}
 
-std::string CSSFontFamilyValue::CustomCSSText() const {
+String CSSFontFamilyValue::CustomCSSText() const {
   return SerializeFontFamily(string_);
 }
 

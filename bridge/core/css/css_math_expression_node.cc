@@ -803,7 +803,7 @@ class CSSMathExpressionNodeParser {
     }
 
     while (!tokens.AtEnd() && nodes.size() < max_argument_count) {
-      if (!nodes.empty()) {
+      if (!nodes.IsEmpty()) {
         if (!css_parsing_utils::ConsumeCommaIncludingWhitespace(tokens)) {
           return nullptr;
         }
@@ -1411,7 +1411,7 @@ CSSPrimitiveValue::BoolStatus CSSMathExpressionNumericLiteral::IsNegative() cons
   return maybe_value.value() < 0.0 ? CSSPrimitiveValue::BoolStatus::kTrue : CSSPrimitiveValue::BoolStatus::kFalse;
 }
 
-std::string CSSMathExpressionNumericLiteral::CustomCSSText() const {
+String CSSMathExpressionNumericLiteral::CustomCSSText() const {
   return value_->CssText();
 }
 
@@ -1825,7 +1825,7 @@ static CalculationResultCategory DetermineCalcSizeCategory(const CSSMathExpressi
 }
 
 static CalculationResultCategory DetermineComparisonCategory(const CSSMathExpressionOperation::Operands& operands) {
-  DCHECK(!operands.empty());
+  DCHECK(!operands.IsEmpty());
 
   bool is_first = true;
   CalculationResultCategory category = kCalcOther;
@@ -2436,7 +2436,7 @@ std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
     current_calc_size = basis_calc_size;
   }
 
-  if (calculation_stack.empty()) {
+  if (calculation_stack.IsEmpty()) {
     // No substitution is needed; return the original.
     return calc_size_input;
   }
@@ -2450,7 +2450,7 @@ std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
       return nullptr;
     }
     calculation_stack.pop_back();
-  } while (!calculation_stack.empty());
+  } while (!calculation_stack.IsEmpty());
 
   return CSSMathExpressionOperation::CreateCalcSizeOperation(innermost_basis, current_result);
 }
@@ -3106,7 +3106,7 @@ static bool ShouldSerializeRoundingStep(const CSSMathExpressionOperation::Operan
   return false;
 }
 
-std::string CSSMathExpressionOperation::CustomCSSText() const {
+String CSSMathExpressionOperation::CustomCSSText() const {
   switch (operator_) {
     case CSSMathOperator::kAdd:
     case CSSMathOperator::kSubtract:
@@ -3434,7 +3434,7 @@ double CSSMathExpressionOperation::EvaluateOperator(const std::vector<double>& o
       DCHECK(operands.size() == 1u || operands.size() == 2u);
       return operands[0] / operands[1];
     case CSSMathOperator::kMin: {
-      if (operands.empty()) {
+      if (operands.IsEmpty()) {
         return std::numeric_limits<double>::quiet_NaN();
       }
       double minimum = operands[0];
@@ -3450,7 +3450,7 @@ double CSSMathExpressionOperation::EvaluateOperator(const std::vector<double>& o
       return minimum;
     }
     case CSSMathOperator::kMax: {
-      if (operands.empty()) {
+      if (operands.IsEmpty()) {
         return std::numeric_limits<double>::quiet_NaN();
       }
       double maximum = operands[0];
@@ -3583,10 +3583,10 @@ CSSMathExpressionContainerFeature::CSSMathExpressionContainerFeature(
   CHECK(size_feature);
 }
 
-std::string CSSMathExpressionContainerFeature::CustomCSSText() const {
+String CSSMathExpressionContainerFeature::CustomCSSText() const {
   std::string builder;
   builder.append(size_feature_->CustomCSSText());
-  if (container_name_ && !container_name_->Value().empty()) {
+  if (container_name_ && !container_name_->Value().IsEmpty()) {
     builder.append(" of ");
     builder.append(container_name_->CustomCSSText());
   }

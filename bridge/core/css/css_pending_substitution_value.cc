@@ -14,7 +14,7 @@ void CSSPendingSubstitutionValue::TraceAfterDispatch(GCVisitor* visitor) const {
   CSSValue::TraceAfterDispatch(visitor);
 }
 
-std::string CSSPendingSubstitutionValue::CustomCSSText() const {
+String CSSPendingSubstitutionValue::CustomCSSText() const {
   return "";
 }
 

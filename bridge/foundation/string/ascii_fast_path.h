@@ -35,7 +35,7 @@ namespace webf {
 class LowerConverter {
  public:
   template <typename CharType>
-  ALWAYS_INLINE static bool IsCorrectCase(CharType* characters, size_t length) {
+  ALWAYS_INLINE static bool IsCorrectCase(const CharType* characters, size_t length) {
     return IsLowerASCII(characters, length);
   }
 
@@ -48,7 +48,7 @@ class LowerConverter {
 class UpperConverter {
  public:
   template <typename CharType>
-  ALWAYS_INLINE static bool IsCorrectCase(CharType* characters, size_t length) {
+  ALWAYS_INLINE static bool IsCorrectCase(const CharType* characters, size_t length) {
     return IsUpperASCII(characters, length);
   }
 

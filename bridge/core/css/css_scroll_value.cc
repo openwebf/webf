@@ -13,7 +13,7 @@ namespace cssvalue {
 CSSScrollValue::CSSScrollValue(std::shared_ptr<const CSSValue> scroller, std::shared_ptr<const CSSValue> axis)
     : CSSValue(kScrollClass), scroller_(scroller), axis_(axis) {}
 
-std::string CSSScrollValue::CustomCSSText() const {
+String CSSScrollValue::CustomCSSText() const {
   std::string result;
   result += "scroll(";
   if (scroller_) {

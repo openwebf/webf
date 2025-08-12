@@ -34,7 +34,7 @@ class CSSAxisValue : public CSSValueList {
                const std::shared_ptr<const CSSPrimitiveValue>& y,
                const std::shared_ptr<const CSSPrimitiveValue>& z);
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   Axis ComputeAxis(const CSSLengthResolver&) const;
   CSSValueID AxisName() const { return axis_name_; }

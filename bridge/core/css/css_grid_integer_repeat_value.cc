@@ -8,7 +8,7 @@
 namespace webf {
 namespace cssvalue {
 
-std::string CSSGridIntegerRepeatValue::CustomCSSText() const {
+String CSSGridIntegerRepeatValue::CustomCSSText() const {
   StringBuilder result;
   result.Append("repeat(");
   result.Append(std::to_string(Repetitions()));

@@ -11,6 +11,7 @@
 #include "css_property_names.h"
 #include "css_value_keywords.h"
 #include "foundation/macros.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -33,7 +34,7 @@ class CSSParserFastPaths {
   // Parses simple values like '10px' or 'green', but makes no guarantees
   // about handling any property completely.
   static std::shared_ptr<const CSSValue> MaybeParseValue(CSSPropertyID,
-                                                         const std::string&,
+                                                         const String&,
                                                          std::shared_ptr<const CSSParserContext>);
 
   // NOTE: Properties handled here shouldn't be explicitly handled in
@@ -48,7 +49,7 @@ class CSSParserFastPaths {
 
   // Tries parsing a string as a color, returning the result. Sets `color` if
   // the result is `kColor`.
-  static ParseColorResult ParseColor(const std::string&, CSSParserMode, Color& color);
+  static ParseColorResult ParseColor(const String&, CSSParserMode, Color& color);
 
  private:
   static CSSBitset handled_by_keyword_fast_paths_properties_;

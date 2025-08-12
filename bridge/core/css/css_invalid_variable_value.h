@@ -27,7 +27,7 @@ class CSSInvalidVariableValue : public CSSValue {
   // Create() to get the pooled value.
   CSSInvalidVariableValue() : CSSValue(kInvalidVariableValueClass) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSInvalidVariableValue&) const { return true; }
 

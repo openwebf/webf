@@ -201,7 +201,7 @@ void CSSStyleDeclaration::NamedPropertyEnumerator(std::vector<AtomicString>& nam
   //
   //  const ExecutingContext* execution_context = GetExecutingContext();
   //
-  //  if (property_names.empty()) {
+  //  if (property_names.IsEmpty()) {
   //    for (CSSPropertyID property_id : CSSPropertyIDList()) {
   //      const CSSProperty& property_class = CSSProperty::Get(ResolveCSSPropertyID(property_id));
   //      if (property_class.IsWebExposed(execution_context)) {

@@ -36,7 +36,7 @@ namespace webf {
 bool CSSFontFaceSrcValue::IsSupportedFormat() const {
   // format() syntax is already checked at parse time, see
   // AtRuleDescriptorParser.
-  if (!format_.empty()) {
+  if (!format_.IsEmpty()) {
     return true;
   }
 
@@ -44,11 +44,11 @@ bool CSSFontFaceSrcValue::IsSupportedFormat() const {
   // with the old WinIE style of font-face, we will also check to see if the URL
   // ends with .eot.  If so, we'll go ahead and assume that we shouldn't load
   // it.
-  const std::string& resolved_url_string = src_value_->UrlData().ResolvedUrl();
-  return ProtocolIs(resolved_url_string, "data") || !base::EndsWith(resolved_url_string, ".eot");
+  const String& resolved_url_string = src_value_->UrlData().ResolvedUrl();
+  return ProtocolIs(resolved_url_string.StdUtf8(), "data") || !base::EndsWith(std::string_view(resolved_url_string.StdUtf8()), ".eot");
 }
 
-std::string CSSFontFaceSrcValue::CustomCSSText() const {
+String CSSFontFaceSrcValue::CustomCSSText() const {
   StringBuilder result;
   if (IsLocal()) {
     result.Append("local(");
@@ -58,7 +58,7 @@ std::string CSSFontFaceSrcValue::CustomCSSText() const {
     result.Append(src_value_->CssText());
   }
 
-  if (!format_.empty()) {
+  if (!format_.IsEmpty()) {
     result.Append(" format(");
     // Format should be serialized as strings:
     // https://github.com/w3c/csswg-drafts/issues/6328#issuecomment-971823790

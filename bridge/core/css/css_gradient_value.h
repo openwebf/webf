@@ -143,7 +143,7 @@ class CSSLinearGradientValue final : public CSSGradientValue {
         second_y_(second_y),
         angle_(angle) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
@@ -233,7 +233,7 @@ class CSSRadialGradientValue final : public CSSGradientValue {
         end_horizontal_size_(horizontal_size),
         end_vertical_size_(vertical_size) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   void SetShape(std::shared_ptr<const CSSIdentifierValue> val) { shape_ = val; }
   void SetSizingBehavior(std::shared_ptr<const CSSIdentifierValue> val) { sizing_behavior_ = val; }
@@ -282,7 +282,7 @@ class CSSConicGradientValue final : public CSSGradientValue {
                         CSSGradientRepeat repeat)
       : CSSGradientValue(kConicGradientClass, repeat, kCSSConicGradient), x_(x), y_(y), from_angle_(from_angle) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,
@@ -314,7 +314,7 @@ class CSSConstantGradientValue final : public CSSGradientValue {
   explicit CSSConstantGradientValue(std::shared_ptr<const CSSValue> color)
       : CSSGradientValue(kConstantGradientClass, kNonRepeating, kCSSConstantGradient), color_(color) {}
 
-  std::string CustomCSSText() const { return color_->CssText(); }
+  String CustomCSSText() const { return color_->CssText(); }
 
   // Create the gradient for a given size.
   std::shared_ptr<Gradient> CreateGradient(const CSSToLengthConversionData&,

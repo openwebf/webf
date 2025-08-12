@@ -161,7 +161,7 @@ class CSSMathExpressionNode : public std::enable_shared_from_this<CSSMathExpress
   virtual std::optional<double> ComputeValueInCanonicalUnit() const = 0;
   virtual std::optional<double> ComputeValueInCanonicalUnit(const CSSLengthResolver& length_resolver) const = 0;
 
-  virtual std::string CustomCSSText() const = 0;
+  virtual String CustomCSSText() const = 0;
   virtual bool operator==(const CSSMathExpressionNode& other) const { return category_ == other.category_; }
 
   virtual bool IsComputationallyIndependent() const = 0;
@@ -276,7 +276,7 @@ class CSSMathExpressionNumericLiteral final : public CSSMathExpressionNode {
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
 
   CSSPrimitiveValue::BoolStatus IsNegative() const final;
-  std::string CustomCSSText() const final;
+  String CustomCSSText() const final;
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
   double DoubleValue() const final;
@@ -338,7 +338,7 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
   CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
-  std::string CustomCSSText() const final { return identifier_; }
+  String CustomCSSText() const final { return identifier_; }
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final { return std::nullopt; }
   double DoubleValue() const final {
@@ -419,7 +419,7 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
   CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
-  std::string CustomCSSText() const final { return getValueName(keyword_); }
+  String CustomCSSText() const final { return getValueName(keyword_); }
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
   double DoubleValue() const final {
@@ -570,7 +570,7 @@ class CSSMathExpressionOperation final : public CSSMathExpressionNode {
   bool AccumulateLengthArray(CSSLengthArray& length_array, double multiplier) const final;
   void AccumulateLengthUnitTypes(CSSPrimitiveValue::LengthTypeFlags& types) const final;
   bool IsComputationallyIndependent() const final;
-  std::string CustomCSSText() const final;
+  String CustomCSSText() const final;
   bool operator==(const CSSMathExpressionNode& exp) const final;
   CSSPrimitiveValue::UnitType ResolvedUnitType() const final;
   std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope*) const final;
@@ -640,7 +640,7 @@ class CSSMathExpressionContainerFeature final : public CSSMathExpressionNode {
 
   CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
-  std::string CustomCSSText() const final;
+  String CustomCSSText() const final;
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
   double DoubleValue() const final {
@@ -735,7 +735,7 @@ struct DowncastTraits<CSSMathExpressionContainerFeature> {
 //    return;
 //  }
 //
-//  std::string CustomCSSText() const final;
+//  String CustomCSSText() const final;
 //  std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
 //  bool operator==(const CSSMathExpressionNode& other) const final;
 //  std::shared_ptr<const CSSMathExpressionNode> PopulateWithTreeScope(const TreeScope*) const final;

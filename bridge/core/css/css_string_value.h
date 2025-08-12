@@ -16,7 +16,7 @@ class CSSStringValue : public CSSValue {
 
   const std::string& Value() const { return string_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSStringValue& other) const { return string_ == other.string_; }
 

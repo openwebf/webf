@@ -17,7 +17,7 @@ namespace cssvalue {
 CSSViewValue::CSSViewValue(const CSSValue* axis, const CSSValue* inset)
     : CSSValue(kViewClass), axis_(axis), inset_(inset) {}
 
-std::string CSSViewValue::CustomCSSText() const {
+String CSSViewValue::CustomCSSText() const {
   StringBuilder result;
   result.Append("view(");
   if (axis_) {

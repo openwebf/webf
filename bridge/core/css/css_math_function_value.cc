@@ -144,7 +144,7 @@ static std::string BuildCSSText(const std::string& expression) {
   return result;
 }
 
-std::string CSSMathFunctionValue::CustomCSSText() const {
+String CSSMathFunctionValue::CustomCSSText() const {
   const std::string& expression_text = expression_->CustomCSSText();
   if (expression_->IsMathFunction()) {
     // If |expression_| is already a math function (e.g., min/max), we don't

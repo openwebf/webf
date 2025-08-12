@@ -56,7 +56,7 @@ const std::shared_ptr<const CSSImageSetOptionValue> CSSImageSetValue::GetBestOpt
   //   4. The image-set() function then represents the <image> of the chosen
   //      <image-set-option>."
 
-  if (options_.empty()) {
+  if (options_.IsEmpty()) {
     for (const auto& i : *this) {
       auto option = std::static_pointer_cast<const CSSImageSetOptionValue>(i);
       if (option->IsSupported()) {
@@ -64,7 +64,7 @@ const std::shared_ptr<const CSSImageSetOptionValue> CSSImageSetValue::GetBestOpt
       }
     }
 
-    if (options_.empty()) {
+    if (options_.IsEmpty()) {
       // No supported options were identified in the image-set.
       // As an optimization in order to avoid having to iterate
       // through the unsupported options on subsequent calls,
@@ -90,7 +90,7 @@ const std::shared_ptr<const CSSImageSetOptionValue> CSSImageSetValue::GetBestOpt
   return options_.back();
 }
 
-std::string CSSImageSetValue::CustomCSSText() const {
+String CSSImageSetValue::CustomCSSText() const {
   StringBuilder result;
   result.Append("image-set(");
 

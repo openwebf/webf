@@ -10,7 +10,7 @@ namespace cssvalue {
 CSSRatioValue::CSSRatioValue(const CSSPrimitiveValue& first, const CSSPrimitiveValue& second)
     : CSSValue(kRatioClass), first_(&first), second_(&second) {}
 
-std::string CSSRatioValue::CustomCSSText() const {
+String CSSRatioValue::CustomCSSText() const {
   std::string builder;
   builder.append(first_->CssText());
   builder.append(" / ");

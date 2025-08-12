@@ -39,6 +39,7 @@
 #include <memory>
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "bindings/qjs/cppgc/member.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -53,7 +54,7 @@ class MediaQuery {
 
   static std::shared_ptr<MediaQuery> CreateNotAll();
 
-  MediaQuery(RestrictorType, std::string media_type, std::shared_ptr<const MediaQueryExpNode>);
+  MediaQuery(RestrictorType, const String& media_type, std::shared_ptr<const MediaQueryExpNode>);
   MediaQuery(const MediaQuery&);
   MediaQuery& operator=(const MediaQuery&) = delete;
   ~MediaQuery();
@@ -62,13 +63,13 @@ class MediaQuery {
   bool HasUnknown() const { return has_unknown_; }
   RestrictorType Restrictor() const;
   const MediaQueryExpNode* ExpNode() const;
-  const std::string& MediaType() const;
+  const String& MediaType() const;
   bool operator==(const MediaQuery& other) const;
-  std::string CssText() const;
+  String CssText() const;
 
  private:
-  std::string media_type_;
-  std::optional<std::string> serialization_cache_;
+  String media_type_;
+  mutable String serialization_cache_;
   std::shared_ptr<const MediaQueryExpNode> exp_node_;
 
   RestrictorType restrictor_;
@@ -81,7 +82,7 @@ class MediaQuery {
   // testing purposes.
   bool has_unknown_;
 
-  std::string Serialize() const;
+  String Serialize() const;
 };
 
 }  // namespace webf

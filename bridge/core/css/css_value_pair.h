@@ -28,6 +28,7 @@
 // #include "core/core_export.h"
 #include "core/css/css_value.h"
 #include "foundation/casting.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -48,17 +49,17 @@ class CSSValuePair : public CSSValue {
 
   bool KeepIdenticalValues() const { return identical_values_policy_ == kKeepIdenticalValues; }
 
-  std::string CustomCSSText() const {
-    std::string first = first_->CssText();
-    std::string second = second_->CssText();
+  String CustomCSSText() const {
+    String first = first_->CssText();
+    String second = second_->CssText();
     if (identical_values_policy_ == kDropIdenticalValues && first == second) {
       return first;
     }
-    std::string result;
-    result.append(first);
-    result.append(" ");
-    result.append(second);
-    return result;
+    StringBuilder result;
+    result.Append(first);
+    result.Append(" ");
+    result.Append(second);
+    return result.ReleaseString();
   }
 
   bool Equals(const CSSValuePair& other) const {

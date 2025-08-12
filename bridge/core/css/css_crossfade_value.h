@@ -46,7 +46,7 @@ class CSSCrossfadeValue final : public CSSImageGeneratorValue {
   }
   bool IsPrefixedVariant() const { return is_prefixed_variant_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool HasFailedOrCanceledSubresources() const;
   bool Equals(const CSSCrossfadeValue&) const;
 

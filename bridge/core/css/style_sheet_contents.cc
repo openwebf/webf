@@ -222,7 +222,7 @@ void StyleSheetContents::ParserAppendRule(std::shared_ptr<StyleRuleBase> rule) {
   //  if (auto* namespace_rule = DynamicTo<StyleRuleNamespace>(rule)) {
   //    // Parser enforces that @namespace rules come before all rules other than
   //    // import/charset rules and empty layer statements
-  //    DCHECK(child_rules_.empty());
+  //    DCHECK(child_rules_.IsEmpty());
   //    ParserAddNamespace(namespace_rule->Prefix(), namespace_rule->Uri());
   //    namespace_rules_.push_back(namespace_rule);
   //    return;

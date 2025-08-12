@@ -17,7 +17,7 @@ StyleRuleKeyframe::StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>
     : StyleRuleBase(kKeyframe), properties_(properties), keys_(*keys) {}
 
 std::string StyleRuleKeyframe::KeyText() const {
-  DCHECK(!keys_.empty());
+  DCHECK(!keys_.IsEmpty());
 
   StringBuilder key_text;
   for (unsigned i = 0; i < keys_.size(); ++i) {
@@ -36,7 +36,7 @@ std::string StyleRuleKeyframe::KeyText() const {
 }
 
 bool StyleRuleKeyframe::SetKeyText(const ExecutingContext* execution_context, const std::string& key_text) {
-  DCHECK(!key_text.empty());
+  DCHECK(!key_text.IsEmpty());
 
   auto context = std::make_shared<CSSParserContext>(execution_context);
 
@@ -66,7 +66,7 @@ std::string StyleRuleKeyframe::CssText() const {
   result.Append(" { ");
   std::string decls = properties_->AsText();
   result.Append(decls);
-  if (!decls.empty()) {
+  if (!decls.IsEmpty()) {
     result.Append(' ');
   }
   result.Append('}');

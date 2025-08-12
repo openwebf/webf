@@ -6,7 +6,7 @@
 #define THIRD_PARTY_BLINK_RENDERER_CORE_CSS_PARSER_AT_RULE_DESCRIPTORS_H_
 
 #include "css_property_names.h"
-#include <string_view>
+#include "foundation/string/string_view.h"
 #include <string.h>
 
 namespace webf {

@@ -27,6 +27,7 @@
 
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "core/base/memory/values_equivalent.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -38,7 +39,7 @@ class CSSValue : public std::enable_shared_from_this<CSSValue> {
  public:
   static std::shared_ptr<const CSSValue> Create(const Length& value, float zoom);
 
-  std::string CssText() const;
+  String CssText() const;
 
   [[nodiscard]] bool IsNumericLiteralValue() const { return class_type_ == kNumericLiteralClass; }
   bool IsMathFunctionValue() const { return class_type_ == kMathFunctionClass; }

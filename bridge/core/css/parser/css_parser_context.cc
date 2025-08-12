@@ -13,10 +13,13 @@
 namespace webf {
 
 CSSParserContext::CSSParserContext(CSSParserMode mode, const Document* use_counter_document)
-    : CSSParserContext("", mode, nullptr) {}
+    : CSSParserContext(String(), mode, nullptr) {}
 
 CSSParserContext::CSSParserContext(const Document& document, const std::string& base_url_override)
     : document_(&document), base_url_(base_url_override) {}
+
+CSSParserContext::CSSParserContext(const Document& document, const String& base_url_override)
+    : document_(&document), base_url_(base_url_override.ToStdString(std::string())) {}
 
 CSSParserContext::CSSParserContext(const CSSParserContext* other, const StyleSheetContents* style_sheet_contents)
     : document_(StyleSheetContents::SingleOwnerDocument(style_sheet_contents)),
@@ -27,6 +30,11 @@ CSSParserContext::CSSParserContext(const std::string& base_url,
                                    webf::CSSParserMode mode,
                                    const webf::Document* use_counter_document)
     : document_(use_counter_document), mode_(mode), base_url_(base_url) {}
+
+CSSParserContext::CSSParserContext(const String& base_url,
+                                   webf::CSSParserMode mode,
+                                   const webf::Document* use_counter_document)
+    : document_(use_counter_document), mode_(mode), base_url_(base_url.ToStdString(std::string())) {}
 
 CSSParserContext::CSSParserContext(const webf::ExecutingContext* context)
     : document_(context->document()), base_url_("") {}

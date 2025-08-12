@@ -48,7 +48,7 @@ class CSSFontStyleRangeValue final : public CSSValue {
   std::shared_ptr<const CSSIdentifierValue> GetFontStyleValue() const { return font_style_value_; }
   std::shared_ptr<const CSSValueList> GetObliqueValues() const { return oblique_values_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSFontStyleRangeValue&) const;
 

@@ -34,7 +34,7 @@
 
 namespace webf::cssvalue {
 
-std::string CSSLinearTimingFunctionValue::CustomCSSText() const {
+String CSSLinearTimingFunctionValue::CustomCSSText() const {
   std::string builder;
   builder.append("linear(");
   for (uint32_t i = 0; i < points_.size(); ++i) {
@@ -55,7 +55,7 @@ bool CSSLinearTimingFunctionValue::Equals(const CSSLinearTimingFunctionValue& ot
                     [](const auto& a, const auto& b) { return a.input == b.input && a.output == b.output; });
 }
 
-std::string CSSCubicBezierTimingFunctionValue::CustomCSSText() const {
+String CSSCubicBezierTimingFunctionValue::CustomCSSText() const {
   return "cubic-bezier(" + std::to_string(x1_) + ", " + std::to_string(y1_) + ", " + std::to_string(x2_) + ", " +
          std::to_string(y2_) + ")";
 }
@@ -64,7 +64,7 @@ bool CSSCubicBezierTimingFunctionValue::Equals(const CSSCubicBezierTimingFunctio
   return x1_ == other.x1_ && x2_ == other.x2_ && y1_ == other.y1_ && y2_ == other.y2_;
 }
 
-std::string CSSStepsTimingFunctionValue::CustomCSSText() const {
+String CSSStepsTimingFunctionValue::CustomCSSText() const {
   std::string step_position_string;
   switch (step_position_) {
     case StepsTimingFunction::StepPosition::START:
@@ -94,7 +94,7 @@ std::string CSSStepsTimingFunctionValue::CustomCSSText() const {
   // https://drafts.csswg.org/css-easing-1/#serialization
   // If the step position is jump-end or end, serialize as steps(<integer>).
   // Otherwise, serialize as steps(<integer>, <step-position>).
-  if (step_position_string.empty()) {
+  if (step_position_string.IsEmpty()) {
     return "steps(" + std::to_string(steps_) + ')';
   }
 

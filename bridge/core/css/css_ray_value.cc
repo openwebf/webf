@@ -18,7 +18,7 @@ CSSRayValue::CSSRayValue(const std::shared_ptr<const CSSPrimitiveValue>& angle,
                          const std::shared_ptr<const CSSValue>& center_y)
     : CSSValue(kRayClass), angle_(angle), size_(size), contain_(contain), center_x_(center_x), center_y_(center_y) {}
 
-std::string CSSRayValue::CustomCSSText() const {
+String CSSRayValue::CustomCSSText() const {
   StringBuilder result;
   result.Append("ray(");
   result.Append(angle_->CssText());

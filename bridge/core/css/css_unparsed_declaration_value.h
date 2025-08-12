@@ -50,7 +50,7 @@ class CSSUnparsedDeclarationValue final : public CSSValue {
   }
 
   bool Equals(const CSSUnparsedDeclarationValue& other) const { return data_ == other.data_; }
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

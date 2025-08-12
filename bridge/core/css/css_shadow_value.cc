@@ -37,7 +37,7 @@ CSSShadowValue::CSSShadowValue(const std::shared_ptr<const CSSPrimitiveValue>& x
                                const std::shared_ptr<const CSSValue>& color)
     : CSSValue(kShadowClass), x(x), y(y), blur(blur), spread(spread), style(style), color(color) {}
 
-std::string CSSShadowValue::CustomCSSText() const {
+String CSSShadowValue::CustomCSSText() const {
   std::string text = "";
 
   if (color) {

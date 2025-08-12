@@ -57,7 +57,7 @@ static std::string StringForPosition(const NamedGridAreaMap& grid_area_map, size
   return ".";
 }
 
-std::string CSSGridTemplateAreasValue::CustomCSSText() const {
+String CSSGridTemplateAreasValue::CustomCSSText() const {
   StringBuilder builder;
   for (size_t row = 0; row < row_count_; ++row) {
     builder.Append('"');

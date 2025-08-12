@@ -160,11 +160,11 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenStream& stre
       if (!font_format) {
         return nullptr;
       }
-      sanitized_format = font_format->CssText();
+      sanitized_format = font_format->CssText().StdUtf8();
     }
 
     if (peek_type == kStringToken) {
-      sanitized_format = css_parsing_utils::ConsumeString(stream)->Value();
+      sanitized_format = css_parsing_utils::ConsumeString(stream)->Value().StdUtf8();
     }
 
     if (IsSupportedFontFormat(sanitized_format)) {
@@ -204,14 +204,14 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcLocal(CSSParserTokenStream& st
     if (!stream.AtEnd()) {
       return nullptr;
     }
-    return CSSFontFaceSrcValue::CreateLocal(std::string(arg.Value()));
+    return CSSFontFaceSrcValue::CreateLocal(String(arg.Value()));
   }
   if (stream.Peek().GetType() == kIdentToken) {
-    std::string family_name = css_parsing_utils::ConcatenateFamilyName(stream);
+    String family_name = css_parsing_utils::ConcatenateFamilyName(stream);
     if (!stream.AtEnd()) {
       return nullptr;
     }
-    if (family_name.empty()) {
+    if (family_name.IsEmpty()) {
       return nullptr;
     }
     return CSSFontFaceSrcValue::CreateLocal(family_name);

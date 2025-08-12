@@ -70,10 +70,10 @@ KleeneValue KleeneAnd(KleeneValue a, KleeneValue b) {
 }  // namespace
 
 using EvalFunc = bool (*)(const MediaQueryExpValue&, MediaQueryOperator, const MediaValues&);
-using FunctionMap = std::unordered_map<std::string, EvalFunc>;
+using FunctionMap = std::unordered_map<StringImpl*, EvalFunc>;
 thread_local static FunctionMap* g_function_map;
 
-MediaQueryEvaluator::MediaQueryEvaluator(const char* accepted_media_type) : media_type_(accepted_media_type) {}
+MediaQueryEvaluator::MediaQueryEvaluator(const char* accepted_media_type) : media_type_(String::FromUTF8(accepted_media_type)) {}
 
 MediaQueryEvaluator::MediaQueryEvaluator(ExecutingContext* frame)
     : media_values_(MediaValues::CreateDynamicIfFrameExists(frame)) {}
@@ -84,20 +84,20 @@ MediaQueryEvaluator::~MediaQueryEvaluator() = default;
 
 void MediaQueryEvaluator::Trace(GCVisitor* visitor) const {}
 
-const std::string MediaQueryEvaluator::MediaType() const {
+const String MediaQueryEvaluator::MediaType() const {
   // If a static mediaType was given by the constructor, we use it here.
-  if (!media_type_.empty()) {
+  if (!media_type_.IsEmpty()) {
     return media_type_;
   }
   // Otherwise, we get one from mediaValues (which may be dynamic or cached).
   if (media_values_) {
     return media_values_->MediaType();
   }
-  return "";
+  return String();
 }
 
-bool MediaQueryEvaluator::MediaTypeMatch(const std::string& media_type_to_match) const {
-  return media_type_to_match.empty() || EqualIgnoringASCIICase(media_type_to_match, media_type_names_stdstring::kAll) ||
+bool MediaQueryEvaluator::MediaTypeMatch(const String& media_type_to_match) const {
+  return media_type_to_match.IsEmpty() || EqualIgnoringASCIICase(media_type_to_match, String(media_type_names_atomicstring::kAll)) ||
          EqualIgnoringASCIICase(media_type_to_match, MediaType());
 }
 
@@ -430,9 +430,9 @@ static bool EvalResolution(const MediaQueryExpValue& value, MediaQueryOperator o
   // this method only got called if this media type matches the one defined
   // in the query. Thus, if if the document's media type is "print", the
   // media type of the query will either be "print" or "all".
-  if (EqualIgnoringASCIICase(media_values.MediaType(), media_type_names_stdstring::kScreen)) {
+  if (EqualIgnoringASCIICase(media_values.MediaType(), media_type_names_atomicstring::kScreen)) {
     actual_resolution = ClampTo<float>(media_values.DevicePixelRatio());
-  } else if (EqualIgnoringASCIICase(media_values.MediaType(), media_type_names_stdstring::kPrint)) {
+  } else if (EqualIgnoringASCIICase(media_values.MediaType(), media_type_names_atomicstring::kPrint)) {
     // The resolution of images while printing should not depend on the DPI
     // of the screen. Until we support proper ways of querying this info
     // we use 300px which is considered minimum for current printers.

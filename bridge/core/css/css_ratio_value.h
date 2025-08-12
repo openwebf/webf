@@ -22,7 +22,7 @@ class CSSRatioValue : public CSSValue {
   // Denominator, but called 'second' by the spec.
   const CSSPrimitiveValue& Second() const { return *second_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   bool Equals(const CSSRatioValue&) const;
 
   void TraceAfterDispatch(GCVisitor* visitor) const {

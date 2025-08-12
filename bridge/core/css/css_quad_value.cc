@@ -10,7 +10,7 @@
 
 namespace webf {
 
-std::string CSSQuadValue::CustomCSSText() const {
+String CSSQuadValue::CustomCSSText() const {
   std::string top = top_->CssText();
   std::string right = right_->CssText();
   std::string bottom = bottom_->CssText();

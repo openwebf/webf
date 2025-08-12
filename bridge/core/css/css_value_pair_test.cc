@@ -85,7 +85,7 @@ TEST_F(CSSValuePairTest, CssTextKeepIdentical) {
   auto blue = CSSIdentifierValue::Create(CSSValueID::kBlue);
   
   CSSValuePair pair_different(red, blue, CSSValuePair::kKeepIdenticalValues);
-  std::string css_text = pair_different.CustomCSSText();
+  String css_text = pair_different.CustomCSSText();
   EXPECT_EQ("red blue", css_text);
   
   // Test with identical values
@@ -99,7 +99,7 @@ TEST_F(CSSValuePairTest, CssTextDropIdentical) {
   auto blue = CSSIdentifierValue::Create(CSSValueID::kBlue);
   
   CSSValuePair pair_different(red, blue, CSSValuePair::kDropIdenticalValues);
-  std::string css_text = pair_different.CustomCSSText();
+  String css_text = pair_different.CustomCSSText();
   EXPECT_EQ("red blue", css_text);
   
   // Test with identical values - should drop the second one
@@ -133,7 +133,7 @@ TEST_F(CSSValuePairTest, BackgroundPosition) {
   EXPECT_EQ(left, position.First());
   EXPECT_EQ(top, position.Second());
   
-  std::string css_text = position.CustomCSSText();
+  String css_text = position.CustomCSSText();
   EXPECT_EQ("left top", css_text);
 }
 
@@ -147,7 +147,7 @@ TEST_F(CSSValuePairTest, BorderRadius) {
   EXPECT_EQ(px10, radius.First());
   EXPECT_EQ(px20, radius.Second());
   
-  std::string css_text = radius.CustomCSSText();
+  String css_text = radius.CustomCSSText();
   EXPECT_EQ("\"10px\" \"20px\"", css_text);
 }
 
@@ -163,7 +163,7 @@ TEST_F(CSSValuePairTest, BorderRadiusIdentical) {
   
   // Note: This test assumes the CSS text generation logic handles identical value dropping
   // The actual behavior may vary based on implementation
-  std::string css_text = radius.CustomCSSText();
+  String css_text = radius.CustomCSSText();
   // Should be either "10px" (dropped) or "10px 10px" (kept) depending on implementation
   EXPECT_TRUE(css_text == "\"10px\"" || css_text == "\"10px\" \"10px\"");
 }
@@ -177,7 +177,7 @@ TEST_F(CSSValuePairTest, MixedValueTypes) {
   EXPECT_EQ(color, mixed.First());
   EXPECT_EQ(string, mixed.Second());
   
-  std::string css_text = mixed.CustomCSSText();
+  String css_text = mixed.CustomCSSText();
   EXPECT_EQ("red \"Arial\"", css_text);
 }
 

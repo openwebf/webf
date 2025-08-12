@@ -17,12 +17,18 @@ WidgetElement::WidgetElement(const AtomicString& tag_name, Document* document)
 
 bool WidgetElement::IsValidName(const AtomicString& name) {
   assert(Document::IsValidName(name));
-  std::string_view string_view = name.ToUTF8StringView();
-
-  const char* string = string_view.data();
-  for (int i = 0; i < string_view.length(); i++) {
-    if (string[i] == '-')
-      return true;
+  if (name.Is8Bit()) {
+    const LChar* string = name.Characters8();
+    for (size_t i = 0; i < name.length(); i++) {
+      if (string[i] == '-')
+        return true;
+    }
+  } else {
+    const UChar* string = name.Characters16();
+    for (size_t i = 0; i < name.length(); i++) {
+      if (string[i] == '-')
+        return true;
+    }
   }
 
   return false;
@@ -47,16 +53,15 @@ static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
     return false;
   }
 
-  std::string_view string_view = key.ToUTF8StringView();
-  const char* string = string_view.data();
-
   const char* suffix = "_async";
-  size_t str_len = string_view.length();
+  size_t str_len = key.length();
   size_t suffix_len = std::strlen(suffix);
 
   if (str_len < suffix_len) {
     return false;  // String is shorter than the suffix
   }
+
+  const LChar* string = key.Characters8();
 
   // Compare the suffix part of the string
   bool is_match = std::strcmp(string + (str_len - suffix_len), suffix) == 0;

@@ -45,7 +45,7 @@ class MediaValues : public CSSLengthResolver {
   virtual int MonochromeBitsPerComponent() const = 0;
   virtual bool InvertedColors() const = 0;
   virtual bool ThreeDEnabled() const = 0;
-  virtual const std::string MediaType() const = 0;
+  virtual const String MediaType() const = 0;
   virtual bool Resizable() const = 0;
   virtual bool StrictMode() const = 0;
   virtual Document* GetDocument() const = 0;

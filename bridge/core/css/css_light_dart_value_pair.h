@@ -13,7 +13,7 @@ class CSSLightDarkValuePair : public CSSValuePair {
  public:
   CSSLightDarkValuePair(const std::shared_ptr<const CSSValue>& first, const std::shared_ptr<const CSSValue>& second)
       : CSSValuePair(kLightDarkValuePairClass, first, second) {}
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   void TraceAfterDispatch(GCVisitor* visitor) const { CSSValuePair::TraceAfterDispatch(visitor); }
 };
 

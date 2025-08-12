@@ -52,7 +52,7 @@ class CSSLinearTimingFunctionValue : public CSSValue {
   explicit CSSLinearTimingFunctionValue(const std::vector<gfx::LinearEasingPoint>& points)
       : CSSValue(kLinearTimingFunctionClass), points_(points) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
   const std::vector<gfx::LinearEasingPoint>& Points() const { return points_; }
 
   bool Equals(const CSSLinearTimingFunctionValue&) const;
@@ -68,7 +68,7 @@ class CSSCubicBezierTimingFunctionValue : public CSSValue {
   CSSCubicBezierTimingFunctionValue(double x1, double y1, double x2, double y2)
       : CSSValue(kCubicBezierTimingFunctionClass), x1_(x1), y1_(y1), x2_(x2), y2_(y2) {}
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   double X1() const { return x1_; }
   double Y1() const { return y1_; }
@@ -94,7 +94,7 @@ class CSSStepsTimingFunctionValue : public CSSValue {
   int NumberOfSteps() const { return steps_; }
   StepsTimingFunction::StepPosition GetStepPosition() const { return step_position_; }
 
-  std::string CustomCSSText() const;
+  String CustomCSSText() const;
 
   bool Equals(const CSSStepsTimingFunctionValue&) const;
 

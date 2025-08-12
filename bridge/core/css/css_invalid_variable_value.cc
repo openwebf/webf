@@ -13,7 +13,7 @@ std::shared_ptr<const CSSInvalidVariableValue> CSSInvalidVariableValue::Create()
   return CssValuePool().InvalidVariableValue();
 }
 
-std::string CSSInvalidVariableValue::CustomCSSText() const {
+String CSSInvalidVariableValue::CustomCSSText() const {
   return "";
 }
 

@@ -17,7 +17,7 @@ std::shared_ptr<const CSSUnsetValue> CSSUnsetValue::Create() {
   return CssValuePool().UnsetValue();
 }
 
-std::string CSSUnsetValue::CustomCSSText() const {
+String CSSUnsetValue::CustomCSSText() const {
   return "unset";
 }
 

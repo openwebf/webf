@@ -41,7 +41,7 @@
 namespace webf {
 
 // https://drafts.csswg.org/cssom/#serialize-a-media-query
-std::string MediaQuery::Serialize() const {
+String MediaQuery::Serialize() const {
   StringBuilder result;
   switch (Restrictor()) {
     case RestrictorType::kOnly:
@@ -61,7 +61,7 @@ std::string MediaQuery::Serialize() const {
     return result.ReleaseString();
   }
 
-  if (MediaType() != media_type_names_stdstring::kAll || Restrictor() != RestrictorType::kNone) {
+  if (MediaType() != String(media_type_names_atomicstring::kAll.Impl()) || Restrictor() != RestrictorType::kNone) {
     result.Append(MediaType());
     result.Append(" and ");
   }
@@ -74,13 +74,13 @@ std::string MediaQuery::Serialize() const {
 }
 
 std::shared_ptr<MediaQuery> MediaQuery::CreateNotAll() {
-  return std::make_shared<MediaQuery>(RestrictorType::kNot, media_type_names_stdstring::kAll, nullptr /* exp_node */);
+  return std::make_shared<MediaQuery>(RestrictorType::kNot, String(media_type_names_atomicstring::kAll), nullptr /* exp_node */);
 }
 
 MediaQuery::MediaQuery(RestrictorType restrictor,
-                       std::string media_type,
+                       const String& media_type,
                        std::shared_ptr<const MediaQueryExpNode> exp_node)
-    : media_type_(base::ToLowerASCII(media_type)),
+    : media_type_(media_type.LowerASCII()),
       exp_node_(exp_node),
       restrictor_(restrictor),
       has_unknown_(exp_node_ ? exp_node_->HasUnknown() : false) {}
@@ -106,7 +106,7 @@ const MediaQueryExpNode* MediaQuery::ExpNode() const {
   return exp_node_.get();
 }
 
-const std::string& MediaQuery::MediaType() const {
+const String& MediaQuery::MediaType() const {
   return media_type_;
 }
 
@@ -116,12 +116,12 @@ bool MediaQuery::operator==(const MediaQuery& other) const {
 }
 
 // https://drafts.csswg.org/cssom/#serialize-a-list-of-media-queries
-std::string MediaQuery::CssText() const {
-  if (!serialization_cache_.has_value()) {
-    const_cast<MediaQuery*>(this)->serialization_cache_ = Serialize();
+String MediaQuery::CssText() const {
+  if (serialization_cache_.IsNull()) {
+    serialization_cache_ = Serialize();
   }
 
-  return serialization_cache_.value();
+  return serialization_cache_;
 }
 
 }  // namespace webf

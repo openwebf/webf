@@ -6,7 +6,7 @@
 
 namespace webf {
 
-std::string CSSAppearanceAutoBaseSelectValuePair::CustomCSSText() const {
+String CSSAppearanceAutoBaseSelectValuePair::CustomCSSText() const {
   std::string first = First()->CssText();
   std::string second = Second()->CssText();
   return "-internal-appearance-auto-base-select(" + first + ", " + second + ")";
