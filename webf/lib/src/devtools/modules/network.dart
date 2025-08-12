@@ -4,11 +4,9 @@
  */
 
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
@@ -16,14 +14,9 @@ import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/foundation/dio_client.dart';
 
-class InspectNetworkModule extends UIInspectorModule implements HttpClientInterceptor {
+class InspectNetworkModule extends UIInspectorModule {
   InspectNetworkModule(DevToolsService devtoolsService) : super(devtoolsService) {
-    _registerHttpClientInterceptor();
     _maybeRegisterDioInterceptor();
-  }
-
-  void _registerHttpClientInterceptor() {
-    setupHttpOverrides(this, contextId: devtoolsService.controller!.view.contextId);
   }
 
   void _maybeRegisterDioInterceptor() {
@@ -44,8 +37,6 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
       }
     });
   }
-
-  HttpClientInterceptor? get _customHttpClientInterceptor => devtoolsService.controller?.httpClientInterceptor;
 
   @override
   String get name => 'Network';
@@ -97,130 +88,8 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
     }
   }
 
-  @override
-  Future<HttpClientRequest?> beforeRequest(String requestId, HttpClientRequest request) {
-    List<int> data = List<int>.from((request as ProxyHttpClientRequest).data);
-    
-    // Store request in NetworkStore
-    final contextId = devtoolsService.controller!.view.contextId;
-    final networkRequest = NetworkRequest(
-      requestId: requestId,
-      url: request.uri.toString(),
-      method: request.method,
-      requestHeaders: _getHttpHeaders(request.headers),
-      requestData: data,
-      startTime: DateTime.now(),
-    );
-    NetworkStore().addRequest(contextId.toInt(), networkRequest);
-
-    sendEventToFrontend(NetworkRequestWillBeSentEvent(
-      requestId: requestId,
-      loaderId: devtoolsService.controller!.view.contextId.toString(),
-      requestMethod: request.method,
-      url: request.uri.toString(),
-      headers: _getHttpHeaders(request.headers),
-      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
-      data: data,
-    ));
-
-    Map<String, List<String>> extraHeaders = {
-      ':authority': [request.uri.authority],
-      ':method': [request.method],
-      ':path': [request.uri.path],
-      ':scheme': [request.uri.scheme],
-    };
-    sendEventToFrontend(NetworkRequestWillBeSendExtraInfo(
-          associatedCookies: [],
-          clientSecurityState: {
-          'initiatorIsSecureContext': true,
-          'initiatorIPAddressSpace': 'Local',
-          'privateNetworkRequestPolicy': 'PreflightWarn'
-        },
-        connectTiming: {
-          'requestTime': 100000
-        },
-        headers: {
-          ..._getHttpHeaders(request.headers),
-          ...extraHeaders
-        },
-        siteHasCookieInOtherPartition: false,
-        requestId: requestId));
-    HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
-    if (customHttpClientInterceptor != null) {
-      return customHttpClientInterceptor.beforeRequest(requestId, request);
-    } else {
-      return Future.value(null);
-    }
-  }
-
-  @override
-  Future<HttpClientResponse?> afterResponse(String requestId, HttpClientRequest request, HttpClientResponse response) async {
-    if (devtoolsService.controller == null) {
-      return response;
-    }
-
-    sendEventToFrontend(NetworkResponseReceivedEvent(
-      requestId: requestId,
-      loaderId: devtoolsService.controller!.view.contextId.toString(),
-      url: request.uri.toString(),
-      headers: _getHttpHeaders(response.headers),
-      status: response.statusCode,
-      statusText: response.reasonPhrase,
-      mimeType: response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain',
-      remoteIPAddress: response.connectionInfo!.remoteAddress.address,
-      remotePort: response.connectionInfo!.remotePort,
-      // HttpClientStreamResponse is the internal implementation for disk cache.
-      fromDiskCache: response is HttpClientStreamResponse,
-      encodedDataLength: response.contentLength,
-      protocol: request.uri.scheme,
-      type: _getRequestType(request),
-      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
-    ));
-    sendEventToFrontend(NetworkLoadingFinishedEvent(
-      requestId: requestId,
-      contentLength: response.contentLength,
-      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
-    ));
-    Uint8List data = await consolidateHttpClientResponseBytes(response);
-    _responseBuffers[requestId] = data;
-    
-    // Update response data in NetworkStore
-    NetworkStore().updateRequest(
-      requestId,
-      responseHeaders: _getHttpHeaders(response.headers),
-      statusCode: response.statusCode,
-      statusText: response.reasonPhrase,
-      mimeType: response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain',
-      responseBody: data,
-      endTime: DateTime.now(),
-      contentLength: response.contentLength,
-      fromCache: response is HttpClientStreamResponse,
-      remoteIPAddress: response.connectionInfo?.remoteAddress.address,
-      remotePort: response.connectionInfo?.remotePort,
-    );
-
-    HttpClientStreamResponse proxyResponse = HttpClientStreamResponse(Stream.value(data),
-        statusCode: response.statusCode,
-        reasonPhrase: response.reasonPhrase,
-        initialHeaders: createHttpHeaders(initialHeaders: _getHttpHeaders(response.headers)));
-
-    HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
-    if (customHttpClientInterceptor != null) {
-      return customHttpClientInterceptor.afterResponse(requestId, request, proxyResponse);
-    } else {
-      return Future.value(proxyResponse);
-    }
-  }
-
-  @override
-  Future<HttpClientResponse?> shouldInterceptRequest(String requestId, HttpClientRequest request) {
-    HttpClientInterceptor? customHttpClientInterceptor = _customHttpClientInterceptor;
-    if (customHttpClientInterceptor != null) {
-      return customHttpClientInterceptor.shouldInterceptRequest(requestId, request);
-    } else {
-      return Future.value(null);
-    }
-  }
+  // Legacy HttpClientInterceptor support has been removed. Network inspection now
+  // relies on Dio interceptors when Dio networking is enabled.
 }
 
 class _InspectDioInterceptor extends InterceptorsWrapper {
@@ -603,7 +472,7 @@ class NetworkRequestWillBeSendExtraInfo extends InspectorEvent {
 class NetworkResponseReceivedExtraInfo extends InspectorEvent {
   final Map<String, dynamic> blockedCookies;
   final String cookiePartitionKey;
-  final Bool cookiePartitionKeyOpaque;
+  final bool cookiePartitionKeyOpaque;
   final Map<String, List<String>> headers;
   final String requestId;
   final Map<String, dynamic> resourceIPAddressSpace;
@@ -707,33 +576,4 @@ class NetworkRequestServedFromCache extends InspectorEvent {
   JSONEncodable? get params => JSONEncodableMap({
         'requestId': requestId,
       });
-}
-
-Map<String, List<String>> _getHttpHeaders(HttpHeaders headers) {
-  Map<String, List<String>> map = {};
-  headers.forEach((String name, List<String> values) {
-    map[name] = values;
-  });
-  return map;
-}
-
-// Allowed Values: Document, Stylesheet, Image, Media, Font, Script, TextTrack, XHR, Fetch, EventSource, WebSocket,
-// Manifest, SignedExchange, Ping, CSPViolationReport, Preflight, Other
-String _getRequestType(HttpClientRequest request) {
-  String urlPath = request.uri.path;
-  if (urlPath.endsWith('.js')) {
-    return 'Script';
-  } else if (urlPath.endsWith('.css')) {
-    return 'Stylesheet';
-  } else if (urlPath.endsWith('.jpg') ||
-      urlPath.endsWith('.png') ||
-      urlPath.endsWith('.gif') ||
-      urlPath.endsWith('.webp') ||
-      urlPath.endsWith('.svg')) {
-    return 'Image';
-  } else if (urlPath.endsWith('.html') || urlPath.endsWith('.htm')) {
-    return 'Document';
-  } else {
-    return 'Fetch';
-  }
 }

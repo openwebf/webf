@@ -99,9 +99,9 @@ class WebFControllerManagerConfig {
   /// connections from any network interface.
   final String devToolsAddress;
 
-  /// Use Dio for network requests (via HttpClientInterceptor)
-  /// When true, controllers without an explicit interceptor will route HTTP through Dio
-  /// while preserving WebF's cookie and HTTP cache behavior.
+  /// Use Dio for network requests
+  /// When true, controllers route HTTP through Dio while preserving WebF's cookie
+  /// and HTTP cache behavior.
   final bool useDioForNetwork;
 
   /// Creates a new configuration object for WebFControllerManager.

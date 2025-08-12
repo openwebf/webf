@@ -30,43 +30,15 @@ class WebFHttpOverrides {
   static void setContextHeader(HttpHeaders headers, double contextId) {
     headers.set(HttpHeaderContext, contextId.toString());
   }
-
-  final Map<double, HttpClientInterceptor> _contextIdToHttpClientInterceptorMap = <double, HttpClientInterceptor>{};
-
-  void registerWebFContext(double contextId, HttpClientInterceptor httpClientInterceptor) {
-    _contextIdToHttpClientInterceptorMap[contextId] = httpClientInterceptor;
-  }
-
-  bool unregisterWebFContext(double contextId) {
-    // Returns true if [value] was in the map, false otherwise.
-    return _contextIdToHttpClientInterceptorMap.remove(contextId) != null;
-  }
-
-  bool hasInterceptor(double contextId) {
-    return _contextIdToHttpClientInterceptorMap.containsKey(contextId);
-  }
-
-  HttpClientInterceptor getInterceptor(double contextId) {
-    return _contextIdToHttpClientInterceptorMap[contextId]!;
-  }
-
-  void clearInterceptors() {
-    _contextIdToHttpClientInterceptorMap.clear();
-  }
 }
 
-WebFHttpOverrides setupHttpOverrides(HttpClientInterceptor? httpClientInterceptor, {required double contextId}) {
-  final WebFHttpOverrides httpOverrides = WebFHttpOverrides.instance();
-
-  if (httpClientInterceptor != null) {
-    httpOverrides.registerWebFContext(contextId, httpClientInterceptor);
-  }
-  return httpOverrides;
+WebFHttpOverrides setupHttpOverrides({required double contextId}) {
+  // Kept for compatibility; no-op since HttpClientInterceptor was removed.
+  return WebFHttpOverrides.instance();
 }
 
 void removeHttpOverrides({required double contextId}) {
-  final WebFHttpOverrides httpOverrides = WebFHttpOverrides.instance();
-  httpOverrides.unregisterWebFContext(contextId);
+  // No-op since we no longer keep per-context state here.
 }
 
 /// Creates a WebF-aware HttpClient without modifying global HttpOverrides.

@@ -13,7 +13,6 @@ import 'cookie_jar.dart';
 import 'http_cache.dart';
 import 'http_cache_object.dart';
 import 'http_client.dart';
-import 'http_client_interceptor.dart';
 import 'http_overrides.dart';
 import 'queue.dart';
 import '../launcher/controller.dart' show WebFController; // controller lookup for per-controller cache toggle
@@ -127,35 +126,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
     _backendRequest?.addError(error, stackTrace);
   }
 
-  Future<HttpClientRequest?> _beforeRequest(
-      String requestId, HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest) async {
-    try {
-      return await _clientInterceptor.beforeRequest(requestId, _clientRequest);
-    } catch (err, stack) {
-      print('$err $stack');
-    }
-    return null;
-  }
-
-  Future<HttpClientResponse?> _afterResponse(String requestId, HttpClientInterceptor _clientInterceptor,
-      HttpClientRequest _clientRequest, HttpClientResponse _clientResponse) async {
-    try {
-      return await _clientInterceptor.afterResponse(requestId, _clientRequest, _clientResponse);
-    } catch (err, stack) {
-      print('$err $stack');
-    }
-    return null;
-  }
-
-  Future<HttpClientResponse?> _shouldInterceptRequest(
-      String requestId, HttpClientInterceptor _clientInterceptor, HttpClientRequest _clientRequest) async {
-    try {
-      return await _clientInterceptor.shouldInterceptRequest(requestId, _clientRequest);
-    } catch (err, stack) {
-      print('$err $stack');
-    }
-    return null;
-  }
+  // Legacy HttpClientInterceptor hooks removed.
 
   static const String _HttpHeadersOrigin = 'origin';
 
@@ -210,15 +181,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
         headers.set(_HttpHeadersOrigin, origin);
       }
 
-      HttpClientInterceptor? clientInterceptor;
-      if (_httpOverrides.hasInterceptor(contextId)) {
-        clientInterceptor = _httpOverrides.getInterceptor(contextId);
-      }
-
-      // Step 1: Handle request.
-      if (clientInterceptor != null) {
-        request = await _beforeRequest(requestId, clientInterceptor, request) ?? request;
-      }
+      // Step 1: Prepare request (no custom interceptor).
       await CookieManager.loadForRequest(_uri, request.cookies);
 
       // Step 2: Handle cache-control and expires,
@@ -250,14 +213,6 @@ class ProxyHttpClientRequest implements HttpClientRequest {
               cacheEntryTime: cacheObject.lastUsed,
               cacheHeaders: {},
             );
-
-            // Step 5: Lifecycle of afterResponse for cached responses.
-            if (clientInterceptor != null) {
-              final HttpClientResponse? interceptorResponse = await _afterResponse(requestId, clientInterceptor, request, cacheResponse);
-              if (interceptorResponse != null) {
-                return interceptorResponse;
-              }
-            }
 
             // Track completion for cache hit
             final responseHeaders = <String, String>{};
@@ -299,17 +254,12 @@ class ProxyHttpClientRequest implements HttpClientRequest {
         _data.clear();
       }
 
-      // Step 4: Lifecycle of shouldInterceptRequest
-      HttpClientResponse? response;
-      if (clientInterceptor != null) {
-        response = await _shouldInterceptRequest(requestId, clientInterceptor, request);
-      }
-
-      bool hitInterceptorResponse = response != null;
+      // Step 4: Send network request
+      late HttpClientResponse response;
       bool hitNegotiateCache = false;
 
-      // If cache only, but no cache hit, throw error directly.
-      if (HttpCacheController.mode == HttpCacheMode.CACHE_ONLY && response == null) {
+      // If cache only, but no cache hit (we'd have returned earlier), abort.
+      if (HttpCacheController.mode == HttpCacheMode.CACHE_ONLY) {
         final errorMsg = 'CACHE_ONLY mode but no cache hit';
         // Check if this is a Fetch/XHR request by looking for the marker header
         final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
@@ -317,45 +267,35 @@ class ProxyHttpClientRequest implements HttpClientRequest {
         throw FlutterError('HttpCacheMode is CACHE_ONLY, but no cache hit for $uri');
       }
 
-      // After this, response should not be null.
-      if (!hitInterceptorResponse) {
-        // Handle 304 here.
-        HttpClientResponse rawResponse;
-        try {
-          rawResponse = await request.close();
-          // Track redirects if any occurred
-          if (rawResponse.redirects.isNotEmpty && dumper != null && ownerBundle == null) {
-            for (final redirect in rawResponse.redirects) {
-              dumper.recordNetworkRequestRedirect(
-                _uri.toString(),
-                redirect.location.toString(),
-                statusCode: redirect.statusCode,
-              );
-            }
+      // Handle response and 304 negotiation
+      HttpClientResponse rawResponse;
+      try {
+        rawResponse = await request.close();
+        // Track redirects if any occurred
+        if (rawResponse.redirects.isNotEmpty && dumper != null && ownerBundle == null) {
+          for (final redirect in rawResponse.redirects) {
+            dumper.recordNetworkRequestRedirect(
+              _uri.toString(),
+              redirect.location.toString(),
+              statusCode: redirect.statusCode,
+            );
           }
-        } catch (e) {
-          // If still failing, log and rethrow
-          print('Error closing HTTP request for $uri: $e');
-          // Check if this is a Fetch/XHR request by looking for the marker header
-          final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
-          dumper?.recordNetworkRequestError(_uri.toString(), e.toString(), isXHR: isFetchRequest);
-          rethrow;
         }
-        response = cacheObject == null
-            ? rawResponse
-            : await HttpCacheController.instance(origin)
-                .interceptResponse(request, rawResponse, cacheObject, _nativeHttpClient, ownerBundle);
-        hitNegotiateCache = rawResponse != response;
+      } catch (e) {
+        // If still failing, log and rethrow
+        print('Error closing HTTP request for $uri: $e');
+        // Check if this is a Fetch/XHR request by looking for the marker header
+        final isFetchRequest = headers.value('X-WebF-Request-Type') == 'fetch';
+        dumper?.recordNetworkRequestError(_uri.toString(), e.toString(), isXHR: isFetchRequest);
+        rethrow;
       }
+      response = cacheObject == null
+          ? rawResponse
+          : await HttpCacheController.instance(origin)
+              .interceptResponse(request, rawResponse, cacheObject, _nativeHttpClient, ownerBundle);
+      hitNegotiateCache = rawResponse != response;
 
-      // Step 5: Lifecycle of afterResponse.
-      if (clientInterceptor != null) {
-        final HttpClientResponse? interceptorResponse = await _afterResponse(requestId, clientInterceptor, request, response);
-        if (interceptorResponse != null) {
-          hitInterceptorResponse = true;
-          response = interceptorResponse;
-        }
-      }
+      // Step 5: Save cookies from response.
       await CookieManager.saveFromResponseRaw(uri, response.headers[HttpHeaders.setCookieHeader]);
 
       // Track 304 Not Modified response
@@ -397,7 +337,7 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       }
 
       // Check match cache, and then return cache.
-      if (hitInterceptorResponse || hitNegotiateCache) {
+      if (hitNegotiateCache) {
         return Future.value(response);
       }
 
