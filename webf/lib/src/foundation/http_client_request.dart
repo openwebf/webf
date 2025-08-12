@@ -16,6 +16,7 @@ import 'http_client.dart';
 import 'http_client_interceptor.dart';
 import 'http_overrides.dart';
 import 'queue.dart';
+import '../launcher/controller.dart' show WebFController; // controller lookup for per-controller cache toggle
 import 'loading_state_registry.dart';
 
 // Global counter for unique request IDs
@@ -223,7 +224,19 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       // Step 2: Handle cache-control and expires,
       //        if hit, no need to open request.
       HttpCacheObject? cacheObject;
-      if (HttpCacheController.mode != HttpCacheMode.NO_CACHE) {
+      // Per-controller cache toggle: allow a controller to override global cache mode.
+      bool cacheEnabled = true;
+      if (contextId != null) {
+        final ctrl = WebFController.getControllerOfJSContextId(contextId);
+        final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
+        final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
+        final bool globalCacheOn = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
+        cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
+      } else {
+        cacheEnabled = HttpCacheController.mode != HttpCacheMode.NO_CACHE;
+      }
+
+      if (cacheEnabled) {
         HttpCacheController cacheController = HttpCacheController.instance(origin);
         cacheObject = await cacheController.getCacheObject(request.uri);
         if (cacheObject.hitLocalCache(request)) {
