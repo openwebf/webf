@@ -15,9 +15,9 @@ import 'http_client_request.dart';
 import 'http_client_response.dart';
 import 'http_overrides.dart';
 import 'bundle.dart';
-import '../launcher/controller.dart' show WebFController; // for getEntrypointUri via http_overrides.dart
+import '../launcher/controller.dart' show WebFController; // controller lookup by contextId
 
-bool useWebFHttpCache = Platform.isLinux || Platform.isWindows;
+bool useWebFHttpCache = Platform.isLinux || Platform.isWindows || Platform.isAndroid;
 
 class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
   WebFDioCacheCookieInterceptor({required this.contextId, this.ownerBundle});
@@ -65,7 +65,14 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
     final origin = getOrigin(ref);
     options.extra[_kOriginKey] = origin;
 
-    if (useWebFHttpCache && HttpCacheController.mode != HttpCacheMode.NO_CACHE) {
+    // Determine cache enablement by controller override or global mode.
+    final ctrl = contextId != null ? WebFController.getControllerOfJSContextId(contextId) : null;
+    final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
+    final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
+    final bool globalCacheOn = (useWebFHttpCache && HttpCacheController.mode != HttpCacheMode.NO_CACHE);
+    final bool cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
+
+    if (cacheEnabled) {
       final controller = HttpCacheController.instance(origin);
       final cacheObject = await controller.getCacheObject(uri);
       options.extra[_kCacheObjectKey] = cacheObject;
@@ -114,7 +121,13 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
     final cacheObject = options.extra[_kCacheObjectKey] as HttpCacheObject?;
 
     // Handle 304 with cache
-    if (useWebFHttpCache && response.statusCode == HttpStatus.notModified && cacheObject != null) {
+    final ctrl = contextId != null ? WebFController.getControllerOfJSContextId(contextId) : null;
+    final bool controllerWantsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == true;
+    final bool controllerForbidsCache = ctrl?.networkOptions?.effectiveEnableHttpCache == false;
+    final bool globalCacheOn = (useWebFHttpCache && HttpCacheController.mode != HttpCacheMode.NO_CACHE);
+    final bool cacheEnabled = controllerForbidsCache ? false : (controllerWantsCache ? true : globalCacheOn);
+
+    if (cacheEnabled && response.statusCode == HttpStatus.notModified && cacheObject != null) {
       final native = HttpClient();
       final cached = await cacheObject.toHttpClientResponse(native);
       if (cached != null) {
@@ -141,7 +154,7 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
     }
 
     // Write to cache for 200 OK
-    if (useWebFHttpCache && cacheObject != null && response.data is Uint8List && response.statusCode == HttpStatus.ok) {
+    if (cacheEnabled && cacheObject != null && response.data is Uint8List && response.statusCode == HttpStatus.ok) {
       final native = HttpClient();
       final httpHeaders = <String, List<String>>{};
       response.headers.forEach((k, v) => httpHeaders[k] = List<String>.from(v));

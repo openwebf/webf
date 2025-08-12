@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cupertino_http/cupertino_http.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
-import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/module.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/foundation/cupertino_adapter.dart';
 import 'dio_logger.dart';
 
 /// Creates a Dio client configured for WebF networking with cookie + cache handling.
@@ -52,39 +53,33 @@ class _WebFDioPool {
     ));
     // Build scheme-specific adapters and install routing adapter unless a custom adapter is provided.
     final controller = WebFController.getControllerOfJSContextId(contextId);
-    final customAdapter = controller?.dioHttpClientAdapter;
-    if (customAdapter != null) {
-      dio.httpClientAdapter = customAdapter;
+    // Resolve platform-specific adapter via unified network options if provided.
+    HttpClientAdapter? selectedAdapter;
+    if (controller?.networkOptions != null) {
+      selectedAdapter = await controller!.networkOptions!.getEffectiveHttpClientAdapter();
+    }
+
+    if (selectedAdapter != null) {
+      dio.httpClientAdapter = selectedAdapter;
     } else {
       String cacheDirectory = await HttpCacheController.getCacheDirectory(uri);
 
-      NativeAdapter nativeAdapter;
+      HttpClientAdapter httpClientAdapter;
+      // NativeAdapter nativeAdapter;
       if (Platform.isIOS || Platform.isMacOS) {
-        nativeAdapter = NativeAdapter(createCupertinoConfiguration: () {
-          return URLSessionConfiguration.defaultSessionConfiguration()
-            ..waitsForConnectivity = true
-            ..allowsConstrainedNetworkAccess = true
-            ..allowsExpensiveNetworkAccess = true
-            ..cache = URLCache.withCapacity(
-                memoryCapacity: 2 * 1024 * 1024, diskCapacity: 24 * 1024 * 1024, directory: Uri.parse(cacheDirectory));
-        });
-      } else if (Platform.isAndroid) {
-        nativeAdapter = NativeAdapter(createCronetEngine: () {
-          return CronetEngine.build(
-            cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
-            cacheMaxSize: 24 * 1024 * 1024,
-            enableBrotli: true,
-            enableHttp2: true,
-            enableQuic: true,
-            storagePath: (kReleaseMode || kProfileMode) ? null : cacheDirectory
-          );
-        });
+        URLSessionConfiguration configuration = URLSessionConfiguration.defaultSessionConfiguration()
+          ..waitsForConnectivity = true
+          ..allowsConstrainedNetworkAccess = true
+          ..allowsExpensiveNetworkAccess = true
+          ..cache = URLCache.withCapacity(
+              memoryCapacity: 2 * 1024 * 1024, diskCapacity: 24 * 1024 * 1024, directory: Uri.parse(cacheDirectory));
+        httpClientAdapter = CupertinoAdapter(configuration);
       } else {
-        nativeAdapter = NativeAdapter();
+        httpClientAdapter = IOHttpClientAdapter();
       }
 
       // Use native http client by default
-      dio.httpClientAdapter = nativeAdapter;
+      dio.httpClientAdapter = httpClientAdapter;
     }
 
     // Cookie + cache interceptor bound to this context

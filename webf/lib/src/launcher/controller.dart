@@ -29,13 +29,14 @@ import 'package:flutter/widgets.dart'
         WidgetsBinding,
         WidgetsBindingObserver;
 import 'package:webf/css.dart';
-import 'package:dio/dio.dart' show Interceptor, HttpClientAdapter; // For custom Dio configuration
+import 'package:dio/dio.dart' show Interceptor; // For custom Dio configuration
 import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/src/foundation/loading_state_registry.dart';
 import 'package:webf/src/launcher/dio_logger_options.dart';
+import 'package:webf/src/launcher/network_options.dart';
 
 import 'loading_state.dart';
 
@@ -358,17 +359,12 @@ class WebFController with Diagnosticable {
   /// Allows developers to create, read, update, and delete cookies with full control.
   late CookieManager cookieManager;
 
-  /// Custom Dio adapter for this controller's networking when using Dio path.
+  /// Combined network options (cache + adapter) with per-platform overrides.
   ///
-  /// When `WebFControllerManager.useDioForNetwork` is true, WebF uses a shared Dio instance
-  /// per WebF context. If provided, this adapter replaces the default `IOHttpClientAdapter`
-  /// tuning used by WebF. Set this before any network request occurs (e.g. in `onControllerInit`).
-  ///
-  /// Example:
-  ///   controller.dioHttpClientAdapter = IOHttpClientAdapter(
-  ///     createHttpClient: () { final c = HttpClient(); c.findProxy = ...; return c; }
-  ///   );
-  HttpClientAdapter? dioHttpClientAdapter;
+  /// This replaces the separate `enableHttpCache` and `dioHttpClientAdapter*` fields
+  /// to centralize network configuration in a single place and support platform
+  /// customization.
+  final WebFNetworkOptions? networkOptions;
 
   /// Additional Dio interceptors to install for this controller's Dio instance.
   ///
@@ -385,6 +381,8 @@ class WebFController with Diagnosticable {
   /// installed on the per-context Dio instance created by WebF.
   /// Defaults to enabled in debug mode with headers logged and bodies disabled.
   final HttpLoggerOptions? httpLoggerOptions;
+
+  // enableHttpCache is now part of `networkOptions`.
 
   /// The default route path for the hybrid router in WebF.
   ///
@@ -754,7 +752,7 @@ class WebFController with Diagnosticable {
     this.routeObserver,
     this.routes,
     this.resizeToAvoidBottomInsets = true,
-    this.dioHttpClientAdapter,
+    this.networkOptions,
     this.dioInterceptors,
     this.httpLoggerOptions,
   })  : _entrypoint = bundle,

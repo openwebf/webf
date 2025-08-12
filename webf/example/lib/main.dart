@@ -4,7 +4,9 @@
  */
 
 import 'dart:async';
+import 'dart:io';
 
+import 'package:cronet_http/cronet_http.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -12,8 +14,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
-import 'package:native_dio_adapter/native_dio_adapter.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:webf_example/cronet_adapter.dart';
 import 'custom_elements/icon.dart';
 import 'custom_elements/search.dart';
 import 'custom_elements/select.dart';
@@ -56,7 +58,6 @@ void main() async {
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
       maxAliveInstances: 4,
       maxAttachedInstances: 1,
-      useDioForNetwork: true,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
       },
@@ -97,6 +98,24 @@ void main() async {
       createController: () => WebFController(
           routeObserver: routeObserver,
           initialRoute: '/',
+          networkOptions: WebFNetworkOptions(
+            android: WebFNetworkOptions(
+                httpClientAdapter: () async {
+                  String cacheDirectory =
+                      await HttpCacheController.getCacheDirectory(Uri.parse('https://miracleplus.openwebf.com/'));
+                  CronetEngine cronetEngine = CronetEngine.build(
+                      cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
+                      cacheMaxSize: 24 * 1024 * 1024,
+                      enableBrotli: true,
+                      enableHttp2: true,
+                      enableQuic: true,
+                      storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
+                  return CronetAdapter(cronetEngine);
+                },
+                enableHttpCache: false // Cronet have it's own http cache impls
+                ),
+          ),
+          // dioHttpClientAdapterAndroid: CronetAdapter(cronetEngine),
           // dioHttpClientAdapter: NativeAdapter(),
           onLCP: (time, isEvaluated) {
             print('LCP time: $time, evaluated: $isEvaluated');
@@ -684,12 +703,28 @@ class _WebFDemoState extends State<WebFDemo> {
                 createController: () => WebFController(
                       routeObserver: routeObserver,
                       initialRoute: widget.initialRoute,
-                      onControllerInit: (controller) async {
-                      },
-                  httpLoggerOptions: HttpLoggerOptions(
-                    requestHeader: true,
-                    requestBody: true,
-                  ),
+                      onControllerInit: (controller) async {},
+                      httpLoggerOptions: HttpLoggerOptions(
+                        requestHeader: true,
+                        requestBody: true,
+                      ),
+                    networkOptions: WebFNetworkOptions(
+                      android: WebFNetworkOptions(
+                          httpClientAdapter: () async {
+                            String cacheDirectory =
+                            await HttpCacheController.getCacheDirectory(_getBundleForControllerName(widget.webfPageName)!.resolvedUri!);
+                            CronetEngine cronetEngine = CronetEngine.build(
+                                cacheMode: (kReleaseMode || kProfileMode) ? CacheMode.disk : CacheMode.memory,
+                                cacheMaxSize: 24 * 1024 * 1024,
+                                enableBrotli: true,
+                                enableHttp2: true,
+                                enableQuic: true,
+                                storagePath: (kReleaseMode || kProfileMode) ? cacheDirectory : null);
+                            return CronetAdapter(cronetEngine);
+                          },
+                          enableHttpCache: false // Cronet have it's own http cache impls
+                      ),
+                    ),
                       onLCPContentVerification: (ContentInfo contentInfo, String routePath) {
                         print('contentInfo: $contentInfo $routePath');
                       },
