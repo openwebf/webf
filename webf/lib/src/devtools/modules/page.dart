@@ -6,6 +6,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:meta/meta.dart';
 import 'package:flutter/scheduler.dart';
@@ -177,8 +178,8 @@ enum ResourceType {
 }
 
 class InspectPageModule extends UIInspectorModule {
-  Document get document => (devtoolsService is ChromeDevToolsService) 
-      ? ChromeDevToolsService.unifiedService.currentController!.view.document 
+  Document get document => (devtoolsService is ChromeDevToolsService)
+      ? ChromeDevToolsService.unifiedService.currentController!.view.document
       : devtoolsService.controller!.view.document;
 
   InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
@@ -233,9 +234,12 @@ class InspectPageModule extends UIInspectorModule {
   int _devToolsMaxWidth = 0;
   int _devToolsMaxHeight = 0;
 
+  double _cachedViewportWidth = 300;
+  double _cachedViewportHeight = 640;
+
   void _frameScreenCast(Duration timeStamp) {
-    final controller = (devtoolsService is ChromeDevToolsService) 
-        ? ChromeDevToolsService.unifiedService.currentController 
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
         : devtoolsService.controller;
     if (controller == null || !controller.isComplete) {
       return;
@@ -246,30 +250,87 @@ class InspectPageModule extends UIInspectorModule {
     double? viewportWidth = document.viewport?.viewportSize.width;
     double? viewportHeight = document.viewport?.viewportSize.height;
 
-    if (viewportWidth == null || viewportHeight == null) return;
+  // Send a screencast frame to the frontend.
+  void _sendFrame(Uint8List bytes, Duration timeStamp, Element root, double deviceWidth, double deviceHeight) {
+    final String encodedImage = base64Encode(bytes);
+    _lastSentSessionID = timeStamp.inMilliseconds;
+    final InspectorEvent event = PageScreenCastFrameEvent(
+      ScreenCastFrame(
+        encodedImage,
+        ScreencastFrameMetadata(
+          0,
+          1,
+          deviceWidth,
+          deviceHeight,
+          root.offsetLeft,
+          root.offsetTop,
+          timestamp: timeStamp.inMilliseconds,
+        ),
+        _lastSentSessionID!,
+      ),
+    );
+    sendEventToFrontend(event);
+  }
 
-    if (_devToolsMaxWidth > 0 && _devToolsMaxHeight > 0 && viewportWidth > 0 && viewportHeight > 0) {
-      devicePixelRatio = math.min(_devToolsMaxHeight / viewportHeight, _devToolsMaxHeight / viewportHeight);
+  // Generate and send a white PNG frame of the given viewport size.
+  Future<void> _sendWhiteFrame(Duration timeStamp, Element root, double deviceWidth, double deviceHeight) async {
+    final double dpr = document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0;
+    final int imgW = (deviceWidth * dpr).round().clamp(1, 1000000);
+    final int imgH = (deviceHeight * dpr).round().clamp(1, 1000000);
+    final Uint8List blank = await _makeWhitePng(imgW, imgH);
+    _sendFrame(blank, timeStamp, root, deviceWidth, deviceHeight);
+  }
+
+  void _frameScreenCast(Duration timeStamp) {
+    Element root = document.documentElement!;
+    // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
+    double? devicePixelRatio;
+    double? viewportWidth = document.viewport?.viewportSize.width;
+    double? viewportHeight = document.viewport?.viewportSize.height;
+
+    _cachedViewportWidth = viewportWidth ?? _cachedViewportWidth;
+    _cachedViewportHeight = viewportHeight ?? _cachedViewportHeight;
+    final double deviceWidth = _cachedViewportWidth;
+    final double deviceHeight = _cachedViewportHeight;
+
+    // When flutter is detached, stream a white blank frame until it reattaches.
+    if (!devtoolsService.controller!.isFlutterAttached ||
+        !devtoolsService.controller!.viewportLayoutCompleter.isCompleted) {
+      _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
+      return;
+    }
+
+    if (_devToolsMaxWidth > 0 && _devToolsMaxHeight > 0 && deviceWidth > 0 && deviceHeight > 0) {
+      // Scale down according to devtools constraints, capped by device DPR.
+      final double sx = _devToolsMaxWidth / deviceWidth;
+      final double sy = _devToolsMaxHeight / deviceHeight;
+      devicePixelRatio = math.min(sx, sy);
       devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView!.devicePixelRatio);
     }
-    root.toBlob(devicePixelRatio: devicePixelRatio).then((Uint8List screenShot) {
-      String encodedImage = base64Encode(screenShot);
-      _lastSentSessionID = timeStamp.inMilliseconds;
-      InspectorEvent event = PageScreenCastFrameEvent(ScreenCastFrame(
-          encodedImage,
-          ScreencastFrameMetadata(
-            0,
-            1,
-            document.viewport!.viewportSize.width,
-            document.viewport!.viewportSize.height,
-            root.offsetLeft,
-            root.offsetTop,
-            timestamp: timeStamp.inMilliseconds,
-          ),
-          _lastSentSessionID!));
+    root
+        .toBlob(devicePixelRatio: devicePixelRatio)
+        .then((Uint8List screenShot) {
+          if (!devtoolsService.controller!.isFlutterAttached) {
+            // Detached after capture started; send white frame instead.
+            return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
+          }
+          _sendFrame(screenShot, timeStamp, root, deviceWidth, deviceHeight);
+        })
+        .catchError((error, stack) {
+          // If capturing failed, send a white frame to keep stream consistent.
+          return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
+        });
+  }
 
-      sendEventToFrontend(event);
-    });
+  Future<Uint8List> _makeWhitePng(int width, int height) async {
+    final recorder = ui.PictureRecorder();
+    final canvas = ui.Canvas(recorder);
+    final paint = ui.Paint()..color = const ui.Color(0xFFFFFFFF);
+    canvas.drawRect(ui.Rect.fromLTWH(0, 0, width.toDouble(), height.toDouble()), paint);
+    final picture = recorder.endRecording();
+    final ui.Image image = await picture.toImage(width, height);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
   }
 
   void startScreenCast() {
@@ -292,7 +353,7 @@ class InspectPageModule extends UIInspectorModule {
       _devToolsMaxWidth = fromModule._devToolsMaxWidth;
       _devToolsMaxHeight = fromModule._devToolsMaxHeight;
       _lastSentSessionID = fromModule._lastSentSessionID;
-      
+
       // Start screencast on the new controller
       SchedulerBinding.instance.addPostFrameCallback(_frameScreenCast);
       SchedulerBinding.instance.scheduleFrame();
@@ -311,9 +372,7 @@ class InspectPageModule extends UIInspectorModule {
   void handleGetFrameResourceTree(int? id, Map<String, dynamic> params) {
     Frame frame = Frame('Frame Name', 'frame-id', '', '', '', '', '', '', []);
     FrameResourceTree frameResourceTree = FrameResourceTree(frame, []);
-    sendToFrontend(id, JSONEncodableMap({
-      'frameTree': frameResourceTree
-    }));
+    sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }
 
