@@ -6,20 +6,43 @@
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:dio/dio.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/src/devtools/network_store.dart';
+import 'package:webf/src/foundation/dio_client.dart';
 
 class InspectNetworkModule extends UIInspectorModule implements HttpClientInterceptor {
   InspectNetworkModule(DevToolsService devtoolsService) : super(devtoolsService) {
     _registerHttpClientInterceptor();
+    _maybeRegisterDioInterceptor();
   }
 
   void _registerHttpClientInterceptor() {
     setupHttpOverrides(this, contextId: devtoolsService.controller!.view.contextId);
+  }
+
+  void _maybeRegisterDioInterceptor() {
+    // Only install Dio interceptor when global Dio networking is enabled
+    final useDio = WebFControllerManager.instance.useDioForNetwork;
+    if (!useDio) return;
+
+    final controller = devtoolsService.controller;
+    if (controller == null) return;
+
+    final contextId = controller.view.contextId;
+    // Register an installer with the Dio pool so it applies immediately if Dio exists,
+    // and also for any future Dio creations for this context.
+    registerWebFDioInterceptorInstaller(contextId, (dio) {
+      final alreadyAdded = dio.interceptors.any((i) => i is _InspectDioInterceptor);
+      if (!alreadyAdded) {
+        dio.interceptors.add(_InspectDioInterceptor(this, contextId));
+      }
+    });
   }
 
   HttpClientInterceptor? get _customHttpClientInterceptor => devtoolsService.controller?.httpClientInterceptor;
@@ -32,6 +55,13 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
 
   // RequestId to data buffer.
   final Map<String, Uint8List> _responseBuffers = {};
+
+  // Helper for request ID generation in Dio path
+  int _dioRequestIdCounter = 0;
+  String _nextDioRequestId() {
+    _dioRequestIdCounter++;
+    return 'dio_${_dioRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
+  }
 
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
@@ -193,6 +223,182 @@ class InspectNetworkModule extends UIInspectorModule implements HttpClientInterc
   }
 }
 
+class _InspectDioInterceptor extends InterceptorsWrapper {
+  _InspectDioInterceptor(this.module, this.contextId);
+
+  final InspectNetworkModule module;
+  final double contextId;
+
+  static const _kInspectorRequestId = 'webf_inspector_request_id';
+
+  Map<String, List<String>> _headersToMultiMap(Map<String, dynamic> headers) {
+    final map = <String, List<String>>{};
+    headers.forEach((k, v) {
+      map[k.toString()] = [v?.toString() ?? ''];
+    });
+    return map;
+  }
+
+  List<int> _extractRequestBody(dynamic data) {
+    if (data == null) return const <int>[];
+    if (data is Uint8List) return data;
+    if (data is List<int>) return data;
+    if (data is String) return utf8.encode(data);
+    return const <int>[];
+  }
+
+  String _guessTypeFromPath(String path) {
+    if (path.endsWith('.js') || path.endsWith('.mjs')) return 'Script';
+    if (path.endsWith('.css')) return 'Stylesheet';
+    if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp') || path.endsWith('.svg') || path.endsWith('.ico')) {
+      return 'Image';
+    }
+    if (path.endsWith('.html') || path.endsWith('.htm') || path.endsWith('/')) return 'Document';
+    return 'Fetch';
+  }
+
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final requestId = module._nextDioRequestId();
+    options.extra[_kInspectorRequestId] = requestId;
+
+    final dataBytes = _extractRequestBody(options.data);
+
+    // Store request in NetworkStore
+    final networkRequest = NetworkRequest(
+      requestId: requestId,
+      url: options.uri.toString(),
+      method: options.method,
+      requestHeaders: _headersToMultiMap(options.headers),
+      requestData: List<int>.from(dataBytes),
+      startTime: DateTime.now(),
+    );
+    NetworkStore().addRequest(contextId.toInt(), networkRequest);
+
+    // Send request events
+    module.sendEventToFrontend(NetworkRequestWillBeSentEvent(
+      requestId: requestId,
+      loaderId: contextId.toString(),
+      requestMethod: options.method,
+      url: options.uri.toString(),
+      headers: _headersToMultiMap(options.headers),
+      timestamp: (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000,
+      data: dataBytes,
+    ));
+
+    final extraHeaders = <String, List<String>>{
+      ':authority': [options.uri.authority],
+      ':method': [options.method],
+      ':path': [options.uri.path],
+      ':scheme': [options.uri.scheme],
+    };
+
+    final ts = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
+    module.sendEventToFrontend(NetworkRequestWillBeSendExtraInfo(
+      associatedCookies: const [],
+      clientSecurityState: const {
+        'initiatorIsSecureContext': true,
+        'initiatorIPAddressSpace': 'Local',
+        'privateNetworkRequestPolicy': 'PreflightWarn'
+      },
+      connectTiming: {
+        'requestTime': ts
+      },
+      headers: {
+        ..._headersToMultiMap(options.headers),
+        ...extraHeaders,
+      },
+      siteHasCookieInOtherPartition: false,
+      requestId: requestId,
+    ));
+
+    handler.next(options);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final options = response.requestOptions;
+    final requestId = (options.extra[_kInspectorRequestId] as String?) ?? module._nextDioRequestId();
+    final bytes = response.data is Uint8List ? response.data as Uint8List : Uint8List(0);
+
+    final headersMap = <String, List<String>>{};
+    response.headers.forEach((k, v) => headersMap[k] = List<String>.from(v));
+
+    final urlStr = options.uri.toString();
+    final mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+    final remoteIp = options.uri.host; // Best effort; real IP not exposed by Dio
+    final remotePort = options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80);
+    final fromDiskCache = options.extra['webf_cache_hit'] == true;
+    final encodedLen = bytes.length;
+    final protocol = options.uri.scheme;
+    final type = _guessTypeFromPath(options.uri.path);
+    final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
+
+    module.sendEventToFrontend(NetworkResponseReceivedEvent(
+      requestId: requestId,
+      loaderId: contextId.toString(),
+      url: urlStr,
+      headers: headersMap,
+      status: response.statusCode ?? 0,
+      statusText: response.statusMessage ?? '',
+      mimeType: mimeType,
+      remoteIPAddress: remoteIp,
+      remotePort: remotePort,
+      fromDiskCache: fromDiskCache,
+      encodedDataLength: encodedLen,
+      protocol: protocol,
+      type: type,
+      timestamp: timestamp,
+    ));
+
+    module.sendEventToFrontend(NetworkLoadingFinishedEvent(
+      requestId: requestId,
+      contentLength: encodedLen,
+      timestamp: timestamp,
+    ));
+
+    // Store response body for getResponseBody
+    module._responseBuffers[requestId] = bytes;
+
+    // Update NetworkStore
+    NetworkStore().updateRequest(
+      requestId,
+      responseHeaders: headersMap,
+      statusCode: response.statusCode ?? 0,
+      statusText: response.statusMessage ?? '',
+      mimeType: mimeType,
+      responseBody: bytes,
+      endTime: DateTime.now(),
+      contentLength: encodedLen,
+      fromCache: fromDiskCache,
+      remoteIPAddress: remoteIp,
+      remotePort: remotePort,
+    );
+
+    handler.next(response);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    // For errors, we still want to mark the request as finished if we created an id
+    final options = err.requestOptions;
+    final requestId = options.extra[_kInspectorRequestId] as String?;
+    if (requestId != null) {
+      final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
+      final type = _guessTypeFromPath(options.uri.path);
+      final errorText = err.message ?? err.error?.toString() ?? 'Request failed';
+      module.sendEventToFrontend(NetworkLoadingFailedEvent(
+        requestId: requestId,
+        timestamp: timestamp,
+        type: type,
+        errorText: errorText,
+        canceled: err.type == DioExceptionType.cancel,
+      ));
+    }
+    handler.next(err);
+  }
+}
+
 class NetworkRequestWillBeSentEvent extends InspectorEvent {
   final String requestId;
   final String loaderId;
@@ -323,6 +529,34 @@ class NetworkLoadingFinishedEvent extends InspectorEvent {
         'requestId': requestId,
         'timestamp': timestamp,
         'encodedDataLength': contentLength,
+      });
+}
+
+class NetworkLoadingFailedEvent extends InspectorEvent {
+  final String requestId;
+  final double timestamp;
+  final String type;
+  final String errorText;
+  final bool canceled;
+
+  NetworkLoadingFailedEvent({
+    required this.requestId,
+    required this.timestamp,
+    required this.type,
+    required this.errorText,
+    this.canceled = false,
+  });
+
+  @override
+  String get method => 'Network.loadingFailed';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'requestId': requestId,
+        'timestamp': timestamp,
+        'type': type,
+        'errorText': errorText,
+        'canceled': canceled,
       });
 }
 

@@ -20,6 +20,26 @@ import 'dio_logger.dart';
 class _WebFDioPool {
   // Maintain a single Dio per context with a scheme-routing adapter.
   static final _instances = <double, Dio>{};
+  // Installers registered by other subsystems (e.g., DevTools) to attach
+  // context-aware interceptors regardless of creation order.
+  static final _installers = <double, List<void Function(Dio)>>{};
+
+  static void registerInstaller(double contextId, void Function(Dio) installer) {
+    _installers.putIfAbsent(contextId, () => <void Function(Dio)>[]).add(installer);
+    // If an instance already exists, apply immediately.
+    final dio = _instances[contextId];
+    if (dio != null) {
+      try {
+        installer(dio);
+      } catch (_) {
+        // Ignore installer errors to avoid breaking networking.
+      }
+    }
+  }
+
+  static void unregisterInstallers(double contextId) {
+    _installers.remove(contextId);
+  }
 
   static Future<Dio> getOrCreate({
     required double contextId,
@@ -111,12 +131,24 @@ class _WebFDioPool {
     }
 
     _instances[contextId] = dio;
+    // Apply any late-bound installers for this context (e.g., DevTools inspectors)
+    final installers = _installers[contextId];
+    if (installers != null && installers.isNotEmpty) {
+      for (final fn in installers) {
+        try {
+          fn(dio);
+        } catch (_) {
+          // Best effort; keep network resilient.
+        }
+      }
+    }
     return dio;
   }
 
   static void dispose(double contextId) {
     final dio = _instances.remove(contextId);
     dio?.close(force: true);
+    // Do not clear installers here; DevTools may still want to reapply when recreated.
   }
 }
 
@@ -155,6 +187,18 @@ Future<Dio> getOrCreateWebFDio({
 /// Dispose the shared Dio for a specific WebF context when controller is torn down.
 void disposeSharedDioForContext(double contextId) {
   _WebFDioPool.dispose(contextId);
+}
+
+/// Register a context-aware installer to be invoked for the Dio instance
+/// associated with the given context. If the Dio already exists, the installer
+/// is applied immediately; otherwise it will be applied on first creation.
+void registerWebFDioInterceptorInstaller(double contextId, void Function(Dio) installer) {
+  _WebFDioPool.registerInstaller(contextId, installer);
+}
+
+/// Remove all registered installers for a given context.
+void unregisterWebFDioInterceptorInstallers(double contextId) {
+  _WebFDioPool.unregisterInstallers(contextId);
 }
 
 String _getDefaultUserAgent() {
