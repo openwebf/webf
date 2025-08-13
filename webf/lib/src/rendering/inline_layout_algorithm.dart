@@ -731,24 +731,21 @@ class InlineLayoutAlgorithm {
         }
 
         if (style != null && _shouldCreateBoxFragment(style)) {
-          // Calculate box bounds - only include padding, not margins
-          // Margins create space in layout but aren't part of the visual box
-          final paddingLeft = style.paddingLeft.computedValue;
-          final paddingRight = style.paddingRight.computedValue;
-          final borderLeft = style.borderLeftWidth?.computedValue ?? 0.0;
-          final borderRight = style.borderRightWidth?.computedValue ?? 0.0;
-
-          // The box visual area starts at the border box left
-          // Since content is positioned after left border + padding, subtract both
-          final boxStartX = minX - paddingLeft - borderLeft;
-          // The box width is content width plus paddings and borders
-          final boxWidth = width + paddingLeft + paddingRight + borderLeft + borderRight;
-          
-
           // Determine if this is the first/last fragment of a multi-line inline element
           final lines = boxToLines[box] ?? [];
           final isFirstFragment = lines.isEmpty || lines.first == lineIndex;
           final isLastFragment = lines.isEmpty || lines.last == lineIndex;
+
+          // Only apply left padding/border to first fragment, right padding/border to last fragment
+          final leftPad = isFirstFragment ? style.paddingLeft.computedValue : 0.0;
+          final rightPad = isLastFragment ? style.paddingRight.computedValue : 0.0;
+          final leftBorder = isFirstFragment ? (style.borderLeftWidth?.computedValue ?? 0.0) : 0.0;
+          final rightBorder = isLastFragment ? (style.borderRightWidth?.computedValue ?? 0.0) : 0.0;
+
+          // Start at content minX minus applicable left extras
+          final boxStartX = minX - leftPad - leftBorder;
+          // Width includes applicable extras on both sides
+          final boxWidth = width + leftPad + rightPad + leftBorder + rightBorder;
 
           final boxItem = BoxLineBoxItem(
             offset: Offset(boxStartX, 0.0),

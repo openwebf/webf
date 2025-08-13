@@ -95,7 +95,7 @@ Future<bool> matchImage(Uint8List imageA, List<int> imageB, String filename) asy
   }
 
   double ratio = await imageSameRatio(imageA, imageB);
-  bool isMatch = (ratio * 100) < 1;
+  bool isMatch = (ratio * 100) < 0.1;
 
   if (!isMatch) {
     var width = a.width;
