@@ -6,7 +6,6 @@ import 'package:webf/rendering.dart';
 import 'inline_item.dart';
 import 'line_box.dart';
 import 'inline_items_builder.dart';
-import 'bidi_resolver.dart';
 import 'inline_layout_algorithm.dart';
 import 'inline_layout_debugger.dart';
 
@@ -82,7 +81,6 @@ class InlineFormattingContext {
       // Debug: Log preparation
       // print('InlineFormattingContext: prepareLayout - collecting inlines');
       _collectInlines();
-      _resolveBidi();
       _shapeText();
       _needsCollectInlines = false;
     }
@@ -100,23 +98,6 @@ class InlineFormattingContext {
     _textContent = builder.textContent;
 
     // Text content and items collected
-  }
-
-  /// Resolve bidirectional text.
-  void _resolveBidi() {
-    if (_items.isEmpty) return;
-
-    final resolver = BidiResolver(
-      text: _textContent,
-      baseDirection: container.renderStyle.direction,
-      items: _items,
-    );
-
-    // Resolve BiDi levels
-    resolver.resolve();
-
-    // Note: Visual reordering happens at the line level in InlineLayoutAlgorithm,
-    // not here at the item collection level
   }
 
   /// Shape text items using Flutter's text layout.
@@ -216,8 +197,8 @@ class InlineFormattingContext {
 
     for (int i = 0; i < _lineBoxes.length; i++) {
       final lineBox = _lineBoxes[i];
-      
-      
+
+
       lineBox.paint(context, Offset(offset.dx, y));
 
       // Debug paint if enabled

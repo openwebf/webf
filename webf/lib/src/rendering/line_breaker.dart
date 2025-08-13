@@ -107,7 +107,7 @@ class LineBreaker {
   void _breakTextItem(InlineItem item) {
     final text = item.getText(textContent);
     final style = item.style;
-    
+
 
     // Break text
 
@@ -123,7 +123,7 @@ class LineBreaker {
     final textSpan = CSSTextMixin.createTextSpan(text, style);
     final textPainter = TextPainter(
       text: textSpan,
-      textDirection: TextDirection.ltr,
+      textDirection: item.direction,
     );
 
     while (startOffset < text.length) {
@@ -134,7 +134,7 @@ class LineBreaker {
         style,
         textPainter,
       );
-      
+
 
 
       if (breakPoint <= startOffset) {
@@ -176,7 +176,7 @@ class LineBreaker {
       final segmentTextSpan = CSSTextMixin.createTextSpan(segment, style);
       final segmentPainter = TextPainter(
         text: segmentTextSpan,
-        textDirection: TextDirection.ltr,
+        textDirection: item.direction,
       );
       segmentPainter.layout();
 
@@ -339,13 +339,13 @@ class LineBreaker {
     if (lastGood > startOffset && lastGood < text.length) {
       // Only look for word boundary if we're actually breaking the line
       // Binary search found break point
-      
+
       // For pre-wrap, check if we actually need to break
       // If lastGood equals text.length, we can fit the entire remaining text
       if (style.whiteSpace == WhiteSpace.preWrap && lastGood == text.length) {
         return lastGood;
       }
-      
+
       final breakPoint = _findWordBoundary(text, startOffset, lastGood, style.whiteSpace);
       if (breakPoint > startOffset) {
         return breakPoint;
@@ -377,18 +377,18 @@ class LineBreaker {
     if (whiteSpace == WhiteSpace.breakSpaces || whiteSpace == WhiteSpace.preWrap) {
       // Look backwards from end to find the last space or hyphen that fits
       // We want to break after a space or hyphen, not in the middle of a word
-      
+
       // Check if we're at the end of the text
       if (end >= text.length) {
         return end;
       }
-      
+
       // Check if the position is already at a space or hyphen
       final charBeforeEnd = text[end - 1];
       if (charBeforeEnd == ' ' || charBeforeEnd == '-') {
         return end;
       }
-      
+
       // We're in the middle of a word, look for the last space or hyphen before this position
       for (int i = end - 1; i > start; i--) {
         final char = text[i - 1];
@@ -397,7 +397,7 @@ class LineBreaker {
           return i;
         }
       }
-      
+
       // No space or hyphen found in this segment
       // This means the entire segment is one word that doesn't fit
       // Return start to indicate we should break before this segment
@@ -468,7 +468,7 @@ class LineBreaker {
         if (char == ' ' || char == '-') {
           // For hyphen, we want to break after it
           // For space, we want to break after it
-          
+
           // Check if breaking here would leave only spaces on the current line
           bool onlySpaces = true;
           for (int j = start; j < i - 1; j++) {
@@ -491,7 +491,7 @@ class LineBreaker {
 
       // No space or hyphen found - check if we're in the middle of a word
       // If we are, we should not break here
-      if (end < text.length && text[end - 1] != ' ' && text[end] != ' ' && 
+      if (end < text.length && text[end - 1] != ' ' && text[end] != ' ' &&
           text[end - 1] != '-' && text[end] != '-') {
         // We're in the middle of a word, return start to indicate no break
         return start;

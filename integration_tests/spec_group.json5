@@ -54,7 +54,6 @@
       "specs/css/css-box/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-flow/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-inline/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-inline-formatting/**/*.ts",
       "specs/css/css-sizing/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
@@ -89,6 +88,12 @@
       "specs/css/css-text-color/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-text-mixin/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "CSSInline",
+    "specs": [
+      "specs/css/css-inline-formatting/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
   {
@@ -153,5 +158,5 @@
     "specs": [
       "specs/text-codec/**/*.{js,jsx,ts,tsx,html}"
     ]
-  }
+  },
 ]
