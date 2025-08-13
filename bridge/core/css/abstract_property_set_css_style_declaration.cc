@@ -136,7 +136,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::removeProperty(const Atomic
   StyleAttributeMutationScope mutation_scope(this);
   WillMutate();
 
-  std::string result;
+  String result;
   bool changed = false;
   if (property_id == CSSPropertyID::kVariable) {
     changed = PropertySet().RemoveProperty(property_name, &result);
@@ -207,11 +207,11 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
     AtomicString atomic_name(custom_property_name);
 
     bool is_animation_tainted = IsKeyframeStyle();
-    result = PropertySet().ParseAndSetCustomProperty(atomic_name, std::string(reinterpret_cast<const char*>(value.Characters8()), value.length()), important, ContextStyleSheet(),
+    result = PropertySet().ParseAndSetCustomProperty(atomic_name, String(value), important, ContextStyleSheet(),
                                                      is_animation_tainted);
   } else {
     result =
-        PropertySet().ParseAndSetProperty(unresolved_property, std::string(reinterpret_cast<const char*>(value.Characters8()), value.length()), important, ContextStyleSheet());
+        PropertySet().ParseAndSetProperty(unresolved_property, String(value), important, ContextStyleSheet());
   }
 
   if (result == MutableCSSPropertyValueSet::kParseError || result == MutableCSSPropertyValueSet::kUnchanged) {

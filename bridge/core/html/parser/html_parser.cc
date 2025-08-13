@@ -195,7 +195,7 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         const char* text_content = child->v.text.text;
         if (text_content != nullptr) {
           ExceptionState exception_state;
-          auto* text = context->document()->createTextNode(AtomicString(text_content), exception_state);
+          auto* text = context->document()->createTextNode(AtomicString::CreateFromUTF8(text_content), exception_state);
           if (!exception_state.HasException() && text != nullptr) {
             root_container->AppendChild(text);
           } else if (exception_state.HasException()) {
@@ -207,7 +207,7 @@ bool HTMLParser::traverseHTML(Node* root_node, GumboNode* node) {
         const char* cdata_content = child->v.text.text;
         if (cdata_content != nullptr) {
           ExceptionState exception_state;
-          auto* text = context->document()->createTextNode(AtomicString(cdata_content), exception_state);
+          auto* text = context->document()->createTextNode(AtomicString::CreateFromUTF8(cdata_content), exception_state);
           if (!exception_state.HasException() && text != nullptr) {
             root_container->AppendChild(text);
           } else if (exception_state.HasException()) {

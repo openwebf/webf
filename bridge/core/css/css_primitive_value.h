@@ -414,7 +414,7 @@ class CSSPrimitiveValue : public CSSValue {
   double ComputeValueInCanonicalUnit(const CSSLengthResolver&) const;
 
   static const char* UnitTypeToString(UnitType);
-  static UnitType StringToUnitType(std::string_view string) {
+  static UnitType StringToUnitType(StringView string) {
     return StringToUnitType(reinterpret_cast<const unsigned char*>(string.data()), string.length());
   }
 

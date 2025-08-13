@@ -13,12 +13,12 @@ namespace webf {
 
 namespace cssvalue {
 
-CSSFontVariationValue::CSSFontVariationValue(const std::string& tag, float value)
+CSSFontVariationValue::CSSFontVariationValue(const AtomicString& tag, float value)
     : CSSValue(kFontVariationClass), tag_(tag), value_(value) {}
 
 String CSSFontVariationValue::CustomCSSText() const {
   StringBuilder builder;
-  SerializeString(tag_, builder);
+  SerializeString(String(tag_), builder);
   builder.Append(' ');
   builder.AppendNumber(value_);
   return builder.ReleaseString();

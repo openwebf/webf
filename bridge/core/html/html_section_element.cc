@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLSectionElement::HTMLSectionElement(Document& document) : HTMLElement(AtomicString("section"), &document) {}
+HTMLSectionElement::HTMLSectionElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("section"), &document) {}
 
 }  // namespace webf

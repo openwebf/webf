@@ -6,6 +6,7 @@
 #define WEBF_CORE_CSS_CONTAINER_QUERY_H_
 
 #include "core/css/container_selector.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -19,7 +20,7 @@ class ContainerQuery final {
 
   std::shared_ptr<ContainerQuery> CopyWithParent(std::shared_ptr<const ContainerQuery>) const;
 
-  std::string ToString() const;
+  String ToString() const;
 
  private:
   friend class ContainerQueryTest;

@@ -2080,7 +2080,7 @@ bool RuleFeatureSet::InvalidationSetFeatures::HasIdClassOrAttribute() const {
   return !classes.IsEmpty() || !attributes.IsEmpty() || !ids.IsEmpty();
 }
 
-std::string RuleFeatureSet::ToString() const {
+String RuleFeatureSet::ToString() const {
   StringBuilder builder;
 
   enum TypeFlags {

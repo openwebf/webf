@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLUListElement::HTMLUListElement(Document& document) : HTMLElement(AtomicString("ul"), &document) {}
+HTMLUListElement::HTMLUListElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("ul"), &document) {}
 
 }  // namespace webf

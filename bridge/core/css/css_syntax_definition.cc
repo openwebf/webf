@@ -19,9 +19,9 @@ std::shared_ptr<const CSSValue> ConsumeSingleType(const CSSSyntaxComponent& synt
                                                   std::shared_ptr<const CSSParserContext> context) {
   switch (syntax.GetType()) {
     case CSSSyntaxType::kIdent:
-      if (stream.Peek().GetType() == kIdentToken && EqualIgnoringASCIICase(stream.Peek().Value(), syntax.GetString().c_str())) {
+      if (stream.Peek().GetType() == kIdentToken && EqualIgnoringASCIICase(stream.Peek().Value(), StringView(syntax.GetString()))) {
         stream.ConsumeIncludingWhitespace();
-        return std::make_shared<CSSCustomIdentValue>(AtomicString::CreateFromUTF8(syntax.GetString().c_str()));
+        return std::make_shared<CSSCustomIdentValue>(AtomicString(syntax.GetString()));
       }
       return nullptr;
     case CSSSyntaxType::kLength: {
@@ -144,10 +144,10 @@ std::string CSSSyntaxDefinition::ToString() const {
     return "*";
   }
   StringBuilder builder;
-  builder.Append(syntax_components_[0].ToString());
+  builder.Append(syntax_components_[0].GetString());
   for (size_t i = 1; i < syntax_components_.size(); i++) {
     builder.Append(" | ");
-    builder.Append(syntax_components_[i].ToString());
+    builder.Append(syntax_components_[i].GetString());
   }
   return builder.ReleaseString().StdUtf8();
 }

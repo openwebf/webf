@@ -8,6 +8,7 @@
 
 #include <type_traits>
 #include "../../foundation/string/atomic_string.h"
+#include "../../foundation/string/wtf_string.h"
 #include "bindings/qjs/union_base.h"
 #include "converter.h"
 #include "core/dom/events/event.h"
@@ -222,6 +223,12 @@ struct Converter<IDLDOMString> : public ConverterBase<IDLDOMString> {
     return JS_NewUnicodeString(ctx, bytes, static_cast<uint32_t>(length));
   }
   static JSValue ToValue(JSContext* ctx, const std::string& str) { return JS_NewString(ctx, str.c_str()); }
+  static JSValue ToValue(JSContext* ctx, const String& str) { 
+    if (str.IsNull()) {
+      return JS_NULL;
+    }
+    return JS_NewString(ctx, str.Utf8().c_str()); 
+  }
 };
 
 template <>

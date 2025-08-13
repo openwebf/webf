@@ -34,8 +34,8 @@ class CSSPropertyName {
     assert(!custom_property_name.empty());
   }
 
-  static std::optional<CSSPropertyName> From(const ExecutingContext* execution_context, const std::string& value) {
-    const CSSPropertyID property_id = CssPropertyID(execution_context, value);
+  static std::optional<CSSPropertyName> From(const ExecutingContext* execution_context, const String& value) {
+    const CSSPropertyID property_id = CssPropertyID(execution_context, value.StdUtf8());
     if (property_id == CSSPropertyID::kInvalid) {
       return std::nullopt;
     }

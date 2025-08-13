@@ -114,8 +114,8 @@ class CSSSelectorList {
     return SelectorIndex(*next);
   }
 
-  std::string SelectorsText() const { return SelectorsText(First()); }
-  static std::string SelectorsText(const CSSSelector* first);
+  String SelectorsText() const { return SelectorsText(First()); }
+  static String SelectorsText(const CSSSelector* first);
 
   // Selector lists don't know their length, computing it is O(n) and should be
   // avoided when possible. Instead iterate from first() and using next().

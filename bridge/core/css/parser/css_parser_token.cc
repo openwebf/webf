@@ -162,15 +162,7 @@ void CSSParserToken::ConvertToDimensionWithUnit(StringView unit) {
   assert(type_ == static_cast<unsigned>(kNumberToken));
   type_ = kDimensionToken;
   InitValueFromStringView(unit);
-  if (unit.Is8Bit()) {
-    std::string_view str_view(reinterpret_cast<const char*>(unit.Characters8()), unit.length());
-    unit_ = static_cast<unsigned>(CSSPrimitiveValue::StringToUnitType(str_view));
-  } else {
-    // Convert 16-bit string to UTF-8
-    String str(unit);
-    std::string utf8 = str.StdUtf8();
-    unit_ = static_cast<unsigned>(CSSPrimitiveValue::StringToUnitType(std::string_view(utf8)));
-  }
+  unit_ = static_cast<unsigned>(CSSPrimitiveValue::StringToUnitType(unit));
 }
 
 void CSSParserToken::ConvertToPercentage() {

@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLMarkElement::HTMLMarkElement(Document& document) : HTMLElement(AtomicString("mark"), &document) {}
+HTMLMarkElement::HTMLMarkElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("mark"), &document) {}
 
 }  // namespace webf

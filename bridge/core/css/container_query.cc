@@ -12,15 +12,15 @@ ContainerQuery::ContainerQuery(ContainerSelector selector, std::shared_ptr<const
 
 ContainerQuery::ContainerQuery(const ContainerQuery& other) : selector_(other.selector_), query_(other.query_) {}
 
-std::string ContainerQuery::ToString() const {
+String ContainerQuery::ToString() const {
   StringBuilder result;
-  std::string name = selector_.Name();
+  const AtomicString& name = selector_.Name();
   if (!name.empty()) {
-    SerializeIdentifier(String::FromUTF8(name.c_str()), result);
+    SerializeIdentifier(String(name), result);
     result.Append(' ');
   }
   result.Append(query_->Serialize());
-  return result.ReleaseString().StdUtf8();
+  return result.ReleaseString();
 }
 
 std::shared_ptr<ContainerQuery> ContainerQuery::CopyWithParent(std::shared_ptr<const ContainerQuery> parent) const {

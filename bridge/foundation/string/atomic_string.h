@@ -30,6 +30,10 @@ class AtomicString {
   explicit AtomicString(const LChar* chars)
       : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
   AtomicString(const LChar* chars, size_t length);
+  
+  // Constructor for const char* to resolve ambiguity
+  explicit AtomicString(const char* chars)
+      : AtomicString(reinterpret_cast<const LChar*>(chars)) {}
 
   explicit AtomicString(UTF8StringView string_view);
   explicit AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};

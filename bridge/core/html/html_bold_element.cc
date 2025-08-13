@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLBoldElement::HTMLBoldElement(Document& document) : HTMLElement(AtomicString("b"), &document) {}
+HTMLBoldElement::HTMLBoldElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("b"), &document) {}
 
 }  // namespace webf

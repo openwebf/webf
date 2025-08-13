@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLSampElement::HTMLSampElement(Document& document) : HTMLElement(AtomicString("samp"), &document) {}
+HTMLSampElement::HTMLSampElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("samp"), &document) {}
 
 }  // namespace webf

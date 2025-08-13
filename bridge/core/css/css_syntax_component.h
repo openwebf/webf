@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include "foundation/macros.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -35,7 +36,7 @@ class CSSSyntaxComponent {
   WEBF_DISALLOW_NEW();
 
  public:
-  CSSSyntaxComponent(CSSSyntaxType type, const std::string& string, CSSSyntaxRepeat repeat)
+  CSSSyntaxComponent(CSSSyntaxType type, const String& string, CSSSyntaxRepeat repeat)
       : type_(type), string_(string), repeat_(repeat) {}
 
   bool operator==(const CSSSyntaxComponent& a) const {
@@ -43,7 +44,7 @@ class CSSSyntaxComponent {
   }
 
   CSSSyntaxType GetType() const { return type_; }
-  const std::string& GetString() const { return string_; }
+  const String& GetString() const { return string_; }
   CSSSyntaxRepeat GetRepeat() const { return repeat_; }
   bool IsRepeatable() const { return repeat_ != CSSSyntaxRepeat::kNone; }
   bool IsInteger() const { return type_ == CSSSyntaxType::kInteger; }
@@ -54,7 +55,7 @@ class CSSSyntaxComponent {
 
  private:
   CSSSyntaxType type_;
-  std::string string_;  // Only used when type_ is CSSSyntaxType::kIdent
+  String string_;  // Only used when type_ is CSSSyntaxType::kIdent
   CSSSyntaxRepeat repeat_;
 };
 

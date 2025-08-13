@@ -11,6 +11,7 @@
 #include "../../foundation/string/string_builder.h"
 #include "core/css/container_query.h"
 #include "core/css/container_selector.h"
+#include "core/css/css_markup.h"
 #include "core/css/style_rule.h"
 #include "foundation/casting.h"
 
@@ -47,9 +48,14 @@ AtomicString CSSContainerRule::cssText() const {
 }
 
 String CSSContainerRule::containerName() const {
+  StringBuilder result;
   auto* container_rule = To<StyleRuleContainer>(group_rule_.get());
   const class ContainerQuery& query = container_rule->GetContainerQuery();
-  return query.Selector().Name();
+  const AtomicString& name = query.Selector().Name();
+  if (!name.empty()) {
+    SerializeIdentifier(String(name), result);
+  }
+  return result.ReleaseString();
 }
 
 String CSSContainerRule::containerQuery() const {
@@ -60,7 +66,8 @@ String CSSContainerRule::containerQuery() const {
 
 String CSSContainerRule::Name() const {
   auto* container_rule = To<StyleRuleContainer>(group_rule_.get());
-  return container_rule->GetContainerQuery().Selector().Name();
+  const AtomicString& name = container_rule->GetContainerQuery().Selector().Name();
+  return String(name);
 }
 
 const ContainerSelector& CSSContainerRule::Selector() const {

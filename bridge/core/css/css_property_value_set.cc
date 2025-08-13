@@ -52,20 +52,20 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue(
   return PropertyAt(found_property_index).Value();
 }
 
-static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
+static String SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
                                       CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   if (shorthand.length() == 0) {
-    return "";
+    return String();
   }
 
-  return StylePropertySerializer(property_set).SerializeShorthand(property_id).StdUtf8();
+  return StylePropertySerializer(property_set).SerializeShorthand(property_id);
 }
 
-static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
+static String SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
                                       const AtomicString& custom_property_name) {
   // Custom properties are never shorthands.
-  return "";
+  return String();
 }
 
 template <typename T>
@@ -196,7 +196,7 @@ bool CSSPropertyValueSet::HasFailedOrCanceledSubresources() const {
 
 #ifndef NDEBUG
 void CSSPropertyValueSet::ShowStyle() {
-  fprintf(stderr, "%s\n", AsText().c_str());
+  fprintf(stderr, "%s\n", AsText().StdUtf8().c_str());
 }
 #endif
 
@@ -374,7 +374,7 @@ void MutableCSSPropertyValueSet::SetProperty(const CSSPropertyName& name,
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetProperty(
     CSSPropertyID unresolved_property,
-    const std::string& value,
+    const String& value,
     bool important,
     std::shared_ptr<StyleSheetContents> context_style_sheet) {
   DCHECK_GE(unresolved_property, kFirstCSSProperty);
@@ -382,7 +382,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // Setting the value to an empty string just removes the property in both IE
   // and Gecko. Setting it to null seems to produce less consistent results, but
   // we treat it just the same.
-  if (value.empty()) {
+  if (value.IsEmpty()) {
     return RemoveProperty(ResolveCSSPropertyID(unresolved_property)) ? kChangedPropertySet : kUnchanged;
   }
 
@@ -394,14 +394,14 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
 
 MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCustomProperty(
     const AtomicString& custom_property_name,
-    const std::string& value,
+    const String& value,
     bool important,
     std::shared_ptr<StyleSheetContents> context_style_sheet,
     bool is_animation_tainted) {
-  if (value.empty()) {
+  if (value.IsEmpty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
   }
-  return CSSParser::ParseValueForCustomProperty(this, custom_property_name.ToUTF8String(), value, important,
+  return CSSParser::ParseValueForCustomProperty(this, String(custom_property_name), value, important,
                                                 context_style_sheet, is_animation_tainted);
 }
 
@@ -446,10 +446,10 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::SetLonghandPro
 }
 
 template <typename T>
-bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, std::string* return_text) {
+bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, String* return_text) {
   if (RemoveShorthandProperty(property)) {
     if (return_text) {
-      *return_text = "";
+      *return_text = String();
     }
     return true;
   }
@@ -457,8 +457,8 @@ bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, std::string* 
   int found_property_index = FindPropertyIndex(property);
   return RemovePropertyAtIndex(found_property_index, return_text);
 }
-template bool MutableCSSPropertyValueSet::RemoveProperty(const CSSPropertyID&, std::string*);
-template bool MutableCSSPropertyValueSet::RemoveProperty(const AtomicString&, std::string*);
+template bool MutableCSSPropertyValueSet::RemoveProperty(const CSSPropertyID&, String*);
+template bool MutableCSSPropertyValueSet::RemoveProperty(const AtomicString&, String*);
 
 inline bool ContainsId(const CSSProperty* const set[], unsigned length, CSSPropertyID id) {
   for (unsigned i = 0; i < length; ++i) {
@@ -609,16 +609,16 @@ ALWAYS_INLINE CSSPropertyValue* MutableCSSPropertyValueSet::FindInsertionPointFo
   return to_replace;
 }
 
-bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, std::string* return_text) {
+bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, String* return_text) {
   if (property_index == -1) {
     if (return_text) {
-      *return_text = "";
+      *return_text = String();
     }
     return false;
   }
 
   if (return_text) {
-    *return_text = PropertyAt(property_index).Value()->get()->CssText().StdUtf8();
+    *return_text = PropertyAt(property_index).Value()->get()->CssText();
   }
 
   // A more efficient removal strategy would involve marking entries as empty

@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLDDElement::HTMLDDElement(Document& document) : HTMLElement(AtomicString("dd"), &document) {}
+HTMLDDElement::HTMLDDElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("dd"), &document) {}
 
 }  // namespace webf

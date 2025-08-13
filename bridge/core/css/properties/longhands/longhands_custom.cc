@@ -1506,12 +1506,12 @@ std::shared_ptr<const cssvalue::CSSFontVariationValue> ConsumeFontVariationTag(
   if (token.Value().length() != kTagNameLength) {
     return nullptr;
   }
-  std::string tag = token.Value().StdUtf8();
+  AtomicString tag = token.Value().ToAtomicString();
   stream.ConsumeIncludingWhitespace();
   for (size_t i = 0; i < kTagNameLength; ++i) {
     // Limits the range of characters to 0x20-0x7E, following the tag name
     // rules defined in the OpenType specification.
-    uint8_t character = tag[i];
+    UChar character = tag[i];
     if (character < 0x20 || character > 0x7E) {
       return nullptr;
     }
@@ -1636,7 +1636,7 @@ std::shared_ptr<const CSSValue> GridTemplateAreas::ParseSingleValue(CSSParserTok
   size_t column_count = 0;
 
   while (stream.Peek().GetType() == kStringToken) {
-    if (!css_parsing_utils::ParseGridTemplateAreasRow(stream.ConsumeIncludingWhitespace().Value().StdUtf8(),
+    if (!css_parsing_utils::ParseGridTemplateAreasRow(String(stream.ConsumeIncludingWhitespace().Value().ToAtomicString()),
                                                       grid_area_map, row_count, column_count)) {
       return nullptr;
     }

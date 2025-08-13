@@ -9,6 +9,7 @@
 #include "core/css/media_query_exp.h"
 #include "core/layout/geometry/axis.h"
 #include "core/platform/hash_functions.h"
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
@@ -23,9 +24,9 @@ class ContainerSelector {
  public:
   ContainerSelector() = default;
   explicit ContainerSelector(PhysicalAxes physical_axes) : physical_axes_(physical_axes) {}
-  ContainerSelector(const std::string& name, PhysicalAxes physical_axes, LogicalAxes logical_axes)
-      : name_(std::move(name)), physical_axes_(physical_axes), logical_axes_(logical_axes) {}
-  ContainerSelector(const std::string& name, const MediaQueryExpNode&);
+  ContainerSelector(const AtomicString& name, PhysicalAxes physical_axes, LogicalAxes logical_axes)
+      : name_(name), physical_axes_(physical_axes), logical_axes_(logical_axes) {}
+  ContainerSelector(const AtomicString& name, const MediaQueryExpNode&);
 
   bool operator==(const ContainerSelector& o) const {
     return (name_ == o.name_) && (physical_axes_ == o.physical_axes_) && (logical_axes_ == o.logical_axes_) &&
@@ -36,7 +37,7 @@ class ContainerSelector {
 
   unsigned GetHash() const;
 
-  const std::string& Name() const { return name_; }
+  const AtomicString& Name() const { return name_; }
 
   // Given the specified writing mode, return the EContainerTypes required
   // for this selector to match.
@@ -56,7 +57,7 @@ class ContainerSelector {
   LogicalAxes GetLogicalAxes() const { return logical_axes_; }
 
  private:
-  std::string name_;
+  AtomicString name_;
   PhysicalAxes physical_axes_{kPhysicalAxesNone};
   LogicalAxes logical_axes_{kLogicalAxesNone};
   bool has_style_query_{false};

@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLTimeElement::HTMLTimeElement(Document& document) : HTMLElement(AtomicString("time"), &document) {}
+HTMLTimeElement::HTMLTimeElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("time"), &document) {}
 
 }  // namespace webf

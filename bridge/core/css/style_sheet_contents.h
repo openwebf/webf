@@ -41,7 +41,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   static const Document* SingleOwnerDocument(const StyleSheetContents*);
 
   explicit StyleSheetContents(const std::shared_ptr<const CSSParserContext>& context,
-                              std::string original_url = "",
+                              String original_url = String(),
                               std::shared_ptr<StyleRuleImport> owner_rule = nullptr);
   explicit StyleSheetContents(const StyleSheetContents& o);
   StyleSheetContents() = delete;
@@ -52,7 +52,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
     return parser_context_;
   }
 
-  ParseSheetResult ParseString(const std::string& sheet_text,
+  ParseSheetResult ParseString(const String& sheet_text,
                                bool allow_import_rules = true,
                                CSSDeferPropertyParsing defer_property_parsing = CSSDeferPropertyParsing::kNo);
 
@@ -75,7 +75,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   const AtomicString& DefaultNamespace() const { return default_namespace_; }
   const AtomicString& NamespaceURIFromPrefix(const AtomicString& prefix) const;
 
-  void ParserAddNamespace(const std::optional<std::string>& prefix, const std::optional<std::string>& uri);
+  void ParserAddNamespace(const std::optional<String>& prefix, const std::optional<String>& uri);
 
   // Gets the first owner document in the list of registered clients, or nullptr
   // if there are none.
@@ -144,7 +144,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   // The URL that started the redirect chain that led to this
   // style sheet. This property probably isn't useful for much except the
   // JavaScript binding (which needs to use this value for security).
-  std::string OriginalURL() const { return original_url_; }
+  String OriginalURL() const { return original_url_; }
   // The response URL after redirects and service worker interception.
   const KURL& BaseURL() const { return parser_context_->BaseURL(); }
 
@@ -199,7 +199,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   Document* ClientSingleOwnerDocument() const;
   Document* ClientAnyOwnerDocument() const;
 
-  std::string original_url_;
+  String original_url_;
 
   bool has_syntactically_valid_css_header_ : 1;
   bool did_load_error_occur_ : 1;

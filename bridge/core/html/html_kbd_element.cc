@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLKbdElement::HTMLKbdElement(Document& document) : HTMLElement(AtomicString("kbd"), &document) {}
+HTMLKbdElement::HTMLKbdElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("kbd"), &document) {}
 
 }  // namespace webf

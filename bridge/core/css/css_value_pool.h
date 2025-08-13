@@ -73,13 +73,13 @@ class CSSValuePool {
   //    static Color EmptyValue() { return Color::kTransparent; }
   //    static Color DeletedValue() { return Color::kWhite; }
   //  };
-  using FontFaceValueCache = std::unordered_map<std::string, std::shared_ptr<const CSSValueList>>;
-  static const unsigned kMaximumFontFaceCacheSize = 128;
   struct StringHash {
     size_t operator()(const String& s) const { 
       return s.Impl() ? s.Impl()->GetHash() : 0;
     }
   };
+  using FontFaceValueCache = std::unordered_map<String, std::shared_ptr<const CSSValueList>, StringHash>;
+  static const unsigned kMaximumFontFaceCacheSize = 128;
   using FontFamilyValueCache = std::unordered_map<String, std::shared_ptr<CSSFontFamilyValue>, StringHash>;
   //
   //  CSSValuePool();
@@ -175,11 +175,11 @@ class CSSValuePool {
     return color_value_cache_[color];
   }
 
-  auto GetFontFamilyCacheEntry(const std::string& family_name) {
+  auto GetFontFamilyCacheEntry(const String& family_name) {
     return font_family_value_cache_.insert({family_name, nullptr});
   }
 
-  auto GetFontFaceCacheEntry(const std::string& string) {
+  auto GetFontFaceCacheEntry(const String& string) {
     // Just wipe out the cache and start rebuilding if it gets too big.
     if (font_face_value_cache_.size() > kMaximumFontFaceCacheSize) {
       font_face_value_cache_.clear();

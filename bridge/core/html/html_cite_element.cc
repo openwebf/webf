@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLCiteElement::HTMLCiteElement(Document& document) : HTMLElement(AtomicString("cite"), &document) {}
+HTMLCiteElement::HTMLCiteElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("cite"), &document) {}
 
 }  // namespace webf

@@ -102,6 +102,12 @@ class CSSPropertyParser {
 CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext*,
                                       const StringView&,
                                       CSSParserMode mode = kHTMLStandardMode);
+// Overload for std::string compatibility with generated code
+inline CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
+                                      const std::string& str,
+                                      CSSParserMode mode = kHTMLStandardMode) {
+  return UnresolvedCSSPropertyID(context, StringView(str), mode);
+}
 CSSValueID CssValueKeywordID(const StringView&);
 
 }  // namespace webf

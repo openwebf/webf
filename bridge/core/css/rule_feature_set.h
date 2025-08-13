@@ -233,7 +233,7 @@ class RuleFeatureSet {
   //  <integer> - Max direct siblings is specified number (omitted if 0).
   //
   // See InvalidationSet::ToString for more information.
-  std::string ToString() const;
+  String ToString() const;
 
  private:
   enum PositionType { kSubject, kAncestor };

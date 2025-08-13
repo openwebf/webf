@@ -63,10 +63,10 @@ class StyleEngine final {
     // Clear the cache to break circular references
     text_to_sheet_cache_.clear();
   }
-  CSSStyleSheet* CreateSheet(Element&, const std::string& text);
+  CSSStyleSheet* CreateSheet(Element&, const String& text);
   Document& GetDocument() const;
   void Trace(GCVisitor* visitor);
-  CSSStyleSheet* ParseSheet(Element&, const std::string& text);
+  CSSStyleSheet* ParseSheet(Element&, const String& text);
 
   bool InRebuildLayoutTree() const { return in_layout_tree_rebuild_; }
   bool InDOMRemoval() const { return in_dom_removal_; }
@@ -123,7 +123,12 @@ class StyleEngine final {
 
  private:
   Document* document_;
-  std::unordered_map<std::string, std::shared_ptr<StyleSheetContents>> text_to_sheet_cache_;
+  struct StringHash {
+    size_t operator()(const String& s) const { 
+      return s.Impl() ? s.Impl()->GetHash() : 0;
+    }
+  };
+  std::unordered_map<String, std::shared_ptr<StyleSheetContents>, StringHash> text_to_sheet_cache_;
   AtomicString preferred_stylesheet_set_name_;
 
   // Tracks the number of currently loading top-level stylesheets. Sheets loaded

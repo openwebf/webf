@@ -12,14 +12,14 @@ namespace webf {
 
 HTMLElement* CustomHTMLElementFactory::CreateCustomElement(const AtomicString& tag_name, Document& document) {
   // Heading elements (h1-h6)
-  if (tag_name == AtomicString("h1") || tag_name == AtomicString("h2") || 
-      tag_name == AtomicString("h3") || tag_name == AtomicString("h4") ||
-      tag_name == AtomicString("h5") || tag_name == AtomicString("h6")) {
+  if (tag_name == AtomicString::CreateFromUTF8("h1") || tag_name == AtomicString::CreateFromUTF8("h2") || 
+      tag_name == AtomicString::CreateFromUTF8("h3") || tag_name == AtomicString::CreateFromUTF8("h4") ||
+      tag_name == AtomicString::CreateFromUTF8("h5") || tag_name == AtomicString::CreateFromUTF8("h6")) {
     return MakeGarbageCollected<HTMLHeadingElement>(tag_name, document);
   }
   
   // Quote elements (blockquote, q)
-  if (tag_name == AtomicString("blockquote") || tag_name == AtomicString("q")) {
+  if (tag_name == AtomicString::CreateFromUTF8("blockquote") || tag_name == AtomicString::CreateFromUTF8("q")) {
     return MakeGarbageCollected<HTMLQuoteElement>(tag_name, document);
   }
   

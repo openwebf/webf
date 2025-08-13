@@ -109,7 +109,7 @@ void CSSSelectorList::Reparent(CSSSelector* selector_list, std::shared_ptr<Style
   } while (!(current++)->IsLastInSelectorList());
 }
 
-std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
+String CSSSelectorList::SelectorsText(const CSSSelector* first) {
   StringBuilder result;
 
   for (const CSSSelector* s = first; s; s = Next(*s)) {
@@ -119,7 +119,7 @@ std::string CSSSelectorList::SelectorsText(const CSSSelector* first) {
     result.Append(s->SelectorText());
   }
 
-  return result.ReleaseString().StdUtf8();
+  return result.ReleaseString();
 }
 
 void CSSSelectorList::Trace(GCVisitor* visitor) const {}

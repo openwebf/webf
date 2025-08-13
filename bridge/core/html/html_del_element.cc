@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLDelElement::HTMLDelElement(Document& document) : HTMLElement(AtomicString("del"), &document) {}
+HTMLDelElement::HTMLDelElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("del"), &document) {}
 
 }  // namespace webf

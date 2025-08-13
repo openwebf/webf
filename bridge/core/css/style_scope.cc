@@ -60,8 +60,9 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
   // <scope-start>
   if (prelude.Peek().GetType() == kLeftParenthesisToken) {
     auto block = prelude.ConsumeBlock();
-    std::string text = block.Serialize();
-    CSSTokenizer tokenizer(text);
+    String text = block.Serialize();
+    StringView text_view(text);
+    CSSTokenizer tokenizer(text_view);
     CSSParserTokenStream stream(tokenizer);
     from = CSSSelectorParser::ParseScopeBoundary(stream, context, nesting_type, parent_rule_for_nesting,
                                                  style_sheet, arena);
@@ -93,8 +94,9 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
     //
     // https://drafts.csswg.org/css-nesting-1/#nesting-at-scope
     auto block = prelude.ConsumeBlock();
-    std::string text = block.Serialize();
-    CSSTokenizer tokenizer(text);
+    String text = block.Serialize();
+    StringView text_view(text);
+    CSSTokenizer tokenizer(text_view);
     CSSParserTokenStream stream(tokenizer);
     to = CSSSelectorParser::ParseScopeBoundary(stream, context, CSSNestingType::kScope,
                                                /* parent_rule_for_nesting */ from_rule,

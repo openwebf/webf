@@ -47,7 +47,7 @@ StyleEngine::StyleEngine(Document& document) : document_(&document) {
   CreateResolver();
 }
 
-CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& text) {
+CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const String& text) {
   assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
   assert(&element.GetDocument() == &GetDocument());
   // Note: Blink allows creating sheets for disconnected elements, so we don't check isConnected()
@@ -64,11 +64,11 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
   // be parked (compressed, or stored to disk) if there's memory pressure,
   // or otherwise dropped, so this keeps us from being the only thing
   // that keeps it alive.
-  std::string key;
+  String key;
   if (text.length() >= 1024) {
-    std::hash<std::string> hasher;
-    size_t digest = hasher(text);
-    key = std::to_string(digest);
+    StringBuilder builder;
+    builder.AppendNumber(text.Impl() ? text.Impl()->GetHash() : 0);
+    key = builder.ReleaseString();
   } else {
     key = text;
   }
@@ -97,7 +97,7 @@ CSSStyleSheet* StyleEngine::CreateSheet(Element& element, const std::string& tex
   return style_sheet;
 }
 
-CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const std::string& text) {
+CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const String& text) {
   assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
   // Create parser context without Document to avoid circular references
   auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);

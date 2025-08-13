@@ -44,7 +44,7 @@ Element::Element(const AtomicString& namespace_uri,
     : ContainerNode(document, construction_type),
       local_name_(local_name),
       namespace_uri_(namespace_uri),
-      tag_name_(local_name.ToUTF8String()) {
+      tag_name_(QualifiedName(prefix, local_name, namespace_uri)) {
   auto buffer = GetExecutingContext()->uiCommandBuffer();
   if (namespace_uri == element_namespace_uris::khtml) {
     buffer->AddCommand(UICommand::kCreateElement, local_name.ToNativeString(), bindingObject(), nullptr);
@@ -258,10 +258,10 @@ String Element::nodeName() const {
   // For HTML elements in HTML namespace, return uppercased tagName
   // For all other elements (including those created with createElementNS), preserve original case
   if (IsHTMLElement()) {
-    return tagName().UpperASCII();
+    return String(tagName().UpperASCII());
   }
   // For elements created with createElementNS or non-HTML elements, preserve original case
-  return tagName();
+  return String(tagName());
 }
 
 AtomicString Element::className() const {

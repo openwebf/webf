@@ -4,6 +4,9 @@
 
 #include "wtf_string.h"
 #include <cstring>
+#include <cstdarg>
+#include <vector>
+#include <cstdio>
 #include "string_builder.h"
 #include "string_view.h"
 
@@ -322,6 +325,45 @@ std::ostream& operator<<(std::ostream& out, const String& string) {
     return out << "<null>";
   }
   return out << StringView(string).EncodeForDebugging().StdUtf8();
+}
+
+// Number to String conversion implementations
+String String::Number(float number) {
+  char buffer[256];
+  snprintf(buffer, sizeof(buffer), "%.6g", number);
+  return String(buffer);
+}
+
+String String::Number(double number, unsigned precision) {
+  char buffer[256];
+  char format[32];
+  snprintf(format, sizeof(format), "%%.%ug", precision);
+  snprintf(buffer, sizeof(buffer), format, number);
+  return String(buffer);
+}
+
+// Format string implementation
+String String::Format(const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  
+  // Get required buffer size
+  va_list args_copy;
+  va_copy(args_copy, args);
+  int size = vsnprintf(nullptr, 0, format, args_copy);
+  va_end(args_copy);
+  
+  if (size < 0) {
+    va_end(args);
+    return String();
+  }
+  
+  // Allocate buffer and format string
+  std::vector<char> buffer(size + 1);
+  vsnprintf(buffer.data(), buffer.size(), format, args);
+  va_end(args);
+  
+  return String(buffer.data());
 }
 
 }  // namespace webf

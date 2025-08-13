@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLMetaElement::HTMLMetaElement(Document& document) : HTMLElement(AtomicString("meta"), &document) {}
+HTMLMetaElement::HTMLMetaElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("meta"), &document) {}
 
 }  // namespace webf

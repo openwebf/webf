@@ -125,7 +125,7 @@ AtomicString SpaceSplitString::SerializeToString() const {
     ss << (*data_)[i].ToUTF8String();
   }
 
-  return {ss.str()};
+  return AtomicString::CreateFromUTF8(ss.str().c_str());
 }
 
 template <typename CharacterType>
@@ -149,7 +149,16 @@ inline void SpaceSplitString::Data::CreateVector(const AtomicString& source,
       return;
     }
 
-    AtomicString token = AtomicString(characters + start, end - start);
+    // Convert CharacterType* to string based on type
+    AtomicString token;
+    if constexpr (std::is_same_v<CharacterType, LChar>) {
+      // For LChar (8-bit), we can use the pointer directly
+      token = AtomicString::CreateFromUTF8(reinterpret_cast<const char*>(characters + start), end - start);
+    } else {
+      // For UChar (16-bit), need to convert to UTF8
+      String str(reinterpret_cast<const UChar*>(characters + start), end - start);
+      token = AtomicString(str);
+    }
     // We skip adding |token| to |token_set| for the first token to reduce the
     // cost of HashSet<>::insert(), and adjust |token_set| when the second
     // unique token is found.

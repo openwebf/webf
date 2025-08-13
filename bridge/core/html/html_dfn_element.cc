@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLDfnElement::HTMLDfnElement(Document& document) : HTMLElement(AtomicString("dfn"), &document) {}
+HTMLDfnElement::HTMLDfnElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("dfn"), &document) {}
 
 }  // namespace webf

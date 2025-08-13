@@ -45,7 +45,8 @@ bool CSSFontFaceSrcValue::IsSupportedFormat() const {
   // ends with .eot.  If so, we'll go ahead and assume that we shouldn't load
   // it.
   const AtomicString& resolved_url_string = src_value_->UrlData().ResolvedUrl();
-  return ProtocolIs(resolved_url_string.GetString().StdUtf8(), "data") || !base::EndsWith(std::string_view(resolved_url_string.GetString().StdUtf8()), ".eot");
+  const String& url_string = resolved_url_string.GetString();
+  return ProtocolIs(url_string.StdUtf8(), "data") || !url_string.EndsWith(".eot");
 }
 
 String CSSFontFaceSrcValue::CustomCSSText() const {

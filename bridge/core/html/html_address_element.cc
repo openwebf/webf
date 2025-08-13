@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLAddressElement::HTMLAddressElement(Document& document) : HTMLElement(AtomicString("address"), &document) {}
+HTMLAddressElement::HTMLAddressElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("address"), &document) {}
 
 }  // namespace webf

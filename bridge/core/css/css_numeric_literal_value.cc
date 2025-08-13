@@ -8,7 +8,7 @@
 #include "core/css/css_length_resolver.h"
 #include "core/css/css_value_pool.h"
 #include "core/platform/math_extras.h"
-//#include "third_party/blink/renderer/platform/wtf/text/string_builder.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -172,14 +172,12 @@ bool CSSNumericLiteralValue::IsComputationallyIndependent() const {
   return !IsRelativeUnit(GetType());
 }
 
-static std::string FormatNumber(double number, const char* suffix) {
-  char buffer[10];
-  snprintf(buffer, 10, "%.6g%s", number, suffix);
-  return buffer;
+static String FormatNumber(double number, const char* suffix) {
+  return String::Format("%.6g%s", number, suffix);
 }
 
-static std::string FormatInfinityOrNaN(double number, const char* suffix) {
-  std::string result;
+static String FormatInfinityOrNaN(double number, const char* suffix) {
+  String result;
   if (std::isinf(number)) {
     if (number > 0) {
       result = "infinity";
@@ -193,22 +191,19 @@ static std::string FormatInfinityOrNaN(double number, const char* suffix) {
   }
 
   if (strlen(suffix) > 0) {
-    char buffer[100];
-    snprintf(buffer, 100, " * 1%s", suffix);
-    result = result + buffer;
+    result = String::Format("%s * 1%s", result.Utf8().c_str(), suffix);
   }
   return result;
 }
 
 String CSSNumericLiteralValue::CustomCSSText() const {
-  std::string text;
+  String text;
   switch (GetType()) {
     case UnitType::kUnknown:
       // FIXME
       break;
     case UnitType::kInteger:
-      // text = String::Number(ComputeInteger());
-      text = std::to_string(ComputeInteger());
+      text = String::Number(ComputeInteger());
       break;
     case UnitType::kNumber:
     case UnitType::kPercentage:
@@ -289,12 +284,12 @@ String CSSNumericLiteralValue::CustomCSSText() const {
           text = FormatNumber(value, UnitTypeToString(GetType()));
         }
       } else {
-        std::string builder;
+        StringBuilder builder;
         int int_value = value;
         const char* unit_type = UnitTypeToString(GetType());
-        builder.append(std::to_string(int_value));
-        builder.append(unit_type, static_cast<unsigned>(strlen(unit_type)));
-        text = builder;
+        builder.AppendNumber(int_value);
+        builder.Append(unit_type);
+        text = builder.ReleaseString();
       }
     } break;
     default:

@@ -5,7 +5,7 @@
 
 #include "at_rule_descriptors.h"
 #include "core/css/hash_tools.h"
-#include "foundation/ascii_types.h"
+#include "foundation/string/ascii_types.h"
 
 #ifdef _MSC_VER
 // Disable the warnings from casting a 64-bit pointer to 32-bit long

@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLLabelElement::HTMLLabelElement(Document& document) : HTMLElement(AtomicString("label"), &document) {}
+HTMLLabelElement::HTMLLabelElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("label"), &document) {}
 
 }  // namespace webf

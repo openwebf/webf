@@ -54,21 +54,21 @@
 #include "core/html/forms/html_input_element.h"
 #include "core/html/parser/html_parser_idioms.h"
 #include "core/svg/svg_element.h"
-#include "foundation/atomic_string.h"
+#include "foundation/string/atomic_string.h"
 #include "foundation/casting.h"
 
 namespace webf {
 
 // Shadow element names used by UA shadow DOM
 namespace shadow_element_names {
-const AtomicString kPseudoFileUploadButton("file-upload-button");
-const AtomicString kSelectFallbackButton("select-fallback-button");
-const AtomicString kSelectFallbackButtonIcon("select-fallback-button-icon");
-const AtomicString kSelectFallbackButtonText("select-fallback-button-text");
-const AtomicString kSelectFallbackDatalist("select-fallback-datalist");
-const AtomicString kPseudoInputPlaceholder("input-placeholder");
-const AtomicString kIdDetailsContent("details-content");
-const AtomicString kPlaceholder("placeholder");
+const AtomicString kPseudoFileUploadButton = AtomicString::CreateFromUTF8("file-upload-button");
+const AtomicString kSelectFallbackButton = AtomicString::CreateFromUTF8("select-fallback-button");
+const AtomicString kSelectFallbackButtonIcon = AtomicString::CreateFromUTF8("select-fallback-button-icon");
+const AtomicString kSelectFallbackButtonText = AtomicString::CreateFromUTF8("select-fallback-button-text");
+const AtomicString kSelectFallbackDatalist = AtomicString::CreateFromUTF8("select-fallback-datalist");
+const AtomicString kPseudoInputPlaceholder = AtomicString::CreateFromUTF8("input-placeholder");
+const AtomicString kIdDetailsContent = AtomicString::CreateFromUTF8("details-content");
+const AtomicString kPlaceholder = AtomicString::CreateFromUTF8("placeholder");
 }  // namespace shadow_element_names
 
 // Stub for probe namespace - WebF doesn't have devtools probe functionality
@@ -334,7 +334,7 @@ SelectorChecker::MatchStatus SelectorChecker::MatchForScopeActivation(const Sele
      // Elements directly (e.g. SetChildrenOrSiblingsAffectedByHover)
      result.flags |= activations.match_flags;
    }
-   if (activations.vector.IsEmpty()) {
+   if (activations.vector.empty()) {
      return kSelectorFailsCompletely;
    }
    for (const StyleScopeActivation& activation : activations.vector) {
@@ -519,7 +519,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        }
      }
      // Ignore empty selectors
-     if (selector_value.IsEmpty()) {
+     if (selector_value.empty()) {
        return false;
      }
      
@@ -563,7 +563,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
      return false;
    }
    case CSSSelector::kAttributeContain:
-     if (selector_value.IsEmpty()) {
+     if (selector_value.empty()) {
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
@@ -604,7 +604,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return false;
      }
    case CSSSelector::kAttributeBegin:
-     if (selector_value.IsEmpty()) {
+     if (selector_value.empty()) {
        return false;
      }
      if (case_sensitivity == kTextCaseSensitive) {
@@ -622,7 +622,7 @@ static bool AttributeValueMatches(const Attribute& attribute_item,
        return true;
      }
    case CSSSelector::kAttributeEnd:
-     if (selector_value.IsEmpty()) {
+     if (selector_value.empty()) {
        return false;
      }
      if (value.length() < selector_value.length()) {
@@ -1286,7 +1286,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
          break;
        }
        if (auto* text_node = DynamicTo<Text>(n)) {
-         if (!text_node->data().IsEmpty()) {
+         if (!text_node->data().empty()) {
            // TODO: Implement ContainsOnlyWhitespaceOrEmpty
            // if (text_node->ContainsOnlyWhitespaceOrEmpty()) {
            //   has_whitespace = true;
@@ -1620,7 +1620,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
      // auto* vtt_element = DynamicTo<VTTElement>(element);
      AtomicString value = element.ComputeInheritedLanguage();
      const AtomicString& argument = selector.Argument();
-     if (value.IsEmpty() || !String(value.Impl()).StartsWith(String(argument.Impl()))) {
+     if (value.empty() || !String(value.Impl()).StartsWith(String(argument.Impl()))) {
        break;
      }
      if (value.length() != argument.length() && value[argument.length()] != '-') {
@@ -1630,7 +1630,7 @@ bool SelectorChecker::CheckPseudoClass(const SelectorCheckingContext& context, M
    }
    case CSSSelector::kPseudoDir: {
      const AtomicString& argument = selector.Argument();
-     if (argument.IsEmpty()) {
+     if (argument.empty()) {
        break;
      }
      TextDirection direction;
@@ -2027,7 +2027,7 @@ bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context,
      if (selector_pseudo_id == kPseudoIdViewTransition) {
        return true;
      }
-     CHECK(!selector.IdentList().IsEmpty());
+     CHECK(!selector.IdentList().empty());
      const AtomicString& name_or_wildcard = selector.IdentList()[0];
      // note that the pseudo_ident_list_ is the class list, and
      // pseudo_argument_ is the name, while in the selector the IdentList() is
@@ -2335,7 +2335,7 @@ const StyleScopeActivations* SelectorChecker::CalculateActivations(Element& elem
    }
  }
  auto activations = std::make_shared<StyleScopeActivations>();
- if (!outer_activations.vector.IsEmpty()) {
+ if (!outer_activations.vector.empty()) {
    const StyleScopeActivations* parent_activations = nullptr;
    // Remain within the outer scope. I.e. don't look at elements above the
    // highest outer activation.

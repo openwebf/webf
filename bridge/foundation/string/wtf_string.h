@@ -108,6 +108,21 @@ class String {
 
   String EncodeForDebugging() const;
 
+  // Number to String conversion
+  template <typename IntegerType>
+  static String Number(IntegerType number) {
+    return String(std::to_string(number).c_str());
+  }
+  
+  static String Number(float);
+  static String Number(double, unsigned precision = 6);
+  
+  // Format string
+  static String Format(const char* format, ...);
+  
+  // Utf8 conversion (alias for StdUtf8 for Blink compatibility)
+  std::string Utf8() const { return StdUtf8(); }
+
 
  private:
   std::shared_ptr<StringImpl> impl_;

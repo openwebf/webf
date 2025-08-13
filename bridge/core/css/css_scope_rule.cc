@@ -59,7 +59,7 @@ AtomicString CSSScopeRule::cssText() const {
   return AtomicString(result.ReleaseString());
 }
 
-std::string CSSScopeRule::start() const {
+String CSSScopeRule::start() const {
   const StyleScope& style_scope = GetStyleRuleScope().GetStyleScope();
   if (style_scope.From()) {
     // TODO: Implement proper selector serialization
@@ -68,7 +68,7 @@ std::string CSSScopeRule::start() const {
   return "";
 }
 
-std::string CSSScopeRule::end() const {
+String CSSScopeRule::end() const {
   const StyleScope& style_scope = GetStyleRuleScope().GetStyleScope();
   if (style_scope.To()) {
     // TODO: Implement proper selector serialization
@@ -77,7 +77,7 @@ std::string CSSScopeRule::end() const {
   return "";
 }
 
-void CSSScopeRule::SetPreludeText(const ExecutingContext* context, const std::string& text) {
+void CSSScopeRule::SetPreludeText(const ExecutingContext* context, const String& text) {
   // TODO: Implement prelude text parsing and setting
   // This would require parsing the scope prelude text and updating the underlying StyleRuleScope
 }

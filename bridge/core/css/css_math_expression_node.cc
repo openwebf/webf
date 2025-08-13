@@ -45,6 +45,7 @@
 #include "css_color_channel_map.h"
 #include "css_math_operator.h"
 #include "css_value_clamping_utils.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -803,7 +804,7 @@ class CSSMathExpressionNodeParser {
     }
 
     while (!tokens.AtEnd() && nodes.size() < max_argument_count) {
-      if (!nodes.IsEmpty()) {
+      if (!nodes.empty()) {
         if (!css_parsing_utils::ConsumeCommaIncludingWhitespace(tokens)) {
           return nullptr;
         }
@@ -1572,7 +1573,7 @@ CSSPrimitiveValue::BoolStatus CSSMathExpressionNumericLiteral::ResolvesTo(double
 
 // ------ Start of CSSMathExpressionIdentifierLiteral member functions -
 
-CSSMathExpressionIdentifierLiteral::CSSMathExpressionIdentifierLiteral(std::string identifier)
+CSSMathExpressionIdentifierLiteral::CSSMathExpressionIdentifierLiteral(AtomicString identifier)
     : CSSMathExpressionNode(UnitCategory(CSSPrimitiveValue::UnitType::kIdent),
                             false /* has_comparisons*/,
                             false /* has_anchor_unctions*/,
@@ -1825,7 +1826,7 @@ static CalculationResultCategory DetermineCalcSizeCategory(const CSSMathExpressi
 }
 
 static CalculationResultCategory DetermineComparisonCategory(const CSSMathExpressionOperation::Operands& operands) {
-  DCHECK(!operands.IsEmpty());
+  DCHECK(!operands.empty());
 
   bool is_first = true;
   CalculationResultCategory category = kCalcOther;
@@ -2436,7 +2437,7 @@ std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
     current_calc_size = basis_calc_size;
   }
 
-  if (calculation_stack.IsEmpty()) {
+  if (calculation_stack.empty()) {
     // No substitution is needed; return the original.
     return calc_size_input;
   }
@@ -2450,7 +2451,7 @@ std::shared_ptr<const CSSMathExpressionNode> UnnestCalcSize(
       return nullptr;
     }
     calculation_stack.pop_back();
-  } while (!calculation_stack.IsEmpty());
+  } while (!calculation_stack.empty());
 
   return CSSMathExpressionOperation::CreateCalcSizeOperation(innermost_basis, current_result);
 }
@@ -3133,7 +3134,7 @@ String CSSMathExpressionOperation::CustomCSSText() const {
       CSSMathOperator op = operation->OperatorType();
       const Operands& operands = operation->GetOperands();
 
-      std::string result;
+      StringBuilder result;
 
       // After all the simplifications we only need parentheses here for the
       // cases like: (lhs as unsimplified sum/sub) [* or /] rhs
@@ -3141,16 +3142,16 @@ String CSSMathExpressionOperation::CustomCSSText() const {
           IsMultiplyOrDivide() && operands.front()->IsOperation() &&
           To<CSSMathExpressionOperation>(operands.front().get())->IsAddOrSubtract();
       if (left_side_needs_parentheses) {
-        result.append("(");
+        result.Append("(");
       }
-      result.append(operands[0]->CustomCSSText());
+      result.Append(operands[0]->CustomCSSText());
       if (left_side_needs_parentheses) {
-        result.append(")");
+        result.Append(")");
       }
 
-      result.append(" ");
-      result.append(ToString(op));
-      result.append(" ");
+      result.Append(" ");
+      result.Append(ToString(op));
+      result.Append(" ");
 
       // After all the simplifications we only need parentheses here for the
       // cases like: lhs [* or /] (rhs as unsimplified sum/sub)
@@ -3158,14 +3159,14 @@ String CSSMathExpressionOperation::CustomCSSText() const {
           IsMultiplyOrDivide() && operands.back()->IsOperation() &&
           To<CSSMathExpressionOperation>(operands.back().get())->IsAddOrSubtract();
       if (right_side_needs_parentheses) {
-        result.append("(");
+        result.Append("(");
       }
-      result.append(operands[1]->CustomCSSText());
+      result.Append(operands[1]->CustomCSSText());
       if (right_side_needs_parentheses) {
-        result.append(")");
+        result.Append(")");
       }
 
-      return result;
+      return result.ReleaseString();
     }
     case CSSMathOperator::kMin:
     case CSSMathOperator::kMax:
@@ -3176,53 +3177,53 @@ String CSSMathExpressionOperation::CustomCSSText() const {
     case CSSMathOperator::kAbs:
     case CSSMathOperator::kSign:
     case CSSMathOperator::kCalcSize: {
-      std::string result;
-      result.append(ToString(operator_));
-      result.append("(");
-      result.append(operands_.front()->CustomCSSText());
+      StringBuilder result;
+      result.Append(ToString(operator_));
+      result.Append("(");
+      result.Append(operands_.front()->CustomCSSText());
       for (auto&& operand : SecondToLastOperands()) {
-        result.append(", ");
-        result.append(operand->CustomCSSText());
+        result.Append(", ");
+        result.Append(operand->CustomCSSText());
       }
-      result.append(")");
+      result.Append(")");
 
-      return result;
+      return result.ReleaseString();
     }
     case CSSMathOperator::kRoundNearest:
     case CSSMathOperator::kRoundUp:
     case CSSMathOperator::kRoundDown:
     case CSSMathOperator::kRoundToZero: {
-      std::string result;
-      result.append(ToString(operator_));
-      result.append("(");
+      StringBuilder result;
+      result.Append(ToString(operator_));
+      result.Append("(");
       if (operator_ != CSSMathOperator::kRoundNearest) {
-        result.append(ToRoundingStrategyString(operator_));
-        result.append(", ");
+        result.Append(ToRoundingStrategyString(operator_));
+        result.Append(", ");
       }
-      result.append(operands_[0]->CustomCSSText());
+      result.Append(operands_[0]->CustomCSSText());
       if (ShouldSerializeRoundingStep(operands_)) {
-        result.append(", ");
-        result.append(operands_[1]->CustomCSSText());
+        result.Append(", ");
+        result.Append(operands_[1]->CustomCSSText());
       }
-      result.append(")");
+      result.Append(")");
 
-      return result;
+      return result.ReleaseString();
     }
     case CSSMathOperator::kProgress:
     case CSSMathOperator::kMediaProgress:
     case CSSMathOperator::kContainerProgress: {
       CHECK_EQ(operands_.size(), 3u);
-      std::string result;
-      result.append(ToString(operator_));
-      result.append("(");
-      result.append(operands_.front()->CustomCSSText());
-      result.append(" from ");
-      result.append(operands_[1]->CustomCSSText());
-      result.append(" to ");
-      result.append(operands_.back()->CustomCSSText());
-      result.append(")");
+      StringBuilder result;
+      result.Append(ToString(operator_));
+      result.Append("(");
+      result.Append(operands_.front()->CustomCSSText());
+      result.Append(" from ");
+      result.Append(operands_[1]->CustomCSSText());
+      result.Append(" to ");
+      result.Append(operands_.back()->CustomCSSText());
+      result.Append(")");
 
-      return result;
+      return result.ReleaseString();
     }
     case CSSMathOperator::kInvalid:
       NOTREACHED_IN_MIGRATION();
@@ -3434,7 +3435,7 @@ double CSSMathExpressionOperation::EvaluateOperator(const std::vector<double>& o
       DCHECK(operands.size() == 1u || operands.size() == 2u);
       return operands[0] / operands[1];
     case CSSMathOperator::kMin: {
-      if (operands.IsEmpty()) {
+      if (operands.empty()) {
         return std::numeric_limits<double>::quiet_NaN();
       }
       double minimum = operands[0];
@@ -3450,7 +3451,7 @@ double CSSMathExpressionOperation::EvaluateOperator(const std::vector<double>& o
       return minimum;
     }
     case CSSMathOperator::kMax: {
-      if (operands.IsEmpty()) {
+      if (operands.empty()) {
         return std::numeric_limits<double>::quiet_NaN();
       }
       double maximum = operands[0];
@@ -3584,13 +3585,13 @@ CSSMathExpressionContainerFeature::CSSMathExpressionContainerFeature(
 }
 
 String CSSMathExpressionContainerFeature::CustomCSSText() const {
-  std::string builder;
-  builder.append(size_feature_->CustomCSSText());
-  if (container_name_ && !container_name_->Value().IsEmpty()) {
-    builder.append(" of ");
-    builder.append(container_name_->CustomCSSText());
+  StringBuilder builder;
+  builder.Append(size_feature_->CustomCSSText());
+  if (container_name_ && !container_name_->Value().Empty()) {
+    builder.Append(" of ");
+    builder.Append(container_name_->CustomCSSText());
   }
-  return builder;
+  return builder.ReleaseString();
 }
 
 std::shared_ptr<const CalculationExpressionNode> CSSMathExpressionContainerFeature::ToCalculationExpression(

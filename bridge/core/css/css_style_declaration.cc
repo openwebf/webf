@@ -83,7 +83,7 @@ CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context, cons
     return CSSPropertyID::kInvalid;
   }
 
-  std::string prop_name = builder.ReleaseString();
+  String prop_name = builder.ReleaseString();
   return UnresolvedCSSPropertyID(execution_context, prop_name);
 }
 
@@ -171,7 +171,7 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   }
 
   if (value.IsString()) {
-    std::string_view string = value.ToString(ctx()).ToStringView();
+    StringView string = value.ToString(ctx()).ToStringView();
     if (string.length() <= 128) {
       uint8_t buffer[128];
       int len = string.length();

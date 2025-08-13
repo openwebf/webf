@@ -58,15 +58,13 @@ std::string FontFamily::ToString() const {
 }
 
 /*static*/ FontFamily::Type FontFamily::InferredTypeFor(const AtomicString& family_name) {
-  // Convert to std::string for comparison with existing constants
-  std::string family_str = family_name.ToUTF8String();
-  return (family_str == font_family_names_stdstring::kcursive ||
-          family_str == font_family_names_stdstring::kfantasy ||
-          family_str == font_family_names_stdstring::kmonospace ||
-          family_str == font_family_names_stdstring::ksansSerif ||
-          family_str == font_family_names_stdstring::kserif || 
-          family_str == font_family_names_stdstring::kSystemUI ||
-          family_str == font_family_names_stdstring::kmath)
+  return (family_name == font_family_names_atomicstring::kcursive ||
+          family_name == font_family_names_atomicstring::kfantasy ||
+          family_name == font_family_names_atomicstring::kmonospace ||
+          family_name == font_family_names_atomicstring::ksansSerif ||
+          family_name == font_family_names_atomicstring::kserif || 
+          family_name == font_family_names_atomicstring::kSystemUI ||
+          family_name == font_family_names_atomicstring::kmath)
              ? Type::kGenericFamily
              : Type::kFamilyName;
 }

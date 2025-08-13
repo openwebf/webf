@@ -25,10 +25,10 @@ class CSSScopeRule final : public CSSGroupingRule {
 
   String PreludeText() const;
   AtomicString cssText() const override;
-  std::string start() const;
-  std::string end() const;
+  String start() const;
+  String end() const;
 
-  void SetPreludeText(const ExecutingContext*, const std::string&);
+  void SetPreludeText(const ExecutingContext*, const String&);
   StyleRuleScope& GetStyleRuleScope();
   const StyleRuleScope& GetStyleRuleScope() const;
 

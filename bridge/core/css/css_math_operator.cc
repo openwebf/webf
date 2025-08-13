@@ -25,62 +25,62 @@ CSSMathOperator ParseCSSArithmeticOperator(const CSSParserToken& token) {
   }
 }
 
-std::string ToString(CSSMathOperator op) {
+StringView ToString(CSSMathOperator op) {
   switch (op) {
     case CSSMathOperator::kAdd:
-      return "+";
+      return StringView("+");
     case CSSMathOperator::kSubtract:
-      return "-";
+      return StringView("-");
     case CSSMathOperator::kMultiply:
-      return "*";
+      return StringView("*");
     case CSSMathOperator::kDivide:
-      return "/";
+      return StringView("/");
     case CSSMathOperator::kMin:
-      return "min";
+      return StringView("min");
     case CSSMathOperator::kMax:
-      return "max";
+      return StringView("max");
     case CSSMathOperator::kClamp:
-      return "clamp";
+      return StringView("clamp");
     case CSSMathOperator::kRoundNearest:
     case CSSMathOperator::kRoundUp:
     case CSSMathOperator::kRoundDown:
     case CSSMathOperator::kRoundToZero:
-      return "round";
+      return StringView("round");
     case CSSMathOperator::kMod:
-      return "mod";
+      return StringView("mod");
     case CSSMathOperator::kRem:
-      return "rem";
+      return StringView("rem");
     case CSSMathOperator::kHypot:
-      return "hypot";
+      return StringView("hypot");
     case CSSMathOperator::kAbs:
-      return "abs";
+      return StringView("abs");
     case CSSMathOperator::kSign:
-      return "sign";
+      return StringView("sign");
     case CSSMathOperator::kProgress:
-      return "progress";
+      return StringView("progress");
     case CSSMathOperator::kCalcSize:
-      return "calc-size";
+      return StringView("calc-size");
     case CSSMathOperator::kMediaProgress:
-      return "media-progress";
+      return StringView("media-progress");
     case CSSMathOperator::kContainerProgress:
-      return "container-progress";
+      return StringView("container-progress");
     default:
       assert(false);
-      return "";
+      return StringView("");
   }
 }
 
-std::string ToRoundingStrategyString(CSSMathOperator op) {
+StringView ToRoundingStrategyString(CSSMathOperator op) {
   switch (op) {
     case CSSMathOperator::kRoundUp:
-      return "up";
+      return StringView("up");
     case CSSMathOperator::kRoundDown:
-      return "down";
+      return StringView("down");
     case CSSMathOperator::kRoundToZero:
-      return "to-zero";
+      return StringView("to-zero");
     default:
       assert(false);
-      return "";
+      return StringView("");
   }
 }
 

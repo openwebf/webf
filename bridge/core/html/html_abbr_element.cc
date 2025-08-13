@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLAbbrElement::HTMLAbbrElement(Document& document) : HTMLElement(AtomicString("abbr"), &document) {}
+HTMLAbbrElement::HTMLAbbrElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("abbr"), &document) {}
 
 }  // namespace webf

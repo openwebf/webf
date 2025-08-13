@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLNavElement::HTMLNavElement(Document& document) : HTMLElement(AtomicString("nav"), &document) {}
+HTMLNavElement::HTMLNavElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("nav"), &document) {}
 
 }  // namespace webf

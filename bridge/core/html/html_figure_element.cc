@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLFigureElement::HTMLFigureElement(Document& document) : HTMLElement(AtomicString("figure"), &document) {}
+HTMLFigureElement::HTMLFigureElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("figure"), &document) {}
 
 }  // namespace webf

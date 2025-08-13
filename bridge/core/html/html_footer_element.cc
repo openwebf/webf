@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLFooterElement::HTMLFooterElement(Document& document) : HTMLElement(AtomicString("footer"), &document) {}
+HTMLFooterElement::HTMLFooterElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("footer"), &document) {}
 
 }  // namespace webf

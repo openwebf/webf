@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLInsElement::HTMLInsElement(Document& document) : HTMLElement(AtomicString("ins"), &document) {}
+HTMLInsElement::HTMLInsElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("ins"), &document) {}
 
 }  // namespace webf

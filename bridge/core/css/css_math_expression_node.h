@@ -313,15 +313,15 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
  public:
   enum class Context { kMediaProgress, kCalcSize, kColorChannel };
 
-  static std::shared_ptr<CSSMathExpressionIdentifierLiteral> Create(std::string identifier) {
+  static std::shared_ptr<CSSMathExpressionIdentifierLiteral> Create(AtomicString identifier) {
     return std::make_shared<CSSMathExpressionIdentifierLiteral>(std::move(identifier));
   }
 
-  explicit CSSMathExpressionIdentifierLiteral(std::string identifier);
+  explicit CSSMathExpressionIdentifierLiteral(AtomicString identifier);
 
   std::shared_ptr<CSSMathExpressionNode> Copy() const final { return Create(identifier_); }
 
-  const std::string& GetValue() const { return identifier_; }
+  const AtomicString& GetValue() const { return identifier_; }
 
   bool IsIdentifierLiteral() const final { return true; }
 
@@ -338,7 +338,7 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
   CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
-  String CustomCSSText() const final { return identifier_; }
+  String CustomCSSText() const final { return String(identifier_); }
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final { return std::nullopt; }
   double DoubleValue() const final {
@@ -378,7 +378,7 @@ class CSSMathExpressionIdentifierLiteral final : public CSSMathExpressionNode {
   }
 
  private:
-  std::string identifier_;
+  AtomicString identifier_;
 };
 
 template <>

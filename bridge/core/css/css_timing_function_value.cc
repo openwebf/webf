@@ -31,6 +31,7 @@
 
 #include "core/css/css_timing_function_value.h"
 #include <cstdint>
+#include "foundation/string/string_builder.h"
 
 namespace webf::cssvalue {
 
@@ -65,7 +66,7 @@ bool CSSCubicBezierTimingFunctionValue::Equals(const CSSCubicBezierTimingFunctio
 }
 
 String CSSStepsTimingFunctionValue::CustomCSSText() const {
-  std::string step_position_string;
+  String step_position_string;
   switch (step_position_) {
     case StepsTimingFunction::StepPosition::START:
       step_position_string = "start";
@@ -94,11 +95,15 @@ String CSSStepsTimingFunctionValue::CustomCSSText() const {
   // https://drafts.csswg.org/css-easing-1/#serialization
   // If the step position is jump-end or end, serialize as steps(<integer>).
   // Otherwise, serialize as steps(<integer>, <step-position>).
-  if (step_position_string.IsEmpty()) {
-    return "steps(" + std::to_string(steps_) + ')';
+  StringBuilder result;
+  result.Append("steps(");
+  result.AppendNumber(steps_);
+  if (!step_position_string.IsEmpty()) {
+    result.Append(", ");
+    result.Append(step_position_string);
   }
-
-  return "steps(" + std::to_string(steps_) + ", " + step_position_string + ')';
+  result.Append(')');
+  return result.ReleaseString();
 }
 
 bool CSSStepsTimingFunctionValue::Equals(const CSSStepsTimingFunctionValue& other) const {

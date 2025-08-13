@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLSpanElement::HTMLSpanElement(Document& document) : HTMLElement(AtomicString("span"), &document) {}
+HTMLSpanElement::HTMLSpanElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("span"), &document) {}
 
 }  // namespace webf

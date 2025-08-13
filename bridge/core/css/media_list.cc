@@ -189,7 +189,8 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   std::shared_ptr<const MediaQuerySet> new_media_queries =
       Queries()->CopyAndRemove(medium.GetString(), execution_context);
   if (!new_media_queries) {
-    exception_state.ThrowException(ctx(), ErrorType::InternalError, std::string("Failed to delete '") + medium.ToUTF8String() + "'.");
+    String error_message = String("Failed to delete '") + String(medium) + "'.";
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, error_message.StdUtf8());
     return;
   }
   Owner()->SetMediaQueries(new_media_queries);

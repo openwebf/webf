@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLStrikethroughElement::HTMLStrikethroughElement(Document& document) : HTMLElement(AtomicString("s"), &document) {}
+HTMLStrikethroughElement::HTMLStrikethroughElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("s"), &document) {}
 
 }  // namespace webf

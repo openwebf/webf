@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLSmallElement::HTMLSmallElement(Document& document) : HTMLElement(AtomicString("small"), &document) {}
+HTMLSmallElement::HTMLSmallElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("small"), &document) {}
 
 }  // namespace webf

@@ -262,7 +262,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // string before setting it. If the value is empty, the property is removed.
   // Only for non-custom properties.
   SetResult ParseAndSetProperty(CSSPropertyID unresolved_property,
-                                const std::string& value,
+                                const String& value,
                                 bool important,
                                 std::shared_ptr<StyleSheetContents> context_style_sheet = nullptr);
 
@@ -271,7 +271,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // custom properties can never be shorthands.) If the value is empty,
   // the property is removed.
   SetResult ParseAndSetCustomProperty(const AtomicString& custom_property_name,
-                                      const std::string& value,
+                                      const String& value,
                                       bool important,
                                       std::shared_ptr<StyleSheetContents> context_style_sheet,
                                       bool is_animation_tainted);
@@ -290,7 +290,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   SetResult SetLonghandProperty(CSSPropertyID, CSSValueID identifier, bool important = false);
 
   template <typename T>
-  bool RemoveProperty(const T& property, std::string* return_text = nullptr);
+  bool RemoveProperty(const T& property, String* return_text = nullptr);
 
   bool RemovePropertiesInSet(const CSSProperty* const set[], unsigned length);
   void RemoveEquivalentProperties(const CSSPropertyValueSet*);
@@ -320,7 +320,7 @@ class MutableCSSPropertyValueSet : public CSSPropertyValueSet {
   // nullptr).
   ALWAYS_INLINE CSSPropertyValue* FindInsertionPointForID(CSSPropertyID property_id);
 
-  bool RemovePropertyAtIndex(int, std::string* return_text);
+  bool RemovePropertyAtIndex(int, String* return_text);
 
   bool RemoveShorthandProperty(CSSPropertyID);
   bool RemoveShorthandProperty(const AtomicString& custom_property_name) { return false; }

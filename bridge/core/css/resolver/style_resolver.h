@@ -293,7 +293,7 @@ class StyleResolver final {
                       Element* element,
                       const CSSPropertyID property_id,
                       const AtomicString& fallback_color,
-                      const std::string& visited_fallback_color);
+                      const String& visited_fallback_color);
 
   Document* document_;
   SelectorFilter selector_filter_;

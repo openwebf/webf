@@ -144,7 +144,7 @@ class CSSSelector {
 
   ~CSSSelector();
 
-  std::string SelectorText() const;
+  String SelectorText() const;
   String SimpleSelectorTextForDebug() const;
 
   CSSSelector& operator=(const CSSSelector&) = delete;

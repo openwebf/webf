@@ -49,10 +49,10 @@ const Document* StyleSheetContents::SingleOwnerDocument(const StyleSheetContents
 }
 
 StyleSheetContents::StyleSheetContents(const std::shared_ptr<const CSSParserContext>& context,
-                                       std::string original_url,
+                                       String original_url,
                                        std::shared_ptr<StyleRuleImport> owner_rule)
     : owner_rule_(std::move(owner_rule)),
-      original_url_(std::move(original_url)),
+      original_url_(original_url),
       has_syntactically_valid_css_header_(true),
       did_load_error_occur_(false),
       is_mutable_(false),
@@ -86,7 +86,7 @@ StyleSheetContents::StyleSheetContents(const webf::StyleSheetContents& o)
 
 StyleSheetContents::~StyleSheetContents() = default;
 
-ParseSheetResult StyleSheetContents::ParseString(const std::string& sheet_text,
+ParseSheetResult StyleSheetContents::ParseString(const String& sheet_text,
                                                  bool allow_import_rules,
                                                  CSSDeferPropertyParsing defer_property_parsing) {
   std::shared_ptr<CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -342,11 +342,11 @@ const AtomicString& StyleSheetContents::NamespaceURIFromPrefix(const AtomicStrin
   return it != namespaces_.end() ? it->second : g_null_atom;
 }
 
-void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& prefix,
-                                            const std::optional<std::string>& uri) {
+void StyleSheetContents::ParserAddNamespace(const std::optional<String>& prefix,
+                                            const std::optional<String>& uri) {
   DCHECK(uri.has_value());
   if (!prefix.has_value()) {
-    default_namespace_ = AtomicString::CreateFromUTF8(uri.value().c_str());
+    default_namespace_ = AtomicString(uri.value());
     return;
   }
   namespaces_.insert(std::make_pair(AtomicString(prefix.value()), AtomicString(uri.value())));

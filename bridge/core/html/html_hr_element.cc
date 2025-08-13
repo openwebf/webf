@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLHRElement::HTMLHRElement(Document& document) : HTMLElement(AtomicString("hr"), &document) {}
+HTMLHRElement::HTMLHRElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("hr"), &document) {}
 
 }  // namespace webf

@@ -9,7 +9,7 @@
 
 namespace webf {
 
-ContainerSelector::ContainerSelector(const std::string& name, const MediaQueryExpNode& query) : name_(std::move(name)) {
+ContainerSelector::ContainerSelector(const AtomicString& name, const MediaQueryExpNode& query) : name_(name) {
   MediaQueryExpNode::FeatureFlags feature_flags = query.CollectFeatureFlags();
 
   if (feature_flags & MediaQueryExpNode::kFeatureInlineSize) {
@@ -39,7 +39,7 @@ ContainerSelector::ContainerSelector(const std::string& name, const MediaQueryEx
 }
 
 unsigned ContainerSelector::GetHash() const {
-  unsigned hash = !name_.empty() ? SuperFastHash(name_.c_str(), name_.size()) : 0;
+  unsigned hash = !name_.empty() ? name_.Hash() : 0;
   AddIntToHash(hash, physical_axes_.value());
   AddIntToHash(hash, logical_axes_.value());
   AddIntToHash(hash, has_style_query_);

@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLAsideElement::HTMLAsideElement(Document& document) : HTMLElement(AtomicString("aside"), &document) {}
+HTMLAsideElement::HTMLAsideElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("aside"), &document) {}
 
 }  // namespace webf

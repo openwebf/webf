@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLStrongElement::HTMLStrongElement(Document& document) : HTMLElement(AtomicString("strong"), &document) {}
+HTMLStrongElement::HTMLStrongElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("strong"), &document) {}
 
 }  // namespace webf

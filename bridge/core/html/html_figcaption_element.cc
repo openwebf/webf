@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLFigCaptionElement::HTMLFigCaptionElement(Document& document) : HTMLElement(AtomicString("figcaption"), &document) {}
+HTMLFigCaptionElement::HTMLFigCaptionElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("figcaption"), &document) {}
 
 }  // namespace webf

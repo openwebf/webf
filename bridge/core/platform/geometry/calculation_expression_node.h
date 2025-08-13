@@ -10,6 +10,7 @@
 #include <vector>
 #include "core/platform/geometry/length.h"
 #include "foundation/casting.h"
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
@@ -119,13 +120,13 @@ struct DowncastTraits<CalculationExpressionNumberNode> {
 
 class CalculationExpressionIdentifierNode final : public CalculationExpressionNode {
  public:
-  explicit CalculationExpressionIdentifierNode(std::string identifier) : identifier_(std::move(identifier)) {
+  explicit CalculationExpressionIdentifierNode(AtomicString identifier) : identifier_(std::move(identifier)) {
 #if DCHECK_IS_ON()
     result_type_ = ResultType::kIdent;
 #endif
   }
 
-  const std::string& Value() const { return identifier_; }
+  const AtomicString& Value() const { return identifier_; }
 
   // Implement |CalculationExpressionNode|:
   float Evaluate(float max_value, const Length::EvaluationInput&) const final { return 0.0f; }
@@ -139,7 +140,7 @@ class CalculationExpressionIdentifierNode final : public CalculationExpressionNo
 #endif
 
  private:
-  std::string identifier_;
+  AtomicString identifier_;
 };
 
 template <>

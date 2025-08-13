@@ -64,7 +64,7 @@ CSSRuleList* CSSGroupingRule::cssRules() const {
 }
 
 unsigned CSSGroupingRule::insertRule(const ExecutingContext* context,
-                                     const std::string& rule,
+                                     const String& rule,
                                      unsigned index,
                                      ExceptionState& exception_state) {
   // TODO: Implement insertRule for dynamic rule insertion

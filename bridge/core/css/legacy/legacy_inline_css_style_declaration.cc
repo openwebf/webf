@@ -13,6 +13,7 @@
 #include "css_property_list.cc"
 #include "core/css/css_property_value_set.h"
 #include "core/dom/element.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 namespace legacy {

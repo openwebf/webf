@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLUnderlineElement::HTMLUnderlineElement(Document& document) : HTMLElement(AtomicString("u"), &document) {}
+HTMLUnderlineElement::HTMLUnderlineElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("u"), &document) {}
 
 }  // namespace webf

@@ -9,6 +9,7 @@
 #include "core/dom/element.h"
 #include "core/html/custom/widget_element.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/string/string_builder.h"
 #include "html_names.h"
 
 namespace webf {

@@ -28,6 +28,7 @@
 
 #include "container_node.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
+#include "foundation/string/string_builder.h"
 #include "core/dom/child_list_mutation_scope.h"
 #include "core/dom/child_node_list.h"
 #include "core/dom/events/event_dispatch_forbidden_scope.h"
@@ -384,9 +385,15 @@ bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
   // 5. If either node is a Text node and parent is a document, or node is a
   // doctype and parent is not a document, throw a HierarchyRequestError.
   if (!IsChildTypeAllowed(new_child)) {
+    StringBuilder error_message;
+    error_message.Append("Nodes of type '");
+    error_message.Append(new_child.nodeName());
+    error_message.Append("' may not be inserted inside nodes of type '");
+    error_message.Append(nodeName());
+    error_message.Append("'.");
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
-        "Nodes of type '" + new_child.nodeName() + "' may not be inserted inside nodes of type '" + nodeName() + "'.");
+        error_message.ReleaseString().StdUtf8());
     return false;
   }
 

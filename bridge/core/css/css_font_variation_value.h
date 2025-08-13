@@ -16,9 +16,9 @@ namespace cssvalue {
 
 class CSSFontVariationValue : public CSSValue {
  public:
-  CSSFontVariationValue(const std::string& tag, float value);
+  CSSFontVariationValue(const AtomicString& tag, float value);
 
-  const std::string& Tag() const { return tag_; }
+  const AtomicString& Tag() const { return tag_; }
   float Value() const { return value_; }
   String CustomCSSText() const;
 
@@ -27,7 +27,7 @@ class CSSFontVariationValue : public CSSValue {
   void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
-  std::string tag_;
+  AtomicString tag_;
   const float value_;
 };
 

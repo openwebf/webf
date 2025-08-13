@@ -64,11 +64,11 @@ static bool IsAsyncKey(const AtomicString& key, char* normal_string) {
   const LChar* string = key.Characters8();
 
   // Compare the suffix part of the string
-  bool is_match = std::strcmp(string + (str_len - suffix_len), suffix) == 0;
+  bool is_match = std::strcmp(reinterpret_cast<const char*>(string + (str_len - suffix_len)), suffix) == 0;
 
   if (is_match) {
     size_t new_len = str_len - suffix_len;
-    std::strncpy(normal_string, string, new_len);
+    std::strncpy(normal_string, reinterpret_cast<const char*>(string), new_len);
     normal_string[new_len] = '\0';
   }
 
@@ -90,7 +90,7 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
 
   std::vector<char> async_key_string(key.length());
   bool is_async = IsAsyncKey(key, async_key_string.data());
-  AtomicString async_key = AtomicString(async_key_string.data());
+  AtomicString async_key = AtomicString::CreateFromUTF8(async_key_string.data());
 
   if (shape == nullptr || !(shape->HasPropertyOrMethod(key) || shape->HasPropertyOrMethod(async_key))) {
     return ScriptValue::Undefined(ctx());
@@ -157,7 +157,7 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
     bool is_async = IsAsyncKey(key, sync_key_string.data());
 
     if (is_async) {
-      AtomicString sync_key = AtomicString(sync_key_string.data());
+      AtomicString sync_key = AtomicString::CreateFromUTF8(sync_key_string.data());
       SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state), exception_state);
       return true;
     }
@@ -204,7 +204,7 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
                                 void* private_data) {
   auto* data = reinterpret_cast<FunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
-  AtomicString method_name = AtomicString(data->method_name.c_str());
+  AtomicString method_name = AtomicString::CreateFromUTF8(data->method_name.c_str());
   ExceptionState exception_state;
 
   std::vector<NativeValue> arguments(argc);
@@ -220,7 +220,7 @@ ScriptValue SyncDynamicFunction(JSContext* ctx,
 
   std::vector<char> sync_method_string(method_name.length());
   if (IsAsyncKey(method_name, sync_method_string.data())) {
-    AtomicString sync_method = AtomicString(sync_method_string.data());
+    AtomicString sync_method = AtomicString::CreateFromUTF8(sync_method_string.data());
     ScriptPromise promise =
         event_target->InvokeBindingMethodAsync(sync_method, argc, arguments.data(), exception_state);
     return promise.ToValue();
@@ -243,7 +243,7 @@ ScriptValue AsyncDynamicFunction(JSContext* ctx,
                                  void* private_data) {
   auto* data = reinterpret_cast<FunctionData*>(private_data);
   auto* event_target = toScriptWrappable<EventTarget>(this_val.QJSValue());
-  AtomicString method_name = AtomicString(data->method_name.c_str());
+  AtomicString method_name = AtomicString::CreateFromUTF8(data->method_name.c_str());
 
   ExceptionState exception_state;
 

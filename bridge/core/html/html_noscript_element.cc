@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLNoScriptElement::HTMLNoScriptElement(Document& document) : HTMLElement(AtomicString("noscript"), &document) {}
+HTMLNoScriptElement::HTMLNoScriptElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("noscript"), &document) {}
 
 }  // namespace webf

@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLHeaderElement::HTMLHeaderElement(Document& document) : HTMLElement(AtomicString("header"), &document) {}
+HTMLHeaderElement::HTMLHeaderElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("header"), &document) {}
 
 }  // namespace webf

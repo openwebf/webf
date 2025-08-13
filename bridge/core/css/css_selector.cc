@@ -683,7 +683,7 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const AtomicString& name,
 
 #if DCHECK_IS_ON()
 void CSSSelector::Show(int indent) const {
-  printf("%*sSelectorText(): %s\n", indent, "", SelectorText().c_str());
+  printf("%*sSelectorText(): %s\n", indent, "", SelectorText().StdUtf8().c_str());
   printf("%*smatch_: %d\n", indent, "", Match());
   if (Match() != kTag && Match() != kUniversalTag) {
     printf("%*sValue(): %s\n", indent, "", Value().ToUTF8String().c_str());
@@ -707,7 +707,7 @@ void CSSSelector::Show(int indent) const {
 }
 
 void CSSSelector::Show() const {
-  printf("\n******* CSSSelector::Show(\"%s\") *******\n", SelectorText().c_str());
+  printf("\n******* CSSSelector::Show(\"%s\") *******\n", SelectorText().StdUtf8().c_str());
   Show(2);
   printf("******* end *******\n");
 }
@@ -1064,10 +1064,10 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         return false;
       case kPseudoActiveViewTransitionType: {
         CHECK(!IdentList().empty());
-        std::string separator = "(";
+        const char* separator = "(";
         for (const AtomicString& type : IdentList()) {
           builder.Append(separator);
-          if (separator == "(") {
+          if (separator[0] == '(') {
             separator = ", ";
           }
           SerializeIdentifier(String(type), builder);
@@ -1191,13 +1191,19 @@ const CSSSelector* CSSSelector::SerializeCompound(StringBuilder& builder) const 
   return nullptr;
 }
 
-std::string CSSSelector::SelectorText() const {
-  std::string result;
+String CSSSelector::SelectorText() const {
+  // We build the string by prepending each part, so we need to
+  // traverse the selector chain and build in reverse.
+  std::vector<String> parts;
+  std::vector<String> separators;
+  
   for (const CSSSelector* compound = this; compound; compound = compound->NextSimpleSelector()) {
     StringBuilder builder;
     compound = compound->SerializeCompound(builder);
+    parts.push_back(builder.ReleaseString());
+    
     if (!compound) {
-      return builder.ReleaseString().StdUtf8() + result;
+      break;
     }
 
     RelationType relation = compound->Relation();
@@ -1222,16 +1228,16 @@ std::string CSSSelector::SelectorText() const {
 
     switch (relation) {
       case kDescendant:
-        result = " " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back(" ");
         break;
       case kChild:
-        result = " > " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back(" > ");
         break;
       case kDirectAdjacent:
-        result = " + " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back(" + ");
         break;
       case kIndirectAdjacent:
-        result = " ~ " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back(" ~ ");
         break;
       case kSubSelector:
       case kScopeActivation:
@@ -1240,20 +1246,34 @@ std::string CSSSelector::SelectorText() const {
       case kShadowPart:
       case kUAShadow:
       case kShadowSlot:
-        result = builder.ReleaseString().StdUtf8() + result;
+        separators.push_back("");
         break;
       case kRelativeDescendant:
-        return builder.ReleaseString().StdUtf8() + result;
+        separators.push_back("");
+        goto done;
       case kRelativeChild:
-        return "> " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back("> ");
+        goto done;
       case kRelativeDirectAdjacent:
-        return "+ " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back("+ ");
+        goto done;
       case kRelativeIndirectAdjacent:
-        return "~ " + builder.ReleaseString().StdUtf8() + result;
+        separators.push_back("~ ");
+        goto done;
     }
   }
-  NOTREACHED_IN_MIGRATION();
-  return "";
+  
+done:
+  // Build result in reverse order
+  StringBuilder result;
+  for (int i = parts.size() - 1; i >= 0; --i) {
+    if (i < separators.size()) {
+      result.Append(separators[i]);
+    }
+    result.Append(parts[i]);
+  }
+  
+  return result.ReleaseString();
 }
 
 String CSSSelector::SimpleSelectorTextForDebug() const {

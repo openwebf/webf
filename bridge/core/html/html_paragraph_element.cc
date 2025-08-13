@@ -6,6 +6,6 @@
 
 namespace webf {
 
-HTMLParagraphElement::HTMLParagraphElement(Document& document) : HTMLElement(AtomicString("p"), &document) {}
+HTMLParagraphElement::HTMLParagraphElement(Document& document) : HTMLElement(AtomicString::CreateFromUTF8("p"), &document) {}
 
 }  // namespace webf

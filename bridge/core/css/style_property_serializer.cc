@@ -241,18 +241,18 @@ String StylePropertySerializer::GetPropertyText(const CSSPropertyName& name,
                                                      const String& value,
                                                      bool is_important,
                                                      bool is_not_first_decl) const {
-  String result;
+  StringBuilder result;
   if (is_not_first_decl) {
-    result.append(" ");
+    result.Append(" ");
   }
-  result.append(name.ToAtomicString().ToUTF8String());
-  result.append(": ");
-  result.append(value);
+  result.Append(name.ToAtomicString());
+  result.Append(": ");
+  result.Append(value);
   if (is_important) {
-    result.append(" !important");
+    result.Append(" !important");
   }
-  result.append(";");
-  return result;
+  result.Append(";");
+  return result.ReleaseString();
 }
 
 String StylePropertySerializer::AsText() const {

@@ -200,6 +200,23 @@ double CharactersToDouble(const unsigned char* data, size_t length, size_t& pars
   return ToDoubleType<kAllowTrailingJunk>(data, length, nullptr, parsed_length);
 }
 
+double CharactersToDouble(const char16_t* data, size_t length, size_t& parsed_length) {
+  // Convert char16_t to char for parsing
+  // This is a simplified implementation - production code might handle this differently
+  std::string str;
+  str.reserve(length);
+  for (size_t i = 0; i < length; ++i) {
+    if (data[i] <= 0x7F) {
+      str.push_back(static_cast<char>(data[i]));
+    } else {
+      // Non-ASCII character, can't be part of a valid number
+      parsed_length = 0;
+      return 0.0;
+    }
+  }
+  return CharactersToDouble(reinterpret_cast<const unsigned char*>(str.data()), str.length(), parsed_length);
+}
+
 float CharactersToFloat(const unsigned char* data, size_t length, bool* ok) {
   // FIXME: This will return ok even when the string fits into a double but
   // not a float.

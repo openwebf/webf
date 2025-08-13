@@ -8,6 +8,7 @@
 #define <%= _.snakeCase(name).toUpperCase() %>_STD_H_
 
 #include <string>
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
