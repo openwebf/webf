@@ -55,14 +55,32 @@ mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
 
 mixin RadioElementState on WebFWidgetElementState {
   StreamSubscription<Map<String, String>>? _subscription;
+  String? _cachedGroupName; // Cache the group name to prevent loss
+  String _currentGroupValue = ''; // Instance-level group value cache
 
   static final Map<String, String> _groupValues = <String, String>{};
+  
+  // Helper to update group values
+  static void _updateGroupValues(String key, String value) {
+    if (value.isEmpty) {
+      _groupValues.remove(key);
+    } else {
+      _groupValues[key] = value;
+    }
+  }
   static final Map<String, bool> _earlyCheckedStates = <String, bool>{};  // Track early checked states
 
-  static final StreamController<Map<String, String>> _streamController =
-      StreamController<Map<String, String>>.broadcast();
+  static StreamController<Map<String, String>>? _streamController;
 
-  StreamController<Map<String, String>> get streamController => _streamController;
+  StreamController<Map<String, String>> get streamController {
+    if (_streamController == null || _streamController!.isClosed) {
+      _streamController = StreamController<Map<String, String>>.broadcast();
+    }
+    return _streamController!;
+  }
+  
+  // Public getter to access cached group name
+  String? get cachedGroupName => _cachedGroupName;
   
   // Public methods to access early checked states
   static void setEarlyCheckedState(String key, bool value) {
@@ -77,54 +95,75 @@ mixin RadioElementState on WebFWidgetElementState {
   
   BaseRadioElement get _radioElement => widgetElement as BaseRadioElement;
 
-  String get groupValue => _groupValues[_radioElement.name] ?? '';
+  String get groupValue {
+    String groupName = _cachedGroupName ?? _radioElement.name;
+    String staticValue = _groupValues[groupName] ?? '';
+    String result = _currentGroupValue.isNotEmpty ? _currentGroupValue : staticValue;
+    return result;
+  }
 
   set groupValue(String? gv) {
-    _radioElement.internalSetAttribute('groupValue', gv ?? _radioElement.name);
-    _groupValues[_radioElement.name] = gv ?? _radioElement.name;
+    String groupName = _cachedGroupName ?? _radioElement.name;
+    String value = gv ?? groupName;
+    _radioElement.internalSetAttribute('groupValue', value);
+    _updateGroupValues(groupName, value);
+    _currentGroupValue = value; // Cache at instance level
   }
 
   void initRadioState() {
-    // Check if JS already set checked=true before state was initialized
-    String radioKey = _radioElement.value;
-    bool wasSetCheckedEarly = RadioElementState.getEarlyCheckedState(radioKey) == true;
     
-    _subscription = _streamController.stream.listen((message) {
+    // Cache the group name when it's first set
+    if (_radioElement.name.isNotEmpty && _cachedGroupName == null) {
+      _cachedGroupName = _radioElement.name;
+    }
+    
+    _subscription = streamController.stream.listen((message) {
       setState(() {
         for (var entry in message.entries) {
-          if (entry.key == _radioElement.name) {
-            _groupValues[entry.key] = entry.value;
+          String groupName = _cachedGroupName ?? _radioElement.name;
+          if (entry.key == groupName) {
+            _updateGroupValues(entry.key, entry.value);
+            _currentGroupValue = entry.value; // Update instance cache
           }
         }
       });
     });
 
-    // Check if this radio is initially checked
-    // This handles both: direct checked attribute and early setChecked calls
-    if (wasSetCheckedEarly) {
+    // Check if this radio is initially checked or has early checked state
+    String radioKey = _radioElement.value;
+    bool wasSetCheckedEarly = RadioElementState.getEarlyCheckedState(radioKey) == true;
+    bool isInitiallyChecked = _radioElement.getAttribute('checked') == 'true';
+    
+    
+    if (wasSetCheckedEarly || isInitiallyChecked) {
       String radioValue = _radioElement.value;
-      String singleRadioValue = '${_radioElement.name}-$radioValue';
-      _groupValues[_radioElement.name] = singleRadioValue;
+      String groupName = _cachedGroupName ?? _radioElement.name;
+      String singleRadioValue = '$groupName-$radioValue';
+      _updateGroupValues(groupName, singleRadioValue);
+      _currentGroupValue = singleRadioValue; // Cache at instance level
       setState(() {});
-    } else if (_groupValues.containsKey(_radioElement.name)) {
-      setState(() {});
+    } else {
+      String groupName = _cachedGroupName ?? _radioElement.name;
+      if (_groupValues.containsKey(groupName)) {
+        setState(() {});
+      }
     }
   }
 
 
   void disposeRadio() {
     _subscription?.cancel();
-    if (_groupValues.containsKey(_radioElement.name)) {
-      _groupValues.remove(_radioElement.name);
-    }
-    if (_groupValues.isEmpty) {
-      _streamController.close();
-    }
+    // Don't remove group values on dispose - other radios might still need them
+    // Only remove if this is the last radio in the group
+
   }
 
   Widget createRadio(BuildContext context) {
+    String groupName = _cachedGroupName ?? _radioElement.name;
     String radioValue = _radioElement.value;
-    String singleRadioValue = '${_radioElement.name}-$radioValue';
+    String singleRadioValue = '$groupName-$radioValue';
+    String currentGroupValue = groupValue; // Use getter instead of direct Map access
+    
     
     return Transform.scale(
       scale: _radioElement.getRadioSize(),
@@ -138,14 +177,14 @@ mixin RadioElementState on WebFWidgetElementState {
                   if (newValue != null) {
                     setState(() {
                       Map<String, String> map = <String, String>{};
-                      map[_radioElement.name] = newValue;
-                      _streamController.sink.add(map);
+                      map[groupName] = newValue;
+                      streamController.sink.add(map);
                       _radioElement.dispatchEvent(dom.InputEvent(inputType: 'radio', data: newValue));
                       _radioElement.dispatchEvent(dom.Event('change'));
                     });
                   }
                 },
-          groupValue: groupValue),
+          groupValue: currentGroupValue),
     );
   }
 }

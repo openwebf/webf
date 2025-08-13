@@ -69,19 +69,37 @@ mixin BaseCheckedElement on BaseInputElement {
     if (this is BaseRadioElement) {
       BaseRadioElement radio = this as BaseRadioElement;
       String radioKey = radio.value;
+      
       if (state == null) {
         RadioElementState.setEarlyCheckedState(radioKey, newValue);
+        return;
       }
       
+      // Use cached group name from state, fallback to current name
+      String radioName = (state as RadioElementState).cachedGroupName ?? radio.name;
+
       if (newValue) {
-        String newGroupValue = '${radio.name}-${radio.value}';
+        String newGroupValue = '$radioName-${radio.value}';
         Map<String, String> map = <String, String>{};
-        map[radio.name] = newGroupValue;
+        map[radioName] = newGroupValue;
 
         state?.groupValue = newGroupValue;
 
         if (state?.streamController.hasListener == true) {
           state?.streamController.sink.add(map);
+        }
+      } else {
+        // When unchecking, only clear if this radio is currently the selected one
+        String currentRadioValue = '$radioName-${radio.value}';
+        String currentGroupValue = state?.groupValue ?? '';
+        if (currentGroupValue == currentRadioValue) {
+          state?.groupValue = '';
+          Map<String, String> map = <String, String>{};
+          map[radioName] = '';
+          
+          if (state?.streamController.hasListener == true) {
+            state?.streamController.sink.add(map);
+          }
         }
       }
     }
