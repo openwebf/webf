@@ -9,11 +9,11 @@
 namespace webf {
 
 static CSSParserToken IdentToken(const String& string) {
-  return CSSParserToken(kIdentToken, string);
+  return CSSParserToken(kIdentToken, StringView(string));
 }
 static CSSParserToken DimensionToken(double value, const String& unit) {
   CSSParserToken token(kNumberToken, value, kNumberValueType, kNoSign);
-  token.ConvertToDimensionWithUnit(unit);
+  token.ConvertToDimensionWithUnit(StringView(unit));
   return token;
 }
 

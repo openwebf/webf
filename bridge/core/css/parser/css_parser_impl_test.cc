@@ -8,6 +8,7 @@
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
 #include "core/css/style_sheet_contents.h"
+#include "foundation/string/wtf_string.h"
 #include "gtest/gtest.h"
 
 namespace webf {
@@ -40,7 +41,7 @@ class TestCSSParserObserver : public CSSParserObserver {
 };
 
 TEST(CSSParserImplTest, AtImportOffsets) {
-  std::string sheet_text = "@import 'test.css';";
+  String sheet_text = String::FromUTF8("@import 'test.css';");
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto style_sheet = std::make_shared<StyleSheetContents>(context);
   TestCSSParserObserver test_css_parser_observer;
@@ -54,7 +55,7 @@ TEST(CSSParserImplTest, AtImportOffsets) {
 }
 
 TEST(CSSParserImplTest, AtMediaOffsets) {
-  std::string sheet_text = "@media screen { }";
+  String sheet_text = String::FromUTF8("@media screen { }");
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto style_sheet = std::make_shared<StyleSheetContents>(context);
   TestCSSParserObserver test_css_parser_observer;
@@ -68,7 +69,7 @@ TEST(CSSParserImplTest, AtMediaOffsets) {
 }
 
 TEST(CSSParserImplTest, AtFontFaceOffsets) {
-  std::string sheet_text = "@font-face { }";
+  String sheet_text = String::FromUTF8("@font-face { }");
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto style_sheet = std::make_shared<StyleSheetContents>(context);
   TestCSSParserObserver test_css_parser_observer;
@@ -82,7 +83,7 @@ TEST(CSSParserImplTest, AtFontFaceOffsets) {
 }
 
 TEST(CSSParserImplTest, DirectNesting) {
-  std::string sheet_text = ".element { color: green; &.other { color: red; margin-left: 10px; }}";
+  String sheet_text = String::FromUTF8(".element { color: green; &.other { color: red; margin-left: 10px; }}");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -103,7 +104,7 @@ TEST(CSSParserImplTest, DirectNesting) {
 }
 
 TEST(CSSParserImplTest, RuleNotStartingWithAmpersand) {
-  std::string sheet_text = ".element { color: green;  .outer & { color: red; }}";
+  String sheet_text = String::FromUTF8(".element { color: green;  .outer & { color: red; }}");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -125,7 +126,7 @@ TEST(CSSParserImplTest, RuleNotStartingWithAmpersand) {
 }
 
 TEST(CSSParserImplTest, ImplicitDescendantSelectors) {
-  std::string sheet_text = ".element { color: green; .outer, .outer2 { color: red; }}";
+  String sheet_text = String::FromUTF8(".element { color: green; .outer, .outer2 { color: red; }}");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -147,7 +148,7 @@ TEST(CSSParserImplTest, ImplicitDescendantSelectors) {
 }
 
 TEST(CSSParserImplTest, NestedRelativeSelector) {
-  std::string sheet_text = ".element { color: green; > .inner { color: red; }}";
+  String sheet_text = String::FromUTF8(".element { color: green; > .inner { color: red; }}");
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
   TestCSSParserObserver test_css_parser_observer;
@@ -168,7 +169,7 @@ TEST(CSSParserImplTest, NestedRelativeSelector) {
 }
 
 TEST(CSSParserImplTest, NestingAtTopLevelIsLegalThoughIsMatchesNothing) {
-  std::string sheet_text = "&.element { color: orchid; }";
+  String sheet_text = String::FromUTF8("&.element { color: orchid; }");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -183,13 +184,13 @@ TEST(CSSParserImplTest, NestingAtTopLevelIsLegalThoughIsMatchesNothing) {
 
 TEST(CSSParserImplTest, ErrorRecoveryEatsOnlyFirstDeclaration) {
   // Note the colon after the opening bracket.
-  std::string sheet_text = R"CSS(
+  String sheet_text = String::FromUTF8(R"CSS(
     .element {:
       color: orchid;
       background-color: plum;
       accent-color: hotpink;
     }
-    )CSS";
+    )CSS");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -203,7 +204,7 @@ TEST(CSSParserImplTest, ErrorRecoveryEatsOnlyFirstDeclaration) {
 }
 
 TEST(CSSParserImplTest, NestedEmptySelectorCrash) {
-  std::string sheet_text = "y{ :is() {} }";
+  String sheet_text = String::FromUTF8("y{ :is() {} }");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -214,7 +215,7 @@ TEST(CSSParserImplTest, NestedEmptySelectorCrash) {
 }
 
 TEST(CSSParserImplTest, NestedRulesInsideMediaQueries) {
-  std::string sheet_text = R"CSS(
+  String sheet_text = String::FromUTF8(R"CSS(
     .element {
       color: green;
       @media (width < 1000px) {
@@ -223,7 +224,7 @@ TEST(CSSParserImplTest, NestedRulesInsideMediaQueries) {
         & + #foo { color: red; }
       }
     }
-    )CSS";
+    )CSS");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -256,14 +257,14 @@ TEST(CSSParserImplTest, NestedRulesInsideMediaQueries) {
 }
 
 TEST(CSSParserImplTest, ObserveNestedMediaQuery) {
-  std::string sheet_text = R"CSS(
+  String sheet_text = String::FromUTF8(R"CSS(
     .element {
       color: green;
       @media (width < 1000px) {
         color: navy;
       }
     }
-    )CSS";
+    )CSS");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -278,14 +279,14 @@ TEST(CSSParserImplTest, ObserveNestedMediaQuery) {
 }
 
 TEST(CSSParserImplTest, ObserveNestedLayer) {
-  std::string sheet_text = R"CSS(
+  String sheet_text = String::FromUTF8(R"CSS(
     .element {
       color: green;
       @layer foo {
         color: navy;
       }
     }
-    )CSS";
+    )CSS");
 
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
@@ -300,7 +301,7 @@ TEST(CSSParserImplTest, ObserveNestedLayer) {
 }
 
 TEST(CSSParserImplTest, NestedIdent) {
-  std::string sheet_text = "div { p:hover { } }";
+  String sheet_text = String::FromUTF8("div { p:hover { } }");
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
   TestCSSParserObserver test_css_parser_observer;
@@ -313,8 +314,8 @@ TEST(CSSParserImplTest, NestedIdent) {
 
 TEST(CSSParserImplTest, RemoveImportantAnnotationIfPresent) {
   struct TestCase {
-    std::string input;
-    std::string expected_text;
+    const char* input;
+    const char* expected_text;
     bool expected_is_important;
   };
   static const TestCase test_cases[] = {
@@ -338,7 +339,7 @@ TEST(CSSParserImplTest, RemoveImportantAnnotationIfPresent) {
     SCOPED_TRACE(current_case.input);
     bool is_important = CSSParserImpl::RemoveImportantAnnotationIfPresent(tokenized_value);
     EXPECT_EQ(is_important, current_case.expected_is_important);
-    EXPECT_EQ(tokenized_value.text, current_case.expected_text);
+    EXPECT_EQ(tokenized_value.text, StringView(current_case.expected_text));
   }
 }
 

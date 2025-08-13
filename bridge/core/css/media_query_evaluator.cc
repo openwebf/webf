@@ -37,6 +37,7 @@
 #include "core/css/media_values.h"
 #include "core/css/parser/css_variable_parser.h"
 #include "core/platform/resolution_units.h"
+#include "foundation/string/wtf_string.h"
 #include "media_feature_names.h"
 #include "media_features.h"
 #include "media_type_names.h"

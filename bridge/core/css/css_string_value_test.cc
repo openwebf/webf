@@ -25,36 +25,36 @@ class CSSStringValueTest : public ::testing::Test {
 
 TEST_F(CSSStringValueTest, Construction) {
   CSSStringValue value("test string");
-  EXPECT_EQ("test string", value.Value());
+  EXPECT_EQ(String("test string"), value.Value());
   EXPECT_TRUE(value.IsStringValue());
 }
 
 TEST_F(CSSStringValueTest, EmptyString) {
   CSSStringValue value("");
-  EXPECT_EQ("", value.Value());
+  EXPECT_EQ(String(""), value.Value());
   EXPECT_TRUE(value.IsStringValue());
 }
 
 TEST_F(CSSStringValueTest, SpecialCharacters) {
   CSSStringValue value("hello \"world\" with 'quotes' and newlines\n\t");
-  EXPECT_EQ("hello \"world\" with 'quotes' and newlines\n\t", value.Value());
+  EXPECT_EQ(String("hello \"world\" with 'quotes' and newlines\n\t"), value.Value());
 }
 
 TEST_F(CSSStringValueTest, UnicodeCharacters) {
   CSSStringValue value("Hello 世界 🌍 emoji");
-  EXPECT_EQ("Hello 世界 🌍 emoji", value.Value());
+  EXPECT_EQ(String("Hello 世界 🌍 emoji"), value.Value());
 }
 
 TEST_F(CSSStringValueTest, CssText) {
   CSSStringValue simple("hello");
-  EXPECT_EQ("\"hello\"", simple.CustomCSSText());
+  EXPECT_EQ(String("\"hello\""), simple.CustomCSSText());
   
   CSSStringValue with_quotes("say \"hello\"");
   // Should properly escape internal quotes
-  EXPECT_EQ("\"say \\\"hello\\\"\"", with_quotes.CustomCSSText());
+  EXPECT_EQ(String("\"say \\\"hello\\\"\""), with_quotes.CustomCSSText());
   
   CSSStringValue empty("");
-  EXPECT_EQ("\"\"", empty.CustomCSSText());
+  EXPECT_EQ(String("\"\""), empty.CustomCSSText());
 }
 
 TEST_F(CSSStringValueTest, CssTextWithNewlines) {
@@ -80,13 +80,13 @@ TEST_F(CSSStringValueTest, FontFamilyNames) {
   CSSStringValue times("Times New Roman");
   CSSStringValue custom("MyCustomFont");
   
-  EXPECT_EQ("Arial", arial.Value());
-  EXPECT_EQ("Times New Roman", times.Value());
-  EXPECT_EQ("MyCustomFont", custom.Value());
+  EXPECT_EQ(String("Arial"), arial.Value());
+  EXPECT_EQ(String("Times New Roman"), times.Value());
+  EXPECT_EQ(String("MyCustomFont"), custom.Value());
   
-  EXPECT_EQ("\"Arial\"", arial.CustomCSSText());
-  EXPECT_EQ("\"Times New Roman\"", times.CustomCSSText());
-  EXPECT_EQ("\"MyCustomFont\"", custom.CustomCSSText());
+  EXPECT_EQ(String("\"Arial\""), arial.CustomCSSText());
+  EXPECT_EQ(String("\"Times New Roman\""), times.CustomCSSText());
+  EXPECT_EQ(String("\"MyCustomFont\""), custom.CustomCSSText());
 }
 
 TEST_F(CSSStringValueTest, ContentStrings) {
@@ -94,9 +94,9 @@ TEST_F(CSSStringValueTest, ContentStrings) {
   CSSStringValue content2("Chapter ");
   CSSStringValue content3("\"");
   
-  EXPECT_EQ("→", content1.Value());
-  EXPECT_EQ("Chapter ", content2.Value());
-  EXPECT_EQ("\"", content3.Value());
+  EXPECT_EQ(String("→"), content1.Value());
+  EXPECT_EQ(String("Chapter "), content2.Value());
+  EXPECT_EQ(String("\""), content3.Value());
 }
 
 TEST_F(CSSStringValueTest, UrlStrings) {
@@ -104,9 +104,9 @@ TEST_F(CSSStringValueTest, UrlStrings) {
   CSSStringValue url2("https://example.com/image.jpg");
   CSSStringValue url3("../assets/background.svg");
   
-  EXPECT_EQ("image.png", url1.Value());
-  EXPECT_EQ("https://example.com/image.jpg", url2.Value());
-  EXPECT_EQ("../assets/background.svg", url3.Value());
+  EXPECT_EQ(String("image.png"), url1.Value());
+  EXPECT_EQ(String("https://example.com/image.jpg"), url2.Value());
+  EXPECT_EQ(String("../assets/background.svg"), url3.Value());
 }
 
 TEST_F(CSSStringValueTest, LongStrings) {
@@ -116,7 +116,7 @@ TEST_F(CSSStringValueTest, LongStrings) {
   }
   
   CSSStringValue value(long_string);
-  EXPECT_EQ(long_string, value.Value());
+  EXPECT_EQ(String(long_string), value.Value());
   EXPECT_TRUE(value.IsStringValue());
 }
 
@@ -125,9 +125,9 @@ TEST_F(CSSStringValueTest, CustomPropertyStrings) {
   CSSStringValue custom2("calc(100% - 20px)");
   CSSStringValue custom3("var(--primary-color)");
   
-  EXPECT_EQ("red", custom1.Value());
-  EXPECT_EQ("calc(100% - 20px)", custom2.Value());
-  EXPECT_EQ("var(--primary-color)", custom3.Value());
+  EXPECT_EQ(String("red"), custom1.Value());
+  EXPECT_EQ(String("calc(100% - 20px)"), custom2.Value());
+  EXPECT_EQ(String("var(--primary-color)"), custom3.Value());
 }
 
 }  // namespace webf

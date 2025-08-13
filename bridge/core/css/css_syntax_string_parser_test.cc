@@ -10,6 +10,7 @@
 
 #include "gtest/gtest.h"
 #include "core/css/css_syntax_component.h"
+#include "foundation/string/wtf_string.h"
 #include "webf_test_env.h"
 
 namespace webf {
@@ -20,7 +21,7 @@ class CSSSyntaxStringParserTest : public ::testing::Test {
     env_ = TEST_init();
   }
 
-  std::optional<CSSSyntaxComponent> ParseSingleComponent(const std::string& syntax) {
+  std::optional<CSSSyntaxComponent> ParseSingleComponent(const String& syntax) {
     auto definition = CSSSyntaxStringParser(syntax).Parse();
     if (!definition) {
       return std::nullopt;
@@ -31,20 +32,20 @@ class CSSSyntaxStringParserTest : public ::testing::Test {
     return definition->Components()[0];
   }
 
-  std::optional<CSSSyntaxType> ParseSingleType(const std::string& syntax) {
+  std::optional<CSSSyntaxType> ParseSingleType(const String& syntax) {
     auto component = ParseSingleComponent(syntax);
     return component ? std::make_optional(component->GetType()) : std::nullopt;
   }
 
-  std::string ParseSingleIdent(const std::string& syntax) {
+  String ParseSingleIdent(const String& syntax) {
     auto component = ParseSingleComponent(syntax);
     if (!component || component->GetType() != CSSSyntaxType::kIdent) {
-      return "";
+      return String("");
     }
     return component->GetString();
   }
 
-  size_t ParseNumberOfComponents(const std::string& syntax) {
+  size_t ParseNumberOfComponents(const String& syntax) {
     auto definition = CSSSyntaxStringParser(syntax).Parse();
     if (!definition) {
       return 0;

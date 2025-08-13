@@ -18,6 +18,7 @@
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
 #include "core/css/style_sheet_contents.h"
+#include "foundation/string/wtf_string.h"
 #include "css_parser_impl.h"
 #include "foundation/logging.h"
 

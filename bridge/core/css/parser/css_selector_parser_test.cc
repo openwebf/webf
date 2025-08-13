@@ -125,7 +125,7 @@ TEST(CSSSelectorParserTest, InvalidANPlusB) {
       " odd", "+ n", "3m+4", "12n--34", "12n- -34", "12n- +34", "23n-+43", "10n 5", "10n + +5", "10n + -5",
   };
 
-  for (std::string test_case : test_cases) {
+  for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
 
     std::pair<int, int> ab;
@@ -344,7 +344,7 @@ TEST(CSSSelectorParserTest, AttributeSelectorUniversalInvalid) {
   auto sheet = std::make_shared<StyleSheetContents>(context);
 
   std::vector<CSSSelector> arena;
-  for (std::string test_case : test_cases) {
+  for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
     CSSTokenizer tokenizer(test_case);
     CSSParserTokenStream stream(tokenizer);
@@ -404,7 +404,7 @@ TEST(CSSSelectorParserTest, InternalPseudo) {
                               ":-internal-video-persistent-ancestor"};
 
   std::vector<CSSSelector> arena;
-  for (std::string test_case : test_cases) {
+  for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
     {
       CSSTokenizer tokenizer(test_case);
@@ -632,7 +632,7 @@ TEST(CSSSelectorParserTest, ShadowPartPseudoElementValid) {
   const char* test_cases[] = {"::part(ident)", "host::part(ident)", "host::part(ident):hover"};
 
   std::vector<CSSSelector> arena;
-  for (std::string test_case : test_cases) {
+  for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
     CSSTokenizer tokenizer(test_case);
     CSSParserTokenStream stream(tokenizer);
@@ -641,7 +641,7 @@ TEST(CSSSelectorParserTest, ShadowPartPseudoElementValid) {
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
-    EXPECT_EQ(test_case, list->SelectorsText());
+    EXPECT_EQ(String(test_case), list->SelectorsText());
   }
 }
 
@@ -650,7 +650,7 @@ TEST(CSSSelectorParserTest, ShadowPartAndBeforeAfterPseudoElementValid) {
                               "::part(ident)::first-line", "::part(ident)::first-letter", "::part(ident)::selection"};
 
   std::vector<CSSSelector> arena;
-  for (std::string test_case : test_cases) {
+  for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
     CSSTokenizer tokenizer(test_case);
     CSSParserTokenStream stream(tokenizer);
@@ -661,7 +661,7 @@ TEST(CSSSelectorParserTest, ShadowPartAndBeforeAfterPseudoElementValid) {
     EXPECT_GT(vector.size(), 0u);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
     EXPECT_TRUE(list->IsValid());
-    EXPECT_EQ(test_case, list->SelectorsText());
+    EXPECT_EQ(String(test_case), list->SelectorsText());
   }
 }
 

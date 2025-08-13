@@ -97,7 +97,7 @@ TEST_F(CSSParserComprehensiveTest, ParseBasicProperties) {
     
     // For shorthand properties, also verify GetPropertyValue works
     if (test.property != test.check_property) {
-      std::string shorthand_value = props.GetPropertyValue(test.property);
+      String shorthand_value = props.GetPropertyValue(test.property);
       EXPECT_FALSE(shorthand_value.IsEmpty()) << "Shorthand should have value for: " << test.css;
     }
   }

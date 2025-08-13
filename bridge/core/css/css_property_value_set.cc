@@ -29,6 +29,7 @@
 #include <span>
 
 #include "core/base/memory/shared_ptr.h"
+#include "foundation/string/wtf_string.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_markup.h"
 #include "core/css/parser/css_parser.h"

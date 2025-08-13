@@ -412,9 +412,9 @@ TEST(CSSParserTokenStreamTest, Boundary) {
   {
     CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ("foo", range.Consume().Value());
+    EXPECT_EQ(StringView("foo"), range.Consume().Value());
     EXPECT_EQ(kColonToken, range.Consume().GetType());
-    EXPECT_EQ("red", range.Consume().Value());
+    EXPECT_EQ(StringView("red"), range.Consume().Value());
     EXPECT_TRUE(stream.AtEnd());
   }
 
@@ -424,16 +424,16 @@ TEST(CSSParserTokenStreamTest, Boundary) {
   {
     CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ("bar", range.Consume().Value());
+    EXPECT_EQ(StringView("bar"), range.Consume().Value());
     EXPECT_EQ(kColonToken, range.Consume().GetType());
-    EXPECT_EQ("blue", range.Consume().Value());
+    EXPECT_EQ(StringView("blue"), range.Consume().Value());
     EXPECT_TRUE(stream.AtEnd());
   }
 
   EXPECT_FALSE(stream.AtEnd());
   EXPECT_EQ(kSemicolonToken, stream.Consume().GetType());
 
-  EXPECT_EQ("asdf", stream.Consume().Value());
+  EXPECT_EQ(StringView("asdf"), stream.Consume().Value());
   EXPECT_TRUE(stream.AtEnd());
 }
 
@@ -450,7 +450,7 @@ TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
       {
         CSSParserTokenStream::Boundary boundary_colon(stream, kColonToken);
         CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-        EXPECT_EQ("a", range.Consume().Value());
+        EXPECT_EQ(StringView("a"), range.Consume().Value());
         EXPECT_TRUE(range.AtEnd());
         EXPECT_TRUE(stream.AtEnd());
       }
@@ -459,7 +459,7 @@ TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
       EXPECT_EQ(kColonToken, stream.Consume().GetType());
 
       CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-      EXPECT_EQ("b", range.Consume().Value());
+      EXPECT_EQ(StringView("b"), range.Consume().Value());
       EXPECT_TRUE(range.AtEnd());
       EXPECT_TRUE(stream.AtEnd());
     }
@@ -468,7 +468,7 @@ TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
     EXPECT_EQ(kCommaToken, stream.Consume().GetType());
 
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ("c", range.Consume().Value());
+    EXPECT_EQ(StringView("c"), range.Consume().Value());
     EXPECT_TRUE(range.AtEnd());
     EXPECT_TRUE(stream.AtEnd());
   }
@@ -479,11 +479,11 @@ TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
   CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
   EXPECT_TRUE(stream.AtEnd());
 
-  EXPECT_EQ("d", range.Consume().Value());
+  EXPECT_EQ(StringView("d"), range.Consume().Value());
   EXPECT_EQ(kColonToken, range.Consume().GetType());
   EXPECT_EQ(kCommaToken, range.Consume().GetType());
   EXPECT_EQ(kSemicolonToken, range.Consume().GetType());
-  EXPECT_EQ("e", range.Consume().Value());
+  EXPECT_EQ(StringView("e"), range.Consume().Value());
 }
 
 TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
@@ -499,7 +499,7 @@ TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
       CSSParserTokenStream::Boundary boundary_semicolon(stream, kSemicolonToken);
 
       CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-      EXPECT_EQ("a", range.Consume().Value());
+      EXPECT_EQ(StringView("a"), range.Consume().Value());
       EXPECT_TRUE(range.AtEnd());
 
       EXPECT_EQ(kColonToken, stream.Peek().GetType());
@@ -518,7 +518,7 @@ TEST(CSSParserTokenStreamTest, BoundaryBlockGuard) {
 
   {
     CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
-    EXPECT_EQ("a", stream.Consume().Value());
+    EXPECT_EQ(StringView("a"), stream.Consume().Value());
 
     {
       CSSParserTokenStream::BlockGuard guard(stream);
@@ -530,7 +530,7 @@ TEST(CSSParserTokenStreamTest, BoundaryBlockGuard) {
 
     // However, now the boundary should apply.
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ("d", range.Serialize());
+    EXPECT_EQ(range.Serialize(), String("d"));
   }
 }
 
@@ -540,7 +540,7 @@ TEST(CSSParserTokenStreamTest, BoundaryRestoringBlockGuard) {
 
   {
     CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
-    EXPECT_EQ("a", stream.Consume().Value());
+    EXPECT_EQ(StringView("a"), stream.Consume().Value());
 
     {
       stream.EnsureLookAhead();
@@ -554,7 +554,7 @@ TEST(CSSParserTokenStreamTest, BoundaryRestoringBlockGuard) {
 
     // However, now the boundary should apply.
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ("d", range.Serialize());
+    EXPECT_EQ(range.Serialize(), String("d"));
   }
 }
 
@@ -574,7 +574,7 @@ TEST(CSSParserTokenStreamTest, SavePointRestoreWithoutLookahead) {
   }
 
   // We should have restored to the beginning.
-  EXPECT_EQ("a", stream.Peek().Value());
+  EXPECT_EQ(StringView("a"), stream.Peek().Value());
 }
 
 namespace {

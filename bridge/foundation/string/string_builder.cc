@@ -5,6 +5,7 @@
 
 #include "string_builder.h"
 #include <cstring>
+#include "wtf_string.h"
 
 namespace webf {
 

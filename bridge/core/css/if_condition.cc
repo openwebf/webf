@@ -4,6 +4,7 @@
 
 #include "core/css/if_condition.h"
 #include "media_type_names.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 

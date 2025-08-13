@@ -11,6 +11,7 @@
 #include "core/html/html_body_element.h"
 #include "core/html/html_style_element.h"
 #include "core/platform/text/text_position.h"
+#include "foundation/string/wtf_string.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
 

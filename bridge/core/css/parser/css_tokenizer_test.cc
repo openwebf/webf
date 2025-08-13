@@ -100,23 +100,23 @@ void TestUnicodeRangeTokens(const std::string& string,
   TEST_TOKENS(string, token1, token2, token3, true);
 }
 
-static CSSParserToken Ident(const std::string& string) {
-  return CSSParserToken(kIdentToken, string);
+static CSSParserToken Ident(const String& string) {
+  return CSSParserToken(kIdentToken, StringView(string));
 }
-static CSSParserToken AtKeyword(const std::string& string) {
-  return CSSParserToken(kAtKeywordToken, string);
+static CSSParserToken AtKeyword(const String& string) {
+  return CSSParserToken(kAtKeywordToken, StringView(string));
 }
-static CSSParserToken GetString(const std::string& string) {
-  return CSSParserToken(kStringToken, string);
+static CSSParserToken GetString(const String& string) {
+  return CSSParserToken(kStringToken, StringView(string));
 }
-static CSSParserToken Func(const std::string& string) {
-  return CSSParserToken(kFunctionToken, string);
+static CSSParserToken Func(const String& string) {
+  return CSSParserToken(kFunctionToken, StringView(string));
 }
-static CSSParserToken Url(const std::string& string) {
-  return CSSParserToken(kUrlToken, string);
+static CSSParserToken Url(const String& string) {
+  return CSSParserToken(kUrlToken, StringView(string));
 }
-static CSSParserToken GetHash(const std::string& string, HashTokenType type) {
-  return CSSParserToken(type, string);
+static CSSParserToken GetHash(const String& string, HashTokenType type) {
+  return CSSParserToken(type, StringView(string));
 }
 static CSSParserToken Delim(char c) {
   return CSSParserToken(kDelimiterToken, c);
@@ -126,9 +126,9 @@ static CSSParserToken Number(NumericValueType type, double value, NumericSign si
   return CSSParserToken(kNumberToken, value, type, sign);
 }
 
-static CSSParserToken Dimension(NumericValueType type, double value, const std::string& string) {
+static CSSParserToken Dimension(NumericValueType type, double value, const String& string) {
   CSSParserToken token = Number(type, value, kNoSign);  // sign ignored
-  token.ConvertToDimensionWithUnit(string);
+  token.ConvertToDimensionWithUnit(StringView(string));
   return token;
 }
 

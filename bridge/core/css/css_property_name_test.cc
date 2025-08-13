@@ -10,6 +10,7 @@
 #include "core/css/properties/css_property.h"
 #include "core/css/properties/longhand.h"
 #include "core/dom/document.h"
+#include "foundation/string/wtf_string.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
 

@@ -99,7 +99,7 @@ bool NeedsInsertedComment(const CSSParserToken& a, const CSSParserToken& b) {
   return at == kDelimiterToken && bt == kDelimiterToken && a.Delimiter() == '/' && b.Delimiter() == '*';
 }
 
-std::string CSSParserTokenRange::Serialize() const {
+String CSSParserTokenRange::Serialize() const {
   StringBuilder result;
   for (const CSSParserToken* it = first_; it != last_; ++it) {
     if (it != first_ && NeedsInsertedComment(*(it - 1), *it)) {
@@ -107,7 +107,7 @@ std::string CSSParserTokenRange::Serialize() const {
     }
     it->Serialize(result);
   }
-  return result.ReleaseString().StdUtf8();
+  return result.ReleaseString();
 }
 
 }  // namespace webf

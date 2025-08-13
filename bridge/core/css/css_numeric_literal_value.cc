@@ -9,6 +9,7 @@
 #include "core/css/css_value_pool.h"
 #include "core/platform/math_extras.h"
 #include "foundation/string/string_builder.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 

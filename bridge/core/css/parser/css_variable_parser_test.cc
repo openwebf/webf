@@ -113,7 +113,7 @@ TEST_P(CustomPropertyDeclarationTest, ParseDeclarationValue) {
   SCOPED_TRACE(GetParam());
   std::vector<CSSParserToken> tokens = Parse(GetParam());
   CSSParserTokenRange range(tokens);
-  CSSTokenizedValue tokenized_value = {range, /* text */ ""};
+  CSSTokenizedValue tokenized_value = {range, /* text */ StringView("")};
   std::shared_ptr<const CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   EXPECT_NE(nullptr,
             CSSVariableParser::ParseDeclarationValue(tokenized_value, /* is_animation_tainted */ false, context));

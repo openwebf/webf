@@ -17,6 +17,7 @@
 #include "core/css/parser/css_parser.h"
 #include "core/css/style_sheet_contents.h"
 #include "core/css/parser/css_parser_context.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 

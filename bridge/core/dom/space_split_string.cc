@@ -50,6 +50,7 @@
 #include <sstream>
 #include <unordered_set>
 #include "core/css/parser/css_parser_idioms.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 

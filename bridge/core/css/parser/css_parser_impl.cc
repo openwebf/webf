@@ -42,7 +42,7 @@
 #include "css_variable_parser.h"
 #include "find_length_of_declaration_list-inl.h"
 #include "foundation/casting.h"
-#include "string/wtf_string.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
