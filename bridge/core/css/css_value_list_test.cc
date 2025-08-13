@@ -199,8 +199,8 @@ TEST_F(CSSValueListTest, CssTextCommaSeparated) {
   list->Append(red);
   list->Append(blue);
   
-  std::string css_text = list->CustomCSSText();
-  EXPECT_EQ("red, blue", css_text);
+  String css_text = list->CustomCSSText();
+  EXPECT_EQ(String("red, blue"), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextSpaceSeparated) {
@@ -211,8 +211,8 @@ TEST_F(CSSValueListTest, CssTextSpaceSeparated) {
   list->Append(red);
   list->Append(blue);
   
-  std::string css_text = list->CustomCSSText();
-  EXPECT_EQ("red blue", css_text);
+  String css_text = list->CustomCSSText();
+  EXPECT_EQ(String("red blue"), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextSlashSeparated) {
@@ -223,14 +223,14 @@ TEST_F(CSSValueListTest, CssTextSlashSeparated) {
   list->Append(red);
   list->Append(blue);
   
-  std::string css_text = list->CustomCSSText();
-  EXPECT_EQ("red / blue", css_text);
+  String css_text = list->CustomCSSText();
+  EXPECT_EQ(String("red / blue"), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextEmpty) {
   auto list = CSSValueList::CreateCommaSeparated();
-  std::string css_text = list->CustomCSSText();
-  EXPECT_EQ("", css_text);
+  String css_text = list->CustomCSSText();
+  EXPECT_EQ(String(""), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextSingleValue) {
@@ -238,8 +238,8 @@ TEST_F(CSSValueListTest, CssTextSingleValue) {
   auto red = CSSIdentifierValue::Create(CSSValueID::kRed);
   list->Append(red);
   
-  std::string css_text = list->CustomCSSText();
-  EXPECT_EQ("red", css_text);
+  String css_text = list->CustomCSSText();
+  EXPECT_EQ(String("red"), css_text);
 }
 
 TEST_F(CSSValueListTest, MixedValueTypes) {
@@ -266,8 +266,8 @@ TEST_F(CSSValueListTest, FontFamily) {
   list->Append(sans_serif);
   
   EXPECT_EQ(3u, list->length());
-  std::string css_text = list->CustomCSSText();
-  EXPECT_EQ("\"Arial\", \"Helvetica\", sans-serif", css_text);
+  String css_text = list->CustomCSSText();
+  EXPECT_EQ(String("\"Arial\", \"Helvetica\", sans-serif"), css_text);
 }
 
 }  // namespace webf

@@ -42,7 +42,7 @@ TEST_P(SelectorParseTest, Parse) {
   SCOPED_TRACE(param.input);
   std::shared_ptr<CSSSelectorList> list = css_test_helpers::ParseSelectorList(param.input);
   const char* expected = param.expected ? param.expected : param.input;
-  EXPECT_EQ(std::string(expected), list->SelectorsText());
+  EXPECT_EQ(String::FromUTF8(expected), list->SelectorsText());
 }
 
 TEST(CSSSelectorParserTest, ValidANPlusB) {
@@ -248,7 +248,7 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-    EXPECT_EQ(!vector.IsEmpty(), test_case.valid);
+    EXPECT_EQ(!vector.empty(), test_case.valid);
     if (!test_case.valid) {
       continue;
     }
@@ -451,7 +451,7 @@ TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
-    EXPECT_TRUE(!vector.IsEmpty());
+    EXPECT_TRUE(!vector.empty());
 
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
     ASSERT_TRUE(list->HasOneSelector());
@@ -851,11 +851,11 @@ static std::optional<CSSSelector::PseudoType> GetImplicitlyAddedPseudo(Document*
   // The back of `selectors` now contains the leftmost simple CSSSelector.
 
   // Ignore leading :true.
-  if (!selectors.IsEmpty() && selectors.back()->GetPseudoType() == CSSSelector::kPseudoTrue) {
+  if (!selectors.empty() && selectors.back()->GetPseudoType() == CSSSelector::kPseudoTrue) {
     selectors.pop_back();
   }
 
-  const CSSSelector* back = !selectors.IsEmpty() ? selectors.back() : nullptr;
+  const CSSSelector* back = !selectors.empty() ? selectors.back() : nullptr;
   if (!back || back->Match() != CSSSelector::kPseudoClass || !back->IsImplicit()) {
     return std::nullopt;
   }
@@ -990,7 +990,7 @@ class TestEnvironmentPool {
     }
     
     // Try to reuse an available environment
-    if (!available_.IsEmpty()) {
+    if (!available_.empty()) {
       auto env = std::move(available_.back());
       available_.pop_back();
       return env;

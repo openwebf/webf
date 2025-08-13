@@ -12,6 +12,7 @@
 #endif
 
 #include "../../../foundation/string/string_view.h"
+#include "../../../foundation/string/wtf_string.h"
 #include "core/base/compiler_specific.h"
 
 namespace webf {

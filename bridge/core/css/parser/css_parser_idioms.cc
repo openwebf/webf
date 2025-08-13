@@ -25,7 +25,7 @@ void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream& input) {
 }
 
 //// https://drafts.csswg.org/css-syntax/#consume-an-escaped-code-point
-UChar32 ConsumeEscape(CSSTokenizerInputStream& input) {
+UCharCodePoint ConsumeEscape(CSSTokenizerInputStream& input) {
   char cc = input.NextInputChar();
   input.Advance();
   DCHECK(!IsCSSNewLine(cc));

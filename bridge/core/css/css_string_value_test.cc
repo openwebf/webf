@@ -59,10 +59,10 @@ TEST_F(CSSStringValueTest, CssText) {
 
 TEST_F(CSSStringValueTest, CssTextWithNewlines) {
   CSSStringValue with_newline("line1\nline2");
-  std::string css_text = with_newline.CustomCSSText();
+  String css_text = with_newline.CustomCSSText();
   // WebF's SerializeString function properly handles the content
   // Just check that it's a properly quoted string
-  EXPECT_TRUE(css_text.front() == '"' && css_text.back() == '"');
+  EXPECT_TRUE(css_text[0] == '"' && css_text[css_text.length() - 1] == '"');
   EXPECT_TRUE(css_text.length() >= 2); // At least the quotes
 }
 

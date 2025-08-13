@@ -17,7 +17,7 @@ typedef char16_t UChar;
 // UTF8 units
 typedef char UTF8Char;
 // Unicode
-typedef uint32_t UChar32;
+typedef uint32_t UCharCodePoint;
 
 // We want to explicit about the string types.
 typedef std::basic_string<LChar> Latin1String;

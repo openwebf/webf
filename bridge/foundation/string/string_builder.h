@@ -145,7 +145,7 @@ class StringBuilder {
 
   void Append(char c) { Append(static_cast<LChar>(c)); }
 
-  void Append(UChar32 c) {
+  void Append(UCharCodePoint c) {
     if (U_IS_BMP(c)) {
       Append(static_cast<UChar>(c));
       return;

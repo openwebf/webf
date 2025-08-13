@@ -50,9 +50,9 @@ TEST(MediaConditionParserTest, Basic) {
     CSSTokenizer tokenizer(test_cases[i].input);
     CSSParserTokenStream stream(tokenizer);
     std::shared_ptr<MediaQuerySet> media_condition_query_set = MediaQueryParser::ParseMediaCondition(stream, nullptr);
-    std::string query_text = media_condition_query_set->MediaText();
+    String query_text = media_condition_query_set->MediaText();
     const char* expected_text = test_cases[i].output ? test_cases[i].output : test_cases[i].input;
-    EXPECT_EQ(expected_text, query_text);
+    EXPECT_EQ(String(expected_text), query_text);
   }
 }
 

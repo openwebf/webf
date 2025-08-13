@@ -39,7 +39,7 @@ TEST(AtomicString, FromNativeString) {
 TEST(AtomicString, CreateFromStdString) {
   TEST_init();
   AtomicString value = AtomicString::CreateFromUTF8("helloworld");
-  EXPECT_EQ(std::string(value.Impl()->Characters8(), value.Impl()->length()), "helloworld");
+  EXPECT_EQ(*value.Impl(), "helloworld");
 }
 
 TEST(AtomicString, CreateFromJSValue) {
@@ -48,7 +48,7 @@ TEST(AtomicString, CreateFromJSValue) {
   JSValue string = JS_NewString(ctx, "helloworld");
   std::shared_ptr<StringImpl> value =
       env->page()->dartIsolateContext()->stringCache()->GetStringFromJSAtom(ctx, JS_ValueToAtom(ctx, string));
-  EXPECT_EQ(std::string(value->Characters8(), value->length()), "helloworld");
+  EXPECT_EQ(*value, "helloworld");
   JS_FreeValue(ctx, string);
 }
 
@@ -122,7 +122,7 @@ TEST(AtomicString, UTF16ToStdString) {
   TEST_init();
   // Test UTF-16 to UTF-8 conversion
   AtomicString utf16_str = AtomicString(u"Hello 世界 🌍");
-  std::string utf8_str = utf16_str.ToUTF8String();
+  UTF8String utf8_str = utf16_str.ToUTF8String();
   
   // The UTF-8 representation should match
   EXPECT_EQ(utf8_str, "Hello 世界 🌍");
@@ -185,9 +185,9 @@ TEST(AtomicString, MixedUTF8AndUTF16) {
   EXPECT_TRUE(utf8_str.Is8Bit());
   EXPECT_FALSE(utf16_str.Is8Bit());
   
-  // Convert both to std::string
-  std::string str1 = utf8_str.ToUTF8String();
-  std::string str2 = utf16_str.ToUTF8String();
+  // Convert both to UTF8String
+  UTF8String str1 = utf8_str.ToUTF8String();
+  UTF8String str2 = utf16_str.ToUTF8String();
   
   EXPECT_EQ(str1, "Hello ASCII");
   EXPECT_EQ(str2, "Hello 世界");
@@ -203,7 +203,7 @@ TEST(AtomicString, UTF16WithSurrogatePairs) {
   EXPECT_FALSE(utf16_str.Is8Bit());
   
   // Convert to UTF-8 and verify
-  std::string utf8_result = utf16_str.ToUTF8String();
+  UTF8String utf8_result = utf16_str.ToUTF8String();
   EXPECT_EQ(utf8_result, "Hello 😀 World 🌍");
 }
 
@@ -245,7 +245,7 @@ TEST(StringImpl, CreateFromUTF8ASCII) {
   
   EXPECT_TRUE(str->Is8Bit());
   EXPECT_EQ(str->length(), 11);
-  EXPECT_EQ(std::string(str->Characters8(), str->length()), "Hello World");
+  EXPECT_EQ(*str, "Hello World");
 }
 
 TEST(StringImpl, CreateFromUTF8WithUnicode) {
@@ -285,17 +285,17 @@ TEST(StringImpl, CreateFromUTF8WithLatin1) {
   TEST_init();
   
   // Test UTF-8 with Latin-1 extended characters
-  const char* latin1_utf8 = "Café"; // é is U+00E9
+  const UTF8Char* latin1_utf8 = "Café"; // é is U+00E9
   auto str = StringImpl::CreateFromUTF8(latin1_utf8, strlen(latin1_utf8));
   
   EXPECT_TRUE(str->Is8Bit()); // Latin-1 fits in 8-bit
   EXPECT_EQ(str->length(), 4);
   
-  const char* chars = str->Characters8();
+  const LChar* chars = str->Characters8();
   EXPECT_EQ(chars[0], 'C');
   EXPECT_EQ(chars[1], 'a');
   EXPECT_EQ(chars[2], 'f');
-  EXPECT_EQ(static_cast<unsigned char>(chars[3]), 0xE9);
+  EXPECT_EQ(chars[3], 0xE9);
 }
 
 TEST(StringImpl, CreateFromUTF8InvalidSequence) {

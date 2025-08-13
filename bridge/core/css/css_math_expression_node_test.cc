@@ -457,7 +457,7 @@ TEST(CSSMathExpressionNode, TestExponentialFunctionsToCalculationExpression) {
 }
 
 TEST(CSSMathExpressionNode, IdentifierLiteralConversion) {
-  const auto css_node = CSSMathExpressionIdentifierLiteral::Create("test");
+  const auto css_node = CSSMathExpressionIdentifierLiteral::Create(AtomicString::CreateFromUTF8("test"));
   EXPECT_TRUE(css_node->IsIdentifierLiteral());
   EXPECT_EQ(css_node->Category(), kCalcIdent);
   EXPECT_EQ(css_node->GetValue(), "test");

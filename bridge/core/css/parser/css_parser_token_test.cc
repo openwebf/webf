@@ -8,16 +8,16 @@
 
 namespace webf {
 
-static CSSParserToken IdentToken(const std::string& string) {
+static CSSParserToken IdentToken(const String& string) {
   return CSSParserToken(kIdentToken, string);
 }
-static CSSParserToken DimensionToken(double value, const std::string& unit) {
+static CSSParserToken DimensionToken(double value, const String& unit) {
   CSSParserToken token(kNumberToken, value, kNumberValueType, kNoSign);
   token.ConvertToDimensionWithUnit(unit);
   return token;
 }
 
-static std::string RoundTripToken(std::string str) {
+static String RoundTripToken(String str) {
   CSSTokenizer tokenizer(str);
   StringBuilder sb;
   tokenizer.TokenizeSingle().Serialize(sb);

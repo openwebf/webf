@@ -11,7 +11,7 @@
 
 namespace webf {
 
-std::string FromUChar32(uint32_t c) {
+String FromUChar32(uint32_t c) {
   StringBuilder input;
   input.Append(c);
   return input.ReleaseString();

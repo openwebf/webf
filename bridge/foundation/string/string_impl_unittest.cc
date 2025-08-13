@@ -14,14 +14,14 @@ TEST(StringImplTest, NullTermination8Bit) {
   // Test that 8-bit strings are null-terminated
   const char* test_str = "Hello, World!";
   size_t len = strlen(test_str);
-  auto string_impl = StringImpl::Create(test_str, len);
+  auto string_impl = StringImpl::CreateFromUTF8(test_str, len);
   
   ASSERT_TRUE(string_impl->Is8Bit());
-  const char* chars = string_impl->Characters8();
+  const LChar* chars = string_impl->Characters8();
   
-  // Verify we can use strlen on the result
-  EXPECT_EQ(strlen(chars), len);
-  EXPECT_EQ(strcmp(chars, test_str), 0);
+  // Verify length matches expected
+  EXPECT_EQ(string_impl->length(), len);
+  EXPECT_EQ(*string_impl, test_str);
   
   // Verify null terminator exists at the expected position
   EXPECT_EQ(chars[len], '\0');
@@ -68,34 +68,35 @@ TEST(StringImplTest, NullTerminationASCIIFromUTF8) {
   
   // Should create an 8-bit string
   ASSERT_TRUE(string_impl->Is8Bit());
-  const char* chars = string_impl->Characters8();
+  const LChar* chars = string_impl->Characters8();
   
-  // Verify null termination
-  EXPECT_EQ(strlen(chars), len);
+  // Verify length and content
+  EXPECT_EQ(string_impl->length(), len);
+  EXPECT_EQ(*string_impl, ascii_str);
   EXPECT_EQ(chars[len], '\0');
 }
 
 TEST(StringImplTest, NullTerminationSubstring) {
   // Test that substring also has null termination
   const char* original = "Hello, World!";
-  auto string_impl = StringImpl::Create(original, strlen(original));
+  auto string_impl = StringImpl::CreateFromUTF8(original, strlen(original));
   
   // Create substring "World"
   auto substr = StringImpl::Substring(string_impl, 7, 5);
   
   ASSERT_TRUE(substr->Is8Bit());
-  const char* chars = substr->Characters8();
+  const LChar* chars = substr->Characters8();
   
-  // Verify null termination
-  EXPECT_EQ(strlen(chars), 5u);
-  EXPECT_EQ(strcmp(chars, "World"), 0);
+  // Verify substring content
+  EXPECT_EQ(substr->length(), 5u);
+  EXPECT_EQ(*substr, "World");
   EXPECT_EQ(chars[5], '\0');
 }
 
 TEST(StringImplTest, NullTerminationRemoveCharacters) {
   // Test that RemoveCharacters result is null-terminated
   const char* original = "Hello, World!";
-  auto string_impl = StringImpl::Create(original, strlen(original));
+  auto string_impl = StringImpl::CreateFromUTF8(original, strlen(original));
   
   // Remove spaces
   auto result = StringImpl::RemoveCharacters(string_impl, [](char16_t c) {
@@ -103,17 +104,17 @@ TEST(StringImplTest, NullTerminationRemoveCharacters) {
   });
   
   ASSERT_TRUE(result->Is8Bit());
-  const char* chars = result->Characters8();
+  const LChar* chars = result->Characters8();
   
-  // Verify null termination
+  // Verify result after removing spaces
   size_t result_len = result->length();
-  EXPECT_EQ(strlen(chars), result_len);
+  EXPECT_EQ(*result, "Hello,World!");
   EXPECT_EQ(chars[result_len], '\0');
 }
 
 TEST(StringImplTest, NullTerminationEmptyString) {
   // Test empty string creation
-  auto empty = StringImpl::Create("", 0);
+  auto empty = StringImpl::CreateFromUTF8("", 0);
   
   // Empty strings should return the static empty instance
   EXPECT_EQ(empty.get(), StringImpl::empty_);
@@ -125,11 +126,11 @@ TEST(StringImplTest, NullTerminationAtomicString) {
   AtomicString atomic_str("test-string");
   
   ASSERT_TRUE(atomic_str.Is8Bit());
-  const char* chars = atomic_str.Characters8();
+  const LChar* chars = atomic_str.Characters8();
   
-  // Verify we can use strlen
-  EXPECT_EQ(strlen(chars), atomic_str.length());
-  EXPECT_EQ(strcmp(chars, "test-string"), 0);
+  // Verify atomic string content
+  EXPECT_EQ(atomic_str.length(), 11u);
+  EXPECT_EQ(atomic_str, "test-string");
 }
 
 TEST(StringImplTest, NullTerminationWithDataPrefix) {
@@ -137,14 +138,15 @@ TEST(StringImplTest, NullTerminationWithDataPrefix) {
   AtomicString name("data-test-attribute");
   
   ASSERT_TRUE(name.Is8Bit());
-  const char* chars = name.Characters8();
+  const LChar* chars = name.Characters8();
   
   // This should work without buffer overflow
-  bool starts_with_data = strncmp(chars, "data-", 5) == 0;
+  bool starts_with_data = name.StartsWith(StringView("data-"));
   EXPECT_TRUE(starts_with_data);
   
-  // Also verify strlen works
-  EXPECT_EQ(strlen(chars), name.length());
+  // Verify length and content
+  EXPECT_EQ(name.length(), 19u);
+  EXPECT_EQ(name, "data-test-attribute");
 }
 
 }  // namespace

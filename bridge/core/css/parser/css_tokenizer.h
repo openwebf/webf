@@ -9,6 +9,7 @@
 #ifndef WEBF_CSS_TOKENIZER_H
 #define WEBF_CSS_TOKENIZER_H
 
+#include <unicode/utf.h>
 #include "css_parser_token.h"
 #include "css_tokenizer_input_stream.h"
 #include "foundation/macros.h"
@@ -109,7 +110,7 @@ class CSSTokenizer {
 
   bool ConsumeIfNext(char);
   StringView ConsumeName();
-  UChar32 ConsumeEscape();
+  UCharCodePoint ConsumeEscape();
 
   bool NextTwoCharsAreValidEscape();
   bool NextCharsAreNumber(char);

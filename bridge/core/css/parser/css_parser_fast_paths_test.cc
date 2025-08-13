@@ -11,37 +11,37 @@ namespace webf {
 
 TEST(CSSParserFastPathsTest, ParseKeyword) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kFloat, "left", context);
+  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kFloat, StringView("left"), context);
   ASSERT_NE(nullptr, value);
   const CSSIdentifierValue* identifier_value = To<CSSIdentifierValue>(value.get());
   EXPECT_EQ(CSSValueID::kLeft, identifier_value->GetValueID());
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kFloat, "foo", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kFloat, StringView("foo"), context);
   ASSERT_EQ(nullptr, value);
 }
 
 TEST(CSSParserFastPathsTest, ParseCSSWideKeywords) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   std::shared_ptr<const CSSValue> value =
-      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, "inherit", context);
+      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, StringView("inherit"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_TRUE(value->IsInheritedValue());
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginRight, "InHeriT", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginRight, StringView("InHeriT"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_TRUE(value->IsInheritedValue());
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginBottom, "initial", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginBottom, StringView("initial"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_TRUE(value->IsInitialValue());
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginLeft, "IniTiaL", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginLeft, StringView("IniTiaL"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_TRUE(value->IsInitialValue());
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, "unset", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, StringView("unset"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_TRUE(value->IsUnsetValue());
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginLeft, "unsEt", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginLeft, StringView("unsEt"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_TRUE(value->IsUnsetValue());
   // Fast path doesn't handle short hands.
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMargin, "initial", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMargin, StringView("initial"), context);
   ASSERT_EQ(nullptr, value);
 }
 
@@ -51,7 +51,7 @@ TEST(CSSParserFastPathsTest, ParseRevert) {
   {
     DCHECK(!CSSParserFastPaths::IsHandledByKeywordFastPath(CSSPropertyID::kMarginTop));
     std::shared_ptr<const CSSValue> value =
-        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, "revert", context);
+        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, StringView("revert"), context);
     ASSERT_TRUE(value);
     EXPECT_TRUE(value->IsRevertValue());
   }
@@ -60,7 +60,7 @@ TEST(CSSParserFastPathsTest, ParseRevert) {
   {
     DCHECK(CSSParserFastPaths::IsHandledByKeywordFastPath(CSSPropertyID::kDirection));
     std::shared_ptr<const CSSValue> value =
-        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kDirection, "revert", context);
+        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kDirection, StringView("revert"), context);
     ASSERT_TRUE(value);
     EXPECT_TRUE(value->IsRevertValue());
   }
@@ -72,7 +72,7 @@ TEST(CSSParserFastPathsTest, ParseRevertLayer) {
   {
     DCHECK(!CSSParserFastPaths::IsHandledByKeywordFastPath(CSSPropertyID::kMarginTop));
     std::shared_ptr<const CSSValue> value =
-        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, "revert-layer", context);
+        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kMarginTop, StringView("revert-layer"), context);
     ASSERT_TRUE(value);
     EXPECT_TRUE(value->IsRevertLayerValue());
   }
@@ -81,7 +81,7 @@ TEST(CSSParserFastPathsTest, ParseRevertLayer) {
   {
     DCHECK(CSSParserFastPaths::IsHandledByKeywordFastPath(CSSPropertyID::kDirection));
     std::shared_ptr<const CSSValue> value =
-        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kDirection, "revert-layer", context);
+        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kDirection, StringView("revert-layer"), context);
     ASSERT_TRUE(value);
     EXPECT_TRUE(value->IsRevertLayerValue());
   }
@@ -89,32 +89,32 @@ TEST(CSSParserFastPathsTest, ParseRevertLayer) {
 
 TEST(CSSParserFastPathsTest, ParseSimpleLength) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, "234px", context);
+  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView("234px"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_FALSE(value->IsValueList());
   EXPECT_EQ("234px", value->CssText());
 
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, "234.567px", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView("234.567px"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_FALSE(value->IsValueList());
   EXPECT_EQ("234.567px", value->CssText());
 
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, ".567px", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView(".567px"), context);
   ASSERT_NE(nullptr, value);
   EXPECT_FALSE(value->IsValueList());
   EXPECT_EQ("0.567px", value->CssText());
 
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, "234.px", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView("234.px"), context);
   EXPECT_EQ(nullptr, value);
 
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, "234.e2px", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView("234.e2px"), context);
   EXPECT_EQ(nullptr, value);
 
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, ".", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView("."), context);
   EXPECT_EQ(nullptr, value);
 
   // This is legal, but we don't support it in the fast path.
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, "234e2px", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView("234e2px"), context);
   EXPECT_EQ(nullptr, value);
 }
 
@@ -135,7 +135,7 @@ TEST(CSSParserFastPathsTest, VariousNumberOfDecimalsInLength) {
   for (const auto& [str, expected_val] : kTestCases) {
     SCOPED_TRACE(str);
     std::shared_ptr<const CSSValue> value =
-        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, str.c_str(), context);
+        CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kWidth, StringView(str.c_str()), context);
     ASSERT_NE(nullptr, value);
     EXPECT_FALSE(value->IsValueList());
     EXPECT_DOUBLE_EQ(expected_val, To<CSSNumericLiteralValue>(value.get())->DoubleValue());
@@ -145,12 +145,12 @@ TEST(CSSParserFastPathsTest, VariousNumberOfDecimalsInLength) {
 TEST(CSSParserFastPathsTest, ParseTransform) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   std::shared_ptr<const CSSValue> value =
-      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, "translate(5.5px, 5px)", context);
+      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView("translate(5.5px, 5px)"), context);
   ASSERT_NE(nullptr, value);
   ASSERT_TRUE(value->IsValueList());
   ASSERT_EQ("translate(5.5px, 5px)", value->CssText());
 
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, "translate3d(5px, 5px, 10.1px)", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView("translate3d(5px, 5px, 10.1px)"), context);
   ASSERT_NE(nullptr, value);
   ASSERT_TRUE(value->IsValueList());
   ASSERT_EQ("translate3d(5px, 5px, 10.1px)", value->CssText());
@@ -172,7 +172,7 @@ TEST(CSSParserFastPathsTest, ParseComplexTransform) {
       "scale3d(0.5, 1, 0.7) "
       "matrix3d(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)";
   std::shared_ptr<const CSSValue> value =
-      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, kComplexTransform, context);
+      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView(kComplexTransform), context);
   ASSERT_NE(nullptr, value);
   ASSERT_TRUE(value->IsValueList());
   ASSERT_EQ(kComplexTransformNormalized, value->CssText());
@@ -181,18 +181,18 @@ TEST(CSSParserFastPathsTest, ParseComplexTransform) {
 TEST(CSSParserFastPathsTest, ParseTransformNotFastPath) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   std::shared_ptr<const CSSValue> value =
-      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, "rotateX(1deg)", context);
+      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView("rotateX(1deg)"), context);
   ASSERT_EQ(nullptr, value);
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, "translateZ(1px) rotateX(1deg)", context);
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView("translateZ(1px) rotateX(1deg)"), context);
   ASSERT_EQ(nullptr, value);
 }
 
 TEST(CSSParserFastPathsTest, ParseInvalidTransform) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   std::shared_ptr<const CSSValue> value =
-      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, "rotateX(1deg", context);
+      CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView("rotateX(1deg"), context);
   ASSERT_EQ(nullptr, value);
-  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, "translateZ(1px) (1px, 1px) rotateX(1deg",
+  value = CSSParserFastPaths::MaybeParseValue(CSSPropertyID::kTransform, StringView("translateZ(1px) (1px, 1px) rotateX(1deg"),
                                               context);
   ASSERT_EQ(nullptr, value);
 }

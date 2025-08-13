@@ -232,7 +232,7 @@ TEST(CSSPropertyParserTest, IncompleteColor) {
   ASSERT_FALSE(value);
 }
 
-void TestImageSetParsing(const std::string& testValue, const std::string& expectedCssText) {
+void TestImageSetParsing(const String& testValue, const String& expectedCssText) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
       CSSPropertyID::kBackgroundImage, testValue, StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_NE(value, nullptr);
@@ -550,9 +550,7 @@ TEST(CSSPropertyParserTest, AnchorPositioningDisabled) {
   EXPECT_FALSE(ParseCSSValue(CSSPropertyID::kHeight, "anchor-size(--foo height)", context));
 }
 
-void TestRepeatStyleParsing(const std::string& testValue,
-                            const std::string& expectedCssText,
-                            const CSSPropertyID& propID) {
+void TestRepeatStyleParsing(const String& testValue, const String& expectedCssText, const CSSPropertyID& propID) {
   std::shared_ptr<const CSSValue> value =
       CSSParser::ParseSingleValue(propID, testValue, StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_NE(value, nullptr);
@@ -627,7 +625,7 @@ void TestRepeatStyleViaShorthandParsing(const std::string& testValue,
   CSSParser::ParseValue(style.get(), propID, testValue, false /* important */);
   ASSERT_NE(style, nullptr);
   WEBF_LOG(VERBOSE) << "style text" << style->AsText();
-  EXPECT_TRUE(style->AsText().find(expectedCssText) != std::string::npos);
+  EXPECT_TRUE(style->AsText().Find(expectedCssText) != kNotFound);
 }
 
 void TestRepeatStyleViaShorthandsParsing(const std::string& testValue, const std::string& expectedCssText) {

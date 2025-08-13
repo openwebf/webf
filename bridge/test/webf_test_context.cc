@@ -251,8 +251,27 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
   MemberMutationScope scope(context);
 
   if (argc == 1) {
-    std::string strHTML = AtomicString(ctx, argv[0]).ToUTF8String();
-    HTMLParser::parseHTML(strHTML, context->document()->documentElement());
+    auto* document = context->document();
+    if (!document || !document->documentElement()) {
+      // Document or documentElement is not ready yet
+      return JS_NULL;
+    }
+    
+    // Get the HTML string directly from QuickJS as UTF-8
+    size_t len;
+    const char* html_cstr = JS_ToCStringLen(ctx, &len, argv[0]);
+    if (!html_cstr) {
+      return JS_ThrowTypeError(ctx, "Failed to convert HTML string");
+    }
+    
+    // Create std::string from the UTF-8 data
+    std::string strHTML(html_cstr, len);
+    
+    // Free the C string allocated by QuickJS
+    JS_FreeCString(ctx, html_cstr);
+    
+    // Parse the HTML
+    HTMLParser::parseHTML(strHTML, document->documentElement());
   }
 
   return JS_NULL;

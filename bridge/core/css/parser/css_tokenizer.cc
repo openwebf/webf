@@ -801,7 +801,7 @@ StringView CSSTokenizer::ConsumeName() {
 }
 
 // https://drafts.csswg.org/css-syntax/#consume-an-escaped-code-point
-UChar32 CSSTokenizer::ConsumeEscape() {
+UCharCodePoint CSSTokenizer::ConsumeEscape() {
   return webf::ConsumeEscape(input_);
 }
 

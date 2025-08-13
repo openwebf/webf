@@ -42,11 +42,11 @@ static bool IsCSSTokenizerIdentifier(const StringView& string) {
   return true;
 }
 
-static void SerializeCharacterAsCodePoint(UChar32 c, StringBuilder& append_to) {
+static void SerializeCharacterAsCodePoint(UCharCodePoint c, StringBuilder& append_to) {
   append_to.AppendFormat("\\%x ", c);
 }
 
-static void SerializeCharacter(UChar32 c, StringBuilder& append_to) {
+static void SerializeCharacter(UCharCodePoint c, StringBuilder& append_to) {
   append_to.Append('\\');
   append_to.Append(c);
 }
@@ -66,7 +66,7 @@ void SerializeIdentifier(const String& identifier, StringBuilder& append_to, boo
   bool is_first_char_hyphen = false;
   unsigned index = 0;
   while (index < identifier.length()) {
-    UChar32 c = identifier.CharacterStartingAt(index);
+    UCharCodePoint c = identifier.CharacterStartingAt(index);
     if (c == 0) {
       // Check for lone surrogate which characterStartingAt does not return.
       c = identifier[index];
@@ -75,7 +75,7 @@ void SerializeIdentifier(const String& identifier, StringBuilder& append_to, boo
     index += U16_LENGTH(c);
 
     if (c == 0) {
-      append_to.Append(static_cast<UChar32>(0xfffd));
+      append_to.Append(static_cast<UCharCodePoint>(0xfffd));
     } else if (c <= 0x1f || c == 0x7f ||
                (0x30 <= c && c <= 0x39 && (is_first || (is_second && is_first_char_hyphen)))) {
       SerializeCharacterAsCodePoint(c, append_to);
@@ -103,7 +103,7 @@ void SerializeString(const String& string, StringBuilder& append_to) {
 
   unsigned index = 0;
   while (index < string.length()) {
-    UChar32 c = string.CharacterStartingAt(index);
+    UCharCodePoint c = string.CharacterStartingAt(index);
     index += U16_LENGTH(c);
 
     if (c <= 0x1f || c == 0x7f) {

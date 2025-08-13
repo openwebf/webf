@@ -30,9 +30,9 @@ class ContainerQueryParserTest : public testing::Test {
     WEBF_STACK_ALLOCATED();
 
    public:
-    bool IsAllowed(const String& feature) const override { return feature == "width"; }
-    bool IsAllowedWithoutValue(const String& feature) const override { return true; }
-    bool IsCaseSensitive(const String& feature) const override { return false; }
+    bool IsAllowed(const AtomicString& feature) const override { return feature == "width"; }
+    bool IsAllowedWithoutValue(const AtomicString& feature) const override { return true; }
+    bool IsCaseSensitive(const AtomicString& feature) const override { return false; }
 
     bool SupportsRange() const override { return true; }
   };
@@ -61,17 +61,17 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   // Test a simple failing case first
   fprintf(stderr, "\nTesting: (width) and (height)\n");
   String result = ParseQuery("(width) and (height)");
-  fprintf(stderr, "Result: '%s'\n", result.c_str());
+  fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
   EXPECT_EQ("(width) and (height)", result);
   
   fprintf(stderr, "\nTesting: ((width) and (width))\n");
   result = ParseQuery("((width) and (width))");
-  fprintf(stderr, "Result: '%s'\n", result.c_str());
+  fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
   EXPECT_EQ("((width) and (width))", result);
   
   fprintf(stderr, "\nTesting: ((width) and (width) and (width))\n");
   result = ParseQuery("((width) and (width) and (width))");
-  fprintf(stderr, "Result: '%s'\n", result.c_str());
+  fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
   EXPECT_EQ("((width) and (width) and (width))", result);
   
   // Test cases that are currently failing
@@ -88,7 +88,7 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   for (const char* test : tests) {
     String result = ParseQuery(test);
     if (result != test) {
-      fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.c_str());
+      fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.StdUtf8().c_str());
     }
     EXPECT_EQ(test, result);
   }
