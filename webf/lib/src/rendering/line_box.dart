@@ -201,8 +201,12 @@ class BoxLineBoxItem extends LineBoxItem {
     // Get padding values
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
+    // Border widths
+    final borderTop = style.borderTopWidth?.computedValue ?? 0.0;
+    final borderBottom = style.borderBottomWidth?.computedValue ?? 0.0;
 
     // For inline elements, the background covers the content area plus padding
+    // and, by default, the border box (background-clip: border-box)
     // The content height is based on font metrics, not line height
     final contentHeight = contentAscent + contentDescent;
     
@@ -210,12 +214,12 @@ class BoxLineBoxItem extends LineBoxItem {
     // The baseline position is relative to the line box top
     final contentTop = offset.dy + baseline - contentAscent;
 
-    // The painted rect includes padding around the content
+    // The painted rect includes padding and borders around the content
     final paintRect = Rect.fromLTWH(
       offset.dx,
-      contentTop - paddingTop,  // Extend upward by padding from actual content top
+      contentTop - paddingTop - borderTop,  // Extend upward by padding and top border
       size.width,
-      contentHeight + paddingTop + paddingBottom,  // Content height plus padding
+      contentHeight + paddingTop + paddingBottom + borderTop + borderBottom,  // Content + padding + borders
     );
 
     // Paint background
@@ -292,6 +296,9 @@ class BoxLineBoxItem extends LineBoxItem {
     // Get padding values
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
+    // Border widths
+    final borderTop = style.borderTopWidth?.computedValue ?? 0.0;
+    final borderBottom = style.borderBottomWidth?.computedValue ?? 0.0;
 
     // Use the same bounds calculation as paint
     final contentHeight = contentAscent + contentDescent;
@@ -300,9 +307,9 @@ class BoxLineBoxItem extends LineBoxItem {
     // Check against the actual painted bounds
     final bounds = Rect.fromLTWH(
       offset.dx,
-      contentTop - paddingTop,
+      contentTop - paddingTop - borderTop,
       size.width,
-      contentHeight + paddingTop + paddingBottom,
+      contentHeight + paddingTop + paddingBottom + borderTop + borderBottom,
     );
 
     if (!bounds.contains(position)) return false;

@@ -47,6 +47,11 @@ class InlineLayoutAlgorithm {
   /// Map to track which items belong to which inline box.
   final Map<RenderBox, List<LineBoxItem>> _boxToItems = {};
 
+  // Track per-line visual start/end X for inline boxes (padding box, excluding margins)
+  // This allows creating box fragments even when an inline has no children (empty inline).
+  final Map<RenderBox, double> _currentLineBoxStartX = {};
+  final Map<RenderBox, double> _currentLineBoxEndX = {};
+
   /// Perform layout and return line boxes.
   List<LineBox> layout() {
     final lineBoxes = <LineBox>[];
@@ -194,8 +199,19 @@ class InlineLayoutAlgorithm {
             baseline = height.toDouble();
           }
 
-          maxAscent = math.max(maxAscent, baseline);
-          maxDescent = math.max(maxDescent, height - baseline);
+          // Include vertical margins in ascent/descent per CSS inline formatting
+          CSSRenderStyle? style = item.style;
+          if (style == null && renderBox is RenderBoxModel) {
+            style = (renderBox as RenderBoxModel).renderStyle;
+          }
+          final double marginTop = style?.marginTop.computedValue ?? 0.0;
+          final double marginBottom = style?.marginBottom.computedValue ?? 0.0;
+
+          final double ascentWithMargin = marginTop + baseline;
+          final double descentWithMargin = (height - baseline) + marginBottom;
+
+          maxAscent = math.max(maxAscent, ascentWithMargin);
+          maxDescent = math.max(maxDescent, descentWithMargin);
         }
       }
 
@@ -233,6 +249,8 @@ class InlineLayoutAlgorithm {
     // Reset position for this line
     _currentX = 0;
     _boxStack.clear();
+    _currentLineBoxStartX.clear();
+    _currentLineBoxEndX.clear();
     // Don't clear _boxToItems - we'll use globalBoxToItems instead
 
     // Always apply bidi reordering based on resolved levels
@@ -344,13 +362,13 @@ class InlineLayoutAlgorithm {
       // The inlineSize from LineBreaker already includes margin and padding
       // We need to track where the actual box content starts (after margin but before padding)
       final leftMargin = style.marginLeft.computedValue;
+      final leftBorder = style.borderLeftWidth?.computedValue ?? 0.0;
       final leftPadding = style.paddingLeft.computedValue;
 
       // Advance by margin first
       _currentX += leftMargin;
 
-      // Store the position after margin (where the box visual area starts)
-      // This includes the padding area
+      // Store the position after margin (where the box's border box starts)
       final boxStartX = _currentX;
 
       _boxStack.add(InlineBoxState(
@@ -359,7 +377,11 @@ class InlineLayoutAlgorithm {
         startX: boxStartX,
       ));
 
-      // Then advance by padding
+      // Record start X for this inline box's visual (padding) area on this line
+      _currentLineBoxStartX[item.renderBox!] = boxStartX;
+
+      // Then advance by border and padding to place content
+      _currentX += leftBorder;
       _currentX += leftPadding;
     } else if (item.renderBox != null) {
       // This is an open tag without box fragment - still advance by its size
@@ -374,6 +396,7 @@ class InlineLayoutAlgorithm {
 
       // Handle right padding and margin
       final rightPadding = style.paddingRight.computedValue;
+      final rightBorder = style.borderRightWidth?.computedValue ?? 0.0;
       final rightMargin = style.marginRight.computedValue;
 
 
@@ -387,9 +410,16 @@ class InlineLayoutAlgorithm {
         }
       }
 
-      // Advance by padding first, then margin
+      // Record end X (end of border box) BEFORE adding margin
+      final boxEndX = _currentX + rightPadding + rightBorder;
+
+      // Advance by padding, border, then margin
       _currentX += rightPadding;
+      _currentX += rightBorder;
       _currentX += rightMargin;
+
+      // Save end X for this inline box on this line
+      _currentLineBoxEndX[item.renderBox!] = boxEndX;
 
 
     } else if (item.renderBox != null) {
@@ -538,6 +568,12 @@ class InlineLayoutAlgorithm {
         ? renderBox.computeDistanceToActualBaseline(TextBaseline.alphabetic) ?? height
         : height;
 
+    // Resolve style once for vertical/horizontal margins
+    CSSRenderStyle? style = item.style;
+    if (style == null && renderBox is RenderBoxModel) {
+      style = (renderBox as RenderBoxModel).renderStyle;
+    }
+
     // Calculate vertical position based on alignment
     double y = 0;
     if (item.style != null) {
@@ -548,7 +584,8 @@ class InlineLayoutAlgorithm {
           break;
         case VerticalAlign.top:
           // Align top of element with top of line box
-          y = 0;
+          // top of margin box = 0 => top of border box = marginTop
+          y = (style?.marginTop.computedValue ?? 0.0);
           break;
         case VerticalAlign.middle:
           // Align vertical midpoint with baseline plus half x-height
@@ -557,15 +594,18 @@ class InlineLayoutAlgorithm {
           break;
         case VerticalAlign.bottom:
           // Align bottom of element with bottom of line box
-          y = lineHeight - height;
+          // bottom of margin box = lineHeight => top of border box = lineHeight - (height + marginBottom)
+          y = lineHeight - (height + (style?.marginBottom.computedValue ?? 0.0));
           break;
         case VerticalAlign.textTop:
           // Align top with top of parent's content area
-          y = baseline - maxAscent;
+          // top of margin box = baseline - maxAscent => top of border box adds marginTop
+          y = (baseline - maxAscent) + (style?.marginTop.computedValue ?? 0.0);
           break;
         case VerticalAlign.textBottom:
           // Align bottom with bottom of parent's content area
-          y = baseline + maxDescent - height;
+          // bottom of margin box = baseline + maxDescent
+          y = (baseline + maxDescent) - (height + (style?.marginBottom.computedValue ?? 0.0));
           break;
         default:
           y = baseline - itemBaseline;
@@ -577,13 +617,18 @@ class InlineLayoutAlgorithm {
         ? (renderBox.boxSize ?? Size.zero)
         : (renderBox.hasSize ? renderBox.size : Size.zero);
 
+    // Apply horizontal margins for inline-block/atomic inlines
+    final double marginLeft = style?.marginLeft.computedValue ?? 0.0;
+    final double marginRight = style?.marginRight.computedValue ?? 0.0;
+
     final atomicItem = AtomicLineBoxItem(
-      offset: Offset(_currentX, y),
+      offset: Offset(_currentX + marginLeft, y),
       size: size,
       renderBox: renderBox,
     );
 
     lineBoxItems.add(atomicItem);
+    // Advance currentX by full inline size (box width + margins)
     _currentX += itemResult.inlineSize;
     return atomicItem;
   }
@@ -617,7 +662,50 @@ class InlineLayoutAlgorithm {
         }
       }
       
-      if (items.isEmpty) continue;
+      // If there are no child items on this line (empty inline), we can still
+      // create a box fragment using recorded start/end X from open/close tags.
+      if (items.isEmpty) {
+        // Use recorded start/end positions for this line.
+        final double? startX = _currentLineBoxStartX[box];
+        final double? endX = _currentLineBoxEndX[box];
+
+        if (startX == null || endX == null) {
+          // No recorded positions; skip this box.
+          continue;
+        }
+
+        // Create the box fragment if style indicates it should paint.
+        CSSRenderStyle? style;
+        if (box is RenderBoxModel) {
+          style = box.renderStyle;
+        }
+        if (style != null && _shouldCreateBoxFragment(style)) {
+          final boxWidth = math.max(0.0, endX - startX);
+
+          // Determine fragment position info across multiple lines
+          final lines = boxToLines[box] ?? [];
+          final isFirstFragment = lines.isEmpty || lines.first == lineIndex;
+          final isLastFragment = lines.isEmpty || lines.last == lineIndex;
+
+          final boxItem = BoxLineBoxItem(
+            offset: Offset(startX, 0.0),
+            size: Size(boxWidth, lineHeight),
+            renderBox: box,
+            style: style,
+            children: const [],
+            isFirstFragment: isFirstFragment,
+            isLastFragment: isLastFragment,
+            baseline: baseline,
+            contentAscent: maxAscent,
+            contentDescent: maxDescent,
+          );
+
+          boxItems.add(boxItem);
+        }
+
+        // Nothing else to compute for this box
+        continue;
+      }
 
       // Find the leftmost and rightmost positions of the box's content
       // This gives us the actual visual bounds after bidi reordering
@@ -647,12 +735,14 @@ class InlineLayoutAlgorithm {
           // Margins create space in layout but aren't part of the visual box
           final paddingLeft = style.paddingLeft.computedValue;
           final paddingRight = style.paddingRight.computedValue;
+          final borderLeft = style.borderLeftWidth?.computedValue ?? 0.0;
+          final borderRight = style.borderRightWidth?.computedValue ?? 0.0;
 
-          // The box visual area starts where the padding starts
-          // Since content is positioned after left padding, we subtract it
-          final boxStartX = minX - paddingLeft;
-          // The box width is content width plus both paddings
-          final boxWidth = width + paddingLeft + paddingRight;
+          // The box visual area starts at the border box left
+          // Since content is positioned after left border + padding, subtract both
+          final boxStartX = minX - paddingLeft - borderLeft;
+          // The box width is content width plus paddings and borders
+          final boxWidth = width + paddingLeft + paddingRight + borderLeft + borderRight;
           
 
           // Determine if this is the first/last fragment of a multi-line inline element

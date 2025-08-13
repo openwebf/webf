@@ -56,11 +56,15 @@ class LineBreaker {
         if (item.shouldCreateBoxFragment && item.style != null) {
           if (item.isOpenTag) {
             // Add left padding and margin width
+            final borderLeft = item.style!.borderLeftWidth?.computedValue ?? 0.0;
             inlineSize = item.style!.paddingLeft.computedValue +
+                        borderLeft +
                         item.style!.marginLeft.computedValue;
           } else if (item.isCloseTag) {
             // Add right padding and margin width
+            final borderRight = item.style!.borderRightWidth?.computedValue ?? 0.0;
             inlineSize = item.style!.paddingRight.computedValue +
+                        borderRight +
                         item.style!.marginRight.computedValue;
           }
         }
