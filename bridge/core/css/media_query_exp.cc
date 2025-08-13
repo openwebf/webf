@@ -41,39 +41,39 @@
 
 namespace webf {
 
-static inline bool FeatureWithValidIdent(const std::string& media_feature, CSSValueID ident) {
-  if (media_feature == media_feature_names_atomicstring::kVideoDynamicRange.ToUTF8String()) {
+static inline bool FeatureWithValidIdent(const String& media_feature, CSSValueID ident) {
+  if (media_feature == media_feature_names_atomicstring::kVideoDynamicRange) {
     return ident == CSSValueID::kStandard || ident == CSSValueID::kHigh;
   }
 
   return false;
 }
 
-static inline bool FeatureWithValidLength(const std::string& media_feature, const CSSPrimitiveValue* value) {
+static inline bool FeatureWithValidLength(const String& media_feature, const CSSPrimitiveValue* value) {
   if (!(value->IsLength() || (value->IsNumber() && value->GetDoubleValue() == 0))) {
     return false;
   }
 
-  return media_feature == media_feature_names_atomicstring::kHeight.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxHeight.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinHeight.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kWidth.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxWidth.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinWidth.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxBlockSize.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinBlockSize.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kInlineSize.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxInlineSize.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinInlineSize.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kDeviceHeight.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxDeviceHeight.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinDeviceHeight.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kDeviceWidth.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinDeviceWidth.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxDeviceWidth.ToUTF8String();
+  return media_feature == media_feature_names_atomicstring::kHeight ||
+         media_feature == media_feature_names_atomicstring::kMaxHeight ||
+         media_feature == media_feature_names_atomicstring::kMinHeight ||
+         media_feature == media_feature_names_atomicstring::kWidth ||
+         media_feature == media_feature_names_atomicstring::kMaxWidth ||
+         media_feature == media_feature_names_atomicstring::kMinWidth ||
+         media_feature == media_feature_names_atomicstring::kMaxBlockSize ||
+         media_feature == media_feature_names_atomicstring::kMinBlockSize ||
+         media_feature == media_feature_names_atomicstring::kInlineSize ||
+         media_feature == media_feature_names_atomicstring::kMaxInlineSize ||
+         media_feature == media_feature_names_atomicstring::kMinInlineSize ||
+         media_feature == media_feature_names_atomicstring::kDeviceHeight ||
+         media_feature == media_feature_names_atomicstring::kMaxDeviceHeight ||
+         media_feature == media_feature_names_atomicstring::kMinDeviceHeight ||
+         media_feature == media_feature_names_atomicstring::kDeviceWidth ||
+         media_feature == media_feature_names_atomicstring::kMinDeviceWidth ||
+         media_feature == media_feature_names_atomicstring::kMaxDeviceWidth;
 }
 
-static inline bool FeatureWithValidDensity(const std::string& media_feature, const CSSPrimitiveValue* value) {
+static inline bool FeatureWithValidDensity(const String& media_feature, const CSSPrimitiveValue* value) {
   // NOTE: The allowed range of <resolution> values always excludes negative
   // values, in addition to any explicit ranges that might be specified.
   // https://drafts.csswg.org/css-values/#resolution
@@ -81,30 +81,30 @@ static inline bool FeatureWithValidDensity(const std::string& media_feature, con
     return false;
   }
 
-  return media_feature == media_feature_names_atomicstring::kMinResolution.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxResolution.ToUTF8String();
+  return media_feature == media_feature_names_atomicstring::kMinResolution ||
+         media_feature == media_feature_names_atomicstring::kMaxResolution;
 }
 
-static inline bool FeatureExpectingInteger(const std::string& media_feature) {
-  if (media_feature == media_feature_names_atomicstring::kColor.ToUTF8String() ||
-      media_feature == media_feature_names_atomicstring::kMaxColor.ToUTF8String() ||
-      media_feature == media_feature_names_atomicstring::kMinColor.ToUTF8String() ||
-      media_feature == media_feature_names_atomicstring::kMaxColorIndex.ToUTF8String() ||
-      media_feature == media_feature_names_atomicstring::kMinColorIndex.ToUTF8String()) {
+static inline bool FeatureExpectingInteger(const String& media_feature) {
+  if (media_feature == media_feature_names_atomicstring::kColor ||
+      media_feature == media_feature_names_atomicstring::kMaxColor ||
+      media_feature == media_feature_names_atomicstring::kMinColor ||
+      media_feature == media_feature_names_atomicstring::kMaxColorIndex ||
+      media_feature == media_feature_names_atomicstring::kMinColorIndex) {
     return true;
   }
 
   return false;
 }
 
-static inline bool FeatureWithInteger(const std::string& media_feature, const CSSPrimitiveValue* value) {
+static inline bool FeatureWithInteger(const String& media_feature, const CSSPrimitiveValue* value) {
   if (!value->IsInteger()) {
     return false;
   }
   return FeatureExpectingInteger(media_feature);
 }
 
-static inline bool FeatureWithNumber(const std::string& media_feature, const CSSPrimitiveValue* value) {
+static inline bool FeatureWithNumber(const String& media_feature, const CSSPrimitiveValue* value) {
   if (!value->IsNumber()) {
     return false;
   }
@@ -112,95 +112,95 @@ static inline bool FeatureWithNumber(const std::string& media_feature, const CSS
   return false;
 }
 
-static inline bool FeatureWithZeroOrOne(const std::string& media_feature, const CSSPrimitiveValue* value) {
+static inline bool FeatureWithZeroOrOne(const String& media_feature, const CSSPrimitiveValue* value) {
   if (!value->IsInteger() || !(value->GetDoubleValue() == 1 || !value->GetDoubleValue())) {
     return false;
   }
 
-  return media_feature == media_feature_names_atomicstring::kGrid.ToUTF8String();
+  return media_feature == media_feature_names_atomicstring::kGrid;
 }
 
-static inline bool FeatureWithAspectRatio(const std::string& media_feature) {
-  return media_feature == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kDeviceAspectRatio.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMinDeviceAspectRatio.ToUTF8String() ||
-         media_feature == media_feature_names_atomicstring::kMaxDeviceAspectRatio.ToUTF8String();
+static inline bool FeatureWithAspectRatio(const String& media_feature) {
+  return media_feature == media_feature_names_atomicstring::kAspectRatio ||
+         media_feature == media_feature_names_atomicstring::kDeviceAspectRatio ||
+         media_feature == media_feature_names_atomicstring::kMinAspectRatio ||
+         media_feature == media_feature_names_atomicstring::kMaxAspectRatio ||
+         media_feature == media_feature_names_atomicstring::kMinDeviceAspectRatio ||
+         media_feature == media_feature_names_atomicstring::kMaxDeviceAspectRatio;
 }
 
 bool MediaQueryExp::IsViewportDependent() const {
-  return media_feature_ == media_feature_names_atomicstring::kWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String();
+  return media_feature_ == media_feature_names_atomicstring::kWidth ||
+         media_feature_ == media_feature_names_atomicstring::kHeight ||
+         media_feature_ == media_feature_names_atomicstring::kMinWidth ||
+         media_feature_ == media_feature_names_atomicstring::kMinHeight ||
+         media_feature_ == media_feature_names_atomicstring::kMaxWidth ||
+         media_feature_ == media_feature_names_atomicstring::kMaxHeight ||
+         media_feature_ == media_feature_names_atomicstring::kAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio;
 }
 
 bool MediaQueryExp::IsDeviceDependent() const {
-  return media_feature_ == media_feature_names_atomicstring::kDeviceAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kDeviceWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kDeviceHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinDeviceWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinDeviceHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxDeviceWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxDeviceHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kVideoDynamicRange.ToUTF8String();
+  return media_feature_ == media_feature_names_atomicstring::kDeviceAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kDeviceWidth ||
+         media_feature_ == media_feature_names_atomicstring::kDeviceHeight ||
+         media_feature_ == media_feature_names_atomicstring::kMinDeviceWidth ||
+         media_feature_ == media_feature_names_atomicstring::kMinDeviceHeight ||
+         media_feature_ == media_feature_names_atomicstring::kMaxDeviceWidth ||
+         media_feature_ == media_feature_names_atomicstring::kMaxDeviceHeight ||
+         media_feature_ == media_feature_names_atomicstring::kVideoDynamicRange;
 }
 
 bool MediaQueryExp::IsWidthDependent() const {
-  return media_feature_ == media_feature_names_atomicstring::kWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxWidth.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String();
+  return media_feature_ == media_feature_names_atomicstring::kWidth ||
+         media_feature_ == media_feature_names_atomicstring::kMinWidth ||
+         media_feature_ == media_feature_names_atomicstring::kMaxWidth ||
+         media_feature_ == media_feature_names_atomicstring::kAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio;
 }
 
 bool MediaQueryExp::IsHeightDependent() const {
-  return media_feature_ == media_feature_names_atomicstring::kHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxHeight.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio.ToUTF8String();
+  return media_feature_ == media_feature_names_atomicstring::kHeight ||
+         media_feature_ == media_feature_names_atomicstring::kMinHeight ||
+         media_feature_ == media_feature_names_atomicstring::kMaxHeight ||
+         media_feature_ == media_feature_names_atomicstring::kAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kMinAspectRatio ||
+         media_feature_ == media_feature_names_atomicstring::kMaxAspectRatio;
 }
 
 bool MediaQueryExp::IsInlineSizeDependent() const {
-  return media_feature_ == media_feature_names_atomicstring::kInlineSize.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMinInlineSize.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxInlineSize.ToUTF8String();
+  return media_feature_ == media_feature_names_atomicstring::kInlineSize ||
+         media_feature_ == media_feature_names_atomicstring::kMinInlineSize ||
+         media_feature_ == media_feature_names_atomicstring::kMaxInlineSize;
 }
 
 bool MediaQueryExp::IsBlockSizeDependent() const {
-  return media_feature_ == media_feature_names_atomicstring::kMinBlockSize.ToUTF8String() ||
-         media_feature_ == media_feature_names_atomicstring::kMaxBlockSize.ToUTF8String();
+  return media_feature_ == media_feature_names_atomicstring::kMinBlockSize ||
+         media_feature_ == media_feature_names_atomicstring::kMaxBlockSize;
 }
 
 MediaQueryExp::MediaQueryExp(const MediaQueryExp& other)
     : media_feature_(other.MediaFeature()), bounds_(other.bounds_) {}
 
-MediaQueryExp::MediaQueryExp(const std::string& media_feature, const MediaQueryExpValue& value)
+MediaQueryExp::MediaQueryExp(const String& media_feature, const MediaQueryExpValue& value)
     : MediaQueryExp(media_feature, MediaQueryExpBounds(MediaQueryExpComparison(value))) {}
 
-MediaQueryExp::MediaQueryExp(const std::string& media_feature, const MediaQueryExpBounds& bounds)
+MediaQueryExp::MediaQueryExp(const String& media_feature, const MediaQueryExpBounds& bounds)
     : media_feature_(media_feature), bounds_(bounds) {}
 
-MediaQueryExp MediaQueryExp::Create(const std::string& media_feature,
+MediaQueryExp MediaQueryExp::Create(const AtomicString& media_feature,
                                     CSSParserTokenRange& range,
                                     const CSSParserTokenOffsets& offsets,
                                     std::shared_ptr<const CSSParserContext> context) {
-  if (auto value = MediaQueryExpValue::Consume(media_feature, range, offsets, context)) {
-    return MediaQueryExp(media_feature, *value);
+  if (auto value = MediaQueryExpValue::Consume(media_feature.GetString(), range, offsets, context)) {
+    return MediaQueryExp(media_feature.GetString(), *value);
   }
   return Invalid();
 }
 
-std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const std::string& media_feature,
+std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const String& media_feature,
                                                               CSSParserTokenRange& range,
                                                               const CSSParserTokenOffsets& offsets,
                                                               std::shared_ptr<const CSSParserContext> context) {
@@ -208,7 +208,7 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const std::string&
 
   if (CSSVariableParser::IsValidVariableName(media_feature)) {
     tcb::span span = range.RemainingSpan();
-    std::string_view original_string = offsets.StringForTokens(span.data(), span.data() + span.size());
+    StringView original_string = offsets.StringForTokens(span.data(), span.data() + span.size());
     CSSTokenizedValue tokenized_value{range, original_string};
     CSSParserImpl::RemoveImportantAnnotationIfPresent(tokenized_value);
     if (auto value = CSSVariableParser::ParseDeclarationIncludingCSSWide(tokenized_value, false, context)) {
@@ -220,7 +220,7 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const std::string&
     return std::nullopt;
   }
 
-  DCHECK_EQ(media_feature, base::ToLowerASCII(media_feature));
+  DCHECK_EQ(media_feature, media_feature.LowerASCII());
 
   std::shared_ptr<const CSSPrimitiveValue> value =
       css_parsing_utils::ConsumeInteger(range, context, -std::numeric_limits<double>::max() /* minimum_value */);
@@ -299,8 +299,8 @@ const char* MediaQueryOperatorToString(MediaQueryOperator op) {
 
 }  // namespace
 
-MediaQueryExp MediaQueryExp::Create(const std::string& media_feature, const MediaQueryExpBounds& bounds) {
-  return MediaQueryExp(media_feature, bounds);
+MediaQueryExp MediaQueryExp::Create(const AtomicString& media_feature, const MediaQueryExpBounds& bounds) {
+  return MediaQueryExp(media_feature.GetString(), bounds);
 }
 
 MediaQueryExp::~MediaQueryExp() = default;
@@ -311,7 +311,7 @@ bool MediaQueryExp::operator==(const MediaQueryExp& other) const {
   return (other.media_feature_ == media_feature_) && (bounds_ == other.bounds_);
 }
 
-std::string MediaQueryExp::Serialize() const {
+String MediaQueryExp::Serialize() const {
   StringBuilder result;
   // <mf-boolean> e.g. (color)
   // <mf-plain>  e.g. (width: 100px)
@@ -351,7 +351,7 @@ unsigned MediaQueryExp::GetUnitFlags() const {
   return unit_flags;
 }
 
-std::string MediaQueryExpValue::CssText() const {
+String MediaQueryExpValue::CssText() const {
   StringBuilder output;
   switch (type_) {
     case Type::kInvalid:
@@ -421,7 +421,7 @@ unsigned MediaQueryExpValue::GetUnitFlags() const {
   return unit_flags;
 }
 
-std::string MediaQueryExpNode::Serialize() const {
+String MediaQueryExpNode::Serialize() const {
   StringBuilder builder;
   SerializeTo(builder);
   return builder.ReleaseString();
@@ -442,7 +442,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Nested(std::shared_p
 }
 
 std::shared_ptr<const MediaQueryExpNode> MediaQueryExpNode::Function(std::shared_ptr<const MediaQueryExpNode> operand,
-                                                                     const std::string& name) {
+                                                                     const AtomicString& name) {
   if (!operand) {
     return nullptr;
   }
@@ -494,7 +494,7 @@ bool MediaQueryFeatureExpNode::IsBlockSizeDependent() const {
 }
 
 void MediaQueryFeatureExpNode::SerializeTo(StringBuilder& builder) const {
-  builder.Append(std::string_view(exp_.Serialize().StdUtf8()));
+  builder.Append(exp_.Serialize());
 }
 
 void MediaQueryFeatureExpNode::CollectExpressions(std::vector<MediaQueryExp>& result) const {

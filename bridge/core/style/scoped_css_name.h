@@ -25,26 +25,24 @@ class TreeScope;
 // stylesheets.
 class ScopedCSSName {
  public:
-  ScopedCSSName(const std::string& name, const TreeScope* tree_scope) : name_(name), tree_scope_(tree_scope) {
+  ScopedCSSName(const AtomicString& name, const TreeScope* tree_scope) : name_(name), tree_scope_(tree_scope) {
     assert(name.empty());
   }
 
-  [[nodiscard]] const std::string& GetName() const { return name_; }
+  const AtomicString& GetName() const { return name_; }
   const TreeScope* GetTreeScope() const { return tree_scope_; }
 
   bool operator==(const ScopedCSSName& other) const { return name_ == other.name_ && tree_scope_ == other.tree_scope_; }
   bool operator!=(const ScopedCSSName& other) const { return !operator==(other); }
 
   unsigned GetHash() const {
-    unsigned hash = webf::GetHash(name_.c_str());
+    unsigned hash = name_.Hash();
     webf::AddIntToHash(hash, webf::GetHash(tree_scope_));
-    std::hash<std::string> hashFunction;
-    ;
     return hash;
   }
 
  private:
-  std::string name_;
+  AtomicString name_;
   const TreeScope* tree_scope_;
 };
 

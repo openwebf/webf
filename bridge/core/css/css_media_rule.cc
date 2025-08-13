@@ -50,9 +50,9 @@ MediaList* CSSMediaRule::media() const {
   return media_cssom_wrapper_.Get();
 }
 
-std::string CSSMediaRule::conditionText() const {
+String CSSMediaRule::conditionText() const {
   if (!group_rule_)
-    return std::string();
+    return String();
 
   auto* media_rule = To<StyleRuleMedia>(group_rule_.get());
   return media_rule->MediaQueries()->MediaText();

@@ -59,7 +59,7 @@ static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet>
     return "";
   }
 
-  return StylePropertySerializer(property_set).SerializeShorthand(property_id);
+  return StylePropertySerializer(property_set).SerializeShorthand(property_id).StdUtf8();
 }
 
 static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
@@ -69,19 +69,19 @@ static std::string SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet>
 }
 
 template <typename T>
-std::string CSSPropertyValueSet::GetPropertyValue(const T& property) const {
-  std::string shorthand_serialization = SerializeShorthand(shared_from_this(), property);
-  if (!shorthand_serialization.IsEmpty()) {
+String CSSPropertyValueSet::GetPropertyValue(const T& property) const {
+  String shorthand_serialization = SerializeShorthand(shared_from_this(), property);
+  if (!shorthand_serialization.IsNull()) {
     return shorthand_serialization;
   }
   const std::shared_ptr<const CSSValue>* value = GetPropertyCSSValue(property);
   if (value) {
     return value->get()->CssText();
   }
-  return "";
+  return String::EmptyString();
 }
-template std::string CSSPropertyValueSet::GetPropertyValue<CSSPropertyID>(const CSSPropertyID&) const;
-template std::string CSSPropertyValueSet::GetPropertyValue<AtomicString>(const AtomicString&) const;
+template String CSSPropertyValueSet::GetPropertyValue<CSSPropertyID>(const CSSPropertyID&) const;
+template String CSSPropertyValueSet::GetPropertyValue<AtomicString>(const AtomicString&) const;
 
 template const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValue<CSSPropertyID>(
     const CSSPropertyID&) const;
@@ -106,12 +106,12 @@ const std::shared_ptr<const CSSValue>* CSSPropertyValueSet::GetPropertyCSSValueW
   return PropertyAt(index).Value();
 }
 
-std::string CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
+String CSSPropertyValueSet::GetPropertyValueWithHint(const AtomicString& property_name, unsigned int index) const {
   auto value = GetPropertyCSSValueWithHint(property_name, index);
   if (value) {
     return value->get()->CssText();
   }
-  return "";
+  return String::EmptyString();
 }
 
 bool CSSPropertyValueSet::PropertyIsImportantWithHint(const AtomicString& property_name, unsigned int index) const {
@@ -180,7 +180,7 @@ const std::shared_ptr<const MutableCSSPropertyValueSet> CSSPropertyValueSet::Cop
   return std::make_shared<MutableCSSPropertyValueSet>(list.data(), list.size());
 }
 
-std::string CSSPropertyValueSet::AsText() const {
+String CSSPropertyValueSet::AsText() const {
   return StylePropertySerializer(shared_from_this()).AsText();
 }
 
@@ -382,7 +382,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetPro
   // Setting the value to an empty string just removes the property in both IE
   // and Gecko. Setting it to null seems to produce less consistent results, but
   // we treat it just the same.
-  if (value.IsEmpty()) {
+  if (value.empty()) {
     return RemoveProperty(ResolveCSSPropertyID(unresolved_property)) ? kChangedPropertySet : kUnchanged;
   }
 
@@ -398,7 +398,7 @@ MutableCSSPropertyValueSet::SetResult MutableCSSPropertyValueSet::ParseAndSetCus
     bool important,
     std::shared_ptr<StyleSheetContents> context_style_sheet,
     bool is_animation_tainted) {
-  if (value.IsEmpty()) {
+  if (value.empty()) {
     return RemoveProperty(custom_property_name) ? kChangedPropertySet : kUnchanged;
   }
   return CSSParser::ParseValueForCustomProperty(this, custom_property_name.ToUTF8String(), value, important,
@@ -469,7 +469,7 @@ inline bool ContainsId(const CSSProperty* const set[], unsigned length, CSSPrope
 }
 
 bool MutableCSSPropertyValueSet::RemovePropertiesInSet(const CSSProperty* const set[], unsigned length) {
-  if (property_vector_.IsEmpty())
+  if (property_vector_.empty())
     return false;
 
   CSSPropertyValue* properties = property_vector_.data();
@@ -618,7 +618,7 @@ bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, std::
   }
 
   if (return_text) {
-    *return_text = PropertyAt(property_index).Value()->get()->CssText();
+    *return_text = PropertyAt(property_index).Value()->get()->CssText().StdUtf8();
   }
 
   // A more efficient removal strategy would involve marking entries as empty

@@ -24,7 +24,7 @@ class Comment : public CharacterData {
   const CommentPublicMethods* commentPublicMethods();
 
  private:
-  std::string nodeName() const override;
+  String nodeName() const override;
   Node* Clone(Document&, CloneChildrenFlag) const override;
 };
 

@@ -35,7 +35,7 @@ class ElementAttributes : public ScriptWrappable {
   bool hasAttribute(const AtomicString& name, ExceptionState& exception_state);
   void removeAttribute(const AtomicString& name, ExceptionState& exception_state);
   void CopyWith(ElementAttributes* attributes);
-  std::string ToString();
+  String ToString();
 
   bool IsEquivalent(const ElementAttributes& other) const;
   std::unordered_map<AtomicString, AtomicString>::iterator begin();

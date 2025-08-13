@@ -9,6 +9,7 @@
 
 #include "core/css/css_value.h"
 #include "css_property_name.h"
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
@@ -17,12 +18,12 @@ class ScopedCSSName;
 
 class CSSCustomIdentValue : public CSSValue {
  public:
-  explicit CSSCustomIdentValue(const std::string&);
+  explicit CSSCustomIdentValue(const AtomicString&);
   explicit CSSCustomIdentValue(CSSPropertyID);
   explicit CSSCustomIdentValue(const ScopedCSSName&);
 
   const TreeScope* GetTreeScope() const { return tree_scope_; }
-  const std::string& Value() const {
+  const AtomicString& Value() const {
     assert(!IsKnownPropertyID());
     return string_;
   }
@@ -47,7 +48,7 @@ class CSSCustomIdentValue : public CSSValue {
 
  private:
   const TreeScope* tree_scope_;
-  std::string string_;
+  AtomicString string_;
   CSSPropertyID property_id_;
 };
 

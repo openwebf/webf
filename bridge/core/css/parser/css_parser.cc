@@ -122,7 +122,7 @@ MutableCSSPropertyValueSet::SetResult CSSParser::ParseValue(MutableCSSPropertyVa
   std::shared_ptr<const CSSParserContext> context = GetParserContext(style_sheet, execution_context, parser_mode);
 
   // See if this property has a specific fast-path parser.
-  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(resolved_property, string, context);
+  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(resolved_property, StringView(string), context);
   if (value) {
     return declaration->SetLonghandProperty(CSSPropertyValue(CSSPropertyName(resolved_property), value, important));
   }
@@ -185,7 +185,7 @@ std::shared_ptr<const CSSValue> CSSParser::ParseSingleValue(CSSPropertyID proper
   if (string.IsEmpty()) {
     return nullptr;
   }
-  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(property_id, string, context);
+  std::shared_ptr<const CSSValue> value = CSSParserFastPaths::MaybeParseValue(property_id, StringView(string), context);
   if (value != nullptr) {
     return value;
   }
@@ -254,7 +254,7 @@ bool CSSParser::ParseColor(Color& color, const String& string, bool strict) {
   // The regular color parsers don't resolve named colors, so explicitly
   // handle these first.
   Color named_color;
-  if (named_color.SetNamedColor(string.StdUtf8())) {
+  if (named_color.SetNamedColor(string)) {
     color = named_color;
     return true;
   }

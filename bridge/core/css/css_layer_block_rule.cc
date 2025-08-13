@@ -20,14 +20,14 @@ CSSLayerBlockRule::CSSLayerBlockRule(std::shared_ptr<StyleRuleLayerBlock> layer_
 
 CSSLayerBlockRule::~CSSLayerBlockRule() = default;
 
-std::string CSSLayerBlockRule::name() const {
+String CSSLayerBlockRule::name() const {
   return To<StyleRuleLayerBlock>(group_rule_.get())->GetNameAsString();
 }
 
 AtomicString CSSLayerBlockRule::cssText() const {
   StringBuilder result;
   result.Append("@layer");
-  const std::string& layer_name = name();
+  const String& layer_name = name();
   if (layer_name.length()) {
     result.Append(" ");
     result.Append(layer_name);

@@ -38,7 +38,7 @@ class CSSVariableParser {
   //
   // https://drafts.css-houdini.org/css-properties-values-api-1/#universal-syntax-definition
   static std::shared_ptr<const CSSUnparsedDeclarationValue>
-  ParseUniversalSyntaxValue(const std::string&, std::shared_ptr<const CSSParserContext>&, bool is_animation_tainted);
+  ParseUniversalSyntaxValue(const String&, std::shared_ptr<const CSSParserContext>&, bool is_animation_tainted);
 
   // Consume a declaration without trying to parse it as any specific
   // property. This is mostly useful for either custom property declarations,
@@ -76,14 +76,12 @@ class CSSVariableParser {
                                                                      const ExecutingContext* context);
 
   static bool IsValidVariableName(const CSSParserToken&);
-  static bool IsValidVariableName(const std::string_view&);
   static bool IsValidVariableName(const String&);
   static bool IsValidVariableName(const StringView&);
 
   // NOTE: We have to strip both leading and trailing whitespace (and comments)
   // from values as per spec, but we assume the tokenizer has already done the
   // leading ones for us; see comment on CSSPropertyParser::ParseValue().
-  static std::string_view StripTrailingWhitespaceAndComments(std::string_view);
   static StringView StripTrailingWhitespaceAndComments(StringView);
 };
 

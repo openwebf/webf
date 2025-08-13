@@ -26,25 +26,26 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "css_font_feature_value.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
 namespace cssvalue {
 
-CSSFontFeatureValue::CSSFontFeatureValue(const std::string& tag, int value)
+CSSFontFeatureValue::CSSFontFeatureValue(const AtomicString& tag, int value)
     : CSSValue(kFontFeatureClass), tag_(tag), value_(value) {}
 
 String CSSFontFeatureValue::CustomCSSText() const {
-  std::string builder;
-  builder += '"';
-  builder += tag_;
-  builder += '"';
+  StringBuilder builder;
+  builder.Append('"');
+  builder.Append(tag_);
+  builder.Append('"');
   // Omit the value if it's 1 as 1 is implied by default.
   if (value_ != 1) {
-    builder += ' ';
-    builder = +value_;
+    builder.Append(' ');
+    builder.AppendNumber(value_);
   }
-  return builder;
+  return builder.ReleaseString();
 }
 
 bool CSSFontFeatureValue::Equals(const CSSFontFeatureValue& other) const {

@@ -15,7 +15,7 @@ struct CSSTokenizedValue {
 
  public:
   CSSParserTokenRange range;
-  std::string_view text;
+  StringView text;
 };
 
 }  // namespace webf

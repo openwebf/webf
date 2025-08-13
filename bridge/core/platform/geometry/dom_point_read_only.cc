@@ -48,8 +48,8 @@ DOMPoint* DOMPointReadOnly::fromPoint(ExecutingContext* context,
  std::vector<DOMPointReadOnly*> matrix_vec{point};
  NativeValue arguments[] = {
      NativeValueConverter<NativeTypeArray<NativeTypePointer<DOMPointReadOnly>>>::ToNativeValue(matrix_vec)};
- AtomicString module_name = AtomicString("DOMPoint");
- AtomicString method_name = AtomicString("fromPoint");
+ AtomicString module_name = AtomicString::CreateFromUTF8("DOMPoint");
+ AtomicString method_name = AtomicString::CreateFromUTF8("fromPoint");
 
  char errmsg[1024];
  errmsg[0] = 0;

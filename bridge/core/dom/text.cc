@@ -29,7 +29,7 @@ const TextNodePublicMethods* Text::textNodePublicMethods() {
   return &text_node_public_methods;
 }
 
-std::string Text::nodeName() const {
+String Text::nodeName() const {
   return "#text";
 }
 

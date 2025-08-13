@@ -19,6 +19,8 @@
 
 namespace webf {
 
+typedef bool (*CharacterMatchFunctionPtr)(UChar);
+
 class AtomicString;
 class String;
 
@@ -100,13 +102,25 @@ class StringView final {
 
   unsigned length() const { return length_; }
   bool Empty() const { return length_ == 0; }
+  bool IsEmpty() const { return length_ == 0; }
   bool IsNull() const { return !bytes_; }
 
   AtomicString ToAtomicString() const;
   String EncodeForDebugging() const;
   
+  // Find characters. Returns the index of the match, or kNotFound.
+  size_t Find(CharacterMatchFunctionPtr match_function, size_t start = 0) const;
+  
   // For StringBuilder optimization - returns null since StringView doesn't own the impl
   StringImpl* SharedImpl() const { return nullptr; }
+  
+  // Helper span methods for Find implementation
+  tcb::span<const LChar> Span8() const { 
+    return tcb::span<const LChar>(Characters8(), length()); 
+  }
+  tcb::span<const UChar> Span16() const { 
+    return tcb::span<const UChar>(Characters16(), length()); 
+  }
 
   [[nodiscard]] UTF8String Characters8ToUTF8String() const;
 

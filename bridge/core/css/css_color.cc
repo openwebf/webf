@@ -15,7 +15,7 @@ std::shared_ptr<const CSSColor> CSSColor::Create(const Color& color) {
   return CssValuePool().GetOrCreateColor(color);
 }
 
-std::string CSSColor::SerializeAsCSSComponentValue(Color color) {
+String CSSColor::SerializeAsCSSComponentValue(Color color) {
   return color.SerializeAsCSSColor();
 }
 

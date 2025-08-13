@@ -86,7 +86,7 @@ class StyleRuleBase : public std::enable_shared_from_this<StyleRuleBase> {
   // vector. Note that this may not be the full layer name if the rule is nested
   // in another @layer rule or in a layered @import.
   using LayerName = std::vector<AtomicString>;
-  static std::string LayerNameAsString(const LayerName&);
+  static String LayerNameAsString(const LayerName&);
 
   RuleType GetType() const { return static_cast<RuleType>(type_); }
 
@@ -306,7 +306,7 @@ class StyleRule : public StyleRuleBase {
     }
     return SelectorIndex(*next);
   }
-  std::string SelectorsText() const { return CSSSelectorList::SelectorsText(FirstSelector()); }
+  String SelectorsText() const { return CSSSelectorList::SelectorsText(FirstSelector()); }
 
   const CSSPropertyValueSet& Properties() const;
   MutableCSSPropertyValueSet& MutableProperties();
@@ -393,17 +393,17 @@ class StyleRuleFontFace : public StyleRuleBase {
 
 class StyleRuleProperty : public StyleRuleBase {
  public:
-  StyleRuleProperty(const std::string& name, std::shared_ptr<CSSPropertyValueSet>);
+  StyleRuleProperty(const String& name, std::shared_ptr<CSSPropertyValueSet>);
   StyleRuleProperty(const StyleRuleProperty&);
 
   const CSSPropertyValueSet& Properties() const { return *properties_; }
   MutableCSSPropertyValueSet& MutableProperties();
-  const std::string& GetName() const { return name_; }
+  const String& GetName() const { return name_; }
   const std::shared_ptr<const CSSValue>* GetSyntax() const;
   const std::shared_ptr<const CSSValue>* Inherits() const;
   const std::shared_ptr<const CSSValue>* GetInitialValue() const;
 
-  bool SetNameText(const ExecutingContext* execution_context, const std::string& name_text);
+  bool SetNameText(const ExecutingContext* execution_context, const String& name_text);
 
   void SetCascadeLayer(std::shared_ptr<const CascadeLayer> layer) { layer_ = layer; }
   const CascadeLayer* GetCascadeLayer() const { return layer_.get(); }
@@ -413,7 +413,7 @@ class StyleRuleProperty : public StyleRuleBase {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::string name_;
+  String name_;
   std::shared_ptr<const CSSPropertyValueSet> properties_;
   std::shared_ptr<const CascadeLayer> layer_;
 };
@@ -474,7 +474,7 @@ class StyleRuleScope : public StyleRuleGroup {
   const StyleScope& GetStyleScope() const { return *style_scope_; }
 
   void SetPreludeText(const ExecutingContext*,
-                      std::string,
+                      String,
                       CSSNestingType,
                       std::shared_ptr<const StyleRule> parent_rule_for_nesting,
                       std::shared_ptr<StyleSheetContents> style_sheet);
@@ -508,7 +508,7 @@ class StyleRuleLayerBlock : public StyleRuleGroup {
   StyleRuleLayerBlock(const StyleRuleLayerBlock&);
 
   const LayerName& GetName() const { return name_; }
-  std::string GetNameAsString() const;
+  String GetNameAsString() const;
 
   std::shared_ptr<StyleRuleLayerBlock> Copy() const { return std::make_shared<StyleRuleLayerBlock>(*this); }
 
@@ -525,7 +525,7 @@ class StyleRuleLayerStatement : public StyleRuleBase {
   StyleRuleLayerStatement(const StyleRuleLayerStatement& other);
 
   const std::vector<LayerName>& GetNames() const { return names_; }
-  std::vector<std::string> GetNamesAsStrings() const;
+  std::vector<String> GetNamesAsStrings() const;
 
   std::shared_ptr<StyleRuleLayerStatement> Copy() const { return std::make_shared<StyleRuleLayerStatement>(*this); }
 
@@ -539,13 +539,13 @@ class StyleRuleLayerStatement : public StyleRuleBase {
 // above.
 class StyleRuleCondition : public StyleRuleGroup {
  public:
-  std::string ConditionText() const { return condition_text_; }
+  String ConditionText() const { return condition_text_; }
 
  protected:
   StyleRuleCondition(RuleType, std::vector<std::shared_ptr<StyleRuleBase>> rules);
-  StyleRuleCondition(RuleType, const std::string& condition_text, std::vector<std::shared_ptr<StyleRuleBase>> rules);
+  StyleRuleCondition(RuleType, const String& condition_text, std::vector<std::shared_ptr<StyleRuleBase>> rules);
   StyleRuleCondition(const StyleRuleCondition&);
-  std::string condition_text_;
+  String condition_text_;
 };
 
 class StyleRuleMedia : public StyleRuleCondition {
@@ -567,7 +567,7 @@ class StyleRuleMedia : public StyleRuleCondition {
 
 class StyleRuleSupports : public StyleRuleCondition {
  public:
-  StyleRuleSupports(const std::string& condition_text,
+  StyleRuleSupports(const String& condition_text,
                     bool condition_is_supported,
                     std::vector<std::shared_ptr<StyleRuleBase>> rules);
   StyleRuleSupports(const StyleRuleSupports&);
@@ -575,7 +575,7 @@ class StyleRuleSupports : public StyleRuleCondition {
   bool ConditionIsSupported() const { return condition_is_supported_; }
   std::shared_ptr<StyleRuleSupports> Copy() const { return std::make_shared<StyleRuleSupports>(*this); }
 
-  void SetConditionText(const ExecutingContext*, std::string);
+  void SetConditionText(const ExecutingContext*, String);
 
   void TraceAfterDispatch(GCVisitor* visitor) const { StyleRuleCondition::TraceAfterDispatch(visitor); }
 
@@ -592,7 +592,7 @@ class StyleRuleContainer : public StyleRuleCondition {
 
   std::shared_ptr<StyleRuleContainer> Copy() const { return std::make_shared<StyleRuleContainer>(*this); }
 
-  void SetConditionText(const ExecutingContext*, std::string);
+  void SetConditionText(const ExecutingContext*, String);
 
   void TraceAfterDispatch(GCVisitor*) const;
 
@@ -626,17 +626,17 @@ class StyleRuleFunction : public StyleRuleBase {
     bool should_add_implicit_calc;
   };
   struct Parameter {
-    std::string name;
+    String name;
     Type type;
   };
 
-  StyleRuleFunction(const std::string& name,
+  StyleRuleFunction(const String& name,
                     std::vector<Parameter> parameters,
                     std::shared_ptr<CSSVariableData> function_body,
                     Type return_type);
   StyleRuleFunction(const StyleRuleFunction&) = delete;
 
-  const std::string& GetName() const { return name_; }
+  const String& GetName() const { return name_; }
   const std::vector<Parameter>& GetParameters() const { return parameters_; }
   CSSVariableData& GetFunctionBody() const { return *function_body_; }
   const Type& GetReturnType() const { return return_type_; }
@@ -644,7 +644,7 @@ class StyleRuleFunction : public StyleRuleBase {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::string name_;
+  String name_;
   std::vector<Parameter> parameters_;
   std::shared_ptr<CSSVariableData> function_body_;
   Type return_type_;
@@ -656,31 +656,31 @@ class StyleRuleFunction : public StyleRuleBase {
 // reparent them into the point of @apply.
 class StyleRuleMixin : public StyleRuleBase {
  public:
-  StyleRuleMixin(const std::string& name, std::shared_ptr<StyleRule> fake_parent_rule);
+  StyleRuleMixin(const String& name, std::shared_ptr<StyleRule> fake_parent_rule);
   StyleRuleMixin(const StyleRuleMixin&) = delete;
 
-  const std::string& GetName() const { return name_; }
+  const String& GetName() const { return name_; }
   StyleRule& FakeParentRule() const { return *fake_parent_rule_; }
 
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::string name_;
+  String name_;
   std::shared_ptr<StyleRule> fake_parent_rule_;
 };
 
 // An @apply rule, representing applying a mixin.
 class StyleRuleApplyMixin : public StyleRuleBase {
  public:
-  explicit StyleRuleApplyMixin(const std::string& name);
+  explicit StyleRuleApplyMixin(const String& name);
   StyleRuleApplyMixin(const StyleRuleMixin&) = delete;
 
-  const std::string& GetName() const { return name_; }
+  const String& GetName() const { return name_; }
 
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::string name_;
+  String name_;
 };
 
 template <>

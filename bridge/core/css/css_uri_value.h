@@ -29,20 +29,20 @@ class CSSURIValue : public CSSValue {
   SVGResource* EnsureResourceReference() const;
   void ReResolveUrl(const Document&) const;
 
-  const std::string& ValueForSerialization() const { return url_data_.ValueForSerialization(); }
+  const AtomicString& ValueForSerialization() const { return url_data_.ValueForSerialization(); }
 
   String CustomCSSText() const;
 
   const CSSUrlData& UrlData() const { return url_data_; }
   bool IsLocal(const Document&) const;
-  std::string FragmentIdentifier() const;
+  AtomicString FragmentIdentifier() const;
 
   // Fragment identifier with trailing spaces removed and URL
   // escape sequences decoded. This is cached, because it can take
   // a surprisingly long time to normalize the URL into an absolute
   // value if we have lots of SVG elements that need to re-run this
   // over and over again.
-  const std::string& NormalizedFragmentIdentifier() const;
+  const AtomicString& NormalizedFragmentIdentifier() const;
 
   bool Equals(const CSSURIValue&) const;
 
@@ -55,7 +55,7 @@ class CSSURIValue : public CSSValue {
 
   CSSUrlData url_data_;
 
-  mutable std::string normalized_fragment_identifier_cache_;
+  mutable AtomicString normalized_fragment_identifier_cache_;
   mutable std::shared_ptr<const SVGResource> resource_;
 };
 

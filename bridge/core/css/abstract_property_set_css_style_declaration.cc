@@ -81,7 +81,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::getPropertyPriority(const A
   } else {
     important = PropertySet().PropertyIsImportant(property_id);
   }
-  return important ? AtomicString("important") : AtomicString::Empty();
+  return important ? AtomicString::CreateFromUTF8("important") : AtomicString::Empty();
 }
 
 AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyShorthand(const AtomicString& property_name) {
@@ -119,7 +119,7 @@ void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext*
   }
 
   bool important = EqualIgnoringASCIICase(String(priority.Impl()).ToStringView(), "important");
-  if (!important && !priority.IsEmpty()) {
+  if (!important && priority != AtomicString::Empty()) {
     return;
   }
 
@@ -191,7 +191,7 @@ AtomicString AbstractPropertySetCSSStyleDeclaration::GetPropertyPriorityWithHint
   } else {
     important = PropertySet().PropertyIsImportant(property_id);
   }
-  return important ? AtomicString("important") : AtomicString::Empty();
+  return important ? AtomicString::CreateFromUTF8("important") : AtomicString::Empty();
 }
 
 void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID unresolved_property,
@@ -207,11 +207,11 @@ void AbstractPropertySetCSSStyleDeclaration::SetPropertyInternal(CSSPropertyID u
     AtomicString atomic_name(custom_property_name);
 
     bool is_animation_tainted = IsKeyframeStyle();
-    result = PropertySet().ParseAndSetCustomProperty(atomic_name, value.Characters8(), important, ContextStyleSheet(),
+    result = PropertySet().ParseAndSetCustomProperty(atomic_name, std::string(reinterpret_cast<const char*>(value.Characters8()), value.length()), important, ContextStyleSheet(),
                                                      is_animation_tainted);
   } else {
     result =
-        PropertySet().ParseAndSetProperty(unresolved_property, value.Characters8(), important, ContextStyleSheet());
+        PropertySet().ParseAndSetProperty(unresolved_property, std::string(reinterpret_cast<const char*>(value.Characters8()), value.length()), important, ContextStyleSheet());
   }
 
   if (result == MutableCSSPropertyValueSet::kParseError || result == MutableCSSPropertyValueSet::kUnchanged) {

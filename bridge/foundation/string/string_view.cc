@@ -322,4 +322,38 @@ bool EqualIgnoringASCIICase(const std::string& a, const char* b) {
   return EqualIgnoringASCIICase(std::string_view(a), std::string_view(b));
 }
 
+// Template Find functions like in Blink
+template <typename CharType>
+inline size_t Find(tcb::span<const CharType> characters,
+                   CharType match_character,
+                   size_t index = 0) {
+  if (index >= characters.size()) {
+    return kNotFound;
+  }
+  const CharType* begin = characters.data();
+  const CharType* end = begin + characters.size();
+  const CharType* it = std::find(begin + index, end, match_character);
+  return it == end ? kNotFound : std::distance(begin, it);
+}
+
+template <typename CharType>
+inline size_t Find(tcb::span<const CharType> characters,
+                   CharacterMatchFunctionPtr match_function,
+                   size_t index = 0) {
+  if (index >= characters.size()) {
+    return kNotFound;
+  }
+  for (size_t i = index; i < characters.size(); ++i) {
+    if (match_function(characters[i])) {
+      return i;
+    }
+  }
+  return kNotFound;
+}
+
+size_t StringView::Find(CharacterMatchFunctionPtr match_function, size_t start) const {
+  return Is8Bit() ? webf::Find(Span8(), match_function, start)
+                  : webf::Find(Span16(), match_function, start);
+}
+
 }  // namespace webf

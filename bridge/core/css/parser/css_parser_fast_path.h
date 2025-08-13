@@ -34,7 +34,7 @@ class CSSParserFastPaths {
   // Parses simple values like '10px' or 'green', but makes no guarantees
   // about handling any property completely.
   static std::shared_ptr<const CSSValue> MaybeParseValue(CSSPropertyID,
-                                                         const String&,
+                                                         StringView,
                                                          std::shared_ptr<const CSSParserContext>);
 
   // NOTE: Properties handled here shouldn't be explicitly handled in

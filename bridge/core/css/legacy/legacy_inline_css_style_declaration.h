@@ -37,7 +37,7 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
   void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
-  [[nodiscard]] std::string ToString() const;
+  [[nodiscard]] String ToString() const;
 
   void InlineStyleChanged();
 

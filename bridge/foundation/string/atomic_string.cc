@@ -9,6 +9,7 @@
 #include "bindings/qjs/native_string_utils.h"
 #include "core/executing_context.h"
 #include "utf8_codecs.h"
+#include "wtf_string.h"
 
 #if defined(_WIN32)
 #include <WinSock2.h>
@@ -67,6 +68,10 @@ namespace {
 
 AtomicString::AtomicString(UTF8StringView string_view)
     : string_(AtomicStringTable::Instance().AddUTF8(string_view.data(), string_view.length())) {}
+
+AtomicString::AtomicString(const String& s) : AtomicString(String(s)) {}
+
+AtomicString::AtomicString(String&& s) : string_(AtomicStringTable::Instance().Add(s.ReleaseImpl())) {}
 
 AtomicString::AtomicString(UTF16StringView string_view)
     : string_(AtomicStringTable::Instance().Add(string_view.data(), string_view.length())) {}
@@ -230,6 +235,10 @@ AtomicString AtomicString::RemoveCharacters(webf::CharacterMatchFunctionPtr ptr)
 
 std::shared_ptr<StringImpl> AtomicString::AddSlowCase(std::shared_ptr<StringImpl>&& string) {
   return AtomicStringTable::Instance().Add(std::move(string));
+}
+
+String AtomicString::GetString() const {
+  return String(string_);
 }
 
 }  // namespace webf

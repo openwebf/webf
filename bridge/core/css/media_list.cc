@@ -59,7 +59,7 @@ MediaQuerySet::MediaQuerySet(const MediaQuerySet&) = default;
 
 MediaQuerySet::MediaQuerySet(std::vector<std::shared_ptr<const MediaQuery>> queries) : queries_(std::move(queries)) {}
 
-std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(const std::string& media_string,
+std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(const String& media_string,
                                                      const ExecutingContext* execution_context) {
   if (media_string.IsEmpty()) {
     return MediaQuerySet::Create();
@@ -70,7 +70,7 @@ std::shared_ptr<MediaQuerySet> MediaQuerySet::Create(const std::string& media_st
 
 void MediaQuerySet::Trace(GCVisitor* visitor) const {}
 
-std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndAdd(const std::string& query_string,
+std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndAdd(const String& query_string,
                                                                const ExecutingContext* execution_context) const {
   // To "parse a media query" for a given string means to follow "the parse
   // a media query list" steps and return "null" if more than one media query
@@ -100,7 +100,7 @@ std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndAdd(const std::string
   return std::make_shared<MediaQuerySet>(std::move(new_queries));
 }
 
-std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndRemove(const std::string& query_string_to_remove,
+std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndRemove(const String& query_string_to_remove,
                                                                   const ExecutingContext* execution_context) const {
   // To "parse a media query" for a given string means to follow "the parse
   // a media query list" steps and return "null" if more than one media query
@@ -136,7 +136,7 @@ std::shared_ptr<const MediaQuerySet> MediaQuerySet::CopyAndRemove(const std::str
   return std::make_shared<MediaQuerySet>(std::move(new_queries));
 }
 
-std::string MediaQuerySet::MediaText() const {
+String MediaQuerySet::MediaText() const {
   StringBuilder text;
 
   bool first = true;
@@ -162,13 +162,13 @@ MediaList::MediaList(CSSRule* parent_rule)
 }
 
 AtomicString MediaList::mediaText(ExecutingContext* execution_context) const {
-  return MediaTextInternal();
+  return AtomicString(Queries()->MediaText());
 }
 
 void MediaList::setMediaText(ExecutingContext* execution_context, const AtomicString& value) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
-  Owner()->SetMediaQueries(MediaQuerySet::Create(value.ToUTF8String(), execution_context));
+  Owner()->SetMediaQueries(MediaQuerySet::Create(value.GetString(), execution_context));
 
   NotifyMutation();
 }
@@ -187,9 +187,9 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
   std::shared_ptr<const MediaQuerySet> new_media_queries =
-      Queries()->CopyAndRemove(medium.ToUTF8String(), execution_context);
+      Queries()->CopyAndRemove(medium.GetString(), execution_context);
   if (!new_media_queries) {
-    exception_state.ThrowException(ctx(), ErrorType::InternalError, "Failed to delete '" + medium.ToUTF8String() + "'.");
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, std::string("Failed to delete '") + medium.ToUTF8String() + "'.");
     return;
   }
   Owner()->SetMediaQueries(new_media_queries);
@@ -200,7 +200,7 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
 void MediaList::appendMedium(const ExecutingContext* execution_context, const AtomicString& medium) {
   CSSStyleSheet::RuleMutationScope mutation_scope(parent_rule_);
 
-  auto new_media_queries = Queries()->CopyAndAdd(medium.ToUTF8String(), execution_context);
+  auto new_media_queries = Queries()->CopyAndAdd(medium.GetString(), execution_context);
   if (!new_media_queries) {
     return;
   }

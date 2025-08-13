@@ -7,6 +7,7 @@
  */
 
 #include "css_alternate_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf::cssvalue {
 
@@ -15,12 +16,12 @@ CSSAlternateValue::CSSAlternateValue(std::shared_ptr<const CSSFunctionValue>& fu
     : CSSValue(kAlternateClass), function_(function), aliases_(alias_list) {}
 
 String CSSAlternateValue::CustomCSSText() const {
-  std::string builder;
-  builder += getValueName(function_->FunctionType());
-  builder += '(';
-  builder += aliases_->CssText();
-  builder += ')';
-  return builder;
+  StringBuilder builder;
+  builder.Append(getValueName(function_->FunctionType()));
+  builder.Append('(');
+  builder.Append(aliases_->CssText());
+  builder.Append(')');
+  return builder.ReleaseString();
 }
 
 bool CSSAlternateValue::Equals(const CSSAlternateValue& other) const {

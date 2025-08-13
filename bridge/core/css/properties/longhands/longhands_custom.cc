@@ -871,7 +871,7 @@ namespace {
 
 std::shared_ptr<const CSSValue> ConsumeAttr(CSSParserTokenStream& stream,
                                             std::shared_ptr<const CSSParserContext> context) {
-  std::string attr_name;
+  AtomicString attr_name;
   {
     CSSParserTokenStream::BlockGuard guard(stream);
     stream.ConsumeWhitespace();
@@ -879,7 +879,7 @@ std::shared_ptr<const CSSValue> ConsumeAttr(CSSParserTokenStream& stream,
       return nullptr;
     }
 
-    attr_name = stream.ConsumeIncludingWhitespace().Value();
+    attr_name = AtomicString(String(stream.ConsumeIncludingWhitespace().Value()));
     if (!stream.AtEnd()) {
       // NOTE: This AtEnd() is fine, because we are inside a function block
       // (i.e., inside a BlockGuard).
@@ -1506,7 +1506,7 @@ std::shared_ptr<const cssvalue::CSSFontVariationValue> ConsumeFontVariationTag(
   if (token.Value().length() != kTagNameLength) {
     return nullptr;
   }
-  std::string tag = std::string(token.Value());
+  std::string tag = token.Value().StdUtf8();
   stream.ConsumeIncludingWhitespace();
   for (size_t i = 0; i < kTagNameLength; ++i) {
     // Limits the range of characters to 0x20-0x7E, following the tag name
@@ -1636,7 +1636,7 @@ std::shared_ptr<const CSSValue> GridTemplateAreas::ParseSingleValue(CSSParserTok
   size_t column_count = 0;
 
   while (stream.Peek().GetType() == kStringToken) {
-    if (!css_parsing_utils::ParseGridTemplateAreasRow(std::string(stream.ConsumeIncludingWhitespace().Value()),
+    if (!css_parsing_utils::ParseGridTemplateAreasRow(stream.ConsumeIncludingWhitespace().Value().StdUtf8(),
                                                       grid_area_map, row_count, column_count)) {
       return nullptr;
     }

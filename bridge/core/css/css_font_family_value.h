@@ -13,11 +13,11 @@ namespace webf {
 
 class CSSFontFamilyValue : public CSSValue {
  public:
-  static std::shared_ptr<CSSFontFamilyValue> Create(const std::string& family_name);
+  static std::shared_ptr<CSSFontFamilyValue> Create(const AtomicString& family_name);
 
-  explicit CSSFontFamilyValue(const std::string&);
+  explicit CSSFontFamilyValue(const AtomicString&);
 
-  const std::string& Value() const { return string_; }
+  const AtomicString& Value() const { return string_; }
 
   String CustomCSSText() const;
 
@@ -28,7 +28,7 @@ class CSSFontFamilyValue : public CSSValue {
  private:
   friend class CSSValuePool;
 
-  std::string string_;
+  AtomicString string_;
 };
 
 template <>

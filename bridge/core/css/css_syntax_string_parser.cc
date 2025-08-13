@@ -11,7 +11,7 @@ namespace webf {
 namespace {
 
 // https://drafts.css-houdini.org/css-properties-values-api-1/#supported-names
-std::optional<CSSSyntaxType> ParseSyntaxType(std::string_view type) {
+std::optional<CSSSyntaxType> ParseSyntaxType(StringView type) {
   if (type == "length") {
     return CSSSyntaxType::kLength;
   }
@@ -63,31 +63,24 @@ bool IsPreMultiplied(CSSSyntaxType type) {
 
 }  // namespace
 
-// Trim from the start (left trim)
-static inline std::string ltrim(std::string s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) { return !std::isspace(ch); }));
-  return s;
-}
 
-// Trim from the end (right trim)
-static inline std::string rtrim(std::string s) {
-  s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) { return !std::isspace(ch); }).base(), s.end());
-  return s;
-}
-
-// Trim from both ends (left and right trim)
-static inline std::string trim(std::string s) {
-  return ltrim(rtrim(s));
-}
-
-CSSSyntaxStringParser::CSSSyntaxStringParser(const std::string& string) : string_(trim(string)), input_(string_) {}
+CSSSyntaxStringParser::CSSSyntaxStringParser(const String& string)
+    : input_(StringView(string)) {}
 
 std::optional<CSSSyntaxDefinition> CSSSyntaxStringParser::Parse() {
-  if (string_.IsEmpty()) {
+  input_.AdvanceUntilNonWhitespace();
+
+  if (!input_.length()) {
     return std::nullopt;
   }
-  if (string_.length() == 1 && string_[0] == '*') {
-    return CSSSyntaxDefinition::CreateUniversal();
+  if (input_.NextInputChar() == '*') {
+    input_.Advance();
+    input_.AdvanceUntilNonWhitespace();
+    if (input_.NextInputChar() == '\0') {
+      return CSSSyntaxDefinition::CreateUniversal();
+    } else {
+      return std::nullopt;
+    }
   }
 
   std::vector<CSSSyntaxComponent> components;
@@ -108,14 +101,14 @@ std::optional<CSSSyntaxDefinition> CSSSyntaxStringParser::Parse() {
     return std::nullopt;
   }
 
-  return CSSSyntaxDefinition(std::move(components), string_);
+  return CSSSyntaxDefinition(std::move(components));
 }
 
 bool CSSSyntaxStringParser::ConsumeSyntaxComponent(std::vector<CSSSyntaxComponent>& components) {
   input_.AdvanceUntilNonWhitespace();
 
   CSSSyntaxType type = CSSSyntaxType::kTokenStream;
-  std::string ident;
+  String ident;
 
   char cc = input_.NextInputChar();
   input_.Advance();
@@ -175,9 +168,10 @@ bool CSSSyntaxStringParser::ConsumeDataTypeName(CSSSyntaxType& type) {
   }
 }
 
-bool CSSSyntaxStringParser::ConsumeIdent(std::string& ident) {
+bool CSSSyntaxStringParser::ConsumeIdent(String& ident) {
   ident = ConsumeName(input_);
-  return !css_parsing_utils::IsCSSWideKeyword(ident) && !css_parsing_utils::IsDefaultKeyword(ident);
+  return !css_parsing_utils::IsCSSWideKeyword(StringView(ident)) &&
+         !css_parsing_utils::IsDefaultKeyword(ident.StdUtf8());
 }
 
 }  // namespace webf

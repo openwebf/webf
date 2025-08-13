@@ -10,6 +10,7 @@
 #define WEBF_CORE_CSS_CSS_CONDITION_RULE_H_
 
 #include "core/css/css_grouping_rule.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -20,8 +21,8 @@ class CSSConditionRule : public CSSGroupingRule {
   ~CSSConditionRule() override;
 
   // Prefer ConditionTextInternal for internal use.
-  virtual std::string conditionText() const;
-  virtual std::string ConditionTextInternal() const;
+  virtual String conditionText() const;
+  virtual String ConditionTextInternal() const;
 
  protected:
   CSSConditionRule(std::shared_ptr<StyleRuleCondition> condition_rule, CSSStyleSheet* parent);

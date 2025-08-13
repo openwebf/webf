@@ -196,17 +196,20 @@ void LegacyInlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
   visitor->TraceMember(owner_element_);
 }
 
-std::string LegacyInlineCssStyleDeclaration::ToString() const {
-  if (properties_.IsEmpty())
-    return "";
+String LegacyInlineCssStyleDeclaration::ToString() const {
+  if (properties_.empty())
+    return String("");
 
-  std::string s;
+  StringBuilder builder;
 
   for (auto& attr : properties_) {
-    s += attr.first + ": " + attr.second.ToUTF8String() + ";";
+    builder.Append(attr.first);
+    builder.Append(": ");
+    builder.Append(attr.second);
+    builder.Append(";");
   }
 
-  return s;
+  return builder.ReleaseString();
 }
 
 void LegacyInlineCssStyleDeclaration::InlineStyleChanged() {
@@ -284,7 +287,7 @@ AtomicString LegacyInlineCssStyleDeclaration::InternalRemoveProperty(std::string
 }
 
 void LegacyInlineCssStyleDeclaration::InternalClearProperty() {
-  if (properties_.IsEmpty())
+  if (properties_.empty())
     return;
   properties_.clear();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, owner_element_->bindingObject(),

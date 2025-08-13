@@ -38,10 +38,10 @@ String CSSURIValue::CustomCSSText() const {
   return url_data_.CssText();
 }
 
-std::string CSSURIValue::FragmentIdentifier() const {
+AtomicString CSSURIValue::FragmentIdentifier() const {
   // Always use KURL's FragmentIdentifier to ensure that we're handling the
   // fragment in a consistent manner.
-  return std::string(AbsoluteUrl().FragmentIdentifier());
+  return AtomicString(AbsoluteUrl().FragmentIdentifier());
 }
 
 // const AtomicString& CSSURIValue::NormalizedFragmentIdentifier() const {
@@ -62,8 +62,16 @@ std::string CSSURIValue::FragmentIdentifier() const {
 //  return normalized_fragment_identifier_cache_;
 //}
 
+const AtomicString& CSSURIValue::NormalizedFragmentIdentifier() const {
+  // TODO: Implement proper fragment identifier normalization
+  if (normalized_fragment_identifier_cache_ == AtomicString::Empty()) {
+    normalized_fragment_identifier_cache_ = FragmentIdentifier();
+  }
+  return normalized_fragment_identifier_cache_;
+}
+
 KURL CSSURIValue::AbsoluteUrl() const {
-  return KURL(url_data_.ResolvedUrl());
+  return KURL(url_data_.ResolvedUrl().GetString().StdUtf8());
 }
 
 bool CSSURIValue::IsLocal(const Document& document) const {

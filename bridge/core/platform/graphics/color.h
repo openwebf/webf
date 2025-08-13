@@ -36,6 +36,7 @@
 
 #include "SkColor.h"
 #include "foundation/macros.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -185,21 +186,21 @@ class Color {
   static constexpr Color FromSkColor(SkColor color) { return Color(color); }
   static constexpr Color FromRGBA32(RGBA32 color) { return Color(color); }
 
-  std::string SerializeInternal() const;
+  String SerializeInternal() const;
   // Returns the color serialized according to HTML5:
   // http://www.whatwg.org/specs/web-apps/current-work/#serialization-of-a-color
-  std::string SerializeAsCSSColor() const;
+  String SerializeAsCSSColor() const;
   // Canvas colors are serialized somewhat differently:
   // https://html.spec.whatwg.org/multipage/canvas.html#serialisation-of-a-color
-  std::string SerializeAsCanvasColor() const;
+  String SerializeAsCanvasColor() const;
   // Returns the color serialized as either #RRGGBB or #RRGGBBAA. The latter
   // format is not a valid CSS color, and should only be seen in DRT dumps.
-  std::string NameForLayoutTreeAsText() const;
+  String NameForLayoutTreeAsText() const;
 
   // Returns whether parsing succeeded. The resulting Color is arbitrary
   // if parsing fails.
-  bool SetFromString(const std::string&);
-  bool SetNamedColor(const std::string&);
+  bool SetFromString(const String&);
+  bool SetNamedColor(const String&);
 
   bool IsFullyTransparent() const { return Alpha() <= 0.0f; }
   bool IsOpaque() const { return Alpha() >= 1.0f; }
@@ -248,7 +249,7 @@ class Color {
   Color Blend(const Color&) const;
   Color BlendWithWhite() const;
 
-  static bool ParseHexColor(const std::string_view&, Color&);
+  static bool ParseHexColor(const StringView&, Color&);
   static bool ParseHexColor(const char*, unsigned, Color&);
 
   static const Color kBlack;
@@ -274,7 +275,7 @@ class Color {
   void ResolveNonFiniteValues();
 
  private:
-  std::string SerializeLegacyColorAsCSSColor() const;
+  String SerializeLegacyColorAsCSSColor() const;
   constexpr explicit Color(RGBA32 color)
       : param0_is_none_(0),
         param1_is_none_(0),

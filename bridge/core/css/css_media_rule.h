@@ -52,7 +52,7 @@ class CSSMediaRule : public CSSConditionRule {
   void TraceAfterDispatch(GCVisitor* visitor) const;
 
  private:
-  std::string conditionText() const override;
+  String conditionText() const override;
 
   mutable Member<MediaList> media_cssom_wrapper_;
 };

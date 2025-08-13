@@ -29,8 +29,8 @@ DOMMatrix* DOMMatrixReadOnly::fromMatrix(ExecutingContext* context,
  NativeValue arguments[] = {
      NativeValueConverter<NativeTypeArray<NativeTypePointer<DOMMatrixReadOnly>>>::ToNativeValue(matrix_vec)};
  // auto* context = matrix->GetExecutingContext();
- AtomicString module_name = AtomicString("DOMMatrix");
- AtomicString method_name = AtomicString("fromMatrix");
+ AtomicString module_name = AtomicString::CreateFromUTF8("DOMMatrix");
+ AtomicString method_name = AtomicString::CreateFromUTF8("fromMatrix");
 
  char errmsg[1024];
  errmsg[0] = 0;

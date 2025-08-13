@@ -57,7 +57,7 @@ StyleSheetContents::StyleSheetContents(const std::shared_ptr<const CSSParserCont
       did_load_error_occur_(false),
       is_mutable_(false),
       has_font_face_rule_(false),
-      default_namespace_("*"),
+      default_namespace_(g_star_atom),
       has_viewport_rule_(false),
       has_single_owner_document_(true),
       has_media_queries_(false),
@@ -346,7 +346,7 @@ void StyleSheetContents::ParserAddNamespace(const std::optional<std::string>& pr
                                             const std::optional<std::string>& uri) {
   DCHECK(uri.has_value());
   if (!prefix.has_value()) {
-    default_namespace_ = uri.value();
+    default_namespace_ = AtomicString::CreateFromUTF8(uri.value().c_str());
     return;
   }
   namespaces_.insert(std::make_pair(AtomicString(prefix.value()), AtomicString(uri.value())));

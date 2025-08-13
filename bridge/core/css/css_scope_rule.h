@@ -12,6 +12,7 @@
 #include "core/css/css_grouping_rule.h"
 #include "core/executing_context.h"
 #include "foundation/casting.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -22,7 +23,7 @@ class CSSScopeRule final : public CSSGroupingRule {
   CSSScopeRule(std::shared_ptr<StyleRuleScope>, CSSStyleSheet*);
   ~CSSScopeRule() override;
 
-  std::string PreludeText() const;
+  String PreludeText() const;
   AtomicString cssText() const override;
   std::string start() const;
   std::string end() const;

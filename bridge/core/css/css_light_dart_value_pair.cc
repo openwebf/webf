@@ -3,13 +3,18 @@
 // found in the LICENSE file.
 
 #include "css_light_dart_value_pair.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
 String CSSLightDarkValuePair::CustomCSSText() const {
-  std::string first = First()->CssText();
-  std::string second = Second()->CssText();
-  return "light-dark(" + first + ", " + second + ")";
+  StringBuilder builder;
+  builder.Append("light-dark(");
+  builder.Append(First()->CssText());
+  builder.Append(", ");
+  builder.Append(Second()->CssText());
+  builder.Append(")");
+  return builder.ReleaseString();
 }
 
 }  // namespace webf

@@ -13,7 +13,7 @@
 
 namespace webf {
 
-CSSCustomIdentValue::CSSCustomIdentValue(const std::string& str)
+CSSCustomIdentValue::CSSCustomIdentValue(const AtomicString& str)
     : CSSValue(kCustomIdentClass), string_(str), property_id_(CSSPropertyID::kInvalid) {
   needs_tree_scope_population_ = true;
 }
@@ -32,7 +32,7 @@ String CSSCustomIdentValue::CustomCSSText() const {
     return CSSUnresolvedProperty::Get(property_id_).GetPropertyName();
   }
   StringBuilder builder;
-  SerializeIdentifier(string_, builder);
+  SerializeIdentifier(string_.GetString(), builder);
   return builder.ReleaseString();
 }
 

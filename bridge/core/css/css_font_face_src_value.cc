@@ -44,8 +44,8 @@ bool CSSFontFaceSrcValue::IsSupportedFormat() const {
   // with the old WinIE style of font-face, we will also check to see if the URL
   // ends with .eot.  If so, we'll go ahead and assume that we shouldn't load
   // it.
-  const String& resolved_url_string = src_value_->UrlData().ResolvedUrl();
-  return ProtocolIs(resolved_url_string.StdUtf8(), "data") || !base::EndsWith(std::string_view(resolved_url_string.StdUtf8()), ".eot");
+  const AtomicString& resolved_url_string = src_value_->UrlData().ResolvedUrl();
+  return ProtocolIs(resolved_url_string.GetString().StdUtf8(), "data") || !base::EndsWith(std::string_view(resolved_url_string.GetString().StdUtf8()), ".eot");
 }
 
 String CSSFontFaceSrcValue::CustomCSSText() const {

@@ -5,6 +5,7 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "css_scroll_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -14,19 +15,19 @@ CSSScrollValue::CSSScrollValue(std::shared_ptr<const CSSValue> scroller, std::sh
     : CSSValue(kScrollClass), scroller_(scroller), axis_(axis) {}
 
 String CSSScrollValue::CustomCSSText() const {
-  std::string result;
-  result += "scroll(";
+  StringBuilder result;
+  result.Append("scroll(");
   if (scroller_) {
-    result += (scroller_->CssText());
+    result.Append(scroller_->CssText());
   }
   if (axis_) {
     if (scroller_) {
-      result += (' ');
+      result.Append(' ');
     }
-    result += (axis_->CssText());
+    result.Append(axis_->CssText());
   }
-  result += (")");
-  return result;
+  result.Append(")");
+  return result.ReleaseString();
 }
 
 bool CSSScrollValue::Equals(const CSSScrollValue& other) const {

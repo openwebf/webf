@@ -14,7 +14,7 @@ namespace webf {
 // type(<string>) function, specifying the image's MIME type in the <string>.
 class CSSImageSetTypeValue : public CSSValue {
  public:
-  explicit CSSImageSetTypeValue(const std::string& type);
+  explicit CSSImageSetTypeValue(const String& type);
 
   ~CSSImageSetTypeValue();
 
@@ -28,7 +28,7 @@ class CSSImageSetTypeValue : public CSSValue {
   void TraceAfterDispatch(GCVisitor* visitor) const;
 
  private:
-  std::string type_;
+  String type_;
 };
 
 template <>

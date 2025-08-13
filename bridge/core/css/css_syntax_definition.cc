@@ -8,6 +8,7 @@
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_variable_parser.h"
 #include "core/css/properties/css_parsing_utils.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -18,9 +19,9 @@ std::shared_ptr<const CSSValue> ConsumeSingleType(const CSSSyntaxComponent& synt
                                                   std::shared_ptr<const CSSParserContext> context) {
   switch (syntax.GetType()) {
     case CSSSyntaxType::kIdent:
-      if (stream.Peek().GetType() == kIdentToken && stream.Peek().Value() == syntax.GetString()) {
+      if (stream.Peek().GetType() == kIdentToken && EqualIgnoringASCIICase(stream.Peek().Value(), syntax.GetString().c_str())) {
         stream.ConsumeIncludingWhitespace();
-        return std::make_shared<CSSCustomIdentValue>(syntax.GetString());
+        return std::make_shared<CSSCustomIdentValue>(AtomicString::CreateFromUTF8(syntax.GetString().c_str()));
       }
       return nullptr;
     case CSSSyntaxType::kLength: {
@@ -124,22 +125,31 @@ CSSSyntaxDefinition CSSSyntaxDefinition::IsolatedCopy() const {
     syntax_components_copy.push_back(
         CSSSyntaxComponent(syntax_component.GetType(), syntax_component.GetString(), syntax_component.GetRepeat()));
   }
-  return CSSSyntaxDefinition(std::move(syntax_components_copy), original_text_);
+  return CSSSyntaxDefinition(std::move(syntax_components_copy));
 }
 
-CSSSyntaxDefinition::CSSSyntaxDefinition(std::vector<CSSSyntaxComponent> components, const std::string& original_text)
-    : syntax_components_(std::move(components)), original_text_(original_text) {
+CSSSyntaxDefinition::CSSSyntaxDefinition(std::vector<CSSSyntaxComponent> components)
+    : syntax_components_(std::move(components)) {
   DCHECK(syntax_components_.size());
 }
 
 CSSSyntaxDefinition CSSSyntaxDefinition::CreateUniversal() {
   std::vector<CSSSyntaxComponent> components;
   components.push_back(CSSSyntaxComponent(CSSSyntaxType::kTokenStream, "", CSSSyntaxRepeat::kNone));
-  return CSSSyntaxDefinition(std::move(components), {});
+  return CSSSyntaxDefinition(std::move(components));
 }
 
 std::string CSSSyntaxDefinition::ToString() const {
-  return IsUniversal() ? "*" : original_text_;
+  if (IsUniversal()) {
+    return "*";
+  }
+  StringBuilder builder;
+  builder.Append(syntax_components_[0].ToString());
+  for (size_t i = 1; i < syntax_components_.size(); i++) {
+    builder.Append(" | ");
+    builder.Append(syntax_components_[i].ToString());
+  }
+  return builder.ReleaseString().StdUtf8();
 }
 
 }  // namespace webf

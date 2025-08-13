@@ -145,7 +145,7 @@ class CSSSelector {
   ~CSSSelector();
 
   std::string SelectorText() const;
-  std::string SimpleSelectorTextForDebug() const;
+  String SimpleSelectorTextForDebug() const;
 
   CSSSelector& operator=(const CSSSelector&) = delete;
   CSSSelector& operator=(CSSSelector&&);
@@ -617,7 +617,7 @@ class CSSSelector {
 
   void Trace(GCVisitor* visitor) const;
 
-  static std::string FormatPseudoTypeForDebugging(PseudoType);
+  static String FormatPseudoTypeForDebugging(PseudoType);
 
  private:
   // Trace() branches on the match/pseudo_type flags,

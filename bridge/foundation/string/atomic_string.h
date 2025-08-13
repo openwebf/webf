@@ -12,6 +12,7 @@
 #include "core/base/hash/hash.h"
 #include "string_impl.h"
 #include "string_view.h"
+#include "wtf_string.h"
 
 namespace webf {
 
@@ -32,6 +33,8 @@ class AtomicString {
 
   explicit AtomicString(UTF8StringView string_view);
   explicit AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
+  explicit AtomicString(const String& s);
+  explicit AtomicString(String&& s);
 
   explicit AtomicString(const UChar* chars)
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}
@@ -78,7 +81,7 @@ class AtomicString {
 
   const LChar* Characters8() const;
   const char16_t* Characters16() const;
-  std::string GetString() const { return ToUTF8String(); }
+  String GetString() const;
 
   AtomicString RemoveCharacters(CharacterMatchFunctionPtr);
 
@@ -170,6 +173,14 @@ struct AtomicStringRef {
 
 inline bool operator==(const AtomicString& a, const AtomicString& b) {
   return a.Impl() == b.Impl();
+}
+
+inline bool operator==(const AtomicString& a, const String& b) {
+  return a.Impl().get() == b.Impl();
+}
+
+inline bool operator==(const String& a, const AtomicString& b) {
+  return b == a;
 }
 
 // Define external global variables for the commonly used atomic strings.

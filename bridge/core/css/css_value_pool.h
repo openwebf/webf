@@ -75,7 +75,12 @@ class CSSValuePool {
   //  };
   using FontFaceValueCache = std::unordered_map<std::string, std::shared_ptr<const CSSValueList>>;
   static const unsigned kMaximumFontFaceCacheSize = 128;
-  using FontFamilyValueCache = std::unordered_map<std::string, std::shared_ptr<CSSFontFamilyValue>>;
+  struct StringHash {
+    size_t operator()(const String& s) const { 
+      return s.Impl() ? s.Impl()->GetHash() : 0;
+    }
+  };
+  using FontFamilyValueCache = std::unordered_map<String, std::shared_ptr<CSSFontFamilyValue>, StringHash>;
   //
   //  CSSValuePool();
   //  CSSValuePool(const CSSValuePool&) = delete;

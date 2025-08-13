@@ -11,7 +11,7 @@ namespace webf {
 
 #define CSS_MEDIAQUERY_NAMES_FOR_EACH_MEDIAFEATURE(macro) \
 <% _.forEach(data, function(name, index) { %>
-   macro(media_feature_names_stdstring::k<%= upperCamelCase(name) %>, <%= upperCamelCase(name) %>) <%= index + 1 != data.length ? "\\" : '' %>
+   macro(media_feature_names_atomicstring::k<%= upperCamelCase(name) %>, <%= upperCamelCase(name) %>) <%= index + 1 != data.length ? "\\" : '' %>
 <% }) %>
 
 

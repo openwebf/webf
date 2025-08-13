@@ -25,6 +25,7 @@
 #include "core/css/css_shadow_value.h"
 #include "core/css/css_identifier_value.h"
 #include "core/css/css_primitive_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -38,24 +39,32 @@ CSSShadowValue::CSSShadowValue(const std::shared_ptr<const CSSPrimitiveValue>& x
     : CSSValue(kShadowClass), x(x), y(y), blur(blur), spread(spread), style(style), color(color) {}
 
 String CSSShadowValue::CustomCSSText() const {
-  std::string text = "";
+  StringBuilder text;
 
   if (color) {
-    text += color->CssText() + ' ';
+    text.Append(color->CssText());
+    text.Append(' ');
   }
-  text += x->CssText() + ' ';
-  text += y->CssText();
+
+  text.Append(x->CssText());
+  text.Append(' ');
+
+  text.Append(y->CssText());
 
   if (blur) {
-    text += ' ' + blur->CssText();
+    text.Append(' ');
+    text.Append(blur->CssText());
   }
   if (spread) {
-    text += ' ' + spread->CssText();
+    text.Append(' ');
+    text.Append(spread->CssText());
   }
   if (style) {
-    text += ' ' + style->CssText();
+    text.Append(' ');
+    text.Append(style->CssText());
   }
-  return text;
+
+  return text.ReleaseString();
 }
 
 bool CSSShadowValue::Equals(const CSSShadowValue& other) const {

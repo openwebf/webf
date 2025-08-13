@@ -24,6 +24,7 @@
 
 #include "core/css/css_value_list.h"
 #include "core/css/css_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -154,18 +155,18 @@ String CSSValueList::CustomCSSText() const {
       WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached CustomCSSText():" << value_list_separator_ << std::endl;
   }
 
-  std::string result;
+  StringBuilder result;
   for (const auto& value : values_) {
     if (!result.IsEmpty()) {
-      result.append(separator);
+      result.Append(separator);
     }
     // TODO(crbug.com/1213338): value_[i] can be null by CSSMathExpressionNode
     // which is implemented by css-values-3. Until fully implement the
     // css-values-4 features, we should append empty string to remove
     // null-pointer exception.
-    result.append(value ? value->CssText() : "");
+    result.Append(value ? value->CssText() : String(""));
   }
-  return result;
+  return result.ReleaseString();
 }
 
 bool CSSValueList::Equals(const CSSValueList& other) const {

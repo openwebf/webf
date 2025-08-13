@@ -25,7 +25,7 @@ Comment::Comment(TreeScope& tree_scope, const AtomicString& data, ConstructionTy
 Node::NodeType Comment::nodeType() const {
   return Node::kCommentNode;
 }
-std::string Comment::nodeName() const {
+String Comment::nodeName() const {
   return "#comment";
 }
 

@@ -18,36 +18,36 @@ CSSScopeRule::CSSScopeRule(std::shared_ptr<StyleRuleScope> scope_rule, CSSStyleS
 
 CSSScopeRule::~CSSScopeRule() = default;
 
-std::string CSSScopeRule::PreludeText() const {
+String CSSScopeRule::PreludeText() const {
   const StyleRuleScope& scope_rule = GetStyleRuleScope();
   const StyleScope& style_scope = scope_rule.GetStyleScope();
-  std::string prelude;
+  StringBuilder prelude;
   
   if (style_scope.From()) {
     // TODO: Convert selector to string
-    prelude += "(";
+    prelude.Append("(");
     // Need proper selector serialization here
-    prelude += ")";
+    prelude.Append(")");
   }
   
   if (style_scope.To()) {
     if (!prelude.IsEmpty()) {
-      prelude += " to ";
+      prelude.Append(" to ");
     } else {
-      prelude += "to ";
+      prelude.Append("to ");
     }
-    prelude += "(";
+    prelude.Append("(");
     // Need proper selector serialization here  
-    prelude += ")";
+    prelude.Append(")");
   }
   
-  return prelude;
+  return prelude.ReleaseString();
 }
 
 AtomicString CSSScopeRule::cssText() const {
   StringBuilder result;
   result.Append("@scope");
-  std::string prelude = PreludeText();
+  String prelude = PreludeText();
   
   if (!prelude.IsEmpty()) {
     result.Append(" ");

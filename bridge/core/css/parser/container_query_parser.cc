@@ -187,7 +187,7 @@ std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeQueryInPar
     if (query) {
       guard.Release();
       stream.ConsumeWhitespace();
-      return MediaQueryExpNode::Function(query, "style");
+      return MediaQueryExpNode::Function(query, AtomicString::CreateFromUTF8("style"));
     }
   } else if (stream.Peek().GetType() == kFunctionToken &&
              stream.Peek().FunctionId() == CSSValueID::kScrollState) {
@@ -199,7 +199,7 @@ std::shared_ptr<const MediaQueryExpNode> ContainerQueryParser::ConsumeQueryInPar
     if (query) {
       guard.Release();
       stream.ConsumeWhitespace();
-      return MediaQueryExpNode::Function(query, "scroll-state");
+      return MediaQueryExpNode::Function(query, AtomicString::CreateFromUTF8("scroll-state"));
     }
   }
   stream.Restore(savepoint);

@@ -72,7 +72,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   Document* SingleOwnerDocument() const;
   bool HasSingleOwnerDocument() const { return has_single_owner_document_; }
 
-  const std::string& DefaultNamespace() const { return default_namespace_; }
+  const AtomicString& DefaultNamespace() const { return default_namespace_; }
   const AtomicString& NamespaceURIFromPrefix(const AtomicString& prefix) const;
 
   void ParserAddNamespace(const std::optional<std::string>& prefix, const std::optional<std::string>& uri);
@@ -214,7 +214,7 @@ class StyleSheetContents : public std::enable_shared_from_this<StyleSheetContent
   std::vector<std::shared_ptr<StyleRuleBase>> child_rules_;
 
   std::unordered_map<AtomicString, AtomicString, AtomicString::KeyHasher> namespaces_;
-  std::string default_namespace_;
+  AtomicString default_namespace_;
 
   std::shared_ptr<StyleRuleImport> owner_rule_;
   std::shared_ptr<const CSSParserContext> parser_context_;

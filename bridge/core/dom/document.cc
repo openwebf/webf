@@ -158,7 +158,7 @@ HTMLAllCollection* Document::all() {
   return MakeGarbageCollected<HTMLAllCollection>(this, CollectionType::kDocAll);
 }
 
-std::string Document::nodeName() const {
+String Document::nodeName() const {
   return "#document";
 }
 

@@ -195,16 +195,12 @@ bool CSSVariableParser::IsValidVariableName(const CSSParserToken& token) {
   return IsValidVariableName(token.Value());
 }
 
-bool CSSVariableParser::IsValidVariableName(const std::string_view& string) {
+bool CSSVariableParser::IsValidVariableName(const StringView& string) {
   return string.length() >= 3 && string[0] == '-' && string[1] == '-';
 }
 
 bool CSSVariableParser::IsValidVariableName(const String& string) {
   return string.length() >= 3 && string.CharacterStartingAt(0) == '-' && string.CharacterStartingAt(1) == '-';
-}
-
-bool CSSVariableParser::IsValidVariableName(const StringView& string) {
-  return string.length() >= 3 && string[0] == '-' && string[1] == '-';
 }
 
 bool CSSVariableParser::ContainsValidVariableReferences(CSSParserTokenRange range, const ExecutingContext* context) {
@@ -239,14 +235,14 @@ std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseDecla
     return nullptr;
   }
 
-  std::string_view text = StripTrailingWhitespaceAndComments(tokenized_value.text);
+  StringView text = StripTrailingWhitespaceAndComments(tokenized_value.text);
   std::shared_ptr<CSSVariableData> data =
       CSSVariableData::Create(CSSTokenizedValue{tokenized_value.range, text}, is_animation_tainted, has_references);
   return std::make_shared<CSSUnparsedDeclarationValue>(data, context);
 }
 
 std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseUniversalSyntaxValue(
-    const std::string& text,
+    const String& text,
     std::shared_ptr<const CSSParserContext>& context,
     bool is_animation_tainted) {
   bool has_references;
@@ -267,7 +263,7 @@ std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseUnive
   return std::make_shared<CSSUnparsedDeclarationValue>(variable_data, context);
 }
 
-std::string_view CSSVariableParser::StripTrailingWhitespaceAndComments(std::string_view text) {
+StringView CSSVariableParser::StripTrailingWhitespaceAndComments(StringView text) {
   // Comments may (unfortunately!) be unfinished, so we can't rely on
   // looking for */; if there's /* anywhere, we'll need to scan through
   // the string from the start. We do a very quick heuristic first
@@ -277,10 +273,20 @@ std::string_view CSSVariableParser::StripTrailingWhitespaceAndComments(std::stri
   // (i.e. not CSSOM, where we just get a string), we know we can't
   // have unfinished comments, so consider piping that knowledge all
   // the way through here.
-  if (!webf::Contains(std::string(text.data()), '/')) {
+  bool has_slash = false;
+  if (text.Is8Bit()) {
+    const LChar* chars = text.Characters8();
+    for (unsigned i = 0; i < text.length(); ++i) {
+      if (chars[i] == '/') {
+        has_slash = true;
+        break;
+      }
+    }
+  }
+  if (text.Is8Bit() && !has_slash) {
     // No comments, so we can strip whitespace only.
-    while (!text.empty() && IsHTMLSpace(text[text.length() - 1])) {
-      text = std::string_view(text.data() + 0, text.length() - 1);
+    while (!text.Empty() && IsHTMLSpace(text[text.length() - 1])) {
+      text = StringView(text, 0, text.length() - 1);
     }
     return text;
   }
@@ -307,12 +313,12 @@ std::string_view CSSVariableParser::StripTrailingWhitespaceAndComments(std::stri
     }
   }
 
-  std::string_view ret = std::string_view(text.data() + 0, string_len);
+  StringView ret = StringView(text, 0, string_len);
 
   // Leading whitespace should already have been stripped.
   // (This test needs to be after we stripped trailing spaces,
   // or we could look at trailing space believing it was leading.)
-  DCHECK(ret.empty() || !IsHTMLSpace(ret[0]));
+  DCHECK(ret.IsEmpty() || !IsHTMLSpace(ret[0]));
 
   return ret;
 }

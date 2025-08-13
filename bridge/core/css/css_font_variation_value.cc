@@ -7,6 +7,7 @@
 #include "css_font_variation_value.h"
 
 #include "core/css/css_markup.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -19,7 +20,7 @@ String CSSFontVariationValue::CustomCSSText() const {
   StringBuilder builder;
   SerializeString(tag_, builder);
   builder.Append(' ');
-  builder.Append(value_);
+  builder.AppendNumber(value_);
   return builder.ReleaseString();
 }
 

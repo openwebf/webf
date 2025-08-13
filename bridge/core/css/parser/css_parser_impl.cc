@@ -139,7 +139,7 @@ MutableCSSPropertyValueSet::SetResult CSSParserImpl::ParseValue(MutableCSSProper
   CSSParserTokenStream stream(tokenizer);
   parser.ConsumeDeclarationValue(stream, unresolved_property,
                                  /*is_in_declaration_list=*/false, rule_type);
-  if (parser.parsed_properties_.IsEmpty()) {
+  if (parser.parsed_properties_.empty()) {
     return MutableCSSPropertyValueSet::kParseError;
   }
   if (important) {
@@ -159,7 +159,7 @@ MutableCSSPropertyValueSet::SetResult CSSParserImpl::ParseVariableValue(MutableC
   STACK_UNINITIALIZED CSSParserImpl parser(context);
   CSSTokenizer tokenizer(value);
   CSSParserTokenStream stream(tokenizer);
-  if (!parser.ConsumeVariableValue(stream, AtomicString(property_name),
+  if (!parser.ConsumeVariableValue(stream, AtomicString::CreateFromUTF8(property_name.StdUtf8().c_str()),
                                    /*allow_important_annotation=*/false, is_animation_tainted)) {
     return MutableCSSPropertyValueSet::kParseError;
   }
@@ -242,7 +242,7 @@ bool CSSParserImpl::ParseDeclarationList(MutableCSSPropertyValueSet* declaration
   parser.ConsumeDeclarationList(stream, rule_type, CSSNestingType::kNone,
                                 /*parent_rule_for_nesting=*/nullptr,
                                 /*child_rules=*/nullptr);
-  if (parser.parsed_properties_.IsEmpty()) {
+  if (parser.parsed_properties_.empty()) {
     return false;
   }
 
@@ -407,12 +407,12 @@ std::shared_ptr<const CSSSelectorList> CSSParserImpl::ParsePageSelector(
     if (selector.GetPseudoType() == CSSSelector::kPseudoUnknown) {
       return nullptr;
     }
-    if (!selectors.IsEmpty()) {
+    if (!selectors.empty()) {
       selectors[0].SetLastInComplexSelector(false);
     }
     selectors.push_back(selector);
   }
-  if (selectors.IsEmpty()) {
+  if (selectors.empty()) {
     selectors.emplace_back(CSSSelector());
   }
   selectors[0].SetForPage();
@@ -649,7 +649,7 @@ void CSSParserImpl::ConsumeDeclarationList(CSSParserTokenStream& stream,
                                            CSSNestingType nesting_type,
                                            std::shared_ptr<const StyleRule> parent_rule_for_nesting,
                                            std::vector<std::shared_ptr<StyleRuleBase>>* child_rules) {
-  DCHECK(parsed_properties_.IsEmpty());
+  DCHECK(parsed_properties_.empty());
 
   bool is_observer_rule_type = rule_type == StyleRule::kStyle || rule_type == StyleRule::kProperty ||
                                rule_type == StyleRule::kPage || rule_type == StyleRule::kContainer ||
@@ -785,11 +785,12 @@ CSSTokenizedValue CSSParserImpl::ConsumeValue(CSSParserTokenStream& stream, Cons
   CSSParserTokenRange range = consume_function(stream);
   size_t value_end_offset = stream.LookAheadOffset();
 
-  return {range, stream.StringRangeAt(value_start_offset, value_end_offset - value_start_offset)};
+  StringView range_view = stream.StringRangeAt(value_start_offset, value_end_offset - value_start_offset);
+  return {range, range_view};
 }
 
 bool CSSParserImpl::ConsumeSupportsDeclaration(CSSParserTokenStream& stream) {
-  DCHECK(parsed_properties_.IsEmpty());
+  DCHECK(parsed_properties_.empty());
   // Even though we might use an observer here, this is just to test if we
   // successfully parse the range, so we can temporarily remove the observer.
   CSSParserObserver* observer_copy = observer_;
@@ -797,7 +798,7 @@ bool CSSParserImpl::ConsumeSupportsDeclaration(CSSParserTokenStream& stream) {
   ConsumeDeclaration(stream, StyleRule::kStyle);
   observer_ = observer_copy;
 
-  bool result = !parsed_properties_.IsEmpty();
+  bool result = !parsed_properties_.empty();
   parsed_properties_.clear();
   return result;
 }
@@ -928,7 +929,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::CreateInvisibleRule(const CSSSelector*
     selectors.back().SetSignal(signal);
   }
 
-  CHECK(!selectors.IsEmpty());
+  CHECK(!selectors.empty());
   CHECK(selectors.back().IsLastInComplexSelector());
   CHECK(selectors.back().IsLastInSelectorList());
 
@@ -1023,13 +1024,12 @@ bool CSSParserImpl::RemoveImportantAnnotationIfPresent(CSSTokenizedValue& tokeni
       tokenized_value.range = tokenized_value.range.MakeSubRange(first, last);
 
       // Truncate the text to remove the delimiter and everything after it.
-      if (!tokenized_value.text.empty()) {
-        DCHECK_NE(std::string(tokenized_value.text).find('!'), std::string::npos);
-        unsigned truncated_length = tokenized_value.text.length() - 1;
-        while (tokenized_value.text[truncated_length] != '!') {
-          --truncated_length;
-        }
-        tokenized_value.text = StringView(tokenized_value.text.data(), truncated_length);
+      if (!tokenized_value.text.Empty()) {
+        // Convert to String to use Find
+        String text_str(tokenized_value.text);
+        size_t exclamation_pos = text_str.Find('!');
+        DCHECK(exclamation_pos != kNotFound);
+        tokenized_value.text = tokenized_value.text.substr(0, exclamation_pos);
       }
       return true;
     }
@@ -1781,7 +1781,7 @@ std::shared_ptr<StyleRuleImport> CSSParserImpl::ConsumeImportRule(const String& 
     return nullptr;
   }
 
-  if (uri.empty()) {
+  if (prelude_uri.IsEmpty()) {
     return nullptr;  // Parse error, expected string or URI
   }
 
@@ -1840,7 +1840,7 @@ std::shared_ptr<StyleRuleImport> CSSParserImpl::ConsumeImportRule(const String& 
   }
 
   return std::make_shared<StyleRuleImport>(
-      String(prelude_uri.Impl()), std::move(layer), supported == CSSSupportsParser::Result::kSupported, supports_string,
+      prelude_uri, std::move(layer), supported == CSSSupportsParser::Result::kSupported, supports_string,
       MediaQueryParser::ParseMediaQuerySet(prelude, offsets, context_->GetExecutingContext()));
 }
 
@@ -1989,7 +1989,7 @@ std::shared_ptr<StyleRule> CSSParserImpl::CreateImplicitNestedRule(
     }
   }
 
-  CHECK(!selectors.IsEmpty());
+  CHECK(!selectors.empty());
   selectors.back().SetLastInComplexSelector(true);
   selectors.back().SetLastInSelectorList(true);
 

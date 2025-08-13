@@ -21,7 +21,7 @@ DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : 
                                                        nullptr);
 }
 
-std::string DocumentFragment::nodeName() const {
+String DocumentFragment::nodeName() const {
   return "#document-fragment";
 }
 

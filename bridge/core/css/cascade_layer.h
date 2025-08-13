@@ -83,7 +83,7 @@ class CascadeLayer final : public std::enable_shared_from_this<CascadeLayer> {
   friend class RuleSetCascadeLayerTest;
 
   std::string ToStringForTesting() const;
-  void ToStringInternal(std::string& result, const std::string& prefix) const;
+  void ToStringInternal(String& result, const String& prefix) const;
 
   CascadeLayer* FindDirectSubLayer(const AtomicString& name) const;
   void ComputeLayerOrderInternal(unsigned* next);

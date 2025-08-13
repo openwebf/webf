@@ -7,6 +7,7 @@
  */
 
 #include "css_property_parser.h"
+#include "foundation/string/character_visitor.h"
 #include "core/css/css_pending_substitution_value.h"
 #include "core/css/css_unparsed_declaration_value.h"
 #include "core/css/hash_tools.h"
@@ -250,7 +251,9 @@ std::shared_ptr<const CSSValue> CSSPropertyParser::ParseSingleValue(CSSPropertyI
 //
 // Returns false if the string is outside the allowed range of ASCII, so that
 // it could never match any CSS properties or values.
-static inline bool QuasiLowercaseIntoBuffer(const char* src, unsigned length, char* dst) {
+// Template for both LChar (uint8_t) and UChar (char16_t)
+template <typename CharacterType>
+static inline bool QuasiLowercaseIntoBuffer(const CharacterType* src, unsigned length, char* dst) {
   for (unsigned i = 0; i < length; ++i) {
     unsigned char c = src[i];
     if (c == 0 || c >= 0x7F) {  // illegal character
@@ -282,8 +285,9 @@ static CSSPropertyID ExposedProperty(CSSPropertyID property_id,
   return IsExposedInMode(execution_context, property, mode) ? property_id : CSSPropertyID::kInvalid;
 }
 
+template <typename CharacterType>
 static CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* execution_context,
-                                             const char* property_name,
+                                             const CharacterType* property_name,
                                              unsigned length,
                                              CSSParserMode mode) {
   if (length == 0) {
@@ -327,9 +331,11 @@ static CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* execution_c
 }
 
 CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
-                                      const std::string_view& string,
+                                      const StringView& string,
                                       CSSParserMode mode) {
-  return UnresolvedCSSPropertyID(context, string.data(), string.length(), mode);
+  return webf::VisitCharacters(string, [&](auto chars) {
+    return UnresolvedCSSPropertyID(context, chars.data(), chars.size(), mode);
+  });
 }
 
 CSSValueID CssValueKeywordID(const StringView& string) {

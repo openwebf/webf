@@ -71,7 +71,7 @@ class Document : public ContainerNode, public TreeScope {
   Event* createEvent(const AtomicString& type, ExceptionState& exception_state);
   HTMLAllCollection* all();
 
-  [[nodiscard]] std::string nodeName() const override;
+  [[nodiscard]] String nodeName() const override;
   [[nodiscard]] AtomicString nodeValue() const override;
   [[nodiscard]] NodeType nodeType() const override;
   [[nodiscard]] bool ChildTypeAllowed(NodeType) const override;

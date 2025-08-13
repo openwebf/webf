@@ -4,6 +4,7 @@
 
 #include "css_math_function_value.h"
 #include "core/base/memory/shared_ptr.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -135,17 +136,17 @@ Length CSSMathFunctionValue::ConvertToLength(const CSSLengthResolver& length_res
   return Length(ToCalcValue(length_resolver));
 }
 
-static std::string BuildCSSText(const std::string& expression) {
-  std::string result;
-  result.append("calc");
-  result.append("(");
-  result.append(expression);
-  result.append(")");
-  return result;
+static String BuildCSSText(const String& expression) {
+  StringBuilder result;
+  result.Append("calc");
+  result.Append("(");
+  result.Append(expression);
+  result.Append(")");
+  return result.ReleaseString();
 }
 
 String CSSMathFunctionValue::CustomCSSText() const {
-  const std::string& expression_text = expression_->CustomCSSText();
+  String expression_text = expression_->CustomCSSText();
   if (expression_->IsMathFunction()) {
     // If |expression_| is already a math function (e.g., min/max), we don't
     // need to wrap it in |calc()|.

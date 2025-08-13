@@ -12,9 +12,9 @@ namespace webf {
 
 class CSSStringValue : public CSSValue {
  public:
-  CSSStringValue(const std::string&);
+  CSSStringValue(const String&);
 
-  const std::string& Value() const { return string_; }
+  const String& Value() const { return string_; }
 
   String CustomCSSText() const;
 
@@ -23,7 +23,7 @@ class CSSStringValue : public CSSValue {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::string string_;
+  String string_;
 };
 
 template <>

@@ -26,6 +26,7 @@
 // Copyright (C) 2022-present The WebF authors. All rights reserved.
 
 #include "css_font_style_range_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -36,11 +37,11 @@ String CSSFontStyleRangeValue::CustomCSSText() const {
     return font_style_value_->CssText();
   }
 
-  std::string builder;
-  builder += font_style_value_->CssText();
-  builder += " ";
-  builder += oblique_values_->CssText();
-  return builder;
+  StringBuilder builder;
+  builder.Append(font_style_value_->CssText());
+  builder.Append(" ");
+  builder.Append(oblique_values_->CssText());
+  return builder.ReleaseString();
 }
 
 bool CSSFontStyleRangeValue::Equals(const CSSFontStyleRangeValue& other) const {

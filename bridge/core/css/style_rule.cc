@@ -48,15 +48,15 @@
 
 namespace webf {
 
-std::string StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& name_parts) {
+String StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& name_parts) {
   StringBuilder result;
   for (const auto& part : name_parts) {
     if (!result.IsEmpty()) {
       result.Append(".");
     }
-    SerializeIdentifier(part.value_or(""), result);
+    SerializeIdentifier(part.GetString(), result);
   }
-  return result.ReleaseString();
+  return result.ReleaseString().StdUtf8();
 }
 
 std::shared_ptr<const StyleRuleBase> StyleRuleBase::Copy() const {
@@ -592,7 +592,7 @@ MutableCSSPropertyValueSet& StyleRuleFontFace::MutableProperties() {
 
 void StyleRuleFontFace::TraceAfterDispatch(webf::GCVisitor*) const {}
 
-StyleRuleProperty::StyleRuleProperty(const std::string& name, std::shared_ptr<CSSPropertyValueSet> properties)
+StyleRuleProperty::StyleRuleProperty(const String& name, std::shared_ptr<CSSPropertyValueSet> properties)
     : StyleRuleBase(kProperty), name_(name), properties_(std::move(properties)) {}
 
 StyleRuleProperty::StyleRuleProperty(const StyleRuleProperty& property_rule)
@@ -617,9 +617,9 @@ const std::shared_ptr<const CSSValue>* StyleRuleProperty::GetInitialValue() cons
   return properties_->GetPropertyCSSValue(CSSPropertyID::kInitialValue);
 }
 
-bool StyleRuleProperty::SetNameText(const ExecutingContext* execution_context, const std::string& name_text) {
+bool StyleRuleProperty::SetNameText(const ExecutingContext* execution_context, const String& name_text) {
   DCHECK(!name_text.IsEmpty());
-  std::string name = CSSParser::ParseCustomPropertyName(name_text);
+  String name = CSSParser::ParseCustomPropertyName(name_text);
   if (name.IsEmpty())
     return false;
 
@@ -694,7 +694,7 @@ void StyleRuleScope::TraceAfterDispatch(GCVisitor* visitor) const {
 }
 
 void StyleRuleScope::SetPreludeText(const ExecutingContext* execution_context,
-                                    std::string value,
+                                    String value,
                                     CSSNestingType nesting_type,
                                     std::shared_ptr<const StyleRule> parent_rule_for_nesting,
                                     std::shared_ptr<StyleSheetContents> style_sheet) {
@@ -734,7 +734,7 @@ void StyleRuleLayerBlock::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleGroup::TraceAfterDispatch(visitor);
 }
 
-std::string StyleRuleLayerBlock::GetNameAsString() const {
+String StyleRuleLayerBlock::GetNameAsString() const {
   return StyleRuleBase::LayerNameAsString(name_);
 }
 
@@ -747,8 +747,8 @@ void StyleRuleLayerStatement::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
-std::vector<std::string> StyleRuleLayerStatement::GetNamesAsStrings() const {
-  std::vector<std::string> result;
+std::vector<String> StyleRuleLayerStatement::GetNamesAsStrings() const {
+  std::vector<String> result;
   result.reserve(names_.size());
   for (const auto& name : names_) {
     result.push_back(StyleRuleBase::LayerNameAsString(name));
@@ -760,7 +760,7 @@ StyleRuleCondition::StyleRuleCondition(RuleType type, std::vector<std::shared_pt
     : StyleRuleGroup(type, std::move(rules)) {}
 
 StyleRuleCondition::StyleRuleCondition(RuleType type,
-                                       const std::string& condition_text,
+                                       const String& condition_text,
                                        std::vector<std::shared_ptr<StyleRuleBase>> rules)
     : StyleRuleGroup(type, std::move(rules)), condition_text_(condition_text) {}
 
@@ -782,7 +782,7 @@ StyleRuleContainer::StyleRuleContainer(const StyleRuleContainer& container_rule)
   container_query_ = std::make_shared<ContainerQuery>(*container_rule.container_query_);
 }
 
-void StyleRuleContainer::SetConditionText(const ExecutingContext* execution_context, const std::string value) {
+void StyleRuleContainer::SetConditionText(const ExecutingContext* execution_context, const String value) {
   auto context = std::make_shared<CSSParserContext>(execution_context);
   ContainerQueryParser parser(*context);
 
@@ -801,7 +801,7 @@ void StyleRuleContainer::TraceAfterDispatch(GCVisitor* visitor) const {
 StyleRuleStartingStyle::StyleRuleStartingStyle(std::vector<std::shared_ptr<StyleRuleBase>> rules)
     : StyleRuleGroup(kStartingStyle, std::move(rules)) {}
 
-StyleRuleFunction::StyleRuleFunction(const std::string& name,
+StyleRuleFunction::StyleRuleFunction(const String& name,
                                      std::vector<StyleRuleFunction::Parameter> parameters,
                                      std::shared_ptr<CSSVariableData> function_body,
                                      StyleRuleFunction::Type return_type)
@@ -815,14 +815,14 @@ void StyleRuleFunction::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
-StyleRuleMixin::StyleRuleMixin(const std::string& name, std::shared_ptr<StyleRule> fake_parent_rule)
+StyleRuleMixin::StyleRuleMixin(const String& name, std::shared_ptr<StyleRule> fake_parent_rule)
     : StyleRuleBase(RuleType::kMixin), name_(std::move(name)), fake_parent_rule_(std::move(fake_parent_rule)) {}
 
 void StyleRuleMixin::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);
 }
 
-StyleRuleApplyMixin::StyleRuleApplyMixin(const std::string& name) : StyleRuleBase(kApplyMixin), name_(name) {}
+StyleRuleApplyMixin::StyleRuleApplyMixin(const String& name) : StyleRuleBase(kApplyMixin), name_(name) {}
 
 void StyleRuleApplyMixin::TraceAfterDispatch(GCVisitor* visitor) const {
   StyleRuleBase::TraceAfterDispatch(visitor);

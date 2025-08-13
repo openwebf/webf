@@ -41,9 +41,9 @@ CSSSupportsRule::CSSSupportsRule(std::shared_ptr<StyleRuleSupports> supports_rul
 
 CSSSupportsRule::~CSSSupportsRule() = default;
 
-std::string CSSSupportsRule::conditionText() const {
+String CSSSupportsRule::conditionText() const {
   if (!group_rule_)
-    return std::string();
+    return String();
 
   auto* supports_rule = To<StyleRuleSupports>(group_rule_.get());
   return supports_rule->ConditionText();

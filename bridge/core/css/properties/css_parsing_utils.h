@@ -244,7 +244,7 @@ typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_
 ConsumeDashedIdent(T& range, std::shared_ptr<const CSSParserContext>);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenStream&);
 std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange&); // Temporary for migration
-std::string ConsumeStringAsString(CSSParserTokenStream& stream, bool* is_string_null);
+String ConsumeStringAsString(CSSParserTokenStream& stream, bool* is_string_null);
 std::shared_ptr<cssvalue::CSSURIValue> ConsumeUrl(CSSParserTokenStream&,
                                                   std::shared_ptr<const CSSParserContext> context);
 
@@ -594,7 +594,7 @@ std::shared_ptr<const CSSValueList> ConsumeSpaceSeparatedList(Func callback,
   return list;
 }
 
-bool ParseGridTemplateAreasRow(const std::string& grid_row_names,
+bool ParseGridTemplateAreasRow(const String& grid_row_names,
                                NamedGridAreaMap& grid_area_map,
                                const size_t row_count,
                                size_t& column_count);
@@ -784,7 +784,7 @@ typename std::enable_if<std::is_same<T, CSSParserTokenStream>::value || std::is_
                         std::shared_ptr<const CSSValue>>::type
 ConsumeTimelineRangeNameAndPercent(T&, std::shared_ptr<const CSSParserContext> context);
 
-CSSValueID FontFormatToId(std::string);
+CSSValueID FontFormatToId(String);
 bool IsSupportedKeywordTech(CSSValueID keyword);
 bool IsSupportedKeywordFormat(CSSValueID keyword);
 

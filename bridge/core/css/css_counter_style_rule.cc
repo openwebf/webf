@@ -29,7 +29,7 @@ AtomicString CSSCounterStyleRule::name() const {
 
 void CSSCounterStyleRule::setName(const AtomicString& name) {
   if (counter_style_rule_) {
-    counter_style_rule_->SetName(name.GetString());
+    counter_style_rule_->SetName(name);
   }
 }
 
@@ -142,55 +142,55 @@ AtomicString CSSCounterStyleRule::cssText() const {
   result.Append(" { ");
   
   // Add each descriptor if present
-  if (!system().IsEmpty()) {
+  if (!system().empty()) {
     result.Append("system: ");
     result.Append(system().GetString());
     result.Append("; ");
   }
   
-  if (!symbols().IsEmpty()) {
+  if (!symbols().empty()) {
     result.Append("symbols: ");
     result.Append(symbols().GetString());
     result.Append("; ");
   }
   
-  if (!additiveSymbols().IsEmpty()) {
+  if (!additiveSymbols().empty()) {
     result.Append("additive-symbols: ");
     result.Append(additiveSymbols().GetString());
     result.Append("; ");
   }
   
-  if (!range().IsEmpty()) {
+  if (!range().empty()) {
     result.Append("range: ");
     result.Append(range().GetString());
     result.Append("; ");
   }
   
-  if (!prefix().IsEmpty()) {
+  if (!prefix().empty()) {
     result.Append("prefix: ");
     result.Append(prefix().GetString());
     result.Append("; ");
   }
   
-  if (!suffix().IsEmpty()) {
+  if (!suffix().empty()) {
     result.Append("suffix: ");
     result.Append(suffix().GetString());
     result.Append("; ");
   }
   
-  if (!pad().IsEmpty()) {
+  if (!pad().empty()) {
     result.Append("pad: ");
     result.Append(pad().GetString());
     result.Append("; ");
   }
   
-  if (!speakAs().IsEmpty()) {
+  if (!speakAs().empty()) {
     result.Append("speak-as: ");
     result.Append(speakAs().GetString());
     result.Append("; ");
   }
   
-  if (!fallback().IsEmpty()) {
+  if (!fallback().empty()) {
     result.Append("fallback: ");
     result.Append(fallback().GetString());
     result.Append("; ");

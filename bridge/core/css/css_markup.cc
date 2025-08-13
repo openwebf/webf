@@ -18,7 +18,7 @@ static bool IsCSSTokenizerIdentifier(const StringView& string) {
     return false;
   }
 
-  const char* chars = string.Characters8();
+  const LChar* chars = string.Characters8();
   const auto* end = chars + length;
 
   // -?
@@ -42,14 +42,11 @@ static bool IsCSSTokenizerIdentifier(const StringView& string) {
   return true;
 }
 
-static void SerializeCharacterAsCodePoint(int32_t c, StringBuilder& append_to) {
-  char s[10];
-  snprintf(s, 10, "\\%x ", c);
-
-  append_to.Append(s);
+static void SerializeCharacterAsCodePoint(UChar32 c, StringBuilder& append_to) {
+  append_to.AppendFormat("\\%x ", c);
 }
 
-static void SerializeCharacter(int32_t c, StringBuilder& append_to) {
+static void SerializeCharacter(UChar32 c, StringBuilder& append_to) {
   append_to.Append('\\');
   append_to.Append(c);
 }
@@ -61,15 +58,15 @@ static void SerializeCharacter(int32_t c, StringBuilder& append_to) {
  * @return 1 or 2
  * @stable ICU 2.4
  */
-#define U16_LENGTH(c) ((uint32_t)(c) <= 0xffff ? 1 : 2)
+// U16_LENGTH is already defined in unicode/utf16.h
 
-void SerializeIdentifier(const std::string_view& identifier, StringBuilder& append_to, bool skip_start_checks) {
+void SerializeIdentifier(const String& identifier, StringBuilder& append_to, bool skip_start_checks) {
   bool is_first = !skip_start_checks;
   bool is_second = false;
   bool is_first_char_hyphen = false;
   unsigned index = 0;
   while (index < identifier.length()) {
-    uint8_t c = identifier.at(index);
+    UChar32 c = identifier.CharacterStartingAt(index);
     if (c == 0) {
       // Check for lone surrogate which characterStartingAt does not return.
       c = identifier[index];
@@ -78,7 +75,7 @@ void SerializeIdentifier(const std::string_view& identifier, StringBuilder& appe
     index += U16_LENGTH(c);
 
     if (c == 0) {
-      append_to.Append(0xfffd);
+      append_to.Append(static_cast<UChar32>(0xfffd));
     } else if (c <= 0x1f || c == 0x7f ||
                (0x30 <= c && c <= 0x39 && (is_first || (is_second && is_first_char_hyphen)))) {
       SerializeCharacterAsCodePoint(c, append_to);
@@ -101,12 +98,12 @@ void SerializeIdentifier(const std::string_view& identifier, StringBuilder& appe
   }
 }
 
-void SerializeString(const std::string_view& string, StringBuilder& append_to) {
+void SerializeString(const String& string, StringBuilder& append_to) {
   append_to.Append('\"');
 
   unsigned index = 0;
   while (index < string.length()) {
-    uint8_t c = string.at(index);
+    UChar32 c = string.CharacterStartingAt(index);
     index += U16_LENGTH(c);
 
     if (c <= 0x1f || c == 0x7f) {
@@ -121,24 +118,30 @@ void SerializeString(const std::string_view& string, StringBuilder& append_to) {
   append_to.Append('\"');
 }
 
-std::string SerializeString(const std::string& string) {
+String SerializeString(const String& string) {
   StringBuilder builder;
   SerializeString(string, builder);
   return builder.ReleaseString();
 }
 
-std::string SerializeURI(const std::string& string) {
-  return "url(" + SerializeString(string) + ")";
+String SerializeURI(const String& string) {
+  StringBuilder builder;
+  builder.Append("url(");
+  builder.Append(SerializeString(string));
+  builder.Append(")");
+  return builder.ReleaseString();
 }
 
-std::string SerializeFontFamily(const std::string& string) {
+String SerializeFontFamily(const AtomicString& string) {
   // Some <font-family> values are serialized without quotes.
   // See https://github.com/w3c/csswg-drafts/issues/5846
-  return (css_parsing_utils::IsCSSWideKeyword(string) || css_parsing_utils::IsDefaultKeyword(string) ||
+  String str = string.GetString();
+  std::string std_str = str.StdUtf8();
+  return (css_parsing_utils::IsCSSWideKeyword(StringView(str)) || css_parsing_utils::IsDefaultKeyword(std_str) ||
           FontFamily::InferredTypeFor(string) == FontFamily::Type::kGenericFamily ||
-          !IsCSSTokenizerIdentifier(StringView(string)))
-             ? SerializeString(string)
-             : string;
+          !IsCSSTokenizerIdentifier(StringView(str)))
+             ? SerializeString(str)
+             : str;
 }
 
 }  // namespace webf

@@ -84,7 +84,7 @@ StyleElement::ProcessingResult StyleElement::Process(Element& element) {
   if (!element.isConnected()) {
     return kProcessingSuccessful;
   }
-  std::string content = element.innerHTML();
+  String content = element.innerHTML();
   return CreateSheet(element, content);
 }
 
@@ -93,7 +93,7 @@ void StyleElement::ClearSheet(Element& owner_element) {
   sheet_.Release()->ClearOwnerNode();
 }
 
-StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const std::string& text) {
+StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const String& text) {
   assert(element.isConnected());
   assert(IsSameObject(element));
   Document& document = element.GetDocument();

@@ -30,7 +30,7 @@ class Text : public CharacterData {
   const TextNodePublicMethods* textNodePublicMethods();
 
  private:
-  std::string nodeName() const override;
+  String nodeName() const override;
   Node* Clone(Document&, CloneChildrenFlag) const override;
 };
 

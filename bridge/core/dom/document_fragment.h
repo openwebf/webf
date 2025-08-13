@@ -29,7 +29,7 @@ class DocumentFragment : public ContainerNode {
   const DocumentFragmentPublicMethods* documentFragmentPublicMethods();
 
  protected:
-  std::string nodeName() const final;
+  String nodeName() const final;
 
  private:
   NodeType nodeType() const final;

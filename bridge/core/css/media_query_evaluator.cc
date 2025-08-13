@@ -802,7 +802,7 @@ void MediaQueryEvaluator::Init() {
   // Create the table.
   g_function_map = new FunctionMap;
 #define ADD_TO_FUNCTIONMAP(constantPrefix, methodPrefix) \
-  g_function_map->insert(std::make_pair(constantPrefix, methodPrefix##MediaFeatureEval));
+  g_function_map->insert(std::make_pair(constantPrefix.Impl().get(), methodPrefix##MediaFeatureEval));
   CSS_MEDIAQUERY_NAMES_FOR_EACH_MEDIAFEATURE(ADD_TO_FUNCTIONMAP);
 #undef ADD_TO_FUNCTIONMAP
 }
@@ -838,11 +838,12 @@ KleeneValue MediaQueryEvaluator::EvalFeature(const MediaQueryFeatureExpNode& fea
 
   // Call the media feature evaluation function. Assume no prefix and let
   // trampoline functions override the prefix if prefix is used.
-  EvalFunc func = g_function_map->at(feature.Name());
-
-  if (!func) {
+  auto it = g_function_map->find(feature.Name().Impl().get());
+  if (it == g_function_map->end()) {
     return KleeneValue::kFalse;
   }
+  
+  EvalFunc func = it->second;
 
   const auto& bounds = feature.Bounds();
 

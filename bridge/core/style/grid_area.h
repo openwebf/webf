@@ -37,6 +37,7 @@
 #include <unordered_map>
 #include "core/platform/math_extras.h"
 #include "core/style/grid_enums.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -233,7 +234,13 @@ struct GridArea {
   GridSpan rows;
 };
 
-typedef std::unordered_map<std::string, GridArea> NamedGridAreaMap;
+struct StringHash {
+  size_t operator()(const String& s) const { 
+    return s.Impl() ? s.Impl()->GetHash() : 0;
+  }
+};
+
+typedef std::unordered_map<String, GridArea, StringHash> NamedGridAreaMap;
 
 }  // namespace webf
 

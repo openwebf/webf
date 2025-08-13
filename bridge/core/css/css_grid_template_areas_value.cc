@@ -45,7 +45,7 @@ CSSGridTemplateAreasValue::CSSGridTemplateAreasValue(const NamedGridAreaMap& gri
   DCHECK(column_count_);
 }
 
-static std::string StringForPosition(const NamedGridAreaMap& grid_area_map, size_t row, size_t column) {
+static String StringForPosition(const NamedGridAreaMap& grid_area_map, size_t row, size_t column) {
   for (const auto& item : grid_area_map) {
     const GridArea& area = item.second;
     if (row >= area.rows.StartLine() && row < area.rows.EndLine() && column >= area.columns.StartLine() &&

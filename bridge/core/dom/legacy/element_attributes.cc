@@ -113,21 +113,26 @@ void ElementAttributes::CopyWith(ElementAttributes* attributes) {
   }
 }
 
-std::string ElementAttributes::ToString() {
-  std::string s;
+String ElementAttributes::ToString() {
+  StringBuilder builder;
   bool first = true;
 
   for (auto& attr : attributes_) {
     if (!first) {
-      s += " ";
+      builder.Append(" ");
     }
-    s += attr.first.ToUTF8String() + "=";
+    builder.Append(attr.first);
+    builder.Append("=");
 
     if (attr.first != html_names::kStyleAttr) {
-      s += "\"" + attr.second.ToUTF8String() + "\"";
+      builder.Append("\"");
+      builder.Append(attr.second);
+      builder.Append("\"");
     } else {
       if (element_ != nullptr && element_->style() != nullptr) {
-        s += "\"" + element_->style()->ToString() +  "\"";
+        builder.Append("\"");
+        builder.Append(element_->style()->ToString());
+        builder.Append("\"");
       } else {
         WEBF_LOG(WARN) << "Style not available inside ElementAttributes::ToString()";
       }
@@ -135,7 +140,7 @@ std::string ElementAttributes::ToString() {
     first = false;
   }
 
-  return s;
+  return builder.ReleaseString();
 }
 
 bool ElementAttributes::IsEquivalent(const ElementAttributes& other) const {

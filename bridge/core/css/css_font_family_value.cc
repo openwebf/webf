@@ -11,18 +11,19 @@
 
 namespace webf {
 
-std::shared_ptr<CSSFontFamilyValue> CSSFontFamilyValue::Create(const std::string& family_name) {
+std::shared_ptr<CSSFontFamilyValue> CSSFontFamilyValue::Create(const AtomicString& family_name) {
   CSSValuePool::FontFamilyValueCache font_family_cache_ = CssValuePool().GetFontFamilyCache();
-  auto it = font_family_cache_.find(family_name);
+  String family_name_string = family_name.GetString();
+  auto it = font_family_cache_.find(family_name_string);
   if (it != font_family_cache_.end()) {
     return it->second;
   }
   auto new_value = std::make_shared<CSSFontFamilyValue>(family_name);
-  font_family_cache_[family_name] = new_value;
+  font_family_cache_[family_name_string] = new_value;
   return new_value;
 }
 
-CSSFontFamilyValue::CSSFontFamilyValue(const std::string& str) : CSSValue(kFontFamilyClass), string_(str) {}
+CSSFontFamilyValue::CSSFontFamilyValue(const AtomicString& str) : CSSValue(kFontFamilyClass), string_(str) {}
 
 String CSSFontFamilyValue::CustomCSSText() const {
   return SerializeFontFamily(string_);

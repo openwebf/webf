@@ -7,7 +7,7 @@
 
 namespace webf {
 
-CSSImageSetTypeValue::CSSImageSetTypeValue(const std::string& type) : CSSValue(kImageSetTypeClass), type_(type) {}
+CSSImageSetTypeValue::CSSImageSetTypeValue(const String& type) : CSSValue(kImageSetTypeClass), type_(type) {}
 
 CSSImageSetTypeValue::~CSSImageSetTypeValue() = default;
 

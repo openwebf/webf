@@ -1256,7 +1256,7 @@ std::string CSSSelector::SelectorText() const {
   return "";
 }
 
-std::string CSSSelector::SimpleSelectorTextForDebug() const {
+String CSSSelector::SimpleSelectorTextForDebug() const {
   StringBuilder builder;
   if ((Match() == kTag || Match() == kUniversalTag) && !IsImplicit()) {
     SerializeNamespacePrefixIfNeeded(TagQName().Prefix(), g_star_atom, builder, IsAttributeSelector());
@@ -1510,7 +1510,7 @@ bool CSSSelector::FollowsSlotted() const {
   return previous->GetPseudoType() == kPseudoSlotted;
 }
 
-std::string CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
+String CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
   for (const auto& s : kPseudoTypeWithoutArgumentsMap) {
     if (s.type == type) {
       return s.string;
@@ -1523,7 +1523,7 @@ std::string CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
   }
   StringBuilder builder;
   builder.Append("pseudo-");
-  builder.Append(static_cast<int>(type));
+  builder.AppendNumber(static_cast<int>(type));
   return builder.ReleaseString();
 }
 

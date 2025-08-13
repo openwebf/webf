@@ -45,55 +45,55 @@ class StylePropertySerializer {
  public:
   explicit StylePropertySerializer(std::shared_ptr<const CSSPropertyValueSet>);
 
-  std::string AsText() const;
-  std::string SerializeShorthand(CSSPropertyID) const;
+  String AsText() const;
+  String SerializeShorthand(CSSPropertyID) const;
 
  private:
-  std::string GetCommonValue(const StylePropertyShorthand&) const;
-  std::string BorderPropertyValue(const StylePropertyShorthand&,
+  String GetCommonValue(const StylePropertyShorthand&) const;
+  String BorderPropertyValue(const StylePropertyShorthand&,
                                   const StylePropertyShorthand&,
                                   const StylePropertyShorthand&) const;
-  std::string BorderImagePropertyValue() const;
-  std::string BorderRadiusValue() const;
-  std::string GetLayeredShorthandValue(const StylePropertyShorthand&) const;
-  std::string Get2Values(const StylePropertyShorthand&) const;
-  std::string Get4Values(const StylePropertyShorthand&) const;
-  std::string PageBreakPropertyValue(const StylePropertyShorthand&) const;
-  std::string GetShorthandValue(const StylePropertyShorthand&, std::string separator = " ") const;
-  std::string GetShorthandValueForColumnRule(const StylePropertyShorthand&) const;
-  std::string GetShorthandValueForColumns(const StylePropertyShorthand&) const;
+  String BorderImagePropertyValue() const;
+  String BorderRadiusValue() const;
+  String GetLayeredShorthandValue(const StylePropertyShorthand&) const;
+  String Get2Values(const StylePropertyShorthand&) const;
+  String Get4Values(const StylePropertyShorthand&) const;
+  String PageBreakPropertyValue(const StylePropertyShorthand&) const;
+  String GetShorthandValue(const StylePropertyShorthand&, String separator = " ") const;
+  String GetShorthandValueForColumnRule(const StylePropertyShorthand&) const;
+  String GetShorthandValueForColumns(const StylePropertyShorthand&) const;
   // foo || bar || ... || baz
   // https://drafts.csswg.org/css-values-4/#component-combinators
-  std::string GetShorthandValueForDoubleBarCombinator(const StylePropertyShorthand&) const;
-  std::string GetShorthandValueForGrid(const StylePropertyShorthand&) const;
-  std::string GetShorthandValueForGridArea(const StylePropertyShorthand&) const;
-  std::string GetShorthandValueForGridLine(const StylePropertyShorthand&) const;
-  //  std::string GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
-  std::string ContainerValue() const;
-  std::string TimelineValue(const StylePropertyShorthand&) const;
-  //  std::string AnimationRangeShorthandValue() const;
-  std::string FontValue() const;
-  std::string FontSynthesisValue() const;
-  std::string FontVariantValue() const;
+  String GetShorthandValueForDoubleBarCombinator(const StylePropertyShorthand&) const;
+  String GetShorthandValueForGrid(const StylePropertyShorthand&) const;
+  String GetShorthandValueForGridArea(const StylePropertyShorthand&) const;
+  String GetShorthandValueForGridLine(const StylePropertyShorthand&) const;
+  //  String GetShorthandValueForGridTemplate(const StylePropertyShorthand&) const;
+  String ContainerValue() const;
+  String TimelineValue(const StylePropertyShorthand&) const;
+  //  String AnimationRangeShorthandValue() const;
+  String FontValue() const;
+  String FontSynthesisValue() const;
+  String FontVariantValue() const;
   bool AppendFontLonghandValueIfNotNormal(const CSSProperty&, StringBuilder& result) const;
-  std::string OffsetValue() const;
-  std::string TextDecorationValue() const;
-  //  std::string WhiteSpaceValue() const;
-  std::string GetPropertyText(const CSSPropertyName&,
-                              const std::string& value,
+  String OffsetValue() const;
+  String TextDecorationValue() const;
+  //  String WhiteSpaceValue() const;
+  String GetPropertyText(const CSSPropertyName&,
+                              const String& value,
                               bool is_important,
                               bool is_not_first_decl) const;
   bool IsPropertyShorthandAvailable(const StylePropertyShorthand&) const;
   bool ShorthandHasOnlyInitialOrInheritedValue(const StylePropertyShorthand&) const;
-  void AppendBackgroundPropertyAsText(std::string& result, unsigned& num_decls) const;
+  void AppendBackgroundPropertyAsText(String& result, unsigned& num_decls) const;
 
   // This function does checks common to all shorthands, and returns:
   // - The serialization if the shorthand serializes as a css-wide keyword.
   // - An empty string if either some longhands are not set, the important
   // flag is not set consistently, or css-wide keywords are used. In these
   // cases serialization will always fail.
-  // - A null std::string otherwise.
-  std::string CommonShorthandChecks(const StylePropertyShorthand&, bool* is_check_success) const;
+  // - A null String otherwise.
+  String CommonShorthandChecks(const StylePropertyShorthand&, bool* is_check_success) const;
 
   // Only StylePropertySerializer uses the following two classes.
   class PropertyValueForSerializer {
@@ -120,7 +120,7 @@ class StylePropertySerializer {
     bool is_important_;
   };
 
-  std::string GetCustomPropertyText(const PropertyValueForSerializer&, bool is_not_first_decl) const;
+  String GetCustomPropertyText(const PropertyValueForSerializer&, bool is_not_first_decl) const;
 
   class CSSPropertyValueSetForSerializer final {
     WEBF_DISALLOW_NEW();

@@ -73,17 +73,17 @@ DEFINE_GLOBAL(AtomicString, g_past);
 DEFINE_GLOBAL(AtomicString, g_unresolved);
 
 void Init() {
-  new ((void*)&g_active) AtomicString(":active");
-  new ((void*)&g_active_view_transition) AtomicString(":active_view_transition");
-  new ((void*)&g_active_view_transition_type) AtomicString(":active_view_transition_type");
-  new ((void*)&g_disabled) AtomicString(":disabled");
-  new ((void*)&g_drag) AtomicString(":-webkit-drag");
-  new ((void*)&g_focus) AtomicString(":focus");
-  new ((void*)&g_focus_visible) AtomicString(":focus-visible");
-  new ((void*)&g_focus_within) AtomicString(":focus-within");
-  new ((void*)&g_hover) AtomicString(":hover");
-  new ((void*)&g_past) AtomicString(":past");
-  new ((void*)&g_unresolved) AtomicString(":unresolved");
+  new ((void*)&g_active) AtomicString(AtomicString::CreateFromUTF8(":active"));
+  new ((void*)&g_active_view_transition) AtomicString(AtomicString::CreateFromUTF8(":active_view_transition"));
+  new ((void*)&g_active_view_transition_type) AtomicString(AtomicString::CreateFromUTF8(":active_view_transition_type"));
+  new ((void*)&g_disabled) AtomicString(AtomicString::CreateFromUTF8(":disabled"));
+  new ((void*)&g_drag) AtomicString(AtomicString::CreateFromUTF8(":-webkit-drag"));
+  new ((void*)&g_focus) AtomicString(AtomicString::CreateFromUTF8(":focus"));
+  new ((void*)&g_focus_visible) AtomicString(AtomicString::CreateFromUTF8(":focus-visible"));
+  new ((void*)&g_focus_within) AtomicString(AtomicString::CreateFromUTF8(":focus-within"));
+  new ((void*)&g_hover) AtomicString(AtomicString::CreateFromUTF8(":hover"));
+  new ((void*)&g_past) AtomicString(AtomicString::CreateFromUTF8(":past"));
+  new ((void*)&g_unresolved) AtomicString(AtomicString::CreateFromUTF8(":unresolved"));
 }
 
 }  // namespace style_change_extra_data

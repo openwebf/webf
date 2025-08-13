@@ -60,21 +60,21 @@ CascadeLayer* CascadeLayer::GetOrAddSubLayer(
 }
 
 std::string CascadeLayer::ToStringForTesting() const {
-  std::string result;
-  ToStringInternal(result, "");
-  return result;
+  String result;
+  ToStringInternal(result, String(""));
+  return result.StdUtf8();
 }
 
-void CascadeLayer::ToStringInternal(std::string& result,
-                                   const std::string& prefix) const {
+void CascadeLayer::ToStringInternal(String& result,
+                                   const String& prefix) const {
   for (const auto& sub_layer : direct_sub_layers_) {
-    std::string name = sub_layer->name_.IsNull() ? "(anonymous)" : sub_layer->name_.GetString();
-    if (!result.empty()) {
-      result.append(",");
+    String name = sub_layer->name_.IsNull() ? String("(anonymous)") : sub_layer->name_.GetString();
+    if (!result.IsEmpty()) {
+      result = result + String(",");
     }
-    result.append(prefix);
-    result.append(name);
-    sub_layer->ToStringInternal(result, prefix + name + ".");
+    result = result + prefix;
+    result = result + name;
+    sub_layer->ToStringInternal(result, prefix + name + String("."));
   }
 }
 

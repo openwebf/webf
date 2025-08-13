@@ -77,7 +77,7 @@ static inline bool IsSimpleLengthPropertyID(CSSPropertyID property_id, bool& acc
   return properties.Has(property_id);
 }
 
-inline static bool ParseSimpleLength(const uint8_t* characters,
+inline static bool ParseSimpleLength(const LChar* characters,
                                      unsigned length,
                                      CSSPrimitiveValue::UnitType& unit,
                                      double& number) {
@@ -100,7 +100,7 @@ inline static bool ParseSimpleLength(const uint8_t* characters,
 }
 
 static std::shared_ptr<const CSSValue> ParseSimpleLengthValue(CSSPropertyID property_id,
-                                                              const String& string,
+                                                              StringView string,
                                                               CSSParserMode css_parser_mode) {
   DCHECK(!string.IsEmpty());
   bool accepts_negative_numbers = false;
@@ -113,7 +113,7 @@ static std::shared_ptr<const CSSValue> ParseSimpleLengthValue(CSSPropertyID prop
   CSSPrimitiveValue::UnitType unit = CSSPrimitiveValue::UnitType::kNumber;
 
   const bool parsed_simple_length =
-      ParseSimpleLength(reinterpret_cast<const uint8_t*>(string.c_str()), string.length(), unit, number);
+      ParseSimpleLength(string.Characters8(), string.length(), unit, number);
   if (!parsed_simple_length) {
     return nullptr;
   }
@@ -983,13 +983,13 @@ static bool FastParseColorInternal(Color& color, const uint8_t* characters, unsi
 // `kKeyword` is returned. If the string identifies a color, then `out_color`
 // is set and `kColor` is returned.
 static ParseColorResult ParseColor(CSSPropertyID property_id,
-                                   const std::string& string,
+                                   StringView string,
                                    CSSParserMode parser_mode,
                                    Color& out_color,
                                    CSSValueID& out_color_keyword) {
   DCHECK(!string.IsEmpty());
   DCHECK(IsColorPropertyID(property_id));
-  CSSValueID value_id = CssValueKeywordID(StringView(string.c_str(), string.length()));
+  CSSValueID value_id = CssValueKeywordID(string);
   if (StyleColor::IsColorKeyword(value_id)) {
     if (!isValueAllowedInMode(value_id, parser_mode)) {
       return ParseColorResult::kFailure;
@@ -1004,13 +1004,13 @@ static ParseColorResult ParseColor(CSSPropertyID property_id,
   // Note that ParseColor may be called from external contexts,
   // i.e., when parsing style sheets, so we need the Unicode path here.
   const bool parsed =
-      FastParseColorInternal(out_color, reinterpret_cast<const uint8_t*>(string.c_str()), string.length(), quirks_mode);
+      FastParseColorInternal(out_color, string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length(), quirks_mode);
   return parsed ? ParseColorResult::kColor : ParseColorResult::kFailure;
 }
 
 ParseColorResult CSSParserFastPaths::ParseColor(const String& string, CSSParserMode parser_mode, Color& color) {
   CSSValueID color_id;
-  return webf::ParseColor(CSSPropertyID::kColor, string.ToStdString(), parser_mode, color, color_id);
+  return webf::ParseColor(CSSPropertyID::kColor, StringView(string), parser_mode, color, color_id);
 }
 
 bool CSSParserFastPaths::IsValidKeywordPropertyAndValue(CSSPropertyID property_id,
@@ -1380,12 +1380,12 @@ static inline std::shared_ptr<const CSSValue> ParseCSSWideKeywordValue(const uin
 }
 
 static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_id,
-                                                         const std::string& string,
+                                                         StringView string,
                                                          std::shared_ptr<const CSSParserContext> context) {
   DCHECK(!string.IsEmpty());
 
   std::shared_ptr<const CSSValue> css_wide_keyword =
-      ParseCSSWideKeywordValue(reinterpret_cast<const uint8_t*>(string.c_str()), string.length());
+      ParseCSSWideKeywordValue(string.Is8Bit() ? string.Characters8() : reinterpret_cast<const uint8_t*>(string.Characters16()), string.length());
 
   if (!CSSParserFastPaths::IsHandledByKeywordFastPath(property_id)) {
     // This isn't a property we have a fast path for, but even
@@ -1415,7 +1415,7 @@ static std::shared_ptr<const CSSValue> ParseKeywordValue(CSSPropertyID property_
     return css_wide_keyword;
   }
 
-  CSSValueID value_id = CssValueKeywordID(StringView(string.c_str(), string.length()));
+  CSSValueID value_id = CssValueKeywordID(string);
 
   if (!IsValidCSSValueID(value_id)) {
     return nullptr;
@@ -1650,14 +1650,14 @@ static bool TransformCanLikelyUseFastPath(const uint8_t* chars, unsigned length)
   return i == length;
 }
 
-static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID property_id, const std::string& string) {
+static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID property_id, StringView string) {
   DCHECK(!string.IsEmpty());
 
   if (property_id != CSSPropertyID::kTransform) {
     return nullptr;
   }
 
-  const uint8_t* pos = reinterpret_cast<const uint8_t*>(string.c_str());
+  const uint8_t* pos = reinterpret_cast<const uint8_t*>(string.data());
   unsigned length = string.length();
   if (!TransformCanLikelyUseFastPath(pos, length)) {
     return nullptr;
@@ -1684,7 +1684,7 @@ static std::shared_ptr<const CSSValue> ParseSimpleTransform(CSSPropertyID proper
 }
 
 std::shared_ptr<const CSSValue> CSSParserFastPaths::MaybeParseValue(CSSPropertyID property_id,
-                                                                    const String& string,
+                                                                    StringView string,
                                                                     std::shared_ptr<const CSSParserContext> context) {
   if (auto length = ParseSimpleLengthValue(property_id, string, context->Mode())) {
     return length;
@@ -1692,7 +1692,7 @@ std::shared_ptr<const CSSValue> CSSParserFastPaths::MaybeParseValue(CSSPropertyI
   if (IsColorPropertyID(property_id)) {
     Color color;
     CSSValueID color_id;
-    switch (webf::ParseColor(property_id, string, context->Mode(), color, color_id)) {
+    switch (webf::ParseColor(property_id, StringView(string), context->Mode(), color, color_id)) {
       case ParseColorResult::kFailure:
         break;
       case ParseColorResult::kKeyword:
@@ -1701,10 +1701,10 @@ std::shared_ptr<const CSSValue> CSSParserFastPaths::MaybeParseValue(CSSPropertyI
         return cssvalue::CSSColor::Create(color);
     }
   }
-  if (auto keyword = ParseKeywordValue(property_id, string, context)) {
+  if (auto keyword = ParseKeywordValue(property_id, StringView(string), context)) {
     return keyword;
   }
-  if (auto transform = ParseSimpleTransform(property_id, string)) {
+  if (auto transform = ParseSimpleTransform(property_id, StringView(string))) {
     return transform;
   }
   return nullptr;

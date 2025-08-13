@@ -21,7 +21,7 @@ class CSSLayerBlockRule final : public CSSGroupingRule {
   CSSLayerBlockRule(std::shared_ptr<StyleRuleLayerBlock>, CSSStyleSheet*);
   ~CSSLayerBlockRule() override;
 
-  std::string name() const;
+  String name() const;
 
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
   AtomicString cssText() const override;

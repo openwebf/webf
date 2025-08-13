@@ -156,8 +156,8 @@ class Element : public ContainerNode {
   void StyleAttributeChanged(const AtomicString& new_style_string, AttributeModificationReason modification_reason);
   void SetInlineStyleFromString(const AtomicString&);
 
-  std::string outerHTML();
-  std::string innerHTML();
+  String outerHTML();
+  String innerHTML();
   AtomicString TextFromChildren();
   void setInnerHTML(const AtomicString& value, ExceptionState& exception_state);
 
@@ -171,7 +171,7 @@ class Element : public ContainerNode {
   AtomicString prefix() const { return prefix_; }
   AtomicString localName() const { return local_name_; }
   AtomicString namespaceURI() const { return namespace_uri_; }
-  std::string nodeName() const override;
+  String nodeName() const override;
 
   AtomicString className() const;
   void setClassName(const AtomicString& value, ExceptionState& exception_state);

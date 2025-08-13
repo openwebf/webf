@@ -107,7 +107,7 @@ std::shared_ptr<const CSSValue> ConsumeFontMetricOverride(CSSParserTokenStream& 
 
 
 
-bool IsSupportedFontFormat(std::string font_format) {
+bool IsSupportedFontFormat(const String& font_format) {
   return css_parsing_utils::IsSupportedKeywordFormat(css_parsing_utils::FontFormatToId(font_format));
 }
 
@@ -153,18 +153,18 @@ std::shared_ptr<const CSSValue> ConsumeFontFaceSrcURI(CSSParserTokenStream& stre
       return nullptr;
     }
 
-    std::string sanitized_format;
+    String sanitized_format;
 
     if (peek_type == kIdentToken) {
       std::shared_ptr<const CSSIdentifierValue> font_format = css_parsing_utils::ConsumeFontFormatIdent(stream);
       if (!font_format) {
         return nullptr;
       }
-      sanitized_format = font_format->CssText().StdUtf8();
+      sanitized_format = font_format->CssText();
     }
 
     if (peek_type == kStringToken) {
-      sanitized_format = css_parsing_utils::ConsumeString(stream)->Value().StdUtf8();
+      sanitized_format = css_parsing_utils::ConsumeString(stream)->Value();
     }
 
     if (IsSupportedFontFormat(sanitized_format)) {
@@ -372,7 +372,7 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtPropertyDescripto
   std::shared_ptr<const CSSValue> parsed_value = nullptr;
   
   // Create a stream from the tokenized value
-  CSSTokenizer tokenizer(std::string(tokenized_value.text));
+  CSSTokenizer tokenizer(tokenized_value.text);
   CSSParserTokenStream stream(tokenizer);
   
   switch (id) {
@@ -418,7 +418,7 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtViewTransitionDes
           return nullptr;
         }
         std::shared_ptr<const CSSCustomIdentValue> ident = css_parsing_utils::ConsumeCustomIdent(stream, context);
-        if (!ident || base::StartsWith(ident->Value(), "-ua-")) {
+        if (!ident || ident->Value().StartsWith(AtomicString::CreateFromUTF8("-ua-"))) {
           return nullptr;
         }
         types->Append(ident);

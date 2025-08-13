@@ -77,7 +77,7 @@ std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(CSSParserTok
   // Create empty offsets for now - proper offset tracking will be added when fully migrated to streams
   std::vector<size_t> dummy_offsets(range.end() - range.begin() + 1, 0);
   CSSParserTokenOffsets offsets(tcb::span<const CSSParserToken>(range.begin(), range.end()), 
-                                std::move(dummy_offsets), "");
+                                std::move(dummy_offsets), StringView());
   return MediaQueryParser(kMediaQuerySetParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
 }
 
@@ -101,7 +101,7 @@ std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaCondition(CSSParserTo
   // Create empty offsets for now - proper offset tracking will be added when fully migrated to streams
   std::vector<size_t> dummy_offsets(range.end() - range.begin() + 1, 0);
   CSSParserTokenOffsets offsets(tcb::span<const CSSParserToken>(range.begin(), range.end()), 
-                                std::move(dummy_offsets), "");
+                                std::move(dummy_offsets), StringView());
   return MediaQueryParser(kMediaConditionParser, kHTMLStandardMode, execution_context).ParseImpl(range, offsets);
 }
 
@@ -364,7 +364,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ParseNameValueCompari
   }
 
   auto value =
-      MediaQueryExpValue::Consume(feature_name, rhs, offsets, std::make_shared<CSSParserContext>(kHTMLStandardMode));
+      MediaQueryExpValue::Consume(feature_name.GetString(), rhs, offsets, std::make_shared<CSSParserContext>(kHTMLStandardMode));
 
   if (!value || !rhs.AtEnd()) {
     return nullptr;
@@ -483,14 +483,14 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(CSSPar
     return nullptr;
   }
 
-  auto left_value = MediaQueryExpValue::Consume(feature_name, segment1, offsets,
+  auto left_value = MediaQueryExpValue::Consume(feature_name.GetString(), segment1, offsets,
                                                 std::make_shared<CSSParserContext>(kHTMLStandardMode));
   if (!left_value || !segment1.AtEnd()) {
     return nullptr;
   }
 
   CSSParserTokenRange& segment3 = range;
-  auto right_value = MediaQueryExpValue::Consume(feature_name, segment3, offsets,
+  auto right_value = MediaQueryExpValue::Consume(feature_name.GetString(), segment3, offsets,
                                                  std::make_shared<CSSParserContext>(kHTMLStandardMode));
   if (!right_value || !segment3.AtEnd()) {
     return nullptr;
@@ -533,7 +533,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(CSSPar
     stream.ConsumeIncludingWhitespace();
   }
   
-  if (tokens.IsEmpty()) {
+  if (tokens.empty()) {
     return nullptr;
   }
   
@@ -543,7 +543,7 @@ std::shared_ptr<const MediaQueryExpNode> MediaQueryParser::ConsumeFeature(CSSPar
   // Create range and parse
   CSSParserTokenRange range(tokens);
   CSSParserTokenOffsets offsets(tcb::span<const CSSParserToken>(tokens.data(), tokens.size()),
-                                std::move(offsets_vec), "");
+                                std::move(offsets_vec), StringView());
   
   auto result = ConsumeFeature(range, offsets, feature_set);
   

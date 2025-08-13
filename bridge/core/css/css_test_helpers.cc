@@ -52,7 +52,7 @@ std::shared_ptr<CSSVariableData> CreateVariableData(std::string s) {
 }
 
 std::shared_ptr<const CSSValue> CreateCustomIdent(const char* s) {
-  return std::make_shared<CSSCustomIdentValue>(std::string(s));
+  return std::make_shared<CSSCustomIdentValue>(AtomicString::CreateFromUTF8(s));
 }
 
 std::shared_ptr<const CSSValue> ParseLonghand(Document& document,

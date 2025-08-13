@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "core/css/css_ratio_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 namespace cssvalue {
@@ -11,11 +12,11 @@ CSSRatioValue::CSSRatioValue(const CSSPrimitiveValue& first, const CSSPrimitiveV
     : CSSValue(kRatioClass), first_(&first), second_(&second) {}
 
 String CSSRatioValue::CustomCSSText() const {
-  std::string builder;
-  builder.append(first_->CssText());
-  builder.append(" / ");
-  builder.append(second_->CssText());
-  return builder;
+  StringBuilder builder;
+  builder.Append(first_->CssText());
+  builder.Append(" / ");
+  builder.Append(second_->CssText());
+  return builder.ReleaseString();
 }
 
 bool CSSRatioValue::Equals(const CSSRatioValue& other) const {

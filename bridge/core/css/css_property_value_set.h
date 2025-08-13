@@ -96,15 +96,15 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   template <typename T>  // CSSPropertyID or std::string
   const std::shared_ptr<const CSSValue>* GetPropertyCSSValue(const T& property) const;
 
-  template <typename T>  // CSSPropertyID or std::string
-  std::string GetPropertyValue(const T& property) const;
+  template <typename T>  // CSSPropertyID or AtomicString
+  String GetPropertyValue(const T& property) const;
 
   template <typename T>  // CSSPropertyID or std::string
   bool PropertyIsImportant(const T& property) const;
 
   const std::shared_ptr<const CSSValue>* GetPropertyCSSValueWithHint(const AtomicString& property_name,
                                                                      unsigned index) const;
-  std::string GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) const;
+  String GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) const;
   bool PropertyIsImportantWithHint(const AtomicString& property_name, unsigned index) const;
 
   bool ShorthandIsImportant(CSSPropertyID) const;
@@ -124,7 +124,7 @@ class CSSPropertyValueSet : public std::enable_shared_from_this<CSSPropertyValue
   const std::shared_ptr<const MutableCSSPropertyValueSet> CopyPropertiesInSet(
       const std::vector<const CSSProperty*>&) const;
 
-  std::string AsText() const;
+  String AsText() const;
 
   bool IsMutable() const { return is_mutable_; }
   bool ContainsCursorHand() const { return contains_cursor_hand_; }

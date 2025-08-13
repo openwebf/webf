@@ -18,11 +18,11 @@ CSSConditionRule::CSSConditionRule(std::shared_ptr<StyleRuleCondition> condition
 
 CSSConditionRule::~CSSConditionRule() = default;
 
-std::string CSSConditionRule::conditionText() const {
+String CSSConditionRule::conditionText() const {
   return ConditionTextInternal();
 }
 
-std::string CSSConditionRule::ConditionTextInternal() const {
+String CSSConditionRule::ConditionTextInternal() const {
   return To<StyleRuleCondition>(group_rule_.get())->ConditionText();
 }
 

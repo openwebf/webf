@@ -106,7 +106,7 @@ class Node : public EventTarget {
   Node* ToNode() override;
 
   // DOM methods & attributes for Node
-  virtual std::string nodeName() const = 0;
+  virtual String nodeName() const = 0;
   virtual AtomicString nodeValue() const = 0;
   virtual void setNodeValue(const AtomicString&, ExceptionState&);
   virtual NodeType nodeType() const = 0;

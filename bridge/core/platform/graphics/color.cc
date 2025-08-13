@@ -98,20 +98,6 @@ inline bool ParseHexColorInternal(const CharacterType* name, unsigned length, Co
   return true;
 }
 
-inline const NamedColor* FindNamedColor(const std::string& name) {
-  char buffer[64];  // easily big enough for the longest color name
-  unsigned length = name.length();
-  if (length > sizeof(buffer) - 1)
-    return nullptr;
-  for (unsigned i = 0; i < length; ++i) {
-    char c = name[i];
-    if (!c || c > 0x7F)
-      return nullptr;
-    buffer[i] = ToASCIILower(static_cast<char>(c));
-  }
-  buffer[length] = '\0';
-  return FindColor(buffer, length);
-}
 
 constexpr int RedChannel(RGBA32 color) {
   return (color >> 16) & 0xFF;
@@ -349,10 +335,22 @@ bool Color::ParseHexColor(const char* name, unsigned length, Color& color) {
   return ParseHexColorInternal(name, length, color);
 }
 
-bool Color::ParseHexColor(const std::string_view& name, Color& color) {
-  if (name.empty())
+bool Color::ParseHexColor(const StringView& name, Color& color) {
+  if (name.IsEmpty())
     return false;
-  return ParseHexColor(name.data(), name.length(), color);
+  if (name.Is8Bit()) {
+    return ParseHexColor(reinterpret_cast<const char*>(name.Characters8()), name.length(), color);
+  } else {
+    // Convert UTF-16 to Latin-1 for hex parsing
+    std::string temp;
+    temp.reserve(name.length());
+    const UChar* chars = name.Characters16();
+    for (size_t i = 0; i < name.length(); i++) {
+      if (chars[i] > 0xFF) return false;  // Not a valid hex character
+      temp.push_back(static_cast<char>(chars[i]));
+    }
+    return ParseHexColor(temp.data(), temp.length(), color);
+  }
 }
 
 int DifferenceSquared(const Color& c1, const Color& c2) {
@@ -362,25 +360,30 @@ int DifferenceSquared(const Color& c1, const Color& c2) {
   return d_r * d_r + d_g * d_g + d_b * d_b;
 }
 
-bool Color::SetFromString(const std::string& name) {
+bool Color::SetFromString(const String& name) {
   // TODO(https://crbug.com/1434423): Implement CSS Color level 4 parsing.
-  if (name[0] != '#')
+  if (name.IsEmpty() || name[0] != '#')
     return SetNamedColor(name);
-  return ParseHexColor(name.c_str() + 1, name.length() - 1, *this);
+  if (name.Is8Bit()) {
+    return ParseHexColor(reinterpret_cast<const char*>(name.Characters8() + 1), name.length() - 1, *this);
+  } else {
+    // Convert to 8-bit for hex parsing
+    String name_8bit = name;
+    return ParseHexColor(reinterpret_cast<const char*>(name_8bit.Characters8() + 1), name_8bit.length() - 1, *this);
+  }
 }
 
 namespace {
 
-std::string doubleToString(double value, int precision) {
-  std::ostringstream oss;
-  oss.precision(precision);
-  oss << std::fixed << value;
-  return oss.str();
+String doubleToString(double value, int precision) {
+  StringBuilder oss;
+  oss.AppendNumber(value, precision);
+  return oss.ReleaseString();
 }
 
 }  // namespace
 
-static std::string ColorParamToString(float param, int precision = 6) {
+static String ColorParamToString(float param, int precision = 6) {
   StringBuilder result;
   if (!isfinite(param)) {
     // https://www.w3.org/TR/css-values-4/#calc-serialize
@@ -389,17 +392,17 @@ static std::string ColorParamToString(float param, int precision = 6) {
       // "Infinity" gets capitalized, so we can't use AppendNumber().
       (param < 0) ? result.Append("-infinity") : result.Append("infinity");
     } else {
-      result.Append(param, precision);
+      result.AppendNumber(param, precision);
     }
     result.Append(")");
     return result.ReleaseString();
   }
 
-  result.Append(param, precision);
+  result.AppendNumber(param, precision);
   return result.ReleaseString();
 }
 
-std::string Color::SerializeAsCanvasColor() const {
+String Color::SerializeAsCanvasColor() const {
   if (IsOpaque()) {
     char buffer[8];
     std::snprintf(buffer, 8, "#%02x%02x%02x", Red(), Green(), Blue());
@@ -409,7 +412,7 @@ std::string Color::SerializeAsCanvasColor() const {
   return SerializeAsCSSColor();
 }
 
-std::string Color::SerializeLegacyColorAsCSSColor() const {
+String Color::SerializeLegacyColorAsCSSColor() const {
   StringBuilder result;
   if (IsOpaque() && isfinite(alpha_)) {
     result.Append("rgb(");
@@ -437,11 +440,11 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
     std::tie(r, g, b) = SRGBToSRGBLegacy(r + kEpsilon, g + kEpsilon, b + kEpsilon);
   }
 
-  result.Append(round(ClampTo(r, 0.0, 255.0)), 6);
+  result.AppendNumber(round(ClampTo(r, 0.0, 255.0)), 6);
   result.Append(", ");
-  result.Append(round(ClampTo(g, 0.0, 255.0)), 6);
+  result.AppendNumber(round(ClampTo(g, 0.0, 255.0)), 6);
   result.Append(", ");
-  result.Append(round(ClampTo(b, 0.0, 255.0)), 6);
+  result.AppendNumber(round(ClampTo(b, 0.0, 255.0)), 6);
 
   if (!IsOpaque()) {
     result.Append(", ");
@@ -468,7 +471,7 @@ std::string Color::SerializeLegacyColorAsCSSColor() const {
   return result.ReleaseString();
 }
 
-std::string Color::SerializeInternal() const {
+String Color::SerializeInternal() const {
   StringBuilder result;
   result.Append("color(");
 
@@ -480,13 +483,13 @@ std::string Color::SerializeInternal() const {
 
   if (alpha_ != 1.0 || alpha_is_none_) {
     result.Append(" / ");
-    alpha_is_none_ ? result.Append("none") : result.Append(alpha_);
+    alpha_is_none_ ? result.Append("none") : result.AppendNumber(alpha_);
   }
   result.Append(")");
   return result.ReleaseString();
 }
 
-std::string Color::SerializeAsCSSColor() const {
+String Color::SerializeAsCSSColor() const {
   if (IsLegacyColorSpace(color_space_)) {
     return SerializeLegacyColorAsCSSColor();
   }
@@ -494,12 +497,35 @@ std::string Color::SerializeAsCSSColor() const {
   return SerializeInternal();
 }
 
-std::string Color::NameForLayoutTreeAsText() const {
+String Color::NameForLayoutTreeAsText() const {
   return SerializeAsCSSColor();
 }
 
-bool Color::SetNamedColor(const std::string& name) {
-  const NamedColor* found_color = FindNamedColor(name);
+bool Color::SetNamedColor(const String& name) {
+  if (name.IsEmpty() || name.length() > 63)
+    return false;
+    
+  char buffer[64];  // easily big enough for the longest color name
+  if (name.Is8Bit()) {
+    const LChar* chars = name.Characters8();
+    for (unsigned i = 0; i < name.length(); ++i) {
+      char c = chars[i];
+      if (!c || c > 0x7F)
+        return false;
+      buffer[i] = ToASCIILower(static_cast<char>(c));
+    }
+  } else {
+    const UChar* chars = name.Characters16();
+    for (unsigned i = 0; i < name.length(); ++i) {
+      UChar c = chars[i];
+      if (!c || c > 0x7F)
+        return false;
+      buffer[i] = ToASCIILower(static_cast<char>(c));
+    }
+  }
+  buffer[name.length()] = '\0';
+  
+  const NamedColor* found_color = FindColor(buffer, name.length());
   *this = found_color ? Color::FromRGBA32(found_color->argb_value) : kTransparent;
   return found_color;
 }

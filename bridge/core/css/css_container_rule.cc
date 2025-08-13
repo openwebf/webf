@@ -26,13 +26,13 @@ AtomicString CSSContainerRule::cssText() const {
   StringBuilder result;
   result.Append("@container");
   
-  std::string name = containerName();
+  String name = containerName();
   if (!name.IsEmpty()) {
     result.Append(" ");
     result.Append(name);
   }
   
-  std::string query = containerQuery();
+  String query = containerQuery();
   if (!query.IsEmpty()) {
     if (!name.IsEmpty()) {
       result.Append(" ");
@@ -46,19 +46,19 @@ AtomicString CSSContainerRule::cssText() const {
   return AtomicString(result.ReleaseString());
 }
 
-std::string CSSContainerRule::containerName() const {
+String CSSContainerRule::containerName() const {
   auto* container_rule = To<StyleRuleContainer>(group_rule_.get());
   const class ContainerQuery& query = container_rule->GetContainerQuery();
   return query.Selector().Name();
 }
 
-std::string CSSContainerRule::containerQuery() const {
+String CSSContainerRule::containerQuery() const {
   auto* container_rule = To<StyleRuleContainer>(group_rule_.get());
   const class ContainerQuery& query = container_rule->GetContainerQuery();
   return query.ToString();
 }
 
-const std::string& CSSContainerRule::Name() const {
+String CSSContainerRule::Name() const {
   auto* container_rule = To<StyleRuleContainer>(group_rule_.get());
   return container_rule->GetContainerQuery().Selector().Name();
 }
@@ -68,7 +68,7 @@ const ContainerSelector& CSSContainerRule::Selector() const {
   return container_rule->GetContainerQuery().Selector();
 }
 
-void CSSContainerRule::SetConditionText(const ExecutingContext*, const std::string&) {
+void CSSContainerRule::SetConditionText(const ExecutingContext*, const String&) {
   // TODO: Implement dynamic condition text setting
   // This would involve re-parsing the container query
 }

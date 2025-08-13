@@ -26,6 +26,7 @@
 #define WEBF_CSS_URL_DATA_H
 
 #include <iostream>
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
@@ -35,13 +36,13 @@ class KURL;
 // Stores data for a <url> value (url(), src()).
 class CSSUrlData {
  public:
-  CSSUrlData(std::string unresolved_url, const KURL& resolved_url
+  CSSUrlData(const AtomicString& unresolved_url, const KURL& resolved_url
              //             const Referrer&, OriginClean, bool is_ad_related
   );
 
   // Create URL data with a resolved (absolute) URL. Generally used for
   // computed values - the above should otherwise be preferred.
-  explicit CSSUrlData(const std::string& resolved_url);
+  explicit CSSUrlData(const AtomicString& resolved_url);
 
   // Returns the resolved URL, potentially reresolving against passed Document
   // if there's a potential risk of "dangling markup".
@@ -61,12 +62,12 @@ class CSSUrlData {
   // Returns a copy where the referrer has been reset.
   CSSUrlData MakeWithoutReferrer() const;
 
-  const std::string& ValueForSerialization() const {
+  const AtomicString& ValueForSerialization() const {
     return is_local_ || absolute_url_.empty() ? relative_url_ : absolute_url_;
   }
 
-  const std::string& UnresolvedUrl() const { return relative_url_; }
-  const std::string& ResolvedUrl() const { return absolute_url_; }
+  const AtomicString& UnresolvedUrl() const { return relative_url_; }
+  const AtomicString& ResolvedUrl() const { return absolute_url_; }
 
   //  const Referrer& GetReferrer() const { return referrer_; }
 
@@ -84,13 +85,13 @@ class CSSUrlData {
   // being a fragment-only URL or by matching the document URL).
   bool IsLocal(const Document&) const;
 
-  std::string CssText() const;
+  String CssText() const;
 
   bool operator==(const CSSUrlData& other) const;
 
  private:
-  std::string relative_url_;
-  mutable std::string absolute_url_;
+  AtomicString relative_url_;
+  mutable AtomicString absolute_url_;
   //  const Referrer referrer_;
 
   // Whether the stylesheet that requested this image is origin-clean:

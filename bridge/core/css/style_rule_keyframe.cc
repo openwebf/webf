@@ -16,8 +16,8 @@ StyleRuleKeyframe::StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>
                                      std::shared_ptr<const CSSPropertyValueSet> properties)
     : StyleRuleBase(kKeyframe), properties_(properties), keys_(*keys) {}
 
-std::string StyleRuleKeyframe::KeyText() const {
-  DCHECK(!keys_.IsEmpty());
+String StyleRuleKeyframe::KeyText() const {
+  DCHECK(!keys_.empty());
 
   StringBuilder key_text;
   for (unsigned i = 0; i < keys_.size(); ++i) {
@@ -28,14 +28,14 @@ std::string StyleRuleKeyframe::KeyText() const {
       key_text.Append(TimelineOffset::TimelineRangeNameToString(keys_.at(i).name));
       key_text.Append(" ");
     }
-    key_text.Append(keys_.at(i).percent * 100);
+    key_text.AppendNumber(keys_.at(i).percent * 100);
     key_text.Append('%');
   }
 
   return key_text.ReleaseString();
 }
 
-bool StyleRuleKeyframe::SetKeyText(const ExecutingContext* execution_context, const std::string& key_text) {
+bool StyleRuleKeyframe::SetKeyText(const ExecutingContext* execution_context, const String& key_text) {
   DCHECK(!key_text.IsEmpty());
 
   auto context = std::make_shared<CSSParserContext>(execution_context);
@@ -60,11 +60,11 @@ std::shared_ptr<const MutableCSSPropertyValueSet> StyleRuleKeyframe::MutableProp
   return std::reinterpret_pointer_cast<const MutableCSSPropertyValueSet>(properties_);
 }
 
-std::string StyleRuleKeyframe::CssText() const {
+String StyleRuleKeyframe::CssText() const {
   StringBuilder result;
   result.Append(KeyText());
   result.Append(" { ");
-  std::string decls = properties_->AsText();
+  String decls = properties_->AsText();
   result.Append(decls);
   if (!decls.IsEmpty()) {
     result.Append(' ');

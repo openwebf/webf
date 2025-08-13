@@ -24,12 +24,12 @@ class CSSContainerRule final : public CSSConditionRule {
   ~CSSContainerRule() override;
 
   AtomicString cssText() const override;
-  std::string containerName() const;
-  std::string containerQuery() const;
+  String containerName() const;
+  String containerQuery() const;
 
-  const std::string& Name() const;
+  String Name() const;
   const ContainerSelector& Selector() const;
-  void SetConditionText(const ExecutingContext*, const std::string&);
+  void SetConditionText(const ExecutingContext*, const String&);
 
  private:
   CSSRule::Type GetType() const override { return kContainerRule; }

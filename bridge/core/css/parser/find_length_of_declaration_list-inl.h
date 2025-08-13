@@ -355,6 +355,18 @@ ALWAYS_INLINE size_t FindLengthOfDeclarationList(std::string_view str) {
                                      reinterpret_cast<const uint8_t*>(str.data() + str.length()));
 }
 
+ALWAYS_INLINE size_t FindLengthOfDeclarationList(StringView str) {
+  if (str.Is8Bit()) {
+    return FindLengthOfDeclarationList(str.Characters8(), str.Characters8() + str.length());
+  } else {
+    // Convert to UTF-8 first for 16-bit strings
+    String s(str);
+    std::string utf8 = s.StdUtf8();
+    return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(utf8.data()),
+                                       reinterpret_cast<const uint8_t*>(utf8.data() + utf8.length()));
+  }
+}
+
 }  // namespace webf
 
 #endif  // WEBF_CORE_CSS_PARSER_FIND_LENGTH_OF_DECLARATION_LIST_INL_H_

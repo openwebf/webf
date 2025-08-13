@@ -35,7 +35,7 @@ CSSBorderImageSliceValue::CSSBorderImageSliceValue(std::shared_ptr<const CSSQuad
 
 String CSSBorderImageSliceValue::CustomCSSText() const {
   // Dump the slices first.
-  std::string text = slices_->CssText();
+  String text = slices_->CssText();
 
   // Now the fill keywords if it is present.
   if (fill_) {

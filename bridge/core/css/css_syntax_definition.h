@@ -34,13 +34,12 @@ class CSSSyntaxDefinition {
   friend class CSSSyntaxStringParser;
   friend class CSSSyntaxStringParserTest;
 
-  CSSSyntaxDefinition(std::vector<CSSSyntaxComponent>, const std::string& original_text);
+  explicit CSSSyntaxDefinition(std::vector<CSSSyntaxComponent>);
 
   // https://drafts.css-houdini.org/css-properties-values-api-1/#universal-syntax-descriptor
   static CSSSyntaxDefinition CreateUniversal();
 
   std::vector<CSSSyntaxComponent> syntax_components_;
-  std::string original_text_;
 };
 
 }  // namespace webf

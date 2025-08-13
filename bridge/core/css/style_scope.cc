@@ -65,13 +65,13 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
     CSSParserTokenStream stream(tokenizer);
     from = CSSSelectorParser::ParseScopeBoundary(stream, context, nesting_type, parent_rule_for_nesting,
                                                  style_sheet, arena);
-    if (from.IsEmpty()) {
+    if (from.empty()) {
       return nullptr;
     }
   }
 
   std::shared_ptr<StyleRule> from_rule = nullptr;
-  if (!from.IsEmpty()) {
+  if (!from.empty()) {
     std::shared_ptr<ImmutableCSSPropertyValueSet> properties = std::make_shared<ImmutableCSSPropertyValueSet>(
         /* properties */ nullptr,
         /* count */ 0, CSSParserMode::kHTMLStandardMode);
@@ -99,7 +99,7 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
     to = CSSSelectorParser::ParseScopeBoundary(stream, context, CSSNestingType::kScope,
                                                /* parent_rule_for_nesting */ from_rule,
                                                style_sheet, arena);
-    if (to.IsEmpty()) {
+    if (to.empty()) {
       return nullptr;
     }
   }
@@ -111,9 +111,9 @@ std::shared_ptr<StyleScope> StyleScope::Parse(CSSParserTokenRange prelude,
   }
 
   std::shared_ptr<CSSSelectorList> to_list =
-      !to.IsEmpty() ? CSSSelectorList::AdoptSelectorVector(to) : nullptr;
+      !to.empty() ? CSSSelectorList::AdoptSelectorVector(to) : nullptr;
 
-  if (from.IsEmpty()) {
+  if (from.empty()) {
     // Implicitly rooted.
     return std::make_shared<StyleScope>(style_sheet, to_list);
   }

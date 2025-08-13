@@ -150,21 +150,21 @@ bool CSSSelectorParser::ConsumeANPlusB(CSSParserTokenStream& stream, std::pair<i
 
   // The 'n' will end up as part of an ident or dimension. For a valid <an+b>,
   // this will store a string of the form 'n', 'n-', or 'n-123'.
-  std::string n_string;
+  String n_string;
 
   if (token.GetType() == kDelimiterToken && token.Delimiter() == '+' && stream.Peek().GetType() == kIdentToken) {
     result.first = 1;
-    n_string = stream.Consume().Value();
+    n_string = String(stream.Consume().Value());
   } else if (token.GetType() == kDimensionToken && token.GetNumericValueType() == kIntegerValueType) {
     result.first = ClampTo<int>(token.NumericValue());
-    n_string = token.Value();
+    n_string = String(token.Value());
   } else if (token.GetType() == kIdentToken) {
     if (token.Value()[0] == '-') {
       result.first = -1;
-      n_string = token.Value().substr(1);
+      n_string = String(token.Value().substr(1));
     } else {
       result.first = 1;
-      n_string = token.Value();
+      n_string = String(token.Value());
     }
   }
 
@@ -180,7 +180,7 @@ bool CSSSelectorParser::ConsumeANPlusB(CSSParserTokenStream& stream, std::pair<i
   if (n_string.length() > 2) {
     bool valid;
     int output;
-    valid = base::StringToInt(n_string.substr(1), &output);
+    valid = base::StringToInt(n_string.Substring(1).ToStdString(), &output);
     result.second = output;
     return valid;
   }
@@ -232,7 +232,7 @@ std::shared_ptr<const CSSSelectorList> CSSSelectorParser::ConsumeNthChildOfSelec
   ResetVectorAfterScope reset_vector(output_);
   ResultFlags flags = 0;
   tcb::span<CSSSelector> selectors = ConsumeComplexSelectorList(stream, CSSNestingType::kNone, flags);
-  if (selectors.IsEmpty()) {
+  if (selectors.empty()) {
     return nullptr;
   }
   return CSSSelectorList::AdoptSelectorVector(selectors);
@@ -255,7 +255,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ParseScopeBoundary(
   ResultFlags result_flags = 0;
   tcb::span<CSSSelector> result =
       parser.ConsumeComplexSelectorList(stream, nesting_type, result_flags);
-  if (result.IsEmpty() || !stream.AtEnd()) {
+  if (result.empty() || !stream.AtEnd()) {
     return {};
   }
   parser.RecordUsageAndDeprecations(result);
@@ -273,7 +273,7 @@ bool CSSSelectorParser::SupportsComplexSelector(CSSParserTokenStream& stream,
   ResultFlags flags = 0;
   tcb::span<CSSSelector> selectors = parser.ConsumeComplexSelector(stream, CSSNestingType::kNone,
                                                                    /*first_in_complex_selector_list=*/true, flags);
-  if (parser.failed_parsing_ || !stream.AtEnd() || selectors.IsEmpty()) {
+  if (parser.failed_parsing_ || !stream.AtEnd() || selectors.empty()) {
     return false;
   }
   return true;
@@ -301,14 +301,14 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTo
   ResetVectorAfterScope reset_vector(output_);
   if (ConsumeComplexSelector(stream, nesting_type,
                              /*first_in_complex_selector_list=*/true, flags)
-          .IsEmpty()) {
+          .empty()) {
     return {};
   }
   while (!stream.AtEnd() && stream.Peek().GetType() == kCommaToken) {
     stream.ConsumeIncludingWhitespace();
     if (ConsumeComplexSelector(stream, nesting_type,
                                /*first_in_complex_selector_list=*/false, flags)
-            .IsEmpty()) {
+            .empty()) {
       return {};
     }
   }
@@ -330,7 +330,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelectorList(CSSParserTo
   while (true) {
     const uint32_t selector_offset_start = stream.LookAheadOffset();
 
-    if (ConsumeComplexSelector(stream, nesting_type, first_in_complex_selector_list, flags).IsEmpty() || failed_parsing_ ||
+    if (ConsumeComplexSelector(stream, nesting_type, first_in_complex_selector_list, flags).empty() || failed_parsing_ ||
         !AtEndOfComplexSelector(stream)) {
       if (AbortsNestedSelectorParsing(kSemicolonToken, semicolon_aborts_nested_selector_, nesting_type)) {
         stream.SkipUntilPeekedTypeIs<kLeftBraceToken, kCommaToken, kSemicolonToken>();
@@ -367,7 +367,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeCompoundSelectorList(
 
   tcb::span<CSSSelector> selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone, flags);
   stream.ConsumeWhitespace();
-  if (selector.IsEmpty()) {
+  if (selector.empty()) {
     return nullptr;
   }
   MarkAsEntireComplexSelector(selector);
@@ -375,7 +375,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeCompoundSelectorList(
     stream.ConsumeIncludingWhitespace();
     selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone, flags);
     stream.ConsumeWhitespace();
-    if (selector.IsEmpty()) {
+    if (selector.empty()) {
       return nullptr;
     }
     MarkAsEntireComplexSelector(selector);
@@ -395,7 +395,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeNestedSelectorList(CS
 
   ResetVectorAfterScope reset_vector(output_);
   tcb::span<CSSSelector> result = ConsumeComplexSelectorList(stream, CSSNestingType::kNone, flags);
-  if (result.IsEmpty()) {
+  if (result.empty()) {
     return {};
   } else {
     std::shared_ptr<CSSSelectorList> selector_list = CSSSelectorList::AdoptSelectorVector(result);
@@ -436,7 +436,7 @@ std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplex
     ResultFlags& flags) {
   if (in_supports_parsing_) {
     tcb::span<CSSSelector> selectors = ConsumeComplexSelectorList(stream, nesting_type, flags);
-    if (selectors.IsEmpty()) {
+    if (selectors.empty()) {
       return std::nullopt;
     } else {
       return selectors;
@@ -451,7 +451,7 @@ std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplex
     CSSParserTokenStream::State state = stream.Save();
     uint32_t subpos = output_.size();
     tcb::span<CSSSelector> selector = ConsumeComplexSelector(stream, nesting_type, first_in_complex_selector_list, flags);
-    if (selector.IsEmpty() || failed_parsing_ || !AtEndOfComplexSelector(stream)) {
+    if (selector.empty() || failed_parsing_ || !AtEndOfComplexSelector(stream)) {
       output_.resize(subpos);  // Drop what we parsed so far.
       stream.Restore(state);
       AddPlaceholderSelectorIfNeeded(stream);  // Forwards until the end of the argument (i.e. to comma or
@@ -464,7 +464,7 @@ std::optional<tcb::span<CSSSelector>> CSSSelectorParser::ConsumeForgivingComplex
     first_in_complex_selector_list = false;
   }
 
-  if (reset_vector.AddedElements().IsEmpty()) {
+  if (reset_vector.AddedElements().empty()) {
     //  Parsed nothing that was supported.
     return tcb::span<CSSSelector>();
   }
@@ -522,7 +522,7 @@ void CSSSelectorParser::AddPlaceholderSelectorIfNeeded(CSSParserTokenStream& str
   if (nesting_type != CSSNestingType::kNone) {
     CSSSelector placeholder_selector;
     placeholder_selector.SetMatch(CSSSelector::kPseudoClass);
-    placeholder_selector.SetUnparsedPlaceholder(nesting_type, std::string(stream.StringRangeAt(start, end - start)));
+    placeholder_selector.SetUnparsedPlaceholder(nesting_type, stream.StringRangeAt(start, end - start).ToAtomicString());
     placeholder_selector.SetLastInComplexSelector(true);
     output_.push_back(placeholder_selector);
   }
@@ -543,7 +543,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingCompoundSele
     uint32_t subpos = output_.size();
     tcb::span<CSSSelector> selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone, flags);
     stream.ConsumeWhitespace();
-    if (selector.IsEmpty() || failed_parsing_ || (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken)) {
+    if (selector.empty() || failed_parsing_ || (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken)) {
       output_.resize(subpos);  // Drop what we parsed so far.
       stream.SkipUntilPeekedTypeIs<kCommaToken>();
     } else {
@@ -554,7 +554,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingCompoundSele
     }
   }
 
-  if (reset_vector.AddedElements().IsEmpty()) {
+  if (reset_vector.AddedElements().empty()) {
     return CSSSelectorList::Empty();
   }
 
@@ -577,7 +577,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingRelativeSele
     uint32_t subpos = output_.size();
     tcb::span<CSSSelector> selector = ConsumeRelativeSelector(stream, flags);
 
-    if (selector.IsEmpty() || failed_parsing_ || (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken)) {
+    if (selector.empty() || failed_parsing_ || (!stream.AtEnd() && stream.Peek().GetType() != kCommaToken)) {
       output_.resize(subpos);  // Drop what we parsed so far.
       stream.SkipUntilPeekedTypeIs<kCommaToken>();
     }
@@ -590,7 +590,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingRelativeSele
   // not allowed after pseudo elements.
   // (e.g. '::slotted(:has(.a))', '::part(foo):has(:hover)')
   if (inside_compound_pseudo_ || restricting_pseudo_element_ != CSSSelector::kPseudoUnknown ||
-      reset_vector.AddedElements().IsEmpty()) {
+      reset_vector.AddedElements().empty()) {
     // TODO(blee@igalia.com) Workaround to make :has() unforgiving to avoid
     // JQuery :has() issue: https://github.com/w3c/csswg-drafts/issues/7676
     // Should return empty CSSSelectorList. (return CSSSelectorList::Empty())
@@ -602,12 +602,12 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeForgivingRelativeSele
 
 std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeRelativeSelectorList(CSSParserTokenStream& stream, ResultFlags& flags) {
   ResetVectorAfterScope reset_vector(output_);
-  if (ConsumeRelativeSelector(stream, flags).IsEmpty()) {
+  if (ConsumeRelativeSelector(stream, flags).empty()) {
     return nullptr;
   }
   while (!stream.AtEnd() && stream.Peek().GetType() == kCommaToken) {
     stream.ConsumeIncludingWhitespace();
-    if (ConsumeRelativeSelector(stream, flags).IsEmpty()) {
+    if (ConsumeRelativeSelector(stream, flags).empty()) {
       return nullptr;
     }
   }
@@ -620,7 +620,7 @@ std::shared_ptr<CSSSelectorList> CSSSelectorParser::ConsumeRelativeSelectorList(
   // not allowed after pseudo elements.
   // (e.g. '::slotted(:has(.a))', '::part(foo):has(:hover)')
   if (inside_compound_pseudo_ || restricting_pseudo_element_ != CSSSelector::kPseudoUnknown ||
-      reset_vector.AddedElements().IsEmpty()) {
+      reset_vector.AddedElements().empty()) {
     return nullptr;
   }
 
@@ -665,7 +665,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeRelativeSelector(CSSParserToken
 
   CSSSelector selector;
   selector.SetMatch(CSSSelector::kPseudoClass);
-  selector.UpdatePseudoType(AtomicString("-internal-relative-anchor"), *context_, false /*has_arguments*/,
+  selector.UpdatePseudoType(AtomicString::CreateFromUTF8("-internal-relative-anchor"), *context_, false /*has_arguments*/,
                             context_->Mode());
   assert(selector.GetPseudoType() == CSSSelector::kPseudoRelativeAnchor);
   output_.push_back(selector);
@@ -720,7 +720,7 @@ static CSSSelector CreateImplicitAnchor(CSSNestingType nesting_type,
   assert(nesting_type == CSSNestingType::kScope);
   // TODO(xiezuobing): 需要传入ExecutingContext
   ExecutingContext* context;
-  return CSSSelector(AtomicString("scope"), /*is_implicit=*/true);
+  return CSSSelector(AtomicString::CreateFromUTF8("scope"), /*is_implicit=*/true);
 }
 
 // Within @scope, each compound that contains either :scope or '&' is prepended
@@ -818,7 +818,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeComplexSelector(CSSParserTokenS
 
   ResetVectorAfterScope reset_vector(output_);
   tcb::span<CSSSelector> compound_selector = ConsumeCompoundSelector(stream, nesting_type, flags);
-  if (compound_selector.IsEmpty()) {
+  if (compound_selector.empty()) {
     return {};
   }
 
@@ -893,7 +893,7 @@ bool CSSSelectorParser::ConsumePartialComplexSelector(CSSParserTokenStream& stre
                                                       ResultFlags& flags) {
   do {
     tcb::span<CSSSelector> compound_selector = ConsumeCompoundSelector(stream, nesting_type, flags);
-    if (compound_selector.IsEmpty()) {
+    if (compound_selector.empty()) {
       // No more selectors. If we ended with some explicit combinator
       // (e.g. “a >” and then nothing), that's a parse error.
       // But if not, we're simply done and return everything
@@ -926,10 +926,10 @@ CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const AtomicString& n
     return pseudo_type;
   }
 
-  if (name.StartsWith("-webkit-")) {
+  if (name.StartsWith(StringView("-webkit-"))) {
     return CSSSelector::PseudoType::kPseudoWebKitCustomElement;
   }
-  if (name.StartsWith("-internal-")) {
+  if (name.StartsWith(StringView("-internal-"))) {
     return CSSSelector::PseudoType::kPseudoBlinkInternalElement;
   }
   return CSSSelector::PseudoType::kPseudoUnknown;
@@ -963,7 +963,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
       }
 
       CSSSelector::PseudoType pseudo_type =
-          ParsePseudoType(AtomicString(selector_name_token.Value()),
+          ParsePseudoType(AtomicString(String(selector_name_token.Value())),
                           /*has_arguments=*/false, parent ? &parent->GetDocument() : nullptr);
 
       PseudoId pseudo_id = CSSSelector::GetPseudoId(pseudo_type);
@@ -1203,7 +1203,7 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, AtomicString& 
 
   const CSSParserToken& first_token = stream.Peek();
   if (first_token.GetType() == kIdentToken) {
-    name = AtomicString(first_token.Value().data(), first_token.Value().size());
+    name = AtomicString::CreateFromUTF8(first_token.Value().data(), first_token.Value().size());
     stream.Consume();
   } else if (first_token.GetType() == kDelimiterToken && first_token.Delimiter() == '*') {
     name = CSSSelector::UniversalSelectorAtom();
@@ -1224,7 +1224,7 @@ bool CSSSelectorParser::ConsumeName(CSSParserTokenStream& stream, AtomicString& 
 
   namespace_prefix = name == CSSSelector::UniversalSelectorAtom() ? g_star_atom : name;
   if (stream.Peek().GetType() == kIdentToken) {
-    name = AtomicString(stream.Consume().Value());
+    name = AtomicString(String(stream.Consume().Value()));
   } else if (stream.Peek().GetType() == kDelimiterToken && stream.Peek().Delimiter() == '*') {
     stream.Consume();
     name = CSSSelector::UniversalSelectorAtom();
@@ -1310,7 +1310,7 @@ bool CSSSelectorParser::ConsumeAttribute(CSSParserTokenStream& stream) {
     return false;
   }
 
-  CSSSelector selector(match_type, qualified_name, case_sensitivity, std::string(attribute_value.Value()));
+  CSSSelector selector(match_type, qualified_name, case_sensitivity, attribute_value.Value().ToAtomicString());
   output_.push_back(std::move(selector));
   return true;
 }
@@ -1334,7 +1334,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
   selector.SetMatch(colons == 1 ? CSSSelector::kPseudoClass : CSSSelector::kPseudoElement);
 
   bool has_arguments = token.GetType() == kFunctionToken;
-  selector.UpdatePseudoType(std::string(token.Value()), *context_, has_arguments, context_->Mode());
+  selector.UpdatePseudoType(token.Value().ToAtomicString(), *context_, has_arguments, context_->Mode());
 
   if (selector.Match() == CSSSelector::kPseudoElement) {
     switch (selector.GetPseudoType()) {
@@ -1476,7 +1476,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
       if (ident.GetType() != kIdentToken) {
         return false;
       }
-      selector.SetArgument(std::string(ident.Value()));
+      selector.SetArgument(ident.Value().ToAtomicString());
       stream.ConsumeIncludingWhitespace();
       if (!stream.AtEnd()) {
         return false;
@@ -1491,7 +1491,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
         if (ident.GetType() != kIdentToken) {
           return false;
         }
-        parts.push_back(std::string(ident.Value()));
+        parts.push_back(ident.Value().ToAtomicString());
         stream.ConsumeIncludingWhitespace();
       } while (!stream.AtEnd());
       selector.SetIdentList(std::make_unique<std::vector<AtomicString>>(parts));
@@ -1505,7 +1505,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
         if (ident.GetType() != kIdentToken) {
           return false;
         }
-        types.push_back(std::string(ident.Value()));
+        types.push_back(ident.Value().ToAtomicString());
         stream.ConsumeIncludingWhitespace();
 
         if (stream.AtEnd()) {
@@ -1531,10 +1531,10 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
         if (!IsScrollButtonDirectionKeyword(ident)) {
           return false;
         }
-        selector.SetArgument(AtomicString(ident.Value()));
+        selector.SetArgument(ident.Value().ToAtomicString());
       } else if (ident.GetType() == kDelimiterToken &&
                  ident.Delimiter() == '*') {
-        selector.SetArgument(AtomicString("*"));
+        selector.SetArgument(AtomicString::CreateFromUTF8("*"));
       } else {
         return false;
       }
@@ -1555,7 +1555,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
       if (name_and_classes->empty()) {
         const CSSParserToken& ident = stream.Peek();
         if (ident.GetType() == kIdentToken) {
-          name_and_classes->push_back(std::string(ident.Value()));
+          name_and_classes->push_back(ident.Value().ToAtomicString());
           stream.Consume();
         } else if (ident.GetType() == kDelimiterToken && ident.Delimiter() == '*') {
           name_and_classes->push_back(CSSSelector::UniversalSelectorAtom());
@@ -1575,7 +1575,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
         if (stream.Peek().GetType() != kIdentToken) {
           return false;
         }
-        name_and_classes->push_back(std::string(stream.Consume().Value()));
+        name_and_classes->push_back(stream.Consume().Value().ToAtomicString());
       }
 
       stream.ConsumeWhitespace();
@@ -1596,7 +1596,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
         ResetVectorAfterScope reset_vector(output_);
         tcb::span<CSSSelector> inner_selector = ConsumeCompoundSelector(stream, CSSNestingType::kNone, flags);
         stream.ConsumeWhitespace();
-        if (inner_selector.IsEmpty() || !stream.AtEnd()) {
+        if (inner_selector.empty() || !stream.AtEnd()) {
           return false;
         }
         MarkAsEntireComplexSelector(reset_vector.AddedElements());
@@ -1611,7 +1611,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
       if (ident.GetType() != kIdentToken) {
         return false;
       }
-      selector.SetArgument(std::string(ident.Value()));
+      selector.SetArgument(ident.Value().ToAtomicString());
       stream.ConsumeIncludingWhitespace();
       if (!stream.AtEnd()) {
         return false;
@@ -1658,7 +1658,7 @@ bool CSSSelectorParser::ConsumePseudo(CSSParserTokenStream& stream, ResultFlags&
       if (ident.GetType() != kIdentToken) {
         return false;
       }
-      selector.SetArgument(std::string(ident.Value()));
+      selector.SetArgument(ident.Value().ToAtomicString());
       stream.ConsumeIncludingWhitespace();
       if (!stream.AtEnd()) {
         return false;
@@ -1741,9 +1741,9 @@ bool CSSSelectorParser::ConsumeSimpleSelector(CSSParserTokenStream& stream, Resu
   return true;
 }
 
-const std::string CSSSelectorParser::DefaultNamespace() const {
+const AtomicString& CSSSelectorParser::DefaultNamespace() const {
   if (!style_sheet_ || ignore_default_namespace_) {
-    return "*";
+    return g_star_atom;
   }
   return style_sheet_->DefaultNamespace();
 }
@@ -1752,7 +1752,7 @@ AtomicString CSSSelectorParser::DetermineNamespace(const AtomicString& prefix) {
   if (prefix.IsNull()) {
     return DefaultNamespace();
   }
-  if (prefix.IsEmpty()) {
+  if (prefix.empty()) {
     return g_empty_atom;  // No namespace. If an element/attribute has a
                           // namespace, we won't match it.
   }
@@ -1816,7 +1816,7 @@ tcb::span<CSSSelector> CSSSelectorParser::ConsumeCompoundSelector(CSSParserToken
       &ignore_default_namespace_,
       ignore_default_namespace_ || (resist_default_namespace_ && !has_q_name && AtEndIgnoringWhitespace(stream)));
 
-  if (reset_vector.AddedElements().IsEmpty()) {
+  if (reset_vector.AddedElements().empty()) {
     // No simple selectors except for the tag name.
     // TODO(sesse): Does this share too much code with
     // PrependTypeSelectorIfNeeded()?

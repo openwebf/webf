@@ -160,7 +160,7 @@ class MediaQueryExpValue {
   // be lower-cased.
   //
   // std::nullopt is returned on errors.
-  static std::optional<MediaQueryExpValue> Consume(const AtomicString& lower_media_feature,
+  static std::optional<MediaQueryExpValue> Consume(const String& lower_media_feature,
                                                    CSSParserTokenRange&,
                                                    const CSSParserTokenOffsets&,
                                                    std::shared_ptr<const CSSParserContext>);
@@ -256,8 +256,9 @@ class MediaQueryExp {
                               const CSSParserTokenOffsets&,
                               std::shared_ptr<const CSSParserContext>);
   static MediaQueryExp Create(const AtomicString& media_feature, const MediaQueryExpBounds&);
-  static MediaQueryExp Invalid() { return MediaQueryExp(AtomicString(), MediaQueryExpValue()); }
+  static MediaQueryExp Invalid() { return MediaQueryExp(); }
 
+  MediaQueryExp() = default;
   MediaQueryExp(const MediaQueryExp& other);
   ~MediaQueryExp();
   void Trace(GCVisitor*) const;
@@ -286,8 +287,8 @@ class MediaQueryExp {
   unsigned GetUnitFlags() const;
 
  private:
-  MediaQueryExp(const AtomicString&, const MediaQueryExpValue&);
-  MediaQueryExp(const AtomicString&, const MediaQueryExpBounds&);
+  MediaQueryExp(const String&, const MediaQueryExpValue&);
+  MediaQueryExp(const String&, const MediaQueryExpBounds&);
 
   AtomicString media_feature_;
   MediaQueryExpBounds bounds_;

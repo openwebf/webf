@@ -29,6 +29,7 @@
 #include "bindings/qjs/cppgc/member.h"
 #include "bindings/qjs/script_wrappable.h"
 #include "core/css/media_query.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -42,19 +43,19 @@ class MediaQuerySetOwner;
 class MediaQuerySet : std::enable_shared_from_this<MediaQuerySet> {
  public:
   static std::shared_ptr<MediaQuerySet> Create() { return std::make_shared<MediaQuerySet>(); }
-  static std::shared_ptr<MediaQuerySet> Create(const std::string& media_string, const ExecutingContext*);
+  static std::shared_ptr<MediaQuerySet> Create(const String& media_string, const ExecutingContext*);
 
   MediaQuerySet();
   MediaQuerySet(const MediaQuerySet&);
   explicit MediaQuerySet(std::vector<std::shared_ptr<const MediaQuery>>);
   void Trace(GCVisitor*) const;
 
-  std::shared_ptr<const MediaQuerySet> CopyAndAdd(const std::string&, const ExecutingContext*) const;
-  std::shared_ptr<const MediaQuerySet> CopyAndRemove(const std::string&, const ExecutingContext*) const;
+  std::shared_ptr<const MediaQuerySet> CopyAndAdd(const String&, const ExecutingContext*) const;
+  std::shared_ptr<const MediaQuerySet> CopyAndRemove(const String&, const ExecutingContext*) const;
 
   const std::vector<std::shared_ptr<const MediaQuery>>& QueryVector() const { return queries_; }
 
-  std::string MediaText() const;
+  String MediaText() const;
 
  private:
   std::vector<std::shared_ptr<const MediaQuery>> queries_;
@@ -81,7 +82,7 @@ class MediaList final : public ScriptWrappable {
   // Prefer MediaTextInternal for internal use. (Avoids use-counter).
   AtomicString mediaText(ExecutingContext*) const;
   void setMediaText(ExecutingContext*, const AtomicString&);
-  std::string MediaTextInternal() const { return Queries()->MediaText(); }
+  String MediaTextInternal() const { return Queries()->MediaText(); }
 
   // Not part of CSSOM.
   CSSRule* ParentRule() const { return parent_rule_.Get(); }

@@ -20,7 +20,7 @@ class CSSSyntaxStringParser {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit CSSSyntaxStringParser(const std::string&);
+  explicit CSSSyntaxStringParser(const String&);
 
   // https://drafts.css-houdini.org/css-properties-values-api-1/#consume-syntax-definition
   std::optional<CSSSyntaxDefinition> Parse();
@@ -41,14 +41,13 @@ class CSSSyntaxStringParser {
 
   // Consumes a name from the input stream, and stores the result in 'ident'.
   // Returns true if the value returned via 'ident' is not a css-wide keyword.
-  bool ConsumeIdent(std::string& ident);
+  bool ConsumeIdent(String& ident);
 
   // Consumes a '+' or '#' from the input stream (if present), and returns
   // the appropriate CSSSyntaxRepeat. CSSSyntaxRepeat::kNone is returned if
   // the next input code point is not '+' or '#'.
   CSSSyntaxRepeat ConsumeRepeatIfPresent();
 
-  std::string string_;
   CSSTokenizerInputStream input_;
 };
 

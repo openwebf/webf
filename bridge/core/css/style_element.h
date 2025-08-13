@@ -64,7 +64,7 @@ class StyleElement {
   bool CreatedByParser() const { return created_by_parser_; }
 
  private:
-  ProcessingResult CreateSheet(Element&, const std::string& text);
+  ProcessingResult CreateSheet(Element&, const String& text);
   ProcessingResult Process(Element&);
   void ClearSheet(Element& owner_element);
 

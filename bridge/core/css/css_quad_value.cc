@@ -7,30 +7,45 @@
  */
 
 #include "core/css/css_quad_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
 String CSSQuadValue::CustomCSSText() const {
-  std::string top = top_->CssText();
-  std::string right = right_->CssText();
-  std::string bottom = bottom_->CssText();
-  std::string left = left_->CssText();
+  String top = top_->CssText();
+  String right = right_->CssText();
+  String bottom = bottom_->CssText();
+  String left = left_->CssText();
 
   if (serialization_type_ == TypeForSerialization::kSerializeAsRect) {
-    return "rect(" + top + ", " + right + ", " + bottom + ", " + left + ')';
+    StringBuilder result;
+    result.Append("rect(");
+    result.Append(top);
+    result.Append(", ");
+    result.Append(right);
+    result.Append(", ");
+    result.Append(bottom);
+    result.Append(", ");
+    result.Append(left);
+    result.Append(")");
+    return result.ReleaseString();
   }
 
-  std::string result = top;
+  StringBuilder result;
+  result.Append(top);
   if (right != top || bottom != top || left != top) {
-    result += " " + right;
+    result.Append(" ");
+    result.Append(right);
     if (bottom != top || right != left) {
-      result += " " + bottom;
+      result.Append(" ");
+      result.Append(bottom);
       if (left != right) {
-        result += " " + left;
+        result.Append(" ");
+        result.Append(left);
       }
     }
   }
-  return result;
+  return result.ReleaseString();
 }
 
 void CSSQuadValue::TraceAfterDispatch(webf::GCVisitor* visitor) const {

@@ -160,7 +160,7 @@ class CSSSelectorParser {
   // This doesn't include element names, since they're handled specially
   bool ConsumeSimpleSelector(CSSParserTokenStream&, ResultFlags&);
 
-  const std::string DefaultNamespace() const;
+  const AtomicString& DefaultNamespace() const;
   AtomicString DetermineNamespace(const AtomicString& prefix);
 
   // Returns an empty range on error.

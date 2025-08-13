@@ -254,14 +254,14 @@ AtomicString Element::nodeValue() const {
   return AtomicString::Null();
 }
 
-std::string Element::nodeName() const {
+String Element::nodeName() const {
   // For HTML elements in HTML namespace, return uppercased tagName
   // For all other elements (including those created with createElementNS), preserve original case
   if (IsHTMLElement()) {
-    return tagName().UpperASCII().ToUTF8String();
+    return tagName().UpperASCII();
   }
   // For elements created with createElementNS or non-HTML elements, preserve original case
-  return tagName().ToUTF8String();
+  return tagName();
 }
 
 AtomicString Element::className() const {
@@ -346,7 +346,7 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
     return nullptr;
   }
 
-  if (position == AtomicString("beforebegin")) {
+  if (position == AtomicString::CreateFromUTF8("beforebegin")) {
     auto* parent = parentNode();
     if (!parent) {
       exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
@@ -357,19 +357,19 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
       return nullptr;
     }
     return element;
-  } else if (position == AtomicString("afterbegin")) {
+  } else if (position == AtomicString::CreateFromUTF8("afterbegin")) {
     InsertBefore(element, firstChild(), exception_state);
     if (exception_state.HasException()) {
       return nullptr;
     }
     return element;
-  } else if (position == AtomicString("beforeend")) {
+  } else if (position == AtomicString::CreateFromUTF8("beforeend")) {
     AppendChild(element, exception_state);
     if (exception_state.HasException()) {
       return nullptr;
     }
     return element;
-  } else if (position == AtomicString("afterend")) {
+  } else if (position == AtomicString::CreateFromUTF8("afterend")) {
     auto* parent = parentNode();
     if (!parent) {
       exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
@@ -922,34 +922,38 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
   }
 }
 
-std::string Element::outerHTML() {
+String Element::outerHTML() {
   // Synchronize style attribute if needed
   if (HasElementData() && GetElementData()->style_attribute_is_dirty()) {
     SynchronizeStyleAttributeInternal();
   }
 
-  std::string tagname = local_name_.ToUTF8String();
-  std::string s = "<" + tagname;
+  StringBuilder builder;
+  builder.Append("<");
+  builder.Append(local_name_);
 
   // Read attributes (including style if it's been synchronized)
   if (attributes_ != nullptr) {
-    std::string attrs = attributes_->ToString();
-    if (!attrs.empty()) {
-      s += " " + attrs;
+    String attrs = attributes_->ToString();
+    if (!attrs.IsEmpty()) {
+      builder.Append(" ");
+      builder.Append(attrs);
     }
   }
 
-  s += ">";
+  builder.Append(">");
 
-  std::string childHTML = innerHTML();
-  s += childHTML;
-  s += "</" + tagname + ">";
+  String childHTML = innerHTML();
+  builder.Append(childHTML);
+  builder.Append("</");
+  builder.Append(local_name_);
+  builder.Append(">");
 
-  return s;
+  return builder.ReleaseString();
 }
 
-std::string Element::innerHTML() {
-  std::string s;
+String Element::innerHTML() {
+  StringBuilder builder;
 
   // If Element is TemplateElement, the innerHTML content is the content of documentFragment.
   Node* parent = To<Node>(this);
@@ -959,25 +963,27 @@ std::string Element::innerHTML() {
   }
 
   if (parent->firstChild() == nullptr)
-    return s;
+    return builder.ReleaseString();
 
   auto* child = parent->firstChild();
   while (child != nullptr) {
     if (auto* element = DynamicTo<Element>(child)) {
-      s += element->outerHTML();
+      builder.Append(element->outerHTML());
     } else if (auto* text = DynamicTo<Text>(child)) {
-      s += text->data().ToUTF8String();
+      builder.Append(text->data());
     } else if (auto* comment = DynamicTo<Comment>(child)) {
-      s += "<!--" + comment->data().ToUTF8String() + "-->";
+      builder.Append("<!--");
+      builder.Append(comment->data());
+      builder.Append("-->");
     }
     child = child->nextSibling();
   }
 
-  return s;
+  return builder.ReleaseString();
 }
 
 AtomicString Element::TextFromChildren() {
-  return {innerHTML()};
+  return AtomicString(innerHTML());
 }
 
 void Element::setInnerHTML(const AtomicString& value, ExceptionState& exception_state) {

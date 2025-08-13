@@ -34,8 +34,8 @@ class StyleRuleKeyframe final : public StyleRuleBase {
   StyleRuleKeyframe(std::unique_ptr<std::vector<KeyframeOffset>>, std::shared_ptr<const CSSPropertyValueSet>);
 
   // Exposed to JavaScript.
-  std::string KeyText() const;
-  bool SetKeyText(const ExecutingContext*, const std::string&);
+  String KeyText() const;
+  bool SetKeyText(const ExecutingContext*, const String&);
 
   // Used by StyleResolver.
   const std::vector<KeyframeOffset>& Keys() const;
@@ -43,7 +43,7 @@ class StyleRuleKeyframe final : public StyleRuleBase {
   const CSSPropertyValueSet& Properties() const { return *properties_; }
   std::shared_ptr<const MutableCSSPropertyValueSet> MutableProperties();
 
-  std::string CssText() const;
+  String CssText() const;
 
   void TraceAfterDispatch(GCVisitor*) const;
 

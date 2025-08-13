@@ -12,6 +12,7 @@
 #include "core/dom/qualified_name.h"
 #include "core/platform/hash_traits.h"
 #include "css_property_instance.h"
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
@@ -27,7 +28,7 @@ class PropertyHandle {
   }
 
   // TODO(crbug.com/980160): Eliminate call to GetCSSPropertyVariable().
-  explicit PropertyHandle(const std::string& property_name)
+  explicit PropertyHandle(const AtomicString& property_name)
       : handle_type_(kHandleCSSCustomProperty),
         css_property_(&GetCSSPropertyVariable()),
         property_name_(property_name) {}
@@ -37,7 +38,7 @@ class PropertyHandle {
       : handle_type_(property_name.IsCustomProperty() ? kHandleCSSCustomProperty : kHandleCSSProperty),
         css_property_(property_name.IsCustomProperty() ? &GetCSSPropertyVariable()
                                                        : &CSSProperty::Get(property_name.Id())),
-        property_name_(property_name.IsCustomProperty() ? property_name.ToAtomicString().GetString() : "") {}
+        property_name_(property_name.IsCustomProperty() ? property_name.ToAtomicString() : g_null_atom) {}
 
   explicit PropertyHandle(const QualifiedName& attribute_name)
       : handle_type_(kHandleSVGAttribute), svg_attribute_(&attribute_name) {}
@@ -54,7 +55,7 @@ class PropertyHandle {
   }
 
   bool IsCSSCustomProperty() const { return handle_type_ == kHandleCSSCustomProperty; }
-  const std::string& CustomPropertyName() const {
+  const AtomicString& CustomPropertyName() const {
     assert(IsCSSCustomProperty());
     return property_name_;
   }
@@ -73,7 +74,7 @@ class PropertyHandle {
 
   CSSPropertyName GetCSSPropertyName() const {
     if (handle_type_ == kHandleCSSCustomProperty)
-      return CSSPropertyName(AtomicString::CreateFromUTF8(property_name_));
+      return CSSPropertyName(property_name_);
     assert(IsCSSProperty() || IsPresentationAttribute());
     return CSSPropertyName(css_property_->PropertyID());
   }
@@ -104,7 +105,7 @@ class PropertyHandle {
     const CSSProperty* css_property_;
     const QualifiedName* svg_attribute_;
   };
-  std::string property_name_;
+  AtomicString property_name_;
 
   friend struct ::webf::HashTraits<webf::PropertyHandle>;
 };

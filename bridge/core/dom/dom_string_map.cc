@@ -48,7 +48,7 @@ static bool IsValidAttributeName(const AtomicString& name) {
 static bool IsValidPropertyName(const AtomicString& name) {
   const int64_t length = name.length();
   if (name.Is8Bit()) {
-    const char* chars = name.Characters8();
+    const LChar* chars = name.Characters8();
     for (unsigned i = 0; i < length; ++i) {
       if (chars[i] == '-' && (i + 1 < length) && IsASCIILower(chars[i + 1]))
         return false;
@@ -107,7 +107,7 @@ static AtomicString ConvertPropertyNameToAttributeName(const AtomicString& name)
     std::string result;
     result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
     result.append("data-");
-    const char* chars = name.Characters8();
+    const LChar* chars = name.Characters8();
     unsigned length = name.length();
     for (unsigned i = 0; i < length; ++i) {
       unsigned char character = chars[i];

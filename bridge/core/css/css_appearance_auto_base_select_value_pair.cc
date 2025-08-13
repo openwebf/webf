@@ -3,13 +3,18 @@
 // found in the LICENSE file.
 
 #include "core/css/css_appearance_auto_base_select_value_pair.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
 String CSSAppearanceAutoBaseSelectValuePair::CustomCSSText() const {
-  std::string first = First()->CssText();
-  std::string second = Second()->CssText();
-  return "-internal-appearance-auto-base-select(" + first + ", " + second + ")";
+  StringBuilder builder;
+  builder.Append("-internal-appearance-auto-base-select(");
+  builder.Append(First()->CssText());
+  builder.Append(", ");
+  builder.Append(Second()->CssText());
+  builder.Append(")");
+  return builder.ReleaseString();
 }
 
 }  // namespace webf

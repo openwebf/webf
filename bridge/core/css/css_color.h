@@ -45,7 +45,7 @@ class CSSColor : public CSSValue {
 
   // Returns the color serialized according to CSSOM:
   // https://drafts.csswg.org/cssom/#serialize-a-css-component-value
-  static std::string SerializeAsCSSComponentValue(Color color);
+  static String SerializeAsCSSComponentValue(Color color);
 
  private:
   friend class ::webf::CSSValuePool;

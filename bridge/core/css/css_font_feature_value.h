@@ -30,15 +30,16 @@
 
 #include "core/css/css_value.h"
 #include "foundation/casting.h"
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
 namespace cssvalue {
 class CSSFontFeatureValue : public CSSValue {
  public:
-  CSSFontFeatureValue(const std::string& tag, int value);
+  CSSFontFeatureValue(const AtomicString& tag, int value);
 
-  const std::string& Tag() const { return tag_; }
+  const AtomicString& Tag() const { return tag_; }
   int Value() const { return value_; }
   String CustomCSSText() const;
 
@@ -47,7 +48,7 @@ class CSSFontFeatureValue : public CSSValue {
   void TraceAfterDispatch(GCVisitor* visitor) const { CSSValue::TraceAfterDispatch(visitor); }
 
  private:
-  std::string tag_;
+  AtomicString tag_;
   const int value_;
 };
 

@@ -21,7 +21,7 @@ class CSSLayerStatementRule final : public CSSRule {
   CSSLayerStatementRule(std::shared_ptr<StyleRuleLayerStatement>, CSSStyleSheet*);
   ~CSSLayerStatementRule() override;
 
-  std::vector<std::string> nameList() const;
+  std::vector<String> nameList() const;
 
   void Reattach(std::shared_ptr<StyleRuleBase>) override;
   AtomicString cssText() const override;

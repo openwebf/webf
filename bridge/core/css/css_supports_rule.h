@@ -52,7 +52,7 @@ class CSSSupportsRule : public CSSConditionRule {
   void TraceAfterDispatch(GCVisitor* visitor) const;
 
  private:
-  std::string conditionText() const override;
+  String conditionText() const override;
 };
 
 }  // namespace webf

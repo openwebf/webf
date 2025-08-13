@@ -3,16 +3,17 @@
 // found in the LICENSE file.
 
 #include "css_function_value.h"
+#include "../../foundation/string/string_builder.h"
 
 namespace webf {
 
 String CSSFunctionValue::CustomCSSText() const {
-  std::string result;
-  result.append(getValueName(value_id_));
-  result.append("(");
-  result.append(CSSValueList::CustomCSSText());
-  result.append(")");
-  return result;
+  StringBuilder result;
+  result.Append(getValueName(value_id_));
+  result.Append("(");
+  result.Append(CSSValueList::CustomCSSText());
+  result.Append(")");
+  return result.ReleaseString();
 }
 
 }  // namespace webf
