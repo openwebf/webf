@@ -5,7 +5,7 @@ import styles from './BasicFormElementsPage.module.css';
 export const BasicFormElementsPage: React.FC = () => {
   const [textValue, setTextValue] = useState('');
   const [radioValue, setRadioValue] = useState('red');
-  const [checkboxValues, setCheckboxValues] = useState<string[]>([]);
+  const [checkboxValues, setCheckboxValues] = useState<string[]>(['reading']);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('handleTextChange', e.target.value);
@@ -30,6 +30,21 @@ export const BasicFormElementsPage: React.FC = () => {
     setTextValue('');
     setRadioValue('');
     setCheckboxValues([]);
+  };
+
+  // Test functions to change states programmatically
+  const testRadioChange = (value: string) => {
+    console.log('Programmatically changing radio from', radioValue, 'to:', value);
+    setRadioValue(value);
+  };
+
+  const testCheckboxToggle = (value: string) => {
+    console.log('Programmatically toggling checkbox:', value);
+    if (checkboxValues.includes(value)) {
+      setCheckboxValues(checkboxValues.filter(item => item !== value));
+    } else {
+      setCheckboxValues([...checkboxValues, value]);
+    }
   };
 
   return (
@@ -99,6 +114,20 @@ export const BasicFormElementsPage: React.FC = () => {
               </label>
             </div>
             <div className={styles.inputValue}>Selected: "{radioValue}"</div>
+            
+            {/* Test buttons for radio */}
+            <div className={styles.testButtons}>
+              <h3>Test Radio Programmatically:</h3>
+              <button onClick={() => testRadioChange('red')} className={styles.testButton}>
+                Set Red
+              </button>
+              <button onClick={() => testRadioChange('blue')} className={styles.testButton}>
+                Set Blue  
+              </button>
+              <button onClick={() => testRadioChange('green')} className={styles.testButton}>
+                Set Green
+              </button>
+            </div>
           </div>
         </div>
 
@@ -151,6 +180,23 @@ export const BasicFormElementsPage: React.FC = () => {
             </div>
             <div className={styles.inputValue}>
               Selected: [{checkboxValues.join(', ')}]
+            </div>
+            
+            {/* Test buttons for checkboxes */}
+            <div className={styles.testButtons}>
+              <h3>Test Checkboxes Programmatically:</h3>
+              <button onClick={() => testCheckboxToggle('reading')} className={styles.testButton}>
+                Toggle Reading
+              </button>
+              <button onClick={() => testCheckboxToggle('sports')} className={styles.testButton}>
+                Toggle Sports
+              </button>
+              <button onClick={() => testCheckboxToggle('music')} className={styles.testButton}>
+                Toggle Music
+              </button>
+              <button onClick={() => testCheckboxToggle('travel')} className={styles.testButton}>
+                Toggle Travel
+              </button>
             </div>
           </div>
         </div>
