@@ -1,3 +1,28 @@
+## 0.23.0-beta.1
+
+Updated QuickJS to commit b3caa5634ec95beb5f49a912774b26d7c2474ced
+
+### Features
+
+* Add core foundation implementations from Blink Source.
+
+  * Migrated string implementations from a QuickJS-based `AtomicString` to a Blink-implemented string.
+  * Temporarily disabled the unfinished CSS implementation feature. The current Dart CSS implementation remains functional.
+  * Upgraded the minimum NDK version requirement from r22 to r27 (27.3.13750724).
+* Added `document.currentScript` support.
+* Added `Element.insertAdjacentElement` support.
+* Added support for the `TextEncoder` API.
+* **WebF DevTools**
+  * Support multiple `WebFController` instances from a single Chrome DevTools service.
+  * Support hybrid router in application preview.
+* Added support for the `go_router` Flutter package.
+
+### Fixed
+
+* Fixed inline-flex container sizing so that gaps are only included in size calculations for display.
+* Corrected gap calculations in `justify-content` space distribution algorithms.
+* Fixed height calculation errors involving flex gaps and overflow.
+
 ## 0.22.8
 
 ### Features
