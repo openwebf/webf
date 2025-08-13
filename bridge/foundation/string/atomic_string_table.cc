@@ -35,7 +35,9 @@ std::shared_ptr<StringImpl> AtomicStringTable::Add(std::shared_ptr<StringImpl> s
   if (string->Is8Bit()) {
     WEBF_LOG(WARN) << "The hash of '" << string->Characters8() << "' is " << string->GetHash();
   } else {
-    WEBF_LOG(WARN) << "The hash of '" << AtomicString(string).ToUTF8String() << "' is " << string->GetHash();
+    // Don't create AtomicString here - it causes infinite recursion
+    // Just use the StringImpl directly
+    WEBF_LOG(WARN) << "The hash of UTF16 string is " << string->GetHash();
   }
   
   // Return the existing string if it was already in the table
