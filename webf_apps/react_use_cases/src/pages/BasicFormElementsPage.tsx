@@ -4,7 +4,7 @@ import styles from './BasicFormElementsPage.module.css';
 
 export const BasicFormElementsPage: React.FC = () => {
   const [textValue, setTextValue] = useState('');
-  const [radioValue, setRadioValue] = useState('');
+  const [radioValue, setRadioValue] = useState('red');
   const [checkboxValues, setCheckboxValues] = useState<string[]>([]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -13,6 +13,7 @@ export const BasicFormElementsPage: React.FC = () => {
   };
 
   const handleRadioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleRadioChange', e.target.value);
     setRadioValue(e.target.value);
   };
 
@@ -58,7 +59,7 @@ export const BasicFormElementsPage: React.FC = () => {
         </div>
 
         {/* Radio Button Section */}
-        {/* <div className={styles.section}>
+        <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Radio Buttons</h2>
           <div className={styles.inputGroup}>
             <div className={styles.label}>Choose your favorite color:</div>
@@ -99,7 +100,7 @@ export const BasicFormElementsPage: React.FC = () => {
             </div>
             <div className={styles.inputValue}>Selected: "{radioValue}"</div>
           </div>
-        </div> */}
+        </div>
 
         {/* Checkbox Section */}
         <div className={styles.section}>
@@ -107,15 +108,15 @@ export const BasicFormElementsPage: React.FC = () => {
           <div className={styles.inputGroup}>
             <div className={styles.label}>Select your hobbies:</div>
             <div className={styles.checkboxGroup}>
-              <input
-                  // type="checkbox"
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
                   value="reading"
                   checked={checkboxValues.includes('reading')}
                   onChange={handleCheckboxChange}
                   className={styles.checkboxInput}
                 />
                 Reading
-              <label className={styles.checkboxLabel}>
               </label>
               <label className={styles.checkboxLabel}>
                 <input

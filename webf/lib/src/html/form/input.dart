@@ -38,7 +38,33 @@ class FlutterInputElement extends WidgetElement
   }
 
   @override
-  get value => state?.controller.text ?? '';
+  get value {
+    if (type == 'radio') {
+      // For radio, use the radioValue getter from BaseRadioElement mixin
+      return (this as BaseRadioElement).radioValue;
+    }
+    // Use text controller for other input types  
+    return state?.controller.text ?? '';
+  }
+
+  @override
+  set value(value) {
+    if (type == 'radio') {
+      // For radio, use the radioValue setter from BaseRadioElement mixin
+      (this as BaseRadioElement).radioValue = value?.toString() ?? '';
+      return;
+    }
+    
+    // Use BaseInputElement's value setter for other types
+    if (value == null) {
+      state?.controller.value = TextEditingValue.empty;
+    } else {
+      value = value.toString();
+      if (state?.controller.value.text != value) {
+        state?.controller.value = TextEditingValue(text: value.toString());
+      }
+    }
+  }
 
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
@@ -156,6 +182,9 @@ class FlutterInputElementState extends WebFWidgetElementState
     switch (widgetElement.type) {
       case 'radio':
         initRadioState();
+        break;
+      case 'checkbox':
+        initCheckboxState();
         break;
       default:
         initBaseInputState();

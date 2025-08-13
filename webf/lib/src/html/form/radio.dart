@@ -15,15 +15,32 @@ import 'checked.dart';
 /// create a radio widget when input type='radio'
 mixin BaseRadioElement on WidgetElement, BaseCheckedElement {
   String _name = '';
+  String _value = '';
 
   String get name => _name;
+  
+  @override
+  String get value => _value;
+  
+  @override
+  set value(value) {
+    _value = value?.toString() ?? '';
+  }
+  
+  // Public getter for _value to allow FlutterInputElement to access it
+  String get radioValue => _value;
+  
+  // Public setter for _value to allow FlutterInputElement to set it
+  set radioValue(String value) {
+    _value = value;
+  }
 
   set name(String? n) {
     if (RadioElementState._groupValues[_name] != null) {
       RadioElementState._groupValues.remove(_name);
     }
     _name = n?.toString() ?? '';
-    RadioElementState._groupValues[_name] = _name;
+    // Don't set the group value here - it should be set when a radio is checked
   }
 
   double getRadioSize() {
@@ -40,15 +57,27 @@ mixin RadioElementState on WebFWidgetElementState {
   StreamSubscription<Map<String, String>>? _subscription;
 
   static final Map<String, String> _groupValues = <String, String>{};
+  static final Map<String, bool> _earlyCheckedStates = <String, bool>{};  // Track early checked states
 
   static final StreamController<Map<String, String>> _streamController =
       StreamController<Map<String, String>>.broadcast();
 
   StreamController<Map<String, String>> get streamController => _streamController;
   
+  // Public methods to access early checked states
+  static void setEarlyCheckedState(String key, bool value) {
+    _earlyCheckedStates[key] = value;
+  }
+  
+  static bool? getEarlyCheckedState(String key) {
+    return _earlyCheckedStates[key];
+  }
+  
+  static Map<String, bool> get earlyCheckedStates => _earlyCheckedStates;
+  
   BaseRadioElement get _radioElement => widgetElement as BaseRadioElement;
 
-  String get groupValue => _groupValues[_radioElement.name] ?? _radioElement.name;
+  String get groupValue => _groupValues[_radioElement.name] ?? '';
 
   set groupValue(String? gv) {
     _radioElement.internalSetAttribute('groupValue', gv ?? _radioElement.name);
@@ -56,6 +85,10 @@ mixin RadioElementState on WebFWidgetElementState {
   }
 
   void initRadioState() {
+    // Check if JS already set checked=true before state was initialized
+    String radioKey = _radioElement.value;
+    bool wasSetCheckedEarly = RadioElementState.getEarlyCheckedState(radioKey) == true;
+    
     _subscription = _streamController.stream.listen((message) {
       setState(() {
         for (var entry in message.entries) {
@@ -66,10 +99,18 @@ mixin RadioElementState on WebFWidgetElementState {
       });
     });
 
-    if (_groupValues.containsKey(_radioElement.name)) {
+    // Check if this radio is initially checked
+    // This handles both: direct checked attribute and early setChecked calls
+    if (wasSetCheckedEarly) {
+      String radioValue = _radioElement.value;
+      String singleRadioValue = '${_radioElement.name}-$radioValue';
+      _groupValues[_radioElement.name] = singleRadioValue;
+      setState(() {});
+    } else if (_groupValues.containsKey(_radioElement.name)) {
       setState(() {});
     }
   }
+
 
   void disposeRadio() {
     _subscription?.cancel();
@@ -82,8 +123,11 @@ mixin RadioElementState on WebFWidgetElementState {
   }
 
   Widget createRadio(BuildContext context) {
-    String singleRadioValue = '${_radioElement.name}-${_radioElement.getAttribute('value')}';
+    String radioValue = _radioElement.value;
+    String singleRadioValue = '${_radioElement.name}-$radioValue';
+    
     return Transform.scale(
+      scale: _radioElement.getRadioSize(),
       child: Radio<String>(
           value: singleRadioValue,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -102,7 +146,6 @@ mixin RadioElementState on WebFWidgetElementState {
                   }
                 },
           groupValue: groupValue),
-      scale: _radioElement.getRadioSize(),
     );
   }
 }
