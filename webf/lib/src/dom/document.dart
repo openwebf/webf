@@ -5,7 +5,6 @@
 
 import 'dart:collection';
 import 'dart:ffi';
-import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
@@ -16,73 +15,12 @@ import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/foundation.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/css/query_selector.dart' as QuerySelector;
+import 'package:webf/src/css/query_selector.dart' as query_selector;
 import 'package:webf/src/dom/element_registry.dart' as element_registry;
-import 'package:webf/src/foundation/cookie_jar.dart';
 
-/// In the document tree, there may contains WidgetElement which connected to a Flutter Elements.
-/// And these flutter element will be unmounted in the end of this frame and their renderObject will call dispose() too.
-/// So we can't dispose WebF Element's renderObject immediately if the WebF element are removed from document tree.
-/// This class will buffering all the renderObjects who's element are removed from the document tree, and they will be disposed
-/// in the end of this frame.
-class _InactiveRenderObjects {
-  Set<RenderObject> _renderObjects = {};
-  Set<RenderObject> _nextDisposeRenderObjects = {};
-
-  bool _isScheduled = false;
-
-  void _scheduleFrameToFinalizeRenderObjects() {
-    _isScheduled = true;
-
-    /// We needs to wait at least 2 frames to dispose all webf managed renderObjects.
-    /// All renderObjects managed by WebF should be disposed after Flutter managed renderObjects dispose.
-    RendererBinding.instance.addPostFrameCallback((timeStamp) {
-      /// The Flutter framework will move all deactivated elements into _InactiveElement list.
-      /// They will be disposed in the next frame.
-      RendererBinding.instance.addPostFrameCallback((timeStamp) {
-        /// Now the renderObjects managed by Flutter framework are disposed, it's safe to dispose renderObject by our own.
-        finalizeInactiveRenderObjects();
-        _isScheduled = false;
-
-        /// Some pending Objects may be added during this 2 frame waiting. Regrouping them into the waiting list.
-        if (_nextDisposeRenderObjects.isNotEmpty) {
-          _renderObjects = _nextDisposeRenderObjects;
-          _nextDisposeRenderObjects = {};
-          _scheduleFrameToFinalizeRenderObjects();
-        }
-      });
-      RendererBinding.instance.scheduleFrame();
-    });
-    RendererBinding.instance.scheduleFrame();
-  }
-
-  void add(RenderObject? renderObject) {
-    if (renderObject == null) return;
-
-    if (_renderObjects.isEmpty && !_isScheduled) {
-      _scheduleFrameToFinalizeRenderObjects();
-    }
-
-    assert(!renderObject.debugDisposed!, '$renderObject already disposed');
-
-    if (!_isScheduled) {
-      _renderObjects.add(renderObject);
-    } else {
-      _nextDisposeRenderObjects.add(renderObject);
-    }
-  }
-
-  void finalizeInactiveRenderObjects() {
-    for (RenderObject object in _renderObjects) {
-      assert(!object.attached);
-      object.dispose();
-    }
-    _renderObjects.clear();
-  }
-}
+// Removed _InactiveRenderObjects helper (unused).
 
 enum DocumentReadyState { loading, interactive, complete }
 
@@ -141,7 +79,7 @@ class Document extends ContainerNode {
 
   ScriptRunner get scriptRunner => _scriptRunner;
 
-  _InactiveRenderObjects inactiveRenderObjects = _InactiveRenderObjects();
+  // Removed unused inactive render objects holder to satisfy lints.
 
   @override
   EventTarget? get parentEventTarget => defaultView;
@@ -166,7 +104,6 @@ class Document extends ContainerNode {
   @override
   String get nodeName => '#document';
 
-  @override
   RenderBox? get domRenderer => viewport;
 
   @override
@@ -275,16 +212,22 @@ class Document extends ContainerNode {
             castToType<Document>(document).elementFromPoint(castToType<double>(args[0]), castToType<double>(args[1]))),
   };
 
-  @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _syncDocumentMethods];
+  // Methods getter overridden below to include debug methods conditionally.
+
+  static final StaticDefinedSyncBindingObjectMethodMap _debugDocumentMethods = {
+    '___clear_cookies__': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).debugClearCookies(args)),
+    '___force_rebuild__': StaticDefinedSyncBindingObjectMethod(
+        call: (document, args) => castToType<Document>(document).forceRebuild()),
+  };
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods {
+    final list = <StaticDefinedSyncBindingObjectMethodMap>[...super.methods, _syncDocumentMethods];
     if (kDebugMode || kProfileMode) {
-      methods['___clear_cookies__'] = BindingObjectMethodSync(call: (args) => debugClearCookies(args));
-      methods['___force_rebuild__'] = BindingObjectMethodSync(call: (args) => forceRebuild());
+      list.add(_debugDocumentMethods);
     }
+    return list;
   }
 
   get readyState {
@@ -352,17 +295,17 @@ class Document extends ContainerNode {
 
   dynamic querySelector(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
-    return QuerySelector.querySelector(this, args.first);
+    return query_selector.querySelector(this, args.first);
   }
 
   dynamic elementFromPoint(double x, double y) {
     forceRebuild();
     documentElement?.flushLayout();
-    return HitTestPoint(x, y);
+    return hitTestPoint(x, y);
   }
 
-  Element? HitTestPoint(double x, double y) {
-    HitTestResult hitTestResult = HitTestInDocument(x, y);
+  Element? hitTestPoint(double x, double y) {
+    HitTestResult hitTestResult = hitTestInDocument(x, y);
     Iterable<HitTestEntry> hitTestEntrys = hitTestResult.path;
     if (hitTestResult.path.isNotEmpty) {
       if (hitTestEntrys.first.target is RenderBoxModel) {
@@ -372,7 +315,7 @@ class Document extends ContainerNode {
     return null;
   }
 
-  HitTestResult HitTestInDocument(double x, double y) {
+  HitTestResult hitTestInDocument(double x, double y) {
     BoxHitTestResult boxHitTestResult = BoxHitTestResult();
     Offset offset = Offset(x, y);
     documentElement?.attachedRenderer?.hitTest(boxHitTestResult, position: offset);
@@ -381,7 +324,7 @@ class Document extends ContainerNode {
 
   dynamic querySelectorAll(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return QuerySelector.querySelectorAll(this, args.first);
+    return query_selector.querySelectorAll(this, args.first);
   }
 
   dynamic getElementById(List<dynamic> args) {
@@ -412,13 +355,13 @@ class Document extends ContainerNode {
 
   dynamic getElementsByClassName(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    String selector = (args.first as String).split(classNameSplitRegExp).map((e) => '.' + e).join('');
-    return QuerySelector.querySelectorAll(this, selector);
+    String selector = (args.first as String).split(classNameSplitRegExp).map((e) => '.$e').join('');
+    return query_selector.querySelectorAll(this, selector);
   }
 
   dynamic getElementsByTagName(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return QuerySelector.querySelectorAll(this, args.first);
+    return query_selector.querySelectorAll(this, args.first);
   }
 
   dynamic getElementsByName(List<dynamic> args) {
@@ -434,7 +377,7 @@ class Document extends ContainerNode {
       return;
     }
 
-    bool documentElementChanged = element != null && element != _documentElement;
+    // Track element changes implicitly by comparing current and previous values.
     // When document is disposed, viewport is null.
     if (viewport != null) {
       _visibilityState = VisibilityState.visible;
@@ -587,13 +530,13 @@ class Document extends ContainerNode {
 
   void recalculateStyleImmediately() {
     var styleSheetNodes = styleNodeManager.styleSheetCandidateNodes;
-    styleSheetNodes.forEach((element) {
+    for (final element in styleSheetNodes) {
       if (element is StyleElementMixin) {
         element.reloadStyle();
       } else if (element is LinkElement && element.isCSSStyleSheetLoaded()) {
         element.reloadStyle();
       }
-    });
+    }
   }
 
   @override

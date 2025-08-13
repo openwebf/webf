@@ -110,14 +110,14 @@ class SVGRenderBoxBuilder {
         element.renderStyle.width = CSSLengthValue.auto;
       }
       element.tagName = tagName;
-      element.namespaceURI = SVG_ELEMENT_URI;
+      element.namespaceURI = svgElementUri;
       element.managedByFlutterWidget = true;
       return element;
     }
     print('Unknown SVG element $tagName');
     final element = SVGUnknownElement(null);
     element.tagName = tagName;
-    element.namespaceURI = SVG_ELEMENT_URI;
+    element.namespaceURI = svgElementUri;
     return element;
   }
 

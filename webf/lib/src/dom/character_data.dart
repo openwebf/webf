@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 
 abstract class CharacterData extends Node {
-  CharacterData(NodeType type, [context]) : super(type, context);
+  CharacterData(super.type, [super.context]);
 
   @override
   String get nodeName => throw UnimplementedError();

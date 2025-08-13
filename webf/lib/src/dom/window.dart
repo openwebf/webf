@@ -4,7 +4,6 @@
  */
 import 'dart:ui';
 
-import 'package:path/path.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/dom.dart';
@@ -12,8 +11,6 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/module.dart';
 import 'package:webf/src/css/computed_style_declaration.dart';
-
-const String WINDOW = 'WINDOW';
 
 class Window extends EventTarget {
   final Document document;
@@ -68,6 +65,7 @@ class Window extends EventTarget {
   @override
   void initializeProperties(Map<String, BindingObjectProperty> properties) {
     // https://www.w3.org/TR/cssom-view-1/#extensions-to-the-window-interface
+    super.initializeProperties(properties);
   }
 
   void open(String url) {

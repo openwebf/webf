@@ -2,6 +2,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
+import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
@@ -14,9 +15,9 @@ import 'package:webf/gesture.dart';
 
 typedef ElementCreator = Element Function(BindingContext? context);
 
-final HTML_ELEMENT_URI = 'http://www.w3.org/1999/xhtml';
-final SVG_ELEMENT_URI = 'http://www.w3.org/2000/svg';
-final MATHML_ELEMENT_URI = 'http://www.w3.org/1998/Math/MathML';
+final htmlElementUri = 'http://www.w3.org/1999/xhtml';
+final svgElementUri = 'http://www.w3.org/2000/svg';
+final mathmlElementUri = 'http://www.w3.org/1998/Math/MathML';
 
 final Map<String, ElementCreator> _htmlRegistry = {};
 final Map<String, ElementCreator> _widgetElements = {};
@@ -27,14 +28,14 @@ final Map<String, ElementCreator> _svgRegistry = {};
 final Map<String, Map<String, ElementCreator>> _registries = {};
 
 class _UnknownHTMLElement extends Element {
-  _UnknownHTMLElement([BindingContext? context]) : super(context);
+  _UnknownHTMLElement([super.context]) : super();
 
   @override
   Map<String, dynamic> get defaultStyle => {'display': 'block'};
 }
 
 class _UnknownNamespaceElement extends Element {
-  _UnknownNamespaceElement([BindingContext? context]) : super(context);
+  _UnknownNamespaceElement([super.context]) : super();
 }
 
 Map<String, ElementCreator> getAllWidgetElements() {
@@ -80,7 +81,7 @@ Element createElement(String name, [BindingContext? context]) {
   Element element;
   if (creator == null) {
     if (enableWebFCommandLog) {
-      print('Unexpected HTML element "$name"');
+      debugPrint('Unexpected HTML element "$name"');
     }
     element = _UnknownHTMLElement(context);
   } else {
@@ -89,7 +90,7 @@ Element createElement(String name, [BindingContext? context]) {
 
   // Assign tagName, used by inspector.
   element.tagName = name;
-  element.namespaceURI = HTML_ELEMENT_URI;
+  element.namespaceURI = htmlElementUri;
   return element;
 }
 
@@ -97,24 +98,24 @@ Element createSvgElement(String name, [BindingContext? context]) {
   ElementCreator? creator = _svgRegistry[name];
   Element element;
   if (creator == null) {
-    print('Unexpected SVG element "$name"');
+    debugPrint('Unexpected SVG element "$name"');
     element = SVGUnknownElement(context);
   } else {
     element = creator(context);
   }
 
   element.tagName = name;
-  element.namespaceURI = SVG_ELEMENT_URI;
+  element.namespaceURI = svgElementUri;
 
   return element;
 }
 
 Element createElementNS(String uri, String name, [BindingContext? context]) {
-  if (uri == HTML_ELEMENT_URI) {
+  if (uri == htmlElementUri) {
     return createElement(name, context);
   }
 
-  if (uri == SVG_ELEMENT_URI) {
+  if (uri == svgElementUri) {
     return createSvgElement(name, context);
   }
 
@@ -122,7 +123,7 @@ Element createElementNS(String uri, String name, [BindingContext? context]) {
   Element element;
 
   if (creator == null) {
-    print('Unexpected element "$name" of namespace "$uri"');
+    debugPrint('Unexpected element "$name" of namespace "$uri"');
 
     element = _UnknownNamespaceElement(context);
   } else {

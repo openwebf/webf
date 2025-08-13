@@ -12,11 +12,7 @@ class Comment extends CharacterData {
   @override
   String get nodeName => '#comment';
 
-  @override
-  RenderBox? get domRenderer => null;
-
-  @override
-  String get hashKey => '#comment';
+  // Comment nodes have no renderer or hash key.
 
 
   // @TODO: Get data from bridge side.

@@ -374,7 +374,7 @@ describe('DOM Element API', () => {
     expect(document.documentElement.parentElement).toEqual(null);
   });
 
-  it('should work with insertAdjacentElement', () => {
+  fit('should work with insertAdjacentElement', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 

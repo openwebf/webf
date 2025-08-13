@@ -12,28 +12,26 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/svg/rendering/container.dart';
 import 'package:webf/widget.dart';
-import 'package:webf/src/css/query_selector.dart' as QuerySelector;
+import 'package:webf/src/css/query_selector.dart' as query_selector;
 
 final RegExp classNameSplitRegExp = RegExp(r'\s+');
-const String _ONE_SPACE = ' ';
-const String _STYLE_PROPERTY = 'style';
-const String _ID = 'id';
-const String _CLASS_NAME = 'class';
-const String _NAME = 'name';
+const String _oneSpace = ' ';
+const String _styleProperty = 'style';
+const String _idAttr = 'id';
+const String _classNameAttr = 'class';
+const String _nameAttr = 'name';
 
 /// Defined by W3C Standard,
 /// Most element's default width is 300 in pixel,
 /// height is 150 in pixel.
-const String ELEMENT_DEFAULT_WIDTH = '300px';
-const String ELEMENT_DEFAULT_HEIGHT = '150px';
-const String UNKNOWN = 'UNKNOWN';
+const String elementDefaultWidth = '300px';
+const String elementDefaultHeight = '150px';
+const String unknown = 'UNKNOWN';
 
 typedef TestElement = bool Function(Element element);
 typedef ElementVisitor = void Function(Node child);
@@ -86,7 +84,7 @@ class ElementAttributeProperty {
 abstract class Element extends ContainerNode
     with ElementBase, ElementEventMixin, ElementOverflowMixin, ElementAdapterMixin {
   // Default to unknown, assign by [createElement], used by inspector.
-  String tagName = UNKNOWN;
+  String tagName = unknown;
 
   String? _id;
 
@@ -172,7 +170,7 @@ abstract class Element extends ContainerNode
     recalculateStyle(rebuildNested: isNeedRecalculate);
   }
 
-  String get className => _classList.join(_ONE_SPACE);
+  String get className => _classList.join(_oneSpace);
 
   PseudoElement? _beforeElement;
   PseudoElement? _afterElement;
@@ -287,11 +285,11 @@ abstract class Element extends ContainerNode
 
   String? collectElementChildText() {
     StringBuffer buffer = StringBuffer();
-    childNodes.forEach((node) {
+    for (final node in childNodes) {
       if (node is TextNode) {
         buffer.write(node.data);
       }
-    });
+    }
     if (buffer.isNotEmpty) {
       return buffer.toString();
     } else {
@@ -303,27 +301,27 @@ abstract class Element extends ContainerNode
 
   @mustCallSuper
   void initializeAttributes(Map<String, ElementAttributeProperty> attributes) {
-    attributes[_STYLE_PROPERTY] = ElementAttributeProperty(setter: (value) {
+    attributes[_styleProperty] = ElementAttributeProperty(setter: (value) {
       final map = CSSParser(value).parseInlineStyle();
       inlineStyle.addAll(map);
       recalculateStyle();
     }, deleter: () {
       _removeInlineStyle();
     });
-    attributes[_CLASS_NAME] = ElementAttributeProperty(
+    attributes[_classNameAttr] = ElementAttributeProperty(
         setter: (value) => className = value,
         deleter: () {
           className = EMPTY_STRING;
         });
-    attributes[_ID] = ElementAttributeProperty(
+    attributes[_idAttr] = ElementAttributeProperty(
         setter: (value) => id = value,
         deleter: () {
           id = EMPTY_STRING;
         });
-    attributes[_NAME] = ElementAttributeProperty(setter: (value) {
-      _updateNameMap(value, oldName: getAttribute(_NAME));
+    attributes[_nameAttr] = ElementAttributeProperty(setter: (value) {
+      _updateNameMap(value, oldName: getAttribute(_nameAttr));
     }, deleter: () {
-      _updateNameMap(null, oldName: getAttribute(_NAME));
+      _updateNameMap(null, oldName: getAttribute(_nameAttr));
     });
   }
 
@@ -398,44 +396,44 @@ abstract class Element extends ContainerNode
         StaticDefinedSyncBindingObjectMethod(call: (element, args) => castToType<Element>(element).closest(args)),
   };
 
-  @override
-  List<StaticDefinedSyncBindingObjectMethodMap> get methods => [...super.methods, _elementSyncMethods];
+  static final StaticDefinedSyncBindingObjectMethodMap _debugElementMethods = {
+    '__test_global_to_local__': StaticDefinedSyncBindingObjectMethod(
+        call: (element, args) => castToType<Element>(element).testGlobalToLocal(args[0], args[1])),
+  };
 
   @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-    super.initializeMethods(methods);
-    if (kDebugMode || kProfileMode) {
-      methods['__test_global_to_local__'] =
-          BindingObjectMethodSync(call: (args) => testGlobalToLocal(args[0], args[1]));
-    }
+  List<StaticDefinedSyncBindingObjectMethodMap> get methods {
+    final list = <StaticDefinedSyncBindingObjectMethodMap>[...super.methods, _elementSyncMethods];
+    if (kDebugMode || kProfileMode) list.add(_debugElementMethods);
+    return list;
   }
 
   dynamic getElementsByClassName(List<dynamic> args) {
-    return QuerySelector.querySelectorAll(this, '.' + args.first);
+    return query_selector.querySelectorAll(this, '.${args.first}');
   }
 
   dynamic getElementsByTagName(List<dynamic> args) {
-    return QuerySelector.querySelectorAll(this, args.first);
+    return query_selector.querySelectorAll(this, args.first);
   }
 
   dynamic querySelector(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
-    return QuerySelector.querySelector(this, args.first);
+    return query_selector.querySelector(this, args.first);
   }
 
   dynamic querySelectorAll(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return [];
-    return QuerySelector.querySelectorAll(this, args.first);
+    return query_selector.querySelectorAll(this, args.first);
   }
 
   bool matches(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return false;
-    return QuerySelector.matches(this, args.first);
+    return query_selector.matches(this, args.first);
   }
 
   dynamic closest(List<dynamic> args) {
     if (args[0].runtimeType == String && (args[0] as String).isEmpty) return null;
-    return QuerySelector.closest(this, args.first);
+    return query_selector.closest(this, args.first);
   }
 
   RenderBoxModel? updateOrCreateRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
@@ -535,7 +533,7 @@ abstract class Element extends ContainerNode
       if (axisDirection == AxisDirection.down) {
         fixedElement.attachedRenderer?.additionalPaintOffsetY = scrollOffset;
       } else if (axisDirection == AxisDirection.right) {
-        fixedElement.attachedRenderer?..additionalPaintOffsetX = scrollOffset;
+        fixedElement.attachedRenderer?.additionalPaintOffsetX = scrollOffset;
       }
     }
   }
@@ -767,8 +765,6 @@ abstract class Element extends ContainerNode
     if (managedByFlutterWidget || this is WidgetElement) {
       child.managedByFlutterWidget = true;
     }
-
-    Node? previousSibling = referenceNode.previousSibling;
     Node? node = super.insertBefore(child, referenceNode);
     return node;
   }
@@ -835,7 +831,7 @@ abstract class Element extends ContainerNode
     }
 
     super.connectedCallback();
-    _updateNameMap(getAttribute(_NAME));
+    _updateNameMap(getAttribute(_nameAttr));
     _updateIDMap(_id);
   }
 
@@ -843,7 +839,7 @@ abstract class Element extends ContainerNode
   void disconnectedCallback() {
     super.disconnectedCallback();
     _updateIDMap(null, oldID: _id);
-    _updateNameMap(null, oldName: getAttribute(_NAME));
+    _updateNameMap(null, oldName: getAttribute(_nameAttr));
     if (renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.absolute) {
       holderAttachedContainingBlockElement?.removeFixedPositionedElement(this);
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
@@ -950,7 +946,7 @@ abstract class Element extends ContainerNode
     return attributes.containsKey(qualifiedName);
   }
 
-  @deprecated
+  @Deprecated('Use setRenderStyleProperty or setRenderStyle instead')
   void setStyle(String property, value) {
     setRenderStyle(property, value);
   }
@@ -1034,11 +1030,11 @@ abstract class Element extends ContainerNode
   void _updateColorRelativePropertyWithColor(Element element) {
     element.renderStyle.updateColorRelativeProperty();
     if (element.children.isNotEmpty) {
-      element.children.forEach((Element child) {
+      for (final Element child in element.children) {
         if (!child.renderStyle.hasColor) {
           _updateColorRelativePropertyWithColor(child);
         }
-      });
+      }
     }
   }
 
@@ -1055,20 +1051,20 @@ abstract class Element extends ContainerNode
   void _updateChildrenFontRelativeLength(Element element) {
     element.renderStyle.updateFontRelativeLength();
     if (element.children.isNotEmpty) {
-      element.children.forEach((Element child) {
+      for (final Element child in element.children) {
         if (!child.renderStyle.hasFontSize) {
           _updateChildrenFontRelativeLength(child);
         }
-      });
+      }
     }
   }
 
   void _updateChildrenRootFontRelativeLength(Element element) {
     element.renderStyle.updateRootFontRelativeLength();
     if (element.children.isNotEmpty) {
-      element.children.forEach((Element child) {
+      for (final Element child in element.children) {
         _updateChildrenRootFontRelativeLength(child);
-      });
+      }
     }
   }
 
@@ -1195,9 +1191,9 @@ abstract class Element extends ContainerNode
 
       if (rebuildNested || hasInheritedPendingProperty) {
         // Update children style.
-        children.forEach((Element child) {
+        for (final Element child in children) {
           child.recalculateStyle(rebuildNested: rebuildNested, forceRecalculate: forceRecalculate);
-        });
+        }
       }
     }
   }
@@ -1313,7 +1309,7 @@ abstract class Element extends ContainerNode
         RenderPositionPlaceholder? placeholder = renderStyle.getSelfPositionPlaceHolder();
         if (placeholder != null && placeholder.attached) {
           // Get the placeholder's position (original position before sticky)
-          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!,
+          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent.attachedRenderer!,
               excludeScrollOffset: true);
 
           // Calculate where the element should be without sticky
@@ -1409,7 +1405,7 @@ abstract class Element extends ContainerNode
         RenderPositionPlaceholder? placeholder = renderStyle.getSelfPositionPlaceHolder();
         if (placeholder != null && placeholder.attached) {
           // Get the placeholder's position (original position before sticky)
-          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent!.attachedRenderer!,
+          Offset placeholderOffset = placeholder.getOffsetToAncestor(Offset.zero, offsetParent.attachedRenderer!,
               excludeScrollOffset: true);
 
           // Calculate where the element should be without sticky

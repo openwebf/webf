@@ -4,9 +4,6 @@
  */
 import 'package:flutter/foundation.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/foundation.dart';
-import 'package:webf/bridge.dart';
-import 'package:webf/src/dom/node_traversal.dart';
 
 typedef InsertNodeHandler = void Function(ContainerNode container, Node child, Node? next);
 
@@ -32,7 +29,7 @@ void getChildNodes(ContainerNode node, List<Node> nodes) {
 }
 
 abstract class ContainerNode extends Node {
-  ContainerNode(NodeType nodeType, [BindingContext? context]) : super(nodeType, context);
+  ContainerNode(super.nodeType, [super.context]);
 
   void _adoptAndAppendChild(ContainerNode container, Node child, Node? next) {
     child.parentOrShadowHostNode = this;
@@ -72,7 +69,7 @@ abstract class ContainerNode extends Node {
 
   @mustCallSuper
   @override
-  Node insertBefore(Node newChild, Node referenceNode) {
+  Node insertBefore(Node child, Node referenceNode) {
     // https://dom.spec.whatwg.org/#concept-node-pre-insert
 
     // insertBefore(node, null) is equivalent to appendChild(node)
@@ -84,8 +81,8 @@ abstract class ContainerNode extends Node {
 
     // 4. Adopt node into parent’s node document.
     List<Node> targets = [];
-    if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) {
-      return newChild;
+    if (!collectChildrenAndRemoveFromOldParent(child, targets)) {
+      return child;
     }
 
     // 5. Insert node into parent before reference child.
@@ -97,8 +94,8 @@ abstract class ContainerNode extends Node {
     }
 
     // 7. Trigger connected callback
-    if (newChild.isConnected) {
-      newChild.connectedCallback();
+    if (child.isConnected) {
+      child.connectedCallback();
     }
 
     // To insert a node into a parent before a child, run step 9 from the spec:
@@ -106,29 +103,29 @@ abstract class ContainerNode extends Node {
     // https://dom.spec.whatwg.org/#concept-node-insert
     didInsertNode(targets, referenceNode);
 
-    return newChild;
+    return child;
   }
 
   @override
-  Node? replaceChild(Node newChild, Node oldChild) {
+  Node? replaceChild(Node newNode, Node oldNode) {
     // https://dom.spec.whatwg.org/#concept-node-replace
     // Step 2 to 6 are already done at C++ side.
 
-    bool isOldChildConnected = oldChild.isConnected;
+    bool isOldChildConnected = oldNode.isConnected;
 
     // 7. Let reference child be child’s next sibling.
-    Node? next = oldChild.nextSibling;
+    Node? next = oldNode.nextSibling;
 
     // 8. If reference child is node, set it to node’s next sibling.
-    if (next == newChild) next = newChild.nextSibling;
+    if (next == newNode) next = newNode.nextSibling;
 
     // 10. Adopt node into parent’s node document.
     // Though the following CollectChildrenAndRemoveFromOldParent() also calls
     // RemoveChild(), we'd like to call RemoveChild() here to make a separated
     // MutationRecord.
-    ContainerNode? newChildParent = newChild.parentNode;
+    ContainerNode? newChildParent = newNode.parentNode;
     if (newChildParent != null) {
-      newChildParent.removeChild(newChild);
+      newChildParent.removeChild(newNode);
     }
 
     // 9. Let previousSibling be child’s previous sibling.
@@ -140,16 +137,16 @@ abstract class ContainerNode extends Node {
     // 12. If child’s parent is not null, run these substeps:
     //    1. Set removedNodes to a list solely containing child.
     //    2. Remove child from its parent with the suppress observers flag set.
-    ContainerNode? oldChildParent = oldChild.parentNode;
+    ContainerNode? oldChildParent = oldNode.parentNode;
     if (oldChildParent != null) {
-      oldChildParent.removeChild(oldChild);
+      oldChildParent.removeChild(oldNode);
     }
 
     List<Node> targets = [];
 
     // 13. Let nodes be node’s children if node is a DocumentFragment node, and
     // a list containing solely node otherwise.
-    if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) return oldChild;
+    if (!collectChildrenAndRemoveFromOldParent(newNode, targets)) return oldNode;
     // 10. Adopt node into parent’s node document.
     // 14. Insert node into parent before reference child with the suppress
     // observers flag set.
@@ -160,19 +157,17 @@ abstract class ContainerNode extends Node {
     }
 
     if (isOldChildConnected) {
-      oldChild.disconnectedCallback();
-      newChild.connectedCallback();
+      oldNode.disconnectedCallback();
+      newNode.connectedCallback();
     }
 
     didInsertNode(targets, next);
 
-    return oldChild;
+    return oldNode;
   }
 
   @override
-  Node? removeChild(Node oldChild) {
-    Node child = oldChild;
-
+  Node? removeChild(Node child) {
     if (this is Element) {
       ownerDocument.markElementStyleDirty(this as Element);
     }
@@ -182,7 +177,7 @@ abstract class ContainerNode extends Node {
 
     Node? prev = child.previousSibling;
     Node? next = child.nextSibling;
-    removeBetween(prev, next, oldChild);
+    removeBetween(prev, next, child);
     notifyNodeRemoved(child);
 
     if (isOldChildConnected) {
@@ -207,11 +202,11 @@ abstract class ContainerNode extends Node {
 
   @mustCallSuper
   @override
-  Node appendChild(Node newChild) {
+  Node appendChild(Node child) {
 
     List<Node> targets = [];
-    if (!collectChildrenAndRemoveFromOldParent(newChild, targets)) {
-      return newChild;
+    if (!collectChildrenAndRemoveFromOldParent(child, targets)) {
+      return child;
     }
 
     _insertNode(targets, null, _adoptAndAppendChild);
@@ -220,13 +215,13 @@ abstract class ContainerNode extends Node {
       ownerDocument.markElementStyleDirty(this as Element);
     }
 
-    if (newChild.isConnected) {
-      newChild.connectedCallback();
+    if (child.isConnected) {
+      child.connectedCallback();
     }
 
     didInsertNode(targets, null);
 
-    return newChild;
+    return child;
   }
 
   void removeChildren() {
@@ -257,7 +252,7 @@ abstract class ContainerNode extends Node {
     assert(oldChild.parentNode == this);
 
     if (nextChild != null) {
-      nextChild..previousSibling = previousChild;
+      nextChild.previousSibling = previousChild;
     }
     if (previousChild != null) {
       previousChild.nextSibling = nextChild;

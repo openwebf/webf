@@ -3,29 +3,16 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
-import 'package:flutter/widgets.dart' as flutter;
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
-import 'package:webf/src/bridge/binding_object.dart';
-
-const String DOCUMENT_FRAGMENT = 'DOCUMENTFRAGMENT';
 
 class DocumentFragment extends ContainerNode {
-  DocumentFragment([context]) : super(NodeType.COMMENT_NODE, context);
+  DocumentFragment([context]) : super(NodeType.DOCUMENT_FRAGMENT_NODE, context);
 
   @override
   String get nodeName => '#documentfragment';
 
-  @override
-  void initializeMethods(Map<String, BindingObjectMethod> methods) {
-  }
-
-  @override
-  void initializeProperties(Map<String, BindingObjectProperty> properties) {
-  }
-
-  @override
-  RenderBox? get domRenderer => null;
+  // No additional methods or properties for DocumentFragment.
 
   @override
   RenderBox? get attachedRenderer => null;
@@ -36,6 +23,5 @@ class DocumentFragment extends ContainerNode {
   @override
   bool get isRendererAttachedToSegmentTree => false;
 
-  @override
-  String get hashKey => '#documentFragment';
+  // DocumentFragment has no hash key representation.
 }

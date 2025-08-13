@@ -202,7 +202,7 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
           view.createDocumentFragment(nativePtr.cast<NativeBindingObject>());
           break;
         case UICommandType.createSVGElement:
-          view.createElementNS(nativePtr.cast<NativeBindingObject>(), SVG_ELEMENT_URI, command.args);
+          view.createElementNS(nativePtr.cast<NativeBindingObject>(), svgElementUri, command.args);
           break;
         case UICommandType.createElementNS:
           Pointer<NativeString> nativeNameSpaceUri = command.nativePtr2.cast<NativeString>();

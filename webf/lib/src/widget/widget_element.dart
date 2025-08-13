@@ -261,7 +261,7 @@ abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
 }
 
 class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
-  WebFWidgetElementAdapterState(WidgetElement widgetElement) : super(widgetElement);
+  WebFWidgetElementAdapterState(WidgetElement widgetElement) : super();
 
   WidgetElement get widgetElement => super.webFElement as WidgetElement;
 

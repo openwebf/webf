@@ -4,7 +4,6 @@
 
 import 'package:flutter/widgets.dart' as flutter;
 import 'node.dart';
-import 'element.dart';
 import 'node_list.dart';
 import 'container_node.dart';
 import 'collection_index_cache.dart';
