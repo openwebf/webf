@@ -40,7 +40,9 @@ class LineBox {
 
   /// Hit test this line box.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    for (final item in items) {
+    // Hit-test in reverse paint order so visually topmost/nested items get priority
+    for (int i = items.length - 1; i >= 0; i--) {
+      final item = items[i];
       if (item.hitTest(result, position: position)) {
         return true;
       }

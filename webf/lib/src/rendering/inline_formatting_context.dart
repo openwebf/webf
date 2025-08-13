@@ -389,7 +389,8 @@ class InlineFormattingContext {
     for (final lineBox in _lineBoxes) {
       bool isHit = lineBox.hitTest(
         result,
-        position: Offset(position.dx, position.dy - y),
+        // Account for text alignment offset applied during paint
+        position: Offset(position.dx - lineBox.alignmentOffset, position.dy - y),
       );
       if (isHit) {
         return true;

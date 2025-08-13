@@ -169,10 +169,14 @@ class InlineItemsBuilder {
 
       // Add text item
 
+      // Associate this text item with the nearest enclosing inline box (if any)
+      // so hit-testing can target the correct inline element (e.g., <span>).
       final item = InlineItem(
         type: InlineItemType.text,
         startOffset: startOffset,
         endOffset: _currentOffset,
+        // When inside an inline element, the top of the box stack is the owner inline box.
+        renderBox: _boxStack.isNotEmpty ? _boxStack.last : null,
         style: style,
       );
       // Set the direction from the current context
