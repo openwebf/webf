@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui show Paragraph, ParagraphBuilder, ParagraphStyle, ParagraphConstraints, PlaceholderAlignment, TextBox, TextPosition, LineMetrics, TextStyle;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -68,6 +69,18 @@ class InlineFormattingContext {
   List<LineBox> _lineBoxes = [];
   List<LineBox> get lineBoxes => _lineBoxes;
 
+  // New: Paragraph-based layout artifacts
+  ui.Paragraph? _paragraph;
+  List<ui.LineMetrics> _paraLines = const [];
+  // Placeholder boxes as reported by Paragraph, in the order placeholders were added.
+  List<ui.TextBox> _placeholderBoxes = const [];
+  // For mapping placeholder index -> RenderBox
+  final List<RenderBox?> _placeholderOrder = [];
+  // For mapping inline element RenderBox -> range in paragraph text
+  final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
+  // Toggle to use paragraph-based layout instead of manual shaping/breaking.
+  static bool useParagraphLayout = true;
+
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
@@ -81,7 +94,9 @@ class InlineFormattingContext {
       // Debug: Log preparation
       // print('InlineFormattingContext: prepareLayout - collecting inlines');
       _collectInlines();
-      _shapeText();
+      if (!useParagraphLayout) {
+        _shapeText();
+      }
       _needsCollectInlines = false;
     }
   }
@@ -166,47 +181,93 @@ class InlineFormattingContext {
   Size layout(BoxConstraints constraints) {
     // Prepare items if needed
     prepareLayout();
+    if (!useParagraphLayout) {
+      // Legacy path: manual shaping + custom line breaker
+      final algorithm = InlineLayoutAlgorithm(
+        context: this,
+        constraints: constraints,
+      );
+      _lineBoxes = algorithm.layout();
 
-    // Create layout algorithm
-    final algorithm = InlineLayoutAlgorithm(
-      context: this,
-      constraints: constraints,
-    );
-
-    // Run layout
-    _lineBoxes = algorithm.layout();
-
-    // Calculate total size
-    double width = 0;
-    double height = 0;
-
-    for (final lineBox in _lineBoxes) {
-      width = math.max(width, lineBox.width);
-      height += lineBox.height;
+      double width = 0;
+      double height = 0;
+      for (final lineBox in _lineBoxes) {
+        width = math.max(width, lineBox.width);
+        height += lineBox.height;
+      }
+      _updateChildOffsets();
+      return Size(width, height);
     }
 
-    // Update RenderBox parentData offsets based on line box layout
-    _updateChildOffsets();
+    // New path: build a single Paragraph using dart:ui APIs
+    _buildAndLayoutParagraph(constraints);
+
+    // Compute size from paragraph
+    final para = _paragraph!;
+    final width = math.min(para.longestLine, constraints.maxWidth);
+    final height = para.height;
+
+    // Update children offsets from placeholder boxes
+    _updateChildOffsetsFromParagraph();
 
     return Size(width, height);
   }
 
   /// Paint the inline content.
   void paint(PaintingContext context, Offset offset) {
-    double y = offset.dy;
-
-    for (int i = 0; i < _lineBoxes.length; i++) {
-      final lineBox = _lineBoxes[i];
-
-
-      lineBox.paint(context, Offset(offset.dx, y));
-
-      // Debug paint if enabled
-      if (debugPaintInlineLayoutEnabled) {
-        _debugPaintLineBox(context, lineBox, Offset(offset.dx, y));
+    if (!useParagraphLayout) {
+      double y = offset.dy;
+      for (int i = 0; i < _lineBoxes.length; i++) {
+        final lineBox = _lineBoxes[i];
+        lineBox.paint(context, Offset(offset.dx, y));
+        if (debugPaintInlineLayoutEnabled) {
+          _debugPaintLineBox(context, lineBox, Offset(offset.dx, y));
+        }
+        y += lineBox.height;
       }
+      return;
+    }
 
-      y += lineBox.height;
+    if (_paragraph == null) return;
+
+    // Paint inline span backgrounds/borders beneath text
+    _paintInlineSpanDecorations(context, offset);
+
+    // Paint the paragraph text
+    context.canvas.drawParagraph(_paragraph!, offset);
+
+    // Paint atomic inline children at their placeholder positions
+    for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
+      final box = _placeholderOrder[i];
+      if (box == null) continue;
+      final rect = _placeholderBoxes[i];
+
+      // Compute child top-left inside placeholder rect accounting margins if RenderBoxModel
+      double childLeft = rect.left;
+      double childTop = rect.top;
+      if (box is RenderBoxModel) {
+        final style = box.renderStyle;
+        childLeft += style.marginLeft.computedValue;
+        // For vertical: align child's bottom with baseline; paragraph placed baseline according to baselineOffset.
+        // We already included margins in placeholder height to align bottom at baseline; just shift by top margin.
+        // Padding/border are internal to child box itself.
+        childTop += 0; // Keep top; baseline alignment handled by addPlaceholder baselineOffset.
+      }
+      if (box.hasSize) {
+        context.paintChild(box, offset + Offset(childLeft, childTop));
+      }
+    }
+
+    if (debugPaintInlineLayoutEnabled) {
+      // Visualize placeholder rects
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = const Color(0xFF00AAFF);
+      for (final tb in _placeholderBoxes) {
+        final r = Rect.fromLTRB(tb.left, tb.top, tb.right, tb.bottom).shift(offset);
+        context.canvas.drawRect(r, paint);
+      }
     }
   }
 
@@ -365,83 +426,107 @@ class InlineFormattingContext {
 
   /// Hit test the inline content.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    double y = 0;
-
-    for (final lineBox in _lineBoxes) {
-      bool isHit = lineBox.hitTest(
-        result,
-        // Account for text alignment offset applied during paint
-        position: Offset(position.dx - lineBox.alignmentOffset, position.dy - y),
-      );
-      if (isHit) {
-        return true;
+    if (!useParagraphLayout) {
+      double y = 0;
+      for (final lineBox in _lineBoxes) {
+        bool isHit = lineBox.hitTest(
+          result,
+          position: Offset(position.dx - lineBox.alignmentOffset, position.dy - y),
+        );
+        if (isHit) return true;
+        y += lineBox.height;
       }
-      y += lineBox.height;
+      return false;
     }
 
+    // Paragraph path: hit test atomic inlines via placeholder rects
+    for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
+      final rb = _placeholderOrder[i];
+      if (rb == null) continue;
+      final tb = _placeholderBoxes[i];
+      final contains = position.dx >= tb.left && position.dx <= tb.right && position.dy >= tb.top && position.dy <= tb.bottom;
+      if (contains) {
+        // Delegate to child
+        final parentData = rb.parentData as ContainerBoxParentData<RenderBox>;
+        final local = position - (parentData.offset);
+        if (rb.hitTest(result, position: local)) {
+          return true;
+        }
+      }
+    }
     return false;
   }
 
   /// Get baseline for first line.
   double? getDistanceToBaseline(TextBaseline baseline) {
-    if (_lineBoxes.isEmpty) return null;
-    return _lineBoxes.first.baseline;
+    if (!useParagraphLayout) {
+      if (_lineBoxes.isEmpty) return null;
+      return _lineBoxes.first.baseline;
+    }
+    if (_paraLines.isEmpty) return null;
+    // First paragraph line baseline
+    return _paraLines.first.baseline;
   }
 
   /// Get the bounding rectangle for a specific inline element across all line fragments.
   Rect? getBoundsForRenderBox(RenderBox targetBox) {
-    if (_lineBoxes.isEmpty) return null;
-
-    double? minX, minY, maxX, maxY;
-    double currentY = 0;
-
-    // Search through all line boxes
-    for (final lineBox in _lineBoxes) {
-      // Check each item in the line box
-      for (final item in lineBox.items) {
-        // Check if this item belongs to the target box
-        bool belongsToTarget = false;
-
-        if (item is BoxLineBoxItem && item.renderBox == targetBox) {
-          belongsToTarget = true;
-        } else if (item is TextLineBoxItem && item.inlineItem.renderBox == targetBox) {
-          belongsToTarget = true;
-        }
-
-        if (belongsToTarget) {
-          // Calculate absolute position including line offset and alignment
-          final itemX = lineBox.alignmentOffset + item.offset.dx;
-          final itemY = currentY + item.offset.dy;
-
-          // For BoxLineBoxItem, include padding in the bounds
-          double left = itemX;
-          double top = itemY;
-          double right = itemX + item.size.width;
-          double bottom = itemY + item.size.height;
-
-          if (item is BoxLineBoxItem) {
-            final style = item.style;
-            top -= style.paddingTop.computedValue;
-            top -= style.borderTopWidth?.computedValue ?? 0.0;
-            bottom += style.paddingBottom.computedValue;
-            bottom += style.borderBottomWidth?.computedValue ?? 0.0;
+    if (!useParagraphLayout) {
+      if (_lineBoxes.isEmpty) return null;
+      double? minX, minY, maxX, maxY;
+      double currentY = 0;
+      for (final lineBox in _lineBoxes) {
+        for (final item in lineBox.items) {
+          bool belongsToTarget = false;
+          if (item is BoxLineBoxItem && item.renderBox == targetBox) belongsToTarget = true;
+          else if (item is TextLineBoxItem && item.inlineItem.renderBox == targetBox) belongsToTarget = true;
+          if (belongsToTarget) {
+            final itemX = lineBox.alignmentOffset + item.offset.dx;
+            final itemY = currentY + item.offset.dy;
+            double left = itemX, top = itemY, right = itemX + item.size.width, bottom = itemY + item.size.height;
+            if (item is BoxLineBoxItem) {
+              final style = item.style;
+              top -= style.paddingTop.computedValue;
+              top -= style.borderTopWidth?.computedValue ?? 0.0;
+              bottom += style.paddingBottom.computedValue;
+              bottom += style.borderBottomWidth?.computedValue ?? 0.0;
+            }
+            minX = minX == null ? left : math.min(minX, left);
+            minY = minY == null ? top : math.min(minY, top);
+            maxX = maxX == null ? right : math.max(maxX, right);
+            maxY = maxY == null ? bottom : math.max(maxY, bottom);
           }
+        }
+        currentY += lineBox.height;
+      }
+      if (minX != null && minY != null && maxX != null && maxY != null) {
+        return Rect.fromLTRB(minX, minY, maxX, maxY);
+      }
+      return null;
+    }
 
-          // Update min/max bounds
-          minX = minX == null ? left : math.min(minX, left);
-          minY = minY == null ? top : math.min(minY, top);
-          maxX = maxX == null ? right : math.max(maxX, right);
-          maxY = maxY == null ? bottom : math.max(maxY, bottom);
+    // Paragraph path: bounds for atomic inline placeholders
+    final idx = _placeholderOrder.indexOf(targetBox);
+    if (idx >= 0 && idx < _placeholderBoxes.length) {
+      final r = _placeholderBoxes[idx];
+      return Rect.fromLTWH(r.left, r.top, r.right - r.left, r.bottom - r.top);
+    }
+    // For inline element ranges (non-atomic), approximate using getBoxesForRange if recorded
+    if (targetBox is RenderBoxModel) {
+      final range = _elementRanges[targetBox];
+      if (range != null && _paragraph != null) {
+        final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+        if (rects.isNotEmpty) {
+          double? minX, minY, maxX, maxY;
+          for (final tb in rects) {
+            minX = (minX == null) ? tb.left : math.min(minX, tb.left);
+            minY = (minY == null) ? tb.top : math.min(minY, tb.top);
+            maxX = (maxX == null) ? tb.right : math.max(maxX, tb.right);
+            maxY = (maxY == null) ? tb.bottom : math.max(maxY, tb.bottom);
+          }
+          return Rect.fromLTRB(minX!, minY!, maxX!, maxY!);
         }
       }
-      currentY += lineBox.height;
     }
-
-    // If we found any fragments, return the bounding rectangle
-    if (minX != null && minY != null && maxX != null && maxY != null) {
-      return Rect.fromLTRB(minX, minY, maxX, maxY);
-    }
-
     return null;
   }
 
@@ -493,6 +578,245 @@ class InlineFormattingContext {
       }
       lineY += lineBox.height;
     }
+  }
+
+  // Build and layout a Paragraph from collected inline items
+  void _buildAndLayoutParagraph(BoxConstraints constraints) {
+    final style = (container as RenderBoxModel).renderStyle;
+    // Lay out atomic inlines first to obtain sizes for placeholders
+    _layoutAtomicInlineItemsForParagraph();
+
+    final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
+      textAlign: style.textAlign,
+      textDirection: style.direction,
+      maxLines: style.lineClamp,
+      ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
+    ));
+
+    _placeholderOrder.clear();
+    _elementRanges.clear();
+
+    // Track current paragraph code-unit position as we add text/placeholders
+    int paraPos = 0;
+    // Track an inline element stack to record ranges
+    final List<RenderBoxModel> elementStack = [];
+
+    for (final item in _items) {
+      if (item.isOpenTag && item.renderBox != null) {
+        final rb = item.renderBox!;
+        elementStack.add(rb);
+        _elementRanges[rb] = (paraPos, paraPos);
+        // Push style if present
+        if (item.style != null) {
+          pb.pushStyle(_uiTextStyleFromCss(item.style!));
+        }
+      } else if (item.isCloseTag && item.renderBox != null) {
+        // Pop style and seal range end
+        if (elementStack.isNotEmpty && elementStack.last == item.renderBox) {
+          final start = _elementRanges[item.renderBox!]!.$1;
+          _elementRanges[item.renderBox!] = (start, paraPos);
+          elementStack.removeLast();
+        }
+        if (item.style != null) {
+          pb.pop();
+        }
+      } else if (item.isAtomicInline && item.renderBox != null) {
+        // Add placeholder for atomic inline
+        final rb = item.renderBox!;
+        final rbStyle = rb.renderStyle;
+        final width = (rb is RenderBoxModel)
+            ? ((rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + rbStyle.marginLeft.computedValue + rbStyle.marginRight.computedValue)
+            : (rb.hasSize ? rb.size.width : 0.0);
+        final height = (rb is RenderBoxModel)
+            ? ((rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0)) + rbStyle.marginTop.computedValue + rbStyle.marginBottom.computedValue)
+            : (rb.hasSize ? rb.size.height : 0.0);
+
+        // CSS: baseline for inline-block defaults to bottom. Align bottom with baseline via baselineOffset=height.
+        pb.addPlaceholder(width, height, ui.PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic, baselineOffset: height);
+        _placeholderOrder.add(rb);
+        paraPos += 1; // placeholder adds a single object replacement char
+      } else if (item.isText) {
+        final text = item.getText(_textContent);
+        if (text.isEmpty || item.style == null) continue;
+        pb.pushStyle(_uiTextStyleFromCss(item.style!));
+        pb.addText(text);
+        pb.pop();
+        paraPos += text.length;
+      }
+    }
+
+    final paragraph = pb.build();
+    paragraph.layout(ui.ParagraphConstraints(width: constraints.maxWidth));
+    _paragraph = paragraph;
+    _paraLines = paragraph.computeLineMetrics();
+    _placeholderBoxes = paragraph.getBoxesForPlaceholders();
+  }
+
+  void _layoutAtomicInlineItemsForParagraph() {
+    final Set<RenderBox> laidOut = {};
+    for (final item in _items) {
+      if (item.isAtomicInline && item.renderBox != null) {
+        final child = item.renderBox!;
+        if (laidOut.contains(child)) continue;
+        final constraints = child.getConstraints();
+        child.layout(constraints, parentUsesSize: true);
+        laidOut.add(child);
+      }
+    }
+  }
+
+  void _updateChildOffsetsFromParagraph() {
+    if (_placeholderBoxes.isEmpty || _placeholderOrder.isEmpty) return;
+    // Apply offsets to actual children housed in this container
+    // We need to map RenderEventListener wrappers to their real children when present.
+    for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
+      final rb = _placeholderOrder[i];
+      if (rb == null) continue;
+      final rect = _placeholderBoxes[i];
+      Offset childOffset = Offset(rect.left, rect.top);
+      if (rb is RenderBoxModel) {
+        final s = rb.renderStyle;
+        childOffset = childOffset.translate(s.marginLeft.computedValue, 0);
+      }
+
+      // Walk up to find the direct child of the container to assign offset
+      RenderBox target = rb;
+      RenderObject? p = rb.parent;
+      while (p != null && p != container) {
+        if (p is RenderBox) target = p;
+        p = p.parent;
+      }
+      if (p == container && target is RenderBox) {
+        final pd = target.parentData as ContainerBoxParentData<RenderBox>;
+        pd.offset = childOffset;
+      }
+    }
+  }
+
+  // Paint backgrounds and borders for non-atomic inline elements using paragraph range boxes
+  void _paintInlineSpanDecorations(PaintingContext context, Offset offset) {
+    if (_elementRanges.isEmpty || _paragraph == null) return;
+
+    // Build entries with depth for proper painting order (parents first)
+    final entries = <_SpanPaintEntry>[];
+    _elementRanges.forEach((box, range) {
+      final style = box.renderStyle;
+      final hasBg = style.backgroundColor?.value != null;
+      final hasBorder = ((style.borderLeftWidth?.value ?? 0) > 0) ||
+          ((style.borderTopWidth?.value ?? 0) > 0) ||
+          ((style.borderRightWidth?.value ?? 0) > 0) ||
+          ((style.borderBottomWidth?.value ?? 0) > 0);
+      final hasPadding = ((style.paddingLeft?.value ?? 0) > 0) ||
+          ((style.paddingTop?.value ?? 0) > 0) ||
+          ((style.paddingRight?.value ?? 0) > 0) ||
+          ((style.paddingBottom?.value ?? 0) > 0);
+      if (!hasBg && !hasBorder && !hasPadding) return;
+
+      final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+      if (rects.isEmpty) return;
+      entries.add(_SpanPaintEntry(box, style, rects, _depthFromContainer(box)));
+    });
+
+    entries.sort((a, b) => a.depth.compareTo(b.depth));
+    final canvas = context.canvas;
+
+    for (final e in entries) {
+      final s = e.style;
+      final padL = s.paddingLeft.computedValue;
+      final padR = s.paddingRight.computedValue;
+      final padT = s.paddingTop.computedValue;
+      final padB = s.paddingBottom.computedValue;
+      final bL = s.borderLeftWidth?.computedValue ?? 0.0;
+      final bR = s.borderRightWidth?.computedValue ?? 0.0;
+      final bT = s.borderTopWidth?.computedValue ?? 0.0;
+      final bB = s.borderBottomWidth?.computedValue ?? 0.0;
+
+      for (int i = 0; i < e.rects.length; i++) {
+        final tb = e.rects[i];
+        double left = tb.left;
+        double right = tb.right;
+        double top = tb.top;
+        double bottom = tb.bottom;
+
+        if (i == 0) left -= (padL + bL);
+        if (i == e.rects.length - 1) right += (padR + bR);
+        top -= (padT + bT);
+        bottom += (padB + bB);
+
+        final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
+
+        // Background
+        if (s.backgroundColor?.value != null) {
+          final bg = Paint()..color = s.backgroundColor!.value;
+          canvas.drawRect(rect, bg);
+        }
+
+        // Borders
+        final p = Paint()..style = PaintingStyle.fill;
+        if (bT > 0) {
+          p.color = s.borderTopColor?.value ?? const Color(0xFF000000);
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
+        }
+        if (bB > 0) {
+          p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
+        }
+        if (i == 0 && bL > 0) {
+          p.color = s.borderLeftColor?.value ?? const Color(0xFF000000);
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
+        }
+        if (i == e.rects.length - 1 && bR > 0) {
+          p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
+          canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
+        }
+      }
+    }
+  }
+
+  int _depthFromContainer(RenderObject obj) {
+    int d = 0;
+    RenderObject? p = obj.parent;
+    while (p != null && p != container) {
+      d++;
+      p = p.parent;
+    }
+    return d;
+  }
+
+  // Convert CSSRenderStyle to dart:ui TextStyle for ParagraphBuilder
+  ui.TextStyle _uiTextStyleFromCss(CSSRenderStyle rs) {
+    final families = rs.fontFamily;
+    if (families != null && families.isNotEmpty) {
+      CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
+    }
+    // Map CSS line-height to a multiplier if specified; null uses font metrics
+    final double? heightMultiple = rs.lineHeight.type == CSSLengthType.NORMAL
+        ? null
+        : (rs.lineHeight.type == CSSLengthType.EM
+            ? rs.lineHeight.value
+            : rs.lineHeight.computedValue / rs.fontSize.computedValue);
+
+    return ui.TextStyle(
+      color: rs.backgroundClip != CSSBackgroundBoundary.text ? rs.color.value : null,
+      decoration: rs.textDecorationLine,
+      decorationColor: rs.textDecorationColor?.value,
+      decorationStyle: rs.textDecorationStyle,
+      fontWeight: rs.fontWeight,
+      fontStyle: rs.fontStyle,
+      textBaseline: CSSText.getTextBaseLine(),
+      fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
+      fontFamilyFallback: families,
+      fontSize: rs.fontSize.computedValue,
+      letterSpacing: rs.letterSpacing?.computedValue,
+      wordSpacing: rs.wordSpacing?.computedValue,
+      height: heightMultiple,
+      locale: CSSText.getLocale(),
+      background: CSSText.getBackground(),
+      foreground: CSSText.getForeground(),
+      shadows: rs.textShadow,
+      // fontFeatures/fontVariations could be mapped from CSS if available
+    );
   }
 
   void dispose() {
@@ -680,4 +1004,12 @@ class InlineFormattingContext {
       debugger.debugFillProperties(properties);
     }
   }
+}
+
+class _SpanPaintEntry {
+  _SpanPaintEntry(this.box, this.style, this.rects, this.depth);
+  final RenderBoxModel box;
+  final CSSRenderStyle style;
+  final List<ui.TextBox> rects;
+  final int depth;
 }

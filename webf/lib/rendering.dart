@@ -29,3 +29,4 @@ export 'src/rendering/widget_element_child.dart';
 export 'src/rendering/child_node_size.dart';
 export 'src/rendering/content_verification.dart';
 export 'src/rendering/inline_formatting_context.dart';
+export 'src/rendering/inline_layout_algorithm.dart';
