@@ -36,7 +36,7 @@ TEST_F(CSSContainerRuleTest, ParseBasicContainerRule) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @container rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);
@@ -60,7 +60,7 @@ TEST_F(CSSContainerRuleTest, ParseNamedContainerRule) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the named @container rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);

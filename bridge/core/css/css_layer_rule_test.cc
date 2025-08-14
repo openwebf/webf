@@ -43,7 +43,7 @@ TEST_F(CSSLayerRuleTest, ParseLayerBlockRule) {
   fprintf(stderr, "DEBUG: Starting ParseLayerBlockRule test\n");
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
   fprintf(stderr, "DEBUG: About to call CSSParser::ParseSheet\n");
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   fprintf(stderr, "DEBUG: CSSParser::ParseSheet completed\n");
   
   // Should successfully parse the @layer block rule
@@ -66,7 +66,7 @@ TEST_F(CSSLayerRuleTest, ParseLayerStatementRule) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @layer statement rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);

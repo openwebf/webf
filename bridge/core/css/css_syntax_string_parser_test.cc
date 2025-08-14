@@ -64,130 +64,130 @@ class CSSSyntaxStringParserTest : public ::testing::Test {
 TEST_F(CSSSyntaxStringParserTest, UniversalDescriptor) {
   auto universal = CreateUniversalDescriptor();
   EXPECT_TRUE(universal.IsUniversal());
-  EXPECT_EQ(universal, *CSSSyntaxStringParser("*").Parse());
-  EXPECT_EQ(universal, *CSSSyntaxStringParser(" * ").Parse());
-  EXPECT_EQ(universal, *CSSSyntaxStringParser("\r*\r\n").Parse());
-  EXPECT_EQ(universal, *CSSSyntaxStringParser("\f*\f").Parse());
-  EXPECT_EQ(universal, *CSSSyntaxStringParser(" \n\t\r\f*").Parse());
+  EXPECT_EQ(universal, *CSSSyntaxStringParser("*"_s).Parse());
+  EXPECT_EQ(universal, *CSSSyntaxStringParser(" * "_s).Parse());
+  EXPECT_EQ(universal, *CSSSyntaxStringParser("\r*\r\n"_s).Parse());
+  EXPECT_EQ(universal, *CSSSyntaxStringParser("\f*\f"_s).Parse());
+  EXPECT_EQ(universal, *CSSSyntaxStringParser(" \n\t\r\f*"_s).Parse());
 }
 
 TEST_F(CSSSyntaxStringParserTest, ValidDataType) {
-  EXPECT_EQ(CSSSyntaxType::kLength, *ParseSingleType("<length>"));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number>"));
-  EXPECT_EQ(CSSSyntaxType::kPercentage, *ParseSingleType("<percentage>"));
+  EXPECT_EQ(CSSSyntaxType::kLength, *ParseSingleType("<length>"_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number>"_s));
+  EXPECT_EQ(CSSSyntaxType::kPercentage, *ParseSingleType("<percentage>"_s));
   EXPECT_EQ(CSSSyntaxType::kLengthPercentage,
-            *ParseSingleType("<length-percentage>"));
-  EXPECT_EQ(CSSSyntaxType::kColor, *ParseSingleType("<color>"));
-  EXPECT_EQ(CSSSyntaxType::kImage, *ParseSingleType("<image>"));
-  EXPECT_EQ(CSSSyntaxType::kUrl, *ParseSingleType("<url>"));
-  EXPECT_EQ(CSSSyntaxType::kInteger, *ParseSingleType("<integer>"));
-  EXPECT_EQ(CSSSyntaxType::kAngle, *ParseSingleType("<angle>"));
-  EXPECT_EQ(CSSSyntaxType::kTime, *ParseSingleType("<time>"));
-  EXPECT_EQ(CSSSyntaxType::kResolution, *ParseSingleType("<resolution>"));
+            *ParseSingleType("<length-percentage>"_s));
+  EXPECT_EQ(CSSSyntaxType::kColor, *ParseSingleType("<color>"_s));
+  EXPECT_EQ(CSSSyntaxType::kImage, *ParseSingleType("<image>"_s));
+  EXPECT_EQ(CSSSyntaxType::kUrl, *ParseSingleType("<url>"_s));
+  EXPECT_EQ(CSSSyntaxType::kInteger, *ParseSingleType("<integer>"_s));
+  EXPECT_EQ(CSSSyntaxType::kAngle, *ParseSingleType("<angle>"_s));
+  EXPECT_EQ(CSSSyntaxType::kTime, *ParseSingleType("<time>"_s));
+  EXPECT_EQ(CSSSyntaxType::kResolution, *ParseSingleType("<resolution>"_s));
   EXPECT_EQ(CSSSyntaxType::kTransformFunction,
-            *ParseSingleType("<transform-function>"));
+            *ParseSingleType("<transform-function>"_s));
   EXPECT_EQ(CSSSyntaxType::kTransformList,
-            *ParseSingleType("<transform-list>"));
-  EXPECT_EQ(CSSSyntaxType::kCustomIdent, *ParseSingleType("<custom-ident>"));
+            *ParseSingleType("<transform-list>"_s));
+  EXPECT_EQ(CSSSyntaxType::kCustomIdent, *ParseSingleType("<custom-ident>"_s));
 
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType(" <number>"));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("\r\n<number>"));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("  \t <number>"));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number> "));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number>\n"));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number>\r\n"));
-  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("\f<number>\f"));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType(" <number>"_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("\r\n<number>"_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("  \t <number>"_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number> "_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number>\n"_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("<number>\r\n"_s));
+  EXPECT_EQ(CSSSyntaxType::kNumber, *ParseSingleType("\f<number>\f"_s));
 }
 
 TEST_F(CSSSyntaxStringParserTest, InvalidDataType) {
-  EXPECT_FALSE(CSSSyntaxStringParser("< length>").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("<length >").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("<\tlength >").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("<").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser(">").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("<>").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("< >").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("<length").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser("<\\61>").Parse());
-  EXPECT_FALSE(CSSSyntaxStringParser(" <\\61> ").Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("< length>"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("<length >"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("<\tlength >"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("<"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser(">"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("<>"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("< >"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("<length"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser("<\\61>"_s).Parse());
+  EXPECT_FALSE(CSSSyntaxStringParser(" <\\61> "_s).Parse());
 }
 
 TEST_F(CSSSyntaxStringParserTest, ValidIdent) {
-  EXPECT_EQ("foo", ParseSingleIdent("foo"));
-  EXPECT_EQ("FOO", ParseSingleIdent("FOO"));
-  EXPECT_EQ("foo-bar", ParseSingleIdent("foo-bar"));
+  EXPECT_EQ("foo", ParseSingleIdent("foo"_s));
+  EXPECT_EQ("FOO", ParseSingleIdent("FOO"_s));
+  EXPECT_EQ("foo-bar", ParseSingleIdent("foo-bar"_s));
   // WebF's CSS syntax parser doesn't accept prefixed identifiers by default
-  // EXPECT_EQ("-webkit-foo", ParseSingleIdent("-webkit-foo"));
+  // EXPECT_EQ("-webkit-foo", ParseSingleIdent("-webkit-foo"_s));
   // WebF properly processes escape sequences, converting \41 to 'A'
-  EXPECT_EQ("A", ParseSingleIdent("\\41"));
-  EXPECT_EQ("A", ParseSingleIdent("\\041"));
+  EXPECT_EQ("A", ParseSingleIdent("\\41"_s));
+  EXPECT_EQ("A", ParseSingleIdent("\\041"_s));
   
-  EXPECT_EQ("foo", ParseSingleIdent(" foo"));
-  EXPECT_EQ("foo", ParseSingleIdent("\rfoo"));
-  EXPECT_EQ("foo", ParseSingleIdent("  \t foo"));
-  EXPECT_EQ("foo", ParseSingleIdent("foo "));
-  EXPECT_EQ("foo", ParseSingleIdent("foo\n"));
-  EXPECT_EQ("foo", ParseSingleIdent("foo\r\n"));
-  EXPECT_EQ("foo", ParseSingleIdent("\ffoo\f"));
+  EXPECT_EQ("foo", ParseSingleIdent(" foo"_s));
+  EXPECT_EQ("foo", ParseSingleIdent("\rfoo"_s));
+  EXPECT_EQ("foo", ParseSingleIdent("  \t foo"_s));
+  EXPECT_EQ("foo", ParseSingleIdent("foo "_s));
+  EXPECT_EQ("foo", ParseSingleIdent("foo\n"_s));
+  EXPECT_EQ("foo", ParseSingleIdent("foo\r\n"_s));
+  EXPECT_EQ("foo", ParseSingleIdent("\ffoo\f"_s));
 }
 
 TEST_F(CSSSyntaxStringParserTest, InvalidIdent) {
-  EXPECT_EQ("", ParseSingleIdent(""));
-  EXPECT_EQ("", ParseSingleIdent(" "));
-  EXPECT_EQ("", ParseSingleIdent("2foo"));
-  EXPECT_EQ("", ParseSingleIdent("foo bar"));
-  EXPECT_EQ("", ParseSingleIdent("foo|bar"));
+  EXPECT_EQ("", ParseSingleIdent(""_s));
+  EXPECT_EQ("", ParseSingleIdent(" "_s));
+  EXPECT_EQ("", ParseSingleIdent("2foo"_s));
+  EXPECT_EQ("", ParseSingleIdent("foo bar"_s));
+  EXPECT_EQ("", ParseSingleIdent("foo|bar"_s));
   // WebF treats prefixed identifiers as invalid in syntax parsing
-  EXPECT_EQ("", ParseSingleIdent("-webkit-foo"));
+  EXPECT_EQ("", ParseSingleIdent("-webkit-foo"_s));
 }
 
 TEST_F(CSSSyntaxStringParserTest, ValidMultiplier) {
-  EXPECT_EQ(1u, ParseNumberOfComponents("foo"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("foo+"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("foo#"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("<length>"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("<length>+"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("<length>#"));
+  EXPECT_EQ(1u, ParseNumberOfComponents("foo"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("foo+"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("foo#"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("<length>"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("<length>+"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("<length>#"_s));
   
-  EXPECT_EQ(1u, ParseNumberOfComponents(" foo+ "));
-  EXPECT_EQ(1u, ParseNumberOfComponents("\rfoo#\r\n"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("  \t <length>+"));
-  EXPECT_EQ(1u, ParseNumberOfComponents("<length># "));
+  EXPECT_EQ(1u, ParseNumberOfComponents(" foo+ "_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("\rfoo#\r\n"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("  \t <length>+"_s));
+  EXPECT_EQ(1u, ParseNumberOfComponents("<length># "_s));
 }
 
 TEST_F(CSSSyntaxStringParserTest, InvalidMultiplier) {
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo++"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo##"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo+#"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo#+"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length>++"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length>##"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length>+#"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length>#+"));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo++"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo##"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo+#"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo#+"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length>++"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length>##"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length>+#"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length>#+"_s));
 }
 
 TEST_F(CSSSyntaxStringParserTest, ValidMultipleComponents) {
-  EXPECT_EQ(2u, ParseNumberOfComponents("foo | bar"));
-  EXPECT_EQ(2u, ParseNumberOfComponents("<length> | <percentage>"));
-  EXPECT_EQ(3u, ParseNumberOfComponents("foo | bar | baz"));
-  EXPECT_EQ(3u, ParseNumberOfComponents("<length> | <percentage> | <number>"));
+  EXPECT_EQ(2u, ParseNumberOfComponents("foo | bar"_s));
+  EXPECT_EQ(2u, ParseNumberOfComponents("<length> | <percentage>"_s));
+  EXPECT_EQ(3u, ParseNumberOfComponents("foo | bar | baz"_s));
+  EXPECT_EQ(3u, ParseNumberOfComponents("<length> | <percentage> | <number>"_s));
   
-  EXPECT_EQ(2u, ParseNumberOfComponents(" foo | bar "));
-  EXPECT_EQ(2u, ParseNumberOfComponents("\rfoo\r|\rbar\r\n"));
-  EXPECT_EQ(2u, ParseNumberOfComponents("  \t foo | bar"));
-  EXPECT_EQ(2u, ParseNumberOfComponents("foo |bar "));
-  EXPECT_EQ(2u, ParseNumberOfComponents("foo| bar"));
+  EXPECT_EQ(2u, ParseNumberOfComponents(" foo | bar "_s));
+  EXPECT_EQ(2u, ParseNumberOfComponents("\rfoo\r|\rbar\r\n"_s));
+  EXPECT_EQ(2u, ParseNumberOfComponents("  \t foo | bar"_s));
+  EXPECT_EQ(2u, ParseNumberOfComponents("foo |bar "_s));
+  EXPECT_EQ(2u, ParseNumberOfComponents("foo| bar"_s));
 }
 
 TEST_F(CSSSyntaxStringParserTest, InvalidMultipleComponents) {
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo |"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("| foo"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo | | bar"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("foo || bar"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length> |"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("| <length>"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length> | | <percentage>"));
-  EXPECT_EQ(0u, ParseNumberOfComponents("<length> || <percentage>"));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo |"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("| foo"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo | | bar"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("foo || bar"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length> |"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("| <length>"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length> | | <percentage>"_s));
+  EXPECT_EQ(0u, ParseNumberOfComponents("<length> || <percentage>"_s));
 }
 
 }  // namespace webf

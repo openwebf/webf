@@ -76,7 +76,7 @@ std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::stri
   auto set = std::make_shared<MutableCSSPropertyValueSet>(mode);
   auto context = std::make_shared<CSSParserContext>(mode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
-  set->ParseDeclarationList(AtomicString(block_text.c_str()), sheet);
+  set->ParseDeclarationList(AtomicString(String::FromUTF8(block_text.c_str())), sheet);
   return set;
 }
 

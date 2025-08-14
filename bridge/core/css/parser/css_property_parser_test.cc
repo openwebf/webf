@@ -34,111 +34,111 @@ static std::shared_ptr<CSSParserContext> StrictCSSParserContext(SecureContextMod
 
 TEST(CSSPropertyParserTest, GridTrackLimit1) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(999, 20px)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(999, 20px)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 999);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit2) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateRows, "repeat(999, 20px)", StrictCSSParserContext(SecureContextMode::kSecureContext));
+      CSSPropertyID::kGridTemplateRows, "repeat(999, 20px)"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 999);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit3) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(1000000, 10%)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(1000000, 10%)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1000000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit4) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(1000000, 10%)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(1000000, 10%)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1000000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit5) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(1000000, [first] min-content [last])",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(1000000, [first] min-content [last])"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1000000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit6) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(1000000, [first] min-content [last])",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(1000000, [first] min-content [last])"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1000000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit7) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(1000001, auto)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(1000001, auto)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1000001);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit8) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(1000001, auto)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(1000001, auto)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1000001);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit9) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateColumns, "repeat(400000, 2em minmax(10px, max-content) 0.5fr)",
+      CSSPropertyID::kGridTemplateColumns, "repeat(400000, 2em minmax(10px, max-content) 0.5fr)"_s,
       StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1200000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit10) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateRows, "repeat(400000, 2em minmax(10px, max-content) 0.5fr)",
+      CSSPropertyID::kGridTemplateRows, "repeat(400000, 2em minmax(10px, max-content) 0.5fr)"_s,
       StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 1200000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit11) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateColumns, "repeat(600000, [first] 3vh 10% 2fr [nav] 10px auto 1fr 6em [last])",
+      CSSPropertyID::kGridTemplateColumns, "repeat(600000, [first] 3vh 10% 2fr [nav] 10px auto 1fr 6em [last])"_s,
       StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 4200000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit12) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateRows, "repeat(600000, [first] 3vh 10% 2fr [nav] 10px auto 1fr 6em [last])",
+      CSSPropertyID::kGridTemplateRows, "repeat(600000, [first] 3vh 10% 2fr [nav] 10px auto 1fr 6em [last])"_s,
       StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 4200000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit13) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(100000000000000000000, 10% 1fr)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateColumns, "repeat(100000000000000000000, 10% 1fr)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 10000000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit14) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(100000000000000000000, 10% 1fr)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kGridTemplateRows, "repeat(100000000000000000000, 10% 1fr)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 10000000);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit15) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateColumns, "repeat(100000000000000000000, 10% 5em 1fr auto auto 15px min-content)",
+      CSSPropertyID::kGridTemplateColumns, "repeat(100000000000000000000, 10% 5em 1fr auto auto 15px min-content)"_s,
       StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 9999997);
 }
 
 TEST(CSSPropertyParserTest, GridTrackLimit16) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kGridTemplateRows, "repeat(100000000000000000000, 10% 5em 1fr auto auto 15px min-content)",
+      CSSPropertyID::kGridTemplateRows, "repeat(100000000000000000000, 10% 5em 1fr auto auto 15px min-content)"_s,
       StrictCSSParserContext(SecureContextMode::kSecureContext));
   EXPECT_EQ(ComputeNumberOfTracks(To<CSSValueList>(value.get())), 9999997);
 }
@@ -217,7 +217,7 @@ TEST(CSSPropertyParserTest, GridTrackLimit16) {
 
 TEST(CSSPropertyParserTest, ColorFunction) {
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kBackgroundColor, "rgba(255, 255, 255, 1)",
+      CSSParser::ParseSingleValue(CSSPropertyID::kBackgroundColor, "rgba(255, 255, 255, 1)"_s,
                                   StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_TRUE(value);
   cssvalue::CSSColor css_color = To<cssvalue::CSSColor>(*value);
@@ -228,7 +228,7 @@ TEST(CSSPropertyParserTest, ColorFunction) {
 
 TEST(CSSPropertyParserTest, IncompleteColor) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kBackgroundColor, "rgba(123 45", StrictCSSParserContext(SecureContextMode::kSecureContext));
+      CSSPropertyID::kBackgroundColor, "rgba(123 45"_s, StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_FALSE(value);
 }
 
@@ -245,175 +245,175 @@ void TestImageSetParsing(const String& testValue, const String& expectedCssText)
 }
 
 TEST(CSSPropertyParserTest, ImageSetDefaultResolution) {
-  TestImageSetParsing("image-set(url(foo))", "image-set(url(\"foo\") 1x)");
+  TestImageSetParsing("image-set(url(foo))"_s, "image-set(url(\"foo\") 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetResolutionUnitX) {
-  TestImageSetParsing("image-set(url(foo) 3x)", "image-set(url(\"foo\") 3x)");
+  TestImageSetParsing("image-set(url(foo) 3x)"_s, "image-set(url(\"foo\") 3x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetResolutionUnitDppx) {
-  TestImageSetParsing("image-set(url(foo) 3dppx)", "image-set(url(\"foo\") 3dppx)");
+  TestImageSetParsing("image-set(url(foo) 3dppx)"_s, "image-set(url(\"foo\") 3dppx)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetResolutionUnitDpi) {
-  TestImageSetParsing("image-set(url(foo) 96dpi)", "image-set(url(\"foo\") 96dpi)");
+  TestImageSetParsing("image-set(url(foo) 96dpi)"_s, "image-set(url(\"foo\") 96dpi)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetResolutionUnitDpcm) {
-  TestImageSetParsing("image-set(url(foo) 37dpcm)", "image-set(url(\"foo\") 37dpcm)");
+  TestImageSetParsing("image-set(url(foo) 37dpcm)"_s, "image-set(url(\"foo\") 37dpcm)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetZeroResolution) {
-  TestImageSetParsing("image-set(url(foo) 0x)", "image-set(url(\"foo\") 0x)");
+  TestImageSetParsing("image-set(url(foo) 0x)"_s, "image-set(url(\"foo\") 0x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcResolutionUnitX) {
-  TestImageSetParsing("image-set(url(foo) calc(1x))", "image-set(url(\"foo\") calc(1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1x))"_s, "image-set(url(\"foo\") calc(1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcNegativerResolution) {
-  TestImageSetParsing("image-set(url(foo) calc(-1x))", "image-set(url(\"foo\") calc(-1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(-1x))"_s, "image-set(url(\"foo\") calc(-1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetAddCalcResolutionUnitX) {
-  TestImageSetParsing("image-set(url(foo) calc(2x + 3x))", "image-set(url(\"foo\") calc(5dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(2x + 3x))"_s, "image-set(url(\"foo\") calc(5dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetSubCalcResolutionUnitX) {
-  TestImageSetParsing("image-set(url(foo) calc(2x - 1x))", "image-set(url(\"foo\") calc(1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(2x - 1x))"_s, "image-set(url(\"foo\") calc(1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetMultCalcResolutionUnitX) {
-  TestImageSetParsing("image-set(url(foo) calc(2x * 3))", "image-set(url(\"foo\") calc(6dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(2x * 3))"_s, "image-set(url(\"foo\") calc(6dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetMultCalcNegativeResolution) {
-  TestImageSetParsing("image-set(url(foo) calc(1 * -1x))", "image-set(url(\"foo\") calc(-1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1 * -1x))"_s, "image-set(url(\"foo\") calc(-1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetMultCalcNegativeNumberResolution) {
-  TestImageSetParsing("image-set(url(foo) calc(-1 * 1x))", "image-set(url(\"foo\") calc(-1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(-1 * 1x))"_s, "image-set(url(\"foo\") calc(-1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetDivCalcResolutionUnitX) {
-  TestImageSetParsing("image-set(url(foo) calc(6x / 3))", "image-set(url(\"foo\") calc(2dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(6x / 3))"_s, "image-set(url(\"foo\") calc(2dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetAddCalcResolutionUnitDpiWithX) {
-  TestImageSetParsing("image-set(url(foo) calc(96dpi + 2x))", "image-set(url(\"foo\") calc(3dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(96dpi + 2x))"_s, "image-set(url(\"foo\") calc(3dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetAddCalcResolutionUnitDpiWithDpi) {
-  TestImageSetParsing("image-set(url(foo) calc(96dpi + 96dpi))", "image-set(url(\"foo\") calc(2dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(96dpi + 96dpi))"_s, "image-set(url(\"foo\") calc(2dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetSubCalcResolutionUnitDpiFromX) {
-  TestImageSetParsing("image-set(url(foo) calc(2x - 96dpi))", "image-set(url(\"foo\") calc(1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(2x - 96dpi))"_s, "image-set(url(\"foo\") calc(1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcResolutionUnitDppx) {
-  TestImageSetParsing("image-set(url(foo) calc(2dppx * 3))", "image-set(url(\"foo\") calc(6dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(2dppx * 3))"_s, "image-set(url(\"foo\") calc(6dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcResolutionUnitDpi) {
-  TestImageSetParsing("image-set(url(foo) calc(32dpi * 3))", "image-set(url(\"foo\") calc(1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(32dpi * 3))"_s, "image-set(url(\"foo\") calc(1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcResolutionUnitDpcm) {
-  TestImageSetParsing("image-set(url(foo) calc(1dpcm * 37.79532))", "image-set(url(\"foo\") calc(1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1dpcm * 37.79532))"_s, "image-set(url(\"foo\") calc(1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcMaxInf) {
-  TestImageSetParsing("image-set(url(foo) calc(1 * max(INFinity * 3x, 0dpcm)))",
-                      "image-set(url(\"foo\") calc(infinity * 1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1 * max(INFinity * 3x, 0dpcm)))"_s,
+                      "image-set(url(\"foo\") calc(infinity * 1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcMinInf) {
-  TestImageSetParsing("image-set(url(foo) calc(1 * min(inFInity * 4x, 0dpi)))", "image-set(url(\"foo\") calc(0dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1 * min(inFInity * 4x, 0dpi)))"_s, "image-set(url(\"foo\") calc(0dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcMinMaxNan) {
-  TestImageSetParsing("image-set(url(foo) calc(1dppx * max(0, min(10, NaN))))",
-                      "image-set(url(\"foo\") calc(NaN * 1dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1dppx * max(0, min(10, NaN))))"_s,
+                      "image-set(url(\"foo\") calc(NaN * 1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcClamp) {
-  TestImageSetParsing("image-set(url(foo) calc(1dppx * clamp(-Infinity, 0, infinity)))",
-                      "image-set(url(\"foo\") calc(0dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1dppx * clamp(-Infinity, 0, infinity)))"_s,
+                      "image-set(url(\"foo\") calc(0dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcClampLeft) {
-  TestImageSetParsing("image-set(url(foo) calc(1dppx * clamp(0, -Infinity, infinity)))",
-                      "image-set(url(\"foo\") calc(0dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1dppx * clamp(0, -Infinity, infinity)))"_s,
+                      "image-set(url(\"foo\") calc(0dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcClampRight) {
-  TestImageSetParsing("image-set(url(foo) calc(1dppx * clamp(-Infinity, infinity, 0)))",
-                      "image-set(url(\"foo\") calc(0dppx))");
+  TestImageSetParsing("image-set(url(foo) calc(1dppx * clamp(-Infinity, infinity, 0)))"_s,
+                      "image-set(url(\"foo\") calc(0dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetCalcClampNan) {
   TestImageSetParsing(
       "image-set(url(foo) calc(1 * clamp(-INFINITY*0dppx, 0dppx, "
-      "infiniTY*0dppx)))",
-      "image-set(url(\"foo\") calc(NaN * 1dppx))");
+      "infiniTY*0dppx)))"_s,
+      "image-set(url(\"foo\") calc(NaN * 1dppx))"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetUrlFunction) {
-  TestImageSetParsing("image-set(url('foo') 1x)", "image-set(url(\"foo\") 1x)");
+  TestImageSetParsing("image-set(url('foo') 1x)"_s, "image-set(url(\"foo\") 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetUrlFunctionEmptyStrUrl) {
-  TestImageSetParsing("image-set(url('') 1x)", "image-set(url(\"\") 1x)");
+  TestImageSetParsing("image-set(url('') 1x)"_s, "image-set(url(\"\") 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetUrlFunctionNoQuotationMarks) {
-  TestImageSetParsing("image-set(url(foo) 1x)", "image-set(url(\"foo\") 1x)");
+  TestImageSetParsing("image-set(url(foo) 1x)"_s, "image-set(url(\"foo\") 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetNoUrlFunction) {
-  TestImageSetParsing("image-set('foo' 1x)", "image-set(url(\"foo\") 1x)");
+  TestImageSetParsing("image-set('foo' 1x)"_s, "image-set(url(\"foo\") 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetEmptyStrUrl) {
-  TestImageSetParsing("image-set('' 1x)", "image-set(url(\"\") 1x)");
+  TestImageSetParsing("image-set('' 1x)"_s, "image-set(url(\"\") 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetLinearGradient) {
-  TestImageSetParsing("image-set(linear-gradient(red, blue) 1x)", "image-set(linear-gradient(red, blue) 1x)");
+  TestImageSetParsing("image-set(linear-gradient(red, blue) 1x)"_s, "image-set(linear-gradient(red, blue) 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetRepeatingLinearGradient) {
-  TestImageSetParsing("image-set(repeating-linear-gradient(red, blue 25%) 1x)",
-                      "image-set(repeating-linear-gradient(red, blue 25%) 1x)");
+  TestImageSetParsing("image-set(repeating-linear-gradient(red, blue 25%) 1x)"_s,
+                      "image-set(repeating-linear-gradient(red, blue 25%) 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetRadialGradient) {
-  TestImageSetParsing("image-set(radial-gradient(red, blue) 1x)", "image-set(radial-gradient(red, blue) 1x)");
+  TestImageSetParsing("image-set(radial-gradient(red, blue) 1x)"_s, "image-set(radial-gradient(red, blue) 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetRepeatingRadialGradient) {
-  TestImageSetParsing("image-set(repeating-radial-gradient(red, blue 25%) 1x)",
-                      "image-set(repeating-radial-gradient(red, blue 25%) 1x)");
+  TestImageSetParsing("image-set(repeating-radial-gradient(red, blue 25%) 1x)"_s,
+                      "image-set(repeating-radial-gradient(red, blue 25%) 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetConicGradient) {
-  TestImageSetParsing("image-set(conic-gradient(red, blue) 1x)", "image-set(conic-gradient(red, blue) 1x)");
+  TestImageSetParsing("image-set(conic-gradient(red, blue) 1x)"_s, "image-set(conic-gradient(red, blue) 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetRepeatingConicGradient) {
-  TestImageSetParsing("image-set(repeating-conic-gradient(red, blue 25%) 1x)",
-                      "image-set(repeating-conic-gradient(red, blue 25%) 1x)");
+  TestImageSetParsing("image-set(repeating-conic-gradient(red, blue 25%) 1x)"_s,
+                      "image-set(repeating-conic-gradient(red, blue 25%) 1x)"_s);
 }
 
 TEST(CSSPropertyParserTest, ImageSetType) {
-  TestImageSetParsing("image-set(url('foo') 1x type('image/png'))", "image-set(url(\"foo\") 1x type(\"image/png\"))");
+  TestImageSetParsing("image-set(url('foo') 1x type('image/png'))"_s, "image-set(url(\"foo\") 1x type(\"image/png\"))"_s);
 }
 
 void TestImageSetParsingFailure(const std::string& testValue) {
   std::shared_ptr<const CSSValue> value = CSSParser::ParseSingleValue(
-      CSSPropertyID::kBackgroundImage, testValue, StrictCSSParserContext(SecureContextMode::kSecureContext));
+      CSSPropertyID::kBackgroundImage, String::FromUTF8(testValue.c_str()), StrictCSSParserContext(SecureContextMode::kSecureContext));
   ASSERT_EQ(value, nullptr);
 }
 
@@ -459,10 +459,10 @@ TEST(CSSPropertyParserTest, ImageSetDivCalcDoubleX) {
 
 TEST(CSSPropertyParserTest, LightDarkAuthor) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  ASSERT_TRUE(CSSParser::ParseSingleValue(CSSPropertyID::kColor, "light-dark(#000000, #ffffff)", context));
-  ASSERT_TRUE(CSSParser::ParseSingleValue(CSSPropertyID::kColor, "light-dark(red, green)", context));
+  ASSERT_TRUE(CSSParser::ParseSingleValue(CSSPropertyID::kColor, "light-dark(#000000, #ffffff)"_s, context));
+  ASSERT_TRUE(CSSParser::ParseSingleValue(CSSPropertyID::kColor, "light-dark(red, green)"_s, context));
   // light-dark() is only valid for background-image in UA sheets.
-  ASSERT_FALSE(CSSParser::ParseSingleValue(CSSPropertyID::kBackgroundImage, "light-dark(url(light.png), url(dark.png))",
+  ASSERT_FALSE(CSSParser::ParseSingleValue(CSSPropertyID::kBackgroundImage, "light-dark(url(light.png), url(dark.png))"_s,
                                            context));
 }
 
@@ -487,14 +487,14 @@ TEST(CSSPropertyParserTest, UALightDarkColor) {
   };
 
   for (const auto& test : tests) {
-    EXPECT_EQ(!!CSSParser::ParseSingleValue(CSSPropertyID::kColor, test.value, ua_context), test.valid);
+    EXPECT_EQ(!!CSSParser::ParseSingleValue(CSSPropertyID::kColor, String::FromUTF8(test.value), ua_context), test.valid);
   }
 }
 
 TEST(CSSPropertyParserTest, UALightDarkColorSerialization) {
   auto ua_context = std::make_shared<CSSParserContext>(kUASheetMode);
   std::shared_ptr<const CSSValue> value =
-      CSSParser::ParseSingleValue(CSSPropertyID::kColor, "light-dark(red,#aaa)", ua_context);
+      CSSParser::ParseSingleValue(CSSPropertyID::kColor, "light-dark(red,#aaa)"_s, ua_context);
   ASSERT_TRUE(value);
   EXPECT_EQ("light-dark(red, rgb(170, 170, 170))", value->CssText());
 }
@@ -504,7 +504,7 @@ namespace {
 bool ParseCSSValue(CSSPropertyID property_id,
                    const std::string& value,
                    std::shared_ptr<const CSSParserContext> context) {
-  CSSTokenizer tokenizer(value);
+  CSSTokenizer tokenizer(String::FromUTF8(value.c_str()));
   CSSParserTokenStream stream(tokenizer);
   std::vector<CSSPropertyValue> parsed_properties;
   parsed_properties.reserve(64);
@@ -518,7 +518,7 @@ TEST(CSSPropertyParserTest, ParseRevert) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
 
   std::string string = " revert";
-  CSSTokenizer tokenizer(string);
+  CSSTokenizer tokenizer(String::FromUTF8(string.c_str()));
   CSSParserTokenStream stream(tokenizer);
 
   std::shared_ptr<const CSSValue> value =
@@ -531,7 +531,7 @@ TEST(CSSPropertyParserTest, ParseRevertLayer) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
 
   std::string string = " revert-layer";
-  CSSTokenizer tokenizer(string);
+  CSSTokenizer tokenizer(String::FromUTF8(string.c_str()));
   CSSParserTokenStream stream(tokenizer);
 
   std::shared_ptr<const CSSValue> value =
@@ -562,64 +562,64 @@ void TestRepeatStyleParsing(const String& testValue, const String& expectedCssTe
   EXPECT_EQ(expectedCssText, repeat_style_value.CssText());
 }
 
-void TestRepeatStylesParsing(const std::string& testValue, const std::string& expectedCssText) {
+void TestRepeatStylesParsing(const String& testValue, const String& expectedCssText) {
   TestRepeatStyleParsing(testValue, expectedCssText, CSSPropertyID::kBackgroundRepeat);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeatX1) {
-  TestRepeatStylesParsing("repeat-x", "repeat-x");
+  TestRepeatStylesParsing("repeat-x"_s, "repeat-x"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeatX2) {
-  TestRepeatStylesParsing("repeat no-repeat", "repeat-x");
+  TestRepeatStylesParsing("repeat no-repeat"_s, "repeat-x"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeatY1) {
-  TestRepeatStylesParsing("repeat-y", "repeat-y");
+  TestRepeatStylesParsing("repeat-y"_s, "repeat-y"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeatY2) {
-  TestRepeatStylesParsing("no-repeat repeat", "repeat-y");
+  TestRepeatStylesParsing("no-repeat repeat"_s, "repeat-y"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeat1) {
-  TestRepeatStylesParsing("repeat", "repeat");
+  TestRepeatStylesParsing("repeat"_s, "repeat"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeat2) {
-  TestRepeatStylesParsing("repeat repeat", "repeat");
+  TestRepeatStylesParsing("repeat repeat"_s, "repeat"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleNoRepeat1) {
-  TestRepeatStylesParsing("no-repeat", "no-repeat");
+  TestRepeatStylesParsing("no-repeat"_s, "no-repeat"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleNoRepeat2) {
-  TestRepeatStylesParsing("no-repeat no-repeat", "no-repeat");
+  TestRepeatStylesParsing("no-repeat no-repeat"_s, "no-repeat"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleSpace1) {
-  TestRepeatStylesParsing("space", "space");
+  TestRepeatStylesParsing("space"_s, "space"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleSpace2) {
-  TestRepeatStylesParsing("space space", "space");
+  TestRepeatStylesParsing("space space"_s, "space"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRound1) {
-  TestRepeatStylesParsing("round", "round");
+  TestRepeatStylesParsing("round"_s, "round"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRound2) {
-  TestRepeatStylesParsing("round round", "round");
+  TestRepeatStylesParsing("round round"_s, "round"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyle2Val) {
-  TestRepeatStylesParsing("round space", "round space");
+  TestRepeatStylesParsing("round space"_s, "round space"_s);
 }
 
-void TestRepeatStyleViaShorthandParsing(const std::string& testValue,
-                                        const std::string& expectedCssText,
+void TestRepeatStyleViaShorthandParsing(const String& testValue,
+                                        const String& expectedCssText,
                                         const CSSPropertyID& propID) {
   auto style = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
   CSSParser::ParseValue(style.get(), propID, testValue, false /* important */);
@@ -628,20 +628,20 @@ void TestRepeatStyleViaShorthandParsing(const std::string& testValue,
   EXPECT_TRUE(style->AsText().Find(expectedCssText) != kNotFound);
 }
 
-void TestRepeatStyleViaShorthandsParsing(const std::string& testValue, const std::string& expectedCssText) {
+void TestRepeatStyleViaShorthandsParsing(const String& testValue, const String& expectedCssText) {
   TestRepeatStyleViaShorthandParsing(testValue, expectedCssText, CSSPropertyID::kBackground);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRepeatXViaShorthand) {
-  TestRepeatStyleViaShorthandsParsing("url(foo) repeat no-repeat", "repeat-x");
+  TestRepeatStyleViaShorthandsParsing("url(foo) repeat no-repeat"_s, "repeat-x"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyleRoundViaShorthand) {
-  TestRepeatStyleViaShorthandsParsing("url(foo) round round", "round");
+  TestRepeatStyleViaShorthandsParsing("url(foo) round round"_s, "round"_s);
 }
 
 TEST(CSSPropertyParserTest, RepeatStyle2ValViaShorthand) {
-  TestRepeatStyleViaShorthandsParsing("url(foo) space repeat", "space repeat");
+  TestRepeatStyleViaShorthandsParsing("url(foo) space repeat"_s, "space repeat"_s);
 }
 
 }  // namespace webf

@@ -129,7 +129,7 @@ TEST(CSSSelectorParserTest, InvalidANPlusB) {
     SCOPED_TRACE(test_case);
 
     std::pair<int, int> ab;
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     bool passed = CSSSelectorParser::ConsumeANPlusB(stream, ab);
     EXPECT_FALSE(passed);
@@ -148,7 +148,7 @@ TEST(CSSSelectorParserTest, PseudoElementsInCompoundLists) {
 
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -173,7 +173,7 @@ TEST(CSSSelectorParserTest, ValidSimpleAfterPseudoElementInCompound) {
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -208,7 +208,7 @@ TEST(CSSSelectorParserTest, InvalidSimpleAfterPseudoElementInCompound) {
 
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -242,7 +242,7 @@ TEST(CSSSelectorParserTest, TransitionPseudoStyles) {
   std::vector<CSSSelector> arena;
   for (const auto& test_case : test_cases) {
     SCOPED_TRACE(test_case.selector);
-    CSSTokenizer tokenizer(test_case.selector);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case.selector));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -275,7 +275,7 @@ TEST(CSSSelectorParserTest, WorkaroundForInvalidCustomPseudoInUAStyle) {
 
   std::vector<CSSSelector> arena;
   for (auto&& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
@@ -291,7 +291,7 @@ TEST(CSSSelectorParserTest, InvalidPseudoElementInNonRightmostCompound) {
 
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -309,7 +309,7 @@ TEST(CSSSelectorParserTest, UnresolvedNamespacePrefix) {
 
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
@@ -327,7 +327,7 @@ TEST(CSSSelectorParserTest, UnexpectedPipe) {
 
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
@@ -346,7 +346,7 @@ TEST(CSSSelectorParserTest, AttributeSelectorUniversalInvalid) {
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
@@ -380,7 +380,7 @@ TEST(CSSSelectorParserTest, DISABLED_SerializedUniversal) {
   std::vector<CSSSelector> arena;
   for (const SerializationTestCase& test_case : test_cases) {
     SCOPED_TRACE(test_case.source);
-    CSSTokenizer tokenizer(test_case.source);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case.source));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,
@@ -407,7 +407,7 @@ TEST(CSSSelectorParserTest, InternalPseudo) {
   for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
     {
-      CSSTokenizer tokenizer(test_case);
+      CSSTokenizer tokenizer(String::FromUTF8(test_case));
       CSSParserTokenStream stream(tokenizer);
       tcb::span<CSSSelector> author_vector =
           CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -417,7 +417,7 @@ TEST(CSSSelectorParserTest, InternalPseudo) {
     }
 
     {
-      CSSTokenizer tokenizer(test_case);
+      CSSTokenizer tokenizer(String::FromUTF8(test_case));
       CSSParserTokenStream stream(tokenizer);
       tcb::span<CSSSelector> ua_vector =
           CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kUASheetMode),
@@ -445,7 +445,7 @@ TEST(CSSSelectorParserTest, ScrollMarkerPseudos) {
   std::vector<CSSSelector> arena;
   for (const auto& test_case : test_cases) {
     SCOPED_TRACE(test_case.selector);
-    CSSTokenizer tokenizer(test_case.selector);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case.selector));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -634,14 +634,14 @@ TEST(CSSSelectorParserTest, ShadowPartPseudoElementValid) {
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
                                          CSSNestingType::kNone, /*parent_rule_for_nesting=*/nullptr,
                                          /*semicolon_aborts_nested_selector=*/false, nullptr, arena);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
-    EXPECT_EQ(String(test_case), list->SelectorsText());
+    EXPECT_EQ(String::FromUTF8(test_case), list->SelectorsText());
   }
 }
 
@@ -652,7 +652,7 @@ TEST(CSSSelectorParserTest, ShadowPartAndBeforeAfterPseudoElementValid) {
   std::vector<CSSSelector> arena;
   for (const char* test_case : test_cases) {
     SCOPED_TRACE(test_case);
-    CSSTokenizer tokenizer(test_case);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, std::make_shared<CSSParserContext>(kHTMLStandardMode),
@@ -661,7 +661,7 @@ TEST(CSSSelectorParserTest, ShadowPartAndBeforeAfterPseudoElementValid) {
     EXPECT_GT(vector.size(), 0u);
     std::shared_ptr<CSSSelectorList> list = CSSSelectorList::AdoptSelectorVector(vector);
     EXPECT_TRUE(list->IsValid());
-    EXPECT_EQ(String(test_case), list->SelectorsText());
+    EXPECT_EQ(String::FromUTF8(test_case), list->SelectorsText());
   }
 }
 
@@ -716,7 +716,7 @@ TEST(CSSSelectorParserTest, ImplicitShadowCrossingCombinators) {
   std::vector<CSSSelector> arena;
   for (auto test_case : test_cases) {
     SCOPED_TRACE(test_case.input);
-    CSSTokenizer tokenizer(test_case.input);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case.input));
     CSSParserTokenStream stream(tokenizer);
     tcb::span<CSSSelector> vector =
         CSSSelectorParser::ParseSelector(stream, context, CSSNestingType::kNone,

@@ -21,7 +21,7 @@ std::shared_ptr<const CSSParserContext> MakeContext(CSSParserMode mode = kHTMLSt
 
 TEST(CSSParsingUtilsTest, Revert) {
   EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(CSSValueID::kRevert));
-  EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(AtomicString::FromUTF8("revert")));
+  EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(AtomicString(String::FromUTF8("revert"))));
 }
 
 double ConsumeAngleValue(String target) {
@@ -31,7 +31,7 @@ double ConsumeAngleValue(String target) {
 }
 
 double ConsumeAngleValue(std::string target, double min, double max) {
-  CSSTokenizer tokenizer(target);
+  CSSTokenizer tokenizer(String::FromUTF8(target.c_str()));
   CSSParserTokenStream stream(tokenizer);
   return ConsumeAngle(stream, MakeContext(), min, max)->ComputeDegrees();
 }
@@ -39,13 +39,13 @@ double ConsumeAngleValue(std::string target, double min, double max) {
 TEST(CSSParsingUtilsTest, ConsumeAngles) {
   const double kMaxDegreeValue = 2867080569122160;
 
-  EXPECT_EQ(10.0, ConsumeAngleValue("10deg"));
-  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue("-3.40282e+38deg"));
-  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue("3.40282e+38deg"));
+  EXPECT_EQ(10.0, ConsumeAngleValue(String::FromUTF8("10deg")));
+  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("-3.40282e+38deg")));
+  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("3.40282e+38deg")));
 
-  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue("calc(infinity * 1deg)"));
-  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue("calc(-infinity * 1deg)"));
-  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue("calc(NaN * 1deg)"));
+  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("calc(infinity * 1deg)")));
+  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("calc(-infinity * 1deg)")));
+  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("calc(NaN * 1deg)")));
 
   // Math function with min and max ranges
 

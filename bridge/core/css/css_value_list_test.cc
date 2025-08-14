@@ -245,7 +245,7 @@ TEST_F(CSSValueListTest, CssTextSingleValue) {
 TEST_F(CSSValueListTest, MixedValueTypes) {
   auto list = CSSValueList::CreateSpaceSeparated();
   auto red = CSSIdentifierValue::Create(CSSValueID::kRed);
-  auto font_name = std::make_shared<CSSStringValue>("Arial");
+  auto font_name = std::make_shared<CSSStringValue>("Arial"_s);
   
   list->Append(red);
   list->Append(font_name);
@@ -257,8 +257,8 @@ TEST_F(CSSValueListTest, MixedValueTypes) {
 
 TEST_F(CSSValueListTest, FontFamily) {
   auto list = CSSValueList::CreateCommaSeparated();
-  auto arial = std::make_shared<CSSStringValue>("Arial");
-  auto helvetica = std::make_shared<CSSStringValue>("Helvetica");
+  auto arial = std::make_shared<CSSStringValue>("Arial"_s);
+  auto helvetica = std::make_shared<CSSStringValue>("Helvetica"_s);
   auto sans_serif = CSSIdentifierValue::Create(CSSValueID::kSansSerif);
   
   list->Append(arial);
@@ -267,7 +267,7 @@ TEST_F(CSSValueListTest, FontFamily) {
   
   EXPECT_EQ(3u, list->length());
   String css_text = list->CustomCSSText();
-  EXPECT_EQ(String("\"Arial\", \"Helvetica\", sans-serif"), css_text);
+  EXPECT_EQ("\"Arial\", \"Helvetica\", sans-serif"_s, css_text);
 }
 
 }  // namespace webf

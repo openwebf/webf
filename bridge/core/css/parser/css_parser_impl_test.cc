@@ -333,7 +333,7 @@ TEST(CSSParserImplTest, RemoveImportantAnnotationIfPresent) {
       {"8px important", "8px important", false},
   };
   for (auto current_case : test_cases) {
-    CSSTokenizer tokenizer(current_case.input);
+    CSSTokenizer tokenizer(String::FromUTF8(current_case.input));
     CSSParserTokenStream stream(tokenizer);
     CSSTokenizedValue tokenized_value = CSSParserImpl::ConsumeRestrictedPropertyValue(stream);
     SCOPED_TRACE(current_case.input);

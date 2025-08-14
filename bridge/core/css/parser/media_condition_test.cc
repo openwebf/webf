@@ -47,12 +47,12 @@ TEST(MediaConditionParserTest, Basic) {
 
   for (unsigned i = 0; test_cases[i].input; ++i) {
     SCOPED_TRACE(test_cases[i].input);
-    CSSTokenizer tokenizer(test_cases[i].input);
+    CSSTokenizer tokenizer(String::FromUTF8(test_cases[i].input));
     CSSParserTokenStream stream(tokenizer);
     std::shared_ptr<MediaQuerySet> media_condition_query_set = MediaQueryParser::ParseMediaCondition(stream, nullptr);
     String query_text = media_condition_query_set->MediaText();
     const char* expected_text = test_cases[i].output ? test_cases[i].output : test_cases[i].input;
-    EXPECT_EQ(String(expected_text), query_text);
+    EXPECT_EQ(String::FromUTF8(expected_text), query_text);
   }
 }
 

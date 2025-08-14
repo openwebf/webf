@@ -75,7 +75,7 @@ TEST_P(ValidVariableReferenceTest, ParseUniversalSyntaxValue) {
   SCOPED_TRACE(GetParam());
   std::shared_ptr<const CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   EXPECT_NE(nullptr,
-            CSSVariableParser::ParseUniversalSyntaxValue(GetParam(), context, /* is_animation_tainted */ false));
+            CSSVariableParser::ParseUniversalSyntaxValue(String::FromUTF8(GetParam()), context, /* is_animation_tainted */ false));
 }
 
 class InvalidVariableReferenceTest : public testing::Test, public testing::WithParamInterface<const char*> {
@@ -97,7 +97,7 @@ TEST_P(InvalidVariableReferenceTest, ParseUniversalSyntaxValue) {
   SCOPED_TRACE(GetParam());
   std::shared_ptr<const CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   EXPECT_NE(nullptr,
-            CSSVariableParser::ParseUniversalSyntaxValue(GetParam(), context, /* is_animation_tainted */ false));
+            CSSVariableParser::ParseUniversalSyntaxValue(String::FromUTF8(GetParam()), context, /* is_animation_tainted */ false));
 }
 
 class CustomPropertyDeclarationTest : public testing::Test, public testing::WithParamInterface<const char*> {

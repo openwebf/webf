@@ -62,11 +62,11 @@ TEST_F(CSSPropertyNameTest, OperatorEquals) {
 
 TEST_F(CSSPropertyNameTest, From) {
   // Test From method using execution context
-  auto opt_color = CSSPropertyName::From(env_->page()->executingContext(), "color");
+  auto opt_color = CSSPropertyName::From(env_->page()->executingContext(), "color"_s);
   ASSERT_TRUE(opt_color.has_value());
   EXPECT_EQ(opt_color->Id(), CSSPropertyID::kColor);
   
-  auto opt_custom = CSSPropertyName::From(env_->page()->executingContext(), "--x");
+  auto opt_custom = CSSPropertyName::From(env_->page()->executingContext(), "--x"_s);
   ASSERT_TRUE(opt_custom.has_value());
   EXPECT_EQ(opt_custom->Id(), CSSPropertyID::kVariable);
   EXPECT_TRUE(opt_custom->IsCustomProperty());
@@ -115,7 +115,7 @@ TEST_F(CSSPropertyNameTest, CustomPropertyVariations) {
   };
   
   for (const std::string& name_str : custom_names) {
-    AtomicString atomic_name(name_str.c_str());
+    AtomicString atomic_name = AtomicString::CreateFromUTF8(name_str.c_str());
     CSSPropertyName name(atomic_name);
     
     EXPECT_EQ(name.Id(), CSSPropertyID::kVariable);

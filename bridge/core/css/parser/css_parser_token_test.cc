@@ -25,13 +25,13 @@ static String RoundTripToken(String str) {
 }
 
 TEST(CSSParserTokenTest, SerializeDoubles) {
-  EXPECT_EQ("1.5", RoundTripToken("1.500"));
-  EXPECT_EQ("2", RoundTripToken("2"));
-  EXPECT_EQ("2.0", RoundTripToken("2.0"));
-  EXPECT_EQ("1234567890.0", RoundTripToken("1234567890.0"));
-  EXPECT_EQ("1e+30", RoundTripToken("1e30"));
-  EXPECT_EQ("0.00001525878", RoundTripToken("0.00001525878"));
-  EXPECT_EQ("0.00001525878rad", RoundTripToken("0.00001525878rad"));
+  EXPECT_EQ("1.5"_s, RoundTripToken("1.500"_s));
+  EXPECT_EQ("2"_s, RoundTripToken("2"_s));
+  EXPECT_EQ("2.0"_s, RoundTripToken("2.0"_s));
+  EXPECT_EQ("1234567890.0"_s, RoundTripToken("1234567890.0"_s));
+  EXPECT_EQ("1e+30"_s, RoundTripToken("1e30"_s));
+  EXPECT_EQ("0.00001525878"_s, RoundTripToken("0.00001525878"_s));
+  EXPECT_EQ("0.00001525878rad"_s, RoundTripToken("0.00001525878rad"_s));
 }
 
 }  // namespace webf

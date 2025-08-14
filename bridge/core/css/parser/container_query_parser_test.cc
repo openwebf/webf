@@ -52,25 +52,25 @@ class ContainerQueryParserTest : public testing::Test {
 
 TEST_F(ContainerQueryParserTest, ParseQuery) {
   // Test simple cases that are passing
-  EXPECT_EQ("(width)", ParseQuery("(width)"));
-  EXPECT_EQ("(min-width: 100px)", ParseQuery("(min-width: 100px)"));
-  EXPECT_EQ("(width > 100px)", ParseQuery("(width > 100px)"));
-  EXPECT_EQ("(width: 100px)", ParseQuery("(width: 100px)"));
-  EXPECT_EQ("not (width)", ParseQuery("not (width)"));
+  EXPECT_EQ("(width)", ParseQuery(String::FromUTF8("(width)")));
+  EXPECT_EQ("(min-width: 100px)", ParseQuery(String::FromUTF8("(min-width: 100px)")));
+  EXPECT_EQ("(width > 100px)", ParseQuery(String::FromUTF8("(width > 100px)")));
+  EXPECT_EQ("(width: 100px)", ParseQuery(String::FromUTF8("(width: 100px)")));
+  EXPECT_EQ("not (width)", ParseQuery(String::FromUTF8("not (width)")));
   
   // Test a simple failing case first
   fprintf(stderr, "\nTesting: (width) and (height)\n");
-  String result = ParseQuery("(width) and (height)");
+  String result = ParseQuery(String::FromUTF8("(width) and (height)"));
   fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
   EXPECT_EQ("(width) and (height)", result);
   
   fprintf(stderr, "\nTesting: ((width) and (width))\n");
-  result = ParseQuery("((width) and (width))");
+  result = ParseQuery(String::FromUTF8("((width) and (width))"));
   fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
   EXPECT_EQ("((width) and (width))", result);
   
   fprintf(stderr, "\nTesting: ((width) and (width) and (width))\n");
-  result = ParseQuery("((width) and (width) and (width))");
+  result = ParseQuery(String::FromUTF8("((width) and (width) and (width))"));
   fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
   EXPECT_EQ("((width) and (width) and (width))", result);
   
@@ -86,7 +86,7 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   };
 
   for (const char* test : tests) {
-    String result = ParseQuery(test);
+    String result = ParseQuery(String::FromUTF8(test));
     if (result != test) {
       fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.StdUtf8().c_str());
     }
@@ -94,16 +94,16 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   }
 
   // Invalid:
-  EXPECT_EQ("<unknown>", ParseQuery("(min-width)"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) or (width) and (width))"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) and (width) or (width))"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) or (height) and (width))"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) and (height) or (width))"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) and (height) 50px)"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) and (height 50px))"));
-  EXPECT_EQ("<unknown>", ParseQuery("((width) and 50px (height))"));
-  EXPECT_EQ("<unknown>", ParseQuery("foo(width)"));
-  EXPECT_EQ("<unknown>", ParseQuery("size(width)"));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("(min-width)")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) or (width) and (width))")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (width) or (width))")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) or (height) and (width))")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (height) or (width))")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (height) 50px)")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and (height 50px))")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("((width) and 50px (height))")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("foo(width)")));
+  EXPECT_EQ("<unknown>", ParseQuery(String::FromUTF8("size(width)")));
 }
 
 // This test exists primarily to not lose coverage of
@@ -120,13 +120,13 @@ TEST_F(ContainerQueryParserTest, ParseFeatureQuery) {
   };
 
   for (const char* test : tests) {
-    EXPECT_EQ(String(test), ParseFeatureQuery(test));
+    EXPECT_EQ(String::FromUTF8(test), ParseFeatureQuery(String::FromUTF8(test)));
   }
 
   // Invalid:
-  EXPECT_EQ("", ParseFeatureQuery("unsupported"));
-  EXPECT_EQ("", ParseFeatureQuery("(width) or (width) and (width)"));
-  EXPECT_EQ("", ParseFeatureQuery("(width) and (width) or (width)"));
+  EXPECT_EQ(String::EmptyString(), ParseFeatureQuery(String::FromUTF8("unsupported")));
+  EXPECT_EQ(String::EmptyString(), ParseFeatureQuery(String::FromUTF8("(width) or (width) and (width)")));
+  EXPECT_EQ(String::EmptyString(), ParseFeatureQuery(String::FromUTF8("(width) and (width) or (width)")));
 }
 
 }  // namespace webf

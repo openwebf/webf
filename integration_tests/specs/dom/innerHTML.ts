@@ -27,7 +27,7 @@ describe('outerHTML & innerHTML', () => {
     expect(document.body.innerHTML).toEqual('<div style="height: 100px;width: 100px;"></div>');
   });
 
-  fit('should work width attribute when get property', async () => {
+  it('should work width attribute when get property', async () => {
     const div = document.createElement('div');
     div.setAttribute('attr-key', 'attr-value');
 

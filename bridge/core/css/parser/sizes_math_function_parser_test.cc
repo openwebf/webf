@@ -110,7 +110,7 @@ class SizesMathFunctionParserTest : public ::testing::Test {
                      float viewport_height = 643.0f,
                      float font_size = 16.0f) {
     TestMediaValues media_values(viewport_width, viewport_height, font_size);
-    CSSTokenizer tokenizer(test_case.input);
+    CSSTokenizer tokenizer(String::FromUTF8(test_case.input));
     CSSParserTokenStream stream(tokenizer);
     SizesMathFunctionParser calc_parser(stream, &media_values);
     

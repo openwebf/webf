@@ -72,7 +72,7 @@ TEST_F(CSSParserComprehensiveTest, ParseBasicProperties) {
 
   for (const auto& test : test_cases) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    CSSParser::ParseSheet(context_, sheet, test.css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(test.css));
     
     ASSERT_EQ(sheet->ChildRules().size(), 1u) << "Failed for CSS: " << test.css;
     auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
@@ -136,7 +136,7 @@ TEST_F(CSSParserComprehensiveTest, ParseShorthandProperties) {
 
   for (const auto& test : test_cases) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    CSSParser::ParseSheet(context_, sheet, test.css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(test.css));
     
     ASSERT_EQ(sheet->ChildRules().size(), 1u) << "Failed for CSS: " << test.css;
     auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
@@ -157,7 +157,7 @@ TEST_F(CSSParserComprehensiveTest, ParseImportantDeclarations) {
   const char* css = "p { color: red !important; background: blue; margin: 10px !important; }";
   
   auto sheet = std::make_shared<StyleSheetContents>(context_);
-  CSSParser::ParseSheet(context_, sheet, css);
+  CSSParser::ParseSheet(context_, sheet, String::FromUTF8(css));
   
   ASSERT_EQ(sheet->ChildRules().size(), 1u);
   auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
@@ -179,7 +179,7 @@ TEST_F(CSSParserComprehensiveTest, ParseMultipleRules) {
   )CSS";
   
   auto sheet = std::make_shared<StyleSheetContents>(context_);
-  CSSParser::ParseSheet(context_, sheet, css);
+  CSSParser::ParseSheet(context_, sheet, String::FromUTF8(css));
   
   EXPECT_EQ(sheet->ChildRules().size(), 4u);
   
@@ -214,7 +214,7 @@ TEST_F(CSSParserComprehensiveTest, HandleInvalidCSS) {
 
   for (const auto& test : test_cases) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    CSSParser::ParseSheet(context_, sheet, test.css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(test.css));
     
     EXPECT_EQ(sheet->ChildRules().size(), test.expected_rules) 
       << "Failed for CSS: " << test.css;
@@ -249,7 +249,7 @@ TEST_F(CSSParserComprehensiveTest, ParseCSSVariables) {
 
   for (const auto& test : test_cases) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    CSSParser::ParseSheet(context_, sheet, test.css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(test.css));
     
     ASSERT_EQ(sheet->ChildRules().size(), 1u) << "Failed for CSS: " << test.css;
     auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
@@ -259,7 +259,7 @@ TEST_F(CSSParserComprehensiveTest, ParseCSSVariables) {
     
     if (test.is_custom_property) {
       // Custom properties use AtomicString
-      auto* value_ptr = props.GetPropertyCSSValue(AtomicString(test.property_name));
+      auto* value_ptr = props.GetPropertyCSSValue(AtomicString(String::FromUTF8(test.property_name)));
       EXPECT_NE(value_ptr, nullptr) << "Failed for CSS: " << test.css;
     } else {
       // Regular properties

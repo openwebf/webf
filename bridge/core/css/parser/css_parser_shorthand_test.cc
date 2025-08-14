@@ -35,7 +35,7 @@ TEST_F(CSSParserShorthandTest, MarginShorthand) {
   const char* css = "p { margin: 10px; }";
   
   auto sheet = std::make_shared<StyleSheetContents>(context_);
-  CSSParser::ParseSheet(context_, sheet, css);
+  CSSParser::ParseSheet(context_, sheet, String::FromUTF8(css));
   
   ASSERT_EQ(sheet->ChildRules().size(), 1u);
   auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
@@ -79,7 +79,7 @@ TEST_F(CSSParserShorthandTest, MarginShorthandMultipleValues) {
   
   for (const auto& test : test_cases) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    CSSParser::ParseSheet(context_, sheet, test.css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(test.css));
     
     ASSERT_EQ(sheet->ChildRules().size(), 1u) << "Failed for: " << test.css;
     auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
@@ -122,7 +122,7 @@ TEST_F(CSSParserShorthandTest, GetPropertyValueForShorthands) {
   
   for (const auto& test : test_cases) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    CSSParser::ParseSheet(context_, sheet, test.css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(test.css));
     
     ASSERT_EQ(sheet->ChildRules().size(), 1u) << "Failed for: " << test.css;
     auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());

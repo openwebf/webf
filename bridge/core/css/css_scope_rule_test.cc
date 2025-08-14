@@ -36,7 +36,7 @@ TEST_F(CSSScopeRuleTest, ParseBasicScopeRule) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @scope rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);
@@ -60,7 +60,7 @@ TEST_F(CSSScopeRuleTest, ParseScopeRuleWithToClause) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @scope rule with 'to' clause
   EXPECT_EQ(sheet->ChildRules().size(), 1u);
@@ -84,7 +84,7 @@ TEST_F(CSSScopeRuleTest, ParseImplicitScope) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse implicit @scope rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);

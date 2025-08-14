@@ -32,7 +32,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
   // Helper to parse a selector and check if it's valid
   bool IsValidSelector(const std::string& selector) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    String css = selector + String::FromUTF8(" { }");
+    String css = String::FromUTF8(selector.c_str()) + String::FromUTF8(" { }");
     CSSParser::ParseSheet(context_, sheet, css);
     
     if (sheet->ChildRules().empty()) {
@@ -65,7 +65,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
   size_t CountSelectors(const std::string& selector_list) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
     std::string css = selector_list + " { }";
-    CSSParser::ParseSheet(context_, sheet, css);
+    CSSParser::ParseSheet(context_, sheet, String::FromUTF8(css.c_str()));
     
     if (sheet->ChildRules().empty()) {
       return 0;
@@ -127,7 +127,7 @@ TEST_F(CSSSelectorParserComprehensiveTest, TypeSelectors) {
 // Test universal selector
 TEST_F(CSSSelectorParserComprehensiveTest, UniversalSelector) {
   EXPECT_TRUE(IsValidSelector("*"));
-  EXPECT_EQ(GetSelectorText("*"), "*");
+  EXPECT_EQ(GetSelectorText(String::FromUTF8("*")), "*");
 }
 
 // Test class selectors
@@ -440,7 +440,7 @@ TEST_F(CSSSelectorParserComprehensiveTest, EdgeCases) {
   EXPECT_TRUE(IsValidSelector(long_selector));
   
   // Case preservation in attribute values
-  EXPECT_EQ(GetSelectorText("[attr=\"CaseSensitive\"]"), "[attr=\"CaseSensitive\"]");
+  EXPECT_EQ(GetSelectorText(String::FromUTF8("[attr=\"CaseSensitive\"]")), "[attr=\"CaseSensitive\"]"_s);
 }
 
 // Test specificity-related parsing

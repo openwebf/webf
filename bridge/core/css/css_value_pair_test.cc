@@ -139,8 +139,8 @@ TEST_F(CSSValuePairTest, BackgroundPosition) {
 
 TEST_F(CSSValuePairTest, BorderRadius) {
   // Typical use case: border-radius with horizontal/vertical radii
-  auto px10 = std::make_shared<CSSStringValue>("10px");
-  auto px20 = std::make_shared<CSSStringValue>("20px");
+  auto px10 = std::make_shared<CSSStringValue>("10px"_s);
+  auto px20 = std::make_shared<CSSStringValue>("20px"_s);
   
   CSSValuePair radius(px10, px20, CSSValuePair::kDropIdenticalValues);
   
@@ -153,8 +153,8 @@ TEST_F(CSSValuePairTest, BorderRadius) {
 
 TEST_F(CSSValuePairTest, BorderRadiusIdentical) {
   // border-radius: 10px 10px should become just 10px when dropping identical
-  auto px10_1 = std::make_shared<CSSStringValue>("10px");
-  auto px10_2 = std::make_shared<CSSStringValue>("10px");
+  auto px10_1 = std::make_shared<CSSStringValue>("10px"_s);
+  auto px10_2 = std::make_shared<CSSStringValue>("10px"_s);
   
   CSSValuePair radius(px10_1, px10_2, CSSValuePair::kDropIdenticalValues);
   
@@ -170,7 +170,7 @@ TEST_F(CSSValuePairTest, BorderRadiusIdentical) {
 
 TEST_F(CSSValuePairTest, MixedValueTypes) {
   auto color = CSSIdentifierValue::Create(CSSValueID::kRed);
-  auto string = std::make_shared<CSSStringValue>("Arial");
+  auto string = std::make_shared<CSSStringValue>("Arial"_s);
   
   CSSValuePair mixed(color, string, CSSValuePair::kKeepIdenticalValues);
   

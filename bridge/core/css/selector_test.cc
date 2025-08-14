@@ -51,7 +51,7 @@ TEST_F(SelectorTest, SimpleSelectorMatching) {
   ASSERT_NE(body, nullptr);
   
   // Create simple CSS
-  const char* simple_css = "body { display: block; }";
+  String simple_css = "body { display: block; }"_s;
   
   auto parser_context = std::make_shared<CSSParserContext>(kUASheetMode);
   auto sheet = std::make_shared<StyleSheetContents>(parser_context);
