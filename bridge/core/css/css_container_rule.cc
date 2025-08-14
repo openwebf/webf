@@ -25,20 +25,20 @@ CSSContainerRule::~CSSContainerRule() = default;
 
 AtomicString CSSContainerRule::cssText() const {
   StringBuilder result;
-  result.Append("@container");
+  result.Append("@container"_s);
   
   String name = containerName();
   if (!name.IsEmpty()) {
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(name);
   }
   
   String query = containerQuery();
   if (!query.IsEmpty()) {
     if (!name.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     } else {
-      result.Append(" ");
+      result.Append(" "_s);
     }
     result.Append(query);
   }

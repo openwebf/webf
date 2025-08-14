@@ -55,7 +55,7 @@ CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context, cons
   bool has_seen_dash = false;
 
   if (HasCSSPropertyNamePrefix(property_name, "webkit")) {
-    builder.Append("-");
+    builder.Append("-"_s);
   } else if (IsASCIIUpper(property_name[0])) {
     return CSSPropertyID::kInvalid;
   }

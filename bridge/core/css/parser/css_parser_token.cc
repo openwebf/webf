@@ -208,12 +208,12 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       SerializeIdentifier(String(Value()), builder, (GetHashTokenType() == kHashTokenUnrestricted));
       break;
     case kUrlToken:
-      builder.Append("url(");
+      builder.Append("url("_s);
       SerializeIdentifier(String(Value()), builder);
       return builder.Append(')');
     case kDelimiterToken:
       if (Delimiter() == '\\') {
-        return builder.Append("\\\n");
+        return builder.Append("\\\n"_s);
       }
       return builder.Append(Delimiter());
     case kNumberToken:
@@ -222,12 +222,12 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       } else {
         NumberToStringBuffer buffer;
         const char* str = NumberToString(NumericValue(), buffer);
-        builder.Append(str);
+        builder.Append(String::FromUTF8(str));
         // This wasn't parsed as an integer, so when we serialize it back,
         // it cannot be an integer. Otherwise, we would round-trip e.g.
         // “2.0” to “2”, which could make an invalid value suddenly valid.
         if (strchr(str, '.') == nullptr && strchr(str, 'e') == nullptr) {
-          builder.Append(".0");
+          builder.Append(".0"_s);
         }
         return;
       }
@@ -238,7 +238,7 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
       // This will incorrectly serialize e.g. 4e3e2 as 4000e2
       NumberToStringBuffer buffer;
       const char* str = NumberToString(NumericValue(), buffer);
-      builder.Append(str);
+      builder.Append(String::FromUTF8(str));
       // NOTE: We don't need the same “.0” treatment as we did for
       // kNumberToken, as there are no situations where e.g. 2deg
       // would be valid but 2.0deg not.
@@ -248,32 +248,32 @@ void CSSParserToken::Serialize(StringBuilder& builder) const {
     case kUnicodeRangeToken:
       char buffer[20];
       snprintf(buffer, 20, "U+%X-%X", UnicodeRangeStart(), UnicodeRangeEnd());
-      builder.Append(buffer);
+      builder.Append(String::FromUTF8(buffer));
       return;
     case kStringToken:
       SerializeString(String(Value()), builder);
       return;
 
     case kIncludeMatchToken:
-      return builder.Append("~=");
+      return builder.Append("~="_s);
     case kDashMatchToken:
-      return builder.Append("|=");
+      return builder.Append("|="_s);
     case kPrefixMatchToken:
-      return builder.Append("^=");
+      return builder.Append("^="_s);
     case kSuffixMatchToken:
-      return builder.Append("$=");
+      return builder.Append("$="_s);
     case kSubstringMatchToken:
-      return builder.Append("*=");
+      return builder.Append("*="_s);
     case kColumnToken:
-      return builder.Append("||");
+      return builder.Append("||"_s);
     case kCDOToken:
-      return builder.Append("<!--");
+      return builder.Append("<!--"_s);
     case kCDCToken:
-      return builder.Append("-->");
+      return builder.Append("-->"_s);
     case kBadStringToken:
-      return builder.Append("'\n");
+      return builder.Append("'\n"_s);
     case kBadUrlToken:
-      return builder.Append("url(()");
+      return builder.Append("url(()"_s);
     case kWhitespaceToken:
       return builder.Append(' ');
     case kColonToken:

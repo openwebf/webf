@@ -199,15 +199,15 @@ void LegacyInlineCssStyleDeclaration::Trace(GCVisitor* visitor) const {
 
 String LegacyInlineCssStyleDeclaration::ToString() const {
   if (properties_.empty())
-    return String("");
+    return String::FromUTF8("");
 
   StringBuilder builder;
 
   for (auto& attr : properties_) {
     builder.Append(attr.first);
-    builder.Append(": ");
+    builder.Append(": "_s);
     builder.Append(attr.second);
-    builder.Append(";");
+    builder.Append(";"_s);
   }
 
   return builder.ReleaseString();

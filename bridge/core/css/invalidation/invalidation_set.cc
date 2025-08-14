@@ -513,16 +513,16 @@ std::string InvalidationSet::ToString() const {
   auto format_max_direct_adjancent = [](const InvalidationSet* set) -> std::string {
     const auto* sibling = DynamicTo<SiblingInvalidationSet>(set);
     if (!sibling) {
-      return "";
+      return String::EmptyString();
     }
     unsigned max = sibling->MaxDirectAdjacentSelectors();
     if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
-      return "~";
+      return "~"_s;
     }
     if (max != 1) {
       return std::to_string(max);
     }
-    return "";
+    return String::EmptyString();
   };
 
   std::string metadata;

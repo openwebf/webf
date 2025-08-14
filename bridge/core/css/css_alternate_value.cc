@@ -17,7 +17,7 @@ CSSAlternateValue::CSSAlternateValue(std::shared_ptr<const CSSFunctionValue>& fu
 
 String CSSAlternateValue::CustomCSSText() const {
   StringBuilder builder;
-  builder.Append(getValueName(function_->FunctionType()));
+  builder.Append(String::FromUTF8(getValueName(function_->FunctionType())));
   builder.Append('(');
   builder.Append(aliases_->CssText());
   builder.Append(')');

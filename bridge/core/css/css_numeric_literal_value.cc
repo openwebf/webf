@@ -173,26 +173,26 @@ bool CSSNumericLiteralValue::IsComputationallyIndependent() const {
   return !IsRelativeUnit(GetType());
 }
 
-static String FormatNumber(double number, const char* suffix) {
-  return String::Format("%.6g%s", number, suffix);
+static String FormatNumber(double number, const String& suffix) {
+  return String::Format("%.6g%s", number, suffix.Utf8().data());
 }
 
-static String FormatInfinityOrNaN(double number, const char* suffix) {
+static String FormatInfinityOrNaN(double number, const String& suffix) {
   String result;
   if (std::isinf(number)) {
     if (number > 0) {
-      result = "infinity";
+      result = "infinity"_s;
     } else {
-      result = "-infinity";
+      result = "-infinity"_s;
     }
 
   } else {
     assert(std::isnan(number));
-    result = "NaN";
+    result = "NaN"_s;
   }
 
-  if (strlen(suffix) > 0) {
-    result = String::Format("%s * 1%s", result.Utf8().c_str(), suffix);
+  if (!suffix.IsEmpty()) {
+    result = String::Format("%s * 1%s", result.Utf8().c_str(), suffix.Utf8().data());
   }
   return result;
 }
@@ -287,7 +287,7 @@ String CSSNumericLiteralValue::CustomCSSText() const {
       } else {
         StringBuilder builder;
         int int_value = value;
-        const char* unit_type = UnitTypeToString(GetType());
+        String unit_type = UnitTypeToString(GetType());
         builder.AppendNumber(int_value);
         builder.Append(unit_type);
         text = builder.ReleaseString();

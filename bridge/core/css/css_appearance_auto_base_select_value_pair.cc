@@ -9,11 +9,11 @@ namespace webf {
 
 String CSSAppearanceAutoBaseSelectValuePair::CustomCSSText() const {
   StringBuilder builder;
-  builder.Append("-internal-appearance-auto-base-select(");
+  builder.Append("-internal-appearance-auto-base-select("_s);
   builder.Append(First()->CssText());
-  builder.Append(", ");
+  builder.Append(", "_s);
   builder.Append(Second()->CssText());
-  builder.Append(")");
+  builder.Append(")"_s);
   return builder.ReleaseString();
 }
 

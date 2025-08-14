@@ -87,10 +87,10 @@ void ToExponentAndMantissa(double val, double thresh, int precision,
 }
 
 std::string ExponentToPrefix(int64_t exponent, bool iec) {
-  if (exponent == 0) return "";
+  if (exponent == 0) return String::EmptyString();
 
   const int64_t index = (exponent > 0 ? exponent - 1 : -exponent - 1);
-  if (index >= kUnitsSize) return "";
+  if (index >= kUnitsSize) return String::EmptyString();
 
   const char* array =
       (exponent > 0 ? (iec ? kBigIECUnits : kBigSIUnits) : kSmallSIUnits);

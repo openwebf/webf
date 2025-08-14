@@ -92,11 +92,11 @@ const std::shared_ptr<const CSSImageSetOptionValue> CSSImageSetValue::GetBestOpt
 
 String CSSImageSetValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append("image-set(");
+  result.Append("image-set("_s);
 
   for (size_t i = 0, length = this->length(); i < length; ++i) {
     if (i > 0) {
-      result.Append(", ");
+      result.Append(", "_s);
     }
 
     result.Append(Item(i)->CssText());

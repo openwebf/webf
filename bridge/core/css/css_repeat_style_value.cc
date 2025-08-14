@@ -40,9 +40,9 @@ String CSSRepeatStyleValue::CustomCSSText() const {
   if (webf::ValuesEquivalent(x_, y_)) {
     result.Append(x_->CssText());
   } else if (x_->GetValueID() == CSSValueID::kRepeat && y_->GetValueID() == CSSValueID::kNoRepeat) {
-    result.Append(getValueName(CSSValueID::kRepeatX));
+    result.Append(String::FromUTF8(getValueName(CSSValueID::kRepeatX)));
   } else if (x_->GetValueID() == CSSValueID::kNoRepeat && y_->GetValueID() == CSSValueID::kRepeat) {
-    result.Append(getValueName(CSSValueID::kRepeatY));
+    result.Append(String::FromUTF8(getValueName(CSSValueID::kRepeatY)));
   } else {
     result.Append(x_->CssText());
     result.Append(' ');

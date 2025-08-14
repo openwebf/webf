@@ -73,7 +73,7 @@ bool AppendPosition(StringBuilder& result,
   if (wrote_something) {
     result.Append(' ');
   }
-  result.Append("at ");
+  result.Append("at "_s);
 
   if (x) {
     result.Append(x->CssText());
@@ -290,20 +290,20 @@ void CSSGradientValue::TraceAfterDispatch(GCVisitor* visitor) const {
 String CSSLinearGradientValue::CustomCSSText() const {
   StringBuilder result;
   if (gradient_type_ == kCSSDeprecatedLinearGradient) {
-    result.Append("-webkit-gradient(linear, ");
+    result.Append("-webkit-gradient(linear, "_s);
     result.Append(first_x_->CssText());
     result.Append(' ');
     result.Append(first_y_->CssText());
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(second_x_->CssText());
     result.Append(' ');
     result.Append(second_y_->CssText());
     AppendCSSTextForDeprecatedColorStops(result);
   } else if (gradient_type_ == kCSSPrefixedLinearGradient) {
     if (repeating_) {
-      result.Append("-webkit-repeating-linear-gradient(");
+      result.Append("-webkit-repeating-linear-gradient("_s);
     } else {
-      result.Append("-webkit-linear-gradient(");
+      result.Append("-webkit-linear-gradient("_s);
     }
 
     if (angle_) {
@@ -328,9 +328,9 @@ String CSSLinearGradientValue::CustomCSSText() const {
     AppendCSSTextForColorStops(result, kAppendSeparator);
   } else {
     if (repeating_) {
-      result.Append("repeating-linear-gradient(");
+      result.Append("repeating-linear-gradient("_s);
     } else {
-      result.Append("linear-gradient(");
+      result.Append("linear-gradient("_s);
     }
 
     bool wrote_something = false;
@@ -342,7 +342,7 @@ String CSSLinearGradientValue::CustomCSSText() const {
     } else if ((first_x_ || first_y_) &&
                !(!first_x_ && first_y_ && first_y_->IsIdentifierValue() &&
                  To<CSSIdentifierValue>(first_y_.get())->GetValueID() == CSSValueID::kBottom)) {
-      result.Append("to ");
+      result.Append("to "_s);
       if (first_x_ && first_y_) {
         result.Append(first_x_->CssText());
         result.Append(' ');
@@ -594,7 +594,7 @@ void CSSLinearGradientValue::TraceAfterDispatch(GCVisitor* visitor) const {
 void CSSGradientValue::AppendCSSTextForColorStops(StringBuilder& result, bool requires_separator) const {
   for (const auto& stop : stops_) {
     if (requires_separator) {
-      result.Append(", ");
+      result.Append(", "_s);
     } else {
       requires_separator = true;
     }
@@ -614,19 +614,19 @@ void CSSGradientValue::AppendCSSTextForColorStops(StringBuilder& result, bool re
 void CSSGradientValue::AppendCSSTextForDeprecatedColorStops(StringBuilder& result) const {
   for (unsigned i = 0; i < stops_.size(); i++) {
     const CSSGradientColorStop& stop = stops_[i];
-    result.Append(", ");
+    result.Append(", "_s);
     if (stop.offset_->IsZero() == CSSPrimitiveValue::BoolStatus::kTrue) {
-      result.Append("from(");
+      result.Append("from("_s);
       result.Append(stop.color_->CssText());
       result.Append(')');
     } else if (stop.offset_->IsOne() == CSSPrimitiveValue::BoolStatus::kTrue) {
-      result.Append("to(");
+      result.Append("to("_s);
       result.Append(stop.color_->CssText());
       result.Append(')');
     } else {
-      result.Append("color-stop(");
+      result.Append("color-stop("_s);
       result.Append(stop.offset_->CssText());
-      result.Append(", ");
+      result.Append(", "_s);
       result.Append(stop.color_->CssText());
       result.Append(')');
     }
@@ -641,24 +641,24 @@ String CSSRadialGradientValue::CustomCSSText() const {
   StringBuilder result;
 
   if (gradient_type_ == kCSSDeprecatedRadialGradient) {
-    result.Append("-webkit-gradient(radial, ");
+    result.Append("-webkit-gradient(radial, "_s);
     result.Append(first_x_->CssText());
     result.Append(' ');
     result.Append(first_y_->CssText());
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(first_radius_->CssText());
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(second_x_->CssText());
     result.Append(' ');
     result.Append(second_y_->CssText());
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(second_radius_->CssText());
     AppendCSSTextForDeprecatedColorStops(result);
   } else if (gradient_type_ == kCSSPrefixedRadialGradient) {
     if (repeating_) {
-      result.Append("-webkit-repeating-radial-gradient(");
+      result.Append("-webkit-repeating-radial-gradient("_s);
     } else {
-      result.Append("-webkit-radial-gradient(");
+      result.Append("-webkit-radial-gradient("_s);
     }
 
     if (first_x_ && first_y_) {
@@ -670,26 +670,26 @@ String CSSRadialGradientValue::CustomCSSText() const {
     } else if (first_y_) {
       result.Append(first_y_->CssText());
     } else {
-      result.Append("center");
+      result.Append("center"_s);
     }
 
     if (shape_ || sizing_behavior_) {
-      result.Append(", ");
+      result.Append(", "_s);
       if (shape_) {
         result.Append(shape_->CssText());
         result.Append(' ');
       } else {
-        result.Append("ellipse ");
+        result.Append("ellipse "_s);
       }
 
       if (sizing_behavior_) {
         result.Append(sizing_behavior_->CssText());
       } else {
-        result.Append("cover");
+        result.Append("cover"_s);
       }
 
     } else if (end_horizontal_size_ && end_vertical_size_) {
-      result.Append(", ");
+      result.Append(", "_s);
       result.Append(end_horizontal_size_->CssText());
       result.Append(' ');
       result.Append(end_vertical_size_->CssText());
@@ -699,9 +699,9 @@ String CSSRadialGradientValue::CustomCSSText() const {
     AppendCSSTextForColorStops(result, kAppendSeparator);
   } else {
     if (repeating_) {
-      result.Append("repeating-radial-gradient(");
+      result.Append("repeating-radial-gradient("_s);
     } else {
-      result.Append("radial-gradient(");
+      result.Append("radial-gradient("_s);
     }
 
     bool wrote_something = false;
@@ -710,7 +710,7 @@ String CSSRadialGradientValue::CustomCSSText() const {
     // is when a sizing keyword is used (or all sizing is omitted).
     if (shape_ && shape_->GetValueID() != CSSValueID::kEllipse &&
         (sizing_behavior_ || (!sizing_behavior_ && !end_horizontal_size_))) {
-      result.Append("circle");
+      result.Append("circle"_s);
       wrote_something = true;
     }
 
@@ -985,14 +985,14 @@ String CSSConicGradientValue::CustomCSSText() const {
   StringBuilder result;
 
   if (repeating_) {
-    result.Append("repeating-");
+    result.Append("repeating-"_s);
   }
-  result.Append("conic-gradient(");
+  result.Append("conic-gradient("_s);
 
   bool wrote_something = false;
 
   if (from_angle_) {
-    result.Append("from ");
+    result.Append("from "_s);
     result.Append(from_angle_->CssText());
     wrote_something = true;
   }

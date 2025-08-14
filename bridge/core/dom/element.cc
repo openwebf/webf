@@ -929,25 +929,25 @@ String Element::outerHTML() {
   }
 
   StringBuilder builder;
-  builder.Append("<");
+  builder.Append("<"_s);
   builder.Append(local_name_);
 
   // Read attributes (including style if it's been synchronized)
   if (attributes_ != nullptr) {
     String attrs = attributes_->ToString();
     if (!attrs.IsEmpty()) {
-      builder.Append(" ");
+      builder.Append(" "_s);
       builder.Append(attrs);
     }
   }
 
-  builder.Append(">");
+  builder.Append(">"_s);
 
   String childHTML = innerHTML();
   builder.Append(childHTML);
-  builder.Append("</");
+  builder.Append("</"_s);
   builder.Append(local_name_);
-  builder.Append(">");
+  builder.Append(">"_s);
 
   return builder.ReleaseString();
 }
@@ -972,9 +972,9 @@ String Element::innerHTML() {
     } else if (auto* text = DynamicTo<Text>(child)) {
       builder.Append(text->data());
     } else if (auto* comment = DynamicTo<Comment>(child)) {
-      builder.Append("<!--");
+      builder.Append("<!--"_s);
       builder.Append(comment->data());
-      builder.Append("-->");
+      builder.Append("-->"_s);
     }
     child = child->nextSibling();
   }

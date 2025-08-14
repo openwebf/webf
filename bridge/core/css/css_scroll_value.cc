@@ -16,7 +16,7 @@ CSSScrollValue::CSSScrollValue(std::shared_ptr<const CSSValue> scroller, std::sh
 
 String CSSScrollValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append("scroll(");
+  result.Append("scroll("_s);
   if (scroller_) {
     result.Append(scroller_->CssText());
   }
@@ -26,7 +26,7 @@ String CSSScrollValue::CustomCSSText() const {
     }
     result.Append(axis_->CssText());
   }
-  result.Append(")");
+  result.Append(")"_s);
   return result.ReleaseString();
 }
 

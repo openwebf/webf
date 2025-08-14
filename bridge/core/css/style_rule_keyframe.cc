@@ -22,11 +22,11 @@ String StyleRuleKeyframe::KeyText() const {
   StringBuilder key_text;
   for (unsigned i = 0; i < keys_.size(); ++i) {
     if (i) {
-      key_text.Append(", ");
+      key_text.Append(", "_s);
     }
     if (keys_.at(i).name != TimelineOffset::NamedRange::kNone) {
       key_text.Append(TimelineOffset::TimelineRangeNameToString(keys_.at(i).name));
-      key_text.Append(" ");
+      key_text.Append(" "_s);
     }
     key_text.AppendNumber(keys_.at(i).percent * 100);
     key_text.Append('%');
@@ -63,7 +63,7 @@ std::shared_ptr<const MutableCSSPropertyValueSet> StyleRuleKeyframe::MutableProp
 String StyleRuleKeyframe::CssText() const {
   StringBuilder result;
   result.Append(KeyText());
-  result.Append(" { ");
+  result.Append(" { "_s);
   String decls = properties_->AsText();
   result.Append(decls);
   if (!decls.IsEmpty()) {

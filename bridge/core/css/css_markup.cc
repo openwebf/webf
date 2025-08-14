@@ -126,9 +126,9 @@ String SerializeString(const String& string) {
 
 String SerializeURI(const String& string) {
   StringBuilder builder;
-  builder.Append("url(");
+  builder.Append("url("_s);
   builder.Append(SerializeString(string));
-  builder.Append(")");
+  builder.Append(")"_s);
   return builder.ReleaseString();
 }
 

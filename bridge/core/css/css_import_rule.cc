@@ -42,23 +42,23 @@ MediaList* CSSImportRule::media() {
 
 AtomicString CSSImportRule::cssText() const {
   StringBuilder result;
-  result.Append("@import ");
+  result.Append("@import "_s);
   result.Append(SerializeURI(import_rule_->Href()));
 
   if (import_rule_->IsLayered()) {
-    result.Append(" layer");
+    result.Append(" layer"_s);
     AtomicString layer_name = layerName();
     if (layer_name.length()) {
-      result.Append("(");
+      result.Append("("_s);
       result.Append(layer_name.ToUTF8String());
-      result.Append(")");
+      result.Append(")"_s);
     }
   }
 
   if (String supports = import_rule_->GetSupportsString(); !supports.IsEmpty()) {
-    result.Append(" supports(");
+    result.Append(" supports("_s);
     result.Append(supports);
-    result.Append(")");
+    result.Append(")"_s);
   }
 
   if (import_rule_->MediaQueries()) {

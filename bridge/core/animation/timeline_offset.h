@@ -10,6 +10,8 @@
 #include <cstddef>
 #include <string>
 
+#include "string/wtf_string.h"
+
 namespace webf {
 
 class Document;
@@ -21,7 +23,7 @@ enum class Enum : size_t { kNone, kCover, kContain, kEntry, kEntryCrossing, kExi
 struct TimelineOffset {
   using NamedRange = Enum;
 
-  static std::string TimelineRangeNameToString(NamedRange range_name);
+  static String TimelineRangeNameToString(NamedRange range_name);
   
   // Add comparison operators for std::optional<TimelineOffset> comparisons
   bool operator==(const TimelineOffset& other) const {

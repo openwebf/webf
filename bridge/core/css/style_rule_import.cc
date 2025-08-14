@@ -42,7 +42,7 @@ StyleRuleImport::StyleRuleImport(const String& href,
       loading_(false),
       supported_(supported) {
   if (!media_queries_) {
-    media_queries_ = MediaQuerySet::Create("", nullptr);
+    media_queries_ = MediaQuerySet::Create(""_s, nullptr);
   }
 }
 

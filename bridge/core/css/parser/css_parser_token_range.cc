@@ -103,7 +103,7 @@ String CSSParserTokenRange::Serialize() const {
   StringBuilder result;
   for (const CSSParserToken* it = first_; it != last_; ++it) {
     if (it != first_ && NeedsInsertedComment(*(it - 1), *it)) {
-      result.Append("/**/");
+      result.Append("/**/"_s);
     }
     it->Serialize(result);
   }

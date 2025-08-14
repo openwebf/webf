@@ -60,13 +60,6 @@ String::String(const LChar* latin1_data) {
   impl_ = StringImpl::Create(latin1_data, strlen(reinterpret_cast<const char*>(latin1_data)));
 }
 
-String::String(const char* characters) {
-  if (!characters) {
-    return;
-  }
-  impl_ = StringImpl::Create(reinterpret_cast<const LChar*>(characters), strlen(characters));
-}
-
 String::String(const std::string& s) {
   if (s.empty()) {
     return;
@@ -87,21 +80,21 @@ String::String(const StringView& view) {
 
 String String::Substring(size_t pos, size_t len) const {
   if (!impl_) {
-    return String();
+    return String::EmptyString();
   }
   return String(StringImpl::Substring(impl_, pos, len));
 }
 
 String String::LowerASCII() const {
   if (!impl_) {
-    return String();
+    return String::EmptyString();
   }
   return String(StringImpl::LowerASCII(impl_));
 }
 
 String String::UpperASCII() const {
   if (!impl_) {
-    return String();
+    return String::EmptyString();
   }
   return String(StringImpl::UpperASCII(impl_));
 }
@@ -259,14 +252,14 @@ std::string String::StdUtf8() const {
 
 String String::FromUTF8(const char* utf8_data, size_t byte_length) {
   if (!utf8_data || !byte_length) {
-    return String();
+    return String::EmptyString();
   }
   return String(StringImpl::CreateFromUTF8(utf8_data, byte_length));
 }
 
 String String::FromUTF8(const char* utf8_data) {
   if (!utf8_data) {
-    return String();
+    return String::EmptyString();
   }
   return FromUTF8(utf8_data, strlen(utf8_data));
 }
@@ -299,11 +292,11 @@ String operator+(const String& a, const char* b) {
   if (!b || !*b)
     return a;
   if (a.IsNull())
-    return String(b);
+    return String::FromUTF8(b);
     
   StringBuilder builder;
   builder.Append(a);
-  builder.Append(b);
+  builder.Append(String::FromUTF8(b));
   return builder.ReleaseString();
 }
 
@@ -311,10 +304,10 @@ String operator+(const char* a, const String& b) {
   if (!a || !*a)
     return b;
   if (b.IsNull())
-    return String(a);
+    return String(String::FromUTF8(a));
     
   StringBuilder builder;
-  builder.Append(a);
+  builder.Append(String::FromUTF8(a));
   builder.Append(b);
   return builder.ReleaseString();
 }
@@ -331,7 +324,7 @@ std::ostream& operator<<(std::ostream& out, const String& string) {
 String String::Number(float number) {
   char buffer[256];
   snprintf(buffer, sizeof(buffer), "%.6g", number);
-  return String(buffer);
+  return String::FromUTF8(buffer);
 }
 
 String String::Number(double number, unsigned precision) {
@@ -339,7 +332,7 @@ String String::Number(double number, unsigned precision) {
   char format[32];
   snprintf(format, sizeof(format), "%%.%ug", precision);
   snprintf(buffer, sizeof(buffer), format, number);
-  return String(buffer);
+  return String::FromUTF8(buffer);
 }
 
 // Format string implementation
@@ -355,7 +348,7 @@ String String::Format(const char* format, ...) {
   
   if (size < 0) {
     va_end(args);
-    return String();
+    return String::EmptyString();
   }
   
   // Allocate buffer and format string
@@ -363,7 +356,7 @@ String String::Format(const char* format, ...) {
   vsnprintf(buffer.data(), buffer.size(), format, args);
   va_end(args);
   
-  return String(buffer.data());
+  return String::FromUTF8(buffer.data());
 }
 
 }  // namespace webf

@@ -228,8 +228,8 @@ TEST(CSSTokenizerTest, WhitespaceTokens) {
 TEST(CSSTokenizerTest, Escapes) {
   TEST_TOKENS("hel\\6Co", Ident("hello"));
   TEST_TOKENS("\\26 B", Ident("&B"));
-  TEST_TOKENS("'hel\\6c o'", GetString("hello"));
-  TEST_TOKENS("'spac\\65\r\ns'", GetString("spaces"));
+  TEST_TOKENS("'hel\\6c o'", GetString::FromUTF8("hello"));
+  TEST_TOKENS("'spac\\65\r\ns'", GetString::FromUTF8("spaces"));
   TEST_TOKENS("spac\\65\r\ns", Ident("spaces"));
   TEST_TOKENS("spac\\65\n\rs", Ident("space"), Whitespace(), Ident("s"));
   TEST_TOKENS("sp\\61\tc\\65\fs", Ident("spaces"));
@@ -272,11 +272,11 @@ TEST(CSSTokenizerTest, FunctionToken) {
   TEST_TOKENS("foo-bar\\ baz(", Func("foo-bar baz"));
   TEST_TOKENS("fun\\(ction(", Func("fun(ction"));
   TEST_TOKENS("-foo(", Func("-foo"));
-  TEST_TOKENS("url(\"foo.gif\"", Func("url"), GetString("foo.gif"));
-  TEST_TOKENS("foo(  \'bar.gif\'", Func("foo"), Whitespace(), GetString("bar.gif"));
+  TEST_TOKENS("url(\"foo.gif\"", Func("url"), GetString::FromUTF8("foo.gif"));
+  TEST_TOKENS("foo(  \'bar.gif\'", Func("foo"), Whitespace(), GetString::FromUTF8("bar.gif"));
   // To simplify implementation we drop the whitespace in
   // function(url),whitespace,string()
-  TEST_TOKENS("url(  \'bar.gif\'", Func("url"), GetString("bar.gif"));
+  TEST_TOKENS("url(  \'bar.gif\'", Func("url"), GetString::FromUTF8("bar.gif"));
 }
 
 TEST(CSSTokenizerTest, AtKeywordToken) {
@@ -318,19 +318,19 @@ TEST(CSSTokenizerTest, UrlToken) {
 }
 
 TEST(CSSTokenizerTest, StringToken) {
-  TEST_TOKENS("'text'", GetString("text"));
-  TEST_TOKENS("\"text\"", GetString("text"));
-  TEST_TOKENS("'testing, 123!'", GetString("testing, 123!"));
+  TEST_TOKENS("'text'", GetString::FromUTF8("text"));
+  TEST_TOKENS("\"text\"", GetString::FromUTF8("text"));
+  TEST_TOKENS("'testing, 123!'", GetString::FromUTF8("testing, 123!"));
   TEST_TOKENS("'es\\'ca\\\"pe'", GetString("es'ca\"pe"));
   TEST_TOKENS("'\"quotes\"'", GetString("\"quotes\""));
-  TEST_TOKENS("\"'quotes'\"", GetString("'quotes'"));
-  TEST_TOKENS("\"mismatch'", GetString("mismatch'"));
-  TEST_TOKENS("'text\5\t\13'", GetString("text\5\t\13"));
-  TEST_TOKENS("\"end on eof", GetString("end on eof"));
-  TEST_TOKENS("'esca\\\nped'", GetString("escaped"));
-  TEST_TOKENS("\"esc\\\faped\"", GetString("escaped"));
-  TEST_TOKENS("'new\\\rline'", GetString("newline"));
-  TEST_TOKENS("\"new\\\r\nline\"", GetString("newline"));
+  TEST_TOKENS("\"'quotes'\"", GetString::FromUTF8("'quotes'"));
+  TEST_TOKENS("\"mismatch'", GetString::FromUTF8("mismatch'"));
+  TEST_TOKENS("'text\5\t\13'", GetString::FromUTF8("text\5\t\13"));
+  TEST_TOKENS("\"end on eof", GetString::FromUTF8("end on eof"));
+  TEST_TOKENS("'esca\\\nped'", GetString::FromUTF8("escaped"));
+  TEST_TOKENS("\"esc\\\faped\"", GetString::FromUTF8("escaped"));
+  TEST_TOKENS("'new\\\rline'", GetString::FromUTF8("newline"));
+  TEST_TOKENS("\"new\\\r\nline\"", GetString::FromUTF8("newline"));
   TEST_TOKENS("'bad\nstring", BadString(), Whitespace(), Ident("string"));
   TEST_TOKENS("'bad\rstring", BadString(), Whitespace(), Ident("string"));
   TEST_TOKENS("'bad\r\nstring", BadString(), Whitespace(), Ident("string"));

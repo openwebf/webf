@@ -28,22 +28,22 @@ unsigned FontSizeAdjust::GetHash() const {
 std::string FontSizeAdjust::ToString(Metric metric) const {
   switch (metric) {
     case Metric::kCapHeight:
-      return "cap-height";
+      return "cap-height"_s;
     case Metric::kChWidth:
-      return "ch-width";
+      return "ch-width"_s;
     case Metric::kIcWidth:
-      return "ic-width";
+      return "ic-width"_s;
     case Metric::kIcHeight:
-      return "ic-height";
+      return "ic-height"_s;
     case Metric::kExHeight:
-      return "ex-height";
+      return "ex-height"_s;
   }
   assert_m(false, "NOTREACHED_IN_MIGRATION");
 }
 
 std::string FontSizeAdjust::ToString() const {
   if (value_ == kFontSizeAdjustNone) {
-    return "none";
+    return "none"_s;
   }
 
   if (metric_ == Metric::kExHeight) {

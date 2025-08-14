@@ -10,9 +10,9 @@ namespace cssvalue {
 
 String CSSGridAutoRepeatValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append("repeat(");
-  result.Append(getValueName(AutoRepeatID()));
-  result.Append(", ");
+  result.Append("repeat("_s);
+  result.Append(String::FromUTF8(getValueName(AutoRepeatID())));
+  result.Append(", "_s);
   result.Append(CSSValueList::CustomCSSText());
   result.Append(')');
   return result.ReleaseString();

@@ -46,13 +46,13 @@ bool CSSFontFaceSrcValue::IsSupportedFormat() const {
   // it.
   const AtomicString& resolved_url_string = src_value_->UrlData().ResolvedUrl();
   const String& url_string = resolved_url_string.GetString();
-  return ProtocolIs(url_string.StdUtf8(), "data") || !url_string.EndsWith(".eot");
+  return ProtocolIs(url_string.StdUtf8(), "data") || !url_string.EndsWith(".eot"_s);
 }
 
 String CSSFontFaceSrcValue::CustomCSSText() const {
   StringBuilder result;
   if (IsLocal()) {
-    result.Append("local(");
+    result.Append("local("_s);
     result.Append(SerializeString(LocalResource()));
     result.Append(')');
   } else {
@@ -60,7 +60,7 @@ String CSSFontFaceSrcValue::CustomCSSText() const {
   }
 
   if (!format_.IsEmpty()) {
-    result.Append(" format(");
+    result.Append(" format("_s);
     // Format should be serialized as strings:
     // https://github.com/w3c/csswg-drafts/issues/6328#issuecomment-971823790
     result.Append(SerializeString(format_));

@@ -27,7 +27,7 @@ class String {
   // Construct a string with latin1 data.
   String(const LChar* latin1_data, size_t length);
   String(const LChar* latin1_data);
-  String(const char* characters);
+  String(const char* characters) = delete;
   String(const std::string& s);
 
   // Construct a string referencing an existing StringImpl.
@@ -111,7 +111,7 @@ class String {
   // Number to String conversion
   template <typename IntegerType>
   static String Number(IntegerType number) {
-    return String(std::to_string(number).c_str());
+    return String::FromUTF8(std::to_string(number).c_str());
   }
   
   static String Number(float);
@@ -139,6 +139,10 @@ std::ostream& operator<<(std::ostream&, const String&);
 String operator+(const String& a, const String& b);
 String operator+(const String& a, const char* b);
 String operator+(const char* a, const String& b);
+
+
+inline webf::String operator""_s(const UTF8Char* s, size_t size) { return webf::String::FromUTF8(s, size); }
+inline webf::String operator""_s(const webf::UChar* s, size_t size) { return {s, size}; }
 
 }  // namespace webf
 

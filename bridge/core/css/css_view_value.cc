@@ -19,7 +19,7 @@ CSSViewValue::CSSViewValue(const CSSValue* axis, const CSSValue* inset)
 
 String CSSViewValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append("view(");
+  result.Append("view("_s);
   if (axis_) {
     result.Append(axis_->CssText());
   }
@@ -29,7 +29,7 @@ String CSSViewValue::CustomCSSText() const {
     }
     result.Append(inset_->CssText());
   }
-  result.Append(")");
+  result.Append(")"_s);
   return result.ReleaseString();
 }
 

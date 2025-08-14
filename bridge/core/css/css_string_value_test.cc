@@ -25,13 +25,13 @@ class CSSStringValueTest : public ::testing::Test {
 
 TEST_F(CSSStringValueTest, Construction) {
   CSSStringValue value("test string");
-  EXPECT_EQ(String("test string"), value.Value());
+  EXPECT_EQ(String::FromUTF8("test string"), value.Value());
   EXPECT_TRUE(value.IsStringValue());
 }
 
 TEST_F(CSSStringValueTest, EmptyString) {
   CSSStringValue value("");
-  EXPECT_EQ(String(""), value.Value());
+  EXPECT_EQ(String::FromUTF8(""), value.Value());
   EXPECT_TRUE(value.IsStringValue());
 }
 
@@ -42,7 +42,7 @@ TEST_F(CSSStringValueTest, SpecialCharacters) {
 
 TEST_F(CSSStringValueTest, UnicodeCharacters) {
   CSSStringValue value("Hello 世界 🌍 emoji");
-  EXPECT_EQ(String("Hello 世界 🌍 emoji"), value.Value());
+  EXPECT_EQ(String::FromUTF8("Hello 世界 🌍 emoji"), value.Value());
 }
 
 TEST_F(CSSStringValueTest, CssText) {
@@ -80,9 +80,9 @@ TEST_F(CSSStringValueTest, FontFamilyNames) {
   CSSStringValue times("Times New Roman");
   CSSStringValue custom("MyCustomFont");
   
-  EXPECT_EQ(String("Arial"), arial.Value());
-  EXPECT_EQ(String("Times New Roman"), times.Value());
-  EXPECT_EQ(String("MyCustomFont"), custom.Value());
+  EXPECT_EQ(String::FromUTF8("Arial"), arial.Value());
+  EXPECT_EQ(String::FromUTF8("Times New Roman"), times.Value());
+  EXPECT_EQ(String::FromUTF8("MyCustomFont"), custom.Value());
   
   EXPECT_EQ(String("\"Arial\""), arial.CustomCSSText());
   EXPECT_EQ(String("\"Times New Roman\""), times.CustomCSSText());
@@ -94,8 +94,8 @@ TEST_F(CSSStringValueTest, ContentStrings) {
   CSSStringValue content2("Chapter ");
   CSSStringValue content3("\"");
   
-  EXPECT_EQ(String("→"), content1.Value());
-  EXPECT_EQ(String("Chapter "), content2.Value());
+  EXPECT_EQ(String::FromUTF8("→"), content1.Value());
+  EXPECT_EQ(String::FromUTF8("Chapter "), content2.Value());
   EXPECT_EQ(String("\""), content3.Value());
 }
 
@@ -104,9 +104,9 @@ TEST_F(CSSStringValueTest, UrlStrings) {
   CSSStringValue url2("https://example.com/image.jpg");
   CSSStringValue url3("../assets/background.svg");
   
-  EXPECT_EQ(String("image.png"), url1.Value());
-  EXPECT_EQ(String("https://example.com/image.jpg"), url2.Value());
-  EXPECT_EQ(String("../assets/background.svg"), url3.Value());
+  EXPECT_EQ(String::FromUTF8("image.png"), url1.Value());
+  EXPECT_EQ(String::FromUTF8("https://example.com/image.jpg"), url2.Value());
+  EXPECT_EQ(String::FromUTF8("../assets/background.svg"), url3.Value());
 }
 
 TEST_F(CSSStringValueTest, LongStrings) {
@@ -125,9 +125,9 @@ TEST_F(CSSStringValueTest, CustomPropertyStrings) {
   CSSStringValue custom2("calc(100% - 20px)");
   CSSStringValue custom3("var(--primary-color)");
   
-  EXPECT_EQ(String("red"), custom1.Value());
-  EXPECT_EQ(String("calc(100% - 20px)"), custom2.Value());
-  EXPECT_EQ(String("var(--primary-color)"), custom3.Value());
+  EXPECT_EQ(String::FromUTF8("red"), custom1.Value());
+  EXPECT_EQ(String::FromUTF8("calc(100% - 20px)"), custom2.Value());
+  EXPECT_EQ(String::FromUTF8("var(--primary-color)"), custom3.Value());
 }
 
 }  // namespace webf

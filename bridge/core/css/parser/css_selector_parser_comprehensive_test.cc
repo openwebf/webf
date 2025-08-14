@@ -32,7 +32,7 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
   // Helper to parse a selector and check if it's valid
   bool IsValidSelector(const std::string& selector) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    String css = selector + String(" { }");
+    String css = selector + String::FromUTF8(" { }");
     CSSParser::ParseSheet(context_, sheet, css);
     
     if (sheet->ChildRules().empty()) {
@@ -46,16 +46,16 @@ class CSSSelectorParserComprehensiveTest : public ::testing::Test {
   // Helper to get selector text
   String GetSelectorText(const String& selector) {
     auto sheet = std::make_shared<StyleSheetContents>(context_);
-    String css = selector + String(" { }");
+    String css = selector + String::FromUTF8(" { }");
     CSSParser::ParseSheet(context_, sheet, css);
     
     if (sheet->ChildRules().empty()) {
-      return "";
+      return String::EmptyString();
     }
     
     auto* rule = DynamicTo<StyleRule>(sheet->ChildRules()[0].get());
     if (!rule) {
-      return "";
+      return String::EmptyString();
     }
     
     return rule->SelectorsText();

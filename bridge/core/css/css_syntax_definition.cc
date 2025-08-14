@@ -135,7 +135,7 @@ CSSSyntaxDefinition::CSSSyntaxDefinition(std::vector<CSSSyntaxComponent> compone
 
 CSSSyntaxDefinition CSSSyntaxDefinition::CreateUniversal() {
   std::vector<CSSSyntaxComponent> components;
-  components.push_back(CSSSyntaxComponent(CSSSyntaxType::kTokenStream, "", CSSSyntaxRepeat::kNone));
+  components.push_back(CSSSyntaxComponent(CSSSyntaxType::kTokenStream, String::EmptyString(), CSSSyntaxRepeat::kNone));
   return CSSSyntaxDefinition(std::move(components));
 }
 
@@ -146,7 +146,7 @@ std::string CSSSyntaxDefinition::ToString() const {
   StringBuilder builder;
   builder.Append(syntax_components_[0].GetString());
   for (size_t i = 1; i < syntax_components_.size(); i++) {
-    builder.Append(" | ");
+    builder.Append(" | "_s);
     builder.Append(syntax_components_[i].GetString());
   }
   return builder.ReleaseString().StdUtf8();

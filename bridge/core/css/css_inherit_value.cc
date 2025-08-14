@@ -28,7 +28,7 @@ std::shared_ptr<const CSSInheritedValue> CSSInheritedValue::Create() {
 }
 
 String CSSInheritedValue::CustomCSSText() const {
-  return "inherit";
+  return "inherit"_s;
 }
 
 }  // namespace webf

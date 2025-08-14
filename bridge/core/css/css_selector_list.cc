@@ -114,7 +114,7 @@ String CSSSelectorList::SelectorsText(const CSSSelector* first) {
 
   for (const CSSSelector* s = first; s; s = Next(*s)) {
     if (s != first) {
-      result.Append(", ");
+      result.Append(", "_s);
     }
     result.Append(s->SelectorText());
   }

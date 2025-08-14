@@ -99,9 +99,9 @@ TEST(CSSParserTokenStreamTest, ConsumeIncludingWhitespace) {
 
 TEST(CSSParserTokenStreamTest, RangesDoNotGetInvalidatedWhenConsuming) {
   StringBuilder s;
-  s.Append("1 ");
+  s.Append("1 "_s);
   for (int i = 0; i < 100; i++) {
-    s.Append("A ");
+    s.Append("A "_s);
   }
 
   CSSTokenizer tokenizer(s.ReleaseString());
@@ -406,7 +406,7 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueFunction) {
 }
 
 TEST(CSSParserTokenStreamTest, Boundary) {
-  CSSTokenizer tokenizer(String("foo:red;bar:blue;asdf"));
+  CSSTokenizer tokenizer(String::FromUTF8("foo:red;bar:blue;asdf"));
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -438,7 +438,7 @@ TEST(CSSParserTokenStreamTest, Boundary) {
 }
 
 TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
-  CSSTokenizer tokenizer(String("a:b,c;d:,;e"));
+  CSSTokenizer tokenizer(String::FromUTF8("a:b,c;d:,;e"));
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -487,7 +487,7 @@ TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
 }
 
 TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
-  CSSTokenizer tokenizer(String("a:b|"));
+  CSSTokenizer tokenizer(String::FromUTF8("a:b|"));
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -513,7 +513,7 @@ TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
 }
 
 TEST(CSSParserTokenStreamTest, BoundaryBlockGuard) {
-  CSSTokenizer tokenizer(String("a[b;c]d;e"));
+  CSSTokenizer tokenizer(String::FromUTF8("a[b;c]d;e"));
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -530,12 +530,12 @@ TEST(CSSParserTokenStreamTest, BoundaryBlockGuard) {
 
     // However, now the boundary should apply.
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ(range.Serialize(), String("d"));
+    EXPECT_EQ(range.Serialize(), String::FromUTF8("d"));
   }
 }
 
 TEST(CSSParserTokenStreamTest, BoundaryRestoringBlockGuard) {
-  CSSTokenizer tokenizer(String("a[b;c]d;e"));
+  CSSTokenizer tokenizer(String::FromUTF8("a[b;c]d;e"));
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -554,12 +554,12 @@ TEST(CSSParserTokenStreamTest, BoundaryRestoringBlockGuard) {
 
     // However, now the boundary should apply.
     CSSParserTokenRange range = stream.ConsumeUntilPeekedTypeIs<>();
-    EXPECT_EQ(range.Serialize(), String("d"));
+    EXPECT_EQ(range.Serialize(), String::FromUTF8("d"));
   }
 }
 
 TEST(CSSParserTokenStreamTest, SavePointRestoreWithoutLookahead) {
-  CSSTokenizer tokenizer(String("a b c"));
+  CSSTokenizer tokenizer(String::FromUTF8("a b c"));
   CSSParserTokenStream stream(tokenizer);
   stream.EnsureLookAhead();
 

@@ -43,20 +43,20 @@ String CSSCrossfadeValue::CustomCSSText() const {
   StringBuilder result;
   if (is_prefixed_variant_) {
     CHECK_EQ(2u, image_and_percentages_.size());
-    result.Append("-webkit-cross-fade(");
+    result.Append("-webkit-cross-fade("_s);
     result.Append(image_and_percentages_[0].first->CssText());
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(image_and_percentages_[1].first->CssText());
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(image_and_percentages_[1].second->CssText());
     result.Append(')');
     DCHECK_EQ(nullptr, image_and_percentages_[0].second);
   } else {
-    result.Append("cross-fade(");
+    result.Append("cross-fade("_s);
     bool first = true;
     for (const auto& [image, percentage] : image_and_percentages_) {
       if (!first) {
-        result.Append(", ");
+        result.Append(", "_s);
       }
       result.Append(image->CssText());
       if (percentage) {

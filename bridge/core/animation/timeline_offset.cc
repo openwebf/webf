@@ -7,31 +7,33 @@
 #include "timeline_offset.h"
 #include <string>
 
+#include "string/wtf_string.h"
+
 namespace webf {
 
 /* static */
-std::string TimelineOffset::TimelineRangeNameToString(TimelineOffset::NamedRange range_name) {
+String TimelineOffset::TimelineRangeNameToString(TimelineOffset::NamedRange range_name) {
   switch (range_name) {
     case NamedRange::kNone:
-      return "none";
+      return "none"_s;
 
     case NamedRange::kCover:
-      return "cover";
+      return "cover"_s;
 
     case NamedRange::kContain:
-      return "contain";
+      return "contain"_s;
 
     case NamedRange::kEntry:
-      return "entry";
+      return "entry"_s;
 
     case NamedRange::kEntryCrossing:
-      return "entry-crossing";
+      return "entry-crossing"_s;
 
     case NamedRange::kExit:
-      return "exit";
+      return "exit"_s;
 
     case NamedRange::kExitCrossing:
-      return "exit-crossing";
+      return "exit-crossing"_s;
   }
 }
 

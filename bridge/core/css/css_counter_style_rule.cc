@@ -137,66 +137,66 @@ AtomicString CSSCounterStyleRule::cssText() const {
     return AtomicString();
 
   StringBuilder result;
-  result.Append("@counter-style ");
+  result.Append("@counter-style "_s);
   result.Append(name().GetString());
-  result.Append(" { ");
+  result.Append(" { "_s);
   
   // Add each descriptor if present
   if (!system().empty()) {
-    result.Append("system: ");
+    result.Append("system: "_s);
     result.Append(system().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!symbols().empty()) {
-    result.Append("symbols: ");
+    result.Append("symbols: "_s);
     result.Append(symbols().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!additiveSymbols().empty()) {
-    result.Append("additive-symbols: ");
+    result.Append("additive-symbols: "_s);
     result.Append(additiveSymbols().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!range().empty()) {
-    result.Append("range: ");
+    result.Append("range: "_s);
     result.Append(range().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!prefix().empty()) {
-    result.Append("prefix: ");
+    result.Append("prefix: "_s);
     result.Append(prefix().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!suffix().empty()) {
-    result.Append("suffix: ");
+    result.Append("suffix: "_s);
     result.Append(suffix().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!pad().empty()) {
-    result.Append("pad: ");
+    result.Append("pad: "_s);
     result.Append(pad().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!speakAs().empty()) {
-    result.Append("speak-as: ");
+    result.Append("speak-as: "_s);
     result.Append(speakAs().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
   if (!fallback().empty()) {
-    result.Append("fallback: ");
+    result.Append("fallback: "_s);
     result.Append(fallback().GetString());
-    result.Append("; ");
+    result.Append("; "_s);
   }
   
-  result.Append("}");
+  result.Append("}"_s);
   return AtomicString(result.ReleaseString());
 }
 

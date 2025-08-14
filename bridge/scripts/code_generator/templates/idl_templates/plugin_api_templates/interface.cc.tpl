@@ -26,7 +26,7 @@ namespace webf {
 void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= className %>* <%= _.snakeCase(className) %>, <%= generatePublicParameterType(prop.type, true) %> <%= prop.name %>, SharedExceptionState* shared_exception_state) {
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% if (isStringType(prop.type)) { %>
-  webf::AtomicString <%= prop.name %>Atomic = webf::AtomicString(<%= prop.name %>);
+  webf::AtomicString <%= prop.name %>Atomic = webf::AtomicString::CreateFromUTF8(<%= prop.name %>);
   <% } %>
   <%= _.snakeCase(className) %>->set<%= _.startCase(prop.name).replace(/ /g, '') %>(<%= prop.name %><% if (isStringType(prop.type)) { %>Atomic<% } %>, shared_exception_state->exception_state);
 }
@@ -39,7 +39,7 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   MemberMutationScope member_mutation_scope{<%= _.snakeCase(className) %>->GetExecutingContext()};
   <% _.forEach(method.args, function(arg, index) { %>
     <% if (isStringType(arg.type)) { %>
-  webf::AtomicString <%= _.snakeCase(arg.name) %>_atomic = webf::AtomicString(<%= _.snakeCase(arg.name) %>);
+  webf::AtomicString <%= _.snakeCase(arg.name) %>_atomic = webf::AtomicString::CreateFromUTF8(<%= _.snakeCase(arg.name) %>);
     <% } %>
     <% if (isAnyType(arg.type)) { %>
   ScriptValue <%=_.snakeCase(arg.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
@@ -131,7 +131,7 @@ WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFM
   <% if (object.construct.args.length >= 1 && object.construct.args.some(arg => arg.name === 'type')) { %>
 WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>(ExecutingContext* context, const char* type, ExceptionState& exception_state) {
   MemberMutationScope member_mutation_scope{context};
-  AtomicString type_atomic = AtomicString(type);
+  AtomicString type_atomic = AtomicString::CreateFromUTF8(type);
   <%= className %>* event = <%= className %>::Create(context, type_atomic, exception_state);
 
   WebFValueStatus* status_block = event->KeepAlive();
@@ -143,13 +143,13 @@ WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFM
 WebFValue<<%= className %>, <%= className %>PublicMethods> ExecutingContextWebFMethods::Create<%= className %>WithOptions(ExecutingContext* context, <%= generatePublicParametersTypeWithName(object.construct.args, true) %> ExceptionState& exception_state) {
   MemberMutationScope member_mutation_scope{context};
   <% if (object.construct.args.some(arg => arg.name === 'type')) { %>
-  AtomicString type_atomic = AtomicString(type);
+  AtomicString type_atomic = AtomicString::CreateFromUTF8(type);
   <% } %>
   std::shared_ptr<<%= className %>Init> init_class = <%= className %>Init::Create();
   <% if(dependentClasses[className + 'Init']){ %>
   <% _.forEach([...dependentClasses[className + 'Init'].props, ...dependentClasses[className + 'Init'].inheritedProps], function (prop) { %>
   <% if(isStringType(prop.type)) { %>
-  AtomicString <%=_.snakeCase(prop.name)%>_atomic = AtomicString(init-><%=_.snakeCase(prop.name)%>);
+  AtomicString <%=_.snakeCase(prop.name)%>_atomic = AtomicString::CreateFromUTF8(init-><%=_.snakeCase(prop.name)%>);
   init_class->set<%=_.upperFirst(prop.name)%>(<%=_.snakeCase(prop.name)%>_atomic);
   <% } else if (isPointerType(prop.type)) { %>
   init_class->set<%=_.upperFirst(prop.name)%>(init-><%=_.snakeCase(prop.name)%>.value);

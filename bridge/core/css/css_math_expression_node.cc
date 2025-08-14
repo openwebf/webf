@@ -3073,7 +3073,9 @@ std::shared_ptr<const CSSMathExpressionNode> MaybeSortSumNode(std::shared_ptr<co
   // them by their units, ordered ASCII case-insensitively, and append them to
   // ret.
   auto comp = [&](const CSSPrimitiveValue::UnitType& key_a, const CSSPrimitiveValue::UnitType& key_b) {
-    return strcmp(CSSPrimitiveValue::UnitTypeToString(key_a), CSSPrimitiveValue::UnitTypeToString(key_b)) < 0;
+    String str_a = CSSPrimitiveValue::UnitTypeToString(key_a);
+    String str_b = CSSPrimitiveValue::UnitTypeToString(key_b);
+    return strcmp(str_a.Utf8().data(), str_b.Utf8().data()) < 0;
   };
   std::vector<CSSPrimitiveValue::UnitType> keys;
   keys.reserve(numeric_children.size());
@@ -3142,16 +3144,16 @@ String CSSMathExpressionOperation::CustomCSSText() const {
           IsMultiplyOrDivide() && operands.front()->IsOperation() &&
           To<CSSMathExpressionOperation>(operands.front().get())->IsAddOrSubtract();
       if (left_side_needs_parentheses) {
-        result.Append("(");
+        result.Append("("_s);
       }
       result.Append(operands[0]->CustomCSSText());
       if (left_side_needs_parentheses) {
-        result.Append(")");
+        result.Append(")"_s);
       }
 
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(ToString(op));
-      result.Append(" ");
+      result.Append(" "_s);
 
       // After all the simplifications we only need parentheses here for the
       // cases like: lhs [* or /] (rhs as unsimplified sum/sub)
@@ -3159,11 +3161,11 @@ String CSSMathExpressionOperation::CustomCSSText() const {
           IsMultiplyOrDivide() && operands.back()->IsOperation() &&
           To<CSSMathExpressionOperation>(operands.back().get())->IsAddOrSubtract();
       if (right_side_needs_parentheses) {
-        result.Append("(");
+        result.Append("("_s);
       }
       result.Append(operands[1]->CustomCSSText());
       if (right_side_needs_parentheses) {
-        result.Append(")");
+        result.Append(")"_s);
       }
 
       return result.ReleaseString();
@@ -3179,13 +3181,13 @@ String CSSMathExpressionOperation::CustomCSSText() const {
     case CSSMathOperator::kCalcSize: {
       StringBuilder result;
       result.Append(ToString(operator_));
-      result.Append("(");
+      result.Append("("_s);
       result.Append(operands_.front()->CustomCSSText());
       for (auto&& operand : SecondToLastOperands()) {
-        result.Append(", ");
+        result.Append(", "_s);
         result.Append(operand->CustomCSSText());
       }
-      result.Append(")");
+      result.Append(")"_s);
 
       return result.ReleaseString();
     }
@@ -3195,17 +3197,17 @@ String CSSMathExpressionOperation::CustomCSSText() const {
     case CSSMathOperator::kRoundToZero: {
       StringBuilder result;
       result.Append(ToString(operator_));
-      result.Append("(");
+      result.Append("("_s);
       if (operator_ != CSSMathOperator::kRoundNearest) {
         result.Append(ToRoundingStrategyString(operator_));
-        result.Append(", ");
+        result.Append(", "_s);
       }
       result.Append(operands_[0]->CustomCSSText());
       if (ShouldSerializeRoundingStep(operands_)) {
-        result.Append(", ");
+        result.Append(", "_s);
         result.Append(operands_[1]->CustomCSSText());
       }
-      result.Append(")");
+      result.Append(")"_s);
 
       return result.ReleaseString();
     }
@@ -3215,19 +3217,19 @@ String CSSMathExpressionOperation::CustomCSSText() const {
       CHECK_EQ(operands_.size(), 3u);
       StringBuilder result;
       result.Append(ToString(operator_));
-      result.Append("(");
+      result.Append("("_s);
       result.Append(operands_.front()->CustomCSSText());
-      result.Append(" from ");
+      result.Append(" from "_s);
       result.Append(operands_[1]->CustomCSSText());
-      result.Append(" to ");
+      result.Append(" to "_s);
       result.Append(operands_.back()->CustomCSSText());
-      result.Append(")");
+      result.Append(")"_s);
 
       return result.ReleaseString();
     }
     case CSSMathOperator::kInvalid:
       NOTREACHED_IN_MIGRATION();
-      return "";
+      return String::EmptyString();
   }
 }
 
@@ -3588,7 +3590,7 @@ String CSSMathExpressionContainerFeature::CustomCSSText() const {
   StringBuilder builder;
   builder.Append(size_feature_->CustomCSSText());
   if (container_name_ && !container_name_->Value().Empty()) {
-    builder.Append(" of ");
+    builder.Append(" of "_s);
     builder.Append(container_name_->CustomCSSText());
   }
   return builder.ReleaseString();

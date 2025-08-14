@@ -143,16 +143,16 @@ CSSKeyframeRule* CSSKeyframesRule::findRule(const ExecutingContext* execution_co
 AtomicString CSSKeyframesRule::cssText() const {
   StringBuilder result;
   if (IsVendorPrefixed()) {
-    result.Append("@-webkit-keyframes ");
+    result.Append("@-webkit-keyframes "_s);
   } else {
-    result.Append("@keyframes ");
+    result.Append("@keyframes "_s);
   }
   SerializeIdentifier(name().ToUTF8String(), result);
-  result.Append(" { \n");
+  result.Append(" { \n"_s);
 
   unsigned size = length();
   for (unsigned i = 0; i < size; ++i) {
-    result.Append("  ");
+    result.Append("  "_s);
     result.Append(keyframes_rule_->Keyframes()[i]->CssText());
     result.Append('\n');
   }

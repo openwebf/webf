@@ -15,7 +15,7 @@ std::shared_ptr<const CSSInitialColorValue> CSSInitialColorValue::Create() {
 }
 
 String CSSInitialColorValue::CustomCSSText() const {
-  return "";
+  return String::EmptyString();
 }
 
 }  // namespace webf

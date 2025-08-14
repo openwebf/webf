@@ -69,37 +69,37 @@ String CSSStepsTimingFunctionValue::CustomCSSText() const {
   String step_position_string;
   switch (step_position_) {
     case StepsTimingFunction::StepPosition::START:
-      step_position_string = "start";
+      step_position_string = "start"_s;
       break;
 
     case StepsTimingFunction::StepPosition::END:
-      step_position_string = "";
+      step_position_string = String::EmptyString();
       break;
 
     case StepsTimingFunction::StepPosition::JUMP_BOTH:
-      step_position_string = "jump-both";
+      step_position_string = "jump-both"_s;
       break;
 
     case StepsTimingFunction::StepPosition::JUMP_END:
-      step_position_string = "";
+      step_position_string = String::EmptyString();
       break;
 
     case StepsTimingFunction::StepPosition::JUMP_NONE:
-      step_position_string = "jump-none";
+      step_position_string = "jump-none"_s;
       break;
 
     case StepsTimingFunction::StepPosition::JUMP_START:
-      step_position_string = "jump-start";
+      step_position_string = "jump-start"_s;
   }
 
   // https://drafts.csswg.org/css-easing-1/#serialization
   // If the step position is jump-end or end, serialize as steps(<integer>).
   // Otherwise, serialize as steps(<integer>, <step-position>).
   StringBuilder result;
-  result.Append("steps(");
+  result.Append("steps("_s);
   result.AppendNumber(steps_);
   if (!step_position_string.IsEmpty()) {
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(step_position_string);
   }
   result.Append(')');

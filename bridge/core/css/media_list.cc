@@ -142,7 +142,7 @@ String MediaQuerySet::MediaText() const {
   bool first = true;
   for (size_t i = 0; i < queries_.size(); ++i) {
     if (!first) {
-      text.Append(", ");
+      text.Append(", "_s);
     } else {
       first = false;
     }
@@ -189,7 +189,7 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
   std::shared_ptr<const MediaQuerySet> new_media_queries =
       Queries()->CopyAndRemove(medium.GetString(), execution_context);
   if (!new_media_queries) {
-    String error_message = String("Failed to delete '") + String(medium) + "'.";
+    String error_message = String::FromUTF8("Failed to delete '") + String(medium) + "'.";
     exception_state.ThrowException(ctx(), ErrorType::InternalError, error_message.StdUtf8());
     return;
   }

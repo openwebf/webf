@@ -43,7 +43,7 @@ const char* <%= class_name %>::GetPropertyName() const {
 }
 
 const AtomicString& <%= class_name %>::GetPropertyNameAtomicString() const {
-  DEFINE_STATIC_LOCAL(const AtomicString, name, ("<%= exposed_property.name %>"));
+  DEFINE_STATIC_LOCAL(const AtomicString, name, ("<%= exposed_property.name %>"_s));
   return name;
 }
 

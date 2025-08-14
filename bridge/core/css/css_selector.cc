@@ -974,7 +974,7 @@ static void SerializeSelectorList(const CSSSelectorList* selector_list, StringBu
   for (const CSSSelector* sub_selector = first_sub_selector; sub_selector;
        sub_selector = CSSSelectorList::Next(*sub_selector)) {
     if (sub_selector != first_sub_selector) {
-      builder.Append(", ");
+      builder.Append(", "_s);
     }
     builder.Append(sub_selector->SelectorText());
   }
@@ -1013,7 +1013,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
           if (a == 1) {
             builder.Append('n');
           } else if (a == -1) {
-            builder.Append("-n");
+            builder.Append("-n"_s);
           } else {
             builder.AppendFormat("%dn", a);
           }
@@ -1027,7 +1027,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
 
         // Only relevant for :nth-child, not :nth-of-type.
         if (data_.rare_data_->selector_list_ != nullptr) {
-          builder.Append(" of ");
+          builder.Append(" of "_s);
           SerializeSelectorList(data_.rare_data_->selector_list_.get(), builder);
           suppress_selector_list = true;
         }
@@ -1066,7 +1066,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         CHECK(!IdentList().empty());
         const char* separator = "(";
         for (const AtomicString& type : IdentList()) {
-          builder.Append(separator);
+          builder.Append(String::FromUTF8(separator));
           if (separator[0] == '(') {
             separator = ", ";
           }
@@ -1079,7 +1079,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         break;
     }
   } else if (Match() == kPseudoElement) {
-    builder.Append("::");
+    builder.Append("::"_s);
     SerializeIdentifier(String(SerializingValue()), builder);
     switch (GetPseudoType()) {
       case kPseudoPart: {
@@ -1113,7 +1113,7 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
 
           first = false;
           if (name_or_class == UniversalSelectorAtom()) {
-            builder.Append("*");
+            builder.Append("*"_s);
           } else {
             SerializeIdentifier(String(name_or_class), builder);
           }
@@ -1137,19 +1137,19 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
         builder.Append(']');
         break;
       case kAttributeList:
-        builder.Append("~=");
+        builder.Append("~="_s);
         break;
       case kAttributeHyphen:
-        builder.Append("|=");
+        builder.Append("|="_s);
         break;
       case kAttributeBegin:
-        builder.Append("^=");
+        builder.Append("^="_s);
         break;
       case kAttributeEnd:
-        builder.Append("$=");
+        builder.Append("$="_s);
         break;
       case kAttributeContain:
-        builder.Append("*=");
+        builder.Append("*="_s);
         break;
       default:
         break;
@@ -1157,9 +1157,9 @@ bool CSSSelector::SerializeSimpleSelector(StringBuilder& builder) const {
     if (Match() != kAttributeSet) {
       SerializeString(String(SerializingValue()), builder);
       if (AttributeMatch() == AttributeMatchType::kCaseInsensitive) {
-        builder.Append(" i");
+        builder.Append(" i"_s);
       } else if (AttributeMatch() == AttributeMatchType::kCaseSensitiveAlways) {
-        builder.Append(" s");
+        builder.Append(" s"_s);
       }
       builder.Append(']');
     }
@@ -1228,16 +1228,16 @@ String CSSSelector::SelectorText() const {
 
     switch (relation) {
       case kDescendant:
-        separators.push_back(" ");
+        separators.push_back(" "_s);
         break;
       case kChild:
-        separators.push_back(" > ");
+        separators.push_back(" > "_s);
         break;
       case kDirectAdjacent:
-        separators.push_back(" + ");
+        separators.push_back(" + "_s);
         break;
       case kIndirectAdjacent:
-        separators.push_back(" ~ ");
+        separators.push_back(" ~ "_s);
         break;
       case kSubSelector:
       case kScopeActivation:
@@ -1246,19 +1246,19 @@ String CSSSelector::SelectorText() const {
       case kShadowPart:
       case kUAShadow:
       case kShadowSlot:
-        separators.push_back("");
+        separators.push_back(""_s);
         break;
       case kRelativeDescendant:
-        separators.push_back("");
+        separators.push_back(""_s);
         goto done;
       case kRelativeChild:
-        separators.push_back("> ");
+        separators.push_back("> "_s);
         goto done;
       case kRelativeDirectAdjacent:
-        separators.push_back("+ ");
+        separators.push_back("+ "_s);
         goto done;
       case kRelativeIndirectAdjacent:
-        separators.push_back("~ ");
+        separators.push_back("~ "_s);
         goto done;
     }
   }
@@ -1533,16 +1533,16 @@ bool CSSSelector::FollowsSlotted() const {
 String CSSSelector::FormatPseudoTypeForDebugging(PseudoType type) {
   for (const auto& s : kPseudoTypeWithoutArgumentsMap) {
     if (s.type == type) {
-      return s.string;
+      return String::FromUTF8(s.string);
     }
   }
   for (const auto& s : kPseudoTypeWithArgumentsMap) {
     if (s.type == type) {
-      return s.string;
+      return String::FromUTF8(s.string);
     }
   }
   StringBuilder builder;
-  builder.Append("pseudo-");
+  builder.Append("pseudo-"_s);
   builder.AppendNumber(static_cast<int>(type));
   return builder.ReleaseString();
 }

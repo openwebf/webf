@@ -21,7 +21,7 @@ std::shared_ptr<const CSSParserContext> MakeContext(CSSParserMode mode = kHTMLSt
 
 TEST(CSSParsingUtilsTest, Revert) {
   EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(CSSValueID::kRevert));
-  EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(AtomicString("revert")));
+  EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(AtomicString::FromUTF8("revert")));
 }
 
 double ConsumeAngleValue(String target) {

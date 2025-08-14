@@ -52,7 +52,7 @@ MediaList* CSSMediaRule::media() const {
 
 String CSSMediaRule::conditionText() const {
   if (!group_rule_)
-    return String();
+    return String::EmptyString();
 
   auto* media_rule = To<StyleRuleMedia>(group_rule_.get());
   return media_rule->MediaQueries()->MediaText();
@@ -60,7 +60,7 @@ String CSSMediaRule::conditionText() const {
 
 AtomicString CSSMediaRule::cssText() const {
   StringBuilder result;
-  result.Append("@media ");
+  result.Append("@media "_s);
   result.Append(conditionText());
   AppendCSSTextForItems(result);
   return AtomicString(result.ReleaseString());

@@ -11,7 +11,7 @@ namespace webf {
 
 String StringBuilder::ReleaseString() {
   if (!length_)
-    return String();
+    return String::FromUTF8("");
   if (string_.IsNull()) {
     if (is_8bit_)
       string_ = String(Characters8(), length_);
@@ -25,7 +25,7 @@ String StringBuilder::ReleaseString() {
 
 String StringBuilder::ToString() {
   if (!length_)
-    return String();
+    return String::EmptyString();
   if (string_.IsNull()) {
     if (is_8bit_)
       string_ = String(Characters8(), length_);

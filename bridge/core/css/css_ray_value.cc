@@ -20,7 +20,7 @@ CSSRayValue::CSSRayValue(const std::shared_ptr<const CSSPrimitiveValue>& angle,
 
 String CSSRayValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append("ray(");
+  result.Append("ray("_s);
   result.Append(angle_->CssText());
   if (size_->GetValueID() != CSSValueID::kClosestSide) {
     result.Append(' ');
@@ -31,7 +31,7 @@ String CSSRayValue::CustomCSSText() const {
     result.Append(contain_->CssText());
   }
   if (center_x_) {
-    result.Append(" at ");
+    result.Append(" at "_s);
     result.Append(center_x_->CssText());
     result.Append(' ');
     result.Append(center_y_->CssText());

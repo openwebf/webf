@@ -25,17 +25,17 @@ std::optional<EffectModel::CompositeOperation> EffectModel::StringToCompositeOpe
 
 std::string EffectModel::CompositeOperationToString(std::optional<CompositeOperation> composite) {
   if (!composite)
-    return "auto";
+    return "auto"_s;
   switch (composite.value()) {
     case EffectModel::kCompositeAccumulate:
-      return "accumulate";
+      return "accumulate"_s;
     case EffectModel::kCompositeAdd:
-      return "add";
+      return "add"_s;
     case EffectModel::kCompositeReplace:
-      return "replace";
+      return "replace"_s;
     default:
       assert_m(false, "EffectModel::CompositeOperationToString NOTREACHED_IN_MIGRATION");
-      return "";
+      return String::EmptyString();
   }
 }
 }  // namespace webf

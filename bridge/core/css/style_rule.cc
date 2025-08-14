@@ -52,7 +52,7 @@ String StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& na
   StringBuilder result;
   for (const auto& part : name_parts) {
     if (!result.IsEmpty()) {
-      result.Append(".");
+      result.Append("."_s);
     }
     SerializeIdentifier(part.GetString(), result);
   }

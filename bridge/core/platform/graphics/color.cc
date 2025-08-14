@@ -387,14 +387,14 @@ static String ColorParamToString(float param, int precision = 6) {
   StringBuilder result;
   if (!isfinite(param)) {
     // https://www.w3.org/TR/css-values-4/#calc-serialize
-    result.Append("calc(");
+    result.Append("calc("_s);
     if (isinf(param)) {
       // "Infinity" gets capitalized, so we can't use AppendNumber().
-      (param < 0) ? result.Append("-infinity") : result.Append("infinity");
+      (param < 0) ? result.Append("-infinity"_s) : result.Append("infinity"_s);
     } else {
       result.AppendNumber(param, precision);
     }
-    result.Append(")");
+    result.Append(")"_s);
     return result.ReleaseString();
   }
 
@@ -406,7 +406,7 @@ String Color::SerializeAsCanvasColor() const {
   if (IsOpaque()) {
     char buffer[8];
     std::snprintf(buffer, 8, "#%02x%02x%02x", Red(), Green(), Blue());
-    return buffer;
+    return String::FromUTF8(buffer);
   }
 
   return SerializeAsCSSColor();
@@ -415,9 +415,9 @@ String Color::SerializeAsCanvasColor() const {
 String Color::SerializeLegacyColorAsCSSColor() const {
   StringBuilder result;
   if (IsOpaque() && isfinite(alpha_)) {
-    result.Append("rgb(");
+    result.Append("rgb("_s);
   } else {
-    result.Append("rgba(");
+    result.Append("rgba("_s);
   }
 
   constexpr float kEpsilon = 1e-07;
@@ -441,13 +441,13 @@ String Color::SerializeLegacyColorAsCSSColor() const {
   }
 
   result.AppendNumber(round(ClampTo(r, 0.0, 255.0)), 6);
-  result.Append(", ");
+  result.Append(", "_s);
   result.AppendNumber(round(ClampTo(g, 0.0, 255.0)), 6);
-  result.Append(", ");
+  result.Append(", "_s);
   result.AppendNumber(round(ClampTo(b, 0.0, 255.0)), 6);
 
   if (!IsOpaque()) {
-    result.Append(", ");
+    result.Append(", "_s);
 
     // See <alphavalue> section in
     // https://www.w3.org/TR/cssom/#serializing-css-values
@@ -473,19 +473,19 @@ String Color::SerializeLegacyColorAsCSSColor() const {
 
 String Color::SerializeInternal() const {
   StringBuilder result;
-  result.Append("color(");
+  result.Append("color("_s);
 
-  param0_is_none_ ? result.Append("none") : result.Append(ColorParamToString(param0_));
-  result.Append(" ");
-  param1_is_none_ ? result.Append("none") : result.Append(ColorParamToString(param1_));
-  result.Append(" ");
-  param2_is_none_ ? result.Append("none") : result.Append(ColorParamToString(param2_));
+  param0_is_none_ ? result.Append("none"_s) : result.Append(ColorParamToString(param0_));
+  result.Append(" "_s);
+  param1_is_none_ ? result.Append("none"_s) : result.Append(ColorParamToString(param1_));
+  result.Append(" "_s);
+  param2_is_none_ ? result.Append("none"_s) : result.Append(ColorParamToString(param2_));
 
   if (alpha_ != 1.0 || alpha_is_none_) {
-    result.Append(" / ");
-    alpha_is_none_ ? result.Append("none") : result.AppendNumber(alpha_);
+    result.Append(" / "_s);
+    alpha_is_none_ ? result.Append("none"_s) : result.AppendNumber(alpha_);
   }
-  result.Append(")");
+  result.Append(")"_s);
   return result.ReleaseString();
 }
 

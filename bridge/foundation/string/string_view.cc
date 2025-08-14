@@ -258,7 +258,7 @@ bool StringView::operator==(const char* str) const {
 
 String StringView::EncodeForDebugging() const {
   if (IsNull()) {
-    return String("<null>");
+    return String::FromUTF8("<null>");
   }
 
   StringBuilder builder;
@@ -268,19 +268,19 @@ String StringView::EncodeForDebugging() const {
     UChar character = (*this)[index];
     switch (character) {
       case '\t':
-        builder.Append("\\t");
+        builder.Append("\\t"_s);
         break;
       case '\n':
-        builder.Append("\\n");
+        builder.Append("\\n"_s);
         break;
       case '\r':
-        builder.Append("\\r");
+        builder.Append("\\r"_s);
         break;
       case '"':
-        builder.Append("\\\"");
+        builder.Append("\\\""_s);
         break;
       case '\\':
-        builder.Append("\\\\");
+        builder.Append("\\\\"_s);
         break;
       default:
         if (IsASCIIPrintable(character)) {

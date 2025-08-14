@@ -2135,26 +2135,26 @@ String RuleFeatureSet::ToString() const {
     // Suffix:
     builder.Append((flags & kAttribute) ? "]" : "");
 
-    builder.Append("[");
+    builder.Append("["_s);
     if (flags & kSibling) {
-      builder.Append("+");
+      builder.Append("+"_s);
     }
     if (flags & kDescendant) {
-      builder.Append(">");
+      builder.Append(">"_s);
     }
-    builder.Append("]");
+    builder.Append("]"_s);
 
     return builder.ReleaseString();
   };
 
   auto format_max_direct_adjancent = [](unsigned max) -> std::string {
     if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
-      return "~";
+      return "~"_s;
     }
     if (max) {
       return std::to_string(max);
     }
-    return "";
+    return String::EmptyString();
   };
 
   for (auto& i : id_invalidation_sets_) {
@@ -2185,7 +2185,7 @@ String RuleFeatureSet::ToString() const {
   for (const Entry& entry : entries) {
     builder.Append(format_name(entry.name, entry.flags));
     builder.Append(entry.set->ToString());
-    builder.Append(" ");
+    builder.Append(" "_s);
   }
 
   StringBuilder metadata;
@@ -2195,7 +2195,7 @@ String RuleFeatureSet::ToString() const {
   metadata.Append(format_max_direct_adjancent(metadata_.max_direct_adjacent_selectors));
 
   if (!metadata.IsEmpty()) {
-    builder.Append("META:");
+    builder.Append("META:"_s);
     builder.Append(metadata.ReleaseString());
   }
 

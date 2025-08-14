@@ -138,10 +138,10 @@ Length CSSMathFunctionValue::ConvertToLength(const CSSLengthResolver& length_res
 
 static String BuildCSSText(const String& expression) {
   StringBuilder result;
-  result.Append("calc");
-  result.Append("(");
+  result.Append("calc"_s);
+  result.Append("("_s);
   result.Append(expression);
-  result.Append(")");
+  result.Append(")"_s);
   return result.ReleaseString();
 }
 

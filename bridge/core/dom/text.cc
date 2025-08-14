@@ -30,7 +30,7 @@ const TextNodePublicMethods* Text::textNodePublicMethods() {
 }
 
 String Text::nodeName() const {
-  return "#text";
+  return "#text"_s;
 }
 
 Node* Text::Clone(Document& document, CloneChildrenFlag flag) const {

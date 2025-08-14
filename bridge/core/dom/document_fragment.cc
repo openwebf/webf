@@ -22,7 +22,7 @@ DocumentFragment::DocumentFragment(Document* document, ConstructionType type) : 
 }
 
 String DocumentFragment::nodeName() const {
-  return "#document-fragment";
+  return "#document-fragment"_s;
 }
 
 Node::NodeType DocumentFragment::nodeType() const {

@@ -24,18 +24,18 @@ Timing::V8Delay* Timing::Delay::ToV8Delay() const {
 std::string Timing::FillModeString(FillMode fill_mode) {
   switch (fill_mode) {
     case FillMode::NONE:
-      return "none";
+      return "none"_s;
     case FillMode::FORWARDS:
-      return "forwards";
+      return "forwards"_s;
     case FillMode::BACKWARDS:
-      return "backwards";
+      return "backwards"_s;
     case FillMode::BOTH:
-      return "both";
+      return "both"_s;
     case FillMode::AUTO:
-      return "auto";
+      return "auto"_s;
   }
   assert_m(false, "NOTREACHED_IN_MIGRATION");
-  return "none";
+  return "none"_s;
 }
 
 Timing::FillMode Timing::StringToFillMode(const std::string& fill_mode) {
@@ -54,16 +54,16 @@ Timing::FillMode Timing::StringToFillMode(const std::string& fill_mode) {
 std::string Timing::PlaybackDirectionString(PlaybackDirection playback_direction) {
   switch (playback_direction) {
     case PlaybackDirection::NORMAL:
-      return "normal";
+      return "normal"_s;
     case PlaybackDirection::REVERSE:
-      return "reverse";
+      return "reverse"_s;
     case PlaybackDirection::ALTERNATE_NORMAL:
-      return "alternate";
+      return "alternate"_s;
     case PlaybackDirection::ALTERNATE_REVERSE:
-      return "alternate-reverse";
+      return "alternate-reverse"_s;
   }
   assert_m(false, "Timing::PlaybackDirectionString NOTREACHED_IN_MIGRATION");
-  return "normal";
+  return "normal"_s;
 }
 
 Timing::FillMode Timing::ResolvedFillMode(bool is_keyframe_effect) const {

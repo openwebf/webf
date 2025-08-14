@@ -9,11 +9,11 @@ namespace webf {
 
 String CSSLightDarkValuePair::CustomCSSText() const {
   StringBuilder builder;
-  builder.Append("light-dark(");
+  builder.Append("light-dark("_s);
   builder.Append(First()->CssText());
-  builder.Append(", ");
+  builder.Append(", "_s);
   builder.Append(Second()->CssText());
-  builder.Append(")");
+  builder.Append(")"_s);
   return builder.ReleaseString();
 }
 

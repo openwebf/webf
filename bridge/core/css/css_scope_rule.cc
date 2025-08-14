@@ -25,20 +25,20 @@ String CSSScopeRule::PreludeText() const {
   
   if (style_scope.From()) {
     // TODO: Convert selector to string
-    prelude.Append("(");
+    prelude.Append("("_s);
     // Need proper selector serialization here
-    prelude.Append(")");
+    prelude.Append(")"_s);
   }
   
   if (style_scope.To()) {
     if (!prelude.IsEmpty()) {
-      prelude.Append(" to ");
+      prelude.Append(" to "_s);
     } else {
-      prelude.Append("to ");
+      prelude.Append("to "_s);
     }
-    prelude.Append("(");
+    prelude.Append("("_s);
     // Need proper selector serialization here  
-    prelude.Append(")");
+    prelude.Append(")"_s);
   }
   
   return prelude.ReleaseString();
@@ -46,11 +46,11 @@ String CSSScopeRule::PreludeText() const {
 
 AtomicString CSSScopeRule::cssText() const {
   StringBuilder result;
-  result.Append("@scope");
+  result.Append("@scope"_s);
   String prelude = PreludeText();
   
   if (!prelude.IsEmpty()) {
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(prelude);
   }
   
@@ -63,18 +63,18 @@ String CSSScopeRule::start() const {
   const StyleScope& style_scope = GetStyleRuleScope().GetStyleScope();
   if (style_scope.From()) {
     // TODO: Implement proper selector serialization
-    return "()";
+    return "()"_s;
   }
-  return "";
+  return String::EmptyString();
 }
 
 String CSSScopeRule::end() const {
   const StyleScope& style_scope = GetStyleRuleScope().GetStyleScope();
   if (style_scope.To()) {
     // TODO: Implement proper selector serialization
-    return "()";
+    return "()"_s;
   }
-  return "";
+  return String::EmptyString();
 }
 
 void CSSScopeRule::SetPreludeText(const ExecutingContext* context, const String& text) {

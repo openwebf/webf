@@ -21,7 +21,7 @@ std::shared_ptr<const CSSIdentifierValue> CSSIdentifierValue::Create(CSSValueID 
 }
 
 String CSSIdentifierValue::CustomCSSText() const {
-  return getValueName(value_id_);
+  return String::FromUTF8(getValueName(value_id_));
 }
 
 CSSIdentifierValue::CSSIdentifierValue(CSSValueID value_id) : CSSValue(kIdentifierClass), value_id_(value_id) {}

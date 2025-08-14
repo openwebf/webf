@@ -32,7 +32,7 @@ std::shared_ptr<const CSSInitialValue> CSSInitialValue::Create() {
 }
 
 String CSSInitialValue::CustomCSSText() const {
-  return "initial";
+  return "initial"_s;
 }
 
 }  // namespace webf

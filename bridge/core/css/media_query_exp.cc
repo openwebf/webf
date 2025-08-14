@@ -277,24 +277,24 @@ std::optional<MediaQueryExpValue> MediaQueryExpValue::Consume(const String& medi
 
 namespace {
 
-const char* MediaQueryOperatorToString(MediaQueryOperator op) {
+String MediaQueryOperatorToString(MediaQueryOperator op) {
   switch (op) {
     case MediaQueryOperator::kNone:
-      return "";
+      return ""_s;
     case MediaQueryOperator::kEq:
-      return "=";
+      return "="_s;
     case MediaQueryOperator::kLt:
-      return "<";
+      return "<"_s;
     case MediaQueryOperator::kLe:
-      return "<=";
+      return "<="_s;
     case MediaQueryOperator::kGt:
-      return ">";
+      return ">"_s;
     case MediaQueryOperator::kGe:
-      return ">=";
+      return ">="_s;
   }
 
   NOTREACHED_IN_MIGRATION();
-  return "";
+  return ""_s;
 }
 
 }  // namespace
@@ -318,21 +318,21 @@ String MediaQueryExp::Serialize() const {
   if (!bounds_.IsRange()) {
     result.Append(media_feature_);
     if (bounds_.right.IsValid()) {
-      result.Append(": ");
+      result.Append(": "_s);
       result.Append(bounds_.right.value.CssText());
     }
   } else {
     if (bounds_.left.IsValid()) {
       result.Append(bounds_.left.value.CssText());
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(MediaQueryOperatorToString(bounds_.left.op));
-      result.Append(" ");
+      result.Append(" "_s);
     }
     result.Append(media_feature_);
     if (bounds_.right.IsValid()) {
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(MediaQueryOperatorToString(bounds_.right.op));
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(bounds_.right.value.CssText());
     }
   }
@@ -361,11 +361,11 @@ String MediaQueryExpValue::CssText() const {
       break;
     case Type::kRatio:
       output.Append(Numerator().CssText());
-      output.Append(" / ");
+      output.Append(" / "_s);
       output.Append(Denominator().CssText());
       break;
     case Type::kId:
-      output.Append(getValueName(Id()));
+      output.Append(String::FromUTF8(getValueName(Id())));
       break;
   }
 
@@ -531,16 +531,16 @@ MediaQueryExpNode::FeatureFlags MediaQueryUnaryExpNode::CollectFeatureFlags() co
 }
 
 void MediaQueryNestedExpNode::SerializeTo(StringBuilder& builder) const {
-  builder.Append("(");
+  builder.Append("("_s);
   Operand().SerializeTo(builder);
-  builder.Append(")");
+  builder.Append(")"_s);
 }
 
 void MediaQueryFunctionExpNode::SerializeTo(StringBuilder& builder) const {
   builder.Append(name_);
-  builder.Append("(");
+  builder.Append("("_s);
   Operand().SerializeTo(builder);
-  builder.Append(")");
+  builder.Append(")"_s);
 }
 
 MediaQueryExpNode::FeatureFlags MediaQueryFunctionExpNode::CollectFeatureFlags() const {
@@ -552,7 +552,7 @@ MediaQueryExpNode::FeatureFlags MediaQueryFunctionExpNode::CollectFeatureFlags()
 }
 
 void MediaQueryNotExpNode::SerializeTo(StringBuilder& builder) const {
-  builder.Append("not ");
+  builder.Append("not "_s);
   Operand().SerializeTo(builder);
 }
 
@@ -569,13 +569,13 @@ MediaQueryExpNode::FeatureFlags MediaQueryCompoundExpNode::CollectFeatureFlags()
 
 void MediaQueryAndExpNode::SerializeTo(StringBuilder& builder) const {
   Left().SerializeTo(builder);
-  builder.Append(" and ");
+  builder.Append(" and "_s);
   Right().SerializeTo(builder);
 }
 
 void MediaQueryOrExpNode::SerializeTo(StringBuilder& builder) const {
   Left().SerializeTo(builder);
-  builder.Append(" or ");
+  builder.Append(" or "_s);
   Right().SerializeTo(builder);
 }
 

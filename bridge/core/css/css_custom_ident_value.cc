@@ -29,7 +29,7 @@ CSSCustomIdentValue::CSSCustomIdentValue(const ScopedCSSName& name) : CSSCustomI
 
 String CSSCustomIdentValue::CustomCSSText() const {
   if (IsKnownPropertyID()) {
-    return CSSUnresolvedProperty::Get(property_id_).GetPropertyName();
+    return String::FromUTF8(CSSUnresolvedProperty::Get(property_id_).GetPropertyName());
   }
   StringBuilder builder;
   SerializeIdentifier(string_.GetString(), builder);

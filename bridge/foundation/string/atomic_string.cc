@@ -114,10 +114,10 @@ AtomicString::AtomicString(JSContext* ctx, JSValue qjs_value) {
   } else {
     size_t len;
     const char* str = JS_ToCStringLen(ctx, &len, qjs_value);
-    // TODO: remove this after we see the issue.
-    string_ = StringImpl::Create(reinterpret_cast<const LChar*>(str), len);
+    // // TODO: remove this after we see the issue.
+    // string_ = StringImpl::Create(reinterpret_cast<const LChar*>(str), len);
     // In QuickJS, cstr really mean utf8.
-    // string_ = StringImpl::CreateFromUTF8(reinterpret_cast<const UTF8Char*>(str), len);
+    string_ = StringImpl::CreateFromUTF8(reinterpret_cast<const UTF8Char*>(str), len);
     JS_FreeCString(ctx, str);
   }
 }

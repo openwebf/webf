@@ -33,7 +33,7 @@ TEST_F(CSSCounterStyleTest, ParseBasicCounterStyle) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @counter-style rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);
@@ -59,7 +59,7 @@ TEST_F(CSSCounterStyleTest, ParseCounterStyleWithExtends) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @counter-style rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);
@@ -87,7 +87,7 @@ TEST_F(CSSCounterStyleTest, ParseCounterStyleWithAdditive) {
   )CSS";
 
   auto sheet = std::make_shared<StyleSheetContents>(parser_context_);
-  CSSParser::ParseSheet(parser_context_, sheet, css_text);
+  CSSParser::ParseSheet(parser_context_, sheet, String::FromUTF8(css_text));
   
   // Should successfully parse the @counter-style rule
   EXPECT_EQ(sheet->ChildRules().size(), 1u);

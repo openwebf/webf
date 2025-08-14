@@ -14,7 +14,7 @@ CSSRatioValue::CSSRatioValue(const CSSPrimitiveValue& first, const CSSPrimitiveV
 String CSSRatioValue::CustomCSSText() const {
   StringBuilder builder;
   builder.Append(first_->CssText());
-  builder.Append(" / ");
+  builder.Append(" / "_s);
   builder.Append(second_->CssText());
   return builder.ReleaseString();
 }

@@ -16,10 +16,10 @@ class ContainerQueryParserTest : public testing::Test {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     std::shared_ptr<const MediaQueryExpNode> node = ContainerQueryParser(*context).ParseCondition(string);
     if (!node) {
-      return "";
+      return String::EmptyString();
     }
     if (node->HasUnknown()) {
-      return "<unknown>";
+      return "<unknown>"_s;
     }
     StringBuilder builder;
     node->SerializeTo(builder);
@@ -44,7 +44,7 @@ class ContainerQueryParserTest : public testing::Test {
     CSSParserTokenStream stream(tokenizer);
     auto node = ContainerQueryParser(*context).ConsumeFeatureQuery(stream, TestFeatureSet());
     if (!node || !stream.AtEnd()) {
-      return "";
+      return String::EmptyString();
     }
     return node->Serialize();
   }

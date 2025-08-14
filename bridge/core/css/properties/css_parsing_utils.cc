@@ -908,14 +908,14 @@ static
       if (token.GetType() == kNumberToken) {  // e.g. 112233
         char buffer[5];
         snprintf(buffer, 5, "%d", static_cast<int>(token.NumericValue()));
-        color = String(buffer);
+        color = String::FromUTF8(buffer);
       } else {  // e.g. 0001FF
         char num_buffer[20];
         snprintf(num_buffer, sizeof(num_buffer), "%d", static_cast<int>(token.NumericValue()));
-        color = String(num_buffer) + String(token.Value());
+        color = String::FromUTF8(num_buffer) + String(token.Value());
       }
       while (color.length() < 6) {
-        color = String("0") + color;
+        color = String::FromUTF8("0") + color;
       }
     } else if (token.GetType() == kIdentToken) {  // e.g. FF0000
       color = String(token.Value());
@@ -2581,7 +2581,7 @@ std::shared_ptr<const CSSStringValue> ConsumeString(CSSParserTokenRange& range) 
 String ConsumeStringAsString(CSSParserTokenStream& stream, bool* is_string_null) {
   if (stream.Peek().GetType() != CSSParserTokenType::kStringToken) {
     *is_string_null = true;
-    return String();
+    return String::EmptyString();
   }
 
   CSSParserToken token = stream.ConsumeIncludingWhitespace();
@@ -4241,7 +4241,7 @@ ConcatenateFamilyName(T& range) {
     builder.Append(range.ConsumeIncludingWhitespace().Value());
   }
   if (!added_space && (IsCSSWideKeyword(first_token.Value()) || IsDefaultKeyword(std::string_view(first_token.Value().data(), first_token.Value().length())))) {
-    return "";
+    return String::EmptyString();
   }
   return builder.ReleaseString();
 }
@@ -4923,7 +4923,7 @@ std::vector<String> ParseGridTemplateAreasColumnNames(const String& grid_row_nam
       continue;
     }
     if (grid_row_names[i] == '.') {
-      if (area_name == ".") {
+      if (area_name == "."_s) {
         continue;
       }
       if (!area_name.IsEmpty()) {
@@ -4933,7 +4933,7 @@ std::vector<String> ParseGridTemplateAreasColumnNames(const String& grid_row_nam
       if (!IsNameCodePoint(grid_row_names[i])) {
         return {};
       }
-      if (area_name == ".") {
+      if (area_name == "."_s) {
         column_names.push_back(area_name.ReleaseString());
       }
     }

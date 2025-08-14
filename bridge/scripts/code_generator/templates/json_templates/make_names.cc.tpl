@@ -70,7 +70,7 @@ void Init() {
     <% if (options.add_atom_prefix) { %>
       new (address) AtomicString(kNames[i].atom);
     <% } else { %>
-      new (address) AtomicString(kNames[i].str);
+      new (address) AtomicString(AtomicString::CreateFromUTF8(kNames[i].str));
     <% } %>
 
   }
@@ -78,7 +78,7 @@ void Init() {
   <% if (deps && deps.html_attribute_names) { %>
     for(size_t i = 0; i < std::size(kHtmlAttributeNames); i ++) {
       void* address = reinterpret_cast<AtomicString*>(&html_attribute_names_storage) + i;
-      new (address) AtomicString(kHtmlAttributeNames[i].str);
+      new (address) AtomicString(AtomicString::CreateFromUTF8(kHtmlAttributeNames[i].str));
     }
   <% } %>
 };

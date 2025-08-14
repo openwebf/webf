@@ -210,7 +210,7 @@ static WTF::String StateAsDebugString(
   }
 
   NOTREACHED_IN_MIGRATION();
-  return "Unknown";
+  return "Unknown"_s;
 }
 
 WTF::String DocumentLifecycle::ToString() const {

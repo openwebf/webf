@@ -413,7 +413,7 @@ class CSSPrimitiveValue : public CSSValue {
   double ComputePercentage(const CSSLengthResolver&) const;
   double ComputeValueInCanonicalUnit(const CSSLengthResolver&) const;
 
-  static const char* UnitTypeToString(UnitType);
+  static String UnitTypeToString(UnitType);
   static UnitType StringToUnitType(StringView string) {
     return StringToUnitType(reinterpret_cast<const unsigned char*>(string.data()), string.length());
   }

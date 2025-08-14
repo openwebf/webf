@@ -108,7 +108,7 @@ std::shared_ptr<StyleSheetContents> CSSDefaultStyleSheets::ParseUASheet(const ch
   
   // Parse the CSS string - we need to use ParseSheet directly with the UA context
   // instead of ParseString which creates its own context
-  CSSParser::ParseSheet(parser_context, sheet, css);
+  CSSParser::ParseSheet(parser_context, sheet, String::FromUTF8(css));
   
   // WEBF_LOG(VERBOSE) << "Parsed UA stylesheet, rule count: " << sheet->RuleCount();
   

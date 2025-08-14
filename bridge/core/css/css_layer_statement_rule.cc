@@ -26,15 +26,15 @@ std::vector<String> CSSLayerStatementRule::nameList() const {
 
 AtomicString CSSLayerStatementRule::cssText() const {
   StringBuilder result;
-  result.Append("@layer ");
+  result.Append("@layer "_s);
   
   const std::vector<String>& names = nameList();
   for (size_t i = 0; i < names.size(); ++i) {
     if (i > 0)
-      result.Append(", ");
+      result.Append(", "_s);
     result.Append(names[i]);
   }
-  result.Append(";");
+  result.Append(";"_s);
   return AtomicString(result.ReleaseString());
 }
 

@@ -98,7 +98,7 @@ std::string CSSVariableData::Serialize() const {
     serialized_text += OriginalText();
     //    serialized_text.Resize(serialized_text.length() - 1);
 
-    CSSTokenizer tokenizer(OriginalText().data());
+    CSSTokenizer tokenizer(String::FromUTF8(OriginalText().data(), OriginalText().length()));
     CSSParserTokenStream stream(tokenizer);
     CSSParserTokenType last_token_type = kEOFToken;
     for (;;) {

@@ -45,10 +45,10 @@ String MediaQuery::Serialize() const {
   StringBuilder result;
   switch (Restrictor()) {
     case RestrictorType::kOnly:
-      result.Append("only ");
+      result.Append("only "_s);
       break;
     case RestrictorType::kNot:
-      result.Append("not ");
+      result.Append("not "_s);
       break;
     case RestrictorType::kNone:
       break;
@@ -63,7 +63,7 @@ String MediaQuery::Serialize() const {
 
   if (MediaType() != String(media_type_names_atomicstring::kAll.Impl()) || Restrictor() != RestrictorType::kNone) {
     result.Append(MediaType());
-    result.Append(" and ");
+    result.Append(" and "_s);
   }
 
   if (exp_node) {

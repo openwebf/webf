@@ -779,144 +779,144 @@ CSSPrimitiveValue::UnitType CSSPrimitiveValue::LengthUnitTypeToUnitType(LengthUn
   return CSSPrimitiveValue::UnitType::kUnknown;
 }
 
-const char* CSSPrimitiveValue::UnitTypeToString(UnitType type) {
+String CSSPrimitiveValue::UnitTypeToString(UnitType type) {
   switch (type) {
     case UnitType::kNumber:
     case UnitType::kInteger:
     case UnitType::kUserUnits:
-      return "";
+      return ""_s;
     case UnitType::kPercentage:
-      return "%";
+      return "%"_s;
     case UnitType::kEms:
     case UnitType::kQuirkyEms:
-      return "em";
+      return "em"_s;
     case UnitType::kExs:
-      return "ex";
+      return "ex"_s;
     case UnitType::kRexs:
-      return "rex";
+      return "rex"_s;
     case UnitType::kRems:
-      return "rem";
+      return "rem"_s;
     case UnitType::kChs:
-      return "ch";
+      return "ch"_s;
     case UnitType::kRchs:
-      return "rch";
+      return "rch"_s;
     case UnitType::kIcs:
-      return "ic";
+      return "ic"_s;
     case UnitType::kRics:
-      return "ric";
+      return "ric"_s;
     case UnitType::kLhs:
-      return "lh";
+      return "lh"_s;
     case UnitType::kRlhs:
-      return "rlh";
+      return "rlh"_s;
     case UnitType::kCaps:
-      return "cap";
+      return "cap"_s;
     case UnitType::kRcaps:
-      return "rcap";
+      return "rcap"_s;
     case UnitType::kPixels:
-      return "px";
+      return "px"_s;
     case UnitType::kCentimeters:
-      return "cm";
+      return "cm"_s;
     case UnitType::kDotsPerPixel:
-      return "dppx";
+      return "dppx"_s;
     case UnitType::kX:
-      return "x";
+      return "x"_s;
     case UnitType::kDotsPerInch:
-      return "dpi";
+      return "dpi"_s;
     case UnitType::kDotsPerCentimeter:
-      return "dpcm";
+      return "dpcm"_s;
     case UnitType::kMillimeters:
-      return "mm";
+      return "mm"_s;
     case UnitType::kQuarterMillimeters:
-      return "q";
+      return "q"_s;
     case UnitType::kInches:
-      return "in";
+      return "in"_s;
     case UnitType::kPoints:
-      return "pt";
+      return "pt"_s;
     case UnitType::kPicas:
-      return "pc";
+      return "pc"_s;
     case UnitType::kDegrees:
-      return "deg";
+      return "deg"_s;
     case UnitType::kRadians:
-      return "rad";
+      return "rad"_s;
     case UnitType::kGradians:
-      return "grad";
+      return "grad"_s;
     case UnitType::kMilliseconds:
-      return "ms";
+      return "ms"_s;
     case UnitType::kSeconds:
-      return "s";
+      return "s"_s;
     case UnitType::kHertz:
-      return "hz";
+      return "hz"_s;
     case UnitType::kKilohertz:
-      return "khz";
+      return "khz"_s;
     case UnitType::kTurns:
-      return "turn";
+      return "turn"_s;
     case UnitType::kFlex:
-      return "fr";
+      return "fr"_s;
     case UnitType::kViewportWidth:
-      return "vw";
+      return "vw"_s;
     case UnitType::kViewportHeight:
-      return "vh";
+      return "vh"_s;
     case UnitType::kViewportInlineSize:
-      return "vi";
+      return "vi"_s;
     case UnitType::kViewportBlockSize:
-      return "vb";
+      return "vb"_s;
     case UnitType::kViewportMin:
-      return "vmin";
+      return "vmin"_s;
     case UnitType::kViewportMax:
-      return "vmax";
+      return "vmax"_s;
     case UnitType::kSmallViewportWidth:
-      return "svw";
+      return "svw"_s;
     case UnitType::kSmallViewportHeight:
-      return "svh";
+      return "svh"_s;
     case UnitType::kSmallViewportInlineSize:
-      return "svi";
+      return "svi"_s;
     case UnitType::kSmallViewportBlockSize:
-      return "svb";
+      return "svb"_s;
     case UnitType::kSmallViewportMin:
-      return "svmin";
+      return "svmin"_s;
     case UnitType::kSmallViewportMax:
-      return "svmax";
+      return "svmax"_s;
     case UnitType::kLargeViewportWidth:
-      return "lvw";
+      return "lvw"_s;
     case UnitType::kLargeViewportHeight:
-      return "lvh";
+      return "lvh"_s;
     case UnitType::kLargeViewportInlineSize:
-      return "lvi";
+      return "lvi"_s;
     case UnitType::kLargeViewportBlockSize:
-      return "lvb";
+      return "lvb"_s;
     case UnitType::kLargeViewportMin:
-      return "lvmin";
+      return "lvmin"_s;
     case UnitType::kLargeViewportMax:
-      return "lvmax";
+      return "lvmax"_s;
     case UnitType::kDynamicViewportWidth:
-      return "dvw";
+      return "dvw"_s;
     case UnitType::kDynamicViewportHeight:
-      return "dvh";
+      return "dvh"_s;
     case UnitType::kDynamicViewportInlineSize:
-      return "dvi";
+      return "dvi"_s;
     case UnitType::kDynamicViewportBlockSize:
-      return "dvb";
+      return "dvb"_s;
     case UnitType::kDynamicViewportMin:
-      return "dvmin";
+      return "dvmin"_s;
     case UnitType::kDynamicViewportMax:
-      return "dvmax";
+      return "dvmax"_s;
     case UnitType::kContainerWidth:
-      return "cqw";
+      return "cqw"_s;
     case UnitType::kContainerHeight:
-      return "cqh";
+      return "cqh"_s;
     case UnitType::kContainerInlineSize:
-      return "cqi";
+      return "cqi"_s;
     case UnitType::kContainerBlockSize:
-      return "cqb";
+      return "cqb"_s;
     case UnitType::kContainerMin:
-      return "cqmin";
+      return "cqmin"_s;
     case UnitType::kContainerMax:
-      return "cqmax";
+      return "cqmax"_s;
     default:
       break;
   }
   assert(false);
-  return "";
+  return ""_s;
 }
 
 String CSSPrimitiveValue::CustomCSSText() const {

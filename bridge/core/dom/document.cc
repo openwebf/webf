@@ -159,7 +159,7 @@ HTMLAllCollection* Document::all() {
 }
 
 String Document::nodeName() const {
-  return "#document";
+  return "#document"_s;
 }
 
 AtomicString Document::nodeValue() const {

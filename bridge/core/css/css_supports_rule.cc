@@ -43,7 +43,7 @@ CSSSupportsRule::~CSSSupportsRule() = default;
 
 String CSSSupportsRule::conditionText() const {
   if (!group_rule_)
-    return String();
+    return String::EmptyString();
 
   auto* supports_rule = To<StyleRuleSupports>(group_rule_.get());
   return supports_rule->ConditionText();
@@ -51,7 +51,7 @@ String CSSSupportsRule::conditionText() const {
 
 AtomicString CSSSupportsRule::cssText() const {
   StringBuilder result;
-  result.Append("@supports ");
+  result.Append("@supports "_s);
   result.Append(conditionText());
   AppendCSSTextForItems(result);
   return AtomicString(result.ReleaseString());

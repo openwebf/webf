@@ -16,7 +16,7 @@ std::shared_ptr<const CSSRevertLayerValue> CSSRevertLayerValue::Create() {
 }
 
 String CSSRevertLayerValue::CustomCSSText() const {
-  return "revert-layer";
+  return "revert-layer"_s;
 }
 
 }  // namespace cssvalue

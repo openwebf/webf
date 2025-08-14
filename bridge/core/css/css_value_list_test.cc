@@ -200,7 +200,7 @@ TEST_F(CSSValueListTest, CssTextCommaSeparated) {
   list->Append(blue);
   
   String css_text = list->CustomCSSText();
-  EXPECT_EQ(String("red, blue"), css_text);
+  EXPECT_EQ(String::FromUTF8("red, blue"), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextSpaceSeparated) {
@@ -212,7 +212,7 @@ TEST_F(CSSValueListTest, CssTextSpaceSeparated) {
   list->Append(blue);
   
   String css_text = list->CustomCSSText();
-  EXPECT_EQ(String("red blue"), css_text);
+  EXPECT_EQ(String::FromUTF8("red blue"), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextSlashSeparated) {
@@ -224,13 +224,13 @@ TEST_F(CSSValueListTest, CssTextSlashSeparated) {
   list->Append(blue);
   
   String css_text = list->CustomCSSText();
-  EXPECT_EQ(String("red / blue"), css_text);
+  EXPECT_EQ(String::FromUTF8("red / blue"), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextEmpty) {
   auto list = CSSValueList::CreateCommaSeparated();
   String css_text = list->CustomCSSText();
-  EXPECT_EQ(String(""), css_text);
+  EXPECT_EQ(String::FromUTF8(""), css_text);
 }
 
 TEST_F(CSSValueListTest, CssTextSingleValue) {
@@ -239,7 +239,7 @@ TEST_F(CSSValueListTest, CssTextSingleValue) {
   list->Append(red);
   
   String css_text = list->CustomCSSText();
-  EXPECT_EQ(String("red"), css_text);
+  EXPECT_EQ(String::FromUTF8("red"), css_text);
 }
 
 TEST_F(CSSValueListTest, MixedValueTypes) {

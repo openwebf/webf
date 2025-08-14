@@ -57,7 +57,7 @@ class CSSValuePair : public CSSValue {
     }
     StringBuilder result;
     result.Append(first);
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(second);
     return result.ReleaseString();
   }

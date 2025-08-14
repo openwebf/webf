@@ -100,16 +100,16 @@ CSSRule* CSSGroupingRule::Item(unsigned index, bool trigger_use_counters) const 
 }
 
 void CSSGroupingRule::AppendCSSTextForItems(StringBuilder& result) const {
-  result.Append(" {\n");
+  result.Append(" {\n"_s);
   for (unsigned i = 0; i < length(); ++i) {
-    result.Append("  ");
+    result.Append("  "_s);
     CSSRule* item = Item(i, false);
     if (item) {
       result.Append(item->cssText().GetString());
     }
-    result.Append("\n");
+    result.Append("\n"_s);
   }
-  result.Append("}");
+  result.Append("}"_s);
 }
 
 void CSSGroupingRule::TraceAfterDispatch(GCVisitor* visitor) const {

@@ -230,7 +230,7 @@ String CSSValue::CssText() const {
       return To<CSSRepeatStyleValue>(this)->CustomCSSText();
     default:
       NOTREACHED_IN_MIGRATION();
-      return String();
+      return String::EmptyString();
   }
 }
 

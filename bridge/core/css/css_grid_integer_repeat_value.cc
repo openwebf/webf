@@ -10,9 +10,9 @@ namespace cssvalue {
 
 String CSSGridIntegerRepeatValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append("repeat(");
+  result.Append("repeat("_s);
   result.Append(std::to_string(Repetitions()));
-  result.Append(", ");
+  result.Append(", "_s);
   result.Append(CSSValueList::CustomCSSText());
   result.Append(')');
   return result.ReleaseString();

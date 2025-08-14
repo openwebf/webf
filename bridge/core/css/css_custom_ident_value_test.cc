@@ -25,7 +25,7 @@ class CSSCustomIdentValueTest : public ::testing::Test {
 };
 
 TEST_F(CSSCustomIdentValueTest, ConstructionWithString) {
-  CSSCustomIdentValue value(AtomicString("my-custom-ident"));
+  CSSCustomIdentValue value(AtomicString::CreateFromUTF8("my-custom-ident"));
   
   EXPECT_FALSE(value.IsKnownPropertyID());
   EXPECT_EQ("my-custom-ident", value.Value());
@@ -41,7 +41,7 @@ TEST_F(CSSCustomIdentValueTest, ConstructionWithPropertyID) {
 }
 
 TEST_F(CSSCustomIdentValueTest, CssTextWithString) {
-  CSSCustomIdentValue value(AtomicString("my-custom-ident"));
+  CSSCustomIdentValue value(AtomicString::CreateFromUTF8("my-custom-ident"));
   EXPECT_EQ("my-custom-ident", value.CustomCSSText());
 }
 
@@ -54,9 +54,9 @@ TEST_F(CSSCustomIdentValueTest, CssTextWithPropertyID) {
 }
 
 TEST_F(CSSCustomIdentValueTest, Equality) {
-  CSSCustomIdentValue value1(AtomicString("test-ident"));
-  CSSCustomIdentValue value2(AtomicString("test-ident"));
-  CSSCustomIdentValue value3(AtomicString("different-ident"));
+  CSSCustomIdentValue value1(AtomicString::CreateFromUTF8("test-ident"));
+  CSSCustomIdentValue value2(AtomicString::CreateFromUTF8("test-ident"));
+  CSSCustomIdentValue value3(AtomicString::CreateFromUTF8("different-ident"));
   
   // Note: WebF's equality includes tree scope comparison, so identical strings 
   // with different tree scopes may not be equal. This is by design.
@@ -74,7 +74,7 @@ TEST_F(CSSCustomIdentValueTest, EqualityWithPropertyID) {
 }
 
 TEST_F(CSSCustomIdentValueTest, MixedComparison) {
-  CSSCustomIdentValue string_value(AtomicString("color"));
+  CSSCustomIdentValue string_value(AtomicString::CreateFromUTF8("color"));
   CSSCustomIdentValue property_value(CSSPropertyID::kColor);
   
   // String value vs property ID should not be equal even if the string matches
@@ -84,13 +84,13 @@ TEST_F(CSSCustomIdentValueTest, MixedComparison) {
 TEST_F(CSSCustomIdentValueTest, CustomIdentifiers) {
   // Test various valid custom identifiers
   std::vector<AtomicString> valid_idents = {
-    AtomicString("my-custom-name"),
-    AtomicString("customIdent"),
-    AtomicString("UPPERCASE"),
-    AtomicString("with_underscores"),
-    AtomicString("with123numbers"),
-    AtomicString("single"),
-    AtomicString("very-long-custom-identifier-name-that-should-work-fine")
+    AtomicString::CreateFromUTF8("my-custom-name"),
+    AtomicString::CreateFromUTF8("customIdent"),
+    AtomicString::CreateFromUTF8("UPPERCASE"),
+    AtomicString::CreateFromUTF8("with_underscores"),
+    AtomicString::CreateFromUTF8("with123numbers"),
+    AtomicString::CreateFromUTF8("single"),
+    AtomicString::CreateFromUTF8("very-long-custom-identifier-name-that-should-work-fine")
   };
   
   for (const auto& ident : valid_idents) {
@@ -103,10 +103,10 @@ TEST_F(CSSCustomIdentValueTest, CustomIdentifiers) {
 
 TEST_F(CSSCustomIdentValueTest, GridAreaNames) {
   // Common use case: CSS Grid area names
-  CSSCustomIdentValue header(AtomicString("header"));
-  CSSCustomIdentValue sidebar(AtomicString("sidebar"));
-  CSSCustomIdentValue main_content(AtomicString("main-content"));
-  CSSCustomIdentValue footer(AtomicString("footer"));
+  CSSCustomIdentValue header(AtomicString::CreateFromUTF8("header"));
+  CSSCustomIdentValue sidebar(AtomicString::CreateFromUTF8("sidebar"));
+  CSSCustomIdentValue main_content(AtomicString::CreateFromUTF8("main-content"));
+  CSSCustomIdentValue footer(AtomicString::CreateFromUTF8("footer"));
   
   EXPECT_EQ("header", header.Value());
   EXPECT_EQ("sidebar", sidebar.Value());
@@ -116,9 +116,9 @@ TEST_F(CSSCustomIdentValueTest, GridAreaNames) {
 
 TEST_F(CSSCustomIdentValueTest, AnimationNames) {
   // Common use case: CSS animation names
-  CSSCustomIdentValue slide_in(AtomicString("slideIn"));
-  CSSCustomIdentValue fade_out(AtomicString("fadeOut"));
-  CSSCustomIdentValue bounce(AtomicString("bounce"));
+  CSSCustomIdentValue slide_in(AtomicString::CreateFromUTF8("slideIn"));
+  CSSCustomIdentValue fade_out(AtomicString::CreateFromUTF8("fadeOut"));
+  CSSCustomIdentValue bounce(AtomicString::CreateFromUTF8("bounce"));
   
   EXPECT_EQ("slideIn", slide_in.Value());
   EXPECT_EQ("fadeOut", fade_out.Value());
@@ -127,9 +127,9 @@ TEST_F(CSSCustomIdentValueTest, AnimationNames) {
 
 TEST_F(CSSCustomIdentValueTest, CounterNames) {
   // Common use case: CSS counter names
-  CSSCustomIdentValue chapter(AtomicString("chapter"));
-  CSSCustomIdentValue section(AtomicString("section"));
-  CSSCustomIdentValue figure_num(AtomicString("figure-num"));
+  CSSCustomIdentValue chapter(AtomicString::CreateFromUTF8("chapter"));
+  CSSCustomIdentValue section(AtomicString::CreateFromUTF8("section"));
+  CSSCustomIdentValue figure_num(AtomicString::CreateFromUTF8("figure-num"));
   
   EXPECT_EQ("chapter", chapter.Value());
   EXPECT_EQ("section", section.Value());
@@ -138,15 +138,15 @@ TEST_F(CSSCustomIdentValueTest, CounterNames) {
 
 TEST_F(CSSCustomIdentValueTest, FontFamilyNames) {
   // Custom font family names (when not quoted)
-  CSSCustomIdentValue custom_font(AtomicString("MyCustomFont"));
-  CSSCustomIdentValue brand_font(AtomicString("BrandFont-Regular"));
+  CSSCustomIdentValue custom_font(AtomicString::CreateFromUTF8("MyCustomFont"));
+  CSSCustomIdentValue brand_font(AtomicString::CreateFromUTF8("BrandFont-Regular"));
   
   EXPECT_EQ("MyCustomFont", custom_font.Value());
   EXPECT_EQ("BrandFont-Regular", brand_font.Value());
 }
 
 TEST_F(CSSCustomIdentValueTest, TreeScopeHandling) {
-  CSSCustomIdentValue value(AtomicString("scoped-name"));
+  CSSCustomIdentValue value(AtomicString::CreateFromUTF8("scoped-name"));
   
   // WebF automatically manages tree scopes for custom ident values
   // The tree scope may be automatically set during construction

@@ -15,7 +15,7 @@ void CSSPendingSubstitutionValue::TraceAfterDispatch(GCVisitor* visitor) const {
 }
 
 String CSSPendingSubstitutionValue::CustomCSSText() const {
-  return "";
+  return String::EmptyString();
 }
 
 }  // namespace cssvalue

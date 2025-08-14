@@ -32,7 +32,7 @@ float CSSPendingSystemFontValue::ResolveFontSize(const Document* document) const
 }
 
 String CSSPendingSystemFontValue::CustomCSSText() const {
-  return "";
+  return String::EmptyString();
 }
 
 void CSSPendingSystemFontValue::TraceAfterDispatch(GCVisitor* visitor) const {

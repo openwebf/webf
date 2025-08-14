@@ -57,7 +57,7 @@ static String SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> prop
                                       CSSPropertyID property_id) {
   StylePropertyShorthand shorthand = shorthandForProperty(property_id);
   if (shorthand.length() == 0) {
-    return String();
+    return String::EmptyString();
   }
 
   return StylePropertySerializer(property_set).SerializeShorthand(property_id);
@@ -66,7 +66,7 @@ static String SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> prop
 static String SerializeShorthand(std::shared_ptr<const CSSPropertyValueSet> property_set,
                                       const AtomicString& custom_property_name) {
   // Custom properties are never shorthands.
-  return String();
+  return String::EmptyString();
 }
 
 template <typename T>

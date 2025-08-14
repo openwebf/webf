@@ -86,14 +86,14 @@ AtomicString CSSStyleRule::cssText() const {
 
   StringBuilder result;
   result.Append(selectorText().GetString());
-  result.Append(" { ");
+  result.Append(" { "_s);
   
   auto style_decl = style();
   if (style_decl) {
     result.Append(style_decl->cssText().GetString());
   }
   
-  result.Append(" }");
+  result.Append(" }"_s);
   return AtomicString(result.ReleaseString());
 }
 

@@ -90,7 +90,7 @@ String ConsumeStringOrURI(CSSParserTokenStream& stream) {
   }
 
   if (token.GetType() != kFunctionToken || !EqualIgnoringASCIICase(token.Value(), "url")) {
-    return String();
+    return String::EmptyString();
   }
 
   String result;
@@ -617,10 +617,10 @@ String CSSParserImpl::ParseCustomPropertyName(const String& name_text) {
   CSSParserTokenStream stream(tokenizer);
   const CSSParserToken& name_token = stream.ConsumeIncludingWhitespace();
   if (!stream.AtEnd()) {
-    return String();
+    return String::EmptyString();
   }
   if (!CSSVariableParser::IsValidVariableName(name_token)) {
-    return String();
+    return String::EmptyString();
   }
   return String(name_token.Value());
 }
@@ -1831,7 +1831,7 @@ std::shared_ptr<StyleRuleImport> CSSParserImpl::ConsumeImportRule(const String& 
     CSSParserTokenRange args = prelude.ConsumeBlock();
     prelude.ConsumeWhitespace();
     supports_string = args.Serialize();
-    CSSTokenizer supports_tokenizer(String("(") + supports_string + ")");
+    CSSTokenizer supports_tokenizer(String::FromUTF8("(") + supports_string + ")");
     CSSParserTokenStream supports_stream(supports_tokenizer);
     supported = CSSSupportsParser::ConsumeSupportsCondition(supports_stream, *this);
     if (supported == CSSSupportsParser::Result::kParseFailure) {

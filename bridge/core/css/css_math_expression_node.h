@@ -419,7 +419,7 @@ class CSSMathExpressionKeywordLiteral final : public CSSMathExpressionNode {
   bool HasInvalidAnchorFunctions(const CSSLengthResolver&) const final { return false; }
   CSSPrimitiveValue::BoolStatus IsNegative() const final { return CSSPrimitiveValue::BoolStatus::kUnresolvable; }
 
-  String CustomCSSText() const final { return getValueName(keyword_); }
+  String CustomCSSText() const final { return String::FromUTF8(getValueName(keyword_)); }
   std::shared_ptr<const CalculationExpressionNode> ToCalculationExpression(const CSSLengthResolver&) const final;
   std::optional<PixelsAndPercent> ToPixelsAndPercent(const CSSLengthResolver&) const final;
   double DoubleValue() const final {

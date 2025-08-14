@@ -226,7 +226,7 @@ String CSSParser::ParseCustomPropertyName(const String& name_text) {
 
 bool CSSParser::ParseSupportsCondition(const String& condition, const ExecutingContext* execution_context) {
   // window.CSS.supports requires to parse as-if it was wrapped in parenthesis.
-  String wrapped_condition = String("(") + condition + ")";
+  String wrapped_condition = String::FromUTF8("(") + condition + ")";
   CSSTokenizer tokenizer(wrapped_condition);
   CSSParserTokenStream stream(tokenizer);
   DCHECK(execution_context);

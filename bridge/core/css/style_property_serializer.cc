@@ -228,10 +228,10 @@ String StylePropertySerializer::GetCustomPropertyText(const PropertyValueForSeri
   }
   const std::shared_ptr<const CSSValue>* value = property.Value();
   SerializeIdentifier(property.Name().ToAtomicString().ToUTF8String(), result, is_not_first_decl);
-  result.Append(": ");
+  result.Append(": "_s);
   result.Append(value->get()->CssText());
   if (property.IsImportant()) {
-    result.Append(" !important");
+    result.Append(" !important"_s);
   }
   result.Append(';');
   return result.ReleaseString();
@@ -243,15 +243,15 @@ String StylePropertySerializer::GetPropertyText(const CSSPropertyName& name,
                                                      bool is_not_first_decl) const {
   StringBuilder result;
   if (is_not_first_decl) {
-    result.Append(" ");
+    result.Append(" "_s);
   }
   result.Append(name.ToAtomicString());
-  result.Append(": ");
+  result.Append(": "_s);
   result.Append(value);
   if (is_important) {
-    result.Append(" !important");
+    result.Append(" !important"_s);
   }
-  result.Append(";");
+  result.Append(";"_s);
   return result.ReleaseString();
 }
 
@@ -398,7 +398,7 @@ String StylePropertySerializer::CommonShorthandChecks(const StylePropertyShortha
   unsigned longhand_count = shorthand.length();
   if (!longhand_count || longhand_count > kMaxShorthandExpansion) {
     NOTREACHED_IN_MIGRATION();
-    return "";
+    return String::EmptyString();
   }
 
   std::shared_ptr<const CSSValue> longhands[kMaxShorthandExpansion] = {};
@@ -410,7 +410,7 @@ String StylePropertySerializer::CommonShorthandChecks(const StylePropertyShortha
     int index = property_set_.FindPropertyIndex(*shorthand.properties()[i]);
     if (index == -1) {
       *is_check_success = true;
-      return "";
+      return String::EmptyString();
     }
     PropertyValueForSerializer value = property_set_.PropertyAt(index);
 
@@ -421,7 +421,7 @@ String StylePropertySerializer::CommonShorthandChecks(const StylePropertyShortha
 
   if (has_important && has_non_important) {
     *is_check_success = true;
-    return "";
+    return String::EmptyString();
   }
 
   if (longhands[0]->IsCSSWideKeyword() || longhands[0]->IsPendingSubstitutionValue()) {
@@ -444,21 +444,21 @@ String StylePropertySerializer::CommonShorthandChecks(const StylePropertyShortha
     const CSSValue& value = *longhands[i];
     if (!allow_initial && value.IsInitialValue()) {
       *is_check_success = true;
-      return "";
+      return String::EmptyString();
     }
     if ((value.IsCSSWideKeyword() && !value.IsInitialValue()) || value.IsPendingSubstitutionValue()) {
       *is_check_success = true;
-      return "";
+      return String::EmptyString();
     }
     if (value.IsUnparsedDeclaration()) {
       *is_check_success = true;
-      return "";
+      return String::EmptyString();
     }
   }
 
   *is_check_success = false;
 
-  return String();
+  return String::EmptyString();
 }
 
 String StylePropertySerializer::SerializeShorthand(CSSPropertyID property_id) const {
@@ -613,7 +613,7 @@ String StylePropertySerializer::SerializeShorthand(CSSPropertyID property_id) co
       assert_m(false, ("Shorthand property " + (CSSPropertyName(property_id).ToAtomicString().ToUTF8String()) +
                        " must be handled in StylePropertySerializer::SerializeShorthand.")
                           .c_str());
-      return "";
+      return String::EmptyString();
   }
 }
 
@@ -682,7 +682,7 @@ bool StylePropertySerializer::AppendFontLonghandValueIfNotNormal(const CSSProper
     // A shorter representation is preferred in general. Thus, 'none' returns
     // instead of the spelling-out form.
     // https://www.w3.org/Bugs/Public/show_bug.cgi?id=29594#c1
-    value = "none";
+    value = "none"_s;
   } else {
     value = val->CssText();
   }
@@ -707,10 +707,10 @@ bool StylePropertySerializer::AppendFontLonghandValueIfNotNormal(const CSSProper
       case CSSPropertyID::kFontVariantPosition:
       case CSSPropertyID::kFontVariantEmoji:
       case CSSPropertyID::kFontWeight:
-        result.Append(" ");
+        result.Append(" "_s);
         break;
       case CSSPropertyID::kLineHeight:
-        result.Append(" / ");
+        result.Append(" / "_s);
         break;
       default:
         NOTREACHED_IN_MIGRATION();
@@ -803,10 +803,10 @@ String StylePropertySerializer::TimelineValue(const StylePropertyShorthand& shor
   // different lengths, so we can also not contract two different-longhands
   // into a single shorthand.
   if (name_list->length() != axis_list->length()) {
-    return "";
+    return String::EmptyString();
   }
   if (inset_list && name_list->length() != inset_list->length()) {
-    return "";
+    return String::EmptyString();
   }
 
   std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
@@ -887,7 +887,7 @@ std::shared_ptr<CSSValueList> AnimationRangeShorthandValueItem(size_t index,
 //   const auto& end_list = To<CSSValueList>(*property_set_.GetPropertyCSSValue(GetCSSPropertyAnimationRangeEnd()));
 //
 //   if (start_list.length() != end_list.length()) {
-//     return "";
+//     return String::EmptyString();
 //   }
 //
 //   std::shared_ptr<CSSValueList> list = CSSValueList::CreateCommaSeparated();
@@ -952,30 +952,30 @@ String StylePropertySerializer::FontValue() const {
   };
 
   if (IsPropertyNonInitial(*ligatures_value, CSSValueID::kNormal) || ligatures_value->get()->IsValueList()) {
-    return "";
+    return String::EmptyString();
   }
 
   if (IsPropertyNonInitial(*numeric_value, CSSValueID::kNormal) || numeric_value->get()->IsValueList()) {
-    return "";
+    return String::EmptyString();
   }
 
   if (IsPropertyNonInitial(*east_asian_value, CSSValueID::kNormal) || east_asian_value->get()->IsValueList()) {
-    return "";
+    return String::EmptyString();
   }
 
   if (IsPropertyNonInitial(*font_kerning_property.Value(), CSSValueID::kAuto) ||
       IsPropertyNonInitial(*font_optical_sizing_property.Value(), CSSValueID::kAuto)) {
-    return "";
+    return String::EmptyString();
   }
 
   if (IsPropertyNonInitial(*variation_settings_value, CSSValueID::kNormal) ||
       variation_settings_value->get()->IsValueList()) {
-    return "";
+    return String::EmptyString();
   }
 
   if (IsPropertyNonInitial(*feature_settings_value, CSSValueID::kNormal) ||
       feature_settings_value->get()->IsValueList()) {
-    return "";
+    return String::EmptyString();
   }
 
   int font_variant_alternates_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantAlternates());
@@ -984,7 +984,7 @@ String StylePropertySerializer::FontValue() const {
       property_set_.PropertyAt(font_variant_alternates_property_index);
   const std::shared_ptr<const CSSValue>* alternates_value = font_variant_alternates_property.Value();
   if (IsPropertyNonInitial(*alternates_value, CSSValueID::kNormal) || alternates_value->get()->IsValueList()) {
-    return "";
+    return String::EmptyString();
   }
 
   int font_variant_position_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantPosition());
@@ -992,14 +992,14 @@ String StylePropertySerializer::FontValue() const {
   PropertyValueForSerializer font_variant_position_property =
       property_set_.PropertyAt(font_variant_position_property_index);
   if (IsPropertyNonInitial(*font_variant_position_property.Value(), CSSValueID::kNormal)) {
-    return "";
+    return String::EmptyString();
   }
 
   int font_variant_emoji_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontVariantEmoji());
   assert(font_variant_emoji_property_index != -1);
   PropertyValueForSerializer font_variant_emoji_property = property_set_.PropertyAt(font_variant_emoji_property_index);
   if (IsPropertyNonInitial(*font_variant_emoji_property.Value(), CSSValueID::kNormal)) {
-    return "";
+    return String::EmptyString();
   }
 
   int font_size_adjust_property_index = property_set_.FindPropertyIndex(GetCSSPropertyFontSizeAdjust());
@@ -1008,7 +1008,7 @@ String StylePropertySerializer::FontValue() const {
   const std::shared_ptr<const CSSValue>* size_adjust_value = font_size_adjust_property.Value();
   if (IsPropertyNonInitial(*size_adjust_value, CSSValueID::kNone) ||
       size_adjust_value->get()->IsNumericLiteralValue()) {
-    return "";
+    return String::EmptyString();
   }
 
   StringBuilder result;
@@ -1018,14 +1018,14 @@ String StylePropertySerializer::FontValue() const {
   auto* identifier_value = DynamicTo<CSSIdentifierValue>(val->get());
   if (identifier_value && (identifier_value->GetValueID() != CSSValueID::kSmallCaps &&
                            identifier_value->GetValueID() != CSSValueID::kNormal)) {
-    return "";
+    return String::EmptyString();
   }
   AppendFontLonghandValueIfNotNormal(GetCSSPropertyFontVariantCaps(), result);
 
   AppendFontLonghandValueIfNotNormal(GetCSSPropertyFontWeight(), result);
   bool font_stretch_valid = AppendFontLonghandValueIfNotNormal(GetCSSPropertyFontStretch(), result);
   if (!font_stretch_valid) {
-    return String();
+    return String::EmptyString();
   }
   if (!result.IsEmpty()) {
     result.Append(' ');
@@ -1061,11 +1061,11 @@ String StylePropertySerializer::FontVariantValue() const {
   // with any other non-normal longhands.
   // https://drafts.csswg.org/cssom-1/#serializing-css-values
   if (is_variant_ligatures_none && result.length() != variant_ligatures_result_length) {
-    return "";
+    return String::EmptyString();
   }
 
   if (result.IsEmpty()) {
-    return "normal";
+    return "normal"_s;
   }
 
   return result.ReleaseString();
@@ -1096,7 +1096,7 @@ String StylePropertySerializer::FontSynthesisValue() const {
   auto* font_synthesis_weight_identifier_value = DynamicTo<CSSIdentifierValue>(font_synthesis_weight_value->get());
   if (font_synthesis_weight_identifier_value &&
       font_synthesis_weight_identifier_value->GetValueID() == CSSValueID::kAuto) {
-    result.Append("weight");
+    result.Append("weight"_s);
   }
 
   auto* font_synthesis_style_identifier_value = DynamicTo<CSSIdentifierValue>(font_synthesis_style_value->get());
@@ -1105,7 +1105,7 @@ String StylePropertySerializer::FontSynthesisValue() const {
     if (!result.IsEmpty()) {
       result.Append(' ');
     }
-    result.Append("style");
+    result.Append("style"_s);
   }
 
   auto* font_synthesis_small_caps_identifier_value =
@@ -1115,11 +1115,11 @@ String StylePropertySerializer::FontSynthesisValue() const {
     if (!result.IsEmpty()) {
       result.Append(' ');
     }
-    result.Append("small-caps");
+    result.Append("small-caps"_s);
   }
 
   if (result.IsEmpty()) {
-    return "none";
+    return "none"_s;
   }
 
   return result.ReleaseString();
@@ -1161,20 +1161,20 @@ String StylePropertySerializer::OffsetValue() const {
   }
   if (use_path) {
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
     result.Append(path->CssText());
   }
   if (use_distance) {
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(distance->CssText());
   }
   if (use_rotate) {
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(rotate->CssText());
   }
   if (use_anchor) {
-    result.Append(" / ");
+    result.Append(" / "_s);
     result.Append(anchor->CssText());
   }
   return result.ReleaseString();
@@ -1201,13 +1201,13 @@ String StylePropertySerializer::TextDecorationValue() const {
       }
     }
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
     result.Append(value_text);
   }
 
   if (result.IsEmpty()) {
-    return "none";
+    return "none"_s;
   }
   return result.ReleaseString();
 }
@@ -1218,7 +1218,7 @@ String StylePropertySerializer::Get2Values(const StylePropertyShorthand& shortha
   int end_value_index = property_set_.FindPropertyIndex(*shorthand.properties()[1]);
 
   if (start_value_index == -1 || end_value_index == -1) {
-    return "";
+    return String::EmptyString();
   }
 
   PropertyValueForSerializer start = property_set_.PropertyAt(start_value_index);
@@ -1243,7 +1243,7 @@ String StylePropertySerializer::Get4Values(const StylePropertyShorthand& shortha
   int left_value_index = property_set_.FindPropertyIndex(*shorthand.properties()[3]);
 
   if (top_value_index == -1 || right_value_index == -1 || bottom_value_index == -1 || left_value_index == -1) {
-    return String();
+    return String::EmptyString();
   }
 
   PropertyValueForSerializer top = property_set_.PropertyAt(top_value_index);
@@ -1296,15 +1296,15 @@ void SerializeMaskOriginAndClip(StringBuilder& result, const CSSValueID& origin_
     // If the values are the same, only emit one value. Note that mask-origin
     // does not support no-clip, so there is no need to consider no-clip
     // special cases.
-    result.Append(getValueName(origin_id));
+    result.Append(String::FromUTF8(getValueName(origin_id)));
   } else if (origin_id == CSSValueID::kBorderBox && clip_id == CSSValueID::kNoClip) {
     // Mask-origin does not support no-clip, so mask-origin can be omitted if it
     // is the default.
-    result.Append(getValueName(clip_id));
+    result.Append(String::FromUTF8(getValueName(clip_id)));
   } else {
-    result.Append(getValueName(origin_id));
+    result.Append(String::FromUTF8(getValueName(origin_id)));
     result.Append(' ');
-    result.Append(getValueName(clip_id));
+    result.Append(String::FromUTF8(getValueName(clip_id)));
   }
 }
 
@@ -1371,21 +1371,21 @@ String StylePropertySerializer::GetLayeredShorthandValue(const StylePropertyShor
       //      if (property->IDEquals(CSSPropertyID::kAnimationTimeline)) {
       //        auto* ident = DynamicTo<CSSIdentifierValue>(value);
       //        if (!ident || (ident->GetValueID() != CSSAnimationData::InitialTimeline().GetKeyword()) || layer > 0) {
-      //          return "";
+      //          return String::EmptyString();
       //        }
       //        omit_value = true;
       //      }
       //      if (property->IDEquals(CSSPropertyID::kAnimationRangeStart)) {
       //        auto* ident = DynamicTo<CSSIdentifierValue>(value);
       //        if (!ident || (ident->GetValueID() != CSSValueID::kNormal) || layer > 0) {
-      //          return "";
+      //          return String::EmptyString();
       //        }
       //        omit_value = true;
       //      }
       //      if (property->IDEquals(CSSPropertyID::kAnimationRangeEnd)) {
       //        auto* ident = DynamicTo<CSSIdentifierValue>(value);
       //        if (!ident || (ident->GetValueID() != CSSValueID::kNormal) || layer > 0) {
-      //          return "";
+      //          return String::EmptyString();
       //        }
       //        omit_value = true;
       //      }
@@ -1437,9 +1437,9 @@ String StylePropertySerializer::GetLayeredShorthandValue(const StylePropertyShor
       if (!omit_value) {
         if (property->IDEquals(CSSPropertyID::kBackgroundSize)) {
           if (is_position_y_serialized || is_position_x_serialized) {
-            layer_result.Append(" / ");
+            layer_result.Append(" / "_s);
           } else {
-            layer_result.Append(" 0% 0% / ");
+            layer_result.Append(" 0% 0% / "_s);
           }
         } else if (!layer_result.IsEmpty()) {
           // Do this second to avoid ending up with an extra space in the output
@@ -1463,11 +1463,11 @@ String StylePropertySerializer::GetLayeredShorthandValue(const StylePropertyShor
       // When serializing the transition shorthand, we omit all values which are
       // set to their defaults. If everything is set to the default, then emit
       // "all" instead of an empty string.
-      layer_result.Append("all");
+      layer_result.Append("all"_s);
     }
     if (!layer_result.IsEmpty()) {
       if (!result.IsEmpty()) {
-        result.Append(", ");
+        result.Append(", "_s);
       }
       result.Append(layer_result);
     }
@@ -1511,7 +1511,7 @@ String StylePropertySerializer::GetShorthandValueForColumnRule(const StyleProper
       !(ident_value && ident_value->GetValueID() == CSSValueID::kNone) && !column_rule_style->IsInitialValue()) {
     String column_rule_style_text = column_rule_style->CssText();
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
 
     result.Append(column_rule_style_text);
@@ -1521,14 +1521,14 @@ String StylePropertySerializer::GetShorthandValueForColumnRule(const StyleProper
       !column_rule_color->IsInitialValue()) {
     String column_rule_color_text = column_rule_color->CssText();
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
 
     result.Append(column_rule_color_text);
   }
 
   if (result.IsEmpty()) {
-    return "medium";
+    return "medium"_s;
   }
 
   return result.ReleaseString();
@@ -1546,13 +1546,13 @@ String StylePropertySerializer::GetShorthandValueForColumns(const StylePropertyS
       continue;
     }
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
     result.Append(value_text);
   }
 
   if (result.IsEmpty()) {
-    return "auto";
+    return "auto"_s;
   }
 
   return result.ReleaseString();
@@ -1573,7 +1573,7 @@ String StylePropertySerializer::GetShorthandValueForDoubleBarCombinator(
     }
     String value_text = value->CssText();
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
     result.Append(value_text);
   }
@@ -1630,7 +1630,7 @@ String StylePropertySerializer::GetShorthandValueForGrid(const StylePropertyShor
   // `grid-auto-*` along with named lines is not valid per the grammar.
   if ((auto_flow_value_list || auto_row_value_list || auto_column_value_list) &&
       *template_area_value != *GetCSSPropertyGridTemplateAreas().InitialValue()) {
-    return String();
+    return String::EmptyString();
   }
 
   // `grid-template-rows` and `grid-template-columns` are shorthards within this
@@ -1644,7 +1644,7 @@ String StylePropertySerializer::GetShorthandValueForGrid(const StylePropertyShor
   if ((non_initial_template_rows && specified_non_initial_auto_rows) ||
       (non_initial_template_columns && specified_non_initial_auto_columns) ||
       (specified_non_initial_auto_rows && specified_non_initial_auto_columns)) {
-    return String();
+    return String::EmptyString();
   }
 
   // 1- <'grid-template'>
@@ -1657,7 +1657,7 @@ String StylePropertySerializer::GetShorthandValueForGrid(const StylePropertyShor
   //    return GetShorthandValueForGridTemplate(shorthand);
   //  } else if (non_initial_template_rows && non_initial_template_columns) {
   //    // Specifying both rows and columns is not valid per the grammar.
-  //    return String();
+  //    return String::EmptyString();
   //  }
 
   // At this point, the syntax matches:
@@ -1665,9 +1665,9 @@ String StylePropertySerializer::GetShorthandValueForGrid(const StylePropertyShor
   // [ auto-flow && dense? ] <'grid-auto-rows'>? / <'grid-template-columns'>
   // ...and thus will include `auto-flow` no matter what.
   StringBuilder auto_flow_text;
-  auto_flow_text.Append("auto-flow");
+  auto_flow_text.Append("auto-flow"_s);
   if (auto_flow_value_list && auto_flow_value_list->HasValue(CSSIdentifierValue::Create(CSSValueID::kDense))) {
-    auto_flow_text.Append(" dense");
+    auto_flow_text.Append(" dense"_s);
   }
 
   // 2- <'grid-template-rows'> / [ auto-flow && dense? ] <'grid-auto-columns'>?
@@ -1678,11 +1678,11 @@ String StylePropertySerializer::GetShorthandValueForGrid(const StylePropertyShor
   StringBuilder result;
   if (auto_flow_value_list && auto_flow_value_list->HasValue(CSSIdentifierValue::Create(CSSValueID::kColumn))) {
     result.Append(template_row_values->CssText());
-    result.Append(" / ");
+    result.Append(" / "_s);
     result.Append(auto_flow_text);
 
     if (specified_non_initial_auto_columns) {
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(auto_column_values->CssText());
     }
   } else {
@@ -1691,18 +1691,18 @@ String StylePropertySerializer::GetShorthandValueForGrid(const StylePropertyShor
     result.Append(auto_flow_text);
 
     if (specified_non_initial_auto_rows) {
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(auto_row_values->CssText());
     }
 
-    result.Append(" / ");
+    result.Append(" / "_s);
     result.Append(template_column_values->CssText());
   }
   return result.ReleaseString();
 }
 
 String StylePropertySerializer::GetShorthandValueForGridArea(const StylePropertyShorthand& shorthand) const {
-  const String separator = " / ";
+  const String separator = " / "_s;
 
   assert(shorthand.length() == 4u);
   std::shared_ptr<const CSSValue> grid_row_start = property_set_.GetPropertyCSSValue(*shorthand.properties()[0]);
@@ -1742,7 +1742,7 @@ String StylePropertySerializer::GetShorthandValueForGridArea(const StyleProperty
 }
 
 String StylePropertySerializer::GetShorthandValueForGridLine(const StylePropertyShorthand& shorthand) const {
-  const String separator = " / ";
+  const String separator = " / "_s;
 
   assert(shorthand.length() == 2u);
   std::shared_ptr<const CSSValue> line_start = property_set_.GetPropertyCSSValue(*shorthand.properties()[0]);
@@ -1782,7 +1782,7 @@ String StylePropertySerializer::GetCommonValue(const StylePropertyShorthand& sho
     if (res.IsEmpty()) {
       res = text;
     } else if (res != text) {
-      return String();
+      return String::EmptyString();
     }
   }
   return res;
@@ -1802,7 +1802,7 @@ String StylePropertySerializer::BorderPropertyValue(const StylePropertyShorthand
     std::shared_ptr<const CSSValue> value = property_set_.GetPropertyCSSValue(*border_image_property);
     std::shared_ptr<const CSSValue> initial_specified_value = To<Longhand>(*border_image_property).InitialValue();
     if (value && !value->IsInitialValue() && *value != *initial_specified_value) {
-      return String();
+      return String::EmptyString();
     }
   }
 
@@ -1811,7 +1811,7 @@ String StylePropertySerializer::BorderPropertyValue(const StylePropertyShorthand
   for (const auto& shorthand_property : shorthand_properties) {
     const String value = GetCommonValue(shorthand_property);
     if (value.IsEmpty()) {
-      return String();
+      return String::EmptyString();
     }
     if (value == "initial") {
       continue;
@@ -1833,10 +1833,10 @@ String StylePropertySerializer::BorderImagePropertyValue() const {
   for (size_t i = 0; i < length; ++i) {
     const CSSValue& value = *property_set_.GetPropertyCSSValue(*properties[i]);
     if (!result.IsEmpty()) {
-      result.Append(" ");
+      result.Append(" "_s);
     }
     if (i == 2 || i == 3) {
-      result.Append("/ ");
+      result.Append("/ "_s);
     }
     result.Append(value.CssText());
   }
@@ -1879,7 +1879,7 @@ String StylePropertySerializer::BorderRadiusValue() const {
 
   if (!(top_left.First() == top_left.Second()) || !(top_right.First() == top_right.Second()) ||
       !(bottom_right.First() == bottom_right.Second()) || !(bottom_left.First() == bottom_left.Second())) {
-    builder.Append(" / ");
+    builder.Append(" / "_s);
     builder.Append(serialize(*top_left.Second(), *top_right.Second(), *bottom_right.Second(), *bottom_left.Second()));
   }
 
@@ -1891,13 +1891,13 @@ String StylePropertySerializer::PageBreakPropertyValue(const StylePropertyShorth
   CSSValueID value_id = To<CSSIdentifierValue>(value.get())->GetValueID();
   // https://drafts.csswg.org/css-break/#page-break-properties
   if (value_id == CSSValueID::kPage) {
-    return "always";
+    return "always"_s;
   }
   if (value_id == CSSValueID::kAuto || value_id == CSSValueID::kLeft || value_id == CSSValueID::kRight ||
       value_id == CSSValueID::kAvoid) {
     return value->CssText();
   }
-  return String();
+  return String::EmptyString();
 }
 
 }  // namespace webf

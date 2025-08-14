@@ -163,6 +163,10 @@ bool EqualIgnoringASCIICase(const AtomicString&, const String&);
 bool EqualIgnoringASCIICase(const String&, const char*);
 bool EqualIgnoringASCIICase(const std::string&, const char*);
 
+
+// literals
+inline StringView operator""_sv(const char* str, size_t len) { return StringView(str, len); }
+
 }  // namespace webf
 
 #endif  // BRIDGE_FOUNDATION_STRING_VIEW_H_

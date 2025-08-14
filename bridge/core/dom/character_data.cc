@@ -16,7 +16,7 @@ void CharacterData::setData(const AtomicString& data, ExceptionState& exception_
   data_ = data;
 
   std::unique_ptr<SharedNativeString> args_01 = data.ToNativeString();
-  std::unique_ptr<SharedNativeString> args_02 = stringToNativeString("data");
+  std::unique_ptr<SharedNativeString> args_02 = AtomicString::CreateFromUTF8("data").ToNativeString();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetAttribute, std::move(args_01), bindingObject(),
                                                        args_02.release());
 

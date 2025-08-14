@@ -26,10 +26,10 @@ String CSSLayerBlockRule::name() const {
 
 AtomicString CSSLayerBlockRule::cssText() const {
   StringBuilder result;
-  result.Append("@layer");
+  result.Append("@layer"_s);
   const String& layer_name = name();
   if (layer_name.length()) {
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(layer_name);
   }
   AppendCSSTextForItems(result);

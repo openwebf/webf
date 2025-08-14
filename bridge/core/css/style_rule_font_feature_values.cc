@@ -145,7 +145,7 @@ AtomicString StyleRuleFontFeatureValues::FamilyAsString() const {
   for (uint32_t i = 0; i < families_.size(); ++i) {
     families.Append(families_[i]);
     if (i < families_.size() - 1) {
-      families.Append(", ");
+      families.Append(", "_s);
     }
   }
   return families.ReleaseString();

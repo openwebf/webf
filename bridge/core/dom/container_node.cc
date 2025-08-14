@@ -386,11 +386,11 @@ bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
   // doctype and parent is not a document, throw a HierarchyRequestError.
   if (!IsChildTypeAllowed(new_child)) {
     StringBuilder error_message;
-    error_message.Append("Nodes of type '");
+    error_message.Append("Nodes of type '"_s);
     error_message.Append(new_child.nodeName());
-    error_message.Append("' may not be inserted inside nodes of type '");
+    error_message.Append("' may not be inserted inside nodes of type '"_s);
     error_message.Append(nodeName());
-    error_message.Append("'.");
+    error_message.Append("'."_s);
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
         error_message.ReleaseString().StdUtf8());
@@ -666,7 +666,7 @@ void ContainerNode::InsertBeforeCommon(Node& next_child, Node& new_child) {
   new_child.SetPreviousSibling(prev);
   new_child.SetNextSibling(&next_child);
 
-  std::unique_ptr<SharedNativeString> args_01 = stringToNativeString("beforebegin");
+  std::unique_ptr<SharedNativeString> args_01 = AtomicString::CreateFromUTF8("beforebegin").ToNativeString();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
                                                        next_child.bindingObject(), new_child.bindingObject());
 }
@@ -681,7 +681,7 @@ void ContainerNode::AppendChildCommon(Node& child) {
   }
   SetLastChild(&child);
 
-  std::unique_ptr<SharedNativeString> args_01 = stringToNativeString("beforeend");
+  std::unique_ptr<SharedNativeString> args_01 = AtomicString::CreateFromUTF8("beforeend").ToNativeString();
   GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kInsertAdjacentNode, std::move(args_01),
                                                        bindingObject(), child.bindingObject());
 }

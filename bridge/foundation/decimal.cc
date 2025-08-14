@@ -922,7 +922,7 @@ std::string Decimal::ToString() const {
       return builder.ReleaseString().StdUtf8();
     }
 
-    builder.Append("0.");
+    builder.Append("0."_sv);
     for (int i = adjusted_exponent + 1; i < 0; ++i)
       builder.Append('0');
 
@@ -939,7 +939,7 @@ std::string Decimal::ToString() const {
     }
 
     if (adjusted_exponent) {
-      builder.Append(adjusted_exponent < 0 ? "e" : "e+");
+      builder.Append(adjusted_exponent < 0 ? "e"_s : "e+"_s);
       builder.AppendNumber(adjusted_exponent);
     }
   }

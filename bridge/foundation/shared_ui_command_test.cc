@@ -54,7 +54,7 @@ TEST_F(SharedUICommandTest, BasicAddAndRetrieve) {
   EXPECT_TRUE(shared_command_->empty());
 
   // Add a command
-  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("test"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("test"), nullptr, nullptr);
 
   // In non-dedicated mode, we need to finish recording to see commands
   shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
@@ -68,8 +68,8 @@ TEST_F(SharedUICommandTest, BasicAddAndRetrieve) {
 // Test data() retrieval
 TEST_F(SharedUICommandTest, DataRetrieval) {
   // Add multiple commands
-  auto str1 = CreateSharedString("element1");
-  auto str2 = CreateSharedString("element2");
+  auto str1 = CreateSharedString::FromUTF8("element1");
+  auto str2 = CreateSharedString::FromUTF8("element2");
 
   shared_command_->AddCommand(UICommand::kCreateElement, std::move(str1), nullptr, nullptr);
   shared_command_->AddCommand(UICommand::kCreateElement, std::move(str2), nullptr, nullptr);
@@ -96,7 +96,7 @@ TEST_F(SharedUICommandTest, DataRetrieval) {
 
 // Test clear() functionality
 TEST_F(SharedUICommandTest, ClearCommands) {
-  auto str = CreateSharedString("test");
+  auto str = CreateSharedString::FromUTF8("test");
 
   // Add and retrieve commands
   shared_command_->AddCommand(UICommand::kCreateElement, std::move(str), nullptr, nullptr);
@@ -149,7 +149,7 @@ TEST_F(SharedUICommandTest, ConcurrentAccess) {
   // Writer thread (simulates JS thread)
   std::thread writer([&]() {
     while (!stop_flag.load()) {
-      shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("concurrent_command"), nullptr, nullptr);
+      shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("concurrent_command"), nullptr, nullptr);
       shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
       commands_added.fetch_add(1);
       std::this_thread::sleep_for(std::chrono::microseconds(100));
@@ -201,7 +201,7 @@ TEST_F(SharedUICommandTest, SizeCalculation) {
   EXPECT_EQ(shared_command_->size(), 0);
 
   // Add commands
-  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("cmd1"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("cmd1"), nullptr, nullptr);
   
   // In dedicated mode, we might need to sync first
   if (context_->isDedicated() && shared_command_->size() == 0) {
@@ -212,7 +212,7 @@ TEST_F(SharedUICommandTest, SizeCalculation) {
   int64_t size1 = shared_command_->size();
   EXPECT_GT(size1, 0);
 
-  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("cmd2"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("cmd2"), nullptr, nullptr);
   
   if (context_->isDedicated()) {
     // Force sync again
@@ -287,7 +287,7 @@ TEST_F(SharedUICommandTest, StressTest) {
   for (int i = 0; i < cycles; ++i) {
     // Add a burst of commands
     for (int j = 0; j < 10; ++j) {
-      shared_command_->AddCommand(UICommand::kSetAttribute, CreateSharedString("stress"), nullptr, nullptr);
+      shared_command_->AddCommand(UICommand::kSetAttribute, CreateSharedString::FromUTF8("stress"), nullptr, nullptr);
     }
 
     shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
@@ -340,7 +340,7 @@ TEST_F(SharedUICommandTest, RaceConditionDataAndEmpty) {
       empty_calls.fetch_add(1);
       
       // Add a command
-      shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("race_test"), nullptr, nullptr);
+      shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("race_test"), nullptr, nullptr);
 
       // Small delay
       std::this_thread::sleep_for(std::chrono::microseconds(5));
@@ -397,7 +397,7 @@ TEST_F(SharedUICommandTest, RaceConditionWithSize) {
   // Thread 3: Adds commands and retrieves data
   std::thread data_thread([&]() {
     while (!stop_flag.load()) {
-      shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("size_race"), nullptr, nullptr);
+      shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("size_race"), nullptr, nullptr);
 
       void* data = shared_command_->data();
       auto* pack = static_cast<UICommandBufferPack*>(data);
@@ -429,8 +429,8 @@ TEST_F(SharedUICommandTest, SyncStrategyIntegration) {
   // context_->setDedicated(true);  // Would need to be set if available
   
   // Add commands that go to waiting queue
-  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString("div"), nullptr, nullptr);
-  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString("color:blue"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kCreateElement, CreateSharedString::FromUTF8("div"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString::FromUTF8("color:blue"), nullptr, nullptr);
   
   // In non-dedicated mode, commands go directly to read buffer
   // In dedicated mode, they would go to waiting queue
@@ -439,7 +439,7 @@ TEST_F(SharedUICommandTest, SyncStrategyIntegration) {
   }
   
   // Add a command that triggers immediate sync
-  shared_command_->AddCommand(UICommand::kAsyncCaller, CreateSharedString("async"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kAsyncCaller, CreateSharedString::FromUTF8("async"), nullptr, nullptr);
   
   // Now add finish recording to request batch update
   shared_command_->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
@@ -475,7 +475,7 @@ TEST_F(SharedUICommandTest, WaitingQueueOverflowSync) {
   // Add commands with different objects to trigger frequency map overflow
   for (int i = 0; i < 70; ++i) {
     shared_command_->AddCommand(UICommand::kCreateElement, 
-                               CreateSharedString("overflow"), 
+                               CreateSharedString::FromUTF8("overflow"), 
                                objects[i].get(), 
                                nullptr);
   }
@@ -514,8 +514,8 @@ TEST_F(SharedUICommandTest, CommandCategorizationSync) {
   dart_free(pack1);
   
   // Test waiting queue commands
-  shared_command_->AddCommand(UICommand::kSetAttribute, CreateSharedString("attr"), nullptr, nullptr);
-  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString("style"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetAttribute, CreateSharedString::FromUTF8("attr"), nullptr, nullptr);
+  shared_command_->AddCommand(UICommand::kSetStyle, CreateSharedString::FromUTF8("style"), nullptr, nullptr);
   shared_command_->AddCommand(UICommand::kDisposeBindingObject, nullptr, nullptr, nullptr);
   
   // These should be in waiting queue until we force sync

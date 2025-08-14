@@ -19,28 +19,28 @@ String CSSQuadValue::CustomCSSText() const {
 
   if (serialization_type_ == TypeForSerialization::kSerializeAsRect) {
     StringBuilder result;
-    result.Append("rect(");
+    result.Append("rect("_s);
     result.Append(top);
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(right);
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(bottom);
-    result.Append(", ");
+    result.Append(", "_s);
     result.Append(left);
-    result.Append(")");
+    result.Append(")"_s);
     return result.ReleaseString();
   }
 
   StringBuilder result;
   result.Append(top);
   if (right != top || bottom != top || left != top) {
-    result.Append(" ");
+    result.Append(" "_s);
     result.Append(right);
     if (bottom != top || right != left) {
-      result.Append(" ");
+      result.Append(" "_s);
       result.Append(bottom);
       if (left != right) {
-        result.Append(" ");
+        result.Append(" "_s);
         result.Append(left);
       }
     }

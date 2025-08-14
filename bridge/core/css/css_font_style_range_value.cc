@@ -39,7 +39,7 @@ String CSSFontStyleRangeValue::CustomCSSText() const {
 
   StringBuilder builder;
   builder.Append(font_style_value_->CssText());
-  builder.Append(" ");
+  builder.Append(" "_s);
   builder.Append(oblique_values_->CssText());
   return builder.ReleaseString();
 }

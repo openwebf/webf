@@ -42,19 +42,19 @@ static String BuildCircleString(const String& radius,
   char at[] = "at";
   char separator[] = " ";
   StringBuilder result;
-  result.Append("circle(");
+  result.Append("circle("_s);
   if (!radius.IsEmpty()) {
     result.Append(radius);
   }
 
   if (has_explicit_center) {
     if (!radius.IsEmpty()) {
-      result.Append(separator);
+      result.Append(String::FromUTF8(separator));
     }
-    result.Append(at);
-    result.Append(separator);
+    result.Append(String::FromUTF8(at));
+    result.Append(String::FromUTF8(separator));
     result.Append(center_x);
-    result.Append(separator);
+    result.Append(String::FromUTF8(separator));
     result.Append(center_y);
   }
   result.Append(')');
@@ -138,7 +138,7 @@ static String BuildEllipseString(const String& radius_x,
   char at[] = "at";
   char separator[] = " ";
   StringBuilder result;
-  result.Append("ellipse(");
+  result.Append("ellipse("_s);
   bool needs_separator = false;
   if (!radius_x.IsEmpty()) {
     result.Append(radius_x);
@@ -146,7 +146,7 @@ static String BuildEllipseString(const String& radius_x,
   }
   if (!radius_y.IsEmpty()) {
     if (needs_separator) {
-      result.Append(separator);
+      result.Append(String::FromUTF8(separator));
     }
     result.Append(radius_y);
     needs_separator = true;
@@ -154,12 +154,12 @@ static String BuildEllipseString(const String& radius_x,
 
   if (has_explicit_center) {
     if (needs_separator) {
-      result.Append(separator);
+      result.Append(String::FromUTF8(separator));
     }
-    result.Append(at);
-    result.Append(separator);
+    result.Append(String::FromUTF8(at));
+    result.Append(String::FromUTF8(separator));
     result.Append(center_x);
-    result.Append(separator);
+    result.Append(String::FromUTF8(separator));
     result.Append(center_y);
   }
   result.Append(')');
@@ -246,19 +246,19 @@ static void AppendRoundedCorners(const char* separator,
                                                 bottom_right_radius_height, bottom_left_radius_height);
 
     if (!are_default_corner_radii) {
-      result.Append(separator);
-      result.Append(corners_separator);
+      result.Append(String::FromUTF8(separator));
+      result.Append(String::FromUTF8(corners_separator));
 
       for (size_t i = 0; i < horizontal_radii.size(); ++i) {
-        result.Append(separator);
+        result.Append(String::FromUTF8(separator));
         result.Append(horizontal_radii[i]);
       }
       if (horizontal_radii != vertical_radii) {
-        result.Append(separator);
+        result.Append(String::FromUTF8(separator));
         result.Append('/');
 
         for (size_t i = 0; i < vertical_radii.size(); ++i) {
-          result.Append(separator);
+          result.Append(String::FromUTF8(separator));
           result.Append(vertical_radii[i]);
         }
       }
@@ -282,21 +282,21 @@ static String BuildRectStringCommon(const char* opening,
                                          const String& bottom_left_radius_height) {
   char separator[] = " ";
   StringBuilder result;
-  result.Append(opening);
+  result.Append(String::FromUTF8(opening));
   result.Append(top);
   show_left_arg |= !left.IsEmpty() && left != right;
   bool show_bottom_arg = !bottom.IsEmpty() && (bottom != top || show_left_arg);
   bool show_right_arg = !right.IsEmpty() && (right != top || show_bottom_arg);
   if (show_right_arg) {
-    result.Append(separator);
+    result.Append(String::FromUTF8(separator));
     result.Append(right);
   }
   if (show_bottom_arg) {
-    result.Append(separator);
+    result.Append(String::FromUTF8(separator));
     result.Append(bottom);
   }
   if (show_left_arg) {
-    result.Append(separator);
+    result.Append(String::FromUTF8(separator));
     result.Append(left);
   }
 
@@ -325,16 +325,16 @@ static String BuildXYWHString(const String& x,
   char separator[] = " ";
   StringBuilder result;
 
-  result.Append(opening);
+  result.Append(String::FromUTF8(opening));
   result.Append(x);
 
-  result.Append(separator);
+  result.Append(String::FromUTF8(separator));
   result.Append(y);
 
-  result.Append(separator);
+  result.Append(String::FromUTF8(separator));
   result.Append(width);
 
-  result.Append(separator);
+  result.Append(String::FromUTF8(separator));
   result.Append(height);
 
   AppendRoundedCorners(separator, top_left_radius_width, top_left_radius_height, top_right_radius_width,
@@ -372,8 +372,8 @@ String CSSBasicShapeInsetValue::CustomCSSText() const {
   UpdateCornerRadiusWidthAndHeight(BottomRightRadius(), bottom_right_radius_width, bottom_right_radius_height);
   UpdateCornerRadiusWidthAndHeight(BottomLeftRadius(), bottom_left_radius_width, bottom_left_radius_height);
 
-  return BuildRectStringCommon("inset(", false, top_ ? top_->CssText() : "", right_ ? right_->CssText() : "",
-                               bottom_ ? bottom_->CssText() : "", left_ ? left_->CssText() : "", top_left_radius_width,
+  return BuildRectStringCommon("inset(", false, top_ ? top_->CssText() : String::EmptyString(), right_ ? right_->CssText() : String::EmptyString(),
+                               bottom_ ? bottom_->CssText() : String::EmptyString(), left_ ? left_->CssText() : String::EmptyString(), top_left_radius_width,
                                top_left_radius_height, top_right_radius_width, top_right_radius_height,
                                bottom_right_radius_width, bottom_right_radius_height, bottom_left_radius_width,
                                bottom_left_radius_height);

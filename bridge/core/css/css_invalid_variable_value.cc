@@ -14,7 +14,7 @@ std::shared_ptr<const CSSInvalidVariableValue> CSSInvalidVariableValue::Create()
 }
 
 String CSSInvalidVariableValue::CustomCSSText() const {
-  return "";
+  return String::EmptyString();
 }
 
 }  // namespace webf

@@ -9,10 +9,10 @@ namespace webf {
 
 String CSSFunctionValue::CustomCSSText() const {
   StringBuilder result;
-  result.Append(getValueName(value_id_));
-  result.Append("(");
+  result.Append(String::FromUTF8(getValueName(value_id_)));
+  result.Append("("_s);
   result.Append(CSSValueList::CustomCSSText());
-  result.Append(")");
+  result.Append(")"_s);
   return result.ReleaseString();
 }
 

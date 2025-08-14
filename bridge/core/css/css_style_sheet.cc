@@ -398,7 +398,7 @@ int CSSStyleSheet::addRule(const AtomicString& selector,
                            ExceptionState& exception_state) {
   StringBuilder text;
   text.Append(selector.ToUTF8String());
-  text.Append(" { ");
+  text.Append(" { "_s);
   text.Append(style.ToUTF8String());
   if (!style.Empty()) {
     text.Append(' ');

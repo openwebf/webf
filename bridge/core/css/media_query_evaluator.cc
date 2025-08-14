@@ -94,7 +94,7 @@ const String MediaQueryEvaluator::MediaType() const {
   if (media_values_) {
     return media_values_->MediaType();
   }
-  return String();
+  return String::EmptyString();
 }
 
 bool MediaQueryEvaluator::MediaTypeMatch(const String& media_type_to_match) const {

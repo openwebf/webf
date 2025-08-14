@@ -23,6 +23,9 @@ class AtomicString {
   static AtomicString Null() { return AtomicString{}; }
   static AtomicString Empty() { return CreateFromUTF8(""); }
 
+  // disable construct frm cstr
+  AtomicString(const char*) = delete;
+
   /**
    * @see {AtomicString::CreateFromUTF8} if you want to create AtomicString from utf8 buffers.
    * @param chars the chars are Latin1(iso-8859-1) encoded
@@ -30,10 +33,6 @@ class AtomicString {
   explicit AtomicString(const LChar* chars)
       : AtomicString(chars, chars ? strlen(reinterpret_cast<const char*>(chars)) : 0) {}
   AtomicString(const LChar* chars, size_t length);
-  
-  // Constructor for const char* to resolve ambiguity
-  explicit AtomicString(const char* chars)
-      : AtomicString(reinterpret_cast<const LChar*>(chars)) {}
 
   explicit AtomicString(UTF8StringView string_view);
   explicit AtomicString(const UTF8String& s) : AtomicString(CreateFromUTF8(s)){};
@@ -141,6 +140,13 @@ class AtomicString {
   std::shared_ptr<StringImpl> string_ = nullptr;
 };
 
+inline AtomicString operator""_as(const char* str, size_t len) {
+  return AtomicString::CreateFromUTF8(str, len);
+}
+
+inline AtomicString operator""_as(const char16_t* str, size_t len) {
+  return {str, len};
+}
 
 // AtomicStringRef is a reference to an AtomicString's string data.
 // It is used to pass an AtomicString's string data without copying the string data.

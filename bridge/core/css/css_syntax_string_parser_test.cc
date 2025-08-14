@@ -40,7 +40,7 @@ class CSSSyntaxStringParserTest : public ::testing::Test {
   String ParseSingleIdent(const String& syntax) {
     auto component = ParseSingleComponent(syntax);
     if (!component || component->GetType() != CSSSyntaxType::kIdent) {
-      return String("");
+      return String::FromUTF8("");
     }
     return component->GetString();
   }

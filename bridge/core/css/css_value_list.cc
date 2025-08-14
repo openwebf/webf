@@ -164,7 +164,7 @@ String CSSValueList::CustomCSSText() const {
     // which is implemented by css-values-3. Until fully implement the
     // css-values-4 features, we should append empty string to remove
     // null-pointer exception.
-    result.Append(value ? value->CssText() : String(""));
+    result.Append(value ? value->CssText() : String::FromUTF8(""));
   }
   return result.ReleaseString();
 }

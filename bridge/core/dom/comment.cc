@@ -26,7 +26,7 @@ Node::NodeType Comment::nodeType() const {
   return Node::kCommentNode;
 }
 String Comment::nodeName() const {
-  return "#comment";
+  return "#comment"_s;
 }
 
 Node* Comment::Clone(Document& factory, CloneChildrenFlag flag) const {

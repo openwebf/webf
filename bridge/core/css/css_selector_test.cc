@@ -354,9 +354,9 @@ TEST(CSSSelector, ComplexModernSelectors) {
 // TEST(CSSSelector, ImplicitPseudoDescendant) {
 //   auto env = TEST_init();
 //   CSSSelector selector[2] = {
-//       CSSSelector(AtomicString("div"),
+//       CSSSelector(AtomicString::FromUTF8("div"),
 //                   /* is_implicit */ false),
-//       CSSSelector(AtomicString("scope"), /* is_implicit */ true)};
+//       CSSSelector(AtomicString::FromUTF8("scope"), /* is_implicit */ true)};
 //   selector[0].SetRelation(CSSSelector::kDescendant);
 //   selector[1].SetLastInComplexSelector(true);
 //   EXPECT_EQ("div", selector[0].SelectorText());
@@ -365,9 +365,9 @@ TEST(CSSSelector, ComplexModernSelectors) {
 // TEST(CSSSelector, ImplicitPseudoChild) {
 //   auto env = TEST_init();
 //   CSSSelector selector[2] = {
-//       CSSSelector(AtomicString("div"),
+//       CSSSelector(AtomicString::FromUTF8("div"),
 //                   /* is_implicit */ false),
-//       CSSSelector(AtomicString("scope"), /* is_implicit */ true)};
+//       CSSSelector(AtomicString::FromUTF8("scope"), /* is_implicit */ true)};
 //   selector[0].SetRelation(CSSSelector::kChild);
 //   selector[1].SetLastInComplexSelector(true);
 //   EXPECT_EQ("> div", selector[0].SelectorText());
@@ -376,9 +376,9 @@ TEST(CSSSelector, ComplexModernSelectors) {
 // TEST(CSSSelector, NonImplicitPseudoChild) {
 //   auto env = TEST_init();
 //   CSSSelector selector[2] = {
-//       CSSSelector(AtomicString("div"),
+//       CSSSelector(AtomicString::FromUTF8("div"),
 //                   /* is_implicit */ false),
-//       CSSSelector(AtomicString("scope"), /* is_implicit */ false)};
+//       CSSSelector(AtomicString::FromUTF8("scope"), /* is_implicit */ false)};
 //   selector[0].SetRelation(CSSSelector::kChild);
 //   selector[1].SetLastInComplexSelector(true);
 //   EXPECT_EQ(":scope > div", selector[0].SelectorText());
@@ -387,9 +387,9 @@ TEST(CSSSelector, ComplexModernSelectors) {
 // TEST(CSSSelector, ImplicitScopeSpecificity) {
 //   auto env = TEST_init();
 //   CSSSelector selector[2] = {
-//       CSSSelector(AtomicString("div"),
+//       CSSSelector(AtomicString::FromUTF8("div"),
 //                   /* is_implicit */ false),
-//       CSSSelector(AtomicString("scope"), /* is_implicit */ true)};
+//       CSSSelector(AtomicString::FromUTF8("scope"), /* is_implicit */ true)};
 //   selector[0].SetRelation(CSSSelector::kChild);
 //   selector[1].SetLastInComplexSelector(true);
 //   EXPECT_EQ("> div", selector[0].SelectorText());

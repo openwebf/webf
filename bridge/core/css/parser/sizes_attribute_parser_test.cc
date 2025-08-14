@@ -28,7 +28,7 @@ class TestMediaValues : public MediaValues {
   int MonochromeBitsPerComponent() const override { return 0; }
   bool InvertedColors() const override { return false; }
   bool ThreeDEnabled() const override { return false; }
-  const String MediaType() const override { return String("screen"); }
+  const String MediaType() const override { return String::FromUTF8("screen"); }
   bool Resizable() const override { return true; }
   bool StrictMode() const override { return true; }
   Document* GetDocument() const override { return nullptr; }

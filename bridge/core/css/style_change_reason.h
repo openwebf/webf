@@ -105,7 +105,7 @@ class StyleChangeReasonForTracing {
     return StyleChangeReasonForTracing(style_change_reason::kAttribute, attribute_name.LocalName());
   }
 
-  String ReasonString() const { return String(reason_); }
+  String ReasonString() const { return String::FromUTF8(reason_); }
   const AtomicString& GetExtraData() const { return extra_data_; }
 
  private:

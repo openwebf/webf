@@ -120,20 +120,20 @@ String ElementAttributes::ToString() {
 
   for (auto& attr : attributes_) {
     if (!first) {
-      builder.Append(" ");
+      builder.Append(" "_s);
     }
     builder.Append(attr.first);
-    builder.Append("=");
+    builder.Append("="_s);
 
     if (attr.first != html_names::kStyleAttr) {
-      builder.Append("\"");
+      builder.Append("\""_s);
       builder.Append(attr.second);
-      builder.Append("\"");
+      builder.Append("\""_s);
     } else {
       if (element_ != nullptr && element_->style() != nullptr) {
-        builder.Append("\"");
+        builder.Append("\""_s);
         builder.Append(element_->style()->ToString());
-        builder.Append("\"");
+        builder.Append("\""_s);
       } else {
         WEBF_LOG(WARN) << "Style not available inside ElementAttributes::ToString()";
       }
