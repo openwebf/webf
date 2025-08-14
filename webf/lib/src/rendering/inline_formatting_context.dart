@@ -38,6 +38,7 @@ import 'inline_layout_debugger.dart';
 /// - Line box height calculations
 /// - Padding and border rendering
 bool debugPaintInlineLayoutEnabled = false;
+bool debugLogInlineLayoutEnabled = true; // Enable verbose logging for paragraph-based IFC
 
 /// Default line-height multiplier for "normal" line-height value.
 /// Matches Chrome's default behavior (approximately 1.146).
@@ -72,6 +73,8 @@ class InlineFormattingContext {
   // New: Paragraph-based layout artifacts
   ui.Paragraph? _paragraph;
   List<ui.LineMetrics> _paraLines = const [];
+  // Expose paragraph line metrics for baseline consumers
+  List<ui.LineMetrics> get paragraphLineMetrics => _paraLines;
   // Placeholder boxes as reported by Paragraph, in the order placeholders were added.
   List<ui.TextBox> _placeholderBoxes = const [];
   // For mapping placeholder index -> RenderBox
@@ -205,7 +208,7 @@ class InlineFormattingContext {
     // Compute size from paragraph
     final para = _paragraph!;
     final width = math.min(para.longestLine, constraints.maxWidth);
-    final height = para.height;
+    final double height = para.height;
 
     // Update children offsets from placeholder boxes
     _updateChildOffsetsFromParagraph();
@@ -244,16 +247,19 @@ class InlineFormattingContext {
 
       // Compute child top-left inside placeholder rect accounting margins if RenderBoxModel
       double childLeft = rect.left;
+      // Paint child aligned to placeholder's top + margin-top
       double childTop = rect.top;
       if (box is RenderBoxModel) {
         final style = box.renderStyle;
         childLeft += style.marginLeft.computedValue;
-        // For vertical: align child's bottom with baseline; paragraph placed baseline according to baselineOffset.
-        // We already included margins in placeholder height to align bottom at baseline; just shift by top margin.
-        // Padding/border are internal to child box itself.
-        childTop += 0; // Keep top; baseline alignment handled by addPlaceholder baselineOffset.
+        childTop += style.marginTop.computedValue;
       }
       if (box.hasSize) {
+        if (debugLogInlineLayoutEnabled) {
+          // ignore: avoid_print
+          print('  [paint ph $i] childOffset=(${(offset.dx + childLeft).toStringAsFixed(2)},${(offset.dy + childTop).toStringAsFixed(2)}) '
+              'rect=(${rect.left.toStringAsFixed(2)},${rect.top.toStringAsFixed(2)} - ${rect.right.toStringAsFixed(2)},${rect.bottom.toStringAsFixed(2)})');
+        }
         context.paintChild(box, offset + Offset(childLeft, childTop));
       }
     }
@@ -601,6 +607,13 @@ class InlineFormattingContext {
     // Track an inline element stack to record ranges
     final List<RenderBoxModel> elementStack = [];
 
+    if (debugLogInlineLayoutEnabled) {
+      // Log high-level container info
+      // ignore: avoid_print
+      print('[IFC] Build paragraph: maxWidth=${constraints.maxWidth.toStringAsFixed(2)} '
+          'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
+    }
+
     for (final item in _items) {
       if (item.isOpenTag && item.renderBox != null) {
         final rb = item.renderBox!;
@@ -609,6 +622,12 @@ class InlineFormattingContext {
         // Push style if present
         if (item.style != null) {
           pb.pushStyle(_uiTextStyleFromCss(item.style!));
+          if (debugLogInlineLayoutEnabled) {
+            final fam = item.style!.fontFamily;
+            final fs = item.style!.fontSize.computedValue;
+            // ignore: avoid_print
+            print('[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}');
+          }
         }
       } else if (item.isCloseTag && item.renderBox != null) {
         // Pop style and seal range end
@@ -619,23 +638,49 @@ class InlineFormattingContext {
         }
         if (item.style != null) {
           pb.pop();
+          if (debugLogInlineLayoutEnabled) {
+            // ignore: avoid_print
+            print('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>' );
+          }
         }
       } else if (item.isAtomicInline && item.renderBox != null) {
         // Add placeholder for atomic inline
         final rb = item.renderBox!;
         final rbStyle = rb.renderStyle;
+        // Width impacts line-breaking: include horizontal margins.
+        final mL = rbStyle.marginLeft.computedValue;
+        final mR = rbStyle.marginRight.computedValue;
+        final mT = rbStyle.marginTop.computedValue;
+        final mB = rbStyle.marginBottom.computedValue;
         final width = (rb is RenderBoxModel)
-            ? ((rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + rbStyle.marginLeft.computedValue + rbStyle.marginRight.computedValue)
-            : (rb.hasSize ? rb.size.width : 0.0);
-        final height = (rb is RenderBoxModel)
-            ? ((rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0)) + rbStyle.marginTop.computedValue + rbStyle.marginBottom.computedValue)
+            ? ((rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0)) + mL + mR)
+            : (rb.hasSize ? rb.size.width : 0.0) + mL + mR;
+        // Include vertical margins in placeholder height
+        final borderBoxHeight = (rb is RenderBoxModel)
+            ? (rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0))
             : (rb.hasSize ? rb.size.height : 0.0);
+        final height = borderBoxHeight + mT + mB;
 
-        // CSS: baseline for inline-block defaults to bottom. Align bottom with baseline via baselineOffset=height.
+        // Baseline offset for inline-block: prefer child last-line baseline if available.
+        final resolvedChild = _resolveAtomicChildForBaseline(rb);
+        double? innerBaseline = _computeInlineBlockBaseline(resolvedChild) ?? _computeInlineBlockBaseline(rb);
+        // Shift baseline by top margin so it's measured from placeholder top
+        double? baselineOffset = innerBaseline != null ? (mT + innerBaseline) : null;
+        baselineOffset ??= height; // fallback to bottom edge including margins
+
         pb.addPlaceholder(width, height, ui.PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic, baselineOffset: height);
+            baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
         _placeholderOrder.add(rb);
         paraPos += 1; // placeholder adds a single object replacement char
+
+        if (debugLogInlineLayoutEnabled) {
+          final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
+          final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
+          // ignore: avoid_print
+          print('[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh.toStringAsFixed(2)}) '
+              'margins=(L:${mL.toStringAsFixed(2)},T:${mT.toStringAsFixed(2)},R:${mR.toStringAsFixed(2)},B:${mB.toStringAsFixed(2)}) '
+              'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(2)}, baselineOffset:${baselineOffset.toStringAsFixed(2)})');
+        }
       } else if (item.isText) {
         final text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
@@ -643,6 +688,11 @@ class InlineFormattingContext {
         pb.addText(text);
         pb.pop();
         paraPos += text.length;
+        if (debugLogInlineLayoutEnabled) {
+          // ignore: avoid_print
+          final t = text.replaceAll('\n', '\\n');
+          print('[IFC] addText len=${text.length} at=$paraPos "$t"');
+        }
       }
     }
 
@@ -651,6 +701,30 @@ class InlineFormattingContext {
     _paragraph = paragraph;
     _paraLines = paragraph.computeLineMetrics();
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
+
+    if (debugLogInlineLayoutEnabled) {
+      // ignore: avoid_print
+      print('[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
+          'longestLine=${paragraph.longestLine.toStringAsFixed(2)} maxLines=${style.lineClamp} exceeded=${paragraph.didExceedMaxLines}');
+      for (int i = 0; i < _paraLines.length; i++) {
+        final lm = _paraLines[i];
+        // ignore: avoid_print
+        print('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
+            'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left.toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
+      }
+      for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
+        final tb = _placeholderBoxes[i];
+        final rb = _placeholderOrder[i];
+        // ignore: avoid_print
+        print('  [ph $i] rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+            'child=<${_getElementDescription(rb is RenderBoxModel ? rb : null)}>');
+      }
+      // Log element ranges
+      _elementRanges.forEach((rb, range) {
+        // ignore: avoid_print
+        print('  [range] <${_getElementDescription(rb)}> ${range.$1}..${range.$2}');
+      });
+    }
   }
 
   void _layoutAtomicInlineItemsForParagraph() {
@@ -666,6 +740,31 @@ class InlineFormattingContext {
     }
   }
 
+  // If an atomic inline is wrapped (e.g., event listener), unwrap to the content box for baseline
+  RenderBox _resolveAtomicChildForBaseline(RenderBox box) {
+    RenderBox current = box;
+    for (int i = 0; i < 3; i++) {
+      if (current is RenderObjectWithChildMixin) {
+        final child = (current as dynamic).child as RenderBox?;
+        if (child != null) {
+          current = child;
+          continue;
+        }
+      }
+      break;
+    }
+    return current;
+  }
+
+  // Compute inline-block baseline from a RenderBox
+  double? _computeInlineBlockBaseline(RenderBox box) {
+    if (box is RenderFlowLayout) {
+      final b = box.computeDistanceToBaseline();
+      if (b != null) return b;
+    }
+    return box.computeDistanceToActualBaseline(TextBaseline.alphabetic);
+  }
+
   void _updateChildOffsetsFromParagraph() {
     if (_placeholderBoxes.isEmpty || _placeholderOrder.isEmpty) return;
     // Apply offsets to actual children housed in this container
@@ -674,10 +773,16 @@ class InlineFormattingContext {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
       final rect = _placeholderBoxes[i];
-      Offset childOffset = Offset(rect.left, rect.top);
+      // Place child at placeholder's top + margin-top; baseline alignment already encoded by rect
+      double left = rect.left;
+      double top = rect.top;
       if (rb is RenderBoxModel) {
-        final s = rb.renderStyle;
-        childOffset = childOffset.translate(s.marginLeft.computedValue, 0);
+        left += rb.renderStyle.marginLeft.computedValue;
+        top += rb.renderStyle.marginTop.computedValue;
+      }
+      Offset childOffset = Offset(left, top);
+      if (rb is RenderBoxModel) {
+        // already included margins
       }
 
       // Walk up to find the direct child of the container to assign offset
@@ -769,6 +874,17 @@ class InlineFormattingContext {
         if (i == e.rects.length - 1 && bR > 0) {
           p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
+        }
+      }
+    }
+
+    if (debugLogInlineLayoutEnabled) {
+      for (final e in entries) {
+        for (int i = 0; i < e.rects.length; i++) {
+          final tb = e.rects[i];
+          // ignore: avoid_print
+          print('  [span] <${_getElementDescription(e.box)}> frag=$i '
+              'tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)})');
         }
       }
     }

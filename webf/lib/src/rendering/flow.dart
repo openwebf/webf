@@ -682,27 +682,34 @@ class RenderFlowLayout extends RenderLayoutBox {
     // 3. The bottom margin edge if it has no in-flow line boxes or overflow is not visible
 
     // Check if we're using inline formatting context
-    if (establishIFC && _inlineFormattingContext != null && _inlineFormattingContext!.lineBoxes.isNotEmpty) {
+    if (establishIFC && _inlineFormattingContext != null) {
       // If overflow is not visible, use bottom edge for IFC too
       if (renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
           renderStyle.effectiveOverflowY != CSSOverflowType.visible) {
-       return boxSize?.height;
+        return boxSize?.height;
       }
 
-      // Get the baseline of the last line box
-      final lastLineBox = _inlineFormattingContext!.lineBoxes.last;
-      double y = 0;
-
-      // Calculate y position of all line boxes before the last one
-      for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
-        y += _inlineFormattingContext!.lineBoxes[i].height;
+      // Paragraph-based path: use last paragraph line baseline if available
+      final paraLines = _inlineFormattingContext!.paragraphLineMetrics;
+      if (paraLines.isNotEmpty) {
+        final last = paraLines.last;
+        return last.baseline +
+            renderStyle.paddingTop.computedValue +
+            renderStyle.effectiveBorderTopWidth.computedValue;
       }
 
-      // Add the baseline of the last line box
-      return y +
-          lastLineBox.baseline +
-          renderStyle.paddingTop.computedValue +
-          renderStyle.effectiveBorderTopWidth.computedValue;
+      // Legacy path: lineBoxes baseline
+      if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
+        final lastLineBox = _inlineFormattingContext!.lineBoxes.last;
+        double y = 0;
+        for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
+          y += _inlineFormattingContext!.lineBoxes[i].height;
+        }
+        return y +
+            lastLineBox.baseline +
+            renderStyle.paddingTop.computedValue +
+            renderStyle.effectiveBorderTopWidth.computedValue;
+      }
     }
 
     // For regular flow layout with line metrics
