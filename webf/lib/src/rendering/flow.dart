@@ -983,22 +983,42 @@ class RenderFlowLayout extends RenderLayoutBox {
     return child.renderStyle.collapsedMarginBottom;
   }
 
+
   @override
-  bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
-    // If using inline formatting context, delegate hit testing to it
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    // When using Inline Formatting Context, delegate hit testing to IFC for inline content
     if (establishIFC && _inlineFormattingContext != null) {
-      // Adjust position for padding and border
-      final adjustedPosition = Offset(
-        position!.dx - renderStyle.paddingLeft.computedValue - renderStyle.effectiveBorderLeftWidth.computedValue,
-        position.dy - renderStyle.paddingTop.computedValue - renderStyle.effectiveBorderTopWidth.computedValue,
+      // 1) Hit test positioned/out-of-flow children first (z-order aware)
+      for (int i = paintingOrder.length - 1; i >= 0; i--) {
+        final RenderBox child = paintingOrder[i];
+        // Only consider positioned elements when using IFC
+        if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+          final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+          final bool isHit = result.addWithPaintOffset(
+            offset: childParentData.offset,
+            position: position,
+            hitTest: (BoxHitTestResult result, Offset transformed) {
+              return child.hitTest(result, position: transformed);
+            },
+          );
+          if (isHit) return true;
+        }
+      }
+
+      // 2) Hit test inline content within the container's content box
+      final Offset contentOffset = Offset(
+        renderStyle.paddingLeft.computedValue + renderStyle.effectiveBorderLeftWidth.computedValue,
+        renderStyle.paddingTop.computedValue + renderStyle.effectiveBorderTopWidth.computedValue,
       );
 
-      return _inlineFormattingContext!.hitTest(result, position: adjustedPosition);
+      final Offset local = position - contentOffset;
+      return _inlineFormattingContext!.hitTest(result, position: local);
     }
 
-    // Otherwise use default hit testing
+    // Fallback to default behavior for regular flow layout
     return defaultHitTestChildren(result, position: position);
   }
+
 
   static double getPureMainAxisExtent(RenderBox child) {
     double marginHorizontal = 0;

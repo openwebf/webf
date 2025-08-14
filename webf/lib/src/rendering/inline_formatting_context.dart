@@ -460,6 +460,74 @@ class InlineFormattingContext {
         }
       }
     }
+    
+    // Paragraph path: hit test non-atomic inline elements (e.g., <span>) using text ranges
+    if (_paragraph != null && _elementRanges.isNotEmpty) {
+      // Search from deepest descendants first to better match nested inline targets
+      final entries = _elementRanges.entries.toList()
+        ..sort((a, b) => _depthFromContainer(b.key).compareTo(_depthFromContainer(a.key)));
+
+      for (final entry in entries) {
+        final RenderBoxModel box = entry.key;
+        final (int start, int end) = entry.value;
+        if (end <= start) continue; // empty range
+
+        final rects = _paragraph!.getBoxesForRange(start, end);
+        if (rects.isEmpty) continue;
+
+        // Inflate rects to include padding and borders
+        final style = box.renderStyle;
+        final padL = style.paddingLeft.computedValue;
+        final padR = style.paddingRight.computedValue;
+        final padT = style.paddingTop.computedValue;
+        final padB = style.paddingBottom.computedValue;
+        final bL = style.borderLeftWidth?.computedValue ?? 0.0;
+        final bR = style.borderRightWidth?.computedValue ?? 0.0;
+        final bT = style.borderTopWidth?.computedValue ?? 0.0;
+        final bB = style.borderBottomWidth?.computedValue ?? 0.0;
+
+        for (int i = 0; i < rects.length; i++) {
+          final tb = rects[i];
+          double left = tb.left;
+          double right = tb.right;
+          double top = tb.top;
+          double bottom = tb.bottom;
+
+          if (i == 0) left -= (padL + bL);
+          if (i == rects.length - 1) right += (padR + bR);
+          top -= (padT + bT);
+          bottom += (padB + bB);
+
+          if (position.dx >= left && position.dx <= right && position.dy >= top && position.dy <= bottom) {
+            // Prefer hitting the RenderEventListener wrapper if present, so events dispatch correctly
+            RenderEventListener? listener;
+            RenderObject? p = box;
+            while (p != null && p != container) {
+              if (p is RenderEventListener && p.enableEvent) {
+                listener = p;
+                break;
+              }
+              p = p.parent;
+            }
+
+            if (listener != null) {
+              // Convert container-local position to listener-local position
+              final Offset offsetToContainer = getLayoutTransformTo(listener, container);
+              final Offset local = position - offsetToContainer;
+              result.add(BoxHitTestEntry(listener, local));
+              return true;
+            } else {
+              // Fallback: add entry for the box itself
+              final Offset offsetToContainer = getLayoutTransformTo(box, container);
+              final Offset local = position - offsetToContainer;
+              result.add(BoxHitTestEntry(box, local));
+              return true;
+            }
+          }
+        }
+      }
+    }
+
     return false;
   }
 
