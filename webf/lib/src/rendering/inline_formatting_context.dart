@@ -984,6 +984,32 @@ class InlineFormattingContext {
         top -= (padT + bT);
         bottom += (padB + bB);
 
+        // Expand horizontally to include descendant inline fragments on this line,
+        // so parent backgrounds cover child padding/border and avoid gaps.
+        for (final childEntry in entries) {
+          if (childEntry.depth <= e.depth) continue; // only deeper entries
+          if (!_isAncestor(e.box, childEntry.box)) continue;
+          final cs = childEntry.style;
+          final cPadL = cs.paddingLeft.computedValue;
+          final cPadR = cs.paddingRight.computedValue;
+          final cBL = cs.borderLeftWidth?.computedValue ?? 0.0;
+          final cBR = cs.borderRightWidth?.computedValue ?? 0.0;
+          for (int j = 0; j < childEntry.rects.length; j++) {
+            final cr = childEntry.rects[j];
+            if (lineTop != null && lineBottom != null) {
+              if (cr.bottom <= lineTop || cr.top >= lineBottom) continue;
+            }
+            double cLeft = cr.left;
+            double cRight = cr.right;
+            final cIsFirst = (j == 0);
+            final cIsLast = (j == childEntry.rects.length - 1);
+            if (cIsFirst) cLeft -= (cPadL + cBL);
+            if (cIsLast) cRight += (cPadR + cBR);
+            if (cLeft < left) left = cLeft;
+            if (cRight > right) right = cRight;
+          }
+        }
+
         final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
 
         // Background
@@ -1034,6 +1060,16 @@ class InlineFormattingContext {
       p = p.parent;
     }
     return d;
+  }
+
+  bool _isAncestor(RenderObject ancestor, RenderObject node) {
+    RenderObject? p = node.parent;
+    while (p != null) {
+      if (p == ancestor) return true;
+      if (p == container) return false;
+      p = p.parent;
+    }
+    return false;
   }
 
   // Convert CSSRenderStyle to dart:ui TextStyle for ParagraphBuilder
