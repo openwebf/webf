@@ -5,6 +5,7 @@
 #include "dom_string_map.h"
 #include "../../foundation/string/string_view.h"
 #include "core/dom/element.h"
+#include "string/string_builder.h"
 
 namespace webf {
 
@@ -104,21 +105,20 @@ static bool PropertyNameMatchesAttributeName(const AtomicString& property_name,
 // as AtomicString types in Element (see setAttribute()).
 static AtomicString ConvertPropertyNameToAttributeName(const AtomicString& name) {
   if (name.Is8Bit()) {
-    std::string result;
-    result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
-    result.append("data-");
+    StringBuilder result;
+    result.Append("data-"_s);
     const LChar* chars = name.Characters8();
     unsigned length = name.length();
     for (unsigned i = 0; i < length; ++i) {
       unsigned char character = chars[i];
       if (std::isupper(character)) {
-        result.push_back('-');
-        result.push_back(std::tolower(character));
+        result.Append('-');
+        result.Append(static_cast<LChar>(std::tolower(character)));
       } else {
-        result.push_back(character);
+        result.Append(character);
       }
     }
-    return AtomicString(result);
+    return result.ToAtomicString();
   } else {
     std::u16string result;
     result.reserve(name.length() * 2 + 5);  // Reserve extra space for potential dashes
@@ -135,7 +135,7 @@ static AtomicString ConvertPropertyNameToAttributeName(const AtomicString& name)
         result.push_back(character);
       }
     }
-    return AtomicString(result);
+    return {result};
   }
 }
 
