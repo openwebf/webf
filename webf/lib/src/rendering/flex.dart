@@ -1080,7 +1080,68 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       // Use intrinsic size for run calculations
       Size childSize = intrinsicSizes[childNodeId]!;
-      _childrenIntrinsicMainSizes[child.hashCode] = _isHorizontalFlexDirection ? childSize.width : childSize.height;
+      double intrinsicMain = _isHorizontalFlexDirection ? childSize.width : childSize.height;
+
+      // Clamp intrinsic main size by child's min/max constraints before flexing,
+      // so percentage max-width/height act as caps on the base size per spec.
+      if (child is RenderBoxModel) {
+        final CSSRenderStyle cs = child.renderStyle;
+        // Determine min/max along the main axis
+        double? minMain;
+        double? maxMain;
+        double paddingBorderMain = _isHorizontalFlexDirection
+            ? (cs.paddingLeft.computedValue + cs.paddingRight.computedValue + cs.border.left + cs.border.right)
+            : (cs.paddingTop.computedValue + cs.paddingBottom.computedValue + cs.border.top + cs.border.bottom);
+        if (_isHorizontalFlexDirection) {
+          if (cs.minWidth.isNotAuto) minMain = cs.minWidth.computedValue;
+          if (!cs.maxWidth.isNone) maxMain = cs.maxWidth.computedValue;
+        } else {
+          if (cs.minHeight.isNotAuto) minMain = cs.minHeight.computedValue;
+          if (!cs.maxHeight.isNone) maxMain = cs.maxHeight.computedValue;
+        }
+
+        // Convert content-box limits to border-box to match intrinsicMain units
+        double? maxBorderBoxMain = maxMain != null && maxMain.isFinite ? (maxMain + paddingBorderMain) : null;
+        double? minBorderBoxMain = minMain != null && minMain.isFinite ? (minMain + paddingBorderMain) : null;
+
+        double beforeClamp = intrinsicMain;
+        if (maxBorderBoxMain != null && intrinsicMain > maxBorderBoxMain) {
+          intrinsicMain = maxBorderBoxMain;
+        }
+        if (minBorderBoxMain != null && intrinsicMain < minBorderBoxMain) {
+          intrinsicMain = minBorderBoxMain;
+        }
+        
+      }
+
+      // If a flex item has percentage max-size and truly no content, its base size should be
+      // its padding+border box (do not expand to the percentage constraint).
+      if (child is RenderBoxModel) {
+        bool hasPctMaxMain = _isHorizontalFlexDirection
+            ? child.renderStyle.maxWidth.type == CSSLengthType.PERCENTAGE
+            : child.renderStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
+        bool hasAutoMain = _isHorizontalFlexDirection ? child.renderStyle.width.isAuto : child.renderStyle.height.isAuto;
+        if (hasPctMaxMain && hasAutoMain) {
+          double paddingBorderMain = _isHorizontalFlexDirection
+              ? (child.renderStyle.effectiveBorderLeftWidth.computedValue +
+                  child.renderStyle.effectiveBorderRightWidth.computedValue +
+                  child.renderStyle.paddingLeft.computedValue +
+                  child.renderStyle.paddingRight.computedValue)
+              : (child.renderStyle.effectiveBorderTopWidth.computedValue +
+                  child.renderStyle.effectiveBorderBottomWidth.computedValue +
+                  child.renderStyle.paddingTop.computedValue +
+                  child.renderStyle.paddingBottom.computedValue);
+
+          // Determine if the item is effectively empty by comparing measured intrinsic size
+          double measuredIntrinsic = _isHorizontalFlexDirection ? childSize.width : childSize.height;
+          bool isEffectivelyEmpty = measuredIntrinsic <= paddingBorderMain + 0.001;
+          if (isEffectivelyEmpty && intrinsicMain > paddingBorderMain) {
+            intrinsicMain = paddingBorderMain;
+          }
+        }
+      }
+
+      _childrenIntrinsicMainSizes[child.hashCode] = intrinsicMain;
 
       Size? intrinsicChildSize = _getChildSize(child, shouldUseIntrinsicMainSize: true);
 
@@ -1138,7 +1199,8 @@ class RenderFlexLayout extends RenderLayoutBox {
         runCrossAxisExtent = math.max(runCrossAxisExtent, childCrossAxisExtent);
       }
 
-      double _originalMainSize = _getMainSize(child, shouldUseIntrinsicMainSize: true);
+      // Use clamped intrinsic main size as original base size for flexing
+      double _originalMainSize = intrinsicMain;
       runChildren[childNodeId] = _RunChild(
         child,
         _originalMainSize,
@@ -1610,6 +1672,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Original size of child.
         double childOldMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
         double childOldCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
+        
 
         // Child need to layout when main axis size or cross size has changed
         // due to flex-grow/flex-shrink/align-items/align-self specified.
@@ -1629,7 +1692,17 @@ class RenderFlexLayout extends RenderLayoutBox {
           childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
         }
 
+        // Also relayout if our preserved intrinsic main size (from PASS 2) differs from current size
+        double? desiredPreservedMain;
+        if (childFlexedMainSize == null) {
+          desiredPreservedMain = _childrenIntrinsicMainSizes[child.hashCode];
+        }
+
         bool isChildNeedsLayout = childMainSizeChanged || childCrossSizeChanged || (child.needsRelayout);
+        if (!isChildNeedsLayout && desiredPreservedMain != null && (desiredPreservedMain != childOldMainSize)) {
+          isChildNeedsLayout = true;
+        }
+        
 
         if (!isChildNeedsLayout) {
           mainAxisExtent += childMainAxisExtent;
@@ -1643,6 +1716,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           child,
           childFlexedMainSize,
           childStretchedCrossSize,
+          preserveMainAxisSize: desiredPreservedMain,
         );
 
         child.layout(childConstraints, parentUsesSize: true);
@@ -1652,6 +1726,11 @@ class RenderFlexLayout extends RenderLayoutBox {
         mainAxisExtent += childMainAxisExtent;
       }
       // Update run main axis & cross axis extent after child is relayouted.
+      // Include main-axis gaps between items so remaining space calculation for
+      // justify-content is based on (items + gaps), matching PASS 2 behavior.
+      if (runChildrenList.length > 1) {
+        mainAxisExtent += (runChildrenList.length - 1) * _getMainAxisGap();
+      }
       metrics.mainAxisExtent = mainAxisExtent;
       metrics.crossAxisExtent = _recomputeRunCrossExtent(metrics);
     }
@@ -1730,6 +1809,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     RenderBoxModel child,
     double? childFlexedMainSize,
     double? childStretchedCrossSize,
+    {double? preserveMainAxisSize}
   ) {
     if (childFlexedMainSize != null) {
       if (_isHorizontalFlexDirection) {
@@ -1753,6 +1833,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Use stored percentage constraints if available, otherwise use current constraints
     BoxConstraints oldConstraints = _childrenOldConstraints[child.hashCode] ?? child.constraints;
+    
     double maxConstraintWidth = child.hasOverrideContentLogicalWidth
         ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
         : oldConstraints.maxWidth;
@@ -1805,6 +1886,27 @@ class RenderFlexLayout extends RenderLayoutBox {
     double adjustedMaxHeight = maxConstraintHeight;
     if (contentMinHeight > maxConstraintHeight) {
       adjustedMaxHeight = contentMinHeight;
+    }
+
+    // If the child did not flex in the main axis, preserve its measured main size
+    // to prevent block-level expansion to the available width when max-width is percentage
+    // and there is no content. This matches the flex algorithm: items are laid out using
+    // their resolved main size.
+    if (preserveMainAxisSize != null && childFlexedMainSize == null) {
+      if (_isHorizontalFlexDirection) {
+        // Only tighten width when width is auto (no explicit width) and child is not replaced.
+        if (child.renderStyle.width.isAuto && !child.renderStyle.isSelfRenderReplaced()) {
+          double clamped = preserveMainAxisSize.clamp(0, maxConstraintWidth);
+          minConstraintWidth = clamped;
+          maxConstraintWidth = clamped;
+        }
+      } else {
+        if (child.renderStyle.height.isAuto && !child.renderStyle.isSelfRenderReplaced()) {
+          double clamped = preserveMainAxisSize.clamp(0, maxConstraintHeight);
+          minConstraintHeight = clamped;
+          adjustedMaxHeight = clamped;
+        }
+      }
     }
 
     BoxConstraints childConstraints = BoxConstraints(
@@ -1910,10 +2012,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runMaxMainSize = _getRunsMaxMainSize(_runMetrics);
     double runCrossSize = _getRunsCrossSize(_runMetrics);
 
-    // Include gaps in the main axis size calculation ONLY for inline-flex containers
-    // Regular flex containers are block-level and should not size to content
+    // mainAxis gaps are already included in metrics.mainAxisExtent after PASS 3.
+    // However, to preserve existing horizontal sizing behavior, we only add
+    // gap space for horizontal flex directions here. For vertical (column)
+    // directions, adding again would double-count and inflate height.
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
-    if (effectiveDisplay == CSSDisplay.inlineFlex || effectiveDisplay == CSSDisplay.flex) {
+    if ((_isHorizontalFlexDirection) && (effectiveDisplay == CSSDisplay.inlineFlex || effectiveDisplay == CSSDisplay.flex)) {
       double mainAxisGap = _getMainAxisGap();
       if (_runMetrics.isNotEmpty && mainAxisGap > 0) {
         _RunMetrics maxMainSizeMetrics = _runMetrics.reduce((_RunMetrics curr, _RunMetrics next) {
