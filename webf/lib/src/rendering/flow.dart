@@ -321,11 +321,6 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   void _setContainerSizeFromIFC(Size ifcSize) {
     InlineFormattingContext inlineFormattingContext = _inlineFormattingContext!;
-    if (inlineFormattingContext.lineBoxes.isEmpty) {
-      _setContainerSizeWithNoChild();
-      return;
-    }
-
     Size layoutContentSize = getContentSize(
       contentWidth: ifcSize.width,
       contentHeight: ifcSize.height,
