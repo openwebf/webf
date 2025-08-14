@@ -618,17 +618,31 @@ class InlineFormattingContext {
       if (item.isOpenTag && item.renderBox != null) {
         final rb = item.renderBox!;
         elementStack.add(rb);
-        _elementRanges[rb] = (paraPos, paraPos);
-        // Push style if present
+        // Push style and insert left extras before recording range start
         if (item.style != null) {
-          pb.pushStyle(_uiTextStyleFromCss(item.style!));
+          final st = item.style!;
+          final leftExtras = (st.marginLeft.computedValue) +
+              (st.borderLeftWidth?.computedValue ?? 0.0) +
+              (st.paddingLeft.computedValue);
+          if (leftExtras > 0) {
+            pb.addPlaceholder(leftExtras, 0.0001, ui.PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic, baselineOffset: 0);
+            paraPos += 1; // account for placeholder char
+            if (debugLogInlineLayoutEnabled) {
+              // ignore: avoid_print
+              print('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
+            }
+          }
+          pb.pushStyle(_uiTextStyleFromCss(st));
           if (debugLogInlineLayoutEnabled) {
-            final fam = item.style!.fontFamily;
-            final fs = item.style!.fontSize.computedValue;
+            final fam = st.fontFamily;
+            final fs = st.fontSize.computedValue;
             // ignore: avoid_print
             print('[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}');
           }
         }
+        // Record content range start after left extras
+        _elementRanges[rb] = (paraPos, paraPos);
       } else if (item.isCloseTag && item.renderBox != null) {
         // Pop style and seal range end
         if (elementStack.isNotEmpty && elementStack.last == item.renderBox) {
@@ -641,6 +655,20 @@ class InlineFormattingContext {
           if (debugLogInlineLayoutEnabled) {
             // ignore: avoid_print
             print('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>' );
+          }
+          // Reserve trailing horizontal extras (padding+border+margin) outside the span content
+          final st = item.style!;
+          final rightExtras = (st.paddingRight.computedValue) +
+              (st.borderRightWidth?.computedValue ?? 0.0) +
+              (st.marginRight.computedValue);
+          if (rightExtras > 0) {
+            pb.addPlaceholder(rightExtras, 0.0001, ui.PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic, baselineOffset: 0);
+            paraPos += 1; // account for placeholder char
+            if (debugLogInlineLayoutEnabled) {
+              // ignore: avoid_print
+              print('[IFC] close extras </${_getElementDescription(item.renderBox!)}> rightExtras=${rightExtras.toStringAsFixed(2)}');
+            }
           }
         }
       } else if (item.isAtomicInline && item.renderBox != null) {
