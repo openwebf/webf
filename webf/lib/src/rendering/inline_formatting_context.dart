@@ -233,11 +233,36 @@ class InlineFormattingContext {
 
     if (_paragraph == null) return;
 
-    // Paint inline span backgrounds/borders beneath text
-    _paintInlineSpanDecorations(context, offset);
+    // Interleave line background and text painting so that later lines can
+    // visually overlay earlier lines when they cross vertically.
+    // For each paragraph line: paint decorations for that line, then clip and paint text for that line.
+    final para = _paragraph!;
+    if (_paraLines.isEmpty) {
+      // Fallback: paint decorations then text if no line metrics
+      _paintInlineSpanDecorations(context, offset);
+      context.canvas.drawParagraph(para, offset);
+    } else {
+      for (int i = 0; i < _paraLines.length; i++) {
+        final lm = _paraLines[i];
+        final double lineTop = lm.baseline - lm.ascent;
+        final double lineBottom = lm.baseline + lm.descent;
 
-    // Paint the paragraph text
-    context.canvas.drawParagraph(_paragraph!, offset);
+        // Paint only the decorations belonging to this line
+        _paintInlineSpanDecorations(context, offset, lineTop: lineTop, lineBottom: lineBottom);
+
+        // Clip to the current line and paint the paragraph text for this band
+        final Rect clip = Rect.fromLTRB(
+          offset.dx,
+          offset.dy + lineTop,
+          offset.dx + para.width,
+          offset.dy + lineBottom,
+        );
+        context.canvas.save();
+        context.canvas.clipRect(clip);
+        context.canvas.drawParagraph(para, offset);
+        context.canvas.restore();
+      }
+    }
 
     // Paint atomic inline children at their placeholder positions
     for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
@@ -493,8 +518,13 @@ class InlineFormattingContext {
           double top = tb.top;
           double bottom = tb.bottom;
 
-          if (i == 0) left -= (padL + bL);
-          if (i == rects.length - 1) right += (padR + bR);
+          final bool isFirst = (i == 0);
+          final bool isLast = (i == rects.length - 1);
+
+          // Horizontal expansion only on first/last fragments
+          if (isFirst) left -= (padL + bL);
+          if (isLast) right += (padR + bR);
+          // Hit area includes full vertical content on every fragment
           top -= (padT + bT);
           bottom += (padB + bB);
 
@@ -896,7 +926,7 @@ class InlineFormattingContext {
   }
 
   // Paint backgrounds and borders for non-atomic inline elements using paragraph range boxes
-  void _paintInlineSpanDecorations(PaintingContext context, Offset offset) {
+  void _paintInlineSpanDecorations(PaintingContext context, Offset offset, {double? lineTop, double? lineBottom}) {
     if (_elementRanges.isEmpty || _paragraph == null) return;
 
     // Build entries with depth for proper painting order (parents first)
@@ -935,13 +965,22 @@ class InlineFormattingContext {
 
       for (int i = 0; i < e.rects.length; i++) {
         final tb = e.rects[i];
+        // If painting per-line, skip fragments not intersecting the current line band
+        if (lineTop != null && lineBottom != null) {
+          if (tb.bottom <= lineTop || tb.top >= lineBottom) continue;
+        }
         double left = tb.left;
         double right = tb.right;
         double top = tb.top;
         double bottom = tb.bottom;
 
-        if (i == 0) left -= (padL + bL);
-        if (i == e.rects.length - 1) right += (padR + bR);
+        final bool isFirst = (i == 0);
+        final bool isLast = (i == e.rects.length - 1);
+
+        // Extend horizontally on first/last fragments
+        if (isFirst) left -= (padL + bL);
+        if (isLast) right += (padR + bR);
+        // Each line fragment paints its full vertical content (padding + border)
         top -= (padT + bT);
         bottom += (padB + bB);
 
@@ -955,6 +994,7 @@ class InlineFormattingContext {
 
         // Borders
         final p = Paint()..style = PaintingStyle.fill;
+        // Top/bottom borders on every fragment to match full per-line painting
         if (bT > 0) {
           p.color = s.borderTopColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
@@ -963,11 +1003,11 @@ class InlineFormattingContext {
           p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
         }
-        if (i == 0 && bL > 0) {
+        if (isFirst && bL > 0) {
           p.color = s.borderLeftColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
         }
-        if (i == e.rects.length - 1 && bR > 0) {
+        if (isLast && bR > 0) {
           p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
         }
