@@ -16,7 +16,10 @@ const UTF8Char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* scri
   if (script_value_ref->script_value.IsString()) {
     auto value = script_value_ref->script_value.ToString(script_value_ref->context->ctx());
     // TODO(CGQAQ): this is not right at all, UAF
-    return value.ToUTF8String().data();
+    auto str =value.ToUTF8String();
+    auto* leak = new UTF8Char[str.size()];
+    memcpy(leak, str.c_str(), str.size() + 1);
+    return leak;
   }
   shared_exception_state->exception_state.ThrowException(script_value_ref->context->ctx(), webf::ErrorType::TypeError,
                                                          "Value is not a string.");
