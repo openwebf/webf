@@ -600,7 +600,7 @@ class FirstPageState extends State<FirstPage> {
 WebFBundle? _getBundleForControllerName(String controllerName) {
   switch (controllerName) {
     case 'html/css':
-      return WebFBundle.fromUrl('http://localhost:3000/tailwind_react/build');
+      return WebFBundle.fromUrl('assets:///assets/bundle.html');
     // return WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js');
     case 'esm_demo':
       return WebFBundle.fromUrl('assets:///assets/esm_demo.html');
@@ -621,7 +621,7 @@ WebFBundle? _getBundleForControllerName(String controllerName) {
     case 'use_cases':
       return WebFBundle.fromUrl('assets:///use_cases/dist/index.html');
     case 'react_use_cases':
-      return WebFBundle.fromUrl('assets:///react_use_cases/build/index.html');
+      return WebFBundle.fromUrl('https://usecase.openwebf.com/');
     default:
       // Return null if the controller name is not recognized
       return null;
