@@ -243,7 +243,7 @@ UICommandPackageRingBuffer::~UICommandPackageRingBuffer() = default;
 
 void UICommandPackageRingBuffer::AddCommand(UICommand type,
                                            SharedNativeString* args_01,
-                                           NativeBindingObject* native_binding_object,
+                                           void* native_binding_object,
                                            void* nativePtr2,
                                            bool request_ui_update) {
   UICommandItem item(static_cast<int32_t>(type), args_01, native_binding_object, nativePtr2);

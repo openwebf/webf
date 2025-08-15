@@ -125,7 +125,6 @@ class ExecutingContext {
   JSContext* ctx();
   FORCE_INLINE double contextId() const { return context_id_; };
   FORCE_INLINE int32_t uniqueId() const { return unique_id_; }
-  FORCE_INLINE bool useLegacyUICommand() const { return use_legacy_ui_command_ != 0; }
   void* owner();
   bool HandleException(JSValue* exc);
   bool HandleException(ScriptValue* exc);
@@ -289,7 +288,6 @@ class ExecutingContext {
   std::unordered_set<NativeByteDataFinalizerContext*> active_native_byte_datas_;
   std::unordered_map<AtomicString, std::unique_ptr<WidgetElementShape>, AtomicString::KeyHasher> widget_element_shapes_;
   bool is_dedicated_;
-  int8_t use_legacy_ui_command_;
   std::unique_ptr<RemoteObjectRegistry> remote_object_registry_;
   bool enable_blink_engine_ = false;
 

@@ -56,8 +56,7 @@ ExecutingContext::ExecutingContext(DartIsolateContext* dart_isolate_context,
       public_method_ptr_(std::make_unique<ExecutingContextWebFMethods>()),
       is_dedicated_(is_dedicated),
       unique_id_(context_unique_id++),
-      is_context_valid_(true),
-      use_legacy_ui_command_(use_legacy_ui_command) {
+      is_context_valid_(true) {
   if (is_dedicated) {
     // Set up the sync command size for dedicated thread mode.
     // Bigger size introduce more ui consistence and lower size led to more high performance by the reason of

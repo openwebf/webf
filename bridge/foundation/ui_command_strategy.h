@@ -30,7 +30,7 @@ public:
  void Reset();
  void RecordUICommand(UICommand type,
                       std::unique_ptr<SharedNativeString>&& args_01,
-                      NativeBindingObject* native_ptr,
+                      void* native_ptr,
                       void* native_ptr2,
                       bool request_ui_update);
  void ConfigWaitingBufferSize(size_t size);
@@ -40,10 +40,10 @@ public:
 private:
  void SyncToRingBuffer();
  void SyncToRingBufferIfNecessary();
- void RecordOperationForPointer(NativeBindingObject* ptr);
+ void RecordOperationForPointer(void* ptr);
  void AddToWaitingQueue(UICommand type,
                        std::unique_ptr<SharedNativeString>&& args_01,
-                       NativeBindingObject* native_binding_object,
+                       void* native_binding_object,
                        void* native_ptr2,
                        bool request_ui_update);
 
@@ -56,7 +56,7 @@ private:
  struct WaitingCommand {
    UICommand type;
    std::unique_ptr<SharedNativeString> args_01;
-   NativeBindingObject* native_binding_object;
+   void* native_binding_object;
    void* native_ptr2;
    bool request_ui_update;
  };

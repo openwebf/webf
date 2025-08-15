@@ -99,7 +99,7 @@ class UICommandPackageRingBuffer {
   // Producer operations
   void AddCommand(UICommand type,
                   SharedNativeString* args_01,
-                  NativeBindingObject* native_binding_object,
+                  void* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
   void FlushCurrentPackage();

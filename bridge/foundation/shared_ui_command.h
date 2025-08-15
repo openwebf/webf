@@ -12,7 +12,6 @@
 #include "foundation/ui_command_buffer.h"
 #include "foundation/ui_command_ring_buffer.h"
 #include "foundation/ui_command_strategy.h"
-#include "foundation/legacy/shared_ui_command.h"
 
 namespace webf {
 
@@ -31,7 +30,7 @@ class SharedUICommand : public DartReadable {
 
   void AddCommand(UICommand type,
                   std::unique_ptr<SharedNativeString>&& args_01,
-                  NativeBindingObject* native_binding_object,
+                  void* native_binding_object,
                   void* nativePtr2,
                   bool request_ui_update = true);
 
@@ -44,7 +43,6 @@ class SharedUICommand : public DartReadable {
   void SyncAllPackages();  // No-op for compatibility
 
  private:
-  bool UseLegacySharedUICommand();
 
   ExecutingContext* context_;
   
@@ -59,8 +57,6 @@ class SharedUICommand : public DartReadable {
   // Statistics
   std::atomic<uint64_t> total_commands_{0};
   std::atomic<uint64_t> total_packages_{0};
-
-  std::unique_ptr<LegacySharedUICommand> legacy_shared_ui_command_ = nullptr;
 
   // Helper methods
   void FillReadBuffer();

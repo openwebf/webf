@@ -47,7 +47,7 @@ void UICommandSyncStrategy::Reset() {
 }
 void UICommandSyncStrategy::RecordUICommand(UICommand type,
                                             std::unique_ptr<SharedNativeString>&& args_01,
-                                            NativeBindingObject* native_binding_object,
+                                            void* native_binding_object,
                                             void* native_ptr2,
                                             bool request_ui_update) {
   switch (type) {
@@ -123,7 +123,7 @@ void UICommandSyncStrategy::SyncToRingBufferIfNecessary() {
   }
 }
 
-void UICommandSyncStrategy::RecordOperationForPointer(NativeBindingObject* ptr) {
+void UICommandSyncStrategy::RecordOperationForPointer(void* ptr) {
   size_t index;
   if (frequency_map_.count(ptr) == 0) {
     index = frequency_map_.size();
@@ -142,7 +142,7 @@ void UICommandSyncStrategy::RecordOperationForPointer(NativeBindingObject* ptr) 
 
 void UICommandSyncStrategy::AddToWaitingQueue(UICommand type,
                                               std::unique_ptr<SharedNativeString>&& args_01,
-                                              NativeBindingObject* native_binding_object,
+                                              void* native_binding_object,
                                               void* native_ptr2,
                                               bool request_ui_update) {
   waiting_commands_.push_back({
