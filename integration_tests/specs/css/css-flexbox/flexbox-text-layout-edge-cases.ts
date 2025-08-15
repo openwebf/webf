@@ -59,7 +59,7 @@ describe('Text layout edge cases in flex containers', () => {
     await snapshot();
   });
 
-  it('should handle justify-between layout with text overflow', async () => {
+  xit('should handle justify-between layout with text overflow', async () => {
     // Test case inspired by the first commented wrap example
     const container = document.createElement('div');
     container.className = 'App';
@@ -114,6 +114,168 @@ describe('Text layout edge cases in flex containers', () => {
 
     // Take snapshot with constrained width
     await snapshot();
+
+    // Make even narrower to test text overflow
+    flexContainer.style.width = '200px';
+
+    // Take final snapshot
+    await snapshot();
+  });
+
+  it('should handle justify-between layout with text overflow 00', async () => {
+    // Test case inspired by the first commented wrap example
+    const container = document.createElement('div');
+    container.className = 'App';
+    container.style.padding = '20px';
+
+    const flexContainer = document.createElement('div');
+    flexContainer.style.display = 'flex';
+    flexContainer.style.alignItems = 'center';
+    flexContainer.style.justifyContent = 'space-between';
+    flexContainer.style.border = '1px solid #000';
+    flexContainer.style.padding = '10px';
+
+    // Left side text
+    const leftText = document.createElement('span');
+    leftText.style.color = '#666';
+    leftText.style.fontSize = '14px';
+    leftText.style.maxWidth = '50%';
+    leftText.textContent = 'qqqqqq';
+
+    // Right side container with text and button
+    const rightContainer = document.createElement('div');
+    rightContainer.style.display = 'flex';
+    rightContainer.style.maxWidth = '50%';
+    rightContainer.style.alignItems = 'center';
+
+    const rightText = document.createElement('span');
+    rightText.style.color = '#333';
+    rightText.style.fontSize = '14px';
+    rightText.style.maxWidth = '100%';
+    rightText.style.textAlign = 'right';
+    rightText.textContent = '阿斯顿发的法师打发打发打发打发三大发2323啥打法是2 打发';
+
+    const copyButton = document.createElement('div');
+    copyButton.style.marginLeft = '8px';
+    copyButton.style.cursor = 'pointer';
+    copyButton.style.color = 'blue';
+    copyButton.style.fontSize = '14px';
+    copyButton.textContent = 'Copy';
+
+    rightContainer.appendChild(rightText);
+    rightContainer.appendChild(copyButton);
+    flexContainer.appendChild(leftText);
+    flexContainer.appendChild(rightContainer);
+    container.appendChild(flexContainer);
+    document.body.appendChild(container);
+
+    // Take initial snapshot
+    await snapshot();
+  });
+
+  it('should handle justify-between layout with text overflow 01', async () => {
+    // Test case inspired by the first commented wrap example
+    const container = document.createElement('div');
+    container.className = 'App';
+    container.style.padding = '20px';
+
+    const flexContainer = document.createElement('div');
+    flexContainer.style.display = 'flex';
+    flexContainer.style.alignItems = 'center';
+    flexContainer.style.justifyContent = 'space-between';
+    flexContainer.style.border = '1px solid #000';
+    flexContainer.style.padding = '10px';
+
+    // Left side text
+    const leftText = document.createElement('span');
+    leftText.style.color = '#666';
+    leftText.style.fontSize = '14px';
+    leftText.style.maxWidth = '50%';
+    leftText.textContent = 'qqqqqq';
+
+    // Right side container with text and button
+    const rightContainer = document.createElement('div');
+    rightContainer.style.display = 'flex';
+    rightContainer.style.maxWidth = '50%';
+    rightContainer.style.alignItems = 'center';
+
+    const rightText = document.createElement('span');
+    rightText.style.color = '#333';
+    rightText.style.fontSize = '14px';
+    rightText.style.maxWidth = '100%';
+    rightText.style.textAlign = 'right';
+    rightText.textContent = '阿斯顿发的法师打发打发打发打发三大发2323啥打法是2 打发';
+
+    const copyButton = document.createElement('div');
+    copyButton.style.marginLeft = '8px';
+    copyButton.style.cursor = 'pointer';
+    copyButton.style.color = 'blue';
+    copyButton.style.fontSize = '14px';
+    copyButton.textContent = 'Copy';
+
+    rightContainer.appendChild(rightText);
+    rightContainer.appendChild(copyButton);
+    flexContainer.appendChild(leftText);
+    flexContainer.appendChild(rightContainer);
+    container.appendChild(flexContainer);
+    document.body.appendChild(container);
+
+    // Change container width to test responsive behavior
+    flexContainer.style.width = '300px';
+
+    // Take snapshot with constrained width
+    await snapshot();
+  });
+
+  it('should handle justify-between layout with text overflow 02', async () => {
+    // Test case inspired by the first commented wrap example
+    const container = document.createElement('div');
+    container.className = 'App';
+    container.style.padding = '20px';
+
+    const flexContainer = document.createElement('div');
+    flexContainer.style.display = 'flex';
+    flexContainer.style.alignItems = 'center';
+    flexContainer.style.justifyContent = 'space-between';
+    flexContainer.style.border = '1px solid #000';
+    flexContainer.style.padding = '10px';
+
+    // Left side text
+    const leftText = document.createElement('span');
+    leftText.style.color = '#666';
+    leftText.style.fontSize = '14px';
+    leftText.style.maxWidth = '50%';
+    leftText.textContent = 'qqqqqq';
+
+    // Right side container with text and button
+    const rightContainer = document.createElement('div');
+    rightContainer.style.display = 'flex';
+    rightContainer.style.maxWidth = '50%';
+    rightContainer.style.alignItems = 'center';
+
+    const rightText = document.createElement('span');
+    rightText.style.color = '#333';
+    rightText.style.fontSize = '14px';
+    rightText.style.maxWidth = '100%';
+    rightText.style.textAlign = 'right';
+    rightText.textContent = '阿斯顿发的法师打发打发打发打发三大发2323啥打法是2 打发';
+
+    const copyButton = document.createElement('div');
+    copyButton.style.marginLeft = '8px';
+    copyButton.style.cursor = 'pointer';
+    copyButton.style.color = 'blue';
+    copyButton.style.fontSize = '14px';
+    copyButton.textContent = 'Copy';
+
+    rightContainer.appendChild(rightText);
+    rightContainer.appendChild(copyButton);
+    flexContainer.appendChild(leftText);
+    flexContainer.appendChild(rightContainer);
+    container.appendChild(flexContainer);
+    document.body.appendChild(container);
+
+    // Change container width to test responsive behavior
+    flexContainer.style.width = '300px';
 
     // Make even narrower to test text overflow
     flexContainer.style.width = '200px';

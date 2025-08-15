@@ -263,4 +263,65 @@ describe('flex-percentage-max-width', () => {
 
     await snapshot();
   });
+
+  it('should handle multiple flex items no text with percentage max-width', async () => {
+    let container;
+    let item1, item2, item3;
+
+    container = createElement(
+      'div',
+      {
+        style: {
+          width: '360px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          gap: '5px',
+          border: '1px solid purple',
+          padding: '10px',
+          boxSizing: 'border-box',
+        },
+      },
+      [
+        (item1 = createElement(
+          'div',
+          {
+            style: {
+              maxWidth: '30%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              backgroundColor: 'lightblue',
+              padding: '25px',
+            },
+          }
+        )),
+        (item2 = createElement(
+          'div',
+          {
+            style: {
+              maxWidth: '40%',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              backgroundColor: 'lightgreen',
+              padding: '25px',
+            },
+          }
+        )),
+        (item3 = createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: 'lightyellow',
+              padding: '25px',
+            },
+          }
+        )),
+      ]
+    );
+
+    document.body.appendChild(container);
+
+    await snapshot();
+  });
 });
