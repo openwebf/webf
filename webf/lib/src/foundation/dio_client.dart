@@ -88,7 +88,6 @@ class _WebFDioPool {
       // NativeAdapter nativeAdapter;
       if (Platform.isIOS || Platform.isMacOS) {
         URLSessionConfiguration configuration = URLSessionConfiguration.defaultSessionConfiguration()
-          ..waitsForConnectivity = true
           ..allowsConstrainedNetworkAccess = true
           ..allowsExpensiveNetworkAccess = true
           ..cache = URLCache.withCapacity(
