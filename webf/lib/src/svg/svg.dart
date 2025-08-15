@@ -24,7 +24,7 @@ class SVGSVGElement extends SVGGraphicsElement {
 
   @override
   Map<String, dynamic> get defaultStyle => {
-        DISPLAY: INLINE,
+        DISPLAY: INLINE_BLOCK,
         WIDTH: DEFAULT_VIEW_BOX_WIDTH.toString(),
         HEIGHT: DEFAULT_VIEW_BOX_HEIGHT.toString(),
       };
