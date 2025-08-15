@@ -125,6 +125,27 @@ void execUICommands(WebFViewController view, List<UICommand> commands) {
 
     try {
       switch (commandType) {
+        case UICommandType.requestAnimationFrame:
+          // args carries the requestId generated on C++ side
+          int requestId = 0;
+          if (command.args.isNotEmpty) {
+            requestId = int.tryParse(command.args) ?? 0;
+          }
+          // nativePtr2 is a function pointer: NativeRAFAsyncCallback
+          final Pointer<NativeFunction<NativeRAFAsyncCallback>> rafCallbackPtr =
+              command.nativePtr2.cast<NativeFunction<NativeRAFAsyncCallback>>();
+          final DartRAFAsyncCallback rafCallback = rafCallbackPtr.asFunction();
+
+          // Schedule a frame and invoke native callback on frame
+          view.rootController.module.requestAnimationFrame(requestId, (double highResTimeStamp) {
+            try {
+              rafCallback(command.nativePtr.cast<Void>(), view.contextId, highResTimeStamp, nullptr);
+            } catch (e, stack) {
+              Pointer<Utf8> nativeErrorMessage = ('Error: $e\n$stack').toNativeUtf8();
+              rafCallback(command.nativePtr.cast<Void>(), view.contextId, highResTimeStamp, nativeErrorMessage);
+            }
+          });
+          break;
         case UICommandType.createElement:
           view.createElement(nativePtr.cast<NativeBindingObject>(), command.args);
 

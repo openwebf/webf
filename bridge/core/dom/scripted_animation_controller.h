@@ -23,6 +23,8 @@ class ScriptAnimationController {
 
  private:
   FrameRequestCallbackCollection frame_request_callback_collection_;
+  // Generate requestAnimationFrame ids on C++ side
+  uint32_t next_frame_id_{1};
 };
 
 }  // namespace webf

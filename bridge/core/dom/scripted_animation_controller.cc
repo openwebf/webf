@@ -5,6 +5,9 @@
 
 #include "scripted_animation_controller.h"
 #include "document.h"
+#include "foundation/native_string.h"
+#include "foundation/native_value_converter.h"
+#include "foundation/ui_command_buffer.h"
 #include "frame_request_callback_collection.h"
 
 namespace webf {
@@ -56,11 +59,21 @@ uint32_t ScriptAnimationController::RegisterFrameCallback(const std::shared_ptr<
 
   frame_callback->SetStatus(FrameCallback::FrameStatus::kPending);
 
-  uint32_t requestId = context->dartMethodPtr()->requestAnimationFrame(
-      context->isDedicated(), frame_callback.get(), context->contextId(), handleRAFTransientCallbackWrapper);
+  // Generate request id on C++ side.
+  uint32_t requestId = next_frame_id_++;
   frame_callback->SetFrameId(requestId);
-  // Register frame callback to collection.
+  // Register frame callback to collection for later invocation/cancellation.
   frame_request_callback_collection_.RegisterFrameCallback(requestId, frame_callback);
+
+  // Package the request id as a UTF-16 string for UICommand args_01.
+  std::string id_str = std::to_string(requestId);
+
+  // Enqueue a UICommand to request RAF on the UI side.
+  // nativePtr: callback context (FrameCallback*)
+  // nativePtr2: function pointer to invoke when frame fires (AsyncRAFCallback)
+  context->uiCommandBuffer()->AddCommand(UICommand::kRequestAnimationFrame,
+                                         AtomicString::CreateFromUTF8(id_str).ToNativeString(), frame_callback.get(),
+                                         reinterpret_cast<void*>(handleRAFTransientCallbackWrapper));
 
   return requestId;
 }

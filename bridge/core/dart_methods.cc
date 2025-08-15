@@ -27,7 +27,6 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   set_timeout_ = reinterpret_cast<SetTimeout>(dart_methods[i++]);
   set_interval_ = reinterpret_cast<SetInterval>(dart_methods[i++]);
   clear_timeout_ = reinterpret_cast<ClearTimeout>(dart_methods[i++]);
-  request_animation_frame_ = reinterpret_cast<RequestAnimationFrame>(dart_methods[i++]);
   request_idle_callback_ = reinterpret_cast<RequestIdleCallback>(dart_methods[i++]);
   cancel_animation_frame_ = reinterpret_cast<CancelAnimationFrame>(dart_methods[i++]);
   cancel_idle_callback_ = reinterpret_cast<CancelIdleCallback>(dart_methods[i++]);
@@ -134,25 +133,6 @@ void DartMethodPointer::clearTimeout(bool is_dedicated, double context_id, int32
 #endif
 
   dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, clear_timeout_, context_id, timer_id);
-}
-
-int32_t DartMethodPointer::requestAnimationFrame(bool is_dedicated,
-                                                 void* callback_context,
-                                                 double context_id,
-                                                 AsyncRAFCallback callback) {
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call START";
-#endif
-
-  int32_t new_frame_id = start_timer_id++;
-
-  dart_isolate_context_->dispatcher()->PostToDart(is_dedicated, request_animation_frame_, new_frame_id,
-                                                  callback_context, context_id, callback);
-
-#if ENABLE_LOG
-  WEBF_LOG(VERBOSE) << "[Dispatcher] DartMethodPointer::requestAnimationFrame call END";
-#endif
-  return new_frame_id;
 }
 
 int32_t DartMethodPointer::requestIdleCallback(bool is_dedicated,

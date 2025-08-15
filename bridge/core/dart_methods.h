@@ -73,10 +73,6 @@ typedef void (*SetInterval)(int32_t new_timer_id,
                             double context_id,
                             AsyncCallback callback,
                             int32_t timeout);
-typedef void (*RequestAnimationFrame)(int32_t new_frame_id,
-                                      void* callback_context,
-                                      double context_id,
-                                      AsyncRAFCallback callback);
 typedef void (*RequestIdleCallback)(int32_t new_idle_id,
                                     void* callback_context,
                                     double context_id,
@@ -198,10 +194,6 @@ class DartMethodPointer {
                       AsyncCallback callback,
                       int32_t timeout);
   void clearTimeout(bool is_dedicated, double context_id, int32_t timerId);
-  int32_t requestAnimationFrame(bool is_dedicated,
-                                void* callback_context,
-                                double context_id,
-                                AsyncRAFCallback callback);
   int32_t requestIdleCallback(bool is_dedicated,
                               void* callback_context,
                               double context_id,
@@ -282,7 +274,6 @@ class DartMethodPointer {
   SetTimeout set_timeout_{nullptr};
   SetInterval set_interval_{nullptr};
   ClearTimeout clear_timeout_{nullptr};
-  RequestAnimationFrame request_animation_frame_{nullptr};
   RequestIdleCallback request_idle_callback_{nullptr};
   CancelAnimationFrame cancel_animation_frame_{nullptr};
   CancelIdleCallback cancel_idle_callback_{nullptr};

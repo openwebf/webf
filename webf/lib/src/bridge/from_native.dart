@@ -383,8 +383,6 @@ void _requestAnimationFrame(int newFrameId, Pointer<Void> callbackContext, doubl
   });
 }
 
-final Pointer<NativeFunction<NativeRequestAnimationFrame>> _nativeRequestAnimationFrame =
-    Pointer.fromFunction(_requestAnimationFrame);
 
 // Register cancelAnimationFrame
 typedef NativeCancelAnimationFrame = Void Function(Double contextId, Int32 id);
@@ -767,7 +765,6 @@ final List<int> _dartNativeMethods = [
   _nativeSetTimeout.address,
   _nativeSetInterval.address,
   _nativeClearTimeout.address,
-  _nativeRequestAnimationFrame.address,
   _nativeRequestIdleCallback.address,
   _nativeCancelAnimationFrame.address,
   _nativeCancelIdleCallback.address,
