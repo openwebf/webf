@@ -15,10 +15,7 @@ import 'package:webf/widget.dart';
 import 'form_element_base.dart';
 
 const Map<String, dynamic> _inputDefaultStyle = {
-  BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
-  MAX_WIDTH: '140px',
-  MIN_HEIGHT: '25px',
   COLOR: '#000'
 };
 
@@ -413,7 +410,7 @@ mixin BaseInputState on WebFWidgetElementState {
                 ),
               )
             : null);
-    late Widget widget = TextField(
+    Widget widget = TextField(
       controller: controller,
       cursorHeight: widgetElement.renderStyle.fontSize.computedValue,
       enabled: !widgetElement.disabled && !widgetElement.readonly,
@@ -449,6 +446,25 @@ mixin BaseInputState on WebFWidgetElementState {
       },
       decoration: decoration,
     );
+    
+    // Apply width and height constraints
+    double? widthValue = widgetElement.renderStyle.width.computedValue;
+    double? heightValue = widgetElement.renderStyle.height.computedValue;
+
+    // Always wrap with IntrinsicWidth to make TextField behave like HTML input
+    // HTML input has intrinsic sizing, doesn't expand to fill parent by default
+    widget = IntrinsicWidth(
+      child: widget,
+    );
+    // Apply explicit width/height constraints if specified
+    if (widthValue != 0 || heightValue != 0) {
+      widget = SizedBox(
+        width: widthValue,
+        height: heightValue,
+        child: widget,
+      );
+    }
+    
     return widget;
   }
 

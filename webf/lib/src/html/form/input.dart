@@ -212,18 +212,6 @@ class FlutterInputElementState extends WebFWidgetElementState
     }
   }
 
-  Widget _wrapInputHeight(Widget widget) {
-    double? heightValue = widgetElement.renderStyle.height.value;
-
-    if (heightValue == null) return widget;
-
-    return SizedBox(
-        child: Center(
-          child: widget,
-        ),
-        height: widgetElement.renderStyle.height.computedValue);
-  }
-
   Widget createInput(BuildContext context, {int minLines = 1, int maxLines = 1}) {
     widgetElement..minLines = minLines;
     widgetElement..maxLines = maxLines;
@@ -231,7 +219,8 @@ class FlutterInputElementState extends WebFWidgetElementState
       case 'hidden':
         return SizedBox(width: 0, height: 0);
     }
-    return _wrapInputHeight(createInputWidget(context));
+    // Width and height are now handled inside createInputWidget
+    return createInputWidget(context);
   }
 
   @override
