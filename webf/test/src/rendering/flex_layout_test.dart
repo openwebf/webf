@@ -453,5 +453,149 @@ void main() {
       print('Border-box: width/height includes padding and border');
       print('Content-box: width/height excludes padding and border');
     });
+
+    testWidgets('empty flex items with percentage max-width should size to padding only (Case 2)', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        html: '''
+          <div id="container" style="
+            width: 360px;
+            display: flex;
+            justify-content: space-between;
+            gap: 5px;
+            border: 1px solid purple;
+            padding: 10px;
+            box-sizing: border-box;
+          ">
+            <div id="item1" style="
+              max-width: 30%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              background-color: lightblue;
+              padding: 25px;
+            "></div>
+            <div id="item2" style="
+              max-width: 40%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              background-color: lightgreen;
+              padding: 25px;
+            "></div>
+            <div id="item3" style="
+              background-color: lightyellow;
+              padding: 25px;
+            "></div>
+          </div>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final item1 = prepared.getElementById('item1');
+      final item2 = prepared.getElementById('item2');
+      final item3 = prepared.getElementById('item3');
+
+      expect(container, isNotNull);
+      expect(item1, isNotNull);
+      expect(item2, isNotNull);
+      expect(item3, isNotNull);
+
+      print('=== Empty Flex Items Size Test ===');
+      print('Container: ${container!.offsetWidth}x${container.offsetHeight}');
+      print('Item1 (maxWidth: 30%, padding: 25px): ${item1!.offsetWidth}x${item1.offsetHeight}');
+      print('Item2 (maxWidth: 40%, padding: 25px): ${item2!.offsetWidth}x${item2.offsetHeight}');
+      print('Item3 (no maxWidth, padding: 25px): ${item3!.offsetWidth}x${item3.offsetHeight}');
+
+      // Each empty item should be exactly 50px wide (25px padding on each side)
+      // Since these items have no content, they should not expand beyond their padding box
+      expect(item1.offsetWidth, equals(50.0), 
+        reason: 'Empty item1 with maxWidth: 30% should be 50px (padding only)');
+      expect(item2.offsetWidth, equals(50.0), 
+        reason: 'Empty item2 with maxWidth: 40% should be 50px (padding only)');
+      expect(item3.offsetWidth, equals(50.0), 
+        reason: 'Empty item3 should be 50px (padding only)');
+
+      // All items should have the same height (50px = 25px padding top + bottom)
+      expect(item1.offsetHeight, equals(50.0), 
+        reason: 'Item1 height should be 50px (padding only)');
+      expect(item2.offsetHeight, equals(50.0), 
+        reason: 'Item2 height should be 50px (padding only)');
+      expect(item3.offsetHeight, equals(50.0), 
+        reason: 'Item3 height should be 50px (padding only)');
+
+      print('✅ All empty flex items correctly sized to padding box (50px)');
+    });
+
+    testWidgets('flex items with text content should size to content within max-width (Case 1)', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        html: '''
+          <div id="container" style="
+            width: 360px;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            border: 1px solid purple;
+            padding: 10px;
+            box-sizing: border-box;
+          ">
+            <div id="item1" style="
+              max-width: 30%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              background-color: lightblue;
+              padding: 5px;
+            ">First item with long text</div>
+            <div id="item2" style="
+              max-width: 40%;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+              background-color: lightgreen;
+              padding: 5px;
+            ">Second item with even longer text content</div>
+            <div id="item3" style="
+              background-color: lightyellow;
+            ">Third</div>
+          </div>
+        ''',
+      );
+
+      final container = prepared.getElementById('container');
+      final item1 = prepared.getElementById('item1');
+      final item2 = prepared.getElementById('item2');
+      final item3 = prepared.getElementById('item3');
+
+      expect(container, isNotNull);
+      expect(item1, isNotNull);
+      expect(item2, isNotNull);
+      expect(item3, isNotNull);
+
+      print('=== Text Content Flex Items Size Test ===');
+      print('Container: ${container!.offsetWidth}x${container.offsetHeight}');
+      print('Item1 (maxWidth: 30%, with text): ${item1!.offsetWidth}x${item1.offsetHeight}');
+      print('Item2 (maxWidth: 40%, with text): ${item2!.offsetWidth}x${item2.offsetHeight}');
+      print('Item3 (no maxWidth, with text): ${item3!.offsetWidth}x${item3.offsetHeight}');
+
+      // Container available width: 360px - 20px padding = 340px
+      // Max widths: item1 = 30% of 340px = 102px, item2 = 40% of 340px = 136px
+      
+      // Items with text should size to their content but not exceed max-width
+      expect(item1.offsetWidth, lessThanOrEqualTo(102.0), 
+        reason: 'Item1 should not exceed 30% of container (102px)');
+      expect(item2.offsetWidth, lessThanOrEqualTo(136.0), 
+        reason: 'Item2 should not exceed 40% of container (136px)');
+      
+      // Items with text should be larger than just padding (10px total)
+      expect(item1.offsetWidth, greaterThan(10.0), 
+        reason: 'Item1 with text should be larger than padding only');
+      expect(item2.offsetWidth, greaterThan(10.0), 
+        reason: 'Item2 with text should be larger than padding only');
+
+      print('✅ Text content flex items correctly sized within max-width limits');
+    });
+
   });
 }

@@ -604,8 +604,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       bool hasPercentageMaxHeight = originalStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
 
       if (hasPercentageMaxWidth || hasPercentageMaxHeight) {
-        // For intrinsic measurement, we'll use relaxed constraints
-        // by temporarily setting a very large max constraint
+        // For intrinsic measurement, use relaxed constraints
+        // Empty element detection will be handled later in _computeRunMetrics
         BoxConstraints originalConstraints = child.getConstraints();
 
         // Create relaxed constraints for intrinsic measurement
@@ -1114,7 +1114,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         
       }
 
-      // If a flex item has percentage max-size and truly no content, its base size should be
+      // If a flex item has percentage max-size and is truly empty, its base size should be
       // its padding+border box (do not expand to the percentage constraint).
       if (child is RenderBoxModel) {
         bool hasPctMaxMain = _isHorizontalFlexDirection
@@ -1132,10 +1132,15 @@ class RenderFlexLayout extends RenderLayoutBox {
                   child.renderStyle.paddingTop.computedValue +
                   child.renderStyle.paddingBottom.computedValue);
 
-          // Determine if the item is effectively empty by comparing measured intrinsic size
-          double measuredIntrinsic = _isHorizontalFlexDirection ? childSize.width : childSize.height;
-          bool isEffectivelyEmpty = measuredIntrinsic <= paddingBorderMain + 0.001;
-          if (isEffectivelyEmpty && intrinsicMain > paddingBorderMain) {
+          // Check if this is an empty element (no content) using DOM-based detection
+          bool isEmptyElement = false;
+          if (child is RenderBoxModel) {
+            Element domElement = child.renderStyle.target;
+            isEmptyElement = !domElement.hasChildren();
+          }
+          
+          // For empty elements, force intrinsic size to padding+border  
+          if (isEmptyElement) {
             intrinsicMain = paddingBorderMain;
           }
         }
@@ -1702,6 +1707,47 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (!isChildNeedsLayout && desiredPreservedMain != null && (desiredPreservedMain != childOldMainSize)) {
           isChildNeedsLayout = true;
         }
+
+        // Special-case: empty flex items with percentage max-width/height should not expand
+        // to the available main size when width/height is auto. They should size to padding+border only.
+        // Force a relayout with preserved main size to clamp them correctly.
+        if (!isChildNeedsLayout) {
+          if (child is RenderBoxModel) {
+            final CSSRenderStyle cs = child.renderStyle;
+            bool hasPctMaxMain = _isHorizontalFlexDirection
+                ? cs.maxWidth.type == CSSLengthType.PERCENTAGE
+                : cs.maxHeight.type == CSSLengthType.PERCENTAGE;
+            bool hasAutoMain = _isHorizontalFlexDirection ? cs.width.isAuto : cs.height.isAuto;
+            if (hasPctMaxMain && hasAutoMain) {
+              // Compute padding+border on main axis
+              double paddingBorderMain = _isHorizontalFlexDirection
+                  ? (cs.effectiveBorderLeftWidth.computedValue +
+                      cs.effectiveBorderRightWidth.computedValue +
+                      cs.paddingLeft.computedValue +
+                      cs.paddingRight.computedValue)
+                  : (cs.effectiveBorderTopWidth.computedValue +
+                      cs.effectiveBorderBottomWidth.computedValue +
+                      cs.paddingTop.computedValue +
+                      cs.paddingBottom.computedValue);
+
+              // Check if this is an empty element (no content)
+              bool isEmptyElement = false;
+              
+              // Access the DOM element through renderStyle.target
+              if (child is RenderBoxModel) {
+                Element domElement = child.renderStyle.target;
+                // Check if the DOM element has no child nodes
+                isEmptyElement = !domElement.hasChildren();
+              }
+              
+              if (isEmptyElement) {
+                // Empty elements with percentage max-width should only size to their padding box
+                desiredPreservedMain = paddingBorderMain;
+                isChildNeedsLayout = true;
+              }
+            }
+          }
+        }
         
 
         if (!isChildNeedsLayout) {
@@ -1723,6 +1769,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Child main size needs to recalculated after layouted.
         childMainAxisExtent = _getMainAxisExtent(child);
+        
+        
         mainAxisExtent += childMainAxisExtent;
       }
       // Update run main axis & cross axis extent after child is relayouted.
