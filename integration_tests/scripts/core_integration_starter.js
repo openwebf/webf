@@ -47,13 +47,14 @@ function startIntegrationTest(websocketPort) {
     stdio: 'pipe'
   });
 
-  tester.stdout.on('data', (data) => {
-    console.log(`${data && data.toString().trim()}`);
-  });
-
-  tester.stderr.on('data', (data) => {
-    console.error(`${data && data.toString().trim()}`);
-  });
+  // Pipe child process output directly to parent to avoid truncation
+  // or formatting issues with long lines.
+  if (tester.stdout) {
+    tester.stdout.pipe(process.stdout);
+  }
+  if (tester.stderr) {
+    tester.stderr.pipe(process.stderr);
+  }
 
   tester.on('close', (code) => {
     process.exit(code);

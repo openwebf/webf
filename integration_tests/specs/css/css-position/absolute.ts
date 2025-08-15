@@ -1121,8 +1121,15 @@ describe('Position absolute', () => {
     );
 
     BODY.appendChild(container);
+
+    await waitForOnScreen(container);
+
     child1.scroll(1000, 1000);
 
+    await waitForFrame();
+    await waitForFrame();
+    await waitForFrame();
+    
     expect(child.offsetTop).toEqual(300);
     expect(child.offsetLeft).toEqual(0);
 

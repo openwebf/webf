@@ -217,8 +217,6 @@ class Document extends ContainerNode {
   static final StaticDefinedSyncBindingObjectMethodMap _debugDocumentMethods = {
     '___clear_cookies__': StaticDefinedSyncBindingObjectMethod(
         call: (document, args) => castToType<Document>(document).debugClearCookies(args)),
-    '___force_rebuild__': StaticDefinedSyncBindingObjectMethod(
-        call: (document, args) => castToType<Document>(document).forceRebuild()),
   };
 
   @override
@@ -299,8 +297,6 @@ class Document extends ContainerNode {
   }
 
   dynamic elementFromPoint(double x, double y) {
-    forceRebuild();
-    documentElement?.flushLayout();
     return hitTestPoint(x, y);
   }
 
@@ -420,10 +416,6 @@ class Document extends ContainerNode {
       styleSheets.clear();
     }
     return result;
-  }
-
-  void forceRebuild() {
-    flutter.WidgetsBinding.instance.buildOwner!.buildScope(flutter.WidgetsBinding.instance.rootElement!);
   }
 
   @override

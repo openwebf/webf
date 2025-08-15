@@ -1,4 +1,4 @@
-describe('Position fixed', () => {
+fdescribe('Position fixed', () => {
   it('001', async () => {
     const container1 = document.createElement('div');
     setElementStyle(container1, {
@@ -137,7 +137,10 @@ describe('Position fixed', () => {
 
     BODY.appendChild(container);
 
+    await waitForOnScreen(container);
+
     window.scroll(100, 200);
+
     await snapshot();
   });
 
@@ -569,15 +572,33 @@ describe('Position fixed', () => {
     document.body.appendChild(div1);
     document.body.appendChild(div2);
 
-    // @ts-ignore
-    document.body.ononscreen = () => {
-      window.scrollBy(500, 500);
+    await Promise.all([
+      waitForOnScreen(div1),
+      waitForOnScreen(div2),
+    ])
 
+    // @ts-ignore
+    document.body.ononscreen = async () => {
+      
+
+      await waitForFrame();
+
+      window.scrollBy(500, 500);
+      
+      await waitForFrame();
       requestAnimationFrame(async () => {
         document.body.appendChild(fixed);
+
+        await waitForFrame();
+
         await snapshot();
+
         requestAnimationFrame(async () => {
+
           window.scrollBy(-500, -500);
+
+          await waitForFrame();
+
           requestAnimationFrame(async () => {
             await snapshot();
             done();

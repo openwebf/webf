@@ -190,7 +190,14 @@ describe('Offset api', () => {
     BODY.appendChild(div1);
     BODY.appendChild(div2);
 
+    await Promise.all([
+      waitForOnScreen(div1),
+      waitForOnScreen(div2)
+    ]);
+
     document.documentElement.scrollTo(0, 80);
+
+    await waitForFrame();
  
     expect(item1.offsetTop).toBe(100);
     expect(item1.offsetLeft).toBe(100);

@@ -262,6 +262,8 @@ describe('DOM EventTarget', () => {
 
     BODY.append(container);
 
+    await waitForOnScreen(container);
+
     window.scrollTo(0, 200);
 
     const clickBox = document.querySelector('#box');

@@ -280,6 +280,7 @@ static JSValue parseHTML(JSContext* ctx, JSValueConst this_val, int argc, JSValu
 static JSValue syncThreadBuffer(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = static_cast<ExecutingContext*>(JS_GetContextOpaque(ctx));
   context->uiCommandBuffer()->SyncAllPackages();
+  context->dartMethodPtr()->requestBatchUpdate(context->isDedicated(), context->contextId());
   return JS_NULL;
 }
 

@@ -228,6 +228,8 @@ describe('Event', () => {
     container2.appendChild(block);
     container2.appendChild(block2);
 
+    await waitForOnScreen(container2);
+
     container2.scrollTo(0, 150);
 
     await simulateClick(25, 25);

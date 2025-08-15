@@ -47,6 +47,7 @@ describe('Document api async', () => {
     ele.style.height = '100px';
     ele.style.backgroundColor = 'blue';
     document.body.appendChild(ele);
+    await waitForOnScreen(ele)
     // @ts-ignore
     const findEle = await document.elementFromPoint_async(50, 50);
     findEle.style.backgroundColor = 'yellow';

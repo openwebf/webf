@@ -85,15 +85,13 @@ class Window extends EventTarget {
   void scrollTo(double x, double y, [bool withAnimation = false]) {
     document.flushStyle();
     document.documentElement!
-      ..flushLayout()
-      ..scrollTo(x, y, withAnimation);
+      .scrollTo(x, y, withAnimation);
   }
 
   void scrollBy(double x, double y, [bool withAnimation = false]) {
     document.flushStyle();
     document.documentElement!
-      ..flushLayout()
-      ..scrollBy(x, y, withAnimation);
+      .scrollBy(x, y, withAnimation);
   }
 
   final Set<Element> _watchedViewportElements = {};

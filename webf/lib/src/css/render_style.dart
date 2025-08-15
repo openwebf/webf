@@ -802,9 +802,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   // Get the offset of current element relative to specified ancestor element.
   Offset getOffset({RenderBoxModel? ancestorRenderBox, bool excludeScrollOffset = false}) {
-    // Need to flush layout to get correct size.
-    flushLayout();
-
     // Returns (0, 0) when ancestor is null.
     if (ancestorRenderBox == null) {
       return Offset.zero;
@@ -862,18 +859,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   Offset localToGlobal(Offset point, {RenderObject? ancestor}) {
     return getRenderBoxValueByType(
         RenderObjectGetType.self, (renderBoxModel, _) => renderBoxModel.localToGlobal(point, ancestor: ancestor));
-  }
-
-  @pragma('vm:prefer-inline')
-  void flushLayout() {
-    everyRenderBox((_, renderObject) {
-      if (renderObject.attached) {
-        renderObject.owner!.flushLayout();
-      } else if (renderObject.parent != null) {
-        renderObject.performLayout();
-      }
-      return true;
-    });
   }
 
   @pragma('vm:prefer-inline')

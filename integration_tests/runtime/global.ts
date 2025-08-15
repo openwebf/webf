@@ -439,6 +439,20 @@ async function snapshotBody(target?: any, filename?: String, postfix?: boolean |
   });
 }
 
+async function waitForOnScreen(target: any) {
+  return new Promise<void>((resolve, reject) => {
+    target.addEventListener('onscreen', () => {
+      resolve();
+    });
+  });
+}
+
+async function waitForFrame() {
+  return new Promise<void>((resolve, reject) => {
+    requestAnimationFrame(() => resolve());
+  });
+}
+
 let snapshotBlob: Blob | undefined
 
 afterEach(() => {
@@ -530,5 +544,7 @@ Object.assign(global, {
   onTripleImageLoad,
   onImageLoad,
   onFourfoldImageLoad,
-  onDoubleImageLoad
+  onDoubleImageLoad,
+  waitForOnScreen,
+  waitForFrame
 });

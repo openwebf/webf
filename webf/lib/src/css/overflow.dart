@@ -113,7 +113,6 @@ mixin ElementOverflowMixin on ElementBase {
   flutter.ScrollController? scrollControllerY;
 
   double get scrollTop {
-    ownerDocument.forceRebuild();
     if (scrollControllerY != null && scrollControllerY!.hasClients) {
       return scrollControllerY!.position.pixels;
     }
@@ -126,17 +125,14 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   void scroll(double x, double y, [bool withAnimation = false]) {
-    ownerDocument.forceRebuild();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
   void scrollBy(double x, double y, [bool withAnimation = false]) {
-    ownerDocument.forceRebuild();
     _scrollBy(dx: x, dy: y, withAnimation: withAnimation);
   }
 
   void scrollTo(double x, double y, [bool withAnimation = false]) {
-    ownerDocument.forceRebuild();
     _scrollTo(x: x, y: y, withAnimation: withAnimation);
   }
 
@@ -147,7 +143,6 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollLeft {
-    ownerDocument.forceRebuild();
     if (scrollControllerX != null && scrollControllerX!.hasClients) {
       return scrollControllerX!.position.pixels;
     }
@@ -159,7 +154,6 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollHeight {
-    ownerDocument.forceRebuild();
     if (!isRendererAttached) {
       return 0.0;
     }
@@ -177,7 +171,6 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get scrollWidth {
-    ownerDocument.forceRebuild();
     if (!isRendererAttached) {
       return 0.0;
     }
@@ -196,38 +189,32 @@ mixin ElementOverflowMixin on ElementBase {
   }
 
   double get clientTop {
-    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderTopWidth.computedValue;
   }
 
   double get clientLeft {
-    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.effectiveBorderLeftWidth.computedValue;
   }
 
   double get clientWidth {
-    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.clientWidth() ?? 0.0;
   }
 
   double get clientHeight {
-    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     return renderStyle.clientHeight() ?? 0.0;
   }
 
   double get offsetWidth {
-    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.width : 0.0);
   }
 
   double get offsetHeight {
-    ownerDocument.forceRebuild();
     _ensureRenderObjectHasLayout();
     if (!renderStyle.hasRenderBox()) return 0;
     return renderStyle.getSelfRenderBoxValue((renderBox, _) => renderBox.hasSize ? renderBox.size.height : 0.0);
@@ -269,8 +256,7 @@ mixin ElementOverflowMixin on ElementBase {
       // Ensure the distance is within valid scroll range
       final position = scrollController.position;
       final clampedDistance = distance.clamp(position.minScrollExtent, position.maxScrollExtent);
-      
-      
+
       position.moveTo(
         clampedDistance,
         duration: withAnimation == true ? SCROLL_DURATION : null,

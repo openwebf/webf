@@ -289,6 +289,8 @@ describe('getBoundingClientRect with custom elements', () => {
         nestedScroller.scrollTop = 150;
       }
 
+      await waitForFrame();
+
       // Get position after scrolling
       const rectAfter = target!.getBoundingClientRect();
 
@@ -350,7 +352,7 @@ describe('getBoundingClientRect with custom elements', () => {
       // Scroll outer container
       outerContainer.scrollTop = 50;
 
-      requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
 
         const rect2 = target!.getBoundingClientRect();
 
@@ -359,6 +361,8 @@ describe('getBoundingClientRect with custom elements', () => {
 
         // Scroll inner listview
         innerListview.scrollTop = 30;
+
+        await waitForFrame();
         const rect3 = target!.getBoundingClientRect();
 
         // Position should change additionally when inner scrolls

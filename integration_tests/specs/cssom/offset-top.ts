@@ -72,7 +72,7 @@ describe('OffsetTop In Scrollable Parent', () => {
 
   it('003', async (done) => {
     createDOM(function onParentMount(e) {
-    }, function onChildMount(e) {
+    }, async function onChildMount(e) {
       const child = e.target;
       child.style.marginTop = "20px"
       child.style.marginLeft = "100px";
@@ -80,7 +80,7 @@ describe('OffsetTop In Scrollable Parent', () => {
         assert_equals(child.offsetTop, 220, "Child is after spacer and margin");
         assert_equals(child.offsetLeft, 100, "Child is 100px from left");
       });
-    }, function onAbsoluteChildMount(e) {
+    }, async function onAbsoluteChildMount(e) {
       var absChild = e.target;
       absChild.style.marginTop = "20px"
       absChild.style.marginLeft = "100px";

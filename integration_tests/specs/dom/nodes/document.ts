@@ -63,6 +63,7 @@ describe('Document api', () => {
     ele.style.height = '100px';
     ele.style.backgroundColor = 'blue';
     document.body.appendChild(ele);
+    await waitForOnScreen(ele);
     const findEle = document.elementFromPoint(50, 50);
     findEle.style.backgroundColor = 'yellow';
     await snapshot();

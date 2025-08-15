@@ -44,6 +44,7 @@ void ExecutingContextWebFMethods::FinishRecordingUIOperations(webf::ExecutingCon
 
 void ExecutingContextWebFMethods::WebFSyncBuffer(webf::ExecutingContext* context) {
   context->uiCommandBuffer()->SyncAllPackages();
+  context->dartMethodPtr()->requestBatchUpdate(context->isDedicated(), context->contextId());
 }
 
 struct ImageSnapshotNativeFunctionContext {

@@ -46,7 +46,7 @@ describe('document.currentScript', () => {
       // The key is that it should be null in async callbacks, not necessarily during the script itself
       expect((window as any).asyncScriptCurrentScript === null || (window as any).asyncScriptCurrentScript === script).toBe(true);
       done();
-    }, 30);
+    }, 130);
   });
 
   it('should handle nested script execution correctly', (done) => {

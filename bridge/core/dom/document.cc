@@ -138,7 +138,6 @@ Element* Document::createElementNS(const AtomicString& uri,
 }
 
 Text* Document::createTextNode(const AtomicString& value, ExceptionState& exception_state) {
-  WEBF_LOG(WARN) << "Document::createTextNode: " << value.ToUTF8String();
   return Text::Create(*this, value);
 }
 

@@ -14,7 +14,7 @@
  * - Element.prototype.insertAdjacentElement
  */
 describe('DOM Element API', () => {
-  it('should work', () => {
+  it('should work', async () => {
     const div = document.createElement('div');
     expect(div.nodeName === 'DIV').toBeTrue();
 
@@ -24,6 +24,8 @@ describe('DOM Element API', () => {
     div.style.margin = '20px';
     div.style.backgroundColor = 'grey';
     document.body.appendChild(div);
+
+    await waitForOnScreen(div);
 
     const boundingClientRect = div.getBoundingClientRect();
     expect(JSON.parse(JSON.stringify(boundingClientRect))).toEqual({
@@ -148,6 +150,8 @@ describe('DOM Element API', () => {
 
     BODY.append(container);
 
+    await waitForOnScreen(container);
+
     const clickBox = document.querySelector('#box');
 
     const rect1 = clickBox?.getBoundingClientRect();
@@ -155,6 +159,8 @@ describe('DOM Element API', () => {
     await snapshot();
 
     window.scrollTo(0, 200);
+
+    await waitForFrame();
 
     const rect2 = clickBox?.getBoundingClientRect();
 
@@ -374,7 +380,7 @@ describe('DOM Element API', () => {
     expect(document.documentElement.parentElement).toEqual(null);
   });
 
-  fit('should work with insertAdjacentElement', () => {
+  it('should work with insertAdjacentElement', () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
 

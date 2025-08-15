@@ -24,6 +24,8 @@ describe('DOM Element API async', () => {
     div.style.backgroundColor = 'grey';
     document.body.appendChild(div);
 
+    await waitForOnScreen(div);
+
     // @ts-ignore
     const boundingClientRect = await div.getBoundingClientRect_async();
     expect(JSON.parse(JSON.stringify(boundingClientRect))).toEqual({

@@ -713,15 +713,6 @@ abstract class Element extends ContainerNode
     super.dispose();
   }
 
-  // Used for force update layout.
-  void flushLayout() {
-    if (isRendererAttached) {
-      RendererBinding.instance.rootPipelineOwner.flushLayout();
-    } else if (isRendererAttachedToSegmentTree) {
-      renderStyle.flushLayout();
-    }
-  }
-
   static bool isRenderObjectOwnedByFlutterFramework(Element element) {
     return element is WidgetElement || element.managedByFlutterWidget;
   }
@@ -1215,16 +1206,12 @@ abstract class Element extends ContainerNode
   // about the size of an element and its position relative to the viewport.
   // https://drafts.csswg.org/cssom-view/#dom-element-getboundingclientrect
   BoundingClientRect get boundingClientRect {
-    ownerDocument.forceRebuild();
     BoundingClientRect boundingClientRect =
         BoundingClientRect.zero(BindingContext(ownerView, ownerView.contextId, allocateNewBindingObject()));
     if (isRendererAttached) {
-      flushLayout();
       // RenderBoxModel sizedBox = renderBoxModel!;
-      // Force flush layout.
       if (!renderStyle.isBoxModelHaveSize()) {
-        renderStyle.markNeedsLayout();
-        renderStyle.flushLayout();
+        return boundingClientRect;
       }
 
       if (renderStyle.isBoxModelHaveSize()) {
@@ -1474,8 +1461,6 @@ abstract class Element extends ContainerNode
   }
 
   void click() {
-    ownerDocument.forceRebuild();
-    flushLayout();
     Event clickEvent = MouseEvent(EVENT_CLICK, detail: 1, view: ownerDocument.defaultView);
     // If element not in tree, click is fired and only response to itself.
     dispatchEvent(clickEvent);
@@ -1486,9 +1471,6 @@ abstract class Element extends ContainerNode
 
     Completer<Uint8List> completer = Completer();
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      ownerDocument.forceRebuild();
-      flushLayout();
-
       if (!renderStyle.isRepaintBoundary()) {
         String msg = 'toImage: the element is not repaintBoundary.';
         completer.completeError(Exception(msg));
@@ -1523,8 +1505,6 @@ abstract class Element extends ContainerNode
 
       completer.complete(captured);
       forceToRepaintBoundary = false;
-      // May be disposed before this callback.
-      flushLayout();
     });
     SchedulerBinding.instance.scheduleFrame();
 

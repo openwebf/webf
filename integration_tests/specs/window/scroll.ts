@@ -102,6 +102,7 @@ describe('window scroll API', () => {
     }
 
     window.addEventListener('scroll', scrollListener);
+    await waitForOnScreen(document.documentElement);
 
     requestAnimationFrame(() => {
       window.scrollTo(0, 100)
