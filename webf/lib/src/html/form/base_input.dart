@@ -16,6 +16,7 @@ import 'form_element_base.dart';
 
 const Map<String, dynamic> _inputDefaultStyle = {
   DISPLAY: INLINE_BLOCK,
+  MIN_WIDTH: '140px',
   COLOR: '#000'
 };
 
