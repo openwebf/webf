@@ -15,9 +15,10 @@ import 'package:webf/widget.dart';
 import 'form_element_base.dart';
 
 const Map<String, dynamic> _inputDefaultStyle = {
+  BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
   WIDTH: '140px',
-  HEIGHT: '16px',
+  HEIGHT: '25px',
   COLOR: '#000'
 };
 
@@ -454,7 +455,7 @@ mixin BaseInputState on WebFWidgetElementState {
       },
       decoration: decoration,
     );
-    
+
     // Apply width and height constraints
     double? widthValue = widgetElement.renderStyle.width.computedValue;
     double? heightValue = widgetElement.renderStyle.height.computedValue;
