@@ -194,13 +194,25 @@ class InspectNetworkModule extends UIInspectorModule {
       case 'getResponseBody':
         String requestId = params!['requestId'];
         Uint8List? buffer = _responseBuffers[requestId];
-        sendToFrontend(
-            id,
-            JSONEncodableMap({
-              if (buffer != null) 'body': utf8.decode(buffer),
-              // True, if content was sent as base64.
-              'base64Encoded': false,
-            }));
+        // Decide whether to return text or base64 based on MIME type
+        final req = NetworkStore().getRequestById(requestId);
+        final mime = req?.mimeType?.toLowerCase();
+        final isText = _isTextMimeType(mime);
+        String bodyStr = '';
+        bool base64 = false;
+        if (buffer != null) {
+          if (isText) {
+            bodyStr = utf8.decode(buffer, allowMalformed: true);
+            base64 = false;
+          } else {
+            bodyStr = base64Encode(buffer);
+            base64 = true;
+          }
+        }
+        sendToFrontend(id, JSONEncodableMap({
+          'body': bodyStr,
+          'base64Encoded': base64,
+        }));
         break;
 
       case 'setAttachDebugStack':
@@ -215,6 +227,20 @@ class InspectNetworkModule extends UIInspectorModule {
 
   // Legacy HttpClientInterceptor support has been removed. Network inspection now
   // relies on Dio interceptors when Dio networking is enabled.
+}
+
+bool _isTextMimeType(String? mime) {
+  if (mime == null) return false;
+  if (mime.startsWith('text/')) return true;
+  return mime.contains('json') ||
+      mime.contains('+json') ||
+      mime.contains('xml') ||
+      mime.contains('+xml') ||
+      mime.contains('html') ||
+      mime.contains('javascript') ||
+      mime.contains('css') ||
+      mime.contains('csv') ||
+      mime.contains('urlencoded');
 }
 
 class _InspectDioInterceptor extends InterceptorsWrapper {
@@ -319,13 +345,23 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
     response.headers.forEach((k, v) => headersMap[k] = List<String>.from(v));
 
     final urlStr = options.uri.toString();
-    final mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+    String mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+    // Auto-detect common image types if content-type is missing or generic
+    if ((mimeType == 'text/plain' || mimeType == 'application/octet-stream' || mimeType.isEmpty) && bytes.isNotEmpty) {
+      final sniffed = _sniffImageMime(bytes);
+      if (sniffed != null) {
+        mimeType = sniffed;
+      }
+    }
     final remoteIp = options.uri.host; // Best effort; real IP not exposed by Dio
     final remotePort = options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80);
     final fromDiskCache = options.extra['webf_cache_hit'] == true;
     final encodedLen = bytes.length;
     final protocol = options.uri.scheme;
-    final type = _guessTypeFromPath(options.uri.path);
+    String type = _guessTypeFromPath(options.uri.path);
+    if (type == 'Fetch' && mimeType.startsWith('image/')) {
+      type = 'Image';
+    }
     final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
 
     module.sendEventToFrontend(NetworkResponseReceivedEvent(
@@ -405,12 +441,21 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
       }
 
       final urlStr = options.uri.toString();
-      final mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+      String mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+      if ((mimeType == 'text/plain' || mimeType == 'application/octet-stream' || mimeType.isEmpty) && bytes.isNotEmpty) {
+        final sniffed = _sniffImageMime(bytes);
+        if (sniffed != null) {
+          mimeType = sniffed;
+        }
+      }
       final remoteIp = options.uri.host;
       final remotePort = options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80);
       final encodedLen = bytes.length;
       final protocol = options.uri.scheme;
-      final type = _guessTypeFromPath(options.uri.path);
+      String type = _guessTypeFromPath(options.uri.path);
+      if (type == 'Fetch' && mimeType.startsWith('image/')) {
+        type = 'Image';
+      }
       final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
 
       module.sendEventToFrontend(NetworkResponseReceivedEvent(
@@ -481,6 +526,26 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
 
     handler.next(err);
   }
+}
+
+// Sniff common image binary signatures (PNG, JPEG) for better DevTools previews.
+String? _sniffImageMime(Uint8List bytes) {
+  if (bytes.length >= 8) {
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    bool isPng = true;
+    for (int i = 0; i < pngSig.length; i++) {
+      if (bytes[i] != pngSig[i]) { isPng = false; break; }
+    }
+    if (isPng) return 'image/png';
+  }
+  if (bytes.length >= 3) {
+    // JPEG signature: FF D8 FF
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return 'image/jpeg';
+    }
+  }
+  return null;
 }
 
 class NetworkRequestWillBeSentEvent extends InspectorEvent {
