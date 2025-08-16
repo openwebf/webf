@@ -170,6 +170,14 @@ void HTMLCollection::InvalidateCache(Document* old_document) const {
   collection_items_cache_.Invalidate();
 }
 
+void HTMLCollection::InvalidateCacheForAttribute(const QualifiedName* attr_name) const {
+  // Invalidate when attribute changes affect this collection type,
+  // or when a structural change triggers a full invalidation (attr_name == nullptr).
+  if (!attr_name || LiveNodeListBase::ShouldInvalidateTypeOnAttributeChange(InvalidationType(), *attr_name)) {
+    InvalidateCache();
+  }
+}
+
 unsigned HTMLCollection::length() const {
   return collection_items_cache_.NodeCount(*this);
 }

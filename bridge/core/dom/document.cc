@@ -586,7 +586,10 @@ void Document::RegisterNodeListWithIdNameCache(const LiveNodeListBase* list) {}
 void Document::UnregisterNodeListWithIdNameCache(const LiveNodeListBase* list) {}
 
 bool Document::ShouldInvalidateNodeListCaches(const QualifiedName* attr_name) const {
-  return false;
+  // Invalidate node list caches for structural and attribute changes.
+  // This ensures collections like `children` reflect recent DOM mutations
+  // such as insertAdjacentElement('beforeend', ...).
+  return true;
 }
 
 void Document::InvalidateNodeListCaches(const QualifiedName* attr_name) {

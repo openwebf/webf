@@ -76,6 +76,7 @@ class HTMLCollection : public LiveNodeListBase {
   HTMLCollection(ContainerNode& base, CollectionType, ItemAfterOverrideType = kDoesNotOverrideItemAfter);
   ~HTMLCollection() override;
   void InvalidateCache(Document* old_document = nullptr) const override;
+  void InvalidateCacheForAttribute(const QualifiedName*) const;
 
   // DOM API
   unsigned length() const;
