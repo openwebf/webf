@@ -922,6 +922,20 @@ class InlineFormattingContext {
           final t = text.replaceAll('\n', '\\n');
           print('[IFC] addText len=${text.length} at=$paraPos "$t"');
         }
+      } else if (item.type == InlineItemType.control) {
+        // Control characters (e.g., from <br>) act as hard line breaks.
+        final text = item.getText(_textContent);
+        if (text.isEmpty) continue;
+        // Use container style to ensure a style is on the stack for ParagraphBuilder
+        pb.pushStyle(_uiTextStyleFromCss(style));
+        pb.addText(text);
+        pb.pop();
+        paraPos += text.length;
+        if (debugLogInlineLayoutEnabled) {
+          // ignore: avoid_print
+          final t = text.replaceAll('\n', '\\n');
+          print('[IFC] addCtrl len=${text.length} at=$paraPos "$t"');
+        }
       }
     }
 

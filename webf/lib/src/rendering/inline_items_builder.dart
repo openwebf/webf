@@ -97,6 +97,23 @@ class InlineItemsBuilder {
       } else if (child is RenderBoxModel) {
         final display = child.renderStyle.display;
 
+        // Handle <br/>: always force a line break in inline formatting context.
+        final target = child.renderStyle.target;
+        final String? tagName = target?.tagName;
+        if (tagName == 'BR') {
+          // Reset collapsible space tracking and insert a newline control
+          _endsWithCollapsibleSpace = false;
+          _addControl('\n');
+          // <br> is a void element; skip descending into it
+          // Move to next sibling
+          if (parent is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+            child = (parent as dynamic).childAfter(child);
+            continue;
+          } else {
+            break;
+          }
+        }
+
         if (display == CSSDisplay.inline) {
           // This case should not happen anymore as inline elements now use RenderInlineBox
           // But keep it for backward compatibility
