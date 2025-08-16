@@ -16,7 +16,8 @@ import 'form_element_base.dart';
 
 const Map<String, dynamic> _inputDefaultStyle = {
   DISPLAY: INLINE_BLOCK,
-  MIN_WIDTH: '140px',
+  WIDTH: '140px',
+  HEIGHT: '16px',
   COLOR: '#000'
 };
 
@@ -149,8 +150,14 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   String? get enterKeyHint => getAttribute('enterkeyhint');
 
   void set type(value) {
-    internalSetAttribute('type', value?.toString() ?? '');
-    resetInputDefaultStyle();
+    String newType = value.toString();
+    String currentType = getAttribute('type') ?? 'text';
+    
+    // Only update if type actually changed
+    if (newType != currentType) {
+      internalSetAttribute('type', newType);
+      resetInputDefaultStyle();
+    }
   }
 
   void resetInputDefaultStyle() {
