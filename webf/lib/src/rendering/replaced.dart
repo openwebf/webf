@@ -89,6 +89,18 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       minContentWidth = renderStyle.intrinsicWidth;
       minContentHeight = renderStyle.intrinsicHeight;
 
+      // Cache CSS baselines for replaced elements (inline-level):
+      // CSS baseline is the bottom margin edge when used in baseline alignment contexts.
+      // We store it unconditionally; parents decide when it applies.
+      try {
+        double marginTop = renderStyle.marginTop.computedValue;
+        double marginBottom = renderStyle.marginBottom.computedValue;
+        final double baseline = marginTop + (boxSize?.height ?? size.height) + marginBottom;
+        setCssBaselines(first: baseline, last: baseline);
+      } catch (_) {
+        // Safeguard: never let baseline caching break layout.
+      }
+
       didLayout();
     } else {
       performResize();

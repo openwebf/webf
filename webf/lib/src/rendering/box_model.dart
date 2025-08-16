@@ -638,6 +638,29 @@ class RenderBoxModel extends RenderBox
     required this.renderStyle,
   }) : super();
 
+  // Cached CSS baselines computed during this render object's own layout.
+  // These represent distances from the top padding edge (including border-top) to the text baselines
+  // according to CSS semantics (first/last line box when applicable).
+  double? _cssFirstBaseline;
+  double? _cssLastBaseline;
+
+  // Expose read-only accessors for parents to consume during their layout
+  // without triggering any new baseline computation.
+  double? computeCssFirstBaseline() => _cssFirstBaseline;
+  double? computeCssLastBaseline() => _cssLastBaseline;
+
+  // Baseline accessor by type; currently returns the same cached values for
+  // both alphabetic and ideographic, and can be specialized as support grows.
+  double? computeCssFirstBaselineOf(TextBaseline baseline) => _cssFirstBaseline;
+  double? computeCssLastBaselineOf(TextBaseline baseline) => _cssLastBaseline;
+
+  // Utilities for children to update baseline caches during their own layout.
+  @protected
+  void setCssBaselines({double? first, double? last}) {
+    _cssFirstBaseline = first;
+    _cssLastBaseline = last ?? first;
+  }
+
   @override
   bool get alwaysNeedsCompositing {
     return intersectionObserverAlwaysNeedsCompositing() || opacityAlwaysNeedsCompositing();
@@ -1067,6 +1090,12 @@ class RenderBoxModel extends RenderBox
     _contentConstraints = contentConstraints;
     clearOverflowLayout();
     isSelfSizeChanged = false;
+
+    // Reset cached CSS baselines before a new layout pass. They will be
+    // updated by subclasses that can establish inline formatting context
+    // or have well-defined CSS baselines (e.g., replaced elements).
+    _cssFirstBaseline = null;
+    _cssLastBaseline = null;
   }
 
   /// Find scroll container

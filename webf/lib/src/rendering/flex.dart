@@ -2867,8 +2867,11 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get distance from top to baseline of child including margin.
   double _getChildAscent(RenderBox child) {
-    // Distance from top to baseline of child.
-    double? childAscent = child.getDistanceToBaseline(TextBaseline.alphabetic, onlyReal: true);
+    // Prefer CSS-cached baseline computed during the child's own layout.
+    double? childAscent;
+    if (child is RenderBoxModel) {
+      childAscent = child.computeCssFirstBaseline();
+    }
     double? childMarginTop = 0;
     double? childMarginBottom = 0;
     if (child is RenderBoxModel) {

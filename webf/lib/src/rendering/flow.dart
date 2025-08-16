@@ -353,6 +353,34 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       _setContainerSizeFromIFC(layoutSize);
 
+      // Cache CSS baselines for this element, computed from IFC line metrics.
+      // Baselines are measured from the top padding/border edge as distances,
+      // consistent with how computeDistanceToBaseline reports.
+      final paddingTop = renderStyle.paddingTop.computedValue;
+      final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+      final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
+          renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+      double? firstBaseline;
+      double? lastBaseline;
+      if (overflowVisible) {
+        final lines = _inlineFormattingContext!.paragraphLineMetrics;
+        if (lines.isNotEmpty) {
+          firstBaseline = lines.first.baseline + paddingTop + borderTop;
+          lastBaseline = lines.last.baseline + paddingTop + borderTop;
+        } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
+          // Legacy line boxes path
+          final first = _inlineFormattingContext!.lineBoxes.first;
+          double y = 0;
+          for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
+            y += _inlineFormattingContext!.lineBoxes[i].height;
+          }
+          final last = _inlineFormattingContext!.lineBoxes.last;
+          firstBaseline = first.baseline + paddingTop + borderTop;
+          lastBaseline = y + last.baseline + paddingTop + borderTop;
+        }
+      }
+      setCssBaselines(first: firstBaseline, last: lastBaseline);
+
       // Set the size of scrollable overflow area for inline formatting context.
       _setMaxScrollableSizeFromIFC();
     } else {
@@ -367,6 +395,30 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // Set the size of scrollable overflow area for flow layout.
       _setMaxScrollableSize();
+
+      // Cache CSS baselines for non-IFC flow: use line metrics when overflow is visible.
+      final paddingTop = renderStyle.paddingTop.computedValue;
+      final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+      final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
+          renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+      double? firstBaseline;
+      double? lastBaseline;
+      if (overflowVisible && _lineMetrics.isNotEmpty) {
+        if (_lineMetrics.first.baseline != null) {
+          firstBaseline = _lineMetrics.first.baseline! + paddingTop + borderTop;
+        }
+        double yOffset = 0;
+        for (int i = 0; i < _lineMetrics.length; i++) {
+          final line = _lineMetrics[i];
+          if (line.baseline != null) {
+            lastBaseline = yOffset + line.baseline! + paddingTop + borderTop;
+          }
+          if (i < _lineMetrics.length - 1) {
+            yOffset += line.crossAxisExtent;
+          }
+        }
+      }
+      setCssBaselines(first: firstBaseline, last: lastBaseline);
     }
   }
 
@@ -429,8 +481,11 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
       }
 
-      // Capture baseline during layout (we can call this on direct children)
-      double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
+      // Capture CSS baseline from child's own layout cache (avoid layout-time baseline queries)
+      double? childBaseline;
+      if (child is RenderBoxModel) {
+        childBaseline = child.computeCssFirstBaseline();
+      }
 
       _lineMetrics.add(RunMetrics(childMainAxisExtent, childCrossAxisExtent, [child], baseline: childBaseline));
     });
