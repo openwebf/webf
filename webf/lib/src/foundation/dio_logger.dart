@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:convert' as convert;
 
 import 'package:dio/dio.dart';
 
@@ -42,6 +43,9 @@ class PrettyDioLogger extends Interceptor {
   /// Size in which the Uint8List will be split
   static const int chunkSize = 20;
 
+  /// Max characters to log for response body; null means unlimited.
+  final int? maxBodyLength;
+
   /// Log printer; defaults logPrint log to console.
   /// In flutter, you'd better use debugPrint.
   /// you can also write log in a file.
@@ -66,6 +70,7 @@ class PrettyDioLogger extends Interceptor {
     this.logPrint = print,
     this.filter,
     this.enabled = true,
+    this.maxBodyLength,
   });
 
   @override
@@ -141,10 +146,6 @@ class PrettyDioLogger extends Interceptor {
             header:
             'DioError ║ Status: ${err.response?.statusCode} ${err.response?.statusMessage} ║ Time: $diff ms',
             text: uri.toString());
-        if (err.response != null && err.response?.data != null) {
-          logPrint('╔ ${err.type.toString()}');
-          _printResponse(err.response!);
-        }
         _printLine('╚');
         logPrint('');
       } else if (err.error != null) {
@@ -198,21 +199,99 @@ class PrettyDioLogger extends Interceptor {
   }
 
   void _printResponse(Response response) {
-    if (response.data != null) {
-      if (response.data is Map) {
-        _printPrettyMap(response.data as Map);
-      } else if (response.data is Uint8List) {
-        logPrint('║${_indent()}[');
-        _printUint8List(response.data as Uint8List);
-        logPrint('║${_indent()}]');
-      } else if (response.data is List) {
-        logPrint('║${_indent()}[');
-        _printList(response.data as List);
-        logPrint('║${_indent()}]');
-      } else {
-        _printBlock(response.data.toString());
+    final data = response.data;
+    if (data == null) return;
+
+    final contentType = response.headers.value(Headers.contentTypeHeader)?.toLowerCase();
+
+    // Prefer content-type to decide how to print
+    if (_isJsonContentType(contentType)) {
+      if (data is Map) {
+        if (maxBodyLength != null) {
+          final s = _truncateBody(_encodeJsonCompact(data));
+          _printBlock(s);
+        } else {
+          _printPrettyMap(data);
+        }
+        return;
       }
+      if (data is List) {
+        if (maxBodyLength != null) {
+          final s = _truncateBody(_encodeJsonCompact(data));
+          _printBlock(s);
+        } else {
+          logPrint('║${_indent()}[');
+          _printList(data);
+          logPrint('║${_indent()}]');
+        }
+        return;
+      }
+      if (data is String) {
+        try {
+          final decoded = convert.jsonDecode(data);
+          if (maxBodyLength != null) {
+            final s = _truncateBody(_encodeJsonCompact(decoded));
+            _printBlock(s);
+          } else if (decoded is Map) {
+            _printPrettyMap(decoded);
+          } else if (decoded is List) {
+            logPrint('║${_indent()}[');
+            _printList(decoded);
+            logPrint('║${_indent()}]');
+          } else {
+            _printBlock(data);
+          }
+        } catch (_) {
+          _printBlock(_truncateBody(data));
+        }
+        return;
+      }
+      if (data is Uint8List) {
+        final enc = _encodingForContentType(contentType);
+        final text = enc.decode(data);
+        try {
+          final decoded = convert.jsonDecode(text);
+          if (maxBodyLength != null) {
+            final s = _truncateBody(_encodeJsonCompact(decoded));
+            _printBlock(s);
+          } else if (decoded is Map) {
+            _printPrettyMap(decoded);
+          } else if (decoded is List) {
+            logPrint('║${_indent()}[');
+            _printList(decoded);
+            logPrint('║${_indent()}]');
+          } else {
+            _printBlock(text);
+          }
+        } catch (_) {
+          _printBlock(_truncateBody(text));
+        }
+        return;
+      }
+      _printBlock(_truncateBody(data.toString()));
+      return;
     }
+
+    if (_isTextContentType(contentType)) {
+      if (data is Uint8List) {
+        final enc = _encodingForContentType(contentType);
+        _printBlock(_truncateBody(enc.decode(data)));
+      } else {
+        _printBlock(_truncateBody(data.toString()));
+      }
+      return;
+    }
+
+    // Binary or unknown content types: avoid logging full body
+    if (data is Uint8List) {
+      final ct = contentType ?? 'unknown';
+      final len = data.length;
+      logPrint('║${_indent()}<binary body omitted> ($ct, $len bytes)');
+      return;
+    }
+
+    // Fallback
+    _printBlock(_truncateBody(data.toString()));
   }
 
   void _printResponseHeader(Response response, int responseTime) {
@@ -363,6 +442,46 @@ class PrettyDioLogger extends Interceptor {
       _printKV(entry.key.toString(), entry.value);
     }
     _printLine('╚');
+  }
+
+  String _truncateBody(String input) {
+    if (maxBodyLength == null) return input;
+    if (input.length <= maxBodyLength!) return input;
+    final omitted = input.length - maxBodyLength!;
+    return input.substring(0, maxBodyLength!) + '… [truncated $omitted chars]';
+  }
+
+  String _encodeJsonCompact(dynamic data) {
+    try {
+      return const convert.JsonEncoder().convert(data);
+    } catch (_) {
+      return data.toString();
+    }
+  }
+
+  bool _isJsonContentType(String? contentType) {
+    if (contentType == null) return false;
+    return contentType.contains('application/json') ||
+        contentType.contains('+json');
+  }
+
+  bool _isTextContentType(String? contentType) {
+    if (contentType == null) return false;
+    return contentType.startsWith('text/') ||
+        contentType.contains('xml') ||
+        contentType.contains('+xml') ||
+        contentType.contains('html') ||
+        contentType.contains('javascript') ||
+        contentType.contains('css') ||
+        contentType.contains('csv') ||
+        contentType.contains('x-www-form-urlencoded');
+  }
+
+  convert.Encoding _encodingForContentType(String? contentType) {
+    if (contentType == null) return convert.utf8;
+    final match = RegExp(r'charset=([^;]+)', caseSensitive: false).firstMatch(contentType);
+    final name = match != null ? match.group(1)?.trim() : null;
+    return convert.Encoding.getByName(name?.toLowerCase() ?? '') ?? convert.utf8;
   }
 }
 

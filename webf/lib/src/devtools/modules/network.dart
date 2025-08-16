@@ -54,6 +54,131 @@ class InspectNetworkModule extends UIInspectorModule {
     return 'dio_${_dioRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
   }
 
+  // Helper and state for HttpClient-originated requests (non-Dio)
+  int _httpRequestIdCounter = 0;
+  String _nextHttpRequestId() {
+    _httpRequestIdCounter++;
+    return 'http_${_httpRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  String _guessTypeFromPath(String path) {
+    if (path.endsWith('.js') || path.endsWith('.mjs')) return 'Script';
+    if (path.endsWith('.css')) return 'Stylesheet';
+    if (path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.svg') ||
+        path.endsWith('.ico')) {
+      return 'Image';
+    }
+    if (path.endsWith('.html') || path.endsWith('.htm') || path.endsWith('/')) return 'Document';
+    return 'Fetch';
+  }
+
+  Map<String, List<String>> _headersToMultiMap(Map<String, String>? headers) {
+    final map = <String, List<String>>{};
+    headers?.forEach((k, v) => map[k] = [v]);
+    return map;
+  }
+
+  /// Public API for non-Dio networking to report a request start to DevTools.
+  /// Returns a generated requestId to be used for subsequent events.
+  String reportHttpClientRequestStart({
+    required double contextId,
+    required Uri uri,
+    String method = 'GET',
+    Map<String, String>? headers,
+    List<int> data = const <int>[],
+  }) {
+    final requestId = _nextHttpRequestId();
+
+    // Track in NetworkStore so DevTools panel can render the row
+    final networkRequest = NetworkRequest(
+      requestId: requestId,
+      url: uri.toString(),
+      method: method,
+      requestHeaders: _headersToMultiMap(headers),
+      requestData: List<int>.from(data),
+      startTime: DateTime.now(),
+    );
+    NetworkStore().addRequest(contextId.toInt(), networkRequest);
+
+    // Emit CDP requestWillBeSent
+    sendEventToFrontend(NetworkRequestWillBeSentEvent(
+      requestId: requestId,
+      loaderId: contextId.toString(),
+      requestMethod: method,
+      url: uri.toString(),
+      headers: _headersToMultiMap(headers),
+      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
+      data: data,
+    ));
+
+    // Optionally emit extra info
+    final extraHeaders = <String, List<String>>{
+      ':authority': [uri.authority],
+      ':method': [method],
+      ':path': [uri.path],
+      ':scheme': [uri.scheme],
+    };
+    sendEventToFrontend(NetworkRequestWillBeSendExtraInfo(
+      associatedCookies: const [],
+      clientSecurityState: const {
+        'initiatorIsSecureContext': true,
+        'initiatorIPAddressSpace': 'Local',
+        'privateNetworkRequestPolicy': 'PreflightWarn'
+      },
+      connectTiming: {
+        'requestTime': (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
+      },
+      headers: {
+        ..._headersToMultiMap(headers),
+        ...extraHeaders,
+      },
+      siteHasCookieInOtherPartition: false,
+      requestId: requestId,
+    ));
+
+    return requestId;
+  }
+
+  /// Public API for non-Dio networking to report a request failure to DevTools.
+  void reportHttpClientLoadingFailed({
+    required String requestId,
+    required double contextId,
+    required Uri uri,
+    required String errorText,
+    bool canceled = false,
+  }) {
+    final timestamp = (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000;
+    final type = _guessTypeFromPath(uri.path);
+
+    // Emit CDP loadingFailed
+    sendEventToFrontend(NetworkLoadingFailedEvent(
+      requestId: requestId,
+      timestamp: timestamp,
+      type: type,
+      errorText: errorText,
+      canceled: canceled,
+    ));
+
+    // Update NetworkStore for UI
+    NetworkStore().updateRequest(
+      requestId,
+      statusCode: 0,
+      statusText: errorText,
+      mimeType: 'text/plain',
+      responseBody: Uint8List(0),
+      endTime: DateTime.now(),
+      contentLength: 0,
+      fromCache: false,
+      remoteIPAddress: uri.host,
+      remotePort: uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80),
+    );
+  }
+
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
     switch (method) {
@@ -249,10 +374,85 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    // For errors, we still want to mark the request as finished if we created an id
+    // For errors, still produce CDP events. Distinguish HTTP error responses vs. network failures.
     final options = err.requestOptions;
-    final requestId = options.extra[_kInspectorRequestId] as String?;
-    if (requestId != null) {
+    final requestId = (options.extra[_kInspectorRequestId] as String?) ?? module._nextDioRequestId();
+
+    if (err.type == DioExceptionType.badResponse && err.response != null) {
+      // HTTP error (4xx/5xx or others rejected by validateStatus): emit responseReceived + loadingFinished
+      final response = err.response!;
+      final headersMap = <String, List<String>>{};
+      response.headers.forEach((k, v) => headersMap[k] = List<String>.from(v));
+
+      // Convert body to bytes if present, for body retrieval and size reporting
+      Uint8List bytes;
+      final body = response.data;
+      if (body == null) {
+        bytes = Uint8List(0);
+      } else if (body is Uint8List) {
+        bytes = body;
+      } else if (body is List<int>) {
+        bytes = Uint8List.fromList(body);
+      } else if (body is String) {
+        bytes = Uint8List.fromList(utf8.encode(body));
+      } else {
+        // Best-effort JSON encoding
+        try {
+          bytes = Uint8List.fromList(utf8.encode(jsonEncode(body)));
+        } catch (_) {
+          bytes = Uint8List(0);
+        }
+      }
+
+      final urlStr = options.uri.toString();
+      final mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+      final remoteIp = options.uri.host;
+      final remotePort = options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80);
+      final encodedLen = bytes.length;
+      final protocol = options.uri.scheme;
+      final type = _guessTypeFromPath(options.uri.path);
+      final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
+
+      module.sendEventToFrontend(NetworkResponseReceivedEvent(
+        requestId: requestId,
+        loaderId: contextId.toString(),
+        url: urlStr,
+        headers: headersMap,
+        status: response.statusCode ?? 0,
+        statusText: response.statusMessage ?? '',
+        mimeType: mimeType,
+        remoteIPAddress: remoteIp,
+        remotePort: remotePort,
+        fromDiskCache: false,
+        encodedDataLength: encodedLen,
+        protocol: protocol,
+        type: type,
+        timestamp: timestamp,
+      ));
+
+      module.sendEventToFrontend(NetworkLoadingFinishedEvent(
+        requestId: requestId,
+        contentLength: encodedLen,
+        timestamp: timestamp,
+      ));
+
+      // Store response body for getResponseBody and update NetworkStore
+      module._responseBuffers[requestId] = bytes;
+      NetworkStore().updateRequest(
+        requestId,
+        responseHeaders: headersMap,
+        statusCode: response.statusCode ?? 0,
+        statusText: response.statusMessage ?? '',
+        mimeType: mimeType,
+        responseBody: bytes,
+        endTime: DateTime.now(),
+        contentLength: encodedLen,
+        fromCache: false,
+        remoteIPAddress: remoteIp,
+        remotePort: remotePort,
+      );
+    } else {
+      // Real network failure (DNS, timeout, cancel, etc.): emit loadingFailed
       final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
       final type = _guessTypeFromPath(options.uri.path);
       final errorText = err.message ?? err.error?.toString() ?? 'Request failed';
@@ -263,7 +463,22 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
         errorText: errorText,
         canceled: err.type == DioExceptionType.cancel,
       ));
+
+      // Update NetworkStore minimal info
+      NetworkStore().updateRequest(
+        requestId,
+        statusCode: 0,
+        statusText: errorText,
+        mimeType: 'text/plain',
+        responseBody: Uint8List(0),
+        endTime: DateTime.now(),
+        contentLength: 0,
+        fromCache: false,
+        remoteIPAddress: options.uri.host,
+        remotePort: options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80),
+      );
     }
+
     handler.next(err);
   }
 }
