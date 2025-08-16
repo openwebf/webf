@@ -499,7 +499,7 @@ void main() {
 
       await tester.pump();
 
-      expect(inner.offsetWidth, 46); // 20*2 (children) + 6 (padding) - gap not included due to nested gap issue
+      expect(inner.offsetWidth, 49); // 20*2 (children) + 3 (gap) + 6 (padding) = 49
       expect(outer.offsetWidth, greaterThan(inner.offsetWidth));
     });
 

@@ -2061,23 +2061,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runCrossSize = _getRunsCrossSize(_runMetrics);
 
     // mainAxis gaps are already included in metrics.mainAxisExtent after PASS 3.
-    // However, to preserve existing horizontal sizing behavior, we only add
-    // gap space for horizontal flex directions here. For vertical (column)
-    // directions, adding again would double-count and inflate height.
-    CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
-    if ((_isHorizontalFlexDirection) && (effectiveDisplay == CSSDisplay.inlineFlex || effectiveDisplay == CSSDisplay.flex)) {
-      double mainAxisGap = _getMainAxisGap();
-      if (_runMetrics.isNotEmpty && mainAxisGap > 0) {
-        _RunMetrics maxMainSizeMetrics = _runMetrics.reduce((_RunMetrics curr, _RunMetrics next) {
-          return curr.mainAxisExtent > next.mainAxisExtent ? curr : next;
-        });
-        int childCount = maxMainSizeMetrics.runChildren.length;
-        if (childCount > 1) {
-          double totalGaps = (childCount - 1) * mainAxisGap;
-          runMaxMainSize += totalGaps;
-        }
-      }
-    }
+    // No need to add them again as this would double-count and cause incorrect sizing.
 
     double contentWidth = _isHorizontalFlexDirection ? runMaxMainSize : runCrossSize;
     double contentHeight = _isHorizontalFlexDirection ? runCrossSize : runMaxMainSize;
@@ -2641,10 +2625,18 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Need to subtract start margin of main axis when calculating next child's start position.
         double mainAxisGap = _getMainAxisGap();
+        
+        // For space-between, space-around, and space-evenly, gap should not be applied
+        // because these justify-content values already handle the spacing between items
+        bool shouldApplyGap = !(renderStyle.justifyContent == JustifyContent.spaceBetween ||
+                                renderStyle.justifyContent == JustifyContent.spaceAround ||
+                                renderStyle.justifyContent == JustifyContent.spaceEvenly);
+        double effectiveGap = shouldApplyGap ? mainAxisGap : 0;
+        
         if (flipMainAxis) {
-          childMainPosition -= betweenSpace + childMainAxisMargin + mainAxisGap;
+          childMainPosition -= betweenSpace + childMainAxisMargin + effectiveGap;
         } else {
-          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace + mainAxisGap;
+          childMainPosition += _getMainAxisExtent(child) - childMainAxisMargin + betweenSpace + effectiveGap;
         }
       }
 
