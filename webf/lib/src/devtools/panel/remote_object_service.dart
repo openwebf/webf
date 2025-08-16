@@ -5,7 +5,7 @@
 import 'dart:async';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:webf/src/devtools/console_store.dart';
+import 'package:webf/src/devtools/panel/console_store.dart';
 import 'package:webf/webf.dart';
 
 // Function pointers that will be set from the C++ side
@@ -18,14 +18,14 @@ typedef ReleaseObjectFunc = void Function(Pointer<Void> dartIsolateContext, doub
 /// Service for interacting with remote JavaScript objects
 class RemoteObjectService {
   static final RemoteObjectService instance = RemoteObjectService._();
-  
+
   RemoteObjectService._();
-  
+
   static GetObjectPropertiesFunc? _getObjectProperties;
   static GetObjectPropertiesAsyncFunc? _getObjectPropertiesAsync;
   static EvaluatePropertyPathFunc? _evaluatePropertyPath;
   static ReleaseObjectFunc? _releaseObject;
-  
+
   /// Set the native function pointers (called from native side)
   static void setNativeFunctions(
     GetObjectPropertiesFunc getObjectProperties,
@@ -38,11 +38,11 @@ class RemoteObjectService {
     _evaluatePropertyPath = evaluatePropertyPath;
     _releaseObject = releaseObject;
   }
-  
+
   /// Get properties of a remote object
   Future<List<RemoteObjectProperty>> getObjectProperties(
-    int contextId, 
-    String objectId, 
+    int contextId,
+    String objectId,
     {bool includePrototype = false}
   ) async {
     print('[RemoteObjectService] getObjectProperties called: contextId=$contextId, objectId=$objectId, includePrototype=$includePrototype');
@@ -50,16 +50,16 @@ class RemoteObjectService {
       print('[RemoteObjectService] ERROR: _getObjectPropertiesAsync is null');
       return [];
     }
-    
+
     final completer = Completer<List<RemoteObjectProperty>>();
     final objectIdPtr = objectId.toNativeUtf8();
-    
+
     // Create callback context
     final context = _GetObjectPropertiesContext(completer, contextId, objectIdPtr);
-    
+
     // Create native callback
     final callback = Pointer.fromFunction<NativeGetObjectPropertiesCallback>(_handleGetObjectPropertiesCallback);
-    
+
     // Call async function
     _getObjectPropertiesAsync!(
       dartContext!.pointer,
@@ -69,10 +69,10 @@ class RemoteObjectService {
       context,
       callback,
     );
-    
+
     return completer.future;
   }
-  
+
   /// Evaluate a property path on a remote object
   Future<ConsoleValue?> evaluatePropertyPath(
     int contextId,
@@ -82,10 +82,10 @@ class RemoteObjectService {
     if (_evaluatePropertyPath == null) {
       return null;
     }
-    
+
     final objectIdPtr = objectId.toNativeUtf8();
     final propertyPathPtr = propertyPath.toNativeUtf8();
-    
+
     try {
       final resultPtr = _evaluatePropertyPath!(
         dartContext!.pointer,
@@ -93,31 +93,31 @@ class RemoteObjectService {
         objectIdPtr,
         propertyPathPtr,
       );
-      
+
       if (resultPtr == nullptr) {
         return null;
       }
-      
+
       // Parse the result
       final WebFController? controller = WebFController.getControllerOfJSContextId(contextId.toDouble());
       if (controller == null) {
         return null;
       }
       final result = fromNativeValue(controller.view, resultPtr);
-      
+
       return _parseConsoleValue(result);
     } finally {
       malloc.free(objectIdPtr);
       malloc.free(propertyPathPtr);
     }
   }
-  
+
   /// Release a remote object reference
   void releaseObject(int contextId, String objectId) {
     if (_releaseObject == null) {
       return;
     }
-    
+
     final objectIdPtr = objectId.toNativeUtf8();
     try {
       _releaseObject!(dartContext!.pointer, contextId.toDouble(), objectIdPtr);
@@ -125,10 +125,10 @@ class RemoteObjectService {
       malloc.free(objectIdPtr);
     }
   }
-  
+
   ConsoleValue? _parsePropertyValue(dynamic value) {
     if (value == null) return null;
-    
+
     if (value is Map<String, dynamic>) {
       if (value['type'] == 'remote-object') {
         return ConsoleRemoteObject(
@@ -151,19 +151,19 @@ class RemoteObjectService {
         } else if (primitiveValue is String) {
           type = 'string';
         }
-        
+
         return ConsolePrimitiveValue(primitiveValue, type);
       }
     }
-    
+
     return null;
   }
-  
+
   ConsoleValue? _parseConsoleValue(dynamic result) {
     if (result is Map<String, dynamic>) {
       return _parsePropertyValue(result);
     }
-    
+
     // Handle direct primitive values
     if (result == null) {
       return ConsolePrimitiveValue(null, 'null');
@@ -174,7 +174,7 @@ class RemoteObjectService {
     } else if (result is String) {
       return ConsolePrimitiveValue(result, 'string');
     }
-    
+
     return null;
   }
 }
@@ -184,29 +184,29 @@ class _GetObjectPropertiesContext {
   final Completer<List<RemoteObjectProperty>> completer;
   final int contextId;
   final Pointer<Utf8> objectIdPtr;
-  
+
   _GetObjectPropertiesContext(this.completer, this.contextId, this.objectIdPtr);
 }
 
 // Callback handler for GetObjectPropertiesAsync
 void _handleGetObjectPropertiesCallback(Object handle, Pointer<NativeValue> resultPtr) {
   final context = handle as _GetObjectPropertiesContext;
-  
+
   try {
     if (resultPtr == nullptr) {
       context.completer.complete([]);
       return;
     }
-    
+
     // Parse the result from NativeValue
     final WebFController? controller = WebFController.getControllerOfJSContextId(context.contextId.toDouble());
     if (controller == null) {
       context.completer.complete([]);
       return;
     }
-    
+
     final result = fromNativeValue(controller.view, resultPtr);
-    
+
     if (result is List) {
       final properties = result.map((item) {
         if (item is Map<String, dynamic>) {
@@ -230,7 +230,7 @@ void _handleGetObjectPropertiesCallback(Object handle, Pointer<NativeValue> resu
           value: null,
         );
       }).toList();
-      
+
       context.completer.complete(properties);
     } else {
       context.completer.complete([]);
@@ -253,7 +253,7 @@ class RemoteObjectProperty {
   final bool writable;
   final bool isOwn;
   final ConsoleValue? value;
-  
+
   RemoteObjectProperty({
     required this.name,
     required this.valueId,
@@ -263,7 +263,7 @@ class RemoteObjectProperty {
     required this.isOwn,
     this.value,
   });
-  
+
   @override
   String toString() {
     final attrs = <String>[];
@@ -271,10 +271,10 @@ class RemoteObjectProperty {
     if (!configurable) attrs.add('non-configurable');
     if (!writable) attrs.add('read-only');
     if (!isOwn) attrs.add('inherited');
-    
+
     final attrStr = attrs.isEmpty ? '' : ' (${attrs.join(', ')})';
     final valueStr = value?.toString() ?? 'undefined';
-    
+
     return '$name: $valueStr$attrStr';
   }
 }

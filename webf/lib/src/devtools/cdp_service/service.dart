@@ -194,9 +194,10 @@ class UnifiedChromeDevToolsService {
     if (_currentController == null) {
       _selectController(controller);
     }
-
-    // Notify connected clients about new controller
-    _broadcastTargetListUpdate();
+    else {
+      // Notify connected clients about new controller
+      _broadcastTargetListUpdate();
+    }
   }
 
   void _unregisterController(WebFController controller) {
@@ -220,6 +221,7 @@ class UnifiedChromeDevToolsService {
 
     // Get the old Page module to transfer screencast state
     InspectPageModule? oldPageModule = _currentService?.uiInspector?.moduleRegistrar['Page'] as InspectPageModule?;
+    final Map<String, UIInspectorModule>? previousRegistrar = _currentService?.uiInspector?.moduleRegistrar;
 
     _currentController = controller;
     _currentService = _controllerServices[controller];
@@ -230,6 +232,20 @@ class UnifiedChromeDevToolsService {
       if (newPageModule != null && oldPageModule.isScreencastActive) {
         newPageModule.transferScreencastState(oldPageModule);
       }
+    }
+
+    // Sync enable state for all modules that extend _InspectorModule
+    final Map<String, UIInspectorModule>? currentRegistrar = _currentService?.uiInspector?.moduleRegistrar;
+    if (previousRegistrar != null && currentRegistrar != null) {
+      previousRegistrar.forEach((name, prevModule) {
+        final currModule = currentRegistrar[name];
+        if (currModule != null) {
+          // Sync only when the module types match
+          if (currModule.runtimeType == prevModule.runtimeType) {
+            currModule.setEnabled(prevModule.isEnabled);
+          }
+        }
+      });
     }
 
     // Notify all modules about controller change
@@ -401,6 +417,7 @@ class UnifiedChromeDevToolsService {
   void _handleWebSocketMessage(String connectionId, message) {
     try {
       final Map<String, dynamic> data = jsonDecode(message);
+
       final method = data['method'] as String?;
       final id = data['id'];
       final params = data['params'] as Map<String, dynamic>?;
@@ -521,6 +538,36 @@ class UnifiedChromeDevToolsService {
     return targets;
   }
 
+  Map<String, dynamic> _getCurrentTargetInfo() {
+    if (_currentController == null) {
+      return {
+        'id': '',
+        'title': 'No controller selected',
+        'url': '',
+      };
+    }
+
+    final manager = WebFControllerManager.instance;
+
+    for (final name in manager.controllerNames) {
+      final controller = manager.getControllerSync(name);
+      if (controller != null && controller == _currentController) {
+        return {
+          'id': name,
+          'title': 'WebF Page - $name',
+          'url': controller.url ?? '',
+          'attached': controller.isFlutterAttached,
+        };
+      }
+    }
+
+    return {
+      'id': '',
+      'title': 'No controller selected',
+      'url': '',
+    };
+  }
+
   void _sendResponse(String connectionId, int? id, Map<String, dynamic> result) {
     if (id == null) return;
 
@@ -530,7 +577,9 @@ class UnifiedChromeDevToolsService {
     };
 
     final connection = _connections[connectionId];
-    connection?.sink.add(jsonEncode(response));
+    final message = jsonEncode(response);
+
+    connection?.sink.add(message);
   }
 
   void _sendErrorResponse(String connectionId, int? id, String message) {
@@ -545,10 +594,16 @@ class UnifiedChromeDevToolsService {
     };
 
     final connection = _connections[connectionId];
-    connection?.sink.add(jsonEncode(response));
+    final result = jsonEncode(response);
+
+    connection?.sink.add(result);
   }
 
   void sendEventToFrontend(InspectorEvent event) {
+    if (_connections.isEmpty) {
+      return;
+    }
+
     final message = jsonEncode(event.toJson());
 
     for (final connection in _connections.values) {
@@ -569,6 +624,7 @@ class UnifiedChromeDevToolsService {
     };
 
     final message = jsonEncode(response);
+
     for (final connection in _connections.values) {
       try {
         connection.sink.add(message);
@@ -580,7 +636,7 @@ class UnifiedChromeDevToolsService {
 
   void _broadcastTargetListUpdate() {
     sendEventToFrontend(TargetCreatedEvent(
-      targetInfos: _getTargetList(),
+      targetInfo: _getCurrentTargetInfo(),
     ));
   }
 
@@ -656,15 +712,15 @@ class LogInspectorModule {
 
 // Event classes for DevTools protocol
 class TargetCreatedEvent extends InspectorEvent {
-  final List<Map<String, dynamic>> targetInfos;
+  final Map<String, dynamic> targetInfo;
 
-  TargetCreatedEvent({required this.targetInfos});
+  TargetCreatedEvent({required this.targetInfo});
 
   @override
   String get method => 'Target.targetCreated';
 
   @override
-  JSONEncodable? get params => JSONEncodableMap({'targetInfos': targetInfos});
+  JSONEncodable? get params => JSONEncodableMap({'targetInfo': targetInfo});
 }
 
 /// Usage Instructions:

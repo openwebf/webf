@@ -12,7 +12,7 @@ import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 
-import 'package:webf/src/devtools/remote_object_service.dart';
+import 'package:webf/src/devtools/panel/remote_object_service.dart';
 
 typedef NativeOnDartContextFinalized = Void Function(Pointer<Void> data);
 typedef DartOnDartContextFinalized = void Function(Pointer<Void> data);

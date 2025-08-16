@@ -11,8 +11,8 @@ import 'package:dio/dio.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/foundation/dio_client.dart';
+import 'package:webf/src/devtools/panel/network_store.dart';
 
 class InspectNetworkModule extends UIInspectorModule {
   InspectNetworkModule(DevToolsService devtoolsService) : super(devtoolsService) {

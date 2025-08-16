@@ -51,6 +51,7 @@ dependencies:
 dependency_overrides:
   webf:
     path: ../
+  adaptive_theme: 3.7.0
 
 # The following section is specific to Flutter.
 flutter:

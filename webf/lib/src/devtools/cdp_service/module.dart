@@ -48,7 +48,11 @@ abstract class _InspectorModule {
   void onEnabled() {}
   void onDisabled() {}
 
+  // Expose enable state for synchronization across controllers.
   bool get isEnabled => _enable;
+  void setEnabled(bool enabled) {
+    _enable = enabled;
+  }
 }
 
 // Inspector modules working on flutter.ui thread.
