@@ -13,27 +13,7 @@ class BRElement extends Element {
   BRElement([BindingContext? context]) : super(context);
 
   @override
-  bool get isReplacedElement => true;
-
-  @override
   void setRenderStyle(String property, String present, { String? baseHref }) {
     // Noop
-  }
-
-  @override
-  flutter.Widget toWidget({flutter.Key? key}) {
-    return WebFRenderReplacedRenderObjectWidget(webFElement: this, key: key ?? this.key);
-  }
-
-  @override
-  RenderBox createRenderer([flutter.RenderObjectElement? flutterWidgetElement]) {
-    RenderLineBreak lineBreak = RenderLineBreak(renderStyle);
-
-    if (managedByFlutterWidget) {
-      assert(flutterWidgetElement != null);
-      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, lineBreak);
-    }
-
-    return lineBreak;
   }
 }

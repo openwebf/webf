@@ -753,11 +753,11 @@ class RenderFlexLayout extends RenderLayoutBox {
   // Sort flex items by their order property (default order is 0)
   List<RenderBox> _getSortedFlexItems(List<RenderBox> children) {
     List<RenderBox> sortedChildren = List.from(children);
-    
+
     sortedChildren.sort((a, b) {
       int orderA = 0;
       int orderB = 0;
-      
+
       // Get order value from RenderStyle if available
       if (a is RenderBoxModel) {
         orderA = a.renderStyle.order;
@@ -2639,7 +2639,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // is treated the same as flex-start.
     // https://www.w3.org/TR/css-flexbox-1/#abspos-items
     final ParentData? childParentData = child.parentData;
-    if (child is! RenderBoxModel || child is RenderLineBreak || (child.renderStyle.isSelfPositioned())) {
+    if (child is! RenderBoxModel || (child.renderStyle.isSelfPositioned())) {
       return false;
     }
 

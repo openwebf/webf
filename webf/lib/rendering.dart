@@ -22,7 +22,6 @@ export 'src/rendering/event_listener.dart';
 export 'src/rendering/transform.dart';
 export 'src/rendering/widget.dart';
 export 'src/rendering/viewport.dart';
-export 'src/rendering/line_break.dart';
 export 'src/rendering/box_wrapper.dart';
 export 'src/rendering/image.dart';
 export 'src/rendering/widget_element_child.dart';
