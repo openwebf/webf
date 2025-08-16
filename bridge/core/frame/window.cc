@@ -328,6 +328,8 @@ legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* ele
 double Window::requestAnimationFrame(const std::shared_ptr<Function>& callback, ExceptionState& exception_state) {
   auto frame_callback = FrameCallback::Create(GetExecutingContext(), callback);
   uint32_t request_id = GetExecutingContext()->document()->RequestAnimationFrame(frame_callback, exception_state);
+  // Add finish recording to force trigger a frame update.
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kFinishRecordingCommand, nullptr, nullptr, nullptr);
   // `-1` represents some error occurred.
   if (request_id == -1) {
     exception_state.ThrowException(
