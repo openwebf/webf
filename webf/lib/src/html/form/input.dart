@@ -61,7 +61,18 @@ class FlutterInputElement extends WidgetElement
     } else {
       value = value.toString();
       if (state?.controller.value.text != value) {
-        state?.controller.value = TextEditingValue(text: value.toString());
+        // Preserve the current selection when updating the text value
+        TextSelection currentSelection = state?.controller.selection ?? TextSelection.collapsed(offset: 0);
+        int textLength = value.length;
+        
+        // Ensure selection doesn't exceed the new text length
+        int selectionStart = currentSelection.start.clamp(0, textLength);
+        int selectionEnd = currentSelection.end.clamp(0, textLength);
+        
+        state?.controller.value = TextEditingValue(
+          text: value.toString(),
+          selection: TextSelection(baseOffset: selectionStart, extentOffset: selectionEnd),
+        );
       }
     }
   }
