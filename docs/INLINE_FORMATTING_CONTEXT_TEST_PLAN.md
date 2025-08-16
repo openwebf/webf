@@ -189,31 +189,6 @@ it('should handle positioned elements in RTL context', async () => {
 });
 ```
 
-##### 1.12 RTL Float Behavior
-```typescript
-it('should handle float direction in RTL context', async () => {
-  document.body.innerHTML = `
-    <div style="direction: rtl; width: 400px; border: 1px solid black;">
-      <div style="float: left; width: 100px; height: 50px; background: red; margin: 5px;">
-        float: left
-      </div>
-      <div style="float: right; width: 100px; height: 50px; background: blue; margin: 5px;">
-        float: right
-      </div>
-      <p style="clear: both;">RTL text flows from right to left around floats</p>
-      <div style="float: inline-start; width: 100px; height: 50px; background: green; margin: 5px;">
-        float: inline-start
-      </div>
-      <div style="float: inline-end; width: 100px; height: 50px; background: orange; margin: 5px;">
-        float: inline-end
-      </div>
-      <p style="clear: both;">Logical float values adapt to direction</p>
-    </div>
-  `;
-  await snapshot();
-});
-```
-
 ##### 1.13 RTL Inline Box Model
 ```typescript
 it('should handle inline element box model in RTL', async () => {
