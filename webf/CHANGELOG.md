@@ -1,3 +1,33 @@
+## 0.23.0-beta.2
+
+### Features
+
+* Flutter WidgetAdapter: optimized set-property performance of widget elements.
+* Scheduling: trigger `requestAnimationFrame` via `UICommands` for more predictable scheduling.
+* Runtime: show error page when route entrypoint is not found.
+* Bridge/Core: add `CharacterVisitor` utility for efficient string character handling.
+* Infra: remove legacy UI command implementations.
+* Infra: remove forced rebuild/layout for all view‑model property APIs.
+* **WebF DevTools**
+  * Preview image contents in DevTools.
+  * Replay past network requests when DevTools connects.
+  * Report exception network status to CDP DevTools.
+
+### Fixes
+
+* Network: removed `waitsForConnectivity` option on the Dio client to prevent hangs.
+* iOS: re‑generated symbol links to fix linking issues.
+* Bridge/Bindings: fixed `ConvertPropertyNameToAttributeName` encoding error.
+
+### Refactoring
+
+* Text/Unicode: replaced `UChar32` with `UCharCodePoint` for clarity; updated related methods and tests.
+
+### Breaking Changes
+
+* Removed legacy UI command implementations.
+* Removed forced rebuild/layout paths for view‑model property APIs.
+
 ## 0.23.0-beta.1
 
 Updated QuickJS to commit b3caa5634ec95beb5f49a912774b26d7c2474ced
