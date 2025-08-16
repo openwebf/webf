@@ -11,20 +11,19 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/src/devtools/modules/network.dart';
-import 'package:webf/src/devtools/network_store.dart';
+import 'package:webf/src/devtools/panel/network_store.dart';
 
 /// Dio interceptor for capturing network requests in DevTools
 class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
   final InspectNetworkModule networkModule;
   final int _initialTimestamp = DateTime.now().millisecondsSinceEpoch;
-  
+
   // RequestId to response data buffer
   final Map<String, Uint8List> _responseBuffers = {};
-  
+
   // Store request IDs for tracking
   final Map<RequestOptions, String> _requestIds = {};
-  
+
   DioNetworkInspectorInterceptor({required this.networkModule});
 
   @override
@@ -32,7 +31,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
     // Generate unique request ID
     final requestId = '${options.uri.toString()}_${DateTime.now().microsecondsSinceEpoch}';
     _requestIds[options] = requestId;
-    
+
     // Extract request data
     List<int> data = [];
     if (options.data != null) {
@@ -47,7 +46,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
         data = utf8.encode(jsonEncode(options.data));
       }
     }
-    
+
     // Store request in NetworkStore
     final contextId = networkModule.devtoolsService.controller!.view.contextId;
     final networkRequest = NetworkRequest(
@@ -59,7 +58,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       startTime: DateTime.now(),
     );
     NetworkStore().addRequest(contextId.toInt(), networkRequest);
-    
+
     // Send event to DevTools frontend
     networkModule.sendEventToFrontend(NetworkRequestWillBeSentEvent(
       requestId: requestId,
@@ -70,7 +69,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
       data: data,
     ));
-    
+
     // Send extra info event
     Map<String, List<String>> extraHeaders = {
       ':authority': [options.uri.authority],
@@ -78,7 +77,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       ':path': [options.uri.path],
       ':scheme': [options.uri.scheme],
     };
-    
+
     networkModule.sendEventToFrontend(NetworkRequestWillBeSendExtraInfo(
       associatedCookies: [],
       clientSecurityState: {
@@ -96,7 +95,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       siteHasCookieInOtherPartition: false,
       requestId: requestId,
     ));
-    
+
     handler.next(options);
   }
 
@@ -107,7 +106,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       handler.next(response);
       return;
     }
-    
+
     // Convert response data to bytes
     Uint8List responseData;
     if (response.data == null) {
@@ -122,10 +121,10 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       // For other types, convert to JSON string
       responseData = Uint8List.fromList(utf8.encode(jsonEncode(response.data)));
     }
-    
+
     // Store response buffer for later retrieval
     _responseBuffers[requestId] = responseData;
-    
+
     // Send response received event
     networkModule.sendEventToFrontend(NetworkResponseReceivedEvent(
       requestId: requestId,
@@ -136,7 +135,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       statusText: response.statusMessage ?? '',
       mimeType: response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain',
       remoteIPAddress: '0.0.0.0', // Dio doesn't provide this info directly
-      remotePort: response.requestOptions.uri.port != 0 ? response.requestOptions.uri.port : 
+      remotePort: response.requestOptions.uri.port != 0 ? response.requestOptions.uri.port :
                   (response.requestOptions.uri.scheme == 'https' ? 443 : 80),
       fromDiskCache: false, // Check if response came from cache
       encodedDataLength: responseData.length,
@@ -144,14 +143,14 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       type: _getRequestType(response.requestOptions),
       timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
     ));
-    
+
     // Send loading finished event
     networkModule.sendEventToFrontend(NetworkLoadingFinishedEvent(
       requestId: requestId,
       contentLength: responseData.length,
       timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
     ));
-    
+
     // Update response data in NetworkStore
     NetworkStore().updateRequest(
       requestId,
@@ -167,10 +166,10 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
       remotePort: response.requestOptions.uri.port != 0 ? response.requestOptions.uri.port :
                   (response.requestOptions.uri.scheme == 'https' ? 443 : 80),
     );
-    
+
     // Clean up request ID mapping
     _requestIds.remove(response.requestOptions);
-    
+
     handler.next(response);
   }
 
@@ -184,7 +183,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
         contentLength: 0,
         timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
       ));
-      
+
       // Update NetworkStore with error
       NetworkStore().updateRequest(
         requestId,
@@ -199,25 +198,25 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
         remoteIPAddress: '0.0.0.0',
         remotePort: 0,
       );
-      
+
       // Clean up request ID mapping
       _requestIds.remove(err.requestOptions);
     }
-    
+
     handler.next(err);
   }
-  
+
   /// Get response body for a specific request ID
   Uint8List? getResponseBody(String requestId) {
     return _responseBuffers[requestId];
   }
-  
+
   /// Clear stored response buffers
   void clearBuffers() {
     _responseBuffers.clear();
     _requestIds.clear();
   }
-  
+
   /// Convert headers to the format expected by DevTools
   Map<String, List<String>> _convertHeaders(Map<String, dynamic> headers) {
     final Map<String, List<String>> result = {};
@@ -230,7 +229,7 @@ class DioNetworkInspectorInterceptor extends InterceptorsWrapper {
     });
     return result;
   }
-  
+
   /// Determine request type based on URL and headers
   String _getRequestType(RequestOptions request) {
     String urlPath = request.uri.path;
