@@ -216,7 +216,7 @@ class InspectCSSModule extends UIInspectorModule {
   static CSSStyle? buildAttributesStyle(Map<String, dynamic> properties) {
     return null;
   }
-  
+
   void handleGetBackgroundColors(int? id, Map<String, dynamic> params) {
     // For now, return empty background colors
     // This could be enhanced to actually compute background colors from the render tree
@@ -224,19 +224,19 @@ class InspectCSSModule extends UIInspectorModule {
       'backgroundColors': [],
     }));
   }
-  
+
   void handleSetEffectivePropertyValueForNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'] != null ? view.getTargetIdByNodeId(params['nodeId']) : null;
     String? propertyName = params['propertyName'];
     String? value = params['value'];
-    
+
     if (nodeId != null && propertyName != null && value != null) {
       BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
       if (element is Element) {
         element.setInlineStyle(camelize(propertyName), value);
       }
     }
-    
+
     sendToFrontend(id, null);
   }
 }

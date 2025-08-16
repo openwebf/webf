@@ -56,32 +56,6 @@ abstract class DevToolsService {
   /// and rendered elements in DevTools.
   UIInspector? get uiInspector => _uiInspector;
 
-  /// The Dart isolate running the DevTools server.
-  ///
-  /// DevTools runs in a separate isolate to avoid impacting the performance
-  /// of the main Flutter application.
-  Isolate? _isolateServer;
-
-  /// Access to the isolate running the DevTools server.
-  ///
-  /// This isolate handles communication with Chrome DevTools.
-  Isolate get isolateServer => _isolateServer!;
-
-  /// Sets the isolate for the DevTools server.
-  ///
-  /// @param isolate The Dart isolate instance handling DevTools communication
-  set isolateServer(Isolate isolate) {
-    _isolateServer = isolate;
-  }
-
-  SendPort? _isolateServerPort;
-
-  SendPort? get isolateServerPort => _isolateServerPort;
-
-  set isolateServerPort(SendPort? value) {
-    _isolateServerPort = value;
-  }
-
   WebFController? _controller;
 
   WebFController? get controller => _controller;
@@ -124,8 +98,6 @@ abstract class DevToolsService {
     // For unified service, send DOM updated event directly
     if (this is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService.sendEventToFrontend(DOMUpdatedEvent());
-    } else {
-      _isolateServerPort!.send(InspectorReload(_controller!.view.contextId));
     }
   }
 
@@ -137,8 +109,6 @@ abstract class DevToolsService {
     _uiInspector?.dispose();
     _contextDevToolMap.remove(controller?.view.contextId);
     _controller = null;
-    _isolateServerPort = null;
-    _isolateServer?.kill();
   }
 }
 
@@ -250,7 +220,7 @@ class UnifiedChromeDevToolsService {
 
     // Get the old Page module to transfer screencast state
     InspectPageModule? oldPageModule = _currentService?.uiInspector?.moduleRegistrar['Page'] as InspectPageModule?;
-    
+
     _currentController = controller;
     _currentService = _controllerServices[controller];
 
@@ -404,50 +374,12 @@ class UnifiedChromeDevToolsService {
   Future<shelf.Response> _handleRequest(shelf.Request request) async {
     final path = request.url.path;
 
-    if (path == 'json/version') {
-      return _handleVersion(request);
-    } else if (path == 'json' || path == 'json/list') {
-      return _handleList(request);
-    } else if (path == '') {
+    if (path == '') {
       final handler = webSocketHandler(_handleWebSocket);
       return await handler(request);
     }
 
     return shelf.Response.notFound('Not found');
-  }
-
-  shelf.Response _handleVersion(shelf.Request request) {
-    final version = {
-      'Browser': 'WebF/0.17.0',
-      'Protocol-Version': '1.3',
-      'User-Agent': 'WebF DevTools Service',
-      'V8-Version': '9.1.269.36',
-      'WebKit-Version': '537.36',
-      'webSocketDebuggerUrl': 'ws://${request.headers['host']}',
-    };
-
-    return shelf.Response.ok(
-      jsonEncode(version),
-      headers: {'Content-Type': 'application/json'},
-    );
-  }
-
-  shelf.Response _handleList(shelf.Request request) {
-    final targets = _getTargetList().map((target) {
-      return {
-        'id': target['id'],
-        'type': 'page',
-        'title': target['title'],
-        'url': target['url'],
-        'devtoolsFrontendUrl': 'devtools://devtools/bundled/js_app.html?ws=${request.headers['host']}',
-        'webSocketDebuggerUrl': 'ws://${request.headers['host']}',
-      };
-    }).toList();
-
-    return shelf.Response.ok(
-      jsonEncode(targets),
-      headers: {'Content-Type': 'application/json'},
-    );
   }
 
   void _handleWebSocket(WebSocketChannel webSocket) {

@@ -54,6 +54,12 @@ class InspectNetworkModule extends UIInspectorModule {
     return 'dio_${_dioRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
   }
 
+  @override
+  void onEnabled() {
+    // On Network.enable, replay past requests for this controller.
+    _replayPastRequests();
+  }
+
   // Helper and state for HttpClient-originated requests (non-Dio)
   int _httpRequestIdCounter = 0;
   String _nextHttpRequestId() {
@@ -227,6 +233,89 @@ class InspectNetworkModule extends UIInspectorModule {
 
   // Legacy HttpClientInterceptor support has been removed. Network inspection now
   // relies on Dio interceptors when Dio networking is enabled.
+
+  void _replayPastRequests() {
+    final controller = devtoolsService.controller;
+    if (controller == null || !controller.isFlutterAttached) return;
+    final ctxId = controller.view.contextId.toInt();
+    final requests = List<NetworkRequest>.from(NetworkStore().getRequestsForContext(ctxId));
+    if (requests.isEmpty) return;
+
+    // Use earliest start as base for timestamps
+    final baseMs = requests.map((r) => r.startTime.millisecondsSinceEpoch).reduce((a, b) => a < b ? a : b);
+    requests.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    for (final req in requests) {
+      final requestId = req.requestId;
+      final loaderId = controller.view.contextId.toString();
+      final uri = Uri.tryParse(req.url);
+      if (uri == null) continue;
+
+      final tsStart = (req.startTime.millisecondsSinceEpoch - baseMs) / 1000;
+      final headers = req.requestHeaders;
+      final postData = req.requestData;
+
+      // Emit requestWillBeSent
+      sendEventToFrontend(NetworkRequestWillBeSentEvent(
+        requestId: requestId,
+        loaderId: loaderId,
+        requestMethod: req.method,
+        url: req.url,
+        headers: headers,
+        timestamp: tsStart,
+        data: postData,
+      ));
+
+      // If request completed, emit responseReceived/loadingFinished or loadingFailed
+      if (req.isComplete) {
+        final respBytes = _responseBuffers[requestId] ?? req.responseBody ?? Uint8List(0);
+        String mime = (req.mimeType ?? '').isNotEmpty ? req.mimeType! : 'text/plain';
+        if ((mime == 'text/plain' || mime == 'application/octet-stream') && respBytes.isNotEmpty) {
+          final sniff = _sniffImageMime(respBytes);
+          if (sniff != null) mime = sniff;
+        }
+
+        final type = mime.startsWith('image/') ? 'Image' : _guessTypeFromPath(uri.path);
+        final tsEnd = (req.endTime!.millisecondsSinceEpoch - baseMs) / 1000;
+
+        if (req.statusCode != null && req.statusCode != 0) {
+          // Treat as a completed HTTP response
+          final responseHeaders = req.responseHeaders ?? <String, List<String>>{};
+          sendEventToFrontend(NetworkResponseReceivedEvent(
+            requestId: requestId,
+            loaderId: loaderId,
+            url: req.url,
+            headers: responseHeaders,
+            status: req.statusCode!,
+            statusText: req.statusText ?? '',
+            mimeType: mime,
+            remoteIPAddress: uri.host,
+            remotePort: uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80),
+            fromDiskCache: req.fromCache ?? false,
+            encodedDataLength: respBytes.length,
+            protocol: uri.scheme,
+            type: type,
+            timestamp: tsEnd,
+          ));
+
+          sendEventToFrontend(NetworkLoadingFinishedEvent(
+            requestId: requestId,
+            contentLength: respBytes.length,
+            timestamp: tsEnd,
+          ));
+        } else {
+          // Failure case
+          sendEventToFrontend(NetworkLoadingFailedEvent(
+            requestId: requestId,
+            timestamp: tsEnd,
+            type: type,
+            errorText: req.statusText ?? 'Request failed',
+            canceled: false,
+          ));
+        }
+      }
+    }
+  }
 }
 
 bool _isTextMimeType(String? mime) {
@@ -242,6 +331,7 @@ bool _isTextMimeType(String? mime) {
       mime.contains('csv') ||
       mime.contains('urlencoded');
 }
+
 
 class _InspectDioInterceptor extends InterceptorsWrapper {
   _InspectDioInterceptor(this.module, this.contextId);

@@ -374,8 +374,33 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   void handleGetFrameResourceTree(int? id, Map<String, dynamic> params) {
-    Frame frame = Frame('Frame Name', 'frame-id', '', '', '', '', '', '', []);
-    FrameResourceTree frameResourceTree = FrameResourceTree(frame, []);
+    print('[DevTools] Page.getResourceTree called');
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
+        : devtoolsService.controller;
+
+    final String url = controller?.url ?? '';
+    final uri = Uri.tryParse(url);
+    final scheme = uri?.scheme ?? '';
+    final host = uri?.host ?? '';
+    final port = (uri != null && uri.hasPort) ? uri.port : (scheme == 'https' ? 443 : scheme == 'http' ? 80 : 0);
+    final origin = (scheme.isNotEmpty && host.isNotEmpty)
+        ? '$scheme://$host${(scheme == 'http' && port == 80) || (scheme == 'https' && port == 443) || port == 0 ? '' : ':$port'}'
+        : '';
+
+    final frame = Frame(
+      'main_frame',
+      controller?.view.contextId.toString() ?? '',
+      url,
+      host,
+      origin,
+      'text/html',
+      scheme == 'https' ? 'Secure' : 'InsecureScheme',
+      'NotIsolated',
+      const <String>[],
+    );
+    final frameResourceTree = FrameResourceTree(frame, []);
+    print('[DevTools] Page.getResourceTree -> url=' + url + ' origin=' + origin + ' ctx=' + (controller?.view.contextId.toString() ?? ''));
     sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }

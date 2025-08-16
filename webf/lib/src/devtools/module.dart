@@ -4,6 +4,7 @@
  */
 
 import 'package:webf/devtools.dart';
+import 'package:webf/foundation.dart';
 
 abstract class _InspectorModule {
   String get name;
@@ -15,12 +16,25 @@ abstract class _InspectorModule {
       case 'enable':
         _enable = true;
         sendToFrontend(id, null);
+        // Hook for modules to handle enable
+        try { onEnabled(); } catch (_) {}
         break;
       case 'disable':
         _enable = false;
         sendToFrontend(id, null);
+        // Hook for modules to handle disable
+        try { onDisabled(); } catch (_) {}
         break;
 
+      case 'setCacheDisabled':
+        bool disableCache = params?['cacheDisabled'] ?? false;
+
+        if (disableCache) {
+          HttpCacheController.mode = HttpCacheMode.NO_CACHE;
+        } else {
+          HttpCacheController.mode = HttpCacheMode.DEFAULT;
+        }
+        break;
       default:
         if (_enable) receiveFromFrontend(id, method, params);
     }
@@ -29,6 +43,12 @@ abstract class _InspectorModule {
   void sendToFrontend(int? id, JSONEncodable? result);
   void sendEventToFrontend(InspectorEvent event);
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params);
+
+  // Optional hooks for subclasses
+  void onEnabled() {}
+  void onDisabled() {}
+
+  bool get isEnabled => _enable;
 }
 
 // Inspector modules working on flutter.ui thread.
@@ -43,9 +63,6 @@ abstract class UIInspectorModule extends _InspectorModule {
       final resultMap = result?.toJson() ?? <String, dynamic>{};
       // Cast the Map to ensure it's Map<String, dynamic>
       ChromeDevToolsService.unifiedService.sendMethodResult(id ?? 0, Map<String, dynamic>.from(resultMap));
-    } else {
-      // Legacy path for old isolate-based service
-      devtoolsService.isolateServerPort!.send(InspectorMethodResult(id, result?.toJson()));
     }
   }
 
@@ -54,9 +71,6 @@ abstract class UIInspectorModule extends _InspectorModule {
     // For the unified service, send directly through the service
     if (devtoolsService is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService.sendEventToFrontend(event);
-    } else {
-      // Legacy path for old isolate-based service
-      devtoolsService.isolateServerPort?.send(event);
     }
   }
 }
