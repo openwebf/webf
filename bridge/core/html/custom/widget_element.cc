@@ -80,6 +80,11 @@ ScriptValue WidgetElement::item(const AtomicString& key, ExceptionState& excepti
     return unimplemented_properties_[key];
   }
 
+  // Return cached value if it was set via async property setter to support sync access.
+  if (cached_properties_.count(key) > 0) {
+    return cached_properties_[key];
+  }
+
   // If the property is defined in the prototype for DOM built-in properties and methods,
   // return undefined to let QuickJS look for this property value on its prototype.
   if (IsPrototypeProperty(key)) {
@@ -153,17 +158,21 @@ bool WidgetElement::SetItem(const AtomicString& key, const ScriptValue& value, E
   }
 
   if (shape->HasProperty(key)) {
+    // Always perform async set, caching the value for synchronous reads via item().
     std::vector<char> sync_key_string(key.length());
     bool is_async = IsAsyncKey(key, sync_key_string.data());
 
+    AtomicString sync_key = key;
     if (is_async) {
-      AtomicString sync_key = AtomicString::CreateFromUTF8(sync_key_string.data());
-      SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state), exception_state);
-      return true;
+      sync_key = AtomicString::CreateFromUTF8(sync_key_string.data());
     }
 
-    NativeValue result = SetBindingProperty(key, value.ToNative(ctx(), exception_state), exception_state);
-    return NativeValueConverter<NativeTypeBool>::FromNativeValue(result);
+    // Cache value for synchronous access.
+    cached_properties_[sync_key] = value;
+
+    // Use async setter to avoid blocking.
+    SetBindingPropertyAsync(sync_key, value.ToNative(ctx(), exception_state), exception_state);
+    return true;
   }
 
   return true;
@@ -181,6 +190,10 @@ void WidgetElement::Trace(GCVisitor* visitor) const {
   HTMLElement::Trace(visitor);
 
   for (auto& entry : unimplemented_properties_) {
+    entry.second.Trace(visitor);
+  }
+
+  for (auto& entry : cached_properties_) {
     entry.second.Trace(visitor);
   }
 
