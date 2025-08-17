@@ -2989,11 +2989,8 @@ class CSSRenderStyle extends RenderStyle
       return false;
     }
 
-    // Body and HTML elements should not establish inline formatting contexts
-    // They should use normal flow layout
-    if (target is BodyElement || target is HTMLElement) {
-      return false;
-    }
+    // Do not special-case BODY/HTML here. They can also establish IFC
+    // when they contain only inline content and no block-level content.
 
     // Positioned elements should not establish inline formatting contexts
     // They are taken out of normal flow and need special layout handling

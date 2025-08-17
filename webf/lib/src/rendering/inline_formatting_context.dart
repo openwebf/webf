@@ -828,7 +828,7 @@ class InlineFormattingContext {
               print('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
             }
           }
-          pb.pushStyle(_uiTextStyleFromCss(st, isChinese: false));
+          pb.pushStyle(_uiTextStyleFromCss(st));
           if (debugLogInlineLayoutEnabled) {
             final fam = st.fontFamily;
             final fs = st.fontSize.computedValue;
