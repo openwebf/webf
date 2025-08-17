@@ -952,16 +952,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       developer.Timeline.finishSync();
     }
 
-    if (!kReleaseMode) {
-      developer.Timeline.startSync('RenderFlex.layoutFlexItems.setContainerSize');
-    }
-
-    // Set flex container size.
-    _setContainerSize(_runMetrics);
-
-    if (!kReleaseMode) {
-      developer.Timeline.finishSync();
-    }
+    // Defer setting container size until after children have been adjusted.
 
     if (!kReleaseMode) {
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.adjustChildrenSize');
@@ -2077,6 +2068,20 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     double contentWidth = _isHorizontalFlexDirection ? runMaxMainSize : runCrossSize;
     double contentHeight = _isHorizontalFlexDirection ? runCrossSize : runMaxMainSize;
+
+    // Respect specified cross size (height for row, width for column) without growing the container.
+    // This allows flex items to overflow when their content is taller/wider than the container.
+    if (_isHorizontalFlexDirection) {
+      final double? specifiedContentHeight = renderStyle.contentBoxLogicalHeight;
+      if (specifiedContentHeight != null) {
+        contentHeight = specifiedContentHeight;
+      }
+    } else {
+      final double? specifiedContentWidth = renderStyle.contentBoxLogicalWidth;
+      if (specifiedContentWidth != null) {
+        contentWidth = specifiedContentWidth;
+      }
+    }
 
     // Set flex container size.
     Size layoutContentSize = getContentSize(

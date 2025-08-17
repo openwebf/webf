@@ -48,7 +48,7 @@ import 'inline_layout_debugger.dart';
 /// - Line box height calculations
 /// - Padding and border rendering
 bool debugPaintInlineLayoutEnabled = true;
-bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
+bool debugLogInlineLayoutEnabled = true; // Enable verbose logging for paragraph-based IFC
 
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
