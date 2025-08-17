@@ -9,6 +9,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart' show debugPaintSizeEnabled;
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/widget.dart';
@@ -19,6 +20,7 @@ import 'package:webf/src/foundation/http_cache.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/src/launcher/controller.dart' show RoutePerformanceMetrics;
 import 'package:webf/src/launcher/loading_state.dart';
+import 'package:webf/rendering.dart' show debugPaintInlineLayoutEnabled, debugLogInlineLayoutEnabled, debugLogFlexBaselineEnabled;
 
 /// A floating inspector panel for WebF that provides debugging tools and insights.
 ///
@@ -2147,6 +2149,88 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
     super.dispose();
   }
 
+  Widget _buildOptionsPopup() {
+    return PopupMenuButton<int>(
+      tooltip: 'Options',
+      icon: Icon(Icons.tune, color: Colors.white),
+      splashRadius: 20,
+      itemBuilder: (context) => <PopupMenuEntry<int>>[
+        PopupMenuItem<int>(
+          value: 0,
+          child: _buildSwitchRow(
+            label: 'Paint Inline Layout',
+            value: debugPaintInlineLayoutEnabled,
+            onChanged: (v) {
+              setState(() {
+                debugPaintInlineLayoutEnabled = v;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        PopupMenuItem<int>(
+          value: 1,
+          child: _buildSwitchRow(
+            label: 'Log Inline Layout',
+            value: debugLogInlineLayoutEnabled,
+            onChanged: (v) {
+              setState(() {
+                debugLogInlineLayoutEnabled = v;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        PopupMenuItem<int>(
+          value: 2,
+          child: _buildSwitchRow(
+            label: 'Log Flex Baseline',
+            value: debugLogFlexBaselineEnabled,
+            onChanged: (v) {
+              setState(() {
+                debugLogFlexBaselineEnabled = v;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        PopupMenuDivider(),
+        PopupMenuItem<int>(
+          value: 3,
+          child: _buildSwitchRow(
+            label: 'Flutter Paint Size',
+            value: debugPaintSizeEnabled,
+            onChanged: (v) {
+              setState(() {
+                debugPaintSizeEnabled = v;
+              });
+              Navigator.pop(context);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSwitchRow({required String label, required bool value, required ValueChanged<bool> onChanged}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(color: Colors.black),
+          ),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: Colors.blueAccent,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -2170,16 +2254,23 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
               borderRadius: BorderRadius.circular(2.5),
             ),
           ),
-          // Title
+          // Title + Options
           Padding(
             padding: EdgeInsets.all(16),
-            child: Text(
-              'WebF DevTools',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'WebF DevTools',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                _buildOptionsPopup(),
+              ],
             ),
           ),
           // Tab Bar with horizontal scrolling
