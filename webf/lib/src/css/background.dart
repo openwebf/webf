@@ -7,12 +7,15 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/painting.dart';
 import 'package:webf/html.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/rendering.dart';
 
@@ -163,6 +166,9 @@ mixin CSSBackgroundMixin on RenderStyle {
   set backgroundColor(CSSColor? value) {
     if (value == _backgroundColor) return;
     _backgroundColor = value;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] set backgroundColor <- ' + (value?.cssText() ?? 'null'));
+    }
     markNeedsPaint();
     resetBoxDecoration();
   }

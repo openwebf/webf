@@ -40,6 +40,8 @@ import 'package:webf/src/launcher/dio_logger_options.dart';
 import 'package:webf/src/launcher/network_options.dart';
 
 import 'loading_state.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // Error handler when load bundle failed.
 typedef LoadErrorHandler = void Function(FlutterError error, StackTrace stack);
@@ -649,19 +651,35 @@ class WebFController with Diagnosticable {
 
   bool? _darkModeOverride;
 
-  // This ensures that when app developers manually toggle dark mode,
-  // both the DOM event is fired and styles are updated immediately
+  // Allow overriding system dark mode and ensure styles update when effect changes.
   set darkModeOverride(value) {
-    bool? previousDarkMode = _darkModeOverride;  // Store previous value
+    // Effective value before change
+    bool? before = isDarkMode;
 
     _darkModeOverride = value;
-    // Only dispatch event and recalculate if:
-    // 1. Previous value existed and was different
-    // 2. New value is not null
-    if (previousDarkMode != null && value != null && previousDarkMode != value) {
-      view.window.dispatchEvent(ColorSchemeChangeEvent(value ? 'dark' : 'light'));
+
+    // Effective value after change
+    bool? after = isDarkMode;
+
+    if (before != after) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[color-scheme] darkModeOverride changed: before=$before after=$after');
+      }
+      view.window.dispatchEvent(ColorSchemeChangeEvent(after == true ? 'dark' : 'light'));
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[style] Recalculate after darkModeOverride change');
+      }
       view.document.recalculateStyleImmediately();
+    } else {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        cssLogger.fine('[color-scheme] darkModeOverride unchanged: before=$before after=$after');
+      }
     }
+  }
+
+  // Toggle CSS debug logs at runtime.
+  void setCssDebugLogs(bool enabled) {
+    DebugFlags.enableCssLogs = enabled;
   }
 
   get darkModeOverride => _darkModeOverride;

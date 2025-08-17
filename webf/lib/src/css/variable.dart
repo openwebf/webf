@@ -6,8 +6,11 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 
 mixin CSSVariableMixin on RenderStyle {
   Map<String, String>? _identifierStorage;
@@ -21,6 +24,9 @@ mixin CSSVariableMixin on RenderStyle {
     } else if (!dep.contains(propertyName)) {
       dep.add(propertyName);
     }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      debugPrint('[webf][var] add dep: ' + identifier + ' -> ' + propertyName);
+    }
   }
 
   @override
@@ -31,14 +37,26 @@ mixin CSSVariableMixin on RenderStyle {
       String originalIdentifier = identifier;
       identifier = variable.identifier.trim();
       _addDependency(identifier, originalIdentifier);
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][var] indirection: ' + originalIdentifier + ' -> ' + identifier);
+      }
     }
     if (_identifierStorage != null && _identifierStorage![identifier] != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][var] hit: ' + identifier + ' = ' + _identifierStorage![identifier]!);
+      }
       return _identifierStorage![identifier];
     }
     if (variable?.defaultValue != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][var] default: ' + identifier + ' = ' + variable!.defaultValue!);
+      }
       return variable!.defaultValue;
     }
     // Inherits from renderStyle tree.
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      debugPrint('[webf][var] inherit: ' + identifier + ' (from parent)');
+    }
     return getParentRenderStyle()?.getCSSVariable(identifier, propertyName);
   }
 
@@ -71,12 +89,43 @@ mixin CSSVariableMixin on RenderStyle {
     if (variable != null) {
       _variableStorage ??= HashMap<String, CSSVariable>();
       _variableStorage![identifier] = variable;
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][var] set: ' + identifier + ' = CSSVariable(' + variable.identifier + (variable.defaultValue != null ? (',' + variable.defaultValue!) : '') + ')');
+      }
     } else {
       _identifierStorage ??= HashMap<String, String>();
       _identifierStorage![identifier] = value;
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][var] set: ' + identifier + ' = ' + value);
+      }
     }
     if (_propertyDependencies.containsKey(identifier)) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][var] notify deps: ' + identifier + ' -> ' + _propertyDependencies[identifier]!.join(','));
+      }
       _notifyCSSVariableChanged(identifier, value);
+    } else {
+      // No dependencies recorded yet (e.g., first parse may have used a cached color string).
+      // Clear common color cache keys so next parse recomputes with the new variable value.
+      _clearColorCacheForVariable(identifier);
+    }
+  }
+
+  void _clearColorCacheForVariable(String identifier) {
+    List<String> maybeColorKeys = <String>[
+      'var($identifier)',
+      'rgba(var($identifier))',
+      'rgb(var($identifier))',
+      'hsla(var($identifier))',
+      'hsl(var($identifier))',
+    ];
+    for (final key in maybeColorKeys) {
+      if (CSSColor.isColor(key)) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[var] fallback clear color cache (set): ' + key);
+        }
+        CSSColor.clearCachedColorValue(key);
+      }
     }
   }
 
@@ -93,16 +142,43 @@ mixin CSSVariableMixin on RenderStyle {
       String propertyValue = target.style.getPropertyValue(propertyName);
       if (target.style.contains(propertyName) && CSSVariable.isCSSVariableValue(propertyValue)) {
         String propertyValue = variableString ?? value;
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][var] update property due to var change: ' + propertyName + ' <- ' + propertyValue + ' (variable=' + identifier + ')');
+        }
         if (CSSColor.isColor(propertyValue)) {
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            debugPrint('[webf][var] clear color cache: ' + propertyValue);
+          }
           CSSColor.clearCachedColorValue(propertyValue);
         }
-        target.style.setProperty(propertyName, variableString ?? value);
+        target.style.setProperty(propertyName, propertyValue);
         target.style.flushPendingProperties();
       }
     });
 
+    // Fallback: clear common color cache patterns for this variable to avoid stale cache hits
+    // even if we failed to record explicit dependencies (e.g., due to prior cache hits).
+    List<String> maybeColorKeys = [
+      'var($identifier)',
+      'rgba(var($identifier))',
+      'rgb(var($identifier))',
+      'hsla(var($identifier))',
+      'hsl(var($identifier))',
+    ];
+    for (final key in maybeColorKeys) {
+      if (CSSColor.isColor(key)) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][var] fallback clear color cache: $key');
+        }
+        CSSColor.clearCachedColorValue(key);
+      }
+    }
+
     notifyCSSVariableChangedRecursive(RenderObject child) {
       if (child is RenderBoxModel && child is! RenderEventListener) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][var] propagate to child: ' + child.renderStyle.target.tagName);
+        }
         child.renderStyle._notifyCSSVariableChanged(identifier, value);
       } else {
         child.visitChildren(notifyCSSVariableChangedRecursive);

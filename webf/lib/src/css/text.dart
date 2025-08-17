@@ -4,8 +4,11 @@
  */
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/text_span.dart';
@@ -39,6 +42,9 @@ mixin CSSTextMixin on RenderStyle {
   set color(CSSColor? value) {
     if (_color == value) return;
     _color = value?.value;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[text] set color <- ' + (value?.cssText() ?? 'null'));
+    }
     // Update all the children text with specified style property not set due to style inheritance.
     _markChildrenTextNeedsLayout(this, COLOR);
   }

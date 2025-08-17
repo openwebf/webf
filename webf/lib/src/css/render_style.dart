@@ -20,6 +20,8 @@ import 'package:webf/src/css/css_animation.dart';
 import 'package:webf/src/svg/rendering/shape.dart';
 
 import 'svg.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 typedef RenderStyleVisitor<T extends RenderObject> = void Function(T renderObject);
 
@@ -1501,6 +1503,9 @@ class CSSRenderStyle extends RenderStyle
         return textOverflow;
       case LINE_CLAMP:
         return lineClamp;
+      case TAB_SIZE:
+        // Returns effective tab-size (number of spaces) from CSSTextMixin
+        return tabSize;
       case VERTICAL_ALIGN:
         return verticalAlign;
       case TEXT_ALIGN:
@@ -1524,6 +1529,9 @@ class CSSRenderStyle extends RenderStyle
   }
 
   setProperty(String name, value) {
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      debugPrint('[webf][render-style] setProperty: ' + name + ' <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+    }
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
       setCSSVariable(name, value.toString());
@@ -1716,6 +1724,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       // Background
       case BACKGROUND_COLOR:
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+        }
         backgroundColor = value;
         break;
       case BACKGROUND_ATTACHMENT:
@@ -1822,6 +1833,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       // Text
       case COLOR:
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][render-style] color <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+        }
         color = value;
         break;
       case TEXT_DECORATION_LINE:
@@ -1865,6 +1879,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case LINE_CLAMP:
         lineClamp = value;
+        break;
+      case TAB_SIZE:
+        tabSize = value;
         break;
       case VERTICAL_ALIGN:
         verticalAlign = value;
@@ -2317,6 +2334,10 @@ class CSSRenderStyle extends RenderStyle
         break;
       case LINE_CLAMP:
         value = CSSText.parseLineClamp(propertyValue);
+        break;
+      case TAB_SIZE:
+        // CSS tab-size accepts <number> (and <length> in spec, but we currently treat it as number of spaces)
+        value = CSSNumber.parseNumber(propertyValue);
         break;
       case VERTICAL_ALIGN:
         value = CSSInlineMixin.resolveVerticalAlign(propertyValue);

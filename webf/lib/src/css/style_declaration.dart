@@ -3,8 +3,11 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/html.dart';
@@ -687,6 +690,9 @@ class CSSStyleDeclaration extends DynamicBindingObject with StaticDefinedBinding
     if (original == present && (!CSSVariable.isCSSVariableValue(present))) return;
 
     if (onStyleChanged != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs && (property == COLOR || property == BACKGROUND_COLOR)) {
+        cssLogger.fine('[style] emit change: ' + property + ' prev=' + (original ?? 'null') + ' curr=' + present);
+      }
       onStyleChanged!(property, original, present, baseHref: baseHref);
     }
 

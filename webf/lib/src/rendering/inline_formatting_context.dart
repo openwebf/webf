@@ -48,12 +48,7 @@ import 'inline_layout_debugger.dart';
 /// - Line box height calculations
 /// - Padding and border rendering
 bool debugPaintInlineLayoutEnabled = false;
-bool debugLogInlineLayoutEnabled = true; // Enable verbose logging for paragraph-based IFC
-
-/// Default line-height multiplier for "normal" line-height value.
-/// Matches Chrome's default behavior (approximately 1.146).
-/// Chrome uses 18.33px for 16px font-size: 18.33/16 ≈ 1.145833
-const double defaultLineHeightMultiplier = 1.146;
+bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
 
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.

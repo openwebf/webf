@@ -3,6 +3,9 @@
  */
 
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:collection/collection.dart';
 
 import 'package:webf/css.dart';
@@ -34,6 +37,9 @@ class StyleNodeManager {
     if (!node.isConnected) {
       return;
     }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] add candidate node: ' + node.runtimeType.toString());
+    }
     if (_styleSheetCandidateNodes.isEmpty) {
       _styleSheetCandidateNodes.add(node);
       _isStyleSheetCandidateNodeChanged = true;
@@ -56,6 +62,9 @@ class StyleNodeManager {
 
   void removeStyleSheetCandidateNode(Node node) {
     _styleSheetCandidateNodes.remove(node);
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] remove candidate node: ' + node.runtimeType.toString());
+    }
     _isStyleSheetCandidateNodeChanged = true;
   }
 
@@ -70,8 +79,8 @@ class StyleNodeManager {
   // TODO(jiangzhou): cache stylesheet
   bool updateActiveStyleSheets({bool rebuild = false}) {
     List<CSSStyleSheet> newSheets = _collectActiveStyleSheets();
-    if (newSheets.isEmpty) {
-      return false;
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] updateActiveStyleSheets: candidates=' + _styleSheetCandidateNodes.length.toString() + ' -> newSheets=' + newSheets.length.toString() + ' (rebuild=' + rebuild.toString() + ')');
     }
     newSheets = newSheets.where((element) => element.cssRules.isNotEmpty).toList();
     if (rebuild == false) {
@@ -100,6 +109,9 @@ class StyleNodeManager {
       } else if (node is StyleElementMixin && node.styleSheet != null) {
         styleSheetsForStyleSheetsList.add(node.styleSheet!);
       }
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] _collectActiveStyleSheets: ' + styleSheetsForStyleSheetsList.length.toString());
     }
     return styleSheetsForStyleSheetsList;
   }

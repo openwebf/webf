@@ -5,6 +5,8 @@
 import 'dart:io';
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
@@ -150,15 +152,24 @@ class LinkElement extends Element {
   String? _cachedStyleSheetText;
 
   void reloadStyle() {
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      debugPrint('[webf][style] <link rel=stylesheet> reloadStyle href=' + (_resolvedHyperlink?.toString() ?? href));
+    }
     if (_cachedStyleSheetText == null) {
       _fetchAndApplyCSSStyle();
       return;
     }
 
     if (_styleSheet != null) {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][style] <link> replaceSync (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+      }
       _styleSheet!.replaceSync(_cachedStyleSheetText!,
           windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     } else {
+      if (kDebugMode && DebugFlags.enableCssLogs) {
+        debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+      }
       _styleSheet = CSSParser(_cachedStyleSheetText!)
           .parse(windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
     }
@@ -275,7 +286,13 @@ class LinkElement extends Element {
         ownerDocument.decrementRequestCount();
 
         final String cssString = _cachedStyleSheetText = await resolveStringFromData(bundle.data!);
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][style] <link> fetched href=' + href + ' len=' + cssString.length.toString());
+        }
 
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+        }
         _styleSheet = CSSParser(cssString, href: href).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = href;
@@ -322,6 +339,9 @@ class LinkElement extends Element {
       if (rel == REL_PRELOAD) {
         _handlePreload();
       } else if (rel == REL_STYLESHEET) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <link> connected: fetch+apply href=' + (_resolvedHyperlink?.toString() ?? href));
+        }
         _fetchAndApplyCSSStyle();
       }
     }
@@ -473,9 +493,15 @@ mixin StyleElementMixin on Element {
 
     if (text != null) {
       if (_styleSheet != null) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> replaceSync (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');
+        }
         _styleSheet!.replaceSync(text,
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       } else {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> parse (len=' + text.length.toString() + ', darkMode=' + (ownerView.rootController.isDarkMode?.toString() ?? 'null') + ')');
+        }
         _styleSheet = CSSParser(text).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
       }
@@ -521,6 +547,9 @@ mixin StyleElementMixin on Element {
     super.connectedCallback();
     if (_type == _CSS_MIME) {
       if (_styleSheet == null) {
+        if (kDebugMode && DebugFlags.enableCssLogs) {
+          cssLogger.fine('[style] <style> connected -> recalc');
+        }
         _recalculateStyle();
       }
       ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
@@ -532,6 +561,9 @@ mixin StyleElementMixin on Element {
     if (_styleSheet != null) {
       ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
       ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] <style> disconnected');
     }
     super.disconnectedCallback();
   }

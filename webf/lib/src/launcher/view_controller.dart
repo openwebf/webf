@@ -11,6 +11,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
+import 'package:webf/src/foundation/debug_flags.dart';
+import 'package:webf/src/foundation/logger.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart' hide Element;
 import 'package:ffi/ffi.dart';
@@ -353,7 +355,15 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (_originalOnPlatformBrightnessChanged != null) {
       _originalOnPlatformBrightnessChanged!();
     }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[color-scheme] Platform brightness changed -> ' + window.colorScheme);
+    }
     window.dispatchEvent(ColorSchemeChangeEvent(window.colorScheme));
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[style] Recalculate after platform brightness change');
+    }
+    // Recalculate styles so prefers-color-scheme media queries re-evaluate
+    document.recalculateStyleImmediately();
   }
 
   // export Uint8List bytes from rendered result.
