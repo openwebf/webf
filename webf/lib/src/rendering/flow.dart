@@ -13,7 +13,7 @@ import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'inline_formatting_context.dart';
 import 'line_box.dart';
-import 'text_next.dart';
+import 'text.dart';
 import 'event_listener.dart';
 
 // Position and size of each run (line box) in flow layout.
@@ -165,10 +165,10 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
       }
     } else {
-      // Regular flow layout painting
+      // Regular flow layout painting: skip RenderTextBox (painted only via IFC)
       for (int i = 0; i < paintingOrder.length; i++) {
         RenderBox child = paintingOrder[i];
-        if (!isPositionPlaceholder(child)) {
+        if (!isPositionPlaceholder(child) && child is! RenderTextBox) {
           final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
           if (child.hasSize) {
             context.paintChild(child, childParentData.offset + offset);

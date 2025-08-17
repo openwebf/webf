@@ -15,7 +15,7 @@ import 'package:webf/src/html/text.dart';
 
 // Enable verbose baseline logging for flex baseline alignment.
 // Toggle at runtime: import 'package:webf/rendering.dart' and set to true.
-bool debugLogFlexBaselineEnabled = true;
+bool debugLogFlexBaselineEnabled = false;
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines

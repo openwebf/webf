@@ -47,8 +47,8 @@ import 'inline_layout_debugger.dart';
 /// - Text alignment problems
 /// - Line box height calculations
 /// - Padding and border rendering
-bool debugPaintInlineLayoutEnabled = true;
-bool debugLogInlineLayoutEnabled = true; // Enable verbose logging for paragraph-based IFC
+bool debugPaintInlineLayoutEnabled = false;
+bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
 
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
@@ -828,7 +828,7 @@ class InlineFormattingContext {
               print('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
             }
           }
-          pb.pushStyle(_uiTextStyleFromCss(st));
+          pb.pushStyle(_uiTextStyleFromCss(st, isChinese: false));
           if (debugLogInlineLayoutEnabled) {
             final fam = st.fontFamily;
             final fs = st.fontSize.computedValue;

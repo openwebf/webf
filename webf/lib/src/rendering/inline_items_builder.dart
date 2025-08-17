@@ -1,7 +1,7 @@
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/text_next.dart';
+import 'package:webf/src/rendering/text.dart';
 import 'package:webf/src/rendering/event_listener.dart';
 import 'package:webf/src/css/whitespace_processor.dart';
 import 'inline_item.dart';
@@ -30,7 +30,7 @@ class InlineItemsBuilder {
 
   /// Stack of embedding levels for nested elements.
   final List<int> _levelStack = [];
-  
+
   /// Track if the previous text ended with collapsible whitespace
   bool _endsWithCollapsibleSpace = false;
 
@@ -163,24 +163,24 @@ class InlineItemsBuilder {
 
     if (processedText.isNotEmpty) {
       // Handle adjacent text node whitespace collapsing
-      if (style.whiteSpace == WhiteSpace.normal || 
+      if (style.whiteSpace == WhiteSpace.normal ||
           style.whiteSpace == WhiteSpace.nowrap ||
           style.whiteSpace == WhiteSpace.preLine) {
         // Check if we need to collapse leading space with previous trailing space
         if (_endsWithCollapsibleSpace && processedText.startsWith(' ')) {
           processedText = processedText.substring(1);
         }
-        
+
         // Update whether we end with collapsible space
         _endsWithCollapsibleSpace = processedText.endsWith(' ');
       } else {
         // For pre, pre-wrap, break-spaces, spaces are not collapsible
         _endsWithCollapsibleSpace = false;
       }
-      
+
       // Skip if the text became empty after collapsing
       if (processedText.isEmpty) return;
-      
+
       final startOffset = _currentOffset;
       _textContent.write(processedText);
 
@@ -241,7 +241,7 @@ class InlineItemsBuilder {
   /// Add atomic inline (inline-block, replaced element).
   void _addAtomicInline(RenderBoxModel box) {
     assert(box.renderStyle.display == CSSDisplay.inlineBlock || box.renderStyle.display == CSSDisplay.inlineFlex);
-    
+
     // Atomic inline elements break the text flow
     _endsWithCollapsibleSpace = false;
 

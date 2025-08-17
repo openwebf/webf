@@ -559,7 +559,36 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isNextSiblingAreRenderObject() {
-    return target.attachedRenderNextSibling?.attachedRenderer is RenderObject;
+    // Fast path: if a next attached render sibling exists, return true
+    if (target.attachedRenderNextSibling?.attachedRenderer is RenderObject) return true;
+
+    // Fallback: look ahead in the DOM for an in-flow, renderable next sibling.
+    // This accounts for cases where inline text will be wrapped into an
+    // anonymous block at the widget/render layer and thus should prevent
+    // collapsing this element's bottom margin with the parent.
+    final parent = target.parentElement;
+    if (parent == null) return false;
+    bool seenSelf = false;
+    for (final n in parent.childNodes) {
+      if (!seenSelf) {
+        if (identical(n, target)) {
+          seenSelf = true;
+        }
+        continue;
+      }
+      if (n is TextNode) {
+        if (n.data.trim().isNotEmpty) return true;
+        continue;
+      }
+      if (n is Element) {
+        final rs = n.renderStyle;
+        // Skip out-of-flow or non-rendered nodes
+        if (rs.position == CSSPositionType.absolute || rs.position == CSSPositionType.fixed) continue;
+        if (rs.display == CSSDisplay.none) continue;
+        return true;
+      }
+    }
+    return false;
   }
 
   @pragma('vm:prefer-inline')
@@ -2973,7 +3002,8 @@ class CSSRenderStyle extends RenderStyle
     }
 
     // If parent is a flex layout, this shouldn't establish IFC
-    if (isParentRenderFlexLayout() is RenderFlexLayout) {
+    // isParentRenderFlexLayout() already returns a boolean.
+    if (isParentRenderFlexLayout()) {
       return false;
     }
 

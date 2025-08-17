@@ -11,7 +11,6 @@ import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/src/foundation/logger.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:webf/rendering.dart';
-import 'package:webf/src/rendering/text_span.dart';
 
 final RegExp _commaRegExp = RegExp(r'\s*,\s*');
 

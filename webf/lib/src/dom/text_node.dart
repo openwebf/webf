@@ -8,7 +8,7 @@ import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
-import 'package:webf/src/rendering/text_next.dart';
+import 'package:webf/src/rendering/text.dart';
 
 typedef EveryRenderTextBoxHandler = void Function(RenderTextBox? textBox);
 
