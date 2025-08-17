@@ -367,6 +367,12 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (lines.isNotEmpty) {
           firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
+          if (debugLogInlineLayoutEnabled) {
+            // ignore: avoid_print
+            print('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
+                'last=${lastBaseline.toStringAsFixed(2)} '
+                'paddingTop=${paddingTop.toStringAsFixed(2)} borderTop=${borderTop.toStringAsFixed(2)}');
+          }
         } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
           // Legacy line boxes path
           final first = _inlineFormattingContext!.lineBoxes.first;
@@ -377,6 +383,11 @@ class RenderFlowLayout extends RenderLayoutBox {
           final last = _inlineFormattingContext!.lineBoxes.last;
           firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
+          if (debugLogInlineLayoutEnabled) {
+            // ignore: avoid_print
+            print('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
+                'last=${lastBaseline.toStringAsFixed(2)}');
+          }
         }
       }
       setCssBaselines(first: firstBaseline, last: lastBaseline);

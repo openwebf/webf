@@ -47,7 +47,7 @@ import 'inline_layout_debugger.dart';
 /// - Text alignment problems
 /// - Line box height calculations
 /// - Padding and border rendering
-bool debugPaintInlineLayoutEnabled = false;
+bool debugPaintInlineLayoutEnabled = true;
 bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
 
 /// Manages the inline formatting context for a block container.
@@ -217,11 +217,13 @@ class InlineFormattingContext {
     // New path: build a single Paragraph using dart:ui APIs
     _buildAndLayoutParagraph(constraints);
 
-    // Compute size from paragraph. For block containers, use the full
-    // available content width so text-align works (center/justify/etc.).
+    // Compute size from paragraph. Avoid propagating infinite widths.
     final para = _paragraph!;
     final bool isBlock = (container as RenderBoxModel).renderStyle.effectiveDisplay == CSSDisplay.block;
-    final double width = isBlock ? constraints.maxWidth : para.width;
+
+    // For blocks with unbounded width constraints, use the paragraph's
+    // actual laid-out width (shrink-to-fit) instead of infinity.
+    final double width = (isBlock && !constraints.hasBoundedWidth) ? para.width : (isBlock ? constraints.maxWidth : para.width);
     final double height = para.height;
 
     // Update children offsets from placeholder boxes
@@ -935,14 +937,24 @@ class InlineFormattingContext {
     }
 
     final paragraph = pb.build();
-    // First layout at the available width to measure longestLine
-    paragraph.layout(ui.ParagraphConstraints(width: constraints.maxWidth));
+    // First layout: use a finite width even when constraints are unbounded,
+    // so the Paragraph API accepts it and computes metrics.
+    final double initialWidth = constraints.hasBoundedWidth ? constraints.maxWidth : 1000000.0;
+    paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
+
     // For non-block containers, shrink-to-fit to the longest visual line so
-    // the reported width matches the painted width. Blocks keep full width.
+    // the reported width matches the painted width.
     final bool isBlock = (container as RenderBoxModel).renderStyle.effectiveDisplay == CSSDisplay.block;
     if (!isBlock) {
-      final double targetWidth = math.min(paragraph.longestLine, constraints.maxWidth);
-      if (targetWidth != constraints.maxWidth) {
+      final double targetWidth = math.min(paragraph.longestLine, constraints.maxWidth.isFinite ? constraints.maxWidth : paragraph.longestLine);
+      if (targetWidth != initialWidth) {
+        paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+      }
+    } else {
+      // For block containers with unbounded width, shrink-to-fit to content
+      // so upper layers don't see an infinite width.
+      if (!constraints.hasBoundedWidth) {
+        final double targetWidth = paragraph.longestLine;
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }

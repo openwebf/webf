@@ -13,6 +13,10 @@ import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
 
+// Enable verbose baseline logging for flex baseline alignment.
+// Toggle at runtime: import 'package:webf/rendering.dart' and set to true.
+bool debugLogFlexBaselineEnabled = true;
+
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
 class _RunMetrics {
@@ -1183,6 +1187,15 @@ class RenderFlexLayout extends RenderLayoutBox {
           childMarginTop = child.renderStyle.marginTop.computedValue;
           childMarginBottom = child.renderStyle.marginBottom.computedValue;
         }
+        if (debugLogFlexBaselineEnabled) {
+          final Size? ic = intrinsicChildSize;
+          // ignore: avoid_print
+          print('[FlexBaseline] PASS2 child='
+              '${child.runtimeType}#${child.hashCode} '
+              'intrinsicSize=${ic?.width.toStringAsFixed(2)}x${ic?.height.toStringAsFixed(2)} '
+              'ascent=${childAscent.toStringAsFixed(2)} '
+              'mT=${(childMarginTop ?? 0).toStringAsFixed(2)} mB=${(childMarginBottom ?? 0).toStringAsFixed(2)}');
+        }
         maxSizeAboveBaseline = math.max(
           childAscent,
           maxSizeAboveBaseline,
@@ -1192,6 +1205,13 @@ class RenderFlexLayout extends RenderLayoutBox {
           maxSizeBelowBaseline,
         );
         runCrossAxisExtent = maxSizeAboveBaseline + maxSizeBelowBaseline;
+        if (debugLogFlexBaselineEnabled) {
+          // ignore: avoid_print
+          print('[FlexBaseline] RUN update: maxAbove='
+              '${maxSizeAboveBaseline.toStringAsFixed(2)} '
+              'maxBelow=${maxSizeBelowBaseline.toStringAsFixed(2)} '
+              'runCross=${runCrossAxisExtent.toStringAsFixed(2)}');
+        }
       } else {
         runCrossAxisExtent = math.max(runCrossAxisExtent, childCrossAxisExtent);
       }
@@ -2785,7 +2805,17 @@ class RenderFlexLayout extends RenderLayoutBox {
       case 'baseline':
         // Distance from top to baseline of child.
         double childAscent = _getChildAscent(child);
-        return crossStartAddedOffset + lineBoxLeading / 2 + (runBaselineExtent - childAscent);
+        final double offset = crossStartAddedOffset + lineBoxLeading / 2 + (runBaselineExtent - childAscent);
+        if (debugLogFlexBaselineEnabled) {
+          // ignore: avoid_print
+          print('[FlexBaseline] offset child=${child.runtimeType}#${child.hashCode} '
+              'runBaseline=${runBaselineExtent.toStringAsFixed(2)} '
+              'childAscent=${childAscent.toStringAsFixed(2)} '
+              'lineLeading=${lineBoxLeading.toStringAsFixed(2)} '
+              'crossStart=${crossStartAddedOffset.toStringAsFixed(2)} '
+              '=> offset=${offset.toStringAsFixed(2)}');
+        }
+        return offset;
       default:
         return null;
     }
@@ -2838,6 +2868,15 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // It needs to subtract margin-top cause offset already includes margin-top.
     lineDistance = (childBaseLineDistance ?? 0) + childOffsetY;
+    if (debugLogFlexBaselineEnabled) {
+      // ignore: avoid_print
+      print('[FlexBaseline] computeDistanceToBaseline firstChild='
+          '${child.runtimeType}#${child.hashCode} '
+          'childBaseline=${childBaseLineDistance?.toStringAsFixed(2)} '
+          'childOffsetY=${childOffsetY.toStringAsFixed(2)} '
+          'marginTop=${marginTop.toStringAsFixed(2)} '
+          '=> lineDistance=${lineDistance.toStringAsFixed(2)}');
+    }
     lineDistance += marginTop;
     return lineDistance;
   }
@@ -2870,7 +2909,22 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Prefer CSS-cached baseline computed during the child's own layout.
     double? childAscent;
     if (child is RenderBoxModel) {
-      childAscent = child.computeCssFirstBaseline();
+      // Unwrap baseline from wrapped content if this is an event listener wrapper
+      if (child is RenderEventListener) {
+        final RenderBox? wrapped = child.child;
+        if (wrapped is RenderBoxModel) {
+          childAscent = wrapped.computeCssFirstBaseline();
+          if (debugLogFlexBaselineEnabled) {
+            // ignore: avoid_print
+            print('[FlexBaseline] unwrap baseline from child content: '
+                '${wrapped.runtimeType}#${wrapped.hashCode} => baseline=${childAscent?.toStringAsFixed(2)}');
+          }
+        } else {
+          childAscent = child.computeCssFirstBaseline();
+        }
+      } else {
+        childAscent = child.computeCssFirstBaseline();
+      }
     }
     double? childMarginTop = 0;
     double? childMarginBottom = 0;
@@ -2886,6 +2940,15 @@ class RenderFlexLayout extends RenderLayoutBox {
         : childMarginTop + childSize!.height;
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
+    if (debugLogFlexBaselineEnabled) {
+      // ignore: avoid_print
+      print('[FlexBaseline] _getChildAscent child='
+          '${child.runtimeType}#${child.hashCode} '
+          'cssFirstBaseline=${childAscent?.toStringAsFixed(2)} '
+          'fallback=${baseline.toStringAsFixed(2)} '
+          'extent=${extentAboveBaseline.toStringAsFixed(2)} size='
+          '${childSize?.width.toStringAsFixed(2)}x${childSize?.height.toStringAsFixed(2)}');
+    }
 
     return extentAboveBaseline;
   }
