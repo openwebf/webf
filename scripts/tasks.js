@@ -816,6 +816,7 @@ task('build-android-webf-lib', (done) => {
     execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
     -DCMAKE_TOOLCHAIN_FILE=${path.join(ndkDir, '/build/cmake/android.toolchain.cmake')} \
     -DANDROID_NDK=${ndkDir} \
+    -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
     -DIS_ANDROID=TRUE \
     -DANDROID_ABI="${arch}" \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}

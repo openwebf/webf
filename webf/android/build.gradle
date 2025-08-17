@@ -29,7 +29,7 @@ android {
     }
 
     compileSdk = 34
-    ndkVersion '28.2.13676358'
+    ndkVersion '27.3.13750724'
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -40,7 +40,7 @@ android {
         minSdk = 21
         externalNativeBuild {
             cmake {
-                arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE"
+                arguments "-DANDROID_STL=c++_shared", "-DIS_ANDROID=TRUE", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
             }
         }
     }
