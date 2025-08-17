@@ -326,12 +326,12 @@ class CSSPositionedLayout {
     // Ensure static position accuracy for W3C compliance
     // W3C requires static position to represent where element would be in normal flow
     Offset adjustedStaticPosition = _ensureAccurateStaticPosition(
-      staticPositionOffset, 
-      child, 
-      parent, 
-      left, 
-      right, 
-      top, 
+      staticPositionOffset,
+      child,
+      parent,
+      left,
+      right,
+      top,
       bottom,
       parentBorderLeftWidth,
       parentBorderRightWidth,
@@ -477,10 +477,10 @@ class CSSPositionedLayout {
   }
 
   /// Ensures accurate static position calculation for W3C compliance.
-  /// 
-  /// According to W3C CSS Position Level 3, static position represents "an approximation 
+  ///
+  /// According to W3C CSS Position Level 3, static position represents "an approximation
   /// of the position the box would have had if it were position: static".
-  /// 
+  ///
   /// This method corrects cases where the placeholder-based static position calculation
   /// includes unwanted flow layout artifacts that don't represent true normal flow position.
   static Offset _ensureAccurateStaticPosition(
@@ -520,29 +520,29 @@ class CSSPositionedLayout {
 
     // Check if current static position may be inaccurate due to flow layout artifacts
     bool needsCorrection = _staticPositionNeedsCorrection(placeholder, staticPositionOffset, parent);
-    
+
     if (!needsCorrection) {
       return staticPositionOffset;
     }
 
     // Calculate the true normal flow position following W3C static position rules
     double contentAreaX = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
-    
+
     // For horizontal axis: use content area start (inline flow beginning)
     double correctedX = shouldUseAccurateHorizontalPosition ? contentAreaX : staticPositionOffset.dx;
-    
+
     // For vertical axis: use actual static position from normal flow (not content area start)
     // This ensures elements appear where they would in normal document flow
-    double correctedY = shouldUseAccurateVerticalPosition ? 
-        _calculateTrueVerticalStaticPosition(placeholder, parent, staticPositionOffset) : 
+    double correctedY = shouldUseAccurateVerticalPosition ?
+        _calculateTrueVerticalStaticPosition(placeholder, parent, staticPositionOffset) :
         staticPositionOffset.dy;
 
     return Offset(correctedX, correctedY);
   }
 
   /// Determines if static position calculation needs correction to be W3C compliant.
-  /// 
-  /// Checks for cases where flow layout artifacts may have affected the placeholder 
+  ///
+  /// Checks for cases where flow layout artifacts may have affected the placeholder
   /// position in ways that don't represent true normal flow position.
   static bool _staticPositionNeedsCorrection(
     RenderPositionPlaceholder placeholder,
@@ -562,14 +562,14 @@ class CSSPositionedLayout {
 
     // Static position may need correction if it follows certain layout patterns
     // that can introduce unwanted offsets not representative of normal flow
-    
+
     // Case 1: Direct replaced element
     if (previousSibling is RenderReplaced) {
       return _hasSignificantOffset(staticPositionOffset, parent);
     }
 
     // Case 2: Interactive replaced element (wrapped in RenderEventListener)
-    if (previousSibling is RenderEventListener && 
+    if (previousSibling is RenderEventListener &&
         previousSibling.child is RenderReplaced) {
       return _hasSignificantOffset(staticPositionOffset, parent);
     }
@@ -578,7 +578,7 @@ class CSSPositionedLayout {
   }
 
   /// Calculates the true vertical static position by considering the normal document flow.
-  /// 
+  ///
   /// Unlike horizontal positioning which typically starts at the content area,
   /// vertical positioning must account for where the element would actually appear
   /// in the normal flow after previous siblings.
@@ -597,7 +597,7 @@ class CSSPositionedLayout {
     if (previousSibling == null) {
       // No previous sibling - use content area start
       RenderStyle parentStyle = parent.renderStyle;
-      return parentStyle.effectiveBorderTopWidth.computedValue + 
+      return parentStyle.effectiveBorderTopWidth.computedValue +
              parentStyle.paddingTop.computedValue;
     }
 
@@ -605,7 +605,7 @@ class CSSPositionedLayout {
     // This represents where the element would appear in normal block flow
     if (previousSibling.parentData is RenderLayoutParentData) {
       RenderLayoutParentData siblingData = previousSibling.parentData as RenderLayoutParentData;
-      
+
       // Get sibling height without accessing size directly
       double siblingHeight = 0;
       if (previousSibling is RenderBoxModel) {
@@ -618,10 +618,10 @@ class CSSPositionedLayout {
         // For other render objects that are laid out, we can use constraints
         siblingHeight = previousSibling.constraints.smallest.height;
       }
-      
+
       // Position after previous sibling: sibling's top + sibling's height
       double siblingBottom = siblingData.offset.dy + siblingHeight;
-      
+
       return siblingBottom;
     }
 
@@ -629,23 +629,23 @@ class CSSPositionedLayout {
     return currentStaticPosition.dy;
   }
 
-  /// Checks if the static position has significant offset that may indicate 
+  /// Checks if the static position has significant offset that may indicate
   /// flow layout artifacts rather than true normal flow position.
   static bool _hasSignificantOffset(Offset staticPosition, RenderBoxModel parent) {
     RenderStyle parentStyle = parent.renderStyle;
-    double expectedX = parentStyle.effectiveBorderLeftWidth.computedValue + 
+    double expectedX = parentStyle.effectiveBorderLeftWidth.computedValue +
                       parentStyle.paddingLeft.computedValue;
-    double expectedY = parentStyle.effectiveBorderTopWidth.computedValue + 
+    double expectedY = parentStyle.effectiveBorderTopWidth.computedValue +
                       parentStyle.paddingTop.computedValue;
-    
+
     // Allow small tolerance for rounding differences
     const double tolerance = 1.0;
-    
+
     // If static position is significantly different from content area start,
     // it may need correction
     bool hasUnexpectedHorizontalOffset = (staticPosition.dx - expectedX).abs() > tolerance;
     bool hasUnexpectedVerticalOffset = (staticPosition.dy - expectedY).abs() > tolerance;
-    
+
     return hasUnexpectedHorizontalOffset || hasUnexpectedVerticalOffset;
   }
 }
