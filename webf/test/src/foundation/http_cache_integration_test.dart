@@ -51,7 +51,7 @@ void main() {
         futures.add(() async {
           final cacheObject = HttpCacheObject(
             HttpCacheController.getCacheKey(uri),
-            (await HttpCacheController.getCacheDirectory()).path,
+            (await HttpCacheController.getCacheDirectory(uri)),
             contentLength: 100 + i,
           );
 
@@ -79,7 +79,7 @@ void main() {
     test('should store and retrieve cache objects', () async {
       final uri = Uri.parse('https://example.com/test.js');
       final cacheKey = HttpCacheController.getCacheKey(uri);
-      final cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final cacheDir = (await HttpCacheController.getCacheDirectory(uri));
 
       // Create and store a cache object
       final cacheObject = HttpCacheObject(
@@ -108,7 +108,7 @@ void main() {
     test('should handle cache removal', () async {
       final uri = Uri.parse('https://example.com/removable.js');
       final cacheKey = HttpCacheController.getCacheKey(uri);
-      final cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final cacheDir = (await HttpCacheController.getCacheDirectory(uri));
 
       // Create and store a cache object
       final cacheObject = HttpCacheObject(

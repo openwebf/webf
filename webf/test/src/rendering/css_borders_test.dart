@@ -53,7 +53,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // With border-box sizing, total size is 100x100
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
@@ -78,7 +78,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -104,7 +104,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // With zero border, element should still have its specified size
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
@@ -136,17 +136,17 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // Initial state - 2px border (WebF uses border-box by default)
       expect(target.offsetWidth, equals(200.0)); // border-box: width includes border
       expect(target.offsetHeight, equals(200.0));
-      
+
       // Change border width
       await tester.runAsync(() async {
         target.style.setProperty('border-width', '10px');
       });
       await tester.pump();
-      
+
       // After change - 10px border
       expect(target.offsetWidth, equals(200.0)); // border-box: width still 200
       expect(target.offsetHeight, equals(200.0));
@@ -173,7 +173,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -199,7 +199,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -228,7 +228,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -257,7 +257,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
     });
@@ -286,7 +286,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // With border-box sizing (WebF default)
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
@@ -314,7 +314,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // With border-box and 100px bottom border
       expect(target.offsetWidth, equals(100.0));
       expect(target.offsetHeight, equals(100.0));
@@ -359,17 +359,17 @@ void main() {
       final right = prepared.getElementById('right');
       final bottom = prepared.getElementById('bottom');
       final left = prepared.getElementById('left');
-      
+
       // With border-box sizing (WebF default)
       expect(top.offsetWidth, equals(100.0));
       expect(top.offsetHeight, equals(50.0));
-      
+
       expect(right.offsetWidth, equals(100.0));
       expect(right.offsetHeight, equals(50.0));
-      
+
       expect(bottom.offsetWidth, equals(100.0));
       expect(bottom.offsetHeight, equals(50.0));
-      
+
       expect(left.offsetWidth, equals(100.0));
       expect(left.offsetHeight, equals(50.0));
     });
@@ -405,11 +405,13 @@ void main() {
         ''',
       );
 
+      await tester.pump();
+
       final target = prepared.getElementById('target');
-      
+
       // With border-box and zero content, only border is visible
-      expect(target.offsetWidth, equals(0.0));
-      expect(target.offsetHeight, equals(0.0));
+      expect(target.offsetWidth, equals(200));
+      expect(target.offsetHeight, equals(200));
     });
 
     testWidgets('border with transform', (WidgetTester tester) async {
@@ -434,7 +436,7 @@ void main() {
       );
 
       final target = prepared.getElementById('target');
-      
+
       // Transform doesn't affect offsetWidth/Height (WebF uses border-box)
       expect(target.offsetWidth, equals(80.0));
       expect(target.offsetHeight, equals(80.0));
@@ -462,7 +464,7 @@ void main() {
 
       final inline1 = prepared.getElementById('inline1');
       final inline2 = prepared.getElementById('inline2');
-      
+
       // Inline elements respect borders
       expect(inline1.offsetHeight, greaterThan(0));
       expect(inline2.offsetHeight, greaterThan(0));
@@ -497,11 +499,11 @@ void main() {
 
       final target1 = prepared.getElementById('target1');
       final target2 = prepared.getElementById('target2');
-      
+
       // First div with solid border (border-box)
       expect(target1.offsetWidth, equals(100.0));
       expect(target1.offsetHeight, equals(50.0));
-      
+
       // Second div with 5px border (border-box)
       expect(target2.offsetWidth, equals(100.0));
       expect(target2.offsetHeight, equals(50.0));

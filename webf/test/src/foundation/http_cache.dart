@@ -18,8 +18,6 @@ void main() {
 
   var server = LocalHttpServer.getInstance();
   double contextId = 1;
-  HttpOverrides.global = null;
-  setupHttpOverrides(null, contextId: contextId);
   HttpClient httpClient = createWebFHttpClient();
 
   setUp(() {

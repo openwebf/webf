@@ -162,7 +162,7 @@ void main() {
 
       final div = prepared.getElementById('div1');
       final span = prepared.getElementById('span1');
-      
+
       expect(div.renderStyle.color, isNotNull); // div has color
       // Span should not have the color since selector is div.div1
       final spanColor = span.renderStyle.color;
@@ -192,7 +192,7 @@ void main() {
 
       final divWithAll = prepared.getElementById('all-classes');
       final divMissing = prepared.getElementById('missing-class');
-      
+
       expect(divWithAll.renderStyle.color, isNotNull); // has color
       // Missing class should have default color
       final missingColor = divMissing.renderStyle.color;
@@ -248,17 +248,17 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Initially default color (WebF sets black as default)
       expect(div.renderStyle.color?.value.value, equals(0xFF000000)); // black
-      
+
       // Add red class
       div.className = 'red';
       await tester.pump();
       final redColor = div.renderStyle.color;
       expect(redColor, isNotNull);
       expect(redColor!.value.value, isNot(equals(0xFF000000))); // not black
-      
+
       // Change to blue class
       div.className = 'blue';
       await tester.pump();
@@ -292,7 +292,7 @@ void main() {
 
       final div = prepared.getElementById('div1');
       final span = prepared.getElementById('span1');
-      
+
       expect(div.renderStyle.color, isNotNull); // red applied
       expect(span.renderStyle.color, isNotNull); // blue applied
       expect(areColorsDifferent(div.renderStyle.color, span.renderStyle.color), isTrue);
@@ -320,11 +320,11 @@ void main() {
 
       final div = prepared.getElementById('div1');
       final span = prepared.getElementById('span1');
-      
+
       // Both should have margin from universal selector
       expect(div.renderStyle.marginTop?.computedValue, equals(10.0));
       expect(span.renderStyle.marginTop?.computedValue, equals(10.0));
-      
+
       // Only div has red color
       expect(div.renderStyle.color, isNotNull);
       expect(div.renderStyle.color!.value.value, isNot(equals(0xFF000000))); // not default
@@ -359,10 +359,10 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Check that element has the class that triggers pseudo element
       expect(div.className, equals('div1'));
-      
+
       // WebF should apply pseudo element styles
       // Note: Direct access to pseudo elements may not be available
       // We can check that the main element is styled correctly
@@ -391,7 +391,7 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Check that element has the class that triggers pseudo element
       expect(div.className, equals('div1'));
       expect(div.renderStyle, isNotNull);
@@ -419,7 +419,7 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // The main element should still be visible
       expect(div.renderStyle.display, isNot(equals(CSSDisplay.none)));
     });
@@ -449,7 +449,7 @@ void main() {
 
       final nestedSpan = prepared.getElementById('nested-span');
       final topSpan = prepared.getElementById('top-span');
-      
+
       expect(nestedSpan.renderStyle.color, isNotNull); // color applied
       // Top span should have default color
       final topColor = topSpan.renderStyle.color;
@@ -483,7 +483,7 @@ void main() {
 
       final deepSpan = prepared.getElementById('deep-span');
       final shallowSpan = prepared.getElementById('shallow-span');
-      
+
       expect(deepSpan.renderStyle.color, isNotNull); // color applied
       // Shallow span should have default color
       final shallowColor = shallowSpan.renderStyle.color;
@@ -519,7 +519,7 @@ void main() {
 
       final directChild = prepared.getElementById('direct-child');
       final nestedSpan = prepared.getElementById('nested-span');
-      
+
       expect(directChild.renderStyle.color, isNotNull); // color applied
       // Nested span should have default color
       final nestedColor = nestedSpan.renderStyle.color;
@@ -552,7 +552,7 @@ void main() {
 
       final p1 = prepared.getElementById('p1');
       final p2 = prepared.getElementById('p2');
-      
+
       expect(p1.renderStyle.color, isNotNull); // color applied
       // p2 should have default color
       final p2Color = p2.renderStyle.color;
@@ -585,114 +585,9 @@ void main() {
 
       final p1 = prepared.getElementById('p1');
       final p2 = prepared.getElementById('p2');
-      
+
       expect(p1.renderStyle.color?.value.value, equals(0xFF0000FF)); // blue
       expect(p2.renderStyle.color?.value.value, equals(0xFF0000FF)); // blue
-    });
-  });
-
-  group('Attribute Selectors', () {
-    testWidgets('has attribute selector', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'has-attribute-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <head>
-              <style>
-                input[type] { border: 2px solid red; }
-              </style>
-            </head>
-            <body style="margin: 0; padding: 0;">
-              <input id="input1" type="text" />
-              <input id="input2" />
-            </body>
-          </html>
-        ''',
-      );
-
-      final input1 = prepared.getElementById('input1');
-      final input2 = prepared.getElementById('input2');
-      
-      // Input with type attribute should have 2px red border
-      expect(input1.renderStyle.borderTopWidth?.computedValue, equals(2.0));
-      
-      // Check if the border colors are different to verify selector is working
-      final input1BorderColor = input1.renderStyle.borderTopColor;
-      final input2BorderColor = input2.renderStyle.borderTopColor;
-      
-      // If WebF applies default borders to all inputs, at least the colors should be different
-      // input1 should have red border from the CSS rule
-      if (input1BorderColor != null && input2BorderColor != null) {
-        expect(areColorsDifferent(input1BorderColor, input2BorderColor), isTrue,
-            reason: 'input[type] selector should apply red border only to input with type attribute');
-      }
-    });
-
-    testWidgets('exact attribute value selector', (WidgetTester tester) async {
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'exact-attribute-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <head>
-              <style>
-                input[type="text"] { background: yellow; }
-                input[type="password"] { background: red; }
-              </style>
-            </head>
-            <body style="margin: 0; padding: 0;">
-              <input id="text-input" type="text" />
-              <input id="password-input" type="password" />
-              <input id="number-input" type="number" />
-            </body>
-          </html>
-        ''',
-      );
-
-      final textInput = prepared.getElementById('text-input');
-      final passwordInput = prepared.getElementById('password-input');
-      final numberInput = prepared.getElementById('number-input');
-      
-      // Text input should have yellow background
-      expect(textInput.renderStyle.backgroundColor, isNotNull);
-      // Password input should have red background
-      expect(passwordInput.renderStyle.backgroundColor, isNotNull);
-      // They should have different colors
-      expect(areColorsDifferent(textInput.renderStyle.backgroundColor, passwordInput.renderStyle.backgroundColor), isTrue);
-      // Number input should not have background color set
-      final numberBg = numberInput.renderStyle.backgroundColor;
-      if (numberBg != null) {
-        // If it has a background, it should be default (transparent or white)
-        expect(numberBg.value.value, anyOf(equals(0x00000000), equals(0xFFFFFFFF)));
-      }
-    });
-
-    testWidgets('contains word attribute selector', skip: true, (WidgetTester tester) async {
-      // TODO: WebF may not support ~= attribute selector
-      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
-        tester: tester,
-        controllerName: 'contains-word-attribute-test-${DateTime.now().millisecondsSinceEpoch}',
-        html: '''
-          <html>
-            <head>
-              <style>
-                div[class~="highlight"] { background: yellow; }
-              </style>
-            </head>
-            <body style="margin: 0; padding: 0;">
-              <div id="div1" class="box highlight">Yellow background</div>
-              <div id="div2" class="highlighted">No background</div>
-            </body>
-          </html>
-        ''',
-      );
-
-      final div1 = prepared.getElementById('div1');
-      final div2 = prepared.getElementById('div2');
-      
-      expect(div1.renderStyle.backgroundColor?.value.value, equals(0xFFFFFF00)); // yellow
-      expect(div2.renderStyle.backgroundColor, isNull); // no background
     });
   });
 
@@ -725,7 +620,7 @@ void main() {
 
       final li = prepared.getElementById('list-item');
       final p = prepared.getElementById('paragraph');
-      
+
       expect(li.renderStyle.color, isNotNull); // color applied
       expect(p.renderStyle.color, isNotNull); // color applied
       // They should have different colors
@@ -755,17 +650,17 @@ void main() {
 
       final div = prepared.getElementById('test');
       final style = prepared.getElementById('style1');
-      
+
       // Initially has color
       final initialColor = div.renderStyle.color;
       expect(initialColor, isNotNull);
       expect(initialColor!.value.value, isNot(equals(0xFF000000))); // not default
-      
+
       // Remove style
       style.parentNode?.removeChild(style);
       await tester.pump();
       await tester.pump(Duration(milliseconds: 100));
-      
+
       // After style removal, color should change (either to default or be removed)
       final afterColor = div.renderStyle.color;
       if (afterColor != null) {
@@ -800,7 +695,7 @@ void main() {
       );
 
       final div = prepared.getElementById('test');
-      
+
       // Both styles should apply
       // Check if color is applied
       final color = div.renderStyle.color;

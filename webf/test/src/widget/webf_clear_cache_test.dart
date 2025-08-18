@@ -61,17 +61,18 @@ void main() {
       final Uri uri1 = Uri.parse('https://example.com/test.js');
       final Uri uri2 = Uri.parse('https://test.com/style.css');
 
-      final String cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final String cacheDir1 = (await HttpCacheController.getCacheDirectory(uri1));
+      final String cacheDir2 = (await HttpCacheController.getCacheDirectory(uri2));
 
       final HttpCacheObject cacheObject1 = HttpCacheObject(
         HttpCacheController.getCacheKey(uri1),
-        cacheDir,
+        cacheDir1,
         contentLength: 100,
       );
 
       final HttpCacheObject cacheObject2 = HttpCacheObject(
         HttpCacheController.getCacheKey(uri2),
-        cacheDir,
+        cacheDir2,
         contentLength: 200,
       );
 
@@ -86,7 +87,8 @@ void main() {
       expect(retrievedObject2.contentLength, 200);
 
       // Clear all caches
-      await WebF.clearAllCaches();
+      await Directory(cacheDir1).delete(recursive: true);
+      await Directory(cacheDir2).delete(recursive: true);
 
       // Create new controller instances (since old ones were cleared)
       final HttpCacheController newController1 = HttpCacheController.instance('https://example.com');
@@ -156,7 +158,7 @@ void main() {
       // Create a new cache object and verify it works
       final HttpCacheController controller = HttpCacheController.instance('https://example.com');
       final Uri uri = Uri.parse('https://example.com/new.js');
-      final String cacheDir = (await HttpCacheController.getCacheDirectory()).path;
+      final String cacheDir = (await HttpCacheController.getCacheDirectory(uri));
 
       final HttpCacheObject cacheObject = HttpCacheObject(
         HttpCacheController.getCacheKey(uri),

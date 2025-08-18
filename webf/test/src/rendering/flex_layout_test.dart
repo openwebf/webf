@@ -74,8 +74,7 @@ void main() {
       final text2 = prepared.getElementById('text2');
       final text3 = prepared.getElementById('text3');
 
-      // Force layout flush to ensure measurements are available
-      WebFWidgetTestUtils.flushLayout([container, text1, text2, text3]);
+      await tester.pump(Duration(milliseconds: 200));
 
       // Try to get measurements
       final containerWidth = container.offsetWidth;
@@ -175,6 +174,8 @@ void main() {
           controller!.viewportLayoutCompleter.future,
         ]);
       });
+
+      await tester.pump(Duration(milliseconds: 200));
 
       // Get elements
       final fixedBox = controller!.view.document.getElementById(['fixed-box']);

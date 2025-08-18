@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/foundation.dart';
@@ -58,11 +59,11 @@ void main() {
 
       final div = prepared.getElementById('box');
       expect(div.offsetWidth, equals(100.0));
-      
+
       // Change width dynamically
       div.style.setProperty('width', '200px');
       await tester.pump();
-      
+
       expect(div.offsetWidth, equals(200.0));
     });
 
@@ -235,11 +236,11 @@ void main() {
 
       final div = prepared.getElementById('box');
       expect(div.offsetHeight, equals(150.0));
-      
+
       // Change height dynamically
       div.style.setProperty('height', '250px');
       await tester.pump();
-      
+
       expect(div.offsetHeight, equals(250.0));
     });
 
@@ -703,14 +704,14 @@ void main() {
       // Verify CSS properties are applied (renderStyle returns computed values)
       expect(box1.renderStyle.width?.value, equals(100.0));
       expect(box1.renderStyle.height?.value, equals(150.0));
-      
+
       // Box 2 has percentage width - check render style exists
       expect(box2.renderStyle.width, isNotNull);
       expect(box2.renderStyle.height, isNotNull);
-      
+
       expect(box3.renderStyle.minWidth?.value, equals(200.0));
       expect(box3.renderStyle.maxWidth?.value, equals(400.0));
-      
+
       expect(box4.renderStyle.minHeight?.value, equals(100.0));
       expect(box4.renderStyle.maxHeight?.value, equals(300.0));
     });
@@ -745,7 +746,7 @@ void main() {
       expect(defaultBox.renderStyle.paddingLeft?.computedValue, equals(10.0));
       expect(borderBox.renderStyle.paddingLeft?.computedValue, equals(10.0));
       expect(contentBox.renderStyle.paddingLeft?.computedValue, equals(10.0));
-      
+
       // Verify width property is set (renderStyle returns computed values)
       expect(defaultBox.renderStyle.width?.value, equals(100.0));
       expect(borderBox.renderStyle.width?.value, equals(100.0));
@@ -771,20 +772,26 @@ void main() {
       );
 
       final box = prepared.getElementById('box');
-      
+
       // Initial values (renderStyle returns computed numeric values)
       expect(box.renderStyle.width?.value, equals(100.0));
       expect(box.renderStyle.height?.value, equals(100.0));
-      
+
       // Update styles
       box.style.setProperty('width', '200px');
       box.style.setProperty('height', '150px');
+      box.style.flushPendingProperties();
       await tester.pump();
-      
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
       // Verify updates (renderStyle returns computed numeric values)
       expect(box.renderStyle.width?.value, equals(200.0));
       expect(box.renderStyle.height?.value, equals(150.0));
-      
+
       // TODO: Dynamic updates of min-width and max-height might not be working correctly in WebF
       // box.style.setProperty('min-width', '50px');
       // box.style.setProperty('max-height', '500px');

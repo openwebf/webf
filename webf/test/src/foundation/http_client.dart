@@ -62,8 +62,6 @@ void main() {
   group('HttpRequest', () {
     var server = LocalHttpServer.getInstance();
     double contextId = 3;
-    HttpOverrides.global = null;
-    setupHttpOverrides(null, contextId: contextId);
     HttpClient httpClient = createWebFHttpClient();
 
     test('Origin', () async {

@@ -77,6 +77,8 @@ class WebFWidgetTestUtils {
       ]);
     });
 
+    await tester.pump(Duration(microseconds: 200));
+
     return PreparedWidgetTest(
       controller: controller!,
       webf: webf,
@@ -133,13 +135,6 @@ class WebFWidgetTestUtils {
       webf: webf,
       tester: tester,
     );
-  }
-
-  /// Forces layout flush on multiple elements.
-  static void flushLayout(List<dom.Element?> elements) {
-    for (final element in elements) {
-      element?.flushLayout();
-    }
   }
 
   /// Gets an element by ID and ensures it exists.
