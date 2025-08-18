@@ -25,6 +25,7 @@
 #endif
 
 namespace webf {
+class FrameCallback;
 
 // Forward declarations
 struct ExecutingContextWebFMethods;
@@ -73,6 +74,10 @@ typedef void (*SetInterval)(int32_t new_timer_id,
                             double context_id,
                             AsyncCallback callback,
                             int32_t timeout);
+typedef void (*RequestAnimationFrame)(int32_t new_id,
+                                webf::FrameCallback* frameCallback,
+                                double contextId,
+                                AsyncRAFCallback handler);
 typedef void (*RequestIdleCallback)(int32_t new_idle_id,
                                     void* callback_context,
                                     double context_id,
@@ -274,6 +279,7 @@ class DartMethodPointer {
   SetTimeout set_timeout_{nullptr};
   SetInterval set_interval_{nullptr};
   ClearTimeout clear_timeout_{nullptr};
+  RequestAnimationFrame request_animation_frame_{nullptr};
   RequestIdleCallback request_idle_callback_{nullptr};
   CancelAnimationFrame cancel_animation_frame_{nullptr};
   CancelIdleCallback cancel_idle_callback_{nullptr};
