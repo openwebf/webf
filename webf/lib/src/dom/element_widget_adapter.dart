@@ -15,6 +15,7 @@ import 'package:webf/css.dart';
 import 'package:webf/html.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 enum ScreenEventType { onScreen, offScreen }
 
@@ -149,6 +150,8 @@ class WebFElementWidget extends flutter.StatefulWidget {
 }
 
 class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
+  // Enable verbose logging for DOM → widget building and anonymous block wrapping.
+  static bool debugLogDomAdapterEnabled = true;
   late final Element webFElement;
 
   @override
@@ -179,10 +182,18 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     } else {
       // Check if we need to create anonymous block boxes for inline content
       // Case 2: Inline content needs to be wrapped to maintain proper formatting context
-      if (_shouldWrapInlineContentInAnonymousBlocks()) {
+      final shouldWrap = _shouldWrapInlineContentInAnonymousBlocks();
+      if (debugLogDomAdapterEnabled) {
+        domLogger.fine('[DOMAdapter] build <${webFElement.tagName}> wrapInline=${shouldWrap} '
+            'display=${webFElement.renderStyle.display} childCount=${webFElement.childNodes.length}');
+      }
+      if (shouldWrap) {
         children = _wrapInlineContentInAnonymousBlocks(webFElement.childNodes);
       } else {
         for (var node in webFElement.childNodes) {
+          if (debugLogDomAdapterEnabled) {
+            domLogger.finer('[DOMAdapter] child node=${node.runtimeType}');
+          }
           if (node is Element &&
               (node.renderStyle.position == CSSPositionType.absolute ||
                   node.renderStyle.position == CSSPositionType.sticky)) {
@@ -210,7 +221,28 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
             children.add(flutter.SizedBox.shrink());
             continue;
+          } else if (node is TextNode) {
+            if (node.data.trim().isNotEmpty) {
+              if (debugLogDomAdapterEnabled) {
+                final t = node.data;
+                domLogger.fine('[DOMAdapter] add TextNode "${t.length > 24 ? t.substring(0,24) + '…' : t}"');
+              }
+              children.add(node.toWidget());
+            } else {
+              if (debugLogDomAdapterEnabled) {
+                domLogger.finer('[DOMAdapter] skip empty TextNode');
+              }
+            }
+          } else if (node is Comment) {
+            // Skip comments entirely
+            if (debugLogDomAdapterEnabled) {
+              domLogger.finer('[DOMAdapter] skip Comment');
+            }
           } else {
+            // Fallback: render regular elements
+            if (debugLogDomAdapterEnabled) {
+              domLogger.fine('[DOMAdapter] add element ${node.runtimeType} via toWidget()');
+            }
             children.add(node.toWidget());
           }
         }
@@ -431,12 +463,18 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           },
           children: currentInlineGroup, // Pass the collected widgets as children
         );
+        if (debugLogDomAdapterEnabled) {
+          domLogger.fine('[DOMAdapter] flushInlineGroup count=${currentInlineGroup.length} → Anonymous');
+        }
         result.add(anonymousBlock);
         currentInlineGroup = [];
       }
     }
 
     for (var node in nodes) {
+      if (debugLogDomAdapterEnabled) {
+        domLogger.finer('[DOMAdapter] wrap pass node=${node.runtimeType}');
+      }
       if (node is Element) {
         final display = node.renderStyle.display;
         final position = node.renderStyle.position;
@@ -518,10 +556,20 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       } else {
         // Text nodes are always inline content
         if (node is TextNode && node.data.trim().isNotEmpty) {
+          if (debugLogDomAdapterEnabled) {
+            final t = node.data;
+            domLogger.fine('[DOMAdapter] add TextNode to inlineGroup "${t.length > 24 ? t.substring(0,24) + '…' : t}"');
+          }
           currentInlineGroup.add(node.toWidget());
-        } else if (node is! TextNode) {
-          // Non-text, non-element nodes (comments, etc.)
-          currentInlineGroup.add(node.toWidget());
+        } else if (node is Comment) {
+          if (debugLogDomAdapterEnabled) {
+            domLogger.finer('[DOMAdapter] skip Comment in wrap pass');
+          }
+          // Do not flush on comment; it should not break inline grouping
+        } else {
+          if (debugLogDomAdapterEnabled) {
+            domLogger.finer('[DOMAdapter] skip non-rendered node type=${node.runtimeType} in wrap pass');
+          }
         }
       }
     }
