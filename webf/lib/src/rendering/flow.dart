@@ -15,6 +15,7 @@ import 'inline_formatting_context.dart';
 import 'line_box.dart';
 import 'text.dart';
 import 'event_listener.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
@@ -368,8 +369,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
           if (debugLogInlineLayoutEnabled) {
-            // ignore: avoid_print
-            print('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
+            renderingLogger.fine('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
                 'last=${lastBaseline.toStringAsFixed(2)} '
                 'paddingTop=${paddingTop.toStringAsFixed(2)} borderTop=${borderTop.toStringAsFixed(2)}');
           }
@@ -384,8 +384,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
           if (debugLogInlineLayoutEnabled) {
-            // ignore: avoid_print
-            print('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
+            renderingLogger.fine('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
                 'last=${lastBaseline.toStringAsFixed(2)}');
           }
         }

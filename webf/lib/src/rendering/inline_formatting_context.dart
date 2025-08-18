@@ -12,6 +12,7 @@ import 'dart:ui' as ui
         TextStyle;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 
 import 'inline_item.dart';
@@ -804,8 +805,7 @@ class InlineFormattingContext {
 
     if (debugLogInlineLayoutEnabled) {
       // Log high-level container info
-      // ignore: avoid_print
-      print('[IFC] Build paragraph: maxWidth=${constraints.maxWidth.toStringAsFixed(2)} '
+      renderingLogger.fine('[IFC] Build paragraph: maxWidth=${constraints.maxWidth.toStringAsFixed(2)} '
           'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
     }
 
@@ -824,17 +824,14 @@ class InlineFormattingContext {
                 baseline: TextBaseline.alphabetic, baselineOffset: 0);
             paraPos += 1; // account for placeholder char
             if (debugLogInlineLayoutEnabled) {
-              // ignore: avoid_print
-              print('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
+              renderingLogger.finer('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
             }
           }
           pb.pushStyle(_uiTextStyleFromCss(st));
           if (debugLogInlineLayoutEnabled) {
             final fam = st.fontFamily;
             final fs = st.fontSize.computedValue;
-            // ignore: avoid_print
-            print(
-                '[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}');
+            renderingLogger.finer('[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}');
           }
         }
         // Record content range start after left extras
@@ -849,8 +846,7 @@ class InlineFormattingContext {
         if (item.style != null) {
           pb.pop();
           if (debugLogInlineLayoutEnabled) {
-            // ignore: avoid_print
-            print('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>');
+            renderingLogger.finer('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>');
           }
           // Reserve trailing horizontal extras (padding+border+margin) outside the span content
           final st = item.style!;
@@ -862,9 +858,7 @@ class InlineFormattingContext {
                 baseline: TextBaseline.alphabetic, baselineOffset: 0);
             paraPos += 1; // account for placeholder char
             if (debugLogInlineLayoutEnabled) {
-              // ignore: avoid_print
-              print(
-                  '[IFC] close extras </${_getElementDescription(item.renderBox!)}> rightExtras=${rightExtras.toStringAsFixed(2)}');
+              renderingLogger.finer('[IFC] close extras </${_getElementDescription(item.renderBox!)}> rightExtras=${rightExtras.toStringAsFixed(2)}');
             }
           }
         }
@@ -901,9 +895,7 @@ class InlineFormattingContext {
         if (debugLogInlineLayoutEnabled) {
           final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
           final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
-          // ignore: avoid_print
-          print(
-              '[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh.toStringAsFixed(2)}) '
+          renderingLogger.finer('[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh.toStringAsFixed(2)}) '
               'margins=(L:${mL.toStringAsFixed(2)},T:${mT.toStringAsFixed(2)},R:${mR.toStringAsFixed(2)},B:${mB.toStringAsFixed(2)}) '
               'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(2)}, baselineOffset:${baselineOffset.toStringAsFixed(2)})');
         }
@@ -915,9 +907,8 @@ class InlineFormattingContext {
         pb.pop();
         paraPos += text.length;
         if (debugLogInlineLayoutEnabled) {
-          // ignore: avoid_print
           final t = text.replaceAll('\n', '\\n');
-          print('[IFC] addText len=${text.length} at=$paraPos "$t"');
+          renderingLogger.finer('[IFC] addText len=${text.length} at=$paraPos "$t"');
         }
       } else if (item.type == InlineItemType.control) {
         // Control characters (e.g., from <br>) act as hard line breaks.
@@ -929,17 +920,61 @@ class InlineFormattingContext {
         pb.pop();
         paraPos += text.length;
         if (debugLogInlineLayoutEnabled) {
-          // ignore: avoid_print
           final t = text.replaceAll('\n', '\\n');
-          print('[IFC] addCtrl len=${text.length} at=$paraPos "$t"');
+          renderingLogger.finer('[IFC] addCtrl len=${text.length} at=$paraPos "$t"');
         }
       }
     }
 
     final paragraph = pb.build();
-    // First layout: use a finite width even when constraints are unbounded,
-    // so the Paragraph API accepts it and computes metrics.
-    final double initialWidth = constraints.hasBoundedWidth ? constraints.maxWidth : 1000000.0;
+    // First layout: choose a sensible width for shaping.
+    // If constraints are unbounded, use a large width. If bounded but zero/negative,
+    // treat it like unbounded to let content determine natural width instead of 0.
+    // Try to get a fallback content max width from the container's render style.
+    // This approximates the parent's content box width and helps when our own
+    // constraints report maxWidth <= 0 during intrinsic measurements.
+    double? fallbackContentMaxWidth;
+    // Prefer this container's own computed content max width
+    final double cmw = style.contentMaxConstraintsWidth;
+    if (cmw.isFinite && cmw > 0) fallbackContentMaxWidth = cmw;
+    // If not available, walk up ancestors to find a reasonable content width
+    if (fallbackContentMaxWidth == null) {
+      RenderObject? p = container.parent;
+      while (p != null) {
+        if (p is RenderBoxModel) {
+          final double acmw = p.renderStyle.contentMaxConstraintsWidth;
+          if (acmw.isFinite && acmw > 0) {
+            fallbackContentMaxWidth = acmw;
+            break;
+          }
+          final BoxConstraints? cc = p.contentConstraints;
+          if (cc != null && cc.hasBoundedWidth && cc.maxWidth.isFinite && cc.maxWidth > 0) {
+            fallbackContentMaxWidth = cc.maxWidth;
+            break;
+          }
+        }
+        p = (p is RenderObject) ? p.parent : null;
+      }
+    }
+
+    double initialWidth;
+    if (!constraints.hasBoundedWidth) {
+      initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+          ? fallbackContentMaxWidth
+          : 1000000.0;
+    } else {
+      if (constraints.maxWidth > 0) {
+        initialWidth = constraints.maxWidth;
+      } else {
+        initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+            ? fallbackContentMaxWidth
+            : 1000000.0;
+        if (debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC] adjust initialWidth due to maxWidth=${constraints.maxWidth} '
+              '→ ${initialWidth.toStringAsFixed(2)} (fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
+        }
+      }
+    }
     paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
 
     // For non-block containers, shrink-to-fit to the longest visual line so
@@ -951,10 +986,23 @@ class InlineFormattingContext {
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     } else {
-      // For block containers with unbounded width, shrink-to-fit to content
-      // so upper layers don't see an infinite width.
+      // For block containers:
+      // - If unbounded, shrink-to-fit to content.
+      // - If bounded but maxWidth <= 0, prefer the fallback content width (so text wraps)
+      //   and only shrink-to-fit to longestLine if no fallback is available.
       if (!constraints.hasBoundedWidth) {
-        final double targetWidth = paragraph.longestLine;
+        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+            ? fallbackContentMaxWidth
+            : paragraph.longestLine;
+        paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+      } else if (constraints.maxWidth <= 0) {
+        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+            ? fallbackContentMaxWidth
+            : paragraph.longestLine;
+        if (debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC] block reflow with fallback width '
+              '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
+        }
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }
@@ -963,28 +1011,22 @@ class InlineFormattingContext {
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
 
     if (debugLogInlineLayoutEnabled) {
-      // ignore: avoid_print
-      print(
-          '[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
+      renderingLogger.fine('[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
           'longestLine=${paragraph.longestLine.toStringAsFixed(2)} maxLines=${style.lineClamp} exceeded=${paragraph.didExceedMaxLines}');
       for (int i = 0; i < _paraLines.length; i++) {
         final lm = _paraLines[i];
-        // ignore: avoid_print
-        print('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
+        renderingLogger.finer('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
             'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left.toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
       }
       for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
         final tb = _placeholderBoxes[i];
         final rb = _placeholderOrder[i];
-        // ignore: avoid_print
-        print(
-            '  [ph $i] rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+        renderingLogger.finer('  [ph $i] rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
             'child=<${_getElementDescription(rb is RenderBoxModel ? rb : null)}>');
       }
       // Log element ranges
       _elementRanges.forEach((rb, range) {
-        // ignore: avoid_print
-        print('  [range] <${_getElementDescription(rb)}> ${range.$1}..${range.$2}');
+        renderingLogger.finer('  [range] <${_getElementDescription(rb)}> ${range.$1}..${range.$2}');
       });
     }
   }
@@ -1180,8 +1222,7 @@ class InlineFormattingContext {
       for (final e in entries) {
         for (int i = 0; i < e.rects.length; i++) {
           final tb = e.rects[i];
-          // ignore: avoid_print
-          print('  [span] <${_getElementDescription(e.box)}> frag=$i '
+          renderingLogger.finer('  [span] <${_getElementDescription(e.box)}> frag=$i '
               'tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)})');
         }
       }

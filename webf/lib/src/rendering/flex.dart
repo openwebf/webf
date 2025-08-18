@@ -12,6 +12,7 @@ import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // Enable verbose baseline logging for flex baseline alignment.
 // Toggle at runtime: import 'package:webf/rendering.dart' and set to true.
@@ -1190,8 +1191,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
         if (debugLogFlexBaselineEnabled) {
           final Size? ic = intrinsicChildSize;
-          // ignore: avoid_print
-          print('[FlexBaseline] PASS2 child='
+          renderingLogger.finer('[FlexBaseline] PASS2 child='
               '${child.runtimeType}#${child.hashCode} '
               'intrinsicSize=${ic?.width.toStringAsFixed(2)}x${ic?.height.toStringAsFixed(2)} '
               'ascent=${childAscent.toStringAsFixed(2)} '
@@ -1207,8 +1207,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         );
         runCrossAxisExtent = maxSizeAboveBaseline + maxSizeBelowBaseline;
         if (debugLogFlexBaselineEnabled) {
-          // ignore: avoid_print
-          print('[FlexBaseline] RUN update: maxAbove='
+          renderingLogger.finer('[FlexBaseline] RUN update: maxAbove='
               '${maxSizeAboveBaseline.toStringAsFixed(2)} '
               'maxBelow=${maxSizeBelowBaseline.toStringAsFixed(2)} '
               'runCross=${runCrossAxisExtent.toStringAsFixed(2)}');

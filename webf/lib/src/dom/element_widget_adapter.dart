@@ -17,6 +17,9 @@ import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/foundation/logger.dart';
 
+// Enable verbose logging for DOM → widget building and anonymous block wrapping.
+bool debugLogDomAdapterEnabled = false;
+
 enum ScreenEventType { onScreen, offScreen }
 
 class ScreenEvent {
@@ -150,8 +153,6 @@ class WebFElementWidget extends flutter.StatefulWidget {
 }
 
 class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutter.AutomaticKeepAliveClientMixin {
-  // Enable verbose logging for DOM → widget building and anonymous block wrapping.
-  static bool debugLogDomAdapterEnabled = true;
   late final Element webFElement;
 
   @override
