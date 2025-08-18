@@ -203,6 +203,9 @@ extern const AtomicString& g_xmlns_atom;
 extern const AtomicString& g_xlink_atom;
 extern const AtomicString& g_http_atom;
 extern const AtomicString& g_https_atom;
+extern const AtomicString& g_class_atom;
+extern const AtomicString& g_style_atom;
+extern const AtomicString& g_id_atom;
 
 }  // namespace webf
 

@@ -37,6 +37,10 @@ DEFINE_GLOBAL(AtomicString, g_xlink_atom);
 DEFINE_GLOBAL(AtomicString, g_http_atom);
 DEFINE_GLOBAL(AtomicString, g_https_atom);
 
+DEFINE_GLOBAL(AtomicString, g_class_atom);
+DEFINE_GLOBAL(AtomicString, g_style_atom);
+DEFINE_GLOBAL(AtomicString, g_id_atom);
+
 // This is not an AtomicString because it is unlikely to be used as an
 // event/element/attribute name, so it shouldn't pollute the AtomicString hash
 // table.
@@ -45,7 +49,7 @@ DEFINE_GLOBAL(std::string, g_empty_string);
 
 void StringStatics::Init() {
   new ((void*)&g_empty_string) std::string();
-  new ((void*)&g_null_atom) AtomicString();
+  new ((void*)&g_null_atom) AtomicString(AtomicString::Null());
   new ((void*)&g_empty_atom) AtomicString(AtomicString::CreateFromUTF8(""));
   new ((void*)&g_star_atom) AtomicString(AtomicString::CreateFromUTF8("*"));
   new ((void*)&g_xml_atom) AtomicString(AtomicString::CreateFromUTF8("xml"));
@@ -53,6 +57,9 @@ void StringStatics::Init() {
   new ((void*)&g_xlink_atom) AtomicString(AtomicString::CreateFromUTF8("xlink"));
   new ((void*)&g_http_atom) AtomicString(AtomicString::CreateFromUTF8("http"));
   new ((void*)&g_https_atom) AtomicString(AtomicString::CreateFromUTF8("https"));
+  new ((void*)&g_class_atom) AtomicString(AtomicString::CreateFromUTF8("class"));
+  new ((void*)&g_style_atom) AtomicString(AtomicString::CreateFromUTF8("style"));
+  new ((void*)&g_id_atom) AtomicString(AtomicString::CreateFromUTF8("id"));
 }
 
 }  // namespace webf

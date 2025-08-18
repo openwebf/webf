@@ -154,9 +154,9 @@ inline void SpaceSplitString::Data::CreateVector(const AtomicString& source,
     AtomicString token;
     if constexpr (std::is_same_v<CharacterType, LChar>) {
       // For LChar (8-bit), we can use the pointer directly
-      token = AtomicString::CreateFromUTF8(reinterpret_cast<const char*>(characters + start), end - start);
+      token = AtomicString(characters + start, end - start);
     } else {
-      // For UChar (16-bit), need to convert to UTF8
+      // For UChar (16-bit), we can use the pointer directly
       String str(reinterpret_cast<const UChar*>(characters + start), end - start);
       token = AtomicString(str);
     }
@@ -218,11 +218,11 @@ void SpaceSplitString::Data::Remove(unsigned int index) {
 void SpaceSplitString::Data::CreateVector(const AtomicString& string) {
   unsigned length = string.length();
   if (string.Is8Bit()) {
-    CreateVector<char>(string, reinterpret_cast<const char*>(string.Characters8()), length);
+    CreateVector<LChar>(string, string.Characters8(), length);
     return;
   }
 
-  CreateVector<uint16_t>(string, reinterpret_cast<const uint16_t*>(string.Characters16()), length);
+  CreateVector<UChar>(string, string.Characters16(), length);
 }
 
 std::unordered_map<JSAtom, SpaceSplitString::Data*>& SpaceSplitString::SharedDataMap() {
