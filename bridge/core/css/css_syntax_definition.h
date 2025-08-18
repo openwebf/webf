@@ -7,6 +7,7 @@
 
 #include "core/css/css_syntax_component.h"
 #include "core/css/parser/css_tokenized_value.h"
+#include "foundation/string/string_view.h"
 
 namespace webf {
 
@@ -15,7 +16,7 @@ class CSSValue;
 
 class CSSSyntaxDefinition {
  public:
-  std::shared_ptr<const CSSValue> Parse(const std::string&,
+  std::shared_ptr<const CSSValue> Parse(StringView text,
                                         std::shared_ptr<const CSSParserContext>,
                                         bool is_animation_tainted) const;
 

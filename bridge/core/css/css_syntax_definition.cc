@@ -101,14 +101,14 @@ std::shared_ptr<const CSSValue> ConsumeSyntaxComponent(const CSSSyntaxComponent&
 
 }  // namespace
 
-std::shared_ptr<const CSSValue> CSSSyntaxDefinition::Parse(const std::string& text,
+std::shared_ptr<const CSSValue> CSSSyntaxDefinition::Parse(StringView text,
                                                            std::shared_ptr<const CSSParserContext> context,
                                                            bool is_animation_tainted) const {
   if (IsUniversal()) {
     return CSSVariableParser::ParseUniversalSyntaxValue(text, context, is_animation_tainted);
   }
   for (const CSSSyntaxComponent& component : syntax_components_) {
-    CSSTokenizer tokenizer(text);
+    CSSTokenizer tokenizer{text};
     CSSParserTokenStream stream(tokenizer);
     stream.ConsumeWhitespace();
     if (auto result = ConsumeSyntaxComponent(component, stream, context)) {

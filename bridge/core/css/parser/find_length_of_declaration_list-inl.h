@@ -62,7 +62,18 @@ static inline __m128i LoadAndCollapseHighBytes(const uint8_t* ptr) {
   return _mm_loadu_si128(reinterpret_cast<const __m128i*>(ptr));
 }
 
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uint8_t* end) {
+// For UChar (16-bit), we need to pack two 128-bit loads into one.
+// We load 16 bytes (8 UChars) twice, then pack them together
+// to get 16 bytes from 16 UChars.
+static inline __m128i LoadAndCollapseHighBytes(const UChar* ptr) {
+  __m128i x1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ptr));
+  __m128i x2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ptr + 8));
+  return _mm_packus_epi16(x1, x2);
+}
+
+// Template version that works with both uint8_t and UChar
+template <typename CharType>
+ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const CharType* begin, const CharType* end) {
   // If the previous block ended with quote status (see below),
   // the lowest byte of this will be all-ones.
   __m128i prev_quoted = _mm_setzero_si128();
@@ -71,7 +82,7 @@ ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin, co
   // of open parentheses from the previous block.
   __m128i prev_parens = _mm_setzero_si128();
 
-  const uint8_t* ptr = begin;
+  const CharType* ptr = begin;
   while (ptr + 17 <= end) {
     __m128i x = LoadAndCollapseHighBytes(ptr);
     __m128i next_x = LoadAndCollapseHighBytes(ptr + 1);
@@ -247,6 +258,17 @@ static inline uint8x16_t LoadAndCollapseHighBytes(const uint8_t* ptr) {
   return ret;
 }
 
+// For UChar (16-bit), we need to pack two 128-bit loads into one.
+// Load 16 UChars (32 bytes) and pack them down to 16 bytes.
+static inline uint8x16_t LoadAndCollapseHighBytes(const UChar* ptr) {
+  uint16x8_t x1 = vld1q_u16(reinterpret_cast<const uint16_t*>(ptr));
+  uint16x8_t x2 = vld1q_u16(reinterpret_cast<const uint16_t*>(ptr + 8));
+  // Use vqmovn (saturating narrow) to convert 16-bit to 8-bit
+  uint8x8_t low = vqmovn_u16(x1);
+  uint8x8_t high = vqmovn_u16(x2);
+  return vcombine_u8(low, high);
+}
+
 // The NEON implementation follows basically the same pattern as the
 // SSE2 implementation; comments will be added only where they differ
 // substantially.
@@ -254,7 +276,8 @@ static inline uint8x16_t LoadAndCollapseHighBytes(const uint8_t* ptr) {
 // For A64, we _do_ have access to the PMULL instruction (the NEON
 // equivalent of PCLMULQDQ), but it's supposedly slow, so we use
 // the same XOR-shift cascade.
-inline static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uint8_t* end) {
+template <typename CharType>
+inline static size_t FindLengthOfDeclarationList(const CharType* begin, const CharType* end) {
   // Since NEON doesn't have a natural way of moving the last element
   // to the first slot (shift right by 15 _bytes_), but _does_ have
   // fairly cheap broadcasting (unlike SSE2 without SSSE3), we use
@@ -265,7 +288,7 @@ inline static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uin
   uint8x16_t prev_quoted = vdupq_n_u8(0);
   uint8x16_t prev_parens = vdupq_n_u8(0);
 
-  const uint8_t* ptr = begin;
+  const CharType* ptr = begin;
   while (ptr + 17 <= end) {
     uint8x16_t x = LoadAndCollapseHighBytes(ptr);
     const uint8x16_t next_x = LoadAndCollapseHighBytes(ptr + 1);
@@ -345,26 +368,19 @@ inline static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uin
 
 // If we have neither SSE2 nor NEON, we simply return 0 immediately.
 // We will then never use lazy parsing.
-ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const uint8_t* begin, const uint8_t* end) {
+template <typename CharType>
+ALWAYS_INLINE static size_t FindLengthOfDeclarationList(const CharType* begin, const CharType* end) {
   return 0;
 }
 
 #endif
 
-ALWAYS_INLINE size_t FindLengthOfDeclarationList(std::string_view str) {
-  return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(str.data()),
-                                     reinterpret_cast<const uint8_t*>(str.data() + str.length()));
-}
-
 ALWAYS_INLINE size_t FindLengthOfDeclarationList(StringView str) {
   if (str.Is8Bit()) {
     return FindLengthOfDeclarationList(str.Characters8(), str.Characters8() + str.length());
   } else {
-    // Convert to UTF-8 first for 16-bit strings
-    String s(str);
-    std::string utf8 = s.StdUtf8();
-    return FindLengthOfDeclarationList(reinterpret_cast<const uint8_t*>(utf8.data()),
-                                       reinterpret_cast<const uint8_t*>(utf8.data() + utf8.length()));
+    // Use the templated version for 16-bit strings
+    return FindLengthOfDeclarationList(str.Characters16(), str.Characters16() + str.length());
   }
 }
 

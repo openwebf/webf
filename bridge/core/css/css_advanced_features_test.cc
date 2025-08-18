@@ -10,6 +10,7 @@
 #include "core/dom/document.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -69,16 +70,16 @@ TEST(CSSAdvancedFeatures, HostContextSelector) {
   auto env = TEST_init();
   
   // Test :host-context() parsing
-  auto list1 = css_test_helpers::ParseSelectorList(":host-context(.dark-theme)");
+  auto list1 = css_test_helpers::ParseSelectorList(":host-context(.dark-theme)"_s);
   EXPECT_TRUE(list1);
   EXPECT_TRUE(list1->IsValid());
   
-  auto list2 = css_test_helpers::ParseSelectorList(":host-context(.dark-theme) .button");
+  auto list2 = css_test_helpers::ParseSelectorList(":host-context(.dark-theme) .button"_s);
   EXPECT_TRUE(list2);
   EXPECT_TRUE(list2->IsValid());
   
   // Test with complex selectors - WebF may not fully support comma-separated arguments
-  auto list3 = css_test_helpers::ParseSelectorList(":host-context(.theme-dark, .theme-contrast)");
+  auto list3 = css_test_helpers::ParseSelectorList(":host-context(.theme-dark, .theme-contrast)"_s);
   EXPECT_TRUE(list3);
   // Note: Complex :host-context() selectors may not be fully implemented in WebF yet
   if (list3->IsValid()) {
@@ -103,7 +104,7 @@ TEST(CSSAdvancedFeatures, ViewTransitions) {
   };
   
   for (const char* selector : vt_selectors) {
-    auto list = css_test_helpers::ParseSelectorList(selector);
+    auto list = css_test_helpers::ParseSelectorList(String::FromUTF8(selector));
     EXPECT_TRUE(list) << "Failed to parse: " << selector;
     EXPECT_TRUE(list->IsValid()) << "Invalid selector: " << selector;
   }

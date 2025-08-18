@@ -4,8 +4,22 @@
 
 #include "core/css/properties/css_parsing_utils.h"
 #include "gtest/gtest.h"
+#include "foundation/string/string_impl.h"
+#include "core/core_initializer.h"
 
 namespace webf {
+
+// Initialize static globals for tests
+class TestEnvironment : public ::testing::Environment {
+ public:
+  void SetUp() override {
+    CoreInitializer::Initialize();
+  }
+};
+
+// Register the environment
+static ::testing::Environment* const test_environment =
+    ::testing::AddGlobalTestEnvironment(new TestEnvironment);
 
 namespace {
 
@@ -24,14 +38,14 @@ TEST(CSSParsingUtilsTest, Revert) {
   EXPECT_TRUE(css_parsing_utils::IsCSSWideKeyword(AtomicString(String::FromUTF8("revert"))));
 }
 
-double ConsumeAngleValue(String target) {
+double ConsumeAngleValue(const String& target) {
   CSSTokenizer tokenizer(target);
   CSSParserTokenStream stream(tokenizer);
   return ConsumeAngle(stream, MakeContext())->ComputeDegrees();
 }
 
-double ConsumeAngleValue(std::string target, double min, double max) {
-  CSSTokenizer tokenizer(String::FromUTF8(target.c_str()));
+double ConsumeAngleValue(const String& target, double min, double max) {
+  CSSTokenizer tokenizer(target);
   CSSParserTokenStream stream(tokenizer);
   return ConsumeAngle(stream, MakeContext(), min, max)->ComputeDegrees();
 }
@@ -39,23 +53,24 @@ double ConsumeAngleValue(std::string target, double min, double max) {
 TEST(CSSParsingUtilsTest, ConsumeAngles) {
   const double kMaxDegreeValue = 2867080569122160;
 
-  EXPECT_EQ(10.0, ConsumeAngleValue(String::FromUTF8("10deg")));
-  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("-3.40282e+38deg")));
-  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("3.40282e+38deg")));
+  EXPECT_EQ(10.0, ConsumeAngleValue("10deg"_s));
+  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue("-3.40282e+38deg"_s));
+  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue("3.40282e+38deg"_s));
 
-  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("calc(infinity * 1deg)")));
-  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("calc(-infinity * 1deg)")));
-  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue(String::FromUTF8("calc(NaN * 1deg)")));
+  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue("calc(infinity * 1deg)"_s));
+  EXPECT_EQ(-kMaxDegreeValue, ConsumeAngleValue("calc(-infinity * 1deg)"_s));
+  EXPECT_EQ(kMaxDegreeValue, ConsumeAngleValue("calc(NaN * 1deg)"_s));
 
   // Math function with min and max ranges
 
-  EXPECT_EQ(-100, ConsumeAngleValue("calc(-3.40282e+38deg)", -100, 100));
-  EXPECT_EQ(100, ConsumeAngleValue("calc(3.40282e+38deg)", -100, 100));
+  EXPECT_EQ(-100, ConsumeAngleValue("calc(-3.40282e+38deg)"_s, -100, 100));
+  EXPECT_EQ(100, ConsumeAngleValue("calc(3.40282e+38deg)"_s, -100, 100));
 }
 
 TEST(CSSParsingUtilsTest, AtIdent_Range) {
-  std::string text = "foo,bar,10px";
-  auto tokens = CSSTokenizer(text).TokenizeToEOF();
+  String text = "foo,bar,10px"_s;
+  CSSTokenizer tokenizer(text);
+  auto tokens = tokenizer.TokenizeToEOF();
   CSSParserTokenRange range(tokens);
   EXPECT_FALSE(AtIdent(range.Consume(), "bar"));  // foo
   EXPECT_FALSE(AtIdent(range.Consume(), "bar"));  // ,
@@ -66,7 +81,7 @@ TEST(CSSParsingUtilsTest, AtIdent_Range) {
 }
 
 TEST(CSSParsingUtilsTest, AtIdent_Stream) {
-  std::string text = "foo,bar,10px";
+  String text = "foo,bar,10px"_s;
   CSSTokenizer tokenizer(text);
   CSSParserTokenStream stream(tokenizer);
   EXPECT_FALSE(AtIdent(stream.Consume(), "bar"));  // foo
@@ -78,8 +93,9 @@ TEST(CSSParsingUtilsTest, AtIdent_Stream) {
 }
 
 TEST(CSSParsingUtilsTest, ConsumeIfIdent_Range) {
-  std::string text = "foo,bar,10px";
-  auto tokens = CSSTokenizer(text).TokenizeToEOF();
+  String text = "foo,bar,10px"_s;
+  CSSTokenizer tokenizer(text);
+  auto tokens = tokenizer.TokenizeToEOF();
   CSSParserTokenRange range(tokens);
   EXPECT_TRUE(AtIdent(range.Peek(), "foo"));
   EXPECT_FALSE(ConsumeIfIdent(range, "bar"));
@@ -89,7 +105,7 @@ TEST(CSSParsingUtilsTest, ConsumeIfIdent_Range) {
 }
 
 TEST(CSSParsingUtilsTest, ConsumeIfIdent_Stream) {
-  std::string text = "foo,bar,10px";
+  String text = "foo,bar,10px"_s;
   CSSTokenizer tokenizer(text);
   CSSParserTokenStream stream(tokenizer);
   EXPECT_TRUE(AtIdent(stream.Peek(), "foo"));
@@ -100,8 +116,9 @@ TEST(CSSParsingUtilsTest, ConsumeIfIdent_Stream) {
 }
 
 TEST(CSSParsingUtilsTest, AtDelimiter_Range) {
-  std::string text = "foo,<,10px";
-  auto tokens = CSSTokenizer(text).TokenizeToEOF();
+  String text = "foo,<,10px"_s;
+  CSSTokenizer temp_tokenizer(text);
+  auto tokens = temp_tokenizer.TokenizeToEOF();
   CSSParserTokenRange range(tokens);
   EXPECT_FALSE(AtDelimiter(range.Consume(), '<'));  // foo
   EXPECT_FALSE(AtDelimiter(range.Consume(), '<'));  // ,
@@ -112,7 +129,7 @@ TEST(CSSParsingUtilsTest, AtDelimiter_Range) {
 }
 
 TEST(CSSParsingUtilsTest, AtDelimiter_Stream) {
-  std::string text = "foo,<,10px";
+  String text = "foo,<,10px"_s;
   CSSTokenizer tokenizer(text);
   CSSParserTokenStream stream(tokenizer);
   EXPECT_FALSE(AtDelimiter(stream.Consume(), '<'));  // foo
@@ -124,8 +141,9 @@ TEST(CSSParsingUtilsTest, AtDelimiter_Stream) {
 }
 
 TEST(CSSParsingUtilsTest, ConsumeIfDelimiter_Range) {
-  std::string text = "<,=,10px";
-  auto tokens = CSSTokenizer(text).TokenizeToEOF();
+  String text = "<,=,10px"_s;
+  CSSTokenizer temp_tokenizer(text);
+  auto tokens = temp_tokenizer.TokenizeToEOF();
   CSSParserTokenRange range(tokens);
   EXPECT_TRUE(AtDelimiter(range.Peek(), '<'));
   EXPECT_FALSE(ConsumeIfDelimiter(range, '='));
@@ -135,7 +153,7 @@ TEST(CSSParsingUtilsTest, ConsumeIfDelimiter_Range) {
 }
 
 TEST(CSSParsingUtilsTest, ConsumeIfDelimiter_Stream) {
-  std::string text = "<,=,10px";
+  String text = "<,=,10px"_s;
   CSSTokenizer tokenizer(text);
   CSSParserTokenStream stream(tokenizer);
   EXPECT_TRUE(AtDelimiter(stream.Peek(), '<'));
@@ -172,9 +190,10 @@ TEST(CSSParsingUtilsTest, ConsumeAnyValue) {
   };
 
   for (const auto& test : tests) {
-    std::string input(test.input);
-    SCOPED_TRACE(input);
-    auto tokens = CSSTokenizer(input).TokenizeToEOF();
+    String input = String::FromUTF8(test.input);
+    SCOPED_TRACE(test.input);
+    CSSTokenizer temp_tokenizer(input);
+    auto tokens = temp_tokenizer.TokenizeToEOF();
     CSSParserTokenRange range(tokens);
     EXPECT_EQ(test.expected, css_parsing_utils::ConsumeAnyValue(range));
     EXPECT_EQ(test.remainder, range.Serialize());
@@ -183,22 +202,26 @@ TEST(CSSParsingUtilsTest, ConsumeAnyValue) {
 
 TEST(CSSParsingUtilsTest, DashedIdent) {
   struct Expectations {
-    std::string css_text;
+    const char* css_text;
     bool is_dashed_indent;
   } expectations[] = {
       {"--grogu", true}, {"--1234", true}, {"--\U0001F37A", true}, {"--", true},       {"-", false},
       {"blue", false},   {"body", false},  {"0", false},           {"#FFAA00", false},
   };
   for (auto& expectation : expectations) {
-    auto tokens = CSSTokenizer(expectation.css_text).TokenizeToEOF();
+    String css_text = String::FromUTF8(expectation.css_text);
+    SCOPED_TRACE(expectation.css_text);
+    CSSTokenizer temp_tokenizer(css_text);
+    auto tokens = temp_tokenizer.TokenizeToEOF();
     CSSParserTokenRange range(tokens);
     EXPECT_EQ(css_parsing_utils::IsDashedIdent(range.Peek()), expectation.is_dashed_indent);
   }
 }
 
 TEST(CSSParsingUtilsTest, ConsumeAbsoluteColor) {
-  auto ConsumeColorForTest = [](std::string css_text, auto func) {
-    auto tokens = CSSTokenizer(css_text).TokenizeToEOF();
+  auto ConsumeColorForTest = [](const String& css_text, auto func) {
+    CSSTokenizer tokenizer(css_text);
+    auto tokens = tokenizer.TokenizeToEOF();
     CSSParserTokenRange range(tokens);
     auto context = MakeContext();
     return func(range, context);
@@ -208,18 +231,18 @@ TEST(CSSParsingUtilsTest, ConsumeAbsoluteColor) {
     WEBF_STACK_ALLOCATED();
 
    public:
-    std::string css_text;
+    String css_text;
     std::shared_ptr<const CSSIdentifierValue> consume_color_expectation;
     std::shared_ptr<const CSSIdentifierValue> consume_absolute_color_expectation;
   } expectations[]{
-      {"Canvas", CSSIdentifierValue::Create(CSSValueID::kCanvas), nullptr},
-      {"HighlightText", CSSIdentifierValue::Create(CSSValueID::kHighlighttext), nullptr},
-      {"GrayText", CSSIdentifierValue::Create(CSSValueID::kGraytext), nullptr},
-      {"blue", CSSIdentifierValue::Create(CSSValueID::kBlue), CSSIdentifierValue::Create(CSSValueID::kBlue)},
+      {"Canvas"_s, CSSIdentifierValue::Create(CSSValueID::kCanvas), nullptr},
+      {"HighlightText"_s, CSSIdentifierValue::Create(CSSValueID::kHighlighttext), nullptr},
+      {"GrayText"_s, CSSIdentifierValue::Create(CSSValueID::kGraytext), nullptr},
+      {"blue"_s, CSSIdentifierValue::Create(CSSValueID::kBlue), CSSIdentifierValue::Create(CSSValueID::kBlue)},
       // Deprecated system colors are not allowed either.
-      {"ActiveBorder", CSSIdentifierValue::Create(CSSValueID::kActiveborder), nullptr},
-      {"WindowText", CSSIdentifierValue::Create(CSSValueID::kWindowtext), nullptr},
-      {"currentcolor", CSSIdentifierValue::Create(CSSValueID::kCurrentcolor), nullptr},
+      {"ActiveBorder"_s, CSSIdentifierValue::Create(CSSValueID::kActiveborder), nullptr},
+      {"WindowText"_s, CSSIdentifierValue::Create(CSSValueID::kWindowtext), nullptr},
+      {"currentcolor"_s, CSSIdentifierValue::Create(CSSValueID::kCurrentcolor), nullptr},
   };
   for (auto& expectation : expectations) {
     EXPECT_EQ(ConsumeColorForTest(expectation.css_text, css_parsing_utils::ConsumeColor<CSSParserTokenRange>),
@@ -238,9 +261,10 @@ TEST(CSSParsingUtilsTest, ConsumeColorRangePreservation) {
       "color-contrast(42deg)",
   };
   for (const char*& test : tests) {
-    std::string input(test);
-    SCOPED_TRACE(input);
-    std::vector<CSSParserToken> tokens = CSSTokenizer(input).TokenizeToEOF();
+    String input = String::FromUTF8(test);
+    SCOPED_TRACE(test);
+    CSSTokenizer tokenizer(input);
+    std::vector<CSSParserToken> tokens = tokenizer.TokenizeToEOF();
     CSSParserTokenRange range(tokens);
     EXPECT_EQ(nullptr, css_parsing_utils::ConsumeColor(range, MakeContext()));
     EXPECT_EQ(test, range.Serialize());

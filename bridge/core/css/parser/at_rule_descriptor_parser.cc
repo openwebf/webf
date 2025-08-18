@@ -226,7 +226,8 @@ std::shared_ptr<const CSSValue> ConsumeDescriptor(StyleRule::RuleType rule_type,
   using Parser = AtRuleDescriptorParser;
   
   // Convert tokenized_value to a stream
-  CSSTokenizer tokenizer(tokenized_value.range.Serialize());
+  String serialized = tokenized_value.range.Serialize();
+  CSSTokenizer tokenizer{serialized.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   switch (rule_type) {
@@ -337,7 +338,8 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
     AtRuleDescriptorID id,
     const std::string& string,
     std::shared_ptr<const CSSParserContext> context) {
-  CSSTokenizer tokenizer(string);
+  String string_value = String::FromUTF8(string.c_str());
+  CSSTokenizer tokenizer{string_value.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
   return ParseFontFaceDescriptor(id, stream, context);
 }
@@ -346,7 +348,8 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseFontFaceDescriptor(
     AtRuleDescriptorID id,
     const CSSTokenizedValue& tokenized_value,
     std::shared_ptr<const CSSParserContext> context) {
-  CSSTokenizer tokenizer(tokenized_value.range.Serialize());
+  String serialized = tokenized_value.range.Serialize();
+  CSSTokenizer tokenizer{serialized.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
   return ParseFontFaceDescriptor(id, stream, context);
 }
@@ -372,7 +375,7 @@ std::shared_ptr<const CSSValue> AtRuleDescriptorParser::ParseAtPropertyDescripto
   std::shared_ptr<const CSSValue> parsed_value = nullptr;
   
   // Create a stream from the tokenized value
-  CSSTokenizer tokenizer(tokenized_value.text);
+  CSSTokenizer tokenizer{tokenized_value.text};
   CSSParserTokenStream stream(tokenizer);
   
   switch (id) {

@@ -71,6 +71,10 @@ class String {
   size_t Find(UChar c, size_t start = 0) const;
   size_t Find(const String& str, size_t start = 0) const;
   
+  // Reverse find - searches from the end
+  size_t RFind(UChar c) const;
+  size_t RFind(const String& str) const;
+  
   bool StartsWith(const String& prefix) const;
   bool StartsWith(UChar character) const;
   
@@ -105,6 +109,9 @@ class String {
 
   // Static empty string
   static const String& EmptyString();
+
+  // Static null string
+  static const String& NullString();
 
   String EncodeForDebugging() const;
 

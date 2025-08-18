@@ -504,7 +504,8 @@ namespace {
 bool ParseCSSValue(CSSPropertyID property_id,
                    const std::string& value,
                    std::shared_ptr<const CSSParserContext> context) {
-  CSSTokenizer tokenizer(String::FromUTF8(value.c_str()));
+  String value_str = String::FromUTF8(value.c_str());
+  CSSTokenizer tokenizer(value_str);
   CSSParserTokenStream stream(tokenizer);
   std::vector<CSSPropertyValue> parsed_properties;
   parsed_properties.reserve(64);
@@ -518,7 +519,8 @@ TEST(CSSPropertyParserTest, ParseRevert) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
 
   std::string string = " revert";
-  CSSTokenizer tokenizer(String::FromUTF8(string.c_str()));
+  String string_str = String::FromUTF8(string.c_str());
+  CSSTokenizer tokenizer(string_str);
   CSSParserTokenStream stream(tokenizer);
 
   std::shared_ptr<const CSSValue> value =
@@ -531,7 +533,8 @@ TEST(CSSPropertyParserTest, ParseRevertLayer) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
 
   std::string string = " revert-layer";
-  CSSTokenizer tokenizer(String::FromUTF8(string.c_str()));
+  String string_str = String::FromUTF8(string.c_str());
+  CSSTokenizer tokenizer(string_str);
   CSSParserTokenStream stream(tokenizer);
 
   std::shared_ptr<const CSSValue> value =

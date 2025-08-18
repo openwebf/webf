@@ -18,7 +18,7 @@ static CSSParserToken DimensionToken(double value, const String& unit) {
 }
 
 static String RoundTripToken(String str) {
-  CSSTokenizer tokenizer(str);
+  CSSTokenizer tokenizer{str.ToStringView()};
   StringBuilder sb;
   tokenizer.TokenizeSingle().Serialize(sb);
   return sb.ReleaseString();

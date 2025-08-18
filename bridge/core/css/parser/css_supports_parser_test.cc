@@ -20,11 +20,12 @@ class CSSSupportsParserTest : public testing::Test {
  public:
   std::shared_ptr<CSSParserContext> MakeContext() { return std::make_shared<CSSParserContext>(kHTMLStandardMode); }
 
-  std::vector<CSSParserToken> Tokenize(const std::string& string) { return CSSTokenizer(string).TokenizeToEOF(); }
+  std::vector<CSSParserToken> Tokenize(const String& string) { return CSSTokenizer(string).TokenizeToEOF(); }
 
   Result StaticConsumeSupportsCondition(std::string string) {
     CSSParserImpl impl(MakeContext());
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     Result result = CSSSupportsParser::ConsumeSupportsCondition(stream, impl);
     return stream.AtEnd() ? result : Result::kParseFailure;
@@ -40,7 +41,8 @@ class CSSSupportsParserTest : public testing::Test {
   Result ConsumeSupportsCondition(std::string string) {
     CSSParserImpl impl(MakeContext());
     CSSSupportsParser parser(impl);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     return parser.ConsumeSupportsCondition(stream);
   }
@@ -48,7 +50,8 @@ class CSSSupportsParserTest : public testing::Test {
   Result ConsumeSupportsInParens(std::string string) {
     CSSParserImpl impl(MakeContext());
     CSSSupportsParser parser(impl);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     return parser.ConsumeSupportsInParens(stream);
   }
@@ -56,7 +59,8 @@ class CSSSupportsParserTest : public testing::Test {
   Result ConsumeSupportsFeature(std::string string) {
     CSSParserImpl impl(MakeContext());
     CSSSupportsParser parser(impl);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     CSSParserToken first_token = stream.Peek();
     CSSParserTokenStream::BlockGuard guard(stream);
@@ -67,7 +71,8 @@ class CSSSupportsParserTest : public testing::Test {
   Result ConsumeSupportsSelectorFn(std::string string) {
     CSSParserImpl impl(MakeContext());
     CSSSupportsParser parser(impl);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     CSSParserToken first_token = stream.Peek();
     CSSParserTokenStream::BlockGuard guard(stream);
@@ -78,7 +83,8 @@ class CSSSupportsParserTest : public testing::Test {
   Result ConsumeSupportsDecl(std::string string) {
     CSSParserImpl impl(MakeContext());
     CSSSupportsParser parser(impl);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     CSSParserToken first_token = stream.Peek();
     CSSParserTokenStream::BlockGuard guard(stream);
@@ -89,7 +95,8 @@ class CSSSupportsParserTest : public testing::Test {
   Result ConsumeGeneralEnclosed(std::string string) {
     CSSParserImpl impl(MakeContext());
     CSSSupportsParser parser(impl);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     CSSParserToken first_token = stream.Peek();
     CSSParserTokenStream::BlockGuard guard(stream);

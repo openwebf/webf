@@ -30,6 +30,7 @@
 #include "core/css/css_rule.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/style_rule.h"
+#include "foundation/string/atomic_string.h"
 
 namespace webf {
 
@@ -51,14 +52,13 @@ class StyleRuleKeyframes final : public StyleRuleBase {
   void WrapperAppendKeyframe(std::shared_ptr<StyleRuleKeyframe>);
   void WrapperRemoveKeyframe(unsigned);
 
-  std::string GetName() const { return name_; }
-  void SetName(const std::string& name) { name_ = name; }
-  void SetName(const String& name) { name_ = name.ToStdString(); }
+  const AtomicString& GetName() const { return name_; }
+  void SetName(const AtomicString& name) { name_ = name; }
 
   bool IsVendorPrefixed() const { return is_prefixed_; }
   void SetVendorPrefixed(bool is_prefixed) { is_prefixed_ = is_prefixed; }
 
-  int FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const std::string& key) const;
+  int FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const String& key) const;
 
   std::shared_ptr<StyleRuleKeyframes> Copy() const { return std::make_shared<StyleRuleKeyframes>(*this); }
 
@@ -73,7 +73,7 @@ class StyleRuleKeyframes final : public StyleRuleBase {
  private:
   std::shared_ptr<const CascadeLayer> layer_;
   std::vector<std::shared_ptr<StyleRuleKeyframe>> keyframes_;
-  std::string name_;
+  AtomicString name_;
   unsigned version_ : 31;
   unsigned is_prefixed_ : 1;
 };
@@ -100,9 +100,9 @@ class CSSKeyframesRule final : public CSSRule {
 
   CSSRuleList* cssRules() const override;
 
-  void appendRule(const ExecutingContext*, const std::string& rule);
-  void deleteRule(const ExecutingContext*, const std::string& key);
-  CSSKeyframeRule* findRule(const ExecutingContext*, const std::string& key);
+  void appendRule(const ExecutingContext*, const String& rule);
+  void deleteRule(const ExecutingContext*, const String& key);
+  CSSKeyframeRule* findRule(const ExecutingContext*, const String& key);
 
   // For IndexedGetter and CSSRuleList.
   unsigned length() const;

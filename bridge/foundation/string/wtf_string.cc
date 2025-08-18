@@ -14,6 +14,7 @@ namespace webf {
 
 // Static empty string singleton
 static const String* g_empty_string = nullptr;
+static const String* g_null_string = nullptr;
 
 const String& String::EmptyString() {
   if (!g_empty_string) {
@@ -22,6 +23,15 @@ const String& String::EmptyString() {
   }
   return *g_empty_string;
 }
+
+const String& String::NullString() {
+  if (!g_null_string) {
+    static String null_string(static_cast<std::shared_ptr<StringImpl>>(nullptr));
+    g_null_string = &null_string;
+  }
+  return *g_null_string;
+}
+
 String String::EncodeForDebugging() const  {
   return StringView(*this).EncodeForDebugging();
 }
@@ -137,6 +147,20 @@ size_t String::Find(const String& str, size_t start) const {
   }
   
   return kNotFound;
+}
+
+size_t String::RFind(UChar c) const {
+  if (!impl_) {
+    return kNotFound;
+  }
+  return impl_->RFind(c);
+}
+
+size_t String::RFind(const String& str) const {
+  if (!impl_ || !str.impl_) {
+    return kNotFound;
+  }
+  return impl_->RFind(*str.impl_);
 }
 
 bool String::StartsWith(const String& prefix) const {

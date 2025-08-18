@@ -10,6 +10,7 @@
 #define WEBF_CSS_TOKENIZER_INPUT_STREAM_H
 
 #include <cstdint>
+#include <cstdio>
 #include "../../../foundation/string/string_view.h"
 #include "foundation/macros.h"
 
@@ -33,7 +34,7 @@ class CSSTokenizerInputStream {
       return '\0';
     }
     UChar result = string_[offset_];
-    return result ? result : 0xFF;
+    return result ? result : 0xFFFD;
   }
 
   // Gets the char at lookaheadOffset from the current stream position. Will
@@ -50,9 +51,9 @@ class CSSTokenizerInputStream {
   [[nodiscard]] StringView Peek() const { return StringView(string_, offset_, length() - offset_); }
 
   void Advance(unsigned offset = 1) { offset_ += offset; }
-  void PushBack(char cc) {
+  void PushBack(UChar cc) {
     --offset_;
-    assert(NextInputChar() == cc);
+    DCHECK(NextInputChar() == cc);
   }
 
   double GetDouble(unsigned start, unsigned end) const;

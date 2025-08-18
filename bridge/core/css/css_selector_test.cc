@@ -15,6 +15,7 @@
 #include "core/dom/document.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -23,7 +24,7 @@ using css_test_helpers::ParseSelectorList;
 
 namespace {
 
-unsigned Specificity(const std::string& selector_text) {
+unsigned Specificity(const String& selector_text) {
   std::shared_ptr<CSSSelectorList> selector_list = ParseSelectorList(selector_text);
   if (selector_list->First()) {
     return selector_list->First()->Specificity();
@@ -43,7 +44,7 @@ bool HasLinkOrVisited(const std::string& selector_text) {
 
 TEST(CSSSelector, BasicTest) {
   // Simple test to verify the test framework works
-  std::shared_ptr<CSSSelectorList> selector_list = ParseSelectorList(".a");
+  std::shared_ptr<CSSSelectorList> selector_list = ParseSelectorList(".a"_s);
   EXPECT_TRUE(selector_list);
   EXPECT_TRUE(selector_list->IsValid());
 }
@@ -114,82 +115,82 @@ TEST(CSSSelector, OverflowRareDataMatchNth) {
 
 TEST(CSSSelector, Specificity_Is) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity(".a :is(.b, div.c)"), Specificity(".a div.c"));
-  EXPECT_EQ(Specificity(".a :is(.c#d, .e)"), Specificity(".a .c#d"));
-  EXPECT_EQ(Specificity(":is(.e+.f, .g>.b, .h)"), Specificity(".e+.f"));
-  EXPECT_EQ(Specificity(".a :is(.e+.f, .g>.b, .h#i)"), Specificity(".a .h#i"));
-  EXPECT_EQ(Specificity(".a+:is(.b+span.f, :is(.c>.e, .g))"),
-            Specificity(".a+.b+span.f"));
-  EXPECT_EQ(Specificity("div > :is(div:where(span:where(.b ~ .c)))"),
-            Specificity("div > div"));
-  EXPECT_EQ(Specificity(":is(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"),
-            Specificity(".c + .c + .c"));
+  EXPECT_EQ(Specificity(".a :is(.b, div.c)"_s), Specificity(".a div.c"_s));
+  EXPECT_EQ(Specificity(".a :is(.c#d, .e)"_s), Specificity(".a .c#d"_s));
+  EXPECT_EQ(Specificity(":is(.e+.f, .g>.b, .h)"_s), Specificity(".e+.f"_s));
+  EXPECT_EQ(Specificity(".a :is(.e+.f, .g>.b, .h#i)"_s), Specificity(".a .h#i"_s));
+  EXPECT_EQ(Specificity(".a+:is(.b+span.f, :is(.c>.e, .g))"_s),
+            Specificity(".a+.b+span.f"_s));
+  EXPECT_EQ(Specificity("div > :is(div:where(span:where(.b ~ .c)))"_s),
+            Specificity("div > div"_s));
+  EXPECT_EQ(Specificity(":is(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"_s),
+            Specificity(".c + .c + .c"_s));
 }
 
 TEST(CSSSelector, Specificity_Where) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity(".a :where(.b, div.c)"), Specificity(".a"));
-  EXPECT_EQ(Specificity(".a :where(.c#d, .e)"), Specificity(".a"));
-  EXPECT_EQ(Specificity(":where(.e+.f, .g>.b, .h)"), Specificity("*"));
-  EXPECT_EQ(Specificity(".a :where(.e+.f, .g>.b, .h#i)"), Specificity(".a"));
-  EXPECT_EQ(Specificity("div > :where(.b+span.f, :where(.c>.e, .g))"),
-            Specificity("div"));
-  EXPECT_EQ(Specificity("div > :where(div:is(span:is(.b ~ .c)))"),
-            Specificity("div"));
+  EXPECT_EQ(Specificity(".a :where(.b, div.c)"_s), Specificity(".a"_s));
+  EXPECT_EQ(Specificity(".a :where(.c#d, .e)"_s), Specificity(".a"_s));
+  EXPECT_EQ(Specificity(":where(.e+.f, .g>.b, .h)"_s), Specificity("*"_s));
+  EXPECT_EQ(Specificity(".a :where(.e+.f, .g>.b, .h#i)"_s), Specificity(".a"_s));
+  EXPECT_EQ(Specificity("div > :where(.b+span.f, :where(.c>.e, .g))"_s),
+            Specificity("div"_s));
+  EXPECT_EQ(Specificity("div > :where(div:is(span:is(.b ~ .c)))"_s),
+            Specificity("div"_s));
   EXPECT_EQ(
-      Specificity(":where(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"),
-      Specificity("*"));
+      Specificity(":where(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"_s),
+      Specificity("*"_s));
 }
 
 TEST(CSSSelector, Specificity_Slotted) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity("::slotted(.a)"), Specificity(".a::first-line"));
-  EXPECT_EQ(Specificity("::slotted(*)"), Specificity("::first-line"));
+  EXPECT_EQ(Specificity("::slotted(.a)"_s), Specificity(".a::first-line"_s));
+  EXPECT_EQ(Specificity("::slotted(*)"_s), Specificity("::first-line"_s));
 }
 
 TEST(CSSSelector, Specificity_Host) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity(":host"), Specificity(".host"));
-  EXPECT_EQ(Specificity(":host(.a)"), Specificity(".host .a"));
-  EXPECT_EQ(Specificity(":host(div#a.b)"), Specificity(".host div#a.b"));
+  EXPECT_EQ(Specificity(":host"_s), Specificity(".host"_s));
+  EXPECT_EQ(Specificity(":host(.a)"_s), Specificity(".host .a"_s));
+  EXPECT_EQ(Specificity(":host(div#a.b)"_s), Specificity(".host div#a.b"_s));
 }
 
 TEST(CSSSelector, Specificity_HostContext) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity(":host-context(.a)"), Specificity(".host-context .a"));
-  EXPECT_EQ(Specificity(":host-context(div#a.b)"),
-            Specificity(".host-context div#a.b"));
+  EXPECT_EQ(Specificity(":host-context(.a)"_s), Specificity(".host-context .a"_s));
+  EXPECT_EQ(Specificity(":host-context(div#a.b)"_s),
+            Specificity(".host-context div#a.b"_s));
 }
 
 TEST(CSSSelector, Specificity_Not) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity(":not(div)"), Specificity(":is(div)"));
-  EXPECT_EQ(Specificity(":not(.a)"), Specificity(":is(.a)"));
-  EXPECT_EQ(Specificity(":not(div.a)"), Specificity(":is(div.a)"));
-  EXPECT_EQ(Specificity(".a :not(.b, div.c)"),
-            Specificity(".a :is(.b, div.c)"));
-  EXPECT_EQ(Specificity(".a :not(.c#d, .e)"), Specificity(".a :is(.c#d, .e)"));
-  EXPECT_EQ(Specificity(".a :not(.e+.f, .g>.b, .h#i)"),
-            Specificity(".a :is(.e+.f, .g>.b, .h#i)"));
-  EXPECT_EQ(Specificity(":not(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"),
-            Specificity(":is(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"));
+  EXPECT_EQ(Specificity(":not(div)"_s), Specificity(":is(div)"_s));
+  EXPECT_EQ(Specificity(":not(.a)"_s), Specificity(":is(.a)"_s));
+  EXPECT_EQ(Specificity(":not(div.a)"_s), Specificity(":is(div.a)"_s));
+  EXPECT_EQ(Specificity(".a :not(.b, div.c)"_s),
+            Specificity(".a :is(.b, div.c)"_s));
+  EXPECT_EQ(Specificity(".a :not(.c#d, .e)"_s), Specificity(".a :is(.c#d, .e)"_s));
+  EXPECT_EQ(Specificity(".a :not(.e+.f, .g>.b, .h#i)"_s),
+            Specificity(".a :is(.e+.f, .g>.b, .h#i)"_s));
+  EXPECT_EQ(Specificity(":not(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"_s),
+            Specificity(":is(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"_s));
 }
 
 TEST(CSSSelector, Specificity_Has) {
   auto env = TEST_init();
-  EXPECT_EQ(Specificity(":has(div)"), Specificity("div"));
-  EXPECT_EQ(Specificity(":has(div)"), Specificity("* div"));
-  EXPECT_EQ(Specificity(":has(~ div)"), Specificity("* ~ div"));
-  EXPECT_EQ(Specificity(":has(> .a)"), Specificity("* > .a"));
-  EXPECT_EQ(Specificity(":has(+ div.a)"), Specificity("* + div.a"));
-  EXPECT_EQ(Specificity(".a :has(.b, div.c)"), Specificity(".a div.c"));
-  EXPECT_EQ(Specificity(".a :has(.c#d, .e)"), Specificity(".a .c#d"));
-  EXPECT_EQ(Specificity(":has(.e+.f, .g>.b, .h)"), Specificity(".e+.f"));
-  EXPECT_EQ(Specificity(".a :has(.e+.f, .g>.b, .h#i)"), Specificity(".a .h#i"));
-  EXPECT_EQ(Specificity("div > :has(div, div:where(span:where(.b ~ .c)))"),
-            Specificity("div > div"));
-  EXPECT_EQ(Specificity(":has(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"),
-            Specificity(".c + .c + .c"));
+  EXPECT_EQ(Specificity(":has(div)"_s), Specificity("div"_s));
+  EXPECT_EQ(Specificity(":has(div)"_s), Specificity("* div"_s));
+  EXPECT_EQ(Specificity(":has(~ div)"_s), Specificity("* ~ div"_s));
+  EXPECT_EQ(Specificity(":has(> .a)"_s), Specificity("* > .a"_s));
+  EXPECT_EQ(Specificity(":has(+ div.a)"_s), Specificity("* + div.a"_s));
+  EXPECT_EQ(Specificity(".a :has(.b, div.c)"_s), Specificity(".a div.c"_s));
+  EXPECT_EQ(Specificity(".a :has(.c#d, .e)"_s), Specificity(".a .c#d"_s));
+  EXPECT_EQ(Specificity(":has(.e+.f, .g>.b, .h)"_s), Specificity(".e+.f"_s));
+  EXPECT_EQ(Specificity(".a :has(.e+.f, .g>.b, .h#i)"_s), Specificity(".a .h#i"_s));
+  EXPECT_EQ(Specificity("div > :has(div, div:where(span:where(.b ~ .c)))"_s),
+            Specificity("div > div"_s));
+  EXPECT_EQ(Specificity(":has(.c + .c + .c, .b + .c:not(span), .b + .c + .e)"_s),
+            Specificity(".c + .c + .c"_s));
 }
 
 TEST(CSSSelector, HasLinkOrVisited) {
@@ -222,7 +223,7 @@ TEST(CSSSelector, CueDefaultNamespace) {
   auto env = TEST_init();
   
   // Test ::cue pseudo-element parsing
-  std::shared_ptr<CSSSelectorList> list = ParseSelectorList("video::cue(b)");
+  std::shared_ptr<CSSSelectorList> list = ParseSelectorList("video::cue(b)"_s);
   EXPECT_TRUE(list);
   // Note: WebF may not have full ::cue support yet, so we just verify parsing doesn't crash
 }
@@ -236,7 +237,7 @@ TEST(CSSSelector, CopyInvalidList) {
 
 TEST(CSSSelector, CopyValidList) {
   auto env = TEST_init();
-  auto list = ParseSelectorList(".a");
+  auto list = ParseSelectorList(".a"_s);
   EXPECT_TRUE(list->IsValid());
   EXPECT_TRUE(list->Copy()->IsValid());
 }
@@ -253,7 +254,7 @@ TEST(CSSSelector, ModernSelectorsParsing) {
   
   // Test :is() pseudo-class parsing
   {
-    auto list = ParseSelectorList(":is(.a, .b)");
+    auto list = ParseSelectorList(":is(.a, .b)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
     const CSSSelector* selector = list->First();
@@ -265,7 +266,7 @@ TEST(CSSSelector, ModernSelectorsParsing) {
   
   // Test :where() pseudo-class parsing
   {
-    auto list = ParseSelectorList(":where(.a, .b)");
+    auto list = ParseSelectorList(":where(.a, .b)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
     const CSSSelector* selector = list->First();
@@ -276,7 +277,7 @@ TEST(CSSSelector, ModernSelectorsParsing) {
   
   // Test :has() pseudo-class parsing
   {
-    auto list = ParseSelectorList(":has(.child)");
+    auto list = ParseSelectorList(":has(.child)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
     const CSSSelector* selector = list->First();
@@ -287,7 +288,7 @@ TEST(CSSSelector, ModernSelectorsParsing) {
   
   // Test :focus-visible pseudo-class parsing
   {
-    auto list = ParseSelectorList(":focus-visible");
+    auto list = ParseSelectorList(":focus-visible"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
     const CSSSelector* selector = list->First();
@@ -297,7 +298,7 @@ TEST(CSSSelector, ModernSelectorsParsing) {
   
   // Test :focus-within pseudo-class parsing
   {
-    auto list = ParseSelectorList(":focus-within");
+    auto list = ParseSelectorList(":focus-within"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
     const CSSSelector* selector = list->First();
@@ -307,7 +308,7 @@ TEST(CSSSelector, ModernSelectorsParsing) {
   
   // Test ::backdrop pseudo-element parsing
   {
-    auto list = ParseSelectorList("::backdrop");
+    auto list = ParseSelectorList("::backdrop"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
     const CSSSelector* selector = list->First();
@@ -321,28 +322,28 @@ TEST(CSSSelector, ComplexModernSelectors) {
   
   // Test nested :is() selectors
   {
-    auto list = ParseSelectorList(":is(:is(.a, .b), .c)");
+    auto list = ParseSelectorList(":is(:is(.a, .b), .c)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
   }
   
   // Test :where() with complex selectors
   {
-    auto list = ParseSelectorList(":where(.parent > .child, .sibling + .sibling)");
+    auto list = ParseSelectorList(":where(.parent > .child, .sibling + .sibling)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
   }
   
   // Test :has() with combinators
   {
-    auto list = ParseSelectorList("div:has(> .direct-child)");
+    auto list = ParseSelectorList("div:has(> .direct-child)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
   }
   
   // Test combination of modern selectors
   {
-    auto list = ParseSelectorList(".container:has(.item):is(:hover, :focus-within)");
+    auto list = ParseSelectorList(".container:has(.item):is(:hover, :focus-within)"_s);
     ASSERT_TRUE(list);
     ASSERT_TRUE(list->IsValid());
   }

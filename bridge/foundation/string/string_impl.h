@@ -235,6 +235,10 @@ class StringImpl {
   size_t Find(CharacterMatchFunctionPtr, size_t index = 0);
   //  size_t Find(base::RepeatingCallback<bool(UChar)> match_callback,
   //                  wtf_size_t index = 0) const;
+  
+  // Reverse find - searches from the end
+  size_t RFind(UChar character) const;
+  size_t RFind(const StringImpl& str) const;
 
   bool StartsWith(char) const;
   bool StartsWith(const StringView& prefix) const;
@@ -329,6 +333,26 @@ inline size_t StringImpl::Find(char16_t character, size_t start) {
   if (Is8Bit())
     return internal::Find(Characters8(), length_, character, start);
   return internal::Find(Characters16(), length_, character, start);
+}
+
+inline size_t StringImpl::RFind(UChar character) const {
+  if (length_ == 0)
+    return kNotFound;
+    
+  if (Is8Bit()) {
+    const LChar* chars = Characters8();
+    for (size_t i = length_; i > 0; --i) {
+      if (chars[i - 1] == character)
+        return i - 1;
+    }
+  } else {
+    const UChar* chars = Characters16();
+    for (size_t i = length_; i > 0; --i) {
+      if (chars[i - 1] == character)
+        return i - 1;
+    }
+  }
+  return kNotFound;
 }
 
 template <>

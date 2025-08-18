@@ -91,6 +91,7 @@ class CSSParserToken {
         numeric_sign_(0),        // Don't care.
         unit_(0),                // Don't care.
         value_is_inline_(false),
+        value_is_8bit_(true),    // Default to 8-bit
         padding_(0)  // Don't care.
   {}
 
@@ -121,7 +122,12 @@ class CSSParserToken {
     if (value_is_inline_) {
       return StringView(reinterpret_cast<const char*>(value_data_char_inline_), value_length_);
     }
-    return StringView(reinterpret_cast<const char*>(value_data_char_raw_), value_length_);
+    // Use the correct encoding for non-inline values
+    if (value_is_8bit_) {
+      return StringView(reinterpret_cast<const char*>(value_data_char_raw_), value_length_);
+    } else {
+      return StringView(reinterpret_cast<const char16_t*>(value_data_char_raw_), value_length_);
+    }
   }
 
   bool IsEOF() const { return type_ == static_cast<unsigned>(kEOFToken); }
@@ -191,17 +197,18 @@ class CSSParserToken {
     if (value_length_ <= sizeof(value_data_char_inline_)) {
       if (string.Is8Bit()) {
         memcpy(value_data_char_inline_, string.Characters8(), value_length_);
+        value_is_inline_ = true;
+        value_is_8bit_ = true;  // inline is always 8-bit
       } else {
-        // Convert UTF-16 to UTF-8 for inline storage
-        // For simplicity, we'll only inline if it's 8-bit
+        // For 16-bit strings, store pointer even if short
         value_data_char_raw_ = string.Characters16();
         value_is_inline_ = false;
-        return;
+        value_is_8bit_ = false;
       }
-      value_is_inline_ = true;
     } else {
       value_data_char_raw_ = string.Is8Bit() ? static_cast<const void*>(string.Characters8()) : static_cast<const void*>(string.Characters16());
       value_is_inline_ = false;
+      value_is_8bit_ = string.Is8Bit();
     }
   }
   bool ValueDataCharRawEqual(const CSSParserToken& other) const;
@@ -229,8 +236,11 @@ class CSSParserToken {
   // a pointer to the string. It also guarantees value_is_8bit_ == true.
   unsigned value_is_inline_ : 1;
 
+  // Track whether the value is 8-bit or 16-bit (only used when value_is_inline_ is false)
+  unsigned value_is_8bit_ : 1;
+  
   // These are free bits. You may take from them if you need.
-  unsigned padding_ : 12;
+  unsigned padding_ : 11;
 
   unsigned value_length_;
   union {

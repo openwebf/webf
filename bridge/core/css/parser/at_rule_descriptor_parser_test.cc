@@ -39,7 +39,8 @@ class AtRuleDescriptorParserTest : public ::testing::Test {
   std::shared_ptr<const CSSValue> ParseCounterStyleDescriptor(
       AtRuleDescriptorID id, const std::string& value) {
     auto context = MakeContext();
-    CSSTokenizer tokenizer(value);
+    String value_string = String::FromUTF8(value.c_str());
+    CSSTokenizer tokenizer{value_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     return AtRuleDescriptorParser::ParseAtCounterStyleDescriptor(id, stream, context);
   }

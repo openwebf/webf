@@ -26,7 +26,8 @@ class CSSTokenizerComprehensiveTest : public ::testing::Test {
 // Helper to test token sequences
 void TestTokenSequence(const std::string& input, 
                       const std::vector<CSSParserTokenType>& expected_types) {
-  CSSTokenizer tokenizer(input);
+  String input_string = String::FromUTF8(input.c_str());
+  CSSTokenizer tokenizer{input_string.ToStringView()};
   
   std::vector<CSSParserToken> tokens;
   while (true) {

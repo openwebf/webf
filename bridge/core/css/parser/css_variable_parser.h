@@ -38,7 +38,7 @@ class CSSVariableParser {
   //
   // https://drafts.css-houdini.org/css-properties-values-api-1/#universal-syntax-definition
   static std::shared_ptr<const CSSUnparsedDeclarationValue>
-  ParseUniversalSyntaxValue(const String&, std::shared_ptr<const CSSParserContext>&, bool is_animation_tainted);
+  ParseUniversalSyntaxValue(StringView text, std::shared_ptr<const CSSParserContext>&, bool is_animation_tainted);
 
   // Consume a declaration without trying to parse it as any specific
   // property. This is mostly useful for either custom property declarations,

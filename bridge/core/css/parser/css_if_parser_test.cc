@@ -16,7 +16,8 @@ class CSSIfParserTest : public ::testing::Test {
   bool ParseQuery(const std::string& string) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     CSSIfParser parser(*context);
-    CSSTokenizer tokenizer(string);
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     auto if_test = parser.ConsumeIfCondition(stream);
     return if_test != nullptr;

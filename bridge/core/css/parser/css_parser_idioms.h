@@ -71,11 +71,11 @@ inline bool IsHTMLSpace(CharType character) {
 
 // Space characters as defined by the CSS specification.
 // http://www.w3.org/TR/css3-syntax/#whitespace
-inline bool IsCSSSpace(char c) {
+inline bool IsCSSSpace(UChar c) {
   return c == ' ' || c == '\t' || c == '\n';
 }
 
-inline bool IsCSSNewLine(char cc) {
+inline bool IsCSSNewLine(UChar cc) {
   // We check \r and \f here, since we have no preprocessing stage
   return (cc == '\r' || cc == '\n' || cc == '\f');
 }
@@ -93,7 +93,7 @@ bool IsNameCodePoint(CharacterType c) {
 }
 
 // https://drafts.csswg.org/css-syntax/#check-if-two-code-points-are-a-valid-escape
-inline bool TwoCharsAreValidEscape(char first, char second) {
+inline bool TwoCharsAreValidEscape(UChar first, UChar second) {
   return first == '\\' && !IsCSSNewLine(second);
 }
 
@@ -111,7 +111,7 @@ UCharCodePoint ConsumeEscape(CSSTokenizerInputStream&);
 std::string ConsumeName(CSSTokenizerInputStream&);
 
 // https://drafts.csswg.org/css-syntax/#would-start-an-identifier
-bool NextCharsAreIdentifier(char, const CSSTokenizerInputStream&);
+bool NextCharsAreIdentifier(UChar, const CSSTokenizerInputStream&);
 
 }  // namespace webf
 

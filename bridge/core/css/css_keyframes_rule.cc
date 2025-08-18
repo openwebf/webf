@@ -56,7 +56,7 @@ void StyleRuleKeyframes::WrapperRemoveKeyframe(unsigned index) {
   StyleChanged();
 }
 
-int StyleRuleKeyframes::FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const std::string& key) const {
+int StyleRuleKeyframes::FindKeyframeIndex(std::shared_ptr<CSSParserContext> context, const String& key) const {
   std::unique_ptr<std::vector<KeyframeOffset>> keys = CSSParser::ParseKeyframeKeyList(std::move(context), key);
   if (!keys) {
     return -1;
@@ -87,10 +87,10 @@ void CSSKeyframesRule::setName(const AtomicString& name) {
     parentStyleSheet()->Contents()->NotifyDiffUnrepresentable();
   }
 
-  keyframes_rule_->SetName(name.ToUTF8String());
+  keyframes_rule_->SetName(name);
 }
 
-void CSSKeyframesRule::appendRule(const ExecutingContext* execution_context, const std::string& rule_text) {
+void CSSKeyframesRule::appendRule(const ExecutingContext* execution_context, const String& rule_text) {
   DCHECK_EQ(child_rule_cssom_wrappers_.size(), keyframes_rule_->Keyframes().size());
 
   CSSStyleSheet* style_sheet = parentStyleSheet();
@@ -110,7 +110,7 @@ void CSSKeyframesRule::appendRule(const ExecutingContext* execution_context, con
   child_rule_cssom_wrappers_.resize(length());
 }
 
-void CSSKeyframesRule::deleteRule(const ExecutingContext* execution_context, const std::string& s) {
+void CSSKeyframesRule::deleteRule(const ExecutingContext* execution_context, const String& s) {
   DCHECK_EQ(child_rule_cssom_wrappers_.size(), keyframes_rule_->Keyframes().size());
 
   std::shared_ptr<CSSParserContext> parser_context = ParserContext();
@@ -133,7 +133,7 @@ void CSSKeyframesRule::deleteRule(const ExecutingContext* execution_context, con
   child_rule_cssom_wrappers_.erase(child_rule_cssom_wrappers_.begin() + i);
 }
 
-CSSKeyframeRule* CSSKeyframesRule::findRule(const ExecutingContext* execution_context, const std::string& s) {
+CSSKeyframeRule* CSSKeyframesRule::findRule(const ExecutingContext* execution_context, const String& s) {
   std::shared_ptr<CSSParserContext> parser_context = ParserContext();
 
   int i = keyframes_rule_->FindKeyframeIndex(parser_context, s);
@@ -147,7 +147,7 @@ AtomicString CSSKeyframesRule::cssText() const {
   } else {
     result.Append("@keyframes "_s);
   }
-  SerializeIdentifier(name().ToUTF8String(), result);
+  SerializeIdentifier(String(name()), result);
   result.Append(" { \n"_s);
 
   unsigned size = length();

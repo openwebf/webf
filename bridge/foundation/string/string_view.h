@@ -82,7 +82,7 @@ class StringView final {
   StringView substr(size_t pos, size_t len = std::string::npos) const {
     if (pos > length()) return StringView();
     size_t actual_len = (len == std::string::npos) ? length() - pos : std::min(len, length() - pos);
-    return StringView(data() + pos, actual_len);
+    return StringView(*this, pos, actual_len);
   }
 
   bool IsLowerASCII() const {
@@ -141,9 +141,9 @@ class StringView final {
   // We use the StringImpl to mark for 8bit or 16bit, even for strings where
   // we were constructed from a char pointer. So impl_->Bytes() might have
   // nothing to do with this view's bytes().
-  StringImpl* impl_;
-  const void* bytes_;
-  unsigned length_;
+  StringImpl* impl_{};
+  const void* bytes_{};
+  unsigned length_{};
 };
 
 inline void StringView::Clear() {

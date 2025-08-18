@@ -79,7 +79,8 @@ void TestTokens(const std::string& string,
   CSSParserTokenRange expected(expected_tokens);
 
   {
-    CSSTokenizer tokenizer(String::FromUTF8(string.c_str()));
+    String input_string = String::FromUTF8(string.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     std::vector<CSSParserToken> tokens;
     tokens = tokenizer.TokenizeToEOF();
     CSSParserTokenRange actual(tokens);

@@ -9,14 +9,11 @@
 
 namespace webf {
 
-static std::string String(const std::string string) {
-  return string;
-}
-
 namespace {
 
 TEST(CSSParserTokenStreamTest, EmptyStream) {
-  CSSTokenizer tokenizer(String::FromUTF8(""));
+  String tokenizer_string = String::FromUTF8("");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
   EXPECT_TRUE(stream.Consume().IsEOF());
   EXPECT_TRUE(stream.Peek().IsEOF());
@@ -24,7 +21,8 @@ TEST(CSSParserTokenStreamTest, EmptyStream) {
 }
 
 TEST(CSSParserTokenStreamTest, PeekThenConsume) {
-  CSSTokenizer tokenizer(String::FromUTF8("A"));  // kIdent
+  String tokenizer_string = String::FromUTF8("A");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kIdent
   CSSParserTokenStream stream(tokenizer);
   EXPECT_EQ(kIdentToken, stream.Peek().GetType());
   EXPECT_EQ(kIdentToken, stream.Consume().GetType());
@@ -32,14 +30,16 @@ TEST(CSSParserTokenStreamTest, PeekThenConsume) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeThenPeek) {
-  CSSTokenizer tokenizer(String::FromUTF8("A"));  // kIdent
+  String tokenizer_string = String::FromUTF8("A");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kIdent
   CSSParserTokenStream stream(tokenizer);
   EXPECT_EQ(kIdentToken, stream.Consume().GetType());
   EXPECT_TRUE(stream.AtEnd());
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeMultipleTokens) {
-  CSSTokenizer tokenizer(String::FromUTF8("A 1"));  // kIdent kWhitespace kNumber
+  String tokenizer_string = String::FromUTF8("A 1");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kIdent kWhitespace kNumber
   CSSParserTokenStream stream(tokenizer);
   EXPECT_EQ(kIdentToken, stream.Consume().GetType());
   EXPECT_EQ(kWhitespaceToken, stream.Consume().GetType());
@@ -48,7 +48,8 @@ TEST(CSSParserTokenStreamTest, ConsumeMultipleTokens) {
 }
 
 TEST(CSSParserTokenStreamTest, UncheckedPeekAndConsumeAfterPeek) {
-  CSSTokenizer tokenizer(String::FromUTF8("A"));  // kIdent
+  String tokenizer_string = String::FromUTF8("A");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kIdent
   CSSParserTokenStream stream(tokenizer);
   EXPECT_EQ(kIdentToken, stream.Peek().GetType());
   EXPECT_EQ(kIdentToken, stream.UncheckedPeek().GetType());
@@ -57,7 +58,8 @@ TEST(CSSParserTokenStreamTest, UncheckedPeekAndConsumeAfterPeek) {
 }
 
 TEST(CSSParserTokenStreamTest, UncheckedPeekAndConsumeAfterAtEnd) {
-  CSSTokenizer tokenizer(String::FromUTF8("A"));  // kIdent
+  String tokenizer_string = String::FromUTF8("A");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kIdent
   CSSParserTokenStream stream(tokenizer);
   EXPECT_FALSE(stream.AtEnd());
   EXPECT_EQ(kIdentToken, stream.UncheckedPeek().GetType());
@@ -66,7 +68,8 @@ TEST(CSSParserTokenStreamTest, UncheckedPeekAndConsumeAfterAtEnd) {
 }
 
 TEST(CSSParserTokenStreamTest, UncheckedConsumeComponentValue) {
-  CSSTokenizer tokenizer(String::FromUTF8("A{1}{2{3}}B"));
+  String tokenizer_string = String::FromUTF8("A{1}{2{3}}B");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   EXPECT_EQ(kIdentToken, stream.Peek().GetType());
@@ -82,7 +85,8 @@ TEST(CSSParserTokenStreamTest, UncheckedConsumeComponentValue) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeWhitespace) {
-  CSSTokenizer tokenizer(String::FromUTF8(" \t\n"));  // kWhitespace
+  String tokenizer_string = String::FromUTF8(" \t\n");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kWhitespace
   CSSParserTokenStream stream(tokenizer);
 
   EXPECT_EQ(kWhitespaceToken, stream.Consume().GetType());
@@ -90,7 +94,8 @@ TEST(CSSParserTokenStreamTest, ConsumeWhitespace) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeIncludingWhitespace) {
-  CSSTokenizer tokenizer(String::FromUTF8("A \t\n"));  // kIdent kWhitespace
+  String tokenizer_string = String::FromUTF8("A \t\n");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};  // kIdent kWhitespace
   CSSParserTokenStream stream(tokenizer);
 
   EXPECT_EQ(kIdentToken, stream.ConsumeIncludingWhitespace().GetType());
@@ -104,7 +109,8 @@ TEST(CSSParserTokenStreamTest, RangesDoNotGetInvalidatedWhenConsuming) {
     s.Append("A "_s);
   }
 
-  CSSTokenizer tokenizer(s.ReleaseString());
+  String input_string = s.ReleaseString();
+  CSSTokenizer tokenizer{input_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   // Consume a single token range.
@@ -122,7 +128,8 @@ TEST(CSSParserTokenStreamTest, RangesDoNotGetInvalidatedWhenConsuming) {
 }
 
 TEST(CSSParserTokenStreamTest, BlockErrorRecoveryConsumesRestOfBlock) {
-  CSSTokenizer tokenizer(String::FromUTF8("{B }1"));
+  String tokenizer_string = String::FromUTF8("{B }1");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -135,7 +142,8 @@ TEST(CSSParserTokenStreamTest, BlockErrorRecoveryConsumesRestOfBlock) {
 }
 
 TEST(CSSParserTokenStreamTest, BlockErrorRecoveryOnSuccess) {
-  CSSTokenizer tokenizer(String::FromUTF8("{B }1"));
+  String tokenizer_string = String::FromUTF8("{B }1");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -149,7 +157,8 @@ TEST(CSSParserTokenStreamTest, BlockErrorRecoveryOnSuccess) {
 }
 
 TEST(CSSParserTokenStreamTest, BlockErrorRecoveryConsumeComponentValue) {
-  CSSTokenizer tokenizer(String::FromUTF8("{{B} C}1"));
+  String tokenizer_string = String::FromUTF8("{{B} C}1");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -162,7 +171,8 @@ TEST(CSSParserTokenStreamTest, BlockErrorRecoveryConsumeComponentValue) {
 }
 
 TEST(CSSParserTokenStreamTest, OffsetAfterPeek) {
-  CSSTokenizer tokenizer(String::FromUTF8("ABC"));
+  String tokenizer_string = String::FromUTF8("ABC");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   EXPECT_EQ(0U, stream.Offset());
@@ -171,7 +181,8 @@ TEST(CSSParserTokenStreamTest, OffsetAfterPeek) {
 }
 
 TEST(CSSParserTokenStreamTest, OffsetAfterConsumes) {
-  CSSTokenizer tokenizer(String::FromUTF8("ABC 1 {23 }"));
+  String tokenizer_string = String::FromUTF8("ABC 1 {23 }");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   EXPECT_EQ(0U, stream.Offset());
@@ -187,7 +198,8 @@ TEST(CSSParserTokenStreamTest, OffsetAfterConsumes) {
 }
 
 TEST(CSSParserTokenStreamTest, LookAheadOffset) {
-  CSSTokenizer tokenizer(String::FromUTF8("ABC/* *//* */1"));
+  String tokenizer_string = String::FromUTF8("ABC/* *//* */1");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   stream.EnsureLookAhead();
@@ -201,7 +213,8 @@ TEST(CSSParserTokenStreamTest, LookAheadOffset) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeOffset) {
-  CSSTokenizer tokenizer(String::FromUTF8("a b c;d e f"));
+  String tokenizer_string = String::FromUTF8("a b c;d e f");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   // a
@@ -219,7 +232,8 @@ TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeOffset) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeOffsetEndOfFile) {
-  CSSTokenizer tokenizer(String::FromUTF8("a b c"));
+  String tokenizer_string = String::FromUTF8("a b c");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   // a
@@ -237,7 +251,8 @@ TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeOffsetEndOfFile) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeOffsetEndOfBlock) {
-  CSSTokenizer tokenizer(String::FromUTF8("a { a b c } d ;"));
+  String tokenizer_string = String::FromUTF8("a { a b c } d ;");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   // a
@@ -273,7 +288,8 @@ TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeOffsetEndOfBlock) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeIsEmpty) {
-  CSSTokenizer tokenizer(String::FromUTF8("{23 }"));
+  String tokenizer_string = String::FromUTF8("{23 }");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   auto range = stream.ConsumeUntilPeekedTypeIs<>();
@@ -287,7 +303,8 @@ TEST(CSSParserTokenStreamTest, ConsumeUntilPeekedTypeIsEmpty) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueEOF) {
-  CSSTokenizer tokenizer(String::FromUTF8(""));
+  String tokenizer_string = String::FromUTF8("");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenRange range = stream.ConsumeComponentValue();
@@ -296,7 +313,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueEOF) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueToken) {
-  CSSTokenizer tokenizer(String::FromUTF8("foo"));
+  String tokenizer_string = String::FromUTF8("foo");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenRange range = stream.ConsumeComponentValue();
@@ -306,7 +324,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueToken) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueWhitespace) {
-  CSSTokenizer tokenizer(String::FromUTF8(" foo"));
+  String tokenizer_string = String::FromUTF8(" foo");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenRange range = stream.ConsumeComponentValue();
@@ -319,7 +338,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueWhitespace) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueTrailingWhitespace) {
-  CSSTokenizer tokenizer(String::FromUTF8("foo "));
+  String tokenizer_string = String::FromUTF8("foo ");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenRange range = stream.ConsumeComponentValue();
@@ -332,7 +352,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueTrailingWhitespace) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueBlock) {
-  CSSTokenizer tokenizer(String::FromUTF8("{ foo }"));
+  String tokenizer_string = String::FromUTF8("{ foo }");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenRange range = stream.ConsumeComponentValue();
@@ -347,7 +368,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueBlock) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueMultiBlock) {
-  CSSTokenizer tokenizer(String::FromUTF8("{} []"));
+  String tokenizer_string = String::FromUTF8("{} []");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenRange range = stream.ConsumeComponentValue();
@@ -364,7 +386,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueMultiBlock) {
 }
 
 TEST(CSSParserTokenStreamTest, ConsumeComponentValueFunction) {
-  CSSTokenizer tokenizer(String::FromUTF8(": foo(42) ;"));
+  String input = String::FromUTF8(": foo(42) ;");
+  CSSTokenizer tokenizer(input);
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -406,7 +429,8 @@ TEST(CSSParserTokenStreamTest, ConsumeComponentValueFunction) {
 }
 
 TEST(CSSParserTokenStreamTest, Boundary) {
-  CSSTokenizer tokenizer(String::FromUTF8("foo:red;bar:blue;asdf"));
+  String tokenizer_string = String::FromUTF8("foo:red;bar:blue;asdf");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -438,7 +462,8 @@ TEST(CSSParserTokenStreamTest, Boundary) {
 }
 
 TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
-  CSSTokenizer tokenizer(String::FromUTF8("a:b,c;d:,;e"));
+  String tokenizer_string = String::FromUTF8("a:b,c;d:,;e");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -487,7 +512,8 @@ TEST(CSSParserTokenStreamTest, MultipleBoundaries) {
 }
 
 TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
-  CSSTokenizer tokenizer(String::FromUTF8("a:b|"));
+  String tokenizer_string = String::FromUTF8("a:b|");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -513,7 +539,8 @@ TEST(CSSParserTokenStreamTest, IneffectiveBoundary) {
 }
 
 TEST(CSSParserTokenStreamTest, BoundaryBlockGuard) {
-  CSSTokenizer tokenizer(String::FromUTF8("a[b;c]d;e"));
+  String tokenizer_string = String::FromUTF8("a[b;c]d;e");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -535,7 +562,8 @@ TEST(CSSParserTokenStreamTest, BoundaryBlockGuard) {
 }
 
 TEST(CSSParserTokenStreamTest, BoundaryRestoringBlockGuard) {
-  CSSTokenizer tokenizer(String::FromUTF8("a[b;c]d;e"));
+  String tokenizer_string = String::FromUTF8("a[b;c]d;e");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   {
@@ -559,7 +587,8 @@ TEST(CSSParserTokenStreamTest, BoundaryRestoringBlockGuard) {
 }
 
 TEST(CSSParserTokenStreamTest, SavePointRestoreWithoutLookahead) {
-  CSSTokenizer tokenizer(String::FromUTF8("a b c"));
+  String tokenizer_string = String::FromUTF8("a b c");
+  CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
   stream.EnsureLookAhead();
 
@@ -579,15 +608,15 @@ TEST(CSSParserTokenStreamTest, SavePointRestoreWithoutLookahead) {
 
 namespace {
 
-std::vector<CSSParserToken> TokenizeAll(std::string string) {
-  CSSTokenizer tokenizer(string);
+std::vector<CSSParserToken> TokenizeAll(const String& string) {
+  CSSTokenizer tokenizer{string.ToStringView()};
   return tokenizer.TokenizeToEOF();
 }
 
 // See struct RestartData.
-std::pair<size_t, size_t> ParseRestart(std::string restart) {
-  size_t restart_target = restart.find('^');
-  size_t restart_offset = restart.find('<');
+std::pair<size_t, size_t> ParseRestart(const String& restart) {
+  size_t restart_target = restart.Find('^');
+  size_t restart_offset = restart.Find('<');
   return std::make_pair(restart_target, restart_offset);
 }
 
@@ -787,7 +816,8 @@ TEST_P(RestartTest, All) {
   WEBF_LOG(VERBOSE) << "tokens: " << CSSParserTokenRange(ref_tokens).Serialize();
 
   std::string input(param.input);
-  CSSTokenizer tokenizer(input);
+  String input_string = String::FromUTF8(input.c_str());
+  CSSTokenizer tokenizer{input_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   auto [restart_target, restart_offset] = ParseRestart(std::string(param.restart));
@@ -816,7 +846,8 @@ TEST_P(BoundaryRestartTest, All) {
   std::vector<CSSParserToken> ref_tokens = TokenizeAll(ref);
 
   std::string input(param.input);
-  CSSTokenizer tokenizer(input);
+  String input_string = String::FromUTF8(input.c_str());
+  CSSTokenizer tokenizer{input_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
   CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
@@ -844,11 +875,11 @@ INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest, NullRestartTest, testing::Val
 TEST_P(NullRestartTest, All) {
   RestartData param = GetParam();
 
-  std::string input(param.input);
+  String input = String::FromUTF8(param.input);
   std::vector<CSSParserToken> ref_tokens = TokenizeAll(input);
 
   for (size_t restart_offset = 0; restart_offset <= input.length(); ++restart_offset) {
-    CSSTokenizer tokenizer(input);
+    CSSTokenizer tokenizer{input.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
 
     std::vector<CSSParserToken> actual_tokens;
@@ -879,7 +910,8 @@ class TestStream {
   bool AtEnd() { return stream_.AtEnd(); }
 
   bool ConsumeTokens(std::string expected) {
-    CSSTokenizer tokenizer(String::FromUTF8(expected.c_str()));
+    String expected_str = String::FromUTF8(expected.c_str());
+    CSSTokenizer tokenizer(expected_str);
     std::vector<CSSParserToken> expected_tokens = tokenizer.TokenizeToEOF();
     for (CSSParserToken expected_token : expected_tokens) {
       if (stream_.Consume() != expected_token) {
@@ -898,7 +930,7 @@ class TestStream {
   friend class TestRestoringBlockGuard;
   friend class TestBlockGuard;
   friend class TestBoundary;
-  std::string input_;
+  String input_;
   CSSTokenizer tokenizer_;
   CSSParserTokenStream stream_;
 };

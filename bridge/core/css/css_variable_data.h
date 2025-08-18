@@ -9,6 +9,8 @@
 #include "core/css/parser/css_parser_token.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_tokenized_value.h"
+#include "foundation/string/string_view.h"
+#include "foundation/string/wtf_string.h"
 
 #include <core/base/memory/shared_ptr.h>
 
@@ -30,7 +32,7 @@ class CSSVariableData {
 
   using PassKey = webf::PassKey<CSSVariableData>;
   CSSVariableData(PassKey,
-                  std::string_view,
+                  StringView,
                   bool is_animation_tainted,
                   bool needs_variable_resolution,
                   bool has_font_units,
@@ -41,7 +43,7 @@ class CSSVariableData {
   // already, e.g. because you extracted them while tokenizing (see
   // ExtractFeatures()) or got them from another CSSVariableData instance during
   // substitution.
-  static std::shared_ptr<CSSVariableData> Create(std::string_view original_text,
+  static std::shared_ptr<CSSVariableData> Create(StringView original_text,
                                                  bool is_animation_tainted,
                                                  bool needs_variable_resolution,
                                                  bool has_font_units,
@@ -52,8 +54,10 @@ class CSSVariableData {
       NOTREACHED_IN_MIGRATION();
       return nullptr;
     }
+    // Allocate extra bytes based on whether we're storing 8-bit or 16-bit data
+    size_t extra_bytes = original_text.Is8Bit() ? original_text.length() : original_text.length() * sizeof(UChar);
     return MakeSharedPtrWithAdditionalBytes<CSSVariableData>(
-        original_text.length(), PassKey(), original_text, is_animation_tainted, needs_variable_resolution,
+        extra_bytes, PassKey(), original_text, is_animation_tainted, needs_variable_resolution,
         has_font_units, has_root_font_units, has_line_height_units);
   }
 
@@ -65,15 +69,21 @@ class CSSVariableData {
                                                  bool needs_variable_resolution);
 
   // Like the previous, but also needs to tokenize the string.
-  static std::shared_ptr<CSSVariableData> Create(const std::string& original_text,
+  static std::shared_ptr<CSSVariableData> Create(const String& original_text,
                                                  bool is_animation_tainted,
                                                  bool needs_variable_resolution);
 
   void Trace(GCVisitor*) const {}
 
-  std::string_view OriginalText() const { return std::string_view(reinterpret_cast<const char*>(this + 1), length_); }
+  StringView OriginalText() const { 
+    if (is_8bit_) {
+      return StringView(reinterpret_cast<const LChar*>(this + 1), length_);
+    } else {
+      return StringView(reinterpret_cast<const UChar*>(this + 1), length_);
+    }
+  }
 
-  std::string Serialize() const;
+  String Serialize() const;
 
   bool operator==(const CSSVariableData& other) const;
 

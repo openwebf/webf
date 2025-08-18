@@ -1027,7 +1027,7 @@ bool CSSParserImpl::RemoveImportantAnnotationIfPresent(CSSTokenizedValue& tokeni
       if (!tokenized_value.text.Empty()) {
         // Convert to String to use Find
         String text_str(tokenized_value.text);
-        size_t exclamation_pos = text_str.Find('!');
+        size_t exclamation_pos = text_str.RFind('!');
         DCHECK(exclamation_pos != kNotFound);
         tokenized_value.text = tokenized_value.text.substr(0, exclamation_pos);
       }
@@ -1414,7 +1414,7 @@ std::shared_ptr<StyleRuleKeyframes> CSSParserImpl::ConsumeKeyframesRule(bool web
                   [keyframe_rule](std::shared_ptr<StyleRuleBase> keyframe, size_t) {
                     keyframe_rule->ParserAppendKeyframe(std::reinterpret_pointer_cast<StyleRuleKeyframe>(keyframe));
                   });
-  keyframe_rule->SetName(name);
+  keyframe_rule->SetName(AtomicString(name));
   keyframe_rule->SetVendorPrefixed(webkit_prefixed);
 
   if (observer_) {
@@ -1831,7 +1831,8 @@ std::shared_ptr<StyleRuleImport> CSSParserImpl::ConsumeImportRule(const String& 
     CSSParserTokenRange args = prelude.ConsumeBlock();
     prelude.ConsumeWhitespace();
     supports_string = args.Serialize();
-    CSSTokenizer supports_tokenizer(String::FromUTF8("(") + supports_string + ")");
+    String supports_condition = String::FromUTF8("(") + supports_string + ")";
+    CSSTokenizer supports_tokenizer{supports_condition.ToStringView()};
     CSSParserTokenStream supports_stream(supports_tokenizer);
     supported = CSSSupportsParser::ConsumeSupportsCondition(supports_stream, *this);
     if (supported == CSSSupportsParser::Result::kParseFailure) {

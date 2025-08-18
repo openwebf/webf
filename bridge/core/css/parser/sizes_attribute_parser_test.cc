@@ -77,32 +77,32 @@ class SizesAttributeParserTest : public ::testing::Test {
 };
 
 TEST_F(SizesAttributeParserTest, Basic) {
-  SizesAttributeParser parser(media_values_.get(), "100px", nullptr, nullptr);
+  SizesAttributeParser parser(media_values_.get(), "100px"_s, nullptr, nullptr);
   EXPECT_FALSE(parser.IsAuto());
   EXPECT_EQ(100.0f, parser.Size());
 }
 
 TEST_F(SizesAttributeParserTest, Auto) {
-  SizesAttributeParser parser(media_values_.get(), "auto", nullptr, nullptr);
+  SizesAttributeParser parser(media_values_.get(), "auto"_s, nullptr, nullptr);
   EXPECT_TRUE(parser.IsAuto());
 }
 
 TEST_F(SizesAttributeParserTest, Empty) {
-  SizesAttributeParser parser(media_values_.get(), "", nullptr, nullptr);
+  SizesAttributeParser parser(media_values_.get(), ""_s, nullptr, nullptr);
   EXPECT_FALSE(parser.IsAuto());
   // Should return default size
   EXPECT_GT(parser.Size(), 0.0f);
 }
 
 TEST_F(SizesAttributeParserTest, InvalidUnit) {
-  SizesAttributeParser parser(media_values_.get(), "100em", nullptr, nullptr);
+  SizesAttributeParser parser(media_values_.get(), "100em"_s, nullptr, nullptr);
   EXPECT_FALSE(parser.IsAuto());
   // Should return default size since em is not yet supported
   EXPECT_GT(parser.Size(), 0.0f);
 }
 
 TEST_F(SizesAttributeParserTest, Whitespace) {
-  SizesAttributeParser parser(media_values_.get(), "  100px  ", nullptr, nullptr);
+  SizesAttributeParser parser(media_values_.get(), "  100px  "_s, nullptr, nullptr);
   EXPECT_FALSE(parser.IsAuto());
   EXPECT_EQ(100.0f, parser.Size());
 }

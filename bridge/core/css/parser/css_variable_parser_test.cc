@@ -7,6 +7,7 @@
 #include "core/css/parser/css_parser_token.h"
 #include "core/css/parser/css_parser_token_range.h"
 #include "core/css/parser/css_tokenizer.h"
+#include "foundation/string/string_view.h"
 #include "gtest/gtest.h"
 
 namespace webf {
@@ -14,8 +15,7 @@ namespace webf {
 namespace {
 
 std::vector<CSSParserToken> Parse(const char* input) {
-  std::string string(input);
-  CSSTokenizer tokenizer(string);
+  CSSTokenizer tokenizer{StringView(input)};
   return tokenizer.TokenizeToEOF();
 }
 
@@ -75,7 +75,7 @@ TEST_P(ValidVariableReferenceTest, ParseUniversalSyntaxValue) {
   SCOPED_TRACE(GetParam());
   std::shared_ptr<const CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   EXPECT_NE(nullptr,
-            CSSVariableParser::ParseUniversalSyntaxValue(String::FromUTF8(GetParam()), context, /* is_animation_tainted */ false));
+            CSSVariableParser::ParseUniversalSyntaxValue(StringView(GetParam()), context, /* is_animation_tainted */ false));
 }
 
 class InvalidVariableReferenceTest : public testing::Test, public testing::WithParamInterface<const char*> {
@@ -97,7 +97,7 @@ TEST_P(InvalidVariableReferenceTest, ParseUniversalSyntaxValue) {
   SCOPED_TRACE(GetParam());
   std::shared_ptr<const CSSParserContext> context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   EXPECT_NE(nullptr,
-            CSSVariableParser::ParseUniversalSyntaxValue(String::FromUTF8(GetParam()), context, /* is_animation_tainted */ false));
+            CSSVariableParser::ParseUniversalSyntaxValue(StringView(GetParam()), context, /* is_animation_tainted */ false));
 }
 
 class CustomPropertyDeclarationTest : public testing::Test, public testing::WithParamInterface<const char*> {

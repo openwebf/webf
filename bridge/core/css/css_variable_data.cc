@@ -4,9 +4,11 @@
 
 #include "css_variable_data.h"
 
+#include <cstring>
 #include "core/css/parser/css_parser_context.h"
 #include "core/css/parser/css_parser_token_stream.h"
 #include "core/css/parser/css_tokenizer.h"
+#include "foundation/string/string_types.h"
 
 namespace webf {
 
@@ -65,27 +67,28 @@ std::shared_ptr<CSSVariableData> CSSVariableData::Create(CSSTokenizedValue value
   while (!value.range.AtEnd()) {
     ExtractFeatures(value.range.Consume(), has_font_units, has_root_font_units, has_line_height_units);
   }
-  return Create(value.text.data(), is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
+  return Create(StringView(value.text.data()), is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
                 has_line_height_units);
 }
 
-std::shared_ptr<CSSVariableData> CSSVariableData::Create(const std::string& original_text,
+std::shared_ptr<CSSVariableData> CSSVariableData::Create(const String& original_text,
                                                          bool is_animation_tainted,
                                                          bool needs_variable_resolution) {
   bool has_font_units = false;
   bool has_root_font_units = false;
   bool has_line_height_units = false;
-  CSSTokenizer tokenizer(original_text);
+  CSSTokenizer tokenizer{StringView(original_text)};
   CSSParserTokenStream stream(tokenizer);
   while (!stream.AtEnd()) {
     ExtractFeatures(stream.ConsumeRaw(), has_font_units, has_root_font_units, has_line_height_units);
   }
-  return Create(original_text, is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
+  return Create(StringView(original_text), is_animation_tainted, needs_variable_resolution, has_font_units, has_root_font_units,
                 has_line_height_units);
 }
 
-std::string CSSVariableData::Serialize() const {
-  if (length_ > 0 && OriginalText()[length_ - 1] == '\\') {
+String CSSVariableData::Serialize() const {
+  StringView text = OriginalText();
+  if (length_ > 0 && text[length_ - 1] == '\\') {
     // https://drafts.csswg.org/css-syntax/#consume-escaped-code-point
     // '\' followed by EOF is consumed as U+FFFD.
     // https://drafts.csswg.org/css-syntax/#consume-string-token
@@ -94,11 +97,10 @@ std::string CSSVariableData::Serialize() const {
     // The tokenizer handles both of these cases when returning tokens, but
     // since we're working with the original string, we need to deal with them
     // ourselves.
-    std::string serialized_text;
-    serialized_text += OriginalText();
+    String serialized_text = String(text);
     //    serialized_text.Resize(serialized_text.length() - 1);
 
-    CSSTokenizer tokenizer(String::FromUTF8(OriginalText().data(), OriginalText().length()));
+    CSSTokenizer tokenizer{text};
     CSSParserTokenStream stream(tokenizer);
     CSSParserTokenType last_token_type = kEOFToken;
     for (;;) {
@@ -112,22 +114,24 @@ std::string CSSVariableData::Serialize() const {
     char16_t kReplacementCharacter = 0xFFFD;
 
     if (last_token_type != kStringToken) {
-      serialized_text += kReplacementCharacter;
+      // Append replacement character
+      UChar replacement[] = { kReplacementCharacter };
+      serialized_text = serialized_text + String(replacement, 1);
     }
 
     // Certain token types implicitly include terminators when serialized.
     // https://drafts.csswg.org/cssom/#common-serializing-idioms
     if (last_token_type == kStringToken) {
-      serialized_text += '"';
+      serialized_text = serialized_text + String::FromUTF8("\"");
     }
     if (last_token_type == kUrlToken) {
-      serialized_text += ')';
+      serialized_text = serialized_text + String::FromUTF8(")");
     }
 
     return serialized_text;
   }
 
-  return std::string(OriginalText());
+  return String(OriginalText());
 }
 
 bool CSSVariableData::operator==(const CSSVariableData& other) const {
@@ -135,7 +139,7 @@ bool CSSVariableData::operator==(const CSSVariableData& other) const {
 }
 
 CSSVariableData::CSSVariableData(PassKey,
-                                 std::string_view original_text,
+                                 StringView original_text,
                                  bool is_animation_tainted,
                                  bool needs_variable_resolution,
                                  bool has_font_units,
@@ -144,12 +148,17 @@ CSSVariableData::CSSVariableData(PassKey,
     : length_(original_text.length()),
       is_animation_tainted_(is_animation_tainted),
       needs_variable_resolution_(needs_variable_resolution),
-      is_8bit_(true),
+      is_8bit_(original_text.Is8Bit()),
       has_font_units_(has_font_units),
       has_root_font_units_(has_root_font_units),
       has_line_height_units_(has_line_height_units),
       unused_(0) {
-  std::ranges::copy(original_text, reinterpret_cast<char*>(this + 1));
+  // Copy the string data after the object, preserving the original encoding
+  if (original_text.Is8Bit()) {
+    std::memcpy(reinterpret_cast<LChar*>(this + 1), original_text.Characters8(), original_text.length());
+  } else {
+    std::memcpy(reinterpret_cast<UChar*>(this + 1), original_text.Characters16(), original_text.length() * sizeof(UChar));
+  }
 }
 
 }  // namespace webf

@@ -40,7 +40,7 @@ class ContainerQueryParserTest : public testing::Test {
   // E.g. https://drafts.csswg.org/css-contain-3/#typedef-style-query
   String ParseFeatureQuery(String feature_query) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-    CSSTokenizer tokenizer(feature_query);
+    CSSTokenizer tokenizer{feature_query.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     auto node = ContainerQueryParser(*context).ConsumeFeatureQuery(stream, TestFeatureSet());
     if (!node || !stream.AtEnd()) {

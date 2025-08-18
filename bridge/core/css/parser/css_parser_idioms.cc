@@ -16,7 +16,7 @@ namespace webf {
 
 void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream& input) {
   // We check for \r\n and HTML spaces since we don't do preprocessing
-  char next = input.PeekWithoutReplacement(0);
+  UChar next = input.PeekWithoutReplacement(0);
   if (next == '\r' && input.PeekWithoutReplacement(1) == '\n') {
     input.Advance(2);
   } else if (IsHTMLSpace(next)) {
@@ -26,7 +26,7 @@ void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream& input) {
 
 //// https://drafts.csswg.org/css-syntax/#consume-an-escaped-code-point
 UCharCodePoint ConsumeEscape(CSSTokenizerInputStream& input) {
-  char cc = input.NextInputChar();
+  UChar cc = input.NextInputChar();
   input.Advance();
   DCHECK(!IsCSSNewLine(cc));
   if (IsASCIIHexDigit(cc)) {
@@ -60,7 +60,7 @@ UCharCodePoint ConsumeEscape(CSSTokenizerInputStream& input) {
 std::string ConsumeName(CSSTokenizerInputStream& input) {
   StringBuilder result;
   while (true) {
-    char cc = input.NextInputChar();
+    UChar cc = input.NextInputChar();
     input.Advance();
     if (IsNameCodePoint(cc)) {
       result.Append(cc);
@@ -76,8 +76,8 @@ std::string ConsumeName(CSSTokenizerInputStream& input) {
 }
 
 // https://drafts.csswg.org/css-syntax/#would-start-an-identifier
-bool NextCharsAreIdentifier(char first, const CSSTokenizerInputStream& input) {
-  char second = input.PeekWithoutReplacement(0);
+bool NextCharsAreIdentifier(UChar first, const CSSTokenizerInputStream& input) {
+  UChar second = input.PeekWithoutReplacement(0);
   if (IsNameStartCodePoint(first) || TwoCharsAreValidEscape(first, second)) {
     return true;
   }

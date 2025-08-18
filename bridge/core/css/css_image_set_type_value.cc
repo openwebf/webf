@@ -16,7 +16,7 @@ String CSSImageSetTypeValue::CustomCSSText() const {
 
   result.Append("type(\""_s);
   result.Append(type_);
-  result.Append("\"_s)"_s);
+  result.Append("\")"_s);
 
   return result.ReleaseString();
 }

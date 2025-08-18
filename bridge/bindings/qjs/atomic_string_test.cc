@@ -286,7 +286,7 @@ TEST(StringImpl, CreateFromUTF8WithLatin1) {
   
   // Test UTF-8 with Latin-1 extended characters
   const UTF8Char* latin1_utf8 = "Café"; // é is U+00E9
-  auto str = StringImpl::CreateFromUTF8(latin1_utf8, strlen(latin1_utf8));
+  auto str = StringImpl::CreateFromUTF8(latin1_utf8);
   
   EXPECT_TRUE(str->Is8Bit()); // Latin-1 fits in 8-bit
   EXPECT_EQ(str->length(), 4);

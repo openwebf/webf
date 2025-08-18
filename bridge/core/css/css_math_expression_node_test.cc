@@ -309,7 +309,9 @@ TEST(CSSMathExpressionNode, TestParseDeeplyNestedExpression) {
       ss << ")";
     }
 
-    CSSTokenizer tokenizer(ss.str());
+    std::string expression = ss.str();
+    String expression_string = String::FromUTF8(expression.c_str());
+    CSSTokenizer tokenizer{expression_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -338,7 +340,8 @@ TEST(CSSMathExpressionNode, TestSteppedValueFunctions) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -382,7 +385,8 @@ TEST(CSSMathExpressionNode, TestSteppedValueFunctionsSerialization) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -401,7 +405,8 @@ TEST(CSSMathExpressionNode, TestExponentialFunctions) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -426,7 +431,8 @@ TEST(CSSMathExpressionNode, TestExponentialFunctionsSerialization) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -481,7 +487,8 @@ TEST(CSSMathExpressionNode, TestProgressNotation) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -503,7 +510,8 @@ TEST(CSSMathExpressionNode, TestProgressNotationComplex) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -526,7 +534,8 @@ TEST(CSSMathExpressionNode, TestInvalidProgressNotation) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case);
+    String input_string = String::FromUTF8(test_case.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -548,7 +557,8 @@ TEST(CSSMathExpressionNode, TestFunctionsWithNumberReturn) {
   };
 
   for (const auto& test_case : test_cases) {
-    CSSTokenizer tokenizer(test_case.input);
+    String input_string = String::FromUTF8(test_case.input.c_str());
+    CSSTokenizer tokenizer{input_string.ToStringView()};
     const auto tokens = tokenizer.TokenizeToEOF();
     const CSSParserTokenRange range(tokens);
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);

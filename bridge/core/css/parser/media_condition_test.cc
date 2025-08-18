@@ -47,7 +47,8 @@ TEST(MediaConditionParserTest, Basic) {
 
   for (unsigned i = 0; test_cases[i].input; ++i) {
     SCOPED_TRACE(test_cases[i].input);
-    CSSTokenizer tokenizer(String::FromUTF8(test_cases[i].input));
+    String tokenizer_string = String::FromUTF8(test_cases[i].input);
+    CSSTokenizer tokenizer{tokenizer_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     std::shared_ptr<MediaQuerySet> media_condition_query_set = MediaQueryParser::ParseMediaCondition(stream, nullptr);
     String query_text = media_condition_query_set->MediaText();

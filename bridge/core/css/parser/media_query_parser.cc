@@ -56,7 +56,7 @@ class MediaQueryFeatureSet : public MediaQueryParser::FeatureSet {
 
 std::shared_ptr<MediaQuerySet> MediaQueryParser::ParseMediaQuerySet(const String& query_string,
                                                                     const ExecutingContext* execution_context) {
-  CSSTokenizer tokenizer(query_string.StdUtf8());
+  CSSTokenizer tokenizer{query_string.ToStringView()};
   auto [tokens, raw_offsets] = tokenizer.TokenizeToEOFWithOffsets();
   auto pair = tokenizer.TokenizeToEOFWithOffsets();
   CSSParserTokenRange range(tokens);

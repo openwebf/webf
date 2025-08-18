@@ -10,8 +10,8 @@
 #define WEBF_CORE_CSS_PARSER_SIZES_ATTRIBUTE_PARSER_H_
 
 #include <memory>
-#include <string>
 #include "foundation/macros.h"
+#include "foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -29,7 +29,7 @@ class SizesAttributeParser {
 
  public:
   SizesAttributeParser(MediaValues* media_values,
-                       const std::string& attribute,
+                       const String& attribute,
                        ExecutingContext* executing_context,
                        const HTMLImageElement* img = nullptr);
 

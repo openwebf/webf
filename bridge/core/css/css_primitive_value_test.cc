@@ -9,6 +9,7 @@
 #include "core/css/css_to_length_conversion_data.h"
 #include "core/dom/document.h"
 #include "core/dom/tree_scope.h"
+#include "foundation/string/wtf_string.h"
 #include "gtest/gtest.h"
 #include "webf_test_env.h"
 
@@ -19,7 +20,7 @@ namespace {
 class CSSPrimitiveValueTest : public testing::Test {
  public:
   std::shared_ptr<const CSSPrimitiveValue> ParseValue(const char* text, Document* document) {
-    auto parsed_value = css_test_helpers::ParseValue(*document, "<length>", text);
+    auto parsed_value = css_test_helpers::ParseValue(*document, "<length>"_s, String::FromUTF8(text));
     const auto value = To<CSSPrimitiveValue>(parsed_value.get());
     DCHECK(value);
     return std::reinterpret_pointer_cast<const CSSPrimitiveValue>(parsed_value);
@@ -345,7 +346,7 @@ TEST_F(CSSPrimitiveValueTest, ContainerProgressTreeScope) {
   auto env = TEST_init([](double contextId, const char* errmsg) { WEBF_LOG(VERBOSE) << errmsg; });
   auto* document = env->page()->executingContext()->document();
   std::shared_ptr<const CSSValue> value =
-      css_test_helpers::ParseValue(*document, "<number>", "container-progress(width of my-container from 0px to 1px)");
+      css_test_helpers::ParseValue(*document, "<number>"_s, "container-progress(width of my-container from 0px to 1px)"_s);
   ASSERT_TRUE(value);
 
   std::shared_ptr<const CSSValue> scoped_value = value->EnsureScopedValue(const_cast<const Document*>(document));

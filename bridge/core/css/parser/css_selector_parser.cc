@@ -936,13 +936,13 @@ CSSSelector::PseudoType CSSSelectorParser::ParsePseudoType(const AtomicString& n
 }
 
 // static
-PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_string,
+PseudoId CSSSelectorParser::ParsePseudoElement(const String& selector_string,
                                                const Node* parent,
                                                AtomicString& argument) {
   // For old pseudos (before, after, first-letter, first-line), we
   // allow the legacy behavior of single-colon / no-colon.
   {
-    CSSTokenizer tokenizer(selector_string);
+    CSSTokenizer tokenizer{selector_string.ToStringView()};
     CSSParserTokenStream stream(tokenizer);
     stream.EnsureLookAhead();
     int num_colons = 0;
@@ -993,7 +993,7 @@ PseudoId CSSSelectorParser::ParsePseudoElement(const std::string& selector_strin
                            /*style_sheet=*/nullptr, arena);
 
   ResetVectorAfterScope reset_vector(parser.output_);
-  CSSTokenizer tokenizer(selector_string);
+  CSSTokenizer tokenizer{selector_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
   ResultFlags flags = 0;
   if (!parser.ConsumePseudo(stream, flags)) {

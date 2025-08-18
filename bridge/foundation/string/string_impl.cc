@@ -217,6 +217,32 @@ size_t StringImpl::Find(CharacterMatchFunctionPtr match_function, size_t start) 
   return internal::Find(Characters16(), length_, match_function, start);
 }
 
+size_t StringImpl::RFind(const StringImpl& str) const {
+  size_t str_length = str.length();
+  
+  if (str_length == 0)
+    return length_;
+    
+  if (str_length > length_)
+    return kNotFound;
+    
+  // Search from the end
+  for (size_t i = length_ - str_length + 1; i > 0; --i) {
+    bool match = true;
+    for (size_t j = 0; j < str_length; ++j) {
+      if ((*this)[i - 1 + j] != str[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) {
+      return i - 1;
+    }
+  }
+  
+  return kNotFound;
+}
+
 bool StringImpl::StartsWith(char character) const {
   return length_ && (*this)[0] == character;
 }
@@ -340,7 +366,6 @@ std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const UTF8StringView& str
     return Create(reinterpret_cast<const LChar*>(string_view.data()), byte_length);
   }
 
-
   auto u16 = UTF8Codecs::Decode(string_view);
 
   if (UTF8Codecs::UTF16IsLatin1(u16)) {
@@ -348,8 +373,8 @@ std::shared_ptr<StringImpl> StringImpl::CreateFromUTF8(const UTF8StringView& str
     LChar* data;
     std::shared_ptr<StringImpl> string = CreateUninitialized(u16.length(), data);
 
-    // Copy ASCII portion
-    std::memcpy(data, string_view.data(), u16.length());
+    // Copy u16 into
+    std::ranges::copy(std::as_const(u16), data);
 
     // Add null termination
     data[u16.length()] = '\0';

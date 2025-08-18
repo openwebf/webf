@@ -242,12 +242,12 @@ std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseDecla
 }
 
 std::shared_ptr<const CSSUnparsedDeclarationValue> CSSVariableParser::ParseUniversalSyntaxValue(
-    const String& text,
+    StringView text,
     std::shared_ptr<const CSSParserContext>& context,
     bool is_animation_tainted) {
   bool has_references;
   bool has_positioned_braces_ignored;
-  CSSTokenizer tokenizer(text);
+  CSSTokenizer tokenizer{text};
   CSSParserTokenStream stream(tokenizer);
   stream.EnsureLookAhead();
 
@@ -594,17 +594,10 @@ std::shared_ptr<CSSVariableData> CSSVariableParser::ConsumeUnparsedDeclaration(C
   }
   original_text = CSSVariableParser::StripTrailingWhitespaceAndComments(original_text);
 
-  // Convert StringView to std::string_view for CSSVariableData::Create
-  // This assumes the CSS is always in 8-bit format
-  if (original_text.Is8Bit()) {
-    std::string_view str_view(reinterpret_cast<const char*>(original_text.Characters8()), original_text.length());
-    return CSSVariableData::Create(str_view, is_animation_tainted,
-                                   /*needs_variable_resolution=*/has_references, has_font_units, has_root_font_units,
-                                   has_line_height_units);
-  } else {
-    // TODO: Handle 16-bit strings properly
-    return nullptr;
-  }
+  // Pass StringView directly to CSSVariableData::Create
+  return CSSVariableData::Create(original_text, is_animation_tainted,
+                                 /*needs_variable_resolution=*/has_references, has_font_units, has_root_font_units,
+                                 has_line_height_units);
 }
 
 }  // namespace webf

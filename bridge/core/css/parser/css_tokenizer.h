@@ -24,10 +24,11 @@ class CSSTokenizer {
   WEBF_DISALLOW_NEW();
 
  public:
-  // The overload with const String& holds on to a reference to the string.
-  // (Most places, we probably don't need to do that, but fixing that would
-  // require manual inspection.)
+  // The overload with StringView doesn't hold onto the string data,
+  // so the string must outlive the tokenizer.
   explicit CSSTokenizer(StringView, size_t offset = 0);
+  // The overload with const String& makes a copy of the string
+  // to ensure it stays alive for the lifetime of the tokenizer.
   explicit CSSTokenizer(const String&, size_t offset = 0);
   CSSTokenizer(const CSSTokenizer&) = delete;
   CSSTokenizer& operator=(const CSSTokenizer&) = delete;
@@ -94,13 +95,13 @@ class CSSTokenizer {
   template <bool SkipComments, bool StoreOffset>
   inline CSSParserToken NextToken();
 
-  char Consume();
-  void Reconsume(char);
+  UChar Consume();
+  void Reconsume(UChar);
 
   CSSParserToken ConsumeNumericToken();
   CSSParserToken ConsumeIdentLikeToken();
   CSSParserToken ConsumeNumber();
-  CSSParserToken ConsumeStringTokenUntil(char);
+  CSSParserToken ConsumeStringTokenUntil(UChar);
   CSSParserToken ConsumeUnicodeRange();
   CSSParserToken ConsumeUrlToken();
 
@@ -108,14 +109,14 @@ class CSSTokenizer {
   void ConsumeSingleWhitespaceIfNext();
   void ConsumeUntilCommentEndFound();
 
-  bool ConsumeIfNext(char);
+  bool ConsumeIfNext(UChar);
   StringView ConsumeName();
   UCharCodePoint ConsumeEscape();
 
   bool NextTwoCharsAreValidEscape();
-  bool NextCharsAreNumber(char);
+  bool NextCharsAreNumber(UChar);
   bool NextCharsAreNumber();
-  bool NextCharsAreIdentifier(char);
+  bool NextCharsAreIdentifier(UChar);
   bool NextCharsAreIdentifier();
 
   CSSParserToken BlockStart(CSSParserTokenType);
@@ -123,37 +124,40 @@ class CSSTokenizer {
   CSSParserToken BlockStart(CSSParserTokenType block_type, CSSParserTokenType, StringView, CSSValueID);
   CSSParserToken BlockEnd(CSSParserTokenType, CSSParserTokenType start_type);
 
-  CSSParserToken WhiteSpace(char);
-  CSSParserToken LeftParenthesis(char);
-  CSSParserToken RightParenthesis(char);
-  CSSParserToken LeftBracket(char);
-  CSSParserToken RightBracket(char);
-  CSSParserToken LeftBrace(char);
-  CSSParserToken RightBrace(char);
-  CSSParserToken PlusOrFullStop(char);
-  CSSParserToken Comma(char);
-  CSSParserToken HyphenMinus(char);
-  CSSParserToken Asterisk(char);
-  CSSParserToken LessThan(char);
-  CSSParserToken Colon(char);
-  CSSParserToken SemiColon(char);
-  CSSParserToken Hash(char);
-  CSSParserToken CircumflexAccent(char);
-  CSSParserToken DollarSign(char);
-  CSSParserToken VerticalLine(char);
-  CSSParserToken Tilde(char);
-  CSSParserToken CommercialAt(char);
-  CSSParserToken ReverseSolidus(char);
-  CSSParserToken AsciiDigit(char);
-  CSSParserToken LetterU(char);
-  CSSParserToken NameStart(char);
-  CSSParserToken StringStart(char);
-  CSSParserToken EndOfFile(char);
+  CSSParserToken WhiteSpace(UChar);
+  CSSParserToken LeftParenthesis(UChar);
+  CSSParserToken RightParenthesis(UChar);
+  CSSParserToken LeftBracket(UChar);
+  CSSParserToken RightBracket(UChar);
+  CSSParserToken LeftBrace(UChar);
+  CSSParserToken RightBrace(UChar);
+  CSSParserToken PlusOrFullStop(UChar);
+  CSSParserToken Comma(UChar);
+  CSSParserToken HyphenMinus(UChar);
+  CSSParserToken Asterisk(UChar);
+  CSSParserToken LessThan(UChar);
+  CSSParserToken Colon(UChar);
+  CSSParserToken SemiColon(UChar);
+  CSSParserToken Hash(UChar);
+  CSSParserToken CircumflexAccent(UChar);
+  CSSParserToken DollarSign(UChar);
+  CSSParserToken VerticalLine(UChar);
+  CSSParserToken Tilde(UChar);
+  CSSParserToken CommercialAt(UChar);
+  CSSParserToken ReverseSolidus(UChar);
+  CSSParserToken AsciiDigit(UChar);
+  CSSParserToken LetterU(UChar);
+  CSSParserToken NameStart(UChar);
+  CSSParserToken StringStart(UChar);
+  CSSParserToken EndOfFile(UChar);
 
   StringView RegisterString(const String&);
 
   friend class CSSParserTokenStream;
 
+  // When constructed with const String&, we need to hold onto it
+  // This must be declared before input_ so it's initialized first
+  String held_string_;
   CSSTokenizerInputStream input_;
 
   uint32_t prev_offset_ = 0;

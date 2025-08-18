@@ -8,6 +8,7 @@
 #include <optional>
 #include <memory>
 #include "core/css/css_property_value_set.h"
+#include "foundation/string/wtf_string.h"
 #include "core/css/style_rule.h"
 #include "core/executing_context.h"
 #include "foundation/macros.h"
@@ -39,7 +40,7 @@ class TestStyleSheet {
 
   const Document& GetDocument() { return *document_; }
 
-  void AddCSSRules(const std::string& rule_text, bool is_empty_sheet = false);
+  void AddCSSRules(const String& rule_text, bool is_empty_sheet = false);
   //  RuleSet& GetRuleSet();
   //  CSSRuleList* CssRules();
 
@@ -52,22 +53,22 @@ class TestStyleSheet {
 
 CSSStyleSheet* CreateStyleSheet(Document& document);
 
-std::shared_ptr<CSSVariableData> CreateVariableData(std::string);
+std::shared_ptr<CSSVariableData> CreateVariableData(const String&);
 std::shared_ptr<const CSSValue> CreateCustomIdent(const char*);
-std::shared_ptr<const CSSValue> ParseLonghand(Document& document, const CSSProperty&, const std::string& value);
-std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::string& block_text,
+std::shared_ptr<const CSSValue> ParseLonghand(Document& document, const CSSProperty&, const String& value);
+std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const String& block_text,
                                                                  CSSParserMode mode = kHTMLStandardMode);
-std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text);
+std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const String& text);
 
 // Parse a value according to syntax defined by:
 // https://drafts.css-houdini.org/css-properties-values-api-1/#syntax-strings
-std::shared_ptr<const CSSValue> ParseValue(Document&, std::string syntax, std::string value);
+std::shared_ptr<const CSSValue> ParseValue(Document&, const String& syntax, const String& value);
 
-std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string&);
+std::shared_ptr<CSSSelectorList> ParseSelectorList(const String&);
 // Parse the selector as if nested with the given CSSNestingType, using
 // the specified StyleRule to resolve either the parent selector "&"
 // (for kNesting), or the :scope pseudo-class (for kScope).
-std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string&,
+std::shared_ptr<CSSSelectorList> ParseSelectorList(const String&,
                                                    CSSNestingType,
                                                    std::shared_ptr<const StyleRule> parent_rule_for_nesting);
 

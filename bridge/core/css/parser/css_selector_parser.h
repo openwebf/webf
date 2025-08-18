@@ -56,7 +56,7 @@ class CSSSelectorParser {
 
   static CSSSelector::PseudoType ParsePseudoType(const AtomicString& name, bool has_arguments, const Document*);
 
-  static PseudoId ParsePseudoElement(const std::string& selector_string, const Node* parent, AtomicString& argument);
+  static PseudoId ParsePseudoElement(const String& selector_string, const Node* parent, AtomicString& argument);
 
   // https://drafts.csswg.org/css-cascade-6/#typedef-scope-start
   // https://drafts.csswg.org/css-cascade-6/#typedef-scope-end

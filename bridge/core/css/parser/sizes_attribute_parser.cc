@@ -16,7 +16,7 @@
 namespace webf {
 
 SizesAttributeParser::SizesAttributeParser(MediaValues* media_values,
-                                           const std::string& attribute,
+                                           const String& attribute,
                                            ExecutingContext* executing_context,
                                            const HTMLImageElement* img)
     : media_values_(media_values),
@@ -26,7 +26,7 @@ SizesAttributeParser::SizesAttributeParser(MediaValues* media_values,
       is_valid_(false),
       is_auto_(false),
       img_(img) {
-  CSSTokenizer tokenizer(attribute);
+  CSSTokenizer tokenizer{attribute.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
   is_valid_ = Parse(stream);
 }

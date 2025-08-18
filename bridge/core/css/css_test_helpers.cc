@@ -45,7 +45,7 @@ CSSStyleSheet* CreateStyleSheet(Document& document) {
   return CSSStyleSheet::CreateInline(document.GetExecutingContext(), contents, document, TextPosition::MinimumPosition());
 }
 
-std::shared_ptr<CSSVariableData> CreateVariableData(std::string s) {
+std::shared_ptr<CSSVariableData> CreateVariableData(const String& s) {
   bool is_animation_tainted = false;
   bool needs_variable_resolution = false;
   return CSSVariableData::Create(s, is_animation_tainted, needs_variable_resolution);
@@ -57,7 +57,7 @@ std::shared_ptr<const CSSValue> CreateCustomIdent(const char* s) {
 
 std::shared_ptr<const CSSValue> ParseLonghand(Document& document,
                                               const CSSProperty& property,
-                                              const std::string& value) {
+                                              const String& value) {
   const auto* longhand = DynamicTo<Longhand>(property);
   if (!longhand) {
     return nullptr;
@@ -67,20 +67,20 @@ std::shared_ptr<const CSSValue> ParseLonghand(Document& document,
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   CSSParserLocalContext local_context;
 
-  CSSTokenizer tokenizer(value);
+  CSSTokenizer tokenizer{StringView(value)};
   CSSParserTokenStream stream(tokenizer);
   return longhand->ParseSingleValue(stream, context, local_context);
 }
 
-std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const std::string& block_text, CSSParserMode mode) {
+std::shared_ptr<const CSSPropertyValueSet> ParseDeclarationBlock(const String& block_text, CSSParserMode mode) {
   auto set = std::make_shared<MutableCSSPropertyValueSet>(mode);
   auto context = std::make_shared<CSSParserContext>(mode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
-  set->ParseDeclarationList(AtomicString(String::FromUTF8(block_text.c_str())), sheet);
+  set->ParseDeclarationList(AtomicString(block_text), sheet);
   return set;
 }
 
-std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& text) {
+std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const String& text) {
   // Note: Document parameter kept for API compatibility but not used
   // Use a temporary shared_ptr for the sheet contents instead of creating a full CSSStyleSheet
   const auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
@@ -89,27 +89,27 @@ std::shared_ptr<StyleRuleBase> ParseRule(Document& document, const std::string& 
                               /*parent_rule_for_nesting=*/nullptr, text);
 }
 
-std::shared_ptr<const CSSValue> ParseValue(Document& document, std::string syntax, std::string value) {
+std::shared_ptr<const CSSValue> ParseValue(Document& document, const String& syntax, const String& value) {
   auto syntax_definition = CSSSyntaxStringParser(syntax).Parse();
   if (!syntax_definition.has_value()) {
     return nullptr;
   }
   const auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  return syntax_definition->Parse(value, context,
+  return syntax_definition->Parse(value.ToStringView(), context,
                                   /* is_animation_tainted */ false);
 }
 
-std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string& string) {
+std::shared_ptr<CSSSelectorList> ParseSelectorList(const String& string) {
   return ParseSelectorList(string, CSSNestingType::kNone,
                            /*parent_rule_for_nesting=*/nullptr);
 }
 
-std::shared_ptr<CSSSelectorList> ParseSelectorList(const std::string& string,
+std::shared_ptr<CSSSelectorList> ParseSelectorList(const String& string,
                                                    CSSNestingType nesting_type,
                                                    std::shared_ptr<const StyleRule> parent_rule_for_nesting) {
   auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
   auto sheet = std::make_shared<StyleSheetContents>(context);
-  CSSTokenizer tokenizer(string);
+  CSSTokenizer tokenizer{StringView(string)};
   CSSParserTokenStream stream(tokenizer);
   std::vector<CSSSelector> arena;
   tcb::span<CSSSelector> vector = CSSSelectorParser::ParseSelector(
