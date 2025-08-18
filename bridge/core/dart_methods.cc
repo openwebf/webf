@@ -27,7 +27,6 @@ DartMethodPointer::DartMethodPointer(DartIsolateContext* dart_isolate_context,
   set_timeout_ = reinterpret_cast<SetTimeout>(dart_methods[i++]);
   set_interval_ = reinterpret_cast<SetInterval>(dart_methods[i++]);
   clear_timeout_ = reinterpret_cast<ClearTimeout>(dart_methods[i++]);
-  request_animation_frame_ = reinterpret_cast<RequestAnimationFrame>(dart_methods[i++]);
   request_idle_callback_ = reinterpret_cast<RequestIdleCallback>(dart_methods[i++]);
   cancel_animation_frame_ = reinterpret_cast<CancelAnimationFrame>(dart_methods[i++]);
   cancel_idle_callback_ = reinterpret_cast<CancelIdleCallback>(dart_methods[i++]);
