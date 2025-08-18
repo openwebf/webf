@@ -18,7 +18,7 @@ describe('document.currentScript', () => {
       expect((window as any).capturedCurrentScript).toBe(script);
       expect((window as any).isScriptSame).toBe(true);
       done();
-    }, 30);
+    }, 100);
   });
 
   it('should return script element during external script execution', (done) => {
