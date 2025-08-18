@@ -2989,6 +2989,13 @@ class CSSRenderStyle extends RenderStyle
       return false;
     }
 
+    // Do not establish IFC on scroll/auto/hidden/clip containers to avoid
+    // placeholder-based paragraph layout interfering with block children order.
+    // These should layout using regular flow and let descendants establish IFC.
+    if (effectiveOverflowX != CSSOverflowType.visible || effectiveOverflowY != CSSOverflowType.visible) {
+      return false;
+    }
+
     // Do not special-case BODY/HTML here. They can also establish IFC
     // when they contain only inline content and no block-level content.
 
@@ -2998,11 +3005,7 @@ class CSSRenderStyle extends RenderStyle
       return false;
     }
 
-    // If parent is a flex layout, this shouldn't establish IFC
-    // isParentRenderFlexLayout() already returns a boolean.
-    if (isParentRenderFlexLayout()) {
-      return false;
-    }
+    // Flex items may establish their own IFC; do not block based on parent.
 
     // If parent is using inline formatting, this block should participate
     // in the parent's IFC rather than establishing its own

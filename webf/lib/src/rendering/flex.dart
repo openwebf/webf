@@ -754,27 +754,37 @@ class RenderFlexLayout extends RenderLayoutBox {
     return computedValue ?? 0;
   }
 
-  // Sort flex items by their order property (default order is 0)
+  // Sort flex items by their order property (default order is 0), stably.
+  // When multiple items have the same order, preserve their original DOM order.
   List<RenderBox> _getSortedFlexItems(List<RenderBox> children) {
     List<RenderBox> sortedChildren = List.from(children);
 
+    // Map each child to its original index to ensure stability.
+    final Map<RenderBox, int> originalIndex = {
+      for (int i = 0; i < children.length; i++) children[i]: i
+    };
+
+    int getOrder(RenderBox box) {
+      if (box is RenderBoxModel) {
+        return box.renderStyle.order;
+      }
+      if (box is RenderEventListener) {
+        final RenderBox? inner = box.child;
+        if (inner is RenderBoxModel) {
+          return inner.renderStyle.order;
+        }
+      }
+      return 0;
+    }
+
     sortedChildren.sort((a, b) {
-      int orderA = 0;
-      int orderB = 0;
-
-      // Get order value from RenderStyle if available
-      if (a is RenderBoxModel) {
-        orderA = a.renderStyle.order;
+      final int orderA = getOrder(a);
+      final int orderB = getOrder(b);
+      if (orderA != orderB) {
+        return orderA.compareTo(orderB);
       }
-      if (b is RenderBoxModel) {
-        orderB = b.renderStyle.order;
-      }
-
-      // If orders are equal, maintain document order (stable sort)
-      if (orderA == orderB) {
-        return 0;
-      }
-      return orderA.compareTo(orderB);
+      // Tie-breaker: original DOM order to make sort stable
+      return originalIndex[a]!.compareTo(originalIndex[b]!);
     });
 
     return sortedChildren;

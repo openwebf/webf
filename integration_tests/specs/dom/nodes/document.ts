@@ -16,6 +16,8 @@ describe('Document api', () => {
   });
 
   it('documentElement', async () => {
+    await waitForOnScreen(document.documentElement)
+
     const documentElementWidth = document.documentElement.clientWidth;
     const documentElementHeight = document.documentElement.clientHeight;
 
