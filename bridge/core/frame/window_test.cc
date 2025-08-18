@@ -47,27 +47,6 @@ TEST(Window, instanceofEventTarget) {
   EXPECT_EQ(logCalled, true);
 }
 
-TEST(Window, requestAnimationFrame) {
-  auto env = TEST_init();
-  bool static logCalled = false;
-
-  webf::WebFPage::consoleMessageHandler = [](void* ctx, const std::string& message, int logLevel) {
-    EXPECT_STREQ(message.c_str(), "456");
-    logCalled = true;
-  };
-
-  std::string code = R"(
-requestAnimationFrame(() => {
-  console.log('456');
-});
-)";
-
-  env->page()->evaluateScript(code.c_str(), code.size(), "vm://", 0);
-  TEST_runLoop(env->page()->executingContext());
-
-  EXPECT_EQ(logCalled, true);
-}
-
 TEST(Window, cancelAnimationFrame) {
   auto env = TEST_init();
 

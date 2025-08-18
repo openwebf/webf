@@ -343,7 +343,6 @@ std::vector<uint64_t> TEST_getMockDartMethods(OnJSError onJSError) {
                                     reinterpret_cast<uint64_t>(TEST_setTimeout),
                                     reinterpret_cast<uint64_t>(TEST_setInterval),
                                     reinterpret_cast<uint64_t>(TEST_clearTimeout),
-                                    reinterpret_cast<uint64_t>(TEST_requestAnimationFrame),
                                     reinterpret_cast<uint64_t>(TEST_requestIdleCallback),
                                     reinterpret_cast<uint64_t>(TEST_cancelAnimationFrame),
                                     reinterpret_cast<uint64_t>(TEST_cancelIdleCallback),
