@@ -1,3 +1,19 @@
+## 0.23.0-beta.3
+
+### Features
+
+- DevTools: improve Chrome DevTools Protocol (CDP) service stability.
+
+### Fixes
+
+- Layout: fix flexbox layout issue where flex items with percentage max-width were incorrectly expanding.
+- DOM: fix checked not work in checkbox/radio.
+- DOM: fix HTMLCollection/children staleness after `insertAdjacentElement('beforeend')`.
+- Bridge/C++: replace deprecated `char_traits<unsigned char>` usage with internal `char_trait`.
+- Bridge/C++: fix use-after-free in `script_value_ref.cc`.
+- Strings: correct `SpaceSplitString::Data::CreateVector` for Latin1 codec.
+- Build: resolve compilation breakages in recent changes.
+
 ## 0.23.0-beta.2
 
 ### Features
