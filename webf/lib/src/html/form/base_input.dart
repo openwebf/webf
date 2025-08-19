@@ -17,6 +17,7 @@ import 'form_element_base.dart';
 const Map<String, dynamic> _inputDefaultStyle = {
   BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
+  PADDING: '0px 2px',
   WIDTH: '140px',
   HEIGHT: '25px',
   COLOR: '#000'
@@ -276,11 +277,6 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
         fontSize: fontSize,
         fontWeight: renderStyle.fontWeight,
         fontFamily: renderStyle.fontFamily?.join(' '),
-        height: 1.0,
-      );
-
-  StrutStyle get _textStruct => StrutStyle(
-        leading: leading,
       );
 
   final double _defaultPadding = 0;
@@ -392,13 +388,32 @@ mixin BaseInputState on WebFWidgetElementState {
 
     _updateSelection();
 
+    // Calculate vertical padding for centering text
+    double? heightValue = widgetElement.renderStyle.height.computedValue;
+    double verticalPadding = 0;
+    
+    if (heightValue > 0) {
+      // Calculate padding needed to center text vertically
+      double fontSize = widgetElement.renderStyle.fontSize.computedValue;
+      // with 2px padding-top and 2px padding-bottom
+      verticalPadding = (heightValue - 4 - fontSize) / 2;
+      if (verticalPadding < 0) verticalPadding = 0;
+    }
+
     InputDecoration decoration = InputDecoration(
         label: widgetElement.label != null ? Text(widgetElement.label!) : null,
         border: InputBorder.none,
-        isDense: true,
+        isDense: true, // Changed to false for better text baseline handling
         isCollapsed: true,
-        contentPadding: EdgeInsets.fromLTRB(0, widgetElement._defaultPadding, 0, widgetElement._defaultPadding),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 2,
+          vertical: verticalPadding,
+        ),
         hintText: widgetElement.placeholder,
+        hintStyle: TextStyle(
+          fontSize: widgetElement.renderStyle.fontSize.computedValue,
+          height: 1.0, // Ensure hint text has consistent line height
+        ),
         counterText: '',
         // Hide counter to align with web
         suffix: widgetElement.isSearch && widgetElement.value.isNotEmpty && _isFocus
@@ -424,7 +439,7 @@ mixin BaseInputState on WebFWidgetElementState {
       cursorHeight: widgetElement.renderStyle.fontSize.computedValue,
       enabled: !widgetElement.disabled && !widgetElement.readonly,
       style: widgetElement._textStyle,
-      strutStyle: widgetElement._textStruct,
+      strutStyle: null, // Remove StrutStyle to avoid conflicts with text baseline
       autofocus: widgetElement.autofocus,
       minLines: widgetElement.minLines,
       maxLines: widgetElement.maxLines,
@@ -458,13 +473,13 @@ mixin BaseInputState on WebFWidgetElementState {
 
     // Apply width and height constraints
     double? widthValue = widgetElement.renderStyle.width.computedValue;
-    double? heightValue = widgetElement.renderStyle.height.computedValue;
+    // double? heightValue = widgetElement.renderStyle.height.computedValue;
 
     // Always wrap with IntrinsicWidth to make TextField behave like HTML input
     // HTML input has intrinsic sizing, doesn't expand to fill parent by default
-    widget = IntrinsicWidth(
-      child: widget,
-    );
+    // widget =  (
+    //   child: widget,
+    // );
     // Apply explicit width/height constraints if specified
     if (widthValue != 0 || heightValue != 0) {
       widget = SizedBox(
