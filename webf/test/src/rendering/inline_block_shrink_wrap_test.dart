@@ -71,18 +71,17 @@ void main() {
         reason: 'Overlay width (${overlay.offsetWidth}) should be 100% of container width (${container.offsetWidth})');
     });
 
-    testWidgets('static vs absolutely positioned overlay comparison', (WidgetTester tester) async {
-      // Test with absolutely positioned overlay (this should work correctly)
-      final preparedAbsolute = await WebFWidgetTestUtils.prepareWidgetTest(
+    testWidgets('absolutely positioned overlay in inline-block container', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName: 'inline-block-absolute-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
               <div style="text-align: center;">
-                <div id="container-abs" style="position: relative; display: inline-block;">
-                  <img style="display: block; width: 100px; height: 100px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" />
-                  <div id="overlay-abs" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex;">
+                <div id="container" style="position: relative; display: inline-block;">
+                  <img id="image" style="display: block; width: 100px; height: 100px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" />
+                  <div id="overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex;">
                     <span>Icon</span>
                   </div>
                 </div>
@@ -91,22 +90,40 @@ void main() {
           </html>
         ''',
       );
-      await tester.pump();
 
-      final containerAbs = preparedAbsolute.getElementById('container-abs');
-      final overlayAbs = preparedAbsolute.getElementById('overlay-abs');
+      final container = prepared.getElementById('container');
+      final image = prepared.getElementById('image');  
+      final overlay = prepared.getElementById('overlay');
 
-      // Test with static positioned overlay (this is what we're fixing)
-      final preparedStatic = await WebFWidgetTestUtils.prepareWidgetTest(
+      print('=== Absolutely Positioned Overlay ===');
+      print('Container: ${container.offsetWidth}px wide');
+      print('Image: ${image.offsetWidth}px wide');
+      print('Overlay: ${overlay.offsetWidth}px wide');
+
+      // Container should shrink-wrap to image size
+      expect(container.offsetWidth, closeTo(100, 5),
+        reason: 'Container width (${container.offsetWidth}) should shrink-wrap to image width (~100px)');
+      
+      // Image should maintain its specified size
+      expect(image.offsetWidth, equals(100.0));
+      expect(image.offsetHeight, equals(100.0));
+
+      // Absolutely positioned overlay should be 100% of container
+      expect(overlay.offsetWidth, closeTo(container.offsetWidth, 2),
+        reason: 'Absolute overlay width (${overlay.offsetWidth}) should be 100% of container width (${container.offsetWidth})');
+    });
+
+    testWidgets('static positioned overlay in inline-block container', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName: 'inline-block-static-${DateTime.now().millisecondsSinceEpoch}',
         html: '''
           <html>
             <body style="margin: 0; padding: 0;">
               <div style="text-align: center;">
-                <div id="container-static" style="position: relative; display: inline-block;">
-                  <img style="display: block; width: 100px; height: 100px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" />
-                  <div id="overlay-static" style="width: 100%; height: 100%; display: flex;">
+                <div id="container" style="position: relative; display: inline-block;">
+                  <img id="image" style="display: block; width: 100px; height: 100px;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" />
+                  <div id="overlay" style="width: 100%; height: 100%; display: flex;">
                     <span>Icon</span>
                   </div>
                 </div>
@@ -116,22 +133,26 @@ void main() {
         ''',
       );
 
-      await tester.pump();
-      final containerStatic = preparedStatic.getElementById('container-static');
-      final overlayStatic = preparedStatic.getElementById('overlay-static');
+      final container = prepared.getElementById('container');
+      final image = prepared.getElementById('image');
+      final overlay = prepared.getElementById('overlay');
 
-      print('=== Comparison ===');
-      print('Absolute positioned: Container=${containerAbs.offsetWidth}px, Overlay=${overlayAbs.offsetWidth}px');
-      print('Static positioned: Container=${containerStatic.offsetWidth}px, Overlay=${overlayStatic.offsetWidth}px');
+      print('=== Static Positioned Overlay ===');
+      print('Container: ${container.offsetWidth}px wide');
+      print('Image: ${image.offsetWidth}px wide'); 
+      print('Overlay: ${overlay.offsetWidth}px wide');
 
-      // Both should have similar shrink-wrap behavior
-      expect(containerAbs.offsetWidth, closeTo(100, 5));
-      expect(containerStatic.offsetWidth, closeTo(100, 5));
+      // Container should shrink-wrap to image size (this is what we're testing)
+      expect(container.offsetWidth, closeTo(100, 5),
+        reason: 'Container width (${container.offsetWidth}) should shrink-wrap to image width (~100px)');
+      
+      // Image should maintain its specified size
+      expect(image.offsetWidth, equals(100.0));
+      expect(image.offsetHeight, equals(100.0));
 
-      // Both overlays should be 100% of their respective containers
-      expect(overlayAbs.offsetWidth, closeTo(containerAbs.offsetWidth, 2));
-      expect(overlayStatic.offsetWidth, closeTo(containerStatic.offsetWidth, 2),
-        reason: 'Static overlay width (${overlayStatic.offsetWidth}) should match container width (${containerStatic.offsetWidth})');
+      // Static overlay should be 100% of container (this is what we're fixing)
+      expect(overlay.offsetWidth, closeTo(container.offsetWidth, 2),
+        reason: 'Static overlay width (${overlay.offsetWidth}) should be 100% of container width (${container.offsetWidth})');
     });
   });
 }
