@@ -282,9 +282,6 @@ class CSSLengthValue {
                 
                 if (recomputedParentWidth != null) {
                   _computedValue = value! * recomputedParentWidth;
-                  if (renderStyle?.target.id == 'span' && realPropertyName == MAX_WIDTH) {
-                    print('span maxWidth resolved: ${value!} * ${recomputedParentWidth} = ${_computedValue}');
-                  }
                 } else {
                   // Last resort: use available constraint width or mark for relayout
                   RenderBox? parentRenderBox = parentRenderStyle.attachedRenderBoxModel;

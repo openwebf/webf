@@ -16,7 +16,7 @@ import 'package:path/path.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/src/devtools/console_store.dart';
+import 'package:webf/src/devtools/panel/console_store.dart';
 
 import '../../foundation.dart';
 
