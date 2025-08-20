@@ -603,16 +603,24 @@ class CSSPositionedLayout {
 
     // Calculate position after the previous sibling
     // This represents where the element would appear in normal block flow
-    if (previousSibling.hasSize && previousSibling.parentData is RenderLayoutParentData) {
+    if (previousSibling.parentData is RenderLayoutParentData) {
       RenderLayoutParentData siblingData = previousSibling.parentData as RenderLayoutParentData;
       
-      // Position after previous sibling: sibling's top + sibling's height
-      double siblingBottom = siblingData.offset.dy + previousSibling.size.height;
-      
-      // Add any margins that would affect normal flow positioning
+      // Get sibling height without accessing size directly
+      double siblingHeight = 0;
       if (previousSibling is RenderBoxModel) {
-        siblingBottom += previousSibling.renderStyle.marginBottom.computedValue;
+        siblingHeight = previousSibling.boxSize?.height ?? 0;
+        // Add margin bottom
+        siblingHeight += previousSibling.renderStyle.marginBottom.computedValue;
+      } else if (previousSibling is RenderTextBox) {
+        siblingHeight = previousSibling.boxSize?.height ?? 0;
+      } else if (previousSibling.hasSize) {
+        // For other render objects that are laid out, we can use constraints
+        siblingHeight = previousSibling.constraints.smallest.height;
       }
+      
+      // Position after previous sibling: sibling's top + sibling's height
+      double siblingBottom = siblingData.offset.dy + siblingHeight;
       
       return siblingBottom;
     }

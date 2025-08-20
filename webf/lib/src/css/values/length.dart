@@ -126,7 +126,12 @@ class CSSLengthValue {
     bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
             renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
         renderStyle.width.value != null;
-    return isBlockLevelBox || isBlockInlineHaveSize;
+    // Inline-block with auto width should also be a percentage container
+    // This follows CSS spec where inline-block establishes a containing block
+    bool isInlineBlockAutoWidth = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
+            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
+        renderStyle.width.isAuto;
+    return isBlockLevelBox || isBlockInlineHaveSize || isInlineBlockAutoWidth;
   }
 
   // Note return value of double.infinity means the value is resolved as the initial value
@@ -233,6 +238,40 @@ class CSSLengthValue {
         // Override the contentBoxWidth
         if (shouldInheritRenderWidgetElementConstraintsWidth) {
           parentContentBoxWidth = parentWidgetConstraintWidth;
+        }
+        
+        // Special handling for inline-block parents with auto width during layout
+        if (parentRenderStyle != null && 
+            (parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock || 
+             parentRenderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
+            parentRenderStyle.width.isAuto &&
+            parentContentBoxWidth == null) {
+          // For inline-block with auto width, during layout we need to handle the
+          // circular dependency carefully. The inline-block should shrink-wrap to
+          // its content, but percentage children need a resolved width.
+          
+          // First check if we can get intrinsic width from parent
+          RenderBox? parentBox = parentRenderStyle.attachedRenderBoxModel;
+          if (parentBox != null) {
+            // Try to get the intrinsic width if available
+            if (parentBox is RenderBoxModel) {
+              // Use minContentWidth if available (intrinsic width)
+              double? intrinsicWidth = parentBox.minContentWidth;
+              if (intrinsicWidth != null && intrinsicWidth > 0) {
+                parentContentBoxWidth = intrinsicWidth;
+              } else if (parentBox.constraints.hasBoundedWidth && parentBox.constraints.maxWidth != double.infinity) {
+                // Fall back to constraint width if reasonable
+                parentContentBoxWidth = parentBox.constraints.maxWidth;
+              }
+            }
+          }
+          
+          // If still null, we need to trigger relayout
+          if (parentContentBoxWidth == null) {
+            renderStyle?.markParentNeedsRelayout();
+            _computedValue = double.infinity;
+            return _computedValue!;
+          }
         }
 
         // Percentage relative height priority: logical height > renderer height
