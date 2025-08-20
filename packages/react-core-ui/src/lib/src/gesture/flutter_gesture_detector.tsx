@@ -5,37 +5,74 @@ interface FlutterGestureDetectorMethods {
 interface FlutterGestureDetectorEventDetail {
   timestamp: number;
 }
+interface FlutterGestureDetectorLongPressDetail {
+  globalX: number;
+  globalY: number;
+  localX: number;
+  localY: number;
+  timestamp: number;
+}
+interface FlutterGestureDetectorLongPressEndDetail {
+  velocityX: number;
+  velocityY: number;
+}
 interface FlutterGestureDetectorPanStartDetail {
   x: number;
   y: number;
+  localX: number;
+  localY: number;
+  pointerCount: number;
   timestamp: number;
 }
 interface FlutterGestureDetectorPanUpdateDetail {
   x: number;
   y: number;
+  localX: number;
+  localY: number;
   deltaX: number;
   deltaY: number;
+  localDeltaX: number;
+  localDeltaY: number;
+  pointerCount: number;
   timestamp: number;
 }
 interface FlutterGestureDetectorPanEndDetail {
-  deltaX: number;
-  deltaY: number;
+  velocityX: number;
+  velocityY: number;
+  totalDeltaX: number;
+  totalDeltaY: number;
+  pointerCount: number;
   timestamp: number;
 }
 interface FlutterGestureDetectorScaleStartDetail {
-  scale: number;
+  focalPointX: number;
+  focalPointY: number;
+  localFocalPointX: number;
+  localFocalPointY: number;
+  pointerCount: number;
+  sourceTimeStampMicros?: number;
   timestamp: number;
 }
 interface FlutterGestureDetectorScaleUpdateDetail {
   scale: number;
+  horizontalScale: number;
+  verticalScale: number;
   rotation: number;
   focalPointX: number;
   focalPointY: number;
+  localFocalPointX: number;
+  localFocalPointY: number;
+  focalPointDeltaX: number;
+  focalPointDeltaY: number;
+  pointerCount: number;
+  sourceTimeStampMicros?: number;
   timestamp: number;
 }
 interface FlutterGestureDetectorScaleEndDetail {
-  scale: number;
-  rotation: number;
+  velocityX: number;
+  velocityY: number;
+  scaleVelocity: number;
+  pointerCount: number;
   timestamp: number;
 }
 export interface FlutterGestureDetectorProps {
@@ -50,11 +87,11 @@ export interface FlutterGestureDetectorProps {
   /**
    * Fired when a long press gesture starts
    */
-  onLongpress?: (event: CustomEvent<FlutterGestureDetectorEventDetail>) => void;
+  onLongpress?: (event: CustomEvent<FlutterGestureDetectorLongPressDetail>) => void;
   /**
    * Fired when a long press gesture ends
    */
-  onLongpressend?: (event: CustomEvent<FlutterGestureDetectorEventDetail>) => void;
+  onLongpressend?: (event: CustomEvent<FlutterGestureDetectorLongPressEndDetail>) => void;
   /**
    * Fired when a pan gesture starts
    */
@@ -105,7 +142,7 @@ tap, double-tap, long press, pan, and scale (pinch/zoom) gestures. It renders
 a visual container with gesture feedback and dispatches detailed gesture events.
 The element supports these JavaScript events:
 - 'tap': Single tap gesture
-- 'doubletap': Double tap gesture  
+- 'doubletap': Double tap gesture
 - 'longpress': Long press start
 - 'longpressend': Long press end
 - 'panstart': Pan gesture start
@@ -154,14 +191,14 @@ export const FlutterGestureDetector = createWebFComponent<FlutterGestureDetector
       propName: 'onLongpress',
       eventName: 'longpress',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent<FlutterGestureDetectorEventDetail>));
+        callback((event as CustomEvent<FlutterGestureDetectorLongPressDetail>));
       },
     },
     {
       propName: 'onLongpressend',
       eventName: 'longpressend',
       handler: (callback) => (event) => {
-        callback((event as CustomEvent<FlutterGestureDetectorEventDetail>));
+        callback((event as CustomEvent<FlutterGestureDetectorLongPressEndDetail>));
       },
     },
     {
