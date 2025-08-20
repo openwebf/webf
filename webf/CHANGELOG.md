@@ -1,3 +1,21 @@
+## 0.22.9
+
+### Features
+
+- DevTools: synced implementations from 0.23.0 and reorganized modules under
+  `webf/lib/src/devtools/cdp_service` with updated panels/stores.
+- Gesture: added `FlutterGestureDetector` bindings and TS typings; integrated React
+  `flutter_gesture_detector` component in `packages/react-core-ui`.
+- Android: support for 16KB page size; upgraded Android NDK version.
+- Networking/Loading: added exception handling for bundle loading and improved Dio log printing.
+
+### Fixes
+
+- Flex layout: corrected gap overflow and space distribution; fixed inline-flex and height
+  calculation with gap; addressed percentage max-width in flex items.
+- Rendering: hardened render checks to avoid failures from unattached RenderObjects.
+- Routing: show error widgets when the routing entrypoint is null.
+
 ## 0.22.8
 
 ### Features
