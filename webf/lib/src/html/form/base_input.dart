@@ -17,9 +17,6 @@ import 'form_element_base.dart';
 const Map<String, dynamic> _inputDefaultStyle = {
   BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
-  PADDING: '0px 2px',
-  WIDTH: '140px',
-  HEIGHT: '25px',
   COLOR: '#000'
 };
 
@@ -388,17 +385,27 @@ mixin BaseInputState on WebFWidgetElementState {
 
     _updateSelection();
 
-    // Calculate vertical padding for centering text
-    double? heightValue = widgetElement.renderStyle.height.computedValue;
+
+    bool isAutoHeight = widgetElement.renderStyle.height.isAuto;
     double verticalPadding = 0;
-    
-    if (heightValue > 0) {
-      // Calculate padding needed to center text vertically
+    if (isAutoHeight) {
+      verticalPadding = 10;
+    } else {
+      double? heightValue = widgetElement.renderStyle.height.computedValue;
       double fontSize = widgetElement.renderStyle.fontSize.computedValue;
-      // with 2px padding-top and 2px padding-bottom
-      verticalPadding = (heightValue - 4 - fontSize) / 2;
+      double paddingTop = widgetElement.renderStyle.paddingTop.computedValue;
+      double paddingBottom = widgetElement.renderStyle.paddingBottom.computedValue;
+      double borderTopWidth = widgetElement.renderStyle.borderTopWidth?.computedValue ?? 0;
+      double borderBottomWidth = widgetElement.renderStyle.borderBottomWidth?.computedValue ?? 0;
+      
+      double textFieldContentHeight = heightValue - borderTopWidth - borderBottomWidth - paddingTop - paddingBottom;
+      verticalPadding = (textFieldContentHeight - fontSize) / 2;
+
       if (verticalPadding < 0) verticalPadding = 0;
     }
+
+    bool isAutoWidth = widgetElement.renderStyle.width.isAuto;
+    double horizontalPadding = isAutoWidth ? 2 : 0;
 
     InputDecoration decoration = InputDecoration(
         label: widgetElement.label != null ? Text(widgetElement.label!) : null,
@@ -406,13 +413,16 @@ mixin BaseInputState on WebFWidgetElementState {
         isDense: true, // Changed to false for better text baseline handling
         isCollapsed: true,
         contentPadding: EdgeInsets.symmetric(
-          horizontal: 2,
+          horizontal: horizontalPadding,
           vertical: verticalPadding,
         ),
         hintText: widgetElement.placeholder,
         hintStyle: TextStyle(
           fontSize: widgetElement.renderStyle.fontSize.computedValue,
           height: 1.0, // Ensure hint text has consistent line height
+          // Match the main text style for consistent baseline
+          fontWeight: widgetElement.renderStyle.fontWeight,
+          fontFamily: widgetElement.renderStyle.fontFamily?.join(' '),
         ),
         counterText: '',
         // Hide counter to align with web
@@ -446,6 +456,7 @@ mixin BaseInputState on WebFWidgetElementState {
       maxLength: widgetElement.maxLength,
       onChanged: onChanged,
       textAlign: widgetElement.renderStyle.textAlign,
+      textAlignVertical: TextAlignVertical.center,
       focusNode: _focusNode,
       obscureText: widgetElement.isPassWord,
       cursorColor: widgetElement.renderStyle.caretColor ?? widgetElement.renderStyle.color.value,
@@ -471,20 +482,13 @@ mixin BaseInputState on WebFWidgetElementState {
       decoration: decoration,
     );
 
-    // Apply width and height constraints
-    double? widthValue = widgetElement.renderStyle.width.computedValue;
-    // double? heightValue = widgetElement.renderStyle.height.computedValue;
-
-    // Always wrap with IntrinsicWidth to make TextField behave like HTML input
-    // HTML input has intrinsic sizing, doesn't expand to fill parent by default
-    // widget =  (
-    //   child: widget,
-    // );
-    // Apply explicit width/height constraints if specified
-    if (widthValue != 0 || heightValue != 0) {
-      widget = SizedBox(
-        width: widthValue,
-        height: heightValue,
+    if (isAutoWidth) {
+      widget = IntrinsicWidth(
+        child: widget,
+      );
+    }
+    if (isAutoHeight) {
+      widget = IntrinsicHeight(
         child: widget,
       );
     }
