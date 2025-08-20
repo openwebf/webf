@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:core';
 import 'dart:io';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -281,96 +282,105 @@ class NetworkBundle extends WebFBundle {
         'headers': {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
       });
 
-      final dio = await getOrCreateWebFDio(
-        contextId: contextId,
-        uri: _uri!,
-        ownerBundle: this,
-      );
-
-      // Mark the moment we see the first received byte
-      bool responseStartedEmitted = false;
-
-      final resp = await dio.requestUri(
-        _uri!,
-        options: Options(
-          method: 'GET',
-          responseType: ResponseType.bytes,
-          headers: {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
-          followRedirects: true,
-          // Accept 200 OK and 304 Not Modified (cache validation)
-          validateStatus: (s) => s == HttpStatus.ok || s == HttpStatus.notModified,
-        ),
-        onReceiveProgress: (received, total) {
-          if (!responseStartedEmitted && received > 0) {
-            responseStartedEmitted = true;
-            dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
-              'contentLength': total,
-            });
-          }
-        },
-      );
-
-      // If no progress callback fired (e.g., very small or cached responses),
-      // ensure we still emit a response_started marker here.
-      if (!responseStartedEmitted) {
-        dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
-          'statusCode': resp.statusCode,
-          'contentLength': resp.data?.length ?? 0,
-        });
-      }
-
-      if (resp.statusCode != HttpStatus.ok && resp.statusCode != HttpStatus.notModified) {
-        dumper?.recordNetworkRequestComplete(url, statusCode: resp.statusCode ?? 0, responseHeaders: {
-          'error': 'HTTP ${resp.statusCode}',
-        });
-        throw FlutterError.fromParts(<DiagnosticsNode>[
-          ErrorSummary('Unable to load asset: $url'),
-          IntProperty('HTTP status code', resp.statusCode ?? 0),
-        ]);
-      }
-
-      // Track cache hit from interceptor
-      final cacheHit = resp.requestOptions.extra['webf_cache_hit'] == true;
-      hitCache = cacheHit;
-      if (cacheHit) {
-        dumper?.recordNetworkRequestCacheInfo(url,
-          cacheHit: true,
-          cacheType: 'disk',
-          cacheHeaders: {},
+      try {
+        final dio = await getOrCreateWebFDio(
+          contextId: contextId,
+          uri: _uri!,
+          ownerBundle: this,
         );
-      }
 
-      final bytes = resp.data ?? Uint8List(0);
-      // Response fully received
-      dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
-        'responseSize': bytes.length,
-      });
+        // Mark the moment we see the first received byte
+        bool responseStartedEmitted = false;
 
-      if (bytes.isEmpty) {
-        await WebFBundle.invalidateCache(url);
-        return;
-      }
+        final resp = await dio.requestUri(
+          _uri!,
+          options: Options(
+            method: 'GET',
+            responseType: ResponseType.bytes,
+            headers: {'Accept': _acceptHeader(), ...?additionalHttpHeaders},
+            followRedirects: true,
+            // Accept 200 OK and 304 Not Modified (cache validation)
+            validateStatus: (s) => s == HttpStatus.ok || s == HttpStatus.notModified,
+          ),
+          onReceiveProgress: (received, total) {
+            if (!responseStartedEmitted && received > 0) {
+              responseStartedEmitted = true;
+              dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
+                'contentLength': total,
+              });
+            }
+          },
+        );
 
-      data = bytes;
-      final contentTypeHeader = resp.headers.value(HttpHeaders.contentTypeHeader);
-      _contentType = contentTypeHeader != null ? ContentType.parse(contentTypeHeader) : ContentType.binary;
-
-      // Completion
-      final responseHeaders = <String, String>{};
-      String? contentType;
-      resp.headers.forEach((name, values) {
-        final headerValue = values.join(', ');
-        responseHeaders[name] = headerValue;
-        if (name.toLowerCase() == 'content-type') {
-          contentType = headerValue;
+        // If no progress callback fired (e.g., very small or cached responses),
+        // ensure we still emit a response_started marker here.
+        if (!responseStartedEmitted) {
+          dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
+            'statusCode': resp.statusCode,
+            'contentLength': resp.data?.length ?? 0,
+          });
         }
-      });
-      dumper?.recordNetworkRequestComplete(url,
-        statusCode: resp.statusCode ?? 0,
-        responseHeaders: responseHeaders,
-        contentType: contentType,
-      );
-      return;
+
+        if (resp.statusCode != HttpStatus.ok && resp.statusCode != HttpStatus.notModified) {
+          dumper?.recordNetworkRequestComplete(url, statusCode: resp.statusCode ?? 0, responseHeaders: {
+            'error': 'HTTP ${resp.statusCode}',
+          });
+          throw FlutterError.fromParts(<DiagnosticsNode>[
+            ErrorSummary('Unable to load asset: $url'),
+            IntProperty('HTTP status code', resp.statusCode ?? 0),
+          ]);
+        }
+
+        // Track cache hit from interceptor
+        final cacheHit = resp.requestOptions.extra['webf_cache_hit'] == true;
+        hitCache = cacheHit;
+        if (cacheHit) {
+          dumper?.recordNetworkRequestCacheInfo(url,
+            cacheHit: true,
+            cacheType: 'disk',
+            cacheHeaders: {},
+          );
+        }
+
+        final bytes = resp.data ?? Uint8List(0);
+        // Response fully received
+        dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
+          'responseSize': bytes.length,
+        });
+
+        if (bytes.isEmpty) {
+          await WebFBundle.invalidateCache(url);
+          return;
+        }
+
+        data = bytes;
+        final contentTypeHeader = resp.headers.value(HttpHeaders.contentTypeHeader);
+        _contentType = contentTypeHeader != null ? ContentType.parse(contentTypeHeader) : ContentType.binary;
+
+        // Completion
+        final responseHeaders = <String, String>{};
+        String? contentType;
+        resp.headers.forEach((name, values) {
+          final headerValue = values.join(', ');
+          responseHeaders[name] = headerValue;
+          if (name.toLowerCase() == 'content-type') {
+            contentType = headerValue;
+          }
+        });
+        dumper?.recordNetworkRequestComplete(url,
+          statusCode: resp.statusCode ?? 0,
+          responseHeaders: responseHeaders,
+          contentType: contentType,
+        );
+        return;
+      } on DioException catch (e) {
+        // Report to loading state and let DevTools interceptor emit failure event too
+        dumper?.recordNetworkRequestError(url, e.message ?? e.error?.toString() ?? 'Network error');
+        rethrow;
+      } catch (e) {
+        dumper?.recordNetworkRequestError(url, e.toString());
+        rethrow;
+      }
     }
 
     // Track network request start
@@ -382,90 +392,119 @@ class NetworkBundle extends WebFBundle {
       remotePort: _uri!.hasAuthority ? _uri!.port : null,
     );
 
-    final HttpClientRequest request = await sharedHttpClient.getUrl(_uri!);
+    ProxyHttpClientRequest? request;
+    try {
+    final HttpClientRequest rawRequest = await sharedHttpClient.getUrl(_uri!);
+      request = rawRequest as ProxyHttpClientRequest;
 
-    // Prepare request headers.
-    request.headers.set('Accept', _acceptHeader());
-    additionalHttpHeaders?.forEach(request.headers.set);
-    WebFHttpOverrides.setContextHeader(request.headers, contextId);
+      // Prepare request headers.
+      rawRequest.headers.set('Accept', _acceptHeader());
+      additionalHttpHeaders?.forEach(rawRequest.headers.set);
+      WebFHttpOverrides.setContextHeader(rawRequest.headers, contextId);
 
-    (request as ProxyHttpClientRequest).ownerBundle = this;
+      request.ownerBundle = this;
 
-    // Track request sent stage
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageRequestSent, metadata: {
-      'method': 'GET',
-      'headers': additionalHttpHeaders ?? {},
-    });
-
-    final HttpClientResponse response = await request.close();
-    (request).ownerBundle = null;
-
-    // Track response started stage
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
-      'statusCode': response.statusCode,
-      'contentLength': response.contentLength,
-    });
-
-    if (response.statusCode != HttpStatus.ok) {
-      // Track error completion
-      dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: {
-        'error': 'HTTP ${response.statusCode}',
+      // Track request sent stage
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageRequestSent, metadata: {
+        'method': 'GET',
+        'headers': additionalHttpHeaders ?? {},
       });
-      throw FlutterError.fromParts(<DiagnosticsNode>[
-        ErrorSummary('Unable to load asset: $url'),
-        IntProperty('HTTP status code', response.statusCode),
-      ]);
-    }
 
-    hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
+      final HttpClientResponse response = await rawRequest.close();
+      request.ownerBundle = null;
 
-    // Track cache info if hit cache
-    if (_hitCache) {
-      dumper?.recordNetworkRequestCacheInfo(url,
-        cacheHit: true,
-        cacheType: response is HttpClientCachedResponse ? 'disk' : 'memory',
-        cacheHeaders: {},
-      );
-    }
+      // Track response started stage
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseStarted, metadata: {
+        'statusCode': response.statusCode,
+        'contentLength': response.contentLength,
+      });
 
-    // Track downloading stage
-    Uint8List bytes = await consolidateHttpClientResponseBytes(response);
-
-    // Track response fully received
-    dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
-      'responseSize': bytes.length,
-    });
-
-    // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
-    // and decode them if they are in gzip format.
-    if (isGzip(bytes)) {
-      bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
-    }
-
-    if (bytes.isEmpty) {
-      await WebFBundle.invalidateCache(url);
-      return;
-    }
-
-    data = bytes.buffer.asUint8List();
-    _contentType = response.headers.contentType ?? ContentType.binary;
-
-    // Track completion
-    final responseHeaders = <String, String>{};
-    String? contentType;
-    response.headers.forEach((name, values) {
-      final headerValue = values.join(', ');
-      responseHeaders[name] = headerValue;
-      if (name.toLowerCase() == 'content-type') {
-        contentType = headerValue;
+      if (response.statusCode != HttpStatus.ok) {
+        // Track error completion
+        dumper?.recordNetworkRequestComplete(url, statusCode: response.statusCode, responseHeaders: {
+          'error': 'HTTP ${response.statusCode}',
+        });
+        throw FlutterError.fromParts(<DiagnosticsNode>[
+          ErrorSummary('Unable to load asset: $url'),
+          IntProperty('HTTP status code', response.statusCode),
+        ]);
       }
-    });
 
-    dumper?.recordNetworkRequestComplete(url,
-      statusCode: response.statusCode,
-      responseHeaders: responseHeaders,
-      contentType: contentType,
-    );
+      hitCache = response is HttpClientStreamResponse || response is HttpClientCachedResponse;
+
+      // Track cache info if hit cache
+      if (_hitCache) {
+        dumper?.recordNetworkRequestCacheInfo(url,
+          cacheHit: true,
+          cacheType: response is HttpClientCachedResponse ? 'disk' : 'memory',
+          cacheHeaders: {},
+        );
+      }
+
+      // Track downloading stage
+      Uint8List bytes = await consolidateHttpClientResponseBytes(response);
+
+      // Track response fully received
+      dumper?.recordNetworkRequestStage(url, LoadingState.stageResponseReceived, metadata: {
+        'responseSize': bytes.length,
+      });
+
+      // To maintain compatibility with older versions of WebF, which save Gzip content in caches, we should check the bytes
+      // and decode them if they are in gzip format.
+      if (isGzip(bytes)) {
+        bytes = Uint8List.fromList(gzip.decoder.convert(bytes));
+      }
+
+      if (bytes.isEmpty) {
+        await WebFBundle.invalidateCache(url);
+        return;
+      }
+
+      data = bytes.buffer.asUint8List();
+      _contentType = response.headers.contentType ?? ContentType.binary;
+
+      // Track completion
+      final responseHeaders = <String, String>{};
+      String? contentType;
+      response.headers.forEach((name, values) {
+        final headerValue = values.join(', ');
+        responseHeaders[name] = headerValue;
+        if (name.toLowerCase() == 'content-type') {
+          contentType = headerValue;
+        }
+      });
+
+      dumper?.recordNetworkRequestComplete(url,
+        statusCode: response.statusCode,
+        responseHeaders: responseHeaders,
+        contentType: contentType,
+      );
+    } on SocketException catch (e) {
+      final errText = 'SocketException: ${e.message}';
+      dumper?.recordNetworkRequestError(url, errText);
+      if (request != null) request.ownerBundle = null;
+      rethrow;
+    } on TimeoutException catch (e) {
+      final errText = 'TimeoutException: ${e.message ?? 'timeout'}';
+      dumper?.recordNetworkRequestError(url, errText);
+      if (request != null) request.ownerBundle = null;
+      rethrow;
+    } on HttpException catch (e) {
+      final errText = 'HttpException: ${e.message}';
+      dumper?.recordNetworkRequestError(url, errText);
+      if (request != null) request.ownerBundle = null;
+      rethrow;
+    } on TlsException catch (e) {
+      final errText = 'TlsException: ${e.message}';
+      dumper?.recordNetworkRequestError(url, errText);
+      if (request != null) request.ownerBundle = null;
+      rethrow;
+    } catch (e) {
+      final errText = e.toString();
+      dumper?.recordNetworkRequestError(url, errText);
+      if (request != null) request.ownerBundle = null;
+      rethrow;
+    }
   }
 }
 
