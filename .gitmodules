@@ -2,3 +2,6 @@
 	path = bridge/third_party/quickjs
 	url = git@github.com:openwebf/quickjs.git
     branch = feat/official_version
+[submodule "opensource"]
+	path = opensource
+	url = https://github.com/openwebf/webf
