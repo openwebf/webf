@@ -336,6 +336,12 @@ describe('Generator', () => {
         'export { Test, TestElement } from "./lib/src/html/test";\n' +
         'export { Component, ComponentElement } from "./lib/src/html/component";'
       );
+      // Ensure index.ts does not exist so it will be generated
+      mockFs.existsSync.mockImplementation((p: any) => {
+        const s = p.toString();
+        if (s.includes(path.join('/test/target', 'src', 'index.ts'))) return false;
+        return true;
+      });
       
       await reactGen({
         source: '/test/source',
@@ -356,6 +362,29 @@ describe('Generator', () => {
       expect(indexCall).toBeDefined();
       expect(indexCall![1]).toContain('export { Test, TestElement }');
       expect(indexCall![1]).toContain('export { Component, ComponentElement }');
+    });
+
+    it('should not overwrite user-managed index.ts', async () => {
+      // Existing index.ts that does not contain auto-generated marker
+      mockFs.existsSync.mockImplementation((p: any) => {
+        const s = p.toString();
+        if (s.includes(path.join('/test/target', 'src', 'index.ts'))) return true;
+        return true;
+      });
+      mockFs.readFileSync.mockImplementation((p: any) => {
+        const s = p.toString();
+        if (s.includes(path.join('/test/target', 'src', 'index.ts'))) return '// custom index file';
+        return 'test content';
+      });
+
+      await reactGen({
+        source: '/test/source',
+        target: '/test/target',
+        command: 'test command'
+      });
+
+      const indexWrite = mockFs.writeFileSync.mock.calls.find(call => call[0].toString().includes('index.ts'));
+      expect(indexWrite).toBeUndefined();
     });
   });
 
