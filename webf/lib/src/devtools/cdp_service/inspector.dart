@@ -98,8 +98,6 @@ class UIInspector {
     if (devtoolsService is ChromeDevToolsService) {
       ChromeDevToolsService.unifiedService.sendEventToFrontend(DOMUpdatedEvent());
     } else {
-      // Legacy path for old isolate-based service
-      devtoolsService.isolateServerPort?.send(DOMUpdatedEvent());
     }
   }
 

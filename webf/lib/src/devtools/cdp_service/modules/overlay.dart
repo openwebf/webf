@@ -39,7 +39,7 @@ class InspectOverlayModule extends UIInspectorModule {
       sendToFrontend(id, null);
       return;
     }
-    
+
     Element? element = view.getBindingObject<Element>(
         Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
 

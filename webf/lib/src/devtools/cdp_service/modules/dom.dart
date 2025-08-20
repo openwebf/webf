@@ -200,11 +200,11 @@ class InspectDOMModule extends UIInspectorModule {
       sendToFrontend(id, null);
     }
   }
-  
+
   void onRemoveNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    
+
     Node? node = view.getBindingObject<Node>(
         Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
     if (node != null && node.parentNode != null) {
@@ -212,19 +212,19 @@ class InspectDOMModule extends UIInspectorModule {
     }
     sendToFrontend(id, null);
   }
-  
+
   void onSetAttributesAsText(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     String? text = params['text'];
     if (nodeId == null) return;
-    
+
     Node? node = view.getBindingObject<Node>(
         Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
     if (node is Element && text != null) {
       // Parse attribute text (format: attr1="value1" attr2="value2")
       // For now, just clear and set new attributes
       node.attributes.clear();
-      
+
       // Simple parsing - this could be improved
       final regex = RegExp(r'(\w+)="([^"]*)"');
       for (final match in regex.allMatches(text)) {
@@ -237,22 +237,22 @@ class InspectDOMModule extends UIInspectorModule {
     }
     sendToFrontend(id, null);
   }
-  
+
   void onGetOuterHTML(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    
+
     Node? node = view.getBindingObject<Node>(
         Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
     if (node is Element) {
       // Generate outer HTML
       String outerHTML = '<${node.tagName.toLowerCase()}';
-      
+
       // Add attributes
       node.attributes.forEach((key, value) {
         outerHTML += ' $key="$value"';
       });
-      
+
       // Add children
       if (node.hasChildren()) {
         outerHTML += '>';
@@ -268,7 +268,7 @@ class InspectDOMModule extends UIInspectorModule {
       } else {
         outerHTML += '/>';
       }
-      
+
       sendToFrontend(id, JSONEncodableMap({
         'outerHTML': outerHTML,
       }));
@@ -278,12 +278,12 @@ class InspectDOMModule extends UIInspectorModule {
       }));
     }
   }
-  
+
   void onSetNodeValue(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     String? value = params['value'];
     if (nodeId == null) return;
-    
+
     Node? node = view.getBindingObject<Node>(
         Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
     if (node is TextNode && value != null) {
@@ -291,7 +291,7 @@ class InspectDOMModule extends UIInspectorModule {
     }
     sendToFrontend(id, null);
   }
-  
+
   void onPushNodesByBackendIdsToFrontend(int? id, Map<String, dynamic> params) {
     List? backendNodeIds = params['backendNodeIds'];
     if (backendNodeIds == null) {
@@ -300,7 +300,7 @@ class InspectDOMModule extends UIInspectorModule {
       }));
       return;
     }
-    
+
     List<int> nodeIds = [];
     for (var backendId in backendNodeIds) {
       if (backendId is int) {
@@ -310,16 +310,16 @@ class InspectDOMModule extends UIInspectorModule {
         }
       }
     }
-    
+
     sendToFrontend(id, JSONEncodableMap({
       'nodeIds': nodeIds,
     }));
   }
-  
+
   void onResolveNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     if (nodeId == null) return;
-    
+
     Node? node = view.getBindingObject<Node>(
         Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
     if (node != null) {

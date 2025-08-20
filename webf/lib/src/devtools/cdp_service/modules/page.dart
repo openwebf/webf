@@ -179,7 +179,9 @@ enum ResourceType {
 }
 
 class InspectPageModule extends UIInspectorModule {
-  Document get document => devtoolsService.controller!.view.document;
+  Document get document => (devtoolsService is ChromeDevToolsService)
+      ? ChromeDevToolsService.unifiedService.currentController!.view.document
+      : devtoolsService.controller!.view.document;
 
   InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
 
@@ -237,7 +239,8 @@ class InspectPageModule extends UIInspectorModule {
   double _cachedViewportHeight = 640;
 
   // Send a screencast frame to the frontend.
-  void _sendFrame(Uint8List bytes, Duration timeStamp, Element root, double deviceWidth, double deviceHeight) {
+  void _sendFrame(Uint8List bytes, Duration timeStamp, double offsetTop, double offsetLeft, double deviceWidth,
+      double deviceHeight) {
     final String encodedImage = base64Encode(bytes);
     _lastSentSessionID = timeStamp.inMilliseconds;
     final InspectorEvent event = PageScreenCastFrameEvent(
@@ -248,8 +251,8 @@ class InspectPageModule extends UIInspectorModule {
           1,
           deviceWidth,
           deviceHeight,
-          root.offsetLeft,
-          root.offsetTop,
+          offsetLeft,
+          offsetTop,
           timestamp: timeStamp.inMilliseconds,
         ),
         _lastSentSessionID!,
@@ -259,15 +262,27 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   // Generate and send a white PNG frame of the given viewport size.
-  Future<void> _sendWhiteFrame(Duration timeStamp, Element root, double deviceWidth, double deviceHeight) async {
+  Future<void> _sendWhiteFrame(Duration timeStamp, double offsetTop, double offsetLeft, double deviceWidth, double deviceHeight) async {
     final double dpr = document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0;
     final int imgW = (deviceWidth * dpr).round().clamp(1, 1000000);
     final int imgH = (deviceHeight * dpr).round().clamp(1, 1000000);
     final Uint8List blank = await _makeWhitePng(imgW, imgH);
-    _sendFrame(blank, timeStamp, root, deviceWidth, deviceHeight);
+    _sendFrame(blank, timeStamp, offsetTop, offsetLeft, deviceWidth, deviceHeight);
   }
 
   void _frameScreenCast(Duration timeStamp) {
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
+        : devtoolsService.controller;
+
+    final double deviceWidth = _cachedViewportWidth;
+    final double deviceHeight = _cachedViewportHeight;
+
+    if (controller == null || !controller.isComplete) {
+      _sendWhiteFrame(timeStamp, 0, 0, deviceWidth, deviceHeight);
+      return;
+    }
+
     Element root = document.documentElement!;
     // Find the current top-route viewport from the hybrid router.
     RenderViewportBox? routeViewport = root.getRootViewport();
@@ -278,14 +293,10 @@ class InspectPageModule extends UIInspectorModule {
 
     _cachedViewportWidth = viewportWidth ?? _cachedViewportWidth;
     _cachedViewportHeight = viewportHeight ?? _cachedViewportHeight;
-    final double deviceWidth = _cachedViewportWidth;
-    final double deviceHeight = _cachedViewportHeight;
 
     // When flutter is detached, stream a white blank frame until it reattaches.
-    if (!devtoolsService.controller!.isFlutterAttached ||
-        !devtoolsService.controller!.viewportLayoutCompleter.isCompleted ||
-        routeViewport == null) {
-      _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
+    if (!controller.isFlutterAttached || !controller.viewportLayoutCompleter.isCompleted || routeViewport == null) {
+      _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
       return;
     }
 
@@ -296,18 +307,16 @@ class InspectPageModule extends UIInspectorModule {
       devicePixelRatio = math.min(sx, sy);
       devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView!.devicePixelRatio);
     }
-    _captureViewportAsPng(routeViewport, devicePixelRatio)
-        .then((Uint8List bytes) {
-          if (!devtoolsService.controller!.isFlutterAttached) {
-            // Detached after capture started; send white frame instead.
-            return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
-          }
-          _sendFrame(bytes, timeStamp, root, deviceWidth, deviceHeight);
-        })
-        .catchError((error, stack) {
-          // If capturing failed, send a white frame to keep stream consistent.
-          return _sendWhiteFrame(timeStamp, root, deviceWidth, deviceHeight);
-        });
+    _captureViewportAsPng(routeViewport, devicePixelRatio).then((Uint8List bytes) {
+      if (!controller.isFlutterAttached) {
+        // Detached after capture started; send white frame instead.
+        return _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
+      }
+      _sendFrame(bytes, timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
+    }).catchError((error, stack) {
+      // If capturing failed, send a white frame to keep stream consistent.
+      return _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
+    });
   }
 
   Future<Uint8List> _makeWhitePng(int width, int height) async {
@@ -338,6 +347,23 @@ class InspectPageModule extends UIInspectorModule {
     _isFramingScreenCast = false;
   }
 
+  /// Gets whether screencast is currently active
+  bool get isScreencastActive => _isFramingScreenCast;
+
+  /// Transfers screencast state from another Page module (used during controller switch)
+  void transferScreencastState(InspectPageModule fromModule) {
+    if (fromModule._isFramingScreenCast) {
+      _isFramingScreenCast = true;
+      _devToolsMaxWidth = fromModule._devToolsMaxWidth;
+      _devToolsMaxHeight = fromModule._devToolsMaxHeight;
+      _lastSentSessionID = fromModule._lastSentSessionID;
+
+      // Start screencast on the new controller
+      SchedulerBinding.instance.addPostFrameCallback(_frameScreenCast);
+      SchedulerBinding.instance.scheduleFrame();
+    }
+  }
+
   /// Avoiding frame blocking, confirm frontend has ack last frame,
   /// and then send next frame.
   void handleScreencastFrameAck(Map<String, dynamic> params) {
@@ -348,8 +374,33 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   void handleGetFrameResourceTree(int? id, Map<String, dynamic> params) {
-    Frame frame = Frame('Frame Name', 'frame-id', '', '', '', '', '', '', []);
-    FrameResourceTree frameResourceTree = FrameResourceTree(frame, []);
+    print('[DevTools] Page.getResourceTree called');
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
+        : devtoolsService.controller;
+
+    final String url = controller?.url ?? '';
+    final uri = Uri.tryParse(url);
+    final scheme = uri?.scheme ?? '';
+    final host = uri?.host ?? '';
+    final port = (uri != null && uri.hasPort) ? uri.port : (scheme == 'https' ? 443 : scheme == 'http' ? 80 : 0);
+    final origin = (scheme.isNotEmpty && host.isNotEmpty)
+        ? '$scheme://$host${(scheme == 'http' && port == 80) || (scheme == 'https' && port == 443) || port == 0 ? '' : ':$port'}'
+        : '';
+
+    final frame = Frame(
+      'main_frame',
+      controller?.view.contextId.toString() ?? '',
+      url,
+      host,
+      origin,
+      'text/html',
+      scheme == 'https' ? 'Secure' : 'InsecureScheme',
+      'NotIsolated',
+      const <String>[],
+    );
+    final frameResourceTree = FrameResourceTree(frame, []);
+    print('[DevTools] Page.getResourceTree -> url=' + url + ' origin=' + origin + ' ctx=' + (controller?.view.contextId.toString() ?? ''));
     sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }

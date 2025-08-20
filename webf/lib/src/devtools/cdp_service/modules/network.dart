@@ -11,8 +11,8 @@ import 'package:dio/dio.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
-import 'package:webf/src/devtools/network_store.dart';
 import 'package:webf/src/foundation/dio_client.dart';
+import 'package:webf/src/devtools/panel/network_store.dart';
 
 class InspectNetworkModule extends UIInspectorModule {
   InspectNetworkModule(DevToolsService devtoolsService) : super(devtoolsService) {
@@ -55,6 +55,137 @@ class InspectNetworkModule extends UIInspectorModule {
   }
 
   @override
+  void onEnabled() {
+    // On Network.enable, replay past requests for this controller.
+    _replayPastRequests();
+  }
+
+  // Helper and state for HttpClient-originated requests (non-Dio)
+  int _httpRequestIdCounter = 0;
+  String _nextHttpRequestId() {
+    _httpRequestIdCounter++;
+    return 'http_${_httpRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  String _guessTypeFromPath(String path) {
+    if (path.endsWith('.js') || path.endsWith('.mjs')) return 'Script';
+    if (path.endsWith('.css')) return 'Stylesheet';
+    if (path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.svg') ||
+        path.endsWith('.ico')) {
+      return 'Image';
+    }
+    if (path.endsWith('.html') || path.endsWith('.htm') || path.endsWith('/')) return 'Document';
+    return 'Fetch';
+  }
+
+  Map<String, List<String>> _headersToMultiMap(Map<String, String>? headers) {
+    final map = <String, List<String>>{};
+    headers?.forEach((k, v) => map[k] = [v]);
+    return map;
+  }
+
+  /// Public API for non-Dio networking to report a request start to DevTools.
+  /// Returns a generated requestId to be used for subsequent events.
+  String reportHttpClientRequestStart({
+    required double contextId,
+    required Uri uri,
+    String method = 'GET',
+    Map<String, String>? headers,
+    List<int> data = const <int>[],
+  }) {
+    final requestId = _nextHttpRequestId();
+
+    // Track in NetworkStore so DevTools panel can render the row
+    final networkRequest = NetworkRequest(
+      requestId: requestId,
+      url: uri.toString(),
+      method: method,
+      requestHeaders: _headersToMultiMap(headers),
+      requestData: List<int>.from(data),
+      startTime: DateTime.now(),
+    );
+    NetworkStore().addRequest(contextId.toInt(), networkRequest);
+
+    // Emit CDP requestWillBeSent
+    sendEventToFrontend(NetworkRequestWillBeSentEvent(
+      requestId: requestId,
+      loaderId: contextId.toString(),
+      requestMethod: method,
+      url: uri.toString(),
+      headers: _headersToMultiMap(headers),
+      timestamp: (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
+      data: data,
+    ));
+
+    // Optionally emit extra info
+    final extraHeaders = <String, List<String>>{
+      ':authority': [uri.authority],
+      ':method': [method],
+      ':path': [uri.path],
+      ':scheme': [uri.scheme],
+    };
+    sendEventToFrontend(NetworkRequestWillBeSendExtraInfo(
+      associatedCookies: const [],
+      clientSecurityState: const {
+        'initiatorIsSecureContext': true,
+        'initiatorIPAddressSpace': 'Local',
+        'privateNetworkRequestPolicy': 'PreflightWarn'
+      },
+      connectTiming: {
+        'requestTime': (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000,
+      },
+      headers: {
+        ..._headersToMultiMap(headers),
+        ...extraHeaders,
+      },
+      siteHasCookieInOtherPartition: false,
+      requestId: requestId,
+    ));
+
+    return requestId;
+  }
+
+  /// Public API for non-Dio networking to report a request failure to DevTools.
+  void reportHttpClientLoadingFailed({
+    required String requestId,
+    required double contextId,
+    required Uri uri,
+    required String errorText,
+    bool canceled = false,
+  }) {
+    final timestamp = (DateTime.now().millisecondsSinceEpoch - _initialTimestamp) / 1000;
+    final type = _guessTypeFromPath(uri.path);
+
+    // Emit CDP loadingFailed
+    sendEventToFrontend(NetworkLoadingFailedEvent(
+      requestId: requestId,
+      timestamp: timestamp,
+      type: type,
+      errorText: errorText,
+      canceled: canceled,
+    ));
+
+    // Update NetworkStore for UI
+    NetworkStore().updateRequest(
+      requestId,
+      statusCode: 0,
+      statusText: errorText,
+      mimeType: 'text/plain',
+      responseBody: Uint8List(0),
+      endTime: DateTime.now(),
+      contentLength: 0,
+      fromCache: false,
+      remoteIPAddress: uri.host,
+      remotePort: uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80),
+    );
+  }
+
+  @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
     switch (method) {
       case 'setCacheDisabled':
@@ -69,13 +200,25 @@ class InspectNetworkModule extends UIInspectorModule {
       case 'getResponseBody':
         String requestId = params!['requestId'];
         Uint8List? buffer = _responseBuffers[requestId];
-        sendToFrontend(
-            id,
-            JSONEncodableMap({
-              if (buffer != null) 'body': utf8.decode(buffer),
-              // True, if content was sent as base64.
-              'base64Encoded': false,
-            }));
+        // Decide whether to return text or base64 based on MIME type
+        final req = NetworkStore().getRequestById(requestId);
+        final mime = req?.mimeType?.toLowerCase();
+        final isText = _isTextMimeType(mime);
+        String bodyStr = '';
+        bool base64 = false;
+        if (buffer != null) {
+          if (isText) {
+            bodyStr = utf8.decode(buffer, allowMalformed: true);
+            base64 = false;
+          } else {
+            bodyStr = base64Encode(buffer);
+            base64 = true;
+          }
+        }
+        sendToFrontend(id, JSONEncodableMap({
+          'body': bodyStr,
+          'base64Encoded': base64,
+        }));
         break;
 
       case 'setAttachDebugStack':
@@ -90,7 +233,105 @@ class InspectNetworkModule extends UIInspectorModule {
 
   // Legacy HttpClientInterceptor support has been removed. Network inspection now
   // relies on Dio interceptors when Dio networking is enabled.
+
+  void _replayPastRequests() {
+    final controller = devtoolsService.controller;
+    if (controller == null || !controller.isFlutterAttached) return;
+    final ctxId = controller.view.contextId.toInt();
+    final requests = List<NetworkRequest>.from(NetworkStore().getRequestsForContext(ctxId));
+    if (requests.isEmpty) return;
+
+    // Use earliest start as base for timestamps
+    final baseMs = requests.map((r) => r.startTime.millisecondsSinceEpoch).reduce((a, b) => a < b ? a : b);
+    requests.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    for (final req in requests) {
+      final requestId = req.requestId;
+      final loaderId = controller.view.contextId.toString();
+      final uri = Uri.tryParse(req.url);
+      if (uri == null) continue;
+
+      final tsStart = (req.startTime.millisecondsSinceEpoch - baseMs) / 1000;
+      final headers = req.requestHeaders;
+      final postData = req.requestData;
+
+      // Emit requestWillBeSent
+      sendEventToFrontend(NetworkRequestWillBeSentEvent(
+        requestId: requestId,
+        loaderId: loaderId,
+        requestMethod: req.method,
+        url: req.url,
+        headers: headers,
+        timestamp: tsStart,
+        data: postData,
+      ));
+
+      // If request completed, emit responseReceived/loadingFinished or loadingFailed
+      if (req.isComplete) {
+        final respBytes = _responseBuffers[requestId] ?? req.responseBody ?? Uint8List(0);
+        String mime = (req.mimeType ?? '').isNotEmpty ? req.mimeType! : 'text/plain';
+        if ((mime == 'text/plain' || mime == 'application/octet-stream') && respBytes.isNotEmpty) {
+          final sniff = _sniffImageMime(respBytes);
+          if (sniff != null) mime = sniff;
+        }
+
+        final type = mime.startsWith('image/') ? 'Image' : _guessTypeFromPath(uri.path);
+        final tsEnd = (req.endTime!.millisecondsSinceEpoch - baseMs) / 1000;
+
+        if (req.statusCode != null && req.statusCode != 0) {
+          // Treat as a completed HTTP response
+          final responseHeaders = req.responseHeaders ?? <String, List<String>>{};
+          sendEventToFrontend(NetworkResponseReceivedEvent(
+            requestId: requestId,
+            loaderId: loaderId,
+            url: req.url,
+            headers: responseHeaders,
+            status: req.statusCode!,
+            statusText: req.statusText ?? '',
+            mimeType: mime,
+            remoteIPAddress: uri.host,
+            remotePort: uri.hasPort ? uri.port : (uri.scheme == 'https' ? 443 : 80),
+            fromDiskCache: req.fromCache ?? false,
+            encodedDataLength: respBytes.length,
+            protocol: uri.scheme,
+            type: type,
+            timestamp: tsEnd,
+          ));
+
+          sendEventToFrontend(NetworkLoadingFinishedEvent(
+            requestId: requestId,
+            contentLength: respBytes.length,
+            timestamp: tsEnd,
+          ));
+        } else {
+          // Failure case
+          sendEventToFrontend(NetworkLoadingFailedEvent(
+            requestId: requestId,
+            timestamp: tsEnd,
+            type: type,
+            errorText: req.statusText ?? 'Request failed',
+            canceled: false,
+          ));
+        }
+      }
+    }
+  }
 }
+
+bool _isTextMimeType(String? mime) {
+  if (mime == null) return false;
+  if (mime.startsWith('text/')) return true;
+  return mime.contains('json') ||
+      mime.contains('+json') ||
+      mime.contains('xml') ||
+      mime.contains('+xml') ||
+      mime.contains('html') ||
+      mime.contains('javascript') ||
+      mime.contains('css') ||
+      mime.contains('csv') ||
+      mime.contains('urlencoded');
+}
+
 
 class _InspectDioInterceptor extends InterceptorsWrapper {
   _InspectDioInterceptor(this.module, this.contextId);
@@ -194,13 +435,23 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
     response.headers.forEach((k, v) => headersMap[k] = List<String>.from(v));
 
     final urlStr = options.uri.toString();
-    final mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+    String mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+    // Auto-detect common image types if content-type is missing or generic
+    if ((mimeType == 'text/plain' || mimeType == 'application/octet-stream' || mimeType.isEmpty) && bytes.isNotEmpty) {
+      final sniffed = _sniffImageMime(bytes);
+      if (sniffed != null) {
+        mimeType = sniffed;
+      }
+    }
     final remoteIp = options.uri.host; // Best effort; real IP not exposed by Dio
     final remotePort = options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80);
     final fromDiskCache = options.extra['webf_cache_hit'] == true;
     final encodedLen = bytes.length;
     final protocol = options.uri.scheme;
-    final type = _guessTypeFromPath(options.uri.path);
+    String type = _guessTypeFromPath(options.uri.path);
+    if (type == 'Fetch' && mimeType.startsWith('image/')) {
+      type = 'Image';
+    }
     final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
 
     module.sendEventToFrontend(NetworkResponseReceivedEvent(
@@ -249,10 +500,94 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    // For errors, we still want to mark the request as finished if we created an id
+    // For errors, still produce CDP events. Distinguish HTTP error responses vs. network failures.
     final options = err.requestOptions;
-    final requestId = options.extra[_kInspectorRequestId] as String?;
-    if (requestId != null) {
+    final requestId = (options.extra[_kInspectorRequestId] as String?) ?? module._nextDioRequestId();
+
+    if (err.type == DioExceptionType.badResponse && err.response != null) {
+      // HTTP error (4xx/5xx or others rejected by validateStatus): emit responseReceived + loadingFinished
+      final response = err.response!;
+      final headersMap = <String, List<String>>{};
+      response.headers.forEach((k, v) => headersMap[k] = List<String>.from(v));
+
+      // Convert body to bytes if present, for body retrieval and size reporting
+      Uint8List bytes;
+      final body = response.data;
+      if (body == null) {
+        bytes = Uint8List(0);
+      } else if (body is Uint8List) {
+        bytes = body;
+      } else if (body is List<int>) {
+        bytes = Uint8List.fromList(body);
+      } else if (body is String) {
+        bytes = Uint8List.fromList(utf8.encode(body));
+      } else {
+        // Best-effort JSON encoding
+        try {
+          bytes = Uint8List.fromList(utf8.encode(jsonEncode(body)));
+        } catch (_) {
+          bytes = Uint8List(0);
+        }
+      }
+
+      final urlStr = options.uri.toString();
+      String mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
+      if ((mimeType == 'text/plain' || mimeType == 'application/octet-stream' || mimeType.isEmpty) && bytes.isNotEmpty) {
+        final sniffed = _sniffImageMime(bytes);
+        if (sniffed != null) {
+          mimeType = sniffed;
+        }
+      }
+      final remoteIp = options.uri.host;
+      final remotePort = options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80);
+      final encodedLen = bytes.length;
+      final protocol = options.uri.scheme;
+      String type = _guessTypeFromPath(options.uri.path);
+      if (type == 'Fetch' && mimeType.startsWith('image/')) {
+        type = 'Image';
+      }
+      final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
+
+      module.sendEventToFrontend(NetworkResponseReceivedEvent(
+        requestId: requestId,
+        loaderId: contextId.toString(),
+        url: urlStr,
+        headers: headersMap,
+        status: response.statusCode ?? 0,
+        statusText: response.statusMessage ?? '',
+        mimeType: mimeType,
+        remoteIPAddress: remoteIp,
+        remotePort: remotePort,
+        fromDiskCache: false,
+        encodedDataLength: encodedLen,
+        protocol: protocol,
+        type: type,
+        timestamp: timestamp,
+      ));
+
+      module.sendEventToFrontend(NetworkLoadingFinishedEvent(
+        requestId: requestId,
+        contentLength: encodedLen,
+        timestamp: timestamp,
+      ));
+
+      // Store response body for getResponseBody and update NetworkStore
+      module._responseBuffers[requestId] = bytes;
+      NetworkStore().updateRequest(
+        requestId,
+        responseHeaders: headersMap,
+        statusCode: response.statusCode ?? 0,
+        statusText: response.statusMessage ?? '',
+        mimeType: mimeType,
+        responseBody: bytes,
+        endTime: DateTime.now(),
+        contentLength: encodedLen,
+        fromCache: false,
+        remoteIPAddress: remoteIp,
+        remotePort: remotePort,
+      );
+    } else {
+      // Real network failure (DNS, timeout, cancel, etc.): emit loadingFailed
       final timestamp = (DateTime.now().millisecondsSinceEpoch - module._initialTimestamp) / 1000;
       final type = _guessTypeFromPath(options.uri.path);
       final errorText = err.message ?? err.error?.toString() ?? 'Request failed';
@@ -263,9 +598,44 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
         errorText: errorText,
         canceled: err.type == DioExceptionType.cancel,
       ));
+
+      // Update NetworkStore minimal info
+      NetworkStore().updateRequest(
+        requestId,
+        statusCode: 0,
+        statusText: errorText,
+        mimeType: 'text/plain',
+        responseBody: Uint8List(0),
+        endTime: DateTime.now(),
+        contentLength: 0,
+        fromCache: false,
+        remoteIPAddress: options.uri.host,
+        remotePort: options.uri.hasPort ? options.uri.port : (options.uri.scheme == 'https' ? 443 : 80),
+      );
     }
+
     handler.next(err);
   }
+}
+
+// Sniff common image binary signatures (PNG, JPEG) for better DevTools previews.
+String? _sniffImageMime(Uint8List bytes) {
+  if (bytes.length >= 8) {
+    // PNG signature: 89 50 4E 47 0D 0A 1A 0A
+    const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    bool isPng = true;
+    for (int i = 0; i < pngSig.length; i++) {
+      if (bytes[i] != pngSig[i]) { isPng = false; break; }
+    }
+    if (isPng) return 'image/png';
+  }
+  if (bytes.length >= 3) {
+    // JPEG signature: FF D8 FF
+    if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+      return 'image/jpeg';
+    }
+  }
+  return null;
 }
 
 class NetworkRequestWillBeSentEvent extends InspectorEvent {
