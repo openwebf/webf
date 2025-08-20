@@ -1,0 +1,27 @@
+.list {
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f9fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.combinedShape {
+  background: linear-gradient(to right, rgb(255,53,26), rgb(0,235,235));
+  border-radius: 0 50% 0 0;
+  box-shadow: 3px 5px 5px black;
+  border-left: 2px rgb(0,235,235) dotted;
+  border-top: 2px rgb(255,53,26) dashed;
+  width: 150px;
+  height: 150px;
+}

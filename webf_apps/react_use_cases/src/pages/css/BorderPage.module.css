@@ -1,0 +1,43 @@
+.list {
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f9fa;
+}
+
+.fixedArea {
+  height: 480px;
+  flex-direction: column;
+}
+
+.head {
+  justify-content: space-around;
+  font-size: 1.5em;
+}
+
+.text {
+  font-size: 0.8em;
+}
+
+.row {
+  justify-content: space-around;
+  margin-top: 5px;
+  display: flex;
+}
+
+.box {
+  width: 160px;
+  height: 50px;
+  margin: 0px 5px;
+  background: yellow;
+}
+
+.radiusStyle0 {
+  border-radius: 15px;
+}
+
+.radiusStyle1 {
+  border-top-right-radius: 0px;
+  border-top-left-radius: 10px 30px;
+  border-bottom-right-radius: 60px;
+  border-bottom-left-radius: 35px;
+}
