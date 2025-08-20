@@ -6,6 +6,7 @@
 import 'package:flutter/material.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/css.dart';
 import 'package:webf/dom.dart' as dom;
 
 const String FLUTTER_GESTURE_DETECTOR = 'FLUTTER-GESTURE-DETECTOR';
@@ -13,6 +14,11 @@ const String FLUTTER_GESTURE_DETECTOR = 'FLUTTER-GESTURE-DETECTOR';
 // Custom gesture detector element
 class FlutterGestureDetector extends WidgetElement {
   FlutterGestureDetector(super.context);
+
+  @override
+  Map<String, dynamic> get defaultStyle => {
+    DISPLAY: BLOCK
+  };
 
   @override
   FlutterGestureDetectorState createState() => FlutterGestureDetectorState(this);
@@ -163,11 +169,7 @@ class FlutterGestureDetectorState extends WebFWidgetElementState {
       },
 
       child: WebFWidgetElementChild(
-          child: WebFHTMLElement(
-              tagName: 'DIV',
-              controller: widgetElement.controller,
-              parentElement: widgetElement,
-              children: widgetElement.childNodes.toWidgetList())),
+          child: widgetElement.firstChild != null ? widgetElement.firstChild!.toWidget() : SizedBox.shrink()),
     );
   }
 }

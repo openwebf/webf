@@ -288,8 +288,7 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
       return SizedBox.shrink();
     }
 
-    Widget child = WebFEventListener(
-        ownerElement: widgetElement, child: WebFWidgetElement(widgetElement), hasEvent: widgetElement.hasEvent);
+    Widget child = WebFWidgetElement(widgetElement);
 
     List<Widget> children = [child];
 
@@ -297,7 +296,10 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
       children.add(element.toWidget());
     });
 
-    return WebFRenderWidgetAdaptor(widgetElement, children: children, key: widgetElement.key);
+    return WebFEventListener(
+        ownerElement: widgetElement,
+        hasEvent: widgetElement.hasEvent,
+        child: WebFRenderWidgetAdaptor(widgetElement, key: widgetElement.key, children: children));
   }
 }
 
@@ -345,7 +347,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
     ModalRoute? route = ModalRoute.of(this);
     _currentRouteSettings = route?.settings;
-    dom.OnScreenEvent event = dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '/');
+    dom.OnScreenEvent event =
+        dom.OnScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '/');
 
     WidgetElement widgetElement = widget.widgetElement;
     // Use the queue system if the element has the mixin
@@ -354,7 +357,8 @@ class RenderWidgetElement extends MultiChildRenderObjectElement {
 
   @override
   void unmount() {
-    dom.OffScreenEvent event = dom.OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
+    dom.OffScreenEvent event =
+        dom.OffScreenEvent(state: _currentRouteSettings?.arguments, path: _currentRouteSettings?.name ?? '');
     dom.Element widgetElement = widget.widgetElement;
 
     // Use the queue system if the element has the mixin
