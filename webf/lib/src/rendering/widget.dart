@@ -35,6 +35,11 @@ class RenderWidget extends RenderBoxModel
   }
 
   void _layoutChild(RenderBox child) {
+    // Ensure logical content sizes are computed from CSS before deriving constraints
+    // so that explicit width/height (e.g. h-8) can be honored.
+    renderStyle.computeContentBoxLogicalWidth();
+    renderStyle.computeContentBoxLogicalHeight();
+
     // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
     // the viewportSize, as same as the MaterialApp does.
     Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
@@ -47,6 +52,21 @@ class RenderWidget extends RenderBoxModel
         maxHeight: contentConstraints!.hasTightHeight
             ? contentConstraints!.maxHeight
             : math.min(viewportSize.height, contentConstraints!.maxHeight));
+
+    // If an explicit CSS height is specified (non-auto), tighten the child's
+    // constraints on the cross axis to that used content height, clamped
+    // within our content constraints. This makes classes like `h-8` take effect
+    // for RenderWidget containers within flex/flow contexts.
+    // Note: contentBoxLogicalHeight is the content-box height (excluding padding/border).
+    if (renderStyle.height.isNotAuto) {
+      final double? logicalContentHeight = renderStyle.contentBoxLogicalHeight;
+      if (logicalContentHeight != null && logicalContentHeight.isFinite) {
+        // Clamp to the available content constraints to avoid exceeding parent limits.
+        final double clampedHeight = logicalContentHeight
+            .clamp(contentConstraints!.minHeight, contentConstraints!.maxHeight);
+        childConstraints = childConstraints.tighten(height: clampedHeight);
+      }
+    }
 
     child.layout(childConstraints, parentUsesSize: true);
 
@@ -181,7 +201,7 @@ class RenderWidget extends RenderBoxModel
         return;
       }
     }
-    
+
     // Default behavior: paint with box model
     paintBoxModel(context, offset);
   }
