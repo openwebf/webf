@@ -210,6 +210,25 @@ class RenderFlowLayout extends RenderLayoutBox {
         _doPerformLayout();
         needsRelayout = false;
       }
+      
+      // Special handling for inline-block with percentage children
+      // May need additional layout pass to resolve circular dependencies
+      if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && 
+          renderStyle.width.isAuto) {
+        bool hasPercentageChildren = false;
+        visitChildren((child) {
+          if (child is RenderBoxModel && child.renderStyle.width.isPercentage) {
+            hasPercentageChildren = true;
+          }
+        });
+        
+        if (hasPercentageChildren && !needsRelayout) {
+          // Force one more layout pass to ensure percentage children
+          // are properly sized after container shrink-wraps
+          _doPerformLayout();
+        }
+      }
+      
       doingThisLayout = false;
     } catch (e, stack) {
       if (!kReleaseMode) {
@@ -725,6 +744,59 @@ class RenderFlowLayout extends RenderLayoutBox {
           contentConstraints.maxWidth != double.infinity &&
           contentConstraints.maxWidth > contentWidth) {
         contentWidth = contentConstraints.maxWidth;
+      }
+    }
+    
+    // Special handling for inline-block with auto width
+    // Ensure proper shrink-wrap behavior when children have percentage widths
+    if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto) {
+      // For inline-block containers, we need to compute the intrinsic width
+      // based on non-percentage children to avoid circular dependency
+      
+      double intrinsicWidth = 0;
+      bool hasPercentageChildren = false;
+      
+      visitChildren((child) {
+        if (child is RenderBoxModel) {
+          if (child.renderStyle.width.isPercentage) {
+            hasPercentageChildren = true;
+          } else {
+            // For non-percentage children, get their natural width
+            if (child is RenderBoxModel) {
+              // Use the child's specified width if available
+              if (child.renderStyle.width.isNotAuto) {
+                double childWidth = child.renderStyle.width.computedValue;
+                intrinsicWidth = math.max(intrinsicWidth, childWidth);
+              } else {
+                // For replaced elements or elements with natural size
+                if (child.renderStyle.isSelfRenderReplaced()) {
+                  // For images and other replaced elements, use their natural/specified size
+                  double? naturalWidth = child.renderStyle.width.isNotAuto ? 
+                    child.renderStyle.width.computedValue : null;
+                  if (naturalWidth != null) {
+                    intrinsicWidth = math.max(intrinsicWidth, naturalWidth);
+                  } else {
+                    // Use constraint width for replaced elements without specified width
+                    // But limit to reasonable sizes
+                    double constraintWidth = math.min(child.constraints.maxWidth, 300);
+                    if (constraintWidth != double.infinity && constraintWidth > 0) {
+                      intrinsicWidth = math.max(intrinsicWidth, constraintWidth);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      // If we have percentage children and found intrinsic width from non-percentage children,
+      // use that as the container width instead of the expanded width
+      if (hasPercentageChildren && intrinsicWidth > 0) {
+        contentWidth = intrinsicWidth + adjustWidth;
+      } else {
+        // Fallback to the calculated width from line boxes
+        contentWidth = runMaxMainSize + adjustWidth;
       }
     }
 

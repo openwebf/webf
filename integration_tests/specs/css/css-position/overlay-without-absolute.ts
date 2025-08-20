@@ -1,4 +1,83 @@
-fdescribe('Overlay behavior without absolute positioning', () => {
+describe('Overlay behavior without absolute positioning', () => {
+  it('overlay without position absolute container inline-block', async done => {
+    const app = document.createElement('div');
+    app.style.textAlign = 'center';
+    
+    const container = document.createElement('div');
+    container.id = 'container';
+    container.style.position = 'relative';
+    container.style.backgroundColor = '#3b82f6';
+    container.style.display = 'inline-block';
+    
+    const image = document.createElement('img');
+    image.id = 'image';
+    image.style.border = '1px solid #e5e7eb';
+    image.style.maxWidth = '299px';
+    image.style.maxHeight = '160px';
+    image.style.width = 'auto';
+    image.style.height = 'auto';
+    image.style.objectFit = 'contain';
+    image.style.borderRadius = '0.5rem';
+    image.style.display = 'block';
+    image.src = 'assets/100x100-green.png';
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'div1';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    // NO position: absolute
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.border = '1px solid #ef4444';
+    overlay.style.backgroundColor = 'rgba(255, 255, 0, 0.3)'; // Semi-transparent yellow
+    
+    const span = document.createElement('span');
+    span.id = 'span';
+    span.style.border = '1px solid #22c55e';
+    span.textContent = '1Icon';
+    
+    app.appendChild(container);
+    container.appendChild(image);
+    container.appendChild(overlay);
+    overlay.appendChild(span);
+    document.body.appendChild(app);
+    
+    image.onload = async () => {
+      await snapshot();
+      
+      console.log('=== Without position:absolute ===');
+      console.log('Container:', {
+        left: container.offsetLeft,
+        top: container.offsetTop,
+        width: container.offsetWidth,
+        height: container.offsetHeight,
+        display: getComputedStyle(container).display
+      });
+      console.log('Image:', {
+        left: image.offsetLeft,
+        top: image.offsetTop,
+        width: image.offsetWidth,
+        height: image.offsetHeight
+      });
+      console.log('Overlay (div1):', {
+        left: overlay.offsetLeft,
+        top: overlay.offsetTop,
+        width: overlay.offsetWidth,
+        height: overlay.offsetHeight,
+        position: getComputedStyle(overlay).position,
+        display: getComputedStyle(overlay).display
+      });
+      console.log('Span:', {
+        left: span.offsetLeft,
+        top: span.offsetTop,
+        width: span.offsetWidth,
+        height: span.offsetHeight
+      });    
+      done();
+    };
+  });
+
   it('overlay without position absolute', async done => {
     const app = document.createElement('div');
     app.style.textAlign = 'center';

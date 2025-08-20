@@ -399,6 +399,12 @@ class ImageElement extends Element {
     } else {
       renderStyle.aspectRatio = naturalWidth / naturalHeight;
     }
+    
+    // Force a relayout when image dimensions are available
+    // This ensures the replaced element layout can use the new intrinsic dimensions
+    if (naturalWidth > 0 && naturalHeight > 0) {
+      renderStyle.markNeedsLayout();
+    }
   }
 
   @override
