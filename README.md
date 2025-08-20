@@ -9,8 +9,7 @@
 <a href="https://openwebf.com" alt="openwebf-site">OpenWebF</a>
 </h1>
 <p align="center">
-  <b>Build flutter apps with HTML/CSS and JavaScript.</b><br/>
-  Building Flutter apps that are friendly to web developers
+  <b>Glue everything between Web, Flutter and Native</b><br/>
 </p>
 <p align="center">
   <a href="https://openwebf.com/docs/tutorials/getting-started/quick-start">
