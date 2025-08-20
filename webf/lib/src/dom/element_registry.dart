@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'package:webf/dom.dart';
+import 'package:webf/gesture.dart';
 import 'package:webf/html.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/src/html/table_cell.dart';
@@ -224,6 +225,7 @@ void defineBuiltInElements() {
   defineWidgetElement(WEBF_TABLE_HEADER, (context) => WebFTableHeader(context));
   defineWidgetElement(WEBF_TABLE_CELL, (context) => WebFTableCell(context));
   defineWidgetElement(WEBF_TABLE_ROW, (context) => WebFTableRow(context));
+  defineWidgetElement(FLUTTER_GESTURE_DETECTOR, (context) => FlutterGestureDetector(context));
 
   //
   // Gesture Elements

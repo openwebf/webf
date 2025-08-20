@@ -257,7 +257,7 @@ abstract class ContainerNode extends Node {
     assert(oldChild.parentNode == this);
 
     if (nextChild != null) {
-      nextChild..previousSibling = previousChild;
+      nextChild.previousSibling = previousChild;
     }
     if (previousChild != null) {
       previousChild.nextSibling = nextChild;
