@@ -1089,9 +1089,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Determine min/max along the main axis
         double? minMain;
         double? maxMain;
-        double paddingBorderMain = _isHorizontalFlexDirection
-            ? (cs.paddingLeft.computedValue + cs.paddingRight.computedValue + cs.border.left + cs.border.right)
-            : (cs.paddingTop.computedValue + cs.paddingBottom.computedValue + cs.border.top + cs.border.bottom);
         if (_isHorizontalFlexDirection) {
           if (cs.minWidth.isNotAuto) minMain = cs.minWidth.computedValue;
           if (!cs.maxWidth.isNone) maxMain = cs.maxWidth.computedValue;
@@ -1100,18 +1097,15 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (!cs.maxHeight.isNone) maxMain = cs.maxHeight.computedValue;
         }
 
-        // Convert content-box limits to border-box to match intrinsicMain units
-        double? maxBorderBoxMain = maxMain != null && maxMain.isFinite ? (maxMain + paddingBorderMain) : null;
-        double? minBorderBoxMain = minMain != null && minMain.isFinite ? (minMain + paddingBorderMain) : null;
-
-        double beforeClamp = intrinsicMain;
-        if (maxBorderBoxMain != null && intrinsicMain > maxBorderBoxMain) {
-          intrinsicMain = maxBorderBoxMain;
+        // intrinsicMain is the border-box main size. In WebF (border-box model),
+        // min-width/max-width are already specified for the border box. Do not
+        // add padding/border again when clamping.
+        if (maxMain != null && maxMain.isFinite && intrinsicMain > maxMain) {
+          intrinsicMain = maxMain;
         }
-        if (minBorderBoxMain != null && intrinsicMain < minBorderBoxMain) {
-          intrinsicMain = minBorderBoxMain;
+        if (minMain != null && minMain.isFinite && intrinsicMain < minMain) {
+          intrinsicMain = minMain;
         }
-        
       }
 
       // If a flex item has percentage max-size and is truly empty, its base size should be
