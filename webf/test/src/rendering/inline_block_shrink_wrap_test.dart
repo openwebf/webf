@@ -92,7 +92,7 @@ void main() {
       );
 
       final container = prepared.getElementById('container');
-      final image = prepared.getElementById('image');  
+      final image = prepared.getElementById('image');
       final overlay = prepared.getElementById('overlay');
 
       print('=== Absolutely Positioned Overlay ===');
@@ -103,7 +103,7 @@ void main() {
       // Container should shrink-wrap to image size
       expect(container.offsetWidth, closeTo(100, 5),
         reason: 'Container width (${container.offsetWidth}) should shrink-wrap to image width (~100px)');
-      
+
       // Image should maintain its specified size
       expect(image.offsetWidth, equals(100.0));
       expect(image.offsetHeight, equals(100.0));
@@ -139,13 +139,13 @@ void main() {
 
       print('=== Static Positioned Overlay ===');
       print('Container: ${container.offsetWidth}px wide');
-      print('Image: ${image.offsetWidth}px wide'); 
+      print('Image: ${image.offsetWidth}px wide');
       print('Overlay: ${overlay.offsetWidth}px wide');
 
       // Container should shrink-wrap to image size (this is what we're testing)
       expect(container.offsetWidth, closeTo(100, 5),
         reason: 'Container width (${container.offsetWidth}) should shrink-wrap to image width (~100px)');
-      
+
       // Image should maintain its specified size
       expect(image.offsetWidth, equals(100.0));
       expect(image.offsetHeight, equals(100.0));

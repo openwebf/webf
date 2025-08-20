@@ -329,7 +329,7 @@ class ImageElement extends Element {
 
   int get height {
     // Height calc priority: style > attr > intrinsic.
-    // When CSS height is 'auto', _styleHeight returns null, so we fall back to intrinsic sizing  
+    // When CSS height is 'auto', _styleHeight returns null, so we fall back to intrinsic sizing
     final double borderBoxHeight = _styleHeight ?? _attrHeight ?? (naturalHeight > 0 ? naturalHeight.toDouble() : renderStyle.getHeightByAspectRatio());
     return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
@@ -400,8 +400,8 @@ class ImageElement extends Element {
       // The intrinsic width of the image in pixels. Must be an integer without a unit.
       renderStyle.width = CSSLengthValue(_attrWidth, CSSLengthType.PX);
     }
-    
-    // Check if CSS height is explicitly 'auto' - if so, don't use HTML height attribute  
+
+    // Check if CSS height is explicitly 'auto' - if so, don't use HTML height attribute
     String cssHeight = style.getPropertyValue(HEIGHT);
     if (_styleHeight == null && _attrHeight != null && cssHeight != 'auto') {
       // The intrinsic height of the image, in pixels. Must be an integer without a unit.

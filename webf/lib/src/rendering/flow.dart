@@ -210,10 +210,10 @@ class RenderFlowLayout extends RenderLayoutBox {
         _doPerformLayout();
         needsRelayout = false;
       }
-      
+
       // Special handling for inline-block with percentage children
       // May need additional layout pass to resolve circular dependencies
-      if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && 
+      if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
           renderStyle.width.isAuto) {
         bool hasPercentageChildren = false;
         visitChildren((child) {
@@ -221,14 +221,14 @@ class RenderFlowLayout extends RenderLayoutBox {
             hasPercentageChildren = true;
           }
         });
-        
+
         if (hasPercentageChildren && !needsRelayout) {
           // Force one more layout pass to ensure percentage children
           // are properly sized after container shrink-wraps
           _doPerformLayout();
         }
       }
-      
+
       doingThisLayout = false;
     } catch (e, stack) {
       if (!kReleaseMode) {
@@ -728,34 +728,34 @@ class RenderFlowLayout extends RenderLayoutBox {
     // For block elements with max-width style and inline content that wraps,
     // use the constraint width rather than shrinking to content width
     double contentWidth = runMaxMainSize + adjustWidth;
-    
+
     // Check if this is a block element with max-width style applied
     // Only apply this fix when max-width is explicitly set in styles AND
     // content has wrapped to multiple lines (indicating width constraint was reached) AND
     // white-space allows wrapping (not nowrap)
-    if (renderStyle.effectiveDisplay == CSSDisplay.block && 
+    if (renderStyle.effectiveDisplay == CSSDisplay.block &&
         renderStyle.maxWidth.isNotNone &&
         lineBoxes.lines.length > 1 &&
         renderStyle.whiteSpace != WhiteSpace.nowrap &&
         contentWidth < constraints.maxWidth) {
       // Use the constraint width which comes from max-width style
       BoxConstraints? contentConstraints = renderStyle.contentConstraints();
-      if (contentConstraints != null && 
+      if (contentConstraints != null &&
           contentConstraints.maxWidth != double.infinity &&
           contentConstraints.maxWidth > contentWidth) {
         contentWidth = contentConstraints.maxWidth;
       }
     }
-    
+
     // Special handling for inline-block with auto width
     // Ensure proper shrink-wrap behavior when children have percentage widths
     if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto) {
       // For inline-block containers, we need to compute the intrinsic width
       // based on non-percentage children to avoid circular dependency
-      
+
       double intrinsicWidth = 0;
       bool hasPercentageChildren = false;
-      
+
       visitChildren((child) {
         if (child is RenderBoxModel) {
           if (child.renderStyle.width.isPercentage) {
@@ -771,7 +771,7 @@ class RenderFlowLayout extends RenderLayoutBox {
                 // For replaced elements or elements with natural size
                 if (child.renderStyle.isSelfRenderReplaced()) {
                   // For images and other replaced elements, use their natural/specified size
-                  double? naturalWidth = child.renderStyle.width.isNotAuto ? 
+                  double? naturalWidth = child.renderStyle.width.isNotAuto ?
                     child.renderStyle.width.computedValue : null;
                   if (naturalWidth != null) {
                     intrinsicWidth = math.max(intrinsicWidth, naturalWidth);
@@ -795,7 +795,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           }
         }
       });
-      
+
       // If we have percentage children and found intrinsic width from non-percentage children,
       // use that as the container width instead of the expanded width
       if (hasPercentageChildren && intrinsicWidth > 0) {

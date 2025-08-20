@@ -218,10 +218,10 @@ void main() {
         bundle: WebFBundle.fromContent('''
           <html>
             <body style="margin: 0; padding: 0;">
-              <img id="testImage" 
+              <img id="testImage"
                    src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAMAAAACCAYAAACddGYaAAAADklEQVQIW2NkYGD4DwABAgEAHl6rxgAAAABJRU5ErkJggg=="
-                   width="100" 
-                   height="100" 
+                   width="100"
+                   height="100"
                    style="width: auto;" />
             </body>
           </html>
@@ -256,7 +256,7 @@ void main() {
       await tester.pump(Duration(milliseconds: 100));
       retries++;
     }
-    
+
     // Log actual values for debugging
     print('Image natural dimensions: ${imageElement.naturalWidth}x${imageElement.naturalHeight}');
     print('Image rendered dimensions: ${image.offsetWidth}x${image.offsetHeight}');
@@ -268,11 +268,11 @@ void main() {
     // Since we're using a 3x2 pixel image, it should NOT be 100x100
     expect(image.offsetWidth, isNot(equals(100.0)),
       reason: 'Image width should not be 100 when CSS width is auto');
-    
+
     // The image should use its natural width (3px)
     expect(image.offsetWidth, equals(3.0),
       reason: 'Image should use its natural width of 3px when CSS width is auto');
-    
+
     // Height should scale proportionally based on natural aspect ratio
     expect(image.offsetHeight, equals(2.0),
       reason: 'Image should use its natural height of 2px when CSS width is auto');
