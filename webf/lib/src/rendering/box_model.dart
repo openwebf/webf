@@ -1614,7 +1614,7 @@ class RenderBoxModel extends RenderBox
     if (viewport == null || !viewport.hasSize) return 0;
 
     // Get the element's position relative to viewport
-    Offset elementOffset = getOffsetToRenderObjectAncestor(Offset.zero, viewport);
+    Offset elementOffset = localToGlobal(Offset.zero, ancestor: viewport);
 
     // Get element and viewport bounds
     Rect elementBounds = elementOffset & size;
