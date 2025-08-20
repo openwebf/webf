@@ -1,0 +1,158 @@
+/* Action Sheet page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.actionContainer {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+/* Guidelines styles */
+.guidelinesContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.guideline {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: flex-start;
+}
+
+.guideline:last-child {
+  margin-bottom: 0;
+}
+
+.guidelineIcon {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.guidelineContent {
+  flex: 1;
+}
+
+.guidelineTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 4px;
+}
+
+.guidelineText {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .componentSection {
+    padding: 16px;
+  }
+
+  .actionContainer {
+    padding: 16px;
+  }
+
+  .guideline {
+    gap: 12px;
+  }
+
+  .guidelineIcon {
+    font-size: 18px;
+    width: 20px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .sectionTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .actionContainer,
+  .guidelinesContainer {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .guidelineTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .guidelineText {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+}

@@ -1,0 +1,73 @@
+.list {
+  padding: 10px 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--background-primary);
+}
+
+.componentSection {
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--font-color-primary);
+  margin-bottom: 16px;
+}
+
+.componentBlock {
+  background-color: var(--background-secondary);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.componentItem {
+  margin-bottom: 24px;
+}
+
+.componentItem:last-child {
+  margin-bottom: 0;
+}
+
+.itemLabel {
+  font-size: 14px;
+  color: var(--font-color-secondary);
+  margin-bottom: 12px;
+}
+
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--font-color-primary);
+}
+
+.menuContainer {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.previewBox {
+  width: 120px;
+  height: 120px;
+  background-color: var(--background-primary);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  user-select: none;
+}
+
+.previewText {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--font-color-primary);
+  text-align: center;
+}

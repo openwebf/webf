@@ -1,0 +1,223 @@
+/* ResizeObserver page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  min-height: 100vh;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+  margin-bottom: 100px;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.componentBlock > * {
+  margin-bottom: 32px;
+}
+
+.componentBlock > *:last-child {
+  margin-bottom: 0;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Resizeable Container */
+.resizeableContainer {
+  position: relative;
+  min-width: 200px;
+  min-height: 150px;
+  width: 300px;
+  height: 200px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  resize: both;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 20px;
+}
+
+.resizeHandle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: se-resize;
+}
+
+.resizeHandle::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 8px 8px;
+  border-color: transparent transparent rgba(255, 255, 255, 0.7) transparent;
+}
+
+.containerContent {
+  text-align: center;
+  padding: 20px;
+}
+
+.dynamicText {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.aspectRatio {
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+/* Resizeable Textarea */
+.resizeableTextarea {
+  width: 100%;
+  min-height: 120px;
+  max-height: 400px;
+  resize: both;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+  background: #fafafa;
+}
+
+.resizeableTextarea:focus {
+  outline: none;
+  border-color: #2196F3;
+  background: white;
+}
+
+/* Size Details */
+.sizeDetails {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.sizeTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 12px;
+}
+
+.sizeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.sizeGrid .sizeItem {
+  margin: 6px;
+}
+
+.sizeItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.sizeLabel {
+  font-size: 13px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.sizeValue {
+  font-size: 13px;
+  color: #495057;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* Activity Log */
+.activityLog {
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.logEntry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 13px;
+}
+
+.logEntry:last-child {
+  border-bottom: none;
+}
+
+.logTime {
+  color: #6c757d;
+  font-family: 'Courier New', monospace;
+  min-width: 80px;
+}
+
+.logMessage {
+  color: #495057;
+  font-weight: 500;
+}
+
+.logEmpty {
+  text-align: center;
+  color: #adb5bd;
+  font-style: italic;
+  padding: 20px;
+}

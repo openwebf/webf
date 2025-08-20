@@ -1,0 +1,283 @@
+.pageContainer {
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  min-height: 100vh;
+}
+
+.pageTitle {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #333;
+}
+
+.gestureSection {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  box-sizing: border-box;
+}
+
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #495057;
+}
+
+.gestureDescription {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.gestureDemo {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.gestureArea {
+  flex: 1;
+  min-width: 300px;
+  min-height: 180px;
+  max-width: 100%;
+  background: #ffffff;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.gestureArea:hover {
+  border-color: #007bff;
+  background: #f8f9ff;
+}
+
+.gestureArea.active {
+  border-color: #28a745;
+  background: #f0fff4;
+  border-style: solid;
+}
+
+.gestureTarget {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.gestureTarget.dragging {
+  cursor: grabbing;
+  box-shadow: 0 8px 16px rgba(0, 123, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.gestureTarget.scaled {
+  transition: transform 0.3s ease;
+}
+
+.gestureTarget.rotated {
+  transition: transform 0.3s ease;
+}
+
+.gestureTarget.longPressed {
+  animation: pulse 0.5s ease-in-out;
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.gestureStatus {
+  flex: 1;
+  min-width: 280px;
+  max-width: 100%;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.statusItem {
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.statusLabel {
+  font-weight: 600;
+  color: #495057;
+}
+
+.statusValue {
+  color: #007bff;
+  font-weight: 500;
+}
+
+.swipeArea {
+  min-height: 140px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #5a67d8;
+}
+
+.swipeIndicator {
+  position: absolute;
+  font-size: 48px;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.swipeIndicator.show {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.swipeIndicator.up {
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.swipeIndicator.down {
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.swipeIndicator.left {
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.swipeIndicator.right {
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.resetButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-top: 15px; 
+  margin-bottom: 20px;
+}
+
+.resetButton:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pageContainer {
+    padding: 12px;
+  }
+  
+  .gestureSection {
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .gestureDemo {
+    flex-direction: column;
+  }
+  
+  .gestureArea {
+    min-width: 100%;
+    min-height: 150px;
+  }
+  
+  .gestureStatus {
+    min-width: 100%;
+  }
+  
+  .gestureTarget {
+    width: 60px;
+    height: 60px;
+    font-size: 18px;
+  }
+  
+  .swipeArea {
+    min-height: 120px;
+    font-size: 14px;
+  }
+  
+  .instructionsSection {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageContainer {
+    padding: 8px;
+  }
+  
+  .gestureSection {
+    padding: 8px;
+  }
+  
+  .statusItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+}

@@ -1,0 +1,31 @@
+.list {
+  padding: 20px;
+  margin: 0;
+  background-color: #f8f9fa;
+}
+
+.fixedArea {
+  height: 480px;
+  flex-direction: column;
+}
+
+.container {
+  margin: 5px;
+  text-align: center;
+  border-color: red;
+  border-width: 5px;
+  padding: 5px;
+  border-style: solid;
+  width: 50%;
+  height: 100px;
+}
+
+.image1 {
+  background-image: url("../../resource/bg_flower.gif");
+}
+
+.image2 {
+  background-image:
+    url("../../resource/bg_flower.gif"),
+    url("../../resource/webf.png");
+}

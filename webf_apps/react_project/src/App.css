@@ -1,0 +1,114 @@
+.App {
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  height: 100vh;
+  overflow: auto;
+}
+
+.landing-page {
+  padding: 20px;
+}
+
+.landing-page h1 {
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.demo-card {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.2s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.demo-card:hover {
+  transform: translateY(-2px);
+}
+
+.demo-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.demo-card p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* ArrayBuffer Demo */
+.array-buffer-demo {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.array-buffer-demo h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.demo-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-button {
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+.status-message {
+  margin-top: 20px;
+  font-size: 14px;
+  color: #333;
+}
+
+.test-image {
+  max-width: 200px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .demo-card {
+    background-color: #1c1c1e;
+    color: white;
+  }
+  
+  .demo-card p {
+    color: #aaa;
+  }
+  
+  .status-message {
+    color: #eee;
+  }
+}

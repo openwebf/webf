@@ -1,0 +1,87 @@
+.list {
+  padding: 10px 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--background-primary);
+}
+
+.componentSection {
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--font-color-primary);
+  margin-bottom: 16px;
+}
+
+.componentBlock {
+  background-color: var(--background-secondary);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.componentItem {
+  margin-bottom: 24px;
+}
+
+.componentItem:last-child {
+  margin-bottom: 0;
+}
+
+.itemLabel {
+  font-size: 14px;
+  color: var(--font-color-secondary);
+  margin-bottom: 12px;
+}
+
+.popupContent {
+  padding: 20px;
+}
+
+.popupTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--font-color-primary);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.popupText {
+  font-size: 16px;
+  color: var(--font-color-secondary);
+  text-align: center;
+}
+
+.shareGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.shareItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.shareLabel {
+  font-size: 12px;
+  color: var(--font-color-secondary);
+}
+
+.popupFooter {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.customStyle {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  margin: 0 16px;
+}

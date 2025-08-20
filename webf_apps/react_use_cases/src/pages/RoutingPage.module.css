@@ -1,0 +1,1305 @@
+/* Routing page styles */
+.list {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+}
+
+.componentSection {
+  padding: 20px;
+  background-color: var(--background-color, #f5f5f5);
+  min-height: 100vh;
+}
+
+.sectionTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.componentBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.componentBlock > * {
+  margin-bottom: 32px;
+}
+
+.componentBlock > *:last-child {
+  margin-bottom: 0;
+}
+
+.componentItem {
+  background: var(--card-background, #ffffff);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--border-color, #e5e5e5);
+}
+
+.itemLabel {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.itemDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Route container styles */
+.routeContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.routeInfo {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -8px;
+  margin-bottom: 12px;
+}
+
+.routeInfo > * {
+  flex: 1;
+  min-width: 200px;
+  margin: 8px;
+}
+
+.routeSection {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.routeLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary-text-color, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.routeValue {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  color: var(--accent-color, #007aff);
+  word-break: break-all;
+  font-weight: 500;
+}
+
+.paramsContainer {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.paramsLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 12px;
+}
+
+.paramsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -4px;
+}
+
+.paramsGrid > * {
+  flex: 1;
+  min-width: 200px;
+  margin: 4px;
+}
+
+.paramItem {
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.paramKey {
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-right: 8px;
+}
+
+.paramValue {
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* History navigation styles */
+.historyContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.historyControls {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -8px;
+  margin-bottom: 16px;
+}
+
+.historyControls > * {
+  flex: 1;
+  min-width: 160px;
+  margin: 8px;
+}
+
+.historyButton {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.historyButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.historyButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.deltaButton {
+  background: #6c757d;
+}
+
+.deltaButton:hover {
+  background: #545b62;
+}
+
+.loading {
+  background: #ffc107 !important;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.historyStack {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.stackLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 12px;
+}
+
+.stackList {
+  display: flex;
+  flex-direction: column;
+}
+
+.stackList > * {
+  margin-bottom: 8px;
+}
+
+.stackList > *:last-child {
+  margin-bottom: 0;
+}
+
+.stackItem {
+  background: #f8f9fa;
+  border-radius: 4px;
+  padding: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.stackHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.stackAction {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  background: rgba(0, 122, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.stackTime {
+  font-size: 12px;
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.stackUrl {
+  font-size: 12px;
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+  word-break: break-all;
+}
+
+/* Routes container styles */
+.routesContainer {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -10px;
+}
+
+.routesContainer > * {
+  flex: 1;
+  min-width: 300px;
+  margin: 10px;
+}
+
+.routeCard {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.routeCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.routeHeader {
+  margin-bottom: 16px;
+}
+
+.routeTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 6px;
+}
+
+.routeDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.4;
+}
+
+.routePath {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  color: var(--accent-color, #007aff);
+  background: #ffffff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.routeParams {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -3px;
+  margin-bottom: 13px;
+}
+
+.routeParams > * {
+  margin: 3px;
+}
+
+.paramChip {
+  font-size: 11px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: rgba(0, 122, 255, 0.1);
+  color: var(--accent-color, #007aff);
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}
+
+.routeActions {
+  display: flex;
+  margin: -6px;
+}
+
+.routeActions > * {
+  flex: 1;
+  margin: 6px;
+}
+
+.routeButton {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.routeButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.routeButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.replaceButton {
+  background: #6c757d;
+}
+
+.replaceButton:hover {
+  background: #545b62;
+}
+
+/* Advanced navigation styles */
+.advancedContainer {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -10px;
+}
+
+.advancedContainer > * {
+  flex: 1;
+  min-width: 250px;
+  margin: 10px;
+}
+
+.advancedCard {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.advancedCard:hover {
+  transform: translateY(-2px);
+}
+
+.advancedHeader {
+  margin-bottom: 16px;
+}
+
+.advancedTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.advancedDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.4;
+}
+
+.advancedButton {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.advancedButton:hover {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.advancedButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tabButton {
+  background: #17a2b8;
+}
+
+.tabButton:hover {
+  background: #138496;
+}
+
+.modalButton {
+  background: #6f42c1;
+}
+
+.modalButton:hover {
+  background: #5a2d9a;
+}
+
+/* 应用状态显示 */
+.appStatus {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e5e5;
+}
+
+.statusTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.statusInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statusRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.statusRow:last-child {
+  border-bottom: none;
+}
+
+.statusLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--secondary-text-color, #666);
+}
+
+.statusValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* TabBar 容器 */
+.tabBarContainer {
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+/* Native WebF Cupertino TabBar Container */
+.nativeTabBar {
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+  min-height: 300px;
+}
+
+/* Tab Content Styles */
+.tabContent {
+  padding: 24px;
+  text-align: center;
+  background: #ffffff;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.tabContent h3 {
+  color: var(--primary-text-color, #333);
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.tabContent p {
+  color: var(--secondary-text-color, #666);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  max-width: 400px;
+}
+
+/* Tab 内的操作按钮 */
+.tabActions {
+  width: 100%;
+  max-width: 500px;
+}
+
+.tabActions h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin: 0 0 16px 0;
+  text-align: left;
+}
+
+.demoButton {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 6px;
+  min-width: 160px;
+  display: inline-block;
+}
+
+.demoButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.demoButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tabStatus {
+  margin-top: 12px;
+  padding: 6px 12px;
+  background: rgba(0, 122, 255, 0.1);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-color, #007aff);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Tab Bar Info Section */
+.tabBarInfo {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  margin-top: 16px;
+}
+
+.infoLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.infoText {
+  font-size: 13px;
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.infoText strong {
+  color: var(--primary-text-color, #333);
+  font-weight: 600;
+}
+
+/* Legacy styles for compatibility */
+.tabBarContainer {
+  display: flex;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
+}
+
+.tabBarItem {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  color: var(--secondary-text-color, #666);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tabBarItem > * {
+  margin-bottom: 4px;
+}
+
+.tabBarItem > *:last-child {
+  margin-bottom: 0;
+}
+
+.tabBarItem:hover {
+  background-color: rgba(0, 122, 255, 0.05);
+}
+
+.tabBarItem.active {
+  background-color: #007aff;
+  color: white;
+}
+
+.tabBarIcon {
+  font-size: 18px;
+}
+
+.tabBarLabel {
+  font-size: 12px;
+}
+
+.tabBarControls {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -6px;
+}
+
+.tabBarControls > * {
+  flex: 1;
+  min-width: 140px;
+  margin: 6px;
+}
+
+.tabBarButton {
+  background: #17a2b8;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.tabBarButton:hover {
+  background: #138496;
+  transform: translateY(-1px);
+}
+
+.tabBarButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Hybrid History Advanced Demo */
+.hybridDemo {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  margin-top: 20px;
+}
+
+.hybridControls {
+  display: flex;
+  flex-wrap: wrap;
+  margin: -6px;
+  margin-bottom: 10px;
+}
+
+.hybridControls > * {
+  flex: 1;
+  min-width: 180px;
+  margin: 6px;
+}
+
+.hybridButton {
+  background: #6f42c1;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hybridButton:hover {
+  background: #5a2d9a;
+  transform: translateY(-1px);
+}
+
+.hybridButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 详情页样式 */
+.detailPage {
+  padding: 20px;
+  background: #ffffff;
+  min-height: 100vh;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.backButton {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 16px;
+}
+
+.backButton:hover {
+  background: #0056b3;
+}
+
+.detailTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+}
+
+.detailContent {
+  max-width: 600px;
+}
+
+.detailContent h3 {
+  color: var(--primary-text-color, #333);
+  margin-bottom: 16px;
+}
+
+.detailContent p {
+  color: var(--secondary-text-color, #666);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.detailActions {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.actionButton {
+  background: #007aff;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
+}
+
+.actionButton:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 路由结果显示 */
+.routeResultContainer {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e5e5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.resultLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 8px;
+}
+
+.resultText {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+  font-family: 'Monaco', 'Menlo', monospace;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+  flex: 1;
+}
+
+.clearButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 16px;
+}
+
+.clearButton:hover {
+  background: #c82333;
+}
+
+/* 历史记录样式 */
+.historyContainer {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e5e5;
+}
+
+.historyLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 16px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyItem {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.historyAction {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  background: rgba(0, 122, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.historyTime {
+  font-size: 12px;
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.historyUrl {
+  font-size: 12px;
+  color: var(--secondary-text-color, #666);
+  font-family: 'Monaco', 'Menlo', monospace;
+  word-break: break-all;
+}
+
+/* API 指南样式 */
+.apiGuideContainer {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e5e5;
+}
+
+.guideTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.apiList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.apiItem {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.apiName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin-bottom: 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.apiDesc {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  line-height: 1.5;
+}
+
+.clearButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.clearButton:hover {
+  background: #c82333;
+}
+
+/* Implementation guide styles */
+.guideContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.guideSection {
+  margin-bottom: 24px;
+}
+
+.guideSection:last-child {
+  margin-bottom: 0;
+}
+
+.guideTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-color, #007aff);
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background: rgba(0, 122, 255, 0.1);
+  border-radius: 6px 6px 0 0;
+  border: 1px solid rgba(0, 122, 255, 0.2);
+}
+
+.codeBlock {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--primary-text-color, #333);
+  margin: 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 0 0 6px 6px;
+  overflow-x: auto;
+  white-space: pre;
+  border-top: none;
+}
+
+.bestPractices {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+}
+
+.practiceItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+}
+
+.practiceItem > * {
+  margin-right: 12px;
+}
+
+.practiceItem > *:last-child {
+  margin-right: 0;
+}
+
+.practiceItem:last-child {
+  margin-bottom: 0;
+}
+
+.practiceIcon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .componentSection {
+    padding: 16px;
+  }
+
+  .routeInfo > *,
+  .paramsGrid > *,
+  .historyControls > *,
+  .routesContainer > *,
+  .advancedContainer > * {
+    min-width: 100%;
+  }
+
+  .historyControls {
+    margin: -6px;
+  }
+
+  .routeActions {
+    flex-direction: column;
+    margin: -4px;
+  }
+
+  .routeActions > * {
+    margin: 4px 0;
+  }
+
+  .resultContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .codeBlock {
+    font-size: 11px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .routeCard,
+  .advancedCard {
+    padding: 16px;
+  }
+
+  .historyButton,
+  .routeButton,
+  .advancedButton {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .stackHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stackHeader > * {
+    margin-bottom: 4px;
+  }
+
+  .stackHeader > *:last-child {
+    margin-bottom: 0;
+  }
+
+  .paramChip {
+    font-size: 10px;
+    padding: 3px 6px;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .componentSection {
+    background-color: var(--dark-background-color, #1a1a1a);
+  }
+
+  .componentItem {
+    background: var(--dark-card-background, #2d2d2d);
+    border-color: var(--dark-border-color, #404040);
+  }
+
+  .sectionTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .itemDesc {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .routeContainer,
+  .historyContainer,
+  .guideContainer {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .routeSection,
+  .paramsContainer,
+  .historyStack,
+  .bestPractices {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .routeCard,
+  .advancedCard {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .routeLabel,
+  .paramsLabel,
+  .stackLabel {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .paramKey,
+  .routeTitle,
+  .advancedTitle {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .paramValue,
+  .routeDesc,
+  .advancedDesc,
+  .stackTime,
+  .stackUrl,
+  .resultText,
+  .practiceItem {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .paramItem,
+  .stackItem {
+    background: #404040;
+  }
+
+  .routePath {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .codeBlock {
+    background: #2d2d2d;
+    color: var(--dark-primary-text-color, #ffffff);
+    border-color: #555;
+  }
+
+  .guideTitle {
+    color: #ffffff;
+    background: rgba(0, 122, 255, 0.3);
+    border-color: rgba(0, 122, 255, 0.4);
+  }
+
+  .resultContainer {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .resultText {
+    background: #383838;
+  }
+
+  .paramChip {
+    background: rgba(0, 122, 255, 0.2);
+    border-color: rgba(0, 122, 255, 0.3);
+  }
+
+  .stackAction {
+    background: rgba(0, 122, 255, 0.2);
+    border-color: rgba(0, 122, 255, 0.3);
+  }
+}
