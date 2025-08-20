@@ -618,8 +618,8 @@ class WebFState extends State<WebF> with RouteAware {
             }
           );
           debugPrint('WebF Loading Error: $error');
-          if (widget.loadingWidget != null) {
-            return widget.loadingWidget!;
+          if (widget.errorBuilder != null) {
+            return widget.errorBuilder!(context, 'WebF Loading Error: $error');
           }
           return WebFHTMLElement(
               tagName: 'DIV',
