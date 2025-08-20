@@ -274,6 +274,11 @@ class ImageElement extends Element {
   double? get _styleWidth {
     String width = style.getPropertyValue(WIDTH);
     if (width.isNotEmpty) {
+      // For images, when CSS width is explicitly 'auto', we should ignore HTML width attribute
+      // and use intrinsic dimensions instead
+      if (width == 'auto') {
+        return null; // This allows fallback to intrinsic sizing
+      }
       CSSLengthValue len = CSSLength.parseLength(width, renderStyle, WIDTH);
       return len.computedValue;
     }
@@ -283,6 +288,11 @@ class ImageElement extends Element {
   double? get _styleHeight {
     String height = style.getPropertyValue(HEIGHT);
     if (height.isNotEmpty) {
+      // For images, when CSS height is explicitly 'auto', we should ignore HTML height attribute
+      // and use intrinsic dimensions instead
+      if (height == 'auto') {
+        return null; // This allows fallback to intrinsic sizing
+      }
       CSSLengthValue len = CSSLength.parseLength(height, renderStyle, HEIGHT);
       return len.computedValue;
     }
@@ -312,13 +322,15 @@ class ImageElement extends Element {
 
   int get width {
     // Width calc priority: style > attr > intrinsic.
-    final double borderBoxWidth = _styleWidth ?? _attrWidth ?? renderStyle.getWidthByAspectRatio();
+    // When CSS width is 'auto', _styleWidth returns null, so we fall back to intrinsic sizing
+    final double borderBoxWidth = _styleWidth ?? _attrWidth ?? (naturalWidth > 0 ? naturalWidth.toDouble() : renderStyle.getWidthByAspectRatio());
     return borderBoxWidth.isFinite ? borderBoxWidth.round() : 0;
   }
 
   int get height {
     // Height calc priority: style > attr > intrinsic.
-    final double borderBoxHeight = _styleHeight ?? _attrHeight ?? renderStyle.getHeightByAspectRatio();
+    // When CSS height is 'auto', _styleHeight returns null, so we fall back to intrinsic sizing  
+    final double borderBoxHeight = _styleHeight ?? _attrHeight ?? (naturalHeight > 0 ? naturalHeight.toDouble() : renderStyle.getHeightByAspectRatio());
     return borderBoxHeight.isFinite ? borderBoxHeight.round() : 0;
   }
 
@@ -399,12 +411,12 @@ class ImageElement extends Element {
     } else {
       renderStyle.aspectRatio = naturalWidth / naturalHeight;
     }
-    
-    // Force a relayout when image dimensions are available
-    // This ensures the replaced element layout can use the new intrinsic dimensions
-    if (naturalWidth > 0 && naturalHeight > 0) {
-      renderStyle.markNeedsLayout();
-    }
+
+    // // Force a relayout when image dimensions are available
+    // // This ensures the replaced element layout can use the new intrinsic dimensions
+    // if (naturalWidth > 0 && naturalHeight > 0) {
+    //   renderStyle.markNeedsLayout();
+    // }
   }
 
   @override
