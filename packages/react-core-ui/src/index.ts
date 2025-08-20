@@ -14,3 +14,10 @@ export { FlutterShimmer, FlutterShimmerElement } from "./lib/src/html/shimmer/sh
 export { FlutterForm, FlutterFormElement } from "./lib/src/html/form/flutter_form";
 export { FlutterFormField, FlutterFormFieldElement } from "./lib/src/html/form/flutter_form";
 export { FlutterGestureDetector, FlutterGestureDetectorElement } from "./lib/src/gesture/flutter_gesture_detector";
+
+// Manual exports - these need to be added back after CLI generation
+export * from './utils/createWebFComponent';
+export * from './components/WebFTouchArea';
+export { WebFLazyRender } from "./components/WebFLazyRender";
+export { useFlutterAttached, useFlutterAttachedEffect } from "./hooks/useFlutterAttached";
+export type { FlutterAttachedCallback, FlutterDetachedCallback } from "./hooks/useFlutterAttached";
