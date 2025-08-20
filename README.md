@@ -36,125 +36,51 @@
   </a>
 </p>
 
-WebF presents a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
+## Why OpenWebF?
 
-- **Adherence to W3C Standards:** By leveraging HTML/CSS and JavaScript, WebF renders content on Flutter, ensuring impeccable alignment with standard browser rendering.
+**Build Fast. Ship Fast. Run Fast.**
 
-- **Compatible with Leading Front-End Frameworks:** Given its compliance with W3C standards, WebF seamlessly integrates with popular front-end frameworks, including [React](https://reactjs.org/) and [Vue](https://vuejs.org/).
+OpenWebF is the compact browser runtime that brings web development's speed and flexibility directly to Flutter. Our high-performance web rendering engine seamlessly glues Web, Flutter, and Native platforms together, enabling you to:
 
-- **Amplify Your Web Applications with Flutter:** WebF's adaptability shines through its customization capabilities. Craft bespoke HTML elements using Flutter Widgets or enhance your application by integrating a JavaScript API sourced from any Dart library on the `pub.dev` registry.
+- **Build Fast:** Dev with React or Vue + TailwindCSS, build with Vite, and deploy to Vercel - it all just works in WebF
+- **Ship Fast:** Deploy once across all Flutter-supported platforms from a single codebase  
+- **Run Fast:** Experience native-level performance that outpaces traditional WebView solutions
 
-- **Authentic Web Development Environment:** Experience a traditional web development setting with WebF. It facilitates DOM structure inspection, CSS style evaluations, and JavaScript debugging via Chrome DevTools.
+## Key Features
 
-- **Craft Once, Deploy Everywhere:** Harness the versatility of WebF to design your web application and launch it across any Flutter-compatible device. What's more, maintain the flexibility to execute your apps within Node.js or web browsers, all from a unified codebase.
+OpenWebF is a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
 
-## Join Our Mission
+✅ **Dedicated Rendering Architecture** - We solved browser engine bottlenecks - the magic that brings your React/Vue UI's LCP times to less than 100ms  
+✅ **DOM, Window, Document, CSS Selectors** - `document.querySelector()`, `window.localStorage`, `element.addEventListener()`, `MutationObserver`, `querySelectorAll()` - hundreds of web APIs just work  
+✅ **Core CSS Support** - Standard CSS Box Model, CSS inline formatting context, CSS Flexbox, Animations - these features make TailwindCSS just work in WebF  
+✅ **Framework Ready** - Your existing React hooks, Vue components, and npm packages work without modification  
+✅ **Modern Build Tools Support** - Vite and Webpack builds just work in WebF - HMR, tree-shaking, code splitting all supported  
+✅ **Popular Web Stack Ready** - Vercel, React, Next.js - the most popular web development workflows are ready for developing Flutter apps  
+✅ **Flutter Widget Integration** - Use Flutter's built-in UI libraries like Cupertino and Material widgets as components in your React/Vue apps  
+✅ **Flutter Economy Access** - Just tell us which feature you want, the highway is ready to connect to any Flutter plugins - [thousands available](https://fluttergems.dev/)  
+✅ **Core DevTools Support** - Element panel inspection and network debugging with Chrome DevTools  
+✅ **True Cross-Platform** - Same codebase runs on iOS, Android, Windows, macOS, Linux (web browser support coming soon)
 
-We envision providing web developers with an innovative web rendering engine, surpassing WebView in performance and adaptability across both mobile and desktop platforms.
-
-WebF's journey is ambitious and enduring. We believe in the strength of collective effort. If you share our dream of a superior alternative to WebView for the future, your expertise could be invaluable to us.
-
-Further, financial contributions can pave the way for erstwhile members of the Kraken team to rejoin our mission, bolstering our developmental pace and potential.
-
-If you or your team are interested in supporting us, please contact @andycall on our Discord channel.
-
-
-## How to use
-
-> All front-end frameworks based on the WhatWG DOM standard are supported; this time, we are using Vue as an example.
-
-### 1. Use vue-cli to generate your front-end project
-
-> ES6 modules are not supported yet, so Vite is not supported.
-
-```bash
-vue create app
-cd app
-npm run serve
-```
-
-And the Vue development server will be hosted at `http://<yourip>:8080/`.
-
-### 2. Add webf as a dependency for your flutter apps.
-
-**packages.yaml**
-
-```yaml
-dependencies:
-  webf: <lastest version>
-```
-
-**import**
-
-```dart
-import 'package:webf/webf.dart';
-import 'package:webf/devtools.dart';
-```
-
-**init**
-
-```dart
-void main() {
-  runApp(MyApp());
-}
-```
-
-
-### 3. Add the WebF widget to run your web applications.
-
-```dart
-@override
-Widget build(BuildContext context) {
-  final MediaQueryData queryData = MediaQuery.of(context);
-  final Size viewportSize = queryData.size;
-
-  return Scaffold(
-      body: Center(
-    child: Column(
-      children: [
-        WebF(
-          devToolsService: ChromeDevToolsService(), // Enable Chrome DevTools Services
-          viewportWidth: viewportSize.width - queryData.padding.horizontal, // Adjust the viewportWidth
-          viewportHeight: viewportSize.height - queryData.padding.vertical, // Adjust the viewportHeight
-          bundle: WebFBundle.fromUrl('http://<yourip>:8080/'), // The page entry point
-        ),
-      ],
-    ),
-  ));
-}
-```
-
-### 4. Run
-
-```bash
-flutter run
-```
-
-<img src="https://user-images.githubusercontent.com/4409743/217754470-697b6998-4451-483c-b26e-bdb2740f3ea1.png" width="800" style="display: block; margin: 0 auto;" />
 
 
 ## How it works
 
-WebF provides a rendering engine which follows the W3C standards like web browsers do. It can render HTML/CSS and execute JavaScript. It's built on top of the flutter rendering pipelines and implements its own layout and painting algorithms.
+WebF is a **compact browser runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
 
-With WebF, Web Apps and Flutter Apps share the same rendering context. It means that you can use Flutter Widgets to define your HTML elements and embed your Web App as a Flutter Widget in your flutter apps.
+**The Magic:** Web Apps and Flutter Apps share the same rendering context. This means you can seamlessly blend Flutter widgets with HTML elements, creating a unified development experience where web technologies just work natively in Flutter.
+
+## Performance Benefits
+
+🚀 **Native Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
+⚡ **Fast Startup** - Lightweight runtime loads instantly compared to heavy browser engines  
+🎯 **Optimized Memory** - Efficient resource usage with shared rendering context  
+📱 **Smooth Animations** - 60fps performance across all platforms
 
 <img width="4452" height="3601" alt="Browser Engine Pipeline" src="https://github.com/user-attachments/assets/5f945b66-fbcd-47b8-9eba-078ee3417610" />
 
 
+## License
 
+The open source code is licensed under Apache-2.0.
 
-
-## Contributors
-
-<a href="https://github.com/openwebf/webf/graphs/contributors"><img src="https://opencollective.com/webf/contributors.svg?width=890&button=false" /></a>
-
-## 👏 Contributing [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/openwebf/webf/pulls)
-
-By contributing to WebF, you agree that your contributions will be licensed under its Apache-2.0 License.
-
-Read our [contributing guide](https://github.com/openwebf/webf/blob/main/.github/CONTRIBUTING.md) and let's build a better WebF project together.
-
-Thank you to all the people who already contributed to [OpenWebF](https://github.com/openwebf) and [OpenKraken](https://github.com/openkraken)!
-
-Copyright (c) 2022-present, The OpenWebF authors.
+Copyright (c) 2024-present, The OpenWebF Company.
