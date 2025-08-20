@@ -140,7 +140,7 @@ WebF provides a rendering engine which follows the W3C standards like web browse
 
 With WebF, Web Apps and Flutter Apps share the same rendering context. It means that you can use Flutter Widgets to define your HTML elements and embed your Web App as a Flutter Widget in your flutter apps.
 
-![Browser Engine Pipeline](https://github.com/user-attachments/assets/56e034c9-ef30-40e4-82ad-0dfa2bd37624)
+<img width="4452" height="3601" alt="Browser Engine Pipeline" src="https://github.com/user-attachments/assets/5f945b66-fbcd-47b8-9eba-078ee3417610" />
 
 
 
