@@ -288,7 +288,8 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
       return SizedBox.shrink();
     }
 
-    Widget child = WebFWidgetElement(widgetElement);
+    Widget child = WebFEventListener(
+        ownerElement: widgetElement, hasEvent: widgetElement.hasEvent, child: WebFWidgetElement(widgetElement));
 
     List<Widget> children = [child];
 
@@ -296,10 +297,7 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
       children.add(element.toWidget());
     });
 
-    return WebFEventListener(
-        ownerElement: widgetElement,
-        hasEvent: widgetElement.hasEvent,
-        child: WebFRenderWidgetAdaptor(widgetElement, key: widgetElement.key, children: children));
+    return WebFRenderWidgetAdaptor(widgetElement, key: widgetElement.key, children: children);
   }
 }
 
