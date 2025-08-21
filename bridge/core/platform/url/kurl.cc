@@ -856,26 +856,18 @@ void KURL::Init(const KURL& base, const std::string& relative) {
   // Clamp to int max to avoid overflow.
   url::RawCanonOutputT<char> output;
 
-  if (!relative.empty()) {
+  if (relative.empty()) {
+    // When the relative input is empty, treat the result as the base URL.
+    // This mirrors URL resolution semantics and avoids using an uninitialized
+    // output buffer.
+    is_valid_ = base.IsValid();
+    parsed_ = base.parsed_;
+    string_ = base_utf8;
+  } else {
     is_valid_ = url::ResolveRelative(base_utf8.data(), base_utf8.size(), base.parsed_, relative.data(),
                                      ClampTo<int>(relative.size()), &output, &parsed_);
-  }
-
-  // Constructing an Atomicstd::string will re-hash the raw output and check the
-  // AtomicStringTable (addWithTranslator) for the string. This can be very
-  // expensive for large URLs. However, since many URLs are generated from
-  // existing AtomicStrings (which already have their hashes computed), the fast
-  // path can often avoid this work.
-  if (!relative.empty() && std::string(output.data(), static_cast<unsigned>(output.length())) == relative) {
-    string_ = relative;
-  } else {
-    string_ = std::string(output.data());
-  }
-
-  if (!relative.empty()) {
-    std::string relative_utf8(relative);
-    is_valid_ = url::ResolveRelative(base_utf8.data(), base_utf8.size(), base.parsed_, relative_utf8.data(),
-                                     ClampTo<int>(relative_utf8.size()), &output, &parsed_);
+    // Construct from the canonicalizer output using its explicit length.
+    string_.assign(output.data(), output.length());
   }
 
   InitProtocolMetadata();
