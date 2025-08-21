@@ -783,8 +783,7 @@ class RenderFlowLayout extends RenderLayoutBox {
                       intrinsicWidth = math.max(intrinsicWidth, intrinsicChildWidth);
                     } else {
                       // Fallback: Use constraint width for replaced elements without natural dimensions
-                      // But limit to reasonable sizes
-                      double constraintWidth = math.min(child.constraints.maxWidth, 300);
+                      double constraintWidth = child.constraints.maxWidth;
                       if (constraintWidth != double.infinity && constraintWidth > 0) {
                         intrinsicWidth = math.max(intrinsicWidth, constraintWidth);
                       }
