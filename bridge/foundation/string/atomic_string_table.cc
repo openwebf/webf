@@ -60,7 +60,7 @@ std::shared_ptr<StringImpl> AtomicStringTable::AddLatin1(const LChar* chars, uns
   return *result.first;
 }
 
-std::shared_ptr<StringImpl> AtomicStringTable::AddUTF8(const UTF8Char* chars, unsigned length) {
+std::shared_ptr<StringImpl> AtomicStringTable::AddUTF8(const UTF8Char* chars, size_t length) {
   if (!chars)
     return nullptr;
 

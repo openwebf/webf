@@ -13,7 +13,7 @@ namespace webf {
 // Based on blink/renderer/core/css/css_selector_test.cc
 // Helper function to calculate specificity
 static unsigned Specificity(const std::string& selector_text) {
-  std::shared_ptr<CSSSelectorList> selector_list = css_test_helpers::ParseSelectorList(selector_text);
+  std::shared_ptr<CSSSelectorList> selector_list = css_test_helpers::ParseSelectorList(String::FromUTF8(selector_text));
   if (selector_list && selector_list->First()) {
     return selector_list->First()->Specificity();
   }

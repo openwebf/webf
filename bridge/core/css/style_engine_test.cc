@@ -64,7 +64,7 @@ TEST_F(StyleEngineTest, CreateSheet) {
     }
   )";
   
-  CSSStyleSheet* sheet = GetStyleEngine().CreateSheet(*element, css_text);
+  CSSStyleSheet* sheet = GetStyleEngine().CreateSheet(*element, String::FromUTF8(css_text));
   
   ASSERT_NE(sheet, nullptr);
   EXPECT_EQ(sheet->ownerNode(), element);
@@ -79,14 +79,14 @@ TEST_F(StyleEngineTest, ParseSheet) {
   // Connect element to document
   GetDocument()->body()->appendChild(element, ASSERT_NO_EXCEPTION());
   
-  std::string css_text = R"(
+  String css_text = R"(
     body {
       font-size: 16px;
     }
     div {
       display: block;
     }
-  )";
+  )"_s;
   
   CSSStyleSheet* sheet = GetStyleEngine().ParseSheet(*element, css_text);
   
@@ -165,12 +165,12 @@ TEST_F(StyleEngineTest, CachedSheet) {
   GetDocument()->body()->appendChild(element1, ASSERT_NO_EXCEPTION());
   GetDocument()->body()->appendChild(element2, ASSERT_NO_EXCEPTION());
   
-  std::string css_text = R"(
+  String css_text = R"(
     .cached-test {
       width: 100px;
       height: 100px;
     }
-  )";
+  )"_s;
   
   // First sheet should create new
   CSSStyleSheet* sheet1 = GetStyleEngine().CreateSheet(*element1, css_text);
@@ -199,10 +199,11 @@ TEST_F(StyleEngineTest, LargeSheetCaching) {
   ASSERT_TRUE(element->isConnected()) << "element should be connected after appendChild";
   
   // Create a large CSS text (> 1024 chars)
-  std::string large_css_text;
+  StringBuilder sb;
   for (int i = 0; i < 100; ++i) {
-    large_css_text += ".large-class-" + std::to_string(i) + " { margin: 10px; padding: 20px; } ";
+    sb.AppendFormat( ".large-class-%d { margin: 10px; padding: 20px; }", i );
   }
+  auto large_css_text = sb.ToString();
   
   EXPECT_GT(large_css_text.length(), 1024u);
   

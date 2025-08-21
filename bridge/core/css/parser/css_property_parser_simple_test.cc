@@ -178,6 +178,7 @@ TEST_F(CSSPropertyParserSimpleTest, ParseBackgroundProperties) {
   // Background image
   EXPECT_TRUE(CanParseValue(CSSPropertyID::kBackgroundImage, "none"));
   EXPECT_TRUE(CanParseValue(CSSPropertyID::kBackgroundImage, "url(image.png)"));
+  EXPECT_TRUE(CanParseValue(CSSPropertyID::kBackgroundImage, "url(你好👋.png)"));
   
   // Background position
   EXPECT_TRUE(CanParseValue(CSSPropertyID::kBackgroundPosition, "center"));

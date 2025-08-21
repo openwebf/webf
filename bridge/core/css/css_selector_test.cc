@@ -33,7 +33,7 @@ unsigned Specificity(const String& selector_text) {
 }
 
 bool HasLinkOrVisited(const std::string& selector_text) {
-  std::shared_ptr<CSSSelectorList> selector_list = ParseSelectorList(selector_text);
+  std::shared_ptr<CSSSelectorList> selector_list = ParseSelectorList(String::FromUTF8(selector_text));
   if (selector_list->First()) {
     return selector_list->First()->HasLinkOrVisited();
   }
@@ -84,7 +84,7 @@ TEST(CSSSelector, Representations) {
 
   // Verify that all these selectors can be parsed successfully
   for (const auto& selector : test_selectors) {
-    std::shared_ptr<CSSSelectorList> list = ParseSelectorList(selector);
+    std::shared_ptr<CSSSelectorList> list = ParseSelectorList(String::FromUTF8(selector));
     EXPECT_TRUE(list) << "Failed to parse selector: " << selector;
     EXPECT_TRUE(list->IsValid()) << "Invalid selector: " << selector;
   }

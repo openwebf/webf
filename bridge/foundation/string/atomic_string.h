@@ -43,8 +43,9 @@ class AtomicString {
     : AtomicString(chars, chars ? std::char_traits<char16_t>::length(chars) : 0) {}
 
   AtomicString(UTF16StringView string_view);
-  static AtomicString CreateFromUTF8(const char* chars, size_t length);
-  static AtomicString CreateFromUTF8(std::string chars);
+  static AtomicString CreateFromUTF8(const UTF8Char* chars, size_t length);
+  static AtomicString CreateFromUTF8(const UTF8Char* chars, size_t length);
+  static AtomicString CreateFromUTF8(const UTF8String& chars);
   AtomicString(const uint16_t* str, size_t length);
   AtomicString(const char16_t* str, size_t length);
   AtomicString(std::shared_ptr<StringImpl> string_impl);

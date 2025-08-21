@@ -28,7 +28,8 @@ class String {
   String(const LChar* latin1_data, size_t length);
   String(const LChar* latin1_data);
   String(const char* characters) = delete;
-  String(const std::string& s);
+  String(std::string) = delete;
+  String(const std::string& s) = delete;
 
   // Construct a string referencing an existing StringImpl.
   String(std::shared_ptr<StringImpl> impl) : impl_(std::move(impl)) {}
@@ -94,6 +95,16 @@ class String {
   }
   static String FromUTF8(const char* utf8_data, size_t byte_length);
   static String FromUTF8(const char* utf8_data);
+  static String FromUTF8(const UTF8Char* utf8_data, size_t byte_length) {
+    return FromUTF8({utf8_data, byte_length});
+  }
+  static String FromUTF8(const UTF8Char* utf8_data) {
+    const auto& view = UTF8StringView(utf8_data);
+    return FromUTF8({view.data(), view.length()});
+  }
+  static String FromUTF8(const UTF8String& utf8_data) {
+    return FromUTF8(utf8_data.c_str(), utf8_data.length());
+  }
 
   // Convert to StringView
   StringView ToStringView() const;

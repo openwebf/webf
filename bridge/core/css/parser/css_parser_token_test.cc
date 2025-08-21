@@ -34,4 +34,9 @@ TEST(CSSParserTokenTest, SerializeDoubles) {
   EXPECT_EQ("0.00001525878rad"_s, RoundTripToken("0.00001525878rad"_s));
 }
 
+TEST(CSSParserTokenTest, SerializeStrings) {
+  EXPECT_EQ("\"åéîøü\""_s, RoundTripToken("\"åéîøü\""_s));
+  EXPECT_EQ("url(åéîøü)"_s, RoundTripToken("url(åéîøü)"_s));
+}
+
 }  // namespace webf

@@ -27,7 +27,7 @@ TEST_F(CSSLazyParsingTest, Simple) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     auto style_sheet = std::make_shared<StyleSheetContents>(context);
 
-    std::string sheet_text = "body { background-color: red; }/*padding1234567890*/";
+    String sheet_text = "body { background-color: red; }/*padding1234567890*/"_s;
     CSSParser::ParseSheet(context, style_sheet, sheet_text, CSSDeferPropertyParsing::kYes);
     StyleRule* rule = RuleAt(style_sheet.get(), 0);
     EXPECT_FALSE(HasParsedProperties(rule));
@@ -41,9 +41,9 @@ TEST_F(CSSLazyParsingTest, LazyParseBeforeAfter) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     auto style_sheet = std::make_shared<StyleSheetContents>(context);
 
-    std::string sheet_text =
+    String sheet_text =
         "p::before { content: 'foo' } p .class::after { content: 'bar' } "
-        "/*padding1234567890*/";
+        "/*padding1234567890*/"_s;
     CSSParser::ParseSheet(context, style_sheet, sheet_text, CSSDeferPropertyParsing::kYes);
 
     EXPECT_FALSE(HasParsedProperties(RuleAt(style_sheet.get(), 0)));
@@ -56,7 +56,7 @@ TEST_F(CSSLazyParsingTest, NoLazyParsingForNestedRules) {
     auto context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
     auto style_sheet = std::make_shared<StyleSheetContents>(context);
 
-    std::string sheet_text = "body { & div { color: red; } color: green; }";
+    String sheet_text = "body { & div { color: red; } color: green; }"_s;
     CSSParser::ParseSheet(context, style_sheet, sheet_text, CSSDeferPropertyParsing::kYes);
     StyleRule* rule = RuleAt(style_sheet.get(), 0);
     EXPECT_TRUE(HasParsedProperties(rule));

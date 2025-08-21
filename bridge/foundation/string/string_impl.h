@@ -162,7 +162,7 @@ class StringImpl {
   
   // Create a StringImpl from UTF-8 encoded data, converting to UTF-16 if necessary
   // Similar to QuickJS's JS_NewStringLen function
-  static std::shared_ptr<StringImpl> CreateFromUTF8(const char* utf8_data, size_t byte_length);
+  static std::shared_ptr<StringImpl> CreateFromUTF8(const UTF8Char* utf8_data, size_t byte_length);
   static std::shared_ptr<StringImpl> CreateFromUTF8(const UTF8StringView& utf8_data);
 
   static void InitStatics();

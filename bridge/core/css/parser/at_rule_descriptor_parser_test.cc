@@ -29,7 +29,7 @@ class AtRuleDescriptorParserTest : public ::testing::Test {
     return std::make_shared<CSSParserContext>(kHTMLStandardMode);
   }
 
-  std::shared_ptr<StyleSheetContents> ParseSheet(const std::string& css_text) {
+  std::shared_ptr<StyleSheetContents> ParseSheet(const String& css_text) {
     auto context = MakeContext();
     auto style_sheet = std::make_shared<StyleSheetContents>(context);
     CSSParser::ParseSheet(context, style_sheet, css_text);

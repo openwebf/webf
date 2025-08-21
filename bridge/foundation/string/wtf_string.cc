@@ -70,13 +70,6 @@ String::String(const LChar* latin1_data) {
   impl_ = StringImpl::Create(latin1_data, strlen(reinterpret_cast<const char*>(latin1_data)));
 }
 
-String::String(const std::string& s) {
-  if (s.empty()) {
-    return;
-  }
-  impl_ = StringImpl::Create(reinterpret_cast<const LChar*>(s.data()), s.length());
-}
-
 String::String(const StringView& view) {
   if (view.IsNull()) {
     return;

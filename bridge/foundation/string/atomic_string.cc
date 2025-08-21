@@ -84,12 +84,15 @@ AtomicString::AtomicString(UTF16StringView string_view)
 AtomicString::AtomicString(const LChar* chars, size_t length)
     : string_(AtomicStringTable::Instance().AddLatin1(chars, length)) {}
 
-AtomicString AtomicString::CreateFromUTF8(const char* chars, size_t length) {
+AtomicString AtomicString::CreateFromUTF8(const UnknownChar* chars, size_t length) {
+
+}
+AtomicString AtomicString::CreateFromUTF8(const UTF8Char* chars, size_t length) {
   AtomicString result;
   result.string_ = AtomicStringTable::Instance().AddUTF8(chars, length);
   return result;
 }
-AtomicString AtomicString::CreateFromUTF8(std::string chars) {
+AtomicString AtomicString::CreateFromUTF8(const UTF8String& chars) {
   return CreateFromUTF8(chars.c_str(), chars.length());
 }
 

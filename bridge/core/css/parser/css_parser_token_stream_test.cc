@@ -810,7 +810,7 @@ INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest, RestartTest, testing::ValuesI
 TEST_P(RestartTest, All) {
   RestartData param = GetParam();
 
-  std::string ref(param.ref);
+  String ref = String::FromUTF8(param.ref);
   std::vector<CSSParserToken> ref_tokens = TokenizeAll(ref);
 
   WEBF_LOG(VERBOSE) << "tokens: " << CSSParserTokenRange(ref_tokens).Serialize();
@@ -820,7 +820,7 @@ TEST_P(RestartTest, All) {
   CSSTokenizer tokenizer{input_string.ToStringView()};
   CSSParserTokenStream stream(tokenizer);
 
-  auto [restart_target, restart_offset] = ParseRestart(std::string(param.restart));
+  auto [restart_target, restart_offset] = ParseRestart(String::FromUTF8(param.restart));
   std::vector<CSSParserToken> actual_tokens;
   TokenizeInto(stream, restart_target, restart_offset, actual_tokens);
 
@@ -842,7 +842,7 @@ INSTANTIATE_TEST_SUITE_P(CSSParserTokenStreamTest, BoundaryRestartTest, testing:
 TEST_P(BoundaryRestartTest, All) {
   RestartData param = GetParam();
 
-  std::string ref(param.ref);
+  String ref = String::FromUTF8(param.ref);
   std::vector<CSSParserToken> ref_tokens = TokenizeAll(ref);
 
   std::string input(param.input);
@@ -852,7 +852,7 @@ TEST_P(BoundaryRestartTest, All) {
 
   CSSParserTokenStream::Boundary boundary(stream, kSemicolonToken);
 
-  auto [restart_target, restart_offset] = ParseRestart(std::string(param.restart));
+  auto [restart_target, restart_offset] = ParseRestart(String::FromUTF8(param.restart));
   std::vector<CSSParserToken> actual_tokens;
   TokenizeInto(stream, restart_target, restart_offset, actual_tokens);
 
@@ -899,7 +899,7 @@ class TestStream {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit TestStream(std::string input) : input_(input), tokenizer_(input_), stream_(tokenizer_) {
+  explicit TestStream(String input) : input_(input), tokenizer_(input_), stream_(tokenizer_) {
     stream_.EnsureLookAhead();
   }
 
@@ -973,7 +973,7 @@ class TestBoundary {
 class RestoringBlockGuardTest : public testing::Test {};
 
 TEST_F(RestoringBlockGuardTest, Restore) {
-  TestStream stream("a b c (d e f) g h i");
+  TestStream stream("a b c (d e f) g h i"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a b c "));
 
   // Restore immediately after guard.
@@ -1018,7 +1018,7 @@ TEST_F(RestoringBlockGuardTest, Restore) {
 }
 
 TEST_F(RestoringBlockGuardTest, NestedRestore) {
-  TestStream stream("a b [c (d e f) g] h i");
+  TestStream stream("a b [c (d e f) g] h i"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a b "));
 
   // Restore immediately after inner guard.
@@ -1064,7 +1064,7 @@ TEST_F(RestoringBlockGuardTest, NestedRestore) {
 }
 
 TEST_F(RestoringBlockGuardTest, Release) {
-  TestStream stream("a b c (d e f) g h i");
+  TestStream stream("a b c (d e f) g h i"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a b c "));
 
   // Cannot release unless we're AtEnd.
@@ -1096,7 +1096,7 @@ TEST_F(RestoringBlockGuardTest, Release) {
 }
 
 TEST_F(RestoringBlockGuardTest, ReleaseEOF) {
-  TestStream stream("a b c (d e f");
+  TestStream stream("a b c (d e f"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a b c "));
 
   {
@@ -1111,7 +1111,7 @@ TEST_F(RestoringBlockGuardTest, ReleaseEOF) {
 }
 
 TEST_F(RestoringBlockGuardTest, NestedRelease) {
-  TestStream stream("a b [c (d e f) g] h i");
+  TestStream stream("a b [c (d e f) g] h i"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a b "));
 
   // Inner guard released, but outer guard is not.
@@ -1152,7 +1152,7 @@ TEST_F(RestoringBlockGuardTest, NestedRelease) {
 }
 
 TEST_F(RestoringBlockGuardTest, BlockStack) {
-  TestStream stream("a (b c) d) e");
+  TestStream stream("a (b c) d) e"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a "));
 
   // Start consuming the block, but abort (restart).
@@ -1178,7 +1178,7 @@ TEST_F(RestoringBlockGuardTest, BlockStack) {
 }
 
 TEST_F(RestoringBlockGuardTest, RestoreDuringBoundary) {
-  TestStream stream("a (b c ; d e) f; g h");
+  TestStream stream("a (b c ; d e) f; g h"_s);
   EXPECT_TRUE(stream.ConsumeTokens("a "));
 
   TestBoundary boundary(stream, kSemicolonToken);
