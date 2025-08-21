@@ -139,9 +139,9 @@ CSSSyntaxDefinition CSSSyntaxDefinition::CreateUniversal() {
   return CSSSyntaxDefinition(std::move(components));
 }
 
-std::string CSSSyntaxDefinition::ToString() const {
+String CSSSyntaxDefinition::ToString() const {
   if (IsUniversal()) {
-    return "*";
+    return "*"_s;
   }
   StringBuilder builder;
   builder.Append(syntax_components_[0].GetString());
@@ -149,7 +149,7 @@ std::string CSSSyntaxDefinition::ToString() const {
     builder.Append(" | "_s);
     builder.Append(syntax_components_[i].GetString());
   }
-  return builder.ReleaseString().ToUTF8String();
+  return builder.ReleaseString();
 }
 
 }  // namespace webf

@@ -59,10 +59,10 @@ CascadeLayer* CascadeLayer::GetOrAddSubLayer(
   return layer;
 }
 
-std::string CascadeLayer::ToStringForTesting() const {
+String CascadeLayer::ToStringForTesting() const {
   String result;
   ToStringInternal(result, ""_s);
-  return result.ToUTF8String();
+  return result;
 }
 
 void CascadeLayer::ToStringInternal(String& result,

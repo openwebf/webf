@@ -26,8 +26,14 @@ class RuleInvalidationDataBuilder : public RuleInvalidationDataVisitor<RuleInval
   // InvalidationSets between keys; see comments on
   // EnsureMutableInvalidationSet() for more details.
   void MergeInvalidationSet(RuleInvalidationData::InvalidationSetMap&,
-                            const std::string& key,
+                            const String& key,
                             std::shared_ptr<InvalidationSet>);
+  // Overload for engine strings
+  void MergeInvalidationSet(RuleInvalidationData::InvalidationSetMap& map,
+                            StringView key,
+                            std::shared_ptr<InvalidationSet> set) {
+    MergeInvalidationSet(map, String(key), std::move(set));
+  }
   void MergeInvalidationSet(RuleInvalidationData::PseudoTypeInvalidationSetMap&,
                             CSSSelector::PseudoType key,
                             std::shared_ptr<InvalidationSet>);

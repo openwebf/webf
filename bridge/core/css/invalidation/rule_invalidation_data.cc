@@ -80,11 +80,11 @@ void RuleInvalidationData::Clear() {
 
 void RuleInvalidationData::CollectInvalidationSetsForClass(InvalidationLists& invalidation_lists,
                                                            Element& element,
-                                                           const std::string& class_name) const {
+                                                           const String& class_name) const {
   // Implicit self-invalidation sets for all classes (with Bloom filter
   // rejection); see comment on class_invalidation_sets_.
   if (names_with_self_invalidation &&
-      names_with_self_invalidation->MayContain(std::hash<std::string>{}(class_name)*kClassSalt)) {
+      names_with_self_invalidation->MayContain(std::hash<webf::String>{}(class_name) * kClassSalt)) {
     invalidation_lists.descendants.push_back(InvalidationSet::SelfInvalidationSet());
   }
 
@@ -112,7 +112,7 @@ void RuleInvalidationData::CollectInvalidationSetsForClass(InvalidationLists& in
 
 void RuleInvalidationData::CollectSiblingInvalidationSetForClass(InvalidationLists& invalidation_lists,
                                                                  Element& element,
-                                                                 const std::string& class_name,
+                                                                 const String& class_name,
                                                                  unsigned min_direct_adjacent) const {
   RuleInvalidationData::InvalidationSetMap::const_iterator it = class_invalidation_sets.find(class_name);
   if (it == class_invalidation_sets.end()) {
@@ -135,8 +135,8 @@ void RuleInvalidationData::CollectSiblingInvalidationSetForClass(InvalidationLis
 
 void RuleInvalidationData::CollectInvalidationSetsForId(InvalidationLists& invalidation_lists,
                                                         Element& element,
-                                                        const std::string& id) const {
-  if (names_with_self_invalidation && names_with_self_invalidation->MayContain(std::hash<std::string>{}(id)*kIdSalt)) {
+                                                        const String& id) const {
+  if (names_with_self_invalidation && names_with_self_invalidation->MayContain(std::hash<webf::String>{}(id) * kIdSalt)) {
     invalidation_lists.descendants.push_back(InvalidationSet::SelfInvalidationSet());
   }
 
@@ -162,7 +162,7 @@ void RuleInvalidationData::CollectInvalidationSetsForId(InvalidationLists& inval
 
 void RuleInvalidationData::CollectSiblingInvalidationSetForId(InvalidationLists& invalidation_lists,
                                                               Element& element,
-                                                              const std::string& id,
+                                                              const String& id,
                                                               unsigned min_direct_adjacent) const {
   RuleInvalidationData::InvalidationSetMap::const_iterator it = id_invalidation_sets.find(id);
   if (it == id_invalidation_sets.end()) {
@@ -186,7 +186,7 @@ void RuleInvalidationData::CollectInvalidationSetsForAttribute(InvalidationLists
                                                                Element& element,
                                                                const QualifiedName& attribute_name) const {
   RuleInvalidationData::InvalidationSetMap::const_iterator it =
-      attribute_invalidation_sets.find(attribute_name.LocalName().ToStdString(element.ctx()));
+      attribute_invalidation_sets.find(attribute_name.LocalName().GetString());
   if (it == attribute_invalidation_sets.end()) {
     return;
   }
@@ -213,7 +213,7 @@ void RuleInvalidationData::CollectSiblingInvalidationSetForAttribute(Invalidatio
                                                                      const QualifiedName& attribute_name,
                                                                      unsigned min_direct_adjacent) const {
   RuleInvalidationData::InvalidationSetMap::const_iterator it =
-      attribute_invalidation_sets.find(attribute_name.LocalName().ToStdString(element.ctx()));
+      attribute_invalidation_sets.find(attribute_name.LocalName().GetString());
   if (it == attribute_invalidation_sets.end()) {
     return;
   }
@@ -319,7 +319,7 @@ bool RuleInvalidationData::NeedsHasInvalidationForPseudoClass(CSSSelector::Pseud
   return pseudos_in_has_argument.find(pseudo_type) != pseudos_in_has_argument.end();
 }
 
-std::string RuleInvalidationData::ToString() const {
+String RuleInvalidationData::ToString() const {
   StringBuilder builder;
 
   enum TypeFlags {
@@ -334,14 +334,14 @@ std::string RuleInvalidationData::ToString() const {
   };
 
   struct Entry {
-    std::string name;
+    String name;
     const InvalidationSet* set;
     unsigned flags;
   };
 
   std::vector<Entry> entries;
 
-  auto add_invalidation_sets = [&entries](const std::string& base, InvalidationSet* set, unsigned flags,
+  auto add_invalidation_sets = [&entries](const String& base, InvalidationSet* set, unsigned flags,
                                           const char* prefix = "", const char* suffix = "") {
     if (!set) {
       return;
@@ -361,7 +361,7 @@ std::string RuleInvalidationData::ToString() const {
     }
   };
 
-  auto format_name = [](const std::string& base, unsigned flags) {
+  auto format_name = [](const String& base, unsigned flags) {
     StringBuilder builder;
     // Prefix:
 
@@ -386,12 +386,12 @@ std::string RuleInvalidationData::ToString() const {
     return builder.ReleaseString();
   };
 
-  auto format_max_direct_adjancent = [](unsigned max) -> std::string {
+  auto format_max_direct_adjancent = [](unsigned max) -> String {
     if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
       return "~"_s;
     }
     if (max) {
-      return std::to_string(max);
+      return String::Number(max);
     }
     return String::EmptyString();
   };
@@ -407,18 +407,17 @@ std::string RuleInvalidationData::ToString() const {
   }
   for (auto& i : pseudo_invalidation_sets) {
     std::string name = CSSSelector::FormatPseudoTypeForDebugging(static_cast<CSSSelector::PseudoType>(i.first));
-    add_invalidation_sets(name, i.second.get(), kPseudo, ":", "");
+    add_invalidation_sets(String::FromUTF8(name.c_str()), i.second.get(), kPseudo, ":", "");
   }
 
-  add_invalidation_sets("*", universal_sibling_invalidation_set.get(), kUniversal);
-  add_invalidation_sets("nth", nth_invalidation_set.get(), kNth);
+  add_invalidation_sets("*"_s, universal_sibling_invalidation_set.get(), kUniversal);
+  add_invalidation_sets("nth"_s, nth_invalidation_set.get(), kNth);
 
   std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
     if (a.flags != b.flags) {
       return a.flags < b.flags;
     }
-    // return WTF::CodeUnitCompareLessThan(a.name, b.name);
-    return a.name < b.name;
+    return a.name.ToUTF8String() < b.name.ToUTF8String();
   });
 
   for (const Entry& entry : entries) {
@@ -428,9 +427,9 @@ std::string RuleInvalidationData::ToString() const {
   }
 
   StringBuilder metadata;
-  metadata.Append(uses_first_line_rules ? "F" : "");
-  metadata.Append(uses_window_inactive_selector ? "W" : "");
-  metadata.Append(invalidates_parts ? "P" : "");
+  if (uses_first_line_rules) metadata.Append("F"_s);
+  if (uses_window_inactive_selector) metadata.Append("W"_s);
+  if (invalidates_parts) metadata.Append("P"_s);
   metadata.Append(format_max_direct_adjancent(max_direct_adjacent_selectors));
 
   if (!metadata.IsEmpty()) {

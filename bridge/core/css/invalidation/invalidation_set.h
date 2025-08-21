@@ -174,7 +174,7 @@ class InvalidationSet {
   //  P - Invalidates parts.
   //  ~ - Max direct siblings is kDirectAdjacentMax.
   //  <integer> - Max direct siblings is specified number (omitted if 1).
-  std::string ToString() const;
+  String ToString() const;
 
   void Combine(const InvalidationSet& other);
 

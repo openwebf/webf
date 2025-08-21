@@ -9,6 +9,8 @@
 
 #include "bindings/qjs/qjs_atomic_string.h"
 #include "core/css/css_selector.h"
+#include "../../foundation/string/string_view.h"
+#include "../../foundation/string/wtf_string.h"
 #include "core/css/invalidation/invalidation_set.h"
 #include "core/platform/bloom_filter.h"
 
@@ -92,20 +94,42 @@ class RuleInvalidationData {
 
   // Note that class invalidations will sometimes return self-invalidation
   // even when it is not necessary; see comment on class_invalidation_sets_.
-  void CollectInvalidationSetsForClass(InvalidationLists&, Element&, const std::string& class_name) const;
+  void CollectInvalidationSetsForClass(InvalidationLists&, Element&, const String& class_name) const;
+  // Overload for engine strings
+  void CollectInvalidationSetsForClass(InvalidationLists& lists, Element& element, StringView class_name) const {
+    CollectInvalidationSetsForClass(lists, element, String(class_name));
+  }
 
-  void CollectInvalidationSetsForId(InvalidationLists&, Element&, const std::string& id) const;
+  void CollectInvalidationSetsForId(InvalidationLists&, Element&, const String& id) const;
+  // Overload for engine strings
+  void CollectInvalidationSetsForId(InvalidationLists& lists, Element& element, StringView id) const {
+    CollectInvalidationSetsForId(lists, element, String(id));
+  }
   void CollectInvalidationSetsForAttribute(InvalidationLists&, Element&, const QualifiedName& attribute_name) const;
   void CollectInvalidationSetsForPseudoClass(InvalidationLists&, Element&, CSSSelector::PseudoType) const;
 
   void CollectSiblingInvalidationSetForClass(InvalidationLists&,
                                              Element&,
-                                             const std::string& class_name,
+                                             const String& class_name,
                                              unsigned min_direct_adjacent) const;
+  // Overload for engine strings
+  void CollectSiblingInvalidationSetForClass(InvalidationLists& lists,
+                                             Element& element,
+                                             StringView class_name,
+                                             unsigned min_direct_adjacent) const {
+    CollectSiblingInvalidationSetForClass(lists, element, String(class_name), min_direct_adjacent);
+  }
   void CollectSiblingInvalidationSetForId(InvalidationLists&,
                                           Element&,
-                                          const std::string& id,
+                                          const String& id,
                                           unsigned min_direct_adjacent) const;
+  // Overload for engine strings
+  void CollectSiblingInvalidationSetForId(InvalidationLists& lists,
+                                          Element& element,
+                                          StringView id,
+                                          unsigned min_direct_adjacent) const {
+    CollectSiblingInvalidationSetForId(lists, element, String(id), min_direct_adjacent);
+  }
   void CollectSiblingInvalidationSetForAttribute(InvalidationLists&,
                                                  Element&,
                                                  const QualifiedName& attribute_name,
@@ -134,9 +158,11 @@ class RuleInvalidationData {
            NeedsHasInvalidationForIdChange() || NeedsHasInvalidationForPseudoStateChange();
   }
 
-  bool HasSelectorForId(const std::string& id_value) const {
+  bool HasSelectorForId(const String& id_value) const {
     return id_invalidation_sets.find(id_value) != id_invalidation_sets.end();
   }
+  // Overload for engine strings
+  bool HasSelectorForId(StringView id_value) const { return HasSelectorForId(String(id_value)); }
   bool HasIdsInSelectors() const { return id_invalidation_sets.size() > 0; }
   bool InvalidatesParts() const { return invalidates_parts; }
   // Returns true if we have :nth-child(... of S) selectors where S contains a
@@ -172,7 +198,7 @@ class RuleInvalidationData {
   //  <integer> - Max direct siblings is specified number (omitted if 0).
   //
   // See InvalidationSet::ToString for more information.
-  std::string ToString() const;
+  String ToString() const;
 
  private:
   static void ExtractInvalidationSets(InvalidationSet* invalidation_set,
@@ -183,7 +209,7 @@ class RuleInvalidationData {
   // SiblingInvalidationSet.
   // When both are needed, we store the SiblingInvalidationSet, and use it to
   // hold the DescendantInvalidationSet.
-  using InvalidationSetMap = std::unordered_map<std::string, std::shared_ptr<InvalidationSet>>;
+  using InvalidationSetMap = std::unordered_map<String, std::shared_ptr<InvalidationSet>>;
   using PseudoTypeInvalidationSetMap = std::unordered_map<CSSSelector::PseudoType, std::shared_ptr<InvalidationSet>>;
   using ValuesInHasArgument = std::unordered_set<AtomicString, AtomicString::KeyHasher>;
   using PseudosInHasArgument = std::unordered_set<CSSSelector::PseudoType>;

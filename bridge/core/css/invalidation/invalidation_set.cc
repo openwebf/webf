@@ -468,87 +468,71 @@ void InvalidationSet::WriteIntoTrace(perfetto::TracedValue context) const {
   }
 }
 */
-std::string InvalidationSet::ToString() const {
-  auto format_backing = [](auto range, const char* prefix, const char* suffix) {
-    std::string builder;
-
-    // TODO(guopengfei)：将AtomicString经StringView转成std::string;
-    std::vector<std::string> names;
+String InvalidationSet::ToString() const {
+  auto format_backing = [](auto range, const char* prefix, const char* suffix) -> String {
+    StringBuilder sb;
+    bool first = true;
     for (const auto& str : range) {
-      names.push_back(str.ToStringView().Characters8ToStdString());
+      if (!first) sb.Append(' ');
+      first = false;
+      if (prefix && *prefix) sb.Append(prefix);
+      sb.Append(str.GetString());
+      if (suffix && *suffix) sb.Append(suffix);
     }
-    // std::sort(names.begin(), names.end(), WTF::CodeUnitCompareLessThan);
-    std::sort(names.begin(), names.end());
-
-    for (const auto& name : names) {
-      if (!builder.IsEmpty()) {
-        builder.append(" ");
-      }
-      builder.append(prefix);
-      builder.append(name);
-      builder.append(suffix);
-    }
-
-    return builder;
+    return sb.ReleaseString();
   };
 
-  std::string features;
+  StringBuilder features;
 
   if (HasIds()) {
-    features.append(format_backing(Ids(), "#", ""));
+    features.Append(format_backing(Ids(), "#", ""));
   }
   if (HasClasses()) {
-    features.append(!features.IsEmpty() ? " " : "");
-    features.append(format_backing(Classes(), ".", ""));
+    if (!features.IsEmpty()) features.Append(' ');
+    features.Append(format_backing(Classes(), ".", ""));
   }
   if (HasTagNames()) {
-    features.append(!features.IsEmpty() ? " " : "");
-    features.append(format_backing(TagNames(), "", ""));
+    if (!features.IsEmpty()) features.Append(' ');
+    features.Append(format_backing(TagNames(), "", ""));
   }
   if (HasAttributes()) {
-    features.append(!features.IsEmpty() ? " " : "");
-    features.append(format_backing(Attributes(), "[", "]"));
+    if (!features.IsEmpty()) features.Append(' ');
+    features.Append(format_backing(Attributes(), "[", "]"));
   }
 
-  auto format_max_direct_adjancent = [](const InvalidationSet* set) -> std::string {
+  auto format_max_direct_adjancent = [](const InvalidationSet* set) -> String {
     const auto* sibling = DynamicTo<SiblingInvalidationSet>(set);
-    if (!sibling) {
-      return String::EmptyString();
-    }
+    if (!sibling) return String::EmptyString();
     unsigned max = sibling->MaxDirectAdjacentSelectors();
-    if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
-      return "~"_s;
-    }
-    if (max != 1) {
-      return std::to_string(max);
-    }
+    if (max == SiblingInvalidationSet::kDirectAdjacentMax) return "~"_s;
+    if (max != 1) return String::Number(max);
     return String::EmptyString();
   };
 
-  std::string metadata;
-  metadata.append(InvalidatesSelf() ? "$" : "");
-  metadata.append(InvalidatesNth() ? "N" : "");
-  metadata.append(invalidation_flags_.WholeSubtreeInvalid() ? "W" : "");
-  metadata.append(invalidation_flags_.InvalidateCustomPseudo() ? "C" : "");
-  metadata.append(invalidation_flags_.TreeBoundaryCrossing() ? "T" : "");
-  metadata.append(invalidation_flags_.InsertionPointCrossing() ? "I" : "");
-  metadata.append(invalidation_flags_.InvalidatesSlotted() ? "S" : "");
-  metadata.append(invalidation_flags_.InvalidatesParts() ? "P" : "");
-  metadata.append(format_max_direct_adjancent(this));
+  StringBuilder metadata;
+  if (InvalidatesSelf()) metadata.Append('$');
+  if (InvalidatesNth()) metadata.Append('N');
+  if (invalidation_flags_.WholeSubtreeInvalid()) metadata.Append('W');
+  if (invalidation_flags_.InvalidateCustomPseudo()) metadata.Append('C');
+  if (invalidation_flags_.TreeBoundaryCrossing()) metadata.Append('T');
+  if (invalidation_flags_.InsertionPointCrossing()) metadata.Append('I');
+  if (invalidation_flags_.InvalidatesSlotted()) metadata.Append('S');
+  if (invalidation_flags_.InvalidatesParts()) metadata.Append('P');
+  metadata.Append(format_max_direct_adjancent(this));
 
-  std::string main;
-  main.append("{");
+  StringBuilder main;
+  main.Append('{');
   if (!features.IsEmpty()) {
-    main.append(" ");
-    main.append(features);
+    main.Append(' ');
+    main.Append(features.ReleaseString());
   }
   if (!metadata.IsEmpty()) {
-    main.append(" ");
-    main.append(metadata);
+    main.Append(' ');
+    main.Append(metadata.ReleaseString());
   }
-  main.append(" }");
+  main.Append('}');
 
-  return main;
+  return main.ReleaseString();
 }
 
 SiblingInvalidationSet::SiblingInvalidationSet(const std::shared_ptr<DescendantInvalidationSet>& descendants)

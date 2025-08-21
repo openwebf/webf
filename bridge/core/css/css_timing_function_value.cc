@@ -27,7 +27,7 @@
  * Copyright (C) 2019-2022 The Kraken authors. All rights reserved.
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
-// TODO:: 修改点，使用std::string 平替String、WTF::StringBuilder；by pengfei
+// Use WebF String/StringBuilder rather than std::string
 
 #include "core/css/css_timing_function_value.h"
 #include <cstdint>
@@ -36,19 +36,19 @@
 namespace webf::cssvalue {
 
 String CSSLinearTimingFunctionValue::CustomCSSText() const {
-  std::string builder;
-  builder.append("linear(");
+  StringBuilder sb;
+  sb.Append("linear("_s);
   for (uint32_t i = 0; i < points_.size(); ++i) {
     if (i != 0) {
-      builder.append(", ");
+      sb.Append(", "_s);
     }
-    builder.append(std::to_string(points_[i].output));
-    builder.append(" ");
-    builder.append(std::to_string(points_[i].input));
-    builder.append("%");
+    sb.AppendNumber(points_[i].output);
+    sb.Append(' ');
+    sb.AppendNumber(points_[i].input);
+    sb.Append('%');
   }
-  builder.append(")");
-  return std::move(builder);
+  sb.Append(')');
+  return sb.ReleaseString();
 }
 
 bool CSSLinearTimingFunctionValue::Equals(const CSSLinearTimingFunctionValue& other) const {
@@ -57,8 +57,17 @@ bool CSSLinearTimingFunctionValue::Equals(const CSSLinearTimingFunctionValue& ot
 }
 
 String CSSCubicBezierTimingFunctionValue::CustomCSSText() const {
-  return "cubic-bezier(" + std::to_string(x1_) + ", " + std::to_string(y1_) + ", " + std::to_string(x2_) + ", " +
-         std::to_string(y2_) + ")";
+  StringBuilder sb;
+  sb.Append("cubic-bezier("_s);
+  sb.AppendNumber(x1_);
+  sb.Append(", "_s);
+  sb.AppendNumber(y1_);
+  sb.Append(", "_s);
+  sb.AppendNumber(x2_);
+  sb.Append(", "_s);
+  sb.AppendNumber(y2_);
+  sb.Append(')');
+  return sb.ReleaseString();
 }
 
 bool CSSCubicBezierTimingFunctionValue::Equals(const CSSCubicBezierTimingFunctionValue& other) const {

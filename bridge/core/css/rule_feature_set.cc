@@ -2095,14 +2095,14 @@ String RuleFeatureSet::ToString() const {
   };
 
   struct Entry {
-    std::string name;
+    String name;
     const std::shared_ptr<InvalidationSet> set;
     unsigned flags;
   };
 
   HeapVector<Entry> entries;
 
-  auto add_invalidation_sets = [&entries](const std::string& webf, std::shared_ptr<InvalidationSet> set, unsigned flags,
+  auto add_invalidation_sets = [&entries](const String& webf, std::shared_ptr<InvalidationSet> set, unsigned flags,
                                           const char* prefix = "", const char* suffix = "") {
     if (!set) {
       return;
@@ -2122,7 +2122,7 @@ String RuleFeatureSet::ToString() const {
     }
   };
 
-  auto format_name = [](const std::string& webf, unsigned flags) {
+  auto format_name = [](const String& webf, unsigned flags) {
     StringBuilder builder;
     // Prefix:
 
@@ -2147,39 +2147,39 @@ String RuleFeatureSet::ToString() const {
     return builder.ReleaseString();
   };
 
-  auto format_max_direct_adjancent = [](unsigned max) -> std::string {
+  auto format_max_direct_adjancent = [](unsigned max) -> String {
     if (max == SiblingInvalidationSet::kDirectAdjacentMax) {
       return "~"_s;
     }
     if (max) {
-      return std::to_string(max);
+      return String::Number(max);
     }
     return String::EmptyString();
   };
 
   for (auto& i : id_invalidation_sets_) {
-    add_invalidation_sets(i.first.ToStringView().Characters8ToStdString(), i.second, kId, "#");
+    add_invalidation_sets(i.first.GetString(), i.second, kId, "#");
   }
   for (auto& i : class_invalidation_sets_) {
-    add_invalidation_sets(i.first.ToStringView().Characters8ToStdString(), i.second, kClass, ".");
+    add_invalidation_sets(i.first.GetString(), i.second, kClass, ".");
   }
   for (auto& i : attribute_invalidation_sets_) {
-    add_invalidation_sets(i.first.ToStringView().Characters8ToStdString(), i.second, kAttribute, "[", "]");
+    add_invalidation_sets(i.first.GetString(), i.second, kAttribute, "[", "]");
   }
   for (auto& i : pseudo_invalidation_sets_) {
     AtomicString name = CSSSelector::FormatPseudoTypeForDebugging(static_cast<CSSSelector::PseudoType>(i.first));
-    add_invalidation_sets(name.ToStringView().Characters8ToStdString(), i.second, kPseudo, ":", "");
+    add_invalidation_sets(name.GetString(), i.second, kPseudo, ":", "");
   }
 
-  add_invalidation_sets("*", universal_sibling_invalidation_set_, kUniversal);
-  add_invalidation_sets("nth", nth_invalidation_set_, kNth);
+  add_invalidation_sets("*"_s, universal_sibling_invalidation_set_, kUniversal);
+  add_invalidation_sets("nth"_s, nth_invalidation_set_, kNth);
 
   std::sort(entries.begin(), entries.end(), [](const auto& a, const auto& b) {
     if (a.flags != b.flags) {
       return a.flags < b.flags;
     }
     // return WTF::CodeUnitCompareLessThan(a.name, b.name);
-    return a.name < b.name;
+    return a.name.ToUTF8String() < b.name.ToUTF8String();
   });
 
   for (const Entry& entry : entries) {

@@ -28,6 +28,12 @@ class AtRuleDescriptorParser {
   static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID,
                                                                  const std::string& value,
                                                                  std::shared_ptr<const CSSParserContext>);
+  // Convenience overload with engine String types
+  static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID id,
+                                                                 StringView value,
+                                                                 std::shared_ptr<const CSSParserContext> ctx) {
+    return ParseFontFaceDescriptor(id, String(value).ToUTF8String(), ctx);
+  }
   static std::shared_ptr<const CSSValue> ParseFontFaceDescriptor(AtRuleDescriptorID,
                                                                  const CSSTokenizedValue&,
                                                                  std::shared_ptr<const CSSParserContext>);

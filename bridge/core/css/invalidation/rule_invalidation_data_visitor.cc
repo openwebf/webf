@@ -1504,7 +1504,7 @@ RuleInvalidationDataVisitor<VisitorType>::EnsureClassInvalidationSet(const Atomi
                                                                      PositionType position,
                                                                      bool in_nth_child) {
   assert(!class_name.IsEmpty());
-  return EnsureInvalidationSet(rule_invalidation_data_.class_invalidation_sets, class_name, type, position,
+  return EnsureInvalidationSet(rule_invalidation_data_.class_invalidation_sets, class_name.GetString(), type, position,
                                in_nth_child);
 }
 
@@ -1515,7 +1515,7 @@ RuleInvalidationDataVisitor<VisitorType>::EnsureAttributeInvalidationSet(const A
                                                                          PositionType position,
                                                                          bool in_nth_child) {
   assert(!attribute_name.IsEmpty());
-  return EnsureInvalidationSet(rule_invalidation_data_.attribute_invalidation_sets, attribute_name, type, position,
+  return EnsureInvalidationSet(rule_invalidation_data_.attribute_invalidation_sets, attribute_name.GetString(), type, position,
                                in_nth_child);
 }
 
@@ -1526,7 +1526,7 @@ RuleInvalidationDataVisitor<VisitorType>::EnsureIdInvalidationSet(const AtomicSt
                                                                   PositionType position,
                                                                   bool in_nth_child) {
   assert(!id.IsEmpty());
-  return EnsureInvalidationSet(rule_invalidation_data_.id_invalidation_sets, id, type, position, in_nth_child);
+  return EnsureInvalidationSet(rule_invalidation_data_.id_invalidation_sets, id.GetString(), type, position, in_nth_child);
 }
 
 template <RuleInvalidationDataVisitorType VisitorType>
@@ -1543,7 +1543,7 @@ RuleInvalidationDataVisitor<VisitorType>::EnsurePseudoInvalidationSet(CSSSelecto
 template <RuleInvalidationDataVisitorType VisitorType>
 RuleInvalidationDataVisitor<VisitorType>::InvalidationSetType*
 RuleInvalidationDataVisitor<VisitorType>::EnsureInvalidationSet(InvalidationSetMapType& map,
-                                                                const std::string& key,
+                                                                const String& key,
                                                                 InvalidationType type,
                                                                 PositionType position,
                                                                 bool in_nth_child) {

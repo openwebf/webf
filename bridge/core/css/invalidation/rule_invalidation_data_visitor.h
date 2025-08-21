@@ -493,7 +493,7 @@ class RuleInvalidationDataVisitor {
                                                    bool in_nth_child);
 
   InvalidationSetType* EnsureInvalidationSet(InvalidationSetMapType&,
-                                             const std::string& key,
+                                             const String& key,
                                              InvalidationType,
                                              PositionType,
                                              bool in_nth_child);

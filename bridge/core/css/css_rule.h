@@ -112,6 +112,8 @@ class CSSRule : public ScriptWrappable {
 
   // The CSSOM spec states that "setting the cssText attribute must do nothing."
   void setCSSText(const std::string&) {}
+  void setCSSText(const String&) {}
+  void setCSSText(StringView) {}
 
   virtual void UseCountForSignalAffected() {}
 

@@ -29,7 +29,7 @@ class CSSSyntaxDefinition {
   bool operator!=(const CSSSyntaxDefinition& a) const { return Components() != a.Components(); }
 
   CSSSyntaxDefinition IsolatedCopy() const;
-  std::string ToString() const;
+  String ToString() const;
 
  private:
   friend class CSSSyntaxStringParser;

@@ -67,7 +67,7 @@ void RuleInvalidationDataBuilder::Merge(const RuleInvalidationData& other) {
 }
 
 void RuleInvalidationDataBuilder::MergeInvalidationSet(RuleInvalidationData::InvalidationSetMap& map,
-                                                       const std::string& key,
+                                                       const String& key,
                                                        std::shared_ptr<InvalidationSet> invalidation_set) {
   assert(invalidation_set);
   std::shared_ptr<InvalidationSet>& slot = map.insert({key, nullptr}).first->second;
