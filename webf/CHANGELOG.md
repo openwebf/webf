@@ -1,3 +1,7 @@
+## 0.22.10+2
+
+revert: revert the changes to widget_element.dart in 6d24e8f4ca3b0a46051f111bfe42014355421629
+
 ## 0.22.10
 
 ### Fixes
