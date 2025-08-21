@@ -1,3 +1,14 @@
+## 0.22.10
+
+### Fixes
+
+- rendering: honor explicit CSS height for WidgetElements (6a8699b7)
+- fix flex item auto size with min-width value (25665d1b)
+
+### Reverts
+- revert: support android 16kb page size (4b011ab0)
+- revert: upgrade ndk version (36cc4769)
+
 ## 0.22.9
 
 ### Features
