@@ -394,11 +394,16 @@ class ImageElement extends Element {
   }
 
   void _resizeImage() {
-    if (_styleWidth == null && _attrWidth != null) {
+    // Check if CSS width is explicitly 'auto' - if so, don't use HTML width attribute
+    String cssWidth = style.getPropertyValue(WIDTH);
+    if (_styleWidth == null && _attrWidth != null && cssWidth != 'auto') {
       // The intrinsic width of the image in pixels. Must be an integer without a unit.
       renderStyle.width = CSSLengthValue(_attrWidth, CSSLengthType.PX);
     }
-    if (_styleHeight == null && _attrHeight != null) {
+    
+    // Check if CSS height is explicitly 'auto' - if so, don't use HTML height attribute  
+    String cssHeight = style.getPropertyValue(HEIGHT);
+    if (_styleHeight == null && _attrHeight != null && cssHeight != 'auto') {
       // The intrinsic height of the image, in pixels. Must be an integer without a unit.
       renderStyle.height = CSSLengthValue(_attrHeight, CSSLengthType.PX);
     }
