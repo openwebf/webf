@@ -545,16 +545,24 @@ class RenderLayoutBox extends RenderBoxModel
       }
     }
 
+    // If an explicit content width is specified via CSS (width/min/max already
+    // resolved above), it should determine the used content width. Do not
+    // auto-expand to accommodate measured content here — overflow handling
+    // should deal with larger content per CSS. Using max() causes blocks inside
+    // unbounded containers (e.g. horizontal slivers) to incorrectly expand to
+    // ancestor viewport widths instead of honoring the specified width.
     if (specifiedContentWidth != null) {
-      finalContentWidth = math.max(specifiedContentWidth, contentWidth);
+      finalContentWidth = specifiedContentWidth;
     }
     if(parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
         parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
       finalContentWidth += marginAddSizeLeft;
       finalContentWidth += marginAddSizeRight;
     }
+    // Same rule for height: honor the specified content height if provided
+    // rather than expanding to measured content height here.
     if (specifiedContentHeight != null) {
-      finalContentHeight = math.max(specifiedContentHeight, contentHeight);
+      finalContentHeight = specifiedContentHeight;
     }
 
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
