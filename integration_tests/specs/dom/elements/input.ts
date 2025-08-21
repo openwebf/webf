@@ -831,6 +831,262 @@ describe('Tags input', () => {
   });
 });
 
+describe('Input Sizing Test Cases', () => {
+  it('default input with no styling', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Default input';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
+  it('fixed width only', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Fixed width';
+    input.style.width = '200px';
+    input.style.padding = '8px 12px';
+    input.style.border = '2px solid #51cf66';
+    input.style.borderRadius = '6px';
+    input.style.fontSize = '16px';
+    input.style.background = '#f3fff5';
+    input.style.boxShadow = '0 2px 4px rgba(81, 207, 102, 0.1)';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
+  it('fixed height only', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Fixed height';
+    input.style.height = '100px';
+    input.style.padding = '10px 14px';
+    input.style.border = '2px solid #f59f00';
+    input.style.borderRadius = '6px';
+    input.style.fontSize = '16px';
+    input.style.background = '#fff9f0';
+    input.style.boxShadow = '0 2px 4px rgba(245, 159, 0, 0.1)';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
+  it('both width and height fixed', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Fixed both';
+    input.style.width = '200px';
+    input.style.height = '80px';
+    input.style.padding = '10px 12px';
+    input.style.border = '2px solid #9775fa';
+    input.style.borderRadius = '6px';
+    input.style.fontSize = '16px';
+    input.style.background = '#f8f0ff';
+    input.style.boxShadow = '0 2px 4px rgba(151, 117, 250, 0.1)';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
+  it('percentage width', async () => {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.padding = '20px';
+    container.style.background = '#fff';
+    container.style.border = '3px dashed #007AFF';
+    container.style.borderRadius = '8px';
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.gap = '20px';
+    
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '50% width';
+    input.style.width = '50%';
+    input.style.padding = '10px 14px';
+    input.style.border = '2px solid #339af0';
+    input.style.borderRadius = '6px';
+    input.style.fontSize = '16px';
+    input.style.background = '#f0f8ff';
+    input.style.boxShadow = '0 2px 4px rgba(51, 154, 240, 0.1)';
+    
+    container.appendChild(input);
+    document.body.appendChild(container);
+    await snapshot();
+  });
+
+  it('padding effects', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Big padding';
+    input.style.padding = '20px';
+    input.style.border = '2px solid #ff6b6b';
+    input.style.borderRadius = '6px';
+    input.style.fontSize = '16px';
+    input.style.background = '#fff5f5';
+    input.style.boxShadow = '0 2px 4px rgba(255, 107, 107, 0.1)';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
+  it('font size variations', async () => {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.padding = '20px';
+    container.style.background = '#fff';
+    container.style.border = '3px dashed #007AFF';
+    container.style.borderRadius = '8px';
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.gap = '20px';
+    
+    const smallInput = document.createElement('input');
+    smallInput.type = 'text';
+    smallInput.placeholder = 'Small';
+    smallInput.style.fontSize = '12px';
+    smallInput.style.padding = '6px 8px';
+    smallInput.style.border = '2px solid #20c997';
+    smallInput.style.borderRadius = '4px';
+    smallInput.style.background = '#f0fff4';
+    
+    const normalInput = document.createElement('input');
+    normalInput.type = 'text';
+    normalInput.placeholder = 'Normal';
+    normalInput.style.fontSize = '16px';
+    normalInput.style.padding = '8px 10px';
+    normalInput.style.border = '2px solid #20c997';
+    normalInput.style.borderRadius = '4px';
+    normalInput.style.background = '#f0fff4';
+    
+    const largeInput = document.createElement('input');
+    largeInput.type = 'text';
+    largeInput.placeholder = 'Large';
+    largeInput.style.fontSize = '24px';
+    largeInput.style.padding = '10px 12px';
+    largeInput.style.border = '2px solid #20c997';
+    largeInput.style.borderRadius = '4px';
+    largeInput.style.background = '#f0fff4';
+    
+    container.appendChild(smallInput);
+    container.appendChild(normalInput);
+    container.appendChild(largeInput);
+    document.body.appendChild(container);
+    await snapshot();
+  });
+
+  it('min/max width constraints', async () => {
+    const container = document.createElement('div');
+    container.style.width = '100%';
+    container.style.padding = '20px';
+    container.style.background = '#fff';
+    container.style.border = '3px dashed #007AFF';
+    container.style.borderRadius = '8px';
+    container.style.display = 'flex';
+    container.style.alignItems = 'center';
+    container.style.gap = '20px';
+    
+    const minWidthInput = document.createElement('input');
+    minWidthInput.type = 'text';
+    minWidthInput.placeholder = 'min-width: 300px';
+    minWidthInput.style.minWidth = '300px';
+    minWidthInput.style.padding = '10px 12px';
+    minWidthInput.style.border = '2px solid #6610f2';
+    minWidthInput.style.borderRadius = '4px';
+    minWidthInput.style.fontSize = '16px';
+    minWidthInput.style.background = '#f8f0ff';
+    
+    const maxWidthInput = document.createElement('input');
+    maxWidthInput.type = 'text';
+    maxWidthInput.placeholder = 'max-width: 100px';
+    maxWidthInput.style.maxWidth = '100px';
+    maxWidthInput.style.padding = '10px 12px';
+    maxWidthInput.style.border = '2px solid #6610f2';
+    maxWidthInput.style.borderRadius = '4px';
+    maxWidthInput.style.fontSize = '16px';
+    maxWidthInput.style.background = '#f8f0ff';
+    
+    container.appendChild(minWidthInput);
+    container.appendChild(maxWidthInput);
+    document.body.appendChild(container);
+    await snapshot();
+  });
+
+  it('complex styling combination', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Complex styling';
+    input.style.height = '120px';
+    input.style.padding = '15px';
+    input.style.fontSize = '18px';
+    input.style.border = '3px solid #dc3545';
+    input.style.borderRadius = '8px';
+    input.style.background = '#fff5f5';
+    input.style.lineHeight = '1.4';
+    input.style.boxShadow = '0 4px 8px rgba(220, 53, 69, 0.2)';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+
+  it('flex container behavior', async () => {
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.gap = '15px';
+    container.style.padding = '20px';
+    container.style.background = '#fff';
+    container.style.border = '3px dashed #007AFF';
+    container.style.borderRadius = '8px';
+    container.style.width = '100%';
+    
+    const input1 = document.createElement('input');
+    input1.type = 'text';
+    input1.placeholder = 'Flex item 1';
+    input1.style.flex = '1';
+    input1.style.padding = '10px 12px';
+    input1.style.border = '2px solid #17a2b8';
+    input1.style.borderRadius = '4px';
+    input1.style.fontSize = '16px';
+    input1.style.background = '#f0fdff';
+    
+    const input2 = document.createElement('input');
+    input2.type = 'text';
+    input2.placeholder = 'Flex item 2';
+    input2.style.flex = '1';
+    input2.style.padding = '10px 12px';
+    input2.style.border = '2px solid #17a2b8';
+    input2.style.borderRadius = '4px';
+    input2.style.fontSize = '16px';
+    input2.style.background = '#f0fdff';
+    
+    const input3 = document.createElement('input');
+    input3.type = 'text';
+    input3.placeholder = 'Flex item 3';
+    input3.style.flex = '1';
+    input3.style.padding = '10px 12px';
+    input3.style.border = '2px solid #17a2b8';
+    input3.style.borderRadius = '4px';
+    input3.style.fontSize = '16px';
+    input3.style.background = '#f0fdff';
+    
+    container.appendChild(input1);
+    container.appendChild(input2);
+    container.appendChild(input3);
+    document.body.appendChild(container);
+    await snapshot();
+  });
+
+  it('long placeholder text overflow', async () => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Very very very very very very long placeholder text that should test text overflow behavior';
+    input.style.width = '200px';
+    input.style.padding = '10px 12px';
+    input.style.border = '2px solid #6c757d';
+    input.style.borderRadius = '4px';
+    input.style.fontSize = '16px';
+    input.style.background = '#f8f9fa';
+    document.body.appendChild(input);
+    await snapshot();
+  });
+});
+
 describe('Input type radio', () => {
   xit('basic radio button', async () => {
     const radio = document.createElement('input');
