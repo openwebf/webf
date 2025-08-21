@@ -84,25 +84,11 @@
 }
 
 /* Input Styles for Testing */
-.noWidthInput {
-  /* No width specified - should use intrinsic width */
-  padding: 10px 14px;
-  border: 2px solid #ff6b6b;
-  border-radius: 6px;
-  font-size: 16px;
-  background: #fff5f5;
-  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.1);
-}
 
-.noWidthInput:focus {
-  outline: none;
-  border-color: #ff3838;
-  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
-}
-
+/* Test 2: Fixed width only */
 .fixedWidthInput {
   width: 200px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: 2px solid #51cf66;
   border-radius: 6px;
   font-size: 16px;
@@ -116,6 +102,42 @@
   box-shadow: 0 0 0 3px rgba(81, 207, 102, 0.2);
 }
 
+/* Test 3: Fixed height only */
+.heightTestInput {
+  height: 100px;
+  padding: 10px 14px;
+  border: 2px solid #f59f00;
+  border-radius: 6px;
+  font-size: 16px;
+  background: #fff9f0;
+  box-shadow: 0 2px 4px rgba(245, 159, 0, 0.1);
+}
+
+.heightTestInput:focus {
+  outline: none;
+  border-color: #e67700;
+  box-shadow: 0 0 0 3px rgba(245, 159, 0, 0.2);
+}
+
+/* Test 4: Both width and height fixed */
+.fixedBothInput {
+  width: 200px;
+  height: 80px;
+  padding: 10px 12px;
+  border: 2px solid #9775fa;
+  border-radius: 6px;
+  font-size: 16px;
+  background: #f8f0ff;
+  box-shadow: 0 2px 4px rgba(151, 117, 250, 0.1);
+}
+
+.fixedBothInput:focus {
+  outline: none;
+  border-color: #7950f2;
+  box-shadow: 0 0 0 3px rgba(151, 117, 250, 0.2);
+}
+
+/* Test 5: Percentage width */
 .percentWidthInput {
   width: 50%;
   padding: 10px 14px;
@@ -132,20 +154,112 @@
   box-shadow: 0 0 0 3px rgba(51, 154, 240, 0.2);
 }
 
-.heightTestInput {
-  height: 100px;
-  padding: 10px 14px;
-  border: 2px solid #f59f00;
+/* Test 6: Big padding */
+.bigPaddingInput {
+  padding: 20px;
+  border: 2px solid #ff6b6b;
   border-radius: 6px;
   font-size: 16px;
-  background: #fff9f0;
-  box-shadow: 0 2px 4px rgba(245, 159, 0, 0.1);
+  background: #fff5f5;
+  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.1);
 }
 
-.heightTestInput:focus {
+.bigPaddingInput:focus {
   outline: none;
-  border-color: #e67700;
-  box-shadow: 0 0 0 3px rgba(245, 159, 0, 0.2);
+  border-color: #ff3838;
+  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+}
+
+/* Test 7: Font size variations */
+.smallFontInput {
+  font-size: 12px;
+  padding: 6px 8px;
+  border: 2px solid #20c997;
+  border-radius: 4px;
+  background: #f0fff4;
+  margin-right: 10px;
+}
+
+.normalFontInput {
+  font-size: 16px;
+  padding: 8px 10px;
+  border: 2px solid #20c997;
+  border-radius: 4px;
+  background: #f0fff4;
+  margin-right: 10px;
+}
+
+.largeFontInput {
+  font-size: 24px;
+  padding: 10px 12px;
+  border: 2px solid #20c997;
+  border-radius: 4px;
+  background: #f0fff4;
+}
+
+/* Test 8: Min/max width */
+.minWidthInput {
+  min-width: 300px;
+  padding: 10px 12px;
+  border: 2px solid #6610f2;
+  font-size: 16px;
+  background: #f8f0ff;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+.maxWidthInput {
+  max-width: 100px;
+  padding: 10px 12px;
+  border: 2px solid #6610f2;
+  font-size: 16px;
+  background: #f8f0ff;
+  border-radius: 4px;
+}
+
+/* Test 9: Complex combination */
+.complexInput {
+  height: 120px;
+  padding: 15px;
+  font-size: 18px;
+  border: 3px solid #dc3545;
+  border-radius: 8px;
+  background: #fff5f5;
+  line-height: 1.4;
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+}
+
+.complexInput:focus {
+  outline: none;
+  border-color: #c82333;
+  box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.25);
+}
+
+/* Test 10: Flex items */
+.flexItemInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 2px solid #17a2b8;
+  font-size: 16px;
+  background: #f0fdff;
+  border-radius: 4px;
+  margin: 0 5px;
+}
+
+.flexItemInput:focus {
+  outline: none;
+  border-color: #138496;
+  box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.2);
+}
+
+/* Test 11: Long placeholder */
+.longPlaceholderInput {
+  width: 200px;
+  padding: 10px 12px;
+  border: 2px solid #6c757d;
+  font-size: 16px;
+  background: #f8f9fa;
+  border-radius: 4px;
 }
 
 /* Value Display */
