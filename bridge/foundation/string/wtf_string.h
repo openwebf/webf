@@ -101,7 +101,7 @@ class String {
     return FromUTF8({view.data(), view.length()});
   }
   static String FromUTF8(const UTF8String& utf8_data) {
-    return FromUTF8(utf8_data.c_str(), utf8_data.length());
+    return String(utf8_data);
   }
 
   // Convert to StringView
