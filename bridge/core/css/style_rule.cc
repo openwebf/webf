@@ -56,7 +56,7 @@ String StyleRuleBase::LayerNameAsString(const webf::StyleRuleBase::LayerName& na
     }
     SerializeIdentifier(part.GetString(), result);
   }
-  return result.ReleaseString().StdUtf8();
+  return result.ReleaseString().ToUTF8String();
 }
 
 std::shared_ptr<const StyleRuleBase> StyleRuleBase::Copy() const {

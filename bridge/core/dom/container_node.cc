@@ -393,7 +393,7 @@ bool ContainerNode::EnsurePreInsertionValidity(const Node& new_child,
     error_message.Append("'."_s);
     exception_state.ThrowException(
         ctx(), ErrorType::TypeError,
-        error_message.ReleaseString().StdUtf8());
+        error_message.ReleaseString().ToUTF8String());
     return false;
   }
 

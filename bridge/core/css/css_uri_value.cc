@@ -71,7 +71,7 @@ const AtomicString& CSSURIValue::NormalizedFragmentIdentifier() const {
 }
 
 KURL CSSURIValue::AbsoluteUrl() const {
-  return KURL(url_data_.ResolvedUrl().GetString().StdUtf8());
+  return KURL(url_data_.ResolvedUrl().GetString().ToUTF8String());
 }
 
 bool CSSURIValue::IsLocal(const Document& document) const {

@@ -190,7 +190,7 @@ void MediaList::deleteMedium(const ExecutingContext* execution_context,
       Queries()->CopyAndRemove(medium.GetString(), execution_context);
   if (!new_media_queries) {
     String error_message = String::FromUTF8("Failed to delete '") + String(medium) + "'.";
-    exception_state.ThrowException(ctx(), ErrorType::InternalError, error_message.StdUtf8());
+    exception_state.ThrowException(ctx(), ErrorType::InternalError, error_message.ToUTF8String());
     return;
   }
   Owner()->SetMediaQueries(new_media_queries);

@@ -36,11 +36,11 @@ CSSUrlData::CSSUrlData(const AtomicString& unresolved_url, const KURL& resolved_
       is_local_(unresolved_url != AtomicString::Empty() && unresolved_url.GetString()[0] == '#'),
       potentially_dangling_markup_(resolved_url.PotentiallyDanglingMarkup()) {}
 
-CSSUrlData::CSSUrlData(const AtomicString& resolved_url) : CSSUrlData(resolved_url, KURL(resolved_url.GetString().StdUtf8())) {}
+CSSUrlData::CSSUrlData(const AtomicString& resolved_url) : CSSUrlData(resolved_url, KURL(resolved_url.GetString().ToUTF8String())) {}
 
 KURL CSSUrlData::ResolveUrl(const Document& document) const {
   if (!potentially_dangling_markup_) {
-    return KURL(absolute_url_.GetString().StdUtf8());
+    return KURL(absolute_url_.GetString().ToUTF8String());
   }
   // The PotentiallyDanglingMarkup() flag is lost when storing the absolute
   // url as a string from which the KURL is constructed here. The url passed
@@ -57,14 +57,14 @@ KURL CSSUrlData::ResolveUrl(const Document& document) const {
   //
   // Having the more spec-compliant behavior for the dangling markup edge case
   // should be fine.
-  return document.CompleteURL(relative_url_.GetString().StdUtf8());
+  return document.CompleteURL(relative_url_.GetString().ToUTF8String());
 }
 
 bool CSSUrlData::ReResolveUrl(const Document& document) const {
   if (relative_url_ == AtomicString::Empty()) {
     return false;
   }
-  KURL url = document.CompleteURL(relative_url_.GetString().StdUtf8());
+  KURL url = document.CompleteURL(relative_url_.GetString().ToUTF8String());
   AtomicString url_string(url.GetString());
   if (url_string == absolute_url_) {
     return false;
@@ -77,7 +77,7 @@ CSSUrlData CSSUrlData::MakeAbsolute() const {
   if (relative_url_ == AtomicString::Empty()) {
     return *this;
   }
-  return CSSUrlData(absolute_url_, KURL(absolute_url_.GetString().StdUtf8())
+  return CSSUrlData(absolute_url_, KURL(absolute_url_.GetString().ToUTF8String())
                     //                    Referrer(), GetOriginClean(), is_ad_related_
   );
 }
@@ -86,7 +86,7 @@ CSSUrlData CSSUrlData::MakeResolved(const KURL& base_url) const {
   if (relative_url_ == AtomicString::Empty()) {
     return *this;
   }
-  const KURL resolved_url = KURL(base_url, relative_url_.GetString().StdUtf8());
+  const KURL resolved_url = KURL(base_url, relative_url_.GetString().ToUTF8String());
   if (is_local_) {
     return CSSUrlData(relative_url_, resolved_url
                       //                      Referrer(), GetOriginClean(), is_ad_related_
@@ -98,13 +98,13 @@ CSSUrlData CSSUrlData::MakeResolved(const KURL& base_url) const {
 }
 
 CSSUrlData CSSUrlData::MakeWithoutReferrer() const {
-  return CSSUrlData(relative_url_, KURL(absolute_url_.GetString().StdUtf8())
+  return CSSUrlData(relative_url_, KURL(absolute_url_.GetString().ToUTF8String())
                     //                    Referrer(), GetOriginClean(), is_ad_related_
   );
 }
 
 bool CSSUrlData::IsLocal(const Document& document) const {
-  return is_local_ || EqualIgnoringFragmentIdentifier(KURL(absolute_url_.GetString().StdUtf8()), document.Url());
+  return is_local_ || EqualIgnoringFragmentIdentifier(KURL(absolute_url_.GetString().ToUTF8String()), document.Url());
 }
 
 String CSSUrlData::CssText() const {

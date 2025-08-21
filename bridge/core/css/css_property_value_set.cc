@@ -197,7 +197,7 @@ bool CSSPropertyValueSet::HasFailedOrCanceledSubresources() const {
 
 #ifndef NDEBUG
 void CSSPropertyValueSet::ShowStyle() {
-  fprintf(stderr, "%s\n", AsText().StdUtf8().c_str());
+  fprintf(stderr, "%s\n", AsText().ToUTF8String().c_str());
 }
 #endif
 

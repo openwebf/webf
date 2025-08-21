@@ -153,7 +153,7 @@ AtRuleDescriptorID CSSParserToken::ParseAsAtRuleDescriptorID() const {
   } else {
     // Convert 16-bit string to UTF-8
     String str(value);
-    std::string utf8 = str.StdUtf8();
+    std::string utf8 = str.ToUTF8String();
     return AsAtRuleDescriptorID(std::string_view(utf8));
   }
 }

@@ -683,7 +683,7 @@ CSSSelector::PseudoType CSSSelector::NameToPseudoType(const AtomicString& name,
 
 #if DCHECK_IS_ON()
 void CSSSelector::Show(int indent) const {
-  printf("%*sSelectorText(): %s\n", indent, "", SelectorText().StdUtf8().c_str());
+  printf("%*sSelectorText(): %s\n", indent, "", SelectorText().ToUTF8String().c_str());
   printf("%*smatch_: %d\n", indent, "", Match());
   if (Match() != kTag && Match() != kUniversalTag) {
     printf("%*sValue(): %s\n", indent, "", Value().ToUTF8String().c_str());
@@ -707,7 +707,7 @@ void CSSSelector::Show(int indent) const {
 }
 
 void CSSSelector::Show() const {
-  printf("\n******* CSSSelector::Show(\"%s\") *******\n", SelectorText().StdUtf8().c_str());
+  printf("\n******* CSSSelector::Show(\"%s\") *******\n", SelectorText().ToUTF8String().c_str());
   Show(2);
   printf("******* end *******\n");
 }

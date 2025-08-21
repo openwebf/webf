@@ -61,17 +61,17 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   // Test a simple failing case first
   fprintf(stderr, "\nTesting: (width) and (height)\n");
   String result = ParseQuery(String::FromUTF8("(width) and (height)"));
-  fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
+  fprintf(stderr, "Result: '%s'\n", result.ToUTF8String().c_str());
   EXPECT_EQ("(width) and (height)", result);
   
   fprintf(stderr, "\nTesting: ((width) and (width))\n");
   result = ParseQuery(String::FromUTF8("((width) and (width))"));
-  fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
+  fprintf(stderr, "Result: '%s'\n", result.ToUTF8String().c_str());
   EXPECT_EQ("((width) and (width))", result);
   
   fprintf(stderr, "\nTesting: ((width) and (width) and (width))\n");
   result = ParseQuery(String::FromUTF8("((width) and (width) and (width))"));
-  fprintf(stderr, "Result: '%s'\n", result.StdUtf8().c_str());
+  fprintf(stderr, "Result: '%s'\n", result.ToUTF8String().c_str());
   EXPECT_EQ("((width) and (width) and (width))", result);
   
   // Test cases that are currently failing
@@ -88,7 +88,7 @@ TEST_F(ContainerQueryParserTest, ParseQuery) {
   for (const char* test : tests) {
     String result = ParseQuery(String::FromUTF8(test));
     if (result != test) {
-      fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.StdUtf8().c_str());
+      fprintf(stderr, "FAILED: '%s' -> '%s'\n", test, result.ToUTF8String().c_str());
     }
     EXPECT_EQ(test, result);
   }

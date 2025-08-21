@@ -44,11 +44,10 @@ class AtomicString {
 
   AtomicString(UTF16StringView string_view);
   static AtomicString CreateFromUTF8(const UTF8Char* chars, size_t length);
-  static AtomicString CreateFromUTF8(const UTF8Char* chars, size_t length);
   static AtomicString CreateFromUTF8(const UTF8String& chars);
   AtomicString(const uint16_t* str, size_t length);
-  AtomicString(const char16_t* str, size_t length);
-  AtomicString(std::shared_ptr<StringImpl> string_impl);
+  AtomicString(const UChar* str, size_t length);
+  AtomicString(const std::shared_ptr<StringImpl>& string_impl);
 
   AtomicString(JSContext* ctx, JSValue qjs_value);
   AtomicString(JSContext* ctx, JSAtom qjs_atom);

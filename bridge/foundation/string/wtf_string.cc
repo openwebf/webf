@@ -70,6 +70,16 @@ String::String(const LChar* latin1_data) {
   impl_ = StringImpl::Create(latin1_data, strlen(reinterpret_cast<const char*>(latin1_data)));
 }
 
+String::String(const char* characters) {
+  if (!characters) {
+    return;
+  }
+  impl_ = StringImpl::CreateFromUTF8(characters, strlen(characters));
+}
+String::String(const std::string& input) {
+  impl_ = StringImpl::CreateFromUTF8(input);
+}
+
 String::String(const StringView& view) {
   if (view.IsNull()) {
     return;
@@ -234,7 +244,7 @@ bool String::operator==(const char* other) const {
   return *impl_ == other;
 }
 
-std::string String::StdUtf8() const {
+std::string String::ToUTF8String() const {
   if (!impl_) {
     return std::string();
   }
@@ -265,20 +275,6 @@ std::string String::StdUtf8() const {
     
     return result;
   }
-}
-
-String String::FromUTF8(const char* utf8_data, size_t byte_length) {
-  if (!utf8_data || !byte_length) {
-    return String::EmptyString();
-  }
-  return String(StringImpl::CreateFromUTF8(utf8_data, byte_length));
-}
-
-String String::FromUTF8(const char* utf8_data) {
-  if (!utf8_data) {
-    return String::EmptyString();
-  }
-  return FromUTF8(utf8_data, strlen(utf8_data));
 }
 
 StringView String::ToStringView() const {
@@ -334,7 +330,7 @@ std::ostream& operator<<(std::ostream& out, const String& string) {
   if (string.IsNull()) {
     return out << "<null>";
   }
-  return out << StringView(string).EncodeForDebugging().StdUtf8();
+  return out << StringView(string).EncodeForDebugging().ToUTF8String();
 }
 
 // Number to String conversion implementations

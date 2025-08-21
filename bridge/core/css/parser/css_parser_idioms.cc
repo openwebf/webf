@@ -42,7 +42,7 @@ UCharCodePoint ConsumeEscape(CSSTokenizerInputStream& input) {
     ConsumeSingleWhitespaceIfNext(input);
     bool ok = false;
     uint32_t code_point;
-    ok = base::HexStringToUInt(hex_chars.ReleaseString().StdUtf8(), &code_point);
+    ok = base::HexStringToUInt(hex_chars.ReleaseString().ToUTF8String(), &code_point);
     DCHECK(ok);
     if (code_point == 0 || (0xD800 <= code_point && code_point <= 0xDFFF) || code_point > 0x10FFFF) {
       return kReplacementCharacter;
@@ -71,7 +71,7 @@ std::string ConsumeName(CSSTokenizerInputStream& input) {
       continue;
     }
     input.PushBack(cc);
-    return result.ReleaseString().StdUtf8();
+    return result.ReleaseString().ToUTF8String();
   }
 }
 

@@ -910,7 +910,7 @@ std::string Decimal::ToString() const {
   if (original_exponent <= 0 && adjusted_exponent >= -6) {
     if (!original_exponent) {
       builder.Append(digits);
-      return builder.ReleaseString().StdUtf8();
+      return builder.ReleaseString().ToUTF8String();
     }
 
     if (adjusted_exponent >= 0) {
@@ -919,7 +919,7 @@ std::string Decimal::ToString() const {
         if (i == adjusted_exponent)
           builder.Append('.');
       }
-      return builder.ReleaseString().StdUtf8();
+      return builder.ReleaseString().ToUTF8String();
     }
 
     builder.Append("0."_sv);
@@ -943,7 +943,7 @@ std::string Decimal::ToString() const {
       builder.AppendNumber(adjusted_exponent);
     }
   }
-  return builder.ReleaseString().StdUtf8();
+  return builder.ReleaseString().ToUTF8String();
 }
 
 Decimal Decimal::Zero(Sign sign) {

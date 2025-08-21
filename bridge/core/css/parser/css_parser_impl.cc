@@ -159,7 +159,7 @@ MutableCSSPropertyValueSet::SetResult CSSParserImpl::ParseVariableValue(MutableC
   STACK_UNINITIALIZED CSSParserImpl parser(context);
   CSSTokenizer tokenizer(value);
   CSSParserTokenStream stream(tokenizer);
-  if (!parser.ConsumeVariableValue(stream, AtomicString::CreateFromUTF8(property_name.StdUtf8().c_str()),
+  if (!parser.ConsumeVariableValue(stream, AtomicString::CreateFromUTF8(property_name.ToUTF8String().c_str()),
                                    /*allow_important_annotation=*/false, is_animation_tainted)) {
     return MutableCSSPropertyValueSet::kParseError;
   }
@@ -332,7 +332,7 @@ ParseSheetResult CSSParserImpl::ParseStyleSheet(const String& string,
   CSSParserTokenStream stream(tokenizer);
   CSSParserImpl parser(context, style_sheet);
   if (defer_property_parsing == CSSDeferPropertyParsing::kYes) {
-    parser.lazy_state_ = std::make_shared<CSSLazyParsingState>(context, string.StdUtf8(), parser.style_sheet_);
+    parser.lazy_state_ = std::make_shared<CSSLazyParsingState>(context, string.ToUTF8String(), parser.style_sheet_);
   }
   ParseSheetResult result = ParseSheetResult::kSucceeded;
   auto consume_rule_list_callback = [&style_sheet, &result, &string, allow_import_rules, context](

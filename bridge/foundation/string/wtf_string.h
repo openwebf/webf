@@ -22,17 +22,19 @@ class String {
 
   // Construct a string with UTF-16 data.
   String(const UChar* utf16_data, size_t length);
-  String(const UChar* utf16_data);
+  explicit String(const UChar* utf16_data);
 
   // Construct a string with latin1 data.
   String(const LChar* latin1_data, size_t length);
-  String(const LChar* latin1_data);
-  String(const char* characters) = delete;
-  String(std::string) = delete;
-  String(const std::string& s) = delete;
+  explicit String(const LChar* latin1_data);
+
+  // cstr and std::string is treated as utf8.
+  // this behavior is intentionally different from WTF::String.
+  explicit String(const char* characters);
+  String(const std::string&);
 
   // Construct a string referencing an existing StringImpl.
-  String(std::shared_ptr<StringImpl> impl) : impl_(std::move(impl)) {}
+  explicit String(std::shared_ptr<StringImpl> impl) : impl_(std::move(impl)) {}
   
   // Construct from StringView
   explicit String(const StringView& view);
@@ -89,12 +91,8 @@ class String {
   bool operator!=(const char* other) const { return !(*this == other); }
 
   // Conversion
-  std::string StdUtf8() const;
-  std::string ToStdString(const std::string& default_value = std::string()) const {
-    return IsNull() ? default_value : StdUtf8();
-  }
-  static String FromUTF8(const char* utf8_data, size_t byte_length);
-  static String FromUTF8(const char* utf8_data);
+  [[nodiscard]] UTF8String ToUTF8String() const;
+
   static String FromUTF8(const UTF8Char* utf8_data, size_t byte_length) {
     return FromUTF8({utf8_data, byte_length});
   }
@@ -139,7 +137,7 @@ class String {
   static String Format(const char* format, ...);
   
   // Utf8 conversion (alias for StdUtf8 for Blink compatibility)
-  std::string Utf8() const { return StdUtf8(); }
+  std::string Utf8() const { return ToUTF8String(); }
 
 
  private:

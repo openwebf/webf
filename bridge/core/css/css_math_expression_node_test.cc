@@ -61,7 +61,7 @@ void TestAccumulatePixelsAndPercent(const CSSToLengthConversionData& conversion_
 
 bool AccumulateLengthArray(std::string text, CSSLengthArray& length_array) {
   auto property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLQuirksMode);
-  property_set->ParseAndSetProperty(CSSPropertyID::kLeft, text,
+  property_set->ParseAndSetProperty(CSSPropertyID::kLeft, String::FromUTF8(text),
                                     /* important */ false);
   return std::static_pointer_cast<const CSSPrimitiveValue>(*property_set->GetPropertyCSSValue(CSSPropertyID::kLeft))
       ->AccumulateLengthArray(length_array);

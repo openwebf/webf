@@ -180,7 +180,7 @@ bool CSSSelectorParser::ConsumeANPlusB(CSSParserTokenStream& stream, std::pair<i
   if (n_string.length() > 2) {
     bool valid;
     int output;
-    valid = base::StringToInt(n_string.Substring(1).ToStdString(), &output);
+    valid = base::StringToInt(n_string.Substring(1).ToUTF8String(), &output);
     result.second = output;
     return valid;
   }

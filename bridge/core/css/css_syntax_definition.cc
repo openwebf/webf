@@ -149,7 +149,7 @@ std::string CSSSyntaxDefinition::ToString() const {
     builder.Append(" | "_s);
     builder.Append(syntax_components_[i].GetString());
   }
-  return builder.ReleaseString().StdUtf8();
+  return builder.ReleaseString().ToUTF8String();
 }
 
 }  // namespace webf

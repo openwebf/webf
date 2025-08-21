@@ -46,7 +46,7 @@ bool CSSFontFaceSrcValue::IsSupportedFormat() const {
   // it.
   const AtomicString& resolved_url_string = src_value_->UrlData().ResolvedUrl();
   const String& url_string = resolved_url_string.GetString();
-  return ProtocolIs(url_string.StdUtf8(), "data") || !url_string.EndsWith(".eot"_s);
+  return ProtocolIs(url_string.ToUTF8String(), "data") || !url_string.EndsWith(".eot"_s);
 }
 
 String CSSFontFaceSrcValue::CustomCSSText() const {

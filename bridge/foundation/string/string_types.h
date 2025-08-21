@@ -57,23 +57,19 @@ struct Latin1CharTrait {
 // UTF16 units
 typedef char16_t UChar;
 // UTF8 units
-typedef char8_t UTF8Char;
+typedef char UTF8Char;
 // Unicode
 typedef uint32_t UCharCodePoint;
-// C style char
-typedef char UnknownChar;
 
 // We want to explicit about the string types.
 typedef std::basic_string<LChar> Latin1String;
 typedef std::basic_string<UChar> UTF16String;
 typedef std::basic_string<UTF8Char> UTF8String;
-typedef std::basic_string<UnknownChar> UnknownString;
 
 // We want to explicit about the string view types.
 typedef std::basic_string_view<LChar, Latin1CharTrait> Latin1StringView;
 typedef std::basic_string_view<UChar> UTF16StringView;
 typedef std::basic_string_view<UTF8Char> UTF8StringView;
-typedef std::basic_string_view<UnknownChar> UnknownStringView;
 
 }
 
