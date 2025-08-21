@@ -9,6 +9,7 @@
 #include "core/css/media_query.h"
 #include "core/css/media_query_exp.h"
 #include <memory>
+#include "../../foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -113,13 +114,13 @@ class IfTestSupports : public IfCondition {
 
 class IfConditionUnknown : public IfCondition {
  public:
-  explicit IfConditionUnknown(std::string string) : string_(string) {}
+  explicit IfConditionUnknown(String string) : string_(std::move(string)) {}
   void Trace() const override;
   Type GetType() const override { return Type::kUnknown; }
-  std::string GetString() const { return string_; }
+  String GetString() const { return string_; }
 
  private:
-  std::string string_;
+  String string_;
 };
 
 class IfConditionElse : public IfCondition {

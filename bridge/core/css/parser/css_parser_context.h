@@ -46,9 +46,13 @@ class CSSParserContext final {
   CSSParserMode Mode() const { return mode_; }
 
   KURL CompleteURL(const std::string& url) const;
+  KURL CompleteURL(const String& url) const { return CompleteURL(url.ToUTF8String()); }
+  KURL CompleteURL(StringView url) const { return CompleteURL(String(url)); }
 
   // Like CompleteURL(), but if `url` is empty a null KURL is returned.
   KURL CompleteNonEmptyURL(const std::string& url) const;
+  KURL CompleteNonEmptyURL(const String& url) const { return CompleteNonEmptyURL(url.ToUTF8String()); }
+  KURL CompleteNonEmptyURL(StringView url) const { return CompleteNonEmptyURL(String(url)); }
 
   // Overrides |mode_| of a CSSParserContext within the scope, allowing us to
   // switching parsing mode while parsing different parts of a style sheet.

@@ -39,6 +39,7 @@
 #include <unicode/utf.h>
 #include "../../../foundation/string/ascii_types.h"
 #include "../../../foundation/string/string_types.h"
+#include "../../../foundation/string/wtf_string.h"
 
 namespace webf {
 
@@ -108,7 +109,7 @@ void ConsumeSingleWhitespaceIfNext(CSSTokenizerInputStream&);
 UCharCodePoint ConsumeEscape(CSSTokenizerInputStream&);
 
 // http://www.w3.org/TR/css3-syntax/#consume-a-name
-std::string ConsumeName(CSSTokenizerInputStream&);
+String ConsumeName(CSSTokenizerInputStream&);
 
 // https://drafts.csswg.org/css-syntax/#would-start-an-identifier
 bool NextCharsAreIdentifier(UChar, const CSSTokenizerInputStream&);

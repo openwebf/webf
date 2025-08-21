@@ -26,83 +26,83 @@ StyleRuleCounterStyle::StyleRuleCounterStyle(const StyleRuleCounterStyle& other)
 StyleRuleCounterStyle::~StyleRuleCounterStyle() = default;
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetSystem() const {
-  return GetDescriptorValue("system");
+  return GetDescriptorValue("system"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetNegative() const {
-  return GetDescriptorValue("negative");
+  return GetDescriptorValue("negative"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetPrefix() const {
-  return GetDescriptorValue("prefix");
+  return GetDescriptorValue("prefix"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetSuffix() const {
-  return GetDescriptorValue("suffix");
+  return GetDescriptorValue("suffix"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetRange() const {
-  return GetDescriptorValue("range");
+  return GetDescriptorValue("range"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetPad() const {
-  return GetDescriptorValue("pad");
+  return GetDescriptorValue("pad"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetFallback() const {
-  return GetDescriptorValue("fallback");
+  return GetDescriptorValue("fallback"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetSymbols() const {
-  return GetDescriptorValue("symbols");
+  return GetDescriptorValue("symbols"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetAdditiveSymbols() const {
-  return GetDescriptorValue("additive-symbols");
+  return GetDescriptorValue("additive-symbols"_sv);
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetSpeakAs() const {
-  return GetDescriptorValue("speak-as");
+  return GetDescriptorValue("speak-as"_sv);
 }
 
 void StyleRuleCounterStyle::SetSystem(const CSSValue* value) {
-  SetDescriptorValue("system", value);
+  SetDescriptorValue("system"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetNegative(const CSSValue* value) {
-  SetDescriptorValue("negative", value);
+  SetDescriptorValue("negative"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetPrefix(const CSSValue* value) {
-  SetDescriptorValue("prefix", value);
+  SetDescriptorValue("prefix"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetSuffix(const CSSValue* value) {
-  SetDescriptorValue("suffix", value);
+  SetDescriptorValue("suffix"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetRange(const CSSValue* value) {
-  SetDescriptorValue("range", value);
+  SetDescriptorValue("range"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetPad(const CSSValue* value) {
-  SetDescriptorValue("pad", value);
+  SetDescriptorValue("pad"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetFallback(const CSSValue* value) {
-  SetDescriptorValue("fallback", value);
+  SetDescriptorValue("fallback"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetSymbols(const CSSValue* value) {
-  SetDescriptorValue("symbols", value);
+  SetDescriptorValue("symbols"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetAdditiveSymbols(const CSSValue* value) {
-  SetDescriptorValue("additive-symbols", value);
+  SetDescriptorValue("additive-symbols"_sv, value);
 }
 
 void StyleRuleCounterStyle::SetSpeakAs(const CSSValue* value) {
-  SetDescriptorValue("speak-as", value);
+  SetDescriptorValue("speak-as"_sv, value);
 }
 
 bool StyleRuleCounterStyle::HasValidSymbols() const {
@@ -148,7 +148,7 @@ CSSPropertyValueSet& StyleRuleCounterStyle::MutableProperties() const {
 }
 
 std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetDescriptorValue(
-    const std::string& descriptor_name) const {
+    StringView descriptor_name) const {
   if (!properties_) {
     return nullptr;
   }
@@ -159,8 +159,8 @@ std::shared_ptr<const CSSValue> StyleRuleCounterStyle::GetDescriptorValue(
   return nullptr;
 }
 
-void StyleRuleCounterStyle::SetDescriptorValue(const std::string& descriptor_name,
-                                                const CSSValue* value) {
+void StyleRuleCounterStyle::SetDescriptorValue(StringView descriptor_name,
+                                               const CSSValue* value) {
   if (!properties_) {
     properties_ = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
   }

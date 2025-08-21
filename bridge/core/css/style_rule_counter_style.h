@@ -66,8 +66,8 @@ class StyleRuleCounterStyle final : public StyleRuleBase {
   void TraceAfterDispatch(GCVisitor*) const;
 
  private:
-  std::shared_ptr<const CSSValue> GetDescriptorValue(const std::string& descriptor_name) const;
-  void SetDescriptorValue(const std::string& descriptor_name, const CSSValue* value);
+  std::shared_ptr<const CSSValue> GetDescriptorValue(StringView descriptor_name) const;
+  void SetDescriptorValue(StringView descriptor_name, const CSSValue* value);
 
   AtomicString name_;
   mutable std::shared_ptr<const CSSPropertyValueSet> properties_;

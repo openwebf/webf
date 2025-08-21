@@ -57,7 +57,7 @@ UCharCodePoint ConsumeEscape(CSSTokenizerInputStream& input) {
 }
 
 //// http://www.w3.org/TR/css3-syntax/#consume-a-name
-std::string ConsumeName(CSSTokenizerInputStream& input) {
+String ConsumeName(CSSTokenizerInputStream& input) {
   StringBuilder result;
   while (true) {
     UChar cc = input.NextInputChar();
@@ -71,7 +71,7 @@ std::string ConsumeName(CSSTokenizerInputStream& input) {
       continue;
     }
     input.PushBack(cc);
-    return result.ReleaseString().ToUTF8String();
+    return result.ReleaseString();
   }
 }
 
