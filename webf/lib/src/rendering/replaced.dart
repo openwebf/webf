@@ -65,7 +65,8 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
           childConstraints = childConstraints.tighten(
               width: width, height: renderStyle.aspectRatio != null ? width * renderStyle.aspectRatio! : null);
         }
-      } else if (renderStyle.height.isPrecise) {
+      }
+      if (renderStyle.height.isPrecise) {
         height = renderStyle.height.computedValue;
         if (renderStyle.width.isPrecise) {
           width = renderStyle.width.computedValue;
@@ -74,70 +75,9 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
           );
         } else {
           childConstraints = childConstraints.tighten(
-            width: renderStyle.aspectRatio != null ? height / renderStyle.aspectRatio! : null, height: height
+            width: renderStyle.aspectRatio != null ? height * renderStyle.aspectRatio! : null, height: height
           );
         }
-      } else {
-        // Both width and height are auto
-        // Only apply special intrinsic sizing logic if:
-        // 1. We have valid natural dimensions AND
-        // 2. We have max-width/max-height constraints (to avoid the expansion issue)
-        
-        double intrinsicWidth = renderStyle.intrinsicWidth;
-        double intrinsicHeight = renderStyle.intrinsicHeight;
-        bool hasMaxWidthConstraint = renderStyle.maxWidth.isNotNone;
-        bool hasMaxHeightConstraint = renderStyle.maxHeight.isNotNone;
-        
-        // Only apply intrinsic sizing if we have valid natural dimensions 
-        // AND there are max constraints that could cause the expansion issue
-        if (intrinsicWidth > 0 && intrinsicHeight > 0 && (hasMaxWidthConstraint || hasMaxHeightConstraint)) {
-          double constrainedWidth = intrinsicWidth;
-          double constrainedHeight = intrinsicHeight;
-          
-          // Apply max-width constraint to limit the width
-          if (renderStyle.maxWidth.isNotNone) {
-            double maxWidth = renderStyle.maxWidth.computedValue;
-            if (constrainedWidth > maxWidth) {
-              constrainedWidth = maxWidth;
-              // Maintain aspect ratio when constrained by max-width
-              constrainedHeight = constrainedWidth * (intrinsicHeight / intrinsicWidth);
-            }
-          }
-          
-          // Apply max-height constraint to limit the height
-          if (renderStyle.maxHeight.isNotNone) {
-            double maxHeight = renderStyle.maxHeight.computedValue;
-            if (constrainedHeight > maxHeight) {
-              constrainedHeight = maxHeight;
-              // Maintain aspect ratio when constrained by max-height
-              constrainedWidth = constrainedHeight * (intrinsicWidth / intrinsicHeight);
-            }
-          }
-          
-          // Apply min-width constraint
-          if (renderStyle.minWidth.isNotAuto) {
-            double minWidth = renderStyle.minWidth.computedValue;
-            if (constrainedWidth < minWidth) {
-              constrainedWidth = minWidth;
-              // Maintain aspect ratio when constrained by min-width
-              constrainedHeight = constrainedWidth * (intrinsicHeight / intrinsicWidth);
-            }
-          }
-          
-          // Apply min-height constraint
-          if (renderStyle.minHeight.isNotAuto) {
-            double minHeight = renderStyle.minHeight.computedValue;
-            if (constrainedHeight < minHeight) {
-              constrainedHeight = minHeight;
-              // Maintain aspect ratio when constrained by min-height
-              constrainedWidth = constrainedHeight * (intrinsicWidth / intrinsicHeight);
-            }
-          }
-          
-          childConstraints = childConstraints.tighten(width: constrainedWidth, height: constrainedHeight);
-        }
-        // If no intrinsic dimensions are available, or no max constraints present,
-        // fall back to using contentConstraints (original behavior)
       }
 
       child!.layout(childConstraints, parentUsesSize: true);
