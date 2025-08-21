@@ -4204,12 +4204,12 @@ bool IsCSSWideKeyword(StringView keyword) {
 }
 
 // https://drafts.csswg.org/css-cascade/#default
-bool IsRevertKeyword(const std::string_view& keyword) {
+bool IsRevertKeyword(StringView keyword) {
   return EqualIgnoringASCIICase(keyword, "revert");
 }
 
 // https://drafts.csswg.org/css-values-4/#identifier-value
-bool IsDefaultKeyword(const std::string_view& keyword) {
+bool IsDefaultKeyword(StringView keyword) {
   return EqualIgnoringASCIICase(keyword, "default");
 }
 
@@ -4240,7 +4240,7 @@ ConcatenateFamilyName(T& range) {
     }
     builder.Append(range.ConsumeIncludingWhitespace().Value());
   }
-  if (!added_space && (IsCSSWideKeyword(first_token.Value()) || IsDefaultKeyword(std::string_view(first_token.Value().data(), first_token.Value().length())))) {
+  if (!added_space && (IsCSSWideKeyword(first_token.Value()) || IsDefaultKeyword(first_token.Value()))) {
     return String::EmptyString();
   }
   return builder.ReleaseString();

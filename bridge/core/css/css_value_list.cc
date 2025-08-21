@@ -140,16 +140,16 @@ std::shared_ptr<const CSSValueList> CSSValueList::PopulateWithTreeScope(const Tr
 }
 
 String CSSValueList::CustomCSSText() const {
-  std::string separator("");
+  StringView separator;
   switch (value_list_separator_) {
     case kSpaceSeparator:
-      separator = " ";
+      separator = " "_sv;
       break;
     case kCommaSeparator:
-      separator = ", ";
+      separator = ", "_sv;
       break;
     case kSlashSeparator:
-      separator = " / ";
+      separator = " / "_sv;
       break;
     default:
       WEBF_LOG(VERBOSE) << "[CSSValueList]: NotReached CustomCSSText():" << value_list_separator_ << std::endl;

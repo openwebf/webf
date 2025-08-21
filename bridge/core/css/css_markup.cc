@@ -136,8 +136,7 @@ String SerializeFontFamily(const AtomicString& string) {
   // Some <font-family> values are serialized without quotes.
   // See https://github.com/w3c/csswg-drafts/issues/5846
   String str = string.GetString();
-  std::string std_str = str.ToUTF8String();
-  return (css_parsing_utils::IsCSSWideKeyword(StringView(str)) || css_parsing_utils::IsDefaultKeyword(std_str) ||
+  return (css_parsing_utils::IsCSSWideKeyword(StringView(str)) || css_parsing_utils::IsDefaultKeyword(StringView(str)) ||
           FontFamily::InferredTypeFor(string) == FontFamily::Type::kGenericFamily ||
           !IsCSSTokenizerIdentifier(StringView(str)))
              ? SerializeString(str)

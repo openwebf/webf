@@ -171,7 +171,7 @@ bool CSSSyntaxStringParser::ConsumeDataTypeName(CSSSyntaxType& type) {
 bool CSSSyntaxStringParser::ConsumeIdent(String& ident) {
   ident = ConsumeName(input_);
   return !css_parsing_utils::IsCSSWideKeyword(StringView(ident)) &&
-         !css_parsing_utils::IsDefaultKeyword(ident.ToUTF8String());
+         !css_parsing_utils::IsDefaultKeyword(StringView(ident));
 }
 
 }  // namespace webf
