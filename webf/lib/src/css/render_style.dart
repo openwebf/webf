@@ -678,6 +678,12 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfAnonymousFlowLayout() {
+    return everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType.self,
+        (renderObject, _) => renderObject is RenderBoxModel && renderObject.renderStyle.target.tagName == 'Anonymous');
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfRenderSVGShape() {
     return everyAttachedRenderObjectByTypeAndMatch(
         RenderObjectGetType.self, (renderObject, _) => renderObject is RenderSVGShape);
@@ -983,14 +989,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   void markNeedsPaint() {
     everyAttachedWidgetRenderBox((element, renderObject) {
       renderObject.markNeedsPaint();
-      return true;
-    });
-  }
-
-  @pragma('vm:prefer-inline')
-  void markAdjacentRenderParagraphNeedsLayout() {
-    everyAttachedWidgetRenderBox((element, renderObject) {
-      renderObject.markAdjacentRenderParagraphNeedsLayout();
       return true;
     });
   }
@@ -1559,7 +1557,10 @@ class CSSRenderStyle extends RenderStyle
 
   setProperty(String name, value) {
     if (kDebugMode && DebugFlags.enableCssLogs) {
-      debugPrint('[webf][render-style] setProperty: ' + name + ' <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+      debugPrint('[webf][render-style] setProperty: ' +
+          name +
+          ' <- ' +
+          (value is CSSColor ? value.cssText() : value.toString()));
     }
     // Memorize the variable value to renderStyle object.
     if (CSSVariable.isCSSSVariableProperty(name)) {
@@ -1754,7 +1755,8 @@ class CSSRenderStyle extends RenderStyle
       // Background
       case BACKGROUND_COLOR:
         if (kDebugMode && DebugFlags.enableCssLogs) {
-          debugPrint('[webf][render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
+          debugPrint(
+              '[webf][render-style] backgroundColor <- ' + (value is CSSColor ? value.cssText() : value.toString()));
         }
         backgroundColor = value;
         break;
@@ -2878,8 +2880,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
-  RenderBoxModel createRenderLayout(
-      {bool isRepaintBoundary = false}) {
+  RenderBoxModel createRenderLayout({bool isRepaintBoundary = false}) {
     CSSDisplay display = this.display;
     RenderBoxModel nextRenderLayoutBox;
 
@@ -2928,7 +2929,6 @@ class CSSRenderStyle extends RenderStyle
     return nextReplaced;
   }
 
-
   /// Check if anonymous block boxes should be created for inline elements.
   /// According to CSS spec, anonymous block boxes are needed when:
   /// 1. A block-level element is a child of an inline element
@@ -2962,14 +2962,12 @@ class CSSRenderStyle extends RenderStyle
         final childPosition = child.renderStyle.position;
 
         // Skip positioned elements (they're out of flow)
-        if (childPosition == CSSPositionType.absolute ||
-            childPosition == CSSPositionType.fixed) {
+        if (childPosition == CSSPositionType.absolute || childPosition == CSSPositionType.fixed) {
           continue;
         }
 
         // Check if child is block-level
-        if (childDisplay == CSSDisplay.block ||
-            childDisplay == CSSDisplay.flex) {
+        if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
           hasBlockLevelChild = true;
           break;
         }
@@ -3045,8 +3043,7 @@ class CSSRenderStyle extends RenderStyle
         final childPosition = childRenderStyle.position;
 
         // Skip positioned elements (out of flow)
-        if (childPosition == CSSPositionType.absolute ||
-            childPosition == CSSPositionType.fixed) {
+        if (childPosition == CSSPositionType.absolute || childPosition == CSSPositionType.fixed) {
           child = renderBoxModel.childAfter(child);
           continue;
         }
@@ -3059,8 +3056,8 @@ class CSSRenderStyle extends RenderStyle
           // Regular block-level content
           hasBlockContent = true;
         } else if (childDisplay == CSSDisplay.inline ||
-                   childDisplay == CSSDisplay.inlineBlock ||
-                   childDisplay == CSSDisplay.inlineFlex) {
+            childDisplay == CSSDisplay.inlineBlock ||
+            childDisplay == CSSDisplay.inlineFlex) {
           // Inline-level content
           hasInlineContent = true;
         }
