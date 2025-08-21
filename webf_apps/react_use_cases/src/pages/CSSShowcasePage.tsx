@@ -124,32 +124,6 @@ export const CSSShowcasePage: React.FC = () => {
               <div className={styles.itemArrow}>&gt;</div>
             </div>
           </div>
-
-          {/* CSS Guides & Selectors */}
-          <div className={styles.sectionTitle}>CSS Guides & Selectors</div>
-          <div className={`${styles.componentBlock} ${styles.categoryBlock}`}>
-            <div className={styles.componentItem} onClick={() => navigateTo('/css/descendant-selectors-theme')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Descendant Selectors Theme</div>
-                <div className={styles.itemDesc}>Descendant selector patterns for theming.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
-            <div className={styles.componentItem} onClick={() => navigateTo('/css/class-guide')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Class Guide</div>
-                <div className={styles.itemDesc}>CSS class usage patterns.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
-            <div className={styles.componentItem} onClick={() => navigateTo('/css/cascade-guide')}>
-              <div className={styles.itemContent}>
-                <div className={styles.itemTitle}>Cascade Guide</div>
-                <div className={styles.itemDesc}>Understanding CSS cascade rules.</div>
-              </div>
-              <div className={styles.itemArrow}>&gt;</div>
-            </div>
-          </div>
         </div>
       </WebFListView>
     </div>

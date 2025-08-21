@@ -27,6 +27,7 @@ import { ImagePreloadPage } from './pages/ImagePreloadPage';
 import { ThemeTogglePage } from './pages/ThemeTogglePage';
 import { FormAdvancedPage } from './pages/FormAdvancedPage';
 import { BasicFormElementsPage } from './pages/BasicFormElementsPage';
+import { InputSizingPage } from './pages/InputSizingPage';
 import { QRCodePage } from './pages/QRCodePage';
 import { TablePage } from './pages/TablePage';
 import { GesturePage } from './pages/GesturePage';
@@ -61,6 +62,7 @@ function App() {
         <Route path="/listview" title="Listview" element={<ListviewPage />} />
         <Route path="/form" title="Form" element={<FormPage />} />
         <Route path="/basic-form-elements" title="Basic Form Elements" element={<BasicFormElementsPage />} />
+        <Route path="/input-sizing" title="Input Sizing" element={<InputSizingPage />} />
         <Route path="/advanced-form" title="Advanced Form" element={<FormAdvancedPage />} />
         <Route path="/echarts" title="ECharts" element={<EChartsPage />} />
         <Route path="/image" title="Image Gallery" element={<ImagePage />} />

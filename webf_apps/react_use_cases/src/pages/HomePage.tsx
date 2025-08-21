@@ -36,6 +36,13 @@ export const HomePage: React.FC = () => {
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>
+            <div className={styles.componentItem} onClick={() => navigateTo('/input-sizing')}>
+              <div className={styles.itemContent}>
+                <div className={styles.itemTitle}>Input Sizing Showcase</div>
+                <div className={styles.itemDesc}>Smart and flexible input sizing with IntrinsicWidth for natural layouts.</div>
+              </div>
+              <div className={styles.itemArrow}>&gt;</div>
+            </div>
             <div className={styles.componentItem} onClick={() => navigateTo('/advanced-form')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Advanced Forms</div>
