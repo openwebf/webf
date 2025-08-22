@@ -672,7 +672,9 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
 
   @override
   RenderObject createRenderObject(flutter.BuildContext context) {
-    return webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
+    // Prefer an existing paired render object; fall back to creating one if missing.
+    return webFElement.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement) ??
+        (webFElement.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel);
   }
 
   @override
@@ -770,8 +772,10 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   flutter.RenderObject createRenderObject(flutter.BuildContext context) {
-    RenderBoxModel renderBoxModel =
-        webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement)!;
+    // Prefer an existing paired render object; fall back to creating one if missing.
+    RenderBoxModel? renderBoxModel =
+        webFElement!.renderStyle.getWidgetPairedRenderBoxModel(context as flutter.RenderObjectElement);
+    renderBoxModel ??= webFElement!.createRenderer(context as flutter.RenderObjectElement) as RenderBoxModel;
 
     // Attach position holder to apply offsets based on original layout.
     for (final positionHolder in webFElement!.positionHolderElements) {
