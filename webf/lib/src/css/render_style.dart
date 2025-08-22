@@ -3038,6 +3038,35 @@ class CSSRenderStyle extends RenderStyle
           hasInlineContent = true;
         }
       } else if (child is RenderBoxModel) {
+        // Special handling: if this is an event listener wrapper, inspect its real child
+        if (child is RenderEventListener) {
+          final RenderBox? wrapped = child.child;
+          if (wrapped is RenderTextBox) {
+            if (wrapped.data.trim().isNotEmpty) {
+              hasInlineContent = true;
+            }
+            child = renderBoxModel.childAfter(child);
+            continue;
+          } else if (wrapped is RenderBoxModel) {
+            final childRenderStyle = wrapped.renderStyle;
+            final childDisplay = childRenderStyle.display;
+            final childPosition = childRenderStyle.position;
+
+            if (childPosition != CSSPositionType.absolute && childPosition != CSSPositionType.fixed) {
+              if (wrapped.renderStyle.isSelfAnonymousFlowLayout()) {
+                hasInlineContent = true;
+              } else if (childDisplay == CSSDisplay.block || childDisplay == CSSDisplay.flex) {
+                hasBlockContent = true;
+              } else if (childDisplay == CSSDisplay.inline ||
+                  childDisplay == CSSDisplay.inlineBlock ||
+                  childDisplay == CSSDisplay.inlineFlex) {
+                hasInlineContent = true;
+              }
+            }
+            child = renderBoxModel.childAfter(child);
+            continue;
+          }
+        }
         final childRenderStyle = child.renderStyle;
         final childDisplay = childRenderStyle.display;
         final childPosition = childRenderStyle.position;

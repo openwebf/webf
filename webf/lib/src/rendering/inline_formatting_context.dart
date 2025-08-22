@@ -934,11 +934,29 @@ class InlineFormattingContext {
     // This approximates the parent's content box width and helps when our own
     // constraints report maxWidth <= 0 during intrinsic measurements.
     double? fallbackContentMaxWidth;
+    // In a flex item intrinsic measurement, avoid falling back to ancestor
+    // content widths. Let content determine its natural width instead of
+    // adopting the flex container's max width.
+    bool parentIsFlex = false;
+    // Walk up the ancestor chain to detect if we are inside a flex item.
+    // Do not stop at intermediate wrappers (e.g., RenderEventListener/Wrapper).
+    // Stop early if we hit a RenderWidget boundary.
+    RenderObject? p = container.parent;
+    while (p != null) {
+      if (p is RenderFlexLayout) {
+        parentIsFlex = true;
+        break;
+      }
+      if (p is RenderWidget) {
+        break;
+      }
+      p = (p is RenderObject) ? (p as RenderObject).parent : null;
+    }
     // Prefer this container's own computed content max width
     final double cmw = style.contentMaxConstraintsWidth;
-    if (cmw.isFinite && cmw > 0) fallbackContentMaxWidth = cmw;
+    if (!parentIsFlex && cmw.isFinite && cmw > 0) fallbackContentMaxWidth = cmw;
     // If not available, walk up ancestors to find a reasonable content width
-    if (fallbackContentMaxWidth == null) {
+    if (!parentIsFlex && fallbackContentMaxWidth == null) {
       RenderObject? p = container.parent;
       while (p != null) {
         if (p is RenderBoxModel) {
@@ -959,16 +977,16 @@ class InlineFormattingContext {
 
     double initialWidth;
     if (!constraints.hasBoundedWidth) {
-      initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-          ? fallbackContentMaxWidth
-          : 1000000.0;
+      initialWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
+          ? 1000000.0
+          : fallbackContentMaxWidth;
     } else {
       if (constraints.maxWidth > 0) {
         initialWidth = constraints.maxWidth;
       } else {
-        initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-            ? fallbackContentMaxWidth
-            : 1000000.0;
+        initialWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
+            ? 1000000.0
+            : fallbackContentMaxWidth;
         if (debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] adjust initialWidth due to maxWidth=${constraints.maxWidth} '
               '→ ${initialWidth.toStringAsFixed(2)} (fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
@@ -991,14 +1009,14 @@ class InlineFormattingContext {
       // - If bounded but maxWidth <= 0, prefer the fallback content width (so text wraps)
       //   and only shrink-to-fit to longestLine if no fallback is available.
       if (!constraints.hasBoundedWidth) {
-        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-            ? fallbackContentMaxWidth
-            : paragraph.longestLine;
+        final double targetWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
+            ? paragraph.longestLine
+            : fallbackContentMaxWidth;
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       } else if (constraints.maxWidth <= 0) {
-        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-            ? fallbackContentMaxWidth
-            : paragraph.longestLine;
+        final double targetWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
+            ? paragraph.longestLine
+            : fallbackContentMaxWidth;
         if (debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] block reflow with fallback width '
               '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');

@@ -17,6 +17,9 @@ import 'text.dart';
 import 'event_listener.dart';
 import 'package:webf/src/foundation/logger.dart';
 
+// Toggle for verbose RenderFlowLayout sizing logs.
+bool debugLogFlowEnabled = false;
+
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
 class RunMetrics {
@@ -233,6 +236,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     beforeLayout();
 
     _establishIFC = renderStyle.shouldEstablishInlineFormattingContext();
+    if (debugLogFlowEnabled) {
+      final tag = renderStyle.target.tagName.toLowerCase();
+      renderingLogger.fine('[Flow] <$tag> establishIFC=$_establishIFC constraints=$constraints contentConstraints=$contentConstraints');
+    }
     if (_establishIFC) {
       _inlineFormattingContext = InlineFormattingContext(container: this);
     }
@@ -331,6 +338,13 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     minContentWidth = ifcSize.width;
     minContentHeight = ifcSize.height;
+
+    if (debugLogFlowEnabled) {
+      renderingLogger.fine('[Flow] IFC size=${ifcSize.width.toStringAsFixed(1)}×${ifcSize.height.toStringAsFixed(1)} '
+          'contentConstraints=${contentConstraints == null ? 'null' : contentConstraints!.toString()} '
+          'final contentSize=${layoutContentSize.width.toStringAsFixed(1)}×${layoutContentSize.height.toStringAsFixed(1)} '
+          'box=${size.width.toStringAsFixed(1)}×${size.height.toStringAsFixed(1)}');
+    }
   }
 
   // There are 3 steps for layout children.
@@ -348,6 +362,10 @@ class RenderFlowLayout extends RenderLayoutBox {
       assert(_inlineFormattingContext != null);
 
       Size layoutSize = _inlineFormattingContext!.layout(contentConstraints!);
+
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow] IFC layout with constraints=${contentConstraints} -> ${layoutSize}');
+      }
 
       // Layout RenderTextBox and RenderEventListener children to avoid semantics errors
       _layoutTextBoxesRecursively(this);

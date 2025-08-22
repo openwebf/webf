@@ -17,6 +17,25 @@ import 'package:webf/src/foundation/logger.dart';
 // Enable verbose baseline logging for flex baseline alignment.
 // Toggle at runtime: import 'package:webf/rendering.dart' and set to true.
 bool debugLogFlexBaselineEnabled = false;
+// Verbose logging for flex sizing and constraints; toggle at runtime.
+bool debugLogFlexEnabled = false;
+
+String _fmtC(BoxConstraints c) =>
+    'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
+    'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
+
+String _fmtS(Size s) => 'S(${s.width.toStringAsFixed(1)}×${s.height.toStringAsFixed(1)})';
+
+String _childDesc(RenderBox child) {
+  if (child is RenderBoxModel) {
+    final el = child.renderStyle.target;
+    final tag = el.tagName.toLowerCase();
+    final id = (el.id != null && el.id!.isNotEmpty) ? '#${el.id}' : '';
+    final cls = (el.className.isNotEmpty) ? '.${el.className}' : '';
+    return '$tag$id$cls@${child.hashCode.toRadixString(16)}';
+  }
+  return '${child.runtimeType}@${child.hashCode.toRadixString(16)}';
+}
 
 // Position and size info of each run (flex line) in flex layout.
 // https://www.w3.org/TR/css-flexbox-1/#flex-lines
@@ -587,7 +606,15 @@ class RenderFlexLayout extends RenderLayoutBox {
     return minusConstraints;
   }
 
-  // Get constraints without percentage-based limits for intrinsic sizing
+  // Get constraints suited for intrinsic sizing of flex items.
+  //
+  // Goals:
+  // - Ignore percentage-based max constraints during the initial (intrinsic)
+  //   measurement so we don't prematurely clamp to the container.
+  // - For auto main-size in the flex main axis, avoid inheriting the flex
+  //   container's main-axis max constraint. This lets items size to their
+  //   content (min/max-content) rather than the container width/height,
+  //   matching CSS flex-basis:auto behavior.
   BoxConstraints _getIntrinsicConstraints(RenderBox child) {
     if (_isPlaceholderPositioned(child)) {
       RenderBoxModel? positionedBox = (child as RenderPositionPlaceholder).positioned;
@@ -603,28 +630,51 @@ class RenderFlexLayout extends RenderLayoutBox {
         return BoxConstraints();
       }
     } else if (child is RenderBoxModel) {
-      // Get constraints but temporarily disable percentage-based max constraints
-      RenderStyle originalStyle = child.renderStyle;
-      bool hasPercentageMaxWidth = originalStyle.maxWidth.type == CSSLengthType.PERCENTAGE;
-      bool hasPercentageMaxHeight = originalStyle.maxHeight.type == CSSLengthType.PERCENTAGE;
+      // Start with the child’s normal constraints
+      BoxConstraints c = child.getConstraints();
 
-      if (hasPercentageMaxWidth || hasPercentageMaxHeight) {
-        // For intrinsic measurement, use relaxed constraints
-        // Empty element detection will be handled later in _computeRunMetrics
-        BoxConstraints originalConstraints = child.getConstraints();
+      final RenderStyle s = child.renderStyle;
+      final bool hasPctMaxW = s.maxWidth.type == CSSLengthType.PERCENTAGE;
+      final bool hasPctMaxH = s.maxHeight.type == CSSLengthType.PERCENTAGE;
 
-        // Create relaxed constraints for intrinsic measurement
-        BoxConstraints relaxedConstraints = BoxConstraints(
-          minWidth: originalConstraints.minWidth,
-          maxWidth: hasPercentageMaxWidth ? double.infinity : originalConstraints.maxWidth,
-          minHeight: originalConstraints.minHeight,
-          maxHeight: hasPercentageMaxHeight ? double.infinity : originalConstraints.maxHeight,
+      // 1) Relax percentage-based maxima for intrinsic sizing
+      if (hasPctMaxW || hasPctMaxH) {
+        c = BoxConstraints(
+          minWidth: c.minWidth,
+          maxWidth: hasPctMaxW ? double.infinity : c.maxWidth,
+          minHeight: c.minHeight,
+          maxHeight: hasPctMaxH ? double.infinity : c.maxHeight,
         );
-
-        return relaxedConstraints;
-      } else {
-        return child.getConstraints();
       }
+
+      // 2) For flex main-axis auto size, avoid inheriting container’s main-axis cap.
+      //    This prevents items from measuring at full container width/height.
+      if (_isHorizontalFlexDirection) {
+        if (s.width.isAuto) {
+          c = BoxConstraints(
+            minWidth: c.minWidth,
+            maxWidth: double.infinity,
+            minHeight: c.minHeight,
+            maxHeight: c.maxHeight,
+          );
+        }
+      } else {
+        if (s.height.isAuto) {
+          c = BoxConstraints(
+            minWidth: c.minWidth,
+            maxWidth: c.maxWidth,
+            minHeight: c.minHeight,
+            maxHeight: double.infinity,
+          );
+        }
+      }
+
+      if (debugLogFlexEnabled) {
+        final s = child.renderStyle;
+        renderingLogger.finer('[Flex] intrinsicConstraints for ${_childDesc(child)} '
+            'autoMain=${_isHorizontalFlexDirection ? s.width.isAuto : s.height.isAuto} -> ${_fmtC(c)}');
+      }
+      return c;
     } else {
       return BoxConstraints();
     }
@@ -951,6 +1001,18 @@ class RenderFlexLayout extends RenderLayoutBox {
       return;
     }
 
+    if (debugLogFlexEnabled) {
+      final dir = renderStyle.flexDirection;
+      final jc = renderStyle.justifyContent;
+      final ai = renderStyle.alignItems;
+      final ac = renderStyle.alignContent;
+      final cw = renderStyle.contentBoxLogicalWidth;
+      final ch = renderStyle.contentBoxLogicalHeight;
+      renderingLogger.fine('[Flex] container start dir=$dir jc=$jc ai=$ai ac=$ac '
+          'constraints=${_fmtC(constraints)} contentConstraints=${_fmtC(contentConstraints!)} '
+          'logical=(w:${cw?.toStringAsFixed(1)}, h:${ch?.toStringAsFixed(1)})');
+    }
+
     if (!kReleaseMode) {
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.computeRunMetrics',
           arguments: {'renderObject': describeIdentity(this)});
@@ -985,6 +1047,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // _runMetrics maybe update after adjust, set flex containerSize again
     _setContainerSize(_runMetrics);
+
+    if (debugLogFlexEnabled) {
+      renderingLogger.fine('[Flex] container sizes content=${_fmtS(contentSize)} box=${_fmtS(size)}');
+    }
 
     if (!kReleaseMode) {
       developer.Timeline.finishSync();
@@ -1043,6 +1109,11 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       child.layout(childConstraints, parentUsesSize: true);
       intrinsicSizes[child.hashCode] = child.size;
+
+      if (debugLogFlexEnabled) {
+        renderingLogger.finer('[Flex] intrinsic child ${_childDesc(child)} '
+            'constraints=${_fmtC(childConstraints)} size=${_fmtS(child.size)}');
+      }
 
       if (child is RenderBoxModel) {
         child.clearOverrideContentSize();
@@ -1142,6 +1213,12 @@ class RenderFlexLayout extends RenderLayoutBox {
             intrinsicMain = paddingBorderMain;
           }
         }
+      }
+
+      if (debugLogFlexEnabled) {
+        renderingLogger.finer('[Flex] base main-size ${_childDesc(child)} '
+            'intrinsic=${(_isHorizontalFlexDirection ? childSize.width : childSize.height).toStringAsFixed(1)} '
+            'clamped=${intrinsicMain.toStringAsFixed(1)}');
       }
 
       _childrenIntrinsicMainSizes[child.hashCode] = intrinsicMain;
@@ -1300,6 +1377,12 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
       _runMetrics.add(_RunMetrics(
           runMainAxisExtent, runCrossAxisExtent, totalFlexGrow, totalFlexShrink, maxSizeAboveBaseline, runChildren, 0));
+
+      if (debugLogFlexEnabled) {
+        renderingLogger.fine('[Flex] run end main=${runMainAxisExtent.toStringAsFixed(1)} '
+            'cross=${runCrossAxisExtent.toStringAsFixed(1)} flexGrow=$totalFlexGrow flexShrink=$totalFlexShrink '
+            'limit=${flexLineLimit.isFinite ? flexLineLimit.toStringAsFixed(1) : '∞'}');
+      }
     }
 
     _flexLineBoxMetrics = _runMetrics;
@@ -1871,6 +1954,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     double? childStretchedCrossSize,
     {double? preserveMainAxisSize}
   ) {
+    if (debugLogFlexEnabled) {
+      renderingLogger.finer('[Flex] adjustConstraints ${_childDesc(child)} '
+          'flexedMain=${childFlexedMainSize?.toStringAsFixed(1)} '
+          'stretchedCross=${childStretchedCrossSize?.toStringAsFixed(1)} '
+          'preserve=${preserveMainAxisSize?.toStringAsFixed(1)}');
+    }
     if (childFlexedMainSize != null) {
       if (_isHorizontalFlexDirection) {
         _overrideChildContentBoxLogicalWidth(child, childFlexedMainSize);
@@ -1975,6 +2064,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       minHeight: minConstraintHeight,
       maxHeight: adjustedMaxHeight,
     );
+
+    if (debugLogFlexEnabled) {
+      renderingLogger.finer('[Flex] -> childConstraints ${_childDesc(child)} ${_fmtC(childConstraints)}');
+    }
 
     return childConstraints;
   }
