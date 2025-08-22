@@ -1968,7 +1968,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
-    if (childStretchedCrossSize != null) {
+    // Only override cross size when we have a positive stretched size.
+    // Guard against passing 0 (or negative due to margins) which would
+    // incorrectly tighten the child's cross-axis constraints to zero.
+    if (childStretchedCrossSize != null && childStretchedCrossSize > 0) {
       if (_isHorizontalFlexDirection) {
         _overrideChildContentBoxLogicalHeight(child, childStretchedCrossSize);
       } else {

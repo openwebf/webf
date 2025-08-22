@@ -977,16 +977,19 @@ class InlineFormattingContext {
 
     double initialWidth;
     if (!constraints.hasBoundedWidth) {
-      initialWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
-          ? 1000000.0
-          : fallbackContentMaxWidth;
+      // Unbounded: prefer a reasonable fallback if available, otherwise use a very large width
+      initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+          ? fallbackContentMaxWidth
+          : 1000000.0;
     } else {
       if (constraints.maxWidth > 0) {
         initialWidth = constraints.maxWidth;
       } else {
-        initialWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
-            ? 1000000.0
-            : fallbackContentMaxWidth;
+        // Bounded but maxWidth <= 0: use fallback content width when available (even in flex),
+        // otherwise fall back to a large width to allow natural shaping.
+        initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+            ? fallbackContentMaxWidth
+            : 1000000.0;
         if (debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] adjust initialWidth due to maxWidth=${constraints.maxWidth} '
               '→ ${initialWidth.toStringAsFixed(2)} (fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
@@ -1005,18 +1008,18 @@ class InlineFormattingContext {
       }
     } else {
       // For block containers:
-      // - If unbounded, shrink-to-fit to content.
+      // - If unbounded, shrink-to-fit to content or use a reasonable fallback width.
       // - If bounded but maxWidth <= 0, prefer the fallback content width (so text wraps)
       //   and only shrink-to-fit to longestLine if no fallback is available.
       if (!constraints.hasBoundedWidth) {
-        final double targetWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
-            ? paragraph.longestLine
-            : fallbackContentMaxWidth;
+        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+            ? fallbackContentMaxWidth
+            : paragraph.longestLine;
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       } else if (constraints.maxWidth <= 0) {
-        final double targetWidth = (parentIsFlex || fallbackContentMaxWidth == null || fallbackContentMaxWidth <= 0)
-            ? paragraph.longestLine
-            : fallbackContentMaxWidth;
+        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+            ? fallbackContentMaxWidth
+            : paragraph.longestLine;
         if (debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] block reflow with fallback width '
               '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
