@@ -135,7 +135,7 @@ bool DoScheme(const char* spec, const Component& scheme, CanonOutput* output, Co
   size_t begin = static_cast<size_t>(scheme.begin);
   size_t end = static_cast<size_t>(scheme.end());
   for (size_t i = begin; i < end; i++) {
-    char ch = std::bit_cast<unsigned char>(spec[i]);
+    unsigned char ch = std::bit_cast<unsigned char>(spec[i]);
     char replacement = 0;
     if (ch < 0x80u) {
       if (i == begin) {
@@ -307,7 +307,7 @@ void DoCanonicalizeRef(const char* spec, const Component& ref, CanonOutput* outp
   // Now iterate through all the characters, converting to UTF-8 and validating.
   size_t end = static_cast<size_t>(ref.end());
   for (size_t i = static_cast<size_t>(ref.begin); i < end; i++) {
-    char current_char = std::bit_cast<unsigned char>(spec[i]);
+    unsigned char current_char = std::bit_cast<unsigned char>(spec[i]);
     if (current_char < 0x80u) {
       if (kShouldEscapeCharInFragment[current_char])
         AppendEscapedChar(static_cast<unsigned char>(spec[i]), output);
