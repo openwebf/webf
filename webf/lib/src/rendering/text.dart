@@ -15,7 +15,12 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   String _data;
 
   set data(String value) {
+    if (_data == value) return;
     _data = value;
+    // Text content changed. Since text boxes are measured and painted by the
+    // parent's inline formatting context, notify the parent to relayout so the
+    // paragraph gets rebuilt with the new text content.
+    parent?.markNeedsLayout();
   }
 
   String get data => _data;

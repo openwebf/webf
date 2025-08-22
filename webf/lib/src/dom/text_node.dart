@@ -43,6 +43,18 @@ class TextNode extends CharacterData {
       }
     }
 
+    // Also mark the nearest render container for layout so IFC can rebuild
+    // and pick up the updated text content promptly.
+    Element? ancestor = parentElement;
+    while (ancestor != null) {
+      final renderBox = ancestor.renderStyle.attachedRenderBoxModel;
+      if (renderBox != null) {
+        renderBox.markNeedsLayout();
+        break;
+      }
+      ancestor = ancestor.parentElement;
+    }
+
     // Notify parent about text content changes to allow elements (e.g., textarea)
     // to react to CharacterData mutations.
     if (parentNode != null) {
