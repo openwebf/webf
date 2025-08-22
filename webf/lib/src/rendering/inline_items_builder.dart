@@ -34,6 +34,9 @@ class InlineItemsBuilder {
   /// Track if the previous text ended with collapsible whitespace
   bool _endsWithCollapsibleSpace = false;
 
+  /// Track if we're at the start of a line (paragraph start or after a forced break)
+  bool _atLineStart = true;
+
   /// Get current direction from stack or base direction.
   TextDirection get _currentDirection =>
       _directionStack.isNotEmpty ? _directionStack.last : direction;
@@ -53,6 +56,7 @@ class InlineItemsBuilder {
     _directionStack.clear();
     _levelStack.clear();
     _endsWithCollapsibleSpace = false;
+    _atLineStart = true;
 
     // Initialize direction stack with container's direction if it has one
     if (container is RenderBoxModel) {
@@ -162,6 +166,24 @@ class InlineItemsBuilder {
     // Process whitespace
 
     if (processedText.isNotEmpty) {
+      // Trim leading collapsible spaces at line start for normal/nowrap/pre-line
+      if (_atLineStart &&
+          (style.whiteSpace == WhiteSpace.normal ||
+              style.whiteSpace == WhiteSpace.nowrap ||
+              style.whiteSpace == WhiteSpace.preLine)) {
+        int trim = 0;
+        while (trim < processedText.length && processedText.codeUnitAt(trim) == WhitespaceProcessor.SPACE) {
+          trim++;
+        }
+        if (trim > 0) {
+          processedText = processedText.substring(trim);
+          // We've removed leading spaces; they shouldn't affect adjacency collapsing
+          _endsWithCollapsibleSpace = false;
+        }
+      }
+
+      // Skip if the text became empty after line-start trimming
+      if (processedText.isEmpty) return;
       // Handle adjacent text node whitespace collapsing
       if (style.whiteSpace == WhiteSpace.normal ||
           style.whiteSpace == WhiteSpace.nowrap ||
@@ -183,6 +205,8 @@ class InlineItemsBuilder {
 
       final startOffset = _currentOffset;
       _textContent.write(processedText);
+      // After emitting any text content, we're no longer at line start
+      _atLineStart = false;
 
       // Add text item
 
@@ -256,6 +280,9 @@ class InlineItemsBuilder {
         endOffset: _currentOffset,
         renderBox: box,
         style: box.renderStyle));
+
+    // Atomic inline occupies content; we're no longer at line start
+    _atLineStart = false;
   }
 
   /// Add open tag for inline box.
@@ -312,5 +339,11 @@ class InlineItemsBuilder {
       startOffset: startOffset,
       endOffset: _currentOffset,
     ));
+
+    // If control is a line break, we are at the start of a new line
+    if (char == '\n') {
+      _atLineStart = true;
+      _endsWithCollapsibleSpace = false;
+    }
   }
 }
