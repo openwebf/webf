@@ -57,8 +57,8 @@ void main() {
       final image = prepared.getElementById('image');
       final overlay = prepared.getElementById('overlay');
 
-      // Force layout
-      container.flushLayout();
+      // Wait for layout to complete
+      await tester.pump();
 
       // Container should shrink-wrap to image width (100px)
       expect(container.offsetWidth, closeTo(100, 5),
@@ -100,8 +100,8 @@ void main() {
       final image = prepared.getElementById('image');
       final overlay = prepared.getElementById('overlay');
 
-      // Force layout
-      container.flushLayout();
+      // Wait for layout to complete
+      await tester.pump();
 
       // Container should shrink-wrap to image width (102px)
       expect(container.offsetWidth, closeTo(102, 5));
@@ -148,8 +148,8 @@ void main() {
       final overlay = prepared.getElementById('overlay');
       final span = prepared.getElementById('span');
 
-      // Force layout
-      container.flushLayout();
+      // Wait for layout to complete
+      await tester.pump();
 
       // Log the actual values for debugging
       print('Container: width=${container.offsetWidth}, height=${container.offsetHeight}');
