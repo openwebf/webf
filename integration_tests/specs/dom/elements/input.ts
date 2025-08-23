@@ -307,7 +307,7 @@ describe('Tags input', () => {
     input.type = 'password';
     input.value = 'HelloWorld';
     input.placeholder = "This is placeholder.";
-
+  
     div.appendChild(input);
     document.body.appendChild(div);
 
@@ -896,7 +896,7 @@ describe('Input Sizing Test Cases', () => {
     container.style.display = 'flex';
     container.style.alignItems = 'center';
     container.style.gap = '20px';
-    
+
     const input = document.createElement('input');
     input.type = 'text';
     input.placeholder = '50% width';
@@ -907,7 +907,7 @@ describe('Input Sizing Test Cases', () => {
     input.style.fontSize = '16px';
     input.style.background = '#f0f8ff';
     input.style.boxShadow = '0 2px 4px rgba(51, 154, 240, 0.1)';
-    
+
     container.appendChild(input);
     document.body.appendChild(container);
     await snapshot();
@@ -937,7 +937,7 @@ describe('Input Sizing Test Cases', () => {
     container.style.display = 'flex';
     container.style.alignItems = 'center';
     container.style.gap = '20px';
-    
+
     const smallInput = document.createElement('input');
     smallInput.type = 'text';
     smallInput.placeholder = 'Small';
@@ -946,7 +946,7 @@ describe('Input Sizing Test Cases', () => {
     smallInput.style.border = '2px solid #20c997';
     smallInput.style.borderRadius = '4px';
     smallInput.style.background = '#f0fff4';
-    
+
     const normalInput = document.createElement('input');
     normalInput.type = 'text';
     normalInput.placeholder = 'Normal';
@@ -955,7 +955,7 @@ describe('Input Sizing Test Cases', () => {
     normalInput.style.border = '2px solid #20c997';
     normalInput.style.borderRadius = '4px';
     normalInput.style.background = '#f0fff4';
-    
+
     const largeInput = document.createElement('input');
     largeInput.type = 'text';
     largeInput.placeholder = 'Large';
@@ -964,7 +964,7 @@ describe('Input Sizing Test Cases', () => {
     largeInput.style.border = '2px solid #20c997';
     largeInput.style.borderRadius = '4px';
     largeInput.style.background = '#f0fff4';
-    
+
     container.appendChild(smallInput);
     container.appendChild(normalInput);
     container.appendChild(largeInput);
@@ -982,7 +982,7 @@ describe('Input Sizing Test Cases', () => {
     container.style.display = 'flex';
     container.style.alignItems = 'center';
     container.style.gap = '20px';
-    
+
     const minWidthInput = document.createElement('input');
     minWidthInput.type = 'text';
     minWidthInput.placeholder = 'min-width: 300px';
@@ -992,7 +992,7 @@ describe('Input Sizing Test Cases', () => {
     minWidthInput.style.borderRadius = '4px';
     minWidthInput.style.fontSize = '16px';
     minWidthInput.style.background = '#f8f0ff';
-    
+
     const maxWidthInput = document.createElement('input');
     maxWidthInput.type = 'text';
     maxWidthInput.placeholder = 'max-width: 100px';
@@ -1002,7 +1002,7 @@ describe('Input Sizing Test Cases', () => {
     maxWidthInput.style.borderRadius = '4px';
     maxWidthInput.style.fontSize = '16px';
     maxWidthInput.style.background = '#f8f0ff';
-    
+
     container.appendChild(minWidthInput);
     container.appendChild(maxWidthInput);
     document.body.appendChild(container);
@@ -1034,7 +1034,7 @@ describe('Input Sizing Test Cases', () => {
     container.style.border = '3px dashed #007AFF';
     container.style.borderRadius = '8px';
     container.style.width = '100%';
-    
+
     const input1 = document.createElement('input');
     input1.type = 'text';
     input1.placeholder = 'Flex item 1';
@@ -1044,7 +1044,7 @@ describe('Input Sizing Test Cases', () => {
     input1.style.borderRadius = '4px';
     input1.style.fontSize = '16px';
     input1.style.background = '#f0fdff';
-    
+
     const input2 = document.createElement('input');
     input2.type = 'text';
     input2.placeholder = 'Flex item 2';
@@ -1054,7 +1054,7 @@ describe('Input Sizing Test Cases', () => {
     input2.style.borderRadius = '4px';
     input2.style.fontSize = '16px';
     input2.style.background = '#f0fdff';
-    
+
     const input3 = document.createElement('input');
     input3.type = 'text';
     input3.placeholder = 'Flex item 3';
@@ -1064,7 +1064,7 @@ describe('Input Sizing Test Cases', () => {
     input3.style.borderRadius = '4px';
     input3.style.fontSize = '16px';
     input3.style.background = '#f0fdff';
-    
+
     container.appendChild(input1);
     container.appendChild(input2);
     container.appendChild(input3);

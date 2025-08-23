@@ -37,43 +37,61 @@ class FlutterInputElement extends WidgetElement
     });
   }
 
+  // defaultValue for INPUT maps to the `value` attribute in HTML.
+  // Setting it should also set the current value property.
+  @override
+  String? get defaultValue => getAttribute('value') ?? '';
+
+  @override
+  set defaultValue(String? text) {
+    final String v = text?.toString() ?? '';
+    // Update the attribute that carries the default value in HTML
+    internalSetAttribute('value', v);
+
+    // Update the live value property according to type
+    switch (type) {
+      case 'radio':
+        (this as BaseRadioElement).radioValue = v;
+        break;
+      case 'button':
+      case 'submit':
+        // BaseButtonElement.attributeDidUpdate will reflect label
+        break;
+      default:
+        // Do not override existing live value if already set (HTML dirty value semantics).
+        // Only initialize when current value is empty.
+        if ((elementValue).isEmpty) {
+          setElementValue(v);
+        }
+    }
+  }
+
+  // Resolve potential mixin conflicts by routing value to the right storage.
   @override
   get value {
-    if (type == 'radio') {
-      // For radio, use the radioValue getter from BaseRadioElement mixin
-      return (this as BaseRadioElement).radioValue;
+    switch (type) {
+      case 'radio':
+        return (this as BaseRadioElement).radioValue;
+      case 'button':
+      case 'submit':
+        return getAttribute('value') ?? '';
+      default:
+        return elementValue; // BaseInputElement storage
     }
-    // Use text controller for other input types  
-    return state?.controller.text ?? '';
   }
 
   @override
-  set value(value) {
-    if (type == 'radio') {
-      // For radio, use the radioValue setter from BaseRadioElement mixin
-      (this as BaseRadioElement).radioValue = value?.toString() ?? '';
-      return;
-    }
-    
-    // Use BaseInputElement's value setter for other types
-    if (value == null) {
-      state?.controller.value = TextEditingValue.empty;
-    } else {
-      value = value.toString();
-      if (state?.controller.value.text != value) {
-        // Preserve the current selection when updating the text value
-        TextSelection currentSelection = state?.controller.selection ?? TextSelection.collapsed(offset: 0);
-        int textLength = value.length;
-        
-        // Ensure selection doesn't exceed the new text length
-        int selectionStart = currentSelection.start.clamp(0, textLength);
-        int selectionEnd = currentSelection.end.clamp(0, textLength);
-        
-        state?.controller.value = TextEditingValue(
-          text: value.toString(),
-          selection: TextSelection(baseOffset: selectionStart, extentOffset: selectionEnd),
-        );
-      }
+  set value(v) {
+    switch (type) {
+      case 'radio':
+        (this as BaseRadioElement).radioValue = v?.toString() ?? '';
+        break;
+      case 'button':
+      case 'submit':
+        internalSetAttribute('value', v?.toString() ?? '');
+        break;
+      default:
+        setElementValue(v?.toString() ?? '');
     }
   }
 

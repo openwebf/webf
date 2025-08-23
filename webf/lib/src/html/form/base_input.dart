@@ -3,6 +3,7 @@
  */
 
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +18,7 @@ import 'form_element_base.dart';
 const Map<String, dynamic> _inputDefaultStyle = {
   BORDER: '2px solid rgb(118, 118, 118)',
   DISPLAY: INLINE_BLOCK,
-  COLOR: '#000'
+  COLOR: '#000',
 };
 
 const Map<String, dynamic> _checkboxDefaultStyle = {
@@ -32,11 +33,13 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
 /// create a base input widget containing input and textarea
 mixin BaseInputElement on WidgetElement implements FormElementBase {
   String? oldValue;
+  String _value = '';
 
   @override
   Map<String, dynamic> get defaultStyle {
     switch (type) {
       case 'text':
+      case 'password':
       case 'time':
         return _inputDefaultStyle;
       case 'radio':
@@ -49,16 +52,29 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   @override
   FlutterInputElementState? get state => super.state as FlutterInputElementState?;
 
-  String get value => state?.controller.value.text ?? '';
+  // Expose element value for resolving mixin conflicts from the concrete class.
+  String get elementValue => _value;
+
+  String get value => _value;
 
   set value(value) {
-    if (value == null) {
-      state?.controller.value = TextEditingValue.empty;
-    } else {
-      value = value.toString();
-      if (state?.controller.value.text != value) {
-        state?.controller.value = TextEditingValue(text: value.toString());
-      }
+    setElementValue(value?.toString() ?? '');
+  }
+
+  // Internal setter used by FlutterInputElement to avoid naming conflicts.
+  void setElementValue(String newValue) {
+    _value = newValue;
+    // Keep controller in sync when state exists, preserving selection.
+    final controller = state?.controller;
+    if (controller != null && controller.value.text != newValue) {
+      final TextSelection currentSelection = controller.selection;
+      final int textLength = newValue.length;
+      final int selectionStart = currentSelection.start.clamp(0, textLength);
+      final int selectionEnd = currentSelection.end.clamp(0, textLength);
+      controller.value = TextEditingValue(
+        text: newValue,
+        selection: TextSelection(baseOffset: selectionStart, extentOffset: selectionEnd),
+      );
     }
   }
 
@@ -151,7 +167,7 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   void set type(value) {
     String newType = value.toString();
     String currentType = getAttribute('type') ?? 'text';
-    
+
     // Only update if type actually changed
     if (newType != currentType) {
       internalSetAttribute('type', newType);
@@ -269,12 +285,29 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
           ? (lineHeight - fontSize - _defaultPadding * 2) / fontSize
           : 0;
 
-  TextStyle get _textStyle => TextStyle(
-        color: renderStyle.color.value,
-        fontSize: fontSize,
-        fontWeight: renderStyle.fontWeight,
-        fontFamily: renderStyle.fontFamily?.join(' '),
-      );
+  TextStyle get _textStyle {
+    double? height = null;
+
+    if (renderStyle.lineHeight != CSSText.DEFAULT_LINE_HEIGHT) {
+      double lineHeight = renderStyle.lineHeight.computedValue / renderStyle.fontSize.computedValue;
+
+      if (renderStyle.height.isNotAuto) {
+        lineHeight = math.min(lineHeight, renderStyle.height.computedValue / renderStyle.fontSize.computedValue);
+      }
+
+      if (lineHeight >= 1) {
+        height = lineHeight;
+      }
+    }
+
+    return TextStyle(
+      color: renderStyle.color.value,
+      fontSize: fontSize,
+      height: height,
+      fontWeight: renderStyle.fontWeight,
+      fontFamily: renderStyle.fontFamily?.join(' '),
+    );
+  }
 
   final double _defaultPadding = 0;
 
@@ -318,6 +351,8 @@ mixin BaseInputState on WebFWidgetElementState {
   void initBaseInputState() {
     _focusNode ??= FocusNode();
     _focusNode!.addListener(handleFocusChange);
+    // Initialize controller text from element value when state is created.
+    controller.value = TextEditingValue(text: widgetElement.elementValue);
   }
 
   void handleFocusChange() {
@@ -378,6 +413,8 @@ mixin BaseInputState on WebFWidgetElementState {
         widgetElement._selectionStart = null;
         widgetElement._selectionEnd = null;
 
+        // Keep element value as source of truth.
+        widgetElement.setElementValue(newValue);
         dom.InputEvent inputEvent = dom.InputEvent(inputType: '', data: newValue);
         widgetElement.dispatchEvent(inputEvent);
       });
@@ -387,35 +424,14 @@ mixin BaseInputState on WebFWidgetElementState {
 
 
     bool isAutoHeight = widgetElement.renderStyle.height.isAuto;
-    double verticalPadding = 0;
-    if (isAutoHeight) {
-      verticalPadding = 10;
-    } else {
-      double? heightValue = widgetElement.renderStyle.height.computedValue;
-      double fontSize = widgetElement.renderStyle.fontSize.computedValue;
-      double paddingTop = widgetElement.renderStyle.paddingTop.computedValue;
-      double paddingBottom = widgetElement.renderStyle.paddingBottom.computedValue;
-      double borderTopWidth = widgetElement.renderStyle.borderTopWidth?.computedValue ?? 0;
-      double borderBottomWidth = widgetElement.renderStyle.borderBottomWidth?.computedValue ?? 0;
-      
-      double textFieldContentHeight = heightValue - borderTopWidth - borderBottomWidth - paddingTop - paddingBottom;
-      verticalPadding = (textFieldContentHeight - fontSize) / 2;
-
-      if (verticalPadding < 0) verticalPadding = 0;
-    }
-
     bool isAutoWidth = widgetElement.renderStyle.width.isAuto;
-    double horizontalPadding = isAutoWidth ? 2 : 0;
 
     InputDecoration decoration = InputDecoration(
         label: widgetElement.label != null ? Text(widgetElement.label!) : null,
         border: InputBorder.none,
-        isDense: true, // Changed to false for better text baseline handling
-        isCollapsed: true,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-          vertical: verticalPadding,
-        ),
+        isDense: true,
+        // Changed to false for better text baseline handling
+        isCollapsed: false,
         hintText: widgetElement.placeholder,
         hintStyle: TextStyle(
           fontSize: widgetElement.renderStyle.fontSize.computedValue,
@@ -428,28 +444,29 @@ mixin BaseInputState on WebFWidgetElementState {
         // Hide counter to align with web
         suffix: widgetElement.isSearch && widgetElement.value.isNotEmpty && _isFocus
             ? SizedBox(
-                width: 14,
-                height: 14,
-                child: IconButton(
-                  iconSize: 14,
-                  padding: const EdgeInsets.all(0),
-                  onPressed: () {
-                    setState(() {
-                      controller.clear();
-                      dom.InputEvent inputEvent = dom.InputEvent(inputType: '', data: '');
-                      widgetElement.dispatchEvent(inputEvent);
-                    });
-                  },
-                  icon: Icon(Icons.clear),
-                ),
-              )
+          width: 14,
+          height: 14,
+          child: IconButton(
+            iconSize: 14,
+            padding: const EdgeInsets.all(0),
+            onPressed: () {
+              setState(() {
+                controller.clear();
+                dom.InputEvent inputEvent = dom.InputEvent(inputType: '', data: '');
+                widgetElement.dispatchEvent(inputEvent);
+              });
+            },
+            icon: Icon(Icons.clear),
+          ),
+        )
             : null);
     Widget widget = TextField(
       controller: controller,
       cursorHeight: widgetElement.renderStyle.fontSize.computedValue,
       enabled: !widgetElement.disabled && !widgetElement.readonly,
       style: widgetElement._textStyle,
-      strutStyle: null, // Remove StrutStyle to avoid conflicts with text baseline
+      strutStyle: null,
+      // Remove StrutStyle to avoid conflicts with text baseline
       autofocus: widgetElement.autofocus,
       minLines: widgetElement.minLines,
       maxLines: widgetElement.maxLines,
@@ -482,17 +499,34 @@ mixin BaseInputState on WebFWidgetElementState {
       decoration: decoration,
     );
 
-    if (isAutoWidth) {
-      widget = IntrinsicWidth(
-        child: widget,
-      );
+    widget = IntrinsicHeight(
+      child: widget,
+    );
+
+    // Align the input if the height was set.
+    if (!isAutoHeight) {
+      widget = Align(child: widget);
     }
-    if (isAutoHeight) {
-      widget = IntrinsicHeight(
-        child: widget,
-      );
+
+    // Apply a default min-width of ~20ch when CSS width is auto.
+    // Use the width of 18 '0' glyphs with current text style, similar to CSS `ch` unit.
+    if (isAutoWidth && widgetElement is! FlutterTextAreaElement) {
+      final TextStyle style = widgetElement._textStyle;
+      final TextPainter tp = TextPainter(
+        text: TextSpan(text: '000000000000000000', style: style), // 18 zeros
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )
+        ..layout(minWidth: 0, maxWidth: double.infinity);
+
+      final double ch18Width = tp.width;
+      // Respect CSS min-width if set (default UA style may set min-width: 140px)
+      final double cssMinWidth = widgetElement.renderStyle.minWidth.computedValue;
+      final double minWidth = math.max(ch18Width, cssMinWidth);
+
+      widget = ConstrainedBox(constraints: BoxConstraints(maxWidth: minWidth, minWidth: minWidth), child: widget);
     }
-    
+
     return widget;
   }
 
