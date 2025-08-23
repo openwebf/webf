@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-01-16
+## [0.1.0-beta] - 2025-08-23
 
 ### Added
 - Initial release of WebF Cupertino UI
@@ -29,6 +29,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - List components (ListSection, ListTile)
 - Icon, SearchInput, TextArea, ModalPopup
 - And many more iOS-style components
-
-[Unreleased]: https://github.com/openwebf/webf-cupertino-ui/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/openwebf/webf-cupertino-ui/releases/tag/v0.1.0
