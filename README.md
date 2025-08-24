@@ -51,7 +51,7 @@ OpenWebF is the runtime that brings web development's speed and flexibility dire
 OpenWebF is a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
 
 ✅ **Optimized Rendering Architecture** - We solved browser engine bottlenecks - the magic that brings your React/Vue UI's LCP times to less than 100ms  
-✅ **DOM, Window, Document, CSS Selectors** - `document.querySelector()`, `window.localStorage`, `element.addEventListener()`, `MutationObserver`, `querySelectorAll()` - hundreds of web APIs just work  
+✅ **DOM, Window, Document, CSS Selectors** - `document.querySelector()`, `window.localStorage`, `MutationObserver` - hundreds of web APIs just work  
 ✅ **Core CSS Support** - Standard CSS Box Model, CSS inline formatting context, CSS Flexbox, Animations - these features make TailwindCSS just work in WebF  
 ✅ **Framework Ready** - Your existing React hooks, Vue components, and npm packages work without modification  
 ✅ **Modern Build Tools Support** - Vite and Webpack builds just work in WebF - HMR, tree-shaking, code splitting all supported  
