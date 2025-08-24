@@ -56,8 +56,8 @@ OpenWebF is a high-performance, cutting-edge web rendering engine built on top o
 ✅ **Framework Ready** - Your existing React hooks, Vue components, and npm packages work without modification  
 ✅ **Modern Build Tools Support** - Vite and Webpack builds just work in WebF - HMR, tree-shaking, code splitting all supported  
 ✅ **Popular Web Stack Ready** - Vercel, React, Next.js - the most popular web development workflows are ready for developing Flutter apps  
-✅ **Flutter Widget Integration** - Use Flutter's built-in UI libraries like Cupertino and Material widgets as components in your React/Vue apps  
-✅ **Flutter Economy Access** - Just tell us which feature you want, the highway is ready to connect to any Flutter plugins - [thousands available](https://fluttergems.dev/)  
+✅ **Flutter Widget Integration** - Use our code_gen tools to generate a ready-to-use React or Vue UI component library from your Flutter widget components in just one click  
+✅ **Flutter Economy Access** - All Flutter plugins are available in WebF. Just tell us which Flutter packages you want from the [thousands available](https://fluttergems.dev/)  
 ✅ **Core DevTools Support** - Element panel inspection and network debugging with Chrome DevTools  
 ✅ **True Cross-Platform** - Same codebase runs on iOS, Android, Windows, macOS, Linux (web browser support coming soon)
 
