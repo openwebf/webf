@@ -65,7 +65,7 @@ OpenWebF is a high-performance, cutting-edge web rendering engine built on top o
 
 ## How it works
 
-WebF is a **compact browser runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
+WebF is a **compact runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
 
 **The Magic:** Web Apps and Flutter Apps share the same rendering context. This means you can seamlessly blend Flutter widgets with HTML elements, creating a unified development experience where web technologies just work natively in Flutter.
 
