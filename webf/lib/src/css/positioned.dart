@@ -612,8 +612,6 @@ class CSSPositionedLayout {
         siblingHeight = previousSibling.boxSize?.height ?? 0;
         // Add margin bottom
         siblingHeight += previousSibling.renderStyle.marginBottom.computedValue;
-      } else if (previousSibling is RenderTextBox) {
-        siblingHeight = previousSibling.boxSize?.height ?? 0;
       } else if (previousSibling.hasSize) {
         // For other render objects that are laid out, we can use constraints
         siblingHeight = previousSibling.constraints.smallest.height;
