@@ -44,7 +44,7 @@ OpenWebF is the runtime that brings web development's speed and flexibility dire
 
 - **Build Fast:** Dev with React or Vue + TailwindCSS, build with Vite, and deploy to Vercel - it all just works in WebF
 - **Ship Fast:** Deploy once across all Flutter-supported platforms from a single codebase  
-- **Run Fast:** Experience native-level performance that outpaces traditional WebView solutions
+- **Run Fast:** Experience native-like performance that outpaces traditional WebView solutions
 
 ## Key Features
 
@@ -71,7 +71,7 @@ WebF is a **compact runtime** that brings the full power of web development dire
 
 ## Performance Benefits
 
-🚀 **Native Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
+🚀 **Native-Like Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
 ⚡ **Fast Startup** - Lightweight runtime loads instantly compared to heavy browser engines  
 🎯 **Optimized Memory** - Efficient resource usage with shared rendering context  
 📱 **Smooth Animations** - 60fps performance across all platforms
