@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 
@@ -45,6 +46,13 @@ class _WebFTesterState extends State<WebFTester> {
               double contextId = controller.view.contextId;
               testContext = initTestFramework(contextId);
               registerDartTestMethodsToCpp(contextId);
+              
+              // Pass test filter from environment if available
+              final testFilter = Platform.environment['WEBF_TEST_NAME_FILTER'];
+              if (testFilter != null && testFilter.isNotEmpty) {
+                await controller.view.evaluateJavaScripts('window.WEBF_TEST_NAME_FILTER = ${jsonEncode(testFilter)};');
+              }
+              
               await controller.view.evaluateJavaScripts(widget.preCode);
             }),
         setup: (controller) {

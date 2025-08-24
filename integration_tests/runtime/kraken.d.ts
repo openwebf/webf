@@ -83,3 +83,11 @@ interface HTMLElement {
  * The mocked local http server origin.
  */
 declare const LOCAL_HTTP_SERVER :string;
+
+/**
+ * Global test helper functions
+ */
+declare function createText(content: string): Text;
+declare function createElement(tagName: string, props?: any, children?: any[]): HTMLElement;
+declare function createElementWithStyle(tagName: string, style?: any, children?: any[]): HTMLElement;
+declare const BODY: HTMLBodyElement;

@@ -60,3 +60,38 @@ this above command will execute which spec's name contains "synthesized-baseline
 ```
  WEBF_TEST_FILTER="synthesized-baseline-flexbox-001" npm run integration
 ```
+
+## Visual Snapshot Comparison
+
+Compare visual snapshots between WebF integration tests and Chrome runner tests:
+
+### Quick Start
+
+```bash
+# Build the comparison tool (first time only)
+npm run compare:build
+
+# Compare a single test file
+npm run compare specs/css/css-text-mixin/color_relative_properties_test.ts
+
+# Compare all tests in a directory
+npm run compare:all css-text-mixin
+
+# Compare all tests with snapshots
+npm run compare:all -- --all
+```
+
+### What it does
+
+1. Runs WebF integration test for the specified file(s)
+2. Runs Chrome runner test for the same file(s)
+3. Compares generated snapshots pixel-by-pixel
+4. Opens a web interface showing visual differences
+
+### Web Interface Features
+
+- **Grid View**: Side-by-side comparison of WebF, Chrome, and diff images
+- **Slider View**: Interactive overlay comparison
+- **Match Classification**: Perfect Match (green), Close Match (yellow), Different (red)
+
+For detailed usage, see [SNAPSHOT_COMPARISON.md](./SNAPSHOT_COMPARISON.md)

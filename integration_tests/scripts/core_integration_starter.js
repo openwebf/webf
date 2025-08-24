@@ -6,6 +6,91 @@ const path = require('path');
 const os = require('os');
 const {startWsServer} = require('./ws_server');
 
+// Show usage help
+function showHelp() {
+  console.log(`
+WebF Integration Test Runner
+
+Usage:
+  npm run integration                                    Run all integration tests
+  npm run integration -- <spec-file>                    Run specific test file
+  npm run integration -- <spec-file1> <spec-file2>      Run multiple test files
+  npm run integration -- <spec-file> --filter "<test-name>"  Run specific test within a file
+
+Examples:
+  npm run integration -- specs/css/css_text_baseline_test.ts
+  npm run integration -- specs/css/css_locale_support_test.ts
+  npm run integration -- specs/css/css_color_relative_properties_test.ts specs/css/css_text_effects_test.ts
+  npm run integration -- specs/css/css-inline-formatting/bidi-basic-rtl.ts --filter "should handle nested direction changes"
+
+Options:
+  --help, -h                                            Show this help message
+  --skip-build                                          Skip the Flutter build step
+  --filter "<test-name>"                                Filter to run only tests matching the name
+`);
+}
+
+// Parse command line arguments for specific spec files
+function parseArgs() {
+  const args = process.argv.slice(2);
+  const specFiles = [];
+  const otherArgs = [];
+  let filter = null;
+  
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    
+    if (arg === '--help' || arg === '-h') {
+      showHelp();
+      process.exit(0);
+    }
+    
+    // Handle --filter option
+    if (arg === '--filter' && i + 1 < args.length) {
+      filter = args[i + 1];
+      i++; // Skip the next argument as it's the filter value
+      continue;
+    }
+    
+    // Handle spec files (can start with specs/ or ./specs/)
+    if ((arg.startsWith('specs/') || arg.startsWith('./specs/')) && 
+        (arg.endsWith('.ts') || arg.endsWith('.js') || arg.endsWith('.tsx') || arg.endsWith('.jsx'))) {
+      // Normalize path to start with specs/
+      const normalizedPath = arg.startsWith('./') ? arg.slice(2) : arg;
+      specFiles.push(normalizedPath);
+    } else if (arg !== '--' && !arg.startsWith('-')) {
+      // Skip npm's -- separator and other flags
+      otherArgs.push(arg);
+    }
+  }
+  
+  return { specFiles, otherArgs, filter };
+}
+
+// Build specs with optional filtering
+function buildSpecs(specFiles) {
+  console.log('Building integration test specs...');
+  
+  const env = { ...process.env };
+  
+  // If specific spec files are provided, set WEBF_TEST_FILTER
+  if (specFiles.length > 0) {
+    console.log('Running specific spec files:', specFiles.join(', '));
+    // Create a filter that matches the full relative path
+    env.WEBF_TEST_FILTER = specFiles.map(f => f.replace(/\\/g, '/')).join('|');
+  }
+  
+  const result = spawnSync('npm', ['run', 'specs'], {
+    stdio: 'inherit',
+    env: env
+  });
+  
+  if (result.status !== 0) {
+    console.error('Failed to build specs');
+    process.exit(1);
+  }
+}
+
 function getRunningPlatform() {
   if (os.platform() == 'darwin') return 'macos';
   if (os.platform() == 'linux') return 'linux';
@@ -13,7 +98,7 @@ function getRunningPlatform() {
 }
 
 // Dart null safety error didn't report in dist binaries. Should run integration test with flutter run directly.
-function startIntegrationTest(websocketPort) {
+function startIntegrationTest(websocketPort, filter) {
   const shouldSkipBuild = /skip\-build/.test(process.argv);
   if (!shouldSkipBuild) {
     console.log('Building integration tests macOS application from "lib/main.dart"...');
@@ -34,15 +119,23 @@ function startIntegrationTest(websocketPort) {
     throw new Error('Unsupported platform:' + platform);
   }
 
+  const env = {
+    ...process.env,
+    WEBF_ENABLE_TEST: 'true',
+    WEBF_WEBSOCKET_SERVER_PORT: websocketPort,
+    'enable-software-rendering': true,
+    'skia-deterministic-rendering': true,
+    WEBF_TEST_DIR: path.join(__dirname, '../')
+  };
+  
+  // Pass filter through environment variable
+  if (filter) {
+    env.WEBF_TEST_NAME_FILTER = filter;
+    console.log(`Running tests with filter: "${filter}"`);
+  }
+
   const tester = spawn(testExecutable, [], {
-    env: {
-      ...process.env,
-      WEBF_ENABLE_TEST: 'true',
-      WEBF_WEBSOCKET_SERVER_PORT: websocketPort,
-      'enable-software-rendering': true,
-      'skia-deterministic-rendering': true,
-      WEBF_TEST_DIR: path.join(__dirname, '../')
-    },
+    env: env,
     cwd: process.cwd(),
     stdio: 'pipe'
   });
@@ -79,9 +172,14 @@ function getRandomNumber(min, max) {
 }
 
 async function main() {
+  const { specFiles, otherArgs, filter } = parseArgs();
+  
+  // Build specs with optional filtering
+  buildSpecs(specFiles);
+  
   const port = await getRandomNumber(11000, 14000);
   
-  startIntegrationTest(port);
+  startIntegrationTest(port, filter);
   startWsServer(port);
 }
 

@@ -1,0 +1,140 @@
+{
+  // Chrome Test Runner Configuration
+  // This file defines which test spec groups should be included in the Chrome test runner
+  
+  "testScopes": {
+    // Define named test scopes that can be run independently
+    "simple": {
+      "description": "Simple test to verify setup",
+      "groups": [],
+      "include": [
+        "chrome_runner/test/simple-test.js"
+      ],
+      "exclude": []
+    },
+    
+    "snapshot-demo": {
+      "description": "Snapshot API demonstration",
+      "groups": [],
+      "include": [
+        "chrome_runner/test/snapshot-demo.ts"
+      ],
+      "exclude": []
+    },
+    
+    "css-text": {
+      "description": "CSS Text and Typography tests",
+      "groups": [],
+      "include": [
+        "specs/css/css-text-mixin/color_relative_properties_test.ts"
+        // "specs/css/css-text-mixin/text_baseline_test.ts",
+        // "specs/css/css-text-mixin/locale_support_test.ts"
+      ],
+      "exclude": []
+    },
+    
+    // "dom-core": {
+    //   "description": "Core DOM functionality tests",
+    //   "groups": ["DOM"],
+    //   "include": [
+    //     "specs/dom/events/**/*.ts",
+    //     "specs/dom/nodes/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/dom/elements/**/*.{js,jsx,ts,tsx,html}"
+    //   ],
+    //   "exclude": []
+    // },
+    
+    // "css-layout": {
+    //   "description": "CSS Layout tests (Flexbox, Positioning, Box Model)",
+    //   "groups": ["FlexBoxLayoutAndPositionedLayout", "BoxModelAndSizing"],
+    //   "include": [
+    //     "specs/css/css-flexbox/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/css/css-position/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/css/css-box/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/css/css-sizing/**/*.{js,jsx,ts,tsx,html}"
+    //   ],
+    //   "exclude": []
+    // },
+    
+    // "css-visual": {
+    //   "description": "CSS Visual effects (Backgrounds, Borders, Transforms)",
+    //   "groups": ["BackgroundsAndBordersAndOverflow", "Transforms"],
+    //   "include": [
+    //     "specs/css/css-backgrounds/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/css/css-borders/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/css/filter-effects/**/*.{js,jsx,ts,tsx,html}"
+    //   ],
+    //   "exclude": []
+    // },
+    
+    // "browser-apis": {
+    //   "description": "Browser API tests (Fetch, Storage, Navigation)",
+    //   "groups": ["BOM", "Storage"],
+    //   "include": [
+    //     "specs/fetch/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/storage/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/url/**/*.{js,jsx,ts,tsx,html}",
+    //     "specs/xhr/**/*.{js,jsx,ts,tsx,html}"
+    //   ],
+    //   "exclude": []
+    // },
+    
+    // "rendering": {
+    //   "description": "Rendering and Performance tests",
+    //   "groups": ["Rendering"],
+    //   "include": [
+    //     "specs/rendering/**/*.{js,jsx,ts,tsx,html}"
+    //   ],
+    //   "exclude": []
+    // },
+    
+    // "all": {
+    //   "description": "All test specifications",
+    //   "groups": "*",
+    //   "include": ["specs/**/*.{js,jsx,ts,tsx,html}"],
+    //   "exclude": [
+    //     "specs/blink/**/*",  // Exclude Blink-specific tests
+    //     "specs/rust/**/*"    // Exclude Rust-specific tests
+    //   ]
+    // }
+  },
+  
+  // Default configuration
+  "defaultScope": "css-text",
+  
+  // Browser configuration
+  "browser": {
+    "headless": false,
+    "devtools": true,
+    "viewport": {
+      "width": 1200,
+      "height": 800
+    }
+  },
+  
+  // Test runner configuration
+  "testRunner": {
+    "timeout": 30000,
+    "retries": 0,
+    "parallel": false,
+    "randomOrder": false,
+    "stopOnFirstFailure": false
+  },
+  
+  // Snapshot testing configuration
+  "snapshots": {
+    "enabled": true,
+    "updateSnapshots": false,
+    "threshold": 0.1,
+    "pixelThreshold": 100
+  },
+  
+  // Reporting configuration
+  "reporting": {
+    "console": true,
+    "junit": false,
+    "html": true,
+    "coverage": false
+  }
+}

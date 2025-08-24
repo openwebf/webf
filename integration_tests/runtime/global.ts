@@ -14,11 +14,49 @@
 // Should by getter because body will reset before each spec
 declare const BODY: HTMLBodyElement
 
+// Declare test filter global
+declare global {
+  interface Window {
+    WEBF_TEST_NAME_FILTER?: string;
+  }
+}
+
 Object.defineProperty(global, 'BODY', {
   get() {
     return document.body;
   }
 });
+
+// Hook into Jasmine to support test filtering
+if (typeof window !== 'undefined' && window.WEBF_TEST_NAME_FILTER) {
+  const originalIt = global.it;
+  const originalFit = global.fit;
+  const filter = window.WEBF_TEST_NAME_FILTER;
+  
+  console.log(`Test filter active: "${filter}"`);
+  
+  // Override 'it' to check filter
+  global.it = function(description: string, fn: Function, timeout?: number) {
+    if (description.includes(filter)) {
+      console.log(`Running test: "${description}"`);
+      return originalIt.call(this, description, fn, timeout);
+    } else {
+      // Skip tests that don't match the filter
+      return global.xit(description, fn, timeout);
+    }
+  };
+  
+  // Override 'fit' to check filter
+  global.fit = function(description: string, fn: Function, timeout?: number) {
+    if (description.includes(filter)) {
+      console.log(`Running focused test: "${description}"`);
+      return originalFit.call(this, description, fn, timeout);
+    } else {
+      // Skip tests that don't match the filter
+      return global.xit(description, fn, timeout);
+    }
+  };
+}
 
 function setElementStyle(dom: HTMLElement, object: any) {
   if (object == null) return;

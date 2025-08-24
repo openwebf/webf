@@ -55,7 +55,19 @@ if (process.env.SPEC_SCOPE) {
     });
   })
   if (process.env.WEBF_TEST_FILTER) {
-    coreSpecFiles = coreSpecFiles.filter(name => name.includes(process.env.WEBF_TEST_FILTER))
+    const filters = process.env.WEBF_TEST_FILTER.split('|');
+    
+    const originalFiles = [...coreSpecFiles];
+    coreSpecFiles = coreSpecFiles.filter(name => {
+      return filters.some(filter => name.includes(filter));
+    });
+    
+    console.log(`Filtered spec files (${coreSpecFiles.length - 2} test files from ${originalFiles.length - 2} total):`); // -2 for runtime files
+    coreSpecFiles.forEach(file => {
+      if (!file.includes('runtime')) {
+        console.log(`  - ${file}`);
+      }
+    });
   }
   getSnapshotOption = (file) => {
     for (const group of specGroup) {

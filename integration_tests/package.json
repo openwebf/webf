@@ -2,17 +2,19 @@
   "private": true,
   "scripts": {
     "pretest": "npm install",
-    "test": "flutter clean && flutter pub get && npm run clean && npm run integration",
-    "posttest": "npm run lint",
-    "plugin_test": "npm run pretest && flutter clean && flutter pub get && npm run clean && npm run lint && npm run plugin_integration",
-    "multiple_page_test": "npm run pretest && flutter clean && flutter pub get && npm run clean && npm run lint && npm run multiple_page_integration",
     "lint": "cd ../ && npm run lint",
     "clean": "node scripts/clean.js && git clean -xfd ./snapshots",
     "specs": "webpack --config ./webpack.config.js",
     "prettier": "prettier --no-config --single-quote --trailing-comma=es5 --write ./specs/{.,**,**/**}/*.ts",
-    "integration": "npm run clean && npm run specs && node scripts/core_integration_starter",
+    "integration": "npm run clean && node scripts/core_integration_starter",
     "multiple_page_integration": "node scripts/multiple_page_integration",
-    "memory_leak_integration": "node scripts/memory_leak_integration"
+    "memory_leak_integration": "node scripts/memory_leak_integration",
+    "compare": "npm run compare:build && node compare-snapshots.js",
+    "compare:all": "npm run compare:build && node compare-all-snapshots.js",
+    "compare:build": "node scripts/build-comparison-tools.js",
+    "test:spec": "npm run integration --",
+    "test": "npm run integration --",
+    "chrome": "cd chrome_runner && npm test -- "
   },
   "devDependencies": {
     "@babel/core": "^7.12.10",
