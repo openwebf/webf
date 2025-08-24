@@ -1,0 +1,26 @@
+{
+  "name": "webf-spec-preview",
+  "version": "1.0.0",
+  "description": "Interactive preview tool for WebF integration test specs",
+  "main": "server.js",
+  "bin": {
+    "webf-spec-preview": "./cli.js"
+  },
+  "scripts": {
+    "start": "node cli.js"
+  },
+  "keywords": [
+    "webf",
+    "spec",
+    "preview",
+    "testing"
+  ],
+  "dependencies": {
+    "express": "^4.18.2",
+    "chalk": "^3.0.0",
+    "glob": "^7.1.6",
+    "get-port-please": "^3.1.2",
+    "open": "^7.0.3",
+    "webpack": "^5.88.1"
+  }
+}

@@ -14,7 +14,10 @@
     "compare:build": "node scripts/build-comparison-tools.js",
     "test:spec": "npm run integration --",
     "test": "npm run integration --",
-    "chrome": "cd chrome_runner && npm test -- "
+    "chrome": "cd chrome_runner && npm test -- ",
+    "snapshot-viewer": "node tools/snapshot-viewer/cli.js",
+    "spec-preview": "node tools/spec-preview/cli.js",
+    "tools:install": "cd tools/snapshot-viewer && npm install && cd ../spec-preview && npm install"
   },
   "devDependencies": {
     "@babel/core": "^7.12.10",
@@ -46,6 +49,7 @@
     "lodash.flattendeep": "^4.4.0",
     "multer": "^2.0.0",
     "node-html-parser": "^5.1.0",
-    "svgo": "^3.0.2"
+    "svgo": "^3.0.2",
+    "open": "^7.0.3"
   }
 }

@@ -73,15 +73,25 @@ it('should render correctly', async () => {
 ### Command Line
 ```bash
 # Run all integration tests
-cd integration_tests && npm run integrations
+cd integration_tests && npm run integration
 
 # Run specific test file
-npm run integrations -- specs/css/css-display/display.ts
+npm run integration -- specs/css/css-display/display.ts
 
-## Run the filtered test specs
-npm run integrations -- --filter <filte string>
+# Run the filtered test specs
+npm run integration -- --filter <filter string>
+```
 
+### Snapshot Viewer
+```bash
+# View failed snapshots interactively
+npm run snapshot-viewer
 
+# View with custom port
+npm run snapshot-viewer -- --port 4000
+
+# View specific snapshot directory
+npm run snapshot-viewer -- --dir ./custom-snapshots
 ```
 
 ### Test Helpers

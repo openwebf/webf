@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebF Spec Preview</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>🧪 WebF Spec Preview</h1>
+      <div class="header-controls">
+        <span class="header-info">Write or paste your spec code • Auto-compiles on blur</span>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="editor-section">
+        <div class="editor-header">
+          <h2 id="current-spec-name">Spec Editor</h2>
+          <div class="editor-controls">
+            <button id="copy-btn" class="btn btn-secondary">📋 Copy Code</button>
+            <button id="compile-btn" class="btn btn-primary">⚙️ Compile</button>
+            <button id="run-browser-btn" class="btn btn-success" disabled>🌐 Run in Browser</button>
+            <button id="copy-webf-url-btn" class="btn btn-warning" disabled>🚀 Copy WebF URL</button>
+          </div>
+        </div>
+        
+        <div class="editor-container">
+          <textarea id="code-editor"></textarea>
+        </div>
+
+        <div class="output-section">
+          <div class="output-header">
+            <h3>Output</h3>
+            <button id="clear-output-btn" class="btn btn-sm">Clear</button>
+          </div>
+          <div id="output-container" class="output-container">
+            <div class="output-placeholder">Compile or run a spec to see output here</div>
+          </div>
+        </div>
+        
+        <div id="webf-url-section" class="webf-url-section" style="display: none;">
+          <div class="webf-url-header">
+            <h3>WebF Debug URL</h3>
+            <button id="copy-url-btn" class="btn btn-sm btn-warning">Copy</button>
+          </div>
+          <div class="webf-url-container">
+            <code id="webf-url-display"></code>
+          </div>
+        </div>
+      </section>
+
+      <section class="preview-section">
+        <div class="preview-header">
+          <h2>Browser Preview</h2>
+          <div class="preview-controls">
+            <button id="reload-preview-btn" class="btn btn-secondary">🔄 Reload</button>
+            <button id="open-external-btn" class="btn btn-secondary">🔗 Open External</button>
+          </div>
+        </div>
+        <div class="preview-container">
+          <iframe id="preview-iframe" class="preview-iframe"></iframe>
+          <div id="preview-placeholder" class="preview-placeholder">
+            <div>📝 Write your spec code</div>
+            <div>⚙️ Compile it</div>
+            <div>🌐 Run in browser to see results here</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

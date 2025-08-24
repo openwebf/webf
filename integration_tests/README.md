@@ -95,3 +95,47 @@ npm run compare:all -- --all
 - **Match Classification**: Perfect Match (green), Close Match (yellow), Different (red)
 
 For detailed usage, see [SNAPSHOT_COMPARISON.md](./SNAPSHOT_COMPARISON.md)
+
+## Test Tools
+
+### Snapshot Viewer
+
+Interactive web-based tool for reviewing and managing failed test snapshots:
+
+```bash
+# Install tool dependencies (first time)
+npm run tools:install
+
+# View failed snapshots
+npm run snapshot-viewer
+
+# View with custom port
+npm run snapshot-viewer -- --port 4000
+```
+
+Features:
+- **Visual Comparison**: Side-by-side view of original, current, and diff images
+- **Keyboard Shortcuts**: Fast navigation (Cmd/Ctrl + arrows) and actions
+- **Batch Operations**: Accept or reject all changes at once
+- **Live Updates**: Automatically detects new failed snapshots
+
+### Spec Preview
+
+Interactive tool for writing and testing WebF integration test specs:
+
+```bash
+# Launch spec preview editor
+npm run spec-preview
+
+# Use custom port
+npm run spec-preview -- --port 4000
+```
+
+Features:
+- **Live Editor**: Write or paste spec code with syntax highlighting
+- **Compile on-the-fly**: Convert TypeScript to JavaScript with WebF runtime
+- **Browser Testing**: Quick testing with mocked WebF environment
+- **WebF Integration**: Launch specs in actual WebF runtime
+- **Real-time Console**: View compilation and test results
+
+See [tools/README.md](tools/README.md) for detailed documentation and keyboard shortcuts.

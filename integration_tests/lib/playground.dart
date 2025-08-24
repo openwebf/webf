@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:async';
+import 'dart:ffi';
 import 'dart:io';
 
 import 'package:ansicolor/ansicolor.dart';
@@ -49,11 +50,15 @@ void main() async {
           children: [
             WebF.fromControllerName(
                 controllerName: 'test',
-                bundle: WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js'),
+                bundle: WebFBundle.fromUrl('http://localhost:3400/webf_debug_server.js'),
                 createController: () => WebFController(viewportWidth: 360, viewportHeight: 640, onControllerInit: (controller) async {
                   double contextId = controller.view.contextId;
-                  initTestFramework(contextId);
+                  Pointer<Void> testContext = initTestFramework(contextId);
                   registerDartTestMethodsToCpp(contextId);
+
+                  Timer(Duration(seconds: 1), () {
+                    executeTest(testContext, contextId);
+                  });
                 })),
             WebFInspectorFloatingPanel(),
           ],

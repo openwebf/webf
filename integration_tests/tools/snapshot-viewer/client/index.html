@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebF Snapshot Viewer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="header">
+      <h1>🖼️ WebF Snapshot Viewer</h1>
+      <div class="header-info">
+        <span id="snapshot-count">Loading...</span>
+        <button id="rescan-btn" class="btn btn-secondary">🔄 Rescan</button>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Failed Snapshots</h2>
+          <div class="bulk-actions">
+            <button id="accept-all-current" class="btn btn-success btn-sm">
+              ✓ Accept All Current
+            </button>
+            <button id="keep-all-original" class="btn btn-warning btn-sm">
+              ✗ Keep All Original
+            </button>
+          </div>
+        </div>
+        <div id="snapshot-list" class="snapshot-list">
+          <!-- Snapshot items will be populated here -->
+        </div>
+      </aside>
+
+      <section class="viewer">
+        <div id="empty-state" class="empty-state">
+          <p>Select a snapshot from the list to view</p>
+        </div>
+
+        <div id="snapshot-viewer" class="snapshot-viewer" style="display: none;">
+          <div class="viewer-header">
+            <h2 id="current-snapshot-name"></h2>
+            <div class="viewer-controls">
+              <button id="prev-btn" class="btn btn-secondary" disabled>← Previous</button>
+              <span id="snapshot-index"></span>
+              <button id="next-btn" class="btn btn-secondary">Next →</button>
+            </div>
+          </div>
+
+          <div class="image-comparison">
+            <div class="image-panel">
+              <h3>Original</h3>
+              <div class="image-container">
+                <img id="original-image" alt="Original snapshot">
+              </div>
+            </div>
+
+            <div class="image-panel">
+              <h3>Current</h3>
+              <div class="image-container">
+                <img id="current-image" alt="Current snapshot">
+              </div>
+            </div>
+
+            <div class="image-panel">
+              <h3>Difference</h3>
+              <div class="image-container">
+                <img id="diff-image" alt="Difference">
+              </div>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button id="accept-current" class="btn btn-success">
+              ✓ Accept Current Version
+            </button>
+            <button id="keep-original" class="btn btn-warning">
+              ✗ Keep Original Version
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
