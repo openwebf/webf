@@ -238,11 +238,9 @@ static JSValue simulateInputText(JSContext* ctx, JSValueConst this_val, int argc
   }
 
   std::unique_ptr<SharedNativeString> nativeString = webf::jsValueToNativeString(ctx, charStringValue);
-  void* p = static_cast<void*>(nativeString.get());
-
   context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
-  context->dartMethodPtr()->simulateInputText(context->isDedicated(), static_cast<SharedNativeString*>(p));
+  context->dartMethodPtr()->simulateInputText(context->isDedicated(), nativeString.release());
   return JS_NULL;
 };
 

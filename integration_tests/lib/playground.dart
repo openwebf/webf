@@ -11,6 +11,9 @@ import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 
+import 'bridge/from_native.dart';
+import 'bridge/test_input.dart';
+import 'bridge/to_native.dart';
 import 'custom_elements/main.dart';
 import 'test_module.dart';
 import 'local_http_server.dart';
@@ -34,6 +37,8 @@ void main() async {
   // Set render font family AlibabaPuHuiTi to resolve rendering difference.
   CSSText.DEFAULT_FONT_FAMILY_FALLBACK = ['AlibabaPuHuiTi'];
 
+  testTextInput = TestTextInput();
+
   runZonedGuarded(() {
     runApp(MaterialApp(
       title: 'webF Integration Tests',
@@ -43,7 +48,13 @@ void main() async {
         body: Stack(
           children: [
             WebF.fromControllerName(
-                controllerName: 'test', bundle: WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js')),
+                controllerName: 'test',
+                bundle: WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js'),
+                createController: () => WebFController(viewportWidth: 360, viewportHeight: 640, onControllerInit: (controller) async {
+                  double contextId = controller.view.contextId;
+                  initTestFramework(contextId);
+                  registerDartTestMethodsToCpp(contextId);
+                })),
             WebFInspectorFloatingPanel(),
           ],
         ),

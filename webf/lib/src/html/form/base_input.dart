@@ -34,6 +34,13 @@ const Map<String, dynamic> _checkboxDefaultStyle = {
 mixin BaseInputElement on WidgetElement implements FormElementBase {
   String? oldValue;
   String _value = '';
+  bool _pendingFocus = false;
+  bool _dirtyValue = false;
+
+  // Public helper to allow other classes to mark focus request before mount.
+  void markPendingFocus() {
+    _pendingFocus = true;
+  }
 
   @override
   Map<String, dynamic> get defaultStyle {
@@ -58,12 +65,13 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
   String get value => _value;
 
   set value(value) {
-    setElementValue(value?.toString() ?? '');
+    setElementValue(value != null ? value.toString() : '');
   }
 
   // Internal setter used by FlutterInputElement to avoid naming conflicts.
-  void setElementValue(String newValue) {
+  void setElementValue(String newValue, {bool markDirty = true}) {
     _value = newValue;
+    if (markDirty) _dirtyValue = true;
     // Keep controller in sync when state exists, preserving selection.
     final controller = state?.controller;
     if (controller != null && controller.value.text != newValue) {
@@ -77,6 +85,8 @@ mixin BaseInputElement on WidgetElement implements FormElementBase {
       );
     }
   }
+
+  bool get isValueDirty => _dirtyValue;
 
   TextInputType? getKeyboardType() {
     if (this is FlutterTextAreaElement) {
@@ -353,6 +363,16 @@ mixin BaseInputState on WebFWidgetElementState {
     _focusNode!.addListener(handleFocusChange);
     // Initialize controller text from element value when state is created.
     controller.value = TextEditingValue(text: widgetElement.elementValue);
+    // Honor pending focus requests issued before state existed.
+    if (widgetElement._pendingFocus) {
+      // Schedule to ensure the widget tree is ready.
+      scheduleMicrotask(() {
+        if (mounted) {
+          focus();
+        }
+      });
+      widgetElement._pendingFocus = false;
+    }
   }
 
   void handleFocusChange() {
@@ -504,7 +524,7 @@ mixin BaseInputState on WebFWidgetElementState {
     );
 
     // Align the input if the height was set.
-    if (!isAutoHeight) {
+    if (!isAutoHeight && widgetElement is! FlutterTextAreaElement) {
       widget = Align(child: widget);
     }
 
@@ -526,6 +546,46 @@ mixin BaseInputState on WebFWidgetElementState {
 
       widget = ConstrainedBox(constraints: BoxConstraints(maxWidth: minWidth, minWidth: minWidth), child: widget);
     }
+
+    // Apply default width for textarea when CSS width is auto.
+    if (isAutoWidth && widgetElement is FlutterTextAreaElement) {
+      // Use `cols` attribute if provided; default to 20.
+      int columns = 20;
+      final String? colsAttr = widgetElement.getAttribute('cols');
+      if (colsAttr != null) {
+        final int? parsed = int.tryParse(colsAttr);
+        if (parsed != null && parsed > 0) columns = parsed;
+      }
+
+      final TextStyle style = widgetElement._textStyle;
+      final String zeros = List.filled(columns, '0').join();
+      final TextPainter tp = TextPainter(
+        text: TextSpan(text: zeros, style: style),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout(minWidth: 0, maxWidth: double.infinity);
+
+      final double chColsWidth = tp.width;
+      final double cssMinWidth = widgetElement.renderStyle.minWidth.computedValue;
+      final double minWidth = math.max(chColsWidth, cssMinWidth);
+
+      // Enforce default width using cols; allow grow if CSS or layout expands beyond it.
+      widget = ConstrainedBox(constraints: BoxConstraints(minWidth: minWidth, maxWidth: minWidth), child: widget);
+    }
+
+    // Dispatch click event on pointer up for input/textarea elements.
+    widget = Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerUp: (_) {
+        final box = context.findRenderObject() as RenderBox;
+        final Offset globalOffset = box.globalToLocal(Offset.zero);
+        final double clientX = globalOffset.dx;
+        final double clientY = globalOffset.dy;
+        widgetElement.dispatchEvent(dom.MouseEvent(dom.EVENT_CLICK,
+            clientX: clientX, clientY: clientY, view: widgetElement.ownerDocument.defaultView));
+      },
+      child: widget,
+    );
 
     return widget;
   }

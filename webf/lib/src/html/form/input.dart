@@ -33,7 +33,12 @@ class FlutterInputElement extends WidgetElement
       state?.blur();
     });
     methods['focus'] = BindingObjectMethodSync(call: (List args) {
-      state?.focus();
+      // If state is not yet available, remember to focus after mount.
+      if (state != null) {
+        state?.focus();
+      } else {
+        (this as BaseInputElement).markPendingFocus();
+      }
     });
   }
 

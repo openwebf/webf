@@ -51,8 +51,21 @@ class TextNode extends CharacterData {
 
     _data = newData;
 
+
     if (managedByFlutterWidget) {
       _applyTextStyle();
+    }
+
+    // Notify parent about text content changes to allow elements (e.g., textarea)
+    // to react to CharacterData mutations.
+    if (parentNode != null) {
+      parentNode!.childrenChanged(ChildrenChange(
+        type: ChildrenChangeType.TEXT_CHANGE,
+        byParser: ChildrenChangeSource.API,
+        affectsElements: ChildrenChangeAffectsElements.NO,
+        siblingChanged: this,
+        oldText: oldData,
+      ));
     }
   }
 

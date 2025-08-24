@@ -1,4 +1,4 @@
-xdescribe('Tags textarea', () => {
+describe('Tags textarea', () => {
   it('basic', async () => {
     const textarea = document.createElement('textarea');
     textarea.style.width = '60px';
@@ -454,7 +454,7 @@ xdescribe('Tags textarea', () => {
     });
   });
 
-  it('event blur', (done) => {
+  it('event blur', async (done) => {
     const textarea1 = document.createElement('textarea');
     const textarea2 = document.createElement('textarea');
     textarea1.value = 'Textarea 1';
@@ -466,6 +466,11 @@ xdescribe('Tags textarea', () => {
       textarea2.removeEventListener('blur', handler);
       done();
     });
+
+    await Promise.all([
+      waitForOnScreen(textarea1),
+      waitForOnScreen(textarea2),
+    ]);
 
     requestAnimationFrame(async () => {
       textarea1.focus();
@@ -493,7 +498,7 @@ xdescribe('Tags textarea', () => {
     });
   });
 
-  it('event input', (done) => {
+  it('event input', async (done) => {
     const VALUE = 'Hello';
     const textarea = document.createElement('input');
     textarea.value = '';
@@ -503,11 +508,14 @@ xdescribe('Tags textarea', () => {
       expect(event.type).toEqual('input');
       expect(event.target).toEqual(textarea);
       expect(event.currentTarget).toEqual(textarea);
-      expect(event.bubbles).toEqual(false);
+      expect(event.bubbles).toEqual(true);
       done();
     });
 
     document.body.appendChild(textarea);
+
+    await waitForOnScreen(textarea);
+
     textarea.focus();
     requestAnimationFrame(() => {
       simulateInputText(VALUE);
@@ -581,7 +589,7 @@ xdescribe('Tags textarea', () => {
     expect(textarea.value).toBe('');
   });
 
-  it('textarea attribute and property value priority', (done) => {
+  it('textarea attribute and property value priority', async (done) => {
     let text;
     const textarea = createElement('textarea', {
       rows: 10,
@@ -595,24 +603,28 @@ xdescribe('Tags textarea', () => {
     ]) as HTMLTextAreaElement;
     document.body.appendChild(textarea);
 
+    await waitForOnScreen(textarea);
+
     requestAnimationFrame(() => {
       text.data = 'text content value';
-      expect(textarea.defaultValue).toBe('text content value');
-      expect(textarea.value).toBe('text content value');
+      requestAnimationFrame(() => {
+        expect(textarea.defaultValue).toBe('text content value');
+        expect(textarea.value).toBe('text content value');
 
-      textarea.defaultValue = 'default value';
-      expect(textarea.defaultValue).toBe('default value');
-      expect(textarea.value).toBe('default value');
+        textarea.defaultValue = 'default value';
+        expect(textarea.defaultValue).toBe('default value');
+        expect(textarea.value).toBe('default value');
 
-      textarea.value = 'property value';
-      expect(textarea.defaultValue).toBe('default value');
-      expect(textarea.value).toBe('property value');
+        textarea.value = 'property value';
+        expect(textarea.defaultValue).toBe('default value');
+        expect(textarea.value).toBe('property value');
 
-      text.data = 'text content value 2';
-      expect(textarea.defaultValue).toBe('text content value 2');
-      expect(textarea.value).toBe('property value');
+        text.data = 'text content value 2';
+        expect(textarea.defaultValue).toBe('default value');
+        expect(textarea.value).toBe('property value');
 
-      done()
+        done()
+      })
     });
   });
 });
