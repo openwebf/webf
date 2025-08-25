@@ -62,14 +62,15 @@ OpenWebF is a high-performance, cutting-edge web rendering engine built on top o
 ✅ **True Cross-Platform** - Same codebase runs on iOS, Android, Windows, macOS, Linux (web browser support coming soon)
 
 
+## How It Works
 
-## How it works
+WebF uses **QuickJS** as its JavaScript runtime to execute your web code. On top of this, we’ve implemented **hundreds of essential DOM APIs**, ensuring that popular web frameworks and modern build tools work out of the box.
 
-WebF is a **browser like runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
+We’ve also created a **custom layout engine** that extends Flutter’s capabilities. This enables support for the **CSS box model, block/inline formatting contexts, and flexbox layouts** to align closely with W3C CSS specifications.
 
-**The Magic:** Web Apps and Flutter Apps share the same rendering context. This means you can seamlessly blend Flutter widgets with HTML elements, creating a unified development experience where web technologies just work natively in Flutter.
+Your JavaScript runs in a **dedicated thread** and supports **headless mode** without attaching to the Flutter rendering context. The JavaScript runtime persists throughout the app’s entire lifecycle, starting up in sync with the Dart VM for optimal performance.
 
-## Performance Benefits
+Additionally, your **DOM elements and CSS UI share the same rendering context as Flutter widgets**, allowing you to **seamlessly blend Flutter widgets with HTML elements**. This unified approach creates a native-like development experience where web technologies and Flutter coexist naturally.
 
 🚀 **Native-Like Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
 ⚡ **Fast Startup** - Lightweight runtime loads instantly compared to heavy browser engines  
