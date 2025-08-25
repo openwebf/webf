@@ -40,7 +40,7 @@
 
 **Build Fast. Ship Fast. Run Fast.**
 
-OpenWebF is the runtime that brings web development's speed and flexibility directly to Flutter. Our high-performance web rendering engine seamlessly glues Web, Flutter, and Native platforms together, enabling you to:
+OpenWebF is the browser like runtime that brings web development's speed and flexibility directly to Flutter. Our high-performance web rendering engine seamlessly glues Web, Flutter, and Native platforms together, enabling you to:
 
 - **Build Fast:** Dev with React or Vue + TailwindCSS, build with Vite, and deploy to Vercel - it all just works in WebF
 - **Ship Fast:** Deploy once across all Flutter-supported platforms from a single codebase  
@@ -65,7 +65,7 @@ OpenWebF is a high-performance, cutting-edge web rendering engine built on top o
 
 ## How it works
 
-WebF is a **compact runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
+WebF is a **browser like runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
 
 **The Magic:** Web Apps and Flutter Apps share the same rendering context. This means you can seamlessly blend Flutter widgets with HTML elements, creating a unified development experience where web technologies just work natively in Flutter.
 
