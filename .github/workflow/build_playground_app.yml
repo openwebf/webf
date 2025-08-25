@@ -10,7 +10,7 @@ env:
 
 jobs:
   build_ios_app:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, macOS, ARM64, Build Runner]
     steps:
     - uses: actions/checkout@v3
       with:
