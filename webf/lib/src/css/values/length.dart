@@ -223,13 +223,14 @@ class CSSLengthValue {
             currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
         bool shouldInheritRenderWidgetElementConstraintsWidth =
             parentRenderStyle?.isSelfRenderWidget() == true && renderWidgetElementChild != null;
-        double? parentWidgetConstraintWidth = renderWidgetElementChild?.constraints.maxWidth;
+        double? parentWidgetConstraintWidth = renderWidgetElementChild?.hasSize == true ? renderWidgetElementChild!.constraints.maxWidth : null;
         bool shouldInheritRenderWidgetElementConstraintsHeight = parentRenderStyle?.isSelfRenderWidget() == true &&
             renderWidgetElementChild != null &&
+            renderWidgetElementChild.hasSize &&
             renderWidgetElementChild.constraints.maxHeight.isFinite &&
             renderWidgetElementChild.constraints.maxHeight !=
                 currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
-        double? parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
+        double? parentWidgetConstraintHeight = renderWidgetElementChild?.hasSize == true ? renderWidgetElementChild!.constraints.maxHeight : null;
 
         // Percentage relative width priority: RenderWidgetChild's constraints > logical width > renderer width
         double? parentPaddingBoxWidth = parentRenderStyle?.paddingBoxLogicalWidth ?? parentRenderStyle?.paddingBoxWidth;
@@ -281,10 +282,10 @@ class CSSLengthValue {
                 // Ensure parent's layout width is computed
                 (parentRenderStyle as CSSRenderStyle).computeContentBoxLogicalWidth();
                 // Try to get parent width again after computation
-                double? recomputedParentWidth = isPositioned 
-                    ? parentRenderStyle.paddingBoxLogicalWidth 
+                double? recomputedParentWidth = isPositioned
+                    ? parentRenderStyle.paddingBoxLogicalWidth
                     : parentRenderStyle.contentBoxLogicalWidth;
-                
+
                 if (recomputedParentWidth != null) {
                   _computedValue = value! * recomputedParentWidth;
                 } else {
@@ -454,11 +455,11 @@ class CSSLengthValue {
           case COLUMN_GAP:
             // Gap percentages resolve against the content area of the container itself
             // For row-gap: against the container's height
-            // For column-gap: against the container's width  
+            // For column-gap: against the container's width
             // For gap (shorthand): against width for horizontal, height for vertical
             double? containerContentWidth = renderStyle!.contentBoxWidth ?? renderStyle!.contentBoxLogicalWidth;
             double? containerContentHeight = renderStyle!.contentBoxHeight ?? renderStyle!.contentBoxLogicalHeight;
-            
+
             if (realPropertyName == ROW_GAP) {
               // Row gap resolves against container height
               if (containerContentHeight != null && containerContentHeight > 0) {
@@ -511,7 +512,7 @@ class CSSLengthValue {
 
     // Ensure _computedValue is never null
     _computedValue ??= 0;
-    
+
     // Cache computed value.
     if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
       cacheComputedValue(renderStyle!, propertyName!, _computedValue!);
