@@ -145,7 +145,7 @@ export const HomePage: React.FC = () => {
             <div className={styles.componentItem} onClick={() => navigateTo('/video')}>
               <div className={styles.itemContent}>
                 <div className={styles.itemTitle}>Video Player</div>
-                <div className={styles.itemDesc}>HTML5 video player with custom controls and multiple formats.</div>
+                <div className={styles.itemDesc}>Flutter Video Player with custom controls.</div>
               </div>
               <div className={styles.itemArrow}>&gt;</div>
             </div>

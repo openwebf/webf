@@ -36,12 +36,15 @@ dependencies:
   permission_handler: ^11.3.1
 
   # WebF
-  webf: ^0.22.0
+  webf:
+    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    version: ^0.23.0-beta.3
   webf_cupertino_ui:
     path: ../webf_cupertino_ui
-  webf_deeplink: ^0.1.0-beta
-  webf_share: ^0.1.0-beta
-  webf_ui_kit: ^0.1.0-beta
+  webf_deeplink: ^0.1.0-beta.1
+  webf_share: ^0.1.0-beta.1
+  webf_ui_kit: ^0.1.0-beta.1
+  webf_video_player: ^0.1.0-beta.0
 
   vibration: ^3.1.3
   go_router: ^16.0.0
@@ -56,14 +59,14 @@ dependencies:
   auto_size_text: ^3.0.0
 
 dependency_overrides:
-  webf:
-    path: ../webf
   webf_deeplink:
     path: ../webf_modules/deeplink
   webf_share:
     path: ../webf_modules/share
   webf_ui_kit:
     path: ../webf_modules/ui_kit
+  webf_video_player:
+    path: ../webf_modules/video_player
 
 dev_dependencies:
   flutter_test:

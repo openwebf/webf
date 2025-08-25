@@ -1,0 +1,5 @@
+# Development artifacts and temporary files
+pubspec.lock
+.dart_tool/
+.packages
+build/

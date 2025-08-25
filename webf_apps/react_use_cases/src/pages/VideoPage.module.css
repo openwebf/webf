@@ -63,7 +63,108 @@
   display: block;
 }
 
-/* Basic video controls */
+/* Enhanced video controls for developer reference */
+.customVideoControls {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  color: white;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.controlsRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.controlButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 10px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.controlButton:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.controlButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.playButton {
+  background: rgba(255, 255, 255, 0.25);
+  min-width: 100px;
+}
+
+.timeDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 12px;
+  border-radius: 6px;
+  backdrop-filter: blur(5px);
+}
+
+.currentTime {
+  color: #ffd700;
+}
+
+.timeSeparator {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.totalTime {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.statusBadges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(5px);
+}
+
+.errorBadge {
+  background: rgba(220, 53, 69, 0.8);
+  border-color: rgba(220, 53, 69, 0.9);
+}
+
+.errorMessage {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+/* Legacy video controls (keep for compatibility) */
 .videoControls {
   display: flex;
   align-items: center;
@@ -71,21 +172,6 @@
   padding: 12px 16px;
   background: rgba(0, 0, 0, 0.8);
   color: white;
-}
-
-.playButton {
-  background: transparent;
-  border: none;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.playButton:hover {
-  background: rgba(255, 255, 255, 0.1);
 }
 
 .timeInfo {
@@ -342,6 +428,143 @@
 }
 
 /* Dark theme support */
+/* State info and error styles */
+.stateInfo {
+  font-size: 14px;
+  color: var(--secondary-text-color, #666);
+  margin-top: 8px;
+}
+
+.error {
+  color: #e74c3c;
+  font-weight: 500;
+}
+
+/* Event log styles */
+.eventLogContainer {
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+.logHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #e9ecef;
+  font-weight: 600;
+  color: var(--primary-text-color, #333);
+}
+
+.clearButton {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clearButton:hover {
+  background: #c82333;
+}
+
+.eventLog {
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.logEntry {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #dee2e6;
+  font-size: 12px;
+  align-items: flex-start;
+}
+
+.logEntry:hover {
+  background: #f1f3f4;
+}
+
+.logTime {
+  color: #6c757d;
+  min-width: 80px;
+  font-weight: 500;
+}
+
+.logType {
+  color: #495057;
+  font-weight: 600;
+  min-width: 100px;
+}
+
+.logData {
+  color: #6f42c1;
+  flex: 1;
+  word-break: break-all;
+}
+
+/* Control panel styles */
+.attributeControls,
+.methodControls {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.controlRow {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.controlRow:last-child {
+  margin-bottom: 0;
+}
+
+.controlRow label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--primary-text-color, #333);
+}
+
+.controlRow input,
+.controlRow select {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.controlRow button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.controlRow button:hover {
+  background: #0056b3;
+}
+
+/* Dark theme support */
 @media (prefers-color-scheme: dark) {
   .componentSection {
     background-color: var(--dark-background-color, #1a1a1a);
@@ -362,6 +585,41 @@
 
   .itemDesc {
     color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .stateInfo {
+    color: var(--dark-secondary-text-color, #cccccc);
+  }
+
+  .eventLogContainer {
+    background: #383838;
+    border-color: #555;
+  }
+
+  .logHeader {
+    background: #555;
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .logEntry:hover {
+    background: #444;
+  }
+
+  .attributeControls,
+  .methodControls {
+    background: #2d2d2d;
+    border-color: #555;
+  }
+
+  .controlRow label {
+    color: var(--dark-primary-text-color, #ffffff);
+  }
+
+  .controlRow input,
+  .controlRow select {
+    background: #444;
+    border-color: #666;
+    color: white;
   }
 
   .videoGridItem,
