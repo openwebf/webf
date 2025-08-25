@@ -40,18 +40,32 @@ class RenderWidget extends RenderBoxModel
     renderStyle.computeContentBoxLogicalWidth();
     renderStyle.computeContentBoxLogicalHeight();
 
-    // To maximum compact with Flutter, We needs to limit the maxWidth and maxHeight constraints to
-    // the viewportSize, as same as the MaterialApp does.
+    // Base child constraints come from our content box constraints.
+    // For inline-block with auto width, avoid clamping to the viewport so
+    // children can determine natural width and we shrink-wrap accordingly.
+    final bool isInlineBlockAutoWidth =
+        renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto;
+
     Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
-    BoxConstraints childConstraints = BoxConstraints(
+    BoxConstraints childConstraints;
+    if (isInlineBlockAutoWidth) {
+      childConstraints = BoxConstraints(
         minWidth: contentConstraints!.minWidth,
-        maxWidth: (contentConstraints!.hasTightWidth || (renderStyle.target as WidgetElement).allowsInfiniteWidth)
-            ? contentConstraints!.maxWidth
-            : math.min(viewportSize.width, contentConstraints!.maxWidth),
+        maxWidth: contentConstraints!.maxWidth,
         minHeight: contentConstraints!.minHeight,
+        maxHeight: contentConstraints!.maxHeight,
+      );
+    } else {
+      childConstraints = BoxConstraints(
+          minWidth: contentConstraints!.minWidth,
+          maxWidth: (contentConstraints!.hasTightWidth || (renderStyle.target as WidgetElement).allowsInfiniteWidth)
+              ? contentConstraints!.maxWidth
+              : math.min(viewportSize.width, contentConstraints!.maxWidth),
+          minHeight: contentConstraints!.minHeight,
           maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
-            ? contentConstraints!.maxHeight
-            : math.min(viewportSize.height, contentConstraints!.maxHeight));
+              ? contentConstraints!.maxHeight
+              : math.min(viewportSize.height, contentConstraints!.maxHeight));
+    }
 
     // If an explicit CSS height is specified (non-auto), tighten the child's
     // constraints on the cross axis to that used content height, clamped

@@ -938,6 +938,7 @@ class InlineFormattingContext {
     // content widths. Let content determine its natural width instead of
     // adopting the flex container's max width.
     bool parentIsFlex = false;
+    bool parentIsInlineBlockAutoWidth = false;
     // Walk up the ancestor chain to detect if we are inside a flex item.
     // Do not stop at intermediate wrappers (e.g., RenderEventListener/Wrapper).
     // Stop early if we hit a RenderWidget boundary.
@@ -947,16 +948,30 @@ class InlineFormattingContext {
         parentIsFlex = true;
         break;
       }
-      if (p is RenderWidget) {
-        break;
+      if (p is RenderEventListener) {
+        p = p.parent;
+        continue;
+      }
+      if (p is RenderBoxModel) {
+        final rs = p.renderStyle;
+        if (rs.effectiveDisplay == CSSDisplay.inlineBlock && rs.width.isAuto) {
+          parentIsInlineBlockAutoWidth = true;
+          // Keep walking up to avoid treating this as a hard boundary
+        }
+        if (p is RenderWidget) {
+          // Stop at widget boundary to avoid leaking app viewport widths
+          break;
+        }
       }
       p = (p is RenderObject) ? (p as RenderObject).parent : null;
     }
     // Prefer this container's own computed content max width
     final double cmw = style.contentMaxConstraintsWidth;
-    if (!parentIsFlex && cmw.isFinite && cmw > 0) fallbackContentMaxWidth = cmw;
+    if (!parentIsFlex && !parentIsInlineBlockAutoWidth && cmw.isFinite && cmw > 0) {
+      fallbackContentMaxWidth = cmw;
+    }
     // If not available, walk up ancestors to find a reasonable content width
-    if (!parentIsFlex && fallbackContentMaxWidth == null) {
+    if (!parentIsFlex && !parentIsInlineBlockAutoWidth && fallbackContentMaxWidth == null) {
       RenderObject? p = container.parent;
       while (p != null) {
         if (p is RenderBoxModel) {

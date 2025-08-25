@@ -204,6 +204,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     try {
       doingThisLayout = true;
 
+      if (renderStyle.target.id == 'divA') {
+        print(1);
+      }
+
       _doPerformLayout();
 
       if (needsRelayout) {

@@ -5,6 +5,7 @@
 import 'dart:ui';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/src/rendering/box_model.dart';
 import 'package:webf/src/css/whitespace_processor.dart';
 
@@ -36,7 +37,7 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   CSSRenderStyle renderStyle;
 
-  bool get _paintsSelf => parent is! RenderBoxModel;
+  bool get _paintsSelf => parent is! RenderFlowLayout;
 
   TextSpan _buildTextSpan() {
     // Phase I whitespace processing to approximate CSS behavior outside IFC

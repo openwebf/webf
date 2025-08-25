@@ -45,6 +45,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/
+    - html_test/
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

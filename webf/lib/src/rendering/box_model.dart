@@ -72,7 +72,7 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       }
 
       Offset sliverScrollOffset = scrollDirection == Axis.vertical ?
-          Offset(0, layoutOffset) : Offset(layoutOffset, 0);
+      Offset(0, layoutOffset) : Offset(layoutOffset, 0);
 
       stackOffsets.add(sliverScrollOffset);
     } else if (parentRenderer is RenderBox) {
@@ -96,8 +96,8 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
 /// Instead, it provides helpful functions that subclasses can call as
 /// appropriate.
 mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
-        ParentDataType extends ContainerBoxParentData<ChildType>>
-    implements ContainerRenderObjectMixin<ChildType, ParentDataType> {
+ParentDataType extends ContainerBoxParentData<ChildType>>
+implements ContainerRenderObjectMixin<ChildType, ParentDataType> {
   /// Returns the baseline of the first child with a baseline.
   ///
   /// Useful when the children are displayed vertically in the same order they
@@ -381,6 +381,7 @@ class RenderLayoutBox extends RenderBoxModel
   }
 
   List<RenderBox>? _cachedPaintingOrder;
+
   List<RenderBox> get paintingOrder {
     _cachedPaintingOrder ??= _computePaintingOrder();
     return _cachedPaintingOrder!;
@@ -524,7 +525,7 @@ class RenderLayoutBox extends RenderBoxModel
     double? marginRight = renderStyle.marginRight.computedValue;
     double? marginAddSizeLeft = 0;
     double? marginAddSizeRight = 0;
-    if(isNegativeMarginChangeHSize) {
+    if (isNegativeMarginChangeHSize) {
       marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
       marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
     }
@@ -554,7 +555,7 @@ class RenderLayoutBox extends RenderBoxModel
     if (specifiedContentWidth != null) {
       finalContentWidth = specifiedContentWidth;
     }
-    if(parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
+    if (parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
         parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
       finalContentWidth += marginAddSizeLeft;
       finalContentWidth += marginAddSizeRight;
@@ -655,11 +656,13 @@ class RenderBoxModel extends RenderBox
   // Expose read-only accessors for parents to consume during their layout
   // without triggering any new baseline computation.
   double? computeCssFirstBaseline() => _cssFirstBaseline;
+
   double? computeCssLastBaseline() => _cssLastBaseline;
 
   // Baseline accessor by type; currently returns the same cached values for
   // both alphabetic and ideographic, and can be specialized as support grows.
   double? computeCssFirstBaselineOf(TextBaseline baseline) => _cssFirstBaseline;
+
   double? computeCssLastBaselineOf(TextBaseline baseline) => _cssLastBaseline;
 
   // Utilities for children to update baseline caches during their own layout.
@@ -722,8 +725,8 @@ class RenderBoxModel extends RenderBox
         renderStyle.width.isPrecise &&
         renderStyle.height.isPrecise);
     bool isFixedMinAndMaxSize = (renderStyle.minWidth.value == renderStyle.maxWidth.value &&
-            renderStyle.minWidth.value != null &&
-            renderStyle.minWidth.isPrecise) &&
+        renderStyle.minWidth.value != null &&
+        renderStyle.minWidth.isPrecise) &&
         (renderStyle.minHeight.value == renderStyle.maxHeight.value &&
             renderStyle.minHeight.value != null &&
             renderStyle.minHeight.isPrecise);
@@ -801,6 +804,7 @@ class RenderBoxModel extends RenderBox
   // box constraint errors during flex item resizing. This flag is automatically cleared
   // after the text box reads it in getConstraints().
   bool isFlexRelayout = false;
+
   // Whether it needs relayout due to percentage calculation.
   bool needsRelayout = false;
 
@@ -808,11 +812,14 @@ class RenderBoxModel extends RenderBox
   // child has percentage length and parent's size can not be calculated by style
   // thus parent needs relayout for its child calculate percentage length.
   void markParentNeedsRelayout() {
-    RenderObject? parent = renderStyle.getParentRenderStyle()?.attachedRenderBoxModel;
+    RenderObject? parent = renderStyle
+        .getParentRenderStyle()
+        ?.attachedRenderBoxModel;
     if (parent is RenderBoxModel) {
       parent.needsRelayout = true;
     }
   }
+
   void markNeedsRelayout() {
     needsRelayout = true;
   }
@@ -910,15 +917,27 @@ class RenderBoxModel extends RenderBox
 
     double? parentBoxContentConstraintsWidth;
     if (renderStyle.isParentRenderBoxModel() && (this is RenderLayoutBox || this is RenderWidget)) {
-      RenderBoxModel parentRenderBoxModel = (parent as RenderBoxModel);
-      parentBoxContentConstraintsWidth =
-          parentRenderBoxModel.renderStyle.deflateMarginConstraints(parentRenderBoxModel.contentConstraints!).maxWidth;
+      RenderBoxModel parentRenderBoxModel = (renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!);
 
-      // When inner minimal content size are larger that parent's constraints,
-      // still use parent constraints but ensure minConstraintWidth is properly handled later
-      if (parentBoxContentConstraintsWidth < minConstraintWidth) {
-        // Don't nullify parent constraints, let the constraint resolution handle this
-        // parentBoxContentConstraintsWidth will be used as maxConstraintWidth
+      // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
+      // do not bound block children by the parent's finite content width. This allows
+      // the child to compute its own natural width and lets the parent shrink-wrap.
+      bool parentIsInlineBlockAutoWidth =
+          parentRenderBoxModel.renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+              parentRenderBoxModel.renderStyle.width.isAuto;
+
+      if (parentIsInlineBlockAutoWidth) {
+        parentBoxContentConstraintsWidth = double.infinity;
+      } else {
+        parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle
+            .deflateMarginConstraints(parentRenderBoxModel.contentConstraints!)
+            .maxWidth;
+
+        // When inner minimal content size are larger that parent's constraints,
+        // still use parent constraints but ensure minConstraintWidth is properly handled later
+        if (parentBoxContentConstraintsWidth < minConstraintWidth) {
+          // Keep parentBoxContentConstraintsWidth; resolution happens below.
+        }
       }
 
       // FlexItems with flex:none won't inherit parent box's constraints
@@ -931,7 +950,8 @@ class RenderBoxModel extends RenderBox
 
       // Skip constraint inheritance if parent is a flex item with flex: none (flex-grow: 0, flex-shrink: 0)
       if (parentFlow.renderStyle.isParentRenderFlexLayout()) {
-        RenderFlexLayout flexParent = parentFlow.renderStyle.getParentRenderStyle()!.attachedRenderBoxModel as RenderFlexLayout;
+        RenderFlexLayout flexParent = parentFlow.renderStyle.getParentRenderStyle()!
+            .attachedRenderBoxModel as RenderFlexLayout;
         if (flexParent.isFlexNone(parentFlow)) {
           // Don't inherit constraints for flex: none items
           parentBoxContentConstraintsWidth = null;
@@ -1057,12 +1077,12 @@ class RenderBoxModel extends RenderBox
     return constraints.constrain(borderBoxSize);
   }
 
-  Size wrapOutContentSizeRight (Size contentSize) {
+  Size wrapOutContentSizeRight(Size contentSize) {
     Size paddingBoxSize = renderStyle.wrapPaddingSizeRight(contentSize);
     return renderStyle.wrapBorderSizeRight(paddingBoxSize);
   }
 
-  Size wrapOutContentSize (Size contentSize) {
+  Size wrapOutContentSize(Size contentSize) {
     Size paddingBoxSize = renderStyle.wrapPaddingSize(contentSize);
     return renderStyle.wrapBorderSize(paddingBoxSize);
   }
@@ -1089,7 +1109,9 @@ class RenderBoxModel extends RenderBox
   // Base layout methods to compute content constraints before content box layout.
   // Call this method before content box layout.
   void beforeLayout() {
-    BoxConstraints contentConstraints = parent is RenderBoxModel ? constraints : getConstraints();
+    BoxConstraints contentConstraints = (parent is RenderEventListener
+        ? (parent as RenderEventListener).parent
+        : parent) is RenderBoxModel ? constraints : getConstraints();
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);
@@ -1308,7 +1330,7 @@ class RenderBoxModel extends RenderBox
       final Matrix4 transform = Matrix4.identity();
       applyLayoutTransform(child, transform, false);
       Offset tlOffset =
-          MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
+      MatrixUtils.transformPoint(transform, Offset(childOverflowLayoutRect.left, childOverflowLayoutRect.top));
       overflowRect = Rect.fromLTRB(
           math.min(overflowRect.left, tlOffset.dx),
           math.min(overflowRect.top, tlOffset.dy),
@@ -1391,7 +1413,8 @@ class RenderBoxModel extends RenderBox
       stack: stack,
       library: 'rendering library',
       context: ErrorDescription('during $method()'),
-      informationCollector: () => <DiagnosticsNode>[
+      informationCollector: () =>
+      <DiagnosticsNode>[
         // debugCreator should always be null outside of debugMode, but we want
         // the tree shaker to notice this.
         if (kDebugMode && debugCreator != null)
