@@ -1,0 +1,123 @@
+name: Build Playground App Release
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+env:
+  flutterVersion: "3.27.0"
+
+jobs:
+  build_ios_app:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.flutterVersion }}
+    - name: Configure Flutter
+      run: flutter config --enable-ios
+    - name: Install Flutter dependencies
+      run: |
+        cd playground_app
+        flutter pub get
+    - name: Build iOS app (no signing)
+      run: |
+        cd playground_app
+        flutter build ios --release --no-codesign
+    - name: Create iOS IPA (unsigned)
+      run: |
+        cd playground_app
+        mkdir -p build/ios/unsigned
+        cp -R build/ios/iphoneos/Runner.app build/ios/unsigned/
+        cd build/ios/unsigned
+        zip -r ../../../playground_app_ios_unsigned.ipa Runner.app
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ios_app
+        path: playground_app/playground_app_ios_unsigned.ipa
+
+  build_android_app:
+    runs-on: [self-hosted, macOS, ARM64]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.flutterVersion }}
+    - name: Set up Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+    - name: Configure Flutter
+      run: flutter config --enable-android
+    - name: Install Flutter dependencies
+      run: |
+        cd playground_app
+        flutter pub get
+    - name: Build Android APK
+      run: |
+        cd playground_app
+        flutter build apk --release
+    - name: Build Android App Bundle
+      run: |
+        cd playground_app
+        flutter build appbundle --release
+    - name: Rename build artifacts
+      run: |
+        cd playground_app
+        cp build/app/outputs/flutter-apk/app-release.apk playground_app_android.apk
+        cp build/app/outputs/bundle/release/app-release.aab playground_app_android.aab
+    - uses: actions/upload-artifact@v4
+      with:
+        name: android_app
+        path: |
+          playground_app/playground_app_android.apk
+          playground_app/playground_app_android.aab
+
+  upload_to_release:
+    needs: [build_ios_app, build_android_app]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v4
+      with:
+        name: ios_app
+        path: ./artifacts/
+    - uses: actions/download-artifact@v4
+      with:
+        name: android_app
+        path: ./artifacts/
+    - name: Upload iOS app to release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifacts/playground_app_ios_unsigned.ipa
+        asset_name: playground_app_ios_unsigned.ipa
+        asset_content_type: application/octet-stream
+    - name: Upload Android APK to release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifacts/playground_app_android.apk
+        asset_name: playground_app_android.apk
+        asset_content_type: application/vnd.android.package-archive
+    - name: Upload Android App Bundle to release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifacts/playground_app_android.aab
+        asset_name: playground_app_android.aab
+        asset_content_type: application/octet-stream
