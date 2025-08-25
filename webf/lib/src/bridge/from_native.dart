@@ -302,11 +302,7 @@ void _setTimeout(int newTimerId, Pointer<Void> callbackContext, double contextId
     }
 
     // Pause if webf page paused.
-    if (controller.paused) {
-      controller.pushPendingCallbacks(runCallback);
-    } else {
-      runCallback();
-    }
+    runCallback();
   });
 }
 
@@ -333,12 +329,7 @@ void _setInterval(int newTimerId, Pointer<Void> callbackContext, double contextI
       }
     }
 
-    // Pause if webf page paused.
-    if (controller.paused) {
-      controller.pushPendingCallbacks(runCallbacks);
-    } else {
-      runCallbacks();
-    }
+    runCallbacks();
   });
 }
 
