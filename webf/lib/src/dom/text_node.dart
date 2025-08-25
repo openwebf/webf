@@ -131,7 +131,7 @@ class TextNodeAdapter extends flutter.SingleChildRenderObjectWidget {
 
   @override
   String toStringShort() {
-    return '"${textNode.data}"';
+    return '"${textNode.data.trim()}"';
   }
 
   @override

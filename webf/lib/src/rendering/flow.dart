@@ -76,31 +76,48 @@ class RenderFlowLayout extends RenderLayoutBox {
     _lineMetrics.clear();
   }
 
-  // Recursively layout all RenderTextBox and RenderEventListener nodes to avoid semantics errors
-  void _layoutTextBoxesRecursively(RenderBox parent) {
+  // Recursively ensure every render object inside IFC gets laid out.
+  // Some nodes (e.g. SizedBox.shrink -> RenderConstrainedBox for <script>)
+  // don't participate in IFC measurement/painting but must still be laid out
+  // to avoid downstream issues (semantics/devtools traversals accessing size).
+  void _ensureChildrenLaidOutRecursively(RenderBox parent) {
+    void layoutIfNeeded(RenderBox node) {
+      if (node.hasSize) return;
+
+      // Use specific constraints for known special cases to avoid side-effects
+      if (node is RenderTextBox) {
+        // Text nodes are measured/painted by IFC; force 0-size layout
+        node.layout(BoxConstraints.tight(Size.zero));
+        return;
+      }
+      if (node is RenderEventListener) {
+        // Event listener needs actual constraints for hit testing/semantics
+        node.layout(contentConstraints ?? constraints);
+        return;
+      }
+
+      // Default: lay out with tight zero to avoid affecting IFC results,
+      // while clearing NEEDS-LAYOUT on non-participating nodes like ConstrainedBox.
+      try {
+        node.layout(BoxConstraints.tight(Size.zero));
+      } catch (_) {
+        // Fall back to container/content constraints if the node rejects tight zero.
+        node.layout(contentConstraints ?? constraints);
+      }
+    }
+
     if (parent is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
       RenderBox? child = (parent as dynamic).firstChild;
       while (child != null) {
-        if (child is RenderTextBox && !child.hasSize) {
-          child.layout(BoxConstraints.tight(Size.zero));
-        } else if (child is RenderEventListener && !child.hasSize) {
-          // RenderEventListener needs to be laid out to avoid semantics errors
-          child.layout(contentConstraints ?? constraints);
-        }
-        // Always recurse into children regardless of type
-        _layoutTextBoxesRecursively(child);
+        layoutIfNeeded(child);
+        _ensureChildrenLaidOutRecursively(child);
         child = (parent as dynamic).childAfter(child);
       }
     } else if (parent is RenderObjectWithChildMixin<RenderBox>) {
-      // Handle single-child render objects
-      final child = (parent as dynamic).child;
+      final RenderBox? child = (parent as dynamic).child;
       if (child != null) {
-        if (child is RenderTextBox && !child.hasSize) {
-          child.layout(BoxConstraints.tight(Size.zero));
-        } else if (child is RenderEventListener && !child.hasSize) {
-          child.layout(contentConstraints ?? constraints);
-        }
-        _layoutTextBoxesRecursively(child);
+        layoutIfNeeded(child);
+        _ensureChildrenLaidOutRecursively(child);
       }
     }
   }
@@ -367,8 +384,9 @@ class RenderFlowLayout extends RenderLayoutBox {
         renderingLogger.finer('[Flow] IFC layout with constraints=${contentConstraints} -> ${layoutSize}');
       }
 
-      // Layout RenderTextBox and RenderEventListener children to avoid semantics errors
-      _layoutTextBoxesRecursively(this);
+      // Ensure all render objects inside IFC are laid out to avoid
+      // devtools/semantics traversals encountering NEEDS-LAYOUT nodes.
+      _ensureChildrenLaidOutRecursively(this);
 
       _setContainerSizeFromIFC(layoutSize);
 
