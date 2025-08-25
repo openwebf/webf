@@ -456,6 +456,11 @@ class WebFState extends State<WebF> with RouteAware {
       widget.controller.initialState = widget.initialState;
       widget.controller.initialRoute = widget.initialRoute;
     }
+    // If this controller was already loaded and evaluated, there might be some ui change when flutter was detached.
+    if (widget.controller.evaluated) {
+      // Sync the updates to the DOM tree
+      flushUICommand(widget.controller.view, nullptr);
+    }
   }
 
   @override
