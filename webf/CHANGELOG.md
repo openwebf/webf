@@ -1,3 +1,11 @@
+## 0.22.11
+
+### Fixes
+
+- fix: fix access constraints exception when rendering widgets (0bd020cf)
+- fix: sync UI changes from detached stage to the DOM tree (ce64d4639)
+- fix: timer API now fires correctly when detached from Flutter (32fc0a9cf)
+
 ## 0.22.10+2
 
 revert: revert the changes to widget_element.dart in 6d24e8f4ca3b0a46051f111bfe42014355421629
