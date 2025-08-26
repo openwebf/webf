@@ -2480,12 +2480,17 @@ class CSSRenderStyle extends RenderStyle
 
         if (parentRenderStyle != null) {
           RenderWidgetElementChild? childWrapper = target.attachedRenderer?.findWidgetElementChild();
+          BoxConstraints? childWrapperConstraints;
+          try {
+            childWrapperConstraints = childWrapper?.constraints;
+          } catch(_) {}
           // Override the default logicalHeight value is the parent is RenderWidget
           if (parentRenderStyle.isSelfRenderWidget() &&
               childWrapper != null &&
-              (childWrapper.constraints.maxHeight.isFinite &&
-                  childWrapper.constraints.maxHeight != renderStyle.target.ownerView.viewport!.boxSize!.height)) {
-            logicalHeight = childWrapper.constraints.maxHeight;
+              childWrapperConstraints != null &&
+              (childWrapperConstraints.maxHeight.isFinite &&
+                  childWrapperConstraints.maxHeight != renderStyle.target.ownerView.viewport!.boxSize!.height)) {
+            logicalHeight = childWrapperConstraints.maxHeight;
           } else if (renderStyle.isHeightStretch) {
             logicalHeight = parentRenderStyle.contentBoxLogicalHeight;
           }
