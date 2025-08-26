@@ -1,3 +1,11 @@
+## 0.22.12
+
+### Fixes
+
+- fix: revert and reimpls the safe way to read the constraint value.
+- fix: increase the wait times for hybrid route loaded.
+- fix: fix cache invalidation and clear.
+
 ## 0.22.11
 
 ### Fixes
