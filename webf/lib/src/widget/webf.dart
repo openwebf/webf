@@ -69,53 +69,25 @@ class WebF extends StatefulWidget {
     try {
       final String appTemporaryPath = await getWebFTemporaryPath();
 
-      // Clear HTTP caches
-      final Directory httpCacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
-      if (await httpCacheDirectory.exists()) {
-        try {
-          await httpCacheDirectory.delete(recursive: true);
-        } catch (e) {
-          // Ignore errors if directory was already deleted by concurrent operation
-          if (e is FileSystemException && e.osError?.errorCode == 2) {
-            // ENOENT - No such file or directory
-            // This is expected in concurrent scenarios
-          } else if (e is FileSystemException &&
-                     (e.osError?.errorCode == 66 || // ENOTEMPTY - macOS/iOS
-                      e.osError?.errorCode == 39)) { // ENOTEMPTY - Linux/Android
-            // Directory not empty
-            // Try to delete files individually first
-            try {
-              await for (final entity in httpCacheDirectory.list(recursive: true, followLinks: false)) {
-                if (entity is File) {
-                  try {
-                    await entity.delete();
-                  } catch (fileError) {
-                    // Ignore individual file deletion errors
-                  }
+      // Clear HTTP caches: delete any directory with a name starting with 'HttpCache'
+      final Directory tmpDir = Directory(appTemporaryPath);
+      if (await tmpDir.exists()) {
+        await for (final entity in tmpDir.list(followLinks: false)) {
+          if (entity is Directory) {
+            final String name = path.basename(entity.path);
+            if (name.startsWith('HttpCache')) {
+              try {
+                await entity.delete(recursive: true);
+              } catch (e) {
+                // Ignore deletions racing with other processes; log non-ENOENT issues for visibility
+                if (e is FileSystemException && e.osError?.errorCode == 2) {
+                  // ENOENT - already removed
+                } else {
+                  print('Warning: Failed to remove HTTP cache directory ${entity.path}: $e');
                 }
               }
-              // Now try to delete the directory again
-              await httpCacheDirectory.delete(recursive: true);
-            } catch (retryError) {
-              // If still failing, log and continue
-              print('Warning: Could not fully clear HTTP cache directory: $retryError');
             }
-          } else {
-            rethrow;
           }
-        }
-      }
-
-      // Always try to create the HTTP cache directory
-      try {
-        await httpCacheDirectory.create(recursive: true);
-      } catch (e) {
-        // Ignore if directory already exists (created by concurrent operation)
-        if (e is FileSystemException && e.osError?.errorCode == 17) {
-          // EEXIST - File exists
-          // This is expected in concurrent scenarios
-        } else {
-          rethrow;
         }
       }
 
