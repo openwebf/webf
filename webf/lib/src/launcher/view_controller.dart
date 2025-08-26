@@ -117,7 +117,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       _hybridRouteLoadCompleter[routePath] = Completer<void>();
 
       // Add timeout fallback for route load.
-      Timer(Duration(seconds: 5), () {
+      Timer(Duration(seconds: 20), () {
         if (_hybridRouteLoadCompleter[routePath]?.isCompleted == false) {
           _hybridRouteLoadCompleter[routePath]!.complete();
         }
