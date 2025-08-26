@@ -615,9 +615,10 @@ class HttpCacheObject {
         await _file.delete();
       }
       await _blob.remove();
+    } catch(_) {
 
-      _valid = false;
     } finally {
+      _valid = false;
       // Always release lock
       await _releaseLock();
     }

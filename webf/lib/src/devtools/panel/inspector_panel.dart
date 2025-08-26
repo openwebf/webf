@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/widget.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
 import 'package:webf/src/devtools/panel/network_store.dart';
 import 'package:webf/src/devtools/panel/remote_object_service.dart';
@@ -2092,6 +2093,29 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
   // Track the selected network filter
   NetworkRequestType? _selectedNetworkFilter;
 
+  Future<void> _clearAllCaches() async {
+    try {
+      await WebF.clearAllCaches();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cleared WebF caches', style: TextStyle(fontSize: 12)),
+          duration: Duration(seconds: 1),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to clear caches: $e', style: TextStyle(fontSize: 12)),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -3625,6 +3649,22 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
                           style: IconButton.styleFrom(
                             backgroundColor: Colors.orange.withOpacity(0.2),
                             foregroundColor: Colors.orange,
+                            padding: EdgeInsets.all(6),
+                            minimumSize: Size(32, 32),
+                          ),
+                          constraints: BoxConstraints(
+                            maxWidth: 32,
+                            maxHeight: 32,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _clearAllCaches,
+                          icon: Icon(Icons.delete_sweep, size: 16),
+                          tooltip: 'Clear WebF caches',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.blue.withOpacity(0.2),
+                            foregroundColor: Colors.blue,
                             padding: EdgeInsets.all(6),
                             minimumSize: Size(32, 32),
                           ),
