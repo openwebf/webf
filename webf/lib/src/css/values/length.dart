@@ -223,14 +223,18 @@ class CSSLengthValue {
             currentRenderStyle?.target.attachedRenderer?.findWidgetElementChild();
         bool shouldInheritRenderWidgetElementConstraintsWidth =
             parentRenderStyle?.isSelfRenderWidget() == true && renderWidgetElementChild != null;
-        double? parentWidgetConstraintWidth = renderWidgetElementChild?.hasSize == true ? renderWidgetElementChild!.constraints.maxWidth : null;
-        bool shouldInheritRenderWidgetElementConstraintsHeight = parentRenderStyle?.isSelfRenderWidget() == true &&
-            renderWidgetElementChild != null &&
-            renderWidgetElementChild.hasSize &&
-            renderWidgetElementChild.constraints.maxHeight.isFinite &&
-            renderWidgetElementChild.constraints.maxHeight !=
-                currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
-        double? parentWidgetConstraintHeight = renderWidgetElementChild?.hasSize == true ? renderWidgetElementChild!.constraints.maxHeight : null;
+        double? parentWidgetConstraintWidth;
+        bool shouldInheritRenderWidgetElementConstraintsHeight = false;
+        double? parentWidgetConstraintHeight;
+        try {
+          parentWidgetConstraintWidth = renderWidgetElementChild?.constraints.maxWidth;
+          shouldInheritRenderWidgetElementConstraintsHeight = parentRenderStyle?.isSelfRenderWidget() == true &&
+              renderWidgetElementChild != null &&
+              renderWidgetElementChild.constraints.maxHeight.isFinite &&
+              renderWidgetElementChild.constraints.maxHeight !=
+                  currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
+          parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
+        } catch(_) {}
 
         // Percentage relative width priority: RenderWidgetChild's constraints > logical width > renderer width
         double? parentPaddingBoxWidth = parentRenderStyle?.paddingBoxLogicalWidth ?? parentRenderStyle?.paddingBoxWidth;
