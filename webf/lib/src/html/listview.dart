@@ -145,7 +145,6 @@ class WebFListViewElement extends WebFListViewBindings {
   void finishLoad(String result) {
     state?.refreshController.finishLoad(_parseIndicatorResult(result));
     state?._isLoading = false;
-    state?.refreshController.resetFooter();
   }
 
   /// Resets the refresh header to its initial state
@@ -166,9 +165,8 @@ class WebFListViewElement extends WebFListViewBindings {
   /// load indicators. This is useful when you need to abort a load-more
   /// operation without completing it.
   void resetFooter() {
-    state?.refreshController.finishLoad();
-    state?._isLoading = false;
     state?.refreshController.resetFooter();
+    state?._isLoading = false;
   }
 
   static StaticDefinedSyncBindingObjectMethodMap listViewMethods = {
