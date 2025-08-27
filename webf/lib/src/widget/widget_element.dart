@@ -82,6 +82,12 @@ abstract class WidgetElement extends dom.Element {
   /// This is useful for widgets that handle their own painting entirely.
   bool get disableBoxModelPaint => false;
 
+  /// Override this property to allow this WidgetElement to have infinite height constraints.
+  /// When set to true, RenderWidget will pass the infinite height constraint to its child
+  /// if it receives an infinite height constraint itself.
+  /// This is useful for widgets that wrap a scrollable container around them.
+  bool get allowsInfiniteHeight => false;
+
   @mustCallSuper
   @override
   void didDetachRenderer([RenderObjectElement? flutterWidgetElement]) {
