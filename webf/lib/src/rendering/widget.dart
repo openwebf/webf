@@ -49,7 +49,7 @@ class RenderWidget extends RenderBoxModel
             ? contentConstraints!.maxWidth
             : math.min(viewportSize.width, contentConstraints!.maxWidth),
         minHeight: contentConstraints!.minHeight,
-        maxHeight: contentConstraints!.hasTightHeight
+          maxHeight: (contentConstraints!.hasTightHeight || (renderStyle.target as WidgetElement).allowsInfiniteHeight)
             ? contentConstraints!.maxHeight
             : math.min(viewportSize.height, contentConstraints!.maxHeight));
 
