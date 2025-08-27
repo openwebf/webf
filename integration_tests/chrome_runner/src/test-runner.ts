@@ -645,6 +645,46 @@ export class ChromeTestRunner {
         return document.createTextNode(content);
       };
       
+      // Add missing global functions from WebF runtime
+      (window as any).setElementStyle = (dom: HTMLElement, object: any) => {
+        if (object == null) return;
+        for (let key in object) {
+          if (object.hasOwnProperty(key)) {
+            (dom.style as any)[key] = object[key];
+          }
+        }
+      };
+      
+      (window as any).setElementProps = (element: HTMLElement, props: any) => {
+        for (const key in props) {
+          if (key === 'style') {
+            (window as any).setElementStyle(element, props[key]);
+          } else if (key === 'children') {
+            if (Array.isArray(props[key])) {
+              props[key].forEach((child: any) => {
+                if (typeof child === 'string') {
+                  element.appendChild(document.createTextNode(child));
+                } else if (child instanceof Node) {
+                  element.appendChild(child);
+                }
+              });
+            }
+          } else {
+            if (key.startsWith('data-')) {
+              element.setAttribute(key, props[key]);
+            } else {
+              (element as any)[key] = props[key];
+            }
+          }
+        }
+      };
+      
+      (window as any).createElementWithStyle = (tag: string, style: any): HTMLElement => {
+        const el = document.createElement(tag);
+        (window as any).setElementStyle(el, style);
+        return el;
+      };
+      
       // Add BODY global variable
       Object.defineProperty(window, 'BODY', {
         get() {
