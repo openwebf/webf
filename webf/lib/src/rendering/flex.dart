@@ -659,13 +659,30 @@ class RenderFlexLayout extends RenderLayoutBox {
           );
         }
       } else {
+        // For column direction, constrain cross-axis (width) to container's width
+        // when child doesn't have explicit width and needs constraint
+        bool needsCrossAxisConstraint = s.width.isAuto && (
+          renderStyle.flexWrap != FlexWrap.nowrap || // Wrapping enabled
+          renderStyle.alignItems == AlignItems.stretch // Stretching needed
+        );
+        
         if (s.height.isAuto) {
           c = BoxConstraints(
             minWidth: c.minWidth,
-            maxWidth: c.maxWidth,
+            maxWidth: needsCrossAxisConstraint ? constraints.maxWidth : c.maxWidth,
             minHeight: c.minHeight,
             maxHeight: double.infinity,
           );
+        } else {
+          // Even with explicit height, constrain width if needed
+          if (needsCrossAxisConstraint) {
+            c = BoxConstraints(
+              minWidth: c.minWidth,
+              maxWidth: constraints.maxWidth,
+              minHeight: c.minHeight,
+              maxHeight: c.maxHeight,
+            );
+          }
         }
       }
 
@@ -1646,6 +1663,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runBetweenSpace = _runSpacingMap['between']!;
     double? contentBoxLogicalWidth = renderStyle.contentBoxLogicalWidth;
     double? contentBoxLogicalHeight = renderStyle.contentBoxLogicalHeight;
+    
 
     // Container's width specified by style or inherited from parent.
     double? containerWidth = 0;
