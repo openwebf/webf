@@ -615,7 +615,16 @@ class WebFState extends State<WebF> with RouteAware {
               children: [Text('Loading Error: $error')]);
         }
 
-        return child.toWidget();
+        Widget routerRootWidget = child.toWidget();
+
+        // Call onBuildSuccess callback after successful widget build
+        if (widget.onBuildSuccess != null) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            widget.onBuildSuccess!();
+          });
+        }
+
+        return routerRootWidget;
       }
 
       if (widget.controller.disposed) {
@@ -657,14 +666,14 @@ class WebFState extends State<WebF> with RouteAware {
       }
 
       final Widget rootWidget = widget.controller.view.document.documentElement!.toWidget();
-      
+
       // Call onBuildSuccess callback after successful widget build
       if (widget.onBuildSuccess != null) {
         SchedulerBinding.instance.addPostFrameCallback((_) {
           widget.onBuildSuccess!();
         });
       }
-      
+
       return rootWidget;
     } catch (e, stack) {
       // Record any unexpected errors during buildRootView
