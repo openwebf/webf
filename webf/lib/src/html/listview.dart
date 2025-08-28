@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
@@ -14,6 +15,7 @@ import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/dom.dart' as dom;
 import 'package:easy_refresh/easy_refresh.dart';
+import 'package:webf/src/widget/nested_scroll_forwarder.dart';
 import 'listview_bindings_generated.dart';
 
 /// Tag name for the ListView element in HTML
@@ -374,49 +376,29 @@ class WebFListViewState extends WebFWidgetElementState {
   /// that can be handled in JavaScript.
   @override
   Widget build(BuildContext context) {
-    // Build the ListView 
+    // Build the ListView
     Widget listView = ListView.builder(
         controller: scrollController,
         scrollDirection: widgetElement.scrollDirection,
         shrinkWrap: widgetElement.shrinkWrap,
-        physics: const ClampingScrollPhysics(),
         itemCount: widgetElement.childNodes.length,
         itemBuilder: (context, index) {
           return buildListViewItemByIndex(index);
         });
-    
-    // Wrap with NotificationListener to handle scroll notifications
-    // This enables nested scroll forwarding
-    Widget result = NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification notification) {
-        // Handle nested scroll forwarding
-        if (notification is OverscrollNotification) {
-          // When inner ListView overscrolls, try to scroll the parent
-          final ScrollController? parentController = _findParentScrollController(context);
-          if (parentController != null && parentController.hasClients) {
-            final double overscroll = notification.overscroll;
-            final double currentPosition = parentController.position.pixels;
-            final double minPosition = parentController.position.minScrollExtent;
-            final double maxPosition = parentController.position.maxScrollExtent;
-            
-            // Forward the overscroll to parent
-            if (overscroll < 0 && currentPosition > minPosition) {
-              // Overscrolling at top, scroll parent up
-              parentController.jumpTo(math.max(minPosition, currentPosition + overscroll));
-              return true; // Stop propagation
-            } else if (overscroll > 0 && currentPosition < maxPosition) {
-              // Overscrolling at bottom, scroll parent down  
-              parentController.jumpTo(math.min(maxPosition, currentPosition + overscroll));
-              return true; // Stop propagation
-            }
-          }
-        }
-        return false; // Allow notification to continue
-      },
-      child: listView,
-    );
-    
+
+    // Wrap the ListView with NestedScrollCoordinator to handle incoming scroll from nested elements
+    // This allows the ListView to receive scroll events from nested overflow containers or ListViews
+    Widget result = listView;
+    if (scrollController != null) {
+      result = NestedScrollCoordinator(
+        axis: widgetElement.scrollDirection,
+        controller: scrollController!,
+        child: result,
+      );
+    }
+
     // Wrap with EasyRefresh for pull-to-refresh functionality
+    // Use the configured scroll behavior
     result = EasyRefresh(
         header: buildEasyRefreshHeader(),
         footer: buildEasyRefreshFooter(),
@@ -424,49 +406,17 @@ class WebFListViewState extends WebFWidgetElementState {
         onRefresh: widgetElement.hasEventListener('refresh') ? onRefresh : null,
         controller: refreshController,
         child: result);
-    
-    return result;
-  }
-  
-  /// Find the parent ListView's scroll controller by looking up the widget tree
-  ScrollController? _findParentScrollController(BuildContext context) {
-    // Try to find a parent ScrollController in the widget tree
-    ScrollController? parentController;
-    
-    context.visitAncestorElements((element) {
-      // Look for Scrollable widgets in ancestors
-      if (element.widget is Scrollable) {
-        final Scrollable scrollable = element.widget as Scrollable;
-        // Make sure it's not our own scrollable
-        if (scrollable.controller != scrollController && scrollable.controller != null) {
-          parentController = scrollable.controller;
-          return false; // Stop searching, found a parent controller
-        }
-      } else if (element.widget is ListView) {
-        // Check if there's a ListView with a controller
-        final ListView listView = element.widget as ListView;
-        if (listView.controller != scrollController && listView.controller != null) {
-          parentController = listView.controller;
-          return false; // Stop searching
-        }
-      }
-      return true; // Continue searching
-    });
-    
-    // If we didn't find a controller directly, try to find parent WebFListViewState
-    if (parentController == null) {
-      context.visitAncestorElements((element) {
-        if (element is StatefulElement) {
-          final state = element.state;
-          if (state is WebFListViewState && state != this) {
-            parentController = state.scrollController;
-            return false; // Stop searching
-          }
-        }
-        return true; // Continue searching
-      });
+
+    // Finally, wrap with NestedScrollForwarder to provide scroll controller to nested elements
+    // This allows nested overflow containers and ListViews to find this controller
+    if (scrollController != null) {
+      result = NestedScrollForwarder(
+        verticalController: widgetElement.scrollDirection == Axis.vertical ? scrollController : null,
+        horizontalController: widgetElement.scrollDirection == Axis.horizontal ? scrollController : null,
+        child: result,
+      );
     }
-    
-    return parentController;
+
+    return result;
   }
 }

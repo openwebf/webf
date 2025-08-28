@@ -306,8 +306,8 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
 
     // Expose this element's scroll controllers to descendants to enable nested scrolling.
     final wrapped = NestedScrollForwarder(
-      vertical: webFElement.scrollControllerY,
-      horizontal: webFElement.scrollControllerX,
+      verticalController: webFElement.scrollControllerY,
+      horizontalController: webFElement.scrollControllerX,
       child: widget,
     );
 

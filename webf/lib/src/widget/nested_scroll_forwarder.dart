@@ -6,38 +6,64 @@
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-/// Provides ancestor scroll controllers to descendants to enable nested scrolling.
+/// A widget that provides scroll controllers to descendant widgets to enable
+/// nested scroll forwarding.
 ///
-/// Wrap each scrollable created for CSS overflow with this widget so inner
-/// scrollables can find the nearest parent scroll controller on the same axis
-/// and forward unconsumed deltas to it when reaching bounds.
+/// This widget creates a chain of scrollable containers where inner scrollables
+/// can forward scroll events to outer scrollables when they reach their boundaries.
 class NestedScrollForwarder extends InheritedWidget {
-  final ScrollController? vertical;
-  final ScrollController? horizontal;
+  /// The vertical scroll controller to be shared with descendants
+  final ScrollController? verticalController;
+
+  /// The horizontal scroll controller to be shared with descendants
+  final ScrollController? horizontalController;
 
   const NestedScrollForwarder({
     super.key,
-    this.vertical,
-    this.horizontal,
+    this.verticalController,
+    this.horizontalController,
     required super.child,
   });
 
+  /// Finds the nearest [NestedScrollForwarder] ancestor in the widget tree
   static NestedScrollForwarder? maybeOf(BuildContext context) {
     return context.dependOnInheritedWidgetOfExactType<NestedScrollForwarder>();
   }
 
+  /// Gets the vertical scroll controller from the nearest ancestor
+  static ScrollController? getVerticalController(BuildContext context) {
+    return maybeOf(context)?.verticalController;
+  }
+
+  /// Gets the horizontal scroll controller from the nearest ancestor
+  static ScrollController? getHorizontalController(BuildContext context) {
+    return maybeOf(context)?.horizontalController;
+  }
+
   @override
   bool updateShouldNotify(NestedScrollForwarder oldWidget) {
-    return oldWidget.vertical != vertical || oldWidget.horizontal != horizontal;
+    return oldWidget.verticalController != verticalController ||
+           oldWidget.horizontalController != horizontalController;
   }
 }
 
-/// Listens to scroll notifications from a child Scrollable and forwards
-/// leftover deltas to the nearest ancestor scrollable on the same axis.
+/// A widget that coordinates nested scrolling between a child scrollable and
+/// its parent scrollable.
+///
+/// This widget listens to scroll notifications from its child and forwards
+/// unconsumed scroll deltas to the parent when the child reaches its scroll
+/// boundaries.
 class NestedScrollCoordinator extends StatelessWidget {
+  /// The axis this coordinator handles (vertical or horizontal)
   final Axis axis;
+
+  /// The scroll controller of the child scrollable
   final ScrollController controller;
+
+  /// The child widget containing the scrollable
   final Widget child;
+
+  /// Whether nested scrolling is enabled
   final bool enabled;
 
   const NestedScrollCoordinator({
@@ -48,109 +74,133 @@ class NestedScrollCoordinator extends StatelessWidget {
     this.enabled = true,
   });
 
-  bool _atMin(ScrollPosition pos) => pos.pixels <= pos.minScrollExtent && !pos.outOfRange;
-  bool _atMax(ScrollPosition pos) => pos.pixels >= pos.maxScrollExtent && !pos.outOfRange;
+  /// Checks if the scroll position is at the minimum extent
+  bool _isAtMin(ScrollPosition position) {
+    return position.pixels <= position.minScrollExtent;
+  }
 
-  NestedScrollForwarder? _findAncestorForwarder(BuildContext context) {
-    NestedScrollForwarder? found;
+  /// Checks if the scroll position is at the maximum extent
+  bool _isAtMax(ScrollPosition position) {
+    return position.pixels >= position.maxScrollExtent;
+  }
+
+  /// Finds the parent scroll controller from ancestors
+  ScrollController? _findParentController(BuildContext context) {
+    // First, try to find via NestedScrollForwarder
+    final forwarder = NestedScrollForwarder.maybeOf(context);
+    if (forwarder != null) {
+      final parentController = axis == Axis.vertical
+          ? forwarder.verticalController
+          : forwarder.horizontalController;
+
+      // Make sure we're not returning our own controller
+      if (parentController != null && !identical(parentController, controller)) {
+        return parentController;
+      }
+    }
+
+    // If not found via forwarder, search up the tree for Scrollable widgets
+    ScrollController? foundController;
     context.visitAncestorElements((element) {
-      final widget = element.widget;
-      if (widget is NestedScrollForwarder) {
-        final candidate = axis == Axis.vertical ? widget.vertical : widget.horizontal;
-        if (candidate != null && !identical(candidate, controller)) {
-          found = widget;
-          return false; // stop visiting
+      if (element.widget is Scrollable) {
+        final scrollable = element.widget as Scrollable;
+        if (scrollable.controller != null &&
+            !identical(scrollable.controller, controller) &&
+            scrollable.axis == axis) {
+          foundController = scrollable.controller;
+          return false; // Stop searching
         }
       }
-      return true; // continue
+      return true; // Continue searching
     });
-    return found;
+
+    return foundController;
   }
 
   @override
   Widget build(BuildContext context) {
     if (!enabled) return child;
 
-    double? lastDelta; // cache last non-zero delta
-
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
-        // Only care about notifications from our child scrollable and matching axis.
-        if (notification.metrics.axis == Axis.horizontal && axis != Axis.horizontal) return false;
-        if (notification.metrics.axis == Axis.vertical && axis != Axis.vertical) return false;
+        // Only handle notifications from our direct child
+        if (notification.depth != 0) return false;
 
-        // Find the nearest ancestor forwarder that is not bound to our own controller.
-        final parent = _findAncestorForwarder(context) ?? NestedScrollForwarder.maybeOf(context);
-        if (parent == null) return false;
+        // Check if this notification is for our axis
+        if (notification.metrics.axis != axis) return false;
 
-        final ScrollController? parentController =
-            axis == Axis.vertical ? parent.vertical : parent.horizontal;
-
-        if (parentController == null) return false;
-        if (identical(parentController, controller)) return false;
-
-        if (notification is ScrollUpdateNotification && notification.dragDetails == null) {
-          return false;
-        }
-        if (notification is OverscrollNotification && notification.dragDetails == null) {
+        // Find parent controller
+        final parentController = _findParentController(context);
+        if (parentController == null || !parentController.hasClients) {
           return false;
         }
 
-        if (notification is ScrollUpdateNotification) {
-          if (notification.scrollDelta != null && notification.scrollDelta!.abs() > 0.0) {
-            lastDelta = notification.scrollDelta;
-          }
-        }
-
-        double? delta;
+        // Handle different types of scroll notifications
         if (notification is OverscrollNotification) {
-          delta = notification.overscroll;
-        } else if (notification is UserScrollNotification) {
-          final ScrollDirection dir = notification.direction;
-          final AxisDirection axisDir = notification.metrics.axisDirection;
-          final double signFactor = (axisDir == AxisDirection.down || axisDir == AxisDirection.right) ? 1.0 : -1.0;
-          final bool isForward = dir == ScrollDirection.forward;
-          final double intendedSign = isForward ? signFactor : -signFactor;
-          final bool atMin = _atMin(controller.position);
-          final bool atMax = _atMax(controller.position);
-          if ((atMin && intendedSign > 0) || (atMax && intendedSign < 0)) {
-            final double mag = (lastDelta?.abs() ?? 20.0);
-            delta = intendedSign * mag;
+          // Handle overscroll by forwarding to parent
+          _handleOverscroll(notification, parentController);
+          return true; // Stop propagation
+        } else if (notification is ScrollUpdateNotification) {
+          // Check if we're at a boundary and trying to scroll further
+          if (notification.dragDetails != null) {
+            _handleScrollUpdate(notification, parentController);
           }
-        } else {
-          return false;
         }
 
-        if (delta == null || delta == 0.0) return false;
-        //
-        final pos = controller.position;
-        final atMin = _atMin(pos);
-        final atMax = _atMax(pos);
-        final bool tryingUpwards = delta < 0.0; // up/left
-        final bool tryingDownwards = delta > 0.0; // down/right
-
-        // Forward only when this scrollable can't consume more in that direction.
-        bool shouldForward = (tryingUpwards && atMin) || (tryingDownwards && atMax);
-        if (!shouldForward) return false;
-
-        final parentPos = parentController.position;
-        final double before = parentPos.pixels;
-        final double minE = parentPos.minScrollExtent;
-        final double maxE = parentPos.maxScrollExtent;
-        final target = (before + delta)
-            .clamp(parentPos.minScrollExtent, parentPos.maxScrollExtent)
-            .toDouble();
-        try {
-          // Use jumpTo for synchronous handoff during drag.
-          parentController.jumpTo(target);
-        } catch (_) {
-          // Ignore if parent not attached yet.
-        }
-
-        // Stop bubbling so only the nearest ancestor handles this.
-        return true;
+        return false; // Allow notification to continue
       },
       child: child,
     );
+  }
+
+  /// Handles overscroll notifications by forwarding to parent
+  void _handleOverscroll(OverscrollNotification notification, ScrollController parentController) {
+    final overscroll = notification.overscroll;
+    if (overscroll == 0) return;
+
+    final parentPosition = parentController.position;
+    final currentPosition = parentPosition.pixels;
+    final minPosition = parentPosition.minScrollExtent;
+    final maxPosition = parentPosition.maxScrollExtent;
+
+    // Calculate new position
+    final newPosition = (currentPosition + overscroll).clamp(minPosition, maxPosition);
+
+    // Apply scroll to parent
+    if (newPosition != currentPosition) {
+      parentController.jumpTo(newPosition);
+    }
+  }
+
+  /// Handles scroll update notifications when at boundaries
+  void _handleScrollUpdate(ScrollUpdateNotification notification, ScrollController parentController) {
+    if (notification.scrollDelta == null || notification.scrollDelta == 0) return;
+
+    final position = controller.position;
+    final delta = notification.scrollDelta!;
+
+    // Check if we're at a boundary
+    bool shouldForward = false;
+    if (delta < 0 && _isAtMin(position)) {
+      // Trying to scroll up/left while at minimum
+      shouldForward = true;
+    } else if (delta > 0 && _isAtMax(position)) {
+      // Trying to scroll down/right while at maximum
+      shouldForward = true;
+    }
+
+    if (!shouldForward) return;
+
+    // Forward to parent
+    final parentPosition = parentController.position;
+    final currentPosition = parentPosition.pixels;
+    final minPosition = parentPosition.minScrollExtent;
+    final maxPosition = parentPosition.maxScrollExtent;
+
+    final newPosition = (currentPosition + delta).clamp(minPosition, maxPosition);
+
+    if (newPosition != currentPosition) {
+      parentController.jumpTo(newPosition);
+    }
   }
 }
