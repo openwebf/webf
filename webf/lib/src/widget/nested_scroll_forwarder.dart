@@ -58,10 +58,6 @@ class NestedScrollCoordinator extends StatelessWidget {
       if (widget is NestedScrollForwarder) {
         final candidate = axis == Axis.vertical ? widget.vertical : widget.horizontal;
         if (candidate != null && !identical(candidate, controller)) {
-          assert(() {
-            debugPrint('[WebF][Nested] Found ancestor forwarder for $axis controller=$candidate');
-            return true;
-          }());
           found = widget;
           return false; // stop visiting
         }
@@ -120,10 +116,6 @@ class NestedScrollCoordinator extends StatelessWidget {
           if ((atMin && intendedSign > 0) || (atMax && intendedSign < 0)) {
             final double mag = (lastDelta?.abs() ?? 20.0);
             delta = intendedSign * mag;
-            assert(() {
-              debugPrint('[WebF][Nested] edge handoff: axis=$axis axisDir=$axisDir dir=$dir atMin=$atMin atMax=$atMax intendedSign=$intendedSign mag=$mag delta=$delta');
-              return true;
-            }());
           }
         } else {
           return false;
@@ -131,34 +123,29 @@ class NestedScrollCoordinator extends StatelessWidget {
 
         if (delta == null || delta == 0.0) return false;
         //
-        // final pos = controller.position;
-        // final atMin = _atMin(pos);
-        // final atMax = _atMax(pos);
-        // final bool tryingUpwards = delta < 0.0; // up/left
-        // final bool tryingDownwards = delta > 0.0; // down/right
-        //
-        // // Forward only when this scrollable can't consume more in that direction.
-        // bool shouldForward = (tryingUpwards && atMin) || (tryingDownwards && atMax);
-        // if (!shouldForward) return false;
-        //
-        // final parentPos = parentController.position;
-        // final double before = parentPos.pixels;
-        // final double minE = parentPos.minScrollExtent;
-        // final double maxE = parentPos.maxScrollExtent;
-        // final target = (before + delta)
-        //     .clamp(parentPos.minScrollExtent, parentPos.maxScrollExtent)
-        //     .toDouble();
-        // try {
-        //   // Use jumpTo for synchronous handoff during drag.
-        //   parentController.jumpTo(target);
-        //   assert(() {
-        //     debugPrint('[WebF][Nested] Forwarded delta=${delta?.toStringAsFixed(2)} to parent; '
-        //         'extents=[$minE,$maxE] before=${before.toStringAsFixed(2)} -> $target');
-        //     return true;
-        //   }());
-        // } catch (_) {
-        //   // Ignore if parent not attached yet.
-        // }
+        final pos = controller.position;
+        final atMin = _atMin(pos);
+        final atMax = _atMax(pos);
+        final bool tryingUpwards = delta < 0.0; // up/left
+        final bool tryingDownwards = delta > 0.0; // down/right
+
+        // Forward only when this scrollable can't consume more in that direction.
+        bool shouldForward = (tryingUpwards && atMin) || (tryingDownwards && atMax);
+        if (!shouldForward) return false;
+
+        final parentPos = parentController.position;
+        final double before = parentPos.pixels;
+        final double minE = parentPos.minScrollExtent;
+        final double maxE = parentPos.maxScrollExtent;
+        final target = (before + delta)
+            .clamp(parentPos.minScrollExtent, parentPos.maxScrollExtent)
+            .toDouble();
+        try {
+          // Use jumpTo for synchronous handoff during drag.
+          parentController.jumpTo(target);
+        } catch (_) {
+          // Ignore if parent not attached yet.
+        }
 
         // Stop bubbling so only the nearest ancestor handles this.
         return true;

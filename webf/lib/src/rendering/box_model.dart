@@ -229,14 +229,8 @@ class RenderLayoutBox extends RenderBoxModel
     // Determine which axis to use based on the axis parameter or default to vertical
     axis ??= Axis.vertical;
     
-    print('[getOffsetToReveal] Called for ${renderStyle.target.runtimeType}');
-    print('[getOffsetToReveal] Target: ${target.runtimeType}, alignment: $alignment, axis: $axis');
-    print('[getOffsetToReveal] Current scrollTop: $scrollTop, scrollLeft: $scrollLeft');
-    print('[getOffsetToReveal] scrollableSize: $scrollableSize, scrollableViewportSize: $scrollableViewportSize');
-    
     // Get the rect in target's coordinate space
     rect ??= target.paintBounds;
-    print('[getOffsetToReveal] Target rect in its own space: $rect');
     
     // If target is not our descendant, return current scroll position
     RenderObject? ancestor = target;
@@ -245,7 +239,6 @@ class RenderLayoutBox extends RenderBoxModel
     }
     if (ancestor == null) {
       // Target is not our descendant, return current position
-      print('[getOffsetToReveal] Target is not our descendant, returning current scroll position');
       return RevealedOffset(
         offset: axis == Axis.vertical ? scrollTop : scrollLeft,
         rect: rect,
@@ -256,71 +249,88 @@ class RenderLayoutBox extends RenderBoxModel
     final Matrix4 transform = target.getTransformTo(this);
     Rect targetRect = MatrixUtils.transformRect(transform, rect);
     
-    // The targetRect is in the scrolled coordinate system, we need to adjust it to the unscrolled position
-    // by adding back the current scroll offset
-    targetRect = targetRect.translate(scrollLeft, scrollTop);
-    print('[getOffsetToReveal] Target rect in our coordinate system (adjusted for scroll): $targetRect');
+    // The targetRect is now in our viewport's coordinate system (already accounts for current scroll)
+    // To calculate the scroll offset needed, we need to work with the absolute position
+    // Add the current scroll offset to get the position in content space
+    final Rect targetInContentSpace = targetRect.translate(scrollLeft, scrollTop);
     
     // Get our viewport size (visible area)
     final Size viewportSize = scrollableViewportSize;
-    print('[getOffsetToReveal] Viewport size: $viewportSize');
     
     // Calculate the target offset based on alignment and axis
     double targetOffset;
     if (axis == Axis.vertical) {
       // Vertical scrolling
-      final double targetTop = targetRect.top;
-      final double targetHeight = targetRect.height;
+      final double targetTop = targetInContentSpace.top;
+      final double targetBottom = targetInContentSpace.bottom;
+      final double targetHeight = targetInContentSpace.height;
       final double viewportHeight = viewportSize.height;
       
-      print('[getOffsetToReveal] Vertical: targetTop=$targetTop, targetHeight=$targetHeight, viewportHeight=$viewportHeight');
-      
       // Calculate position based on alignment (0.0 = top, 0.5 = center, 1.0 = bottom)
-      final double alignmentOffset = (viewportHeight - targetHeight) * alignment;
-      targetOffset = targetTop - alignmentOffset;
-      
-      print('[getOffsetToReveal] alignmentOffset=$alignmentOffset, targetOffset before clamp=$targetOffset');
+      // For alignment=1.0 (bottom), we want the target at the bottom of the viewport
+      if (targetHeight >= viewportHeight) {
+        // Target is larger than viewport
+        if (alignment == 1.0) {
+          // Show the bottom of the target
+          targetOffset = targetBottom - viewportHeight;
+        } else if (alignment == 0.0) {
+          // Show the top of the target
+          targetOffset = targetTop;
+        } else {
+          // Center as much as possible
+          targetOffset = targetTop + (targetHeight - viewportHeight) * alignment;
+        }
+      } else {
+        // Target fits within viewport
+        if (alignment == 1.0) {
+          // Position target at bottom of viewport
+          targetOffset = targetBottom - viewportHeight;
+        } else if (alignment == 0.0) {
+          // Position target at top of viewport
+          targetOffset = targetTop;
+        } else {
+          // Position based on alignment
+          final double availableSpace = viewportHeight - targetHeight;
+          targetOffset = targetTop - (availableSpace * alignment);
+        }
+      }
       
       // Clamp to valid scroll range
       final double maxScroll = math.max(0.0, scrollableSize.height - viewportHeight);
-      print('[getOffsetToReveal] maxScroll=$maxScroll');
       targetOffset = targetOffset.clamp(0.0, maxScroll);
-      print('[getOffsetToReveal] targetOffset after clamp=$targetOffset');
     } else {
       // Horizontal scrolling
-      final double targetLeft = targetRect.left;
-      final double targetWidth = targetRect.width;
+      final double targetLeft = targetInContentSpace.left;
+      final double targetRight = targetInContentSpace.right;
+      final double targetWidth = targetInContentSpace.width;
       final double viewportWidth = viewportSize.width;
       
-      print('[getOffsetToReveal] Horizontal: targetLeft=$targetLeft, targetWidth=$targetWidth, viewportWidth=$viewportWidth');
-      
-      // Calculate position based on alignment (0.0 = left, 0.5 = center, 1.0 = right)
-      final double alignmentOffset = (viewportWidth - targetWidth) * alignment;
-      targetOffset = targetLeft - alignmentOffset;
-      
-      print('[getOffsetToReveal] alignmentOffset=$alignmentOffset, targetOffset before clamp=$targetOffset');
+      if (alignment == 1.0) {
+        // Align right of target with right of viewport
+        targetOffset = targetRight - viewportWidth;
+      } else if (alignment == 0.0) {
+        // Align left of target with left of viewport
+        targetOffset = targetLeft;
+      } else {
+        // General alignment
+        final double alignmentOffset = (viewportWidth - targetWidth) * alignment;
+        targetOffset = targetLeft - alignmentOffset;
+      }
       
       // Clamp to valid scroll range
       final double maxScroll = math.max(0.0, scrollableSize.width - viewportWidth);
-      print('[getOffsetToReveal] maxScroll=$maxScroll');
       targetOffset = targetOffset.clamp(0.0, maxScroll);
-      print('[getOffsetToReveal] targetOffset after clamp=$targetOffset');
     }
     
-    // Calculate the rect position after scrolling
+    // Calculate the rect position in viewport space after scrolling
     final Rect revealedRect;
     if (axis == Axis.vertical) {
-      final double offsetDifference = scrollTop - targetOffset;
-      revealedRect = targetRect.translate(0.0, offsetDifference);
-      print('[getOffsetToReveal] Vertical offset difference: $offsetDifference');
+      // After scrolling to targetOffset, the element will appear at:
+      // its content space position minus the new scroll offset
+      revealedRect = targetInContentSpace.translate(0.0, -targetOffset);
     } else {
-      final double offsetDifference = scrollLeft - targetOffset;
-      revealedRect = targetRect.translate(offsetDifference, 0.0);
-      print('[getOffsetToReveal] Horizontal offset difference: $offsetDifference');
+      revealedRect = targetInContentSpace.translate(-targetOffset, 0.0);
     }
-    
-    print('[getOffsetToReveal] Final revealed rect: $revealedRect');
-    print('[getOffsetToReveal] Returning offset: $targetOffset');
     
     return RevealedOffset(
       offset: targetOffset,
