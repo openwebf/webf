@@ -33,8 +33,21 @@ class WebFDioCacheCookieInterceptor extends InterceptorsWrapper {
   @override
   Future<void> onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final uri = options.uri;
-    // Attach WebF context header
-    options.headers[HttpHeaderContext] = (contextId ?? 0).toString();
+    
+    // Check if this is a Fetch/XHR request and save to extras for tracking
+    final isFetchRequest = options.headers['X-WebF-Request-Type'] == 'fetch';
+    if (isFetchRequest) {
+      options.extra['webf_is_xhr'] = true;
+    }
+    
+    // Save context ID to extras for internal use
+    if (contextId != null) {
+      options.extra['webf_context_id'] = contextId;
+    }
+    
+    // Remove internal WebF headers that shouldn't be sent to the server
+    options.headers.remove('X-WebF-Request-Type');
+    options.headers.remove(HttpHeaderContext);  // Remove x-context header
 
     // Attach Referer/Origin based on entrypoint
     if (contextId != null) {
