@@ -380,7 +380,6 @@ mixin BaseInputState on WebFWidgetElementState {
 
   void handleFocusChange() {
     if (_isFocus) {
-      print('[WebF][Input] Focus gained on ${widgetElement.tagName}#${(widgetElement as dom.Element).id ?? ''}');
       widgetElement.oldValue = widgetElement.value;
       scheduleMicrotask(() {
         widgetElement.dispatchEvent(dom.FocusEvent(dom.EVENT_FOCUS, relatedTarget: widgetElement));
@@ -393,7 +392,8 @@ mixin BaseInputState on WebFWidgetElementState {
         Future.delayed(const Duration(milliseconds: 350), () {
           // if (mounted) _scrollIntoNearestOverflow();
           if (mounted) {
-            WebFEnsureVisible.acrossScrollables(context);
+            // Use alignment=1.0 to position input at bottom of viewport for better keyboard visibility
+            WebFEnsureVisible.acrossScrollables(context, alignment: 1.0);
           }
         });
       });
@@ -409,111 +409,6 @@ mixin BaseInputState on WebFWidgetElementState {
 
       HardwareKeyboard.instance.removeHandler(_handleKey);
     }
-  }
-
-  // Adjust ancestor scrollables (inner → outer) so this input becomes visible on screen.
-  void _scrollIntoNearestOverflow() {
-    print('[WebF][Input] Begin scroll-into-view for ${widgetElement.tagName}');
-    // Ensure latest layout values.
-    RendererBinding.instance.rootPipelineOwner.flushLayout();
-
-    // Walk up DOM to collect all scrollable ancestors (nearest first).
-    dom.Node? node = widgetElement.parentNode;
-    final List<dom.Element> scrollChain = [];
-    int hops = 0;
-    while (node is dom.Element) {
-      final idOrEmpty = node.id ?? '';
-      print('[WebF][Input] Visit ancestor ${node.tagName}#$idOrEmpty hasY=${node.scrollControllerY != null} hasX=${node.scrollControllerX != null}');
-      if (node.scrollControllerY != null) {
-        scrollChain.add(node);
-      }
-      node = node.parentNode;
-      if (++hops > 32) { print('[WebF][Input] Ancestor search bailout at depth 32'); break; }
-    }
-    if (scrollChain.isEmpty) {
-      print('[WebF][Input] No scrollable ancestors found');
-      return;
-    }
-
-    // Get render objects for target and scroll container.
-    final RenderObject? targetRO = widgetElement.attachedRenderer;
-    final RenderViewportBox? root = widgetElement.ownerDocument.viewport;
-    if (targetRO is! RenderBox || root == null) {
-      print('[WebF][Input] Missing RenderBox/Root: targetRO=${targetRO.runtimeType}, root=$root');
-      return;
-    }
-
-    // Compute target rect relative to root viewport.
-    Offset targetToRoot = getLayoutTransformTo(targetRO, root);
-    final double targetHeight = (targetRO is RenderBoxModel)
-        ? (targetRO as RenderBoxModel).boxSize?.height ?? targetRO.size.height
-        : targetRO.size.height;
-
-    // Compute visible screen height considering keyboard/host resize.
-    double visibleScreenHeight = 0.0;
-    final view = View.maybeOf(context);
-    final mq = MediaQuery.maybeOf(context);
-    final double rawHeight = view != null ? (view.physicalSize.height / view.devicePixelRatio) : 0.0;
-    final double inset = (view?.viewInsets.bottom ?? 0.0) > 0.0
-        ? (view?.viewInsets.bottom ?? 0.0)
-        : (mq?.viewInsets.bottom ?? 0.0);
-    if (rawHeight > 0) {
-      visibleScreenHeight = (rawHeight - inset).clamp(0.0, rawHeight);
-    }
-    if (visibleScreenHeight == 0.0 && (mq?.size.height ?? 0) > 0) {
-      visibleScreenHeight = mq!.size.height;
-    }
-
-    // Compute necessary translation on screen: positive = scroll ancestors up; negative = down.
-    final double targetTopOnScreen = targetToRoot.dy;
-    final double targetBottomOnScreen = targetToRoot.dy + targetHeight;
-    double delta = 0.0;
-    if (targetBottomOnScreen > visibleScreenHeight) {
-      delta = targetBottomOnScreen - visibleScreenHeight;
-    } else if (targetTopOnScreen < 0) {
-      delta = targetTopOnScreen; // negative => scroll down
-    }
-    print('[WebF][Input] screenVisible=$visibleScreenHeight targetTop=$targetTopOnScreen targetBottom=$targetBottomOnScreen initialDelta=$delta');
-
-    if (delta == 0.0) {
-      print('[WebF][Input] Target already fully visible on screen');
-      return;
-    }
-
-    // Apply delta across inner→outer scrollables, limited by each one's available extent.
-    double remaining = delta;
-    for (final el in scrollChain) {
-      final ctrl = el.scrollControllerY!;
-      if (!ctrl.hasClients) continue;
-      final current = ctrl.position.pixels;
-      final minExtent = ctrl.position.minScrollExtent;
-      final maxExtent = ctrl.position.maxScrollExtent;
-      double available = 0.0;
-      if (remaining > 0) {
-        available = (maxExtent - current).clamp(0.0, double.infinity);
-      } else if (remaining < 0) {
-        available = (current - minExtent).clamp(0.0, double.infinity);
-      }
-      final double consume = remaining.sign * math.min(available, remaining.abs());
-      if (consume != 0.0) {
-        final double target = (current + consume).clamp(minExtent, maxExtent);
-        try {
-          ctrl.jumpTo(target);
-          print('[WebF][Input] Scrolled ${el.tagName}#${el.id ?? ''} by ${consume.toStringAsFixed(1)} -> $target');
-        } catch (e) {
-          print('[WebF][Input] jumpTo error on ${el.tagName}: $e');
-        }
-        remaining -= consume;
-        if (remaining.abs() < 1.0) break;
-      }
-    }
-
-    // Recompute after scrolling to verify.
-    RendererBinding.instance.rootPipelineOwner.flushLayout();
-    targetToRoot = getLayoutTransformTo(targetRO, root);
-    final double top2 = targetToRoot.dy;
-    final double bottom2 = targetToRoot.dy + targetHeight;
-    print('[WebF][Input] after-scroll top=$top2 bottom=$bottom2 visible=$visibleScreenHeight remaining=${remaining.toStringAsFixed(1)}');
   }
 
   bool _handleKey(KeyEvent event) {
