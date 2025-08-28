@@ -44,9 +44,12 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     if (child is RenderBoxModel) {
       double childMarginTop = renderStyle.collapsedMarginTop;
       double childMarginBottom = renderStyle.collapsedMarginBottom;
-      Size scrollableSize = (child as RenderBoxModel).scrollableSize;
+      Size scrollableSize = (child as RenderBoxModel).renderStyle.isSelfScrollingContainer()
+          ? child!.size
+          : (child as RenderBoxModel).scrollableSize;
 
-      size = constraints.constrain(Size(scrollableSize.width, childMarginTop + scrollableSize.height + childMarginBottom));
+      size =
+          constraints.constrain(Size(scrollableSize.width, childMarginTop + scrollableSize.height + childMarginBottom));
 
       double childMarginLeft = renderStyle.marginLeft.computedValue;
 
@@ -56,7 +59,8 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
           if (renderStyle.position == CSSPositionType.absolute) {
             containingBlockElement!.attachedRenderer!.positionedChildren.add(child as RenderBoxModel);
             if (!containingBlockElement.attachedRenderer!.needsLayout) {
-              CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child as RenderBoxModel);
+              CSSPositionedLayout.applyPositionedChildOffset(
+                  containingBlockElement.attachedRenderer!, child as RenderBoxModel);
             }
           } else {
             CSSPositionedLayout.applyPositionedChildOffset(this, child as RenderBoxModel);

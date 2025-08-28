@@ -3,6 +3,7 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// Provides ancestor scroll controllers to descendants to enable nested scrolling.
@@ -57,6 +58,10 @@ class NestedScrollCoordinator extends StatelessWidget {
       if (widget is NestedScrollForwarder) {
         final candidate = axis == Axis.vertical ? widget.vertical : widget.horizontal;
         if (candidate != null && !identical(candidate, controller)) {
+          assert(() {
+            debugPrint('[WebF][Nested] Found ancestor forwarder for $axis controller=$candidate');
+            return true;
+          }());
           found = widget;
           return false; // stop visiting
         }
@@ -69,6 +74,8 @@ class NestedScrollCoordinator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!enabled) return child;
+
+    double? lastDelta; // cache last non-zero delta
 
     return NotificationListener<ScrollNotification>(
       onNotification: (notification) {
@@ -86,12 +93,39 @@ class NestedScrollCoordinator extends StatelessWidget {
         if (parentController == null) return false;
         if (identical(parentController, controller)) return false;
 
-        // Determine delta to forward. Prefer overscroll when available; otherwise use scrollDelta.
+        // Track last meaningful delta from updates to infer magnitude when clamped.
+        if (notification is ScrollUpdateNotification) {
+          if (notification.scrollDelta != null && notification.scrollDelta!.abs() > 0.0) {
+            lastDelta = notification.scrollDelta;
+          }
+        }
+
+        // Determine delta to forward. Prefer overscroll; then use update delta; or infer from user direction at edge.
         double? delta;
         if (notification is OverscrollNotification) {
           delta = notification.overscroll;
         } else if (notification is ScrollUpdateNotification) {
           delta = notification.scrollDelta;
+        } else if (notification is UserScrollNotification) {
+          // Infer intent and sign relative to axisDirection when clamped at edge.
+          final ScrollDirection dir = notification.direction;
+          final AxisDirection axisDir = notification.metrics.axisDirection;
+          final double signFactor = (axisDir == AxisDirection.down || axisDir == AxisDirection.right) ? 1.0 : -1.0;
+          final bool isForward = dir == ScrollDirection.forward;
+          final double intendedSign = isForward ? signFactor : -signFactor;
+          final bool atMin = _atMin(controller.position);
+          final bool atMax = _atMax(controller.position);
+          // Forward only when hitting the edge in the proper intent direction:
+          // At min: need positive delta to increase pixels; At max: need negative to decrease.
+          if ((atMin && intendedSign > 0) || (atMax && intendedSign < 0)) {
+            final double mag = (lastDelta?.abs() ?? 20.0);
+            delta = intendedSign * mag;
+            assert(() {
+              debugPrint('[WebF][Nested] edge handoff: axis=$axis axisDir=$axisDir dir=$dir '
+                  'atMin=$atMin atMax=$atMax intendedSign=$intendedSign mag=$mag delta=$delta');
+              return true;
+            }());
+          }
         }
 
         if (delta == null || delta == 0.0) return false;
@@ -107,12 +141,20 @@ class NestedScrollCoordinator extends StatelessWidget {
         if (!shouldForward) return false;
 
         final parentPos = parentController.position;
-        final target = (parentPos.pixels + delta)
+        final double before = parentPos.pixels;
+        final double minE = parentPos.minScrollExtent;
+        final double maxE = parentPos.maxScrollExtent;
+        final target = (before + delta)
             .clamp(parentPos.minScrollExtent, parentPos.maxScrollExtent)
             .toDouble();
         try {
           // Use jumpTo for synchronous handoff during drag.
           parentController.jumpTo(target);
+          assert(() {
+            debugPrint('[WebF][Nested] Forwarded delta=${delta?.toStringAsFixed(2)} to parent; '
+                'extents=[$minE,$maxE] before=${before.toStringAsFixed(2)} -> $target');
+            return true;
+          }());
         } catch (_) {
           // Ignore if parent not attached yet.
         }
