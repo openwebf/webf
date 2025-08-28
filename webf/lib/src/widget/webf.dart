@@ -56,6 +56,10 @@ class WebF extends StatefulWidget {
   /// Callbacks when WebFController was created by this WebF widget.
   final OnControllerCreated? onControllerCreated;
 
+  /// Callback that's called after the build success in webf.dart
+  /// when widget.controller.view.document.documentElement!.toWidget() finishes executing.
+  final VoidCallback? onBuildSuccess;
+
   // Set webf http cache mode.
   static void setHttpCacheMode(HttpCacheMode mode) {
     HttpCacheController.mode = mode;
@@ -174,6 +178,7 @@ class WebF extends StatefulWidget {
     this.errorBuilder,
     this.onDispose,
     this.onControllerCreated,
+    this.onBuildSuccess,
     required this.controller,
   }) : super(key: key);
 
@@ -200,6 +205,7 @@ class WebF extends StatefulWidget {
       Map<String, SubViewBuilder>? routes,
       VoidCallback? onDispose,
       OnControllerCreated? onControllerCreated,
+      VoidCallback? onBuildSuccess,
       ControllerSetup? setup}) {
     return AutoManagedWebF(
         controllerName: controllerName,
@@ -210,6 +216,7 @@ class WebF extends StatefulWidget {
         bundle: bundle,
         onDispose: onDispose,
         onControllerCreated: onControllerCreated,
+        onBuildSuccess: onBuildSuccess,
         createController: createController,
         routes: routes,
         key: key,
@@ -259,6 +266,7 @@ class AutoManagedWebFState extends State<AutoManagedWebF> {
           print('webf $controller disposed');
           setState(() {});
         },
+        onBuildSuccess: widget.onBuildSuccess,
         loadingWidget: widget.loadingWidget ??
             const SizedBox(
               width: 50,
@@ -355,6 +363,7 @@ class AutoManagedWebF extends StatefulWidget {
   /// Callbacks for this controller of WebF had been disposed
   final VoidCallback? onDispose;
   final OnControllerCreated? onControllerCreated;
+  final VoidCallback? onBuildSuccess;
 
   // Auto-initialization parameters
   final WebFBundle? bundle;
@@ -370,6 +379,7 @@ class AutoManagedWebF extends StatefulWidget {
       this.initialState,
       this.onDispose,
       this.onControllerCreated,
+      this.onBuildSuccess,
       // Auto-initialization parameters
       this.bundle,
       this.createController,
@@ -646,7 +656,16 @@ class WebFState extends State<WebF> with RouteAware {
             children: [Text('Loading Error: $error')]);
       }
 
-      return widget.controller.view.document.documentElement!.toWidget();
+      final Widget rootWidget = widget.controller.view.document.documentElement!.toWidget();
+      
+      // Call onBuildSuccess callback after successful widget build
+      if (widget.onBuildSuccess != null) {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          widget.onBuildSuccess!();
+        });
+      }
+      
+      return rootWidget;
     } catch (e, stack) {
       // Record any unexpected errors during buildRootView
       widget.controller.loadingState.recordError(
