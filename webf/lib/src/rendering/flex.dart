@@ -2465,6 +2465,7 @@ class RenderFlexLayout extends RenderLayoutBox {
   ) {
     bool isSingleLine = (renderStyle.flexWrap != FlexWrap.wrap && renderStyle.flexWrap != FlexWrap.wrapReverse);
 
+
     if (isSingleLine) {
       // Normally the height of flex line in single line equals to flex container's cross size.
       // But it may change in cases of the cross size of replaced flex item tranferred from
@@ -2472,6 +2473,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       bool isCrossSizeDefinite = _isHorizontalFlexDirection
           ? (renderStyle.contentBoxLogicalHeight != null || renderStyle.minHeight.isNotAuto)
           : (renderStyle.contentBoxLogicalWidth != null || renderStyle.minWidth.isNotAuto);
+      
       if (_needToStretchChildCrossSize(child) && !isCrossSizeDefinite) {
         return runCrossAxisExtent;
       } else {
@@ -2798,6 +2800,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool isChildLengthAuto =
         _isHorizontalFlexDirection ? child.renderStyle.height.isAuto : child.renderStyle.width.isAuto;
 
+
     // If the cross size property of the flex item computes to auto, and neither of
     // the cross axis margins are auto, the flex item is stretched.
     // https://www.w3.org/TR/css-flexbox-1/#valdef-align-items-stretch
@@ -3091,11 +3094,16 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get cross size of content size.
   double _getContentCrossSize() {
+    // Use contentConstraints if contentSize hasn't been set yet (for early stretch calculations)
+    double result;
     if (_isHorizontalFlexDirection) {
-      return contentSize.height;
+      result = contentSize.height != 0 ? contentSize.height : 
+               (contentConstraints?.maxHeight.isFinite == true ? contentConstraints!.maxHeight : 0);
     } else {
-      return contentSize.width;
+      result = contentSize.width != 0 ? contentSize.width : 
+               (contentConstraints?.maxWidth.isFinite == true ? contentConstraints!.maxWidth : 0);
     }
+    return result;
   }
 
   double? _getLineHeight(RenderBox child) {
