@@ -413,7 +413,14 @@ class ProxyHttpClientRequest implements HttpClientRequest {
       _cookies.clear();
     }
 
-    _httpHeaders.forEach(backendRequest.headers.set);
+    // Forward all headers except internal WebF headers
+    _httpHeaders.forEach((String name, List<String> values) {
+      // Filter out internal WebF headers that shouldn't be sent to the server
+      final lowerName = name.toLowerCase();
+      if (lowerName != 'x-webf-request-type' && lowerName != 'x-context') {
+        backendRequest.headers.set(name, values);
+      }
+    });
     _httpHeaders.clear();
 
     // Assign configs for backend request.
