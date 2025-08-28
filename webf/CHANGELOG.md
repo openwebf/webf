@@ -1,3 +1,20 @@
+## 0.22.13
+
+### Fixes
+
+- fix: revert timeout for resolve entrypoint.
+- fix: fix list view reset footer.
+- fix: filter the extra webf headers to the http requests.
+
+### Features
+
+- feat: add allowsInfiniteHeight property on WidgetElement to support infinite layout size for
+  WidgetElement.
+- feat: support nested scrollable for normal overflow containers and WebFListView.
+- feat: add `WebFEnsureVisible.acrossScrollables(context, alignment: 1.0)` API to make the target
+  element visible in scroll container.
+- feat: add onBuildSuccess callback in webf widget.
+
 ## 0.22.12
 
 ### Fixes
