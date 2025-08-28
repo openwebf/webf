@@ -38,7 +38,7 @@ class ScriptValue final {
   // Create an undefined ScriptValue;
   static ScriptValue Undefined(JSContext* ctx);
   // Wrap an Quickjs JSValue to ScriptValue.
-  explicit ScriptValue(JSContext* ctx, JSValue value) : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
+  explicit ScriptValue(JSContext* ctx, JSValueConst value) : value_(JS_DupValue(ctx, value)), runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const AtomicString& value)
       : value_(value.IsNull() ? JS_NULL : value.ToQuickJS(ctx)) , runtime_(JS_GetRuntime(ctx)){};
   explicit ScriptValue(JSContext* ctx, const SharedNativeString* string)

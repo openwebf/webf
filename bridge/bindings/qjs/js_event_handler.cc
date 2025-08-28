@@ -68,10 +68,21 @@ void JSEventHandler::InvokeInternal(EventTarget& event_target, Event& event, Exc
     if (error_attribute.IsEmpty()) {
       error_attribute = ScriptValue::Empty(event.ctx());
     }
-    arguments = {ScriptValue(ctx, Converter<IDLDOMString>::ToValue(ctx, error_event->message())),
-                 ScriptValue(ctx, Converter<IDLDOMString>::ToValue(ctx, error_event->filename())),
-                 ScriptValue(ctx, Converter<IDLInt64>::ToValue(ctx, error_event->lineno())),
-                 ScriptValue(ctx, Converter<IDLInt64>::ToValue(ctx, error_event->colno())), error_attribute};
+
+    JSValue message = Converter<IDLDOMString>::ToValue(ctx, error_event->message());
+    JSValue filename = Converter<IDLDOMString>::ToValue(ctx, error_event->filename());
+    JSValue lineno = Converter<IDLInt64>::ToValue(ctx, error_event->lineno());
+    JSValue colno = Converter<IDLInt64>::ToValue(ctx, error_event->colno());
+
+    arguments = {ScriptValue(ctx, message),
+                 ScriptValue(ctx, filename),
+                 ScriptValue(ctx, lineno),
+                 ScriptValue(ctx, colno), error_attribute};
+
+    JS_FreeValue(ctx, message);
+    JS_FreeValue(ctx, filename);
+    JS_FreeValue(ctx, lineno);
+    JS_FreeValue(ctx, colno);
   } else {
     arguments.emplace_back(event.ToValue());
   }
