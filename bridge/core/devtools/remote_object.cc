@@ -180,7 +180,8 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
       }
       
       properties.push_back(prop);
-      
+
+      JS_FreeAtom(ctx, atom);
       JS_FreeValue(ctx, prop_value);
     }
     
@@ -276,7 +277,8 @@ std::vector<RemoteObjectProperty> RemoteObjectRegistry::GetObjectProperties(cons
           }
           
           properties.push_back(prop);
-          
+
+          JS_FreeAtom(ctx, atom);
           JS_FreeValue(ctx, prop_value);
         }
         
@@ -761,6 +763,10 @@ JSValue RemoteObjectRegistry::GetPropertyValue(const std::string& object_id, con
         prop_value = JS_GetProperty(ctx, obj, atom);
       } else {
         prop_value = JS_UNDEFINED;
+      }
+
+      for (uint32_t i = 0; i < prop_count; i++) {
+        JS_FreeAtom(ctx, props[i].atom);
       }
       js_free(ctx, props);
     } else {
