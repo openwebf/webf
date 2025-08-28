@@ -47,7 +47,14 @@ JSAtom StringCache::CreateStringAndInsertIntoCache(JSContext* ctx, std::shared_p
   }
   
   string_cache_[string_impl] = JS_DupAtom(ctx, new_string_atom);
-  atom_to_string_cache[JS_DupAtom(ctx, new_string_atom)] = string_impl;
+
+  JSAtom cache_key;
+  if (UNLIKELY(atom_to_string_cache.contains(new_string_atom)))  {
+    cache_key = new_string_atom;
+  } else {
+    cache_key = JS_DupAtom(ctx, new_string_atom);
+  }
+  atom_to_string_cache[cache_key] = string_impl;
 
   JS_FreeAtom(ctx, new_string_atom);
 
