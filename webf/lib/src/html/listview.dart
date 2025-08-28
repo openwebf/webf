@@ -3,8 +3,10 @@
  * Licensed under GNU AGPL with Enterprise exception.
  */
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 import 'package:webf/css.dart';
 import 'package:webf/src/css/position.dart';
@@ -204,7 +206,9 @@ class WebFListViewState extends WebFWidgetElementState {
   ///
   /// This controller provides access to scroll position, enables programmatic
   /// scrolling, and allows listening to scroll events.
-  final ScrollController? scrollController = ScrollController();
+  /// When in a nested scroll context (e.g., inside NestedScrollView), this may
+  /// be null if using the parent's scroll controller.
+  ScrollController? scrollController;
 
   /// Controller for the EasyRefresh widget that manages refresh and loading states
   ///
@@ -220,6 +224,14 @@ class WebFListViewState extends WebFWidgetElementState {
   /// This provides type-safe access to the parent element properties and methods.
   @override
   WebFListViewElement get widgetElement => super.widgetElement as WebFListViewElement;
+
+  @override
+  void initState() {
+    super.initState();
+    // Only create our own ScrollController if we're not in a nested scroll context
+    // This will be checked and potentially overridden in didChangeDependencies
+    scrollController = ScrollController();
+  }
 
   /// Cleans up resources when the state is disposed
   ///
@@ -251,17 +263,17 @@ class WebFListViewState extends WebFWidgetElementState {
   /// This method is called whenever the scroll position changes. It performs these tasks:
   /// - Checks if the scroll controller is valid and has clients
   /// - Calls widgetElement.handleScroll() to notify the base element of scroll position
-  /// - Calls handleScroll() to potentially trigger load-more functionality
   ///
   /// The method includes error handling to prevent crashes if the scroll position
   /// becomes invalid during scrolling.
+  /// Note: This is only used when we have our own controller (non-nested case)
   void _scrollListener() {
-    if (!mounted || !(scrollController?.hasClients == true) || (scrollController?.positions.isEmpty == true)) {
+    if (!mounted || scrollController == null || !scrollController!.hasClients || scrollController!.positions.isEmpty) {
       return;
     }
 
     try {
-      // Handle load more
+      // Handle scroll events from our own controller
       final position = scrollController!.position;
       widgetElement.handleScroll(position.pixels, position.axisDirection);
     } catch (e) {
@@ -362,19 +374,99 @@ class WebFListViewState extends WebFWidgetElementState {
   /// that can be handled in JavaScript.
   @override
   Widget build(BuildContext context) {
-    return EasyRefresh(
+    // Build the ListView 
+    Widget listView = ListView.builder(
+        controller: scrollController,
+        scrollDirection: widgetElement.scrollDirection,
+        shrinkWrap: widgetElement.shrinkWrap,
+        physics: const ClampingScrollPhysics(),
+        itemCount: widgetElement.childNodes.length,
+        itemBuilder: (context, index) {
+          return buildListViewItemByIndex(index);
+        });
+    
+    // Wrap with NotificationListener to handle scroll notifications
+    // This enables nested scroll forwarding
+    Widget result = NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        // Handle nested scroll forwarding
+        if (notification is OverscrollNotification) {
+          // When inner ListView overscrolls, try to scroll the parent
+          final ScrollController? parentController = _findParentScrollController(context);
+          if (parentController != null && parentController.hasClients) {
+            final double overscroll = notification.overscroll;
+            final double currentPosition = parentController.position.pixels;
+            final double minPosition = parentController.position.minScrollExtent;
+            final double maxPosition = parentController.position.maxScrollExtent;
+            
+            // Forward the overscroll to parent
+            if (overscroll < 0 && currentPosition > minPosition) {
+              // Overscrolling at top, scroll parent up
+              parentController.jumpTo(math.max(minPosition, currentPosition + overscroll));
+              return true; // Stop propagation
+            } else if (overscroll > 0 && currentPosition < maxPosition) {
+              // Overscrolling at bottom, scroll parent down  
+              parentController.jumpTo(math.min(maxPosition, currentPosition + overscroll));
+              return true; // Stop propagation
+            }
+          }
+        }
+        return false; // Allow notification to continue
+      },
+      child: listView,
+    );
+    
+    // Wrap with EasyRefresh for pull-to-refresh functionality
+    result = EasyRefresh(
         header: buildEasyRefreshHeader(),
         footer: buildEasyRefreshFooter(),
         onLoad: widgetElement.hasEventListener('loadmore') ? onLoad : null,
         onRefresh: widgetElement.hasEventListener('refresh') ? onRefresh : null,
         controller: refreshController,
-        child: ListView.builder(
-            controller: scrollController,
-            scrollDirection: widgetElement.scrollDirection,
-            shrinkWrap: widgetElement.shrinkWrap,
-            itemCount: widgetElement.childNodes.length,
-            itemBuilder: (context, index) {
-              return buildListViewItemByIndex(index);
-            }));
+        child: result);
+    
+    return result;
+  }
+  
+  /// Find the parent ListView's scroll controller by looking up the widget tree
+  ScrollController? _findParentScrollController(BuildContext context) {
+    // Try to find a parent ScrollController in the widget tree
+    ScrollController? parentController;
+    
+    context.visitAncestorElements((element) {
+      // Look for Scrollable widgets in ancestors
+      if (element.widget is Scrollable) {
+        final Scrollable scrollable = element.widget as Scrollable;
+        // Make sure it's not our own scrollable
+        if (scrollable.controller != scrollController && scrollable.controller != null) {
+          parentController = scrollable.controller;
+          return false; // Stop searching, found a parent controller
+        }
+      } else if (element.widget is ListView) {
+        // Check if there's a ListView with a controller
+        final ListView listView = element.widget as ListView;
+        if (listView.controller != scrollController && listView.controller != null) {
+          parentController = listView.controller;
+          return false; // Stop searching
+        }
+      }
+      return true; // Continue searching
+    });
+    
+    // If we didn't find a controller directly, try to find parent WebFListViewState
+    if (parentController == null) {
+      context.visitAncestorElements((element) {
+        if (element is StatefulElement) {
+          final state = element.state;
+          if (state is WebFListViewState && state != this) {
+            parentController = state.scrollController;
+            return false; // Stop searching
+          }
+        }
+        return true; // Continue searching
+      });
+    }
+    
+    return parentController;
   }
 }
