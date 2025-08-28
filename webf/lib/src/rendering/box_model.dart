@@ -10,6 +10,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:path/path.dart';
+import 'package:vector_math/vector_math_64.dart' show Matrix4;
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/gesture.dart';
@@ -224,107 +225,107 @@ class RenderLayoutBox extends RenderBoxModel
   // RenderAbstractViewport impl so Scrollable.ensureVisible can compute reveal offsets
   @override
   RevealedOffset getOffsetToReveal(RenderObject target, double alignment, {Rect? rect, Axis? axis}) {
-    final Axis useAxis = axis ?? (scrollOffsetY != null ? Axis.vertical : Axis.horizontal);
-
-    // Only act as viewport when actually scrollable for this axis; otherwise, delegate upward.
-    final bool isScrollableForAxis = (useAxis == Axis.vertical)
-        ? (scrollOffsetY != null && renderStyle.effectiveOverflowY != CSSOverflowType.visible)
-        : (scrollOffsetX != null && renderStyle.effectiveOverflowX != CSSOverflowType.visible);
-    assert(() {
-      debugPrint('[WebF][Viewport] getOffsetToReveal enter: axis=$useAxis isScrollable=$isScrollableForAxis '
-          'size=$size scrollY=${scrollOffsetY?.pixels} scrollX=${scrollOffsetX?.pixels} '
-          'overflowY=${renderStyle.effectiveOverflowY} overflowX=${renderStyle.effectiveOverflowX}');
-      return true;
-    }());
-    if (!isScrollableForAxis) {
-      final RenderObject? ancestor = parent as RenderObject?;
-      if (ancestor != null) {
-        final RenderAbstractViewport? vp = RenderAbstractViewport.of(ancestor);
-        if (vp != null) {
-          assert(() { debugPrint('[WebF][Viewport] delegating to ancestor viewport: $vp'); return true; }());
-          return vp.getOffsetToReveal(target, alignment, rect: rect, axis: axis);
-        }
-      }
-      final Rect tb = rect ?? target.paintBounds;
-      final Offset toLocal = getLayoutTransformTo(target, this);
-      final Rect lr = tb.shift(toLocal);
-      assert(() { debugPrint('[WebF][Viewport] no ancestor viewport; returning no-op reveal. localRect=$lr'); return true; }());
-      return RevealedOffset(offset: 0.0, rect: lr);
+    // WebF elements can scroll in both axes, but this method needs to work per axis
+    // Determine which axis to use based on the axis parameter or default to vertical
+    axis ??= Axis.vertical;
+    
+    print('[getOffsetToReveal] Called for ${renderStyle.target.runtimeType}');
+    print('[getOffsetToReveal] Target: ${target.runtimeType}, alignment: $alignment, axis: $axis');
+    print('[getOffsetToReveal] Current scrollTop: $scrollTop, scrollLeft: $scrollLeft');
+    print('[getOffsetToReveal] scrollableSize: $scrollableSize, scrollableViewportSize: $scrollableViewportSize');
+    
+    // Get the rect in target's coordinate space
+    rect ??= target.paintBounds;
+    print('[getOffsetToReveal] Target rect in its own space: $rect');
+    
+    // If target is not our descendant, return current scroll position
+    RenderObject? ancestor = target;
+    while (ancestor != null && ancestor != this) {
+      ancestor = ancestor.parent as RenderObject?;
     }
-
-    final Rect targetBounds = rect ?? target.paintBounds;
-    final Offset toLocal = globalToLocal(Offset.zero, ancestor: target);
-    final Rect localRect = targetBounds.shift(toLocal);
-
-    assert(() {
-      debugPrint('[WebF][Viewport] localRect=$localRect toLocal=$toLocal '
-          'viewportSize=$size scrollableViewport=$scrollableViewportSize scrollableSize=$scrollableSize');
-      return true;
-    }());
-
-    // Use the content viewport (excludes borders/padding) when deciding visibility.
-    double availHeight = scrollableViewportSize.height > 0 ? scrollableViewportSize.height : size.height;
-    double availWidth = scrollableViewportSize.width > 0 ? scrollableViewportSize.width : size.width;
-
-    // Further reduce available height/width if part of this viewport is below the root visible area
-    // (e.g., obscured by on-screen keyboard). We approximate screen visible size with the root RenderViewportBox size.
-    RenderObject? p = parent as RenderObject?;
-    RenderViewportBox? root;
-    while (p != null) {
-      if (p is RenderViewportBox) { root = p; break; }
-      p = (p.parent as RenderObject?);
+    if (ancestor == null) {
+      // Target is not our descendant, return current position
+      print('[getOffsetToReveal] Target is not our descendant, returning current scroll position');
+      return RevealedOffset(
+        offset: axis == Axis.vertical ? scrollTop : scrollLeft,
+        rect: rect,
+      );
     }
-    if (root != null) {
-      final Offset containerToRoot = globalToLocal(Offset.zero, ancestor: root);
-      final double containerTopOnScreen = containerToRoot.dy;
-      final double visibleScreenHeight = root.size.height;
-      final double overlapV = (containerTopOnScreen + availHeight - visibleScreenHeight).clamp(0.0, availHeight);
-      if (overlapV > 0) {
-        availHeight = (availHeight - overlapV).clamp(0.0, availHeight);
-      }
-      // Horizontal overlap is unusual here, but keep symmetry for completeness.
-      final double visibleScreenWidth = root.size.width;
-      final double containerLeftOnScreen = containerToRoot.dx;
-      final double overlapH = (containerLeftOnScreen + availWidth - visibleScreenWidth).clamp(0.0, availWidth);
-      if (overlapH > 0) {
-        availWidth = (availWidth - overlapH).clamp(0.0, availWidth);
-      }
-      assert(() {
-        debugPrint('[WebF][Viewport] rootVisible=${root!.size} containerTop=$containerTopOnScreen '
-            'overlapV=$overlapV -> availHeight=$availHeight');
-        return true;
-      }());
-    }
-    double delta = 0.0;
-    if (useAxis == Axis.vertical) {
-      if (localRect.top < 0) {
-        delta = localRect.top;
-      } else if (localRect.bottom > availHeight) {
-        delta = localRect.bottom - availHeight;
-      }
-      final double current = scrollOffsetY?.pixels ?? 0.0;
-      final double newOffset = current + delta;
-      assert(() {
-        debugPrint('[WebF][Viewport] vertical delta=$delta current=$current newOffset=$newOffset '
-            'availHeight=$availHeight');
-        return true;
-      }());
-      return RevealedOffset(offset: newOffset, rect: localRect.shift(Offset(0, -delta)));
+    
+    // Transform the rect from target's coordinate system to our coordinate system
+    final Matrix4 transform = target.getTransformTo(this);
+    Rect targetRect = MatrixUtils.transformRect(transform, rect);
+    
+    // The targetRect is in the scrolled coordinate system, we need to adjust it to the unscrolled position
+    // by adding back the current scroll offset
+    targetRect = targetRect.translate(scrollLeft, scrollTop);
+    print('[getOffsetToReveal] Target rect in our coordinate system (adjusted for scroll): $targetRect');
+    
+    // Get our viewport size (visible area)
+    final Size viewportSize = scrollableViewportSize;
+    print('[getOffsetToReveal] Viewport size: $viewportSize');
+    
+    // Calculate the target offset based on alignment and axis
+    double targetOffset;
+    if (axis == Axis.vertical) {
+      // Vertical scrolling
+      final double targetTop = targetRect.top;
+      final double targetHeight = targetRect.height;
+      final double viewportHeight = viewportSize.height;
+      
+      print('[getOffsetToReveal] Vertical: targetTop=$targetTop, targetHeight=$targetHeight, viewportHeight=$viewportHeight');
+      
+      // Calculate position based on alignment (0.0 = top, 0.5 = center, 1.0 = bottom)
+      final double alignmentOffset = (viewportHeight - targetHeight) * alignment;
+      targetOffset = targetTop - alignmentOffset;
+      
+      print('[getOffsetToReveal] alignmentOffset=$alignmentOffset, targetOffset before clamp=$targetOffset');
+      
+      // Clamp to valid scroll range
+      final double maxScroll = math.max(0.0, scrollableSize.height - viewportHeight);
+      print('[getOffsetToReveal] maxScroll=$maxScroll');
+      targetOffset = targetOffset.clamp(0.0, maxScroll);
+      print('[getOffsetToReveal] targetOffset after clamp=$targetOffset');
     } else {
-      if (localRect.left < 0) {
-        delta = localRect.left;
-      } else if (localRect.right > availWidth) {
-        delta = localRect.right - availWidth;
-      }
-      final double current = scrollOffsetX?.pixels ?? 0.0;
-      final double newOffset = current + delta;
-      assert(() {
-        debugPrint('[WebF][Viewport] horizontal delta=$delta current=$current newOffset=$newOffset '
-            'availWidth=$availWidth');
-        return true;
-      }());
-      return RevealedOffset(offset: newOffset, rect: localRect.shift(Offset(-delta, 0)));
+      // Horizontal scrolling
+      final double targetLeft = targetRect.left;
+      final double targetWidth = targetRect.width;
+      final double viewportWidth = viewportSize.width;
+      
+      print('[getOffsetToReveal] Horizontal: targetLeft=$targetLeft, targetWidth=$targetWidth, viewportWidth=$viewportWidth');
+      
+      // Calculate position based on alignment (0.0 = left, 0.5 = center, 1.0 = right)
+      final double alignmentOffset = (viewportWidth - targetWidth) * alignment;
+      targetOffset = targetLeft - alignmentOffset;
+      
+      print('[getOffsetToReveal] alignmentOffset=$alignmentOffset, targetOffset before clamp=$targetOffset');
+      
+      // Clamp to valid scroll range
+      final double maxScroll = math.max(0.0, scrollableSize.width - viewportWidth);
+      print('[getOffsetToReveal] maxScroll=$maxScroll');
+      targetOffset = targetOffset.clamp(0.0, maxScroll);
+      print('[getOffsetToReveal] targetOffset after clamp=$targetOffset');
     }
+    
+    // Calculate the rect position after scrolling
+    final Rect revealedRect;
+    if (axis == Axis.vertical) {
+      final double offsetDifference = scrollTop - targetOffset;
+      revealedRect = targetRect.translate(0.0, offsetDifference);
+      print('[getOffsetToReveal] Vertical offset difference: $offsetDifference');
+    } else {
+      final double offsetDifference = scrollLeft - targetOffset;
+      revealedRect = targetRect.translate(offsetDifference, 0.0);
+      print('[getOffsetToReveal] Horizontal offset difference: $offsetDifference');
+    }
+    
+    print('[getOffsetToReveal] Final revealed rect: $revealedRect');
+    print('[getOffsetToReveal] Returning offset: $targetOffset');
+    
+    return RevealedOffset(
+      offset: targetOffset,
+      rect: revealedRect,
+    );
   }
 
   // Sort children by zIndex, used for paint and hitTest.
