@@ -145,7 +145,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       _setUpScrollY();
     }
   }
-
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
     return -_scrollOffsetX!.pixels;

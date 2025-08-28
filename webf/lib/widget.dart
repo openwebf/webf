@@ -12,3 +12,4 @@ export 'src/widget/child_node_size.dart';
 export 'src/widget/router_view.dart';
 export 'src/widget/contentful_widget_detector.dart';
 export 'src/widget/nested_scroll_forwarder.dart';
+export 'src/widget/ensure_visible.dart';

@@ -213,11 +213,118 @@ mixin RenderBoxContainerDefaultsMixin<ChildType extends RenderBox,
 class RenderLayoutBox extends RenderBoxModel
     with
         ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>,
-        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>> {
+        RenderBoxContainerDefaultsMixin<RenderBox, ContainerBoxParentData<RenderBox>>
+    implements RenderAbstractViewport {
   RenderLayoutBox({required CSSRenderStyle renderStyle}) : super(renderStyle: renderStyle);
 
   void markChildrenNeedsSort() {
     _cachedPaintingOrder = null;
+  }
+
+  // RenderAbstractViewport impl so Scrollable.ensureVisible can compute reveal offsets
+  @override
+  RevealedOffset getOffsetToReveal(RenderObject target, double alignment, {Rect? rect, Axis? axis}) {
+    final Axis useAxis = axis ?? (scrollOffsetY != null ? Axis.vertical : Axis.horizontal);
+
+    // Only act as viewport when actually scrollable for this axis; otherwise, delegate upward.
+    final bool isScrollableForAxis = (useAxis == Axis.vertical)
+        ? (scrollOffsetY != null && renderStyle.effectiveOverflowY != CSSOverflowType.visible)
+        : (scrollOffsetX != null && renderStyle.effectiveOverflowX != CSSOverflowType.visible);
+    assert(() {
+      debugPrint('[WebF][Viewport] getOffsetToReveal enter: axis=$useAxis isScrollable=$isScrollableForAxis '
+          'size=$size scrollY=${scrollOffsetY?.pixels} scrollX=${scrollOffsetX?.pixels} '
+          'overflowY=${renderStyle.effectiveOverflowY} overflowX=${renderStyle.effectiveOverflowX}');
+      return true;
+    }());
+    if (!isScrollableForAxis) {
+      final RenderObject? ancestor = parent as RenderObject?;
+      if (ancestor != null) {
+        final RenderAbstractViewport? vp = RenderAbstractViewport.of(ancestor);
+        if (vp != null) {
+          assert(() { debugPrint('[WebF][Viewport] delegating to ancestor viewport: $vp'); return true; }());
+          return vp.getOffsetToReveal(target, alignment, rect: rect, axis: axis);
+        }
+      }
+      final Rect tb = rect ?? target.paintBounds;
+      final Offset toLocal = getLayoutTransformTo(target, this);
+      final Rect lr = tb.shift(toLocal);
+      assert(() { debugPrint('[WebF][Viewport] no ancestor viewport; returning no-op reveal. localRect=$lr'); return true; }());
+      return RevealedOffset(offset: 0.0, rect: lr);
+    }
+
+    final Rect targetBounds = rect ?? target.paintBounds;
+    final Offset toLocal = globalToLocal(Offset.zero, ancestor: target);
+    final Rect localRect = targetBounds.shift(toLocal);
+
+    assert(() {
+      debugPrint('[WebF][Viewport] localRect=$localRect toLocal=$toLocal '
+          'viewportSize=$size scrollableViewport=$scrollableViewportSize scrollableSize=$scrollableSize');
+      return true;
+    }());
+
+    // Use the content viewport (excludes borders/padding) when deciding visibility.
+    double availHeight = scrollableViewportSize.height > 0 ? scrollableViewportSize.height : size.height;
+    double availWidth = scrollableViewportSize.width > 0 ? scrollableViewportSize.width : size.width;
+
+    // Further reduce available height/width if part of this viewport is below the root visible area
+    // (e.g., obscured by on-screen keyboard). We approximate screen visible size with the root RenderViewportBox size.
+    RenderObject? p = parent as RenderObject?;
+    RenderViewportBox? root;
+    while (p != null) {
+      if (p is RenderViewportBox) { root = p; break; }
+      p = (p.parent as RenderObject?);
+    }
+    if (root != null) {
+      final Offset containerToRoot = globalToLocal(Offset.zero, ancestor: root);
+      final double containerTopOnScreen = containerToRoot.dy;
+      final double visibleScreenHeight = root.size.height;
+      final double overlapV = (containerTopOnScreen + availHeight - visibleScreenHeight).clamp(0.0, availHeight);
+      if (overlapV > 0) {
+        availHeight = (availHeight - overlapV).clamp(0.0, availHeight);
+      }
+      // Horizontal overlap is unusual here, but keep symmetry for completeness.
+      final double visibleScreenWidth = root.size.width;
+      final double containerLeftOnScreen = containerToRoot.dx;
+      final double overlapH = (containerLeftOnScreen + availWidth - visibleScreenWidth).clamp(0.0, availWidth);
+      if (overlapH > 0) {
+        availWidth = (availWidth - overlapH).clamp(0.0, availWidth);
+      }
+      assert(() {
+        debugPrint('[WebF][Viewport] rootVisible=${root!.size} containerTop=$containerTopOnScreen '
+            'overlapV=$overlapV -> availHeight=$availHeight');
+        return true;
+      }());
+    }
+    double delta = 0.0;
+    if (useAxis == Axis.vertical) {
+      if (localRect.top < 0) {
+        delta = localRect.top;
+      } else if (localRect.bottom > availHeight) {
+        delta = localRect.bottom - availHeight;
+      }
+      final double current = scrollOffsetY?.pixels ?? 0.0;
+      final double newOffset = current + delta;
+      assert(() {
+        debugPrint('[WebF][Viewport] vertical delta=$delta current=$current newOffset=$newOffset '
+            'availHeight=$availHeight');
+        return true;
+      }());
+      return RevealedOffset(offset: newOffset, rect: localRect.shift(Offset(0, -delta)));
+    } else {
+      if (localRect.left < 0) {
+        delta = localRect.left;
+      } else if (localRect.right > availWidth) {
+        delta = localRect.right - availWidth;
+      }
+      final double current = scrollOffsetX?.pixels ?? 0.0;
+      final double newOffset = current + delta;
+      assert(() {
+        debugPrint('[WebF][Viewport] horizontal delta=$delta current=$current newOffset=$newOffset '
+            'availWidth=$availWidth');
+        return true;
+      }());
+      return RevealedOffset(offset: newOffset, rect: localRect.shift(Offset(-delta, 0)));
+    }
   }
 
   // Sort children by zIndex, used for paint and hitTest.
@@ -487,49 +594,6 @@ class RenderLayoutBox extends RenderBoxModel
         renderStyle.paddingBottom.computedValue;
   }
 
-  /// Convert to [RenderFlexLayout]
-  RenderFlexLayout toFlexLayout() {
-    RenderFlexLayout flexLayout = RenderFlexLayout(
-      renderStyle: renderStyle,
-    );
-    copyWith(flexLayout);
-    flexLayout.addAll(detachChildren());
-    return flexLayout;
-  }
-
-  /// Convert to [RenderRepaintBoundaryFlexLayout]
-  RenderRepaintBoundaryFlexLayout toRepaintBoundaryFlexLayout() {
-    RenderRepaintBoundaryFlexLayout repaintBoundaryFlexLayout = RenderRepaintBoundaryFlexLayout(
-      renderStyle: renderStyle,
-    );
-    copyWith(repaintBoundaryFlexLayout);
-
-    repaintBoundaryFlexLayout.addAll(detachChildren());
-    return repaintBoundaryFlexLayout;
-  }
-
-  /// Convert to [RenderFlowLayout]
-  RenderFlowLayout toFlowLayout() {
-    RenderFlowLayout flowLayout = RenderFlowLayout(
-      renderStyle: renderStyle,
-    );
-    copyWith(flowLayout);
-
-    flowLayout.addAll(detachChildren());
-    return flowLayout;
-  }
-
-  /// Convert to [RenderRepaintBoundaryFlowLayout]
-  RenderRepaintBoundaryFlowLayout toRepaintBoundaryFlowLayout() {
-    RenderRepaintBoundaryFlowLayout repaintBoundaryFlowLayout = RenderRepaintBoundaryFlowLayout(
-      renderStyle: renderStyle,
-    );
-    copyWith(repaintBoundaryFlowLayout);
-
-    repaintBoundaryFlowLayout.addAll(detachChildren());
-    return repaintBoundaryFlowLayout;
-  }
-
   @override
   void debugFillProperties(DiagnosticPropertiesBuilder properties) {
     super.debugFillProperties(properties);
@@ -666,33 +730,6 @@ class RenderBoxModel extends RenderBox
 
   // Positioned holder box ref.
   RenderPositionPlaceholder? positionedHolder;
-
-  T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
-    if (renderPositionPlaceholder != null) {
-      renderPositionPlaceholder!.positioned = copiedRenderBoxModel;
-    }
-
-    scrollOffsetX?.removeListener(scrollXListener);
-    scrollOffsetY?.removeListener(scrollYListener);
-
-    RenderIntersectionObserverMixin.copyTo(this, copiedRenderBoxModel);
-
-    return copiedRenderBoxModel
-      // Copy render style
-      ..renderStyle = renderStyle
-
-      // Copy overflow
-      ..scrollListener = scrollListener
-      ..scrollablePointerListener = scrollablePointerListener
-      ..scrollOffsetX = scrollOffsetX
-      ..scrollOffsetY = scrollOffsetY
-
-      // Copy renderPositionHolder
-      ..renderPositionPlaceholder = renderPositionPlaceholder
-
-      // Copy parentData
-      ..parentData = parentData;
-  }
 
   /// Whether current box is the root of the document which corresponds to HTML element in dom tree.
   bool get isDocumentRootBox {

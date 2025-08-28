@@ -2794,108 +2794,32 @@ class CSSRenderStyle extends RenderStyle
 
   // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
   RenderLayoutBox createRenderLayout(
-      {RenderLayoutBox? previousRenderLayoutBox, bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
+      {bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
     CSSDisplay display = this.display;
     RenderLayoutBox? nextRenderLayoutBox;
 
     if (display == CSSDisplay.flex || display == CSSDisplay.inlineFlex) {
-      if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
-        if (isRepaintBoundary) {
-          nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
-            renderStyle: cssRenderStyle ?? this,
-          );
-        } else {
-          nextRenderLayoutBox = RenderFlexLayout(
-            renderStyle: cssRenderStyle ?? this,
-          );
-        }
-      } else if (previousRenderLayoutBox is RenderFlowLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlowLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlowLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
-          } else {
-            // RenderRepaintBoundaryFlowLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlowLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
-          } else {
-            // RenderFlowLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-          }
-        }
-      } else if (previousRenderLayoutBox is RenderFlexLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlexLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlexLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          } else {
-            // RenderRepaintBoundaryFlexLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlexLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlexLayout --> RenderRepaintBoundaryFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlexLayout();
-          } else {
-            // RenderFlexLayout --> RenderFlexLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          }
-        }
+      if (isRepaintBoundary) {
+        nextRenderLayoutBox = RenderRepaintBoundaryFlexLayout(
+          renderStyle: cssRenderStyle ?? this,
+        );
+      } else {
+        nextRenderLayoutBox = RenderFlexLayout(
+          renderStyle: cssRenderStyle ?? this,
+        );
       }
     } else if (display == CSSDisplay.block ||
         display == CSSDisplay.none ||
         display == CSSDisplay.inline ||
         display == CSSDisplay.inlineBlock) {
-      if (previousRenderLayoutBox == null || target.managedByFlutterWidget) {
-        if (isRepaintBoundary) {
-          nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
-            renderStyle: cssRenderStyle ?? this,
-          );
-        } else {
-          nextRenderLayoutBox = RenderFlowLayout(
-            renderStyle: cssRenderStyle ?? this,
-          );
-        }
-      } else if (previousRenderLayoutBox is RenderFlowLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlowLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlowLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          } else {
-            // RenderRepaintBoundaryFlowLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlowLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
-          } else {
-            // RenderFlowLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox;
-          }
-        }
-      } else if (previousRenderLayoutBox is RenderFlexLayout) {
-        if (previousRenderLayoutBox is RenderRepaintBoundaryFlexLayout) {
-          if (isRepaintBoundary) {
-            // RenderRepaintBoundaryFlexLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
-          } else {
-            // RenderRepaintBoundaryFlexLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-          }
-        } else {
-          if (isRepaintBoundary) {
-            // RenderFlexLayout --> RenderRepaintBoundaryFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toRepaintBoundaryFlowLayout();
-          } else {
-            // RenderFlexLayout --> RenderFlowLayout
-            nextRenderLayoutBox = previousRenderLayoutBox.toFlowLayout();
-          }
-        }
+      if (isRepaintBoundary) {
+        nextRenderLayoutBox = RenderRepaintBoundaryFlowLayout(
+          renderStyle: cssRenderStyle ?? this,
+        );
+      } else {
+        nextRenderLayoutBox = RenderFlowLayout(
+          renderStyle: cssRenderStyle ?? this,
+        );
       }
     } else {
       throw FlutterError('Not supported display type $display');
@@ -2907,34 +2831,14 @@ class CSSRenderStyle extends RenderStyle
   RenderReplaced _createRenderReplaced({RenderReplaced? previousReplaced, bool isRepaintBoundary = false}) {
     RenderReplaced nextReplaced;
 
-    if (previousReplaced == null || target.managedByFlutterWidget) {
-      if (isRepaintBoundary) {
-        nextReplaced = RenderRepaintBoundaryReplaced(
-          this,
-        );
-      } else {
-        nextReplaced = RenderReplaced(
-          this,
-        );
-      }
+    if (isRepaintBoundary) {
+      nextReplaced = RenderRepaintBoundaryReplaced(
+        this,
+      );
     } else {
-      if (previousReplaced is RenderRepaintBoundaryReplaced) {
-        if (isRepaintBoundary) {
-          // RenderRepaintBoundaryReplaced --> RenderRepaintBoundaryReplaced
-          nextReplaced = previousReplaced;
-        } else {
-          // RenderRepaintBoundaryReplaced --> RenderReplaced
-          nextReplaced = previousReplaced.toReplaced();
-        }
-      } else {
-        if (isRepaintBoundary) {
-          // RenderReplaced --> RenderRepaintBoundaryReplaced
-          nextReplaced = previousReplaced.toRepaintBoundaryReplaced();
-        } else {
-          // RenderReplaced --> RenderReplaced
-          nextReplaced = previousReplaced;
-        }
-      }
+      nextReplaced = RenderReplaced(
+        this,
+      );
     }
     return nextReplaced;
   }

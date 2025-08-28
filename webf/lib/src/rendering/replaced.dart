@@ -156,22 +156,6 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
   }
 
-  RenderRepaintBoundaryReplaced toRepaintBoundaryReplaced() {
-    RenderObject? childRenderObject = child;
-    child = null;
-    RenderRepaintBoundaryReplaced newChild = RenderRepaintBoundaryReplaced(renderStyle);
-    newChild.child = childRenderObject as RenderBox?;
-    return copyWith(newChild);
-  }
-
-  RenderReplaced toReplaced() {
-    RenderObject? childRenderObject = child;
-    child = null;
-    RenderReplaced newChild = RenderReplaced(renderStyle);
-    newChild.child = childRenderObject as RenderBox?;
-    return copyWith(newChild);
-  }
-
   @override
   bool hitTestChildren(BoxHitTestResult result, {Offset? position}) {
     if (!hasSize || child?.hasSize == false) return false;
@@ -179,13 +163,6 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       return hitTestIntrinsicChild(result, child, position!);
     }
     return super.hitTestChildren(result, position: position!);
-  }
-
-  @override
-  T copyWith<T extends RenderBoxModel>(T copiedRenderBoxModel) {
-    final renderObject = super.copyWith(copiedRenderBoxModel) as RenderReplaced;
-    renderObject._isInLazyRendering = _isInLazyRendering;
-    return renderObject as T;
   }
 
   @override

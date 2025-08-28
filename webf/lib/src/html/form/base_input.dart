@@ -389,10 +389,12 @@ mixin BaseInputState on WebFWidgetElementState {
       HardwareKeyboard.instance.addHandler(_handleKey);
       // Try to keep the focused input visible within the nearest overflow scroll container.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollIntoNearestOverflow();
         // A second pass after the keyboard animates in.
         Future.delayed(const Duration(milliseconds: 350), () {
-          if (mounted) _scrollIntoNearestOverflow();
+          // if (mounted) _scrollIntoNearestOverflow();
+          if (mounted) {
+            WebFEnsureVisible.acrossScrollables(context);
+          }
         });
       });
     } else {
