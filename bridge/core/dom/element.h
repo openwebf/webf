@@ -190,8 +190,10 @@ class Element : public ContainerNode {
 
   Element* insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state);
 
-//  InlineCssStyleDeclaration* style();
+  //  InlineCssStyleDeclaration* style();
   legacy::LegacyInlineCssStyleDeclaration* style();
+  // Blink-only inline style accessor (not exposed to legacy bindings).
+  InlineCssStyleDeclaration* inlineStyleForBlink();
   DOMTokenList* classList();
   DOMStringMap* dataset();
 

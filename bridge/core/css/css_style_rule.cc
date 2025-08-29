@@ -45,7 +45,8 @@ CSSStyleRule::CSSStyleRule(std::shared_ptr<StyleRule> style_rule,
 
 CSSStyleRule::~CSSStyleRule() = default;
 
-LegacyCssStyleDeclaration* CSSStyleRule::style() const {
+// TODO: find out why this was LegacyCssStyleDeclaration
+CSSStyleDeclaration* CSSStyleRule::style() const {
   if (!style_rule_)
     return nullptr;
 

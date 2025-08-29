@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include "quickjs/quickjs.h"
 #include "string_impl.h"
 
 namespace webf {
@@ -38,6 +39,9 @@ class String {
   
   // Construct from StringView
   explicit String(const StringView& view);
+
+  // Construct from JSValue
+  String(JSContext* ctx, JSValueConst qjs_value);
 
   // Copying a String is relatively inexpensive, since the underlying data is
   // immutable and refcounted.
@@ -105,7 +109,7 @@ class String {
   }
 
   // Convert to StringView
-  StringView ToStringView() const;
+  StringView ToStringView() const LIFETIME_BOUND;
   
   // Character access for Blink compatibility
   UChar CharacterStartingAt(size_t offset) const {

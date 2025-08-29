@@ -210,7 +210,11 @@ ScriptValue ScriptValue::ToJSONStringify(JSContext* ctx, ExceptionState* excepti
   return result;
 }
 
-AtomicString ScriptValue::ToString(JSContext* ctx) const {
+String ScriptValue::ToString(JSContext* ctx) const {
+  return {ctx, value_};
+}
+
+AtomicString ScriptValue::ToAtomicString(JSContext* ctx) const {
   return {ctx, value_};
 }
 
@@ -222,7 +226,7 @@ AtomicString ScriptValue::ToLegacyDOMString(JSContext* ctx) const {
 }
 
 std::unique_ptr<SharedNativeString> ScriptValue::ToNativeString(JSContext* ctx) const {
-  return ToString(ctx).ToNativeString();
+  return ToAtomicString(ctx).ToNativeString();
 }
 
 namespace {}  // namespace
@@ -248,7 +252,7 @@ NativeValue ScriptValue::ToNative(JSContext* ctx, ExceptionState& exception_stat
     }
     case JS_TAG_STRING:
       // NativeString owned by NativeValue will be freed by users.
-      return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx, ToString(ctx));
+      return NativeValueConverter<NativeTypeString>::ToNativeValue(ctx, ToAtomicString(ctx));
     case JS_TAG_OBJECT: {
       if (JS_IsArrayBuffer(value_)) {
         size_t byte_len;

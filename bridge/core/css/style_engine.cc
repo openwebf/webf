@@ -116,9 +116,19 @@ Document& StyleEngine::GetDocument() const {
 
 void StyleEngine::Trace(GCVisitor* visitor) {}
 
-void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node) {}
+void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node) {
+  // Minimal placeholder: pending invalidations are already tracked on nodes.
+  // This hook exists to allow future optimizations and invalidation root tracking.
+  (void)ancestor;
+  (void)dirty_node;
+}
 
-void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node) {}
+void StyleEngine::UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node) {
+  // Minimal placeholder: ancestor chain has been marked via Node::MarkAncestorsWithChildNeedsStyleRecalc.
+  // This hook can later maintain a compact set of recalc roots.
+  (void)ancestor;
+  (void)dirty_node;
+}
 
 void StyleEngine::ScheduleNthPseudoInvalidations(ContainerNode& nth_parent) {}
 
@@ -135,6 +145,11 @@ bool StyleEngine::MarkStyleDirtyAllowed() const {
 
 void StyleEngine::CreateResolver() {
   resolver_ = std::make_shared<StyleResolver>(GetDocument());
+}
+
+void StyleEngine::RecalcStyle(Document& document) {
+  // Phase 1 placeholder: selection and diffing will be added later.
+  (void)document;
 }
 
 }  // namespace webf

@@ -36,13 +36,6 @@ unsigned AbstractPropertySetCSSStyleDeclaration::length() const {
   return PropertySet().PropertyCount();
 }
 
-AtomicString AbstractPropertySetCSSStyleDeclaration::item(unsigned i) const {
-  if (i >= PropertySet().PropertyCount()) {
-    return AtomicString::Empty();
-  }
-  return AtomicString(PropertySet().PropertyAt(i).Name().ToAtomicString());
-}
-
 AtomicString AbstractPropertySetCSSStyleDeclaration::cssText() const {
   return AtomicString(PropertySet().AsText());
 }
@@ -287,7 +280,7 @@ bool AbstractPropertySetCSSStyleDeclaration::CssPropertyMatches(CSSPropertyID pr
 }
 
 void AbstractPropertySetCSSStyleDeclaration::Trace(GCVisitor* visitor) const {
-  legacy::LegacyCssStyleDeclaration::Trace(visitor);
+  CSSStyleDeclaration::Trace(visitor);
 }
 
 }  // namespace webf

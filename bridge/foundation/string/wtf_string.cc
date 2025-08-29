@@ -91,6 +91,14 @@ String::String(const StringView& view) {
   }
 }
 
+String::String(JSContext* ctx, JSValue qjs_value) {
+  const auto* str = JS_ToCString(ctx, qjs_value);
+  if (str) {
+    impl_ = StringImpl::CreateFromUTF8(str);
+    JS_FreeCString(ctx, str);
+  }
+}
+
 String String::Substring(size_t pos, size_t len) const {
   if (!impl_) {
     return String::EmptyString();
@@ -277,7 +285,7 @@ std::string String::ToUTF8String() const {
   }
 }
 
-StringView String::ToStringView() const {
+StringView String::ToStringView() const LIFETIME_BOUND {
   if (IsNull()) {
     return StringView();
   }

@@ -18,9 +18,9 @@ ElementRareDataVector::~ElementRareDataVector() {
   DCHECK(!GetElementRareDataField(FieldId::kPseudoElementData));
 }
 
-//CSSStyleDeclaration& ElementRareDataVector::EnsureInlineCSSStyleDeclaration(Element* owner_element) {
-//  return EnsureWrappedField<InlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);
-//}
+CSSStyleDeclaration& ElementRareDataVector::EnsureInlineCSSStyleDeclaration(Element* owner_element) {
+  return EnsureWrappedField<InlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);
+}
 
 legacy::LegacyCssStyleDeclaration& ElementRareDataVector::EnsureLegacyInlineCSSStyleDeclaration(Element* owner_element) {
   return EnsureWrappedField<legacy::LegacyInlineCssStyleDeclaration>(owner_element, FieldId::kCssomWrapper);

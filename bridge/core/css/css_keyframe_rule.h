@@ -49,7 +49,7 @@ class CSSKeyframeRule final : public CSSRule {
   AtomicString keyText() const { return AtomicString(keyframe_->KeyText()); }
   void setKeyText(const ExecutingContext*, const AtomicString&, ExceptionState&);
 
-  legacy::LegacyCssStyleDeclaration* style() const;
+  CSSStyleDeclaration* style() const;
 
   void Trace(GCVisitor*) const override;
 

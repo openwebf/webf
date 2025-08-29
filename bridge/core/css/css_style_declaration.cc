@@ -7,8 +7,8 @@
 #include "bindings/qjs/converter_impl.h"
 #include "core/css/css_value.h"
 #include "core/css/parser/css_property_parser.h"
-#include "foundation/string_builder.h"
-#include "foundation/string_utils.h"
+#include "foundation/string/string_builder.h"
+#include "foundation/string/string_utils.h"
 #include "property_bitsets.h"
 
 namespace webf {
@@ -49,7 +49,7 @@ CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context, cons
   }
 
   StringBuilder builder;
-  builder.Reserve(length);
+  builder.ReserveCapacity(length);
 
   unsigned i = 0;
   bool has_seen_dash = false;
@@ -84,7 +84,7 @@ CSSPropertyID ParseCSSPropertyID(const ExecutingContext* execution_context, cons
   }
 
   String prop_name = builder.ReleaseString();
-  return UnresolvedCSSPropertyID(execution_context, prop_name);
+  return UnresolvedCSSPropertyID(execution_context, prop_name.ToStringView());
 }
 
 // When getting properties on CSSStyleDeclarations, the name used from
@@ -171,7 +171,7 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
   }
 
   if (value.IsString()) {
-    StringView string = value.ToString(ctx()).ToStringView();
+    auto string = value.ToString(ctx());
     if (string.length() <= 128) {
       uint8_t buffer[128];
       int len = string.length();

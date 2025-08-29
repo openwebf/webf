@@ -14,7 +14,7 @@ namespace webf {
 const UTF8Char* ScriptValueRefPublicMethods::ToString(webf::ScriptValueRef* script_value_ref,
                                                       webf::SharedExceptionState* shared_exception_state) {
   if (script_value_ref->script_value.IsString()) {
-    auto value = script_value_ref->script_value.ToString(script_value_ref->context->ctx());
+    auto value = script_value_ref->script_value.ToAtomicString(script_value_ref->context->ctx());
     // TODO(CGQAQ): this is not right at all, UAF
     auto str =value.ToUTF8String();
     auto* leak = new UTF8Char[str.size()];

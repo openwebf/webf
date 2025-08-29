@@ -106,7 +106,8 @@ CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext*,
 inline CSSPropertyID UnresolvedCSSPropertyID(const ExecutingContext* context,
                                       const std::string& str,
                                       CSSParserMode mode = kHTMLStandardMode) {
-  return UnresolvedCSSPropertyID(context, StringView(str), mode);
+  auto string = String::FromUTF8(str);
+  return UnresolvedCSSPropertyID(context, string.ToStringView(), mode);
 }
 CSSValueID CssValueKeywordID(const StringView&);
 

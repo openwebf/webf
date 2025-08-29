@@ -52,6 +52,9 @@ void HTMLMetaElement::ProcessMetaElement() {
     if (content_str.find("blink-css-enabled") != std::string::npos) {
       // Enable the Blink CSS engine
       GetExecutingContext()->EnableBlinkEngine();
+
+      // Ensure that the style engine is created
+      GetDocument().EnsureStyleEngine();
       
       // Log that Blink CSS is enabled
       WEBF_LOG(INFO) << "Blink CSS engine enabled via meta tag";

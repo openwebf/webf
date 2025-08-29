@@ -61,7 +61,8 @@ class ScriptValue final {
   JSValue QJSValue() const;
   // Create a new ScriptValue from call JSON.stringify to current value.
   ScriptValue ToJSONStringify(JSContext* ctx, ExceptionState* exception) const;
-  AtomicString ToString(JSContext* ctx) const;
+  String ToString(JSContext* ctx) const;
+  AtomicString ToAtomicString(JSContext* ctx) const;
   AtomicString ToLegacyDOMString(JSContext* ctx) const;
   std::unique_ptr<SharedNativeString> ToNativeString(JSContext* ctx) const;
   NativeValue ToNative(JSContext* ctx, ExceptionState& exception_state, bool shared_js_value = false) const;

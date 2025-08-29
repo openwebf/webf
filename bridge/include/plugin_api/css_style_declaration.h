@@ -18,8 +18,8 @@ typedef struct AtomicStringRef AtomicStringRef;
 class CSSStyleDeclaration;
 enum class CSSStyleDeclarationType {
   kCSSStyleDeclaration = 0,
-  kComputedCssStyleDeclaration = 1,
-  kInlineCssStyleDeclaration = 2,
+  kInlineCssStyleDeclaration = 1,
+  kComputedCssStyleDeclaration = 2,
 };
 using PublicCSSStyleDeclarationGetCssText = AtomicStringRef (*)(CSSStyleDeclaration*);
 using PublicCSSStyleDeclarationSetCssText = void (*)(CSSStyleDeclaration*, const char*, SharedExceptionState*);

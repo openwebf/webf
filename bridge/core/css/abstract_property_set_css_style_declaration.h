@@ -43,11 +43,11 @@ class ExceptionState;
 class MutableCSSPropertyValueSet;
 class StyleSheetContents;
 
-class AbstractPropertySetCSSStyleDeclaration : public LegacyCssStyleDeclaration {
+class AbstractPropertySetCSSStyleDeclaration : public CSSStyleDeclaration {
  public:
   virtual Element* ParentElement() const { return nullptr; }
   std::shared_ptr<StyleSheetContents> ContextStyleSheet() const;
-  explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context) : LegacyCssStyleDeclaration(context->ctx()) {}
+  explicit AbstractPropertySetCSSStyleDeclaration(ExecutingContext* context) : CSSStyleDeclaration(context->ctx()) {}
 
   // Some subclasses only allow a subset of the properties, for example
   // CSSPositionTryDescriptors only allows inset and sizing properties.
@@ -68,7 +68,6 @@ class AbstractPropertySetCSSStyleDeclaration : public LegacyCssStyleDeclaration 
   bool IsAbstractPropertySet() const final { return true; }
   CSSRule* parentRule() const override { return nullptr; }
   unsigned length() const final;
-  AtomicString item(unsigned index) const override;
 
   AtomicString getPropertyValue(const AtomicString& property_name, ExceptionState& exception_state) override;
   AtomicString getPropertyPriority(const AtomicString& property_name) final;

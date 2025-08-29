@@ -365,7 +365,7 @@ NativeValue BindingObject::SetBindingProperty(const AtomicString& prop,
           prop, NativeValueConverter<NativeTypeString>::FromNativeValueShared(ctx(), value), exception_state, true);
     } else {
       ScriptValue script_value = ScriptValue(ctx(), value);
-      element->attributes()->setAttribute(prop, script_value.ToString(ctx()), exception_state, true);
+      element->attributes()->setAttribute(prop, script_value.ToAtomicString(ctx()), exception_state, true);
     }
   }
 

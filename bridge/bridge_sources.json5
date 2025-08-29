@@ -368,6 +368,17 @@
     "core/platform/fonts/font.cc",
     "core/platform/fonts/font_description.cc",
 
+    // CSS Non Legacy
+    "core/css/css_style_declaration.h",
+    "core/css/css_style_declaration.cc",
+    "core/css/computed_css_style_declaration.h",
+    "core/css/computed_css_style_declaration.cc",
+    "core/css/inline_css_style_declaration.h",
+    "core/css/inline_css_style_declaration.cc",
+    "code_gen/qjs_css_style_declaration.cc",
+    "code_gen/qjs_inline_css_style_declaration.cc",
+    "code_gen/qjs_computed_css_style_declaration.cc",
+
     // CSS Legacy
     "core/css/legacy/legacy_css_style_declaration.cc",
     "core/css/legacy/legacy_inline_css_style_declaration.cc",
@@ -815,6 +826,9 @@
     "code_gen/plugin_api_hybrid_router_change_event.cc",
     "code_gen/plugin_api_input_event.cc",
     "code_gen/plugin_api_intersection_change_event.cc",
+    "code_gen/plugin_api_computed_css_style_declaration.cc",
+    "code_gen/plugin_api_css_style_declaration.cc",
+    "code_gen/plugin_api_inline_css_style_declaration.cc",
     "code_gen/plugin_api_legacy_computed_css_style_declaration.cc",
     "code_gen/plugin_api_legacy_css_style_declaration.cc",
     "code_gen/plugin_api_legacy_inline_css_style_declaration.cc",

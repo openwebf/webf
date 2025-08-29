@@ -51,7 +51,7 @@ class CSSStyleRule : public CSSRule {
   AtomicString selectorText() const;
   void setSelectorText(const ExecutingContext* context, const AtomicString& selector_text, ExceptionState&);
 
-  legacy::LegacyCssStyleDeclaration* style() const;
+  CSSStyleDeclaration* style() const;
 
   // FIXME: Not CSSOM. Remove.
   std::shared_ptr<StyleRule> GetStyleRule() const { return style_rule_; }

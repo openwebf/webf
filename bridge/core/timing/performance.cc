@@ -178,7 +178,7 @@ void Performance::measure(const AtomicString& measure_name,
                           const ScriptValue& start_mark_or_options,
                           ExceptionState& exception_state) {
   if (start_mark_or_options.IsString()) {
-    measure(measure_name, start_mark_or_options.ToString(ctx()), exception_state);
+    measure(measure_name, start_mark_or_options.ToAtomicString(ctx()), exception_state);
   } else {
     auto&& options =
         Converter<PerformanceMeasureOptions>::FromValue(ctx(), start_mark_or_options.QJSValue(), exception_state);
@@ -192,7 +192,7 @@ void Performance::measure(const AtomicString& measure_name,
                           const AtomicString& end_mark,
                           ExceptionState& exception_state) {
   if (start_mark_or_options.IsString()) {
-    measure(measure_name, start_mark_or_options.ToString(ctx()), end_mark, exception_state);
+    measure(measure_name, start_mark_or_options.ToAtomicString(ctx()), end_mark, exception_state);
   } else {
     auto&& options =
         Converter<PerformanceMeasureOptions>::FromValue(ctx(), start_mark_or_options.QJSValue(), exception_state);

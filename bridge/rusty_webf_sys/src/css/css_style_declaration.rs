@@ -8,8 +8,8 @@ use crate::*;
 #[repr(C)]
 enum CSSStyleDeclarationType {
   CSSStyleDeclaration = 0,
-  ComputedCssStyleDeclaration = 1,
-  InlineCssStyleDeclaration = 2,
+  InlineCssStyleDeclaration = 1,
+  ComputedCssStyleDeclaration = 2,
 }
 #[repr(C)]
 pub struct CSSStyleDeclarationRustMethods {
@@ -83,16 +83,6 @@ impl CSSStyleDeclaration {
     }
     Ok(value.to_string())
   }
-  pub fn as_computed_css_style_declaration(&self) -> Result<ComputedCssStyleDeclaration, &str> {
-    let raw_ptr = unsafe {
-      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
-      ((*self.method_pointer).dynamic_to)(self.ptr, CSSStyleDeclarationType::ComputedCssStyleDeclaration)
-    };
-    if (raw_ptr.value == std::ptr::null()) {
-      return Err("The type value of CSSStyleDeclaration does not belong to the ComputedCssStyleDeclaration type.");
-    }
-    Ok(ComputedCssStyleDeclaration::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ComputedCssStyleDeclarationRustMethods, raw_ptr.status))
-  }
   pub fn as_inline_css_style_declaration(&self) -> Result<InlineCssStyleDeclaration, &str> {
     let raw_ptr = unsafe {
       assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
@@ -102,6 +92,16 @@ impl CSSStyleDeclaration {
       return Err("The type value of CSSStyleDeclaration does not belong to the InlineCssStyleDeclaration type.");
     }
     Ok(InlineCssStyleDeclaration::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const InlineCssStyleDeclarationRustMethods, raw_ptr.status))
+  }
+  pub fn as_computed_css_style_declaration(&self) -> Result<ComputedCssStyleDeclaration, &str> {
+    let raw_ptr = unsafe {
+      assert!(!(*((*self).status)).disposed, "The underline C++ impl of this ptr({:?}) had been disposed", (self.method_pointer));
+      ((*self.method_pointer).dynamic_to)(self.ptr, CSSStyleDeclarationType::ComputedCssStyleDeclaration)
+    };
+    if (raw_ptr.value == std::ptr::null()) {
+      return Err("The type value of CSSStyleDeclaration does not belong to the ComputedCssStyleDeclaration type.");
+    }
+    Ok(ComputedCssStyleDeclaration::initialize(raw_ptr.value, self.context, raw_ptr.method_pointer as *const ComputedCssStyleDeclarationRustMethods, raw_ptr.status))
   }
 }
 impl Drop for CSSStyleDeclaration {

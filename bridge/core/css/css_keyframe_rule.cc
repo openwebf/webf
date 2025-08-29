@@ -58,7 +58,8 @@ void CSSKeyframeRule::setKeyText(const ExecutingContext* execution_context,
   }
 }
 
-LegacyCssStyleDeclaration* CSSKeyframeRule::style() const {
+// TODO: find out why this was LegacyCssStyleDeclaration
+CSSStyleDeclaration* CSSKeyframeRule::style() const {
   if (!properties_cssom_wrapper_) {
     properties_cssom_wrapper_ = MakeGarbageCollected<KeyframeStyleRuleCSSStyleDeclaration>(
         std::const_pointer_cast<MutableCSSPropertyValueSet>(keyframe_->MutableProperties()),

@@ -788,54 +788,26 @@ bool Node::InActiveDocument() const {
 }
 
 void Node::SetNeedsStyleRecalc(StyleChangeType change_type, const StyleChangeReasonForTracing& reason) {
-  //  assert(GetDocument().GetStyleEngine().MarkStyleDirtyAllowed());
-  ////  assert(!GetDocument().InvalidationDisallowed());
-  //  assert(change_type != kNoStyleChange);
-  //  assert(IsElementNode() || IsTextNode());
-  //
-  //  if (!InActiveDocument())
-  //    return;
-  ////  if (ShouldSkipMarkingStyleDirty())
-  ////    return;
-  ///*
-  //  DEVTOOLS_TIMELINE_TRACE_EVENT_INSTANT_WITH_CATEGORIES(
-  //      TRACE_DISABLED_BY_DEFAULT("devtools.timeline.invalidationTracking"),
-  //      "StyleRecalcInvalidationTracking",
-  //      inspector_style_recalc_invalidation_tracking_event::Data, this,
-  //      change_type, reason);*/
-  //
-  //  StyleChangeType existing_change_type = GetStyleChangeType();
-  //  if (change_type > existing_change_type)
-  //    SetStyleChange(change_type);
-  //
-  //  if (existing_change_type == kNoStyleChange)
-  //    MarkAncestorsWithChildNeedsStyleRecalc();
-  //
-  //  // NOTE: If we are being called from SetNeedsAnimationStyleRecalc(), the
-  //  // AnimationStyleChange bit may be reset to 'true'.
-  //  if (auto* this_element = DynamicTo<Element>(this)) {
-  //    this_element->SetAnimationStyleChange(false);
-  //    /*
-  //    // TODO(guopengfei)：PseudoElement not support
-  //    // The style walk for the pseudo tree created for a ViewTransition is
-  //    // done after resolving style for the author DOM. See
-  //    // StyleEngine::RecalcTransitionPseudoStyle.
-  //    // Since the dirty bits from the originating element (root element) are not
-  //    // propagated to these pseudo elements during the default walk, we need to
-  //    // invalidate style for these elements here.
-  //    if (this_element->IsDocumentElement()) {
-  //      auto update_style_change = [](PseudoElement* pseudo_element) {
-  //        pseudo_element->SetNeedsStyleRecalc(
-  //            kLocalStyleChange, StyleChangeReasonForTracing::Create(
-  //                                   style_change_reason::kViewTransition));
-  //      };
-  //      ViewTransitionUtils::ForEachTransitionPseudo(GetDocument(),
-  //                                                   update_style_change);
-  //    }*/
-  //  }
-  //
-  //  if (auto* svg_element = DynamicTo<SVGElement>(this))
-  //    svg_element->SetNeedsStyleRecalcForInstances(change_type, reason);
+  if (!GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+
+  // Minimal implementation to support Blink CSS recalc plumbing.
+  // Skip if not connected to a document.
+  if (!isConnected()) {
+    return;
+  }
+
+  // Update this node's style change type if escalating.
+  StyleChangeType existing_change_type = GetStyleChangeType();
+  if (change_type > existing_change_type) {
+    SetStyleChange(change_type);
+  }
+
+  // If this is the first time marking dirty, propagate up to ancestors.
+  if (existing_change_type == kNoStyleChange) {
+    MarkAncestorsWithChildNeedsStyleRecalc();
+  }
 }
 
 void Node::ClearNeedsStyleRecalc() {
@@ -850,59 +822,20 @@ void Node::ClearNeedsStyleRecalc() {
 }
 
 void Node::MarkAncestorsWithChildNeedsStyleRecalc() {
-  //  Element* style_parent = GetStyleRecalcParent();
-  //  bool parent_dirty = style_parent && style_parent->IsDirtyForStyleRecalc();
-  //  Element* ancestor = style_parent;
-  //  for (; ancestor && !ancestor->ChildNeedsStyleRecalc();
-  //       ancestor = ancestor->GetStyleRecalcParent()) {
-  //    if (!ancestor->isConnected())
-  //      return;
-  //    ancestor->SetChildNeedsStyleRecalc();
-  //    if (ancestor->IsDirtyForStyleRecalc())
-  //      break;
-  //
-  //    // If we reach a locked ancestor, we should abort since the ancestor marking
-  //    // will be done when the lock is committed.
-  //    if (ancestor->ChildStyleRecalcBlockedByDisplayLock())
-  //      break;
-  //  }
-  //  if (!isConnected())
-  //    return;
-  //  // If the parent node is already dirty, we can keep the same recalc root. The
-  //  // early return here is a performance optimization.
-  //  if (parent_dirty)
-  //    return;
-  //  /*
-  //  // TODO(guopengfei)：DisplayLockDocumentState not support
-  //  // If we are outside the flat tree we should not update the recalc root
-  //  // because we should not traverse those nodes from StyleEngine::RecalcStyle().
-  //  const ComputedStyle* current_style = nullptr;
-  //  if (Element* element = DynamicTo<Element>(this)) {
-  //    current_style = element->GetComputedStyle();
-  //  }
-  //  if (!current_style && style_parent) {
-  //    current_style = style_parent->GetComputedStyle();
-  //  }
-  //  if (current_style && current_style->IsEnsuredOutsideFlatTree()) {
-  //    return;
-  //  }
-  //
-  //  // TODO(guopengfei)：DisplayLockDocumentState not support
-  //  // If we're in a locked subtree, then we should not update the style recalc
-  //  // roots. These would be updated when we commit the lock. If we have locked
-  //  // display locks somewhere in the document, we iterate up the ancestor chain
-  //  // to check if we're in one such subtree.
-  //  if (GetDocument().GetDisplayLockDocumentState().LockedDisplayLockCount() >
-  //      0) {
-  //    for (Element* ancestor_copy = ancestor; ancestor_copy;
-  //         ancestor_copy = ancestor_copy->GetStyleRecalcParent()) {
-  //      if (ancestor_copy->ChildStyleRecalcBlockedByDisplayLock())
-  //        return;
-  //    }
-  //  }*/
-  //
-  //  GetDocument().GetStyleEngine().UpdateStyleRecalcRoot(ancestor, this);
-  //  GetDocument().ScheduleLayoutTreeUpdateIfNeeded();
+  Element* ancestor = GetStyleRecalcParent();
+  bool parent_dirty = ancestor && ancestor->ChildNeedsStyleRecalc();
+  for (; ancestor && !ancestor->ChildNeedsStyleRecalc(); ancestor = ancestor->GetStyleRecalcParent()) {
+    if (!ancestor->isConnected())
+      return;
+    ancestor->SetChildNeedsStyleRecalc();
+  }
+  if (!isConnected())
+    return;
+  if (parent_dirty)
+    return;
+
+  // Notify the StyleEngine about the new recalc root.
+  GetDocument().GetStyleEngine().UpdateStyleRecalcRoot(GetStyleRecalcParent(), this);
 }
 
 void Node::SetNeedsStyleInvalidation() {

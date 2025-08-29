@@ -393,6 +393,17 @@ legacy::LegacyInlineCssStyleDeclaration* Element::style() {
   return To<legacy::LegacyInlineCssStyleDeclaration>(&style);
 }
 
+InlineCssStyleDeclaration* Element::inlineStyleForBlink() {
+  if (!IsStyledElement())
+    return nullptr;
+  // Provide Blink inline style declaration when Blink engine is enabled; otherwise return nullptr.
+  if (!GetExecutingContext()->isBlinkEnabled()) {
+    return nullptr;
+  }
+  CSSStyleDeclaration& decl = EnsureElementRareData().EnsureInlineCSSStyleDeclaration(this);
+  return To<InlineCssStyleDeclaration>(&decl);
+}
+
 DOMTokenList* Element::classList() {
   ElementRareDataVector& rare_data = EnsureElementRareData();
   if (rare_data.GetClassList() == nullptr) {
@@ -915,6 +926,28 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
       DCHECK(inline_style->IsMutable());
       static_cast<MutableCSSPropertyValueSet*>(const_cast<CSSPropertyValueSet*>(inline_style.get()))
           ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
+    }
+
+    // Emit declared style updates to Dart as raw CSS strings (no C++ evaluation).
+    // This keeps values like calc(), var(), and viewport units intact for Dart-side evaluation.
+    if (inline_style) {
+      unsigned count = inline_style->PropertyCount();
+      if (count == 0) {
+        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+      } else {
+        for (unsigned i = 0; i < count; ++i) {
+          auto property = inline_style->PropertyAt(i);
+          // Property name as AtomicString
+          AtomicString prop_name = property.Name().ToAtomicString();
+          // Get the serialized value without evaluation; use name+hint to preserve custom properties
+          String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
+          AtomicString value_atom(value_string);
+
+          std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
+          GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
+                                                               bindingObject(), value_atom.ToNativeString().release());
+        }
+      }
     }
   } else {
     auto&& legacy_inline_style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);

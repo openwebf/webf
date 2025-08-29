@@ -16,9 +16,24 @@ class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
 class ComputedCssStyleDeclaration;
+using PublicComputedCssStyleDeclarationGetCssText = AtomicStringRef (*)(ComputedCssStyleDeclaration*);
+using PublicComputedCssStyleDeclarationSetCssText = void (*)(ComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
+using PublicComputedCssStyleDeclarationGetLength = int64_t (*)(ComputedCssStyleDeclaration*);
+using PublicComputedCssStyleDeclarationGetPropertyValue = AtomicStringRef (*)(ComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
+using PublicComputedCssStyleDeclarationRemoveProperty = AtomicStringRef (*)(ComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
 struct ComputedCssStyleDeclarationPublicMethods : public WebFPublicMethods {
+  static AtomicStringRef CssText(ComputedCssStyleDeclaration* computed_css_style_declaration);
+  static void SetCssText(ComputedCssStyleDeclaration* computed_css_style_declaration, const char* cssText, SharedExceptionState* shared_exception_state);
+  static int64_t Length(ComputedCssStyleDeclaration* computed_css_style_declaration);
+  static AtomicStringRef GetPropertyValue(ComputedCssStyleDeclaration* computed_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
+  static AtomicStringRef RemoveProperty(ComputedCssStyleDeclaration* computed_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   double version{1.0};
   CSSStyleDeclarationPublicMethods css_style_declaration;
+  PublicComputedCssStyleDeclarationGetCssText computed_css_style_declaration_get_css_text{CssText};
+  PublicComputedCssStyleDeclarationSetCssText computed_css_style_declaration_set_css_text{SetCssText};
+  PublicComputedCssStyleDeclarationGetLength computed_css_style_declaration_get_length{Length};
+  PublicComputedCssStyleDeclarationGetPropertyValue computed_css_style_declaration_get_property_value{GetPropertyValue};
+  PublicComputedCssStyleDeclarationRemoveProperty computed_css_style_declaration_remove_property{RemoveProperty};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_COMPUTED_CSS_STYLE_DECLARATION_H_

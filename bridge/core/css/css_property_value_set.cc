@@ -37,7 +37,7 @@
 #include "core/css/property_set_css_style_declaration.h"
 #include "core/css/style_property_serializer.h"
 #include "core/css/style_sheet_contents.h"
-#include "css_style_rule.h"
+#include "css_style_declaration.h"
 #include "foundation/macros.h"
 #include "property_bitsets.h"
 #include "style_property_shorthand.h"
@@ -549,7 +549,8 @@ void MutableCSSPropertyValueSet::ParseDeclarationList(const AtomicString& style_
   CSSParser::ParseDeclarationList(std::move(context), this, style_declaration.ToUTF8String());
 }
 
-LegacyCssStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {
+// TODO: find out why this was LegacyCssStyleDeclaration
+CSSStyleDeclaration* MutableCSSPropertyValueSet::EnsureCSSStyleDeclaration(ExecutingContext* execution_context) {
   // FIXME: get rid of this weirdness of a CSSStyleDeclaration inside of a
   // style property set.
   if (cssom_wrapper_) {

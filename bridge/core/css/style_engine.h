@@ -100,6 +100,9 @@ class StyleEngine final {
 
   void UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node);
   void UpdateStyleRecalcRoot(ContainerNode* ancestor, Node* dirty_node);
+  // Performs declared-value style recalculation for dirty subtrees.
+  // In Phase 1 this is a no-op placeholder.
+  void RecalcStyle(Document&);
 
   bool MarkReattachAllowed() const;
   bool MarkStyleDirtyAllowed() const;
