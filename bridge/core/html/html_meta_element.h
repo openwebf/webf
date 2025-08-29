@@ -15,6 +15,13 @@ class HTMLMetaElement : public HTMLElement {
  public:
   using ImplType = HTMLMetaElement*;
   explicit HTMLMetaElement(Document&);
+  
+  void AttributeChanged(const AttributeModificationParams&) override;
+  Node::InsertionNotificationRequest InsertedInto(ContainerNode&) override;
+  void RemovedFrom(ContainerNode&) override;
+
+ private:
+  void ProcessMetaElement();
 };
 
 }  // namespace webf
