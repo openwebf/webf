@@ -1096,20 +1096,17 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   dynamic getRenderBoxValueByType(RenderObjectGetType getType, RenderBoxModelGetter getter) {
-    if (target.managedByFlutterWidget) {
-      RenderBoxModel? widgetRenderBoxModel =
-          widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
+    RenderBoxModel? widgetRenderBoxModel =
+    widgetRenderObjectIterator.firstWhereOrNull((renderBox) => renderBox.attached);
 
-      if (widgetRenderBoxModel == null) return null;
+    if (widgetRenderBoxModel == null) return null;
 
-      return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
-        if (renderObject is RenderBoxModel && renderStyle != null) {
-          return getter(renderObject, renderStyle);
-        }
-        return null;
-      });
-    }
-    return null;
+    return _renderObjectMatchFn(widgetRenderBoxModel, getType, (renderObject, renderStyle) {
+      if (renderObject is RenderBoxModel && renderStyle != null) {
+        return getter(renderObject, renderStyle);
+      }
+      return null;
+    });
   }
 
   dynamic _renderObjectMatchFn(
@@ -1157,21 +1154,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   bool everyRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
-    if (target.managedByFlutterWidget) {
-      return everyWidgetRenderBox((_, renderBoxModel) {
-        return _renderObjectMatchFn(renderBoxModel, getType, matcher);
-      });
-    }
-    return false;
+    return everyWidgetRenderBox((_, renderBoxModel) {
+      return _renderObjectMatchFn(renderBoxModel, getType, matcher);
+    });
   }
 
   bool everyAttachedRenderObjectByTypeAndMatch(RenderObjectGetType getType, RenderObjectMatchers matcher) {
-    if (target.managedByFlutterWidget) {
-      return everyAttachedWidgetRenderBox((_, renderBoxModel) {
-        return _renderObjectMatchFn(renderBoxModel, getType, matcher);
-      });
-    }
-    return false;
+    return everyAttachedWidgetRenderBox((_, renderBoxModel) {
+      return _renderObjectMatchFn(renderBoxModel, getType, matcher);
+    });
   }
 
   bool everyRenderBox(EveryRenderBoxModelHandlerCallback callback) {
@@ -1259,17 +1250,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
       return;
     }
 
-    if (target.managedByFlutterWidget) {
-      everyAttachedWidgetRenderBox((_, renderBoxMode) {
-        if (renderBoxMode is RenderEventListener) {
-          renderBoxMode.child?.visitChildren(visitor);
-        } else {
-          renderBoxMode.visitChildren(visitor);
-        }
-        return true;
-      });
-      return;
-    }
+    everyAttachedWidgetRenderBox((_, renderBoxMode) {
+      if (renderBoxMode is RenderEventListener) {
+        renderBoxMode.child?.visitChildren(visitor);
+      } else {
+        renderBoxMode.visitChildren(visitor);
+      }
+      return true;
+    });
+    return;
   }
 
   void dispose() {
@@ -2863,7 +2852,7 @@ class CSSRenderStyle extends RenderStyle
   RenderWidget _createRenderWidget({RenderWidget? previousRenderWidget, bool isRepaintBoundary = false}) {
     RenderWidget nextReplaced;
 
-    if (previousRenderWidget == null || target.managedByFlutterWidget) {
+    if (previousRenderWidget == null) {
       if (isRepaintBoundary) {
         nextReplaced = RenderRepaintBoundaryWidget(
           renderStyle: this,

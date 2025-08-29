@@ -50,4 +50,8 @@ class RenderBr extends RenderLayoutBox {
     // BR has no text baseline of its own.
     setCssBaselines(first: null, last: null);
   }
+
+  @override
+  void calculateBaseline() {
+  }
 }

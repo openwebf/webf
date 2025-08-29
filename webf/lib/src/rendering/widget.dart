@@ -161,6 +161,7 @@ class RenderWidget extends RenderBoxModel
     //   CSSPositionedLayout.applyStickyChildOffset(this, stickyChild);
     // }
 
+    calculateBaseline();
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
     didLayout();
   }
@@ -182,24 +183,18 @@ class RenderWidget extends RenderBoxModel
 
   @override
   double computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
+    final cached = computeCssLastBaselineOf(baseline);
+    if (cached != null) return cached;
+    double marginTop = renderStyle.marginTop.computedValue;
+    double marginBottom = renderStyle.marginBottom.computedValue;
+    // Use margin-bottom as baseline if layout has no children
+    return computeCssFirstBaseline() ?? marginTop + boxSize!.height + marginBottom;
   }
 
   @override
   void dispose() {
     super.dispose();
     stickyChildren.clear();
-  }
-
-
-  /// Compute distance to baseline of replaced element
-  @override
-  double computeDistanceToBaseline() {
-    double marginTop = renderStyle.marginTop.computedValue;
-    double marginBottom = renderStyle.marginBottom.computedValue;
-
-    // Use margin-bottom as baseline if layout has no children
-    return marginTop + boxSize!.height + marginBottom;
   }
 
   /// This class mixin [RenderProxyBoxMixin], which has its' own paint method,
@@ -296,6 +291,13 @@ class RenderWidget extends RenderBoxModel
     }
 
     return false;
+  }
+
+  @override
+  void calculateBaseline() {
+    double? firstBaseline = firstChild?.getDistanceToBaseline(TextBaseline.alphabetic);
+    double? lastBaseline = lastChild?.getDistanceToBaseline(TextBaseline.alphabetic);
+    setCssBaselines(first: firstBaseline, last: lastBaseline);
   }
 }
 

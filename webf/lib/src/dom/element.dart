@@ -435,10 +435,8 @@ abstract class Element extends ContainerNode
   RenderBoxModel? createRenderBoxModel({flutter.RenderObjectElement? flutterWidgetElement}) {
     RenderBoxModel nextRenderBoxModel = renderStyle.createRenderBoxModel();
 
-    if (managedByFlutterWidget) {
-      assert(flutterWidgetElement != null);
-      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, nextRenderBoxModel);
-    }
+    assert(flutterWidgetElement != null);
+    renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, nextRenderBoxModel);
 
     // Ensure that the event responder is bound.
     renderStyle.ensureEventResponderBound();
@@ -564,7 +562,6 @@ abstract class Element extends ContainerNode
   }
 
   void _updateHostingWidgetWithPosition(CSSPositionType oldPosition) {
-    assert(managedByFlutterWidget);
     CSSPositionType currentPosition = renderStyle.position;
     if (oldPosition == currentPosition) return;
 
@@ -709,25 +706,15 @@ abstract class Element extends ContainerNode
     super.dispose();
   }
 
-  static bool isRenderObjectOwnedByFlutterFramework(Element element) {
-    return element is WidgetElement || element.managedByFlutterWidget;
-  }
-
   @override
   void childrenChanged(ChildrenChange change) {
     super.childrenChanged(change);
-    if (managedByFlutterWidget) {
-      renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
-    }
+    renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
   }
 
   @override
   @mustCallSuper
   Node appendChild(Node child) {
-    if (managedByFlutterWidget || this is WidgetElement) {
-      child.managedByFlutterWidget = true;
-    }
-
     super.appendChild(child);
     return child;
   }
@@ -748,10 +735,6 @@ abstract class Element extends ContainerNode
   @override
   @mustCallSuper
   Node insertBefore(Node child, Node referenceNode) {
-
-    if (managedByFlutterWidget || this is WidgetElement) {
-      child.managedByFlutterWidget = true;
-    }
     Node? node = super.insertBefore(child, referenceNode);
     return node;
   }
@@ -759,9 +742,6 @@ abstract class Element extends ContainerNode
   @override
   @mustCallSuper
   Node? replaceChild(Node newNode, Node oldNode) {
-    if (managedByFlutterWidget || this is WidgetElement) {
-      newNode.managedByFlutterWidget = true;
-    }
     return super.replaceChild(newNode, oldNode);
   }
 
@@ -809,12 +789,10 @@ abstract class Element extends ContainerNode
 
   @override
   void connectedCallback() {
-    if (managedByFlutterWidget) {
-      applyStyle(style);
-      style.flushPendingProperties();
-      if (_connectedCompleter != null) {
-        _connectedCompleter!.complete();
-      }
+    applyStyle(style);
+    style.flushPendingProperties();
+    if (_connectedCompleter != null) {
+      _connectedCompleter!.complete();
     }
 
     super.connectedCallback();
@@ -869,14 +847,8 @@ abstract class Element extends ContainerNode
       case CSSPositionType.fixed:
         Element viewportElement = ownerDocument.documentElement!;
 
-        if (managedByFlutterWidget) {
-          // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
-          containingBlockElement = _findRouterLinkElement(this) ?? viewportElement;
-        } else {
-          // If the element has 'position: fixed', the containing block is established by the viewport
-          // in the case of continuous media or the page area in the case of paged media.
-          containingBlockElement = viewportElement;
-        }
+        // If the element has 'position: fixed', the router link element was behavior as the HTMLElement in DOM mode.
+        containingBlockElement = _findRouterLinkElement(this) ?? viewportElement;
 
         break;
     }
@@ -942,9 +914,6 @@ abstract class Element extends ContainerNode
     CSSDisplay presentDisplay = renderStyle.display;
 
     if (parentElement == null || !parentElement!.isConnected) return;
-
-    assert(managedByFlutterWidget);
-
     // Destroy renderer of element when display is changed to none.
     if (presentDisplay == CSSDisplay.none) {
       renderStyle.requestWidgetToRebuild(UpdateDisplayReason());

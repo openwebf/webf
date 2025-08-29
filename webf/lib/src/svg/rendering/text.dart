@@ -17,6 +17,9 @@ class RenderSVGText extends RenderBoxModel with RenderObjectWithChildMixin<Rende
   }
 
   @override
+  void calculateBaseline() {}
+
+  @override
   void performPaint(PaintingContext context, Offset offset) {
     final dx = renderStyle.x.computedValue + offset.dx;
     final dy = renderStyle.y.computedValue + offset.dy - _baseline;

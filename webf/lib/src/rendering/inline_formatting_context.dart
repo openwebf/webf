@@ -18,7 +18,6 @@ import 'package:webf/rendering.dart';
 import 'inline_item.dart';
 import 'line_box.dart';
 import 'inline_items_builder.dart';
-import 'inline_layout_algorithm.dart';
 import 'inline_layout_debugger.dart';
 
 /// Debug flag to enable inline layout visualization.
@@ -94,10 +93,6 @@ class InlineFormattingContext {
 
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
-
-  // Toggle to use paragraph-based layout instead of manual shaping/breaking.
-  static bool useParagraphLayout = true;
-
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
@@ -111,9 +106,6 @@ class InlineFormattingContext {
       // Debug: Log preparation
       // print('InlineFormattingContext: prepareLayout - collecting inlines');
       _collectInlines();
-      if (!useParagraphLayout) {
-        _shapeText();
-      }
       _needsCollectInlines = false;
     }
   }
@@ -132,89 +124,10 @@ class InlineFormattingContext {
     // Text content and items collected
   }
 
-  /// Shape text items using Flutter's text layout.
-  void _shapeText() {
-    for (final item in _items) {
-      if (item.type == InlineItemType.text) {
-        _shapeTextItem(item);
-      }
-    }
-  }
-
-  /// Shape a single text item.
-  void _shapeTextItem(InlineItem item) {
-    final text = item.getText(_textContent);
-    final style = item.style;
-
-    if (style == null || text.isEmpty) return;
-
-    // Note: We use Flutter's standard TextPainter here because:
-    // 1. InlineFormattingContext handles CSS line-height at the line box level
-    // 2. Each TextPainter only renders a single line segment (not multi-line)
-    // 3. CSS line-height spacing is controlled by line box height, not text painting
-    // This is actually the correct approach per CSS specifications, where line-height
-    // affects the line box, not the text itself.
-    //
-    // WebFRenderParagraph's approach of creating multiple TextPainters per line
-    // is less efficient and could be refactored to use this line box approach.
-
-    // Create text painter for measurement using unified text rendering from CSSTextMixin
-    final textSpan = CSSTextMixin.createTextSpan(text, style);
-    // Use the item's direction if set, otherwise fall back to style direction
-    final textDirection = item.direction ?? style.direction;
-
-    // For RTL text, we need to use Paragraph API for proper bidi handling
-    final textPainter = TextPainter(
-      text: textSpan,
-      textDirection: textDirection,
-      textWidthBasis: TextWidthBasis.parent,
-    );
-
-    // Layout to get metrics
-    textPainter.layout();
-
-    // Store shape result
-    // Get the actual baseline
-    final baselineDistance = textPainter.computeDistanceToActualBaseline(TextBaseline.alphabetic);
-
-    // Use the text painter's height which includes line height
-    final height = textPainter.height;
-
-    // If baseline is null, estimate it as 80% of height (common for alphabetic baseline)
-    final baseline = baselineDistance ?? (height * 0.8);
-
-    // print('  Baseline distance: $baselineDistance, calculated baseline: $baseline');
-    item.shapeResult = ShapeResult(
-      width: textPainter.width,
-      height: height,
-      ascent: baseline,
-      descent: height - baseline,
-      glyphData: textPainter,
-    );
-  }
-
   /// Perform layout with given constraints.
   Size layout(BoxConstraints constraints) {
     // Prepare items if needed
     prepareLayout();
-    if (!useParagraphLayout) {
-      // Legacy path: manual shaping + custom line breaker
-      final algorithm = InlineLayoutAlgorithm(
-        context: this,
-        constraints: constraints,
-      );
-      _lineBoxes = algorithm.layout();
-
-      double width = 0;
-      double height = 0;
-      for (final lineBox in _lineBoxes) {
-        width = math.max(width, lineBox.width);
-        height += lineBox.height;
-      }
-      _updateChildOffsets();
-      return Size(width, height);
-    }
-
     // New path: build a single Paragraph using dart:ui APIs
     _buildAndLayoutParagraph(constraints);
 
@@ -235,19 +148,6 @@ class InlineFormattingContext {
 
   /// Paint the inline content.
   void paint(PaintingContext context, Offset offset) {
-    if (!useParagraphLayout) {
-      double y = offset.dy;
-      for (int i = 0; i < _lineBoxes.length; i++) {
-        final lineBox = _lineBoxes[i];
-        lineBox.paint(context, Offset(offset.dx, y));
-        if (debugPaintInlineLayoutEnabled) {
-          _debugPaintLineBox(context, lineBox, Offset(offset.dx, y));
-        }
-        y += lineBox.height;
-      }
-      return;
-    }
-
     if (_paragraph == null) return;
 
     // Interleave line background and text painting so that later lines can
@@ -556,19 +456,6 @@ class InlineFormattingContext {
 
   /// Hit test the inline content.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    if (!useParagraphLayout) {
-      double y = 0;
-      for (final lineBox in _lineBoxes) {
-        bool isHit = lineBox.hitTest(
-          result,
-          position: Offset(position.dx - lineBox.alignmentOffset, position.dy - y),
-        );
-        if (isHit) return true;
-        y += lineBox.height;
-      }
-      return false;
-    }
-
     // Paragraph path: hit test atomic inlines via placeholder rects
     for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
       final rb = _placeholderOrder[i];
@@ -661,54 +548,8 @@ class InlineFormattingContext {
     return false;
   }
 
-  /// Get baseline for first line.
-  double? getDistanceToBaseline(TextBaseline baseline) {
-    if (!useParagraphLayout) {
-      if (_lineBoxes.isEmpty) return null;
-      return _lineBoxes.first.baseline;
-    }
-    if (_paraLines.isEmpty) return null;
-    // First paragraph line baseline
-    return _paraLines.first.baseline;
-  }
-
   /// Get the bounding rectangle for a specific inline element across all line fragments.
   Rect? getBoundsForRenderBox(RenderBox targetBox) {
-    if (!useParagraphLayout) {
-      if (_lineBoxes.isEmpty) return null;
-      double? minX, minY, maxX, maxY;
-      double currentY = 0;
-      for (final lineBox in _lineBoxes) {
-        for (final item in lineBox.items) {
-          bool belongsToTarget = false;
-          if (item is BoxLineBoxItem && item.renderBox == targetBox)
-            belongsToTarget = true;
-          else if (item is TextLineBoxItem && item.inlineItem.renderBox == targetBox) belongsToTarget = true;
-          if (belongsToTarget) {
-            final itemX = lineBox.alignmentOffset + item.offset.dx;
-            final itemY = currentY + item.offset.dy;
-            double left = itemX, top = itemY, right = itemX + item.size.width, bottom = itemY + item.size.height;
-            if (item is BoxLineBoxItem) {
-              final style = item.style;
-              top -= style.paddingTop.computedValue;
-              top -= style.borderTopWidth?.computedValue ?? 0.0;
-              bottom += style.paddingBottom.computedValue;
-              bottom += style.borderBottomWidth?.computedValue ?? 0.0;
-            }
-            minX = minX == null ? left : math.min(minX, left);
-            minY = minY == null ? top : math.min(minY, top);
-            maxX = maxX == null ? right : math.max(maxX, right);
-            maxY = maxY == null ? bottom : math.max(maxY, bottom);
-          }
-        }
-        currentY += lineBox.height;
-      }
-      if (minX != null && minY != null && maxX != null && maxY != null) {
-        return Rect.fromLTRB(minX, minY, maxX, maxY);
-      }
-      return null;
-    }
-
     // Paragraph path: bounds for atomic inline placeholders
     final idx = _placeholderOrder.indexOf(targetBox);
     if (idx >= 0 && idx < _placeholderBoxes.length) {
@@ -1096,11 +937,12 @@ class InlineFormattingContext {
     return current;
   }
 
-  // Compute inline-block baseline from a RenderBox
+  // Compute inline-block baseline using WebF CSS baseline API to avoid Flutter's restrictions.
+  // Returns null if the child has no CSS baseline.
   double? _computeInlineBlockBaseline(RenderBox box) {
+    // Use cached CSS baseline saved during child's layout
     if (box is RenderBoxModel) {
-      final b = box.computeDistanceToBaseline();
-      if (b != null) return b;
+      return box.computeCssLastBaselineOf(TextBaseline.alphabetic);
     }
     return null;
   }

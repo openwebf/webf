@@ -24,11 +24,9 @@ class BRElement extends Element {
     // when it is not part of an inline formatting context.
     final renderBr = RenderBr(renderStyle: renderStyle);
 
-    if (managedByFlutterWidget) {
-      assert(flutterWidgetElement != null);
-      // Pair render object with Flutter element for widget-managed elements
-      renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, renderBr);
-    }
+    assert(flutterWidgetElement != null);
+    // Pair render object with Flutter element for widget-managed elements
+    renderStyle.addOrUpdateWidgetRenderObjects(flutterWidgetElement!, renderBr);
     // Ensure event responder is bound for event dispatch consistency
     renderStyle.ensureEventResponderBound();
 

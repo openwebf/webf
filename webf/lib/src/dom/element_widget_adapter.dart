@@ -129,9 +129,7 @@ mixin ElementAdapterMixin on ElementBase {
 class WebFElementWidget extends flutter.StatefulWidget {
   final Element webFElement;
 
-  WebFElementWidget(this.webFElement, {super.key}) : super() {
-    webFElement.managedByFlutterWidget = true;
-  }
+  const WebFElementWidget(this.webFElement, {super.key}) : super();
 
   @override
   flutter.State<flutter.StatefulWidget> createState() {

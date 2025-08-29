@@ -226,18 +226,6 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     }
   }
 
-  @override
-  double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    double? result;
-    final BoxParentData? childParentData = parentData as BoxParentData?;
-    double? candidate = getDistanceToActualBaseline(baseline);
-    if (candidate != null) {
-      candidate += childParentData!.offset.dy;
-      result = candidate;
-    }
-    return result;
-  }
-
   // For position fixed render box, should reduce the outer scroll offsets.
   void applyPositionFixedPaintTransform(RenderBoxModel child, Matrix4 transform) {
     Offset totalScrollOffset = child.getTotalScrollOffset();

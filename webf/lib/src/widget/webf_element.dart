@@ -83,7 +83,6 @@ class SelfOwnedWebRenderLayoutWidgetElement extends WebRenderLayoutRenderObjectE
   void mount(Element? parent, Object? newSlot) {
     dom.Element element = dom.createElement(
         tagName, BindingContext(controller.view, controller.view.contextId, allocateNewBindingObject()));
-    element.managedByFlutterWidget = true;
     element.parentOrShadowHostNode = widget.parentElement;
     element.isConnected = true;
     element.isWidgetOwned = true;

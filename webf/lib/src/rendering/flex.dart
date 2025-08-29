@@ -665,7 +665,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           renderStyle.flexWrap != FlexWrap.nowrap || // Wrapping enabled
           renderStyle.alignItems == AlignItems.stretch // Stretching needed
         );
-        
+
         if (s.height.isAuto) {
           c = BoxConstraints(
             minWidth: c.minWidth,
@@ -1091,9 +1091,49 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Set the size of scrollable overflow area for flex layout.
     _setMaxScrollableSize(_runMetrics);
 
+    // Set the baseline values for flex items
+    calculateBaseline();
+
     if (!kReleaseMode) {
       developer.Timeline.finishSync();
     }
+  }
+
+  @override
+  void calculateBaseline() {
+    // Cache CSS baselines for this flex container during layout to avoid cross-child baseline computation later.
+    double? containerBaseline;
+    CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
+    bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
+    bool isParentFlowLayout = renderStyle.isParentRenderFlowLayout();
+    if (_flexLineBoxMetrics.isEmpty) {
+      if (isDisplayInline) {
+        final double marginTop = renderStyle.marginTop.computedValue;
+        final double marginBottom = renderStyle.marginBottom.computedValue;
+        final double height = boxSize?.height ?? size.height;
+        containerBaseline = isParentFlowLayout ? (marginTop + height + marginBottom) : (marginTop + height);
+      }
+    } else {
+      // Baseline equals the first child's baseline plus its offset within the container.
+      final _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
+      final List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
+      if (firstRunChildren.isNotEmpty) {
+        final RenderBox child = firstRunChildren[0].child;
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        final double childMarginTop = child is RenderBoxModel ? child.renderStyle.marginTop.computedValue : 0.0;
+        final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
+        double childOffsetY = childParentData.offset.dy - childMarginTop;
+        if (child is RenderBoxModel) {
+          final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(child.renderStyle);
+          if (relativeOffset != null) {
+            childOffsetY -= relativeOffset.dy;
+          }
+        }
+        final double marginTop = renderStyle.marginTop.computedValue;
+        containerBaseline = (childBaseline ?? 0) + childOffsetY + marginTop;
+      }
+    }
+    setCssBaselines(first: containerBaseline, last: containerBaseline);
   }
 
   // Layout position placeholder.
@@ -1224,8 +1264,8 @@ class RenderFlexLayout extends RenderLayoutBox {
             Element domElement = child.renderStyle.target;
             isEmptyElement = !domElement.hasChildren();
           }
-          
-          // For empty elements, force intrinsic size to padding+border  
+
+          // For empty elements, force intrinsic size to padding+border
           if (isEmptyElement) {
             intrinsicMain = paddingBorderMain;
           }
@@ -1663,7 +1703,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runBetweenSpace = _runSpacingMap['between']!;
     double? contentBoxLogicalWidth = renderStyle.contentBoxLogicalWidth;
     double? contentBoxLogicalHeight = renderStyle.contentBoxLogicalHeight;
-    
+
 
     // Container's width specified by style or inherited from parent.
     double? containerWidth = 0;
@@ -1790,7 +1830,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Original size of child.
         double childOldMainSize = _isHorizontalFlexDirection ? child.size.width : child.size.height;
         double childOldCrossSize = _isHorizontalFlexDirection ? child.size.height : child.size.width;
-        
+
 
         // Child need to layout when main axis size or cross size has changed
         // due to flex-grow/flex-shrink/align-items/align-self specified.
@@ -1845,14 +1885,14 @@ class RenderFlexLayout extends RenderLayoutBox {
 
               // Check if this is an empty element (no content)
               bool isEmptyElement = false;
-              
+
               // Access the DOM element through renderStyle.target
               if (child is RenderBoxModel) {
                 Element domElement = child.renderStyle.target;
                 // Check if the DOM element has no child nodes
                 isEmptyElement = !domElement.hasChildren();
               }
-              
+
               if (isEmptyElement) {
                 // Empty elements with percentage max-width should only size to their padding box
                 desiredPreservedMain = paddingBorderMain;
@@ -1861,7 +1901,7 @@ class RenderFlexLayout extends RenderLayoutBox {
             }
           }
         }
-        
+
 
         if (!isChildNeedsLayout) {
           mainAxisExtent += childMainAxisExtent;
@@ -1882,8 +1922,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Child main size needs to recalculated after layouted.
         childMainAxisExtent = _getMainAxisExtent(child);
-        
-        
+
+
         mainAxisExtent += childMainAxisExtent;
       }
       // Update run main axis & cross axis extent after child is relayouted.
@@ -2003,7 +2043,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Use stored percentage constraints if available, otherwise use current constraints
     BoxConstraints oldConstraints = _childrenOldConstraints[child.hashCode] ?? child.constraints;
-    
+
     double maxConstraintWidth = child.hasOverrideContentLogicalWidth
         ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
         : oldConstraints.maxWidth;
@@ -2761,14 +2801,14 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Need to subtract start margin of main axis when calculating next child's start position.
         double mainAxisGap = _getMainAxisGap();
-        
+
         // For space-between, space-around, and space-evenly, gap should not be applied
         // because these justify-content values already handle the spacing between items
         bool shouldApplyGap = !(renderStyle.justifyContent == JustifyContent.spaceBetween ||
                                 renderStyle.justifyContent == JustifyContent.spaceAround ||
                                 renderStyle.justifyContent == JustifyContent.spaceEvenly);
         double effectiveGap = shouldApplyGap ? mainAxisGap : 0;
-        
+
         if (flipMainAxis) {
           childMainPosition -= betweenSpace + childMainAxisMargin + effectiveGap;
         } else {
@@ -2954,62 +2994,8 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Compute distance to baseline of flex layout.
   @override
-  double? computeDistanceToBaseline() {
-    double lineDistance = 0;
-    double marginTop = renderStyle.marginTop.computedValue;
-    double marginBottom = renderStyle.marginBottom.computedValue;
-    bool isParentFlowLayout = renderStyle.isParentRenderFlowLayout();
-    CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
-    bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
-    // Use margin bottom as baseline if layout has no children
-    if (_flexLineBoxMetrics.isEmpty) {
-      if (isDisplayInline) {
-        // Flex item baseline does not includes margin-bottom
-        Size? boxSize = this.boxSize;
-        lineDistance = isParentFlowLayout ? marginTop + boxSize!.height + marginBottom : marginTop + boxSize!.height;
-        return lineDistance;
-      } else {
-        return null;
-      }
-    }
-
-    // Always use the baseline of the first child as the baseline in flex layout.
-    _RunMetrics firstLineMetrics = _flexLineBoxMetrics[0];
-    List<_RunChild> firstRunChildren = firstLineMetrics.runChildren.values.toList();
-    _RunChild firstRunChild = firstRunChildren[0];
-    RenderBox child = firstRunChild.child;
-
-    double childMarginTop = child is RenderBoxModel ? child.renderStyle.marginTop.computedValue : 0;
-    RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-    double? childBaseLineDistance = 0;
-    if (child is RenderBoxModel) {
-      childBaseLineDistance = child.computeDistanceToBaseline();
-    }
-
-    // Baseline of relative positioned element equals its original position
-    // so it needs to subtract its vertical offset.
-    Offset? relativeOffset;
-    double childOffsetY = childParentData.offset.dy - childMarginTop;
-    if (child is RenderBoxModel) {
-      relativeOffset = CSSPositionedLayout.getRelativeOffset(child.renderStyle);
-    }
-    if (relativeOffset != null) {
-      childOffsetY -= relativeOffset.dy;
-    }
-
-    // It needs to subtract margin-top cause offset already includes margin-top.
-    lineDistance = (childBaseLineDistance ?? 0) + childOffsetY;
-    if (debugLogFlexBaselineEnabled) {
-      // ignore: avoid_print
-      print('[FlexBaseline] computeDistanceToBaseline firstChild='
-          '${child.runtimeType}#${child.hashCode} '
-          'childBaseline=${childBaseLineDistance?.toStringAsFixed(2)} '
-          'childOffsetY=${childOffsetY.toStringAsFixed(2)} '
-          'marginTop=${marginTop.toStringAsFixed(2)} '
-          '=> lineDistance=${lineDistance.toStringAsFixed(2)}');
-    }
-    lineDistance += marginTop;
-    return lineDistance;
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    return computeCssFirstBaseline();
   }
 
   // Get child size through boxSize to avoid flutter error when parentUsesSize is set to false.

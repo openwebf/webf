@@ -204,10 +204,6 @@ class RenderFlowLayout extends RenderLayoutBox {
     try {
       doingThisLayout = true;
 
-      if (renderStyle.target.id == 'divA') {
-        print(1);
-      }
-
       _doPerformLayout();
 
       if (needsRelayout) {
@@ -394,42 +390,8 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       _setContainerSizeFromIFC(layoutSize);
 
-      // Cache CSS baselines for this element, computed from IFC line metrics.
-      // Baselines are measured from the top padding/border edge as distances,
-      // consistent with how computeDistanceToBaseline reports.
-      final paddingTop = renderStyle.paddingTop.computedValue;
-      final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
-      final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
-          renderStyle.effectiveOverflowY == CSSOverflowType.visible;
-      double? firstBaseline;
-      double? lastBaseline;
-      if (overflowVisible) {
-        final lines = _inlineFormattingContext!.paragraphLineMetrics;
-        if (lines.isNotEmpty) {
-          firstBaseline = lines.first.baseline + paddingTop + borderTop;
-          lastBaseline = lines.last.baseline + paddingTop + borderTop;
-          if (debugLogInlineLayoutEnabled) {
-            renderingLogger.fine('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
-                'last=${lastBaseline.toStringAsFixed(2)} '
-                'paddingTop=${paddingTop.toStringAsFixed(2)} borderTop=${borderTop.toStringAsFixed(2)}');
-          }
-        } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
-          // Legacy line boxes path
-          final first = _inlineFormattingContext!.lineBoxes.first;
-          double y = 0;
-          for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
-            y += _inlineFormattingContext!.lineBoxes[i].height;
-          }
-          final last = _inlineFormattingContext!.lineBoxes.last;
-          firstBaseline = first.baseline + paddingTop + borderTop;
-          lastBaseline = y + last.baseline + paddingTop + borderTop;
-          if (debugLogInlineLayoutEnabled) {
-            renderingLogger.fine('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
-                'last=${lastBaseline.toStringAsFixed(2)}');
-          }
-        }
-      }
-      setCssBaselines(first: firstBaseline, last: lastBaseline);
+      // Set the baseline value for this box
+      calculateBaseline();
 
       // Set the size of scrollable overflow area for inline formatting context.
       _setMaxScrollableSizeFromIFC();
@@ -446,29 +408,8 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Set the size of scrollable overflow area for flow layout.
       _setMaxScrollableSize();
 
-      // Cache CSS baselines for non-IFC flow: use line metrics when overflow is visible.
-      final paddingTop = renderStyle.paddingTop.computedValue;
-      final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
-      final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
-          renderStyle.effectiveOverflowY == CSSOverflowType.visible;
-      double? firstBaseline;
-      double? lastBaseline;
-      if (overflowVisible && _lineMetrics.isNotEmpty) {
-        if (_lineMetrics.first.baseline != null) {
-          firstBaseline = _lineMetrics.first.baseline! + paddingTop + borderTop;
-        }
-        double yOffset = 0;
-        for (int i = 0; i < _lineMetrics.length; i++) {
-          final line = _lineMetrics[i];
-          if (line.baseline != null) {
-            lastBaseline = yOffset + line.baseline! + paddingTop + borderTop;
-          }
-          if (i < _lineMetrics.length - 1) {
-            yOffset += line.crossAxisExtent;
-          }
-        }
-      }
-      setCssBaselines(first: firstBaseline, last: lastBaseline);
+      // Set the baseline value for this box
+      calculateBaseline();
     }
   }
 
@@ -778,78 +719,16 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
   }
 
-  // Compute distance to baseline of flow layout.
+  // Compute distance to baseline of flow layout: prefer cached baselines from layout.
   @override
-  double? computeDistanceToBaseline() {
-    // For inline-block elements, the baseline is:
-    // 1. The baseline of the last line box if it has inline formatting context
-    // 2. The baseline of the last in-flow line box if using regular flow layout
-    // 3. The bottom margin edge if it has no in-flow line boxes or overflow is not visible
-
-    // Check if we're using inline formatting context
-    if (establishIFC && _inlineFormattingContext != null) {
-      // If overflow is not visible, use bottom edge for IFC too
-      if (renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-          renderStyle.effectiveOverflowY != CSSOverflowType.visible) {
-        return boxSize?.height;
-      }
-
-      // Paragraph-based path: use last paragraph line baseline if available
-      final paraLines = _inlineFormattingContext!.paragraphLineMetrics;
-      if (paraLines.isNotEmpty) {
-        final last = paraLines.last;
-        return last.baseline +
-            renderStyle.paddingTop.computedValue +
-            renderStyle.effectiveBorderTopWidth.computedValue;
-      }
-
-      // Legacy path: lineBoxes baseline
-      if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
-        final lastLineBox = _inlineFormattingContext!.lineBoxes.last;
-        double y = 0;
-        for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
-          y += _inlineFormattingContext!.lineBoxes[i].height;
-        }
-        return y +
-            lastLineBox.baseline +
-            renderStyle.paddingTop.computedValue +
-            renderStyle.effectiveBorderTopWidth.computedValue;
-      }
-    }
-
-    // For regular flow layout with line metrics
-    if (_lineMetrics.isNotEmpty) {
-      // Find the last line with a baseline
-      double yOffset = 0;
-      double? lastBaseline;
-
-      for (int i = 0; i < _lineMetrics.length; i++) {
-        final line = _lineMetrics[i];
-
-        // If this line has a baseline, remember it
-        if (line.baseline != null) {
-          lastBaseline = yOffset + line.baseline!;
-        }
-
-        // Add the line height to y offset for next iteration
-        if (i < _lineMetrics.length - 1) {
-          yOffset += line.crossAxisExtent;
-        }
-      }
-
-      if (lastBaseline != null) {
-        return lastBaseline + renderStyle.paddingTop.computedValue + renderStyle.effectiveBorderTopWidth.computedValue;
-      }
-    }
-
-    // If overflow is not visible, use bottom edge
-    if (renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-        renderStyle.effectiveOverflowY != CSSOverflowType.visible) {
+  double? computeDistanceToActualBaseline(TextBaseline baseline) {
+    final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
+        renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    if (!overflowVisible) {
       return boxSize?.height;
     }
-
-    // For empty inline-blocks (no content), use bottom edge as baseline
-    return boxSize?.height;
+    // Use cached last baseline when available; otherwise fall back to bottom edge.
+    return computeCssLastBaselineOf(baseline) ?? boxSize?.height;
   }
 
   // Set the size of scrollable overflow area for inline formatting context.
@@ -1089,6 +968,80 @@ class RenderFlowLayout extends RenderLayoutBox {
   }
 
 
+  void setUpChildBaselineForIFC() {
+    // Cache CSS baselines for this element, computed from IFC line metrics.
+    // Baselines are measured from the top padding/border edge as distances,
+    // consistent with how computeDistanceToBaseline reports.
+    final paddingTop = renderStyle.paddingTop.computedValue;
+    final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+    final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
+        renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    double? firstBaseline;
+    double? lastBaseline;
+    if (overflowVisible) {
+      final lines = _inlineFormattingContext!.paragraphLineMetrics;
+      if (lines.isNotEmpty) {
+        firstBaseline = lines.first.baseline + paddingTop + borderTop;
+        lastBaseline = lines.last.baseline + paddingTop + borderTop;
+        if (debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
+              'last=${lastBaseline.toStringAsFixed(2)} '
+              'paddingTop=${paddingTop.toStringAsFixed(2)} borderTop=${borderTop.toStringAsFixed(2)}');
+        }
+      } else if (_inlineFormattingContext!.lineBoxes.isNotEmpty) {
+        // Legacy line boxes path
+        final first = _inlineFormattingContext!.lineBoxes.first;
+        double y = 0;
+        for (int i = 0; i < _inlineFormattingContext!.lineBoxes.length - 1; i++) {
+          y += _inlineFormattingContext!.lineBoxes[i].height;
+        }
+        final last = _inlineFormattingContext!.lineBoxes.last;
+        firstBaseline = first.baseline + paddingTop + borderTop;
+        lastBaseline = y + last.baseline + paddingTop + borderTop;
+        if (debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
+              'last=${lastBaseline.toStringAsFixed(2)}');
+        }
+      }
+    }
+    setCssBaselines(first: firstBaseline, last: lastBaseline);
+  }
+
+  void setUpChildBaselineForBFC() {
+    // Cache CSS baselines for non-IFC flow: use line metrics when overflow is visible.
+    final paddingTop = renderStyle.paddingTop.computedValue;
+    final borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+    final bool overflowVisible = renderStyle.effectiveOverflowX == CSSOverflowType.visible &&
+        renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    double? firstBaseline;
+    double? lastBaseline;
+    if (overflowVisible && _lineMetrics.isNotEmpty) {
+      if (_lineMetrics.first.baseline != null) {
+        firstBaseline = _lineMetrics.first.baseline! + paddingTop + borderTop;
+      }
+      double yOffset = 0;
+      for (int i = 0; i < _lineMetrics.length; i++) {
+        final line = _lineMetrics[i];
+        if (line.baseline != null) {
+          lastBaseline = yOffset + line.baseline! + paddingTop + borderTop;
+        }
+        if (i < _lineMetrics.length - 1) {
+          yOffset += line.crossAxisExtent;
+        }
+      }
+    }
+    setCssBaselines(first: firstBaseline, last: lastBaseline);
+  }
+
+  @override
+  void calculateBaseline() {
+    if (establishIFC) {
+      setUpChildBaselineForIFC();
+    } else {
+      setUpChildBaselineForBFC();
+    }
+  }
+
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
     // When using Inline Formatting Context, delegate hit testing to IFC for inline content
@@ -1161,6 +1114,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       _inlineFormattingContext!.debugFillProperties(properties);
     }
   }
+
 }
 
 // Render flex layout with self repaint boundary.

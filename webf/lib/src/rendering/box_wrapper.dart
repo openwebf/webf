@@ -23,12 +23,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
-  }
-
-  @override
-  double? computeDistanceToBaseline() {
-    return renderStyle.attachedRenderBoxModel!.computeDistanceToBaseline();
+    return computeCssFirstBaseline();
   }
 
   @override
@@ -77,6 +72,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       }
     }
 
+    calculateBaseline();
     initOverflowLayout(Rect.fromLTRB(0, 0, size.width, size.height), Rect.fromLTRB(0, 0, size.width, size.height));
   }
 
@@ -143,6 +139,12 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
       return false;
     });
     return isHit;
+  }
+
+  @override
+  void calculateBaseline() {
+    double? baseline = getDistanceToBaseline(TextBaseline.alphabetic);
+    setCssBaselines(first: baseline, last: baseline);
   }
 }
 

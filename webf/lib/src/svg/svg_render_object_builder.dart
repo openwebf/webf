@@ -111,7 +111,6 @@ class SVGRenderBoxBuilder {
       }
       element.tagName = tagName;
       element.namespaceURI = svgElementUri;
-      element.managedByFlutterWidget = true;
       return element;
     }
     print('Unknown SVG element $tagName');

@@ -126,18 +126,15 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
   @override
   double computeDistanceToActualBaseline(TextBaseline baseline) {
-    return computeDistanceToBaseline();
-  }
-
-  /// Compute distance to baseline of replaced element
-  @override
-  double computeDistanceToBaseline() {
+    final cached = computeCssLastBaselineOf(baseline);
+    if (cached != null) return cached;
     double marginTop = renderStyle.marginTop.computedValue;
     double marginBottom = renderStyle.marginBottom.computedValue;
-
     // Use margin-bottom as baseline if layout has no children
-    return marginTop + boxSize!.height + marginBottom;
+    return marginTop + (boxSize?.height ?? size.height) + marginBottom;
   }
+
+  // Removed legacy computeDistanceToBaseline(); use computeDistanceToActualBaseline instead.
 
   // Should not paint when renderObject is in lazy loading and not rendered yet.
   @override
@@ -175,10 +172,16 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
     }
     return super.hitTestChildren(result, position: position!);
   }
+
+  @override
+  void calculateBaseline() {
+    double? baseline = child?.getDistanceToBaseline(TextBaseline.alphabetic);
+    setCssBaselines(first: baseline, last: baseline);
+  }
 }
 
 class RenderRepaintBoundaryReplaced extends RenderReplaced {
-  RenderRepaintBoundaryReplaced(CSSRenderStyle renderStyle) : super(renderStyle);
+  RenderRepaintBoundaryReplaced(super.renderStyle);
 
   @override
   bool get isRepaintBoundary => true;
