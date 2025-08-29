@@ -1,3 +1,9 @@
+## 0.22.13+1
+
+### Fixes
+
+- fix: fix export images hang out when the target renderObject not painted.
+
 ## 0.22.13
 
 ### Fixes
