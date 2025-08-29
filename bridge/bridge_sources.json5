@@ -565,11 +565,7 @@
     "third_party/gumbo-parser/src/utf8.c",
     "third_party/gumbo-parser/src/util.c",
     "third_party/gumbo-parser/src/vector.c",
-    "third_party/quickjs/cutils.c",
-    "third_party/quickjs/dtoa.c",
-    "third_party/quickjs/libregexp.c",
-    "third_party/quickjs/libunicode.c",
-    "third_party/quickjs/quickjs.c",
+    'third_party/modp_b64/modp_b64.cc',
 
     // CodeGen
     "code_gen/names_installer.cc",
@@ -835,5 +831,12 @@
     "code_gen/plugin_api_touch.cc",
     "code_gen/plugin_api_transition_event.cc",
     "code_gen/plugin_api_ui_event.cc",
+  ],
+  QUICKJS_SOURCE: [
+    "third_party/quickjs/cutils.c",
+    "third_party/quickjs/dtoa.c",
+    "third_party/quickjs/libregexp.c",
+    "third_party/quickjs/libunicode.c",
+    "third_party/quickjs/quickjs.c"
   ]
 }

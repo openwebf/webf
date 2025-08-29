@@ -141,42 +141,38 @@ set(BRIDGE_SOURCE_LOADED FALSE)
 set(_BRIDGE_SOURCES_JSON5 "${CMAKE_CURRENT_SOURCE_DIR}/bridge_sources.json5")
 if(EXISTS "${_BRIDGE_SOURCES_JSON5}")
   execute_process(
-    COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/scripts/read_bridge_sources_json5.js ${_BRIDGE_SOURCES_JSON5}
+    COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/scripts/read_bridge_sources.js ${_BRIDGE_SOURCES_JSON5}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     RESULT_VARIABLE _bridge_sources_status
     OUTPUT_VARIABLE _bridge_sources_output
     ERROR_VARIABLE _bridge_sources_error
   )
+  execute_process(
+    COMMAND node ${CMAKE_CURRENT_SOURCE_DIR}/scripts/read_quickjs_sources.js ${_BRIDGE_SOURCES_JSON5}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    RESULT_VARIABLE _quickjs_sources_status
+    OUTPUT_VARIABLE _quickjs_sources_output
+    ERROR_VARIABLE _quickjs_sources_error
+  )
   if(_bridge_sources_status EQUAL 0)
     # Normalize newlines and convert to a CMake list
     string(REPLACE "\r\n" "\n" _bridge_sources_output "${_bridge_sources_output}")
+    string(REPLACE "\r\n" "\n" _quickjs_sources_output "${_quickjs_sources_output}")
     string(REPLACE "\n" ";" _bridge_sources_list "${_bridge_sources_output}")
+    string(REPLACE "\n" ";" _quickjs_sources_list "${_quickjs_sources_output}")
     list(REMOVE_ITEM _bridge_sources_list "")
+    list(REMOVE_ITEM _quickjs_sources_list "")
     set(BRIDGE_SOURCE ${_bridge_sources_list})
+    set(QUICK_JS_SOURCE ${_quickjs_sources_list})
     set(BRIDGE_SOURCE_LOADED TRUE)
     list(LENGTH _bridge_sources_list _bridge_sources_count)
-    message(STATUS "Loaded BRIDGE_SOURCE from JSON5 (${_bridge_sources_count} files)")
+    message(STATUS "Loaded SOURCE from JSON5 (${_bridge_sources_count} files)")
   else()
-    message(WARNING "Failed to load BRIDGE_SOURCE from JSON5: ${_bridge_sources_error}")
+    message(WARNING "Failed to load SOURCE from JSON5: ${_bridge_sources_error}")
   endif()
 else()
   message(STATUS "BRIDGE sources JSON5 not found: ${_BRIDGE_SOURCES_JSON5}")
 endif()
-
-list(APPEND GUMBO_PARSER
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/attribute.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/char_ref.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/error.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/parser.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_buffer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_piece.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tag.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/string_piece.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/tokenizer.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/utf8.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/util.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gumbo-parser/src/vector.c
-)
 
 list(APPEND BRIDGE_INCLUDE
   ${CMAKE_CURRENT_LIST_DIR}/foundation
@@ -191,36 +187,12 @@ list(APPEND BRIDGE_INCLUDE
   ${ADDITIONAL_INCLUDE_DIRS}
 )
 
-add_library(double_conversion STATIC
-  third_party/double_conversion/double-conversion/bignum.cc
-  third_party/double_conversion/double-conversion/bignum-dtoa.cc
-  third_party/double_conversion/double-conversion/cached-powers.cc
-  third_party/double_conversion/double-conversion/double-to-string.cc
-  third_party/double_conversion/double-conversion/fast-dtoa.cc
-  third_party/double_conversion/double-conversion/fixed-dtoa.cc
-  third_party/double_conversion/double-conversion/string-to-double.cc
-  third_party/double_conversion/double-conversion/strtod.cc
-)
-list(APPEND BRIDGE_LINK_LIBS double_conversion)
-
 if(${WEBF_JS_ENGINE} MATCHES "quickjs")
   add_compile_options(-DWEBF_QUICK_JS_ENGINE=1)
 
   execute_process(
     COMMAND cat ${CMAKE_CURRENT_SOURCE_DIR}/third_party/quickjs/VERSION
     OUTPUT_VARIABLE QUICKJS_VERSION
-  )
-
-  add_library(modb STATIC
-    third_party/modp_b64/modp_b64.cc
-  )
-
-  list(APPEND QUICK_JS_SOURCE
-    third_party/quickjs/cutils.c
-    third_party/quickjs/dtoa.c
-    third_party/quickjs/libregexp.c
-    third_party/quickjs/libunicode.c
-    third_party/quickjs/quickjs.c
   )
 
   if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -256,7 +228,6 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
   list(APPEND BRIDGE_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/modp_b64/include)
   list(APPEND BRIDGE_LINK_LIBS quickjs)
-  list(APPEND BRIDGE_LINK_LIBS modb)
 
   if (NOT MSVC)
     # Quickjs use __builtin_frame_address() to get stack pointer, we should add follow options to get it work with -O2
@@ -274,9 +245,6 @@ list(APPEND PUBLIC_HEADER
 add_library(webf SHARED ${BRIDGE_SOURCE})
 
 target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
-
-add_library(gumbo_parse_static STATIC ${GUMBO_PARSER})
-list(APPEND BRIDGE_LINK_LIBS gumbo_parse_static)
 
 if (${IS_ANDROID})
   find_library(log-lib log)

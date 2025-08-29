@@ -85,6 +85,8 @@ function copyCppSourceFiles(rootDir, webfDir) {
     'third_party/gumbo-parser',
     'third_party/modp_b64',
     'third_party/quickjs',
+    'third_party/cityhash',
+    'third_party/double_conversion'
   ];
   
   // Copy all directories recursively

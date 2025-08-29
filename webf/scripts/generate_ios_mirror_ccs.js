@@ -69,7 +69,10 @@ function readBridgeSources(configPath, { verbose }) {
     const list = Array.from(new Set(json.BRIDGE_SOURCE))
       .map((p) => p.trim())
       .filter((p) => p && (p.endsWith('.cc') || p.endsWith('.c')));
-    return list;
+    const qjs_list = Array.from(new Set(json.QUICKJS_SOURCE))
+      .map((p) => p.trim())
+      .filter((p) => p && (p.endsWith('.cc') || p.endsWith('.c')));
+    return list.concat(qjs_list);
   } catch (e) {
     console.warn(`Failed to parse ${configPath} with JSON5: ${e.message}`);
     return null;
