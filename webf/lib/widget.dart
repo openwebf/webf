@@ -11,3 +11,4 @@ export 'src/widget/event_listener.dart';
 export 'src/widget/child_node_size.dart';
 export 'src/widget/router_view.dart';
 export 'src/widget/contentful_widget_detector.dart';
+export 'src/widget/nested_scroll_forwarder.dart';

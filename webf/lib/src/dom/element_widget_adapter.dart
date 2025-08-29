@@ -219,62 +219,85 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           overflowX == CSSOverflowType.auto ||
           overflowX == CSSOverflowType.hidden) {
         webFElement._scrollControllerX ??= flutter.ScrollController();
+        final bool xScrollable = overflowX != CSSOverflowType.hidden;
         scrollableX = LayoutBoxWrapper(
             ownerElement: webFElement,
-            child: flutter.Scrollable(
-                controller: webFElement.scrollControllerX,
-                axisDirection: AxisDirection.right,
-                physics: overflowX == CSSOverflowType.hidden ? flutter.NeverScrollableScrollPhysics() : null,
-                viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
-                  flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                    webFElement: webFElement,
-                    scrollListener: webFElement.handleScroll,
-                    positionX: position,
-                    key: webFElement.key,
-                    children: children,
-                  );
+            child: NestedScrollCoordinator(
+                axis: flutter.Axis.horizontal,
+                controller: webFElement.scrollControllerX!,
+                enabled: xScrollable,
+                child: flutter.Scrollable(
+                    controller: webFElement.scrollControllerX,
+                    axisDirection: AxisDirection.right,
+                    physics: xScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
+                    viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
+                      flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                        webFElement: webFElement,
+                        key: webFElement.key,
+                        scrollListener: webFElement.handleScroll,
+                        positionX: position,
+                        children: children,
+                      );
 
-                  return adapter;
-                }));
+                      return adapter;
+                    })));
       }
 
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
         webFElement._scrollControllerY ??= flutter.ScrollController();
+        final bool yScrollable = overflowY != CSSOverflowType.hidden;
         widget = LayoutBoxWrapper(
             ownerElement: webFElement,
-            child: flutter.Scrollable(
-                axisDirection: AxisDirection.down,
-                physics: overflowY == CSSOverflowType.hidden ? flutter.NeverScrollableScrollPhysics() : null,
-                controller: webFElement.scrollControllerY,
-                viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
-                  if (scrollableX != null) {
-                    return flutter.Scrollable(
-                        controller: webFElement.scrollControllerX,
-                        axisDirection: AxisDirection.right,
-                        viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
-                          flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
-                            webFElement: webFElement,
-                            scrollListener: webFElement.handleScroll,
-                            positionX: positionX,
-                            positionY: positionY,
-                            key: webFElement.key,
-                            children: children,
-                          );
+            child: NestedScrollCoordinator(
+                axis: flutter.Axis.vertical,
+                controller: webFElement.scrollControllerY!,
+                enabled: yScrollable,
+                child: flutter.Scrollable(
+                    axisDirection: AxisDirection.down,
+                    physics: yScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
+                    controller: webFElement.scrollControllerY,
+                    viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
+                      final double kbInset = flutter.MediaQuery.maybeOf(context)?.viewInsets.bottom ?? 0.0;
+                      if (scrollableX != null) {
+                        flutter.Widget nestedX = NestedScrollCoordinator(
+                            axis: flutter.Axis.horizontal,
+                            controller: webFElement.scrollControllerX!,
+                            enabled: (webFElement.renderStyle.overflowX != CSSOverflowType.hidden),
+                            child: flutter.Scrollable(
+                                controller: webFElement.scrollControllerX,
+                                axisDirection: AxisDirection.right,
+                                viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
+                                  flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
+                                    webFElement: webFElement,
+                                    key: webFElement.key,
+                                    scrollListener: webFElement.handleScroll,
+                                    positionX: positionX,
+                                    positionY: positionY,
+                                    children: children,
+                                  );
 
-                          return adapter;
-                        });
-                  }
+                                  return adapter;
+                                }));
+                        if (kbInset > 0) {
+                          nestedX = flutter.Padding(padding: EdgeInsets.only(bottom: kbInset), child: nestedX);
+                        }
+                        return nestedX;
+                      }
 
-                  return WebFRenderLayoutWidgetAdaptor(
-                    webFElement: webFElement,
-                    scrollListener: webFElement.handleScroll,
-                    positionY: positionY,
-                    key: webFElement.key,
-                    children: children,
-                  );
-                }));
+                      flutter.Widget v = WebFRenderLayoutWidgetAdaptor(
+                        webFElement: webFElement,
+                        key: webFElement.key,
+                        scrollListener: webFElement.handleScroll,
+                        positionY: positionY,
+                        children: children,
+                      );
+                      if (kbInset > 0) {
+                        v = flutter.Padding(padding: EdgeInsets.only(bottom: kbInset), child: v);
+                      }
+                      return v;
+                    })));
       } else {
         widget = scrollableX ??
             WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, key: webFElement.key, children: children);
@@ -283,11 +306,18 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       widget = WebFRenderLayoutWidgetAdaptor(webFElement: webFElement, key: webFElement.key, children: children);
     }
 
+    // Expose this element's scroll controllers to descendants to enable nested scrolling.
+    final wrapped = NestedScrollForwarder(
+      vertical: webFElement.scrollControllerY,
+      horizontal: webFElement.scrollControllerX,
+      child: widget,
+    );
+
     return WebFEventListener(
         ownerElement: webFElement,
         hasEvent: webFElement.hasEvent,
         enableTouchEvent: webFElement is WebFTouchAreaElement,
-        child: widget);
+        child: wrapped);
   }
 
   @override
