@@ -819,10 +819,15 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     });
   }
 
-  Future<Image> toImage(double pixelRatio) {
-    return getSelfRenderBoxValue((renderBoxModel, _) {
-      return renderBoxModel.toImage(pixelRatio: pixelRatio);
-    });
+  Future<Image> toImage(double pixelRatio) async {
+    for (final renderObject in widgetRenderObjectIterator) {
+      try {
+        return await renderObject.toImage(pixelRatio: pixelRatio);
+      } catch(_) {
+        continue;
+      }
+    }
+    throw FlutterError('Can not export images from $this');
   }
 
   @pragma('vm:prefer-inline')
