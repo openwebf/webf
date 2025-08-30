@@ -57,8 +57,6 @@ class DeepLinkModule extends WebFBaseModule {
         };
       }
 
-      print('Opening deep link: $url');
-      
       final uri = Uri.parse(url);
       
       // Check if URL can be launched
@@ -133,7 +131,6 @@ class DeepLinkModule extends WebFBaseModule {
         };
       }
     } catch (e, stackTrace) {
-      print('Open deep link failed: $e');
       print('Stack trace: $stackTrace');
       return {
         'success': false,
@@ -171,9 +168,7 @@ class DeepLinkModule extends WebFBaseModule {
           'error': 'URL scheme is required'
         };
       }
-
-      print('Registering deep link handler for scheme: $scheme');
-      
+   
       // Store the handler configuration
       final handlerKey = '$scheme://${host ?? ''}';
       _deepLinkHandlers[handlerKey] = (Uri uri) {
