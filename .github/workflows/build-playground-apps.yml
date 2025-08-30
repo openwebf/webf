@@ -42,7 +42,7 @@ jobs:
     
     - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
 
     - name: Install dependencies
       run: |
@@ -87,7 +87,7 @@ jobs:
     
     - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
     
     - name: Install dependencies
       run: |
@@ -121,7 +121,7 @@ jobs:
     
   #   - name: Authenticate Cloudsmith for WebF Enterprise
   #     run: |
-  #       echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
+  #       echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
   #     if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
     
   #   - name: Install dependencies
@@ -156,7 +156,7 @@ jobs:
     
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
     
     - name: Install dependencies
       run: |
@@ -190,7 +190,7 @@ jobs:
     
     - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
 
     - name: Install dependencies
       run: |
@@ -229,7 +229,7 @@ jobs:
     
     - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
     
     - name: Install dependencies
       run: |

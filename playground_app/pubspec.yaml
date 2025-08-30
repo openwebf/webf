@@ -36,16 +36,16 @@ dependencies:
   permission_handler: ^11.3.1
 
   webf:
-    hosted: https://dart.cloudsmith.io/openwebf/webf/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
     version: ^0.23.0
   webf_cupertino_ui:
-    hosted: https://dart.cloudsmith.io/openwebf/webf-cupertino-ui/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
     version: ^0.2.0
   webf_deeplink:
-    hosted: https://dart.cloudsmith.io/openwebf/webf-deeplink/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
     version: ^1.0.0
   webf_share:
-    hosted: https://dart.cloudsmith.io/openwebf/webf-share/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
     version: ^1.0.0
 
   vibration: ^3.1.3

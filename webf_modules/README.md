@@ -33,9 +33,9 @@ Add to your `pubspec.yaml`:
 ```yaml
 dependencies:
   webf_deeplink: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
   webf_share: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
 ```
 
 ## Quick Start

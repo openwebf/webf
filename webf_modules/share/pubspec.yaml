@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   webf: 
-    hosted: https://dart.cloudsmith.io/openwebf/webf/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
     version: ^0.23.0
   share_plus: ^10.0.0
   path_provider: ^2.1.0
@@ -24,7 +24,7 @@ dev_dependencies:
 flutter:
 
 # Information used by the publishing tool.
-publish_to: https://dart.cloudsmith.io/openwebf/webf-share/
+publish_to: https://dart.cloudsmith.io/openwebf/packages/
 
 topics:
   - webf

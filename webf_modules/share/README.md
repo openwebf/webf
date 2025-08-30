@@ -18,7 +18,7 @@ Add this to your `pubspec.yaml`:
 ```yaml
 dependencies:
   webf_share: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
 ```
 
 ## Usage
