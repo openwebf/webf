@@ -80,6 +80,10 @@ function copyCppSourceFiles(rootDir, webfDir) {
     'foundation',
     'include',
     'code_gen',
+    'bridge_sources.json5',
+    'scripts/get_app_ver.js',
+    'scripts/read_bridge_sources.js',
+    'scripts/read_quickjs_sources.js',
     'multiple_threading',
     'third_party/dart',
     'third_party/gumbo-parser',
@@ -89,27 +93,37 @@ function copyCppSourceFiles(rootDir, webfDir) {
     'third_party/double_conversion'
   ];
   
-  // Copy all directories recursively
-  for (const dir of directoriesToCopy) {
-    const sourceDir = PATH.join(bridgeDir, dir);
-    const destDir = PATH.join(srcDir, dir);
+  // Copy all directories and files
+  for (const item of directoriesToCopy) {
+    const sourcePath = PATH.join(bridgeDir, item);
+    const destPath = PATH.join(srcDir, item);
     
-    if (fs.existsSync(sourceDir)) {
-      // Create the destination directory if it doesn't exist
-      if (!fs.existsSync(destDir)) {
-        fs.mkdirSync(destDir, { recursive: true });
-      }
+    if (fs.existsSync(sourcePath)) {
+      const stats = fs.statSync(sourcePath);
       
-      // Use rsync or recursive copy depending on the platform
-      if (os.platform() === 'win32') {
-        // For Windows, use xcopy or robocopy
-        exec(`xcopy "${sourceDir}" "${destDir}" /E /I /Y`);
-      } else {
-        // For Unix-like systems, use rsync or cp
-        exec(`rsync -a "${sourceDir}/" "${destDir}/"`);
+      if (stats.isDirectory()) {
+        // It's a directory - copy recursively
+        // Create the destination directory if it doesn't exist
+        if (!fs.existsSync(destPath)) {
+          fs.mkdirSync(destPath, { recursive: true });
+        }
+        
+        // Use rsync or recursive copy depending on the platform
+        if (os.platform() === 'win32') {
+          // For Windows, use xcopy or robocopy
+          exec(`xcopy "${sourcePath}" "${destPath}" /E /I /Y`);
+        } else {
+          // For Unix-like systems, use rsync or cp
+          exec(`rsync -a "${sourcePath}/" "${destPath}/"`);
+        }
+        console.log(`Copied directory: ${item}`);
+      } else if (stats.isFile()) {
+        // It's a file - copy it directly
+        copyFile(sourcePath, destPath);
+        console.log(`Copied file: ${item}`);
       }
     } else {
-      console.warn(`Warning: Source directory ${sourceDir} does not exist.`);
+      console.warn(`Warning: Source path ${sourcePath} does not exist.`);
     }
   }
   
