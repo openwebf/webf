@@ -35,13 +35,18 @@ dependencies:
   qr_code_scanner_plus: ^2.0.0
   permission_handler: ^11.3.1
 
-  # WebF
-  webf: ^0.22.0
+  webf:
+    hosted: https://dart.cloudsmith.io/openwebf/webf/
+    version: ^0.23.0
   webf_cupertino_ui:
-    path: ../webf_cupertino_ui
-  webf_deeplink: ^0.1.0-beta
-  webf_share: ^0.1.0-beta
-  webf_ui_kit: ^0.1.0-beta
+    hosted: https://dart.cloudsmith.io/openwebf/webf-cupertino-ui/
+    version: ^0.2.0
+  webf_deeplink:
+    hosted: https://dart.cloudsmith.io/openwebf/webf-deeplink/
+    version: ^1.0.0
+  webf_share:
+    hosted: https://dart.cloudsmith.io/openwebf/webf-share/
+    version: ^1.0.0
 
   vibration: ^3.1.3
   go_router: ^16.0.0
@@ -54,16 +59,6 @@ dependencies:
   day_night_switcher: ^0.2.0+1
   adaptive_theme: ^3.3.0
   auto_size_text: ^3.0.0
-
-dependency_overrides:
-  webf:
-    path: ../webf
-  webf_deeplink:
-    path: ../webf_modules/deeplink
-  webf_share:
-    path: ../webf_modules/share
-  webf_ui_kit:
-    path: ../webf_modules/ui_kit
 
 dev_dependencies:
   flutter_test:
