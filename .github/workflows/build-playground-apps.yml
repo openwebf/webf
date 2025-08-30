@@ -43,7 +43,6 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
     
     - name: Install dependencies
       run: |
@@ -89,7 +88,6 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
     
     - name: Install dependencies
       run: |
@@ -159,7 +157,6 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
     
     - name: Install dependencies
       run: |
@@ -194,7 +191,6 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
     
     - name: Install dependencies
       run: |
@@ -234,7 +230,6 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
     
     - name: Install dependencies
       run: |
