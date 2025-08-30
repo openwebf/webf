@@ -1,3 +1,77 @@
+## 0.23.0
+
+### Features
+
+- **Android Support**: Add support for Android 16KB page size compatibility.
+- **Input Elements**: Enhanced input field functionality:
+  - Set default border and height for input fields
+  - Add minimum width for input elements
+  - Support normal input dimensions with proper sizing
+- **Form Controls**: Enhance radio and checkbox functionality with programmatic state changes.
+- **Testing Infrastructure**:
+  - Add comprehensive integration test tools
+  - Add integration test comparison tools with Chrome
+  - Add multiple new integration tests for overlay, inline-block, and input sizing
+- **Open Source**: Move npm packages and modules to open source repository.
+- **String Performance**: Replace `std::string` with WebF String for better performance.
+- **Gesture**: Add Flutter gesture detector component support.
+
+### Fixes
+
+- **Rendering**: Fix export images issue when renderObject is not painted.
+- **Routing**:
+  - Revert timeout for resolve entrypoint
+  - Fix onBuildSuccess with route entry
+  - Increase wait times for hybrid route loaded
+- **Networking**: Filter extra WebF headers from HTTP requests.
+- **Memory Management**:
+  - Improve memory handling for JSValue in ScriptValue and event arguments
+  - Correct memory allocation size and pointer casting in interface template
+  - Handle duplicate atom entries in value cache
+  - Ensure proper memory cleanup in devtools object properties
+- **ListView**: Fix ListView footer reset issue.
+- **Input Elements**:
+  - Fix input element size with line-height and font size
+  - Preserve text selection when updating input value
+  - Update input dimensions and optimize type setting logic
+  - Fix input dimension issues
+- **Checkbox/Radio**: Fix set checked functionality in checkbox and radio elements.
+- **Textarea**: Enable textarea and fix all related specs.
+- **Layout**:
+  - Fix images with `width: auto` and `max-width` constraints to use natural size correctly
+  - Fix absolute child offset calculations
+  - Fix flex item auto size with min-width value
+  - Fix inline-block layout issues
+  - Honor explicit CSS height in RenderWidget for flex contexts
+  - **Constraints**: Safe way to read constraint values to prevent exceptions.
+- **Cache**: **Fix cache invalidation and clear functionality.
+- **Timer**: Fix timer API not firing when detached from Flutter.
+- **UI Sync**: Sync UI changes from detached stage to the DOM tree.
+- **URL Processing**: Correct variable types in URL processing to resolve compiler warnings.
+- **String Handling**: Fix buffer overflow in KURL::Init and infinite recursion in String::FromUTF8.
+- **Tests**:**
+  - Fix Flutter unit test failures
+  - Fix integration test failures
+  - Fix DOM test specs
+  - Update input and textarea snapshots
+- **Performance**: Fix LCP visible area reporting and renderCheck validations.
+
+### Refactoring
+
+- **Code Cleanup**:
+  - Remove deprecated `registerWith` method from WebFPlugin
+  - Cleanup logs throughout the codebase
+  - Cleanup WebF String API
+  - Fix broken symbol links
+- **Gesture System**: Refactor Flutter gesture detector and update bindings.
+- **Input Handling**: Improve input field padding and dimension handling.
+
+### Infrastructure
+
+- **Build**: Set architecture to arm64 only for macOS builds.
+- **CLI**: Avoid overriding index.ts from packages when it exists.
+- **Examples**: Fix example build issues and add checkbox example page.
+
 ## 0.23.0-beta.3
 
 ### Features
