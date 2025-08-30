@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   webf:
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    hosted: https://dart.cloudsmith.io/openwebf/webf/
     version: ^0.23.0
   logger: ^2.0.0
   collection: ^1.18.0
