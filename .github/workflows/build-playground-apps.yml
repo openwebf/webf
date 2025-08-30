@@ -40,15 +40,10 @@ jobs:
         flutter-version: '3.27.0'
         channel: 'stable'
     
-    - name: Authenticate Cloudsmith for WebF Enterprise
+    - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    
-    - name: Add WebF from Cloudsmith
-      run: |
-        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      working-directory: playground_app
-    
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+
     - name: Install dependencies
       run: |
         flutter pub get
@@ -90,14 +85,9 @@ jobs:
         flutter-version: '3.27.0'
         channel: 'stable'
     
-    - name: Authenticate Cloudsmith for WebF Enterprise
+    - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    
-    - name: Add WebF from Cloudsmith
-      run: |
-        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      working-directory: playground_app
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
     
     - name: Install dependencies
       run: |
@@ -166,12 +156,7 @@ jobs:
     
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    
-    - name: Add WebF from Cloudsmith
-      run: |
-        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      working-directory: playground_app
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
     
     - name: Install dependencies
       run: |
@@ -203,15 +188,10 @@ jobs:
         flutter-version: '3.27.0'
         channel: 'stable'
     
-    - name: Authenticate Cloudsmith for WebF Enterprise
+    - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    
-    - name: Add WebF from Cloudsmith
-      run: |
-        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      working-directory: playground_app
-    
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
+
     - name: Install dependencies
       run: |
         flutter pub get
@@ -247,14 +227,9 @@ jobs:
         flutter-version: '3.27.0'
         channel: 'stable'
     
-    - name: Authenticate Cloudsmith for WebF Enterprise
+    - name: Authenticate Cloudsmith for WebF
       run: |
-        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    
-    - name: Add WebF from Cloudsmith
-      run: |
-        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
-      working-directory: playground_app
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf/
     
     - name: Install dependencies
       run: |
