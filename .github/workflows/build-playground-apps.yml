@@ -44,6 +44,11 @@ jobs:
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
     
+    - name: Add WebF from Cloudsmith
+      run: |
+        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
+      working-directory: playground_app
+    
     - name: Install dependencies
       run: |
         flutter pub get
@@ -88,6 +93,11 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    
+    - name: Add WebF from Cloudsmith
+      run: |
+        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
+      working-directory: playground_app
     
     - name: Install dependencies
       run: |
@@ -158,6 +168,11 @@ jobs:
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
     
+    - name: Add WebF from Cloudsmith
+      run: |
+        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
+      working-directory: playground_app
+    
     - name: Install dependencies
       run: |
         flutter pub get
@@ -191,6 +206,11 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    
+    - name: Add WebF from Cloudsmith
+      run: |
+        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
+      working-directory: playground_app
     
     - name: Install dependencies
       run: |
@@ -230,6 +250,11 @@ jobs:
     - name: Authenticate Cloudsmith for WebF Enterprise
       run: |
         echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    
+    - name: Add WebF from Cloudsmith
+      run: |
+        dart pub add webf --hosted-url https://dart.cloudsmith.io/openwebf/webf-enterprise/
+      working-directory: playground_app
     
     - name: Install dependencies
       run: |
