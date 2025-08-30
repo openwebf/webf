@@ -40,38 +40,37 @@
 
 **Build Fast. Ship Fast. Run Fast.**
 
-OpenWebF is the compact browser runtime that brings web development's speed and flexibility directly to Flutter. Our high-performance web rendering engine seamlessly glues Web, Flutter, and Native platforms together, enabling you to:
+OpenWebF is the browser like runtime that brings web development's speed and flexibility directly to Flutter. Seamlessly glues Web, Flutter, and Native platforms together, enabling you to:
 
 - **Build Fast:** Dev with React or Vue + TailwindCSS, build with Vite, and deploy to Vercel - it all just works in WebF
 - **Ship Fast:** Deploy once across all Flutter-supported platforms from a single codebase  
-- **Run Fast:** Experience native-level performance that outpaces traditional WebView solutions
+- **Run Fast:** Experience native-like performance that outpaces traditional WebView solutions
 
 ## Key Features
 
-OpenWebF is a high-performance, cutting-edge web rendering engine built on top of Flutter, empowering web applications to operate natively within the Flutter ecosystem.
-
 ✅ **Optimized Rendering Architecture** - We solved browser engine bottlenecks - the magic that brings your React/Vue UI's LCP times to less than 100ms  
-✅ **DOM, Window, Document, CSS Selectors** - `document.querySelector()`, `window.localStorage`, `element.addEventListener()`, `MutationObserver`, `querySelectorAll()` - hundreds of web APIs just work  
+✅ **DOM, Window, Document, CSS Selectors** - `document.querySelector()`, `window.localStorage`, `MutationObserver` - hundreds of web APIs just work  
 ✅ **Core CSS Support** - Standard CSS Box Model, CSS inline formatting context, CSS Flexbox, Animations - these features make TailwindCSS just work in WebF  
 ✅ **Framework Ready** - Your existing React hooks, Vue components, and npm packages work without modification  
 ✅ **Modern Build Tools Support** - Vite and Webpack builds just work in WebF - HMR, tree-shaking, code splitting all supported  
 ✅ **Popular Web Stack Ready** - Vercel, React, Next.js - the most popular web development workflows are ready for developing Flutter apps  
-✅ **Flutter Widget Integration** - Use Flutter's built-in UI libraries like Cupertino and Material widgets as components in your React/Vue apps  
-✅ **Flutter Economy Access** - Just tell us which feature you want, the highway is ready to connect to any Flutter plugins - [thousands available](https://fluttergems.dev/)  
+✅ **Flutter Widget Integration** - Use our code_gen tools to generate a ready-to-use React or Vue UI component library from your Flutter widget components in just one click  
+✅ **Flutter Economy Access** - All Flutter plugins are available in WebF. Just tell us which Flutter packages you want from the [thousands available](https://fluttergems.dev/)  
 ✅ **Core DevTools Support** - Element panel inspection and network debugging with Chrome DevTools  
 ✅ **True Cross-Platform** - Same codebase runs on iOS, Android, Windows, macOS, Linux (web browser support coming soon)
 
 
+## How It Works
 
-## How it works
+WebF uses **QuickJS** as its JavaScript runtime to execute your web code. On top of this, we’ve implemented **hundreds of essential DOM APIs**, ensuring that popular web frameworks and modern build tools work out of the box.
 
-WebF is a **compact browser runtime** that brings the full power of web development directly into Flutter. Unlike heavy WebView solutions, WebF provides a lightweight, high-performance rendering engine that follows W3C standards while being deeply integrated with Flutter's rendering pipeline.
+We’ve also created a **custom layout engine** that extends Flutter’s capabilities. This enables support for the **CSS box model, block/inline formatting contexts, and flexbox layouts** to align closely with W3C CSS specifications.
 
-**The Magic:** Web Apps and Flutter Apps share the same rendering context. This means you can seamlessly blend Flutter widgets with HTML elements, creating a unified development experience where web technologies just work natively in Flutter.
+Your JavaScript runs in a **dedicated thread** and supports **headless mode** without attaching to the Flutter rendering context. The JavaScript runtime persists throughout the app’s entire lifecycle, starting up in sync with the Dart VM for optimal performance.
 
-## Performance Benefits
+Additionally, your **DOM elements and CSS UI share the same rendering context as Flutter widgets**, allowing you to **seamlessly blend Flutter widgets with HTML elements**. This unified approach creates a native-like development experience where web technologies and Flutter coexist naturally.
 
-🚀 **Native Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
+🚀 **Native-Like Speed** - No WebView overhead, runs directly on Flutter's rendering pipeline  
 ⚡ **Fast Startup** - Lightweight runtime loads instantly compared to heavy browser engines  
 🎯 **Optimized Memory** - Efficient resource usage with shared rendering context  
 📱 **Smooth Animations** - 60fps performance across all platforms
