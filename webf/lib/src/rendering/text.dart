@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
@@ -37,7 +38,19 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
 
   CSSRenderStyle renderStyle;
 
-  bool get _paintsSelf => parent is! RenderFlowLayout;
+  bool get paintsSelf {
+    if (parent is! RenderFlowLayout) return true;
+    
+    // If parent is RenderFlowLayout but doesn't establish IFC (i.e., block layout),
+    // the text should measure and paint itself
+    final flowParent = parent as RenderFlowLayout;
+    bool result = !flowParent.establishIFC;
+    
+    
+    return result;
+  }
+  
+  bool get _paintsSelf => paintsSelf;
 
   TextSpan _buildTextSpan() {
     // Phase I whitespace processing to approximate CSS behavior outside IFC

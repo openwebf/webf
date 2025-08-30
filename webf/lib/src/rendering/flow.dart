@@ -186,10 +186,17 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
       }
     } else {
-      // Regular flow layout painting: skip RenderTextBox (painted only via IFC)
+      // Regular flow layout painting: skip RenderTextBox unless it paints itself (non-IFC)
       for (int i = 0; i < paintingOrder.length; i++) {
         RenderBox child = paintingOrder[i];
-        if (!isPositionPlaceholder(child) && child is! RenderTextBox) {
+        bool shouldPaint = !isPositionPlaceholder(child);
+        
+        // Skip text boxes that are handled by IFC, but paint text boxes that paint themselves
+        if (child is RenderTextBox) {
+          shouldPaint = shouldPaint && (child as RenderTextBox).paintsSelf;
+        }
+        
+        if (shouldPaint) {
           final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
           if (child.hasSize) {
             context.paintChild(child, childParentData.offset + offset);
@@ -433,7 +440,13 @@ class RenderFlowLayout extends RenderLayoutBox {
       if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
       } else if (child is RenderTextBox) {
-        childConstraints = BoxConstraints.tight(Size.zero);
+        // For text boxes in block layout (not IFC), allow them to measure their natural size
+        // This is needed for absolutely positioned elements with auto dimensions that need to shrink-to-fit
+        if (!establishIFC) {
+          childConstraints = contentConstraints ?? constraints;
+        } else {
+          childConstraints = BoxConstraints.tight(Size.zero);
+        }
       } else if (child is RenderPositionPlaceholder) {
         childConstraints = BoxConstraints();
       } else if (child is RenderConstrainedBox) {
