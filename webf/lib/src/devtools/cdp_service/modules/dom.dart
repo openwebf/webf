@@ -11,6 +11,7 @@ import 'package:webf/rendering.dart';
 import 'package:flutter/rendering.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/svg.dart';
+import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 const int DOCUMENT_NODE_ID = 0;
 const String DEFAULT_FRAME_ID = 'main_frame';
@@ -19,12 +20,17 @@ class InspectDOMModule extends UIInspectorModule {
   @override
   String get name => 'DOM';
 
-  Document get document => devtoolsService.controller!.view.document;
-  WebFViewController get view => devtoolsService.controller!.view;
+  DebuggingContext? get dbgContext =>
+      devtoolsService.context; // new abstraction
+  Document? get document => dbgContext?.document ?? controller?.view.document;
+
+  WebFViewController? get view => controller?.view; // legacy fallback
+
   InspectDOMModule(DevToolsService devtoolsService) : super(devtoolsService);
 
   @override
-  void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
+  void receiveFromFrontend(
+      int? id, String method, Map<String, dynamic>? params) {
     switch (method) {
       case 'getDocument':
         onGetDocument(id, method, params);
@@ -71,9 +77,22 @@ class InspectDOMModule extends UIInspectorModule {
     int x = params['x'];
     int y = params['y'];
 
-    RenderBox rootRenderObject = document.viewport!;
+    // Check if controller is attached to Flutter
+    final ctx = dbgContext;
+    if (ctx != null && !ctx.isFlutterAttached) {
+      // Return null if controller is not attached
+      sendToFrontend(id, null);
+      return;
+    }
+
+    if (document == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    RenderBox rootRenderObject = document!.viewport!;
     BoxHitTestResult result = BoxHitTestResult();
-    rootRenderObject.hitTest(result, position: Offset(x.toDouble(), y.toDouble()));
+    rootRenderObject.hitTest(result,
+        position: Offset(x.toDouble(), y.toDouble()));
     var hitPath = result.path;
     if (hitPath.isEmpty) {
       sendToFrontend(id, null);
@@ -81,14 +100,20 @@ class InspectDOMModule extends UIInspectorModule {
     }
     // find real img element.
     if (hitPath.first.target is WebFRenderImage ||
-          (hitPath.first.target is RenderSVGRoot &&
-          (hitPath.first.target as RenderBoxModel).renderStyle.target.pointer == null)) {
+        (hitPath.first.target is RenderSVGRoot &&
+            (hitPath.first.target as RenderBoxModel)
+                    .renderStyle
+                    .target
+                    .pointer ==
+                null)) {
       hitPath = hitPath.skip(1);
     }
     if (hitPath.isNotEmpty && hitPath.first.target is RenderBoxModel) {
-      RenderObject lastHitRenderBoxModel = result.path.first.target as RenderObject;
-      if (lastHitRenderBoxModel is RenderBoxModel) {
-        int? targetId = view.forDevtoolsNodeId(lastHitRenderBoxModel.renderStyle.target);
+      RenderObject lastHitRenderBoxModel =
+          result.path.first.target as RenderObject;
+      if (lastHitRenderBoxModel is RenderBoxModel && dbgContext != null) {
+        int targetId = dbgContext!
+            .forDevtoolsNodeId(lastHitRenderBoxModel.renderStyle.target);
         sendToFrontend(
             id,
             JSONEncodableMap({
@@ -110,9 +135,16 @@ class InspectDOMModule extends UIInspectorModule {
 
   void onSetInspectedNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
-    if (nodeId == null) return;
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
     if (node != null) {
       inspectedNode = node;
     }
@@ -121,24 +153,57 @@ class InspectDOMModule extends UIInspectorModule {
 
   /// https://chromedevtools.github.io/devtools-protocol/tot/DOM/#method-getDocument
   void onGetDocument(int? id, String method, Map<String, dynamic>? params) {
-    Node root = this.document.documentElement!;
-    InspectorDocument document = InspectorDocument(InspectorNode(root));
+    // Check if we're using the unified service and if it's in the middle of a context switch
+    if (devtoolsService is ChromeDevToolsService) {
+      final unifiedService = ChromeDevToolsService.unifiedService;
+      if (unifiedService.isContextSwitching) {
+        // Return null during context switch to clear the DOM panel
+        sendToFrontend(id, null);
+        return;
+      }
+    }
 
-    sendToFrontend(id, document);
+    // Check if controller is attached to Flutter
+    final ctx = dbgContext;
+    if (ctx != null && !ctx.isFlutterAttached) {
+      // Return null if controller is not attached to show empty document
+      sendToFrontend(id, null);
+      return;
+    }
+
+    if (document == null || document!.documentElement == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    Node root = document!.documentElement!;
+    InspectorDocument inspectorDoc = InspectorDocument(InspectorNode(root));
+
+    sendToFrontend(id, inspectorDoc);
   }
 
   void onGetBoxModel(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
-    if (nodeId == null) return;
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
 
     Element? element = null;
     if (node is Element) element = node;
 
     // BoxModel design to BorderBox in kraken.
-    if (element != null && element.renderStyle.hasRenderBox() && element.renderStyle.isBoxModelHaveSize()) {
-      ui.Offset contentBoxOffset = element.renderStyle.localToGlobal(ui.Offset.zero, ancestor: element.ownerDocument.viewport);
+    if (element != null &&
+        element.renderStyle.hasRenderBox() &&
+        element.renderStyle.isBoxModelHaveSize()) {
+      ui.Offset contentBoxOffset = element.renderStyle.localToGlobal(
+          ui.Offset.zero,
+          ancestor: element.ownerDocument.viewport);
 
       int widthWithinBorder = element.renderStyle.boxSize()!.width.toInt();
       int heightWithinBorder = element.renderStyle.boxSize()!.height.toInt();
@@ -203,10 +268,16 @@ class InspectDOMModule extends UIInspectorModule {
 
   void onRemoveNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
-    if (nodeId == null) return;
-
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
     if (node != null && node.parentNode != null) {
       node.parentNode!.removeChild(node);
     }
@@ -216,10 +287,16 @@ class InspectDOMModule extends UIInspectorModule {
   void onSetAttributesAsText(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     String? text = params['text'];
-    if (nodeId == null) return;
-
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
     if (node is Element && text != null) {
       // Parse attribute text (format: attr1="value1" attr2="value2")
       // For now, just clear and set new attributes
@@ -240,10 +317,13 @@ class InspectDOMModule extends UIInspectorModule {
 
   void onGetOuterHTML(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
-    if (nodeId == null) return;
-
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) return;
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
     if (node is Element) {
       // Generate outer HTML
       String outerHTML = '<${node.tagName.toLowerCase()}';
@@ -269,23 +349,30 @@ class InspectDOMModule extends UIInspectorModule {
         outerHTML += '/>';
       }
 
-      sendToFrontend(id, JSONEncodableMap({
-        'outerHTML': outerHTML,
-      }));
+      sendToFrontend(
+          id,
+          JSONEncodableMap({
+            'outerHTML': outerHTML,
+          }));
     } else {
-      sendToFrontend(id, JSONEncodableMap({
-        'outerHTML': '',
-      }));
+      sendToFrontend(
+          id,
+          JSONEncodableMap({
+            'outerHTML': '',
+          }));
     }
   }
 
   void onSetNodeValue(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
     String? value = params['value'];
-    if (nodeId == null) return;
-
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) return;
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
     if (node is TextNode && value != null) {
       node.data = value;
     }
@@ -295,44 +382,55 @@ class InspectDOMModule extends UIInspectorModule {
   void onPushNodesByBackendIdsToFrontend(int? id, Map<String, dynamic> params) {
     List? backendNodeIds = params['backendNodeIds'];
     if (backendNodeIds == null) {
-      sendToFrontend(id, JSONEncodableMap({
-        'nodeIds': [],
-      }));
+      sendToFrontend(
+          id,
+          JSONEncodableMap({
+            'nodeIds': [],
+          }));
       return;
     }
 
     List<int> nodeIds = [];
+    final ctx = dbgContext;
     for (var backendId in backendNodeIds) {
-      if (backendId is int) {
-        Node? node = view.getBindingObject<Node>(Pointer.fromAddress(backendId));
+      if (backendId is int && ctx != null) {
+        Node? node =
+            ctx.getBindingObject(Pointer.fromAddress(backendId)) as Node?;
         if (node != null) {
-          nodeIds.add(view.forDevtoolsNodeId(node));
+          nodeIds.add(ctx.forDevtoolsNodeId(node));
         }
       }
     }
 
-    sendToFrontend(id, JSONEncodableMap({
-      'nodeIds': nodeIds,
-    }));
+    sendToFrontend(
+        id,
+        JSONEncodableMap({
+          'nodeIds': nodeIds,
+        }));
   }
 
   void onResolveNode(int? id, Map<String, dynamic> params) {
     int? nodeId = params['nodeId'];
-    if (nodeId == null) return;
-
-    Node? node = view.getBindingObject<Node>(
-        Pointer.fromAddress(view.getTargetIdByNodeId(nodeId)));
+    final ctx = dbgContext;
+    if (nodeId == null || ctx == null) return;
+    final targetId = ctx.getTargetIdByNodeId(nodeId);
+    Node? node;
+    if (targetId != null) {
+      node = ctx.getBindingObject(Pointer.fromAddress(targetId)) as Node?;
+    }
     if (node != null) {
       // Return a remote object reference for the node
-      sendToFrontend(id, JSONEncodableMap({
-        'object': {
-          'type': 'object',
-          'subtype': 'node',
-          'className': node.nodeName,
-          'description': node.nodeName,
-          'objectId': '${nodeId}',
-        }
-      }));
+      sendToFrontend(
+          id,
+          JSONEncodableMap({
+            'object': {
+              'type': 'object',
+              'subtype': 'node',
+              'className': node.nodeName,
+              'description': node.nodeName,
+              'objectId': '${nodeId}',
+            }
+          }));
     } else {
       sendToFrontend(id, null);
     }
@@ -444,9 +542,13 @@ class InspectorNode extends JSONEncodable {
       'childNodeCount': childNodeCount,
       'attributes': attributes,
       if (childNodeCount > 0)
-        'children': referencedNode.childNodes.where((node) {
-          return node is Element || (node is TextNode && node.data.isNotEmpty);
-        }).map((Node node) => InspectorNode(node).toJson()).toList(),
+        'children': referencedNode.childNodes
+            .where((node) {
+              return node is Element ||
+                  (node is TextNode && node.data.isNotEmpty);
+            })
+            .map((Node node) => InspectorNode(node).toJson())
+            .toList(),
     };
   }
 }
@@ -459,7 +561,13 @@ class BoxModel extends JSONEncodable {
   int? width;
   int? height;
 
-  BoxModel({this.content, this.padding, this.border, this.margin, this.width, this.height});
+  BoxModel(
+      {this.content,
+      this.padding,
+      this.border,
+      this.margin,
+      this.width,
+      this.height});
 
   @override
   Map toJson() {
@@ -467,7 +575,7 @@ class BoxModel extends JSONEncodable {
       'content': content,
       'padding': padding,
       'border': border,
-      'margin': content,
+      'margin': margin,
       'width': width,
       'height': height,
     };

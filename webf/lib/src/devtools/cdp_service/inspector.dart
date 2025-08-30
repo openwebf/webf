@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:webf/devtools.dart';
+import 'package:webf/dom.dart';
 
 const String INSPECTOR_URL = 'devtools://devtools/bundled/inspector.html';
 const int INSPECTOR_DEFAULT_PORT = 9222;
@@ -21,6 +22,103 @@ class DOMUpdatedEvent extends InspectorEvent {
   JSONEncodable? get params => null;
 }
 
+/// Event sent when DOM should be cleared (e.g., during controller switch)
+class DOMClearEvent extends InspectorEvent {
+  @override
+  String get method => 'DOM.documentUpdated';
+
+  @override
+  JSONEncodable? get params => null;
+}
+
+// Incremental DOM mutation events (subset of Chrome DevTools Protocol)
+class DOMChildNodeInsertedEvent extends InspectorEvent {
+  final Node parent;
+  final Node node;
+  final Node? previousSibling;
+
+  DOMChildNodeInsertedEvent(
+      {required this.parent, required this.node, this.previousSibling});
+
+  @override
+  String get method => 'DOM.childNodeInserted';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'parentNodeId': parent.ownerView.forDevtoolsNodeId(parent),
+        'previousNodeId': previousSibling != null
+            ? parent.ownerView.forDevtoolsNodeId(previousSibling!)
+            : null,
+        'node': InspectorNode(node).toJson(),
+      });
+}
+
+class DOMChildNodeRemovedEvent extends InspectorEvent {
+  final Node parent;
+  final Node node;
+
+  DOMChildNodeRemovedEvent({required this.parent, required this.node});
+
+  @override
+  String get method => 'DOM.childNodeRemoved';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'parentNodeId': parent.ownerView.forDevtoolsNodeId(parent),
+        'nodeId': parent.ownerView.forDevtoolsNodeId(node),
+      });
+}
+
+class DOMAttributeModifiedEvent extends InspectorEvent {
+  final Element element;
+  final String name;
+  final String? value;
+
+  DOMAttributeModifiedEvent(
+      {required this.element, required this.name, this.value});
+
+  @override
+  String get method => 'DOM.attributeModified';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'nodeId': element.ownerView.forDevtoolsNodeId(element),
+        'name': name,
+        'value': value ?? ''
+      });
+}
+
+class DOMAttributeRemovedEvent extends InspectorEvent {
+  final Element element;
+  final String name;
+
+  DOMAttributeRemovedEvent({required this.element, required this.name});
+
+  @override
+  String get method => 'DOM.attributeRemoved';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'nodeId': element.ownerView.forDevtoolsNodeId(element),
+        'name': name,
+      });
+}
+
+class DOMCharacterDataModifiedEvent extends InspectorEvent {
+  final TextNode node;
+
+  DOMCharacterDataModifiedEvent({required this.node});
+
+  @override
+  String get method => 'DOM.characterDataModified';
+
+  @override
+  JSONEncodable? get params => JSONEncodableMap({
+        'nodeId': node.ownerView.forDevtoolsNodeId(node),
+        'characterData': node.data,
+      });
+}
+
 class InspectorServerInit {
   final int port;
   final String address;
@@ -32,6 +130,7 @@ class InspectorServerInit {
 
 class InspectorServerConnect {
   final String url;
+
   InspectorServerConnect(this.url);
 }
 
@@ -39,11 +138,13 @@ class InspectorClientConnected {}
 
 class InspectorServerStart {
   int port;
+
   InspectorServerStart(this.port);
 }
 
 class InspectorFrontEndMessage {
   InspectorFrontEndMessage(this.id, this.module, this.method, this.params);
+
   int? id;
   String module;
   String method;
@@ -53,11 +154,13 @@ class InspectorFrontEndMessage {
 class InspectorMethodResult {
   final int? id;
   final Map? result;
+
   InspectorMethodResult(this.id, this.result);
 }
 
 class InspectorReload {
   double contextId;
+
   InspectorReload(this.contextId);
 }
 
@@ -87,7 +190,8 @@ class UIInspector {
     print('    $inspectorURL');
   }
 
-  void messageRouter(int? id, String module, String method, Map<String, dynamic>? params) {
+  void messageRouter(
+      int? id, String module, String method, Map<String, dynamic>? params) {
     if (moduleRegistrar.containsKey(module)) {
       moduleRegistrar[module]!.invoke(id, method, params);
     }
@@ -96,9 +200,9 @@ class UIInspector {
   void onDOMTreeChanged() {
     // For the unified service, send directly through the service
     if (devtoolsService is ChromeDevToolsService) {
-      ChromeDevToolsService.unifiedService.sendEventToFrontend(DOMUpdatedEvent());
-    } else {
-    }
+      ChromeDevToolsService.unifiedService
+          .sendEventToFrontend(DOMUpdatedEvent());
+    } else {}
   }
 
   void dispose() {
@@ -106,12 +210,14 @@ class UIInspector {
   }
 
   static Future<String> getConnectedLocalNetworkAddress() async {
-    List<NetworkInterface> interfaces =
-        await NetworkInterface.list(includeLoopback: false, type: InternetAddressType.IPv4);
+    List<NetworkInterface> interfaces = await NetworkInterface.list(
+        includeLoopback: false, type: InternetAddressType.IPv4);
 
     String result = INSPECTOR_DEFAULT_ADDRESS;
     for (NetworkInterface interface in interfaces) {
-      if (interface.name == 'en0' || interface.name == 'eth0' || interface.name == 'wlan0') {
+      if (interface.name == 'en0' ||
+          interface.name == 'eth0' ||
+          interface.name == 'wlan0') {
         result = interface.addresses.first.address;
         break;
       }
@@ -132,7 +238,9 @@ abstract class JSONEncodable {
 
 abstract class InspectorEvent extends JSONEncodable {
   String get method;
+
   JSONEncodable? get params;
+
   InspectorEvent();
 
   @override
@@ -146,6 +254,7 @@ abstract class InspectorEvent extends JSONEncodable {
 
 class JSONEncodableMap extends JSONEncodable {
   Map<String, dynamic> map;
+
   JSONEncodableMap(this.map);
 
   @override

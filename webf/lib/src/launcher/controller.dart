@@ -34,6 +34,7 @@ import 'package:webf/dom.dart';
 import 'package:webf/gesture.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/devtools.dart'; // Import for ChromeDevToolsService
 import 'package:webf/src/foundation/loading_state_registry.dart';
 import 'package:webf/src/launcher/dio_logger_options.dart';
 import 'package:webf/src/launcher/network_options.dart';
@@ -1447,6 +1448,16 @@ class WebFController with Diagnosticable {
     PaintingBinding.instance.systemFonts.addListener(_watchFontLoading);
     _isFlutterAttached = true;
     pushNewBuildContext(context: context, routePath: initialRoute ?? '/', state: initialState);
+
+    // Notify DevTools service about controller attach
+    try {
+      ChromeDevToolsService.unifiedService.switchToController(this);
+    } catch (e) {
+      // Ignore DevTools errors in production builds
+      if (kDebugMode) {
+        print('DevTools notification failed: $e');
+      }
+    }
   }
 
   /// Detaches the WebF controller from the Flutter widget tree.
@@ -1458,6 +1469,17 @@ class WebFController with Diagnosticable {
     _loadingState.recordPhase(LoadingState.phaseDetachFromFlutter, parameters: {
       'routePath': initialRoute ?? '/',
     });
+
+    // Notify DevTools service about controller detach BEFORE actual detach
+    try {
+      // Clear DOM panel immediately when controller detaches
+      ChromeDevToolsService.unifiedService.clearDOMPanel();
+    } catch (e) {
+      // Ignore DevTools errors in production builds
+      if (kDebugMode) {
+        print('DevTools DOM clear failed: $e');
+      }
+    }
 
     view.detachFromFlutter();
     PaintingBinding.instance.systemFonts.removeListener(_watchFontLoading);

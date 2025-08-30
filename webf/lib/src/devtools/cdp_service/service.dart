@@ -23,6 +23,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/devtools.dart';
 import 'modules/page.dart';
+import 'debugging_context.dart';
+import 'inspector.dart'; // Import for DOMClearEvent and DOMEmptyDocumentEvent
 
 /// Abstract base class for implementing DevTools debugging services for WebF content.
 ///
@@ -37,13 +39,13 @@ abstract class DevToolsService {
   /// More detail see [InspectPageModule.handleReloadPage].
   static DevToolsService? prevDevTools;
 
-  static final Map<double, DevToolsService> _contextDevToolMap = {};
+  static final Map<int, DevToolsService> _contextDevToolMap = {};
 
   /// Retrieves the DevTools service instance associated with a specific JavaScript context ID.
   ///
   /// @param contextId The unique identifier for a JavaScript context
   /// @return The DevToolsService instance for the context, or null if none exists
-  static DevToolsService? getDevToolOfContextId(double contextId) {
+  static DevToolsService? getDevToolOfContextId(int contextId) {
     return _contextDevToolMap[contextId];
   }
 
@@ -56,21 +58,81 @@ abstract class DevToolsService {
   /// and rendered elements in DevTools.
   UIInspector? get uiInspector => _uiInspector;
 
-  WebFController? _controller;
+  DebuggingContext? _context;
+  WebFController? _controller; // Keep for backward compatibility
 
-  WebFController? get controller => _controller;
+  DebuggingContext? get context => _context;
 
-  /// Initializes the DevTools service for a WebF controller.
+  WebFController? get controller =>
+      _controller; // Deprecated, use context instead
+
+  /// Initializes the DevTools service with a debugging context.
   ///
   /// Sets up the inspector server and UI inspector, enabling Chrome DevTools
   /// to connect to and debug the WebF content.
   ///
-  /// @param controller The WebFController instance to enable debugging for
-  void init(WebFController controller) {
-    _contextDevToolMap[controller.view.contextId] = this;
-    _controller = controller;
+  /// @param context The DebuggingContext instance to enable debugging for
+  void initWithContext(DebuggingContext context) {
+    _contextDevToolMap[context.contextId] = this;
+    _context = context;
     _uiInspector = UIInspector(this);
-    controller.view.debugDOMTreeChanged = uiInspector!.onDOMTreeChanged;
+    // Legacy full refresh callback
+    context.debugDOMTreeChanged = () => uiInspector!.onDOMTreeChanged();
+    // Incremental mutation callbacks (only used by new DOM incremental update logic).
+    context.debugChildNodeInserted = (parent, node, previousSibling) {
+      if (this is ChromeDevToolsService) {
+        ChromeDevToolsService.unifiedService
+            .sendEventToFrontend(DOMChildNodeInsertedEvent(
+          parent: parent,
+          node: node,
+          previousSibling: previousSibling,
+        ));
+      }
+    };
+    context.debugChildNodeRemoved = (parent, node) {
+      if (this is ChromeDevToolsService) {
+        ChromeDevToolsService.unifiedService
+            .sendEventToFrontend(DOMChildNodeRemovedEvent(
+          parent: parent,
+          node: node,
+        ));
+      }
+    };
+    context.debugAttributeModified = (element, name, value) {
+      if (this is ChromeDevToolsService) {
+        ChromeDevToolsService.unifiedService
+            .sendEventToFrontend(DOMAttributeModifiedEvent(
+          element: element,
+          name: name,
+          value: value,
+        ));
+      }
+    };
+    context.debugAttributeRemoved = (element, name) {
+      if (this is ChromeDevToolsService) {
+        ChromeDevToolsService.unifiedService
+            .sendEventToFrontend(DOMAttributeRemovedEvent(
+          element: element,
+          name: name,
+        ));
+      }
+    };
+    context.debugCharacterDataModified = (textNode) {
+      if (this is ChromeDevToolsService) {
+        ChromeDevToolsService.unifiedService
+            .sendEventToFrontend(DOMCharacterDataModifiedEvent(
+          node: textNode,
+        ));
+      }
+    };
+  }
+
+  /// Legacy initialization method for backward compatibility
+  /// @deprecated Use initWithContext instead
+  void init(WebFController controller) {
+    _controller = controller;
+    final adapter = WebFControllerDebuggingAdapter(controller);
+    initWithContext(adapter);
   }
 
   /// Indicates whether the WebF content is currently being reloaded.
@@ -94,10 +156,13 @@ abstract class DevToolsService {
   /// about the reload completion.
   void didReload() {
     _reloading = false;
-    controller!.view.debugDOMTreeChanged = _uiInspector!.onDOMTreeChanged;
+    if (_context != null) {
+      _context!.debugDOMTreeChanged = () => _uiInspector!.onDOMTreeChanged();
+    }
     // For unified service, send DOM updated event directly
     if (this is ChromeDevToolsService) {
-      ChromeDevToolsService.unifiedService.sendEventToFrontend(DOMUpdatedEvent());
+      ChromeDevToolsService.unifiedService
+          .sendEventToFrontend(DOMUpdatedEvent());
     }
   }
 
@@ -107,7 +172,11 @@ abstract class DevToolsService {
   /// the inspector isolate server.
   void dispose() {
     _uiInspector?.dispose();
-    _contextDevToolMap.remove(controller?.view.contextId);
+    if (_context != null) {
+      _contextDevToolMap.remove(_context!.contextId);
+      _context!.dispose();
+    }
+    _context = null;
     _controller = null;
   }
 }
@@ -122,12 +191,12 @@ class ChromeDevToolsService extends DevToolsService {
   }
 
   @override
-  void init(WebFController controller) {
-    // Call parent init to set up the controller and UI inspector
-    super.init(controller);
+  void initWithContext(DebuggingContext context) {
+    // Call parent init to set up the context and UI inspector
+    super.initWithContext(context);
 
-    // Register this controller with the unified service
-    unifiedService._registerController(controller, this);
+    // Register this context with the unified service
+    unifiedService._registerContext(context, this);
 
     // Start the unified service if not already running
     if (!unifiedService.isRunning) {
@@ -140,16 +209,20 @@ class ChromeDevToolsService extends DevToolsService {
   }
 
   @override
+  void init(WebFController controller) {
+    super.init(controller);
+  }
+
+  @override
   void dispose() {
     // Unregister from unified service
-    if (controller != null) {
-      unifiedService._unregisterController(controller!);
+    if (_context != null) {
+      unifiedService._unregisterContext(_context!);
     }
 
     // Call parent dispose
     super.dispose();
   }
-
 }
 
 /// Unified DevTools service that manages debugging for all WebF controllers
@@ -170,12 +243,21 @@ class UnifiedChromeDevToolsService {
   // Inspector modules (both UI and isolate modules unified)
   final Map<String, dynamic> _modules = {};
 
-  // Currently selected controller for inspection
-  WebFController? _currentController;
+  // Currently selected context for inspection
+  DebuggingContext? _currentContext;
   ChromeDevToolsService? _currentService;
 
-  // Registered controllers and their services
-  final Map<WebFController, ChromeDevToolsService> _controllerServices = {};
+  // Flag to indicate if we're in the middle of a context switch
+  bool _isContextSwitching = false;
+
+  // Queue of incoming messages (decoded) received before a context exists, to replay after first context selection.
+  final List<Map<String, dynamic>> _preContextMessageQueue = [];
+
+  // Registered contexts and their services
+  final Map<DebuggingContext, ChromeDevToolsService> _contextServices = {};
+
+  // Keep controller mapping for backward compatibility
+  final Map<WebFController, DebuggingContext> _controllerToContext = {};
 
   // Module instances that handle inspector functionality
   RuntimeInspectorModule? _runtimeModule;
@@ -187,55 +269,93 @@ class UnifiedChromeDevToolsService {
   /// Gets the DevTools connection URL if the server is running
   String? get devToolsUrl => _devToolsUrl;
 
-  void _registerController(WebFController controller, ChromeDevToolsService service) {
-    _controllerServices[controller] = service;
+  void _registerContext(
+      DebuggingContext context, ChromeDevToolsService service) {
+    _contextServices[context] = service;
 
-    // If no controller is selected, select this one
-    if (_currentController == null) {
-      _selectController(controller);
+    // If this context comes from a controller, track the mapping
+    if (context is WebFControllerDebuggingAdapter) {
+      _controllerToContext[context.controller] = context;
     }
-    else {
-      // Notify connected clients about new controller
+
+    // If no context is selected, select this one
+    if (_currentContext == null) {
+      _selectContext(context);
+    } else {
+      // Notify connected clients about new context
       _broadcastTargetListUpdate();
     }
   }
 
-  void _unregisterController(WebFController controller) {
-    _controllerServices.remove(controller);
+  void _unregisterContext(DebuggingContext context) {
+    _contextServices.remove(context);
 
-    // If this was the current controller, select another one
-    if (_currentController == controller) {
-      _currentController = null;
+    // Remove controller mapping if exists
+    if (context is WebFControllerDebuggingAdapter) {
+      _controllerToContext.remove(context.controller);
+    }
+
+    // If this was the current context, clear DOM immediately on detach
+    if (_currentContext == context) {
+      // Clear the DOM panel immediately when controller detaches
+      _sendDOMClearEvent();
+
+      _currentContext = null;
       _currentService = null;
-      if (_controllerServices.isNotEmpty) {
-        _selectController(_controllerServices.keys.first);
+
+      // If there are other contexts, switch to one after clearing
+      if (_contextServices.isNotEmpty) {
+        // Delay the context switch to allow DOM clear to take effect
+        Future.delayed(Duration(milliseconds: 150), () {
+          _selectContextWithoutClear(_contextServices.keys.first);
+        });
       }
     }
 
-    // Notify connected clients about controller removal
+    // Notify connected clients about context removal
     _broadcastTargetListUpdate();
   }
 
-  void _selectController(WebFController controller) {
-    if (!_controllerServices.containsKey(controller)) return;
+  void _selectContext(DebuggingContext context) {
+    if (!_contextServices.containsKey(context)) return;
 
+    // If switching between different contexts, clear DOM first
+    bool isContextSwitch = _currentContext != null && _currentContext != context;
+    if (isContextSwitch) {
+      _sendDOMClearEvent();
+    }
+
+    _selectContextInternal(context, isContextSwitch);
+  }
+
+  /// Internal method to select context without triggering DOM clear
+  void _selectContextWithoutClear(DebuggingContext context) {
+    if (!_contextServices.containsKey(context)) return;
+    _selectContextInternal(context, false);
+  }
+
+  void _selectContextInternal(DebuggingContext context, bool isContextSwitch) {
     // Get the old Page module to transfer screencast state
-    InspectPageModule? oldPageModule = _currentService?.uiInspector?.moduleRegistrar['Page'] as InspectPageModule?;
-    final Map<String, UIInspectorModule>? previousRegistrar = _currentService?.uiInspector?.moduleRegistrar;
+    InspectPageModule? oldPageModule = _currentService
+        ?.uiInspector?.moduleRegistrar['Page'] as InspectPageModule?;
+    final Map<String, UIInspectorModule>? previousRegistrar =
+        _currentService?.uiInspector?.moduleRegistrar;
 
-    _currentController = controller;
-    _currentService = _controllerServices[controller];
+    _currentContext = context;
+    _currentService = _contextServices[context];
 
     // Transfer screencast state to new Page module if screencast was active
     if (oldPageModule != null && _currentService?.uiInspector != null) {
-      InspectPageModule? newPageModule = _currentService!.uiInspector!.moduleRegistrar['Page'] as InspectPageModule?;
+      InspectPageModule? newPageModule = _currentService!
+          .uiInspector!.moduleRegistrar['Page'] as InspectPageModule?;
       if (newPageModule != null && oldPageModule.isScreencastActive) {
         newPageModule.transferScreencastState(oldPageModule);
       }
     }
 
     // Sync enable state for all modules that extend _InspectorModule
-    final Map<String, UIInspectorModule>? currentRegistrar = _currentService?.uiInspector?.moduleRegistrar;
+    final Map<String, UIInspectorModule>? currentRegistrar =
+        _currentService?.uiInspector?.moduleRegistrar;
     if (previousRegistrar != null && currentRegistrar != null) {
       previousRegistrar.forEach((name, prevModule) {
         final currModule = currentRegistrar[name];
@@ -248,21 +368,75 @@ class UnifiedChromeDevToolsService {
       });
     }
 
-    // Notify all modules about controller change
-    _runtimeModule?.onControllerChanged(controller);
-    _debuggerModule?.onControllerChanged(controller);
-    _logModule?.onControllerChanged(controller);
+    // Notify all modules about context change
+    _runtimeModule?.onContextChanged(context);
+    _debuggerModule?.onContextChanged(context);
+    _logModule?.onContextChanged(context);
 
     // Notify connected clients
     _broadcastTargetListUpdate();
+
+    // Replay any queued pre-context messages (only once)
+    if (_preContextMessageQueue.isNotEmpty) {
+      final queued = List<Map<String, dynamic>>.from(_preContextMessageQueue);
+      _preContextMessageQueue.clear();
+
+      // Wait a bit for DOM to be fully loaded before replaying messages
+      Future.delayed(Duration(milliseconds: 300), () {
+        for (final msg in queued) {
+          try {
+            final id = msg['id'];
+            final method = msg['method'] as String;
+            final parts = method.split('.');
+            if (parts.length >= 2) {
+              final module = parts[0];
+              final command = parts.skip(1).join('.');
+              final params = msg['params'] as Map<String, dynamic>?;
+
+              if (_modules.containsKey(module)) {
+                _modules[module].invoke(id, command, params);
+              } else if (_currentService?.uiInspector != null) {
+                _currentService!.uiInspector!
+                    .messageRouter(id, module, command, params);
+              }
+            }
+          } catch (e) {
+            print('Error replaying queued message: $e');
+          }
+        }
+      });
+    }
+
+    // For context switches, delay DOM update to allow clear event to take effect
+    if (isContextSwitch) {
+      Future.delayed(Duration(milliseconds: 200), () {
+        _isContextSwitching = false; // Clear the switching flag
+        sendEventToFrontend(DOMUpdatedEvent());
+      });
+    } else {
+      _isContextSwitching = false; // Ensure flag is cleared
+      // Send DOM update immediately for new context attach
+      Future.delayed(Duration(milliseconds: 100), () {
+        sendEventToFrontend(DOMUpdatedEvent());
+      });
+    }
   }
 
   /// Switch DevTools to a specific controller (called when controller is attached)
   void switchToController(WebFController controller) {
-    if (_controllerServices.containsKey(controller)) {
-      _selectController(controller);
-      // Send DOM update event to force frontend refresh
-      sendEventToFrontend(DOMUpdatedEvent());
+    // Check if we have a context for this controller
+    final context = _controllerToContext[controller];
+    if (context != null && _contextServices.containsKey(context)) {
+      // For controller attach, don't clear DOM - just switch to new context
+      _selectContextWithoutClear(context);
+    }
+  }
+
+  /// Switch DevTools to a specific context
+  void switchToContext(DebuggingContext context) {
+    if (_contextServices.containsKey(context)) {
+      // For manual context switch, clear DOM first then switch
+      _selectContext(context);
     }
   }
 
@@ -346,9 +520,12 @@ class UnifiedChromeDevToolsService {
 
       // Find the most likely LAN IP (usually starts with 192.168, 10., or 172.)
       String? primaryIP = availableIPs.firstWhere(
-        (ip) => ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.'),
-        orElse: () => availableIPs.isNotEmpty ? availableIPs.first : 'localhost'
-      );
+          (ip) =>
+              ip.startsWith('192.168.') ||
+              ip.startsWith('10.') ||
+              ip.startsWith('172.'),
+          orElse: () =>
+              availableIPs.isNotEmpty ? availableIPs.first : 'localhost');
 
       connectAddress = primaryIP;
     } else {
@@ -356,15 +533,21 @@ class UnifiedChromeDevToolsService {
     }
 
     // Store the primary DevTools URL
-    _devToolsUrl = 'devtools://devtools/bundled/inspector.html?ws=$connectAddress:${_httpServer!.port}';
+    _devToolsUrl =
+        'devtools://devtools/bundled/inspector.html?ws=$connectAddress:${_httpServer!.port}';
 
-    print('╔════════════════════════════════════════════════════════════════════╗');
-    print('║                Chrome DevTools Server Started                       ║');
-    print('╚════════════════════════════════════════════════════════════════════╝');
+    print(
+        '╔════════════════════════════════════════════════════════════════════╗');
+    print(
+        '║                Chrome DevTools Server Started                       ║');
+    print(
+        '╚════════════════════════════════════════════════════════════════════╝');
     print('');
-    print('DevTools is listening on port ${_httpServer!.port} on all network interfaces.');
+    print(
+        'DevTools is listening on port ${_httpServer!.port} on all network interfaces.');
     print('');
-    print('To debug your WebF application, open Chrome or Edge and navigate to:');
+    print(
+        'To debug your WebF application, open Chrome or Edge and navigate to:');
     print('');
     print('  $_devToolsUrl');
     print('');
@@ -372,13 +555,15 @@ class UnifiedChromeDevToolsService {
     if (availableIPs.length > 1) {
       print('Available on multiple network interfaces:');
       for (final ip in availableIPs) {
-        print('  • devtools://devtools/bundled/inspector.html?ws=$ip:${_httpServer!.port}');
+        print(
+            '  • devtools://devtools/bundled/inspector.html?ws=$ip:${_httpServer!.port}');
       }
       print('');
     }
 
     print('You can also use localhost:');
-    print('  • devtools://devtools/bundled/inspector.html?ws=localhost:${_httpServer!.port}');
+    print(
+        '  • devtools://devtools/bundled/inspector.html?ws=localhost:${_httpServer!.port}');
     print('');
     print('For debugging tools, visit:');
     print('  • http://$connectAddress:${_httpServer!.port}/json/version');
@@ -420,7 +605,12 @@ class UnifiedChromeDevToolsService {
 
       final method = data['method'] as String?;
       final id = data['id'];
-      final params = data['params'] as Map<String, dynamic>?;
+      // jsonDecode returns Map<String,dynamic>, but defensive: user agents may send mixed key maps.
+      Map<String, dynamic>? params;
+      final rawParams = data['params'];
+      if (rawParams is Map) {
+        params = rawParams.map((k, v) => MapEntry(k.toString(), v));
+      }
 
       if (method == null) return;
 
@@ -442,32 +632,173 @@ class UnifiedChromeDevToolsService {
         // Handle modules that run in the main thread
         final moduleInstance = _modules[module];
         moduleInstance.invoke(id, command, params);
-      } else if (_currentService != null && _currentService!.uiInspector != null) {
+      } else if (_currentService != null &&
+          _currentService!.uiInspector != null) {
         // Route to UI inspector for DOM, CSS, etc.
-        _currentService!.uiInspector!.messageRouter(id, module, command, params);
+        _currentService!.uiInspector!
+            .messageRouter(id, module, command, params);
       } else {
-        // Send error response
-        _sendErrorResponse(connectionId, id, 'No controller selected or module not found');
+        // Try pre-context stub handling so DevTools frontend can initialize without a controller.
+        // If no context, record enable-like messages to replay later.
+        if (_currentService == null &&
+            _shouldQueueMessage(module, command, params)) {
+          _preContextMessageQueue
+              .add({'id': id, 'method': method, 'params': params ?? {}});
+        }
+        if (!_handlePreContextMessage(
+            connectionId, id, module, command, params)) {
+          _sendErrorResponse(
+              connectionId, id, 'No controller selected or module not found');
+        }
       }
     } catch (e) {
       print('Error handling WebSocket message: $e');
     }
   }
 
-  void _handleTargetMethod(String connectionId, int? id, String method, Map<String, dynamic>? params) {
+  /// Handle a subset of DevTools protocol messages before any debugging context exists.
+  /// Returns true if the message was handled (stubbed) and no error should be sent.
+  bool _handlePreContextMessage(String connectionId, dynamic id, String module,
+      String command, Map<String, dynamic>? params) {
+    // Only act when there is really no current service yet.
+    if (_currentService != null) return false;
+
+    // Common enable / config style commands: reply with empty result so frontend proceeds.
+    bool isEnableLike() =>
+        command == 'enable' ||
+        command.startsWith('set') ||
+        command.startsWith('track') ||
+        command.startsWith('take');
+
+    // Modules we allow stubbing prior to real context.
+    const preContextModules = {
+      'Page',
+      'DOM',
+      'CSS',
+      'Overlay',
+      'Animation',
+      'Autofill',
+      'Profiler',
+      'Audits',
+      'ServiceWorker',
+      'Inspector',
+      'Emulation',
+      'Accessibility',
+      'Network',
+      'Log',
+      'Target'
+    };
+    if (!preContextModules.contains(module)) return false;
+
+    // Special query style commands that require shaped responses.
+    dynamic result;
+    switch ('$module.$command') {
+      case 'Page.getResourceTree':
+        result = {
+          'frameTree': {
+            'frame': {
+              'id': 'temp-frame',
+              'loaderId': 'temp-loader',
+              'url': 'about:blank',
+              'securityOrigin': '',
+              'mimeType': 'text/html'
+            },
+            'resources': []
+          }
+        };
+        break;
+      case 'Page.getNavigationHistory':
+        result = {'currentIndex': 0, 'entries': []};
+        break;
+      case 'Page.startScreencast':
+        // Acknowledge immediately; queue actual start so frames begin once context arrives.
+        result = {};
+        // Queue with null id to avoid duplicate response later.
+        _preContextMessageQueue.add({
+          'id': null,
+          'method': 'Page.startScreencast',
+          'params': params ?? {}
+        });
+        break;
+      case 'Page.stopScreencast':
+        result = {};
+        _preContextMessageQueue.add({
+          'id': null,
+          'method': 'Page.stopScreencast',
+          'params': params ?? {}
+        });
+        break;
+      case 'DOM.getDocument':
+        // Don't provide a stub response for getDocument - queue it for proper handling
+        // when the actual context is available
+        _preContextMessageQueue.add({
+          'id': id,
+          'method': 'DOM.getDocument',
+          'params': params ?? {}
+        });
+        return true; // Handled, but no response sent yet
+      case 'CSS.takeComputedStyleUpdates':
+        result = {'computedStyleUpdates': []};
+        break;
+      case 'Target.getTargets':
+        result = {'targetInfos': _getTargetList()}; // Likely empty now.
+        break;
+      case 'Target.attachToTarget':
+        // No real target yet – queue intention? For now return an error-style stub success so frontend keeps listening.
+        // When a target later appears, the frontend will request again after targetCreated event.
+        result = {'sessionId': 'pending'};
+        break;
+      default:
+        if (isEnableLike()) {
+          result = {};
+        }
+    }
+
+    if (result != null) {
+      _sendResponse(connectionId, id, result);
+      return true;
+    }
+    return false;
+  }
+
+  bool _shouldQueueMessage(
+      String module, String command, Map<String, dynamic>? params) {
+    // Queue only stateless enable/config commands to re-run once real context exists.
+    if (command == 'enable') return true;
+    if (module == 'Page' &&
+        (command == 'getResourceTree' || command == 'getNavigationHistory'))
+      return true;
+    if (module == 'Page' &&
+        (command == 'startScreencast' || command == 'stopScreencast'))
+      return true;
+    if (module == 'DOM' && (command == 'getDocument')) return true;
+    if (module == 'CSS' && (command == 'enable' || command.startsWith('track')))
+      return true;
+    if (module == 'Overlay' && command.startsWith('setShow')) return true;
+    return false;
+  }
+
+  void _handleTargetMethod(String connectionId, int? id, String method,
+      Map<String, dynamic>? params) {
     switch (method) {
       case 'getTargets':
         _sendResponse(connectionId, id, {
           'targetInfos': _getTargetList(),
         });
         break;
+      case 'setAutoAttach':
+      case 'setDiscoverTargets':
+      case 'setRemoteLocations':
+        // Gracefully acknowledge unimplemented Target features so frontend doesn't spam errors pre-context.
+        _sendResponse(connectionId, id, {});
+        break;
 
       case 'attachToTarget':
         final targetId = params?['targetId'] as String?;
         if (targetId != null) {
-          final controller = _findControllerById(targetId);
-          if (controller != null) {
-            _selectController(controller);
+          final context = _findContextById(targetId);
+          if (context != null) {
+            _selectContext(context);
             _sendResponse(connectionId, id, {
               'sessionId': targetId,
             });
@@ -484,20 +815,20 @@ class UnifiedChromeDevToolsService {
     }
   }
 
-  WebFController? _findControllerById(String targetId) {
+  DebuggingContext? _findContextById(String targetId) {
     // Try to find by context ID
-    for (final entry in _controllerServices.entries) {
-      if (entry.key.view.contextId.toString() == targetId) {
+    for (final entry in _contextServices.entries) {
+      if (entry.key.contextId.toString() == targetId) {
         return entry.key;
       }
     }
 
-    // Try to find by controller name in manager
+    // Try to find by controller name in manager (backward compatibility)
     final manager = WebFControllerManager.instance;
     if (manager.hasController(targetId)) {
       final controller = manager.getControllerSync(targetId);
-      if (controller != null && _controllerServices.containsKey(controller)) {
-        return controller;
+      if (controller != null) {
+        return _controllerToContext[controller];
       }
     }
 
@@ -508,29 +839,41 @@ class UnifiedChromeDevToolsService {
     final manager = WebFControllerManager.instance;
     final targets = <Map<String, dynamic>>[];
 
-    // Add controllers from manager
+    // Add contexts with controller names
     for (final name in manager.controllerNames) {
       final controller = manager.getControllerSync(name);
-      if (controller != null && _controllerServices.containsKey(controller)) {
-        targets.add({
-          'id': name,
-          'title': 'WebF Page - $name',
-          'url': controller.url ?? '',
-          'attached': controller == _currentController,
-        });
+      if (controller != null) {
+        final context = _controllerToContext[controller];
+        if (context != null && _contextServices.containsKey(context)) {
+          targets.add({
+            'id': name,
+            'title': 'WebF Page - $name',
+            'url': context.url ?? '',
+            'attached': context == _currentContext,
+          });
+        }
       }
     }
 
-    // Add any controllers not in manager
-    for (final entry in _controllerServices.entries) {
-      final controller = entry.key;
-      final name = manager.getControllerName(controller);
-      if (name == null) {
+    // Add any contexts not tied to named controllers
+    for (final entry in _contextServices.entries) {
+      final context = entry.key;
+      bool found = false;
+
+      // Check if this context is from a named controller
+      if (context is WebFControllerDebuggingAdapter) {
+        final name = manager.getControllerName(context.controller);
+        if (name != null) {
+          found = true;
+        }
+      }
+
+      if (!found) {
         targets.add({
-          'id': controller.view.contextId.toString(),
+          'id': context.contextId.toString(),
           'title': 'WebF Page',
-          'url': controller.url ?? '',
-          'attached': controller == _currentController,
+          'url': context.url ?? '',
+          'attached': context == _currentContext,
         });
       }
     }
@@ -539,36 +882,40 @@ class UnifiedChromeDevToolsService {
   }
 
   Map<String, dynamic> _getCurrentTargetInfo() {
-    if (_currentController == null) {
+    if (_currentContext == null) {
       return {
         'id': '',
-        'title': 'No controller selected',
+        'title': 'No context selected',
         'url': '',
       };
     }
 
     final manager = WebFControllerManager.instance;
 
-    for (final name in manager.controllerNames) {
-      final controller = manager.getControllerSync(name);
-      if (controller != null && controller == _currentController) {
+    // Check if this context is from a named controller
+    if (_currentContext is WebFControllerDebuggingAdapter) {
+      final adapter = _currentContext as WebFControllerDebuggingAdapter;
+      final name = manager.getControllerName(adapter.controller);
+      if (name != null) {
         return {
           'id': name,
           'title': 'WebF Page - $name',
-          'url': controller.url ?? '',
-          'attached': controller.isFlutterAttached,
+          'url': _currentContext!.url ?? '',
+          'attached': _currentContext!.isFlutterAttached,
         };
       }
     }
 
     return {
-      'id': '',
-      'title': 'No controller selected',
-      'url': '',
+      'id': _currentContext!.contextId.toString(),
+      'title': 'WebF Page',
+      'url': _currentContext!.url ?? '',
+      'attached': _currentContext!.isFlutterAttached,
     };
   }
 
-  void _sendResponse(String connectionId, int? id, Map<String, dynamic> result) {
+  void _sendResponse(
+      String connectionId, int? id, Map<String, dynamic> result) {
     if (id == null) return;
 
     final response = {
@@ -640,6 +987,21 @@ class UnifiedChromeDevToolsService {
     ));
   }
 
+  /// Send DOM clear event to clear the Elements panel before switching contexts
+  void _sendDOMClearEvent() {
+    // Set context switching flag
+    _isContextSwitching = true;
+
+    // Send DOM.documentUpdated to clear the existing DOM tree
+    // Chrome DevTools will then request DOM.getDocument, and we can return empty/null
+    sendEventToFrontend(DOMClearEvent());
+  }
+
+  /// Public method to clear DOM panel (called from controller detach)
+  void clearDOMPanel() {
+    _sendDOMClearEvent();
+  }
+
   shelf.Middleware _corsMiddleware() {
     return (shelf.Handler innerHandler) {
       return (shelf.Request request) async {
@@ -654,8 +1016,20 @@ class UnifiedChromeDevToolsService {
   }
 
   // Getters for current state
-  WebFController? get currentController => _currentController;
+  DebuggingContext? get currentContext => _currentContext;
+
   ChromeDevToolsService? get currentService => _currentService;
+
+  /// Returns true if currently switching between contexts
+  bool get isContextSwitching => _isContextSwitching;
+
+  // Backward compatibility
+  WebFController? get currentController {
+    if (_currentContext is WebFControllerDebuggingAdapter) {
+      return (_currentContext as WebFControllerDebuggingAdapter).controller;
+    }
+    return null;
+  }
 }
 
 // Inspector module classes
@@ -664,8 +1038,8 @@ class RuntimeInspectorModule {
 
   RuntimeInspectorModule(this.service);
 
-  void onControllerChanged(WebFController controller) {
-    // Handle controller change
+  void onContextChanged(DebuggingContext context) {
+    // Handle context change
   }
 
   void invoke(int? id, String method, Map<String, dynamic>? params) {
@@ -681,8 +1055,8 @@ class DebuggerInspectorModule {
 
   DebuggerInspectorModule(this.service);
 
-  void onControllerChanged(WebFController controller) {
-    // Handle controller change
+  void onContextChanged(DebuggingContext context) {
+    // Handle context change
   }
 
   void invoke(int? id, String method, Map<String, dynamic>? params) {
@@ -698,8 +1072,8 @@ class LogInspectorModule {
 
   LogInspectorModule(this.service);
 
-  void onControllerChanged(WebFController controller) {
-    // Handle controller change
+  void onContextChanged(DebuggingContext context) {
+    // Handle context change
   }
 
   void invoke(int? id, String method, Map<String, dynamic>? params) {

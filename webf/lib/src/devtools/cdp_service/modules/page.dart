@@ -179,9 +179,12 @@ enum ResourceType {
 }
 
 class InspectPageModule extends UIInspectorModule {
-  Document get document => (devtoolsService is ChromeDevToolsService)
-      ? ChromeDevToolsService.unifiedService.currentController!.view.document
-      : devtoolsService.controller!.view.document;
+  Document? get document {
+    if (devtoolsService is ChromeDevToolsService) {
+      return ChromeDevToolsService.unifiedService.currentController?.view.document;
+    }
+    return devtoolsService.controller?.view.document;
+  }
 
   InspectPageModule(DevToolsService devtoolsService) : super(devtoolsService);
 
@@ -224,7 +227,11 @@ class InspectPageModule extends UIInspectorModule {
 
   void handleReloadPage() async {
     try {
-      await document.controller.reload();
+      if (devtoolsService is ChromeDevToolsService) {
+        await ChromeDevToolsService.unifiedService.currentController?.reload();
+      } else if (devtoolsService.controller != null) {
+        await devtoolsService.controller!.reload();
+      }
     } catch (e, stack) {
       print('Dart Error: $e\n$stack');
     }
@@ -262,8 +269,12 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   // Generate and send a white PNG frame of the given viewport size.
-  Future<void> _sendWhiteFrame(Duration timeStamp, double offsetTop, double offsetLeft, double deviceWidth, double deviceHeight) async {
-    final double dpr = document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0;
+  Future<void> _sendWhiteFrame(
+      Duration timeStamp, double offsetTop, double offsetLeft, double deviceWidth, double deviceHeight) async {
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
+        : devtoolsService.controller;
+    final double dpr = controller?.ownerFlutterView?.devicePixelRatio ?? 1.0;
     final int imgW = (deviceWidth * dpr).round().clamp(1, 1000000);
     final int imgH = (deviceHeight * dpr).round().clamp(1, 1000000);
     final Uint8List blank = await _makeWhitePng(imgW, imgH);
@@ -278,24 +289,40 @@ class InspectPageModule extends UIInspectorModule {
     final double deviceWidth = _cachedViewportWidth;
     final double deviceHeight = _cachedViewportHeight;
 
-    if (controller == null || !controller.isComplete) {
+    // NEW FEATURE: If no WebF controller is attached yet (null or flutter not attached),
+    // do NOT send any Page.screencastFrame (suppress even placeholder frames).
+    // Keep polling so once attached we immediately begin streaming.
+    if (controller == null || !controller.isFlutterAttached) {
+      if (_isFramingScreenCast) {
+        SchedulerBinding.instance.addPostFrameCallback(_frameScreenCast);
+        SchedulerBinding.instance.scheduleFrame();
+      }
+      return;
+    }
+
+    // If controller exists but not complete yet, still send a white frame so DevTools UI keeps responsive.
+    if (!controller.isComplete) {
       _sendWhiteFrame(timeStamp, 0, 0, deviceWidth, deviceHeight);
       return;
     }
 
-    Element root = document.documentElement!;
+    if (document?.documentElement == null) {
+      _sendWhiteFrame(timeStamp, 0, 0, deviceWidth, deviceHeight);
+      return;
+    }
+    Element root = document!.documentElement!;
     // Find the current top-route viewport from the hybrid router.
     RenderViewportBox? routeViewport = root.getRootViewport();
     // the devtools of some pc do not automatically scale. so modify devicePixelRatio for it
     double? devicePixelRatio;
-    double? viewportWidth = routeViewport?.viewportSize.width ?? document.viewport?.viewportSize.width;
-    double? viewportHeight = routeViewport?.viewportSize.height ?? document.viewport?.viewportSize.height;
+    double? viewportWidth = routeViewport?.viewportSize.width ?? document?.viewport?.viewportSize.width;
+    double? viewportHeight = routeViewport?.viewportSize.height ?? document?.viewport?.viewportSize.height;
 
     _cachedViewportWidth = viewportWidth ?? _cachedViewportWidth;
     _cachedViewportHeight = viewportHeight ?? _cachedViewportHeight;
 
-    // When flutter is detached, stream a white blank frame until it reattaches.
-    if (!controller.isFlutterAttached || !controller.viewportLayoutCompleter.isCompleted || routeViewport == null) {
+    // When layout not completed or viewport missing, stream a white blank frame.
+    if (!controller.viewportLayoutCompleter.isCompleted || routeViewport == null) {
       _sendWhiteFrame(timeStamp, root.offsetTop, root.offsetLeft, deviceWidth, deviceHeight);
       return;
     }
@@ -305,7 +332,7 @@ class InspectPageModule extends UIInspectorModule {
       final double sx = _devToolsMaxWidth / deviceWidth;
       final double sy = _devToolsMaxHeight / deviceHeight;
       devicePixelRatio = math.min(sx, sy);
-      devicePixelRatio = math.min(devicePixelRatio, document.controller.ownerFlutterView!.devicePixelRatio);
+      devicePixelRatio = math.min(devicePixelRatio, controller.ownerFlutterView?.devicePixelRatio ?? devicePixelRatio);
     }
     _captureViewportAsPng(routeViewport, devicePixelRatio).then((Uint8List bytes) {
       if (!controller.isFlutterAttached) {
@@ -331,7 +358,10 @@ class InspectPageModule extends UIInspectorModule {
   }
 
   Future<Uint8List> _captureViewportAsPng(RenderViewportBox viewport, double? devicePixelRatio) async {
-    final double dpr = (devicePixelRatio ?? document.controller.ownerFlutterView?.devicePixelRatio ?? 1.0).toDouble();
+    final controller = (devtoolsService is ChromeDevToolsService)
+        ? ChromeDevToolsService.unifiedService.currentController
+        : devtoolsService.controller;
+    final double dpr = (devicePixelRatio ?? controller?.ownerFlutterView?.devicePixelRatio ?? 1.0).toDouble();
     final ui.Image image = await viewport.toImage(dpr);
     final data = await image.toByteData(format: ui.ImageByteFormat.png);
     return data!.buffer.asUint8List();
@@ -383,7 +413,13 @@ class InspectPageModule extends UIInspectorModule {
     final uri = Uri.tryParse(url);
     final scheme = uri?.scheme ?? '';
     final host = uri?.host ?? '';
-    final port = (uri != null && uri.hasPort) ? uri.port : (scheme == 'https' ? 443 : scheme == 'http' ? 80 : 0);
+    final port = (uri != null && uri.hasPort)
+        ? uri.port
+        : (scheme == 'https'
+            ? 443
+            : scheme == 'http'
+                ? 80
+                : 0);
     final origin = (scheme.isNotEmpty && host.isNotEmpty)
         ? '$scheme://$host${(scheme == 'http' && port == 80) || (scheme == 'https' && port == 443) || port == 0 ? '' : ':$port'}'
         : '';
@@ -400,7 +436,12 @@ class InspectPageModule extends UIInspectorModule {
       const <String>[],
     );
     final frameResourceTree = FrameResourceTree(frame, []);
-    print('[DevTools] Page.getResourceTree -> url=' + url + ' origin=' + origin + ' ctx=' + (controller?.view.contextId.toString() ?? ''));
+    print('[DevTools] Page.getResourceTree -> url=' +
+        url +
+        ' origin=' +
+        origin +
+        ' ctx=' +
+        (controller?.view.contextId.toString() ?? ''));
     sendToFrontend(id, JSONEncodableMap({'frameTree': frameResourceTree}));
   }
 }

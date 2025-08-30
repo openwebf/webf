@@ -9,14 +9,15 @@ import 'package:webf/css.dart';
 import 'package:webf/devtools.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 const int INLINED_STYLESHEET_ID = 1;
 const String ZERO_PX = '0px';
 
 class InspectCSSModule extends UIInspectorModule {
-  Document get document => devtoolsService.controller!.view.document;
+  DebuggingContext? get dbgContext => devtoolsService.context;
 
-  WebFViewController get view => devtoolsService.controller!.view;
+  Document? get document => dbgContext?.document ?? devtoolsService.controller?.view.document;
 
   InspectCSSModule(DevToolsService devtoolsService) : super(devtoolsService);
 
@@ -30,10 +31,7 @@ class InspectCSSModule extends UIInspectorModule {
         handleGetMatchedStylesForNode(id, params!);
         break;
       case 'getAnimatedStylesForNode':
-        sendToFrontend(id, JSONEncodableMap({
-          'animationStyles': [],
-          'inherited': []
-        }));
+        sendToFrontend(id, JSONEncodableMap({'animationStyles': [], 'inherited': []}));
         break;
       case 'getComputedStyleForNode':
         handleGetComputedStyleForNode(id, params!);
@@ -54,8 +52,17 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   void handleGetMatchedStylesForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
-    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? targetId = ctx.getTargetIdByNodeId(params['nodeId']);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(targetId));
     if (element is Element) {
       MatchedStyles matchedStyles = MatchedStyles(
         inlineStyle: buildMatchedStyle(element),
@@ -65,8 +72,17 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   void handleGetComputedStyleForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
-    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? targetId = ctx.getTargetIdByNodeId(params['nodeId']);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(targetId));
 
     if (element is Element) {
       ComputedStyle computedStyle = ComputedStyle(
@@ -79,8 +95,17 @@ class InspectCSSModule extends UIInspectorModule {
   // Returns the styles defined inline (explicitly in the "style" attribute and
   // implicitly, using DOM attributes) for a DOM node identified by nodeId.
   void handleGetInlineStylesForNode(int? id, Map<String, dynamic> params) {
-    int nodeId = view.getTargetIdByNodeId(params['nodeId']);
-    BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? targetId = ctx.getTargetIdByNodeId(params['nodeId']);
+    if (targetId == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(targetId));
 
     if (element is Element) {
       InlinedStyle inlinedStyle = InlinedStyle(
@@ -92,6 +117,11 @@ class InspectCSSModule extends UIInspectorModule {
   }
 
   void handleSetStyleTexts(int? id, Map<String, dynamic> params) {
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
     List edits = params['edits'];
     List<CSSStyle?> styles = [];
 
@@ -99,10 +129,14 @@ class InspectCSSModule extends UIInspectorModule {
     // @TODO: support comments for inline style.
     for (Map<String, dynamic> edit in edits) {
       // Use styleSheetId to identity element.
-      int nodeId = view.getTargetIdByNodeId(edit['styleSheetId']);
+      int? nodeId = ctx.getTargetIdByNodeId(edit['styleSheetId']);
       String text = edit['text'] ?? '';
       List<String> texts = text.split(';');
-      BindingObject? element = document.controller.view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+      if (nodeId == null) {
+        styles.add(null);
+        continue;
+      }
+      BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(nodeId));
       if (element is Element) {
         for (String kv in texts) {
           kv = kv.trim();
@@ -220,18 +254,25 @@ class InspectCSSModule extends UIInspectorModule {
   void handleGetBackgroundColors(int? id, Map<String, dynamic> params) {
     // For now, return empty background colors
     // This could be enhanced to actually compute background colors from the render tree
-    sendToFrontend(id, JSONEncodableMap({
-      'backgroundColors': [],
-    }));
+    sendToFrontend(
+        id,
+        JSONEncodableMap({
+          'backgroundColors': [],
+        }));
   }
 
   void handleSetEffectivePropertyValueForNode(int? id, Map<String, dynamic> params) {
-    int? nodeId = params['nodeId'] != null ? view.getTargetIdByNodeId(params['nodeId']) : null;
+    final ctx = dbgContext;
+    if (ctx == null) {
+      sendToFrontend(id, null);
+      return;
+    }
+    int? nodeId = params['nodeId'] != null ? ctx.getTargetIdByNodeId(params['nodeId']) : null;
     String? propertyName = params['propertyName'];
     String? value = params['value'];
 
     if (nodeId != null && propertyName != null && value != null) {
-      BindingObject? element = view.getBindingObject<BindingObject>(Pointer.fromAddress(nodeId));
+      BindingObject? element = ctx.getBindingObject(Pointer.fromAddress(nodeId));
       if (element is Element) {
         element.setInlineStyle(camelize(propertyName), value);
       }

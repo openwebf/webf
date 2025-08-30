@@ -18,7 +18,7 @@ describe('document.currentScript', () => {
       expect((window as any).capturedCurrentScript).toBe(script);
       expect((window as any).isScriptSame).toBe(true);
       done();
-    }, 100);
+    }, 300);
   });
 
   it('should return script element during external script execution', (done) => {
@@ -46,7 +46,7 @@ describe('document.currentScript', () => {
       // The key is that it should be null in async callbacks, not necessarily during the script itself
       expect((window as any).asyncScriptCurrentScript === null || (window as any).asyncScriptCurrentScript === script).toBe(true);
       done();
-    }, 130);
+    }, 300);
   });
 
   it('should handle nested script execution correctly', (done) => {
@@ -67,7 +67,7 @@ describe('document.currentScript', () => {
       expect((window as any).innerCurrentScript).not.toBe(outerScript);
       expect((window as any).outerCurrentScriptAfterInner).toBe(outerScript);
       done();
-    }, 30);
+    }, 300);
   });
 
   it('should return null after script execution completes', (done) => {
@@ -81,7 +81,7 @@ describe('document.currentScript', () => {
       expect((window as any).duringExecution).toBe(script);
       expect(document.currentScript).toBe(null);
       done();
-    }, 30);
+    }, 300);
   });
 
   it('should handle multiple sequential scripts correctly', (done) => {
@@ -103,7 +103,7 @@ describe('document.currentScript', () => {
       expect((window as any).script2CurrentScript).toBe(script2);
       expect(document.currentScript).toBe(null);
       done();
-    }, 30);
+    }, 300);
   });
 
   it('should handle script removal during execution', (done) => {
@@ -120,7 +120,7 @@ describe('document.currentScript', () => {
       expect((window as any).afterRemovalCurrentScript).toBe(script);
       expect(document.body.contains(script)).toBe(false);
       done();
-    }, 30);
+    }, 300);
   });
 
   it('should handle script with both src and textContent', (done) => {

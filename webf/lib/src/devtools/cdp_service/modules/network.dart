@@ -49,6 +49,7 @@ class InspectNetworkModule extends UIInspectorModule {
 
   // Helper for request ID generation in Dio path
   int _dioRequestIdCounter = 0;
+
   String _nextDioRequestId() {
     _dioRequestIdCounter++;
     return 'dio_${_dioRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
@@ -62,6 +63,7 @@ class InspectNetworkModule extends UIInspectorModule {
 
   // Helper and state for HttpClient-originated requests (non-Dio)
   int _httpRequestIdCounter = 0;
+
   String _nextHttpRequestId() {
     _httpRequestIdCounter++;
     return 'http_${_httpRequestIdCounter}_${DateTime.now().microsecondsSinceEpoch}';
@@ -215,10 +217,12 @@ class InspectNetworkModule extends UIInspectorModule {
             base64 = true;
           }
         }
-        sendToFrontend(id, JSONEncodableMap({
-          'body': bodyStr,
-          'base64Encoded': base64,
-        }));
+        sendToFrontend(
+            id,
+            JSONEncodableMap({
+              'body': bodyStr,
+              'base64Encoded': base64,
+            }));
         break;
 
       case 'setAttachDebugStack':
@@ -332,7 +336,6 @@ bool _isTextMimeType(String? mime) {
       mime.contains('urlencoded');
 }
 
-
 class _InspectDioInterceptor extends InterceptorsWrapper {
   _InspectDioInterceptor(this.module, this.contextId);
 
@@ -360,7 +363,13 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
   String _guessTypeFromPath(String path) {
     if (path.endsWith('.js') || path.endsWith('.mjs')) return 'Script';
     if (path.endsWith('.css')) return 'Stylesheet';
-    if (path.endsWith('.jpg') || path.endsWith('.jpeg') || path.endsWith('.png') || path.endsWith('.gif') || path.endsWith('.webp') || path.endsWith('.svg') || path.endsWith('.ico')) {
+    if (path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.png') ||
+        path.endsWith('.gif') ||
+        path.endsWith('.webp') ||
+        path.endsWith('.svg') ||
+        path.endsWith('.ico')) {
       return 'Image';
     }
     if (path.endsWith('.html') || path.endsWith('.htm') || path.endsWith('/')) return 'Document';
@@ -411,9 +420,7 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
         'initiatorIPAddressSpace': 'Local',
         'privateNetworkRequestPolicy': 'PreflightWarn'
       },
-      connectTiming: {
-        'requestTime': ts
-      },
+      connectTiming: {'requestTime': ts},
       headers: {
         ..._headersToMultiMap(options.headers),
         ...extraHeaders,
@@ -532,7 +539,8 @@ class _InspectDioInterceptor extends InterceptorsWrapper {
 
       final urlStr = options.uri.toString();
       String mimeType = response.headers.value(HttpHeaders.contentTypeHeader) ?? 'text/plain';
-      if ((mimeType == 'text/plain' || mimeType == 'application/octet-stream' || mimeType.isEmpty) && bytes.isNotEmpty) {
+      if ((mimeType == 'text/plain' || mimeType == 'application/octet-stream' || mimeType.isEmpty) &&
+          bytes.isNotEmpty) {
         final sniffed = _sniffImageMime(bytes);
         if (sniffed != null) {
           mimeType = sniffed;
@@ -625,7 +633,10 @@ String? _sniffImageMime(Uint8List bytes) {
     const pngSig = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
     bool isPng = true;
     for (int i = 0; i < pngSig.length; i++) {
-      if (bytes[i] != pngSig[i]) { isPng = false; break; }
+      if (bytes[i] != pngSig[i]) {
+        isPng = false;
+        break;
+      }
     }
     if (isPng) return 'image/png';
   }

@@ -10,6 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/devtools.dart';
+import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 /// Configuration options for the WebFControllerManager.
 ///
@@ -216,6 +217,9 @@ class WebFControllerManager {
 
   /// Map to track DevTools services for each controller
   final Map<WebFController, ChromeDevToolsService> _controllerDevTools = {};
+
+  /// Map to track debugging contexts for each controller
+  final Map<WebFController, DebuggingContext> _controllerContexts = {};
 
   /// Private constructor for the singleton implementation.
   WebFControllerManager._internal() : _config = const WebFControllerManagerConfig();
@@ -770,10 +774,13 @@ class WebFControllerManager {
     if (_devToolsEnabled && !_controllerDevTools.containsKey(controller)) {
       _enableDevToolsForController(controller);
     }
-    
-    // Switch DevTools to this newly attached controller
+
+    // Switch DevTools to this newly attached controller's context
     if (_devToolsEnabled) {
-      ChromeDevToolsService.unifiedService.switchToController(controller);
+      final context = _controllerContexts[controller];
+      if (context != null) {
+        ChromeDevToolsService.unifiedService.switchToContext(context);
+      }
     }
   }
 
@@ -1370,6 +1377,9 @@ class WebFControllerManager {
     for (final controller in _controllerDevTools.keys.toList()) {
       _disableDevToolsForController(controller);
     }
+
+    // Clear the debugging context registry
+    DebuggingContextRegistry.instance.clear();
   }
 
   /// Gets whether DevTools is currently enabled
@@ -1384,9 +1394,16 @@ class WebFControllerManager {
   /// Enables DevTools for a specific controller
   void _enableDevToolsForController(WebFController controller) {
     if (_devToolsEnabled) {
+      // Create debugging context adapter for the controller
+      final context = WebFControllerDebuggingAdapter(controller);
+      _controllerContexts[controller] = context;
+
+      // Register with the debugging context registry
+      DebuggingContextRegistry.instance.register(context);
+
       // Create and attach a DevTools service for this controller
       final devToolsService = ChromeDevToolsService();
-      devToolsService.init(controller);
+      devToolsService.initWithContext(context);
 
       // Store the service reference for cleanup
       _controllerDevTools[controller] = devToolsService;
@@ -1400,6 +1417,12 @@ class WebFControllerManager {
       devToolsService.dispose();
       _controllerDevTools.remove(controller);
     }
-  }
 
+    // Unregister debugging context
+    final context = _controllerContexts[controller];
+    if (context != null) {
+      DebuggingContextRegistry.instance.unregister(context);
+      _controllerContexts.remove(controller);
+    }
+  }
 }

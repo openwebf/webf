@@ -5,12 +5,35 @@
 
 import 'package:webf/devtools.dart';
 import 'package:webf/launcher.dart';
+import 'package:webf/src/devtools/cdp_service/debugging_context.dart';
 
 class InspectLogModule extends UIInspectorModule {
   InspectLogModule(DevToolsService server) : super(server) {
-    devtoolsService.controller!.onJSLog = (level, message) {
-      handleMessage(level, message);
-    };
+    _setupLogHandler();
+  }
+
+  void _setupLogHandler() {
+    // Set up log handler if controller is available
+    if (devtoolsService.controller != null) {
+      devtoolsService.controller!.onJSLog = (level, message) {
+        handleMessage(level, message);
+      };
+    }
+  }
+
+  @override
+  void onEnabled() {
+    super.onEnabled();
+    _setupLogHandler();
+  }
+
+  @override
+  void onDisabled() {
+    super.onDisabled();
+    // Clear log handler when disabled
+    if (devtoolsService.controller != null) {
+      devtoolsService.controller!.onJSLog = null;
+    }
   }
 
   void handleMessage(int level, String message) {

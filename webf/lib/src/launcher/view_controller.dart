@@ -25,9 +25,8 @@ import 'package:webf/src/foundation/dio_client.dart' show disposeSharedDioForCon
 typedef NativeBatchFreeFunction = Void Function(Pointer<Void> pointers, Int32 count);
 typedef DartBatchFreeFunction = void Function(Pointer<Void> pointers, int count);
 
-late final DartBatchFreeFunction _batchFreeNativeBindingObjects =
-    WebFDynamicLibrary.ref.lookupFunction<NativeBatchFreeFunction, DartBatchFreeFunction>(
-        'batchFreeNativeBindingObjects');
+late final DartBatchFreeFunction _batchFreeNativeBindingObjects = WebFDynamicLibrary.ref
+    .lookupFunction<NativeBatchFreeFunction, DartBatchFreeFunction>('batchFreeNativeBindingObjects');
 
 class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFController rootController;
@@ -69,7 +68,6 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
       debugPaintSizeEnabled = true;
     }
-
 
     _contextId = await initBridge(this, runningThread);
 
@@ -145,7 +143,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (_hybridRouterViews.containsKey(path)) {
       return _hybridRouterViews[path] as RouterLinkElement?;
     }
-    
+
     // Then try pattern matching for dynamic routes
     for (String pattern in _hybridRouterViews.keys) {
       if (pattern.contains(':')) {
@@ -155,19 +153,16 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
         }
       }
     }
-    
+
     return null;
   }
-  
+
   // Helper method to match dynamic route patterns
   bool _matchesPattern(String pattern, String path) {
     // Convert pattern like "/user/:userId" to regex like "^/user/([^/]+)$"
-    String regexPattern = pattern.replaceAllMapped(
-      RegExp(r':([^/]+)'), 
-      (match) => r'([^/]+)'
-    );
+    String regexPattern = pattern.replaceAllMapped(RegExp(r':([^/]+)'), (match) => r'([^/]+)');
     regexPattern = '^${regexPattern.replaceAll('/', r'\/')}\$';
-    
+
     RegExp regex = RegExp(regexPattern);
     return regex.hasMatch(path);
   }
@@ -459,9 +454,18 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (!hasBindingObject(pointer)) return;
 
     Node? target = getBindingObject<Node>(pointer);
+    Node? parent = target?.parentNode;
     target?.parentNode?.removeChild(target);
 
-    _debugDOMTreeChanged();
+    final cb = devtoolsChildNodeRemoved;
+    if (parent != null && target != null && cb != null) {
+      try {
+        cb(parent, target);
+      } catch (_) {}
+    } else {
+      // Fallback to legacy full refresh
+      _debugDOMTreeChanged();
+    }
   }
 
   /// <!-- beforebegin -->
@@ -487,24 +491,41 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     switch (position) {
       case 'beforebegin':
+        Node? previousSibling = target.previousSibling;
         targetParentNode!.insertBefore(newNode, target);
+        final cb = devtoolsChildNodeInserted;
+        if (cb != null) cb(targetParentNode, newNode, previousSibling);
         break;
       case 'afterbegin':
+        Node? previousSibling;
         target.insertBefore(newNode, target.firstChild!);
+        final cb = devtoolsChildNodeInserted;
+        if (cb != null) cb(target, newNode, previousSibling);
         break;
       case 'beforeend':
+        Node? previousSibling = target.lastChild;
         target.appendChild(newNode);
+        final cb = devtoolsChildNodeInserted;
+        if (cb != null) cb(target, newNode, previousSibling);
         break;
       case 'afterend':
         if (targetParentNode!.lastChild == target) {
+          Node? previousSibling = target;
           targetParentNode.appendChild(newNode);
+          final cb = devtoolsChildNodeInserted;
+          if (cb != null) cb(targetParentNode, newNode, previousSibling);
         } else {
+          Node? previousSibling = target;
           targetParentNode.insertBefore(newNode, target.nextSibling!);
+          final cb = devtoolsChildNodeInserted;
+          if (cb != null) cb(targetParentNode, newNode, previousSibling);
         }
         break;
     }
 
-    _debugDOMTreeChanged();
+    if (devtoolsChildNodeInserted == null) {
+      _debugDOMTreeChanged();
+    }
   }
 
   void setAttribute(Pointer<NativeBindingObject> selfPtr, String key, String value) {
@@ -515,8 +536,24 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
     if (target is Element) {
       // Only element has properties.
       target.setAttribute(key, value);
+      final cb = devtoolsAttributeModified;
+      if (cb != null) {
+        try {
+          cb(target, key, value);
+        } catch (_) {}
+      } else {
+        _debugDOMTreeChanged();
+      }
     } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
       target.data = value;
+      final cb2 = devtoolsCharacterDataModified;
+      if (cb2 != null) {
+        try {
+          cb2(target);
+        } catch (_) {}
+      } else {
+        _debugDOMTreeChanged();
+      }
 
       if (target.parentNode is WebFTextElement) {
         (target.parentNode as WebFTextElement).notifyRootTextElement();
@@ -549,9 +586,25 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
     if (target is Element) {
       target.removeAttribute(key);
+      final cb = devtoolsAttributeRemoved;
+      if (cb != null) {
+        try {
+          cb(target, key);
+        } catch (_) {}
+      } else {
+        _debugDOMTreeChanged();
+      }
     } else if (target is TextNode && (key == 'data' || key == 'nodeValue')) {
       // @TODO: property is not attribute.
       target.data = '';
+      final cb2 = devtoolsCharacterDataModified;
+      if (cb2 != null) {
+        try {
+          cb2(target);
+        } catch (_) {}
+      } else {
+        _debugDOMTreeChanged();
+      }
     } else {
       debugPrint('Only element has attributes, try removing $key from Node(#$selfPtr).');
     }
@@ -589,6 +642,13 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   // Hooks for DevTools.
   VoidCallback? debugDOMTreeChanged;
+
+  // Incremental DOM mutation hooks
+  void Function(Node parent, Node node, Node? previousSibling)? devtoolsChildNodeInserted;
+  void Function(Node parent, Node node)? devtoolsChildNodeRemoved;
+  void Function(Element element, String name, String? value)? devtoolsAttributeModified;
+  void Function(Element element, String name)? devtoolsAttributeRemoved;
+  void Function(TextNode node)? devtoolsCharacterDataModified;
 
   void _debugDOMTreeChanged() {
     VoidCallback? f = debugDOMTreeChanged;
