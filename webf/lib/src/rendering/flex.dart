@@ -669,7 +669,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         if (s.height.isAuto) {
           c = BoxConstraints(
             minWidth: c.minWidth,
-            maxWidth: needsCrossAxisConstraint ? constraints.maxWidth : c.maxWidth,
+            maxWidth: needsCrossAxisConstraint ? math.min(constraints.maxWidth, c.maxWidth) : c.maxWidth,
             minHeight: c.minHeight,
             maxHeight: double.infinity,
           );
@@ -678,7 +678,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           if (needsCrossAxisConstraint) {
             c = BoxConstraints(
               minWidth: c.minWidth,
-              maxWidth: constraints.maxWidth,
+              maxWidth: math.min(constraints.maxWidth, c.maxWidth),
               minHeight: c.minHeight,
               maxHeight: c.maxHeight,
             );
