@@ -1,3 +1,9 @@
+## 0.22.14
+
+### Fixes
+
+Use the FormData impls from original 0.22.7+2
+
 ## 0.22.13+1
 
 ### Fixes
