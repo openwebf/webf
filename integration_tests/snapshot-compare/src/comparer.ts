@@ -177,16 +177,62 @@ export class SnapshotComparer {
       }
     }
     
-    // Look for WebF snapshots
-    const webfPattern = path.join(this.webfSnapshotDir, specDir, `${specName}*.png`);
-    console.log(chalk.gray(`Looking for WebF snapshots: ${webfPattern}`));
-    const webfSnapshots = glob.sync(webfPattern);
-    console.log(chalk.gray(`Found ${webfSnapshots.length} WebF snapshot(s)`));
+    // Look for WebF snapshots - prioritize .current.png files
+    const webfCurrentPattern = path.join(this.webfSnapshotDir, specDir, `${specName}*.current.png`);
+    const webfRegularPattern = path.join(this.webfSnapshotDir, specDir, `${specName}*.png`);
+    
+    console.log(chalk.gray(`Looking for WebF current snapshots: ${webfCurrentPattern}`));
+    const webfCurrentSnapshots = glob.sync(webfCurrentPattern);
+    console.log(chalk.gray(`Found ${webfCurrentSnapshots.length} WebF current snapshot(s)`));
+    
+    // Also get regular snapshots for fallback
+    const webfRegularSnapshots = glob.sync(webfRegularPattern)
+      .filter(f => !f.endsWith('.current.png')); // Exclude .current.png from regular
+    console.log(chalk.gray(`Found ${webfRegularSnapshots.length} WebF regular snapshot(s)`));
 
     const results: ComparisonResult[] = [];
+    const processedBasenames = new Set<string>();
 
-    for (const webfSnapshot of webfSnapshots) {
+    // Process .current.png snapshots first (these are the ones to compare with Chrome)
+    for (const webfSnapshot of webfCurrentSnapshots) {
       const filename = path.basename(webfSnapshot);
+      // Get the base filename without .current.png suffix
+      const baseFilename = filename.replace('.current.png', '.png');
+      processedBasenames.add(baseFilename);
+      
+      const chromeSnapshot = path.join(this.chromeSnapshotDir, specDir, baseFilename);
+
+      console.log(chalk.gray(`Checking Chrome snapshot: ${chromeSnapshot}`));
+      if (!fs.existsSync(chromeSnapshot)) {
+        console.log(chalk.yellow(`Chrome snapshot not found: ${baseFilename}`));
+        // Still include in results to show that WebF has a snapshot but Chrome doesn't
+        const testDescription = testDescriptions.get(baseFilename) || baseFilename;
+        results.push({
+          testName: baseFilename.replace(/\.([\da-f]+)\d+\.png$/, ''),
+          testDescription,
+          specFile: this.options.specFile,
+          webfSnapshot: webfSnapshot,
+          chromeSnapshot: '',
+          pixelDifference: -1,
+          percentDifference: 100,
+          width: 0,
+          height: 0
+        });
+        continue;
+      }
+
+      const testDescription = testDescriptions.get(baseFilename) || baseFilename;
+      const result = await this.compareImages(webfSnapshot, chromeSnapshot, baseFilename, testDescription);
+      results.push(result);
+    }
+
+    // Process regular snapshots that don't have .current.png versions
+    for (const webfSnapshot of webfRegularSnapshots) {
+      const filename = path.basename(webfSnapshot);
+      if (processedBasenames.has(filename)) {
+        continue; // Skip if we already processed a .current.png version
+      }
+      
       const chromeSnapshot = path.join(this.chromeSnapshotDir, specDir, filename);
 
       console.log(chalk.gray(`Checking Chrome snapshot: ${chromeSnapshot}`));
@@ -204,6 +250,24 @@ export class SnapshotComparer {
   }
 
   private async compareImages(webfPath: string, chromePath: string, filename: string, testDescription: string): Promise<ComparisonResult> {
+    // Check if Chrome snapshot exists
+    if (!chromePath || !fs.existsSync(chromePath)) {
+      const webfImg = PNG.sync.read(fs.readFileSync(webfPath));
+      console.log(chalk.red(`  No Chrome snapshot available for comparison`));
+      return {
+        testName: filename.replace(/\.([\da-f]+)\d+\.png$/, ''),
+        testDescription,
+        specFile: this.options.specFile,
+        webfSnapshot: webfPath,
+        chromeSnapshot: '',
+        diffImage: undefined,
+        pixelDifference: -1,
+        percentDifference: 100,
+        width: webfImg.width,
+        height: webfImg.height
+      };
+    }
+
     const webfImg = PNG.sync.read(fs.readFileSync(webfPath));
     const chromeImg = PNG.sync.read(fs.readFileSync(chromePath));
 

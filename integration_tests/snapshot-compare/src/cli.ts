@@ -11,7 +11,7 @@ program
   .description('Compare WebF and Chrome runner snapshots')
   .version('1.0.0')
   .argument('<spec-file>', 'Test spec file path (e.g., specs/css/css-text-mixin/color_relative_properties_test.ts)')
-  .option('-p, --port <number>', 'Port for the comparison web interface', '3000')
+  .option('-p, --port <number>', 'Port for the comparison web interface', '3500')
   .option('--no-open', 'Do not automatically open the browser')
   .option('--threshold <number>', 'Pixel difference threshold (0-1)', '0.1')
   .action(async (specFile: string, options) => {

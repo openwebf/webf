@@ -9,7 +9,7 @@
  *   ./compare-snapshots.js css/css-text-mixin/color_relative_properties_test.ts
  * 
  * Options:
- *   --port <number>     Port for web interface (default: 3000)
+ *   --port <number>     Port for web interface (default: 3500)
  *   --threshold <num>   Pixel difference threshold 0-1 (default: 0.1)
  *   --no-open          Don't auto-open browser
  *   --help             Show help
@@ -36,7 +36,7 @@ Examples:
   ./compare-snapshots.js specs/dom/elements/canvas.ts --threshold 0.2
 
 Options:
-  --port <number>     Port for web interface (default: 3000)
+  --port <number>     Port for web interface (default: 3500)
   --threshold <num>   Pixel difference threshold 0-1 (default: 0.1)
   --no-open          Don't automatically open browser
   --help, -h         Show this help message
