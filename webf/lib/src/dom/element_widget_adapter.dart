@@ -252,10 +252,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       if (overflowY == CSSOverflowType.scroll ||
           overflowY == CSSOverflowType.auto ||
           overflowY == CSSOverflowType.hidden) {
-        if (webFElement._scrollControllerY == null) {
-          webFElement._scrollControllerY = flutter.ScrollController();
-          print('[WebF][Overflow] Created ScrollControllerY for ${webFElement.tagName}#${webFElement.id ?? ''}');
-        }
+        webFElement._scrollControllerY ??= flutter.ScrollController();
         final bool yScrollable = overflowY != CSSOverflowType.hidden;
         widget = LayoutBoxWrapper(
             ownerElement: webFElement,
