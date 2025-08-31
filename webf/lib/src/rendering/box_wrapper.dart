@@ -143,7 +143,7 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   void calculateBaseline() {
-    double? baseline = getDistanceToBaseline(TextBaseline.alphabetic);
+    double? baseline = child?.getDistanceToBaseline(TextBaseline.alphabetic);
     setCssBaselines(first: baseline, last: baseline);
   }
 }
