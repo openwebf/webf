@@ -1,3 +1,7 @@
+## 0.22.14+3
+
+fix: fix get custom module from invokeModule.
+
 ## 0.22.14+2
 
 fix: fix WebF.defineModule can not override built-in modules.
