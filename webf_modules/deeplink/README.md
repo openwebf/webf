@@ -16,8 +16,8 @@ Add this to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  webf_deeplink: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+  webf_deeplink: ^0.1.0
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
 ```
 
 ## Usage
@@ -161,77 +161,6 @@ When app-specific schemes aren't available, the module will attempt to use fallb
 - Instagram: `https://instagram.com/`
 - App Store (iOS): `https://apps.apple.com/app/id{appId}`
 - Play Store (Android): `https://play.google.com/store/apps/details?id={appId}`
-
-## Complete Example
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>WebF DeepLink Example</title>
-    <script type="module">
-        import { WebFDeepLink, DeepLinkHelpers, COMMON_URL_SCHEMES } from '@openwebf/webf-deeplink';
-        
-        window.openEmail = async () => {
-            const result = await DeepLinkHelpers.openEmail({
-                to: 'support@example.com',
-                subject: 'Support Request',
-                body: 'I need help with...'
-            });
-            
-            if (result.success) {
-                alert('Email client opened!');
-            } else {
-                alert('Failed to open email client');
-            }
-        };
-        
-        window.openPhone = async () => {
-            const result = await DeepLinkHelpers.openPhone('+1234567890');
-            
-            if (result.success) {
-                alert('Phone dialer opened!');
-            } else {
-                alert('Failed to open phone dialer');
-            }
-        };
-        
-        window.openWhatsApp = async () => {
-            const message = encodeURIComponent('Hello from WebF!');
-            const result = await WebFDeepLink.openDeepLink({
-                url: `${COMMON_URL_SCHEMES.WHATSAPP}send?text=${message}`,
-                fallbackUrl: `https://wa.me/?text=${message}`
-            });
-            
-            if (result.success) {
-                alert('WhatsApp opened!');
-            } else {
-                alert('Failed to open WhatsApp');
-            }
-        };
-        
-        window.openLocation = async () => {
-            const result = await DeepLinkHelpers.openMaps({
-                query: 'coffee shops near me'
-            });
-            
-            if (result.success) {
-                alert('Maps opened!');
-            } else {
-                alert('Failed to open maps');
-            }
-        };
-    </script>
-</head>
-<body>
-    <h1>WebF DeepLink Examples</h1>
-    <button onclick="openEmail()">📧 Send Email</button>
-    <button onclick="openPhone()">📞 Call Phone</button>
-    <button onclick="openWhatsApp()">💬 Open WhatsApp</button>
-    <button onclick="openLocation()">📍 Find Coffee</button>
-</body>
-</html>
-```
 
 ## API Reference
 

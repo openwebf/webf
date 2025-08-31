@@ -18,7 +18,7 @@ Add this to your `pubspec.yaml`:
 ```yaml
 dependencies:
   webf_share: ^1.0.0
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
 ```
 
 ## Usage
@@ -136,76 +136,6 @@ The module uses the platform's native sharing mechanism:
 - **iOS**: UIActivityViewController
 - **Android**: Android Share Intent
 - **macOS**: NSSharingService
-
-## Complete Example
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <title>WebF Share Example</title>
-    <script type="module">
-        import { WebFShare, ShareHelpers } from '@openwebf/webf-share';
-        
-        // Draw something on canvas
-        window.addEventListener('load', () => {
-            const canvas = document.getElementById('myCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#3498db';
-            ctx.fillRect(0, 0, 400, 300);
-            ctx.fillStyle = 'white';
-            ctx.font = '24px Arial';
-            ctx.fillText('Hello WebF!', 150, 150);
-        });
-        
-        window.shareImage = async () => {
-            const canvas = document.getElementById('myCanvas');
-            const imageData = await ShareHelpers.canvasToArrayBuffer(canvas);
-            
-            const success = await WebFShare.shareImage({
-                imageData,
-                text: 'Check out my WebF creation!',
-                subject: 'WebF App'
-            });
-            
-            alert('Share ' + (success ? 'successful' : 'failed'));
-        };
-        
-        window.shareText = async () => {
-            const success = await WebFShare.shareText({
-                title: 'WebF App',
-                text: 'Check out this awesome WebF application!',
-                url: 'https://openwebf.com'
-            });
-            
-            alert('Text share ' + (success ? 'successful' : 'failed'));
-        };
-        
-        window.saveImage = async () => {
-            const canvas = document.getElementById('myCanvas');
-            const imageData = await ShareHelpers.canvasToArrayBuffer(canvas);
-            
-            const result = await WebFShare.saveScreenshot({
-                imageData,
-                filename: 'webf_creation'
-            });
-            
-            if (result.success) {
-                alert('Image saved to: ' + (result.platformInfo || result.filePath));
-            } else {
-                alert('Save failed: ' + result.message);
-            }
-        };
-    </script>
-</head>
-<body>
-    <canvas id="myCanvas" width="400" height="300"></canvas>
-    <button onclick="shareImage()">Share Image</button>
-    <button onclick="shareText()">Share Text</button>
-    <button onclick="saveImage()">Save Image</button>
-</body>
-</html>
-```
 
 ## API Reference
 

@@ -1,0 +1,248 @@
+name: Build Playground Apps
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'playground_app/**'
+      - 'webf/**'
+      - 'bridge/**'
+      - 'webf_cupertino_ui/**'
+      - '.github/workflows/build-playground-apps.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'playground_app/**'
+      - 'webf/**'
+      - 'bridge/**'
+      - 'webf_cupertino_ui/**'
+      - '.github/workflows/build-playground-apps.yml'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '18'
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.0'
+        channel: 'stable'
+
+    - name: Authenticate Cloudsmith for WebF
+      run: |
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+
+    - name: Install dependencies
+      run: |
+        flutter pub get
+      working-directory: playground_app
+
+    - name: Build APK
+      run: |
+        flutter build apk --release
+      working-directory: playground_app
+
+    # - name: Build App Bundle
+    #   run: |
+    #     flutter build appbundle --release
+    #   working-directory: playground_app
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: playground-app-apk
+        path: playground_app/build/app/outputs/flutter-apk/app-release.apk
+
+    # - name: Upload App Bundle
+    #   uses: actions/upload-artifact@v4
+    #   with:
+    #     name: playground-app-bundle
+    #     path: playground_app/build/app/outputs/bundle/release/app-release.aab
+
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.0'
+        channel: 'stable'
+
+    - name: Authenticate Cloudsmith for WebF
+      run: |
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+
+    - name: Install dependencies
+      run: |
+        flutter pub get
+      working-directory: playground_app
+
+    - name: Build iOS (no signing)
+      run: |
+        flutter build ios --release --no-codesign
+      working-directory: playground_app
+
+    - name: Upload iOS build
+      uses: actions/upload-artifact@v4
+      with:
+        name: playground-app-ios
+        path: playground_app/build/ios/iphoneos/Runner.app
+
+  # build-web:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #     with:
+  #       submodules: recursive
+
+  #   - name: Setup Flutter
+  #     uses: subosito/flutter-action@v2
+  #     with:
+  #       flutter-version: '3.27.0'
+  #       channel: 'stable'
+
+  #   - name: Authenticate Cloudsmith for WebF Enterprise
+  #     run: |
+  #       echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+  #     if: ${{ secrets.CLOUDSMITH_API_KEY != '' }}
+
+  #   - name: Install dependencies
+  #     run: |
+  #       flutter pub get
+  #     working-directory: playground_app
+
+  #   - name: Build Web
+  #     run: |
+  #       flutter build web --release
+  #     working-directory: playground_app
+
+  #   - name: Upload Web build
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: playground-app-web
+  #       path: playground_app/build/web
+
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.0'
+        channel: 'stable'
+
+    - name: Authenticate Cloudsmith for WebF Enterprise
+      run: |
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+
+    - name: Install dependencies
+      run: |
+        flutter pub get
+      working-directory: playground_app
+
+    - name: Build macOS
+      run: |
+        flutter build macos --release
+      working-directory: playground_app
+
+    - name: Upload macOS build
+      uses: actions/upload-artifact@v4
+      with:
+        name: playground-app-macos
+        path: playground_app/build/macos/Build/Products/Release/playground_app.app
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.0'
+        channel: 'stable'
+
+    - name: Authenticate Cloudsmith for WebF
+      run: |
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+
+    - name: Install dependencies
+      run: |
+        flutter pub get
+      working-directory: playground_app
+
+    - name: Build Windows
+      run: |
+        flutter build windows --release
+      working-directory: playground_app
+
+    - name: Upload Windows build
+      uses: actions/upload-artifact@v4
+      with:
+        name: playground-app-windows
+        path: playground_app/build/windows/x64/runner/Release
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y ninja-build libgtk-3-dev build-essential g++ cmake libc6-dev
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.0'
+        channel: 'stable'
+
+    - name: Authenticate Cloudsmith for WebF
+      run: |
+        echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+
+    - name: Install dependencies
+      run: |
+        flutter pub get
+      working-directory: playground_app
+
+    - name: Build Linux
+      run: |
+        flutter build linux --release
+      working-directory: playground_app
+
+    - name: Upload Linux build
+      uses: actions/upload-artifact@v4
+      with:
+        name: playground-app-linux
+        path: playground_app/build/linux/x64/release/bundle

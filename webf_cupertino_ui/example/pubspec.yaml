@@ -1,7 +1,7 @@
 name: webf_cupertino_ui_example
 description: Example app demonstrating WebF Cupertino UI components
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -10,11 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  # For development: use local webf package
-  # For publishing: uncomment below and comment out the path dependency above
   webf:
-    hosted: https://dart.cloudsmith.io/openwebf/webf-enterprise/
-    version: ^0.22.1
+    hosted: https://dart.cloudsmith.io/openwebf/packages/
+    version: ^0.23.0
   webf_cupertino_ui:
     path: ../
 

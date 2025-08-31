@@ -332,28 +332,6 @@ try {
 }
 ```
 
-## 🔧 **Migration from Manual Usage**
-
-### Before (Manual)
-```typescript
-// ❌ Manual, error-prone
-const result = await window.webf.invokeModuleAsync('DeepLink', 'openDeepLink', {
-  url: 'mailto:demo@example.com?subject=Hello',
-  fallbackUrl: window.location.href
-});
-```
-
-### After (This Library)
-```typescript
-// ✅ Simple, type-safe, error-handled
-import { DeepLinkHelpers } from '@openwebf/webf-deeplink';
-
-await DeepLinkHelpers.openEmail({
-  to: 'demo@example.com',
-  subject: 'Hello'
-});
-```
-
 ## 💡 **Tips**
 
 1. **Always check availability** in production:

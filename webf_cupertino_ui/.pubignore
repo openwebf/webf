@@ -1,0 +1,19 @@
+# Example app
+example/
+
+# Development and testing files
+test/
+analysis_options.yaml
+
+# TypeScript config
+tsconfig.json
+lib/src/tsconfig.json
+
+# Development documentation
+CONTRIBUTING.md
+
+# Build artifacts and temporary files
+pubspec.lock
+.dart_tool/
+.packages
+build/

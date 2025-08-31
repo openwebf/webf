@@ -3,7 +3,6 @@ import 'package:webf/webf.dart';
 import 'package:webf_cupertino_ui/webf_cupertino_ui.dart';
 import 'package:webf_deeplink/webf_deeplink.dart';
 import 'package:webf_share/webf_share.dart';
-import 'package:webf_ui_kit/webf_ui_kit.dart';
 import 'router_config.dart';
 import 'modules/test_array_buffer.dart';
 
@@ -13,7 +12,6 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   installWebFCupertinoUI();
-  installWebFUIKit();
 
   // Initialize the WebF controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
