@@ -1,7 +1,6 @@
-import 'dart:typed_data';
-import 'package:dio/dio.dart';
 import 'package:webf/bridge.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/src/foundation/form_data/multipart_file.dart';
 
 // FormData implementation following web standards
 // https://developer.mozilla.org/en-US/docs/Web/API/FormData
