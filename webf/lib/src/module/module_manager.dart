@@ -62,10 +62,16 @@ void _defineModuleCreator() {
 }
 
 final Map<String, ModuleCreator> _creatorMap = {};
+final Map<String, ModuleCreator> _customizedCreatorMap = {};
 
 void _defineModule(ModuleCreator moduleCreator) {
   BaseModule fakeModule = moduleCreator(null);
   _creatorMap[fakeModule.name] = moduleCreator;
+}
+
+void _defineCustomModule(ModuleCreator moduleCreator) {
+  BaseModule customModule = moduleCreator(null);
+  _customizedCreatorMap[customModule.name] = moduleCreator;
 }
 
 class ModuleManager {
@@ -80,6 +86,9 @@ class ModuleManager {
     _creatorMap.forEach((String name, ModuleCreator creator) {
       _moduleMap[name] = creator(this);
     });
+    _customizedCreatorMap.forEach((String name, ModuleCreator creator) {
+      _moduleMap[name] = creator(this);
+    });
   }
 
   Future<void> initialize() async {
@@ -91,7 +100,7 @@ class ModuleManager {
   }
 
   static void defineModule(ModuleCreator moduleCreator) {
-    _defineModule(moduleCreator);
+    _defineCustomModule(moduleCreator);
   }
 
   dynamic emitModuleEvent(String moduleName, {Event? event, data}) {
