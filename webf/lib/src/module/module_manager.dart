@@ -108,7 +108,7 @@ class ModuleManager {
   }
 
   dynamic invokeModule(String moduleName, String method, params, InvokeModuleCallback callback) {
-    ModuleCreator? creator = _creatorMap[moduleName];
+    ModuleCreator? creator = _customizedCreatorMap[moduleName] ?? _creatorMap[moduleName];
     if (creator == null) {
       throw Exception('ModuleManager: Can not find module of name: $moduleName');
     }
