@@ -1113,6 +1113,8 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (_inlineFormattingContext != null) {
       _inlineFormattingContext!.debugFillProperties(properties);
     }
+    properties.add(DiagnosticsProperty('first child baseline', computeCssFirstBaseline()));
+    properties.add(DiagnosticsProperty('last child baseline', computeCssLastBaseline()));
   }
 
 }

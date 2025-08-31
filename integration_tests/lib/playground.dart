@@ -7,9 +7,11 @@ import 'dart:io';
 
 import 'package:ansicolor/ansicolor.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:path/path.dart' as path;
 import 'package:webf/css.dart';
 import 'package:webf/webf.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/devtools.dart';
 
 import 'bridge/from_native.dart';
@@ -24,6 +26,13 @@ import 'modules/array_buffer_module.dart';
 
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
+  // Inline formatter + paragraph logs (placeholders, baselines, lines)
+  debugLogInlineLayoutEnabled = true;
+  debugPaintBaselinesEnabled = true;
+  debugPaintInlineLayoutEnabled = true;
+  // Flow layout baseline logs
+  debugLogFlowEnabled = true;
+
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
       maxAliveInstances: 1,
@@ -46,26 +55,50 @@ void main() async {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(title: Text('WebF Integration Tests')),
-        body: Stack(
-          children: [
-            WebF.fromControllerName(
-                controllerName: 'test',
-                bundle: WebFBundle.fromUrl('http://localhost:3400/webf_debug_server.js'),
-                createController: () => WebFController(viewportWidth: 360, viewportHeight: 640, onControllerInit: (controller) async {
-                  double contextId = controller.view.contextId;
-                  Pointer<Void> testContext = initTestFramework(contextId);
-                  registerDartTestMethodsToCpp(contextId);
-
-                  Timer(Duration(seconds: 1), () {
-                    executeTest(testContext, contextId);
-                  });
-                })),
-            WebFInspectorFloatingPanel(),
-          ],
-        ),
+        body: SimplePage(),
       ),
     ));
   }, (Object error, StackTrace stack) {
     print('$error\n$stack');
   });
+}
+
+class SimplePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return WebFPage();
+          }));
+        },
+        child: Text('RUN'));
+  }
+}
+
+class WebFPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(),
+        body: Stack(
+          children: [
+            WebF.fromControllerName(
+                controllerName: 'test',
+                bundle: WebFBundle.fromUrl('http://127.0.0.1:3300/kraken_debug_server.js'),
+                createController: () => WebFController(
+                    viewportWidth: 360,
+                    viewportHeight: 640,
+                    onControllerInit: (controller) async {
+                      double contextId = controller.view.contextId;
+                      Pointer<Void> testContext = initTestFramework(contextId);
+                      registerDartTestMethodsToCpp(contextId);
+                      // Timer(Duration(seconds: 1), () {
+                      //   executeTest(testContext, contextId);
+                      // });
+                    })),
+            WebFInspectorFloatingPanel()
+          ],
+        ));
+  }
 }
