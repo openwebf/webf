@@ -259,11 +259,6 @@ class UnifiedChromeDevToolsService {
   // Keep controller mapping for backward compatibility
   final Map<WebFController, DebuggingContext> _controllerToContext = {};
 
-  // Module instances that handle inspector functionality
-  RuntimeInspectorModule? _runtimeModule;
-  DebuggerInspectorModule? _debuggerModule;
-  LogInspectorModule? _logModule;
-
   bool get isRunning => _isRunning;
 
   /// Gets the DevTools connection URL if the server is running
@@ -368,10 +363,12 @@ class UnifiedChromeDevToolsService {
       });
     }
 
-    // Notify all modules about context change
-    _runtimeModule?.onContextChanged(context);
-    _debuggerModule?.onContextChanged(context);
-    _logModule?.onContextChanged(context);
+    // Notify all UI modules about context change
+    if (currentRegistrar != null) {
+      currentRegistrar.values.forEach((module) {
+        module.onContextChanged();
+      });
+    }
 
     // Notify connected clients
     _broadcastTargetListUpdate();
@@ -471,25 +468,15 @@ class UnifiedChromeDevToolsService {
     _httpServer = null;
     _devToolsUrl = null;
 
-    // Dispose modules
-    _runtimeModule = null;
-    _debuggerModule = null;
-    _logModule = null;
+    // Clear modules
     _modules.clear();
 
     _isRunning = false;
   }
 
   void _initializeModules() {
-    // Initialize inspector modules that previously ran in isolate
-    _runtimeModule = RuntimeInspectorModule(this);
-    _debuggerModule = DebuggerInspectorModule(this);
-    _logModule = LogInspectorModule(this);
-
-    // Register modules
-    _modules['Runtime'] = _runtimeModule;
-    _modules['Debugger'] = _debuggerModule;
-    _modules['Log'] = _logModule;
+    // Don't register any modules here - let all messages route to UIInspector
+    // which has the actual implementation of Log, Network, CSS, DOM, etc.
   }
 
   Future<void> _startServer() async {
@@ -1029,58 +1016,6 @@ class UnifiedChromeDevToolsService {
       return (_currentContext as WebFControllerDebuggingAdapter).controller;
     }
     return null;
-  }
-}
-
-// Inspector module classes
-class RuntimeInspectorModule {
-  final UnifiedChromeDevToolsService service;
-
-  RuntimeInspectorModule(this.service);
-
-  void onContextChanged(DebuggingContext context) {
-    // Handle context change
-  }
-
-  void invoke(int? id, String method, Map<String, dynamic>? params) {
-    // TODO: Implement Runtime methods
-    if (id != null) {
-      service.sendMethodResult(id, {});
-    }
-  }
-}
-
-class DebuggerInspectorModule {
-  final UnifiedChromeDevToolsService service;
-
-  DebuggerInspectorModule(this.service);
-
-  void onContextChanged(DebuggingContext context) {
-    // Handle context change
-  }
-
-  void invoke(int? id, String method, Map<String, dynamic>? params) {
-    // TODO: Implement Debugger methods
-    if (id != null) {
-      service.sendMethodResult(id, {});
-    }
-  }
-}
-
-class LogInspectorModule {
-  final UnifiedChromeDevToolsService service;
-
-  LogInspectorModule(this.service);
-
-  void onContextChanged(DebuggingContext context) {
-    // Handle context change
-  }
-
-  void invoke(int? id, String method, Map<String, dynamic>? params) {
-    // TODO: Implement Log methods
-    if (id != null) {
-      service.sendMethodResult(id, {});
-    }
   }
 }
 

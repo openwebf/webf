@@ -24,7 +24,8 @@ class InspectNetworkModule extends UIInspectorModule {
     final useDio = WebFControllerManager.instance.useDioForNetwork;
     if (!useDio) return;
 
-    final controller = devtoolsService.controller;
+    final context = devtoolsService.context;
+    final controller = context?.getController();
     if (controller == null) return;
 
     final contextId = controller.view.contextId;
@@ -235,11 +236,19 @@ class InspectNetworkModule extends UIInspectorModule {
     }
   }
 
+  @override
+  void onContextChanged() {
+    super.onContextChanged();
+    // Reinitialize Dio interceptor when context changes
+    _maybeRegisterDioInterceptor();
+  }
+
   // Legacy HttpClientInterceptor support has been removed. Network inspection now
   // relies on Dio interceptors when Dio networking is enabled.
 
   void _replayPastRequests() {
-    final controller = devtoolsService.controller;
+    final context = devtoolsService.context;
+    final controller = context?.getController();
     if (controller == null || !controller.isFlutterAttached) return;
     final ctxId = controller.view.contextId.toInt();
     final requests = List<NetworkRequest>.from(NetworkStore().getRequestsForContext(ctxId));

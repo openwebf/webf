@@ -13,11 +13,15 @@ class InspectLogModule extends UIInspectorModule {
   }
 
   void _setupLogHandler() {
-    // Set up log handler if controller is available
-    if (devtoolsService.controller != null) {
-      devtoolsService.controller!.onJSLog = (level, message) {
-        handleMessage(level, message);
-      };
+    // Set up log handler if context is available
+    final context = devtoolsService.context;
+    if (context != null) {
+      final controller = context.getController();
+      if (controller != null) {
+        controller.onJSLog = (level, message) {
+          handleMessage(level, message);
+        };
+      }
     }
   }
 
@@ -31,8 +35,12 @@ class InspectLogModule extends UIInspectorModule {
   void onDisabled() {
     super.onDisabled();
     // Clear log handler when disabled
-    if (devtoolsService.controller != null) {
-      devtoolsService.controller!.onJSLog = null;
+    final context = devtoolsService.context;
+    if (context != null) {
+      final controller = context.getController();
+      if (controller != null) {
+        controller.onJSLog = null;
+      }
     }
   }
 
@@ -71,6 +79,13 @@ class InspectLogModule extends UIInspectorModule {
   @override
   void receiveFromFrontend(int? id, String method, Map<String, dynamic>? params) {
     // callNativeInspectorMethod(id, method, params);
+  }
+
+  @override
+  void onContextChanged() {
+    super.onContextChanged();
+    // Reinitialize log handler when context changes
+    _setupLogHandler();
   }
 }
 

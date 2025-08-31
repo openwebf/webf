@@ -96,4 +96,10 @@ abstract class UIInspectorModule extends _InspectorModule {
       ChromeDevToolsService.unifiedService.sendEventToFrontend(event);
     }
   }
+
+  /// Called when the debugging context changes (e.g., when switching controllers)
+  /// Subclasses can override this to reinitialize their state
+  void onContextChanged() {
+    // Default implementation does nothing
+  }
 }

@@ -62,6 +62,9 @@ abstract class DebuggingContext {
   /// Get render object for element
   RenderBox? getRenderBox(Element element);
 
+  /// Get the underlying WebFController (if available)
+  WebFController? getController();
+
   /// Dispose resources
   void dispose();
 }
@@ -142,8 +145,11 @@ class WebFControllerDebuggingAdapter implements DebuggingContext {
   }
 
   @override
+  WebFController? getController() => controller;
+
+  @override
   void dispose() {
-    // No-op for adapter - controller manages its own lifecycle
+    // The controller lifecycle is managed elsewhere
   }
 }
 
