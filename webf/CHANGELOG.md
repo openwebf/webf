@@ -1,3 +1,7 @@
+## 0.22.15
+
+fix: force all the decencies of renderObject in the current viewport layout when the viewport metrics changed.
+
 ## 0.22.14+3
 
 fix: fix get custom module from invokeModule.
