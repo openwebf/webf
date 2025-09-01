@@ -774,7 +774,26 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   @override
   void didChangeMetrics() {
+    BuildContext? currentBuildContext = rootController.currentBuildContext?.context;
+    RenderViewportBox? rootViewport = currentBuildContext?.findRenderObject() as RenderViewportBox?;
+
+    if (rootViewport != null) {
+      // Mark viewport and all its descendants for layout
+      _markDescendantsNeedsLayout(rootViewport);
+    }
     window.resizeViewportRelatedElements();
+  }
+
+  void _markDescendantsNeedsLayout(RenderObject renderObject) {
+    // Mark the current render object for layout
+    if (renderObject is RenderBox) {
+      renderObject.markNeedsLayout();
+    }
+
+    // Recursively visit all children
+    renderObject.visitChildren((child) {
+      _markDescendantsNeedsLayout(child);
+    });
   }
 
   @override
