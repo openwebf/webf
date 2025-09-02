@@ -17,39 +17,59 @@ void main() {
 
   group('WebF.clearAllCaches', () {
     test('should clear all HTTP disk cache files', () async {
-      // Create a test cache directory structure
+      // Create test cache directory structures for multiple pages
       final String appTemporaryPath = await getWebFTemporaryPath();
-      final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
+      
+      // Create cache directories for different pages (simulating the new structure)
+      final Directory cacheDirectory1 = Directory(path.join(appTemporaryPath, 'HttpCaches_page1'));
+      final Directory cacheDirectory2 = Directory(path.join(appTemporaryPath, 'HttpCaches_page2'));
+      final Directory cacheDirectory3 = Directory(path.join(appTemporaryPath, 'HttpCache_special')); // Note: starts with HttpCache
 
-      // Create some test cache files
-      if (!await cacheDirectory.exists()) {
-        await cacheDirectory.create(recursive: true);
-      }
+      // Create directories
+      await cacheDirectory1.create(recursive: true);
+      await cacheDirectory2.create(recursive: true);
+      await cacheDirectory3.create(recursive: true);
 
-      // Create test cache files
-      final File testCacheFile1 = File(path.join(cacheDirectory.path, 'test_cache_1'));
-      final File testCacheFile2 = File(path.join(cacheDirectory.path, 'test_cache_2'));
-      final File testCacheBlobFile = File(path.join(cacheDirectory.path, 'test_cache_1-blob'));
+      // Create test cache files in each directory
+      final File testCacheFile1 = File(path.join(cacheDirectory1.path, 'test_cache_1'));
+      final File testCacheFile2 = File(path.join(cacheDirectory1.path, 'test_cache_2'));
+      final File testCacheBlobFile1 = File(path.join(cacheDirectory1.path, 'test_cache_1-blob'));
+      
+      final File testCacheFile3 = File(path.join(cacheDirectory2.path, 'test_cache_3'));
+      final File testCacheBlobFile2 = File(path.join(cacheDirectory2.path, 'test_cache_3-blob'));
+      
+      final File testCacheFile4 = File(path.join(cacheDirectory3.path, 'test_cache_4'));
 
       await testCacheFile1.writeAsString('test cache content 1');
       await testCacheFile2.writeAsString('test cache content 2');
-      await testCacheBlobFile.writeAsString('test blob content');
+      await testCacheBlobFile1.writeAsString('test blob content 1');
+      await testCacheFile3.writeAsString('test cache content 3');
+      await testCacheBlobFile2.writeAsString('test blob content 2');
+      await testCacheFile4.writeAsString('test cache content 4');
 
       // Verify files exist
       expect(await testCacheFile1.exists(), true);
       expect(await testCacheFile2.exists(), true);
-      expect(await testCacheBlobFile.exists(), true);
+      expect(await testCacheBlobFile1.exists(), true);
+      expect(await testCacheFile3.exists(), true);
+      expect(await testCacheBlobFile2.exists(), true);
+      expect(await testCacheFile4.exists(), true);
 
       // Clear all caches
       await WebF.clearAllCaches();
 
-      // Verify all cache files are deleted
+      // Verify all cache files and directories are deleted
       expect(await testCacheFile1.exists(), false);
       expect(await testCacheFile2.exists(), false);
-      expect(await testCacheBlobFile.exists(), false);
+      expect(await testCacheBlobFile1.exists(), false);
+      expect(await testCacheFile3.exists(), false);
+      expect(await testCacheBlobFile2.exists(), false);
+      expect(await testCacheFile4.exists(), false);
 
-      // Verify cache directory is recreated
-      expect(await cacheDirectory.exists(), true);
+      // Verify cache directories are deleted (they match HttpCache* pattern)
+      expect(await cacheDirectory1.exists(), false);
+      expect(await cacheDirectory2.exists(), false);
+      expect(await cacheDirectory3.exists(), false);
     });
 
     test('should clear all memory caches', () async {
@@ -101,39 +121,60 @@ void main() {
       expect(clearedObject2.valid, false);
     });
 
-    test('should handle case when cache directory does not exist', () async {
-      // Get the cache directory path
+    test('should handle case when cache directories do not exist', () async {
+      // Get the temp directory path
       final String appTemporaryPath = await getWebFTemporaryPath();
-      final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
-
-      // Delete the cache directory if it exists
-      if (await cacheDirectory.exists()) {
-        await cacheDirectory.delete(recursive: true);
+      
+      // Delete any existing HttpCache* directories
+      final Directory tmpDir = Directory(appTemporaryPath);
+      if (await tmpDir.exists()) {
+        await for (final entity in tmpDir.list(followLinks: false)) {
+          if (entity is Directory) {
+            final String name = path.basename(entity.path);
+            if (name.startsWith('HttpCache')) {
+              await entity.delete(recursive: true);
+            }
+          }
+        }
       }
 
-      // Verify directory doesn't exist
-      expect(await cacheDirectory.exists(), false);
+      // Verify no HttpCache* directories exist
+      bool hasHttpCacheDir = false;
+      if (await tmpDir.exists()) {
+        await for (final entity in tmpDir.list(followLinks: false)) {
+          if (entity is Directory) {
+            final String name = path.basename(entity.path);
+            if (name.startsWith('HttpCache')) {
+              hasHttpCacheDir = true;
+              break;
+            }
+          }
+        }
+      }
+      expect(hasHttpCacheDir, false);
 
       // Clear all caches should not throw
       await expectLater(WebF.clearAllCaches(), completes);
 
-      // Cache directory might not exist after clearing if it didn't exist before
       // The important thing is that the operation completes without throwing
     });
 
     test('should handle concurrent cache clearing', () async {
-      // Create test cache files
+      // Create test cache directories and files
       final String appTemporaryPath = await getWebFTemporaryPath();
-      final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
-
-      if (!await cacheDirectory.exists()) {
-        await cacheDirectory.create(recursive: true);
-      }
-
-      // Create multiple test files
-      for (int i = 0; i < 10; i++) {
-        final File testFile = File(path.join(cacheDirectory.path, 'test_cache_$i'));
-        await testFile.writeAsString('test content $i');
+      
+      // Create multiple cache directories for different pages
+      final List<Directory> cacheDirectories = [];
+      for (int j = 0; j < 3; j++) {
+        final Directory cacheDir = Directory(path.join(appTemporaryPath, 'HttpCaches_concurrent_$j'));
+        await cacheDir.create(recursive: true);
+        cacheDirectories.add(cacheDir);
+        
+        // Create multiple test files in each directory
+        for (int i = 0; i < 10; i++) {
+          final File testFile = File(path.join(cacheDir.path, 'test_cache_$i'));
+          await testFile.writeAsString('test content $i');
+        }
       }
 
       // Clear caches concurrently
@@ -145,10 +186,10 @@ void main() {
       // All operations should complete without error
       await expectLater(Future.wait(futures), completes);
 
-      // Verify cache directory exists and is empty
-      expect(await cacheDirectory.exists(), true);
-      final List<FileSystemEntity> files = cacheDirectory.listSync();
-      expect(files.isEmpty, true);
+      // Verify all cache directories are deleted
+      for (final cacheDir in cacheDirectories) {
+        expect(await cacheDir.exists(), false);
+      }
     });
 
     test('should work correctly after clearing caches', () async {
@@ -184,9 +225,9 @@ void main() {
     });
 
     test('should handle file system errors gracefully', () async {
-      // Mock a file system error by creating a read-only directory
+      // Create cache directories with potential issues
       final String appTemporaryPath = await getWebFTemporaryPath();
-      final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches'));
+      final Directory cacheDirectory = Directory(path.join(appTemporaryPath, 'HttpCaches_errors'));
 
       if (!await cacheDirectory.exists()) {
         await cacheDirectory.create(recursive: true);
@@ -266,11 +307,16 @@ void main() {
     test('should clear both HTTP and bytecode caches together', () async {
       final String appTemporaryPath = await getWebFTemporaryPath();
 
-      // Create HTTP cache files
-      final Directory httpCacheDir = Directory(path.join(appTemporaryPath, 'HttpCaches'));
-      await httpCacheDir.create(recursive: true);
-      final File httpCacheFile = File(path.join(httpCacheDir.path, 'http_cache'));
-      await httpCacheFile.writeAsString('http cache content');
+      // Create multiple HTTP cache directories (new structure)
+      final Directory httpCacheDir1 = Directory(path.join(appTemporaryPath, 'HttpCaches_page1'));
+      final Directory httpCacheDir2 = Directory(path.join(appTemporaryPath, 'HttpCache_special'));
+      await httpCacheDir1.create(recursive: true);
+      await httpCacheDir2.create(recursive: true);
+      
+      final File httpCacheFile1 = File(path.join(httpCacheDir1.path, 'http_cache'));
+      final File httpCacheFile2 = File(path.join(httpCacheDir2.path, 'http_cache'));
+      await httpCacheFile1.writeAsString('http cache content 1');
+      await httpCacheFile2.writeAsString('http cache content 2');
 
       // Create bytecode cache files
       final Directory bytecodeCacheDir = Directory(
@@ -281,18 +327,21 @@ void main() {
       await bytecodeCacheFile.writeAsString('bytecode cache content');
 
       // Verify files exist
-      expect(await httpCacheFile.exists(), true);
+      expect(await httpCacheFile1.exists(), true);
+      expect(await httpCacheFile2.exists(), true);
       expect(await bytecodeCacheFile.exists(), true);
 
       // Clear all caches
       await WebF.clearAllCaches();
 
       // Verify both cache types are cleared
-      expect(await httpCacheFile.exists(), false);
+      expect(await httpCacheFile1.exists(), false);
+      expect(await httpCacheFile2.exists(), false);
       expect(await bytecodeCacheFile.exists(), false);
 
-      // HTTP cache directory should be recreated, bytecode cache directory should not
-      expect(await httpCacheDir.exists(), true);
+      // All cache directories should be deleted
+      expect(await httpCacheDir1.exists(), false);
+      expect(await httpCacheDir2.exists(), false);
       expect(await bytecodeCacheDir.exists(), false);
     });
   });
