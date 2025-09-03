@@ -60,7 +60,9 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
         ctx, "Failed to execute '__webf_match_image_snapshot__': parameter 3 (callback) is not an function.");
   }
 
-  auto* callbackContext = new ImageSnapShotContext{JS_DupValue(ctx, callbackValue), context};
+  auto* callbackContext = new ImageSnapShotContext;
+  callbackContext->callback = JS_DupValue(ctx, callbackValue);
+  callbackContext->context = context;
 
   context->FlushUICommand(context->window(), FlushUICommandReason::kDependentsAll);
 
@@ -121,7 +123,7 @@ static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSVa
 #endif
 }
 
-struct SimulatePointerCallbackContext {
+struct SimulatePointerCallbackContext: DartReadable {
   ExecutingContext* context{nullptr};
   JSValue callbackValue{JS_NULL};
 };
@@ -309,7 +311,7 @@ static JSValue changeDarkMode(JSContext* ctx, JSValueConst this_val, int argc, J
   return JS_NULL;
 }
 
-struct ExecuteCallbackContext {
+struct ExecuteCallbackContext: DartReadable {
   ExecuteCallbackContext() = delete;
 
   explicit ExecuteCallbackContext(ExecutingContext* context,

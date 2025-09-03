@@ -13,7 +13,7 @@
 
 namespace webf {
 
-struct ImageSnapShotContext {
+struct ImageSnapShotContext: public DartReadable {
   JSValue callback;
   ExecutingContext* context;
   list_head link;

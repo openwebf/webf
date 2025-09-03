@@ -86,7 +86,7 @@ static JSValue FromNativeValue(ExecutingContext* context,
     case NativeTag::TAG_JSON: {
       auto* str = static_cast<const char*>(native_value.u.ptr);
       JSValue returnedValue = JS_ParseJSON(context->ctx(), str, strlen(str), "");
-      delete str;
+      dart_free(const_cast<char*>(str));
       return returnedValue;
     }
     case NativeTag::TAG_POINTER: {

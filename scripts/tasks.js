@@ -655,7 +655,8 @@ task('generate-bindings-code', (done) => {
   if (!fs.existsSync(path.join(paths.codeGen, 'node_modules'))) {
     spawnSync(NPM, ['install'], {
       cwd: paths.codeGen,
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: true
     });
   }
 

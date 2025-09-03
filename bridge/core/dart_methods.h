@@ -130,7 +130,7 @@ struct NativePerformanceEntryList {
 typedef NativePerformanceEntryList* (*GetPerformanceEntries)(int32_t);
 #endif
 
-struct MousePointer {
+struct MousePointer: DartReadable {
   double context_id;
   double x;
   double y;

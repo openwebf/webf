@@ -104,7 +104,8 @@ function startIntegrationTest(websocketPort, filter) {
   if (!shouldSkipBuild) {
     console.log('Building integration tests macOS application from "lib/main.dart"...');
     spawnSync('flutter', ['build', getRunningPlatform(), '--debug'], {
-      stdio: 'inherit'
+      stdio: 'inherit',
+      shell: true
     });
   }
 
