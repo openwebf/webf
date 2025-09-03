@@ -30,6 +30,7 @@
     "foundation/string/utf8_codecs.h",
     "foundation/string/wtf_string.cc",
     "foundation/decimal.cc",
+    "foundation/utility/make_visitor.h",
     "multiple_threading/dispatcher.cc",
     "multiple_threading/looper.cc",
 
