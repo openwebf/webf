@@ -13,6 +13,8 @@
 #include "element_namespace_uris.h"
 #include "html_names.h"
 
+#include "core/css/css_property_value_set.h"
+
 namespace webf {
 
 InlineCssStyleDeclaration::InlineCssStyleDeclaration(webf::Element* parent_element)
@@ -56,6 +58,10 @@ bool InlineCssStyleDeclaration::IsInlineCssStyleDeclaration() const {
 const InlineCssStyleDeclarationPublicMethods* InlineCssStyleDeclaration::inlineCssStyleDeclarationPublicMethods() {
   static InlineCssStyleDeclarationPublicMethods inline_css_style_declaration_public_methods;
   return &inline_css_style_declaration_public_methods;
+}
+
+String InlineCssStyleDeclaration::ToString() const {
+  return PropertySet().AsText();
 }
 
 }  // namespace webf

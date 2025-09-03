@@ -4,9 +4,10 @@
 
 #include "plugin_api/element.h"
 #include "core/api/exception_state.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/container_node.h"
 #include "core/dom/element.h"
-#include "core/css/legacy/legacy_inline_css_style_declaration.h"
+#include "foundation/utility/make_visitor.h"
 
 namespace webf {
 
@@ -14,9 +15,16 @@ WebFValue<LegacyCssStyleDeclaration, LegacyCssStyleDeclarationPublicMethods> Ele
   auto* element = static_cast<webf::Element*>(ptr);
   MemberMutationScope member_mutation_scope{element->GetExecutingContext()};
   auto style = element->style();
-  WebFValueStatus* status_block = style->KeepAlive();
-  return WebFValue<LegacyCssStyleDeclaration, LegacyCssStyleDeclarationPublicMethods>(
-      style, style->legacyCssStyleDeclarationPublicMethods(), status_block);
+
+  return std::visit(
+      MakeVisitor(
+          [&](legacy::LegacyInlineCssStyleDeclaration* styleDeclaration) {
+            WebFValueStatus* status_block = styleDeclaration->KeepAlive();
+            return WebFValue<LegacyCssStyleDeclaration, LegacyCssStyleDeclarationPublicMethods>(
+                styleDeclaration, styleDeclaration->legacyCssStyleDeclarationPublicMethods(), status_block);
+          },
+          [](auto&&) { return WebFValue<LegacyCssStyleDeclaration, LegacyCssStyleDeclarationPublicMethods>::Null(); }),
+      style);
 }
 
 void ElementPublicMethods::ToBlob(Element* ptr,

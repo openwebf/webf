@@ -7,7 +7,6 @@
 #include <core/css/parser/css_selector_parser.h>
 
 #include <utility>
-#include "core/dom/element_rare_data_vector.h"
 #include "binding_call_methods.h"
 #include "bindings/qjs/exception_state.h"
 #include "bindings/qjs/script_promise.h"
@@ -17,17 +16,19 @@
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_style_sheet.h"
 #include "core/css/inline_css_style_declaration.h"
-#include "core/css/style_engine.h"
-#include "core/css/parser/css_parser.h"
-#include "core/css/style_scope_data.h"
 #include "core/css/legacy/legacy_inline_css_style_declaration.h"
+#include "core/css/parser/css_parser.h"
+#include "core/css/style_engine.h"
+#include "core/css/style_scope_data.h"
 #include "core/dom/document_fragment.h"
+#include "core/dom/element_rare_data_vector.h"
 #include "core/fileapi/blob.h"
 #include "core/html/html_template_element.h"
 #include "core/html/parser/html_parser.h"
 #include "element_attribute_names.h"
 #include "element_namespace_uris.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/utility/make_visitor.h"
 #include "html_element_type_helper.h"
 #include "mutation_observer_interest_group.h"
 #include "plugin_api/element.h"
@@ -49,8 +50,7 @@ Element::Element(const AtomicString& namespace_uri,
   if (namespace_uri == element_namespace_uris::khtml) {
     buffer->AddCommand(UICommand::kCreateElement, local_name.ToNativeString(), bindingObject(), nullptr);
   } else if (namespace_uri == element_namespace_uris::ksvg) {
-    buffer->AddCommand(UICommand::kCreateSVGElement, local_name.ToNativeString(), bindingObject(),
-                       nullptr);
+    buffer->AddCommand(UICommand::kCreateSVGElement, local_name.ToNativeString(), bindingObject(), nullptr);
   } else {
     buffer->AddCommand(UICommand::kCreateElementNS, local_name.ToNativeString(), bindingObject(),
                        namespace_uri.ToNativeString().release());
@@ -340,16 +340,22 @@ Element* Element::closest(const AtomicString& selectors, ExceptionState& excepti
   return NativeValueConverter<NativeTypePointer<Element>>::FromNativeValue(ctx(), result);
 }
 
-Element* Element::insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state) {
+Element* Element::insertAdjacentElement(const AtomicString& position,
+                                        Element* element,
+                                        ExceptionState& exception_state) {
   if (!element) {
-    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': 2nd parameter is not of type 'Element'.");
+    exception_state.ThrowException(
+        ctx(), ErrorType::TypeError,
+        "Failed to execute 'insertAdjacentElement' on 'Element': 2nd parameter is not of type 'Element'.");
     return nullptr;
   }
 
   if (position == AtomicString::CreateFromUTF8("beforebegin")) {
     auto* parent = parentNode();
     if (!parent) {
-      exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
+      exception_state.ThrowException(
+          ctx(), ErrorType::TypeError,
+          "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
       return nullptr;
     }
     parent->InsertBefore(element, this, exception_state);
@@ -372,7 +378,9 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
   } else if (position == AtomicString::CreateFromUTF8("afterend")) {
     auto* parent = parentNode();
     if (!parent) {
-      exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
+      exception_state.ThrowException(
+          ctx(), ErrorType::TypeError,
+          "Failed to execute 'insertAdjacentElement' on 'Element': The element has no parent.");
       return nullptr;
     }
     parent->InsertBefore(element, nextSibling(), exception_state);
@@ -381,14 +389,25 @@ Element* Element::insertAdjacentElement(const AtomicString& position, Element* e
     }
     return element;
   } else {
-    exception_state.ThrowException(ctx(), ErrorType::TypeError, "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" + position.ToUTF8String() + "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
+    exception_state.ThrowException(ctx(), ErrorType::TypeError,
+                                   "Failed to execute 'insertAdjacentElement' on 'Element': The value provided ('" +
+                                       position.ToUTF8String() +
+                                       "') is not one of 'beforebegin', 'afterbegin', 'beforeend', or 'afterend'.");
     return nullptr;
   }
 }
 
-legacy::LegacyInlineCssStyleDeclaration* Element::style() {
-  if (!IsStyledElement())
-    return nullptr;
+ElementStyle Element::style() {
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    if (!IsStyledElement()) {
+      return static_cast<InlineCssStyleDeclaration*>(nullptr);
+    }
+    return inlineStyleForBlink();
+  }
+
+  if (!IsStyledElement()) {
+    return static_cast<legacy::LegacyInlineCssStyleDeclaration*>(nullptr);
+  }
   legacy::LegacyCssStyleDeclaration& style = EnsureElementRareData().EnsureLegacyInlineCSSStyleDeclaration(this);
   return To<legacy::LegacyInlineCssStyleDeclaration>(&style);
 }
@@ -448,16 +467,25 @@ void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildre
   // Clone the inline style from the legacy style declaration
   if (other.IsStyledElement() && this->IsStyledElement()) {
     // Get the source element's style
-    auto* other_style = const_cast<Element&>(other).style();
-    if (other_style && !other_style->cssText().empty()) {
-      // Get or create this element's style and copy the CSS text
-      auto* this_style = this->style();
-      if (this_style) {
-        this_style->CopyWith(other_style);
-      }
-    }
+    auto other_style = const_cast<Element&>(other).style();
+    auto this_style = this->style();
+
+    std::visit(MakeVisitorWithUnreachableWildcard(
+                   [&](legacy::LegacyInlineCssStyleDeclaration* other_style,
+                       legacy::LegacyInlineCssStyleDeclaration* this_style) {
+                     if (other_style && !other_style->cssText().empty()) {
+                       // Get or create this element's style and copy the CSS text
+                       if (this_style) {
+                         this_style->CopyWith(other_style);
+                       }
+                     }
+                   },
+                   [&](InlineCssStyleDeclaration* other_style, InlineCssStyleDeclaration* this_style) {
+                     // todo:
+                   }),
+               other_style, this_style);
   }
-  
+
   // Also clone the inline style from element_data_ if it exists
   if (other.element_data_ && other.element_data_->InlineStyle()) {
     if (element_data_ && element_data_->IsUnique()) {
@@ -806,9 +834,12 @@ void Element::SynchronizeStyleAttributeInternal() {
   assert(GetElementData()->style_attribute_is_dirty());
   GetElementData()->SetStyleAttributeIsDirty(false);
 
-  legacy::LegacyInlineCssStyleDeclaration* inline_style = style();
-  SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
-                       AttributeModificationReason::kBySynchronizationOfLazyAttribute, ASSERT_NO_EXCEPTION());
+  std::visit(MakeVisitor([&](auto&& inline_style) {
+               SetAttributeInternal(html_names::kStyleAttr, inline_style->cssText(),
+                                    AttributeModificationReason::kBySynchronizationOfLazyAttribute,
+                                    ASSERT_NO_EXCEPTION());
+             }),
+             style());
 }
 
 void Element::SetAttributeInternal(const webf::AtomicString& name,
@@ -857,12 +888,12 @@ void Element::SynchronizeAttribute(const AtomicString& name) {
 
 void Element::InvalidateStyleAttribute(bool only_changed_independent_properties) {
   if (GetExecutingContext()->isBlinkEnabled()) {
-     DCHECK(HasElementData());
-     GetElementData()->SetStyleAttributeIsDirty(true);
-     SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
-                         StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
-     //  GetDocument().GetStyleEngine().AttributeChangedForElement(
-     //      html_names::kStyleAttr, *this);
+    DCHECK(HasElementData());
+    GetElementData()->SetStyleAttributeIsDirty(true);
+    SetNeedsStyleRecalc(only_changed_independent_properties ? kInlineIndependentStyleChange : kLocalStyleChange,
+                        StyleChangeReasonForTracing::Create(style_change_reason::kInlineCSSStyleMutated));
+    //  GetDocument().GetStyleEngine().AttributeChangedForElement(
+    //      html_names::kStyleAttr, *this);
   } else {
     EnsureUniqueElementData().SetStyleAttributeIsDirty(true);
   }

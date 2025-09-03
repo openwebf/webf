@@ -33,6 +33,8 @@ class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration 
   bool IsInlineCssStyleDeclaration() const override;
   const InlineCssStyleDeclarationPublicMethods* inlineCssStyleDeclarationPublicMethods();
 
+  String ToString() const;
+
  private:
   MutableCSSPropertyValueSet& PropertySet() const override;
   CSSStyleSheet* ParentStyleSheet() const override;

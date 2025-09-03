@@ -6,10 +6,12 @@
 #define BRIDGE_ELEMENT_H
 
 #include "../../foundation/string/atomic_string.h"
+#include "bindings/qjs/converter.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
 #include "bindings/qjs/script_promise.h"
 #include "container_node.h"
 #include "core/css/inline_css_style_declaration.h"
+#include "core/css/legacy/legacy_inline_css_style_declaration.h"
 #include "core/dom/attribute_collection.h"
 #include "core/dom/element_rare_data_vector.h"
 #include "core/native/native_function.h"
@@ -20,14 +22,12 @@
 #include "parent_node.h"
 #include "plugin_api/element.h"
 #include "qjs_scroll_to_options.h"
+#include "foundation/utility/make_visitor.h"
 
 namespace webf {
 
 class ShadowRoot;
 class StyleScopeData;
-namespace legacy {
-class LegacyInlineCssStyleDeclaration;
-}
 
 enum class ElementFlags {
   kTabIndexWasSetExplicitly = 1 << 0,
@@ -43,6 +43,8 @@ enum class ElementFlags {
 };
 
 using ScrollOffset = gfx::Vector2dF;
+
+using ElementStyle = std::variant<legacy::LegacyInlineCssStyleDeclaration*, InlineCssStyleDeclaration*>;
 
 class Element : public ContainerNode {
   DEFINE_WRAPPERTYPEINFO();
@@ -82,7 +84,7 @@ class Element : public ContainerNode {
 
   ElementAttributes* attributes() const { return &EnsureElementAttributes(); }
   ElementAttributes& EnsureElementAttributes() const;
-  
+
   // Get attributes as a collection for selector matching
   AttributeCollection Attributes() const;
 
@@ -191,7 +193,7 @@ class Element : public ContainerNode {
   Element* insertAdjacentElement(const AtomicString& position, Element* element, ExceptionState& exception_state);
 
   //  InlineCssStyleDeclaration* style();
-  legacy::LegacyInlineCssStyleDeclaration* style();
+  ElementStyle style();
   // Blink-only inline style accessor (not exposed to legacy bindings).
   InlineCssStyleDeclaration* inlineStyleForBlink();
   DOMTokenList* classList();
@@ -272,7 +274,7 @@ class Element : public ContainerNode {
   bool ChildStyleRecalcBlockedByDisplayLock() const;
 
   // void SetNeedsCompositingUpdate();
-  
+
   // :has() pseudo-class invalidation support
   // TODO: Implement these methods with proper invalidation flags
   void SetAffectedBySubjectHas() {}
@@ -283,13 +285,13 @@ class Element : public ContainerNode {
   void SetSiblingsAffectedByHasFlags(unsigned flags) {}
   bool AffectedByMultipleHas() const { return false; }
   void SetAffectedByMultipleHas() {}
-  
+
   // Additional style invalidation methods
   void SetStyleAffectedByEmpty() {}
   void SetAffectedByFirstChildRules() {}
   void SetAffectedByLastChildRules() {}
   ContainerNode* ParentElementOrDocumentFragment() const;
-  
+
   // More invalidation methods
   void SetChildrenOrSiblingsAffectedByDrag() {}
   bool IsDragged() const { return false; }
@@ -306,7 +308,7 @@ class Element : public ContainerNode {
   void SetAncestorsOrSiblingsAffectedByActiveInHas() {}
   bool ShouldAppearIndeterminate() const { return false; }
   AtomicString ComputeInheritedLanguage() const { return AtomicString(); }
-  
+
   // Form control methods
   bool IsActive() const { return false; }
   bool MatchesEnabledPseudoClass() const { return false; }
@@ -318,7 +320,7 @@ class Element : public ContainerNode {
   bool IsRequiredFormControl() const { return false; }
   bool MatchesValidityPseudoClasses() const { return false; }
   bool IsValidElement() const { return false; }
-  
+
   // Additional methods for selector matching
   bool ContainsPersistentVideo() const { return false; }
   bool IsInRange() const { return false; }
@@ -326,8 +328,13 @@ class Element : public ContainerNode {
   bool IsDefined() const { return false; }
   bool DidAttachInternals() const { return false; }
   // Dummy ElementInternals class for compilation
-  struct ElementInternals { bool HasState(const AtomicString&) const { return false; } };
-  ElementInternals& EnsureElementInternals() const { static ElementInternals dummy; return dummy; }
+  struct ElementInternals {
+    bool HasState(const AtomicString&) const { return false; }
+  };
+  ElementInternals& EnsureElementInternals() const {
+    static ElementInternals dummy;
+    return dummy;
+  }
   AtomicString ShadowPseudoId() const { return AtomicString(); }
 
   // add for invalidation end

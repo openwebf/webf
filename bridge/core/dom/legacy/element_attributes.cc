@@ -10,6 +10,7 @@
 #include "core/html/custom/widget_element.h"
 #include "foundation/native_value_converter.h"
 #include "foundation/string/string_builder.h"
+#include "foundation/utility/make_visitor.h"
 #include "html_names.h"
 
 namespace webf {
@@ -130,9 +131,13 @@ String ElementAttributes::ToString() {
       builder.Append(attr.second);
       builder.Append("\""_s);
     } else {
-      if (element_ != nullptr && element_->style() != nullptr) {
+      if (element_ != nullptr) {
         builder.Append("\""_s);
-        builder.Append(element_->style()->ToString());
+        std::visit(MakeVisitor([&](auto* style) {
+                     if (style != nullptr) {
+                       builder.Append(style->ToString());
+                     }
+                   }), element_->style());
         builder.Append("\""_s);
       } else {
         WEBF_LOG(WARN) << "Style not available inside ElementAttributes::ToString()";

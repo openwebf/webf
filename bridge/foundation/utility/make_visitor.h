@@ -7,24 +7,28 @@
 namespace webf {
 
 namespace internal {
-template<typename Tf, typename Tremains...>
-struct Overloaded {
-  using Tf::operator();
+template<typename Tf, typename... Tremains>
+struct Overloaded : Overloaded<Tf>, Overloaded<Tremains...> {
+  using Overloaded<Tf>::operator();
   using Overloaded<Tremains...>::operator();
 
-  explicit Overloaded(Tf f, Tremains remains...): Overloaded<Tf>(f), Overloaded<Tremains...>(remains...) {}
+  explicit Overloaded(Tf f, Tremains... remains): Overloaded<Tf>(f), Overloaded<Tremains...>(remains...) {}
 };
 
 template<typename Tf>
-struct Overloaded<Tf> {
+struct Overloaded<Tf> : Tf {
   using Tf::operator();
 
-  explicit Overloaded(Tf f): Overloaded<Tf>(f) {}
+  explicit Overloaded(Tf f): Tf(f) {}
 };
 }
 
-auto MakeVisitor(auto... fn) {
+constexpr auto MakeVisitor(auto... fn) {
   return internal::Overloaded(fn...);
+}
+
+constexpr auto MakeVisitorWithUnreachableWildcard(auto... fn) {
+  return internal::Overloaded(fn..., [](auto&&...) {unreachable();});
 }
 
 } // namespace webf
