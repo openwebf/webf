@@ -9,7 +9,7 @@
 
 namespace webf {
 
-struct NativeTouchList {
+struct NativeTouchList: DartReadable {
   int64_t length;
   NativeTouch* touches;
 };
