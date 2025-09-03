@@ -34,7 +34,7 @@ abstract class WebFDynamicLibrary {
     if (Platform.isMacOS) {
       return 'lib$testLibName.dylib';
     } else if (Platform.isWindows) {
-      return '$testLibName.dll';
+      return 'lib$testLibName.dll';
     } else if (Platform.isLinux) {
       return 'lib$libName.so';
     } else {
@@ -48,7 +48,8 @@ abstract class WebFDynamicLibrary {
     if (Platform.isIOS) {
       _ref = nativeDynamicLibrary ??= DynamicLibrary.executable();
     } else {
-      _ref = nativeDynamicLibrary ??= DynamicLibrary.open(join(dynamicLibraryPath, _nativeDynamicLibraryName));
+      _ref = nativeDynamicLibrary ??= DynamicLibrary.open(
+          join(dynamicLibraryPath, _nativeDynamicLibraryName));
     }
 
     return nativeDynamicLibrary;
@@ -56,6 +57,7 @@ abstract class WebFDynamicLibrary {
 
   static DynamicLibrary? _testRef;
   static DynamicLibrary get testRef {
-    return _testRef ??= DynamicLibrary.open(join(dynamicLibraryPath, _nativeDynamicLibraryTestName));
+    return _testRef ??= DynamicLibrary.open(
+        join(dynamicLibraryPath, _nativeDynamicLibraryTestName));
   }
 }

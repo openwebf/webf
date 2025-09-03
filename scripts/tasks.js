@@ -720,7 +720,7 @@ task('build-window-webf-lib', (done) => {
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`).replaceAll(path.sep, path.posix.sep);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -732,7 +732,11 @@ task('build-window-webf-lib', (done) => {
       }
     });
 
-  const webfTargets = ['webf'];
+  const webfTargets = ['webf', 'webf_test'];
+
+  if (targetJSEngine === 'quickjs') {
+    webfTargets.push('webf_unit_test');
+  }
 
   // build
   execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose --config ${buildType}`, {
@@ -743,6 +747,21 @@ task('build-window-webf-lib', (done) => {
     stdio: 'inherit',
     cwd: path.join(paths.bridge, 'cmake-build-windows')
   });
+
+  // Strip debug symbols from Windows binary in release mode
+  if (buildMode === 'Release' || buildMode === 'RelWithDebInfo') {
+    const binaryPath = path.join(paths.bridge, 'build/windows/lib/bin/libwebf.dll');
+    if (fs.existsSync(binaryPath)) {
+      try {
+        execSync(`strip -S -X -x "${binaryPath}"`, { stdio: 'inherit' });
+        console.log(chalk.green(`Stripped debug symbols from ${binaryPath}`));
+      } catch (error) {
+        console.log(chalk.yellow(`Warning: Failed to strip debug symbols from ${binaryPath}: ${error.message}`));
+      }
+    } else {
+      console.log(chalk.yellow(`Warning: Binary not found at ${binaryPath}, skipping strip operation`));
+    }
+  }
 
   done();
 });

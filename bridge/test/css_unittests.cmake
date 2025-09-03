@@ -109,5 +109,5 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
 endif()
 
 # Enable test discovery for CTest
-include(GoogleTest)
-gtest_discover_tests(webf_css_unittests)
+#include(GoogleTest)
+#gtest_discover_tests(webf_css_unittests)

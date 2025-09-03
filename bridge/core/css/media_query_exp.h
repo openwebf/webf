@@ -153,6 +153,7 @@ class MediaQueryExpValue {
       case Type::kRatio:
         return webf::ValuesEquivalent(ratio_, other.ratio_);
     }
+    return false;  // Should never reach here
   }
   bool operator!=(const MediaQueryExpValue& other) const { return !(*this == other); }
 

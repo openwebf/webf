@@ -8,6 +8,7 @@
 #include <../../../foundation/string/atomic_string.h>
 
 #include <unordered_set>
+#include <vector>
 #include "foundation/native_value.h"
 
 namespace webf {

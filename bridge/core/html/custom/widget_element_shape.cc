@@ -13,10 +13,10 @@ WidgetElementShape::WidgetElementShape(JSContext* ctx, NativeWidgetElementShape*
   InitializeMethods(ctx, native_widget_element_shape->methods);
   InitializeAsyncMethods(ctx, native_widget_element_shape->async_methods);
 
-  delete native_widget_element_shape->name;
-  delete native_widget_element_shape->properties;
-  delete native_widget_element_shape->methods;
-  delete native_widget_element_shape->async_methods;
+  dart_free(const_cast<UTF8Char *>(native_widget_element_shape->name));
+  dart_free(native_widget_element_shape->properties);
+  dart_free(native_widget_element_shape->methods);
+  dart_free(native_widget_element_shape->async_methods);
 }
 
 bool WidgetElementShape::HasPropertyOrMethod(const AtomicString& name) const {

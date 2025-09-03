@@ -32,6 +32,9 @@
 #include <limits>
 #include <unordered_map>
 #include <cassert>
+#include <cstdint>
+#include <memory>
+#include <vector>
 #include "foundation/macros.h"
 
 namespace webf {

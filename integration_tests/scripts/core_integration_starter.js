@@ -82,7 +82,8 @@ function buildSpecs(specFiles) {
   
   const result = spawnSync('npm', ['run', 'specs'], {
     stdio: 'inherit',
-    env: env
+    env: env,
+    shell: true,
   });
   
   if (result.status !== 0) {
@@ -114,7 +115,7 @@ function startIntegrationTest(websocketPort, filter) {
   } else if (platform === 'darwin') {
     testExecutable = path.join(__dirname, '../build/macos/Build/Products/Debug/tests.app/Contents/MacOS/tests');
   } else if (platform == 'win32') {
-    testExecutable = path.join(__dirname, '../build/windows/runner/Debug/app.exe');
+    testExecutable = path.join(__dirname, '../build/windows/x64/runner/Debug/app.exe');
   } else {
     throw new Error('Unsupported platform:' + platform);
   }

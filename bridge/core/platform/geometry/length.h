@@ -31,6 +31,7 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <memory>
 #include <optional>
 #include "core/platform/geometry/layout_unit.h"
 #include "core/platform/math_extras.h"

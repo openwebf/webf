@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "css_color_function_parser.h"
+#include <cmath>
 #include "core/css/css_color.h"
 #include "core/css/css_math_expression_node.h"
 #include "core/css/css_math_function_value.h"
@@ -334,7 +335,7 @@ bool ColorFunctionParser::ConsumeChannel(CSSParserTokenRange& args,
 
     // Non-finite values should be clamped to the range [0, 360].
     // Since 0 = 360 in this case, they can all simply become zero.
-    if (!isfinite(channels_[i].value())) {
+    if (!std::isfinite(channels_[i].value())) {
       channels_[i] = 0.0;
     }
 
@@ -418,7 +419,7 @@ bool ColorFunctionParser::MakePerColorSpaceAdjustments() {
         uses_bare_numbers = true;
       }
 
-      if (!isfinite(channels_[i].value())) {
+      if (!std::isfinite(channels_[i].value())) {
         channels_[i].value() = channels_[i].value() > 0 ? 255.0 : 0;
       } else if (!is_relative_color_) {
         // Clamp to [0, 1] range, but allow out-of-gamut relative colors.

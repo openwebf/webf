@@ -13,6 +13,10 @@
 #include <thread>
 #include <chrono>
 
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
+
 using namespace webf;
 
 // Helper function to create SharedNativeString from C string

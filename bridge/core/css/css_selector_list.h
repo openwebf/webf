@@ -80,7 +80,7 @@ class CSSSelectorList {
   // Do not call; for Empty() and AdoptSelectorVector() only.
   explicit CSSSelectorList(webf::PassKey<CSSSelectorList>) {}
 
-  CSSSelectorList(CSSSelectorList&& o) { memcpy(this, o.first_selector_, ComputeLength() * sizeof(CSSSelector)); }
+  CSSSelectorList(CSSSelectorList&& o) { memcpy((void*)this, o.first_selector_, ComputeLength() * sizeof(CSSSelector)); }
   ~CSSSelectorList() = default;
 
   static std::shared_ptr<CSSSelectorList> AdoptSelectorVector(tcb::span<CSSSelector> selector_vector);

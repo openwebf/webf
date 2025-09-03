@@ -4,6 +4,8 @@
 
 #include "color_conversions.h"
 #include <tuple>
+#include <cmath>
+#include <algorithm>
 #include "core/base/numerics/angle_conversion.h"
 
 namespace webf {

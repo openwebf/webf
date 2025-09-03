@@ -16,15 +16,46 @@ endif()
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
   message("Running in an MSYS2 environment (MSYS or MinGW)")
 
+  set(ENV{MSYSTEM_PREFIX} "C:/msys64/clang64")
+  set(MSYS2_PREFIX "C:/msys64/clang64")
+  set(MINGW_64 "C:/msys64/mingw64")
+
+#  set(CMAKE_C_COMPILER clang)
+#  set(CMAKE_CXX_COMPILER clang++)
+#  set(CMAKE_ASM_COMPILER clang)
+#  set(CMAKE_LINKER lld)
+#  set(CMAKE_AR llvm-ar)
+#  set(CMAKE_RANLIB llvm-ranlib)
+  
+  # Set C++20 standard for MSYS2 with libc++
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
+  set(CMAKE_CXX_EXTENSIONS OFF)
+  add_compile_options(-stdlib=libc++)
+  add_link_options(-stdlib=libc++)
+  
+  # Define math constants that are not in standard C++
+  add_compile_definitions(_USE_MATH_DEFINES)
+
   if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     set(CMAKE_INSTALL_PREFIX $ENV{LIBRARY_OUTPUT_DIR})
   endif()
 
   # MSYS2 environments set the MSYSTEM_PREFIX environment variable
   # which points to the root of the specific environment (e.g., /mingw64, /ucrt64, /mingw32)
-  set(LIBPTHREAD_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libwinpthread-1.dll")
-  set(LIBGCC_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libgcc_s_seh-1.dll")
-  set(LIBSTDCXX_DLL_PATH "$ENV{MSYSTEM_PREFIX}/bin/libstdc++-6.dll")
+  set(LIBPTHREAD_DLL_PATH "${MINGW_64}/bin/libwinpthread-1.dll")
+  set(LIBGCC_DLL_PATH "${MINGW_64}/bin/libgcc_s_seh-1.dll")
+  set(LIBSTDCXX_DLL_PATH "${MINGW_64}/bin/libc++.dll")
+
+  # Add ICU library support for MinGW
+  find_package(PkgConfig QUIET)
+  if(PKG_CONFIG_FOUND)
+    pkg_check_modules(ICU QUIET icu-uc icu-i18n icu-io)
+    if(ICU_FOUND)
+      message(STATUS "Found ICU via pkg-config")
+      list(APPEND BRIDGE_INCLUDE ${ICU_INCLUDE_DIRS})
+    endif()
+  endif()
 
 
   # Install the DLL to the runtime binary directory

@@ -6,6 +6,7 @@
 #define BASE_MEMORY_SHARED_PTR_H_
 
 #include <memory>
+#include <cstring>
 
 namespace std {
 

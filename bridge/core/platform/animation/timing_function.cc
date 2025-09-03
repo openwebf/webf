@@ -7,6 +7,7 @@
 #include "core/platform/animation/timing_function.h"
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 #include <string>
 #include "core/platform/gfx/animation/keyframe/timing_function.h"
 

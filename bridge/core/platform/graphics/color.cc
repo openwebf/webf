@@ -385,10 +385,10 @@ String doubleToString(double value, int precision) {
 
 static String ColorParamToString(float param, int precision = 6) {
   StringBuilder result;
-  if (!isfinite(param)) {
+  if (!std::isfinite(param)) {
     // https://www.w3.org/TR/css-values-4/#calc-serialize
     result.Append("calc("_s);
-    if (isinf(param)) {
+    if (std::isinf(param)) {
       // "Infinity" gets capitalized, so we can't use AppendNumber().
       (param < 0) ? result.Append("-infinity"_s) : result.Append("infinity"_s);
     } else {
@@ -414,7 +414,7 @@ String Color::SerializeAsCanvasColor() const {
 
 String Color::SerializeLegacyColorAsCSSColor() const {
   StringBuilder result;
-  if (IsOpaque() && isfinite(alpha_)) {
+  if (IsOpaque() && std::isfinite(alpha_)) {
     result.Append("rgb("_s);
   } else {
     result.Append("rgba("_s);
@@ -711,10 +711,10 @@ static float ResolveNonFiniteChannel(float value,
                                      float negative_infinity_substitution,
                                      float positive_infinity_substitution) {
   // Finite values should be unchanged, even if they are out-of-gamut.
-  if (isfinite(value)) {
+  if (std::isfinite(value)) {
     return value;
   } else {
-    if (isnan(value)) {
+    if (std::isnan(value)) {
       return 0.0f;
     } else {
       if (value < 0) {
@@ -727,9 +727,9 @@ static float ResolveNonFiniteChannel(float value,
 
 void Color::ResolveNonFiniteValues() {
   // Parsed values are `calc(NaN)` but computed values are 0 for NaN.
-  param0_ = isnan(param0_) ? 0.0f : param0_;
-  param1_ = isnan(param1_) ? 0.0f : param1_;
-  param2_ = isnan(param2_) ? 0.0f : param2_;
+  param0_ = std::isnan(param0_) ? 0.0f : param0_;
+  param1_ = std::isnan(param1_) ? 0.0f : param1_;
+  param2_ = std::isnan(param2_) ? 0.0f : param2_;
   alpha_ = ResolveNonFiniteChannel(alpha_, 0.0f, 1.0f);
 }
 

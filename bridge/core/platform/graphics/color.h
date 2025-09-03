@@ -33,6 +33,7 @@
 #include <iosfwd>
 #include <optional>
 #include <tuple>
+#include <cmath>
 
 #include "SkColor.h"
 #include "foundation/macros.h"

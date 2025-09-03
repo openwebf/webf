@@ -96,7 +96,7 @@ inline ScriptWrappable* toScriptWrappable(JSValue object) {
 }
 
 template <typename T>
-Local<T>::~Local<T>() {
+Local<T>::~Local() {
   if (raw_ == nullptr)
     return;
   auto* wrappable = To<ScriptWrappable>(raw_);

@@ -730,7 +730,7 @@ class CSSSelector {
   // from a normal |value_| to a |rare_data_|.
   union DataUnion {
     enum ConstructUninitializedTag { kConstructUninitialized };
-    explicit DataUnion(ConstructUninitializedTag) { memset(this, 0, sizeof(DataUnion)); }
+    explicit DataUnion(ConstructUninitializedTag) { memset((void*)this, 0, sizeof(DataUnion)); }
 
     enum ConstructEmptyValueTag { kConstructEmptyValue };
     explicit DataUnion(ConstructEmptyValueTag) : value_() {}
@@ -865,8 +865,8 @@ inline CSSSelector::CSSSelector(CSSSelector&& o) : data_(DataUnion::kConstructUn
   // constructor (i.e., using similar code as in the copy constructor above)
   // after moving to Oilpan, copying the bits one by one. We already allow
   // memcpy + memset by traits, so we can do it by ourselves, too.
-  memcpy(this, &o, sizeof(*this));
-  memset(&o, 0, sizeof(o));
+  memcpy((void*)this, &o, sizeof(*this));
+  memset((void*)&o, 0, sizeof(o));
 }
 
 inline CSSSelector::~CSSSelector() {
@@ -922,9 +922,9 @@ inline bool CSSSelector::IsIdClassOrAttributeSelector() const {
 
 inline void swap(CSSSelector& a, CSSSelector& b) {
   char tmp[sizeof(CSSSelector)];
-  memcpy(tmp, &a, sizeof(CSSSelector));
-  memcpy(&a, &b, sizeof(CSSSelector));
-  memcpy(&b, tmp, sizeof(CSSSelector));
+  memcpy(tmp, (void*)&a, sizeof(CSSSelector));
+  memcpy((void*)&a, &b, sizeof(CSSSelector));
+  memcpy((void*)&b, tmp, sizeof(CSSSelector));
 }
 
 // Converts descendant to relative descendant, child to relative child

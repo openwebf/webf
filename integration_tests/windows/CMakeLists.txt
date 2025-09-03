@@ -80,7 +80,7 @@ install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}
 install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
-  set(WEBF_TEST_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../../bridge/build/windows/lib/webf_test.dll")
+  set(WEBF_TEST_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../../bridge/build/windows/lib/bin/libwebf_test.dll")
 install(FILES "${WEBF_TEST_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}" COMPONENT Runtime)
 
 

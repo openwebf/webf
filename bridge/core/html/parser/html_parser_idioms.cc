@@ -166,7 +166,9 @@ double ParseToDoubleForNumberType(const std::string& string, double fallback_val
 }
 
 template <typename CharacterType>
-static bool ParseHTMLIntegerInternal(const CharacterType* position, const CharacterType* end, int& value) {}
+static bool ParseHTMLIntegerInternal(const CharacterType* position, const CharacterType* end, int& value) {
+  return false;  // TODO: Implement
+}
 
 template <typename CharacterType>
 static bool IsSpaceOrDelimiter(CharacterType c) {

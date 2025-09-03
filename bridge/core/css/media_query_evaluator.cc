@@ -55,6 +55,7 @@ KleeneValue KleeneOr(KleeneValue a, KleeneValue b) {
     case KleeneValue::kUnknown:
       return (b == KleeneValue::kTrue) ? KleeneValue::kTrue : KleeneValue::kUnknown;
   }
+  return KleeneValue::kUnknown;  // Should never reach here
 }
 
 KleeneValue KleeneAnd(KleeneValue a, KleeneValue b) {
@@ -66,6 +67,7 @@ KleeneValue KleeneAnd(KleeneValue a, KleeneValue b) {
     case KleeneValue::kUnknown:
       return (b == KleeneValue::kFalse) ? KleeneValue::kFalse : KleeneValue::kUnknown;
   }
+  return KleeneValue::kUnknown;  // Should never reach here
 }
 
 }  // namespace
@@ -181,6 +183,7 @@ KleeneValue MediaQueryEvaluator::EvalNot(const MediaQueryExpNode& operand_node,
     case KleeneValue::kUnknown:
       return KleeneValue::kUnknown;
   }
+  return KleeneValue::kUnknown;  // Should never reach here
 }
 
 KleeneValue MediaQueryEvaluator::EvalAnd(const MediaQueryExpNode& left_node,
@@ -229,6 +232,7 @@ static bool HandleNegativeMediaFeatureValue(MediaQueryOperator op) {
     case MediaQueryOperator::kGe:
       return true;
   }
+  return false;  // Should never reach here
 }
 
 template <typename T>
