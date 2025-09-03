@@ -994,8 +994,14 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (overflowVisible) {
       final lines = _inlineFormattingContext!.paragraphLineMetrics;
       if (lines.isNotEmpty) {
-        firstBaseline = lines.first.baseline + paddingTop + borderTop;
-        lastBaseline = lines.last.baseline + paddingTop + borderTop;
+        // For inline-block elements, use the last line's baseline for both first and last
+        if (renderStyle.display == CSSDisplay.inlineBlock) {
+          lastBaseline = lines.last.baseline + paddingTop + borderTop;
+          firstBaseline = lastBaseline;
+        } else {
+          firstBaseline = lines.first.baseline + paddingTop + borderTop;
+          lastBaseline = lines.last.baseline + paddingTop + borderTop;
+        }
         if (debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
               'last=${lastBaseline.toStringAsFixed(2)} '
@@ -1009,8 +1015,14 @@ class RenderFlowLayout extends RenderLayoutBox {
           y += _inlineFormattingContext!.lineBoxes[i].height;
         }
         final last = _inlineFormattingContext!.lineBoxes.last;
-        firstBaseline = first.baseline + paddingTop + borderTop;
-        lastBaseline = y + last.baseline + paddingTop + borderTop;
+        // For inline-block elements, use the last line's baseline for both first and last
+        if (renderStyle.display == CSSDisplay.inlineBlock) {
+          lastBaseline = y + last.baseline + paddingTop + borderTop;
+          firstBaseline = lastBaseline;
+        } else {
+          firstBaseline = first.baseline + paddingTop + borderTop;
+          lastBaseline = y + last.baseline + paddingTop + borderTop;
+        }
         if (debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
               'last=${lastBaseline.toStringAsFixed(2)}');
@@ -1028,7 +1040,48 @@ class RenderFlowLayout extends RenderLayoutBox {
         renderStyle.effectiveOverflowY == CSSOverflowType.visible;
     double? firstBaseline;
     double? lastBaseline;
-    if (overflowVisible && _lineMetrics.isNotEmpty) {
+    
+    // Special handling for inline-block elements
+    if (renderStyle.display == CSSDisplay.inlineBlock && boxSize != null) {
+      // Check if any child elements have text content (establish IFC)
+      double? childLastBaseline;
+      bool hasChildWithText = false;
+      
+      visitChildren((child) {
+        if (child is RenderFlowLayout && child.establishIFC) {
+          hasChildWithText = true;
+          // Ensure child baseline is calculated first
+          child.calculateBaseline();
+          double? baseline = child.computeCssLastBaseline();
+          if (baseline != null) {
+            childLastBaseline = baseline;
+          }
+        } else if (child is RenderEventListener) {
+          // Check children of RenderEventListener (common wrapper)
+          child.visitChildren((grandchild) {
+            if (grandchild is RenderFlowLayout && grandchild.establishIFC) {
+              hasChildWithText = true;
+              // Ensure grandchild baseline is calculated first
+              grandchild.calculateBaseline();
+              double? baseline = grandchild.computeCssLastBaseline();
+              if (baseline != null) {
+                childLastBaseline = baseline;
+              }
+            }
+          });
+        }
+      });
+      
+      if (hasChildWithText && childLastBaseline != null) {
+        // Use child's text baseline
+        firstBaseline = childLastBaseline! + paddingTop + borderTop;
+        lastBaseline = firstBaseline;
+      } else {
+        // No text content in children, use bottom margin edge
+        firstBaseline = boxSize!.height + paddingTop + borderTop;
+        lastBaseline = firstBaseline;
+      }
+    } else if (overflowVisible && _lineMetrics.isNotEmpty) {
       if (_lineMetrics.first.baseline != null) {
         firstBaseline = _lineMetrics.first.baseline! + paddingTop + borderTop;
       }
