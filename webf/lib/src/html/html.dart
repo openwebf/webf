@@ -5,6 +5,7 @@
 import 'package:flutter/widgets.dart' as flutter;
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/src/html/form/base_input.dart';
 import 'package:webf/webf.dart';
 import 'package:webf/rendering.dart';
 import 'package:webf/bridge.dart';
@@ -19,7 +20,9 @@ class HTMLElement extends Element {
   HTMLElement([BindingContext? context]) : super(context) {
     // Add default behavior unfocus focused input or textarea elements.
     addEventListener('click', (event) async {
-      flutter.FocusManager.instance.primaryFocus?.unfocus();
+      if (event.target is! BaseInputElement) {
+        flutter.FocusManager.instance.primaryFocus?.unfocus();
+      }
     });
   }
 

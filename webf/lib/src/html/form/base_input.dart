@@ -500,6 +500,14 @@ mixin BaseInputState on WebFWidgetElementState {
       enabled: !widgetElement.disabled && !widgetElement.readonly,
       style: widgetElement._textStyle,
       strutStyle: null,
+      onTap: () {
+        final box = context.findRenderObject() as RenderBox;
+        final Offset globalOffset = box.globalToLocal(Offset.zero);
+        final double clientX = globalOffset.dx;
+        final double clientY = globalOffset.dy;
+        widgetElement.dispatchEvent(dom.MouseEvent(dom.EVENT_CLICK,
+            clientX: clientX, clientY: clientY, view: widgetElement.ownerDocument.defaultView));
+      },
       // Remove StrutStyle to avoid conflicts with text baseline
       autofocus: widgetElement.autofocus,
       minLines: widgetElement.minLines,
@@ -586,20 +594,6 @@ mixin BaseInputState on WebFWidgetElementState {
       // Enforce default width using cols; allow grow if CSS or layout expands beyond it.
       widget = ConstrainedBox(constraints: BoxConstraints(minWidth: minWidth, maxWidth: minWidth), child: widget);
     }
-
-    // Dispatch click event on pointer up for input/textarea elements.
-    widget = Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerUp: (_) {
-        final box = context.findRenderObject() as RenderBox;
-        final Offset globalOffset = box.globalToLocal(Offset.zero);
-        final double clientX = globalOffset.dx;
-        final double clientY = globalOffset.dy;
-        widgetElement.dispatchEvent(dom.MouseEvent(dom.EVENT_CLICK,
-            clientX: clientX, clientY: clientY, view: widgetElement.ownerDocument.defaultView));
-      },
-      child: widget,
-    );
 
     return widget;
   }
