@@ -22,7 +22,8 @@ public:
  using ImplType = ComputedCssStyleDeclaration;
  ComputedCssStyleDeclaration() = delete;
 
- explicit ComputedCssStyleDeclaration(ExecutingContext* context, NativeBindingObject* native_binding_object);
+ explicit ComputedCssStyleDeclaration(ExecutingContext* context);
+ explicit ComputedCssStyleDeclaration(ExecutingContext* context, NativeBindingObject* nativeBindingObject);
 
  //  ScriptValue item(const AtomicString& key, ExceptionState& exception_state) override;
  unsigned length() const override;

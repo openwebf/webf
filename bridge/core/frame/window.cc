@@ -308,7 +308,7 @@ void Window::postMessage(const ScriptValue& message,
 
 WindowComputedStyle Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
   if (GetExecutingContext()->isBlinkEnabled()) {
-    return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), element->bindingObject());
+    return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext());
   }
 
   // Legacy ComputedStyle is from dart side.

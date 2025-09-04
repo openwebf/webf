@@ -13,9 +13,12 @@
 
 namespace webf {
 
+ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* context)
+   : CSSStyleDeclaration(context->ctx()) {}
+
 ComputedCssStyleDeclaration::ComputedCssStyleDeclaration(ExecutingContext* context,
-                                                        NativeBindingObject* native_binding_object)
-   : CSSStyleDeclaration(context->ctx(), native_binding_object) {}
+                                                         NativeBindingObject* nativeBindingObject)
+   : CSSStyleDeclaration(context->ctx(), nativeBindingObject) {}
 
 ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, ExceptionState& exception_state) {
   if (IsPrototypeMethods(key)) {
