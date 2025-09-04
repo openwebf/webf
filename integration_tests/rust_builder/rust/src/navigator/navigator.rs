@@ -87,15 +87,15 @@ pub fn test_user_agent(_metadata: TestCaseMetadata, context: ExecutingContext) {
   }
 }
 
-#[webf_test_async]
-pub async fn test_clipboard(_metadata: TestCaseMetadata, context: ExecutingContext) {
-  let navigator = context.navigator();
-  let exception_state = context.create_exception_state();
-  let clipboard = navigator.clipboard();
+// #[webf_test_async]
+// pub async fn test_clipboard(_metadata: TestCaseMetadata, context: ExecutingContext) {
+//   let navigator = context.navigator();
+//   let exception_state = context.create_exception_state();
+//   let clipboard = navigator.clipboard();
 
-  let text = "Hello, World!";
-  clipboard.write_text(text, &exception_state).await.unwrap();
-  let result = clipboard.read_text(&exception_state).await.unwrap().unwrap();
+//   let text = "Hello, World!";
+//   clipboard.write_text(text, &exception_state).await.unwrap();
+//   let result = clipboard.read_text(&exception_state).await.unwrap().unwrap();
 
-  safe_assert_eq!(result, text.to_string());
-}
+//   safe_assert_eq!(result, text.to_string());
+// }

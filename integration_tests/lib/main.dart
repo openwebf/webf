@@ -23,7 +23,7 @@ String? pass = (AnsiPen()..green())('[TEST PASS]');
 String? err = (AnsiPen()..red())('[TEST FAILED]');
 
 final String __dirname = path.dirname(Platform.script.path);
-final String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
+String testDirectory = Platform.environment['WEBF_TEST_DIR'] ?? __dirname;
 
 Future<int> findAvailablePort(
     {int startPort = 4000, int endPort = 5000}) async {
@@ -41,6 +41,10 @@ Future<int> findAvailablePort(
 }
 
 Future<Process> startHttpMockServer(int port) async {
+  if (Platform.isWindows) {
+    testDirectory = testDirectory.substring(1);
+  }
+
   return await Process.start(
       'node', [testDirectory + '/scripts/mock_http_server.js'],
       environment: {'PORT': port.toString()},
@@ -54,7 +58,6 @@ void main() async {
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(
       maxAliveInstances: 1,
-      useDioForNetwork: false,
       maxAttachedInstances: 1,
       onControllerDisposed: (String name, WebFController controller) {
         print('controller disposed: $name $controller');
