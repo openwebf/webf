@@ -6,7 +6,6 @@
 #define BRIDGE_WINDOW_H
 
 #include "bindings/qjs/wrapper_type_info.h"
-#include "core/css/computed_css_style_declaration.h"
 #include "core/dom/events/event_target.h"
 #include "core/frame/script_idle_task_controller.h"
 #include "plugin_api/window.h"
@@ -19,7 +18,10 @@ namespace legacy {
 class LegacyComputedCssStyleDeclaration;
 }
 
+class ComputedCssStyleDeclaration;
 class Element;
+
+using WindowComputedStyle = std::variant<legacy::LegacyComputedCssStyleDeclaration*, ComputedCssStyleDeclaration*>;
 
 class Window : public EventTargetWithInlineData {
   DEFINE_WRAPPERTYPEINFO();
@@ -63,8 +65,8 @@ class Window : public EventTargetWithInlineData {
   void postMessage(const ScriptValue& message, ExceptionState& exception_state);
   void postMessage(const ScriptValue& message, const AtomicString& target_origin, ExceptionState& exception_state);
 
-  legacy::LegacyComputedCssStyleDeclaration* getComputedStyle(Element* element, ExceptionState& exception_state);
-  legacy::LegacyComputedCssStyleDeclaration* getComputedStyle(Element* element,
+  WindowComputedStyle getComputedStyle(Element* element, ExceptionState& exception_state);
+  WindowComputedStyle getComputedStyle(Element* element,
                                                 const AtomicString& pseudo_elt,
                                                 ExceptionState& exception_state);
 

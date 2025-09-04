@@ -7,7 +7,8 @@ import {ParentNode} from "./parent_node";
 import {ChildNode} from "./child_node";
 import {Blob} from "../fileapi/blob";
 
-declare class ElementStyle{}
+// Forward-decl for std::variant ElementStyle
+declare class ElementStyleVariant{}
 
 interface Element extends Node, ParentNode, ChildNode {
   id: string;
@@ -16,7 +17,7 @@ interface Element extends Node, ParentNode, ChildNode {
   readonly dataset: DOMStringMap;
   name: DartImpl<string>;
   readonly attributes: ElementAttributes;
-  readonly style: ElementStyle;
+  readonly style: ElementStyleVariant;
   readonly clientHeight: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
   readonly clientLeft: SupportAsync<DartImpl<DependentsOnLayout<number>>>;
   readonly clientTop: SupportAsync<DartImpl<DependentsOnLayout<number>>>;

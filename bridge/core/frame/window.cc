@@ -7,7 +7,6 @@
 #include <modp_b64/modp_b64.h>
 #include "binding_call_methods.h"
 #include "bindings/qjs/cppgc/garbage_collected.h"
-#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
 #include "core/events/message_event.h"
@@ -16,6 +15,9 @@
 #include "event_type_names.h"
 #include "foundation/native_value_converter.h"
 #include "string/utf8_codecs.h"
+
+#include "core/css/computed_css_style_declaration.h"
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 
 namespace webf {
 
@@ -304,7 +306,12 @@ void Window::postMessage(const ScriptValue& message,
   dispatchEvent(message_event, exception_state);
 }
 
-legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
+WindowComputedStyle Window::getComputedStyle(Element* element, ExceptionState& exception_state) {
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    return MakeGarbageCollected<ComputedCssStyleDeclaration>(GetExecutingContext(), element->bindingObject());
+  }
+
+  // Legacy ComputedStyle is from dart side.
   NativeValue arguments[] = {NativeValueConverter<NativeTypePointer<Element>>::ToNativeValue(element)};
   NativeValue result = InvokeBindingMethod(
       binding_call_methods::kgetComputedStyle, 1, arguments,
@@ -314,12 +321,12 @@ legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* ele
       NativeValueConverter<NativeTypePointer<NativeBindingObject>>::FromNativeValue(result);
 
   if (native_binding_object == nullptr)
-    return nullptr;
+    return static_cast<legacy::LegacyComputedCssStyleDeclaration*>(nullptr);
 
   return MakeGarbageCollected<legacy::LegacyComputedCssStyleDeclaration>(GetExecutingContext(), native_binding_object);
 }
 
-legacy::LegacyComputedCssStyleDeclaration* Window::getComputedStyle(Element* element,
+WindowComputedStyle Window::getComputedStyle(Element* element,
                                                       const AtomicString& pseudo_elt,
                                                       ExceptionState& exception_state) {
   return getComputedStyle(element, exception_state);

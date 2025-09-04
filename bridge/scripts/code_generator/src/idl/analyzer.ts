@@ -42,6 +42,15 @@ export function buildClassRelationship() {
   });
 }
 
+function isVariantType(type: string | undefined) {
+  return typeof type === "string" && type.endsWith('Variant');
+}
+
+function getVariantTypeName(type: string | undefined) {
+  console.assert(isVariantType(type), `${type} should be variant type but is not`);
+  return (type as string).slice(0, -("Variant".length));
+}
+
 function getInterfaceName(statement: ts.Statement) {
   return (statement as ts.InterfaceDeclaration).name.escapedText;
 }
@@ -99,6 +108,7 @@ function getParameterName(name: ts.BindingName) : string {
 
 export type ParameterBaseType = FunctionArgumentType | string;
 export type ParameterType = {
+  isVariant?: boolean;
   isArray?: boolean;
   value: ParameterType | ParameterType[] | ParameterBaseType;
 };
@@ -125,6 +135,11 @@ function getParameterBaseType(type: ts.TypeNode, mode?: ParameterMode): Paramete
     let typeReference: ts.TypeReference = type as unknown as ts.TypeReference;
     // @ts-ignore
     let identifier = (typeReference.typeName as ts.Identifier).text;
+
+    if (isVariantType(identifier)) {
+      identifier = getVariantTypeName(identifier)
+    }
+
     if (identifier === 'Function') {
       return FunctionArgumentType.function;
     } else if (identifier === 'Promise') {
@@ -250,13 +265,16 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
     let identifier = (typeReference.typeName as ts.Identifier).text;
     if (identifier.indexOf('SupportAsync') >= 0) {
       let argument = typeReference.typeArguments![0] as unknown as ts.TypeNode;
-      if (argument.kind == ts.SyntaxKind.UnionType) {
-        if (mode) {
-          mode.supportAsync = true
-          if (identifier === 'SupportAsyncManual') {
-            mode.supportAsyncManual = true
-          }
+      // Always mark async mode for SupportAsync wrappers
+      if (mode) {
+        mode.supportAsync = true;
+        if (identifier === 'SupportAsyncManual') {
+          mode.supportAsyncManual = true;
         }
+      }
+
+      // Handle union specially to collect union types
+      if (argument.kind == ts.SyntaxKind.UnionType) {
         let node = argument as unknown as ts.UnionType;
         let types = node.types;
         let result = {
@@ -268,9 +286,47 @@ function getParameterType(type: ts.TypeNode, unionTypeCollector: UnionTypeCollec
         }
         return result;
       }
+
+      // Unwrap DartImpl and DependentsOnLayout to preserve mode flags
+      if (argument.kind == ts.SyntaxKind.TypeReference) {
+        let innerTypeRef: ts.TypeReference = argument as unknown as ts.TypeReference;
+        // @ts-ignore
+        let innerIdentifier = (innerTypeRef.typeName as ts.Identifier).text;
+        if (innerIdentifier == 'DartImpl') {
+          if (mode) {
+            mode.dartImpl = true;
+          }
+          argument = innerTypeRef.typeArguments![0] as unknown as ts.TypeNode;
+        }
+
+        if (argument.kind == ts.SyntaxKind.TypeReference) {
+          let maybeLayoutRef: ts.TypeReference = argument as unknown as ts.TypeReference;
+          // @ts-ignore
+          let maybeLayoutId = (maybeLayoutRef.typeName as ts.Identifier).text;
+          if (maybeLayoutId == 'DependentsOnLayout') {
+            if (mode) mode.layoutDependent = true;
+            argument = maybeLayoutRef.typeArguments![0] as unknown as ts.TypeNode;
+          }
+        }
+      }
+
+      // If it's an array, preserve the array shape by recursion
+      if (argument.kind == ts.SyntaxKind.ArrayType) {
+        let elementType = (argument as ts.ArrayTypeNode).elementType;
+        return {
+          isArray: true,
+          value: getParameterType(elementType, unionTypeCollector, mode)
+        };
+      }
+
+      // For non-union, non-array, return the inner type directly so that
+      // isVariant and pointer/primitive info are preserved at top level.
+      return getParameterType(argument, unionTypeCollector, mode);
     }
   }
   return {
+    // @ts-ignore
+    isVariant: isVariantType(type?.typeName?.text),
     isArray: false,
     value: getParameterBaseType(type, mode)
   };

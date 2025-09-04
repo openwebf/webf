@@ -4,10 +4,11 @@ import {ScrollToOptions} from "../dom/scroll_to_options";
 import {Screen} from "./screen";
 import {WindowEventHandlers} from "./window_event_handlers";
 import {GlobalEventHandlers} from "../dom/global_event_handlers";
-import {LegacyComputedCssStyleDeclaration} from "../css/legacy/legacy_computed_css_style_declaration";
-import {LegacyInlineCssStyleDeclaration} from "../css/legacy/legacy_inline_css_style_declaration";
 import {Element} from "../dom/element";
 import {WindowIdleRequestOptions} from "./window_idle_request_options";
+
+// Forward-decl for std::variant WindowComputedStyle
+declare class WindowComputedStyleVariant {}
 
 interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   // base64 utility methods
@@ -28,7 +29,7 @@ interface Window extends EventTarget, WindowEventHandlers, GlobalEventHandlers {
   __requestIdleCallback__(callback: Function, options?: WindowIdleRequestOptions): int64;
   cancelAnimationFrame(request_id: int64): void;
 
-  getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<LegacyComputedCssStyleDeclaration>;
+  getComputedStyle(element: Element, pseudoElt?: string): SupportAsync<WindowComputedStyleVariant>;
 
   readonly window: Window;
   readonly parent: Window;

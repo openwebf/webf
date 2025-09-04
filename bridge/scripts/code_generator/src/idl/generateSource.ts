@@ -583,6 +583,10 @@ function generateReturnValueInit(blob: IDLBlob, declare: FunctionDeclaration, op
     return `std::shared_ptr<${generateUnionTypeClassName(type.value)}> return_value = nullptr;`;
   }
 
+  if (type.isVariant) {
+    return `${type.value} return_value;`;
+  }
+
   if (isPointerType(type)) {
     if (getPointerType(type) === 'Promise') {
       return 'ScriptPromise return_value;';

@@ -7,8 +7,8 @@
 #define BRIDGE_BINDINGS_QJS_CONVERTER_IMPL_H_
 
 #include <type_traits>
-#include "../../foundation/string/atomic_string.h"
-#include "../../foundation/string/wtf_string.h"
+#include "foundation/string/atomic_string.h"
+#include "foundation/string/wtf_string.h"
 #include "bindings/qjs/union_base.h"
 #include "converter.h"
 #include "core/dom/events/event.h"
@@ -28,6 +28,9 @@
 #include "js_event_listener.h"
 #include "native_string_utils.h"
 #include "script_promise.h"
+
+#include "core/css/computed_css_style_declaration.h"
+#include "core/css/legacy/legacy_computed_css_style_declaration.h"
 
 namespace webf {
 
@@ -663,6 +666,56 @@ struct Converter<ElementStyle> {
   }
 
   static JSValue ToValue(JSContext* ctx, ElementStyle value) {
+    return std::visit(MakeVisitor([&ctx](auto* style) {
+                        if (style == nullptr)
+                          return JS_NULL;
+                        return Converter<std::remove_pointer_t<std::decay_t<decltype(style)>>>::ToValue(ctx, style);
+                      }),
+                      value);
+  }
+};
+
+template <>
+struct Converter<WindowComputedStyle> {
+  using ImplType = WindowComputedStyle;
+
+  static WindowComputedStyle FromValue(JSContext* ctx, JSValue value, ExceptionState& exception_state) {
+    auto ectx = ExecutingContext::From(ctx);
+    if (ectx->isBlinkEnabled()) {
+      if (JS_IsNull(value)) {
+        return static_cast<ComputedCssStyleDeclaration*>(nullptr);
+      }
+
+      return Converter<ComputedCssStyleDeclaration>::FromValue(ctx, value, exception_state);
+    } else {
+      if (JS_IsNull(value)) {
+        return static_cast<legacy::LegacyComputedCssStyleDeclaration*>(nullptr);
+      }
+
+      return Converter<legacy::LegacyComputedCssStyleDeclaration>::FromValue(ctx, value, exception_state);
+    }
+  }
+
+  static WindowComputedStyle ArgumentsValue(ExecutingContext* context,
+                                     JSValue value,
+                                     uint32_t argv_index,
+                                     ExceptionState& exception_state) {
+    if (context->isBlinkEnabled()) {
+      if (JS_IsNull(value)) {
+        return static_cast<ComputedCssStyleDeclaration*>(nullptr);
+      }
+
+      return Converter<ComputedCssStyleDeclaration>::ArgumentsValue(context, value, argv_index, exception_state);
+    } else {
+      if (JS_IsNull(value)) {
+        return static_cast<legacy::LegacyComputedCssStyleDeclaration*>(nullptr);
+      }
+
+      return Converter<legacy::LegacyComputedCssStyleDeclaration>::ArgumentsValue(context, value, argv_index, exception_state);
+    }
+  }
+
+  static JSValue ToValue(JSContext* ctx, WindowComputedStyle value) {
     return std::visit(MakeVisitor([&ctx](auto* style) {
                         if (style == nullptr)
                           return JS_NULL;
