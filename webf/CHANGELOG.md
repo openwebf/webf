@@ -1,3 +1,14 @@
+## 0.22.16
+
+### Features
+
+- Add support for android 16k.
+
+### Fixes
+
+- Fix form data missing chunks when sending with stream.
+- Support dynamic change viewport size when viewport size changes.
+
 ## 0.22.15
 
 fix: force all the decencies of renderObject in the current viewport layout when the viewport metrics changed.
