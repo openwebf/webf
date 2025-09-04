@@ -756,7 +756,7 @@ task('build-android-webf-lib', (done) => {
     } else if (platform == 'linux') {
       androidHome = path.join(process.env.HOME, 'Android/Sdk');
     }
-    const ndkVersion = '22.1.7171670';
+    const ndkVersion = '27.3.13750724';
     ndkDir = path.join(androidHome, 'ndk', ndkVersion);
 
     if (!fs.existsSync(ndkDir)) {
@@ -809,6 +809,7 @@ task('build-android-webf-lib', (done) => {
     -DCMAKE_TOOLCHAIN_FILE=${path.join(ndkDir, '/build/cmake/android.toolchain.cmake')} \
     -DANDROID_NDK=${ndkDir} \
     -DIS_ANDROID=TRUE \
+    -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
     -DANDROID_ABI="${arch}" \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
