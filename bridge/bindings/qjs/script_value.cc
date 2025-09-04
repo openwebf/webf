@@ -116,6 +116,9 @@ static JSValue FromNativeValue(ExecutingContext* context,
           return MakeGarbageCollected<TextMetrics>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::ComputedCSSStyleDeclaration: {
+          if (context->isBlinkEnabled()) {
+            return MakeGarbageCollected<ComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
+          }
           return MakeGarbageCollected<legacy::LegacyComputedCssStyleDeclaration>(context, ptr)->ToQuickJS();
         }
         case JSPointerType::DOMPoint: {
