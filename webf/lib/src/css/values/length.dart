@@ -145,7 +145,9 @@ class CSSLengthValue {
 
     // Use cached value if type is not percentage which may needs 2 layout passes to resolve the
     // final computed value.
-    if (renderStyle?.hasRenderBox() == true && propertyName != null && type != CSSLengthType.PERCENTAGE) {
+    if (renderStyle?.hasRenderBox() == true &&
+        propertyName != null &&
+        type != CSSLengthType.PERCENTAGE) {
       double? cachedValue = getCachedComputedValue(renderStyle!, propertyName!);
       if (cachedValue != null) {
         return cachedValue;
@@ -185,10 +187,10 @@ class CSSLengthValue {
         }
         break;
       case CSSLengthType.VH:
-        _computedValue = value! * renderStyle!.viewportSize.height;
+        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? Size.zero).height;
         break;
       case CSSLengthType.VW:
-        _computedValue = value! * renderStyle!.viewportSize.width;
+        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? Size.zero).width;
         break;
       // 1% of viewport's smaller (vw or vh) dimension.
       // If the height of the viewport is less than its width, 1vmin will be equivalent to 1vh.
@@ -234,7 +236,7 @@ class CSSLengthValue {
               renderWidgetElementChild.constraints.maxHeight !=
                   currentRenderStyle!.target.ownerView.viewport!.boxSize!.height;
           parentWidgetConstraintHeight = renderWidgetElementChild?.constraints.maxHeight;
-        } catch(_) {}
+        } catch (_) {}
 
         // Percentage relative width priority: RenderWidgetChild's constraints > logical width > renderer width
         double? parentPaddingBoxWidth = parentRenderStyle?.paddingBoxLogicalWidth ?? parentRenderStyle?.paddingBoxWidth;
@@ -286,9 +288,8 @@ class CSSLengthValue {
                 // Ensure parent's layout width is computed
                 (parentRenderStyle as CSSRenderStyle).computeContentBoxLogicalWidth();
                 // Try to get parent width again after computation
-                double? recomputedParentWidth = isPositioned
-                    ? parentRenderStyle.paddingBoxLogicalWidth
-                    : parentRenderStyle.contentBoxLogicalWidth;
+                double? recomputedParentWidth =
+                    isPositioned ? parentRenderStyle.paddingBoxLogicalWidth : parentRenderStyle.contentBoxLogicalWidth;
 
                 if (recomputedParentWidth != null) {
                   _computedValue = value! * recomputedParentWidth;

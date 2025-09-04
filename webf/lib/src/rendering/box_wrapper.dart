@@ -39,6 +39,9 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
 
   @override
   void performLayout() {
+    renderStyle.computeContentBoxLogicalWidth();
+    renderStyle.computeContentBoxLogicalHeight();
+
     super.performLayout();
 
     if (child is RenderBoxModel) {

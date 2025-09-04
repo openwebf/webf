@@ -430,7 +430,7 @@ class WebFRenderReplacedRenderObjectWidget extends flutter.SingleChildRenderObje
 
   @override
   String toStringShort() {
-    return 'RenderObjectAdapter(${webFElement.tagName.toLowerCase()})';
+    return webFElement.attachedRenderer?.toStringShort() ?? '';
   }
 }
 
@@ -549,7 +549,7 @@ class WebFRenderLayoutWidgetAdaptor extends flutter.MultiChildRenderObjectWidget
 
   @override
   String toStringShort() {
-    return 'RenderObjectAdapter(${webFElement?.tagName.toLowerCase()})';
+    return webFElement?.attachedRenderer?.toStringShort() ?? '';
   }
 }
 

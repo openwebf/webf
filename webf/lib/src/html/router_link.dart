@@ -7,19 +7,34 @@ import 'package:webf/bridge.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/foundation.dart';
+import 'package:webf/rendering.dart';
 import 'package:webf/widget.dart';
 
 const ROUTER_LINK = 'WEBF-ROUTER-LINK';
 
 class RouterLinkElement extends WidgetElement {
-  RouterLinkElement(super.context);
+  RouterLinkElement(BindingContext? context) : super(context) {
+    if (context != null) {
+      ownerView.window.watchViewportSizeChangeForElement(this);
+    }
+  }
 
   @override
-  bool isRouterLinkElement = true;
+  Map<String, dynamic> get defaultStyle => {DISPLAY: BLOCK};
+
+  @override
+  bool get allowsInfiniteWidth => true;
+
+  @override
+  bool get allowsInfiniteHeight => true;
+
+  @override
+  bool get isRouterLinkElement => true;
 
   String _path = '';
 
   String get path => _path;
+
   set path(String value) {
     _path = value;
   }
@@ -114,11 +129,12 @@ class RouterLinkElementState extends WebFWidgetElementState {
       });
     }
 
-    return WebFHTMLElement(
-        tagName: 'DIV',
-        children: children,
-        inlineStyle: {'position': 'relative'},
-        controller: widgetElement.ownerDocument.controller,
-        parentElement: widgetElement);
+    return WebFWidgetElementChild(
+        child: WebFHTMLElement(
+            tagName: 'ROUTER_LINK',
+            inlineStyle: {'position': 'relative'},
+            controller: widgetElement.ownerDocument.controller,
+            parentElement: widgetElement,
+            children: children));
   }
 }

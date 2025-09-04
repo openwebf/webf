@@ -228,10 +228,10 @@ class RenderLayoutBox extends RenderBoxModel
     // WebF elements can scroll in both axes, but this method needs to work per axis
     // Determine which axis to use based on the axis parameter or default to vertical
     axis ??= Axis.vertical;
-    
+
     // Get the rect in target's coordinate space
     rect ??= target.paintBounds;
-    
+
     // If target is not our descendant, return current scroll position
     RenderObject? ancestor = target;
     while (ancestor != null && ancestor != this) {
@@ -244,19 +244,19 @@ class RenderLayoutBox extends RenderBoxModel
         rect: rect,
       );
     }
-    
+
     // Transform the rect from target's coordinate system to our coordinate system
     final Matrix4 transform = target.getTransformTo(this);
     Rect targetRect = MatrixUtils.transformRect(transform, rect);
-    
+
     // The targetRect is now in our viewport's coordinate system (already accounts for current scroll)
     // To calculate the scroll offset needed, we need to work with the absolute position
     // Add the current scroll offset to get the position in content space
     final Rect targetInContentSpace = targetRect.translate(scrollLeft, scrollTop);
-    
+
     // Get our viewport size (visible area)
     final Size viewportSize = scrollableViewportSize;
-    
+
     // Calculate the target offset based on alignment and axis
     double targetOffset;
     if (axis == Axis.vertical) {
@@ -265,7 +265,7 @@ class RenderLayoutBox extends RenderBoxModel
       final double targetBottom = targetInContentSpace.bottom;
       final double targetHeight = targetInContentSpace.height;
       final double viewportHeight = viewportSize.height;
-      
+
       // Calculate position based on alignment (0.0 = top, 0.5 = center, 1.0 = bottom)
       // For alignment=1.0 (bottom), we want the target at the bottom of the viewport
       if (targetHeight >= viewportHeight) {
@@ -294,7 +294,7 @@ class RenderLayoutBox extends RenderBoxModel
           targetOffset = targetTop - (availableSpace * alignment);
         }
       }
-      
+
       // Clamp to valid scroll range
       final double maxScroll = math.max(0.0, scrollableSize.height - viewportHeight);
       targetOffset = targetOffset.clamp(0.0, maxScroll);
@@ -304,7 +304,7 @@ class RenderLayoutBox extends RenderBoxModel
       final double targetRight = targetInContentSpace.right;
       final double targetWidth = targetInContentSpace.width;
       final double viewportWidth = viewportSize.width;
-      
+
       if (alignment == 1.0) {
         // Align right of target with right of viewport
         targetOffset = targetRight - viewportWidth;
@@ -316,12 +316,12 @@ class RenderLayoutBox extends RenderBoxModel
         final double alignmentOffset = (viewportWidth - targetWidth) * alignment;
         targetOffset = targetLeft - alignmentOffset;
       }
-      
+
       // Clamp to valid scroll range
       final double maxScroll = math.max(0.0, scrollableSize.width - viewportWidth);
       targetOffset = targetOffset.clamp(0.0, maxScroll);
     }
-    
+
     // Calculate the rect position in viewport space after scrolling
     final Rect revealedRect;
     if (axis == Axis.vertical) {
@@ -331,7 +331,7 @@ class RenderLayoutBox extends RenderBoxModel
     } else {
       revealedRect = targetInContentSpace.translate(-targetOffset, 0.0);
     }
-    
+
     return RevealedOffset(
       offset: targetOffset,
       rect: revealedRect,
