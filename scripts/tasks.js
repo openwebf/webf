@@ -818,6 +818,7 @@ task('build-android-webf-lib', (done) => {
     -DANDROID_NDK=${ndkDir} \
     -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
     -DIS_ANDROID=TRUE \
+    -DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON \
     -DANDROID_ABI="${arch}" \
     ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
     ${externCmakeArgs.join(' ')} \
