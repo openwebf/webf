@@ -699,6 +699,11 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   }
 
   @pragma('vm:prefer-inline')
+  bool isSelfRouterLinkElement() {
+    return target is RouterLinkElement;
+  }
+
+  @pragma('vm:prefer-inline')
   bool isSelfNeedsRelayout() {
     return someRenderBoxSatisfy((renderObject) => renderObject.needsRelayout);
   }
@@ -731,6 +736,19 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     if (selfRender.parent is! RenderBoxModel) return false;
 
     return matcher(selfRender.parent as RenderBoxModel, (selfRender.parent as RenderBoxModel).renderStyle);
+  }
+
+  @override
+  RenderViewportBox? getCurrentViewportBox() {
+    flutter.RenderObject? current = attachedRenderBoxModel;
+    while (current != null) {
+      if (current is RenderViewportBox) {
+        return current;
+      }
+
+      current = current.parent;
+    }
+    return null;
   }
 
   @pragma('vm:prefer-inline')
@@ -826,7 +844,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     for (final renderObject in widgetRenderObjectIterator) {
       try {
         return await renderObject.toImage(pixelRatio: pixelRatio);
-      } catch(_) {
+      } catch (_) {
         continue;
       }
     }
@@ -1036,7 +1054,6 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     }
     return false;
   }
-
 
   void ensureEventResponderBound() {
     everyRenderObjectByTypeAndMatch(RenderObjectGetType.self, (renderObject, _) {
@@ -2369,8 +2386,9 @@ class CSSRenderStyle extends RenderStyle
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if (renderStyle.isSelfHTMLElement()) {
-        logicalWidth = target.ownerView.viewport!.boxSize!.width;
+      } else if (renderStyle.isSelfHTMLElement() ||
+          (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
+        logicalWidth = getCurrentViewportBox()!.boxSize!.width;
       } else if (parentStyle != null) {
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
         // Replaced element also stretch in flex layout if align-items is stretch.
@@ -2382,7 +2400,7 @@ class CSSRenderStyle extends RenderStyle
             double? maxConstraintWidth;
             try {
               maxConstraintWidth = childWrapper?.constraints.maxWidth;
-            } catch(_) {}
+            } catch (_) {}
 
             if (ancestorRenderStyle.isSelfRenderWidget() && childWrapper != null && maxConstraintWidth != null) {
               logicalWidth = maxConstraintWidth;
@@ -2505,7 +2523,7 @@ class CSSRenderStyle extends RenderStyle
           BoxConstraints? childWrapperConstraints;
           try {
             childWrapperConstraints = childWrapper?.constraints;
-          } catch(_) {}
+          } catch (_) {}
           // Override the default logicalHeight value is the parent is RenderWidget
           if (parentRenderStyle.isSelfRenderWidget() &&
               childWrapper != null &&
@@ -2816,8 +2834,7 @@ class CSSRenderStyle extends RenderStyle
   }
 
   // Create renderLayoutBox if type changed and copy children if there has previous renderLayoutBox.
-  RenderLayoutBox createRenderLayout(
-      {bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
+  RenderLayoutBox createRenderLayout({bool isRepaintBoundary = false, CSSRenderStyle? cssRenderStyle}) {
     CSSDisplay display = this.display;
     RenderLayoutBox? nextRenderLayoutBox;
 

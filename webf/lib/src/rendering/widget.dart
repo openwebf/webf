@@ -45,7 +45,7 @@ class RenderWidget extends RenderBoxModel
     Size viewportSize = renderStyle.target.ownerDocument.viewport!.viewportSize;
     BoxConstraints childConstraints = BoxConstraints(
         minWidth: contentConstraints!.minWidth,
-        maxWidth: contentConstraints!.hasTightWidth
+        maxWidth: (contentConstraints!.hasTightWidth || (renderStyle.target as WidgetElement).allowsInfiniteWidth)
             ? contentConstraints!.maxWidth
             : math.min(viewportSize.width, contentConstraints!.maxWidth),
         minHeight: contentConstraints!.minHeight,

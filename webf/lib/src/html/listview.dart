@@ -42,7 +42,14 @@ class WebFListViewElement extends WebFListViewBindings {
   /// Creates a new FlutterListViewElement
   ///
   /// @param context The binding context for the element
-  WebFListViewElement(BindingContext? context) : super(context);
+  WebFListViewElement(BindingContext? context) : super(context) {
+    if (context != null) {
+      ownerView.window.watchViewportSizeChangeForElement(this);
+    }
+  }
+
+  @override
+  bool get allowsInfiniteWidth => true;
 
   /// The scroll direction for the list view (vertical by default)
   Axis scrollDirection = Axis.vertical;
