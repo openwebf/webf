@@ -115,18 +115,7 @@ class FetchModule extends BaseModule {
     }
   }
 
-  @override
-  dynamic invoke(String method, List<dynamic> params) {
-    if (method == 'abortRequest') {
-      _abortRequest();
-      return '';
-    }
-
-    // Use Dio path when globally enabled
-    if (WebFControllerManager.instance.useDioForNetwork) {
-      return _invokeWithDio(method, params);
-    }
-
+  Future<dynamic> _invokeWithHttpRequest(String method, List<dynamic> params) async {
     Completer<dynamic> completer = Completer();
 
     Uri uri = _resolveUri(method);
@@ -138,8 +127,10 @@ class FetchModule extends BaseModule {
     dynamic requestBody;
 
     if (body is FormDataBindings) {
-      FormData formData = FormData.fromMap(body.storage);
-      requestBody = formData.finalize();
+      final formData = FormData.fromMap(body.storage);
+      final stream = formData.finalize();
+      final chunks = await stream.toList();
+      requestBody = Uint8List.fromList(chunks.expand((e) => e).toList());
       headers['content-type'] = 'multipart/form-data; boundary=${formData.boundary}';
     } else if (body is NativeByteData) {
       requestBody = body.bytes;
@@ -154,9 +145,9 @@ class FetchModule extends BaseModule {
         final dumper = LoadingStateRegistry.instance.getDumper(contextId);
         // Use the resolved URI for error reporting
         dumper?.recordNetworkRequestError(
-          uri.toString(),  // Use the resolved URI
-          error.toString(),
-          isXHR: true  // Mark as XHR/Fetch request
+            uri.toString(),  // Use the resolved URI
+            error.toString(),
+            isXHR: true  // Mark as XHR/Fetch request
         );
       }
       completer.completeError(error, stackTrace);
@@ -189,6 +180,21 @@ class FetchModule extends BaseModule {
     }
 
     return completer.future;
+  }
+
+  @override
+  dynamic invoke(String method, List<dynamic> params) {
+    if (method == 'abortRequest') {
+      _abortRequest();
+      return '';
+    }
+
+    // Use Dio path when globally enabled
+    if (WebFControllerManager.instance.useDioForNetwork) {
+      return _invokeWithDio(method, params);
+    }
+
+    return _invokeWithHttpRequest(method, params);
   }
 
   Future<dynamic> _invokeWithDio(String method, List<dynamic> params) async {
