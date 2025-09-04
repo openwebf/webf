@@ -88,9 +88,9 @@ class ElementData {
 
   BitField bit_field_;
 
-  mutable std::shared_ptr<const CSSPropertyValueSet> inline_style_;
-  mutable SpaceSplitString class_names_;
-  mutable AtomicString id_for_style_resolution_;
+  mutable std::shared_ptr<const CSSPropertyValueSet> inline_style_{nullptr};
+  mutable SpaceSplitString class_names_{};
+  mutable AtomicString id_for_style_resolution_{};
 
  private:
   friend class Element;

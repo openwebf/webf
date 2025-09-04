@@ -937,7 +937,7 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
 void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_string) {
   if (GetExecutingContext()->isBlinkEnabled()) {
     DCHECK(IsStyledElement());
-    std::shared_ptr<const CSSPropertyValueSet>& inline_style = GetElementData()->inline_style_;
+    std::shared_ptr<const CSSPropertyValueSet> inline_style = EnsureUniqueElementData().inline_style_;
 
     // Avoid redundant work if we're using shared attribute data with already
     // parsed inline style.
