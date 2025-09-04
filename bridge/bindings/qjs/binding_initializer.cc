@@ -101,9 +101,9 @@
 #include "qjs_input_event.h"
 #include "qjs_intersection_change_event.h"
 #include "qjs_keyboard_event.h"
-// #include "qjs_computed_css_style_declaration.h"
-// #include "qjs_css_style_declaration.h"
-// #include "qjs_inline_css_style_declaration.h"
+#include "qjs_computed_css_style_declaration.h"
+#include "qjs_css_style_declaration.h"
+#include "qjs_inline_css_style_declaration.h"
 #include "qjs_legacy_computed_css_style_declaration.h"
 #include "qjs_legacy_css_style_declaration.h"
 #include "qjs_legacy_inline_css_style_declaration.h"
@@ -261,9 +261,9 @@ void InstallBindings(ExecutingContext* context) {
   QJSDOMMatrix::Install(context);
   QJSDOMPointReadOnly::Install(context);
   QJSDOMPoint::Install(context);
-  // QJSCSSStyleDeclaration::Install(context);
-  // QJSInlineCssStyleDeclaration::Install(context);
-  // QJSComputedCssStyleDeclaration::Install(context);
+  QJSCSSStyleDeclaration::Install(context);
+  QJSInlineCssStyleDeclaration::Install(context);
+  QJSComputedCssStyleDeclaration::Install(context);
   QJSBoundingClientRect::Install(context);
   QJSScreen::Install(context);
   QJSStyleSheet::Install(context);
