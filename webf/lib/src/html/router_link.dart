@@ -26,9 +26,6 @@ class RouterLinkElement extends WidgetElement {
   bool get allowsInfiniteWidth => true;
 
   @override
-  bool get allowsInfiniteHeight => true;
-
-  @override
   bool get isRouterLinkElement => true;
 
   String _path = '';
