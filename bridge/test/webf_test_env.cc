@@ -218,7 +218,7 @@ std::unique_ptr<WebFTestEnv> TEST_init(OnJSError onJsError, NativeWidgetElementS
   auto mockedDartMethods = TEST_getMockDartMethods(onJsError);
   auto* dart_isolate_context = initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size());
   double pageContextId = contextId -= 1;
-  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context, shape, shape_len);
+  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context, shape, shape_len, /*enable_blink=*/kEnableBlink);
   void* testContext = initTestFramework(page);
   TEST_mockTestEnvDartMethods(testContext, onJsError);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
@@ -238,7 +238,7 @@ std::unique_ptr<webf::WebFPage> TEST_allocateNewPage(OnJSError onJsError) {
   auto dart_isolate_context = std::unique_ptr<DartIsolateContext>(
       (DartIsolateContext*)initDartIsolateContextSync(0, mockedDartMethods.data(), mockedDartMethods.size()));
   int pageContextId = contextId -= 1;
-  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context.get(), nullptr, 0);
+  auto* page = allocateNewPageSync(pageContextId, dart_isolate_context.get(), nullptr, 0, /*enable_blink=*/kEnableBlink);
   void* testContext = initTestFramework(page);
   test_context_map[pageContextId] = reinterpret_cast<WebFTestContext*>(testContext);
 

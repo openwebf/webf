@@ -61,7 +61,7 @@ void* initDartIsolateContextSync(int64_t dart_port,
   return dart_isolate_context;
 }
 
-void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget_element_shapes, int32_t shape_len) {
+void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget_element_shapes, int32_t shape_len, int8_t enable_blink) {
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPageSync Call BEGIN";
 #endif
@@ -69,7 +69,7 @@ void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget
   assert(dart_isolate_context != nullptr);
 
   void* result = static_cast<webf::DartIsolateContext*>(dart_isolate_context)
-                     ->AddNewPageSync(thread_identity, native_widget_element_shapes, shape_len);
+                     ->AddNewPageSync(thread_identity, native_widget_element_shapes, shape_len, enable_blink);
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPageSync Call END";
 #endif
@@ -80,6 +80,7 @@ void* allocateNewPageSync(double thread_identity, void* ptr, void* native_widget
 void allocateNewPage(double thread_identity,
                      int32_t sync_buffer_size,
                      int8_t use_legacy_ui_command,
+                     int8_t enable_blink,
                      void* ptr,
                      void* native_widget_element_shapes,
                      int32_t shape_len,
@@ -93,7 +94,7 @@ void allocateNewPage(double thread_identity,
   Dart_PersistentHandle persistent_handle = Dart_NewPersistentHandle_DL(dart_handle);
 
   static_cast<webf::DartIsolateContext*>(dart_isolate_context)
-      ->AddNewPage(thread_identity, sync_buffer_size, use_legacy_ui_command, native_widget_element_shapes, shape_len, persistent_handle,
+      ->AddNewPage(thread_identity, sync_buffer_size, use_legacy_ui_command, enable_blink, native_widget_element_shapes, shape_len, persistent_handle,
                    result_callback);
 #if ENABLE_LOG
   WEBF_LOG(VERBOSE) << "[Dispatcher]: allocateNewPage Call END";

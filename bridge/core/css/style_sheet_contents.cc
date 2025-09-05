@@ -325,7 +325,11 @@ void StyleSheetContents::RegisterClient(webf::CSSStyleSheet* sheet) {
   }
 }
 
-void StyleSheetContents::UnregisterClient(webf::CSSStyleSheet* style_sheet) {}
+void StyleSheetContents::UnregisterClient(webf::CSSStyleSheet* style_sheet) {
+  if (!style_sheet) return;
+  loading_clients_.erase(style_sheet);
+  completed_clients_.erase(style_sheet);
+}
 
 void StyleSheetContents::StartMutation() {
   is_mutable_ = true;

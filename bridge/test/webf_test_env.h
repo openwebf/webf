@@ -15,6 +15,14 @@
 
 using namespace webf;
 
+// NOTE: Uncomment this to enable blink in unittests
+// #define WEBF_ENABLE_BLINK
+#ifdef WEBF_ENABLE_BLINK
+constexpr inline uint8_t kEnableBlink = 1;
+#else
+constexpr inline uint8_t kEnableBlink = 0;
+#endif
+
 // Trigger a callbacks before GC free the eventTargets.
 using TEST_OnEventTargetDisposed = void (*)(EventTarget* event_target);
 struct UnitTestEnv {

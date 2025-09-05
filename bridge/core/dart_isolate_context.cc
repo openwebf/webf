@@ -147,6 +147,7 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
                                                      double page_context_id,
                                                      int32_t sync_buffer_size,
                                                      int8_t use_legacy_ui_command,
+                                                     int8_t enable_blink,
                                                      NativeWidgetElementShape* native_widget_element_shapes,
                                                      int32_t shape_len,
                                                      Dart_Handle dart_handle,
@@ -155,6 +156,10 @@ void DartIsolateContext::InitializeNewPageInJSThread(PageGroup* page_group,
   dart_isolate_context->InitializeGlobalsPerThread();
   auto* page = new WebFPage(dart_isolate_context, true, sync_buffer_size, use_legacy_ui_command, page_context_id, native_widget_element_shapes,
                             shape_len, nullptr);
+
+  if (enable_blink) {
+    page->executingContext()->EnableBlinkEngine();
+  }
 
   dart_isolate_context->dispatcher_->PostToDart(true, HandleNewPageResult, page_group, dart_handle, result_callback,
                                                 page);
@@ -181,6 +186,7 @@ void DartIsolateContext::DisposePageInJSThread(DartIsolateContext* dart_isolate_
 void* DartIsolateContext::AddNewPage(double thread_identity,
                                      int32_t sync_buffer_size,
                                      int8_t use_legacy_ui_command,
+                                     int8_t enable_blink,
                                      void* native_widget_element_shapes,
                                      int32_t shape_len,
                                      Dart_Handle dart_handle,
@@ -203,7 +209,7 @@ void* DartIsolateContext::AddNewPage(double thread_identity,
   }
 
   dispatcher_->PostToJs(true, thread_group_id, InitializeNewPageInJSThread, page_group, this, thread_identity,
-                        sync_buffer_size, use_legacy_ui_command, static_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
+                        sync_buffer_size, use_legacy_ui_command, enable_blink, static_cast<NativeWidgetElementShape*>(native_widget_element_shapes),
                         shape_len, dart_handle, result_callback);
   return nullptr;
 }
@@ -224,8 +230,13 @@ std::unique_ptr<WebFPage> DartIsolateContext::InitializeNewPageSync(DartIsolateC
 
 void* DartIsolateContext::AddNewPageSync(double thread_identity,
                                          void* native_widget_element_shapes,
-                                         int32_t shape_len) {
+                                         int32_t shape_len,
+                                         int8_t enable_blink) {
   auto page = InitializeNewPageSync(this, 0, thread_identity, native_widget_element_shapes, shape_len);
+
+  if (enable_blink) {
+    page->executingContext()->EnableBlinkEngine();
+  }
 
   void* p = page.get();
   pages_in_ui_thread_.emplace(std::move(page));

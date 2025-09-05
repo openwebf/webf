@@ -67,11 +67,12 @@ class DartIsolateContext {
   void* AddNewPage(double thread_identity,
                    int32_t sync_buffer_size,
                    int8_t use_legacy_ui_command,
+                   int8_t enable_blink,
                    void* native_widget_element_shapes,
                    int32_t shape_len,
                    Dart_Handle dart_handle,
                    AllocateNewPageCallback result_callback);
-  void* AddNewPageSync(double thread_identity, void* native_widget_element_shapes, int32_t shape_len);
+  void* AddNewPageSync(double thread_identity, void* native_widget_element_shapes, int32_t shape_len, int8_t enable_blink = 0);
   void RemovePage(double thread_identity, WebFPage* page, Dart_Handle dart_handle, DisposePageCallback result_callback);
   void RemovePageSync(double thread_identity, WebFPage* page);
 
@@ -91,6 +92,7 @@ class DartIsolateContext {
                                           double page_context_id,
                                           int32_t sync_buffer_size,
                                           int8_t use_legacy_ui_command,
+                                          int8_t enable_blink,
                                           NativeWidgetElementShape* native_widget_element_shapes,
                                           int32_t shape_len,
                                           Dart_Handle dart_handle,

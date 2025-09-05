@@ -49,6 +49,7 @@ WEBF_EXPORT_C
 void allocateNewPage(double thread_identity,
                      int32_t sync_buffer_size,
                      int8_t use_legacy_ui_command,
+                     int8_t enable_blink,
                      void* dart_isolate_context,
                      void* native_widget_element_shapes,
                      int32_t shape_len,
@@ -59,7 +60,8 @@ WEBF_EXPORT_C
 void* allocateNewPageSync(double thread_identity,
                           void* dart_isolate_context,
                           void* native_widget_element_shapes,
-                          int32_t shape_len);
+                          int32_t shape_len,
+                          int8_t enable_blink);
 
 WEBF_EXPORT_C
 int64_t newPageIdSync();

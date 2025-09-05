@@ -54,6 +54,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
   WebFViewController(
       {this.background,
       this.enableDebug = false,
+      this.enableBlink = false,
       required this.rootController,
       required this.runningThread,
       this.navigationDelegate,
@@ -69,7 +70,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
 
-    _contextId = await initBridge(this, runningThread);
+    _contextId = await initBridge(this, runningThread, enableBlink || bool.fromEnvironment("WEBF_ENABLE_BLINK"));
 
     _inited = true;
 
@@ -230,6 +231,9 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
 
   // Enable print debug message when rendering.
   bool enableDebug;
+
+  // Enable Blink CSS stack
+  bool enableBlink;
 
   // have already disposed.
   bool _disposed = false;

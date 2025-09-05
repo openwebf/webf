@@ -17,8 +17,8 @@ import 'package:webf/src/devtools/panel/remote_object_service.dart';
 typedef NativeOnDartContextFinalized = Void Function(Pointer<Void> data);
 typedef DartOnDartContextFinalized = void Function(Pointer<Void> data);
 
-final _initDartDynamicLinking = WebFDynamicLibrary.ref
-    .lookup<NativeFunction<NativeOnDartContextFinalized>>('on_dart_context_finalized');
+final _initDartDynamicLinking =
+    WebFDynamicLibrary.ref.lookup<NativeFunction<NativeOnDartContextFinalized>>('on_dart_context_finalized');
 
 class DartContext implements Finalizable {
   static final _finalizer = NativeFinalizer(_initDartDynamicLinking);
@@ -40,7 +40,12 @@ bool isJSRunningInDedicatedThread(double contextId) {
 typedef NativeGetObjectPropertiesFunc = Pointer<NativeValue> Function(
     Pointer<Void> dartIsolateContext, Double contextId, Pointer<Utf8> objectId, Int32 includePrototype);
 typedef NativeGetObjectPropertiesAsyncFunc = Void Function(
-    Pointer<Void> dartIsolateContext, Double contextId, Pointer<Utf8> objectId, Int32 includePrototype, Handle object, Pointer<NativeFunction<NativeGetObjectPropertiesCallback>> callback);
+    Pointer<Void> dartIsolateContext,
+    Double contextId,
+    Pointer<Utf8> objectId,
+    Int32 includePrototype,
+    Handle object,
+    Pointer<NativeFunction<NativeGetObjectPropertiesCallback>> callback);
 typedef NativeGetObjectPropertiesCallback = Void Function(Handle object, Pointer<NativeValue> result);
 typedef NativeEvaluatePropertyPathFunc = Pointer<NativeValue> Function(
     Pointer<Void> dartIsolateContext, Double contextId, Pointer<Utf8> objectId, Pointer<Utf8> propertyPath);
@@ -55,14 +60,14 @@ void _initRemoteObjectService() {
   if (_remoteObjectServiceInitialized) return;
 
   try {
-    final getObjectPropertiesPtr = WebFDynamicLibrary.ref
-        .lookup<NativeFunction<NativeGetObjectPropertiesFunc>>('GetObjectPropertiesFromDart');
+    final getObjectPropertiesPtr =
+        WebFDynamicLibrary.ref.lookup<NativeFunction<NativeGetObjectPropertiesFunc>>('GetObjectPropertiesFromDart');
     final getObjectPropertiesAsyncPtr = WebFDynamicLibrary.ref
         .lookup<NativeFunction<NativeGetObjectPropertiesAsyncFunc>>('GetObjectPropertiesFromDartAsync');
-    final evaluatePropertyPathPtr = WebFDynamicLibrary.ref
-        .lookup<NativeFunction<NativeEvaluatePropertyPathFunc>>('EvaluatePropertyPathFromDart');
-    final releaseObjectPtr = WebFDynamicLibrary.ref
-        .lookup<NativeFunction<NativeReleaseObjectFunc>>('ReleaseObjectFromDart');
+    final evaluatePropertyPathPtr =
+        WebFDynamicLibrary.ref.lookup<NativeFunction<NativeEvaluatePropertyPathFunc>>('EvaluatePropertyPathFromDart');
+    final releaseObjectPtr =
+        WebFDynamicLibrary.ref.lookup<NativeFunction<NativeReleaseObjectFunc>>('ReleaseObjectFromDart');
 
     RemoteObjectService.setNativeFunctions(
       getObjectPropertiesPtr.asFunction<GetObjectPropertiesFunc>(),
@@ -78,7 +83,7 @@ void _initRemoteObjectService() {
 }
 
 /// Init bridge
-FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) async {
+FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread, bool enableBlink) async {
   // Setup binding bridge.
   BindingBridge.setup();
   defineBuiltInElements();
@@ -89,12 +94,9 @@ FutureOr<double> initBridge(WebFViewController view, WebFThread runningThread) a
   _initRemoteObjectService();
 
   double newContextId = runningThread.identity();
-  await allocateNewPage(
-    runningThread is FlutterUIThread,
-    newContextId,
-    runningThread.syncBufferSize(),
-    useLegacyUICommand: runningThread is DedicatedThread ? runningThread.useLegacyUICommand : false
-  );
+  await allocateNewPage(runningThread is FlutterUIThread, newContextId, runningThread.syncBufferSize(),
+      useLegacyUICommand: runningThread is DedicatedThread ? runningThread.useLegacyUICommand : false,
+      enableBlink: enableBlink);
 
   return newContextId;
 }
