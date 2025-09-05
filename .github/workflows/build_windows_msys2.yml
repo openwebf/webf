@@ -1,0 +1,157 @@
+name: Build WebF Bridge - Windows MSYS2/Clang
+
+on:
+  push:
+    branches: [ main, develop, 'fix/*', 'feature/*', "release/*" ]
+  pull_request:
+    branches: [ main, develop, "release/*" ]
+  workflow_dispatch:
+
+env:
+  nodeVersion: "22"
+  cmakeVersion: "4.0.2"
+
+jobs:
+  build_windows_bridge:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_mode: [Debug, Release]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.nodeVersion }}
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v2
+      with:
+        cmake-version: ${{ env.cmakeVersion }}
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          mingw-w64-ucrt-x86_64-toolchain
+          mingw-w64-ucrt-x86_64-clang
+          mingw-w64-ucrt-x86_64-clang-tools-extra
+          mingw-w64-ucrt-x86_64-cmake
+          mingw-w64-ucrt-x86_64-ninja
+          mingw-w64-ucrt-x86_64-pkgconf
+          mingw-w64-ucrt-x86_64-gperf
+          mingw-w64-ucrt-x86_64-icu
+          mingw-w64-ucrt-x86_64-libiconv
+          git
+          make
+
+    - name: Add MSYS2 to PATH
+      shell: bash
+      run: |
+        echo "C:/msys64/ucrt64/bin" >> $GITHUB_PATH
+        echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+
+    - name: Verify toolchain
+      shell: bash
+      run: |
+        which clang
+        which clang++
+        clang --version
+        cmake --version
+        ninja --version
+
+    - name: Install Node.js dependencies
+      run: npm install
+
+    - name: Generate binding code
+      run: npm run bindgen
+
+    - name: Build WebF Bridge
+      shell: bash
+      run: |
+        export CC=clang
+        export CXX=clang++
+        export WEBF_BUILD=${{ matrix.build_mode }}
+        export WEBF_JS_ENGINE=quickjs
+        export MSYSTEM_PREFIX=/ucrt64
+        npm run build:bridge:windows
+      env:
+        WEBF_BUILD: ${{ matrix.build_mode }}
+        WEBF_JS_ENGINE: quickjs
+
+    - name: Run Bridge Unit Tests
+      shell: bash
+      run: |
+        chmod +x ./bridge/build/windows/lib/bin/webf_unit_test.exe
+        node scripts/run_bridge_unit_test.js
+      continue-on-error: true
+
+    - name: Upload DLL files
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-dlls-${{ matrix.build_mode }}
+        path: |
+          bridge/build/windows/lib/bin/*.dll
+          webf/windows/*.dll
+        retention-days: 30
+        if-no-files-found: warn
+
+  test_integration:
+    runs-on: windows-latest
+    needs: build_windows_bridge
+    strategy:
+      matrix:
+        build_mode: [Debug]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.27.0'
+        channel: 'stable'
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.nodeVersion }}
+
+    - name: Download DLL artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: windows-dlls-${{ matrix.build_mode }}
+        path: ./
+
+    - name: Setup Flutter for Windows
+      run: |
+        flutter config --enable-windows-desktop
+        flutter doctor -v
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run Flutter tests
+      run: |
+        cd webf
+        flutter test
+      continue-on-error: true
+
+    - name: Run integration tests
+      run: |
+        cd integration_tests
+        npm install
+        npm run integration
+      continue-on-error: true
+      env:
+        CI: true
