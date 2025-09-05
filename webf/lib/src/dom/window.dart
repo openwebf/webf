@@ -16,9 +16,9 @@ class Window extends EventTarget {
   final Document document;
   Screen? _screen;
   Screen get screen {
-    if (document.controller.ownerFlutterView == null) return Screen.zero(contextId!, null, document.controller.view);
+    if (document.controller.ownerFlutterView == null) return Screen.zero(contextId!, document.controller.view);
 
-    _screen ??= Screen(contextId!, document.controller.ownerFlutterView, document.controller.view);
+    _screen ??= Screen(contextId!, document.controller.view);
     return _screen!;
   }
 
