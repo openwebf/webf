@@ -2369,8 +2369,9 @@ class CSSRenderStyle extends RenderStyle
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
       if (renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if (renderStyle.isSelfHTMLElement() ||
-          (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
+      } else if (renderStyle.isSelfHTMLElement()) {
+        logicalWidth = target.ownerView.viewport!.boxSize!.width;
+      } else if ((renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
       } else if (parentStyle != null) {
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
