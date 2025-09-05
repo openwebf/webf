@@ -103,7 +103,12 @@ list(APPEND WEBF_INTEGRATION_TEST_SOURCE
 
 # Built libwebf_test library for integration test with flutter.
 add_library(webf_test SHARED ${WEBF_INTEGRATION_TEST_SOURCE})
-target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf dbghelp)
+target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
+
+if(WIN32)
+  target_link_libraries(webf_test PRIVATE dbghelp)
+endif()
+
 target_include_directories(webf_test PRIVATE
   ${BRIDGE_INCLUDE}
   ./test
