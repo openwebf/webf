@@ -187,10 +187,10 @@ class CSSLengthValue {
         }
         break;
       case CSSLengthType.VH:
-        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? Size.zero).height;
+        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? renderStyle!.viewportSize).height;
         break;
       case CSSLengthType.VW:
-        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? Size.zero).width;
+        _computedValue = value! * (renderStyle!.getCurrentViewportBox()?.boxSize ?? renderStyle!.viewportSize).width;
         break;
       // 1% of viewport's smaller (vw or vh) dimension.
       // If the height of the viewport is less than its width, 1vmin will be equivalent to 1vh.
