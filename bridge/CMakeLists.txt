@@ -18,7 +18,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 
   set(ENV{MSYSTEM_PREFIX} "C:/msys64/clang64")
   set(MSYS2_PREFIX "C:/msys64/clang64")
-  set(MINGW_64 "C:/msys64/mingw64")
+  set(MINGW_64 "C:/msys64/ucrt64")
 
 #  set(CMAKE_C_COMPILER clang)
 #  set(CMAKE_CXX_COMPILER clang++)

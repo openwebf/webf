@@ -159,23 +159,6 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
 
   if (string_->Is8Bit()) {
     const uint8_t* p = reinterpret_cast<const uint8_t*>(string_->Characters8());
-
-#if defined(_WIN32)
-    uint16_t* buffer;
-    int utf16_str_len = MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, NULL, 0) - 1;
-    if (utf16_str_len == -1) {
-      return nullptr;
-    }
-    // Allocate memory for the UTF-16 string, including the null terminator
-    buffer = (uint16_t*)CoTaskMemAlloc((utf16_str_len + 1) * sizeof(WCHAR));
-    if (buffer == nullptr) {
-      return nullptr;
-    }
-
-    // Convert the ASCII string to UTF-16
-    MultiByteToWideChar(CP_ACP, 0, reinterpret_cast<const char*>(p), -1, (WCHAR*)buffer, utf16_str_len + 1);
-    return std::make_unique<SharedNativeString>(buffer, string_->length());
-#else
     uint32_t len = string_->length();
     uint16_t* u16_buffer = (uint16_t*)dart_malloc(sizeof(uint16_t) * (len + 1));
     for (size_t i = 0; i < len; i++) {
@@ -184,7 +167,6 @@ std::unique_ptr<SharedNativeString> AtomicString::ToNativeString() const {
     u16_buffer[len] = 0;  // Null terminate
 
     return std::make_unique<SharedNativeString>(u16_buffer, len);
-#endif
   } else {
     const char16_t* p = string_->Characters16();
     uint32_t len = string_->length();
