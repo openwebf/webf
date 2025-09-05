@@ -1,3 +1,12 @@
+## 0.22.16+1
+
+### Fixes
+
+Fix: router link element should not have intrinsic height allows.
+Fix: always get viewport size for HTML element.
+Fix: add fallback viewport size for vh/vw.
+Fix: Revert android 16kb support.
+
 ## 0.22.16
 
 ### Features
