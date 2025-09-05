@@ -3,16 +3,10 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  app_links
-  file_selector_windows
-  share_plus
-  url_launcher_windows
   webf
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  example_app
-  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

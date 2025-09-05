@@ -24,7 +24,7 @@ enum HttpCacheMode {
 }
 
 class HttpCacheController {
-  static HttpCacheMode mode = Platform.isWindows ? HttpCacheMode.NO_CACHE : HttpCacheMode.DEFAULT;
+  static HttpCacheMode mode = HttpCacheMode.DEFAULT;
 
   static final Map<String, HttpCacheController> _controllers = HashMap();
 

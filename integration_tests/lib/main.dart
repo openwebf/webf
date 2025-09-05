@@ -42,7 +42,7 @@ Future<int> findAvailablePort(
 
 Future<Process> startHttpMockServer(int port) async {
   if (Platform.isWindows) {
-    testDirectory = testDirectory.substring(1);
+    testDirectory = testDirectory.replaceAllMapped(RegExp('^/([A-Z]):'), (match) => '${match.group(1)}:');
   }
 
   return await Process.start(

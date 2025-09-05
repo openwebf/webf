@@ -36,7 +36,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   webf_cupertino_ui:
-    path: ../../webf_cupertino_ui
+    path: ../../opensource/webf_cupertino_ui
 
 dependency_overrides:
   webf:
