@@ -176,7 +176,7 @@ task('run-bridge-unit-test', done => {
   } else if (platform === 'linux') {
     execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform == 'win32') {
-    execSync(`${path.join(paths.bridge, 'build/windows/lib/webf_unit_test.exe')}`, { stdio: 'inherit' });
+    execSync(`${path.join(paths.bridge, 'build/windows/lib/bin/webf_unit_test.exe')}`, { stdio: 'inherit' });
   }
   done();
 });

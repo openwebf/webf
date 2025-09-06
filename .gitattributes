@@ -1,1 +1,42 @@
-*.ts linguist-detectable=false
+# Set default line ending behavior
+* text=auto
+
+# Force LF line endings for text files
+*.js text eol=lf
+*.ts text eol=lf linguist-detectable=false
+*.jsx text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+*.cc text eol=lf
+*.cpp text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.hpp text eol=lf
+*.dart text eol=lf
+*.gradle text eol=lf
+*.xml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+
+# Keep Windows-specific files with CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files should not be modified
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar.gz binary
+*.so binary
+*.dll binary
+*.dylib binary
+*.exe binary

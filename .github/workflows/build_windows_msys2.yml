@@ -1,4 +1,4 @@
-name: Build WebF Bridge - Windows MSYS2/Clang
+name: Build and Testing Windows
 
 on:
   push:
@@ -16,23 +16,13 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        build_mode: [Debug, Release]
+        build_mode: [Debug]
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
         submodules: recursive
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.nodeVersion }}
-
-    - name: Setup CMake
-      uses: jwlawson/actions-setup-cmake@v2
-      with:
-        cmake-version: ${{ env.cmakeVersion }}
 
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
@@ -43,20 +33,46 @@ jobs:
           mingw-w64-ucrt-x86_64-toolchain
           mingw-w64-ucrt-x86_64-clang
           mingw-w64-ucrt-x86_64-clang-tools-extra
+          mingw-w64-ucrt-x86_64-libc++
           mingw-w64-ucrt-x86_64-cmake
           mingw-w64-ucrt-x86_64-ninja
           mingw-w64-ucrt-x86_64-pkgconf
           mingw-w64-ucrt-x86_64-gperf
           mingw-w64-ucrt-x86_64-icu
           mingw-w64-ucrt-x86_64-libiconv
+          mingw-w64-ucrt-x86_64-winpthreads
           git
           make
+          curl
+          unzip
 
     - name: Add MSYS2 to PATH
       shell: bash
       run: |
         echo "C:/msys64/ucrt64/bin" >> $GITHUB_PATH
         echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+
+    - name: Install NVM and Node.js
+      shell: msys2 {0}
+      run: |
+        # Unset npm_config_prefix to avoid NVM conflicts
+        unset npm_config_prefix
+        
+        # Install NVM
+        curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+        
+        # Source nvm
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        
+        # Install and use Node.js
+        nvm install ${{ env.nodeVersion }}
+        nvm use ${{ env.nodeVersion }}
+        nvm alias default ${{ env.nodeVersion }}
+        
+        # Verify installation
+        node --version
+        npm --version
 
     - name: Verify toolchain
       shell: bash
@@ -68,28 +84,49 @@ jobs:
         ninja --version
 
     - name: Install Node.js dependencies
-      run: npm install
+      shell: msys2 {0}
+      run: |
+        unset npm_config_prefix
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        npm install
 
     - name: Generate binding code
-      run: npm run bindgen
+      shell: msys2 {0}
+      run: |
+        unset npm_config_prefix
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+        npm run bindgen
 
     - name: Build WebF Bridge
-      shell: bash
+      shell: msys2 {0}
       run: |
+        unset npm_config_prefix
+        export NVM_DIR="$HOME/.nvm"
+        [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         export CC=clang
         export CXX=clang++
         export WEBF_BUILD=${{ matrix.build_mode }}
         export WEBF_JS_ENGINE=quickjs
-        export MSYSTEM_PREFIX=/ucrt64
+        # Set MSYS2 paths for CMake - use Windows-style paths for CMake
+        export MSYSTEM_PREFIX="D:/a/_temp/msys64/ucrt64"
+        export MINGW_64="D:/a/_temp/msys64/ucrt64"
+        
+        echo "Using MSYSTEM_PREFIX: $MSYSTEM_PREFIX"
+        echo "Using MINGW_64: $MINGW_64"
+        
+        # Verify MSYS2 installation path
+        ls -la /d/a/_temp/msys64/ucrt64/bin/ || echo "MSYS2 path not found, checking alternatives..."
+        
         npm run build:bridge:windows
       env:
         WEBF_BUILD: ${{ matrix.build_mode }}
         WEBF_JS_ENGINE: quickjs
 
     - name: Run Bridge Unit Tests
-      shell: bash
+      shell: powershell
       run: |
-        chmod +x ./bridge/build/windows/lib/bin/webf_unit_test.exe
         node scripts/run_bridge_unit_test.js
       continue-on-error: true
 

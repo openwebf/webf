@@ -16,9 +16,28 @@ endif()
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
   message("Running in an MSYS2 environment (MSYS or MinGW)")
 
-  set(ENV{MSYSTEM_PREFIX} "C:/msys64/clang64")
-  set(MSYS2_PREFIX "C:/msys64/clang64")
-  set(MINGW_64 "C:/msys64/ucrt64")
+  # Check environment variables first, then fall back to defaults
+  if(DEFINED ENV{MSYSTEM_PREFIX})
+    set(MSYS2_PREFIX "$ENV{MSYSTEM_PREFIX}")
+    message("Using MSYSTEM_PREFIX from environment: $ENV{MSYSTEM_PREFIX}")
+  else()
+    set(ENV{MSYSTEM_PREFIX} "C:/msys64/clang64")
+    set(MSYS2_PREFIX "C:/msys64/clang64")
+    message("Using default MSYSTEM_PREFIX: C:/msys64/clang64")
+  endif()
+
+  # Set MINGW_64 based on MSYS2_PREFIX or environment variable
+  if(DEFINED ENV{MINGW_64})
+    set(MINGW_64 "$ENV{MINGW_64}")
+    message("Using MINGW_64 from environment: $ENV{MINGW_64}")
+  else()
+    # Try to derive from MSYS2_PREFIX, otherwise use default
+    string(REPLACE "/clang64" "/ucrt64" MINGW_64 "${MSYS2_PREFIX}")
+    if(MINGW_64 STREQUAL MSYS2_PREFIX)
+      set(MINGW_64 "C:/msys64/ucrt64")
+    endif()
+    message("Using derived/default MINGW_64: ${MINGW_64}")
+  endif()
 
 #  set(CMAKE_C_COMPILER clang)
 #  set(CMAKE_CXX_COMPILER clang++)
