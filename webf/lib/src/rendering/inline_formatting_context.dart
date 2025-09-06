@@ -131,13 +131,10 @@ class InlineFormattingContext {
     // New path: build a single Paragraph using dart:ui APIs
     _buildAndLayoutParagraph(constraints);
 
-    // Compute size from paragraph. Avoid propagating infinite widths.
+    // Compute size from paragraph
     final para = _paragraph!;
-    final bool isBlock = (container as RenderBoxModel).renderStyle.effectiveDisplay == CSSDisplay.block;
-
-    // For blocks with unbounded width constraints, use the paragraph's
-    // actual laid-out width (shrink-to-fit) instead of infinity.
-    final double width = (isBlock && !constraints.hasBoundedWidth) ? para.width : (isBlock ? constraints.maxWidth : para.width);
+    // Use actual content width (longestLine) for shrink-to-fit behavior
+    final double width = para.longestLine;
     final double height = para.height;
 
     // Update children offsets from placeholder boxes
