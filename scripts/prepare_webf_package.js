@@ -65,8 +65,6 @@ function main() {
   const scripts = [
     { name: 'copy_macos_dylibs.js', description: 'Copy macOS dynamic libraries' },
     { name: 'copy_cpp_sources.js', description: 'Copy C/C++ source files' },
-    { name: 'patch_windows_cmake.js', description: 'Patch Windows CMakeLists.txt' },
-    { name: 'remove_src_symlinks.js', description: 'Remove symbolic links from src directory' },
     { name: 'patch_cmake_versions.js', description: 'Patch CMake versions (App Revision and App Version)' },
     { name: 'patch_ios_podspec.js', description: 'Patch iOS podspec' },
     { name: 'git_add_webf_files.js', description: 'Add files to git' }
