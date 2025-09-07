@@ -28,6 +28,8 @@ This is the main guide for WebF development. Detailed content is organized into 
 | Task | Command |
 |------|---------|
 | Build C++ (macOS) | `npm run build:bridge:macos` |
+| Build C++ (Android, bundled) | `npm run build:bridge:android` |
+| Build C++ (Android, separate libs) | `npm run build:bridge:android:separate` |
 | Build C++ (all platforms) | `npm run build:bridge:all` |
 | Run all tests | `npm test` |
 | Run integration tests | `cd integration_tests && npm run integration` |
@@ -48,6 +50,63 @@ This is the main guide for WebF development. Detailed content is organized into 
 - Function usage: `FunctionName\(`
 - Class definition: `class ClassName`
 - FFI exports: `WEBF_EXPORT_C`
+
+## 📦 C++ Library Bundling
+
+### Android Library Bundling
+
+WebF supports two modes for bundling C++ libraries in Android builds:
+
+#### Bundled Libraries (Default, Recommended)
+```bash
+npm run build:bridge:android              # Bundled QuickJS + dynamic STL (default)
+npm run build:bridge:android:release      # Bundled QuickJS + dynamic STL (release)
+npm run build:bridge:android:static-stl   # Bundled QuickJS + static STL
+```
+
+**Outputs:**
+- `libwebf.so` - Contains WebF + QuickJS code bundled together
+- `libc++_shared.so` - Android STL runtime (only with dynamic STL)
+
+**Advantages:**
+- Simpler deployment (fewer .so files)
+- Better optimization (cross-library inlining)
+- Reduced app size (no duplicate symbols)
+- Easier debugging (single library)
+
+#### Separate Libraries (Advanced)
+```bash
+npm run build:bridge:android:separate     # Separate QuickJS library
+WEBF_SEPARATE_QUICKJS=true npm run build:bridge:android
+```
+
+**Outputs:**
+- `libwebf.so` - WebF core library
+- `libquickjs.so` - JavaScript engine (separate)
+- `libc++_shared.so` - Android STL runtime
+
+**Use Cases:**
+- When you need to share QuickJS with other libraries
+- For debugging library boundaries
+- Advanced library management scenarios
+
+### Build Options
+
+| Flag/Environment | Description | Default |
+|------------------|-------------|---------|
+| `--static-quickjs` | Bundle QuickJS into webf library | Android: true, Others: false |
+| `--static-stl` | Use static C++ standard library (Android) | false |
+| `WEBF_SEPARATE_QUICKJS=true` | Build QuickJS as separate library | false |
+| `ANDROID_STL=c++_static` | Set Android STL type | `c++_shared` |
+| `--enable-log` | Enable debug logging | false |
+
+### Android STL Options
+
+| STL Type | Description | Libraries Required |
+|----------|-------------|-------------------|
+| `c++_shared` (default) | Dynamic C++ standard library | `libwebf.so` + `libc++_shared.so` |
+| `c++_static` | Static C++ standard library | `libwebf.so` only |
+| `system` | System C++ library (deprecated) | `libwebf.so` only |
 
 ## 🌉 Cross-Platform Development
 
