@@ -35,6 +35,7 @@ dependencies:
   dio: ^5.4.0
   http: ^1.5.0
   cupertino_http: ^2.3.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
