@@ -262,6 +262,7 @@ if(${WEBF_JS_ENGINE} MATCHES "quickjs")
   )
 
   target_link_libraries(quickjs PRIVATE Threads::Threads)
+  target_link_libraries(qjsc PRIVATE Threads::Threads m)
 
   set(MI_OVERRIDE OFF)
 #  if (NOT MSVC AND NOT DEFINED USE_SYSTEM_MALLOC)
