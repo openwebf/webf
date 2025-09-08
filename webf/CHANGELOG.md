@@ -1,3 +1,7 @@
+## 0.22.17
+
+- Add support for android 16k.
+
 ## 0.22.16+1
 
 ### Fixes
