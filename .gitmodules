@@ -4,4 +4,4 @@
     branch = feat/official_version
 [submodule "opensource"]
 	path = opensource
-	url = https://github.com/openwebf/webf
+	url = git@github.com:openwebf/webf.git
