@@ -51,8 +51,8 @@ else()
 endif()
 
 # List of absolute paths to libraries that should be bundled with the plugin
+# Note: libwebf.so now contains statically linked QuickJS and libc++
 set(webf_bundled_libraries
-    ${CMAKE_CURRENT_SOURCE_DIR}/libquickjs.so
     ${CMAKE_CURRENT_SOURCE_DIR}/libwebf.so
     PARENT_SCOPE
   )

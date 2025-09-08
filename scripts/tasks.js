@@ -584,10 +584,19 @@ task('build-linux-webf-lib', (done) => {
     externCmakeArgs.push('-DENABLE_LOG=true');
   }
 
+  if (process.env.ENABLE_ASAN === 'true') {
+    externCmakeArgs.push('-DENABLE_ASAN=true');
+  }
+
+  // Force static QuickJS for Linux to bundle everything into libwebf.so
+  externCmakeArgs.push('-DSTATIC_QUICKJS=true');
+
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
   // generate project
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+  -DCMAKE_C_COMPILER=clang \
+  -DCMAKE_CXX_COMPILER=clang++ \
   ${externCmakeArgs.join(' ')} \
   ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
   ${'-DENABLE_TEST=true \\'}
@@ -608,9 +617,7 @@ task('build-linux-webf-lib', (done) => {
     stdio: 'inherit'
   });
 
-  const libs = [
-    'libwebf.so'
-  ];
+  const libs = [];
 
   if (buildMode != 'Release') {
     libs.push('libwebf_test.so');

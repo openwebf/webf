@@ -3,11 +3,11 @@ const path = require('path');
 
 /**
  * Copies shared library files from bridge build directory, always overwriting if source exists
+ * Note: QuickJS and libc++ are now statically linked into libwebf.so
  */
 function copyLibFiles() {
   const libFiles = [
-    'libquickjs.so',
-    'libwebf.so'
+    'libwebf.so'  // Contains statically linked QuickJS and libc++
   ];
 
   const currentDir = __dirname;
