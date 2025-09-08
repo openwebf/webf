@@ -136,20 +136,6 @@ else()
   add_definitions(-DENABLE_LOG=0)
 endif()
 
-if(NOT MSVC)
-  if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    include(CheckIPOSupported)
-    check_ipo_supported(RESULT supported OUTPUT error)
-    if( supported )
-      set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-      add_compile_options(-flto)
-    endif()
-  else ()
-    # debug
-    add_compile_options(-g3 -O0)
-  endif()
-endif()
-
 list(APPEND WEBF_PUBLIC_HEADERS
         ${CMAKE_CURRENT_SOURCE_DIR}/include/webf_bridge.h
 )

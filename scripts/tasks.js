@@ -18,7 +18,8 @@ const uploader = require('./utils/uploader');
 
 program
   .option('--static-quickjs', 'Bundle QuickJS into webf library (default for Android)', false)
-  .option('--static-stl', 'Use static C++ standard library (Android only)', false)
+  .option('--static-stl', 'Use static C++ standard library (Android default, kept for compatibility)', false)
+  .option('--dynamic-stl', 'Use dynamic C++ standard library (Android only)', false)
   .option('--enable-log', 'Enable log printing')
   .parse(process.argv);
 
@@ -424,149 +425,269 @@ function patchiOSFrameworkPList(frameworkPath) {
 
     pListString = insertStringSlice(pListString, versionStringLast, `
         <key>MinimumOSVersion</key>
-        <string>11.0</string>`);
+        <string>12.0</string>`);
     fs.writeFileSync(pListPath, pListString);
+  }
+}
+
+// Helper function to build iOS CMake arguments
+function getIOSCMakeArgs(buildType, externCmakeArgs) {
+  const baseArgs = [
+    `-DCMAKE_BUILD_TYPE=${buildType}`,
+    `-DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake`,
+    `-DDEPLOYMENT_TARGET=12.0`,
+    `-DIS_IOS=TRUE`,
+    `-DENABLE_BITCODE=FALSE`,
+    `-G "Unix Makefiles"`,
+    `-S ${paths.bridge}`
+  ];
+  
+  if (isProfile) {
+    baseArgs.push('-DENABLE_PROFILE=TRUE');
+  }
+  
+  return [...baseArgs, ...externCmakeArgs];
+}
+
+// Helper function to configure and build iOS target
+function configureAndBuildIOSTarget(platform, arch, buildType, externCmakeArgs) {
+  const buildDir = `${paths.bridge}/cmake-build-ios-${arch}`;
+  const outputDir = path.join(paths.bridge, `build/ios/lib/${arch}`);
+  
+  try {
+    // Configure
+    const cmakeArgs = getIOSCMakeArgs(buildType, externCmakeArgs);
+    cmakeArgs.push(`-DPLATFORM=${platform}`);
+    cmakeArgs.push(`-B ${buildDir}`);
+    
+    execSync(`cmake ${cmakeArgs.join(' ')}`, {
+      cwd: paths.bridge,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        WEBF_JS_ENGINE: targetJSEngine,
+        LIBRARY_OUTPUT_DIR: outputDir
+      }
+    });
+    
+    // Build
+    const cpuCount = os.cpus().length;
+    execSync(`cmake --build ${buildDir} --target webf -- -j ${cpuCount}`, {
+      stdio: 'inherit'
+    });
+    
+    return { buildDir, outputDir };
+  } catch (error) {
+    console.error(chalk.red(`Failed to build iOS target ${arch}: ${error.message}`));
+    throw error;
+  }
+}
+
+// Helper function to create XCFramework for a target
+function createXCFramework(target, architectures, options = {}) {
+  try {
+    // Options for XCFramework creation
+    const includeDsyms = options.includeDsyms !== undefined ? options.includeDsyms : (buildMode === 'Debug');
+    const createSeparateDsyms = options.createSeparateDsyms !== undefined ? options.createSeparateDsyms : true;
+    
+    const frameworkPaths = architectures.map(arch => 
+      path.join(paths.bridge, `build/ios/lib/${arch.name}/${target}.framework`)
+    );
+    
+    // Verify all frameworks exist
+    frameworkPaths.forEach((frameworkPath, idx) => {
+      if (!fs.existsSync(frameworkPath)) {
+        throw new Error(`Framework not found at ${frameworkPath} for architecture ${architectures[idx].name}`);
+      }
+    });
+    
+    // Separate device and simulator architectures
+    const simArchs = architectures.filter(a => a.isSimulator);
+    const deviceArchs = architectures.filter(a => !a.isSimulator);
+    
+    // Create universal binary for simulators (merge x86_64 and arm64)
+    let simulatorFrameworkPath = null;
+    if (simArchs.length > 0) {
+      // Use the first simulator path as the output location for the universal binary
+      simulatorFrameworkPath = path.join(paths.bridge, `build/ios/lib/${simArchs[0].name}/${target}.framework`);
+      
+      if (simArchs.length > 1) {
+        // Merge multiple simulator architectures into a universal binary
+        const simBinaries = simArchs.map(arch => 
+          path.join(paths.bridge, `build/ios/lib/${arch.name}/${target}.framework/${target}`)
+        );
+        console.log(chalk.gray(`    Creating universal simulator binary...`));
+        execSync(`lipo -create ${simBinaries.join(' ')} -output ${simulatorFrameworkPath}/${target}`, {
+          stdio: 'inherit'
+        });
+      }
+    }
+    
+    // Collect frameworks for XCFramework (universal simulator + device)
+    const xcframeworkInputs = [];
+    const dSymPaths = [];
+    
+    // Add simulator framework (now contains both x86_64 and arm64 if both were built)
+    if (simulatorFrameworkPath) {
+      patchiOSFrameworkPList(simulatorFrameworkPath);
+      
+      if (createSeparateDsyms) {
+        const simDSymPath = `${simulatorFrameworkPath}/../${target}.dSYM`;
+        execSync(`dsymutil -o ${simDSymPath} ${simulatorFrameworkPath}/${target}`, { stdio: 'inherit' });
+        dSymPaths.push({ platform: 'simulator', path: simDSymPath });
+        
+        // Strip debug symbols from Release builds after extracting dSYM
+        if (buildMode === 'Release' || buildMode === 'RelWithDebInfo') {
+          console.log(chalk.gray(`    Stripping debug symbols from simulator binary...`));
+          execSync(`strip -S -x ${simulatorFrameworkPath}/${target}`, { stdio: 'inherit' });
+        }
+        
+        xcframeworkInputs.push({
+          frameworkPath: simulatorFrameworkPath,
+          dSymPath: includeDsyms ? simDSymPath : null
+        });
+      } else {
+        xcframeworkInputs.push({
+          frameworkPath: simulatorFrameworkPath,
+          dSymPath: null
+        });
+      }
+    }
+    
+    // Add device framework(s)
+    deviceArchs.forEach(arch => {
+      const deviceFrameworkPath = path.join(paths.bridge, `build/ios/lib/${arch.name}/${target}.framework`);
+      patchiOSFrameworkPList(deviceFrameworkPath);
+      
+      if (createSeparateDsyms) {
+        const deviceDSymPath = `${deviceFrameworkPath}/../${target}.dSYM`;
+        execSync(`dsymutil -o ${deviceDSymPath} ${deviceFrameworkPath}/${target}`, { stdio: 'inherit' });
+        dSymPaths.push({ platform: arch.name, path: deviceDSymPath });
+        
+        // Strip debug symbols from Release builds after extracting dSYM
+        if (buildMode === 'Release' || buildMode === 'RelWithDebInfo') {
+          console.log(chalk.gray(`    Stripping debug symbols from ${arch.name} binary...`));
+          execSync(`strip -S -x ${deviceFrameworkPath}/${target}`, { stdio: 'inherit' });
+        }
+        
+        xcframeworkInputs.push({
+          frameworkPath: deviceFrameworkPath,
+          dSymPath: includeDsyms ? deviceDSymPath : null
+        });
+      } else {
+        xcframeworkInputs.push({
+          frameworkPath: deviceFrameworkPath,
+          dSymPath: null
+        });
+      }
+    });
+    
+    // Create XCFramework with all inputs
+    const targetDynamicSDKPath = `${paths.bridge}/build/ios/framework`;
+    mkdirp.sync(targetDynamicSDKPath);
+    
+    const xcframeworkPath = `${targetDynamicSDKPath}/${target}.xcframework`;
+    
+    // Remove existing XCFramework if it exists
+    if (fs.existsSync(xcframeworkPath)) {
+      execSync(`rm -rf ${xcframeworkPath}`, { stdio: 'inherit' });
+    }
+    
+    // Build XCFramework command
+    const xcframeworkArgs = xcframeworkInputs.map(({ frameworkPath, dSymPath }) => {
+      let args = `-framework ${frameworkPath}`;
+      if (dSymPath) {
+        args += ` -debug-symbols ${dSymPath}`;
+      }
+      return args;
+    }).join(' ');
+    
+    console.log(chalk.gray(`    Creating XCFramework ${includeDsyms ? 'with' : 'without'} embedded dSYMs...`));
+    execSync(`xcodebuild -create-xcframework ${xcframeworkArgs} -output ${xcframeworkPath}`, {
+      stdio: 'inherit'
+    });
+    
+    // If we created separate dSYMs but didn't include them, create a separate dSYMs bundle
+    if (createSeparateDsyms && !includeDsyms && dSymPaths.length > 0) {
+      const dSymBundlePath = `${targetDynamicSDKPath}/${target}.dSYMs`;
+      mkdirp.sync(dSymBundlePath);
+      
+      console.log(chalk.gray(`    Copying dSYMs to separate bundle...`));
+      dSymPaths.forEach(({ platform, path: dSymPath }) => {
+        const targetPath = `${dSymBundlePath}/${platform}`;
+        mkdirp.sync(targetPath);
+        execSync(`cp -R ${dSymPath} ${targetPath}/`, { stdio: 'inherit' });
+      });
+      console.log(chalk.blue(`    ℹ dSYMs saved separately at: ${dSymBundlePath}`));
+    }
+    
+    console.log(chalk.green(`  ✓ Created ${target}.xcframework`));
+  } catch (error) {
+    console.error(chalk.red(`Failed to create XCFramework for ${target}: ${error.message}`));
+    throw error;
   }
 }
 
 task(`build-ios-webf-lib`, (done) => {
   const buildType = (buildMode == 'Release' || buildMode === 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
-  let externCmakeArgs = [];
-
+  
+  // Collect external CMake arguments
+  const externCmakeArgs = [];
   if (process.env.ENABLE_ASAN === 'true') {
     externCmakeArgs.push('-DENABLE_ASAN=true');
   }
-
-  // Bundle quickjs into webf.
   if (program.staticQuickjs) {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
   }
-
   if (process.env.USE_SYSTEM_MALLOC === 'true') {
     externCmakeArgs.push('-DUSE_SYSTEM_MALLOC=true');
   }
-
   if (program.enableLog) {
     externCmakeArgs.push('-DENABLE_LOG=true');
   }
-
-  // generate build scripts for simulator
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
-    -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
-    -DPLATFORM=SIMULATOR64 \
-    -DDEPLOYMENT_TARGET=11.0 \
-    -DIS_IOS=TRUE \
-    ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
-    ${externCmakeArgs.join(' ')} \
-    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-simulator-x86 -S ${paths.bridge}`, {
-    cwd: paths.bridge,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/simulator_x86')
-    }
+  
+  // Define architectures to build
+  const architectures = [
+    { platform: 'SIMULATOR64', name: 'simulator_x86', isSimulator: true },
+    { platform: 'SIMULATORARM64', name: 'simulator_arm64', isSimulator: true },
+    { platform: 'OS64', name: 'arm64', isSimulator: false }
+  ];
+  
+  // Build all architectures
+  console.log(chalk.blue('Building iOS frameworks...'));
+  architectures.forEach(arch => {
+    console.log(chalk.gray(`  - Building ${arch.name}...`));
+    configureAndBuildIOSTarget(arch.platform, arch.name, buildType, externCmakeArgs);
   });
-  // genereate build scripts for simulator arm64
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
-    -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
-    -DPLATFORM=SIMULATORARM64 \
-    -DDEPLOYMENT_TARGET=11.0 \
-    -DIS_IOS=TRUE \
-    ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
-    ${externCmakeArgs.join(' ')} \
-    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-simulator-arm64 -S ${paths.bridge}`, {
-    cwd: paths.bridge,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/simulator_arm64')
-    }
-  });
-
-  let cpus = os.cpus();
-
-  // build for simulator x86
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-simulator-x86 --target webf -- -j ${cpus.length}`, {
-    stdio: 'inherit'
-  });
-
-  // build for simulator arm64
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-simulator-arm64 --target webf -- -j ${cpus.length}`, {
-    stdio: 'inherit'
-  });
-
-  // Generate builds scripts for ARM64
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
-    -DCMAKE_TOOLCHAIN_FILE=${paths.bridge}/cmake/ios.toolchain.cmake \
-    -DPLATFORM=OS64 \
-    -DDEPLOYMENT_TARGET=11.0 \
-    -DIS_IOS=TRUE \
-    ${externCmakeArgs.join(' ')} \
-    ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
-    -DENABLE_BITCODE=FALSE -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-ios-arm64 -S ${paths.bridge}`, {
-    cwd: paths.bridge,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/ios/lib/arm64')
-    }
-  });
-
-  // Build for ARM64
-  execSync(`cmake --build ${paths.bridge}/cmake-build-ios-arm64 --target webf -- -j ${cpus.length}`, {
-    stdio: 'inherit'
-  });
-
-  const targetSourceFrameworks = ['webf_bridge'];
-
-  // If quickjs is not static, there will be another framework called quickjs.framework.
+  
+  // Determine which frameworks to build
+  const targetFrameworks = ['webf_bridge'];
   if (!program.staticQuickjs) {
-    targetSourceFrameworks.push('quickjs');
+    targetFrameworks.push('quickjs');
   }
-
-  targetSourceFrameworks.forEach(target => {
-    const arm64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/arm64/${target}.framework`);
-    const simulatorX64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/simulator_x86/${target}.framework`);
-    const simulatorArm64DynamicSDKPath = path.join(paths.bridge, `build/ios/lib/simulator_arm64/${target}.framework`);
-
-    // Create flat simulator frameworks with multiple archs.
-    execSync(`lipo -create ${simulatorX64DynamicSDKPath}/${target} ${simulatorArm64DynamicSDKPath}/${target} -output ${simulatorX64DynamicSDKPath}/${target}`, {
-      stdio: 'inherit'
-    });
-
-    // CMake generated iOS frameworks does not contains <MinimumOSVersion> key in Info.plist.
-    patchiOSFrameworkPList(simulatorX64DynamicSDKPath);;
-    patchiOSFrameworkPList(arm64DynamicSDKPath);
-
-    const targetDynamicSDKPath = `${paths.bridge}/build/ios/framework`;
-    const frameworkPath = `${targetDynamicSDKPath}/${target}.xcframework`;
-    mkdirp.sync(targetDynamicSDKPath);
-
-    // dSYM file are located at /path/to/webf/build/ios/lib/${arch}/target.dSYM.
-    // Create dSYM for simulator.
-    execSync(`dsymutil ${simulatorX64DynamicSDKPath}/${target} --out ${simulatorX64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
-    // Create dSYM for arm64,armv7.
-    execSync(`dsymutil ${arm64DynamicSDKPath}/${target} --out ${arm64DynamicSDKPath}/../${target}.dSYM`, { stdio: 'inherit' });
-
-    // Generated xcframework at located at /path/to/webf/build/ios/framework/${target}.xcframework.
-    // Generate xcframework with dSYM.
-    if (buildMode === 'RelWithDebInfo') {
-      execSync(`xcodebuild -create-xcframework \
-        -framework ${simulatorX64DynamicSDKPath} -debug-symbols ${simulatorX64DynamicSDKPath}/../${target}.dSYM \
-        -framework ${arm64DynamicSDKPath} -debug-symbols ${arm64DynamicSDKPath}/../${target}.dSYM -output ${frameworkPath}`, {
-        stdio: 'inherit'
-      });
-    } else {
-      execSync(`xcodebuild -create-xcframework \
-        -framework ${simulatorX64DynamicSDKPath} \
-        -framework ${arm64DynamicSDKPath} -output ${frameworkPath}`, {
-        stdio: 'inherit'
-      });
-    }
+  
+  // Create XCFrameworks
+  console.log(chalk.blue('Creating XCFrameworks...'));
+  
+  // Determine dSYM handling based on build mode
+  const xcframeworkOptions = {
+    // For Debug builds: include dSYMs in XCFramework for easier debugging
+    // For Release builds: keep dSYMs separate for distribution
+    includeDsyms: buildMode === 'Debug',
+    createSeparateDsyms: true
+  };
+  
+  // Allow environment variable override
+  if (process.env.INCLUDE_DSYMS_IN_XCFRAMEWORK !== undefined) {
+    xcframeworkOptions.includeDsyms = process.env.INCLUDE_DSYMS_IN_XCFRAMEWORK === 'true';
+  }
+  
+  targetFrameworks.forEach(target => {
+    console.log(chalk.gray(`  - Creating ${target}.xcframework...`));
+    createXCFramework(target, architectures, xcframeworkOptions);
   });
+  
+  console.log(chalk.green('✓ iOS build completed successfully!'));
   done();
 });
 
@@ -834,12 +955,15 @@ task('build-android-webf-lib', (done) => {
     externCmakeArgs.push('-DSTATIC_QUICKJS=true');
   }
 
-  // Configure Android STL - default to shared, allow override via flag or environment
-  let androidStl = 'c++_shared'; // Default to dynamic
-  if (program.staticStl) {
-    androidStl = 'c++_static';
+  // Configure Android STL - default to static for simpler deployment
+  let androidStl = 'c++_static'; // Default to static (fewer dependencies)
+  if (program.dynamicStl) {
+    androidStl = 'c++_shared';
   } else if (process.env.ANDROID_STL) {
     androidStl = process.env.ANDROID_STL;
+  } else if (program.staticStl) {
+    // --static-stl flag is now redundant but kept for backward compatibility
+    androidStl = 'c++_static';
   }
   const useDynamicStl = androidStl === 'c++_shared';
 
