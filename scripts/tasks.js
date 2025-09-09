@@ -735,6 +735,39 @@ task('build-linux-webf-lib', (done) => {
     stdio: 'inherit'
   });
 
+  // Copy C++ standard library dependencies to the output directory
+  const fs = require('fs');
+  const libcppPath = '/lib/x86_64-linux-gnu/libc++.so.1';
+  const libcppabiPath = '/lib/x86_64-linux-gnu/libc++abi.so.1';
+  const libunwindPath = '/lib/x86_64-linux-gnu/libunwind.so.1';
+  
+  if (fs.existsSync(libcppPath)) {
+    execSync(`cp -L ${libcppPath} ${soBinaryDirectory}/libc++.so.1`, { stdio: 'inherit' });
+    console.log(chalk.green('✓ Copied libc++.so.1'));
+  }
+  
+  if (fs.existsSync(libcppabiPath)) {
+    execSync(`cp -L ${libcppabiPath} ${soBinaryDirectory}/libc++abi.so.1`, { stdio: 'inherit' });
+    console.log(chalk.green('✓ Copied libc++abi.so.1'));
+  }
+  
+  if (fs.existsSync(libunwindPath)) {
+    execSync(`cp -L ${libunwindPath} ${soBinaryDirectory}/libunwind.so.1`, { stdio: 'inherit' });
+    console.log(chalk.green('✓ Copied libunwind.so.1'));
+  }
+  
+  // Use patchelf to set RPATH so libwebf.so looks for dependencies in its own directory
+  const libwebfPath = path.join(soBinaryDirectory, 'libwebf.so');
+  if (fs.existsSync(libwebfPath)) {
+    try {
+      // Set RPATH to $ORIGIN (the directory containing the library)
+      execSync(`patchelf --set-rpath '$ORIGIN' ${libwebfPath}`, { stdio: 'inherit' });
+      console.log(chalk.green('✓ Set RPATH for libwebf.so to use local dependencies'));
+    } catch (e) {
+      console.log(chalk.yellow('⚠ patchelf not found. Install it to enable local library loading: sudo apt-get install patchelf'));
+    }
+  }
+
   done();
 });
 

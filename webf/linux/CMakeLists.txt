@@ -54,5 +54,8 @@ endif()
 # Note: libwebf.so now contains statically linked QuickJS and libc++
 set(webf_bundled_libraries
     ${CMAKE_CURRENT_SOURCE_DIR}/libwebf.so
+    ${CMAKE_CURRENT_SOURCE_DIR}/libc++.so.1
+    ${CMAKE_CURRENT_SOURCE_DIR}/libc++abi.so.1
+    ${CMAKE_CURRENT_SOURCE_DIR}/libunwind.so.1
     PARENT_SCOPE
   )

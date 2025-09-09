@@ -95,18 +95,6 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -static-libgcc")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -stdlib=libc++ -static-libgcc")
   
-  # Find static libc++ libraries
-  find_library(LIBCXX_STATIC_LIB NAMES libc++.a)
-  find_library(LIBCXXABI_STATIC_LIB NAMES libc++abi.a)
-  
-  if(LIBCXX_STATIC_LIB AND LIBCXXABI_STATIC_LIB)
-    message(STATUS "Found static libc++ libraries:")
-    message(STATUS "  libc++: ${LIBCXX_STATIC_LIB}")
-    message(STATUS "  libc++abi: ${LIBCXXABI_STATIC_LIB}")
-  else()
-    message(WARNING "Static libc++ libraries not found")
-  endif()
-  
   # Ensure we're using clang/clang++ for libc++ support
   if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(WARNING "Using libc++ requires Clang compiler. Current compiler: ${CMAKE_CXX_COMPILER_ID}")

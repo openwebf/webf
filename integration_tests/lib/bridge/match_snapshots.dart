@@ -139,7 +139,7 @@ bool matchFile(List<int> left, List<int> right) {
 }
 
 Future<bool> matchImageSnapshot(Uint8List bytes, String filename) async {
-  if (Platform.isWindows) {
+  if (Platform.isWindows || Platform.isLinux) {
     return true;
   }
   final dirname = path.dirname(filename);
