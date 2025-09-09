@@ -106,6 +106,10 @@ list(APPEND WEBF_INTEGRATION_TEST_SOURCE
 target_sources(webf PRIVATE ${WEBF_INTEGRATION_TEST_SOURCE})
 target_include_directories(webf PRIVATE ./test)
 
+if(WIN32)
+  target_link_libraries(webf PRIVATE dbghelp)
+endif()
+
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
   install(TARGETS webf_unit_test
     RUNTIME DESTINATION bin     # For Windows executables
