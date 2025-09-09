@@ -153,9 +153,6 @@ task('build-darwin-webf-lib', done => {
   if (targetJSEngine === 'quickjs') {
     webfTargets.push('webf_unit_test');
   }
-  if (buildMode === 'Debug') {
-    webfTargets.push('webf_test');
-  }
 
   let cpus = os.cpus();
   execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
@@ -734,20 +731,8 @@ task('build-linux-webf-lib', (done) => {
     });
 
   // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target webf ${buildMode != 'Release' ? 'webf_test' : ''} webf_unit_test -- -j 12`, {
+  execSync(`cmake --build ${bridgeCmakeDir} --target webf webf_unit_test -- -j 12`, {
     stdio: 'inherit'
-  });
-
-  const libs = [];
-
-  if (buildMode != 'Release') {
-    libs.push('libwebf_test.so');
-  }
-
-  libs.forEach(lib => {
-    const libkrakenPath = path.join(paths.bridge, `build/linux/lib/${lib}`);
-    // Patch libkraken.so's runtime path.
-    execSync(`chrpath --replace \\$ORIGIN ${libkrakenPath}`, { stdio: 'inherit' });
   });
 
   done();
@@ -862,7 +847,7 @@ task('build-window-webf-lib', (done) => {
       }
     });
 
-  const webfTargets = ['webf', 'webf_test'];
+  const webfTargets = ['webf'];
 
   if (targetJSEngine === 'quickjs') {
     webfTargets.push('webf_unit_test');

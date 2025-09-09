@@ -63,9 +63,6 @@ void main() async {
         print('controller disposed: $name $controller');
       }));
 
-  // enableWebFProfileTracking = true;
-  // Overrides library name.
-  WebFDynamicLibrary.testLibName = 'webf_test';
   defineWebFCustomElements();
 
   int mockServerPort = await findAvailablePort();

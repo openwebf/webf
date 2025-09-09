@@ -101,25 +101,12 @@ list(APPEND WEBF_INTEGRATION_TEST_SOURCE
   test/webf_test_context.h
 )
 
-# Built libwebf_test library for integration test with flutter.
-add_library(webf_test SHARED ${WEBF_INTEGRATION_TEST_SOURCE})
-target_link_libraries(webf_test PRIVATE ${BRIDGE_LINK_LIBS} webf)
-
-if(WIN32)
-  target_link_libraries(webf_test PRIVATE dbghelp)
-endif()
-
-target_include_directories(webf_test PRIVATE
-  ${BRIDGE_INCLUDE}
-  ./test
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
+# Add test sources to main webf library in debug mode only (when ENABLE_TEST=true)
+# No separate webf_test target needed
+target_sources(webf PRIVATE ${WEBF_INTEGRATION_TEST_SOURCE})
+target_include_directories(webf PRIVATE ./test)
 
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
-  install(TARGETS webf_test
-    LIBRARY DESTINATION lib     # For Unix-like OSes
-    ARCHIVE DESTINATION lib     # For static libs, if built
-    RUNTIME DESTINATION bin     # For Windows DLLs
-    INCLUDES DESTINATION include)
   install(TARGETS webf_unit_test
     RUNTIME DESTINATION bin     # For Windows executables
     LIBRARY DESTINATION lib     # For Unix-like shared libs
@@ -131,9 +118,5 @@ if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
   set_target_properties(webf_unit_test
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-  )
-  set_target_properties(webf_test
-    PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
   )
 endif()

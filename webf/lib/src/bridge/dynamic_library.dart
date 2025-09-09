@@ -9,14 +9,13 @@ import 'dart:io' show Platform;
 import 'package:path/path.dart';
 
 abstract class WebFDynamicLibrary {
-  static final String _defaultLibraryPath = Platform.isLinux ? '\$ORIGIN' : '';
+  static final String _defaultLibraryPath = '';
 
   /// The search path that dynamic library be load, if null using default.
   static String dynamicLibraryPath = _defaultLibraryPath;
 
   // The kraken library name.
   static String libName = 'webf';
-  static String testLibName = 'webf_test';
 
   static String get _nativeDynamicLibraryName {
     if (Platform.isMacOS) {
@@ -24,18 +23,6 @@ abstract class WebFDynamicLibrary {
     } else if (Platform.isWindows) {
       return 'lib$libName.dll';
     } else if (Platform.isAndroid || Platform.isLinux) {
-      return 'lib$libName.so';
-    } else {
-      throw UnimplementedError('Not supported platform.');
-    }
-  }
-
-  static String get _nativeDynamicLibraryTestName {
-    if (Platform.isMacOS) {
-      return 'lib$testLibName.dylib';
-    } else if (Platform.isWindows) {
-      return 'lib$testLibName.dll';
-    } else if (Platform.isLinux) {
       return 'lib$libName.so';
     } else {
       throw UnimplementedError('Not supported platform.');
@@ -53,11 +40,5 @@ abstract class WebFDynamicLibrary {
     }
 
     return nativeDynamicLibrary;
-  }
-
-  static DynamicLibrary? _testRef;
-  static DynamicLibrary get testRef {
-    return _testRef ??= DynamicLibrary.open(
-        join(dynamicLibraryPath, _nativeDynamicLibraryTestName));
   }
 }

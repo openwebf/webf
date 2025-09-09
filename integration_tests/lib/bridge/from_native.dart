@@ -210,7 +210,7 @@ typedef Native_RegisterTestEnvDartMethods = Void Function(
 typedef Dart_RegisterTestEnvDartMethods = void Function(
     Pointer<Void>, Pointer<Uint64> methodBytes, int length);
 
-final Dart_RegisterTestEnvDartMethods _registerTestEnvDartMethods = WebFDynamicLibrary.testRef
+final Dart_RegisterTestEnvDartMethods _registerTestEnvDartMethods = WebFDynamicLibrary.ref
     .lookup<NativeFunction<Native_RegisterTestEnvDartMethods>>('registerTestEnvDartMethods')
     .asFunction();
 
