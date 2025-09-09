@@ -44,13 +44,21 @@ list(APPEND WEBF_TEST_SOURCE
 )
 
 ### webf_unit_test executable
-add_executable(webf_unit_test
-  ${WEBF_TEST_SOURCE}
-  ${WEBF_CSS_UNIT_TEST_SOURCE}
-  ${BRIDGE_SOURCE}
-)
+if (TARGET webf_core)
+  # When webf_core exists, link to the static library instead of recompiling
+  add_executable(webf_unit_test
+    ${WEBF_TEST_SOURCE}
+    ${WEBF_CSS_UNIT_TEST_SOURCE}
+  )
+else()
+  # Without webf_core, compile sources directly
+  add_executable(webf_unit_test
+    ${WEBF_TEST_SOURCE}
+    ${WEBF_CSS_UNIT_TEST_SOURCE}
+    ${BRIDGE_SOURCE}
+  )
+endif()
 
-target_compile_definitions(webf_unit_test PUBLIC -DFLUTTER_BACKEND=0)
 target_compile_definitions(webf_unit_test PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(webf_unit_test PUBLIC -DUNIT_TEST=1)
 
@@ -64,11 +72,26 @@ enable_testing()
 # this sets the output dir to /bin
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-target_include_directories(webf_unit_test PUBLIC ./third_party/googletest/googletest/include ${BRIDGE_INCLUDE} ./test)
-target_link_libraries(webf_unit_test
-  ${BRIDGE_LINK_LIBS}
-  GTest::gtest_main
-)
+target_include_directories(webf_unit_test PUBLIC 
+  ./third_party/googletest/googletest/include 
+  ${BRIDGE_INCLUDE} 
+  ./test
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+if (TARGET webf_core)
+  # Link to webf_core which already includes BRIDGE_LINK_LIBS
+  target_link_libraries(webf_unit_test
+    webf_core
+    GTest::gtest_main
+  )
+else()
+  # Link libraries directly
+  target_link_libraries(webf_unit_test
+    ${BRIDGE_LINK_LIBS}
+    GTest::gtest_main
+  )
+endif()
 
 # Configure thread stack size
 if(WIN32)

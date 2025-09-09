@@ -55,13 +55,15 @@ class Dispatcher {
       return;
     }
 
-#if FLUTTER_BACKEND
-    auto task = std::make_shared<ConcreteTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
-    DartWork work = [task](bool cancel) { (*task)(); };
+    // Runtime check: Only execute Flutter backend code if we have a valid Dart port
+    // When running tests without Flutter backend, dart_port_ will be ILLEGAL_PORT (0)
+    if (dart_port_ != ILLEGAL_PORT) {
+      auto task = std::make_shared<ConcreteTask<Func, Args...>>(std::forward<Func>(func), std::forward<Args>(args)...);
+      DartWork work = [task](bool cancel) { (*task)(); };
 
-    const DartWork* work_ptr = new DartWork(work);
-    NotifyDart(work_ptr, false);
-#endif
+      const DartWork* work_ptr = new DartWork(work);
+      NotifyDart(work_ptr, false);
+    }
   }
 
   template <typename Func, typename... Args>

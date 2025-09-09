@@ -115,12 +115,9 @@ static JSValue matchImageSnapshot(JSContext* ctx, JSValueConst this_val, int arg
 
 static JSValue environment(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv) {
   auto* context = ExecutingContext::From(ctx);
-#if FLUTTER_BACKEND
+  // Always call the dart method - it will be either the real one or the mock one from TEST_environment
   const char* env = context->dartMethodPtr()->environment(context->isDedicated(), context->contextId());
   return JS_ParseJSON(ctx, env, strlen(env), "");
-#else
-  return JS_NewObject(ctx);
-#endif
 }
 
 struct SimulatePointerCallbackContext: DartReadable {

@@ -295,9 +295,33 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-add_library(webf SHARED ${BRIDGE_SOURCE})
-
-target_compile_definitions(webf PUBLIC -DFLUTTER_BACKEND=1)
+# Create a static library with core sources to avoid duplicate compilation when tests are enabled
+if (${ENABLE_TEST})
+  # Remove webf_bridge.cc from the core static library sources
+  # webf_bridge.cc contains the export symbols and needs to be compiled directly into the shared library
+  set(WEBF_CORE_SOURCE ${BRIDGE_SOURCE})
+  list(REMOVE_ITEM WEBF_CORE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
+  
+  add_library(webf_core STATIC ${WEBF_CORE_SOURCE})
+  # Set position-independent code for static library that will be linked into shared library
+  set_target_properties(webf_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_include_directories(webf_core PUBLIC
+    ${BRIDGE_INCLUDE}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ./include)
+  target_link_libraries(webf_core PUBLIC ${BRIDGE_LINK_LIBS})
+  
+  # webf shared library compiles webf_bridge.cc directly to ensure symbols are exported
+  add_library(webf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
+  target_link_libraries(webf PUBLIC webf_core)
+  target_include_directories(webf PRIVATE
+    ${BRIDGE_INCLUDE}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ./include)
+else()
+  # For non-test builds, use the original approach
+  add_library(webf SHARED ${BRIDGE_SOURCE})
+endif()
 
 if (${IS_ANDROID})
   find_library(log-lib log)
@@ -317,18 +341,27 @@ endif()
 
 
 ## webf
-target_include_directories(webf PRIVATE
-  ${BRIDGE_INCLUDE}
-  ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
-target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
+# Only set include directories and link libraries if not using webf_core
+if (NOT TARGET webf_core)
+  target_include_directories(webf PRIVATE
+    ${BRIDGE_INCLUDE}
+    ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
+  target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
+endif()
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+    if (TARGET webf_core)
+      target_compile_options(webf_core PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
+    endif()
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
+    if (TARGET webf_core)
+      target_compile_options(webf_core PRIVATE -fno-exceptions -fno-rtti)
+    endif()
   endif ()
 endif ()
 

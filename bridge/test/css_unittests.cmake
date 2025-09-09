@@ -94,7 +94,6 @@ target_link_libraries(webf_css_unittests
 )
 
 # Apply the same compile definitions as webf_unit_test
-target_compile_definitions(webf_css_unittests PUBLIC -DFLUTTER_BACKEND=0)
 target_compile_definitions(webf_css_unittests PUBLIC -DSPEC_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(webf_css_unittests PUBLIC -DUNIT_TEST=1)
 # Set minimum log level to INFO to suppress VERBOSE logs (including Dispatcher logs)
