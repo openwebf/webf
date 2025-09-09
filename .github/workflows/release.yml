@@ -441,15 +441,10 @@ jobs:
           cache: 'npm'
       
       - name: Setup Android SDK and NDK
-        run: |
-          # For self-hosted macOS runner, check if NDK is already installed
-          if [ ! -d "$ANDROID_HOME/ndk/27.3.13750724" ]; then
-            echo "Installing Android NDK 27.3.13750724..."
-            yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
-            $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.3.13750724"
-          else
-            echo "Android NDK 27.3.13750724 already installed"
-          fi
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r27d
+          local-cache: true
       
       - name: Setup build dependencies
         run: |
