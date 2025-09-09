@@ -204,6 +204,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.nodeVersion }}
+          cache: 'npm'
       
       - name: Install build dependencies
         run: |
@@ -291,6 +292,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.nodeVersion }}
+          cache: 'npm'
       
       - name: Install build dependencies
         run: |
@@ -364,6 +366,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.nodeVersion }}
+          cache: 'npm'
       
       - name: Verify toolchain
         run: |
@@ -435,6 +438,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.nodeVersion }}
+          cache: 'npm'
       
       - name: Setup Android SDK and NDK
         run: |

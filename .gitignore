@@ -59,7 +59,6 @@ cmake-build-release
 cmake-build-macos
 
 # Node.js
-package-lock.json
 
 Podfile.lock
 .cxx
