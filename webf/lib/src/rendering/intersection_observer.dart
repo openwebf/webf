@@ -285,7 +285,7 @@ class IntersectionObserverLayer extends ContainerLayer {
   // Computes the accumulated clipping bounds, in global coordinates.
   Rect _computeClipRect() {
     var clipRect = Offset.zero &
-        (Platform.isWindows
+        ((Platform.isWindows || Platform.isLinux)
             ? (flutterView.physicalSize / flutterView.devicePixelRatio)
             : flutterView.display.size);
 
