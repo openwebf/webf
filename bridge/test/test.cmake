@@ -134,10 +134,8 @@ if(${ENABLE_TEST})
   endif()
 endif()
 
-if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
-  install(TARGETS webf_unit_test
-    RUNTIME DESTINATION bin     # For Windows executables
-    LIBRARY DESTINATION lib     # For Unix-like shared libs
-    ARCHIVE DESTINATION lib     # For static libs, if built
-    INCLUDES DESTINATION include)
-endif()
+set_target_properties(webf_unit_test
+  PROPERTIES
+  LIBRARY_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+  RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
+)
