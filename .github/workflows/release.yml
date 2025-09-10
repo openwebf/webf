@@ -176,7 +176,6 @@ jobs:
           path: |
             bridge/build/windows/lib/bin/*.dll
             bridge/build/windows/lib/bin/webf_unit_test.exe
-            webf/windows/*.dll
           retention-days: 1
           if-no-files-found: warn
 
@@ -331,6 +330,44 @@ jobs:
         run: |
           node scripts/run_bridge_unit_test.js
       
+      - name: Prepare macOS debug symbols
+        run: |
+          # Create debug symbols directory for artifact upload
+          mkdir -p debug-symbols-macos
+          
+          # Find and copy dSYM directories from macOS build
+          echo "🔍 Searching for debug symbols in bridge/build/macos..."
+          
+          # Find and copy dSYM bundles (preserving directory structure)
+          find bridge/build/macos -name "*.dSYM" -type d | while read dsym; do
+            # Get relative path from bridge/build/macos
+            rel_path=${dsym#bridge/build/macos/}
+            # Create parent directory in destination
+            mkdir -p "debug-symbols-macos/$(dirname "$rel_path")"
+            # Copy entire dSYM bundle
+            cp -R "$dsym" "debug-symbols-macos/$(dirname "$rel_path")/"
+          done
+          
+          # Count dSYM bundles found
+          dsym_count=$(find debug-symbols-macos -name "*.dSYM" -type d | wc -l)
+          echo "Found $dsym_count dSYM bundles"
+          
+          if [ "$dsym_count" -gt 0 ]; then
+            echo "📋 Debug symbols prepared for upload:"
+            find debug-symbols-macos -name "*.dSYM" -type d
+          else
+            echo "⚠️  No debug symbols found"
+          fi
+      
+      - name: Upload macOS debug symbols artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-macos
+          path: debug-symbols-macos/
+          retention-days: 1
+          if-no-files-found: warn
+      
       - name: Upload macOS binaries
         uses: actions/upload-artifact@v4
         with:
@@ -362,11 +399,11 @@ jobs:
         with:
           cmake-version: ${{ env.cmakeVersion }}
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.nodeVersion }}
-          cache: 'npm'
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: ${{ env.nodeVersion }}
+      #     cache: 'npm'
       
       - name: Verify toolchain
         run: |
@@ -375,7 +412,7 @@ jobs:
           clang --version
       
       - name: Install Node.js dependencies
-        run: npm ci
+        run: npm install
       
       - name: Generate binding code
         run: npm run bindgen
@@ -398,9 +435,7 @@ jobs:
         with:
           name: ios-binaries
           path: |
-            bridge/build/ios/**/*.a
-            bridge/build/ios/**/*.framework
-            bridge/build/ios/
+            bridge/build/ios/framework/**/*.xcframework
           retention-days: 1
           if-no-files-found: warn
       
@@ -409,8 +444,7 @@ jobs:
         with:
           name: debug-symbols-ios
           path: |
-            bridge/build/ios/framework/*.dSYMs/
-            bridge/build/ios/lib/**/*.dSYM
+            bridge/build/ios/framework/**/*.dSYMs/
           retention-days: 1
           if-no-files-found: warn
 
@@ -442,6 +476,7 @@ jobs:
       
       - name: Setup Android SDK and NDK
         uses: nttld/setup-ndk@v1
+        id: setup-ndk
         with:
           ndk-version: r27d
           local-cache: true
@@ -459,8 +494,8 @@ jobs:
           cmake --version
           ninja --version
           echo "Android SDK: $ANDROID_HOME"
-          echo "Android NDK: $ANDROID_HOME/ndk/27.3.13750724"
-          ls -la $ANDROID_HOME/ndk/ || echo "NDK directory not found"
+          echo "Android NDK: ${{ steps.setup-ndk.outputs.ndk-path }}"
+          ls -la "${{ steps.setup-ndk.outputs.ndk-path }}" || echo "NDK directory not found"
       
       - name: Install Node.js dependencies
         run: npm ci
@@ -470,16 +505,61 @@ jobs:
       
       - name: Build Android bridge
         env:
-          ANDROID_NDK_HOME: $ANDROID_HOME/ndk/27.3.13750724
-          ANDROID_NDK_ROOT: $ANDROID_HOME/ndk/27.3.13750724
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
           WEBF_BUILD: Release
           WEBF_JS_ENGINE: quickjs
         run: |
           echo "🔨 Building Android bridge..."
           echo "Using NDK: $ANDROID_NDK_HOME"
+          echo "NDK version: ${{ steps.setup-ndk.outputs.ndk-full-version }}"
           export WEBF_BUILD=Release
           export WEBF_JS_ENGINE=quickjs
           npm run build:bridge:android:release
+      
+      - name: Prepare Android debug symbols
+        run: |
+          # Create debug symbols directory for artifact upload with architecture subdirectories
+          mkdir -p debug-symbols-android
+          
+          # Find and copy debug symbol files from Android build directory, preserving architecture structure
+          echo "🔍 Searching for debug symbols in bridge/build/android/lib/..."
+          
+          # Copy .debug files while preserving the architecture directory structure
+          for arch in arm64-v8a armeabi-v7a x86 x86_64; do
+            if [ -d "bridge/build/android/lib/$arch" ]; then
+              mkdir -p "debug-symbols-android/$arch"
+              find "bridge/build/android/lib/$arch" -name "*.debug" -type f -exec cp {} "debug-symbols-android/$arch/" \; 2>/dev/null || true
+            fi
+          done
+          
+          # Count files found
+          debug_count=$(find debug-symbols-android -type f -name "*.debug" | wc -l)
+          echo "Found $debug_count debug symbol files"
+          
+          if [ "$debug_count" -gt 0 ]; then
+            echo "📋 Debug symbols prepared for upload by architecture:"
+            for arch in arm64-v8a armeabi-v7a x86 x86_64; do
+              if [ -d "debug-symbols-android/$arch" ]; then
+                count=$(find "debug-symbols-android/$arch" -type f | wc -l)
+                if [ "$count" -gt 0 ]; then
+                  echo "  - $arch: $count files"
+                  ls -lh "debug-symbols-android/$arch/"
+                fi
+              fi
+            done
+          else
+            echo "⚠️  No debug symbols found"
+          fi
+      
+      - name: Upload Android debug symbols artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-android
+          path: debug-symbols-android/
+          retention-days: 1
+          if-no-files-found: warn
       
       - name: Upload Android binaries
         uses: actions/upload-artifact@v4
