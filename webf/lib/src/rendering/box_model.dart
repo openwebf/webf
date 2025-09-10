@@ -367,7 +367,7 @@ abstract class RenderBoxModel extends RenderBox
         renderStyle.paddingRight.computedValue;
 
     double? parentBoxContentConstraintsWidth;
-    if (renderStyle.isParentRenderBoxModel() && (this is RenderLayoutBox || this is RenderWidget)) {
+    if (renderStyle.isParentRenderBoxModel() && (renderStyle.isSelfRenderLayoutBox() || renderStyle.isSelfRenderWidget())) {
       RenderBoxModel parentRenderBoxModel = (renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!);
 
       // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
