@@ -124,13 +124,14 @@ list(APPEND WEBF_INTEGRATION_TEST_SOURCE
   test/webf_test_context.h
 )
 
-# Add test sources to main webf library in debug mode only (when ENABLE_TEST=true)
-# No separate webf_test target needed
-target_sources(webf PRIVATE ${WEBF_INTEGRATION_TEST_SOURCE})
-target_include_directories(webf PRIVATE ./test)
-
-if(WIN32)
-  target_link_libraries(webf PRIVATE dbghelp)
+# Only add test sources to main webf library when ENABLE_TEST=true
+if(${ENABLE_TEST})
+  target_sources(webf PRIVATE ${WEBF_INTEGRATION_TEST_SOURCE})
+  target_include_directories(webf PRIVATE ./test)
+  
+  if(WIN32)
+    target_link_libraries(webf PRIVATE dbghelp)
+  endif()
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)

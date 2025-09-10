@@ -137,8 +137,11 @@ task('build-darwin-webf-lib', done => {
   if (program.enableLog) {
     externCmakeArgs.push('-DENABLE_LOG=true');
   }
+  
+  // Only enable tests for debug/development builds
+  const enableTest = buildMode !== 'Release';
 
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true ${externCmakeArgs.join(' ')} \
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${enableTest ? '-DENABLE_TEST=true' : ''} ${externCmakeArgs.join(' ')} \
     -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-x86_64 -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
@@ -149,10 +152,8 @@ task('build-darwin-webf-lib', done => {
     }
   });
 
-  let webfTargets = ['webf', 'qjsc'];
-  if (targetJSEngine === 'quickjs') {
-    webfTargets.push('webf_unit_test');
-  }
+  // Always build webf_unit_test for testing
+  let webfTargets = ['webf', 'qjsc', 'webf_unit_test'];
 
   let cpus = os.cpus();
   execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
@@ -689,7 +690,7 @@ task(`build-ios-webf-lib`, (done) => {
 });
 
 task('build-linux-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'RelWithDebInfo';
+  const buildType = buildMode == 'Release' ? 'Release' : 'Debug';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
 
   let externCmakeArgs = [];
@@ -708,6 +709,9 @@ task('build-linux-webf-lib', (done) => {
 
   // Force static QuickJS for Linux to bundle everything into libwebf.so
   externCmakeArgs.push('-DSTATIC_QUICKJS=true');
+  
+  // Only enable tests for debug/development builds
+  const enableTest = buildMode !== 'Release';
 
   const soBinaryDirectory = path.join(paths.bridge, `build/linux/lib/`);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-linux');
@@ -717,7 +721,7 @@ task('build-linux-webf-lib', (done) => {
   -DCMAKE_CXX_COMPILER=clang++ \
   ${externCmakeArgs.join(' ')} \
   ${isProfile ? '-DENABLE_PROFILE=TRUE \\' : '\\'}
-  ${'-DENABLE_TEST=true \\'}
+  ${enableTest ? '-DENABLE_TEST=true \\' : '\\'}
   -G "${cmakeGeneratorTemplate}" \
   -B ${paths.bridge}/cmake-build-linux -S ${paths.bridge}`,
     {
@@ -730,8 +734,9 @@ task('build-linux-webf-lib', (done) => {
       }
     });
 
-  // build
-  execSync(`cmake --build ${bridgeCmakeDir} --target webf webf_unit_test -- -j 12`, {
+  // build - always build webf_unit_test for testing
+  const buildTargets = 'webf webf_unit_test';
+  execSync(`cmake --build ${bridgeCmakeDir} --target ${buildTargets} -- -j 12`, {
     stdio: 'inherit'
   });
 
@@ -864,11 +869,14 @@ task('build-window-webf-lib', (done) => {
   if (program.enableLog) {
     externCmakeArgs.push('-DENABLE_LOG=true');
   }
+  
+  // Only enable tests for debug/development builds
+  const enableTest = buildMode !== 'Release';
 
   const soBinaryDirectory = path.join(paths.bridge, `build/windows/lib/`).replaceAll(path.sep, path.posix.sep);
   const bridgeCmakeDir = path.join(paths.bridge, 'cmake-build-windows');
   // generate project
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} -DENABLE_TEST=true ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
+  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${enableTest ? '-DENABLE_TEST=true' : ''} ${externCmakeArgs.join(' ')} -B ${bridgeCmakeDir} -S ${paths.bridge}`,
     {
       cwd: paths.bridge,
       stdio: 'inherit',
@@ -880,11 +888,8 @@ task('build-window-webf-lib', (done) => {
       }
     });
 
-  const webfTargets = ['webf'];
-
-  if (targetJSEngine === 'quickjs') {
-    webfTargets.push('webf_unit_test');
-  }
+  // Always build webf_unit_test for testing
+  const webfTargets = ['webf', 'webf_unit_test'];
 
   // build
   execSync(`cmake --build ${bridgeCmakeDir} --target ${webfTargets.join(' ')} --verbose --config ${buildType}`, {

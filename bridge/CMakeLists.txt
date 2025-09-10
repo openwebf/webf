@@ -295,33 +295,28 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
-# Create a static library with core sources to avoid duplicate compilation when tests are enabled
-if (${ENABLE_TEST})
-  # Remove webf_bridge.cc from the core static library sources
-  # webf_bridge.cc contains the export symbols and needs to be compiled directly into the shared library
-  set(WEBF_CORE_SOURCE ${BRIDGE_SOURCE})
-  list(REMOVE_ITEM WEBF_CORE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
-  
-  add_library(webf_core STATIC ${WEBF_CORE_SOURCE})
-  # Set position-independent code for static library that will be linked into shared library
-  set_target_properties(webf_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  target_include_directories(webf_core PUBLIC
-    ${BRIDGE_INCLUDE}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ./include)
-  target_link_libraries(webf_core PUBLIC ${BRIDGE_LINK_LIBS})
-  
-  # webf shared library compiles webf_bridge.cc directly to ensure symbols are exported
-  add_library(webf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
-  target_link_libraries(webf PUBLIC webf_core)
-  target_include_directories(webf PRIVATE
-    ${BRIDGE_INCLUDE}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ./include)
-else()
-  # For non-test builds, use the original approach
-  add_library(webf SHARED ${BRIDGE_SOURCE})
-endif()
+# Always create a static library with core sources to avoid duplicate compilation
+# Remove webf_bridge.cc from the core static library sources
+# webf_bridge.cc contains the export symbols and needs to be compiled directly into the shared library
+set(WEBF_CORE_SOURCE ${BRIDGE_SOURCE})
+list(REMOVE_ITEM WEBF_CORE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
+
+add_library(webf_core STATIC ${WEBF_CORE_SOURCE})
+# Set position-independent code for static library that will be linked into shared library
+set_target_properties(webf_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_include_directories(webf_core PUBLIC
+  ${BRIDGE_INCLUDE}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ./include)
+target_link_libraries(webf_core PUBLIC ${BRIDGE_LINK_LIBS})
+
+# webf shared library compiles webf_bridge.cc directly to ensure symbols are exported
+add_library(webf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
+target_link_libraries(webf PUBLIC webf_core)
+target_include_directories(webf PRIVATE
+  ${BRIDGE_INCLUDE}
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  ./include)
 
 if (${IS_ANDROID})
   find_library(log-lib log)
@@ -341,27 +336,17 @@ endif()
 
 
 ## webf
-# Only set include directories and link libraries if not using webf_core
-if (NOT TARGET webf_core)
-  target_include_directories(webf PRIVATE
-    ${BRIDGE_INCLUDE}
-    ${CMAKE_CURRENT_SOURCE_DIR} PUBLIC ./include)
-  target_link_libraries(webf PRIVATE ${BRIDGE_LINK_LIBS})
-endif()
+# Include directories and link libraries are already set above when creating webf
 
 if ($ENV{WEBF_JS_ENGINE} MATCHES "quickjs" AND NOT MSVC)
   if (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     target_compile_options(webf PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
-    if (TARGET webf_core)
-      target_compile_options(webf_core PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
-    endif()
+    target_compile_options(webf_core PRIVATE -fno-exceptions -fvisibility=hidden -fno-rtti -fdata-sections -ffunction-sections)
     target_compile_options(quickjs PRIVATE -fno-exceptions -fno-rtti -fdata-sections -ffunction-sections)
   else ()
     ### remove dynamic_cast and exceptions
     target_compile_options(webf PRIVATE -fno-exceptions -fno-rtti)
-    if (TARGET webf_core)
-      target_compile_options(webf_core PRIVATE -fno-exceptions -fno-rtti)
-    endif()
+    target_compile_options(webf_core PRIVATE -fno-exceptions -fno-rtti)
   endif ()
 endif ()
 
@@ -380,11 +365,10 @@ execute_process(
 string(REPLACE \n "" GIT_HEAD ${GIT_HEAD}) # Remove last \n
 add_definitions(-DAPP_REV="${GIT_HEAD}") # Read from git head sha1
 
-if (${ENABLE_TEST})
-  add_compile_definitions(IS_TEST=true)
-  include(./test/css_unittests.cmake)
-  include(./test/test.cmake)
-endif ()
+add_compile_definitions(IS_TEST=true)
+include(./test/css_unittests.cmake)
+# Always include test.cmake to make webf_unit_test target available
+include(./test/test.cmake)
 
 if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
   install(TARGETS quickjs
