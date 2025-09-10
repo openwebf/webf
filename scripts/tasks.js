@@ -113,7 +113,7 @@ task('compile-build-tools', done => {
 task('build-darwin-webf-lib', done => {
   let externCmakeArgs = [];
   let buildType = 'Debug';
-  if (process.env.WEBF_BUILD === 'Release') {
+  if (process.env.WEBF_BUILD === 'Release' || buildMode === 'Release' || buildMode === 'RelWithDebInfo') {
     buildType = 'RelWithDebInfo';
   }
 
@@ -690,7 +690,7 @@ task(`build-ios-webf-lib`, (done) => {
 });
 
 task('build-linux-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'Release' : 'Debug';
+  const buildType = (buildMode == 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   const cmakeGeneratorTemplate = platform == 'win32' ? 'Ninja' : 'Unix Makefiles';
 
   let externCmakeArgs = [];
@@ -771,6 +771,45 @@ task('build-linux-webf-lib', (done) => {
     } catch (e) {
       console.log(chalk.yellow('⚠ patchelf not found. Install it to enable local library loading: sudo apt-get install patchelf'));
     }
+  }
+
+  // Extract debug symbols for release builds
+  if (buildMode === 'Release' || buildMode === 'RelWithDebInfo') {
+    console.log(chalk.blue('Extracting debug symbols for release build...'));
+    
+    // List of libraries to process
+    const librariesToProcess = ['libwebf.so'];
+    
+    // Check if QuickJS is built as a separate library
+    const libquickjsPath = path.join(soBinaryDirectory, 'libquickjs.so');
+    if (fs.existsSync(libquickjsPath)) {
+      librariesToProcess.push('libquickjs.so');
+    }
+    
+    librariesToProcess.forEach(libName => {
+      const libPath = path.join(soBinaryDirectory, libName);
+      const debugPath = path.join(soBinaryDirectory, `${libName}.debug`);
+      
+      if (fs.existsSync(libPath)) {
+        try {
+          // Extract debug symbols
+          execSync(`objcopy --only-keep-debug "${libPath}" "${debugPath}"`, { stdio: 'inherit' });
+          console.log(chalk.green(`  ✓ Extracted debug symbols to ${libName}.debug`));
+          
+          // Strip debug symbols from the binary
+          execSync(`strip --strip-debug --strip-unneeded "${libPath}"`, { stdio: 'inherit' });
+          console.log(chalk.green(`  ✓ Stripped debug symbols from ${libName}`));
+          
+          // Add debug link to the stripped binary
+          execSync(`objcopy --add-gnu-debuglink="${debugPath}" "${libPath}"`, { stdio: 'inherit' });
+          console.log(chalk.green(`  ✓ Added debug link to ${libName}`));
+        } catch (error) {
+          console.log(chalk.yellow(`  ⚠ Failed to extract/strip debug symbols from ${libName}: ${error.message}`));
+        }
+      }
+    });
+    
+    console.log(chalk.green('✓ Debug symbol extraction completed'));
   }
 
   done();
@@ -858,7 +897,7 @@ task('generate-bindings-code', (done) => {
 });
 
 task('build-window-webf-lib', (done) => {
-  const buildType = buildMode == 'Release' ? 'RelWithDebInfo' : 'Debug';
+  const buildType = (buildMode == 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
 
   let externCmakeArgs = [];
 
