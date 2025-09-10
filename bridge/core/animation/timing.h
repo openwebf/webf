@@ -36,6 +36,11 @@
 #include <optional>
 // #include "cc/animation/keyframe_model.h"
 #include "core/animation/animation_time_delta.h"
+
+// Undefine Windows macros that conflict with enum values
+#ifdef ALTERNATE
+#undef ALTERNATE
+#endif
 #include "core/base/memory/values_equivalent.h"
 #include "core/css/css_value.h"
 #include "core/platform/geometry/length.h"

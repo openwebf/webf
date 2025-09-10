@@ -10,6 +10,11 @@
 #include <sstream>
 #include <string>
 
+// Undefine Windows macros that conflict with our constants
+#ifdef ERROR
+#undef ERROR
+#endif
+
 #define WEBF_LOG_STREAM(severity) ::webf::LogMessage(::webf::severity, __FILE__, __LINE__, nullptr).stream()
 
 #define WEBF_LAZY_STREAM(stream, condition) !(condition) ? (void)0 : ::webf::LogMessageVoidify() & (stream)
