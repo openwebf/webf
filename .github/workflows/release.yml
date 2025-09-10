@@ -297,11 +297,11 @@ jobs:
         with:
           cmake-version: ${{ env.cmakeVersion }}
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.nodeVersion }}
-          cache: 'npm'
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: ${{ env.nodeVersion }}
+      #     cache: 'npm'
       
       - name: Install build dependencies
         run: |
@@ -478,11 +478,11 @@ jobs:
         with:
           cmake-version: ${{ env.cmakeVersion }}
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.nodeVersion }}
-          cache: 'npm'
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v4
+      #   with:
+      #     node-version: ${{ env.nodeVersion }}
+      #     cache: 'npm'
       
       - name: Setup Android SDK and NDK
         uses: nttld/setup-ndk@v1
