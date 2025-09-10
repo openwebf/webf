@@ -295,6 +295,22 @@ list(APPEND PUBLIC_HEADER
   include/webf_bridge.h
 )
 
+if (${IS_ANDROID})
+  find_library(log-lib log)
+
+  #  add_link_options("-Wl,-z,max-page-size=16384")
+
+  if (${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
+    add_definitions(-DANDROID_32_BIT=1)
+  endif()
+
+  add_definitions(-DIS_ANDROID=1)
+  add_definitions(-DANDROID=1)
+  list(APPEND BRIDGE_LINK_LIBS ${log-lib})
+elseif(${IS_IOS})
+  add_definitions(-DIS_IOS=1)
+endif()
+
 # Always create a static library with core sources to avoid duplicate compilation
 # Remove webf_bridge.cc from the core static library sources
 # webf_bridge.cc contains the export symbols and needs to be compiled directly into the shared library
@@ -312,27 +328,13 @@ target_link_libraries(webf_core PUBLIC ${BRIDGE_LINK_LIBS})
 
 # webf shared library compiles webf_bridge.cc directly to ensure symbols are exported
 add_library(webf SHARED ${CMAKE_CURRENT_SOURCE_DIR}/webf_bridge.cc)
-target_link_libraries(webf PUBLIC webf_core)
+target_link_libraries(webf PUBLIC webf_core ${BRIDGE_LINK_LIBS})
 target_include_directories(webf PRIVATE
   ${BRIDGE_INCLUDE}
   ${CMAKE_CURRENT_SOURCE_DIR}
   ./include)
 
-if (${IS_ANDROID})
-  find_library(log-lib log)
 
-#  add_link_options("-Wl,-z,max-page-size=16384")
-
-  if (${ANDROID_ABI} MATCHES "armeabi-v7a" OR ${ANDROID_ABI} MATCHES "x86")
-    add_definitions(-DANDROID_32_BIT=1)
-  endif()
-
-  add_definitions(-DIS_ANDROID=1)
-  add_definitions(-DANDROID=1)
-  list(APPEND BRIDGE_LINK_LIBS ${log-lib})
-elseif(${IS_IOS})
-  add_definitions(-DIS_IOS=1)
-endif()
 
 
 ## webf
