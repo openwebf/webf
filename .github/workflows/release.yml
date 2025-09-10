@@ -174,8 +174,8 @@ jobs:
         with:
           name: windows-binaries
           path: |
-            bridge/build/windows/lib/bin/*.dll
-            bridge/build/windows/lib/bin/webf_unit_test.exe
+            bridge/build/windows/lib/*.dll
+            bridge/build/windows/lib/webf_unit_test.exe
           retention-days: 1
           if-no-files-found: warn
 

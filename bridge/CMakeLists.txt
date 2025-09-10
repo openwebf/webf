@@ -79,9 +79,9 @@ if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
 
   # Install the DLL to the runtime binary directory
   # 'bin' is the standard destination for runtime executables and required DLLs
-  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION bin)
-  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION bin)
-  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION bin)
+  install(FILES "${LIBPTHREAD_DLL_PATH}" DESTINATION .)
+  install(FILES "${LIBGCC_DLL_PATH}" DESTINATION .)
+  install(FILES "${LIBSTDCXX_DLL_PATH}" DESTINATION .)
 endif()
 
 
@@ -370,18 +370,13 @@ include(./test/css_unittests.cmake)
 # Always include test.cmake to make webf_unit_test target available
 include(./test/test.cmake)
 
-if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
-  install(TARGETS quickjs
-          LIBRARY DESTINATION lib     # For Unix-like OSes
-          ARCHIVE DESTINATION lib     # For static libs, if built
-          RUNTIME DESTINATION bin     # For Windows DLLs
-          INCLUDES DESTINATION include)
-  install(TARGETS webf
-          LIBRARY DESTINATION lib     # For Unix-like OSes
-          ARCHIVE DESTINATION lib     # For static libs, if built
-          RUNTIME DESTINATION bin     # For Windows DLLs
-          INCLUDES DESTINATION include)
-else()
+#if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
+#  install(TARGETS webf
+#          LIBRARY DESTINATION lib     # For Unix-like OSes
+#          ARCHIVE DESTINATION lib     # For static libs, if built
+#          RUNTIME DESTINATION bin     # For Windows DLLs
+#          INCLUDES DESTINATION include)
+#else()
   if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
     set_target_properties(webf
       PROPERTIES
@@ -403,7 +398,7 @@ else()
   elseif (IS_ANDROID)
     # android do nothing
   endif ()
-endif()
+#endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "iOS")
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED "NO")

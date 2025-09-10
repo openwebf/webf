@@ -176,7 +176,7 @@ task('run-bridge-unit-test', done => {
   } else if (platform === 'linux') {
     execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform == 'win32') {
-    execSync(`${path.join(paths.bridge, 'build/windows/lib/bin/webf_unit_test.exe')}`, { stdio: 'inherit' });
+    execSync(`${path.join(paths.bridge, 'build/windows/lib/webf_unit_test.exe')}`, { stdio: 'inherit' });
   }
   done();
 });
@@ -948,11 +948,11 @@ task('build-window-webf-lib', (done) => {
     ];
 
     for (var dll of targetDlls) {
-      const binaryPath = path.join(paths.bridge, `build/windows/lib/bin/${dll}.dll`);
+      const binaryPath = path.join(paths.bridge, `build/windows/lib/${dll}.dll`);
       if (fs.existsSync(binaryPath)) {
         try {
           // Extract debug symbols before stripping
-          const debugPath = path.join(paths.bridge, `build/windows/lib/bin/${dll}.debug`);
+          const debugPath = path.join(paths.bridge, `build/windows/lib/${dll}.debug`);
           execSync(`objcopy --only-keep-debug "${binaryPath}" "${debugPath}"`, { stdio: 'inherit' });
           console.log(chalk.green(`Extracted debug symbols to ${debugPath}`));
 

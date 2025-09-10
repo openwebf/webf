@@ -14,7 +14,7 @@ function copyDllFiles() {
   ];
 
   const currentDir = __dirname;
-  const bridgeBinDir = path.join(currentDir, '..', '..', 'bridge', 'build', 'windows', 'lib', 'bin');
+  const bridgeBinDir = path.join(currentDir, '..', '..', 'bridge', 'build', 'windows', 'lib');
   let copiedCount = 0;
 
   console.log('Processing DLL files...');
