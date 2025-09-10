@@ -1042,7 +1042,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       developer.Timeline.finishSync();
     }
 
-    // Defer setting container size until after children have been adjusted.
+    // Set flex container size.
+    _setContainerSize(_runMetrics);
 
     if (!kReleaseMode) {
       developer.Timeline.startSync('RenderFlex.layoutFlexItems.adjustChildrenSize');
@@ -2513,7 +2514,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       bool isCrossSizeDefinite = _isHorizontalFlexDirection
           ? (renderStyle.contentBoxLogicalHeight != null || renderStyle.minHeight.isNotAuto)
           : (renderStyle.contentBoxLogicalWidth != null || renderStyle.minWidth.isNotAuto);
-      
+
       if (_needToStretchChildCrossSize(child) && !isCrossSizeDefinite) {
         return runCrossAxisExtent;
       } else {
@@ -3083,10 +3084,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     // Use contentConstraints if contentSize hasn't been set yet (for early stretch calculations)
     double result;
     if (_isHorizontalFlexDirection) {
-      result = contentSize.height != 0 ? contentSize.height : 
+      result = contentSize.height != 0 ? contentSize.height :
                (contentConstraints?.maxHeight.isFinite == true ? contentConstraints!.maxHeight : 0);
     } else {
-      result = contentSize.width != 0 ? contentSize.width : 
+      result = contentSize.width != 0 ? contentSize.width :
                (contentConstraints?.maxWidth.isFinite == true ? contentConstraints!.maxWidth : 0);
     }
     return result;
