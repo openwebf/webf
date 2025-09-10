@@ -17,11 +17,11 @@ namespace <%= name %>_atomicstring {
 
 <% _.forEach(data, function(name, index) { %>
   <% if (_.isArray(name)) { %>
-    extern const AtomicString k<%= options.camelcase ? upperCamelCase(name[0]) : name[0] %>;
+    extern thread_local const AtomicString k<%= options.camelcase ? upperCamelCase(name[0]) : name[0] %>;
   <% } else if (_.isObject(name)) { %>
-    extern const AtomicString k<%= options.camelcase ? upperCamelCase(name.name) : name.name %>;
+    extern thread_local const AtomicString k<%= options.camelcase ? upperCamelCase(name.name) : name.name %>;
   <% } else { %>
-     extern const AtomicString k<%= options.camelcase ? upperCamelCase(name) : name %>;
+     extern thread_local const AtomicString k<%= options.camelcase ? upperCamelCase(name) : name %>;
   <% } %>
 <% }) %>
 }

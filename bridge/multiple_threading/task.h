@@ -88,7 +88,7 @@ class ConcreteSyncTask : public SyncTask {
 #else
     auto status = future_.wait_for(std::chrono::milliseconds(2000));
     if (status == std::future_status::timeout) {
-      WEBF_LOG(ERROR) << "SyncTask wait timeout" << std::endl;
+      WEBF_LOG(VERBOSE) << "SyncTask wait timeout" << std::endl;
     }
 #endif
   }

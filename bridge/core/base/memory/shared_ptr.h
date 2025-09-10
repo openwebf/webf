@@ -8,6 +8,10 @@
 #include <memory>
 #include <cstring>
 
+#ifdef _WIN32
+#include <Windows.h>  // For CoTaskMemAlloc and CoTaskMemFree
+#endif
+
 namespace std {
 
 // Polyfill for std::reinterpret_pointer_cast(shared_ptr) on older toolchains.
@@ -25,11 +29,42 @@ std::shared_ptr<T> reinterpret_pointer_cast(const std::shared_ptr<U>& r) noexcep
 
 namespace webf {
 
+namespace {
+
+inline void* AllocateMemory(size_t size) {
+#ifdef _WIN32
+  return CoTaskMemAlloc(size);
+#else
+  return malloc(size);
+#endif
+}
+
+inline void FreeMemory(void* ptr) {
+#ifdef _WIN32
+  CoTaskMemFree(ptr);
+#else
+  free(ptr);
+#endif
+}
+
+// Custom deleter for objects allocated with platform-specific allocators
+template<typename T>
+struct ObjectDeleter {
+  void operator()(T* ptr) {
+    if (ptr) {
+      ptr->~T();  // Call destructor
+      FreeMemory(ptr);  // Free memory with matching allocator
+    }
+  }
+};
+
+}  // anonymous namespace
+
 template <typename T, typename... Args>
 std::shared_ptr<T> MakeSharedPtrWithAdditionalBytes(size_t additional_bytes, Args&&... args) {
-  void* memory = malloc(sizeof(T) + additional_bytes);
+  void* memory = AllocateMemory(sizeof(T) + additional_bytes);
   memset(memory, 0, sizeof(T) + additional_bytes);
-  return std::shared_ptr<T>(::new (memory) T(std::forward<Args>(args)...));
+  return std::shared_ptr<T>(::new (memory) T(std::forward<Args>(args)...), ObjectDeleter<T>{});
 }
 
 }  // namespace webf

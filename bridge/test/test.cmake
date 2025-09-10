@@ -141,10 +141,3 @@ if(CMAKE_SYSTEM_NAME MATCHES "MSYS" OR MINGW)
     ARCHIVE DESTINATION lib     # For static libs, if built
     INCLUDES DESTINATION include)
 endif()
-
-if (DEFINED ENV{LIBRARY_OUTPUT_DIR})
-  set_target_properties(webf_unit_test
-    PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "$ENV{LIBRARY_OUTPUT_DIR}"
-  )
-endif()

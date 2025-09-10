@@ -12,7 +12,42 @@
 #include "string_view.h"
 #include "utf8_codecs.h"
 
+#ifdef _WIN32
+#include <objbase.h>  // For CoTaskMemAlloc and CoTaskMemFree
+#endif
+
 namespace webf {
+
+// Platform-specific memory allocation functions
+namespace {
+
+inline void* AllocateStringMemory(size_t size) {
+#ifdef _WIN32
+  return CoTaskMemAlloc(size);
+#else
+  return malloc(size);
+#endif
+}
+
+inline void FreeStringMemory(void* ptr) {
+#ifdef _WIN32
+  CoTaskMemFree(ptr);
+#else
+  free(ptr);
+#endif
+}
+
+// Custom deleter for StringImpl objects allocated with platform-specific allocators
+struct StringImplDeleter {
+  void operator()(StringImpl* ptr) {
+    if (ptr) {
+      ptr->~StringImpl();  // Call destructor
+      FreeStringMemory(ptr);  // Free memory with matching allocator
+    }
+  }
+};
+
+}  // anonymous namespace
 
 DEFINE_GLOBAL(StringImpl, g_global_empty);
 DEFINE_GLOBAL(StringImpl, g_global_empty16_bit);
@@ -94,9 +129,9 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, LChar
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  auto* string = static_cast<StringImpl*>(malloc(AllocationSize<LChar>(length) + 1));
+  auto* string = static_cast<StringImpl*>(AllocateStringMemory(AllocationSize<LChar>(length) + 1));
   data = reinterpret_cast<LChar*>(string + 1);
-  return std::shared_ptr<StringImpl>(new (string) StringImpl(length, kForce8BitConstructor));
+  return std::shared_ptr<StringImpl>(new (string) StringImpl(length, kForce8BitConstructor), StringImplDeleter{});
 }
 
 std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, UChar*& data) {
@@ -108,10 +143,10 @@ std::shared_ptr<StringImpl> StringImpl::CreateUninitialized(size_t length, UChar
   // Allocate a single buffer large enough to contain the StringImpl
   // struct as well as the data which it contains. This removes one
   // heap allocation from this call.
-  StringImpl* string = static_cast<StringImpl*>(malloc(AllocationSize<UChar>(length) + sizeof(UChar)));
+  StringImpl* string = static_cast<StringImpl*>(AllocateStringMemory(AllocationSize<UChar>(length) + sizeof(UChar)));
   data = reinterpret_cast<UChar*>(string + 1);
 
-  return std::shared_ptr<StringImpl>(new (string) StringImpl(length));
+  return std::shared_ptr<StringImpl>(new (string) StringImpl(length), StringImplDeleter{});
 }
 
 class StringImplAllocator {
