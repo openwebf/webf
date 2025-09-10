@@ -90,20 +90,20 @@ task('compile-build-tools', done => {
   let buildType = 'Debug';
 
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
-    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-x86_64 -S ${paths.bridge}`, {
+    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-arm64 -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
     env: {
       ...process.env,
       WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/x86_64')
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/arm64')
     }
   });
 
   let webfTargets = ['qjsc'];
 
   let cpus = os.cpus();
-  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-arm64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -142,13 +142,13 @@ task('build-darwin-webf-lib', done => {
   const enableTest = buildMode !== 'Release';
 
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${enableTest ? '-DENABLE_TEST=true' : ''} ${externCmakeArgs.join(' ')} \
-    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-x86_64 -S ${paths.bridge}`, {
+    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-arm64 -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
     env: {
       ...process.env,
       WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/x86_64')
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/arm64')
     }
   });
 
@@ -156,11 +156,11 @@ task('build-darwin-webf-lib', done => {
   let webfTargets = ['webf', 'qjsc', 'webf_unit_test'];
 
   let cpus = os.cpus();
-  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-x86_64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-arm64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
-  const binaryPath = path.join(paths.bridge, `build/macos/lib/x86_64/libwebf.dylib`);
+  const binaryPath = path.join(paths.bridge, `build/macos/lib/arm64/libwebf.dylib`);
 
   if (buildMode == 'Release' || buildMode == 'RelWithDebInfo') {
     execSync(`dsymutil ${binaryPath}`, { stdio: 'inherit' });
@@ -172,7 +172,7 @@ task('build-darwin-webf-lib', done => {
 
 task('run-bridge-unit-test', done => {
   if (platform === 'darwin') {
-    execSync(`${path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test')}`, { stdio: 'inherit' });
+    execSync(`${path.join(paths.bridge, 'build/macos/lib/arm64/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform === 'linux') {
     execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform == 'win32') {
@@ -817,7 +817,7 @@ task('build-linux-webf-lib', (done) => {
 
 task('generate-polyfill-bytecode', (done) => {
   if (platform == 'darwin') {
-    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/x86_64/');
+    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/arm64/');
     const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
     const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
     let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill', '-o', polyfillTarget, polyfillSource], {

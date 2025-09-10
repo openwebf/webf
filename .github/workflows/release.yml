@@ -216,6 +216,7 @@ jobs:
             libc++abi-dev \
             chrpath \
             gperf \
+            patchelf \
             pkg-config \
             openjdk-17-jdk \
             libiconv-hook-dev \
@@ -264,6 +265,15 @@ jobs:
             bridge/build/linux/lib/*.so
             bridge/build/linux/lib/webf_unit_test
             bridge/build/linux/
+          retention-days: 1
+          if-no-files-found: warn
+      
+      - name: Upload Linux debug symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-symbols-linux
+          path: |
+            bridge/build/linux/lib/*.debug
           retention-days: 1
           if-no-files-found: warn
 
@@ -479,8 +489,9 @@ jobs:
         id: setup-ndk
         with:
           ndk-version: r27d
-          local-cache: true
-      
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+
       - name: Setup build dependencies
         run: |
           # Check if build tools are already installed on self-hosted macOS runner
