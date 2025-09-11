@@ -264,7 +264,6 @@ jobs:
           path: |
             bridge/build/linux/lib/*.so
             bridge/build/linux/lib/webf_unit_test
-            bridge/build/linux/
           retention-days: 1
           if-no-files-found: warn
       
@@ -611,81 +610,97 @@ jobs:
           pattern: debug-symbols-*
           path: ./debug-artifacts
       
-      - name: Organize and commit debug symbols
+      - name: Install 7-Zip
         run: |
-          echo "🔍 Organizing debug symbols for release ${{ github.event.release.tag_name }}..."
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+      
+      - name: Organize and compress debug symbols
+        run: |
+          echo "🔍 Organizing and compressing debug symbols for release ${{ github.event.release.tag_name }}..."
           
-          # Create organized directory structure
-          mkdir -p debug-symbols/${{ github.event.release.tag_name }}
+          # Create temporary directory for organizing symbols
+          mkdir -p temp-symbols/${{ github.event.release.tag_name }}
           
           # Process Windows debug symbols
           if [ -d "debug-artifacts/debug-symbols-windows" ]; then
-            mkdir -p debug-symbols/${{ github.event.release.tag_name }}/windows
-            cp -r debug-artifacts/debug-symbols-windows/* debug-symbols/${{ github.event.release.tag_name }}/windows/ 2>/dev/null || true
+            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/windows
+            cp -r debug-artifacts/debug-symbols-windows/* temp-symbols/${{ github.event.release.tag_name }}/windows/ 2>/dev/null || true
             echo "✅ Windows debug symbols organized"
           fi
           
-          # Process Linux debug symbols (when added)
+          # Process Linux debug symbols
           if [ -d "debug-artifacts/debug-symbols-linux" ]; then
-            mkdir -p debug-symbols/${{ github.event.release.tag_name }}/linux
-            cp -r debug-artifacts/debug-symbols-linux/* debug-symbols/${{ github.event.release.tag_name }}/linux/ 2>/dev/null || true
+            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/linux
+            cp -r debug-artifacts/debug-symbols-linux/* temp-symbols/${{ github.event.release.tag_name }}/linux/ 2>/dev/null || true
             echo "✅ Linux debug symbols organized"
           fi
           
-          # Process macOS debug symbols (when added)
+          # Process macOS debug symbols
           if [ -d "debug-artifacts/debug-symbols-macos" ]; then
-            mkdir -p debug-symbols/${{ github.event.release.tag_name }}/macos
-            cp -r debug-artifacts/debug-symbols-macos/* debug-symbols/${{ github.event.release.tag_name }}/macos/ 2>/dev/null || true
+            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/macos
+            cp -r debug-artifacts/debug-symbols-macos/* temp-symbols/${{ github.event.release.tag_name }}/macos/ 2>/dev/null || true
             echo "✅ macOS debug symbols organized"
           fi
           
-          # Process iOS debug symbols (when added)
+          # Process iOS debug symbols
           if [ -d "debug-artifacts/debug-symbols-ios" ]; then
-            mkdir -p debug-symbols/${{ github.event.release.tag_name }}/ios
-            cp -r debug-artifacts/debug-symbols-ios/* debug-symbols/${{ github.event.release.tag_name }}/ios/ 2>/dev/null || true
+            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/ios
+            cp -r debug-artifacts/debug-symbols-ios/* temp-symbols/${{ github.event.release.tag_name }}/ios/ 2>/dev/null || true
             echo "✅ iOS debug symbols organized"
           fi
           
-          # Process Android debug symbols (when added)
+          # Process Android debug symbols
           if [ -d "debug-artifacts/debug-symbols-android" ]; then
-            mkdir -p debug-symbols/${{ github.event.release.tag_name }}/android
-            cp -r debug-artifacts/debug-symbols-android/* debug-symbols/${{ github.event.release.tag_name }}/android/ 2>/dev/null || true
+            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/android
+            cp -r debug-artifacts/debug-symbols-android/* temp-symbols/${{ github.event.release.tag_name }}/android/ 2>/dev/null || true
             echo "✅ Android debug symbols organized"
           fi
           
-          # Count total debug symbol files
-          total_files=$(find debug-symbols/${{ github.event.release.tag_name }} -type f | wc -l)
-          echo "📊 Total debug symbol files: $total_files"
+          # Create compressed archives for each platform
+          mkdir -p debug-symbols/${{ github.event.release.tag_name }}
           
-          if [ "$total_files" -gt 0 ]; then
-            # List all debug symbols by platform
-            echo "📋 Debug symbols summary:"
-            for platform in windows linux macos ios android; do
-              if [ -d "debug-symbols/${{ github.event.release.tag_name }}/$platform" ]; then
-                count=$(find debug-symbols/${{ github.event.release.tag_name }}/$platform -type f | wc -l)
-                echo "  - $platform: $count files"
-                ls -lh debug-symbols/${{ github.event.release.tag_name }}/$platform/ 2>/dev/null | head -5
+          for platform in windows linux macos ios android; do
+            if [ -d "temp-symbols/${{ github.event.release.tag_name }}/$platform" ]; then
+              echo "📦 Compressing $platform debug symbols..."
+              
+              # Count files before compression
+              file_count=$(find temp-symbols/${{ github.event.release.tag_name }}/$platform -type f | wc -l)
+              
+              if [ "$file_count" -gt 0 ]; then
+                # Get size before compression
+                size_before=$(du -sh temp-symbols/${{ github.event.release.tag_name }}/$platform | cut -f1)
+                
+                # Compress with 7z using maximum compression
+                7z a -t7z -m0=lzma2 -mx=9 -mfb=64 -md=32m -ms=on \
+                  debug-symbols/${{ github.event.release.tag_name }}/${platform}-debug-symbols.7z \
+                  temp-symbols/${{ github.event.release.tag_name }}/$platform/* > /dev/null
+                
+                # Get size after compression
+                size_after=$(du -sh debug-symbols/${{ github.event.release.tag_name }}/${platform}-debug-symbols.7z | cut -f1)
+                
+                echo "  ✅ $platform: $file_count files, $size_before → $size_after"
               fi
-            done
+            fi
+          done
+          
+          # Count total compressed archives
+          total_archives=$(find debug-symbols/${{ github.event.release.tag_name }} -name "*.7z" -type f | wc -l)
+          echo "📊 Total compressed debug symbol archives: $total_archives"
+          
+          if [ "$total_archives" -gt 0 ]; then
+            # List all compressed debug symbols
+            echo "📋 Compressed debug symbols summary:"
+            ls -lh debug-symbols/${{ github.event.release.tag_name }}/*.7z 2>/dev/null
             
-            # Setup Git LFS tracking if not already done
-            if ! grep -q "debug-symbols/\*\*/\*\.debug.*filter=lfs" .gitattributes; then
-              git lfs track "debug-symbols/**/*.debug"
-            fi
-            if ! grep -q "debug-symbols/\*\*/\*\.pdb.*filter=lfs" .gitattributes; then
-              git lfs track "debug-symbols/**/*.pdb"
-            fi
-            # Track dSYM folders and their contents
-            if ! grep -q "debug-symbols/\*\*/\*\.dSYM/\*\*.*filter=lfs" .gitattributes; then
-              git lfs track "debug-symbols/**/*.dSYM/**"
-            fi
-            # Track individual dSYM files (if any)
-            if ! grep -q "debug-symbols/\*\*/\*\.dSYM.*filter=lfs" .gitattributes; then
-              git lfs track "debug-symbols/**/*.dSYM"
-            fi
-            # Track dSYMs folder contents
-            if ! grep -q "debug-symbols/\*\*/\*\.dSYMs/\*\*.*filter=lfs" .gitattributes; then
-              git lfs track "debug-symbols/**/*.dSYMs/**"
+            # Calculate total compression ratio
+            original_size=$(du -sh temp-symbols/${{ github.event.release.tag_name }} 2>/dev/null | cut -f1)
+            compressed_size=$(du -sh debug-symbols/${{ github.event.release.tag_name }} | cut -f1)
+            echo "💾 Total size: $original_size → $compressed_size"
+            
+            # Setup Git LFS tracking for 7z files if not already done
+            if ! grep -q "debug-symbols/\*\*/\*\.7z.*filter=lfs" .gitattributes; then
+              git lfs track "debug-symbols/**/*.7z"
             fi
             
             # Add all debug symbols
@@ -696,12 +711,16 @@ jobs:
             CURRENT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
             echo "📋 Target branch: $CURRENT_BRANCH"
             
-            # Commit all debug symbols in one atomic operation
-            git commit -m "Add debug symbols for release ${{ github.event.release.tag_name }}"
+            # Commit compressed debug symbols
+            git commit -m "Add compressed debug symbols for release ${{ github.event.release.tag_name }} (7z archives)"
             
             # Push to the release branch
             git push origin HEAD:$CURRENT_BRANCH
-            echo "✅ Successfully uploaded all debug symbols to Git LFS on branch: $CURRENT_BRANCH"
+            echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $CURRENT_BRANCH"
+            
+            # Clean up temporary files
+            rm -rf temp-symbols/
+            echo "🧹 Cleaned up temporary files"
           else
             echo "⚠️  No debug symbols found to upload"
           fi
