@@ -40,15 +40,15 @@ CSSParserContext::CSSParserContext(const webf::ExecutingContext* context)
     : document_(context->document()), base_url_("") {}
 
 ExecutingContext* CSSParserContext::GetExecutingContext() const {
-  return (document_.Get()) ? document_.Get()->GetExecutingContext() : nullptr;
+  return (document_) ? document_->GetExecutingContext() : nullptr;
 }
 
 bool CSSParserContext::IsDocumentHandleEqual(const webf::Document* other) const {
-  return document_.Get() == other;
+  return document_ == other;
 }
 
 const Document* CSSParserContext::GetDocument() const {
-  return document_.Get();
+  return document_;
 }
 
 KURL CSSParserContext::CompleteURL(const std::string& url) const {
@@ -70,7 +70,6 @@ bool CSSParserContext::IsForMarkupSanitization() const {
 }
 
 void CSSParserContext::Trace(webf::GCVisitor* visitor) const {
-  visitor->TraceMember(document_);
 }
 
 }  // namespace webf

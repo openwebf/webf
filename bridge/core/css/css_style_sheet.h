@@ -147,7 +147,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
 
   // Associated document for constructed stylesheet. Always non-null for
   // constructed stylesheets, always null otherwise.
-  Document* ConstructorDocument() const { return constructor_document_.Get(); }
+  Document* ConstructorDocument() const { return constructor_document_; }
 
   // Set constructor document for constructed stylesheet.
   void SetConstructorDocument(Document& document) { constructor_document_ = &document; }
@@ -236,7 +236,7 @@ class CSSStyleSheet final : public StyleSheet, public MediaQuerySetOwner {
   std::unordered_map<TreeScope*, size_t> adopted_tree_scopes_;
   // The Document this stylesheet was constructed for. Always non-null for
   // constructed stylesheets. Always null for other sheets.
-  Member<Document> constructor_document_;
+  Document* constructor_document_;
   std::unordered_set<AtomicString, AtomicString::KeyHasher> custom_element_tag_names_;
 
   TextPosition start_position_;

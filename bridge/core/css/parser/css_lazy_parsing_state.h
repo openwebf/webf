@@ -55,7 +55,7 @@ class CSSLazyParsingState final {
 
   // Cache the document as a proxy for caching the UseCounter. Grabbing the
   // UseCounter per every property parse is a bit more expensive.
-  Member<Document> document_;
+  Document* document_;
 
   // Whether you use counting is enabled for parsing. This will usually be
   // true, except for when stylesheets with @imports are removed from the page.

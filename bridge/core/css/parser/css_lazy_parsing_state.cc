@@ -38,7 +38,7 @@ std::shared_ptr<const CSSParserContext> CSSLazyParsingState::Context() {
 }
 
 void CSSLazyParsingState::Trace(GCVisitor* visitor) const {
-  visitor->TraceMember(document_);
+//  visitor->TraceMember(document_);
 }
 
 }  // namespace webf

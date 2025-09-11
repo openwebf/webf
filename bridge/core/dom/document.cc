@@ -577,6 +577,7 @@ void Document::UnregisterIntersectionObserver(IntersectionObserver* observer) {
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   visitor->TraceMember(current_script_);
+  visitor->TraceMember(elem_sheet_);
   for (auto& observer : intersection_observers_) {
     visitor->TraceMember(observer);
   }
