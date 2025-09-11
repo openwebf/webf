@@ -1,3 +1,63 @@
+## 0.23.1
+
+### Features
+
+- **Build System**:
+  - Support for building Android x86_64 target for emulator support
+  - Add Windows builds using MSYS2 with full CI/CD pipeline
+
+- **DevTools**:
+  - Major improvements to Chrome DevTools Protocol integration
+  - Add debugging context for better state management
+  - Enhanced network, DOM, and CSS debugging capabilities
+  - Improved log and overlay module functionality
+
+- **Platform Support**:
+  - Full Windows/WSL platform support
+
+### Fixes
+
+- **Memory Management**:
+  - Fix malloc/free mismatch in Windows release builds
+  - Fix double free issues with NativeBindingObject om Windows Platform
+  - Fix null pointer dereference in Element::SetInlineStyleFromString
+  - Improve memory handling for touch events in Windows Platform
+  - Fix pre-defined atomic strings being optimized by compiler
+
+- **Build System**:
+  - Fix Android build with proper library dependencies
+  - Fix Windows executable path resolution
+  - Fix Linux build dependencies and integration tests
+  - Fix release stripping on Windows builds
+  - Make webf unit tests always compile correctly
+
+- **Rendering**:
+  - Fix router link element intrinsic height behavior
+  - Support dynamic viewport size changes
+  - Fix image dispose exceptions
+
+- **Input & Forms**:
+  - Fix click input immediately unfocusing issue
+  - Fix FormData missing chunks when sending with stream
+  - Restore original FormData implementation from v0.22.7+2
+
+- **Module System**:
+  - Fix custom module retrieval from invokeModule
+  - Fix WebF.defineModule cannot override built-in modules
+
+- **Testing**:
+  - Make integration tests support Linux and WSL environments
+  - Fix unit test execution on Windows
+  - Fix blob constructor specs
+  - Fix touch event crashes in tests
+  - Pass all snapshot comparisons on Windows
+
+- **Platform Specific**:
+  - Fix Windows toNativeString issues
+  - Enable HTTP cache on Windows platform
+  - Fix screen API not responding to WebF viewport size
+  - Fix Flutter viewport display size detection
+
 ## 0.23.0+1
 
 Fix android build from source.
