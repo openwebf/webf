@@ -68,7 +68,7 @@ class ElementRuleCollector {
   WEBF_STACK_ALLOCATED();
 
  public:
-  explicit ElementRuleCollector(StyleResolverState&);
+  explicit ElementRuleCollector(StyleResolverState&, SelectorChecker::Mode mode = SelectorChecker::kResolvingStyle);
   ~ElementRuleCollector();
 
   // Collect matching rules from a RuleSet

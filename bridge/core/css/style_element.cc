@@ -110,7 +110,11 @@ StyleElement::ProcessingResult StyleElement::CreateSheet(Element& element, const
 
   auto* new_sheet = document.EnsureStyleEngine().CreateSheet(element, text);
   sheet_ = new_sheet;
-  
+
+  // After stylesheet is (re)created, run a style recalc that uses Blink's
+  // selector matching to produce declared values and send them to Dart via
+  // inline style if the element has no inline style.
+  document.EnsureStyleEngine().RecalcStyle(document);
 
   return kProcessingSuccessful;
 }

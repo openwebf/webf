@@ -108,6 +108,9 @@ class StyleCascade {
                           CascadeOrigin,
                           CascadeResolver&);
 
+  // Public wrapper to export the winning declared values as a property set.
+  std::shared_ptr<MutableCSSPropertyValueSet> ExportWinningPropertySet();
+
  private:
   // Before we can Apply the cascade, the MatchResult must be Analyzed.
   // This means going through all the declarations, and adding them to
@@ -140,6 +143,11 @@ class StyleCascade {
                           CascadePriority,
                           CascadeOrigin&,
                           CascadeResolver&);
+
+  // Build a property set containing the winning declared values from the
+  // current cascade match result. This preserves original CSSValue objects
+  // (no evaluation), suitable for emitting to Dart or persisting as inline style.
+  std::shared_ptr<MutableCSSPropertyValueSet> BuildWinningPropertySet();
   const CSSValue* ResolveSubstitutions(const CSSProperty&,
                                        const CSSValue&,
                                        CascadeResolver&);

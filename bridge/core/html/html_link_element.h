@@ -37,6 +37,12 @@ class HTMLLinkElement : public HTMLElement {
  protected:
   NativeValue HandleParseAuthorStyleSheet(int32_t argc, const NativeValue* argv, Dart_Handle dart_object);
 
+  // Override lifecycle hooks to trigger style recalc when link elements
+  // enter/leave the document or when relevant attributes change.
+  void ParseAttribute(const webf::Element::AttributeModificationParams& params) override;
+  Node::InsertionNotificationRequest InsertedInto(webf::ContainerNode& insertion_point) override;
+  void RemovedFrom(webf::ContainerNode& insertion_point) override;
+
  private:
   mutable Member<DOMTokenList> rel_list_;
 };
