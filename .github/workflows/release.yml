@@ -2,9 +2,17 @@ name: Release WebF Package
 
 # Trigger only when a new release is published
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 0.23.1)'
+        required: true
+        type: string
+      release_branch:
+        description: 'Release branch name (e.g., release/0.23.1)'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   # Build bridge binaries for each platform
@@ -617,86 +625,68 @@ jobs:
 
       - name: Organize and compress debug symbols
         run: |
-          echo "🔍 Organizing and compressing debug symbols for release ${{ github.event.release.tag_name }}..."
+          echo "🔍 Organizing and compressing debug symbols..."
 
-          # Create temporary directory for organizing symbols
-          mkdir -p temp-symbols/${{ github.event.release.tag_name }}
-
-          # Process Windows debug symbols
-          if [ -d "debug-artifacts/debug-symbols-windows" ]; then
-            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/windows
-            cp -r debug-artifacts/debug-symbols-windows/* temp-symbols/${{ github.event.release.tag_name }}/windows/ 2>/dev/null || true
-            echo "✅ Windows debug symbols organized"
+          # Get branch name from GitHub context
+          BRANCH_NAME="${{ github.ref_name }}"
+          echo "📋 Current branch: $BRANCH_NAME"
+          
+          # Extract version from branch name or use input version
+          if [[ "$BRANCH_NAME" == release/* ]]; then
+            VERSION="${BRANCH_NAME#release/}"
+          elif [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Fallback to branch name itself
+            VERSION="$BRANCH_NAME"
           fi
+          
+          echo "📋 Using version: $VERSION"
 
-          # Process Linux debug symbols
-          if [ -d "debug-artifacts/debug-symbols-linux" ]; then
-            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/linux
-            cp -r debug-artifacts/debug-symbols-linux/* temp-symbols/${{ github.event.release.tag_name }}/linux/ 2>/dev/null || true
-            echo "✅ Linux debug symbols organized"
-          fi
+          # Create version-based directory structure
+          mkdir -p "debug-symbols/$VERSION"
 
-          # Process macOS debug symbols
-          if [ -d "debug-artifacts/debug-symbols-macos" ]; then
-            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/macos
-            cp -r debug-artifacts/debug-symbols-macos/* temp-symbols/${{ github.event.release.tag_name }}/macos/ 2>/dev/null || true
-            echo "✅ macOS debug symbols organized"
-          fi
-
-          # Process iOS debug symbols
-          if [ -d "debug-artifacts/debug-symbols-ios" ]; then
-            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/ios
-            cp -r debug-artifacts/debug-symbols-ios/* temp-symbols/${{ github.event.release.tag_name }}/ios/ 2>/dev/null || true
-            echo "✅ iOS debug symbols organized"
-          fi
-
-          # Process Android debug symbols
-          if [ -d "debug-artifacts/debug-symbols-android" ]; then
-            mkdir -p temp-symbols/${{ github.event.release.tag_name }}/android
-            cp -r debug-artifacts/debug-symbols-android/* temp-symbols/${{ github.event.release.tag_name }}/android/ 2>/dev/null || true
-            echo "✅ Android debug symbols organized"
-          fi
-
-          # Create compressed archives for each platform
-          mkdir -p debug-symbols/${{ github.event.release.tag_name }}
-
+          # Process and compress each platform's debug symbols
           for platform in windows linux macos ios android; do
-            if [ -d "temp-symbols/${{ github.event.release.tag_name }}/$platform" ]; then
+            artifact_dir="debug-artifacts/debug-symbols-${platform}"
+            
+            if [ -d "$artifact_dir" ] && [ "$(ls -A $artifact_dir 2>/dev/null)" ]; then
               echo "📦 Compressing $platform debug symbols..."
-
-              # Count files before compression
-              file_count=$(find temp-symbols/${{ github.event.release.tag_name }}/$platform -type f | wc -l)
-
+              
+              # Count files
+              file_count=$(find "$artifact_dir" -type f | wc -l)
+              
               if [ "$file_count" -gt 0 ]; then
                 # Get size before compression
-                size_before=$(du -sh temp-symbols/${{ github.event.release.tag_name }}/$platform | cut -f1)
-
-                # Compress with 7z using maximum compression
+                size_before=$(du -sh "$artifact_dir" | cut -f1)
+                
+                # Compress directly from artifact directory with descriptive name
                 7z a -t7z -m0=lzma2 -mx=9 -mfb=64 -md=32m -ms=on \
-                  debug-symbols/${{ github.event.release.tag_name }}/${platform}-debug-symbols.7z \
-                  temp-symbols/${{ github.event.release.tag_name }}/$platform/* > /dev/null
-
+                  "debug-symbols/$VERSION/${platform}-debug-symbols.7z" \
+                  "$artifact_dir"/* > /dev/null
+                
                 # Get size after compression
-                size_after=$(du -sh debug-symbols/${{ github.event.release.tag_name }}/${platform}-debug-symbols.7z | cut -f1)
-
+                size_after=$(du -sh "debug-symbols/$VERSION/${platform}-debug-symbols.7z" | cut -f1)
+                
                 echo "  ✅ $platform: $file_count files, $size_before → $size_after"
               fi
+            else
+              echo "  ⚠️  No $platform debug symbols found"
             fi
           done
 
           # Count total compressed archives
-          total_archives=$(find debug-symbols/${{ github.event.release.tag_name }} -name "*.7z" -type f | wc -l)
+          total_archives=$(find "debug-symbols/$VERSION" -name "*.7z" -type f | wc -l)
           echo "📊 Total compressed debug symbol archives: $total_archives"
 
           if [ "$total_archives" -gt 0 ]; then
             # List all compressed debug symbols
-            echo "📋 Compressed debug symbols summary:"
-            ls -lh debug-symbols/${{ github.event.release.tag_name }}/*.7z 2>/dev/null
-
-            # Calculate total compression ratio
-            original_size=$(du -sh temp-symbols/${{ github.event.release.tag_name }} 2>/dev/null | cut -f1)
-            compressed_size=$(du -sh debug-symbols/${{ github.event.release.tag_name }} | cut -f1)
-            echo "💾 Total size: $original_size → $compressed_size"
+            echo "📋 Compressed debug symbols summary for version $VERSION:"
+            ls -lh "debug-symbols/$VERSION"/*.7z
+            
+            # Calculate total size
+            total_size=$(du -sh "debug-symbols/$VERSION" | cut -f1)
+            echo "💾 Total compressed size: $total_size"
 
             # Setup Git LFS tracking for 7z files if not already done
             if ! grep -q "debug-symbols/\*\*/\*\.7z.*filter=lfs" .gitattributes; then
@@ -707,51 +697,25 @@ jobs:
             git add .gitattributes
             git add debug-symbols/
 
-            # Determine the target branch based on the release tag
-            # Remove 'v' prefix if present from tag name to get version
-            VERSION="${{ github.event.release.tag_name }}"
-            VERSION="${VERSION#v}"
+            # Get branch name from GitHub context
+            CURRENT_BRANCH="${{ github.ref_name }}"
+            echo "📋 Current branch: $CURRENT_BRANCH"
             
-            # The release branch should be release/VERSION
-            TARGET_BRANCH="release/$VERSION"
-            
-            # Check if we're in detached HEAD state (typical for tag-based triggers)
-            if git symbolic-ref -q HEAD > /dev/null; then
-              # We're on a branch
-              CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
-              echo "📋 Current branch: $CURRENT_BRANCH"
+            # Extract version for commit message
+            if [[ "$CURRENT_BRANCH" == release/* ]]; then
+              VERSION="${CURRENT_BRANCH#release/}"
+            elif [ -n "${{ inputs.version }}" ]; then
+              VERSION="${{ inputs.version }}"
             else
-              # We're in detached HEAD state (on a tag)
-              echo "📋 Currently on tag: ${{ github.event.release.tag_name }}"
-              echo "📋 Will push to branch: $TARGET_BRANCH"
-              
-              # Fetch the release branch if it exists
-              git fetch origin $TARGET_BRANCH:$TARGET_BRANCH 2>/dev/null || true
-              
-              # Create or checkout the release branch
-              if git show-ref --verify --quiet refs/heads/$TARGET_BRANCH; then
-                echo "📋 Release branch exists locally, checking out..."
-                git checkout $TARGET_BRANCH
-                git pull origin $TARGET_BRANCH --rebase || true
-              elif git ls-remote --heads origin $TARGET_BRANCH | grep -q $TARGET_BRANCH; then
-                echo "📋 Release branch exists on remote, checking out..."
-                git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH
-              else
-                echo "📋 Creating new release branch..."
-                git checkout -b $TARGET_BRANCH
-              fi
+              VERSION="$CURRENT_BRANCH"
             fi
 
             # Commit compressed debug symbols
-            git commit -m "Add compressed debug symbols for release ${{ github.event.release.tag_name }} (7z archives)"
+            git commit -m "Add compressed debug symbols for release $VERSION"
 
-            # Push to the release branch
-            git push origin HEAD:$TARGET_BRANCH
-            echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $TARGET_BRANCH"
-
-            # Clean up temporary files
-            rm -rf temp-symbols/
-            echo "🧹 Cleaned up temporary files"
+            # Push to the current branch
+            git push origin HEAD
+            echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $CURRENT_BRANCH"
           else
             echo "⚠️  No debug symbols found to upload"
           fi
@@ -813,7 +777,8 @@ jobs:
 
           # Restore Windows binaries
           if [ -d "artifacts/windows-binaries" ]; then
-            cp -r artifacts/windows-binaries bridge/build/windows
+            mkdir -p bridge/build/windows
+            cp -r artifacts/windows-binaries/* bridge/build/windows/
             echo "✅ Windows binaries restored"
           else
             echo "⚠️ Windows binaries not found"
@@ -822,7 +787,8 @@ jobs:
 
           # Restore Linux binaries
           if [ -d "artifacts/linux-binaries" ]; then
-            cp -r artifacts/linux-binaries bridge/build/linux
+            mkdir -p bridge/build/linux
+            cp -r artifacts/linux-binaries/* bridge/build/linux/
             echo "✅ Linux binaries restored"
           else
             echo "⚠️ Linux binaries not found"
@@ -831,7 +797,8 @@ jobs:
 
           # Restore macOS binaries
           if [ -d "artifacts/macos-binaries" ]; then
-            cp -r artifacts/macos-binaries bridge/build/macos
+            mkdir -p bridge/build/macos
+            cp -r artifacts/macos-binaries/* bridge/build/macos/
             echo "✅ macOS binaries restored"
           else
             echo "⚠️ macOS binaries not found"
@@ -840,7 +807,8 @@ jobs:
 
           # Restore iOS binaries
           if [ -d "artifacts/ios-binaries" ]; then
-            cp -r artifacts/ios-binaries bridge/build/ios
+            mkdir -p bridge/build/ios
+            cp -r artifacts/ios-binaries/* bridge/build/ios/
             echo "✅ iOS binaries restored"
           else
             echo "⚠️ iOS binaries not found"
@@ -849,7 +817,8 @@ jobs:
 
           # Restore Android binaries
           if [ -d "artifacts/android-binaries" ]; then
-            cp -r artifacts/android-binaries bridge/build/android
+            mkdir -p bridge/build/android
+            cp -r artifacts/android-binaries/* bridge/build/android/
             echo "✅ Android binaries restored"
           else
             echo "⚠️ Android binaries not found"
@@ -947,12 +916,22 @@ jobs:
 
       - name: Update WebF version
         run: |
-          echo "🔢 Updating WebF version to ${{ github.event.release.tag_name }}..."
+          # Determine version from inputs or branch name
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#release/}"
+          else
+            echo "❌ Error: Version not specified and not on a release branch"
+            exit 1
+          fi
+          
+          echo "🔢 Updating WebF version to $VERSION..."
 
           # Update version in pubspec.yaml
           cd webf
           # Remove 'v' prefix if present
-          VERSION="${{ github.event.release.tag_name }}"
           VERSION="${VERSION#v}"
 
           # Update pubspec.yaml version
@@ -978,16 +957,37 @@ jobs:
           # Run Flutter pub get to ensure dependencies are resolved
           flutter pub get
 
-          # Publish to Cloudsmith repository
-          dart pub publish
+          # Publish to Cloudsmith repository (--force to skip confirmation)
+          dart pub publish --force
 
-          echo "✅ Successfully published WebF version ${{ github.event.release.tag_name }} to Cloudsmith"
+          # Get version for success message
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#release/}"
+          else
+            VERSION="unknown"
+          fi
+          
+          echo "✅ Successfully published WebF version $VERSION to Cloudsmith"
 
       - name: Summary
         run: |
+          # Get version for summary
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#release/}"
+          else
+            VERSION="unknown"
+          fi
+          
           echo "🎉 WebF package published successfully!"
           echo "📋 Summary:"
-          echo "   - Release: ${{ github.event.release.tag_name }}"
+          echo "   - Version: $VERSION"
+          echo "   - Branch: ${{ github.ref_name }}"
           echo "   - Commit: ${{ github.sha }}"
           echo "   - Published to: Cloudsmith (https://dart.cloudsmith.io/openwebf/packages/)"
           echo "   - Debug symbols stored in Git LFS"
@@ -1017,8 +1017,18 @@ jobs:
       - name: Extract version and branch info
         id: version-info
         run: |
-          # Remove 'v' prefix if present from tag name
-          VERSION="${{ github.event.release.tag_name }}"
+          # Determine version from inputs or branch name
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#release/}"
+          else
+            echo "❌ Error: Version not specified and not on a release branch"
+            exit 1
+          fi
+          
+          # Remove 'v' prefix if present
           VERSION="${VERSION#v}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           
@@ -1045,14 +1055,18 @@ jobs:
           else
             echo "📝 Creating pull request from ${{ steps.version-info.outputs.release_branch }} to main..."
             
-            # Create PR body
-            PR_BODY="## 🚀 Release ${{ github.event.release.tag_name }}
+            # Create the pull request
+            PR_URL=$(gh pr create \
+              --base main \
+              --head "${{ steps.version-info.outputs.release_branch }}" \
+              --title "Release ${{ steps.version-info.outputs.version }}" \
+              --body "## 🚀 Release ${{ steps.version-info.outputs.version }}
 
           This pull request merges the release branch back to the main branch after successful package publication.
 
           ### 📋 Release Information
-          - **Version**: ${{ github.event.release.tag_name }}
-          - **Release URL**: ${{ github.event.release.html_url }}
+          - **Version**: ${{ steps.version-info.outputs.version }}
+          - **Branch**: ${{ steps.version-info.outputs.release_branch }}
           - **Published to**: [Cloudsmith](https://dart.cloudsmith.io/openwebf/packages/)
 
           ### ✅ Automated Checks Completed
@@ -1066,14 +1080,7 @@ jobs:
           - [ ] Confirm all CI checks pass
 
           ---
-          *This PR was automatically created by the release workflow.*"
-            
-            # Create the pull request
-            PR_URL=$(gh pr create \
-              --base main \
-              --head "${{ steps.version-info.outputs.release_branch }}" \
-              --title "Release ${{ github.event.release.tag_name }}" \
-              --body "$PR_BODY")
+          *This PR was automatically created by the release workflow.*")
             
             echo "✅ Pull request created successfully!"
             echo "📋 PR URL: $PR_URL"
@@ -1084,7 +1091,7 @@ jobs:
           echo "## 📋 Release Workflow Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### ✅ Release Published" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version-info.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Package**: Published to [Cloudsmith](https://dart.cloudsmith.io/openwebf/packages/)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔄 Pull Request" >> $GITHUB_STEP_SUMMARY
