@@ -237,6 +237,7 @@ jobs:
           name: linux-binaries
           path: |
             bridge/build/linux/**/*.so
+            bridge/build/linux/**/*.so.*
             bridge/build/linux/**/webf_unit_test
           retention-days: 1
           if-no-files-found: warn
