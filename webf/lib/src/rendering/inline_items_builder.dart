@@ -119,14 +119,19 @@ class InlineItemsBuilder {
         }
 
         if (display == CSSDisplay.inline) {
-          // This case should not happen anymore as inline elements now use RenderInlineBox
-          // But keep it for backward compatibility
-          // Skip RenderEventListener wrappers - they're just for event handling
-          // and shouldn't create separate inline boxes
-          if (child is RenderEventListener && child.child != null) {
-            _collectInlines(child);
+          // Inline replaced elements and widget elements behave like atomic inlines
+          // (similar to <img/>). Treat them as atomic so they generate a placeholder
+          // in the paragraph and participate in line height/baseline properly.
+          if (child.renderStyle.isSelfRenderReplaced() || child.renderStyle.isSelfRenderWidget()) {
+            _addAtomicInline(child);
           } else {
-            _addInlineBox(child);
+            // Skip RenderEventListener wrappers - they're just for event handling
+            // and shouldn't create separate inline boxes
+            if (child is RenderEventListener && child.child != null) {
+              _collectInlines(child);
+            } else {
+              _addInlineBox(child);
+            }
           }
         } else if (display == CSSDisplay.inlineBlock || display == CSSDisplay.inlineFlex) {
           _addAtomicInline(child);
@@ -262,9 +267,15 @@ class InlineItemsBuilder {
     _addCloseTag(box);
   }
 
-  /// Add atomic inline (inline-block, replaced element).
+  /// Add atomic inline (inline-block, replaced/widget inline element).
   void _addAtomicInline(RenderBoxModel box) {
-    assert(box.renderStyle.display == CSSDisplay.inlineBlock || box.renderStyle.display == CSSDisplay.inlineFlex);
+    // Allow inline-block/inline-flex, or inline replaced/widget elements.
+    assert(
+      box.renderStyle.display == CSSDisplay.inlineBlock ||
+      box.renderStyle.display == CSSDisplay.inlineFlex ||
+      (box.renderStyle.display == CSSDisplay.inline &&
+          (box.renderStyle.isSelfRenderReplaced() || box.renderStyle.isSelfRenderWidget()))
+    );
 
     // Atomic inline elements break the text flow
     _endsWithCollapsibleSpace = false;
