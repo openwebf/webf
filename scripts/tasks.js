@@ -88,22 +88,28 @@ const libOutputPath = join(TARGET_PATH, platform, 'lib');
 
 task('compile-build-tools', done => {
   let buildType = 'Debug';
+  
+  // Detect current architecture
+  const currentArch = process.arch === 'x64' ? 'x86_64' : 'arm64';
+  
+  console.log(chalk.blue(`Building build tools for ${currentArch}...`));
 
   execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
-    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-arm64 -S ${paths.bridge}`, {
+    -DCMAKE_OSX_ARCHITECTURES=${currentArch} \
+    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-${currentArch} -S ${paths.bridge}`, {
     cwd: paths.bridge,
     stdio: 'inherit',
     env: {
       ...process.env,
       WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/arm64')
+      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, `build/macos/lib/${currentArch}`)
     }
   });
 
   let webfTargets = ['qjsc'];
 
   let cpus = os.cpus();
-  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-arm64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
+  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-${currentArch} --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
     stdio: 'inherit'
   });
 
@@ -140,39 +146,132 @@ task('build-darwin-webf-lib', done => {
   
   // Only enable tests for debug/development builds
   const enableTest = buildMode !== 'Release';
-
-  execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} ${enableTest ? '-DENABLE_TEST=true' : ''} ${externCmakeArgs.join(' ')} \
-    -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-arm64 -S ${paths.bridge}`, {
-    cwd: paths.bridge,
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      WEBF_JS_ENGINE: targetJSEngine,
-      LIBRARY_OUTPUT_DIR: path.join(paths.bridge, 'build/macos/lib/arm64')
+  
+  // Define architectures to build based on environment variable or default
+  let architectures = ['arm64', 'x86_64']; // Default: build both
+  
+  if (process.env.MACOS_ARCH) {
+    // Allow specifying single architecture or comma-separated list
+    const archList = process.env.MACOS_ARCH.split(',').map(a => a.trim());
+    const validArchs = ['arm64', 'x86_64'];
+    architectures = archList.filter(arch => {
+      if (!validArchs.includes(arch)) {
+        console.log(chalk.yellow(`Warning: Invalid architecture '${arch}' ignored. Valid options: arm64, x86_64`));
+        return false;
+      }
+      return true;
+    });
+    
+    if (architectures.length === 0) {
+      console.log(chalk.red('Error: No valid architectures specified'));
+      return done(new Error('No valid architectures specified'));
+    }
+    
+    console.log(chalk.blue(`Building for architecture(s): ${architectures.join(', ')}`));
+  }
+  const cpuCount = os.cpus().length;
+  const webfTargets = ['webf', 'qjsc', 'webf_unit_test'];
+  
+  // Build for each architecture
+  architectures.forEach(arch => {
+    console.log(chalk.blue(`Building macOS ${arch}...`));
+    
+    // Configure CMake for this architecture
+    execSync(`cmake -DCMAKE_BUILD_TYPE=${buildType} \
+      -DCMAKE_OSX_ARCHITECTURES=${arch} \
+      ${enableTest ? '-DENABLE_TEST=true' : ''} \
+      ${externCmakeArgs.join(' ')} \
+      -G "Unix Makefiles" -B ${paths.bridge}/cmake-build-macos-${arch} -S ${paths.bridge}`, {
+      cwd: paths.bridge,
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        WEBF_JS_ENGINE: targetJSEngine,
+        LIBRARY_OUTPUT_DIR: path.join(paths.bridge, `build/macos/lib/${arch}`)
+      }
+    });
+    
+    // Build targets
+    execSync(`cmake --build ${paths.bridge}/cmake-build-macos-${arch} --target ${webfTargets.join(' ')} -- -j ${cpuCount}`, {
+      stdio: 'inherit'
+    });
+    
+    // Extract debug symbols and strip for Release builds
+    if (buildMode == 'Release' || buildMode == 'RelWithDebInfo') {
+      const binaryPath = path.join(paths.bridge, `build/macos/lib/${arch}/libwebf.dylib`);
+      if (fs.existsSync(binaryPath)) {
+        execSync(`dsymutil ${binaryPath}`, { stdio: 'inherit' });
+        execSync(`strip -S -X -x ${binaryPath}`, { stdio: 'inherit' });
+        console.log(chalk.green(`✓ Stripped debug symbols for ${arch}`));
+      }
+      
+      // Also handle QuickJS if it's separate
+      const quickjsPath = path.join(paths.bridge, `build/macos/lib/${arch}/libquickjs.dylib`);
+      if (fs.existsSync(quickjsPath)) {
+        execSync(`dsymutil ${quickjsPath}`, { stdio: 'inherit' });
+        execSync(`strip -S -X -x ${quickjsPath}`, { stdio: 'inherit' });
+      }
     }
   });
-
-  // Always build webf_unit_test for testing
-  let webfTargets = ['webf', 'qjsc', 'webf_unit_test'];
-
-  let cpus = os.cpus();
-  execSync(`cmake --build ${paths.bridge}/cmake-build-macos-arm64 --target ${webfTargets.join(' ')} -- -j ${cpus.length}`, {
-    stdio: 'inherit'
-  });
-
-  const binaryPath = path.join(paths.bridge, `build/macos/lib/arm64/libwebf.dylib`);
-
-  if (buildMode == 'Release' || buildMode == 'RelWithDebInfo') {
-    execSync(`dsymutil ${binaryPath}`, { stdio: 'inherit' });
-    execSync(`strip -S -X -x ${binaryPath}`, { stdio: 'inherit' });
+  
+  // Create universal binaries (fat binaries) combining both architectures
+  console.log(chalk.blue('Creating universal binaries...'));
+  const universalDir = path.join(paths.bridge, 'build/macos/lib/universal');
+  mkdirp.sync(universalDir);
+  
+  // Create universal binary for libwebf.dylib
+  const webfLibs = architectures.map(arch => 
+    path.join(paths.bridge, `build/macos/lib/${arch}/libwebf.dylib`)
+  );
+  if (webfLibs.every(lib => fs.existsSync(lib))) {
+    execSync(`lipo -create ${webfLibs.join(' ')} -output ${universalDir}/libwebf.dylib`, {
+      stdio: 'inherit'
+    });
+    console.log(chalk.green('✓ Created universal libwebf.dylib'));
   }
-
+  
+  // Create universal binary for libquickjs.dylib if it exists
+  const quickjsLibs = architectures.map(arch => 
+    path.join(paths.bridge, `build/macos/lib/${arch}/libquickjs.dylib`)
+  );
+  if (quickjsLibs.every(lib => fs.existsSync(lib))) {
+    execSync(`lipo -create ${quickjsLibs.join(' ')} -output ${universalDir}/libquickjs.dylib`, {
+      stdio: 'inherit'
+    });
+    console.log(chalk.green('✓ Created universal libquickjs.dylib'));
+  }
+  
+  // Create universal binary for webf_unit_test
+  const testBins = architectures.map(arch => 
+    path.join(paths.bridge, `build/macos/lib/${arch}/webf_unit_test`)
+  );
+  if (testBins.every(bin => fs.existsSync(bin))) {
+    execSync(`lipo -create ${testBins.join(' ')} -output ${universalDir}/webf_unit_test`, {
+      stdio: 'inherit'
+    });
+    console.log(chalk.green('✓ Created universal webf_unit_test'));
+  }
+  
+  console.log(chalk.green('✓ macOS build completed successfully!'));
   done();
 });
 
 task('run-bridge-unit-test', done => {
   if (platform === 'darwin') {
-    execSync(`${path.join(paths.bridge, 'build/macos/lib/arm64/webf_unit_test')}`, { stdio: 'inherit' });
+    // Try universal binary first, then fall back to architecture-specific binary
+    const universalTest = path.join(paths.bridge, 'build/macos/lib/universal/webf_unit_test');
+    const arm64Test = path.join(paths.bridge, 'build/macos/lib/arm64/webf_unit_test');
+    const x86_64Test = path.join(paths.bridge, 'build/macos/lib/x86_64/webf_unit_test');
+    
+    if (fs.existsSync(universalTest)) {
+      execSync(universalTest, { stdio: 'inherit' });
+    } else if (fs.existsSync(arm64Test)) {
+      execSync(arm64Test, { stdio: 'inherit' });
+    } else if (fs.existsSync(x86_64Test)) {
+      execSync(x86_64Test, { stdio: 'inherit' });
+    } else {
+      throw new Error('No webf_unit_test binary found for macOS');
+    }
   } else if (platform === 'linux') {
     execSync(`${path.join(paths.bridge, 'build/linux/lib/webf_unit_test')}`, { stdio: 'inherit' });
   } else if (platform == 'win32') {
@@ -817,7 +916,9 @@ task('build-linux-webf-lib', (done) => {
 
 task('generate-polyfill-bytecode', (done) => {
   if (platform == 'darwin') {
-    const qjscExecDir = path.join(paths.bridge, 'build/macos/lib/arm64/');
+    // Detect current architecture and use appropriate qjsc
+    const currentArch = process.arch === 'x64' ? 'x86_64' : 'arm64';
+    const qjscExecDir = path.join(paths.bridge, `build/macos/lib/${currentArch}/`);
     const polyfillTarget = path.join(paths.bridge, 'core/bridge_polyfill.c');
     const polyfillSource = path.join(paths.polyfill, 'dist/main.js');
     let polyfillCompileResult = spawnSync('./qjsc', ['-c', '-N', 'bridge_polyfill', '-o', polyfillTarget, polyfillSource], {

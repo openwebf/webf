@@ -86,7 +86,21 @@ endif()
 
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_OSX_ARCHITECTURES "arm64")
+  # Allow CMAKE_OSX_ARCHITECTURES to be set from command line
+  # If not specified, default to native architecture
+  if(NOT CMAKE_OSX_ARCHITECTURES)
+    # Detect native architecture
+    execute_process(
+      COMMAND uname -m
+      OUTPUT_VARIABLE NATIVE_ARCH
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(NATIVE_ARCH STREQUAL "arm64")
+      set(CMAKE_OSX_ARCHITECTURES "arm64")
+    else()
+      set(CMAKE_OSX_ARCHITECTURES "x86_64")
+    endif()
+  endif()
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
