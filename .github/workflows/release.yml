@@ -1014,35 +1014,35 @@ jobs:
           else
             echo "📝 Creating pull request from ${{ steps.version-info.outputs.release_branch }} to main..."
             
+            # Create PR body
+            PR_BODY="## 🚀 Release ${{ github.event.release.tag_name }}
+
+          This pull request merges the release branch back to the main branch after successful package publication.
+
+          ### 📋 Release Information
+          - **Version**: ${{ github.event.release.tag_name }}
+          - **Release URL**: ${{ github.event.release.html_url }}
+          - **Published to**: [Cloudsmith](https://dart.cloudsmith.io/openwebf/packages/)
+
+          ### ✅ Automated Checks Completed
+          - All platform bridges built successfully
+          - Debug symbols collected and stored in Git LFS
+          - Package published to Cloudsmith
+
+          ### 📝 Merge Checklist
+          - [ ] Review the changes in this release
+          - [ ] Verify package is available on Cloudsmith
+          - [ ] Confirm all CI checks pass
+
+          ---
+          *This PR was automatically created by the release workflow.*"
+            
             # Create the pull request
             PR_URL=$(gh pr create \
               --base main \
               --head "${{ steps.version-info.outputs.release_branch }}" \
               --title "Release ${{ github.event.release.tag_name }}" \
-              --body "$(cat <<'EOF'
-## 🚀 Release ${{ github.event.release.tag_name }}
-
-This pull request merges the release branch back to the main branch after successful package publication.
-
-### 📋 Release Information
-- **Version**: ${{ github.event.release.tag_name }}
-- **Release URL**: ${{ github.event.release.html_url }}
-- **Published to**: [Cloudsmith](https://dart.cloudsmith.io/openwebf/packages/)
-
-### ✅ Automated Checks Completed
-- All platform bridges built successfully
-- Debug symbols collected and stored in Git LFS
-- Package published to Cloudsmith
-
-### 📝 Merge Checklist
-- [ ] Review the changes in this release
-- [ ] Verify package is available on Cloudsmith
-- [ ] Confirm all CI checks pass
-
----
-*This PR was automatically created by the release workflow.*
-EOF
-              )")
+              --body "$PR_BODY")
             
             echo "✅ Pull request created successfully!"
             echo "📋 PR URL: $PR_URL"

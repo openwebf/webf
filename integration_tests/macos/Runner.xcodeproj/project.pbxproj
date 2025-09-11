@@ -21,7 +21,6 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		1BBD1BD926F386FE00962139 /* libwebf_test.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 1BBD1BD726F386FE00962139 /* libwebf_test.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
@@ -39,20 +38,6 @@
 			remoteInfo = FLX;
 		};
 /* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		1BBD1BDA26F386FE00962139 /* Embed Libraries */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				1BBD1BD926F386FE00962139 /* libwebf_test.dylib in Embed Libraries */,
-			);
-			name = "Embed Libraries";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		1BBD1BD726F386FE00962139 /* libwebf_test.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libwebf_test.dylib; path = ../../bridge/build/macos/lib/x86_64/libwebf_test.dylib; sourceTree = "<group>"; };
@@ -187,7 +172,6 @@
 				33CC10EB2044A3C60003C045 /* Resources */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 				F76E123C4F3FE8B8EE6C7759 /* [CP] Embed Pods Frameworks */,
-				1BBD1BDA26F386FE00962139 /* Embed Libraries */,
 			);
 			buildRules = (
 			);
