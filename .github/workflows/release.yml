@@ -707,16 +707,47 @@ jobs:
             git add .gitattributes
             git add debug-symbols/
 
-            # Get the current branch name for the release
-            CURRENT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
-            echo "📋 Target branch: $CURRENT_BRANCH"
+            # Determine the target branch based on the release tag
+            # Remove 'v' prefix if present from tag name to get version
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"
+            
+            # The release branch should be release/VERSION
+            TARGET_BRANCH="release/$VERSION"
+            
+            # Check if we're in detached HEAD state (typical for tag-based triggers)
+            if git symbolic-ref -q HEAD > /dev/null; then
+              # We're on a branch
+              CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
+              echo "📋 Current branch: $CURRENT_BRANCH"
+            else
+              # We're in detached HEAD state (on a tag)
+              echo "📋 Currently on tag: ${{ github.event.release.tag_name }}"
+              echo "📋 Will push to branch: $TARGET_BRANCH"
+              
+              # Fetch the release branch if it exists
+              git fetch origin $TARGET_BRANCH:$TARGET_BRANCH 2>/dev/null || true
+              
+              # Create or checkout the release branch
+              if git show-ref --verify --quiet refs/heads/$TARGET_BRANCH; then
+                echo "📋 Release branch exists locally, checking out..."
+                git checkout $TARGET_BRANCH
+                git pull origin $TARGET_BRANCH --rebase || true
+              elif git ls-remote --heads origin $TARGET_BRANCH | grep -q $TARGET_BRANCH; then
+                echo "📋 Release branch exists on remote, checking out..."
+                git checkout -b $TARGET_BRANCH origin/$TARGET_BRANCH
+              else
+                echo "📋 Creating new release branch..."
+                git checkout -b $TARGET_BRANCH
+              fi
+            fi
 
             # Commit compressed debug symbols
             git commit -m "Add compressed debug symbols for release ${{ github.event.release.tag_name }} (7z archives)"
 
             # Push to the release branch
-            git push origin HEAD:$CURRENT_BRANCH
-            echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $CURRENT_BRANCH"
+            git push origin HEAD:$TARGET_BRANCH
+            echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $TARGET_BRANCH"
 
             # Clean up temporary files
             rm -rf temp-symbols/
