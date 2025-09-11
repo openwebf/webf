@@ -851,19 +851,16 @@ class InlineFormattingContext {
     }
     paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
 
-    // For non-block containers, shrink-to-fit to the longest visual line so
-    // the reported width matches the painted width.
-    final bool isBlock = (container as RenderBoxModel).renderStyle.effectiveDisplay == CSSDisplay.block;
-    if (!isBlock) {
-      final double targetWidth = math.min(paragraph.longestLine, constraints.maxWidth.isFinite ? constraints.maxWidth : paragraph.longestLine);
-      if (targetWidth != initialWidth) {
-        paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
-      }
-    } else {
-      // For block containers:
-      // - If unbounded, shrink-to-fit to content or use a reasonable fallback width.
-      // - If bounded but maxWidth <= 0, prefer the fallback content width (so text wraps)
-      //   and only shrink-to-fit to longestLine if no fallback is available.
+    // Use container's available content width to preserve text-align behavior
+    // for both block and inline-block containers when width is definite.
+    // Only shrink-to-fit when the width is effectively unbounded.
+    final CSSDisplay display = (container as RenderBoxModel).renderStyle.effectiveDisplay;
+    final bool isBlockLike = display == CSSDisplay.block || display == CSSDisplay.inlineBlock;
+
+    if (isBlockLike) {
+      // Keep the laid-out width (initialWidth) when we have a definite width.
+      // Handle unbounded or non-positive widths by shrinking to content or
+      // using a reasonable fallback.
       if (!constraints.hasBoundedWidth) {
         final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
             ? fallbackContentMaxWidth
@@ -874,9 +871,16 @@ class InlineFormattingContext {
             ? fallbackContentMaxWidth
             : paragraph.longestLine;
         if (debugLogInlineLayoutEnabled) {
-          renderingLogger.fine('[IFC] block reflow with fallback width '
+          renderingLogger.fine('[IFC] block-like reflow with fallback width '
               '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
         }
+        paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+      }
+    } else {
+      // Non block-like (theoretically unused here) — retain previous behavior.
+      final double targetWidth = math.min(
+          paragraph.longestLine, constraints.maxWidth.isFinite ? constraints.maxWidth : paragraph.longestLine);
+      if (targetWidth != initialWidth) {
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }
