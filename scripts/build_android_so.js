@@ -12,12 +12,6 @@ const buildTasks = [
   'build-android-webf-lib'
 ];
 
-if (os.platform() == 'win32') {
-  buildTasks.push(
-    'patch-windows-symbol-link-for-android'
-  );
-}
-
 // Run tasks
 series(
   buildTasks
