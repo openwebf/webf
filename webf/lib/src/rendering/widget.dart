@@ -295,8 +295,19 @@ class RenderWidget extends RenderBoxModel
 
   @override
   void calculateBaseline() {
+    // Baselines returned by children are relative to the child's local
+    // coordinate system. RenderWidget paints its child offset by its own
+    // border+padding; include that offset so cached CSS baselines are
+    // relative to the RenderWidget's border box top (CSS expectation).
+    double borderTop = renderStyle.effectiveBorderTopWidth.computedValue;
+    double paddingTop = renderStyle.paddingTop.computedValue;
+    double topInset = borderTop + paddingTop;
+
     double? firstBaseline = firstChild?.getDistanceToBaseline(TextBaseline.alphabetic);
     double? lastBaseline = lastChild?.getDistanceToBaseline(TextBaseline.alphabetic);
+
+    if (firstBaseline != null) firstBaseline += topInset;
+    if (lastBaseline != null) lastBaseline += topInset;
     setCssBaselines(first: firstBaseline, last: lastBaseline);
   }
 }
