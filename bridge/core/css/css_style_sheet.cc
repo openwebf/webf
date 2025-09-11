@@ -575,7 +575,7 @@ void CSSStyleSheet::Trace(GCVisitor* visitor) const {
     visitor->TraceMember(wrapper);
   }
   visitor->TraceMember(rule_list_cssom_wrapper_);
-  visitor->TraceMember(constructor_document_);
+//  visitor->TraceMember(constructor_document_);
   contents_->Trace(visitor);
   StyleSheet::Trace(visitor);
 }

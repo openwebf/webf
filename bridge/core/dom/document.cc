@@ -559,6 +559,7 @@ std::shared_ptr<EventListener> Document::GetWindowAttributeEventListener(const A
 void Document::Trace(GCVisitor* visitor) const {
   script_animation_controller_.Trace(visitor);
   visitor->TraceMember(current_script_);
+  visitor->TraceMember(elem_sheet_);
   if (style_engine_ != nullptr) {
     style_engine_->Trace(visitor);
   }

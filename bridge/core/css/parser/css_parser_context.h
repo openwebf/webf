@@ -74,7 +74,7 @@ class CSSParserContext final {
  private:
   KURL base_url_;
   CSSParserMode mode_;
-  Member<const Document> document_;
+  const Document* document_;
 };
 
 }  // namespace webf
