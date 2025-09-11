@@ -996,11 +996,12 @@ task('build-android-webf-lib', (done) => {
     }
   }
 
-  const archs = ['arm64-v8a', 'armeabi-v7a', 'x86'];
+  const archs = ['arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'];
   const toolChainMap = {
     'arm64-v8a': 'aarch64-linux-android',
     'armeabi-v7a': 'arm-linux-androideabi',
-    'x86': 'i686-linux-android'
+    'x86': 'i686-linux-android',
+    'x86_64': 'x86_64-linux-android'
   };
   const buildType = (buildMode === 'Release' || buildMode == 'RelWithDebInfo') ? 'RelWithDebInfo' : 'Debug';
   let externCmakeArgs = [];
