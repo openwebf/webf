@@ -26,6 +26,7 @@
     "use-prebuilt:linux": "node scripts/copy_linux_libs.js",
     "use-prebuilt:ios": "node scripts/convert_to_prebuilt_frameworks.js",
     "use-prebuilt:android": "node scripts/build_android_package.js",
+    "prepare-release": "node scripts/prepare_release.js",
     "ios:use-source": "node scripts/revert_to_source_compilation.js",
     "ios:patch-podspec": "node scripts/patch_ios_podspec.js",
     "build:clean": "node scripts/clean.js",

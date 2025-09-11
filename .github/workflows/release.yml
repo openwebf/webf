@@ -834,6 +834,11 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare package for release
+        run: |
+          echo "🧹 Preparing package for release..."
+          npm run prepare-release
+
       - name: Copy prebuilt binaries to WebF package
         run: |
           echo "🚀 Copying prebuilt binaries to WebF package..."
