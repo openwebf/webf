@@ -132,38 +132,14 @@ jobs:
         run: |
           node scripts/run_bridge_unit_test.js
 
-      - name: Prepare Windows debug symbols
-        shell: msys2 {0}
-        run: |
-          # Create debug symbols directory for artifact upload
-          mkdir -p debug-symbols-windows
-
-          # Find and copy debug symbol files from Windows build directory
-          echo "🔍 Searching for debug symbols in bridge/build/windows..."
-
-          # Copy .debug files (extracted debug symbols from objcopy)
-          find bridge/build/windows -name "*.debug" -type f -exec cp {} debug-symbols-windows/ \; 2>/dev/null || true
-
-          # Copy any PDB files if they exist
-          find bridge/build/windows -name "*.pdb" -type f -exec cp {} debug-symbols-windows/ \; 2>/dev/null || true
-
-          # Count files found
-          debug_count=$(find debug-symbols-windows -type f | wc -l)
-          echo "Found $debug_count debug symbol files"
-
-          if [ "$debug_count" -gt 0 ]; then
-            echo "📋 Debug symbols prepared for upload:"
-            ls -lh debug-symbols-windows/
-          else
-            echo "⚠️  No debug symbols found"
-          fi
-
       - name: Upload Windows debug symbols artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: debug-symbols-windows
-          path: debug-symbols-windows/
+          path: |
+            bridge/build/windows/**/*.debug
+            bridge/build/windows/**/*.pdb
           retention-days: 1
           if-no-files-found: warn
 
@@ -172,8 +148,8 @@ jobs:
         with:
           name: windows-binaries
           path: |
-            bridge/build/windows/lib/*.dll
-            bridge/build/windows/lib/webf_unit_test.exe
+            bridge/build/windows/**/*.dll
+            bridge/build/windows/**/webf_unit_test.exe
           retention-days: 1
           if-no-files-found: warn
 
@@ -260,8 +236,8 @@ jobs:
         with:
           name: linux-binaries
           path: |
-            bridge/build/linux/lib/*.so
-            bridge/build/linux/lib/webf_unit_test
+            bridge/build/linux/**/*.so
+            bridge/build/linux/**/webf_unit_test
           retention-days: 1
           if-no-files-found: warn
 
@@ -269,8 +245,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-symbols-linux
-          path: |
-            bridge/build/linux/lib/*.debug
+          path: bridge/build/linux/**/*.debug
           retention-days: 1
           if-no-files-found: warn
 
@@ -371,7 +346,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: debug-symbols-macos
-          path: debug-symbols-macos/
+          path: bridge/build/macos/**/*.dSYM/
           retention-days: 1
           if-no-files-found: warn
 
@@ -380,9 +355,8 @@ jobs:
         with:
           name: macos-binaries
           path: |
-            bridge/build/macos/lib/*.dylib
-            bridge/build/macos/lib/webf_unit_test
-            bridge/build/macos/
+            bridge/build/macos/**/*.dylib
+            bridge/build/macos/**/webf_unit_test
           retention-days: 1
           if-no-files-found: warn
 
@@ -525,47 +499,12 @@ jobs:
           export WEBF_JS_ENGINE=quickjs
           npm run build:bridge:android:release
 
-      - name: Prepare Android debug symbols
-        run: |
-          # Create debug symbols directory for artifact upload with architecture subdirectories
-          mkdir -p debug-symbols-android
-
-          # Find and copy debug symbol files from Android build directory, preserving architecture structure
-          echo "🔍 Searching for debug symbols in bridge/build/android/lib/..."
-
-          # Copy .debug files while preserving the architecture directory structure
-          for arch in arm64-v8a armeabi-v7a x86 x86_64; do
-            if [ -d "bridge/build/android/lib/$arch" ]; then
-              mkdir -p "debug-symbols-android/$arch"
-              find "bridge/build/android/lib/$arch" -name "*.debug" -type f -exec cp {} "debug-symbols-android/$arch/" \; 2>/dev/null || true
-            fi
-          done
-
-          # Count files found
-          debug_count=$(find debug-symbols-android -type f -name "*.debug" | wc -l)
-          echo "Found $debug_count debug symbol files"
-
-          if [ "$debug_count" -gt 0 ]; then
-            echo "📋 Debug symbols prepared for upload by architecture:"
-            for arch in arm64-v8a armeabi-v7a x86 x86_64; do
-              if [ -d "debug-symbols-android/$arch" ]; then
-                count=$(find "debug-symbols-android/$arch" -type f | wc -l)
-                if [ "$count" -gt 0 ]; then
-                  echo "  - $arch: $count files"
-                  ls -lh "debug-symbols-android/$arch/"
-                fi
-              fi
-            done
-          else
-            echo "⚠️  No debug symbols found"
-          fi
-
       - name: Upload Android debug symbols artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: debug-symbols-android
-          path: debug-symbols-android/
+          path: bridge/build/android/**/*.debug
           retention-days: 1
           if-no-files-found: warn
 
@@ -576,7 +515,6 @@ jobs:
           path: |
             bridge/build/android/**/*.so
             bridge/build/android/**/*.a
-            bridge/build/android/
           retention-days: 1
           if-no-files-found: warn
 
@@ -765,37 +703,27 @@ jobs:
           # Track restoration status
           RESTORE_FAILED=false
 
-          # Restore Windows binaries (artifacts are flattened, restore to lib/)
+          # Restore Windows binaries (maintaining path structure from bridge/build/windows/)
           if [ -d "artifacts/windows-binaries" ]; then
-            mkdir -p bridge/build/windows/lib
-            # Check if files are already in a lib subdirectory or flattened
-            if [ -d "artifacts/windows-binaries/lib" ]; then
-              cp -r artifacts/windows-binaries/* bridge/build/windows/
-            else
-              cp -r artifacts/windows-binaries/* bridge/build/windows/lib/
-            fi
+            mkdir -p bridge/build/windows
+            cp -r artifacts/windows-binaries/* bridge/build/windows/
             echo "✅ Windows binaries restored"
           else
             echo "⚠️ Windows binaries not found"
             RESTORE_FAILED=true
           fi
 
-          # Restore Linux binaries (artifacts are flattened, restore to lib/)
+          # Restore Linux binaries (maintaining path structure from bridge/build/linux/)
           if [ -d "artifacts/linux-binaries" ]; then
-            mkdir -p bridge/build/linux/lib
-            # Check if files are already in a lib subdirectory or flattened
-            if [ -d "artifacts/linux-binaries/lib" ]; then
-              cp -r artifacts/linux-binaries/* bridge/build/linux/
-            else
-              cp -r artifacts/linux-binaries/* bridge/build/linux/lib/
-            fi
+            mkdir -p bridge/build/linux
+            cp -r artifacts/linux-binaries/* bridge/build/linux/
             echo "✅ Linux binaries restored"
           else
             echo "⚠️ Linux binaries not found"
             RESTORE_FAILED=true
           fi
 
-          # Restore macOS binaries
+          # Restore macOS binaries (maintaining path structure from bridge/build/macos/)
           if [ -d "artifacts/macos-binaries" ]; then
             mkdir -p bridge/build/macos
             cp -r artifacts/macos-binaries/* bridge/build/macos/
@@ -805,7 +733,7 @@ jobs:
             RESTORE_FAILED=true
           fi
 
-          # Restore iOS binaries
+          # Restore iOS binaries (maintaining path structure from bridge/build/ios/)
           if [ -d "artifacts/ios-binaries" ]; then
             mkdir -p bridge/build/ios
             cp -r artifacts/ios-binaries/* bridge/build/ios/
@@ -815,7 +743,7 @@ jobs:
             RESTORE_FAILED=true
           fi
 
-          # Restore Android binaries
+          # Restore Android binaries (maintaining path structure from bridge/build/android/)
           if [ -d "artifacts/android-binaries" ]; then
             mkdir -p bridge/build/android
             cp -r artifacts/android-binaries/* bridge/build/android/
@@ -913,31 +841,6 @@ jobs:
           else
             echo "⚠️ Android JNI libraries not found"
           fi
-
-      - name: Update WebF version
-        run: |
-          # Determine version from inputs or branch name
-          if [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
-          elif [[ "${{ github.ref_name }}" == release/* ]]; then
-            VERSION="${{ github.ref_name }}"
-            VERSION="${VERSION#release/}"
-          else
-            echo "❌ Error: Version not specified and not on a release branch"
-            exit 1
-          fi
-          
-          echo "🔢 Updating WebF version to $VERSION..."
-
-          # Update version in pubspec.yaml
-          cd webf
-          # Remove 'v' prefix if present
-          VERSION="${VERSION#v}"
-
-          # Update pubspec.yaml version
-          sed -i "s/^version: .*/version: $VERSION/" pubspec.yaml
-
-          echo "✅ Updated version to $VERSION"
 
       - name: Authenticate Cloudsmith for WebF
         run: |
