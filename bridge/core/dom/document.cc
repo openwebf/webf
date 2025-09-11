@@ -581,6 +581,7 @@ void Document::Trace(GCVisitor* visitor) const {
   for (auto& observer : intersection_observers_) {
     visitor->TraceMember(observer);
   }
+  visitor->TraceMember(elem_sheet_);
   if (style_engine_ != nullptr) {
     style_engine_->Trace(visitor);
   }
