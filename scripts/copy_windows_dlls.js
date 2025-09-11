@@ -69,7 +69,7 @@ function copyWindowsDlls() {
   console.log(`🔄 Copying Windows DLLs...`);
   
   const projectRoot = path.join(__dirname, '../');
-  const bridgeBuildDir = path.join(projectRoot, 'bridge/build/windows/lib/bin');
+  const bridgeBuildDir = path.join(projectRoot, 'bridge/build/windows/lib');
   const webfWindowsDir = path.join(projectRoot, 'webf/windows');
   
   console.log(`📁 Source: ${bridgeBuildDir}`);

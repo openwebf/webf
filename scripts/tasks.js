@@ -14,7 +14,6 @@ const chalk = require('chalk');
 const fs = require('fs');
 const del = require('del');
 const os = require('os');
-const uploader = require('./utils/uploader');
 
 program
   .option('--static-quickjs', 'Bundle QuickJS into webf library (default for Android)', false)
@@ -1228,98 +1227,6 @@ task('android-so-clean', (done) => {
   execSync(`rm -rf ${paths.bridge}/build/android`, { stdio: 'inherit', shell: winShell });
   done();
 });
-
-task('build-benchmark-app', async (done) => {
-  execSync('npm install', { cwd: path.join(paths.performanceTests, '/benchmark') });
-  const result = spawnSync('npm', ['run', 'build'], {
-    cwd: path.join(paths.performanceTests, '/benchmark')
-  });
-
-  if (result.status !== 0) {
-    return done(result.status);
-  }
-
-  done();
-})
-
-task('run-benchmark', async (done) => {
-  const serverPort = '8892';
-
-  const childProcess = spawn('http-server', ['./', `-p ${serverPort}`], {
-    stdio: 'pipe',
-    cwd: path.join(paths.performanceTests, '/benchmark/build')
-  })
-
-  let serverIpAddress;
-  let interfaces = os.networkInterfaces();
-  for (let devName in interfaces) {
-    interfaces[devName].forEach((item) => {
-      if (item.family === 'IPv4' && !item.internal && item.address !== '127.0.0.1') {
-        serverIpAddress = item.address;
-      }
-    })
-  }
-
-  if (!serverIpAddress) {
-    const err = new Error('The IP address was not found.');
-    done(err);
-  }
-
-  let androidDevices = getDevicesInfo();
-
-  let performanceInfos = execSync(
-    `flutter run -d ${androidDevices[0].id} --profile --dart-define="SERVER=${serverIpAddress}:${serverPort}" | grep Performance`,
-    {
-      cwd: paths.performanceTests
-    }
-  ).toString().split(/\n/);
-
-  const KrakenPerformancePath = 'kraken-performance';
-  for (let item in performanceInfos) {
-    let info = performanceInfos[item];
-    const match = /\[(\s?\d,?)+\]/.exec(info);
-    if (match) {
-      const viewType = item == 0 ? 'kraken' : 'web';
-      try {
-        let performanceDatas = JSON.parse(match[0]);
-        // Remove the top and the bottom five from the final numbers to eliminate fluctuations, and calculate the average.
-        performanceDatas = performanceDatas.sort().slice(5, performanceDatas.length - 5);
-
-        // Save performance list to file and upload to OSS.
-        const listFile = path.join(__dirname, `${viewType}-load-time-list.js`);
-        fs.writeFileSync(listFile, `performanceCallback('${viewType}LoadtimeList', [${performanceDatas.toString()}]);`);
-
-        let WebviewPerformanceOSSPath = `${KrakenPerformancePath}/${viewType}-loadtimeList.js`;
-        await uploader(WebviewPerformanceOSSPath, listFile).then(() => {
-          console.log(`Performance Upload Success: https://kraken.oss-cn-hangzhou.aliyuncs.com/${WebviewPerformanceOSSPath}`);
-        }).catch(err => done(err));
-        // Save performance data of Webview with kraken version.
-        let WebviewPerformanceWithVersionOSSPath = `${KrakenPerformancePath}/${viewType}-${pkgVersion}-loadtimeList.js`;
-        await uploader(WebviewPerformanceWithVersionOSSPath, listFile).then(() => {
-          console.log(`Performance Upload Success: https://kraken.oss-cn-hangzhou.aliyuncs.com/${WebviewPerformanceWithVersionOSSPath}`);
-        }).catch(err => done(err));
-      } catch {
-        const err = new Error('The performance info parse exception.');
-        done(err);
-      }
-    }
-  }
-
-  execSync('adb uninstall com.example.performance_tests');
-
-  done();
-});
-
-function getDevicesInfo() {
-  let output = JSON.parse(execSync('flutter devices --machine', { stdio: 'pipe', encoding: 'utf-8' }));
-  let androidDevices = output.filter(device => {
-    return device.sdk.indexOf('Android') >= 0;
-  });
-  if (androidDevices.length == 0) {
-    throw new Error('Can not find android benchmark devices.');
-  }
-  return androidDevices;
-}
 
 // Update typings version
 task('update-typings-version', (done) => {
