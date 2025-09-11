@@ -765,20 +765,30 @@ jobs:
           # Track restoration status
           RESTORE_FAILED=false
 
-          # Restore Windows binaries
+          # Restore Windows binaries (artifacts are flattened, restore to lib/)
           if [ -d "artifacts/windows-binaries" ]; then
-            mkdir -p bridge/build/windows
-            cp -r artifacts/windows-binaries/* bridge/build/windows/
+            mkdir -p bridge/build/windows/lib
+            # Check if files are already in a lib subdirectory or flattened
+            if [ -d "artifacts/windows-binaries/lib" ]; then
+              cp -r artifacts/windows-binaries/* bridge/build/windows/
+            else
+              cp -r artifacts/windows-binaries/* bridge/build/windows/lib/
+            fi
             echo "✅ Windows binaries restored"
           else
             echo "⚠️ Windows binaries not found"
             RESTORE_FAILED=true
           fi
 
-          # Restore Linux binaries
+          # Restore Linux binaries (artifacts are flattened, restore to lib/)
           if [ -d "artifacts/linux-binaries" ]; then
-            mkdir -p bridge/build/linux
-            cp -r artifacts/linux-binaries/* bridge/build/linux/
+            mkdir -p bridge/build/linux/lib
+            # Check if files are already in a lib subdirectory or flattened
+            if [ -d "artifacts/linux-binaries/lib" ]; then
+              cp -r artifacts/linux-binaries/* bridge/build/linux/
+            else
+              cp -r artifacts/linux-binaries/* bridge/build/linux/lib/
+            fi
             echo "✅ Linux binaries restored"
           else
             echo "⚠️ Linux binaries not found"
