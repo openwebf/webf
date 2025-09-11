@@ -10,6 +10,8 @@
 #include "html_link_element.h"
 #include "binding_call_methods.h"
 #include "html_names.h"
+#include "core/dom/document.h"
+#include "core/css/style_engine.h"
 #include "qjs_html_link_element.h"
 
 namespace webf {
@@ -62,6 +64,33 @@ DOMTokenList* HTMLLinkElement::relList() {
 void HTMLLinkElement::Trace(webf::GCVisitor* visitor) const {
   visitor->TraceMember(rel_list_);
   HTMLElement::Trace(visitor);
+}
+
+void HTMLLinkElement::ParseAttribute(const webf::Element::AttributeModificationParams& params) {
+  HTMLElement::ParseAttribute(params);
+  if (!GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+  // If rel/href/type/disabled attributes change, trigger style recalc.
+  if (params.name == html_names::kRelAttr || params.name == html_names::kHrefAttr || params.name == html_names::kTypeAttr ||
+      params.name == html_names::kDisabledAttr) {
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+  }
+}
+
+Node::InsertionNotificationRequest HTMLLinkElement::InsertedInto(webf::ContainerNode& insertion_point) {
+  HTMLElement::InsertedInto(insertion_point);
+  if (isConnected() && GetExecutingContext()->isBlinkEnabled()) {
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+  }
+  return kInsertionDone;
+}
+
+void HTMLLinkElement::RemovedFrom(webf::ContainerNode& insertion_point) {
+  HTMLElement::RemovedFrom(insertion_point);
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+  }
 }
 
 }  // namespace webf

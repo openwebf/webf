@@ -39,6 +39,9 @@
 #include "core/css/resolver/style_resolver.h"
 #include "core/dom/document.h"
 #include "core/dom/element.h"
+#include "core/css/element_rule_collector.h"
+#include "core/css/resolver/style_resolver_state.h"
+#include "core/css/resolver/style_cascade.h"
 
 namespace webf {
 
@@ -114,7 +117,6 @@ Document& StyleEngine::GetDocument() const {
   return *document_;
 }
 
-void StyleEngine::Trace(GCVisitor* visitor) {}
 
 void StyleEngine::UpdateStyleInvalidationRoot(ContainerNode* ancestor, Node* dirty_node) {
   // Minimal placeholder: pending invalidations are already tracked on nodes.
@@ -148,8 +150,64 @@ void StyleEngine::CreateResolver() {
 }
 
 void StyleEngine::RecalcStyle(Document& document) {
-  // Phase 1 placeholder: selection and diffing will be added later.
-  (void)document;
+  if (!document.GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+
+  auto apply_for_element = [&](Element* element) {
+    if (!element || !element->IsStyledElement()) return;
+
+    // Match rules and build cascade.
+    StyleResolver& resolver = EnsureStyleResolver();
+    StyleResolverState state(document, *element);
+    ElementRuleCollector collector(state, SelectorChecker::kQueryingRules);
+    resolver.CollectAllRules(state, collector, /*include_smil_properties*/ false);
+    collector.SortAndTransferMatchedRules();
+
+    StyleCascade cascade(state);
+    // Transfer matched properties to cascade's MatchResult
+    for (const auto& entry : collector.GetMatchResult().GetMatchedProperties()) {
+      if (entry.is_inline_style) {
+        cascade.MutableMatchResult().AddInlineStyleProperties(entry.properties);
+      } else {
+        cascade.MutableMatchResult().AddMatchedProperties(entry.properties, entry.origin, entry.layer_level);
+      }
+    }
+
+    auto property_set = cascade.ExportWinningPropertySet();
+    if (!property_set || property_set->IsEmpty()) {
+      return;
+    }
+
+    // Emit UICommands: clear + set all properties as original CSS strings.
+    auto* ctx = document.GetExecutingContext();
+    ctx->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, element->bindingObject(), nullptr);
+    unsigned count = property_set->PropertyCount();
+    for (unsigned i = 0; i < count; ++i) {
+      auto prop = property_set->PropertyAt(i);
+      AtomicString prop_name = prop.Name().ToAtomicString();
+      String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
+      AtomicString value_atom(value_string);
+      std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
+      ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
+                                         value_atom.ToNativeString().release());
+    }
+  };
+
+  // Traverse the DOM and apply for each element.
+  std::function<void(Node*)> walk = [&](Node* node) {
+    if (!node) return;
+    if (node->IsElementNode()) {
+      apply_for_element(static_cast<Element*>(node));
+    }
+    for (Node* child = node->firstChild(); child; child = child->nextSibling()) {
+      walk(child);
+    }
+  };
+
+  walk(document.documentElement());
 }
+
+void StyleEngine::Trace(GCVisitor* visitor) {}
 
 }  // namespace webf

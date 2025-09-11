@@ -9,7 +9,9 @@
 
 #include "html_style_element.h"
 #include "core/css/style_element.h"
+#include "core/css/style_engine.h"
 #include "core/dom/node.h"
+#include "core/dom/document.h"
 #include "defined_properties.h"
 #include "html_names.h"
 
@@ -29,6 +31,10 @@ NativeValue HTMLStyleElement::HandleCallFromDartSide(const webf::AtomicString& m
 
 void HTMLStyleElement::ParseAttribute(const webf::Element::AttributeModificationParams& params) {
   HTMLElement::ParseAttribute(params);
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    // Changes like media/type/disabled can affect matching; recalc winners.
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+  }
 }
 
 Node::InsertionNotificationRequest HTMLStyleElement::InsertedInto(webf::ContainerNode& insertion_point) {
@@ -43,6 +49,8 @@ void HTMLStyleElement::RemovedFrom(webf::ContainerNode& insertion_point) {
   HTMLElement::RemovedFrom(insertion_point);
   if (GetExecutingContext()->isBlinkEnabled()) {
     StyleElement::RemovedFrom(*this, insertion_point);
+    // Stylesheet removed; recompute winners and emit inline updates.
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
   }
 }
 
@@ -50,6 +58,8 @@ void HTMLStyleElement::ChildrenChanged(const webf::ContainerNode::ChildrenChange
   HTMLElement::ChildrenChanged(change);
   if (GetExecutingContext()->isBlinkEnabled()) {
     StyleElement::ChildrenChanged(*this);
+    // Style text changed; recompute winners and emit inline updates.
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
   }
 }
 
@@ -57,6 +67,8 @@ void HTMLStyleElement::FinishParsingChildren() {
   if (GetExecutingContext()->isBlinkEnabled()) {
     StyleElement::ProcessingResult result = StyleElement::FinishParsingChildren(*this);
     HTMLElement::FinishParsingChildren();
+    // After finishing parsing, recompute winners and emit inline updates.
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
   }
 }
 

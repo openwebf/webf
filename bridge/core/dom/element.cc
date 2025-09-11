@@ -461,7 +461,36 @@ Element& Element::CloneWithoutChildren(Document* document) const {
   return clone;
 }
 
-void Element::NotifyInlineStyleMutation() {}
+void Element::NotifyInlineStyleMutation() {
+  if (!GetExecutingContext()->isBlinkEnabled()) {
+    return;
+  }
+
+  // Read current inline style property set from element data.
+  const std::shared_ptr<const CSSPropertyValueSet> inline_style = EnsureUniqueElementData().inline_style_;
+
+  // When there is no inline style or it's empty, clear styles on Dart side.
+  if (!inline_style || inline_style->IsEmpty()) {
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+    return;
+  }
+
+  // Always clear existing inline styles before applying updates to avoid stale properties.
+  GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+
+  // Emit each declared property as raw CSS string value for Dart to process.
+  unsigned count = inline_style->PropertyCount();
+  for (unsigned i = 0; i < count; ++i) {
+    auto property = inline_style->PropertyAt(i);
+    AtomicString prop_name = property.Name().ToAtomicString();
+    String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
+    AtomicString value_atom(value_string);
+
+    std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
+    GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+                                                         value_atom.ToNativeString().release());
+  }
+}
 
 void Element::CloneNonAttributePropertiesFrom(const Element& other, CloneChildrenFlag) {
   // Clone the inline style from the legacy style declaration
@@ -911,6 +940,13 @@ void Element::AttributeChanged(const AttributeModificationParams& params) {
       StyleAttributeChanged(params.new_value, params.reason);
     }
   }
+
+  // Trigger style recalc for selector-affecting attributes when Blink is enabled.
+  if (GetExecutingContext()->isBlinkEnabled()) {
+    if (name == html_names::kClassAttr || name == html_names::kIdAttr) {
+      GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+    }
+  }
 }
 
 void Element::ParseAttribute(const webf::Element::AttributeModificationParams& params) {
@@ -929,6 +965,10 @@ void Element::StyleAttributeChanged(const AtomicString& new_style_string,
 
   if (new_style_string.IsNull()) {
     EnsureUniqueElementData().inline_style_ = nullptr;
+    if (GetExecutingContext()->isBlinkEnabled()) {
+      // Clear all inline styles on Dart side when style attribute is removed.
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+    }
   } else {
     SetInlineStyleFromString(new_style_string);
   }
@@ -959,25 +999,25 @@ void Element::SetInlineStyleFromString(const webf::AtomicString& new_style_strin
           ->ParseDeclarationList(new_style_string, GetDocument().ElementSheet().Contents());
     }
 
+    // Persist the parsed inline style back to the element so CSSOM accessors
+    // (style(), cssText(), getPropertyValue(), serialization) reflect updates.
+    EnsureUniqueElementData().inline_style_ = inline_style;
+
     // Emit declared style updates to Dart as raw CSS strings (no C++ evaluation).
     // This keeps values like calc(), var(), and viewport units intact for Dart-side evaluation.
     if (inline_style) {
       unsigned count = inline_style->PropertyCount();
-      if (count == 0) {
-        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
-      } else {
-        for (unsigned i = 0; i < count; ++i) {
-          auto property = inline_style->PropertyAt(i);
-          // Property name as AtomicString
-          AtomicString prop_name = property.Name().ToAtomicString();
-          // Get the serialized value without evaluation; use name+hint to preserve custom properties
-          String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
-          AtomicString value_atom(value_string);
+      // Always clear existing inline styles before applying new set to avoid stale properties.
+      GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kClearStyle, nullptr, bindingObject(), nullptr);
+      for (unsigned i = 0; i < count; ++i) {
+        auto property = inline_style->PropertyAt(i);
+        AtomicString prop_name = property.Name().ToAtomicString();
+        String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
+        AtomicString value_atom(value_string);
 
-          std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
-          GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01),
-                                                               bindingObject(), value_atom.ToNativeString().release());
-        }
+        std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
+        GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
+                                                             value_atom.ToNativeString().release());
       }
     }
   } else {

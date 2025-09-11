@@ -356,6 +356,80 @@ const CSSValue* StyleCascade::Resolve(const CSSProperty& property,
   return result;
 }
 
+std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySet() {
+  AnalyzeIfNeeded();
+  // Create a property set in standard HTML mode.
+  auto result = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+
+  // Helper to locate the property reference for a flattened position in
+  // MatchResult. Returns true if found and fills out the reference.
+  auto find_ref_at = [&](uint32_t position,
+                         const StylePropertySet** out_set,
+                         unsigned* out_index,
+                         CSSPropertyValueSet::PropertyReference* out_prop) -> bool {
+    uint32_t current_pos = 0;
+    for (const auto& entry : match_result_.GetMatchedProperties()) {
+      if (!entry.properties) continue;
+      const StylePropertySet& properties = *entry.properties;
+      unsigned count = properties.PropertyCount();
+      if (position < current_pos + count) {
+        unsigned local_index = position - current_pos;
+        if (out_set) *out_set = &properties;
+        if (out_index) *out_index = local_index;
+        if (out_prop) *out_prop = properties.PropertyAt(local_index);
+        return true;
+      }
+      current_pos += count;
+    }
+    return false;
+  };
+
+  // Export native properties (non-custom)
+  for (CSSPropertyID id : map_.NativeBitset()) {
+    const CascadePriority* prio = map_.FindKnownToExist(id);
+    if (!prio) continue;
+    uint32_t pos = prio->GetPosition();
+    const StylePropertySet* set = nullptr;
+    unsigned idx = 0;
+    CSSPropertyValueSet::PropertyReference prop_ref = CSSPropertyValueSet::PropertyReference(*result, 0);
+    if (!find_ref_at(pos, &set, &idx, &prop_ref)) {
+      continue;
+    }
+
+    // Get shared CSSValue and importance.
+    const std::shared_ptr<const CSSValue>* value_ptr = prop_ref.Value();
+    if (!value_ptr || !(*value_ptr)) continue;
+    bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
+
+    // Set property by ID with original value object; no evaluation performed.
+    result->SetProperty(id, *value_ptr, important);
+  }
+
+  // Export custom properties
+  for (const auto& entry : map_.GetCustomMap()) {
+    const AtomicString& custom_name = entry.first;
+    const CascadePriority* prio = map_.Find(CSSPropertyName(custom_name));
+    if (!prio) continue;
+    uint32_t pos = prio->GetPosition();
+    const StylePropertySet* set = nullptr;
+    unsigned idx = 0;
+    CSSPropertyValueSet::PropertyReference prop_ref = CSSPropertyValueSet::PropertyReference(*result, 0);
+    if (!find_ref_at(pos, &set, &idx, &prop_ref)) {
+      continue;
+    }
+    const std::shared_ptr<const CSSValue>* value_ptr = prop_ref.Value();
+    if (!value_ptr || !(*value_ptr)) continue;
+    bool important = prop_ref.PropertyMetadata().important_ || prio->IsImportant();
+    result->SetProperty(CSSPropertyName(custom_name), *value_ptr, important);
+  }
+
+  return result;
+}
+
+std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::ExportWinningPropertySet() {
+  return BuildWinningPropertySet();
+}
+
 const CSSValue* StyleCascade::ResolveSubstitutions(const CSSProperty& property,
                                                    const CSSValue& value,
                                                    CascadeResolver& resolver) {

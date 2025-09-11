@@ -47,11 +47,11 @@
 
 namespace webf {
 
-ElementRuleCollector::ElementRuleCollector(StyleResolverState& state)
+ElementRuleCollector::ElementRuleCollector(StyleResolverState& state, SelectorChecker::Mode mode)
     : state_(state),
       element_(&state.GetElement()),
       pseudo_element_id_(state.GetPseudoElementId()),
-      selector_checker_(SelectorChecker::kResolvingStyle),
+      selector_checker_(mode),
       selector_filter_(nullptr) {
 }
 
