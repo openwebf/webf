@@ -11,23 +11,23 @@ jobs:
   build-windows:
     name: Build Windows Bridge
     runs-on: windows-latest
-    
+
     env:
       nodeVersion: "22"
       cmakeVersion: "3.28.1"
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-      
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      
+
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
@@ -49,35 +49,35 @@ jobs:
             make
             curl
             unzip
-      
+
       - name: Add MSYS2 to PATH
         shell: bash
         run: |
           echo "C:/msys64/ucrt64/bin" >> $GITHUB_PATH
           echo "C:/msys64/usr/bin" >> $GITHUB_PATH
-      
+
       - name: Install NVM and Node.js
         shell: msys2 {0}
         run: |
           # Unset npm_config_prefix to avoid NVM conflicts
           unset npm_config_prefix
-          
+
           # Install NVM
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-          
+
           # Source nvm
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          
+
           # Install and use Node.js
           nvm install ${{ env.nodeVersion }}
           nvm use ${{ env.nodeVersion }}
           nvm alias default ${{ env.nodeVersion }}
-          
+
           # Verify installation
           node --version
           npm --version
-      
+
       - name: Verify toolchain
         shell: bash
         run: |
@@ -86,7 +86,7 @@ jobs:
           clang --version
           cmake --version
           ninja --version
-      
+
       - name: Install Node.js dependencies
         shell: msys2 {0}
         run: |
@@ -94,7 +94,7 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           npm install
-      
+
       - name: Generate binding code
         shell: msys2 {0}
         run: |
@@ -102,7 +102,7 @@ jobs:
           export NVM_DIR="$HOME/.nvm"
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           npm run bindgen
-      
+
       - name: Build Windows bridge
         shell: msys2 {0}
         run: |
@@ -117,49 +117,49 @@ jobs:
           # Set MSYS2 paths for CMake - use Windows-style paths for CMake
           export MSYSTEM_PREFIX="D:/a/_temp/msys64/ucrt64"
           export MINGW_64="D:/a/_temp/msys64/ucrt64"
-          
+
           echo "Using MSYSTEM_PREFIX: $MSYSTEM_PREFIX"
           echo "Using MINGW_64: $MINGW_64"
-          
+
           # Verify MSYS2 installation path
           ls -la /d/a/_temp/msys64/ucrt64/bin/ || echo "MSYS2 path not found, checking alternatives..."
-          
+
           npm run build:bridge:windows:release
         env:
           WEBF_BUILD: Release
           WEBF_JS_ENGINE: quickjs
-      
+
       - name: Run Bridge Unit Tests
         shell: powershell
         run: |
           node scripts/run_bridge_unit_test.js
-      
+
       - name: Prepare Windows debug symbols
         shell: msys2 {0}
         run: |
           # Create debug symbols directory for artifact upload
           mkdir -p debug-symbols-windows
-          
+
           # Find and copy debug symbol files from Windows build directory
           echo "🔍 Searching for debug symbols in bridge/build/windows..."
-          
+
           # Copy .debug files (extracted debug symbols from objcopy)
           find bridge/build/windows -name "*.debug" -type f -exec cp {} debug-symbols-windows/ \; 2>/dev/null || true
-          
+
           # Copy any PDB files if they exist
           find bridge/build/windows -name "*.pdb" -type f -exec cp {} debug-symbols-windows/ \; 2>/dev/null || true
-          
+
           # Count files found
           debug_count=$(find debug-symbols-windows -type f | wc -l)
           echo "Found $debug_count debug symbol files"
-          
+
           if [ "$debug_count" -gt 0 ]; then
             echo "📋 Debug symbols prepared for upload:"
             ls -lh debug-symbols-windows/
           else
             echo "⚠️  No debug symbols found"
           fi
-      
+
       - name: Upload Windows debug symbols artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -168,7 +168,7 @@ jobs:
           path: debug-symbols-windows/
           retention-days: 1
           if-no-files-found: warn
-      
+
       - name: Upload Windows binaries
         uses: actions/upload-artifact@v4
         with:
@@ -182,29 +182,29 @@ jobs:
   build-linux:
     name: Build Linux Bridge
     runs-on: ubuntu-latest
-    
+
     env:
       nodeVersion: "22"
       cmakeVersion: "3.28.1"
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-      
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.nodeVersion }}
           cache: 'npm'
-      
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -221,7 +221,7 @@ jobs:
             openjdk-17-jdk \
             libiconv-hook-dev \
             libicu-dev
-      
+
       - name: Verify toolchain
         run: |
           which clang
@@ -232,13 +232,13 @@ jobs:
           ninja --version
           chrpath --version
           gperf --version
-      
+
       - name: Install Node.js dependencies
         run: npm ci
-      
+
       - name: Generate binding code
         run: npm run bindgen
-      
+
       - name: Build Linux bridge
         run: |
           echo "🔨 Building Linux bridge..."
@@ -252,11 +252,11 @@ jobs:
           CXX: clang++
           WEBF_BUILD: Release
           WEBF_JS_ENGINE: quickjs
-      
+
       - name: Run Bridge Unit Tests
         run: |
           node scripts/run_bridge_unit_test.js
-      
+
       - name: Upload Linux binaries
         uses: actions/upload-artifact@v4
         with:
@@ -266,7 +266,7 @@ jobs:
             bridge/build/linux/lib/webf_unit_test
           retention-days: 1
           if-no-files-found: warn
-      
+
       - name: Upload Linux debug symbols
         uses: actions/upload-artifact@v4
         with:
@@ -279,34 +279,34 @@ jobs:
   build-macos:
     name: Build macOS Bridge
     runs-on: [self-hosted, macos]
-    
+
     env:
       nodeVersion: "22"
       cmakeVersion: "3.28.1"
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-      
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      
+
       # - name: Setup Node.js
       #   uses: actions/setup-node@v4
       #   with:
       #     node-version: ${{ env.nodeVersion }}
       #     cache: 'npm'
-      
+
       - name: Install build dependencies
         run: |
           # Check if ninja is already installed on self-hosted runner
           which ninja || brew install ninja
-      
+
       - name: Verify toolchain
         run: |
           which clang
@@ -314,13 +314,13 @@ jobs:
           clang --version
           cmake --version
           ninja --version
-      
+
       - name: Install Node.js dependencies
         run: npm ci
-      
+
       - name: Generate binding code
         run: npm run bindgen
-      
+
       - name: Build macOS bridge
         run: |
           echo "🔨 Building macOS bridge..."
@@ -334,19 +334,19 @@ jobs:
           CXX: clang++
           WEBF_BUILD: Release
           WEBF_JS_ENGINE: quickjs
-      
+
       - name: Run Bridge Unit Tests
         run: |
           node scripts/run_bridge_unit_test.js
-      
+
       - name: Prepare macOS debug symbols
         run: |
           # Create debug symbols directory for artifact upload
           mkdir -p debug-symbols-macos
-          
+
           # Find and copy dSYM directories from macOS build
           echo "🔍 Searching for debug symbols in bridge/build/macos..."
-          
+
           # Find and copy dSYM bundles (preserving directory structure)
           find bridge/build/macos -name "*.dSYM" -type d | while read dsym; do
             # Get relative path from bridge/build/macos
@@ -356,18 +356,18 @@ jobs:
             # Copy entire dSYM bundle
             cp -R "$dsym" "debug-symbols-macos/$(dirname "$rel_path")/"
           done
-          
+
           # Count dSYM bundles found
           dsym_count=$(find debug-symbols-macos -name "*.dSYM" -type d | wc -l)
           echo "Found $dsym_count dSYM bundles"
-          
+
           if [ "$dsym_count" -gt 0 ]; then
             echo "📋 Debug symbols prepared for upload:"
             find debug-symbols-macos -name "*.dSYM" -type d
           else
             echo "⚠️  No debug symbols found"
           fi
-      
+
       - name: Upload macOS debug symbols artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -376,7 +376,7 @@ jobs:
           path: debug-symbols-macos/
           retention-days: 1
           if-no-files-found: warn
-      
+
       - name: Upload macOS binaries
         uses: actions/upload-artifact@v4
         with:
@@ -391,41 +391,41 @@ jobs:
   build-ios:
     name: Build iOS Bridge
     runs-on: [self-hosted, macos]
-    
+
     env:
       nodeVersion: "22"
       cmakeVersion: "3.28.1"
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-      
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      
+
       # - name: Setup Node.js
       #   uses: actions/setup-node@v4
       #   with:
       #     node-version: ${{ env.nodeVersion }}
       #     cache: 'npm'
-      
+
       - name: Verify toolchain
         run: |
           xcodebuild -version
           which clang
           clang --version
-      
+
       - name: Install Node.js dependencies
         run: npm install
-      
+
       - name: Generate binding code
         run: npm run bindgen
-      
+
       - name: Build iOS bridge
         run: |
           echo "🔨 Building iOS bridge..."
@@ -438,7 +438,7 @@ jobs:
           WEBF_BUILD: Release
           WEBF_JS_ENGINE: quickjs
           INCLUDE_DSYMS_IN_XCFRAMEWORK: false
-      
+
       - name: Upload iOS binaries
         uses: actions/upload-artifact@v4
         with:
@@ -447,7 +447,7 @@ jobs:
             bridge/build/ios/framework/**/*.xcframework
           retention-days: 1
           if-no-files-found: warn
-      
+
       - name: Upload iOS debug symbols
         uses: actions/upload-artifact@v4
         with:
@@ -460,29 +460,29 @@ jobs:
   build-android:
     name: Build Android Bridge
     runs-on: [self-hosted, macos]
-    
+
     env:
       nodeVersion: "22"
       cmakeVersion: "3.28.1"
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-      
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v2
         with:
           cmake-version: ${{ env.cmakeVersion }}
-      
+
       # - name: Setup Node.js
       #   uses: actions/setup-node@v4
       #   with:
       #     node-version: ${{ env.nodeVersion }}
       #     cache: 'npm'
-      
+
       - name: Setup Android SDK and NDK
         uses: nttld/setup-ndk@v1
         id: setup-ndk
@@ -496,7 +496,7 @@ jobs:
           # Check if build tools are already installed on self-hosted macOS runner
           which ninja || brew install ninja
           which pkg-config || brew install pkg-config
-      
+
       - name: Verify toolchain
         run: |
           which clang
@@ -506,13 +506,13 @@ jobs:
           echo "Android SDK: $ANDROID_HOME"
           echo "Android NDK: ${{ steps.setup-ndk.outputs.ndk-path }}"
           ls -la "${{ steps.setup-ndk.outputs.ndk-path }}" || echo "NDK directory not found"
-      
+
       - name: Install Node.js dependencies
         run: npm ci
-      
+
       - name: Generate binding code
         run: npm run bindgen
-      
+
       - name: Build Android bridge
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
@@ -526,15 +526,15 @@ jobs:
           export WEBF_BUILD=Release
           export WEBF_JS_ENGINE=quickjs
           npm run build:bridge:android:release
-      
+
       - name: Prepare Android debug symbols
         run: |
           # Create debug symbols directory for artifact upload with architecture subdirectories
           mkdir -p debug-symbols-android
-          
+
           # Find and copy debug symbol files from Android build directory, preserving architecture structure
           echo "🔍 Searching for debug symbols in bridge/build/android/lib/..."
-          
+
           # Copy .debug files while preserving the architecture directory structure
           for arch in arm64-v8a armeabi-v7a x86 x86_64; do
             if [ -d "bridge/build/android/lib/$arch" ]; then
@@ -542,11 +542,11 @@ jobs:
               find "bridge/build/android/lib/$arch" -name "*.debug" -type f -exec cp {} "debug-symbols-android/$arch/" \; 2>/dev/null || true
             fi
           done
-          
+
           # Count files found
           debug_count=$(find debug-symbols-android -type f -name "*.debug" | wc -l)
           echo "Found $debug_count debug symbol files"
-          
+
           if [ "$debug_count" -gt 0 ]; then
             echo "📋 Debug symbols prepared for upload by architecture:"
             for arch in arm64-v8a armeabi-v7a x86 x86_64; do
@@ -561,7 +561,7 @@ jobs:
           else
             echo "⚠️  No debug symbols found"
           fi
-      
+
       - name: Upload Android debug symbols artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -570,7 +570,7 @@ jobs:
           path: debug-symbols-android/
           retention-days: 1
           if-no-files-found: warn
-      
+
       - name: Upload Android binaries
         uses: actions/upload-artifact@v4
         with:
@@ -587,137 +587,137 @@ jobs:
     runs-on: ubuntu-latest
     # Wait for all bridge builds to complete
     needs: [build-windows, build-linux, build-macos, build-ios, build-android]
-    
+
     permissions:
       contents: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Setup Git LFS
         run: |
           git lfs install
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
-      
+
       - name: Download all debug symbol artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: debug-symbols-*
           path: ./debug-artifacts
-      
+
       - name: Install 7-Zip
         run: |
           sudo apt-get update
           sudo apt-get install -y p7zip-full
-      
+
       - name: Organize and compress debug symbols
         run: |
           echo "🔍 Organizing and compressing debug symbols for release ${{ github.event.release.tag_name }}..."
-          
+
           # Create temporary directory for organizing symbols
           mkdir -p temp-symbols/${{ github.event.release.tag_name }}
-          
+
           # Process Windows debug symbols
           if [ -d "debug-artifacts/debug-symbols-windows" ]; then
             mkdir -p temp-symbols/${{ github.event.release.tag_name }}/windows
             cp -r debug-artifacts/debug-symbols-windows/* temp-symbols/${{ github.event.release.tag_name }}/windows/ 2>/dev/null || true
             echo "✅ Windows debug symbols organized"
           fi
-          
+
           # Process Linux debug symbols
           if [ -d "debug-artifacts/debug-symbols-linux" ]; then
             mkdir -p temp-symbols/${{ github.event.release.tag_name }}/linux
             cp -r debug-artifacts/debug-symbols-linux/* temp-symbols/${{ github.event.release.tag_name }}/linux/ 2>/dev/null || true
             echo "✅ Linux debug symbols organized"
           fi
-          
+
           # Process macOS debug symbols
           if [ -d "debug-artifacts/debug-symbols-macos" ]; then
             mkdir -p temp-symbols/${{ github.event.release.tag_name }}/macos
             cp -r debug-artifacts/debug-symbols-macos/* temp-symbols/${{ github.event.release.tag_name }}/macos/ 2>/dev/null || true
             echo "✅ macOS debug symbols organized"
           fi
-          
+
           # Process iOS debug symbols
           if [ -d "debug-artifacts/debug-symbols-ios" ]; then
             mkdir -p temp-symbols/${{ github.event.release.tag_name }}/ios
             cp -r debug-artifacts/debug-symbols-ios/* temp-symbols/${{ github.event.release.tag_name }}/ios/ 2>/dev/null || true
             echo "✅ iOS debug symbols organized"
           fi
-          
+
           # Process Android debug symbols
           if [ -d "debug-artifacts/debug-symbols-android" ]; then
             mkdir -p temp-symbols/${{ github.event.release.tag_name }}/android
             cp -r debug-artifacts/debug-symbols-android/* temp-symbols/${{ github.event.release.tag_name }}/android/ 2>/dev/null || true
             echo "✅ Android debug symbols organized"
           fi
-          
+
           # Create compressed archives for each platform
           mkdir -p debug-symbols/${{ github.event.release.tag_name }}
-          
+
           for platform in windows linux macos ios android; do
             if [ -d "temp-symbols/${{ github.event.release.tag_name }}/$platform" ]; then
               echo "📦 Compressing $platform debug symbols..."
-              
+
               # Count files before compression
               file_count=$(find temp-symbols/${{ github.event.release.tag_name }}/$platform -type f | wc -l)
-              
+
               if [ "$file_count" -gt 0 ]; then
                 # Get size before compression
                 size_before=$(du -sh temp-symbols/${{ github.event.release.tag_name }}/$platform | cut -f1)
-                
+
                 # Compress with 7z using maximum compression
                 7z a -t7z -m0=lzma2 -mx=9 -mfb=64 -md=32m -ms=on \
                   debug-symbols/${{ github.event.release.tag_name }}/${platform}-debug-symbols.7z \
                   temp-symbols/${{ github.event.release.tag_name }}/$platform/* > /dev/null
-                
+
                 # Get size after compression
                 size_after=$(du -sh debug-symbols/${{ github.event.release.tag_name }}/${platform}-debug-symbols.7z | cut -f1)
-                
+
                 echo "  ✅ $platform: $file_count files, $size_before → $size_after"
               fi
             fi
           done
-          
+
           # Count total compressed archives
           total_archives=$(find debug-symbols/${{ github.event.release.tag_name }} -name "*.7z" -type f | wc -l)
           echo "📊 Total compressed debug symbol archives: $total_archives"
-          
+
           if [ "$total_archives" -gt 0 ]; then
             # List all compressed debug symbols
             echo "📋 Compressed debug symbols summary:"
             ls -lh debug-symbols/${{ github.event.release.tag_name }}/*.7z 2>/dev/null
-            
+
             # Calculate total compression ratio
             original_size=$(du -sh temp-symbols/${{ github.event.release.tag_name }} 2>/dev/null | cut -f1)
             compressed_size=$(du -sh debug-symbols/${{ github.event.release.tag_name }} | cut -f1)
             echo "💾 Total size: $original_size → $compressed_size"
-            
+
             # Setup Git LFS tracking for 7z files if not already done
             if ! grep -q "debug-symbols/\*\*/\*\.7z.*filter=lfs" .gitattributes; then
               git lfs track "debug-symbols/**/*.7z"
             fi
-            
+
             # Add all debug symbols
             git add .gitattributes
             git add debug-symbols/
-            
+
             # Get the current branch name for the release
             CURRENT_BRANCH=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
             echo "📋 Target branch: $CURRENT_BRANCH"
-            
+
             # Commit compressed debug symbols
             git commit -m "Add compressed debug symbols for release ${{ github.event.release.tag_name }} (7z archives)"
-            
+
             # Push to the release branch
             git push origin HEAD:$CURRENT_BRANCH
             echo "✅ Successfully uploaded compressed debug symbols to Git LFS on branch: $CURRENT_BRANCH"
-            
+
             # Clean up temporary files
             rm -rf temp-symbols/
             echo "🧹 Cleaned up temporary files"
@@ -725,194 +725,233 @@ jobs:
             echo "⚠️  No debug symbols found to upload"
           fi
 
-  # prepare-and-publish:
-    # name: Prepare and Publish WebF Package
-    # runs-on: ubuntu-latest
-    # # Wait for all bridge builds and debug symbol collection
-    # needs: [build-windows, build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
-    
-    # permissions:
-    #   contents: write
-    #   packages: write
-    
-    # steps:
-    #   - name: Checkout repository
-    #     uses: actions/checkout@v4
-    #     with:
-    #       # Fetch full history for git operations
-    #       fetch-depth: 0
-    #       # Use a personal access token to allow pushing to webf directory
-    #       token: ${{ secrets.GITHUB_TOKEN }}
-      
-    #   - name: Setup Node.js
-    #     uses: actions/setup-node@v4
-    #     with:
-    #       node-version: '22'
-    #       cache: 'npm'
-      
-    #   - name: Install dependencies
-    #     run: npm ci
-      
-    #   - name: Setup Git configuration
-    #     run: |
-    #       git config --global user.name "GitHub Actions"
-    #       git config --global user.email "actions@github.com"
-      
-    #   - name: Download all build artifacts
-    #     uses: actions/download-artifact@v4
-    #     with:
-    #       path: ./artifacts
-    #     continue-on-error: false
-      
-    #   - name: Restore bridge binaries
-    #     run: |
-    #       echo "📦 Restoring bridge binaries from artifacts..."
-          
-    #       # Create bridge/build directory structure
-    #       mkdir -p bridge/build
-          
-    #       # Track restoration status
-    #       RESTORE_FAILED=false
-          
-    #       # Restore Windows binaries
-    #       if [ -d "artifacts/windows-binaries" ]; then
-    #         cp -r artifacts/windows-binaries bridge/build/windows
-    #         echo "✅ Windows binaries restored"
-    #       else
-    #         echo "⚠️ Windows binaries not found"
-    #         RESTORE_FAILED=true
-    #       fi
-          
-    #       # Restore Linux binaries
-    #       if [ -d "artifacts/linux-binaries" ]; then
-    #         cp -r artifacts/linux-binaries bridge/build/linux
-    #         echo "✅ Linux binaries restored"
-    #       else
-    #         echo "⚠️ Linux binaries not found"
-    #         RESTORE_FAILED=true
-    #       fi
-          
-    #       # Restore macOS binaries
-    #       if [ -d "artifacts/macos-binaries" ]; then
-    #         cp -r artifacts/macos-binaries bridge/build/macos
-    #         echo "✅ macOS binaries restored"
-    #       else
-    #         echo "⚠️ macOS binaries not found"
-    #         RESTORE_FAILED=true
-    #       fi
-          
-    #       # Restore iOS binaries
-    #       if [ -d "artifacts/ios-binaries" ]; then
-    #         cp -r artifacts/ios-binaries bridge/build/ios
-    #         echo "✅ iOS binaries restored"
-    #       else
-    #         echo "⚠️ iOS binaries not found"
-    #         RESTORE_FAILED=true
-    #       fi
-          
-    #       # Restore Android binaries
-    #       if [ -d "artifacts/android-binaries" ]; then
-    #         cp -r artifacts/android-binaries bridge/build/android
-    #         echo "✅ Android binaries restored"
-    #       else
-    #         echo "⚠️ Android binaries not found"
-    #         RESTORE_FAILED=true
-    #       fi
-          
-    #       echo "📋 Bridge build directory structure:"
-    #       find bridge/build -type f -name "*.so" -o -name "*.dll" -o -name "*.dylib" -o -name "*.a" | head -20
-          
-    #       # Exit with error if any platform binaries are missing
-    #       if [ "$RESTORE_FAILED" = true ]; then
-    #         echo "❌ Error: Some platform binaries are missing. Please check the build jobs."
-    #         exit 1
-    #       fi
-      
-    #   - name: Check WebF directory exists
-    #     run: |
-    #       if [ ! -d "webf" ]; then
-    #         echo "❌ WebF directory not found. Please ensure the webf package directory exists."
-    #         exit 1
-    #       fi
-    #       echo "✅ WebF directory found"
-      
-    #   - name: Run WebF package preparation pipeline
-    #     run: |
-    #       echo "🚀 Starting WebF package preparation..."
-    #       node scripts/prepare_webf_package.js
-      
-    #   - name: Verify prepared package
-    #     run: |
-    #       echo "🔍 Verifying prepared package structure..."
-          
-    #       # Check if src directory was created
-    #       if [ -d "webf/src" ]; then
-    #         echo "✅ webf/src directory created"
-    #         echo "📁 Contents:"
-    #         ls -la webf/src/ | head -10
-    #       else
-    #         echo "⚠️  webf/src directory not found"
-    #       fi
-          
-    #       # Check if macOS libraries exist
-    #       if [ -f "webf/macos/libwebf.dylib" ] && [ -f "webf/macos/libquickjs.dylib" ]; then
-    #         echo "✅ macOS dynamic libraries found"
-    #       else
-    #         echo "⚠️  macOS dynamic libraries not found"
-    #       fi
-          
-    #       # Check if iOS podspec was patched
-    #       if [ -f "webf/ios/webf.podspec" ]; then
-    #         echo "✅ iOS podspec found"
-    #       else
-    #         echo "⚠️  iOS podspec not found"
-    #       fi
-      
-    #   - name: Create release archive (optional)
-    #     run: |
-    #       # Create a tarball of the prepared webf directory
-    #       echo "📦 Creating release archive..."
-    #       tar -czf "webf-package-${{ github.event.release.tag_name }}.tar.gz" webf/
-          
-    #       # Calculate checksum
-    #       sha256sum "webf-package-${{ github.event.release.tag_name }}.tar.gz" > "webf-package-${{ github.event.release.tag_name }}.sha256"
-      
-    #   - name: Upload release assets
-    #     uses: actions/upload-release-asset@v1
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     with:
-    #       upload_url: ${{ github.event.release.upload_url }}
-    #       asset_path: ./webf-package-${{ github.event.release.tag_name }}.tar.gz
-    #       asset_name: webf-package-${{ github.event.release.tag_name }}.tar.gz
-    #       asset_content_type: application/gzip
-      
-    #   - name: Upload checksum
-    #     uses: actions/upload-release-asset@v1
-    #     env:
-    #       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     with:
-    #       upload_url: ${{ github.event.release.upload_url }}
-    #       asset_path: ./webf-package-${{ github.event.release.tag_name }}.sha256
-    #       asset_name: webf-package-${{ github.event.release.tag_name }}.sha256
-    #       asset_content_type: text/plain
-      
-    #   - name: Publish to npm (optional)
-    #     run: |
-    #       # This step would publish to npm if needed
-    #       # Uncomment and configure if you want to publish to npm registry
-          
-    #       # cd webf
-    #       # echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-    #       # npm publish --access public
-          
-    #       echo "ℹ️  NPM publishing skipped (configure if needed)"
-      
-    #   - name: Notify completion
-    #     run: |
-    #       echo "🎉 WebF package preparation completed successfully!"
-    #       echo "📋 Summary:"
-    #       echo "   - Release: ${{ github.event.release.tag_name }}"
-    #       echo "   - Commit: ${{ github.sha }}"
-    #       echo "   - Archive created and uploaded"
-    #       echo "   - Package ready for distribution"
+  prepare-and-publish:
+    name: Prepare and Publish WebF Package
+    runs-on: ubuntu-latest
+    # Wait for all bridge builds and debug symbol collection
+    needs: [build-windows, build-linux, build-macos, build-ios, build-android, collect-debug-symbols]
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for git operations
+          fetch-depth: 0
+          # Use a personal access token to allow pushing to webf directory
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+
+      - name: Setup Git configuration
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+        continue-on-error: false
+
+      - name: Restore bridge binaries
+        run: |
+          echo "📦 Restoring bridge binaries from artifacts..."
+
+          # Create bridge/build directory structure
+          mkdir -p bridge/build
+
+          # Track restoration status
+          RESTORE_FAILED=false
+
+          # Restore Windows binaries
+          if [ -d "artifacts/windows-binaries" ]; then
+            cp -r artifacts/windows-binaries bridge/build/windows
+            echo "✅ Windows binaries restored"
+          else
+            echo "⚠️ Windows binaries not found"
+            RESTORE_FAILED=true
+          fi
+
+          # Restore Linux binaries
+          if [ -d "artifacts/linux-binaries" ]; then
+            cp -r artifacts/linux-binaries bridge/build/linux
+            echo "✅ Linux binaries restored"
+          else
+            echo "⚠️ Linux binaries not found"
+            RESTORE_FAILED=true
+          fi
+
+          # Restore macOS binaries
+          if [ -d "artifacts/macos-binaries" ]; then
+            cp -r artifacts/macos-binaries bridge/build/macos
+            echo "✅ macOS binaries restored"
+          else
+            echo "⚠️ macOS binaries not found"
+            RESTORE_FAILED=true
+          fi
+
+          # Restore iOS binaries
+          if [ -d "artifacts/ios-binaries" ]; then
+            cp -r artifacts/ios-binaries bridge/build/ios
+            echo "✅ iOS binaries restored"
+          else
+            echo "⚠️ iOS binaries not found"
+            RESTORE_FAILED=true
+          fi
+
+          # Restore Android binaries
+          if [ -d "artifacts/android-binaries" ]; then
+            cp -r artifacts/android-binaries bridge/build/android
+            echo "✅ Android binaries restored"
+          else
+            echo "⚠️ Android binaries not found"
+            RESTORE_FAILED=true
+          fi
+
+          echo "📋 Bridge build directory structure:"
+          find bridge/build -type f -name "*.so" -o -name "*.dll" -o -name "*.dylib" -o -name "*.a" -o -name "*.framework" | head -20
+
+          # Exit with error if any platform binaries are missing
+          if [ "$RESTORE_FAILED" = true ]; then
+            echo "❌ Error: Some platform binaries are missing. Please check the build jobs."
+            exit 1
+          fi
+
+      - name: Copy prebuilt binaries to WebF package
+        run: |
+          echo "🚀 Copying prebuilt binaries to WebF package..."
+
+          # Windows binaries
+          echo "📦 Windows binaries..."
+          npm run use-prebuilt:windows || echo "⚠️ Windows binaries copy failed (may be expected on Linux)"
+
+          # Linux binaries
+          echo "📦 Linux binaries..."
+          npm run use-prebuilt:linux
+
+          # macOS binaries (skip on Linux CI, would fail)
+          echo "📦 macOS binaries..."
+          # Note: macOS script requires macOS platform, copy manually on Linux
+          if [ -d "bridge/build/macos/lib/universal" ]; then
+            mkdir -p webf/macos
+            cp bridge/build/macos/lib/universal/*.dylib webf/macos/ 2>/dev/null || true
+            echo "✅ macOS binaries copied manually"
+          fi
+
+          # iOS binaries
+          echo "📦 iOS binaries..."
+          npm run use-prebuilt:ios
+
+          # Android binaries
+          echo "📦 Android binaries..."
+          npm run use-prebuilt:android
+
+          echo "✅ All prebuilt binaries copied"
+
+      - name: Verify prepared package
+        run: |
+          echo "🔍 Verifying prepared package structure..."
+
+          # Check Linux libraries
+          if ls webf/linux/*.so 1> /dev/null 2>&1; then
+            echo "✅ Linux libraries found:"
+            ls -lh webf/linux/*.so
+          else
+            echo "⚠️ Linux libraries not found"
+          fi
+
+          # Check Windows libraries
+          if ls webf/windows/*.dll 1> /dev/null 2>&1; then
+            echo "✅ Windows libraries found:"
+            ls -lh webf/windows/*.dll
+          else
+            echo "⚠️ Windows libraries not found"
+          fi
+
+          # Check macOS libraries
+          if ls webf/macos/*.dylib 1> /dev/null 2>&1; then
+            echo "✅ macOS libraries found:"
+            ls -lh webf/macos/*.dylib
+          else
+            echo "⚠️ macOS libraries not found"
+          fi
+
+          # Check iOS frameworks
+          if [ -d "webf/ios/Frameworks" ]; then
+            echo "✅ iOS frameworks found:"
+            ls -la webf/ios/Frameworks/
+          else
+            echo "⚠️ iOS frameworks not found"
+          fi
+
+          # Check Android libraries
+          if [ -d "webf/android/jniLibs" ]; then
+            echo "✅ Android JNI libraries found:"
+            find webf/android/jniLibs -name "*.so" | head -10
+          else
+            echo "⚠️ Android JNI libraries not found"
+          fi
+
+      - name: Update WebF version
+        run: |
+          echo "🔢 Updating WebF version to ${{ github.event.release.tag_name }}..."
+
+          # Update version in pubspec.yaml
+          cd webf
+          # Remove 'v' prefix if present
+          VERSION="${{ github.event.release.tag_name }}"
+          VERSION="${VERSION#v}"
+
+          # Update pubspec.yaml version
+          sed -i "s/^version: .*/version: $VERSION/" pubspec.yaml
+
+          echo "✅ Updated version to $VERSION"
+
+      - name: Authenticate Cloudsmith for WebF
+        run: |
+          echo "🔐 Setting up Cloudsmith authentication..."
+
+          # Add the Cloudsmith token for the WebF repository
+          echo '${{ secrets.CLOUDSMITH_API_KEY }}' | dart pub token add https://dart.cloudsmith.io/openwebf/packages/
+
+          echo "✅ Cloudsmith authentication configured"
+
+      - name: Publish to Cloudsmith
+        run: |
+          echo "🚀 Publishing WebF to Cloudsmith..."
+
+          cd webf
+
+          # Run Flutter pub get to ensure dependencies are resolved
+          flutter pub get
+
+          # Publish to Cloudsmith repository
+          dart pub publish
+
+          echo "✅ Successfully published WebF version ${{ github.event.release.tag_name }} to Cloudsmith"
+
+      - name: Summary
+        run: |
+          echo "🎉 WebF package published successfully!"
+          echo "📋 Summary:"
+          echo "   - Release: ${{ github.event.release.tag_name }}"
+          echo "   - Commit: ${{ github.sha }}"
+          echo "   - Published to: Cloudsmith (https://dart.cloudsmith.io/openwebf/packages/)"
+          echo "   - Debug symbols stored in Git LFS"
