@@ -76,6 +76,7 @@ class AtomicString {
   explicit operator bool() const { return !IsNull(); }
   bool IsNull() const { return string_ == nullptr; }
   bool empty() const { return !string_ || !string_->length(); }
+  bool IsEmpty() const { return empty(); }
 
   friend bool operator==(const AtomicString& lhs, const char* rhs) {
     return *lhs.string_ == rhs;

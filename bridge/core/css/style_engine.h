@@ -36,7 +36,10 @@
 
 #include <core/base/auto_reset.h>
 #include <unordered_map>
+#include <vector>
+#include <algorithm>
 #include "core/css/css_global_rule_set.h"
+#include "core/css/css_style_sheet.h"
 #include "core/css/invalidation/pending_invalidations.h"
 //#include "core/css/layout_tree_rebuild_root.h"
 #include "core/css/resolver/style_resolver.h"
@@ -165,6 +168,33 @@ class StyleEngine final {
   PendingInvalidations pending_invalidations_;
   std::shared_ptr<StyleResolver> resolver_;
   std::shared_ptr<CSSGlobalRuleSet> global_rule_set_;
+
+  // Active author stylesheets registered by link/style processing.
+  std::vector<std::shared_ptr<StyleSheetContents>> author_sheets_;
+
+ public:
+  void RegisterAuthorSheet(CSSStyleSheet* sheet) {
+    if (!sheet) return;
+    auto contents = sheet->Contents();
+    if (!contents) return;
+    // Avoid duplicates
+    for (auto& s : author_sheets_) {
+      if (s.get() == contents.get()) return;
+    }
+    author_sheets_.push_back(contents);
+  }
+
+  void UnregisterAuthorSheet(CSSStyleSheet* sheet) {
+    if (!sheet) return;
+    auto contents = sheet->Contents();
+    if (!contents) return;
+    author_sheets_.erase(
+        std::remove_if(author_sheets_.begin(), author_sheets_.end(),
+                        [&](const std::shared_ptr<StyleSheetContents>& s) { return s.get() == contents.get(); }),
+        author_sheets_.end());
+  }
+
+  const std::vector<std::shared_ptr<StyleSheetContents>>& AuthorSheets() const { return author_sheets_; }
 };
 
 }  // namespace webf

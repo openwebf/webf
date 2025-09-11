@@ -60,9 +60,6 @@ ElementRuleCollector::~ElementRuleCollector() = default;
 void ElementRuleCollector::CollectMatchingRules(const MatchRequest& match_request) {
   assert(element_);
   
-  WEBF_LOG(VERBOSE) << "CollectMatchingRules for element: " << element_->localName().GetString() 
-                    << " origin: " << static_cast<int>(match_request.GetOrigin());
-  
   // Collect rules from the match request
   for (const auto& rule_set : match_request.GetRuleSets()) {
     if (rule_set) {
@@ -164,10 +161,10 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       // Simple tag matching for UA stylesheet - bypass complex selector matching
       if (context.selector->Match() == CSSSelector::kTag) {
         const AtomicString& selector_tag = context.selector->TagQName().LocalName();
-        WEBF_LOG(VERBOSE) << "UA rule tag: " << selector_tag.GetString() 
-                          << " element: " << element_->localName().GetString();
+//        WEBF_LOG(VERBOSE) << "UA rule tag: " << selector_tag.GetString()
+//                          << " element: " << element_->localName().GetString();
         if (selector_tag == element_->localName() || selector_tag == CSSSelector::UniversalSelectorAtom()) {
-          WEBF_LOG(VERBOSE) << "UA rule matched!";
+//          WEBF_LOG(VERBOSE) << "UA rule matched!";
           DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
         }
       }
@@ -175,8 +172,19 @@ void ElementRuleCollector::CollectMatchingRulesForList(
     }
     
     SelectorChecker::MatchResult match_result;
+    const AtomicString& selector_tag = context.selector->TagQName().LocalName();
+    WEBF_LOG(VERBOSE) << "Author rule tag: " << selector_tag.GetString()
+                      << " element: " << element_->localName().GetString();
     bool matched = selector_checker_.Match(context, match_result);
     if (matched) {
+      WEBF_LOG(VERBOSE) << "Author rule matched!";
+      const std::shared_ptr<StyleRule>& rule = rule_data->Rule();
+
+      String selector = rule->SelectorsText();
+      WEBF_LOG(VERBOSE) << "SELECTOR: " << selector.Characters8();
+
+      String s = rule->Properties().AsText();
+      WEBF_LOG(VERBOSE) << "RULE: " << s.Characters8();
       DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
   }
