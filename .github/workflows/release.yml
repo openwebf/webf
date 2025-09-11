@@ -313,35 +313,6 @@ jobs:
         run: |
           node scripts/run_bridge_unit_test.js
 
-      - name: Prepare macOS debug symbols
-        run: |
-          # Create debug symbols directory for artifact upload
-          mkdir -p debug-symbols-macos
-
-          # Find and copy dSYM directories from macOS build
-          echo "🔍 Searching for debug symbols in bridge/build/macos..."
-
-          # Find and copy dSYM bundles (preserving directory structure)
-          find bridge/build/macos -name "*.dSYM" -type d | while read dsym; do
-            # Get relative path from bridge/build/macos
-            rel_path=${dsym#bridge/build/macos/}
-            # Create parent directory in destination
-            mkdir -p "debug-symbols-macos/$(dirname "$rel_path")"
-            # Copy entire dSYM bundle
-            cp -R "$dsym" "debug-symbols-macos/$(dirname "$rel_path")/"
-          done
-
-          # Count dSYM bundles found
-          dsym_count=$(find debug-symbols-macos -name "*.dSYM" -type d | wc -l)
-          echo "Found $dsym_count dSYM bundles"
-
-          if [ "$dsym_count" -gt 0 ]; then
-            echo "📋 Debug symbols prepared for upload:"
-            find debug-symbols-macos -name "*.dSYM" -type d
-          else
-            echo "⚠️  No debug symbols found"
-          fi
-
       - name: Upload macOS debug symbols artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -417,7 +388,7 @@ jobs:
         with:
           name: ios-binaries
           path: |
-            bridge/build/ios/framework/**/*.xcframework
+            bridge/build/ios/**/*.xcframework
           retention-days: 1
           if-no-files-found: warn
 
@@ -426,7 +397,7 @@ jobs:
         with:
           name: debug-symbols-ios
           path: |
-            bridge/build/ios/framework/**/*.dSYMs/
+            bridge/build/ios/**/*.dSYMs/
           retention-days: 1
           if-no-files-found: warn
 
