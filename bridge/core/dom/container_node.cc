@@ -27,6 +27,7 @@
  */
 
 #include "container_node.h"
+#include "core/css/style_engine.h"
 #include "bindings/qjs/cppgc/gc_visitor.h"
 #include "foundation/string/string_builder.h"
 #include "core/dom/child_list_mutation_scope.h"
@@ -729,6 +730,15 @@ void ContainerNode::NotifyNodeRemoved(Node& root) {
 
 void ContainerNode::ChildrenChanged(const webf::ContainerNode::ChildrenChange& change) {
   InvalidateNodeListCachesInAncestors(nullptr, nullptr, &change);
+
+  // When Blink CSS is enabled, structural changes that affect elements should trigger
+  // a style recalculation so newly added/removed nodes get inline styles pushed to Dart.
+  if (GetDocument().GetExecutingContext()->isBlinkEnabled() &&
+      change.affects_elements == ChildrenChangeAffectsElements::kYes) {
+    GetDocument().EnsureStyleEngine().RecalcStyle(GetDocument());
+    // Flush UI commands so Dart applies inline styles before observers/snapshots run.
+    GetDocument().GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
+  }
 }
 
 void ContainerNode::InvalidateNodeListCachesInAncestors(const QualifiedName* attr_name,

@@ -11,6 +11,7 @@
 #define WEBF_CORE_HTML_HTML_LINK_ELEMENT_H_
 
 #include "html_element.h"
+#include "core/css/css_style_sheet.h"
 #include "core/dom/dom_token_list.h"
 #include "html_element_type_helper.h"
 
@@ -20,7 +21,12 @@ class HTMLLinkElement : public HTMLElement {
   DEFINE_WRAPPERTYPEINFO();
 
  public:
-  explicit HTMLLinkElement(Document& document);
+ explicit HTMLLinkElement(Document& document);
+  void Trace(GCVisitor* visitor) const override {
+    HTMLElement::Trace(visitor);
+    visitor->TraceMember(sheet_);
+  }
+  CSSStyleSheet* sheet() const { return sheet_.Get(); }
   NativeValue HandleCallFromDartSide(const webf::AtomicString& method,
                                      int32_t argc,
                                      const webf::NativeValue* argv,
@@ -44,6 +50,8 @@ class HTMLLinkElement : public HTMLElement {
   void RemovedFrom(webf::ContainerNode& insertion_point) override;
 
  private:
+  // Keep the created stylesheet alive and associated with this element.
+  Member<CSSStyleSheet> sheet_;
   mutable Member<DOMTokenList> rel_list_;
 };
 

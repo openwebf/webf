@@ -33,6 +33,8 @@
  */
 
 #include "style_resolver.h"
+#include <algorithm>
+#include <string>
 
 #include "foundation/logging.h"
 #include "core/css/css_default_style_sheets.h"
@@ -60,9 +62,12 @@
 #include "core/dom/shadow_root.h"
 #include "core/dom/text.h"
 #include "core/html/html_style_element.h"
+#include "core/html/html_link_element.h"
+#include "html_names.h"
 #include "core/html/html_head_element.h"
 #include "core/style/computed_style.h"
 #include "core/style/computed_style_constants.h"
+#include "code_gen/html_element_type_helper.h"
 
 namespace webf {
 
@@ -364,8 +369,7 @@ void StyleResolver::MatchAuthorRules(
   // Match rules from author stylesheets (style elements, link elements)
   Document& document = element.GetDocument();
   
-  // Get all style elements in the document
-  // Note: getElementsByTagName might not work in test environment, so we'll manually find style elements
+  // Get all style elements in the document by traversal; link-based sheets come from StyleEngine registry.
   std::vector<Element*> style_elements;
   
   // Helper function to recursively find style elements
@@ -374,8 +378,8 @@ void StyleResolver::MatchAuthorRules(
     
     if (node->IsElementNode()) {
       Element* elem = static_cast<Element*>(node);
-      // Use localName() instead of tagName() since tagName() returns uppercase for HTML
-      if (elem->localName() == html_names::kStyle) {
+      // Use HasTagName for robust tag matching
+      if (elem->HasTagName(html_names::kStyle)) {
         style_elements.push_back(elem);
       }
     }
@@ -388,10 +392,6 @@ void StyleResolver::MatchAuthorRules(
   // Start from document element
   findStyleElements(document.documentElement());
   
-  if (style_elements.empty()) {
-    return;
-  }
-  
   // Create a media query evaluator for the current document
   MediaQueryEvaluator media_evaluator("screen");
   
@@ -402,7 +402,7 @@ void StyleResolver::MatchAuthorRules(
     
     // Check if this is a style element
     // Note: tagName() returns uppercase for HTML elements
-    if (style_element->localName() != html_names::kStyle) {
+    if (!style_element->HasTagName(html_names::kStyle)) {
       continue;
     }
     
@@ -423,6 +423,18 @@ void StyleResolver::MatchAuthorRules(
     // Create a match request for this style sheet
     MatchRequest match_request(rule_set_ptr);
     collector.CollectMatchingRules(match_request);
+  }
+
+  // Process link-based author stylesheets from StyleEngine registry (robust even if DOM traversal misses links)
+  const auto& author_sheets = document.EnsureStyleEngine().AuthorSheets();
+  unsigned author_index = 0;
+  for (const auto& contents : author_sheets) {
+    if (!contents) { author_index++; continue; }
+    auto rule_set_ptr = contents->EnsureRuleSet(media_evaluator);
+    // Preserve stylesheet order so later sheets override earlier ones.
+    MatchRequest match_request(rule_set_ptr, CascadeOrigin::kAuthor, author_index);
+    collector.CollectMatchingRules(match_request);
+    author_index++;
   }
 }
 

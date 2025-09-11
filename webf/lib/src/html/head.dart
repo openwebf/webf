@@ -8,6 +8,8 @@
  */
 import 'dart:async';
 import 'dart:io';
+import 'dart:async';
+import 'dart:ffi';
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +17,25 @@ import 'package:webf/src/foundation/debug_flags.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/webf.dart';
+import 'package:ffi/ffi.dart';
+
+// FFI callback for native method result
+void _handleParseStyleSheetResult(Object handle, Pointer<NativeValue> result) {
+  final _ParseStyleSheetContext ctx = handle as _ParseStyleSheetContext;
+  // Free allocated native resources
+  malloc.free(ctx.method);
+  malloc.free(ctx.argv);
+  malloc.free(result);
+  // Complete the operation
+  ctx.completer.complete();
+}
+
+class _ParseStyleSheetContext {
+  _ParseStyleSheetContext(this.completer, this.method, this.argv);
+  final Completer<void> completer;
+  final Pointer<NativeValue> method;
+  final Pointer<NativeValue> argv;
+}
 
 // Children of the <head> element all have display:none
 const Map<String, dynamic> _defaultStyle = {
@@ -256,6 +277,12 @@ class LinkElement extends Element {
       return;
     }
 
+    // When Blink CSS is enabled, send stylesheet text to native side.
+    if (ownerView.enableBlink == true) {
+      _sendStyleSheetToNative(_cachedStyleSheetText!, href: href);
+      return;
+    }
+
     if (_styleSheet != null) {
       // Ensure the stylesheet carries an absolute href for correct URL resolution
       if (_resolvedHyperlink != null) {
@@ -318,7 +345,7 @@ class LinkElement extends Element {
     if (_resolvedHyperlink != null) {
       _stylesheetLoaded.remove(_resolvedHyperlink.toString());
     }
-    if (_styleSheet != null) {
+    if (!ownerView.enableBlink && _styleSheet != null) {
       ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
     }
     fetchAndApplyCSSStyle();
@@ -405,26 +432,55 @@ class LinkElement extends Element {
         _styleSheet = CSSParser(cssString, href: sheetHref).parse(
             windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
         _styleSheet?.href = sheetHref;
-
-        // Resolve and inline any @import rules before applying
-        await _resolveCSSImports(ownerDocument, _styleSheet!);
-        // Ensure style manager re-indexes rules after imports
-        ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
-        if (DebugFlags.enableCssBatchStyleUpdates) {
-          ownerDocument.scheduleStyleUpdate();
+        // If Blink CSS stack is enabled, forward stylesheet to native; otherwise parse in Dart.
+        if (ownerView.enableBlink) {
+          await _sendStyleSheetToNative(cssString, href: href);
         } else {
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            debugPrint('[webf][style] <link> parse (darkMode=' + ownerView.rootController.isDarkMode.toString() + ')');
+          }
+          final String? sheetHref = _resolvedHyperlink?.toString() ?? href;
+          _styleSheet = CSSParser(cssString, href: sheetHref).parse(
+              windowWidth: windowWidth, windowHeight: windowHeight, isDarkMode: ownerView.rootController.isDarkMode);
+          _styleSheet?.href = sheetHref;
+
+          // Resolve and inline any @import rules before applying
+          await _resolveCSSImports(ownerDocument, _styleSheet!);
+          // Ensure style manager re-indexes rules after imports
+          ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+          if (DebugFlags.enableCssBatchStyleUpdates) {
+            ownerDocument.scheduleStyleUpdate();
+          } else {
+            ownerDocument.updateStyleIfNeeded();
+          }
+
+          // Successful load.
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            dispatchEvent(Event(EVENT_LOAD));
+          });
+          // Resolve and inline any @import rules before applying
+          await _resolveCSSImports(ownerDocument, _styleSheet!);
+          // Ensure style manager re-indexes rules after imports
+          ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
+
+          ownerDocument.markElementStyleDirty(ownerDocument.documentElement!);
+          ownerDocument.styleNodeManager.appendPendingStyleSheet(_styleSheet!);
           ownerDocument.updateStyleIfNeeded();
         }
 
-        // Successful load.
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          dispatchEvent(Event(EVENT_LOAD));
-        });
+        // Successful load: In Blink mode, C++ dispatches 'load'. Avoid double-dispatch here.
+        if (!ownerView.enableBlink) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            dispatchEvent(Event(EVENT_LOAD));
+          });
+        }
       } catch (e) {
-        // An error occurred.
-        SchedulerBinding.instance.addPostFrameCallback((_) {
-          dispatchEvent(Event(EVENT_ERROR));
-        });
+        // Error: In Blink mode, dispatch on C++ side only.
+        if (!ownerView.enableBlink) {
+          SchedulerBinding.instance.addPostFrameCallback((_) {
+            dispatchEvent(Event(EVENT_ERROR));
+          });
+        }
       } finally {
         bundle.dispose();
 
@@ -448,7 +504,9 @@ class LinkElement extends Element {
   @override
   void connectedCallback() {
     super.connectedCallback();
-    ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
+    if (!ownerView.enableBlink) {
+      ownerDocument.styleNodeManager.addStyleSheetCandidateNode(this);
+    }
 
     if (_resolvedHyperlink != null) {
       if (rel == REL_PRELOAD) {
@@ -463,10 +521,39 @@ class LinkElement extends Element {
   @override
   void disconnectedCallback() {
     super.disconnectedCallback();
-    if (_styleSheet != null) {
-      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+    if (!ownerView.enableBlink) {
+      if (_styleSheet != null) {
+        ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+      }
+      ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
     }
-    ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+  }
+
+  Future<void> _sendStyleSheetToNative(String cssText, {String? href}) async {
+    // Ensure we have a native binding object to call.
+    final pointer = this.pointer;
+    if (pointer == null || isBindingObjectDisposed(pointer) || pointer.ref.invokeBindingMethodFromDart == nullptr) {
+      return;
+    }
+
+    final completer = Completer<void>();
+    final bindingObject = this as BindingObject;
+
+    // Prepare method name and arguments
+    final Pointer<NativeValue> method = malloc.allocate(sizeOf<NativeValue>());
+    toNativeValue(method, 'parseAuthorStyleSheet');
+    final Pointer<NativeValue> argv = makeNativeValueArguments(bindingObject, <dynamic>[cssText, href ?? '']);
+
+    final ctx = _ParseStyleSheetContext(completer, method, argv);
+    final callback = Pointer.fromFunction<NativeInvokeResultCallback>(_handleParseStyleSheetResult);
+
+    // Invoke native method asynchronously
+    final f = pointer.ref.invokeBindingMethodFromDart.asFunction<DartInvokeBindingMethodsFromDart>();
+    Future.microtask(() {
+      f(pointer, ownerView.contextId, method, 2, argv, ctx, callback);
+    });
+
+    await completer.future;
   }
 
   //https://www.w3schools.com/cssref/css3_pr_mediaquery.php
@@ -616,12 +703,12 @@ mixin StyleElementMixin on Element {
   }
 
   void _recalculateStyle() {
-    String? text = collectElementChildText();
+    // When Blink CSS is enabled, let native side handle inline <style> processing.
+    if (ownerView.enableBlink == true) {
+      return;
+    }
 
-    // TODO(CGQAQ): Dispatch an event to notify C++ blink side to recalculate style if we are in Blink css mode.
-    // Question1: How to know if we are in Blink css mode?
-    // Question2: Pass the text to C++ blink side through UICommand? Do we already have the style text on c++ side?
-    // Question3: Animation timeline should send a command to c++ side to recalculate style or we just do it in dart side?
+    String? text = collectElementChildText();
 
     if (text != null) {
       // Inline stylesheet parsing depends on the raw CSS text plus runtime
@@ -713,6 +800,10 @@ mixin StyleElementMixin on Element {
   void connectedCallback() {
     super.connectedCallback();
     if (_type == _CSS_MIME) {
+      if (ownerView.enableBlink) {
+        // Native side will process inline styles via lifecycle hooks.
+        return;
+      }
       if (_styleSheet == null) {
         _recalculateStyle();
       }
@@ -722,9 +813,11 @@ mixin StyleElementMixin on Element {
 
   @override
   void disconnectedCallback() {
-    if (_styleSheet != null) {
-      ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
-      ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+    if (!ownerView.enableBlink) {
+      if (_styleSheet != null) {
+        ownerDocument.styleNodeManager.removePendingStyleSheet(_styleSheet!);
+        ownerDocument.styleNodeManager.removeStyleSheetCandidateNode(this);
+      }
     }
     super.disconnectedCallback();
   }
