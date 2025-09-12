@@ -348,15 +348,21 @@ CSSValueID CssValueKeywordID(const StringView& string) {
   }
 
   char buffer[maxCSSValueKeywordLength + 1];  // 1 for null character
-  if (!QuasiLowercaseIntoBuffer(string.data() , length, buffer)) {
-    return CSSValueID::kInvalid;
+  if (string.Is8Bit()) {
+    if (!QuasiLowercaseIntoBuffer(string.Characters8() , length, buffer)) {
+      return CSSValueID::kInvalid;
+    }
+  } else {
+    if (!QuasiLowercaseIntoBuffer(string.Characters16() , length, buffer)) {
+      return CSSValueID::kInvalid;
+    }
   }
 
   const Value* hash_table_entry = FindValue(buffer, length);
 #if DDEBUG
   // Verify that we get the same answer with standard lowercasing.
   for (unsigned i = 0; i < length; ++i) {
-    buffer[i] = ToASCIILower(string.data()[i]);
+    buffer[i] = ToASCIILower(string[i]);
   }
   assert(hash_table_entry == FindValue(buffer, length));
 #endif
