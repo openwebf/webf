@@ -9,7 +9,9 @@ import 'dart:ui' as ui
         TextBox,
         TextPosition,
         LineMetrics,
-        TextStyle;
+        TextStyle,
+        TextHeightBehavior,
+        TextLeadingDistribution;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -650,6 +652,14 @@ class InlineFormattingContext {
       textDirection: style.direction,
       maxLines: style.lineClamp,
       ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
+      // Distribute extra line-height evenly above/below the glyphs so a single
+      // line with large line-height (e.g., equal to box height) is vertically
+      // centered as in CSS.
+      textHeightBehavior: const ui.TextHeightBehavior(
+        applyHeightToFirstAscent: true,
+        applyHeightToLastDescent: true,
+        leadingDistribution: ui.TextLeadingDistribution.even,
+      ),
     ));
 
     _placeholderOrder.clear();
