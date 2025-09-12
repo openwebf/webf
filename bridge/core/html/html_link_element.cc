@@ -82,7 +82,7 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
     sheet_.Release()->ClearOwnerNode();
   }
 
-  CSSStyleSheet* new_sheet = document.EnsureStyleEngine().CreateSheet(*this, cssString.ToUTF8String());
+  CSSStyleSheet* new_sheet = document.EnsureStyleEngine().CreateSheet(*this, cssString.GetString());
   sheet_ = new_sheet;
 
   MediaQueryEvaluator evaluator("screen");
