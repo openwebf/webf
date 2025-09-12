@@ -860,14 +860,19 @@ abstract class RenderBoxModel extends RenderBox
   void _paintLayoutError(PaintingContext context, Offset offset) {
     final Canvas canvas = context.canvas;
 
-    // Draw a red background to indicate error
-    final Paint errorPaint = Paint()..color = const Color(0xFFFF0000).withOpacity(0.7);
-    canvas.drawRect(offset & size, errorPaint);
+    // Determine the maximum area we can use to display the error.
+    // Prefer the viewport size; fall back to our current size.
+    final Size viewportSize = renderStyle.target.ownerView.viewport?.boxSize ?? size;
 
-    // Draw error message text
+    // Expand within the visible viewport starting from our own paint origin.
+    final double maxPaintWidth = math.max(0, viewportSize.width - offset.dx);
+    final double maxPaintHeight = math.max(0, viewportSize.height - offset.dy);
+
+    // Prepare error text
+    final String errorSummary = layoutExceptions!.split('\n').take(3).join('\n');
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
-        text: 'LAYOUT ERROR\n${layoutExceptions!.split('\n').take(3).join('\n')}',
+        text: 'LAYOUT ERROR\n$errorSummary',
         style: const TextStyle(
           color: Color(0xFFFFFFFF),
           fontSize: 14.0,
@@ -875,11 +880,23 @@ abstract class RenderBoxModel extends RenderBox
         ),
       ),
       textDirection: TextDirection.ltr,
-      maxLines: 4,
-      ellipsis: '...',
     );
-    textPainter.layout(maxWidth: size.width - 20);
-    textPainter.paint(canvas, offset + Offset(10, 10));
+
+    // Layout text with expanded width budget
+    const double kPadding = 10.0;
+    final double textMaxWidth = math.max(0, maxPaintWidth - kPadding * 2);
+    textPainter.layout(maxWidth: textMaxWidth);
+
+    // Compute background height to fit text, clamp to viewport height
+    final double bgHeight = math.min(maxPaintHeight, textPainter.height + kPadding * 2);
+
+    // Draw a red translucent background spanning the expanded area
+    final Paint errorPaint = Paint()..color = const Color(0xFFFF0000).withOpacity(0.7);
+    final Rect bgRect = Rect.fromLTWH(offset.dx, offset.dy, maxPaintWidth, bgHeight);
+    canvas.drawRect(bgRect, errorPaint);
+
+    // Paint error text with padding
+    textPainter.paint(canvas, offset + const Offset(kPadding, kPadding));
   }
 
   void debugPaintOverlay(PaintingContext context, Offset offset) {
