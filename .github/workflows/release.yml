@@ -638,6 +638,7 @@ jobs:
           fetch-depth: 0
           # Use a personal access token to allow pushing to webf directory
           token: ${{ secrets.GITHUB_TOKEN }}
+          submodules: recursive
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
