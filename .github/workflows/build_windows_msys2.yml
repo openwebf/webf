@@ -119,7 +119,7 @@ jobs:
         # Verify MSYS2 installation path
         ls -la /d/a/_temp/msys64/ucrt64/bin/ || echo "MSYS2 path not found, checking alternatives..."
         
-        npm run build:bridge:windows
+        npm run build:bridge:windows:release
       env:
         WEBF_BUILD: ${{ matrix.build_mode }}
         WEBF_JS_ENGINE: quickjs
