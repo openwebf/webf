@@ -865,14 +865,6 @@ std::shared_ptr<StyleRule> CSSParserImpl::ConsumeStyleRuleContents(tcb::span<CSS
   child_rules.reserve(4);
   ConsumeDeclarationList(stream, StyleRule::kStyle, CSSNestingType::kNesting,
                          /*parent_rule_for_nesting=*/style_rule, &child_rules);
-  // Debug: log parsed declarations before creating the property set
-  WEBF_LOG(VERBOSE) << "ConsumeStyleRuleContents: parsed_properties_ size=" << parsed_properties_.size();
-  for (const auto& prop : parsed_properties_) {
-    CSSPropertyName name = prop.Name();
-    AtomicString n = name.ToAtomicString();
-    String v = prop.Value()->get()->CssText();
-    WEBF_LOG(VERBOSE) << "  " << n.ToUTF8String() << ": " << v.ToUTF8String();
-  }
   for (auto&& child_rule : child_rules) {
     style_rule->AddChildRule(child_rule);
   }
