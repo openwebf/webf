@@ -37,6 +37,15 @@ class InlineItemsBuilder {
   /// Track if we're at the start of a line (paragraph start or after a forced break)
   bool _atLineStart = true;
 
+  /// Whether we should trim a single leading newline at the very start
+  /// of a PRE element. Per HTML spec, if a <pre> element's first child is
+  /// a text node and that text node starts with a U+000A line feed, it is
+  /// ignored (treated as if it were not there).
+  bool _shouldTrimLeadingNewlineForPre = false;
+
+  /// Have we already consumed any content at the container root level?
+  bool _consumedRootContent = false;
+
   /// Get current direction from stack or base direction.
   TextDirection get _currentDirection =>
       _directionStack.isNotEmpty ? _directionStack.last : direction;
@@ -62,6 +71,9 @@ class InlineItemsBuilder {
     if (container is RenderBoxModel) {
       _directionStack.add(container.renderStyle.direction);
       _levelStack.add(container.renderStyle.direction == TextDirection.rtl ? 1 : 0);
+      // Enable PRE leading newline trimming only for PRE tag
+      final String? tag = container.renderStyle.target.tagName;
+      _shouldTrimLeadingNewlineForPre = (tag == 'PRE');
     }
 
     _collectInlines(container);
@@ -128,6 +140,9 @@ class InlineItemsBuilder {
             // Skip RenderEventListener wrappers - they're just for event handling
             // and shouldn't create separate inline boxes
             if (child is RenderEventListener && child.child != null) {
+              if (_boxStack.isEmpty) {
+                _consumedRootContent = true;
+              }
               _collectInlines(child);
             } else {
               _addInlineBox(child);
@@ -168,6 +183,19 @@ class InlineItemsBuilder {
 
     final style = textBox.renderStyle;
     var processedText = _processWhiteSpace(text, style);
+
+    // HTML: If the first child of a PRE is a text node starting with a
+    // single LF (or CRLF), ignore that line break. Only apply when the
+    // text is directly under the container (no enclosing inline box).
+    if (_shouldTrimLeadingNewlineForPre && !_consumedRootContent && _boxStack.isEmpty && processedText.isNotEmpty) {
+      if (processedText.startsWith('\r\n')) {
+        processedText = processedText.substring(2);
+      } else if (processedText.startsWith('\n') || processedText.startsWith('\r')) {
+        processedText = processedText.substring(1);
+      }
+      // Only trim once per PRE
+      _shouldTrimLeadingNewlineForPre = false;
+    }
     // Process whitespace
 
     if (processedText.isNotEmpty) {
@@ -230,10 +258,19 @@ class InlineItemsBuilder {
       item.bidiLevel = _currentLevel;
       items.add(item);
     }
+
+    // Mark that we've consumed some content at root level when not inside an inline box
+    if (_boxStack.isEmpty) {
+      _consumedRootContent = true;
+    }
   }
 
   /// Add inline box (non-atomic).
   void _addInlineBox(RenderBoxModel box) {
+    // If this inline box is at the root level, we've consumed root content
+    if (_boxStack.isEmpty) {
+      _consumedRootContent = true;
+    }
     // Add open tag
     _addOpenTag(box);
 
@@ -269,6 +306,9 @@ class InlineItemsBuilder {
 
   /// Add atomic inline (inline-block, replaced/widget inline element).
   void _addAtomicInline(RenderBoxModel box) {
+    if (_boxStack.isEmpty) {
+      _consumedRootContent = true;
+    }
     // Allow inline-block/inline-flex, or inline replaced/widget elements.
     assert(
       box.renderStyle.display == CSSDisplay.inlineBlock ||
