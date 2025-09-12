@@ -104,7 +104,7 @@ CSSStyleSheet* StyleEngine::ParseSheet(Element& element, const String& text) {
   assert(GetDocument().GetExecutingContext()->isBlinkEnabled());
   // Create parser context without Document to avoid circular references
   auto parser_context = std::make_shared<CSSParserContext>(kHTMLStandardMode);
-  auto contents = std::make_shared<StyleSheetContents>(parser_context, KURL("").GetString());
+  auto contents = std::make_shared<StyleSheetContents>(parser_context, NullURL().GetString());
   contents->ParseString(text);
   // For style elements (inline CSS), ensure no load error is flagged
   contents->SetDidLoadErrorOccur(false);
