@@ -1102,6 +1102,12 @@ class RenderFlowLayout extends RenderLayoutBox {
           yOffset += line.crossAxisExtent;
         }
       }
+    } else if (boxSize != null) {
+      // No in-flow line boxes found: per CSS 2.1 §10.8.1, synthesize baseline from
+      // the bottom margin edge for block-level boxes.
+      final double marginBottom = renderStyle.marginBottom.computedValue;
+      firstBaseline = boxSize!.height + marginBottom;
+      lastBaseline = firstBaseline;
     }
     setCssBaselines(first: firstBaseline, last: lastBaseline);
   }

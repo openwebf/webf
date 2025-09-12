@@ -341,4 +341,54 @@ void main() {
       print('Span establishes IFC: ${spanFlow.establishIFC}');
     });
   });
+
+  group('Inline-flex baseline with block child', () {
+    testWidgets('inline-flex baseline equals first child bottom for alignment', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'inline-flex-child-baseline-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <div id="wrapper" style="
+            border: 5px solid black;
+            position: relative;
+            width: 200px;
+            height: 150px;
+            margin: 10px;
+          ">
+            <div id="blue" style="
+              width: 50px;
+              height: 50px;
+              background: blue;
+              display: inline-block;
+            "></div>
+            <div id="magenta" style="
+              border: 5px solid magenta;
+              display: inline-flex;
+            ">
+              <div id="cyan" style="
+                border: 10px solid cyan;
+                padding: 15px;
+                margin: 20px 0px;
+                background: yellow;
+              "></div>
+            </div>
+          </div>
+        '''
+      );
+
+      final blue = prepared.getElementById('blue');
+      final cyan = prepared.getElementById('cyan');
+
+      await tester.pump();
+
+      final blueRect = blue.getBoundingClientRect();
+      final cyanRect = cyan.getBoundingClientRect();
+
+      final blueBottom = blueRect.top + blue.offsetHeight;
+      final cyanBottom = cyanRect.top + cyan.offsetHeight;
+
+      // Baseline alignment expectation: blue bottom aligns with cyan bottom.
+      expect((blueBottom - cyanBottom).abs(), lessThanOrEqualTo(1.0));
+    });
+  });
 }

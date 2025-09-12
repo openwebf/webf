@@ -1144,17 +1144,19 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (firstRunChildren.isNotEmpty) {
         final RenderBox child = firstRunChildren[0].child;
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        final double childMarginTop = child is RenderBoxModel ? child.renderStyle.marginTop.computedValue : 0.0;
         final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
-        double childOffsetY = childParentData.offset.dy - childMarginTop;
+        // Offset of the child's border-box top within the flex container's border-box.
+        // Use the laid-out offset directly (includes margins) so the container baseline
+        // derived from the child matches browser behavior for inline-flex baseline.
+        double childOffsetY = childParentData.offset.dy;
         if (child is RenderBoxModel) {
           final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(child.renderStyle);
           if (relativeOffset != null) {
             childOffsetY -= relativeOffset.dy;
           }
         }
-        // Child baseline is already relative to the child's border-box top; convert to
-        // the container's border-box by adding the child's offset within the container.
+        // Child baseline is relative to the child's border-box top; convert to the
+        // container's border-box by adding the child's offset within the container.
         containerBaseline = (childBaseline ?? 0) + childOffsetY;
       }
     }
