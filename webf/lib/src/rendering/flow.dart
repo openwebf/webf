@@ -999,10 +999,12 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (overflowVisible) {
       final lines = _inlineFormattingContext!.paragraphLineMetrics;
       if (lines.isNotEmpty) {
-        // For inline-block elements, use the last line's baseline for both first and last
+        // For inline-block elements inside IFC, compute both first and last baselines:
+        // - first baseline = baseline of the first in-flow line box
+        // - last baseline  = baseline of the last in-flow line box
         if (renderStyle.display == CSSDisplay.inlineBlock) {
+          firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
-          firstBaseline = lastBaseline;
         } else {
           firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
@@ -1020,10 +1022,10 @@ class RenderFlowLayout extends RenderLayoutBox {
           y += _inlineFormattingContext!.lineBoxes[i].height;
         }
         final last = _inlineFormattingContext!.lineBoxes.last;
-        // For inline-block elements, use the last line's baseline for both first and last
+        // For inline-block elements, compute distinct first and last baselines.
         if (renderStyle.display == CSSDisplay.inlineBlock) {
+          firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
-          firstBaseline = lastBaseline;
         } else {
           firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
