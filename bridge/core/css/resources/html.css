@@ -25,13 +25,16 @@
 
 html {
     display: block;
+    /* TODO: Fix this, the white background is for compatibility with the old dart css stack and should be removed. */
+    background-color: white;
 }
 
 /* generic block-level elements */
 
 body {
     display: block;
-    margin: 8px;
+    /* TODO: Fix this, the commented out margin is for compatibility with the old dart css stack and should be uncommented.*/
+    /*margin: 8px;*/
 }
 
 p {

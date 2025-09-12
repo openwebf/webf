@@ -68,6 +68,7 @@ class AtomicString {
   bool IsLowerASCII() const { return string_->IsLowerASCII(); }
 
   std::unique_ptr<SharedNativeString> ToNativeString() const;
+  std::unique_ptr<SharedNativeString> ToStylePropertyNameNativeString() const;
 
   [[nodiscard]] UTF8String ToUTF8String() const;
 
@@ -102,6 +103,9 @@ class AtomicString {
   size_t Find(CharacterMatchFunctionPtr match_function, size_t start = 0) const {
     return string_->Find(match_function, start);
   }
+
+  bool Contains(char ch, size_t start = 0) const { return string_->Contains(ch, start); }
+  bool Contains(char16_t ch, size_t start = 0) const { return string_->Contains(ch, start); }
 
   bool StartsWith(
       const StringView& prefix,

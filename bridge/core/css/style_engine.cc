@@ -188,7 +188,7 @@ void StyleEngine::RecalcStyle(Document& document) {
       AtomicString prop_name = prop.Name().ToAtomicString();
       String value_string = property_set->GetPropertyValueWithHint(prop_name, i);
       AtomicString value_atom(value_string);
-      std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
+      std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
       ctx->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), element->bindingObject(),
                                          value_atom.ToNativeString().release());
     }

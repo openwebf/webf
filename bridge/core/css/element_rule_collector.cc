@@ -156,20 +156,17 @@ void ElementRuleCollector::CollectMatchingRulesForList(
       continue;
     }
     
-    // For UA stylesheets, do a simple tag name check to avoid complex selector matching
-    if (cascade_origin == CascadeOrigin::kUserAgent) {
-      // Simple tag matching for UA stylesheet - bypass complex selector matching
-      if (context.selector->Match() == CSSSelector::kTag) {
-        const AtomicString& selector_tag = context.selector->TagQName().LocalName();
-//        WEBF_LOG(VERBOSE) << "UA rule tag: " << selector_tag.GetString()
-//                          << " element: " << element_->localName().GetString();
-        if (selector_tag == element_->localName() || selector_tag == CSSSelector::UniversalSelectorAtom()) {
-//          WEBF_LOG(VERBOSE) << "UA rule matched!";
-          DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
-        }
-      }
-      continue;  // Skip complex matching for UA rules
+  // UA stylesheet matching must respect full selectors (combinators, pseudos).
+  // Previously we short-circuited on tag-only which caused rules like
+  // "td > p:first-child" to (incorrectly) match all <p>, zeroing margins.
+  if (cascade_origin == CascadeOrigin::kUserAgent) {
+    SelectorChecker::MatchResult ua_match_result;
+    bool ua_matched = selector_checker_.Match(context, ua_match_result);
+    if (ua_matched) {
+      DidMatchRule(rule_data, cascade_origin, cascade_layer, match_request);
     }
+    continue;  // Handled UA case.
+  }
     
     SelectorChecker::MatchResult match_result;
     const AtomicString& selector_tag = context.selector->TagQName().LocalName();

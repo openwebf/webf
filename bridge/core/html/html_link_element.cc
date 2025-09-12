@@ -109,8 +109,11 @@ NativeValue HTMLLinkElement::parseAuthorStyleSheet(AtomicString& cssString, Atom
   // Ensure UI commands (inline styles) are flushed to Dart before dispatching 'load'.
   GetExecutingContext()->FlushUICommand(this, FlushUICommandReason::kDependentsAll);
 
-  // Dispatch 'load' event on the link element after stylesheet is parsed/applied.
+  // Dispatch 'load' synchronously after flush. FlushUICommand is sync, so any
+  // UICommandType.addEvent has already arrived. Fire now to ensure native
+  // listeners (registered in C++) observe the event reliably.
   {
+    MemberMutationScope scope(GetExecutingContext());
     ExceptionState exception_state;
     Event* load_event = Event::Create(GetExecutingContext(), event_type_names::kload, exception_state);
     dispatchEvent(load_event, exception_state);

@@ -15,6 +15,7 @@
 #include <cinttypes>
 #include <cstring>
 #include <memory>
+#include <iterator>
 #include "ascii_fast_path.h"
 #include "core/base/compiler_specific.h"
 #include "core/base/containers/span.h"
@@ -208,6 +209,46 @@ class StringImpl {
     return Characters16()[i];
   }
 
+  // Iterator over UTF-16 code units (char16_t), independent of internal width.
+  class CodeUnitIterator {
+   public:
+    using value_type = char16_t;
+    using difference_type = std::ptrdiff_t;
+    using reference = char16_t;
+    using pointer = const void*;
+    using iterator_category = std::forward_iterator_tag;
+
+    CodeUnitIterator() : str_(nullptr), index_(0) {}
+    CodeUnitIterator(const StringImpl* str, size_t index) : str_(str), index_(index) {}
+
+    value_type operator*() const { return (*str_)[index_]; }
+    CodeUnitIterator& operator++() {
+      ++index_;
+      return *this;
+    }
+    CodeUnitIterator operator++(int) {
+      CodeUnitIterator tmp(*this);
+      ++(*this);
+      return tmp;
+    }
+
+    bool operator==(const CodeUnitIterator& other) const {
+      return str_ == other.str_ && index_ == other.index_;
+    }
+    bool operator!=(const CodeUnitIterator& other) const { return !(*this == other); }
+
+   private:
+    const StringImpl* str_;
+    size_t index_;
+  };
+
+  using const_iterator = CodeUnitIterator;
+
+  ALWAYS_INLINE const_iterator begin() const { return const_iterator(this, 0); }
+  ALWAYS_INLINE const_iterator end() const { return const_iterator(this, length_); }
+  ALWAYS_INLINE const_iterator cbegin() const { return begin(); }
+  ALWAYS_INLINE const_iterator cend() const { return end(); }
+
   template <typename CharType>
   static size_t AllocationSize(size_t length) {
     return sizeof(StringImpl) + length * sizeof(CharType);
@@ -259,6 +300,9 @@ class StringImpl {
   // Reverse find - searches from the end
   size_t RFind(UChar character) const;
   size_t RFind(const StringImpl& str) const;
+
+  bool Contains(char ch, size_t start = 0);
+  bool Contains(char16_t ch, size_t start = 0);
 
   bool StartsWith(char) const;
   bool StartsWith(const StringView& prefix) const;
@@ -375,6 +419,16 @@ inline size_t StringImpl::RFind(UChar character) const {
     }
   }
   return kNotFound;
+}
+
+inline bool StringImpl::Contains(char ch, size_t start) {
+  auto result = Find(ch, start);
+  return result != kNotFound;
+}
+
+inline bool StringImpl::Contains(char16_t ch, size_t start) {
+  auto result = Find(ch, start);
+  return result != kNotFound;
 }
 
 template <>
