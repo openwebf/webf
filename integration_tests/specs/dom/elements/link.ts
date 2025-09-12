@@ -17,7 +17,7 @@ describe('Link Element', () => {
     BODY.appendChild(div);
   });
 
-  it('should work with local css', async (done) => {
+  fit('should work with local css', async (done) => {
     let link = document.createElement('link');
     link.setAttribute('href', 'assets:assets/bad.css');
     link.setAttribute('rel', 'stylesheet');

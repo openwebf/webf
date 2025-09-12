@@ -486,7 +486,7 @@ void Element::NotifyInlineStyleMutation() {
     String value_string = inline_style->GetPropertyValueWithHint(prop_name, i);
     AtomicString value_atom(value_string);
 
-    std::unique_ptr<SharedNativeString> args_01 = prop_name.ToNativeString();
+    std::unique_ptr<SharedNativeString> args_01 = prop_name.ToStylePropertyNameNativeString();
     GetExecutingContext()->uiCommandBuffer()->AddCommand(UICommand::kSetStyle, std::move(args_01), bindingObject(),
                                                          value_atom.ToNativeString().release());
   }
