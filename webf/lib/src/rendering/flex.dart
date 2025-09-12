@@ -1015,6 +1015,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     // If no child exists, stop layout.
     if (children.isEmpty) {
       _setContainerSizeWithNoChild();
+      // Ensure CSS baselines are cached even when there are no flex items.
+      // Needed so inline-flex placeholders get correct baseline (content-box bottom).
+      calculateBaseline();
       return;
     }
 
@@ -1122,13 +1125,17 @@ class RenderFlexLayout extends RenderLayoutBox {
     double? containerBaseline;
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
-    bool isParentFlowLayout = renderStyle.isParentRenderFlowLayout();
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
-        final double marginTop = renderStyle.marginTop.computedValue;
+        // Inline flex container with no flex items: per CSS 2.1 §10.8.1 and
+        // CSS Flexbox alignment rules, when no baseline can be taken from in-flow
+        // content, synthesize the baseline from the bottom margin edge.
+        //
+        // Our cached CSS baselines are measured from the border-box top.
+        // Bottom margin edge distance = borderBoxHeight + margin-bottom.
+        final double borderBoxHeight = boxSize?.height ?? size.height;
         final double marginBottom = renderStyle.marginBottom.computedValue;
-        final double height = boxSize?.height ?? size.height;
-        containerBaseline = isParentFlowLayout ? (marginTop + height + marginBottom) : (marginTop + height);
+        containerBaseline = borderBoxHeight + marginBottom;
       }
     } else {
       // Baseline equals the first child's baseline plus its offset within the container.
@@ -1146,8 +1153,9 @@ class RenderFlexLayout extends RenderLayoutBox {
             childOffsetY -= relativeOffset.dy;
           }
         }
-        final double marginTop = renderStyle.marginTop.computedValue;
-        containerBaseline = (childBaseline ?? 0) + childOffsetY + marginTop;
+        // Child baseline is already relative to the child's border-box top; convert to
+        // the container's border-box by adding the child's offset within the container.
+        containerBaseline = (childBaseline ?? 0) + childOffsetY;
       }
     }
     setCssBaselines(first: containerBaseline, last: containerBaseline);

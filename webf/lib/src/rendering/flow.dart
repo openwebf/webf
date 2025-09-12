@@ -1082,8 +1082,10 @@ class RenderFlowLayout extends RenderLayoutBox {
         firstBaseline = childLastBaseline! + paddingTop + borderTop;
         lastBaseline = firstBaseline;
       } else {
-        // No text content in children, use bottom margin edge
-        firstBaseline = boxSize!.height + paddingTop + borderTop;
+        // No in-flow line boxes inside the inline-block: per CSS 2.1 §10.8.1,
+        // synthesize baseline from the bottom margin edge.
+        final double marginBottom = renderStyle.marginBottom.computedValue;
+        firstBaseline = boxSize!.height + marginBottom;
         lastBaseline = firstBaseline;
       }
     } else if (overflowVisible && _lineMetrics.isNotEmpty) {
