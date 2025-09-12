@@ -110,6 +110,25 @@ class InlineFormattingContext {
     }
   }
 
+  // Expose paragraph intrinsic widths when available.
+  // minIntrinsicWidth approximates CSS min-content width for the inline content
+  // and is used by flex auto-min-size computation to avoid clamping to the
+  // max-content width (longestLine).
+  double get paragraphMinIntrinsicWidth {
+    if (_paragraph != null) {
+      // ui.Paragraph provides minIntrinsicWidth when text is laid out.
+      // If unavailable for any reason, fall back to longestLine to remain
+      // conservative.
+      try {
+        final double w = (_paragraph as dynamic).minIntrinsicWidth as double? ?? _paragraph!.longestLine;
+        return w.isFinite ? w : _paragraph!.longestLine;
+      } catch (_) {
+        return _paragraph!.longestLine;
+      }
+    }
+    return 0;
+  }
+
   /// Collect inline items from the render tree.
   void _collectInlines() {
     final builder = InlineItemsBuilder(

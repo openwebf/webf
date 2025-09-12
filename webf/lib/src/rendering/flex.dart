@@ -1051,16 +1051,32 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Adjust children size based on flex properties which may affect children size.
     _adjustChildrenSize(_runMetrics);
-    // After adjusting children sizes, recalculate the cross-axis extents
-    // to ensure container size is based on final child sizes
+
+    // After adjusting children sizes, recalculate both cross-axis and main-axis
+    // extents so that spacing computation (remainingSpace, justify-content) uses
+    // the final item sizes, including margins and gaps.
     for (_RunMetrics metrics in _runMetrics) {
       double maxCrossAxisExtent = 0;
-      for (_RunChild runChild in metrics.runChildren.values) {
-        RenderBox child = runChild.child;
-        double childCrossAxisExtent = _getCrossAxisExtent(child);
+      double newMainAxisExtent = 0;
+
+      final List<_RunChild> runChildrenList = metrics.runChildren.values.toList();
+      for (int i = 0; i < runChildrenList.length; i++) {
+        final _RunChild runChild = runChildrenList[i];
+        final RenderBox child = runChild.child;
+
+        // Recompute cross-axis extent from final sizes
+        final double childCrossAxisExtent = _getCrossAxisExtent(child);
         maxCrossAxisExtent = math.max(maxCrossAxisExtent, childCrossAxisExtent);
+
+        // Recompute main-axis extent from final sizes (includes margins)
+        if (i > 0) {
+          newMainAxisExtent += _getMainAxisGap();
+        }
+        newMainAxisExtent += _getMainAxisExtent(child);
       }
+
       metrics.crossAxisExtent = maxCrossAxisExtent;
+      metrics.mainAxisExtent = newMainAxisExtent;
     }
 
     // _runMetrics maybe update after adjust, set flex containerSize again

@@ -360,7 +360,12 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     size = getBoxSize(layoutContentSize);
 
-    minContentWidth = ifcSize.width;
+    // For IFC, min-content width should reflect the paragraph's
+    // min intrinsic width (approximate CSS min-content), not the
+    // max-content width (longestLine). Using longestLine here would
+    // clamp flex items' auto min-size too large and prevent shrinking.
+    final double minIntrW = inlineFormattingContext.paragraphMinIntrinsicWidth;
+    minContentWidth = minIntrW;
     minContentHeight = ifcSize.height;
 
     if (debugLogFlowEnabled) {
