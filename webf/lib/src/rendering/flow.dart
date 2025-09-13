@@ -20,6 +20,11 @@ import 'package:webf/src/foundation/logger.dart';
 // Toggle for verbose RenderFlowLayout sizing logs.
 bool debugLogFlowEnabled = false;
 
+// Pretty format for BoxConstraints in debug logs.
+String _fmtC(BoxConstraints c) =>
+    'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
+    'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
+
 // Position and size of each run (line box) in flow layout.
 // https://www.w3.org/TR/css-inline-3/#line-boxes
 class RunMetrics {
@@ -190,12 +195,12 @@ class RenderFlowLayout extends RenderLayoutBox {
       for (int i = 0; i < paintingOrder.length; i++) {
         RenderBox child = paintingOrder[i];
         bool shouldPaint = !isPositionPlaceholder(child);
-        
+
         // Skip text boxes that are handled by IFC, but paint text boxes that paint themselves
         if (child is RenderTextBox) {
           shouldPaint = shouldPaint && (child as RenderTextBox).paintsSelf;
         }
-        
+
         if (shouldPaint) {
           final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
           if (child.hasSize) {
@@ -216,24 +221,6 @@ class RenderFlowLayout extends RenderLayoutBox {
       if (needsRelayout) {
         _doPerformLayout();
         needsRelayout = false;
-      }
-
-      // Special handling for inline-block with percentage children
-      // May need additional layout pass to resolve circular dependencies
-      if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
-          renderStyle.width.isAuto) {
-        bool hasPercentageChildren = false;
-        visitChildren((child) {
-          if (child is RenderBoxModel && child.renderStyle.width.isPercentage) {
-            hasPercentageChildren = true;
-          }
-        });
-
-        if (hasPercentageChildren && !needsRelayout) {
-          // Force one more layout pass to ensure percentage children
-          // are properly sized after container shrink-wraps
-          _doPerformLayout();
-        }
       }
 
       doingThisLayout = false;
@@ -474,6 +461,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (isChildNeedsLayout) {
         bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
+        if (debugLogFlowEnabled) {
+          renderingLogger.finer('[Flow] -> layout child ${child.runtimeType} '
+              'with ${_fmtC(childConstraints)} parentUsesSize=$parentUseSize');
+        }
         child.layout(childConstraints, parentUsesSize: parentUseSize);
       }
 
@@ -1047,13 +1038,13 @@ class RenderFlowLayout extends RenderLayoutBox {
         renderStyle.effectiveOverflowY == CSSOverflowType.visible;
     double? firstBaseline;
     double? lastBaseline;
-    
+
     // Special handling for inline-block elements
     if (renderStyle.display == CSSDisplay.inlineBlock && boxSize != null) {
       // Check if any child elements have text content (establish IFC)
       double? childLastBaseline;
       bool hasChildWithText = false;
-      
+
       visitChildren((child) {
         if (child is RenderFlowLayout && child.establishIFC) {
           hasChildWithText = true;
@@ -1078,7 +1069,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           });
         }
       });
-      
+
       if (hasChildWithText && childLastBaseline != null) {
         // Use child's text baseline
         firstBaseline = childLastBaseline! + paddingTop + borderTop;
