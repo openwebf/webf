@@ -142,7 +142,7 @@ describe('Tags img', () => {
 
       image.addEventListener('load', async () => {
         image.style.objectPosition = '';
-        await snapshot(0.1);
+        await snapshot(1);
         done();
       });
     });

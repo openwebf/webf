@@ -360,7 +360,12 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     size = getBoxSize(layoutContentSize);
 
-    minContentWidth = ifcSize.width;
+    // For IFC, min-content width should reflect the paragraph's
+    // min intrinsic width (approximate CSS min-content), not the
+    // max-content width (longestLine). Using longestLine here would
+    // clamp flex items' auto min-size too large and prevent shrinking.
+    final double minIntrW = inlineFormattingContext.paragraphMinIntrinsicWidth;
+    minContentWidth = minIntrW;
     minContentHeight = ifcSize.height;
 
     if (debugLogFlowEnabled) {
@@ -994,10 +999,12 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (overflowVisible) {
       final lines = _inlineFormattingContext!.paragraphLineMetrics;
       if (lines.isNotEmpty) {
-        // For inline-block elements, use the last line's baseline for both first and last
+        // For inline-block elements inside IFC, compute both first and last baselines:
+        // - first baseline = baseline of the first in-flow line box
+        // - last baseline  = baseline of the last in-flow line box
         if (renderStyle.display == CSSDisplay.inlineBlock) {
+          firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
-          firstBaseline = lastBaseline;
         } else {
           firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
@@ -1015,10 +1022,10 @@ class RenderFlowLayout extends RenderLayoutBox {
           y += _inlineFormattingContext!.lineBoxes[i].height;
         }
         final last = _inlineFormattingContext!.lineBoxes.last;
-        // For inline-block elements, use the last line's baseline for both first and last
+        // For inline-block elements, compute distinct first and last baselines.
         if (renderStyle.display == CSSDisplay.inlineBlock) {
+          firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
-          firstBaseline = lastBaseline;
         } else {
           firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
@@ -1077,8 +1084,10 @@ class RenderFlowLayout extends RenderLayoutBox {
         firstBaseline = childLastBaseline! + paddingTop + borderTop;
         lastBaseline = firstBaseline;
       } else {
-        // No text content in children, use bottom margin edge
-        firstBaseline = boxSize!.height + paddingTop + borderTop;
+        // No in-flow line boxes inside the inline-block: per CSS 2.1 §10.8.1,
+        // synthesize baseline from the bottom margin edge.
+        final double marginBottom = renderStyle.marginBottom.computedValue;
+        firstBaseline = boxSize!.height + marginBottom;
         lastBaseline = firstBaseline;
       }
     } else if (overflowVisible && _lineMetrics.isNotEmpty) {
@@ -1095,6 +1104,12 @@ class RenderFlowLayout extends RenderLayoutBox {
           yOffset += line.crossAxisExtent;
         }
       }
+    } else if (boxSize != null) {
+      // No in-flow line boxes found: per CSS 2.1 §10.8.1, synthesize baseline from
+      // the bottom margin edge for block-level boxes.
+      final double marginBottom = renderStyle.marginBottom.computedValue;
+      firstBaseline = boxSize!.height + marginBottom;
+      lastBaseline = firstBaseline;
     }
     setCssBaselines(first: firstBaseline, last: lastBaseline);
   }

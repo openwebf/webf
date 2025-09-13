@@ -1015,6 +1015,9 @@ class RenderFlexLayout extends RenderLayoutBox {
     // If no child exists, stop layout.
     if (children.isEmpty) {
       _setContainerSizeWithNoChild();
+      // Ensure CSS baselines are cached even when there are no flex items.
+      // Needed so inline-flex placeholders get correct baseline (content-box bottom).
+      calculateBaseline();
       return;
     }
 
@@ -1051,16 +1054,32 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Adjust children size based on flex properties which may affect children size.
     _adjustChildrenSize(_runMetrics);
-    // After adjusting children sizes, recalculate the cross-axis extents
-    // to ensure container size is based on final child sizes
+
+    // After adjusting children sizes, recalculate both cross-axis and main-axis
+    // extents so that spacing computation (remainingSpace, justify-content) uses
+    // the final item sizes, including margins and gaps.
     for (_RunMetrics metrics in _runMetrics) {
       double maxCrossAxisExtent = 0;
-      for (_RunChild runChild in metrics.runChildren.values) {
-        RenderBox child = runChild.child;
-        double childCrossAxisExtent = _getCrossAxisExtent(child);
+      double newMainAxisExtent = 0;
+
+      final List<_RunChild> runChildrenList = metrics.runChildren.values.toList();
+      for (int i = 0; i < runChildrenList.length; i++) {
+        final _RunChild runChild = runChildrenList[i];
+        final RenderBox child = runChild.child;
+
+        // Recompute cross-axis extent from final sizes
+        final double childCrossAxisExtent = _getCrossAxisExtent(child);
         maxCrossAxisExtent = math.max(maxCrossAxisExtent, childCrossAxisExtent);
+
+        // Recompute main-axis extent from final sizes (includes margins)
+        if (i > 0) {
+          newMainAxisExtent += _getMainAxisGap();
+        }
+        newMainAxisExtent += _getMainAxisExtent(child);
       }
+
       metrics.crossAxisExtent = maxCrossAxisExtent;
+      metrics.mainAxisExtent = newMainAxisExtent;
     }
 
     // _runMetrics maybe update after adjust, set flex containerSize again
@@ -1106,13 +1125,17 @@ class RenderFlexLayout extends RenderLayoutBox {
     double? containerBaseline;
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
     bool isDisplayInline = effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex;
-    bool isParentFlowLayout = renderStyle.isParentRenderFlowLayout();
     if (_flexLineBoxMetrics.isEmpty) {
       if (isDisplayInline) {
-        final double marginTop = renderStyle.marginTop.computedValue;
+        // Inline flex container with no flex items: per CSS 2.1 §10.8.1 and
+        // CSS Flexbox alignment rules, when no baseline can be taken from in-flow
+        // content, synthesize the baseline from the bottom margin edge.
+        //
+        // Our cached CSS baselines are measured from the border-box top.
+        // Bottom margin edge distance = borderBoxHeight + margin-bottom.
+        final double borderBoxHeight = boxSize?.height ?? size.height;
         final double marginBottom = renderStyle.marginBottom.computedValue;
-        final double height = boxSize?.height ?? size.height;
-        containerBaseline = isParentFlowLayout ? (marginTop + height + marginBottom) : (marginTop + height);
+        containerBaseline = borderBoxHeight + marginBottom;
       }
     } else {
       // Baseline equals the first child's baseline plus its offset within the container.
@@ -1121,17 +1144,20 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (firstRunChildren.isNotEmpty) {
         final RenderBox child = firstRunChildren[0].child;
         final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-        final double childMarginTop = child is RenderBoxModel ? child.renderStyle.marginTop.computedValue : 0.0;
         final double? childBaseline = child.getDistanceToBaseline(TextBaseline.alphabetic);
-        double childOffsetY = childParentData.offset.dy - childMarginTop;
+        // Offset of the child's border-box top within the flex container's border-box.
+        // Use the laid-out offset directly (includes margins) so the container baseline
+        // derived from the child matches browser behavior for inline-flex baseline.
+        double childOffsetY = childParentData.offset.dy;
         if (child is RenderBoxModel) {
           final Offset? relativeOffset = CSSPositionedLayout.getRelativeOffset(child.renderStyle);
           if (relativeOffset != null) {
             childOffsetY -= relativeOffset.dy;
           }
         }
-        final double marginTop = renderStyle.marginTop.computedValue;
-        containerBaseline = (childBaseline ?? 0) + childOffsetY + marginTop;
+        // Child baseline is relative to the child's border-box top; convert to the
+        // container's border-box by adding the child's offset within the container.
+        containerBaseline = (childBaseline ?? 0) + childOffsetY;
       }
     }
     setCssBaselines(first: containerBaseline, last: containerBaseline);

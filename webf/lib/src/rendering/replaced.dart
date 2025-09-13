@@ -90,12 +90,11 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
       minContentHeight = renderStyle.intrinsicHeight;
 
       // Cache CSS baselines for replaced elements (inline-level):
-      // CSS baseline is the bottom margin edge when used in baseline alignment contexts.
-      // We store it unconditionally; parents decide when it applies.
+      // CSS baseline for replaced inline elements is the bottom border edge
+      // (i.e., the border-box bottom). Margins are handled by the formatting
+      // context and must NOT be included here.
       try {
-        double marginTop = renderStyle.marginTop.computedValue;
-        double marginBottom = renderStyle.marginBottom.computedValue;
-        final double baseline = marginTop + (boxSize?.height ?? size.height) + marginBottom;
+        final double baseline = (boxSize?.height ?? size.height);
         setCssBaselines(first: baseline, last: baseline);
       } catch (_) {
         // Safeguard: never let baseline caching break layout.
@@ -128,10 +127,8 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
   double computeDistanceToActualBaseline(TextBaseline baseline) {
     final cached = computeCssLastBaselineOf(baseline);
     if (cached != null) return cached;
-    double marginTop = renderStyle.marginTop.computedValue;
-    double marginBottom = renderStyle.marginBottom.computedValue;
-    // Use margin-bottom as baseline if layout has no children
-    return marginTop + (boxSize?.height ?? size.height) + marginBottom;
+    // Fallback to bottom border edge (border-box height) without margins.
+    return (boxSize?.height ?? size.height);
   }
 
   // Removed legacy computeDistanceToBaseline(); use computeDistanceToActualBaseline instead.

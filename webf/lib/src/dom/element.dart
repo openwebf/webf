@@ -927,6 +927,19 @@ abstract class Element extends ContainerNode
 
     renderStyle.requestWidgetToRebuild(UpdateDisplayReason());
     updateElementKey();
+
+    // When display changes (e.g., block <-> inline), ancestor containers may need
+    // to rebuild to re-evaluate anonymous block wrapping and inline formatting.
+    // For example, when an inline element previously had a block child which turned
+    // to inline, its block parent must rebuild to drop anonymous blocks.
+    // Propagate a lightweight child-update rebuild up to two ancestor levels.
+    Element? ancestor = parentElement;
+    int hops = 0;
+    while (ancestor != null && hops < 2) {
+      ancestor.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+      ancestor = ancestor.parentElement;
+      hops++;
+    }
   }
 
   void setRenderStyleProperty(String name, value) {
