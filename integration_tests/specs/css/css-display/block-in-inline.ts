@@ -296,4 +296,28 @@ describe('Display block in inline', () => {
     document.body.appendChild(container);
     await snapshot();
   });
+
+  it('percentage box inside of inline-block elements with bigger images', async () => {
+    const container = createElement('div', {
+      style: {
+        width: '50px'
+      }
+    }, [
+      createElement('div', {
+        style: {
+          display: 'inline-block'
+        }
+      }, [
+        createElement('img', {
+          src: 'assets/200x200-green.png',
+          style: {
+            width: '50%'
+          }
+        })
+      ])
+    ]);
+
+    document.body.appendChild(container);
+    await snapshot(1);
+  });
 });

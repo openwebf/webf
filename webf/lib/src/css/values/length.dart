@@ -134,6 +134,21 @@ class CSSLengthValue {
     return isBlockLevelBox || isBlockInlineHaveSize || isInlineBlockAutoWidth;
   }
 
+  // Whether the container has a definite inline (horizontal) size that
+  // percentages can resolve against. Avoid depending solely on contentConstraints,
+  // which may be null on the first layout. Instead, use contentMaxConstraintsWidth
+  // which falls back to the nearest ancestor with a computed logical width, or
+  // check explicit non-percentage width on the element.
+  static bool _hasDefiniteInlineSize(RenderStyle rs) {
+    if (rs is CSSRenderStyle) {
+      final double cmw = rs.contentMaxConstraintsWidth;
+      if (cmw != double.infinity) return true;
+      // As a fallback, treat explicit non-percentage width as definite.
+      if (rs.width.isNotAuto && !rs.width.isPercentage) return true;
+    }
+    return false;
+  }
+
   // Note return value of double.infinity means the value is resolved as the initial value
   // which can not be computed to a specific value, eg. percentage height is sometimes parsed
   // to be auto due to parent height not defined.
@@ -280,8 +295,39 @@ class CSSLengthValue {
           case WIDTH:
           case MIN_WIDTH:
           case MAX_WIDTH:
+            // Only resolve percent widths when the containing block has a definite inline size.
+            if (!isPositioned && parentRenderStyle != null && !_hasDefiniteInlineSize(parentRenderStyle)) {
+              _computedValue = double.infinity;
+              break;
+            }
+            // For inline-block shrink-to-fit (width:auto), resolve percentages against
+            // the available inline size (ancestor-constrained width), not the element's
+            // current used width to avoid recursive halving.
+            if (!isPositioned &&
+                parentRenderStyle != null &&
+                parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                parentRenderStyle.width.isAuto &&
+                parentRenderStyle is CSSRenderStyle) {
+              final double aw = (parentRenderStyle as CSSRenderStyle).contentMaxConstraintsWidth;
+              if (aw != double.infinity) {
+                relativeParentWidth = aw;
+              }
+            }
             if (relativeParentWidth != null) {
               _computedValue = value! * relativeParentWidth;
+              // Do not upscale replaced elements inside shrink-to-fit inline-block containers.
+              if (!isPositioned &&
+                  parentRenderStyle != null &&
+                  parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                  parentRenderStyle.width.isAuto &&
+                  renderStyle != null &&
+                  renderStyle!.isSelfRenderReplaced() &&
+                  _computedValue != null) {
+                final double iw = renderStyle!.intrinsicWidth;
+                if (iw > 0 && _computedValue! > iw) {
+                  _computedValue = iw;
+                }
+              }
             } else {
               // Attempt to force parent width computation before giving up
               if (parentRenderStyle != null && parentRenderStyle is CSSRenderStyle) {
@@ -293,6 +339,17 @@ class CSSLengthValue {
 
                 if (recomputedParentWidth != null) {
                   _computedValue = value! * recomputedParentWidth;
+                  if (!isPositioned &&
+                      parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                      parentRenderStyle.width.isAuto &&
+                      renderStyle != null &&
+                      renderStyle!.isSelfRenderReplaced() &&
+                      _computedValue != null) {
+                    final double iw = renderStyle!.intrinsicWidth;
+                    if (iw > 0 && _computedValue! > iw) {
+                      _computedValue = iw;
+                    }
+                  }
                 } else {
                   // Last resort: use available constraint width or mark for relayout
                   RenderBox? parentRenderBox = parentRenderStyle.attachedRenderBoxModel;
@@ -300,11 +357,24 @@ class CSSLengthValue {
                     double constraintWidth = parentRenderBox.constraints.maxWidth;
                     if (constraintWidth != double.infinity) {
                       _computedValue = value! * constraintWidth;
+                      if (!isPositioned &&
+                          parentRenderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+                          parentRenderStyle.width.isAuto &&
+                          renderStyle != null &&
+                          renderStyle!.isSelfRenderReplaced() &&
+                          _computedValue != null) {
+                        final double iw = renderStyle!.intrinsicWidth;
+                        if (iw > 0 && _computedValue! > iw) {
+                          _computedValue = iw;
+                        }
+                      }
                     } else {
+                      // Avoid spurious relayout loops for shrink-to-fit inline-block cycles
                       renderStyle?.markParentNeedsRelayout();
                       _computedValue = double.infinity;
                     }
                   } else {
+                    // Parent not laid out yet; mark once and return auto for now
                     renderStyle?.markParentNeedsRelayout();
                     _computedValue = double.infinity;
                   }

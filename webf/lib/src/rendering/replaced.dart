@@ -54,29 +54,54 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
       double? width;
       double? height;
-      if (renderStyle.width.isPrecise) {
-        width = renderStyle.width.computedValue;
-        if (renderStyle.height.isPrecise) {
-          height = renderStyle.height.computedValue;
-          childConstraints = childConstraints.tighten(
-              width: width, height: height);
-        } else {
-          childConstraints = childConstraints.tighten(
-              width: width, height: renderStyle.aspectRatio != null ? width * renderStyle.aspectRatio! : null);
+      bool hasFiniteWidth = false;
+      bool hasFiniteHeight = false;
+
+      // Only use computed values if they are finite; unresolved percentages compute to infinity.
+      if (renderStyle.width.isNotAuto) {
+        final double w = renderStyle.width.computedValue;
+        if (w.isFinite) {
+          width = w;
+          hasFiniteWidth = true;
         }
       }
-      if (renderStyle.height.isPrecise) {
-        height = renderStyle.height.computedValue;
-        if (renderStyle.width.isPrecise) {
-          width = renderStyle.width.computedValue;
-          childConstraints = childConstraints.tighten(
-            width: width, height: height
-          );
-        } else {
-          childConstraints = childConstraints.tighten(
-            width: renderStyle.aspectRatio != null ? height * renderStyle.aspectRatio! : null, height: height
-          );
+      if (renderStyle.height.isNotAuto) {
+        final double h = renderStyle.height.computedValue;
+        if (h.isFinite) {
+          height = h;
+          hasFiniteHeight = true;
         }
+      }
+
+      if (hasFiniteWidth && hasFiniteHeight) {
+        childConstraints = childConstraints.tighten(width: width, height: height);
+      } else if (hasFiniteWidth) {
+        childConstraints = childConstraints.tighten(
+          width: width,
+          height: renderStyle.aspectRatio != null ? width! * renderStyle.aspectRatio! : null,
+        );
+      } else if (hasFiniteHeight) {
+        childConstraints = childConstraints.tighten(
+          width: renderStyle.aspectRatio != null ? height! * renderStyle.aspectRatio! : null,
+          height: height,
+        );
+      }
+
+      // Avoid passing unconstrained infinity to child render box. Clamp to viewport when unbounded.
+      if (childConstraints.maxWidth == double.infinity || childConstraints.maxHeight == double.infinity) {
+        final viewport = renderStyle.target.ownerDocument.viewport!.viewportSize;
+        final double newMaxW = childConstraints.maxWidth.isFinite ? childConstraints.maxWidth : viewport.width;
+        final double newMaxH = childConstraints.maxHeight.isFinite ? childConstraints.maxHeight : viewport.height;
+        double newMinW = childConstraints.minWidth;
+        double newMinH = childConstraints.minHeight;
+        if (!newMinW.isFinite || newMinW > newMaxW) newMinW = 0;
+        if (!newMinH.isFinite || newMinH > newMaxH) newMinH = 0;
+        childConstraints = BoxConstraints(
+          minWidth: newMinW,
+          maxWidth: newMaxW,
+          minHeight: newMinH,
+          maxHeight: newMaxH,
+        );
       }
 
       child!.layout(childConstraints, parentUsesSize: true);
