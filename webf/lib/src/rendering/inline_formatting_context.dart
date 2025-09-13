@@ -945,6 +945,10 @@ class InlineFormattingContext {
         final child = item.renderBox!;
         if (laidOut.contains(child)) continue;
         final constraints = child.getConstraints();
+        if (debugLogInlineLayoutEnabled) {
+          renderingLogger.finer('[IFC] layout atomic <${_getElementDescription(child is RenderBoxModel ? child : null)}>'
+              ' constraints=${constraints.toString()}');
+        }
         child.layout(constraints, parentUsesSize: true);
         laidOut.add(child);
       }
