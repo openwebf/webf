@@ -2411,6 +2411,30 @@ class CSSRenderStyle extends RenderStyle
 
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
 
+    // Special handling for absolutely/fixed positioned non-replaced elements.
+    // Follow CSS abs-non-replaced width algorithm:
+    // - If width is auto and both left and right are auto: keep width as auto (shrink-to-fit in layout).
+    // - If width is auto and both left and right are not auto: solve width from containing block padding box.
+    if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
+        !renderStyle.isSelfRenderReplaced()) {
+      if (renderStyle.width.isNotAuto) {
+        logicalWidth = renderStyle.width.computedValue;
+      } else if (renderStyle.left.isNotAuto && renderStyle.right.isNotAuto) {
+        // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
+        if (renderStyle.isParentRenderBoxModel()) {
+          RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
+          // Width of positioned element should subtract its horizontal margin.
+          logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
+              renderStyle.left.computedValue -
+              renderStyle.right.computedValue -
+              renderStyle.marginLeft.computedValue -
+              renderStyle.marginRight.computedValue;
+        } else {
+          logicalWidth = null;
+        }
+      }
+    }
+
     // Width applies to all elements except non-replaced inline elements.
     // https://drafts.csswg.org/css-sizing-3/#propdef-width
     if (effectiveDisplay == CSSDisplay.inline && !renderStyle.isSelfRenderReplaced()) {
@@ -2418,17 +2442,21 @@ class CSSRenderStyle extends RenderStyle
       return;
     } else if (effectiveDisplay == CSSDisplay.block || effectiveDisplay == CSSDisplay.flex) {
       CSSRenderStyle? parentStyle = renderStyle.getParentRenderStyle();
-      if (renderStyle.width.isNotAuto) {
+      if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if (renderStyle.isSelfHTMLElement()) {
+      } else if (logicalWidth == null && renderStyle.isSelfHTMLElement()) {
         logicalWidth = target.ownerView.viewport!.boxSize!.width;
-      } else if ((renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
+      } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
-      } else if (parentStyle != null) {
+      } else if (logicalWidth == null && parentStyle != null) {
         // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
         // But NOT in flex layout - flex items do not stretch to parent width by default.
         // Replaced element can stretch in flex layout if align-items is stretch (handled elsewhere).
-        if (!renderStyle.isSelfRenderReplaced() && !renderStyle.isParentRenderFlexLayout()) {
+        // Do not stretch absolutely/fixed positioned elements; their auto width is determined by abs formatting rules.
+        if (!renderStyle.isSelfRenderReplaced() &&
+            !renderStyle.isParentRenderFlexLayout() &&
+            renderStyle.position != CSSPositionType.absolute &&
+            renderStyle.position != CSSPositionType.fixed) {
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
@@ -2454,30 +2482,8 @@ class CSSRenderStyle extends RenderStyle
     } else if (effectiveDisplay == CSSDisplay.inlineBlock ||
         effectiveDisplay == CSSDisplay.inlineFlex ||
         effectiveDisplay == CSSDisplay.inline) {
-      if (renderStyle.width.isNotAuto) {
+      if (logicalWidth == null && renderStyle.width.isNotAuto) {
         logicalWidth = renderStyle.width.computedValue;
-      } else if ((renderStyle.position == CSSPositionType.absolute || renderStyle.position == CSSPositionType.fixed) &&
-          !renderStyle.isSelfRenderReplaced() &&
-          renderStyle.width.isAuto &&
-          renderStyle.left.isNotAuto &&
-          renderStyle.right.isNotAuto) {
-        // The width of positioned, non-replaced element is determined as following algorithm.
-        // https://www.w3.org/TR/css-position-3/#abs-non-replaced-width
-        if (!renderStyle.isParentRenderBoxModel()) {
-          logicalWidth = null;
-        }
-        // Should access the renderStyle of renderBoxModel parent but not renderStyle parent
-        // cause the element of renderStyle parent may not equal to containing block.
-        // RenderBoxModel parent = current.parent as RenderBoxModel;
-        // Get the renderStyle of outer scrolling box cause the renderStyle of scrolling
-        // content box is only a fraction of the complete renderStyle.
-        RenderStyle parentRenderStyle = renderStyle.getParentRenderStyle()!;
-        // Width of positioned element should subtract its horizontal margin.
-        logicalWidth = (parentRenderStyle.paddingBoxLogicalWidth ?? 0) -
-            renderStyle.left.computedValue -
-            renderStyle.right.computedValue -
-            renderStyle.marginLeft.computedValue -
-            renderStyle.marginRight.computedValue;
       }
     }
 
