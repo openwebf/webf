@@ -294,7 +294,7 @@ describe('Display block in inline', () => {
       ])
     ]);
     document.body.appendChild(container);
-    await snapshot();
+    await snapshot(1);
   });
 
   it('percentage box inside of inline-block elements with bigger images', async () => {
