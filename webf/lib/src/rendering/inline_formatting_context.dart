@@ -90,8 +90,11 @@ class InlineFormattingContext {
   // Placeholder boxes as reported by Paragraph, in the order placeholders were added.
   List<ui.TextBox> _placeholderBoxes = const [];
 
-  // For mapping placeholder index -> RenderBox
+  // For mapping placeholder index -> RenderBox (atomic inline items only)
   final List<RenderBox?> _placeholderOrder = [];
+
+  // Track all placeholders (atomic and extras) to synthesize boxes for empty spans
+  final List<_InlinePlaceholder> _allPlaceholders = [];
 
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
@@ -438,7 +441,7 @@ class InlineFormattingContext {
       _elementRanges.forEach((box, range) {
         final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
         if (rects.isEmpty) return;
-        entries.add(_SpanPaintEntry(box, box.renderStyle, rects, _depthFromContainer(box)));
+      entries.add(_SpanPaintEntry(box, box.renderStyle, rects, _depthFromContainer(box), false));
       });
       entries.sort((a, b) => a.depth.compareTo(b.depth));
 
@@ -663,6 +666,7 @@ class InlineFormattingContext {
     ));
 
     _placeholderOrder.clear();
+    _allPlaceholders.clear();
     _elementRanges.clear();
 
     // Track current paragraph code-unit position as we add text/placeholders
@@ -690,6 +694,9 @@ class InlineFormattingContext {
             pb.addPlaceholder(leftExtras, 0.0001, ui.PlaceholderAlignment.baseline,
                 baseline: TextBaseline.alphabetic, baselineOffset: 0);
             paraPos += 1; // account for placeholder char
+            if (rb is RenderBoxModel) {
+              _allPlaceholders.add(_InlinePlaceholder.leftExtra(rb));
+            }
             if (debugLogInlineLayoutEnabled) {
               renderingLogger.finer('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
             }
@@ -724,6 +731,9 @@ class InlineFormattingContext {
             pb.addPlaceholder(rightExtras, 0.0001, ui.PlaceholderAlignment.baseline,
                 baseline: TextBaseline.alphabetic, baselineOffset: 0);
             paraPos += 1; // account for placeholder char
+            if (item.renderBox is RenderBoxModel) {
+              _allPlaceholders.add(_InlinePlaceholder.rightExtra(item.renderBox as RenderBoxModel));
+            }
             if (debugLogInlineLayoutEnabled) {
               renderingLogger.finer('[IFC] close extras </${_getElementDescription(item.renderBox!)}> rightExtras=${rightExtras.toStringAsFixed(2)}');
             }
@@ -757,6 +767,7 @@ class InlineFormattingContext {
         pb.addPlaceholder(width, height, ui.PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
         _placeholderOrder.add(rb);
+        _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
         paraPos += 1; // placeholder adds a single object replacement char
 
         if (debugLogInlineLayoutEnabled) {
@@ -1034,9 +1045,15 @@ class InlineFormattingContext {
           ((style.paddingBottom?.value ?? 0) > 0);
       if (!hasBg && !hasBorder && !hasPadding) return;
 
-      final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-      if (rects.isEmpty) return;
-      entries.add(_SpanPaintEntry(box, style, rects, _depthFromContainer(box)));
+      List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+      bool synthesized = false;
+      if (rects.isEmpty) {
+        // Synthesize rect for empty spans using extras placeholders
+        rects = _synthesizeRectsForEmptySpan(box);
+        if (rects.isEmpty) return;
+        synthesized = true;
+      }
+      entries.add(_SpanPaintEntry(box, style, rects, _depthFromContainer(box), synthesized));
     });
 
     entries.sort((a, b) => a.depth.compareTo(b.depth));
@@ -1064,12 +1081,27 @@ class InlineFormattingContext {
         double top = tb.top;
         double bottom = tb.bottom;
 
+        // If the text box has zero height (empty span), synthesize a content height
+        // based on CSS line-height semantics so padding/border wrap visible content.
+        if ((bottom - top).abs() < 0.5) {
+          // Prefer paragraph height, otherwise approximate NORMAL as ~1.125×font-size
+          final double fs = s.fontSize.computedValue;
+          final double paraH = _paragraph?.height ?? 0;
+          final double approxNormal = fs * 1.125; // heuristic tuned to typical UA default
+          final double contentH = math.max(paraH, approxNormal);
+          final double center = (top + bottom) / 2.0;
+          top = center - contentH / 2.0;
+          bottom = center + contentH / 2.0;
+        }
+
         final bool isFirst = (i == 0);
         final bool isLast = (i == e.rects.length - 1);
 
         // Extend horizontally on first/last fragments
-        if (isFirst) left -= (padL + bL);
-        if (isLast) right += (padR + bR);
+        if (!e.synthetic) {
+          if (isFirst) left -= (padL + bL);
+          if (isLast) right += (padR + bR);
+        }
         // Each line fragment paints its full vertical content (padding + border)
         top -= (padT + bT);
         bottom += (padB + bB);
@@ -1139,6 +1171,27 @@ class InlineFormattingContext {
         }
       }
     }
+  }
+
+  // Create a synthetic TextBox from left/right extras placeholders for empty inline spans
+  List<ui.TextBox> _synthesizeRectsForEmptySpan(RenderBoxModel box) {
+    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return const [];
+    int? leftIndex;
+    int? rightIndex;
+    for (int i = 0; i < _allPlaceholders.length; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind == _PHKind.leftExtra && ph.owner == box) leftIndex ??= i;
+      if (ph.kind == _PHKind.rightExtra && ph.owner == box) rightIndex = i;
+    }
+    if (leftIndex == null || rightIndex == null) return const [];
+    if (leftIndex! >= _placeholderBoxes.length || rightIndex! >= _placeholderBoxes.length) return const [];
+    final left = _placeholderBoxes[leftIndex!];
+    final right = _placeholderBoxes[rightIndex!];
+    final l = left.left;
+    final r = right.right;
+    final t = math.min(left.top, right.top);
+    final b = math.max(left.bottom, right.bottom);
+    return [ui.TextBox.fromLTRBD(l, t, r, b, TextDirection.ltr)];
   }
 
   int _depthFromContainer(RenderObject obj) {
@@ -1380,11 +1433,26 @@ class InlineFormattingContext {
   }
 }
 
+// Placeholder descriptor to map paragraph placeholders back to owners
+// for both atomic inlines and extras (left/right).
+enum _PHKind { atomic, leftExtra, rightExtra }
+
+class _InlinePlaceholder {
+  final _PHKind kind;
+  final RenderBoxModel? owner;
+  final RenderBox? atomic;
+  _InlinePlaceholder._(this.kind, {this.owner, this.atomic});
+  factory _InlinePlaceholder.atomic(RenderBox rb) => _InlinePlaceholder._(_PHKind.atomic, atomic: rb);
+  factory _InlinePlaceholder.leftExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.leftExtra, owner: owner);
+  factory _InlinePlaceholder.rightExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.rightExtra, owner: owner);
+}
+
 class _SpanPaintEntry {
-  _SpanPaintEntry(this.box, this.style, this.rects, this.depth);
+  _SpanPaintEntry(this.box, this.style, this.rects, this.depth, [this.synthetic = false]);
 
   final RenderBoxModel box;
   final CSSRenderStyle style;
   final List<ui.TextBox> rects;
   final int depth;
+  final bool synthetic;
 }
