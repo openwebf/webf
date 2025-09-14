@@ -471,10 +471,6 @@ class InlineFormattingContext {
 
   /// Hit test the inline content.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    if (debugLogInlineLayoutEnabled) {
-      renderingLogger.finer('[IFC hitTest] start pos=(${position.dx.toStringAsFixed(2)},${position.dy.toStringAsFixed(2)}) '
-          'phBoxes=${_placeholderBoxes.length} phOrder=${_placeholderOrder.length} para=${_paragraph != null} ranges=${_elementRanges.length}');
-    }
     // Paragraph path: hit test atomic inlines using their parentData offsets
     // Convert content-relative position to container-relative to match parentData.offset space
     final contentOffset = Offset(
@@ -493,9 +489,6 @@ class InlineFormattingContext {
       }
       final parentData = hitBox.parentData as ContainerBoxParentData<RenderBox>;
       final local = (position + contentOffset) - (parentData.offset);
-      if (debugLogInlineLayoutEnabled) {
-        renderingLogger.finer('[IFC hitTest] atomic box=${hitBox.runtimeType} local=(${local.dx.toStringAsFixed(2)},${local.dy.toStringAsFixed(2)})');
-      }
       if (hitBox.hitTest(result, position: local)) {
         return true;
       }
@@ -585,31 +578,18 @@ class InlineFormattingContext {
               // Convert container-local position to listener-local position
               final Offset offsetToContainer = getLayoutTransformTo(listener, container);
               final Offset local = position - offsetToContainer;
-              if (debugLogInlineLayoutEnabled) {
-                renderingLogger.finer('[IFC hitTest] listener <${_getElementDescription(box)}>'
-                    ' rect=(${left.toStringAsFixed(2)},${top.toStringAsFixed(2)} - ${right.toStringAsFixed(2)},${bottom.toStringAsFixed(2)})'
-                    ' local=(${local.dx.toStringAsFixed(2)},${local.dy.toStringAsFixed(2)})');
-              }
               result.add(BoxHitTestEntry(listener, local));
               return true;
             } else {
               // Fallback: add entry for the box itself
               final Offset offsetToContainer = getLayoutTransformTo(box, container);
               final Offset local = position - offsetToContainer;
-              if (debugLogInlineLayoutEnabled) {
-                renderingLogger.finer('[IFC hitTest] box <${_getElementDescription(box)}>'
-                    ' rect=(${left.toStringAsFixed(2)},${top.toStringAsFixed(2)} - ${right.toStringAsFixed(2)},${bottom.toStringAsFixed(2)})'
-                    ' local=(${local.dx.toStringAsFixed(2)},${local.dy.toStringAsFixed(2)})');
-              }
               result.add(BoxHitTestEntry(box, local));
               return true;
             }
           }
         }
       }
-    }
-    if (debugLogInlineLayoutEnabled) {
-      renderingLogger.finer('[IFC hitTest] miss');
     }
     return false;
   }
