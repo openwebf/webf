@@ -98,6 +98,10 @@ class InlineFormattingContext {
 
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
+  // Measured visual sizes (border-box) for inline render boxes (including wrappers)
+  final Map<RenderBox, Size> _measuredVisualSizes = {};
+
+  Size? measuredVisualSizeOf(RenderBox box) => _measuredVisualSizes[box];
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
@@ -730,6 +734,7 @@ class InlineFormattingContext {
     _placeholderOrder.clear();
     _allPlaceholders.clear();
     _elementRanges.clear();
+    _measuredVisualSizes.clear();
     // Track open inline element frames for deferred extras handling
     final List<_OpenInlineFrame> openFrames = [];
 
@@ -1158,6 +1163,23 @@ class InlineFormattingContext {
         if (hasWrapper && rb.parentData is BoxParentData) {
           (rb.parentData as BoxParentData).offset = Offset.zero;
         }
+        // Compute and record a visual border-box size for atomic inline to be applied via tight constraints later.
+        if (rb is RenderBoxModel) {
+          final CSSRenderStyle s = rb.renderStyle;
+          final double padL = s.paddingLeft.computedValue;
+          final double padR = s.paddingRight.computedValue;
+          final double padT = s.paddingTop.computedValue;
+          final double padB = s.paddingBottom.computedValue;
+          final double bL = s.borderLeftWidth?.computedValue ?? 0.0;
+          final double bR = s.borderRightWidth?.computedValue ?? 0.0;
+          final double bT = s.borderTopWidth?.computedValue ?? 0.0;
+          final double bB = s.borderBottomWidth?.computedValue ?? 0.0;
+          final double bw = (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0));
+          final double bh = (rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0));
+          final double visualW = bw + padL + padR + bL + bR;
+          final double visualH = bh + padT + padB + bT + bB;
+          _measuredVisualSizes[target] = Size(visualW, visualH);
+        }
       }
     }
 
@@ -1239,12 +1261,9 @@ class InlineFormattingContext {
             bEdge = maxBottom;
           }
           final Rect contentRect = Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
-          final Rect shiftedRect = contentRect.shift(contentOffset);
           final Size visualSize = Size(contentRect.width, contentRect.height);
-          box.debugIfcVisualRect = shiftedRect;
-          box.debugIfcVisualSize = visualSize;
-
-          // Do not propagate to wrapper; keep debug size only on the inline element itself.
+          // Record measured size for the direct child to be laid out tightly later.
+          _measuredVisualSizes[target] = visualSize;
         }
       });
     }
@@ -1493,6 +1512,13 @@ class InlineFormattingContext {
   void dispose() {
     _items.clear();
     _lineBoxes.clear();
+    _placeholderBoxes = const [];
+    _placeholderOrder.clear();
+    _allPlaceholders.clear();
+    _elementRanges.clear();
+    _measuredVisualSizes.clear();
+    _paraLines = const [];
+    _paragraph = null;
   }
 
   // Compute an effective line-height in px for cases where we need a concrete
