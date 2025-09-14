@@ -168,19 +168,21 @@ class HttpCacheController {
       // Remove from pending set when complete
       writeFuture.whenComplete(() => _pendingCacheWrites.remove(writeFuture));
 
-      // Add to cache after write completes successfully
+      // After the write completes, validate and cache if still valid.
+      // Avoid re-writing checksum/index here since _executeCacheWrite() already did it.
       writeFuture.then((_) async {
         try {
-          // Update checksum and persist index with checksum
-          await cacheObject.updateContentChecksum();
-          await cacheObject.writeIndex();
-        } catch (e) {
-          print('Warning: Failed to finalize cache index for ${request.uri}: $e');
-        }
-        // Cache the object if it's valid after writing
-        if (cacheObject.valid) {
-          putObject(request.uri, cacheObject);
-        } else {
+          final bool isValid = await cacheObject.validateContent();
+          if (isValid && cacheObject.valid) {
+            putObject(request.uri, cacheObject);
+          } else {
+            // Ensure removal from memory if invalid or missing blob
+            removeObject(request.uri);
+          }
+        } catch (e, st) {
+          // Be resilient to race conditions where files disappear between steps
+          print('Warning: Cache validation failed after write for ${request.uri}: $e');
+          print('\n$st');
           removeObject(request.uri);
         }
       }, onError: (_) {
