@@ -552,11 +552,11 @@ class InlineFormattingContext {
             if (isLast) right += (padR + bR);
           }
           // Vertical extent: include full content on every fragment. For synthesized spans,
-          // use paragraph ascent/descent around the baseline; otherwise expand by padding/border.
+          // use effective line-height to match painted area; otherwise expand by padding/border.
           if (synthesized) {
-            final (double asc, double desc) = _ascentDescentAtBaselineY(tb.top, style);
-            top = tb.top - (asc + padT + bT);
-            bottom = tb.top + (desc + padB + bB);
+            final double lineHeight = _effectiveLineHeightPx(style);
+            top = tb.top - (lineHeight + padT + bT);
+            bottom = tb.top + (padB + bB);
           } else {
             top -= (padT + bT);
             bottom += (padB + bB);
@@ -622,16 +622,37 @@ class InlineFormattingContext {
     if (targetBox is RenderBoxModel) {
       final range = _elementRanges[targetBox];
       if (range != null && _paragraph != null) {
-        final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+        List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+        bool synthesized = false;
+        if (rects.isEmpty) {
+          rects = _synthesizeRectsForEmptySpan(targetBox);
+          synthesized = rects.isNotEmpty;
+        }
         if (rects.isNotEmpty) {
-          double? minX, minY, maxX, maxY;
-          for (final tb in rects) {
-            minX = (minX == null) ? tb.left : math.min(minX, tb.left);
-            minY = (minY == null) ? tb.top : math.min(minY, tb.top);
-            maxX = (maxX == null) ? tb.right : math.max(maxX, tb.right);
-            maxY = (maxY == null) ? tb.bottom : math.max(maxY, tb.bottom);
+          if (!synthesized) {
+            double? minX, minY, maxX, maxY;
+            for (final tb in rects) {
+              minX = (minX == null) ? tb.left : math.min(minX, tb.left);
+              minY = (minY == null) ? tb.top : math.min(minY, tb.top);
+              maxX = (maxX == null) ? tb.right : math.max(maxX, tb.right);
+              maxY = (maxY == null) ? tb.bottom : math.max(maxY, tb.bottom);
+            }
+            return Rect.fromLTRB(minX!, minY!, maxX!, maxY!);
+          } else {
+            // For synthesized empty spans, include effective line-height vertically to match visual area
+            final style = targetBox.renderStyle;
+            final padT = style.paddingTop.computedValue;
+            final bT = style.borderTopWidth?.computedValue ?? 0.0;
+            final padB = style.paddingBottom.computedValue;
+            final bB = style.borderBottomWidth?.computedValue ?? 0.0;
+            final lh = _effectiveLineHeightPx(style);
+            final tb = rects.first;
+            final double left = tb.left;
+            final double right = tb.right;
+            final double top = tb.top - (lh + padT + bT);
+            final double bottom = tb.top + (padB + bB);
+            return Rect.fromLTRB(left, top, right, bottom);
           }
-          return Rect.fromLTRB(minX!, minY!, maxX!, maxY!);
         }
       }
     }
@@ -709,6 +730,8 @@ class InlineFormattingContext {
     _placeholderOrder.clear();
     _allPlaceholders.clear();
     _elementRanges.clear();
+    // Track open inline element frames for deferred extras handling
+    final List<_OpenInlineFrame> openFrames = [];
 
     // Track current paragraph code-unit position as we add text/placeholders
     int paraPos = 0;
@@ -721,26 +744,38 @@ class InlineFormattingContext {
           'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
     }
 
+    // Helper to flush pending left extras for all open frames (from outermost to innermost)
+    void _flushPendingLeftExtras() {
+      for (final frame in openFrames) {
+        if (!frame.leftFlushed && frame.leftExtras > 0) {
+          pb.addPlaceholder(frame.leftExtras, 0.0001, ui.PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic, baselineOffset: 0);
+          paraPos += 1; // account for placeholder char
+          _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
+          frame.leftFlushed = true;
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.finer('[IFC] open extras <${_getElementDescription(frame.box)}> leftExtras='
+                '${frame.leftExtras.toStringAsFixed(2)}');
+          }
+        }
+      }
+    }
+
     for (final item in _items) {
       if (item.isOpenTag && item.renderBox != null) {
         final rb = item.renderBox!;
         elementStack.add(rb);
-        // Push style and insert left extras before recording range start
         if (item.style != null) {
           final st = item.style!;
+          // Defer left extras until we know this span has content; for empty spans we will merge.
           final leftExtras = (st.marginLeft.computedValue) +
               (st.borderLeftWidth?.computedValue ?? 0.0) +
               (st.paddingLeft.computedValue);
-          if (leftExtras > 0) {
-            pb.addPlaceholder(leftExtras, 0.0001, ui.PlaceholderAlignment.baseline,
-                baseline: TextBaseline.alphabetic, baselineOffset: 0);
-            paraPos += 1; // account for placeholder char
-            if (rb is RenderBoxModel) {
-              _allPlaceholders.add(_InlinePlaceholder.leftExtra(rb));
-            }
-            if (debugLogInlineLayoutEnabled) {
-              renderingLogger.finer('[IFC] open extras <${_getElementDescription(rb)}> leftExtras=${leftExtras.toStringAsFixed(2)}');
-            }
+          final rightExtras = (st.paddingRight.computedValue) +
+              (st.borderRightWidth?.computedValue ?? 0.0) +
+              (st.marginRight.computedValue);
+          if (rb is RenderBoxModel) {
+            openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
           }
           pb.pushStyle(_uiTextStyleFromCss(st));
           if (debugLogInlineLayoutEnabled) {
@@ -763,24 +798,50 @@ class InlineFormattingContext {
           if (debugLogInlineLayoutEnabled) {
             renderingLogger.finer('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>');
           }
-          // Reserve trailing horizontal extras (padding+border+margin) outside the span content
-          final st = item.style!;
-          final rightExtras = (st.paddingRight.computedValue) +
-              (st.borderRightWidth?.computedValue ?? 0.0) +
-              (st.marginRight.computedValue);
-          if (rightExtras > 0) {
-            pb.addPlaceholder(rightExtras, 0.0001, ui.PlaceholderAlignment.baseline,
-                baseline: TextBaseline.alphabetic, baselineOffset: 0);
-            paraPos += 1; // account for placeholder char
-            if (item.renderBox is RenderBoxModel) {
-              _allPlaceholders.add(_InlinePlaceholder.rightExtra(item.renderBox as RenderBoxModel));
-            }
-            if (debugLogInlineLayoutEnabled) {
-              renderingLogger.finer('[IFC] close extras </${_getElementDescription(item.renderBox!)}> rightExtras=${rightExtras.toStringAsFixed(2)}');
+          // Handle right extras or merged extras for empty spans
+          if (item.renderBox is RenderBoxModel) {
+            // Find and remove the corresponding open frame
+            int idx = openFrames.lastIndexWhere((f) => f.box == item.renderBox);
+            if (idx != -1) {
+              final frame = openFrames.removeAt(idx);
+              if (frame.hadContent) {
+                // Non-empty: ensure left extras flushed, then add right extras
+                _flushPendingLeftExtras();
+                if (frame.rightExtras > 0) {
+                  pb.addPlaceholder(frame.rightExtras, 0.0001, ui.PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic, baselineOffset: 0);
+                  paraPos += 1;
+                  _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
+                  if (debugLogInlineLayoutEnabled) {
+                    renderingLogger.finer('[IFC] close extras </${_getElementDescription(frame.box)}> rightExtras='
+                        '${frame.rightExtras.toStringAsFixed(2)}');
+                  }
+                }
+              } else {
+                // Empty span: merge left+right extras into a single placeholder to avoid wrapping
+                final double merged = frame.leftExtras + frame.rightExtras;
+                if (merged > 0) {
+                  pb.addPlaceholder(merged, 0.0001, ui.PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic, baselineOffset: 0);
+                  paraPos += 1;
+                  _allPlaceholders.add(_InlinePlaceholder.emptySpan(frame.box, merged));
+                  if (debugLogInlineLayoutEnabled) {
+                    renderingLogger.finer('[IFC] empty span extras <${_getElementDescription(frame.box)}>'
+                        ' merged=${merged.toStringAsFixed(2)}');
+                  }
+                }
+              }
             }
           }
         }
       } else if (item.isAtomicInline && item.renderBox != null) {
+        // First content inside any open frames
+        if (openFrames.isNotEmpty) {
+          for (final f in openFrames) {
+            f.hadContent = true;
+          }
+          _flushPendingLeftExtras();
+        }
         // Add placeholder for atomic inline
         final rb = item.renderBox!;
         final rbStyle = rb.renderStyle;
@@ -821,6 +882,13 @@ class InlineFormattingContext {
       } else if (item.isText) {
         final text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
+        // First content inside any open frames
+        if (openFrames.isNotEmpty) {
+          for (final f in openFrames) {
+            f.hadContent = true;
+          }
+          _flushPendingLeftExtras();
+        }
         pb.pushStyle(_uiTextStyleFromCss(item.style!));
         pb.addText(text);
         pb.pop();
@@ -833,6 +901,12 @@ class InlineFormattingContext {
         // Control characters (e.g., from <br>) act as hard line breaks.
         final text = item.getText(_textContent);
         if (text.isEmpty) continue;
+        if (openFrames.isNotEmpty) {
+          for (final f in openFrames) {
+            f.hadContent = true;
+          }
+          _flushPendingLeftExtras();
+        }
         // Use container style to ensure a style is on the stack for ParagraphBuilder
         pb.pushStyle(_uiTextStyleFromCss(style));
         pb.addText(text);
@@ -1111,10 +1185,10 @@ class InlineFormattingContext {
         double top;
         if (synthesized) {
           // Synthetic rect spans left/right extras. Anchor near the padding-box top-left
-          // using the paragraph line ascent above the baseline when available.
+          // using effective line-height for content box height to match painted area.
           left = tb.left + mL;
-          final (double asc, _) = _ascentDescentAtBaselineY(tb.top, style);
-          top = tb.top - padT - asc;
+          final double lineHeight = _effectiveLineHeightPx(style);
+          top = tb.top - padT - lineHeight;
         } else {
           // Real text fragment: move outward by padding+border to reach border-box top-left
           left = tb.left - (padL + bL);
@@ -1147,12 +1221,13 @@ class InlineFormattingContext {
           // Compute and store a debug visual size/rect for the inline element for Inspector.
           double lEdge, rEdge, tEdge, bEdge;
           if (synthesized) {
-            // Synthesized rect from extras: include content height using paragraph ascent/descent when available.
-            final (double asc, double desc) = _ascentDescentAtBaselineY(tb.top, style);
+            // Synthesized rect from extras: include content height using effective line-height
+            // to better match painted area of empty inline spans.
+            final double lineHeight = _effectiveLineHeightPx(style);
             lEdge = tb.left;
             rEdge = tb.right;
-            tEdge = tb.top - (asc + padT + bT);
-            bEdge = tb.top + (desc + style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
+            tEdge = tb.top - (lineHeight + padT + bT);
+            bEdge = tb.top + (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
           } else {
             // Union across fragments: first/last horizontally; min/max vertically
             lEdge = rects.first.left - (padL + bL);
@@ -1164,8 +1239,12 @@ class InlineFormattingContext {
             bEdge = maxBottom;
           }
           final Rect contentRect = Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
-          box.debugIfcVisualRect = contentRect.shift(contentOffset);
-          box.debugIfcVisualSize = Size(contentRect.width, contentRect.height);
+          final Rect shiftedRect = contentRect.shift(contentOffset);
+          final Size visualSize = Size(contentRect.width, contentRect.height);
+          box.debugIfcVisualRect = shiftedRect;
+          box.debugIfcVisualSize = visualSize;
+
+          // Do not propagate to wrapper; keep debug size only on the inline element itself.
         }
       });
     }
@@ -1320,14 +1399,31 @@ class InlineFormattingContext {
 
   // Create a synthetic TextBox from left/right extras placeholders for empty inline spans
   List<ui.TextBox> _synthesizeRectsForEmptySpan(RenderBoxModel box) {
-    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return const [];
+    if (_paragraph == null || _allPlaceholders.isEmpty) return const [];
     int? leftIndex;
     int? rightIndex;
+    int? mergedIndex;
+    double? mergedWidth;
     for (int i = 0; i < _allPlaceholders.length; i++) {
       final ph = _allPlaceholders[i];
-      if (ph.kind == _PHKind.leftExtra && ph.owner == box) leftIndex ??= i;
-      if (ph.kind == _PHKind.rightExtra && ph.owner == box) rightIndex = i;
+      if (ph.owner != box) continue;
+      if (ph.kind == _PHKind.leftExtra) leftIndex ??= i;
+      if (ph.kind == _PHKind.rightExtra) rightIndex = i;
+      if (ph.kind == _PHKind.emptySpan) {
+        mergedIndex = i;
+        mergedWidth = ph.width;
+      }
     }
+    // Prefer merged placeholder when available to avoid line-break artifacts
+    if (mergedIndex != null && mergedIndex! < _placeholderBoxes.length) {
+      final anchor = _placeholderBoxes[mergedIndex!];
+      final double leftEdge = anchor.left;
+      final double rightEdge = anchor.left + (mergedWidth ?? (anchor.right - anchor.left));
+      final double top = anchor.top;
+      final double bottom = anchor.bottom;
+      return [ui.TextBox.fromLTRBD(leftEdge, top, rightEdge, bottom, TextDirection.ltr)];
+    }
+    // Fallback to separate left/right extras if present
     if (leftIndex == null || rightIndex == null) return const [];
     if (leftIndex! >= _placeholderBoxes.length || rightIndex! >= _placeholderBoxes.length) return const [];
     final left = _placeholderBoxes[leftIndex!];
@@ -1626,18 +1722,32 @@ class InlineFormattingContext {
   }
 }
 
+// Tracks an open inline element while building the paragraph so we can
+// defer inserting left extras until we know the span actually has content.
+class _OpenInlineFrame {
+  _OpenInlineFrame(this.box, {required this.leftExtras, required this.rightExtras});
+  final RenderBoxModel box;
+  final double leftExtras;
+  final double rightExtras;
+  bool leftFlushed = false;
+  bool hadContent = false;
+}
+
 // Placeholder descriptor to map paragraph placeholders back to owners
 // for both atomic inlines and extras (left/right).
-enum _PHKind { atomic, leftExtra, rightExtra }
+enum _PHKind { atomic, leftExtra, rightExtra, emptySpan }
 
 class _InlinePlaceholder {
   final _PHKind kind;
   final RenderBoxModel? owner;
   final RenderBox? atomic;
-  _InlinePlaceholder._(this.kind, {this.owner, this.atomic});
+  final double? width; // used for merged empty span extras
+  _InlinePlaceholder._(this.kind, {this.owner, this.atomic, this.width});
   factory _InlinePlaceholder.atomic(RenderBox rb) => _InlinePlaceholder._(_PHKind.atomic, atomic: rb);
   factory _InlinePlaceholder.leftExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.leftExtra, owner: owner);
   factory _InlinePlaceholder.rightExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.rightExtra, owner: owner);
+  factory _InlinePlaceholder.emptySpan(RenderBoxModel owner, double width) =>
+      _InlinePlaceholder._(_PHKind.emptySpan, owner: owner, width: width);
 }
 
 class _SpanPaintEntry {
