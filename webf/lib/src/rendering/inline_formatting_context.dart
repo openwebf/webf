@@ -161,7 +161,7 @@ class InlineFormattingContext {
     final double width = para.longestLine;
     final double height = para.height;
 
-    // Update children offsets from placeholder boxes
+    // Update children offsets from placeholder boxes (atomic inlines)
     _updateChildOffsetsFromParagraph();
 
     return Size(width, height);
@@ -202,30 +202,20 @@ class InlineFormattingContext {
       }
     }
 
-    // Paint atomic inline children at their placeholder positions
-    for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
-      final box = _placeholderOrder[i];
-      if (box == null) continue;
-      final rect = _placeholderBoxes[i];
-
-      // Compute child top-left inside placeholder rect accounting margins if RenderBoxModel
-      double childLeft = rect.left;
-      // Paint child aligned to placeholder's top + margin-top
-      double childTop = rect.top;
-      if (box is RenderBoxModel) {
-        final style = box.renderStyle;
-        childLeft += style.marginLeft.computedValue;
-        childTop += style.marginTop.computedValue;
+    // Paint atomic inline children at their parentData offsets (container-relative)
+    for (int i = 0; i < _placeholderOrder.length; i++) {
+      final rb = _placeholderOrder[i];
+      if (rb == null) continue;
+      // Find the direct child of container that owns the parentData.offset we set in layout
+      RenderBox paintBox = rb;
+      RenderObject? p = rb.parent;
+      while (p != null && p != container) {
+        if (p is RenderBox) paintBox = p;
+        p = p.parent;
       }
-      if (box.hasSize) {
-        if (debugLogInlineLayoutEnabled) {
-          // ignore: avoid_print
-          print(
-              '  [paint ph $i] childOffset=(${(offset.dx + childLeft).toStringAsFixed(2)},${(offset.dy + childTop).toStringAsFixed(2)}) '
-              'rect=(${rect.left.toStringAsFixed(2)},${rect.top.toStringAsFixed(2)} - ${rect.right.toStringAsFixed(2)},${rect.bottom.toStringAsFixed(2)})');
-        }
-        context.paintChild(box, offset + Offset(childLeft, childTop));
-      }
+      if (!paintBox.hasSize) continue;
+      final pd = paintBox.parentData as ContainerBoxParentData<RenderBox>;
+      context.paintChild(paintBox, offset + pd.offset);
     }
 
     if (debugPaintInlineLayoutEnabled) {
@@ -477,20 +467,33 @@ class InlineFormattingContext {
 
   /// Hit test the inline content.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // Paragraph path: hit test atomic inlines via placeholder rects
-    for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.finer('[IFC hitTest] start pos=(${position.dx.toStringAsFixed(2)},${position.dy.toStringAsFixed(2)}) '
+          'phBoxes=${_placeholderBoxes.length} phOrder=${_placeholderOrder.length} para=${_paragraph != null} ranges=${_elementRanges.length}');
+    }
+    // Paragraph path: hit test atomic inlines using their parentData offsets
+    // Convert content-relative position to container-relative to match parentData.offset space
+    final contentOffset = Offset(
+      container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue,
+      container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue,
+    );
+    for (int i = 0; i < _placeholderOrder.length; i++) {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
-      final tb = _placeholderBoxes[i];
-      final contains =
-          position.dx >= tb.left && position.dx <= tb.right && position.dy >= tb.top && position.dy <= tb.bottom;
-      if (contains) {
-        // Delegate to child
-        final parentData = rb.parentData as ContainerBoxParentData<RenderBox>;
-        final local = position - (parentData.offset);
-        if (rb.hitTest(result, position: local)) {
-          return true;
-        }
+      // Use the direct child (wrapper) that carries the parentData offset
+      RenderBox hitBox = rb;
+      RenderObject? p = rb.parent;
+      while (p != null && p != container) {
+        if (p is RenderBox) hitBox = p;
+        p = p.parent;
+      }
+      final parentData = hitBox.parentData as ContainerBoxParentData<RenderBox>;
+      final local = (position + contentOffset) - (parentData.offset);
+      if (debugLogInlineLayoutEnabled) {
+        renderingLogger.finer('[IFC hitTest] atomic box=${hitBox.runtimeType} local=(${local.dx.toStringAsFixed(2)},${local.dy.toStringAsFixed(2)})');
+      }
+      if (hitBox.hitTest(result, position: local)) {
+        return true;
       }
     }
 
@@ -503,10 +506,22 @@ class InlineFormattingContext {
       for (final entry in entries) {
         final RenderBoxModel box = entry.key;
         final (int start, int end) = entry.value;
-        if (end <= start) continue; // empty range
 
-        final rects = _paragraph!.getBoxesForRange(start, end);
-        if (rects.isEmpty) continue;
+        List<ui.TextBox> rects = const [];
+        bool synthesized = false;
+        if (end <= start) {
+          // Empty range: synthesize rects from extras for empty inline spans
+          rects = _synthesizeRectsForEmptySpan(box);
+          if (rects.isEmpty) continue;
+          synthesized = true;
+        } else {
+          rects = _paragraph!.getBoxesForRange(start, end);
+          if (rects.isEmpty) {
+            rects = _synthesizeRectsForEmptySpan(box);
+            if (rects.isEmpty) continue;
+            synthesized = true;
+          }
+        }
 
         // Inflate rects to include padding and borders
         final style = box.renderStyle;
@@ -529,14 +544,28 @@ class InlineFormattingContext {
           final bool isFirst = (i == 0);
           final bool isLast = (i == rects.length - 1);
 
-          // Horizontal expansion only on first/last fragments
-          if (isFirst) left -= (padL + bL);
-          if (isLast) right += (padR + bR);
-          // Hit area includes full vertical content on every fragment
-          top -= (padT + bT);
-          bottom += (padB + bB);
+          // Horizontal expansion only on first/last fragments for real text fragments.
+          // For synthesized rects (built from extras), placeholders already include padding/border,
+          // so do not expand horizontally again to avoid oversizing the hit area.
+          if (!synthesized) {
+            if (isFirst) left -= (padL + bL);
+            if (isLast) right += (padR + bR);
+          }
+          // Vertical extent: include full content on every fragment. For synthesized spans,
+          // use paragraph ascent/descent around the baseline; otherwise expand by padding/border.
+          if (synthesized) {
+            final (double asc, double desc) = _ascentDescentAtBaselineY(tb.top, style);
+            top = tb.top - (asc + padT + bT);
+            bottom = tb.top + (desc + padB + bB);
+          } else {
+            top -= (padT + bT);
+            bottom += (padB + bB);
+          }
 
-          if (position.dx >= left && position.dx <= right && position.dy >= top && position.dy <= bottom) {
+          if (position.dx >= left &&
+              position.dx <= right &&
+              position.dy >= top &&
+              position.dy <= bottom) {
             // Prefer hitting the RenderEventListener wrapper if present, so events dispatch correctly
             RenderEventListener? listener;
             RenderObject? p = box;
@@ -552,12 +581,22 @@ class InlineFormattingContext {
               // Convert container-local position to listener-local position
               final Offset offsetToContainer = getLayoutTransformTo(listener, container);
               final Offset local = position - offsetToContainer;
+              if (debugLogInlineLayoutEnabled) {
+                renderingLogger.finer('[IFC hitTest] listener <${_getElementDescription(box)}>'
+                    ' rect=(${left.toStringAsFixed(2)},${top.toStringAsFixed(2)} - ${right.toStringAsFixed(2)},${bottom.toStringAsFixed(2)})'
+                    ' local=(${local.dx.toStringAsFixed(2)},${local.dy.toStringAsFixed(2)})');
+              }
               result.add(BoxHitTestEntry(listener, local));
               return true;
             } else {
               // Fallback: add entry for the box itself
               final Offset offsetToContainer = getLayoutTransformTo(box, container);
               final Offset local = position - offsetToContainer;
+              if (debugLogInlineLayoutEnabled) {
+                renderingLogger.finer('[IFC hitTest] box <${_getElementDescription(box)}>'
+                    ' rect=(${left.toStringAsFixed(2)},${top.toStringAsFixed(2)} - ${right.toStringAsFixed(2)},${bottom.toStringAsFixed(2)})'
+                    ' local=(${local.dx.toStringAsFixed(2)},${local.dy.toStringAsFixed(2)})');
+              }
               result.add(BoxHitTestEntry(box, local));
               return true;
             }
@@ -565,7 +604,9 @@ class InlineFormattingContext {
         }
       }
     }
-
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.finer('[IFC hitTest] miss');
+    }
     return false;
   }
 
@@ -993,7 +1034,15 @@ class InlineFormattingContext {
   }
 
   void _updateChildOffsetsFromParagraph() {
-    if (_placeholderBoxes.isEmpty || _placeholderOrder.isEmpty) return;
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.finer('[IFC] updateChildOffsetsFromParagraph placeholders=${_placeholderBoxes.length} order=${_placeholderOrder.length}');
+    }
+    // Base content offset (padding + border) to convert content-relative positions
+    // to the container's coordinate space, matching actual paint offset usage.
+    final contentOffset = Offset(
+      container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue,
+      container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue,
+    );
     // Apply offsets to actual children housed in this container
     // We need to map RenderEventListener wrappers to their real children when present.
     for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
@@ -1007,7 +1056,8 @@ class InlineFormattingContext {
         left += rb.renderStyle.marginLeft.computedValue;
         top += rb.renderStyle.marginTop.computedValue;
       }
-      Offset childOffset = Offset(left, top);
+      // ParentData offsets are container-relative
+      Offset childOffset = contentOffset + Offset(left, top);
       if (rb is RenderBoxModel) {
         // already included margins
       }
@@ -1015,14 +1065,109 @@ class InlineFormattingContext {
       // Walk up to find the direct child of the container to assign offset
       RenderBox target = rb;
       RenderObject? p = rb.parent;
+      bool hasWrapper = false;
       while (p != null && p != container) {
-        if (p is RenderBox) target = p;
+        if (p is RenderBox) {
+          target = p;
+          hasWrapper = true;
+        }
         p = p.parent;
       }
       if (p == container && target is RenderBox) {
         final pd = target.parentData as ContainerBoxParentData<RenderBox>;
         pd.offset = childOffset;
+        if (debugLogInlineLayoutEnabled) {
+          renderingLogger.finer('[IFC] set parentData for <${_getElementDescription(rb is RenderBoxModel ? rb : null)}> target=${target.runtimeType} offset=(${childOffset.dx.toStringAsFixed(2)},${childOffset.dy.toStringAsFixed(2)})');
+        }
+        // Ensure the atomic render box itself has zero local offset inside wrapper
+        // so wrapper's parentData carries the full translation.
+        if (hasWrapper && rb.parentData is BoxParentData) {
+          (rb.parentData as BoxParentData).offset = Offset.zero;
+        }
       }
+    }
+
+    // Also set offsets for non-atomic inline boxes using paragraph ranges.
+    if (_paragraph != null && _elementRanges.isNotEmpty) {
+      _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+        List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+        bool synthesized = false;
+        if (rects.isEmpty) {
+          rects = _synthesizeRectsForEmptySpan(box);
+          if (rects.isEmpty) return;
+          synthesized = true;
+        }
+
+        // Use the first fragment as the anchor
+        final style = box.renderStyle;
+        final padL = style.paddingLeft.computedValue;
+        final padT = style.paddingTop.computedValue;
+        final bL = style.borderLeftWidth?.computedValue ?? 0.0;
+        final bT = style.borderTopWidth?.computedValue ?? 0.0;
+        final mL = style.marginLeft.computedValue;
+
+        final tb = rects.first;
+        double left;
+        double top;
+        if (synthesized) {
+          // Synthetic rect spans left/right extras. Anchor near the padding-box top-left
+          // using the paragraph line ascent above the baseline when available.
+          left = tb.left + mL;
+          final (double asc, _) = _ascentDescentAtBaselineY(tb.top, style);
+          top = tb.top - padT - asc;
+        } else {
+          // Real text fragment: move outward by padding+border to reach border-box top-left
+          left = tb.left - (padL + bL);
+          top = tb.top - (padT + bT);
+        }
+
+        final Offset childOffset = contentOffset + Offset(left, top);
+
+        // Assign offset to the direct child (wrapper if present)
+        RenderBox target = box;
+        RenderObject? p = box.parent;
+        bool hasWrapper = false;
+        while (p != null && p != container) {
+          if (p is RenderBox) {
+            target = p;
+            hasWrapper = true;
+          }
+          p = p.parent;
+        }
+        if (p == container && target is RenderBox) {
+          final pd = target.parentData as ContainerBoxParentData<RenderBox>;
+          pd.offset = childOffset;
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.finer('[IFC] set inline parentData for <${_getElementDescription(box)}> target=${target.runtimeType} offset=(${childOffset.dx.toStringAsFixed(2)},${childOffset.dy.toStringAsFixed(2)})');
+          }
+          if (hasWrapper && box.parentData is BoxParentData) {
+            (box.parentData as BoxParentData).offset = Offset.zero;
+          }
+
+          // Compute and store a debug visual size/rect for the inline element for Inspector.
+          double lEdge, rEdge, tEdge, bEdge;
+          if (synthesized) {
+            // Synthesized rect from extras: include content height using paragraph ascent/descent when available.
+            final (double asc, double desc) = _ascentDescentAtBaselineY(tb.top, style);
+            lEdge = tb.left;
+            rEdge = tb.right;
+            tEdge = tb.top - (asc + padT + bT);
+            bEdge = tb.top + (desc + style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
+          } else {
+            // Union across fragments: first/last horizontally; min/max vertically
+            lEdge = rects.first.left - (padL + bL);
+            rEdge = rects.last.right + (style.paddingRight.computedValue + (style.borderRightWidth?.computedValue ?? 0.0));
+            double minTop = rects.map((e) => e.top).reduce(math.min) - (padT + bT);
+            double maxBottom = rects.map((e) => e.bottom).reduce(math.max) +
+                (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
+            tEdge = minTop;
+            bEdge = maxBottom;
+          }
+          final Rect contentRect = Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
+          box.debugIfcVisualRect = contentRect.shift(contentOffset);
+          box.debugIfcVisualSize = Size(contentRect.width, contentRect.height);
+        }
+      });
     }
   }
 
@@ -1252,6 +1397,54 @@ class InlineFormattingContext {
   void dispose() {
     _items.clear();
     _lineBoxes.clear();
+  }
+
+  // Compute an effective line-height in px for cases where we need a concrete
+  // value (e.g., synthesizing empty inline span height). If CSS line-height is
+  // 'normal', fall back to a reasonable multiple of font-size (1.2x), which
+  // approximates typical font metrics used by the paragraph shaper.
+  double _effectiveLineHeightPx(CSSRenderStyle rs) {
+    final lh = rs.lineHeight;
+    if (lh.type == CSSLengthType.NORMAL) {
+      // Approximate 'normal' as 1.2 × font-size
+      return rs.fontSize.computedValue * 1.2;
+    }
+    final v = lh.computedValue;
+    // Guard against zero or infinity
+    if (v.isInfinite || v <= 0) {
+      return rs.fontSize.computedValue * 1.2;
+    }
+    return v;
+  }
+
+  // Get ascent/descent at a given baseline y using paragraph line metrics when available.
+  // Falls back to splitting effective line-height into ascent/descent (0.8/0.2) if metrics are unavailable.
+  (double ascent, double descent) _ascentDescentAtBaselineY(double baselineY, CSSRenderStyle style) {
+    if (_paraLines.isNotEmpty) {
+      ui.LineMetrics? best;
+      double bestDist = double.infinity;
+      for (final lm in _paraLines) {
+        final double dist = (lm.baseline - baselineY).abs();
+        // Prefer the line whose baseline is closest to the given y
+        if (dist < bestDist) {
+          best = lm;
+          bestDist = dist;
+        }
+        // Or where y falls within the line box vertically
+        final double lineTop = lm.baseline - lm.ascent;
+        final double lineBottom = lm.baseline + lm.descent;
+        if (baselineY >= lineTop && baselineY <= lineBottom) {
+          best = lm;
+          break;
+        }
+      }
+      if (best != null && best!.ascent > 0 && best!.descent >= 0) {
+        return (best!.ascent, best!.descent);
+      }
+    }
+    final double lh = _effectiveLineHeightPx(style);
+    // Reasonable split for ascent/descent when metrics are missing
+    return (lh * 0.8, lh * 0.2);
   }
 
   /// Get a description of the element from a RenderBoxModel.

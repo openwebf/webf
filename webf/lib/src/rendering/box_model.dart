@@ -324,6 +324,12 @@ abstract class RenderBoxModel extends RenderBox
 
   void calculateBaseline();
 
+  // Debug-only: visual size of an inline element as measured by IFC.
+  // This does not affect layout; it is populated by the InlineFormattingContext
+  // to aid Flutter Inspector debugging so inline elements show their font metrics size.
+  Size? debugIfcVisualSize;
+  Rect? debugIfcVisualRect;
+
   @override
   void layout(Constraints newConstraints, {bool parentUsesSize = false}) {
     renderBoxInLayoutHashCodes.add(hashCode);
@@ -1177,6 +1183,12 @@ abstract class RenderBoxModel extends RenderBox
     properties.add(renderStyle.toDiagnosticsNode(name: 'renderStyle'));
     properties.add(DiagnosticsProperty('creatorElement', renderStyle.target));
     properties.add(DiagnosticsProperty('contentSize', _contentSize));
+    if (debugIfcVisualSize != null) {
+      properties.add(DiagnosticsProperty<Size>('ifcVisualSize', debugIfcVisualSize));
+    }
+    if (debugIfcVisualRect != null) {
+      properties.add(DiagnosticsProperty<Rect>('ifcVisualRect', debugIfcVisualRect));
+    }
     properties.add(DiagnosticsProperty('contentConstraints', contentConstraints, missingIfNull: true));
     properties.add(DiagnosticsProperty('maxScrollableSize', scrollableSize, missingIfNull: true));
     properties.add(DiagnosticsProperty('scrollableViewportSize', scrollableViewportSize, missingIfNull: true));

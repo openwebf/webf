@@ -616,6 +616,23 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     size = getBoxSize(layoutContentSize);
 
+    // If this is an inline element whose visual size was computed by a parent IFC,
+    // adopt that visual size for inspector/debugging (does not affect parent layout).
+    if (renderStyle.display == CSSDisplay.inline && debugIfcVisualSize != null) {
+      final double padH = renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue;
+      final double padV = renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue;
+      final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
+          renderStyle.effectiveBorderRightWidth.computedValue;
+      final double borderV = renderStyle.effectiveBorderTopWidth.computedValue +
+          renderStyle.effectiveBorderBottomWidth.computedValue;
+
+      final double overrideContentW = math.max(0.0, debugIfcVisualSize!.width - padH - borderH);
+      final double overrideContentH = math.max(0.0, debugIfcVisualSize!.height - padV - borderV);
+
+      final Size overrideContentSize = Size(overrideContentW, overrideContentH);
+      size = getBoxSize(overrideContentSize);
+    }
+
     minContentWidth = _getMainAxisAutoSize(_lineMetrics);
     minContentHeight = _getCrossAxisAutoSize(_lineMetrics);
   }
@@ -626,6 +643,22 @@ class RenderFlowLayout extends RenderLayoutBox {
       contentWidth: 0,
       contentHeight: 0,
     );
+    // If this is an inline element whose visual size was computed by a parent IFC,
+    // adopt that visual size for inspector/debugging (does not affect parent layout).
+    if (renderStyle.display == CSSDisplay.inline && debugIfcVisualSize != null) {
+      final double padH = renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue;
+      final double padV = renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue;
+      final double borderH = renderStyle.effectiveBorderLeftWidth.computedValue +
+          renderStyle.effectiveBorderRightWidth.computedValue;
+      final double borderV = renderStyle.effectiveBorderTopWidth.computedValue +
+          renderStyle.effectiveBorderBottomWidth.computedValue;
+      final Size overrideContentSize = Size(
+        math.max(0.0, debugIfcVisualSize!.width - padH - borderH),
+        math.max(0.0, debugIfcVisualSize!.height - padV - borderV),
+      );
+      layoutContentSize = overrideContentSize;
+    }
+
     setMaxScrollableSize(layoutContentSize);
     size = scrollableSize = getBoxSize(layoutContentSize);
   }
