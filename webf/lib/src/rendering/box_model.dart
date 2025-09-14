@@ -566,6 +566,27 @@ abstract class RenderBoxModel extends RenderBox
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);
     // Deflate padding constraints.
     contentConstraints = renderStyle.deflatePaddingConstraints(contentConstraints);
+    
+    // Fix for text-overflow ellipsis: when content constraints become unbounded 
+    // but the original constraints were bounded, and the element needs ellipsis,
+    // restore bounded width to allow proper text truncation.
+    if (renderStyle.effectiveOverflowX != CSSOverflowType.visible &&
+        renderStyle.effectiveTextOverflow == TextOverflow.ellipsis &&
+        contentConstraints.maxWidth.isInfinite &&
+        constraints.hasBoundedWidth) {
+      
+      // Recalculate the content constraints using the original bounded constraints
+      BoxConstraints boundedConstraints = renderStyle.deflateBorderConstraints(constraints);
+      boundedConstraints = renderStyle.deflatePaddingConstraints(boundedConstraints);
+      
+      contentConstraints = BoxConstraints(
+        minWidth: contentConstraints.minWidth,
+        maxWidth: boundedConstraints.maxWidth,
+        minHeight: contentConstraints.minHeight,
+        maxHeight: contentConstraints.maxHeight,
+      );
+    }
+    
     this.contentConstraints = contentConstraints;
     clearOverflowLayout();
     isSelfSizeChanged = false;
