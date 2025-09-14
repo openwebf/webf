@@ -440,11 +440,23 @@ class RenderFlowLayout extends RenderLayoutBox {
       if (child is RenderBoxModel) {
         childConstraints = child.getConstraints();
       } else if (child is RenderTextBox) {
-        // For text boxes in block layout (not IFC), allow them to measure their natural size
-        // This is needed for absolutely positioned elements with auto dimensions that need to shrink-to-fit
+        // In non-IFC (block) layout, text should measure itself within the
+        // available content box width so that CSS text-overflow can work.
+        // Prefer the finite bound between contentConstraints and our own
+        // constraints; fall back to the latter when contentConstraints are
+        // unbounded (e.g., during flex intrinsic measuring passes).
         if (!establishIFC) {
-          childConstraints = contentConstraints ?? constraints;
+          final BoxConstraints cc = contentConstraints ?? constraints;
+          final double maxW = cc.hasBoundedWidth ? cc.maxWidth : constraints.maxWidth;
+          final double maxH = cc.hasBoundedHeight ? cc.maxHeight : constraints.maxHeight;
+          childConstraints = BoxConstraints(
+            minWidth: 0,
+            maxWidth: maxW.isFinite ? maxW : double.infinity,
+            minHeight: 0,
+            maxHeight: maxH.isFinite ? maxH : double.infinity,
+          );
         } else {
+          // IFC path: the container measures/paints the text; keep the text node 0-sized.
           childConstraints = BoxConstraints.tight(Size.zero);
         }
       } else if (child is RenderPositionPlaceholder) {

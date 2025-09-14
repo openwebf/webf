@@ -77,12 +77,20 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   void _layoutText(BoxConstraints constraints) {
     final span = _buildTextSpan();
     _textPainter ??= TextPainter(text: span, textDirection: renderStyle.direction);
+    // Determine effective maxLines based on CSS semantics:
+    // - If line-clamp is set, use it directly.
+    // - If white-space is nowrap and text-overflow resolves to ellipsis,
+    //   enforce a single line to enable truncation with ellipsis.
+    final bool nowrap = renderStyle.whiteSpace == WhiteSpace.nowrap;
+    final bool wantsEllipsis = renderStyle.effectiveTextOverflow == TextOverflow.ellipsis;
+    final int? effectiveMaxLines = renderStyle.lineClamp ?? (nowrap && wantsEllipsis ? 1 : null);
+
     _textPainter!
       ..text = span
       ..textAlign = renderStyle.textAlign
       ..textDirection = renderStyle.direction
       ..ellipsis = (renderStyle.effectiveTextOverflow == TextOverflow.ellipsis) ? '…' : null
-      ..maxLines = renderStyle.lineClamp
+      ..maxLines = effectiveMaxLines
       ..layout(
         minWidth: constraints.minWidth.clamp(0.0, double.infinity),
         maxWidth: constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity,

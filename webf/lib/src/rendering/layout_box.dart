@@ -275,12 +275,21 @@ abstract class RenderLayoutBox extends RenderBoxModel
       marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
       marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
     }
-    // Flex basis takes priority over main size in flex item when flex-grow or flex-shrink not work.
+    // Flex-basis participates in the flex base size calculation, but should
+    // not override the used width/height when the item is flexible. Only when
+    // the flex item is inflexible (flex-grow:0 and flex-shrink:0) does
+    // flex-basis act like a preferred main size.
     if (renderStyle.isParentRenderFlexLayout()) {
-      CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
-      double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto ? null : renderStyle.flexBasis?.computedValue;
-      if (flexBasis != null) {
-        if (CSSFlex.isHorizontalFlexDirection(parentRenderStyle!.flexDirection)) {
+      final CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
+      final double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto
+          ? null
+          : renderStyle.flexBasis?.computedValue;
+
+      // Consider the item “flexible” if either grow or shrink is non-zero.
+      final bool isFlexible = (renderStyle.flexGrow > 0) || (renderStyle.flexShrink > 0);
+
+      if (flexBasis != null && !isFlexible && parentRenderStyle != null) {
+        if (CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection)) {
           if (!hasOverrideContentLogicalWidth) {
             specifiedContentWidth = _getContentWidth(flexBasis);
           }
