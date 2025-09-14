@@ -292,49 +292,24 @@ abstract class RenderLayoutBox extends RenderBoxModel
       }
     }
 
-    // Respect specified content width except when this box is a flex item and
-    // the specified dimension corresponds to the flex container’s main axis
-    // and flex-basis is not 'auto'. In that case, the main-size is determined
-    // by the flex algorithm, not the 'width' property. See
-    // https://www.w3.org/TR/css-flexbox-1/#main-size
+    // If an explicit content width is specified via CSS (width/min/max already
+    // resolved above), it should determine the used content width. Do not
+    // auto-expand to accommodate measured content here — overflow handling
+    // should deal with larger content per CSS. Using max() causes blocks inside
+    // unbounded containers (e.g. horizontal slivers) to incorrectly expand to
+    // ancestor viewport widths instead of honoring the specified width.
     if (specifiedContentWidth != null) {
-      bool isFlexItem = renderStyle.isParentRenderFlexLayout();
-      bool parentMainIsHorizontal = false;
-      bool flexBasisNotAuto = false;
-      if (isFlexItem) {
-        final parentStyle = renderStyle.getParentRenderStyle();
-        if (parentStyle != null) {
-          parentMainIsHorizontal = CSSFlex.isHorizontalFlexDirection(parentStyle.flexDirection);
-        }
-        flexBasisNotAuto = renderStyle.flexBasis != CSSLengthValue.auto;
-      }
-      // Only override width from CSS when not the flex main-size under a non-auto flex-basis.
-      if (!(isFlexItem && parentMainIsHorizontal && flexBasisNotAuto)) {
-        finalContentWidth = specifiedContentWidth;
-      }
+      finalContentWidth = specifiedContentWidth;
     }
     if (parent is RenderFlexLayout && marginAddSizeLeft > 0 && marginAddSizeRight > 0 ||
         parent is RenderFlowLayout && (marginAddSizeRight > 0 || marginAddSizeLeft > 0)) {
       finalContentWidth += marginAddSizeLeft;
       finalContentWidth += marginAddSizeRight;
     }
-    // Similar rule for height: if this is a flex item and the parent main axis
-    // is vertical (column) with non-auto flex-basis, the main-size (height)
-    // is determined by flex-basis, not the 'height' property.
+    // Same rule for height: honor the specified content height if provided
+    // rather than expanding to measured content height here.
     if (specifiedContentHeight != null) {
-      bool isFlexItem = renderStyle.isParentRenderFlexLayout();
-      bool parentMainIsVertical = false;
-      bool flexBasisNotAuto = false;
-      if (isFlexItem) {
-        final parentStyle = renderStyle.getParentRenderStyle();
-        if (parentStyle != null) {
-          parentMainIsVertical = !CSSFlex.isHorizontalFlexDirection(parentStyle.flexDirection);
-        }
-        flexBasisNotAuto = renderStyle.flexBasis != CSSLengthValue.auto;
-      }
-      if (!(isFlexItem && parentMainIsVertical && flexBasisNotAuto)) {
-        finalContentHeight = specifiedContentHeight;
-      }
+      finalContentHeight = specifiedContentHeight;
     }
 
     CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
