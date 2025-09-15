@@ -7,6 +7,7 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 // CSS Positioned Layout: https://drafts.csswg.org/css-position/
 
@@ -42,6 +43,8 @@ Offset _getPlaceholderToParentOffset(RenderPositionPlaceholder? placeholder, Ren
 }
 
 class CSSPositionedLayout {
+  // Toggle detailed positioned layout logging.
+  static bool debugLogPositionedEnabled = false;
   static Offset? getRelativeOffset(RenderStyle renderStyle) {
     CSSLengthValue left = renderStyle.left;
     CSSLengthValue right = renderStyle.right;
@@ -320,8 +323,19 @@ class CSSPositionedLayout {
     // The static position of positioned element is its offset when its position property had been static
     // which equals to the position of its placeholder renderBox.
     // https://www.w3.org/TR/CSS2/visudet.html#static-position
-    Offset staticPositionOffset = _getPlaceholderToParentOffset(child.renderStyle.getSelfPositionPlaceHolder(), parent,
+    RenderPositionPlaceholder? ph = child.renderStyle.getSelfPositionPlaceHolder();
+    Offset staticPositionOffset = _getPlaceholderToParentOffset(ph, parent,
         excludeScrollOffset: child.renderStyle.position != CSSPositionType.fixed);
+
+    if (debugLogPositionedEnabled) {
+      final pTag = parent.renderStyle.target.tagName.toLowerCase();
+      final cTag = child.renderStyle.target.tagName.toLowerCase();
+      final phOff = (ph != null && ph.parentData is RenderLayoutParentData)
+          ? (ph.parentData as RenderLayoutParentData).offset
+          : null;
+      renderingLogger.finer('[ABS] <$cTag> static from placeholder: raw=${phOff?.dx.toStringAsFixed(2)},${phOff?.dy.toStringAsFixed(2)} '
+          'toParent=${staticPositionOffset.dx.toStringAsFixed(2)},${staticPositionOffset.dy.toStringAsFixed(2)} parent=<$pTag>');
+    }
 
     // Ensure static position accuracy for W3C compliance
     // W3C requires static position to represent where element would be in normal flow
@@ -340,6 +354,11 @@ class CSSPositionedLayout {
       parentPaddingLeft,
       parentPaddingTop
     );
+
+    if (debugLogPositionedEnabled) {
+      renderingLogger.finer('[ABS] adjusted static pos = '
+          '(${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})');
+    }
 
     Offset ancestorOffset = Offset.zero;
 
@@ -387,7 +406,14 @@ class CSSPositionedLayout {
       marginBottom,
     );
 
-    childParentData.offset = Offset(x, y) - ancestorOffset;
+    final Offset finalOffset = Offset(x, y) - ancestorOffset;
+    childParentData.offset = finalOffset;
+
+    if (debugLogPositionedEnabled) {
+      renderingLogger.finer('[ABS] final offset=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
+          'components: x=${x.toStringAsFixed(2)} y=${y.toStringAsFixed(2)} '
+          'ancestor=(${ancestorOffset.dx.toStringAsFixed(2)},${ancestorOffset.dy.toStringAsFixed(2)})');
+    }
   }
 
   // Compute the offset of positioned element in one axis.

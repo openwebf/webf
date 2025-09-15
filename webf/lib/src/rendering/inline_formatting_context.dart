@@ -1033,11 +1033,15 @@ class InlineFormattingContext {
         double left;
         double top;
         if (synthesized) {
-          // Synthetic rect spans left/right extras. Anchor near the padding-box top-left
-          // using effective line-height for content box height to match painted area.
+          // Synthetic rect spans left/right extras. Anchor to the paragraph line band
+          // like real text fragments: use line top minus padding+border, not CSS line-height.
           left = tb.left + mL;
-          final double lineHeight = _effectiveLineHeightPx(style);
-          top = tb.top - padT - lineHeight;
+          top = tb.top - (padT + bT);
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.finer('[IFC] synthesize offset for <${_getElementDescription(box)}>: '
+                'tb.top=${tb.top.toStringAsFixed(2)} padT=${padT.toStringAsFixed(2)} bT=${bT.toStringAsFixed(2)} '
+                '-> top=${top.toStringAsFixed(2)}');
+          }
         } else {
           // Real text fragment: move outward by padding+border to reach border-box top-left
           left = tb.left - (padL + bL);
@@ -1328,12 +1332,17 @@ class InlineFormattingContext {
     if (families != null && families.isNotEmpty) {
       CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
     }
-    // Map CSS line-height to a multiplier if specified; null uses font metrics
-    final double? heightMultiple = rs.lineHeight.type == CSSLengthType.NORMAL
-        ? null
-        : (rs.lineHeight.type == CSSLengthType.EM
-            ? rs.lineHeight.value
-            : rs.lineHeight.computedValue / rs.fontSize.computedValue);
+    // Map CSS line-height to a multiplier for dart:ui. For 'normal', align with CSS by
+    // using 1.2× font-size instead of letting Flutter pick a font-driven band.
+    final double? heightMultiple = ((){
+      if (rs.lineHeight.type == CSSLengthType.NORMAL) {
+        return 1.2; // CSS 'normal' approximation
+      }
+      if (rs.lineHeight.type == CSSLengthType.EM) {
+        return rs.lineHeight.value;
+      }
+      return rs.lineHeight.computedValue / rs.fontSize.computedValue;
+    })();
 
     return ui.TextStyle(
       color: rs.backgroundClip != CSSBackgroundBoundary.text ? rs.color.value : null,
