@@ -851,7 +851,11 @@ class InlineFormattingContext {
         double? baselineOffset = innerBaseline != null ? (mT + innerBaseline) : null;
         baselineOffset ??= height; // fallback to bottom edge including margins
 
-        pb.addPlaceholder(width, height, ui.PlaceholderAlignment.baseline,
+        // Map CSS vertical-align to dart:ui PlaceholderAlignment for atomic inline items.
+        // For textTop/textBottom we approximate using top/bottom as Flutter does not
+        // distinguish font-box vs line-box alignment at this level.
+        pb.addPlaceholder(width, height,
+            _placeholderAlignmentFromCss(rbStyle.verticalAlign),
             baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
         _placeholderOrder.add(rb);
         _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
@@ -1452,6 +1456,27 @@ class InlineFormattingContext {
       p = p.parent;
     }
     return false;
+  }
+
+  // Map CSS VerticalAlign to ui.PlaceholderAlignment used by ParagraphBuilder.addPlaceholder.
+  // Notes:
+  // - Flutter does not provide distinct alignments for CSS text-top/text-bottom vs line-box
+  //   top/bottom; we approximate by using top/bottom.
+  // - Baseline alignment uses the computed baselineOffset above (measured from placeholder top).
+  ui.PlaceholderAlignment _placeholderAlignmentFromCss(VerticalAlign va) {
+    switch (va) {
+      case VerticalAlign.baseline:
+        return ui.PlaceholderAlignment.baseline;
+      case VerticalAlign.top:
+        return ui.PlaceholderAlignment.top;
+      case VerticalAlign.bottom:
+        return ui.PlaceholderAlignment.bottom;
+      case VerticalAlign.middle:
+        return ui.PlaceholderAlignment.middle;
+      // For unsupported values (textTop/textBottom), fall back to baseline.
+      default:
+        return ui.PlaceholderAlignment.baseline;
+    }
   }
 
   // Convert CSSRenderStyle to dart:ui TextStyle for ParagraphBuilder
