@@ -113,6 +113,20 @@ class InlineItemsBuilder {
       } else if (child is RenderBoxModel) {
         final display = child.renderStyle.display;
 
+        // Out-of-flow positioned elements (absolute/fixed) do not participate in IFC.
+        // They must be skipped regardless of their display value.
+        if (child.renderStyle.position == CSSPositionType.fixed ||
+            child.renderStyle.position == CSSPositionType.absolute) {
+          // Skip positioned elements entirely; their placeholder is handled separately in flow layout.
+          // Move to next sibling.
+          if (parent is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+            child = (parent as dynamic).childAfter(child);
+            continue;
+          } else {
+            break;
+          }
+        }
+
         // Handle <br/>: always force a line break in inline formatting context.
         final target = child.renderStyle.target;
         final String? tagName = target?.tagName;
@@ -150,9 +164,6 @@ class InlineItemsBuilder {
           }
         } else if (display == CSSDisplay.inlineBlock || display == CSSDisplay.inlineFlex) {
           _addAtomicInline(child);
-        } else if (child.renderStyle.position == CSSPositionType.fixed ||
-            child.renderStyle.position == CSSPositionType.absolute) {
-          // Skip positioned elements
         } else if (display == CSSDisplay.block || display == CSSDisplay.flex) {
           // Block-level elements inside inline context should be treated as inline-block
           // This creates an anonymous block box according to CSS spec

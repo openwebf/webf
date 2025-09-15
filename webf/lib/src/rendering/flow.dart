@@ -184,20 +184,17 @@ class RenderFlowLayout extends RenderLayoutBox {
         offset.dy + renderStyle.paddingTop.computedValue + renderStyle.effectiveBorderTopWidth.computedValue,
       );
 
+      if (debugLogFlowEnabled) {
+        final tag = renderStyle.target.tagName.toLowerCase();
+        renderingLogger.finer('[Flow] <$tag> paint IFC content at (${contentOffset.dx.toStringAsFixed(2)},'
+            '${contentOffset.dy.toStringAsFixed(2)})');
+      }
+
       // Paint the inline formatting context content
       _inlineFormattingContext!.paint(context, contentOffset);
 
-      // Still need to paint positioned children that are out of flow
-      for (int i = 0; i < paintingOrder.length; i++) {
-        RenderBox child = paintingOrder[i];
-        // Only paint positioned elements when using IFC
-        if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
-          final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-          if (child.hasSize) {
-            context.paintChild(child, childParentData.offset + offset);
-          }
-        }
-      }
+      // Paint ALL positioned descendants (not only direct children) on top of IFC text.
+      _paintPositionedDescendants(context, offset, this);
     } else {
       // Regular flow layout painting: skip RenderTextBox unless it paints itself (non-IFC)
       for (int i = 0; i < paintingOrder.length; i++) {
@@ -212,10 +209,82 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (shouldPaint) {
           final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
           if (child.hasSize) {
+            if (debugLogFlowEnabled) {
+              String name;
+              if (child is RenderBoxModel) {
+                name = child.renderStyle.target.tagName.toLowerCase();
+              } else {
+                name = child.runtimeType.toString();
+              }
+              final dx = (childParentData.offset + offset).dx.toStringAsFixed(2);
+              final dy = (childParentData.offset + offset).dy.toStringAsFixed(2);
+              renderingLogger.finer('[Flow] paint <$name> at ($dx,$dy) size='
+                  '(${child.size.width.toStringAsFixed(2)}x${child.size.height.toStringAsFixed(2)})');
+            }
             context.paintChild(child, childParentData.offset + offset);
+          } else if (debugLogFlowEnabled) {
+            String name;
+            if (child is RenderBoxModel) {
+              name = child.renderStyle.target.tagName.toLowerCase();
+            } else {
+              name = child.runtimeType.toString();
+            }
+            renderingLogger.finer('[Flow] skip paint <$name>: hasSize=false');
           }
         }
       }
+    }
+  }
+
+  // Recursively paint positioned descendants within this subtree. This ensures
+  // absolutely/fixed positioned elements nested inside inline content are painted
+  // when the container uses IFC for text.
+  void _paintPositionedDescendants(PaintingContext context, Offset ancestorOffset, RenderBox parent) {
+    RenderBox? first;
+    RenderBox? next(RenderBox c) {
+      if (parent is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+        return (parent as dynamic).childAfter(c);
+      }
+      return null;
+    }
+    if (parent is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
+      first = (parent as dynamic).firstChild;
+    } else if (parent is RenderObjectWithChildMixin<RenderBox>) {
+      first = (parent as dynamic).child;
+    }
+
+    RenderBox? child = first;
+    while (child != null) {
+      // Determine paint offset accumulation. Many WebF render objects use
+      // RenderLayoutParentData or subclasses; fall back to BoxParentData.
+      Offset childOffset = Offset.zero;
+      final Object? pd = child.parentData;
+      if (pd is ContainerBoxParentData<RenderBox>) {
+        childOffset = pd.offset;
+      } else if (pd is BoxParentData) {
+        childOffset = pd.offset;
+      }
+      final Offset paintOffset = ancestorOffset + childOffset;
+
+      if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+        if (child.hasSize) {
+          if (debugLogFlowEnabled) {
+            final tag = child.renderStyle.target.tagName.toLowerCase();
+            renderingLogger.finer('[Flow] paint positioned <$tag> at '
+                '(${paintOffset.dx.toStringAsFixed(2)},${paintOffset.dy.toStringAsFixed(2)}) size='
+                '(${child.size.width.toStringAsFixed(2)}x${child.size.height.toStringAsFixed(2)})');
+          }
+          context.paintChild(child, paintOffset);
+        } else if (debugLogFlowEnabled) {
+          final tag = child.renderStyle.target.tagName.toLowerCase();
+          renderingLogger.finer('[Flow] skip paint positioned <$tag>: hasSize=false');
+        }
+      }
+
+      // Recurse into subtree to find deeper positioned descendants.
+      _paintPositionedDescendants(context, paintOffset, child);
+
+      child = next(child!);
     }
   }
 
