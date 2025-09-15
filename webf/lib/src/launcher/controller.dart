@@ -705,6 +705,7 @@ class WebFController with Diagnosticable {
 
   WebFController({
     bool enableDebug = false,
+    bool enableBlink = false,
     WebFBundle? bundle,
     WebFThread? runningThread,
     this.background,
@@ -748,6 +749,7 @@ class WebFController with Diagnosticable {
     _view = WebFViewController(
         background: background,
         enableDebug: enableDebug,
+        enableBlink: enableBlink,
         rootController: this,
         runningThread: this.runningThread!,
         navigationDelegate: navigationDelegate,
