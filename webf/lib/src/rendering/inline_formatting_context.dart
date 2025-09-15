@@ -102,6 +102,14 @@ class InlineFormattingContext {
   final Map<RenderBox, Size> _measuredVisualSizes = {};
 
   Size? measuredVisualSizeOf(RenderBox box) => _measuredVisualSizes[box];
+
+  // Whether this inline element had a left-extras placeholder inserted.
+  bool _elementHasLeftExtrasPlaceholder(RenderBoxModel box) {
+    for (final ph in _allPlaceholders) {
+      if (ph.kind == _PHKind.leftExtra && ph.owner == box) return true;
+    }
+    return false;
+  }
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
@@ -305,7 +313,9 @@ class InlineFormattingContext {
           double right = tb.right;
           double top = tb.top;
           double bottom = tb.bottom;
-          if (isFirst) left -= (padL + bL);
+          // Avoid double-counting when a left-extras placeholder exists
+          final bool hasLeftPH = _elementHasLeftExtrasPlaceholder(e.box);
+          if (isFirst && !hasLeftPH) left -= (padL + bL);
           if (isLast) right += (padR + bR);
           top -= (padT + bT);
           bottom += (padB + bB);
@@ -572,14 +582,19 @@ class InlineFormattingContext {
         if (!frame.leftFlushed && frame.leftExtras > 0) {
           final rs = frame.box.renderStyle;
           final (ph, bo) = _measureTextMetricsFor(rs);
+          // Use measured text metrics for placeholder height and baseline to
+          // align with the paragraph's line box for this style.
           pb.addPlaceholder(frame.leftExtras, ph, ui.PlaceholderAlignment.baseline,
               baseline: TextBaseline.alphabetic, baselineOffset: bo);
           paraPos += 1; // account for placeholder char
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
           frame.leftFlushed = true;
           if (debugLogInlineLayoutEnabled) {
-            renderingLogger.finer('[IFC] open extras <${_getElementDescription(frame.box)}> leftExtras='
-                '${frame.leftExtras.toStringAsFixed(2)}');
+            final effLH = _effectiveLineHeightPx(rs);
+            renderingLogger.finer('[IFC] open extras <${_getElementDescription(frame.box)}> '
+                'leftExtras=${frame.leftExtras.toStringAsFixed(2)} '
+                'metrics(height=${ph.toStringAsFixed(2)}, baselineOffset=${bo.toStringAsFixed(2)}, '
+                'effectiveLineHeight=${effLH.toStringAsFixed(2)}, fontSize=${rs.fontSize.computedValue.toStringAsFixed(2)})');
           }
         }
       }
@@ -628,20 +643,16 @@ class InlineFormattingContext {
             int idx = openFrames.lastIndexWhere((f) => f.box == item.renderBox);
             if (idx != -1) {
               final frame = openFrames.removeAt(idx);
-              if (frame.hadContent) {
-                // Non-empty: ensure left extras flushed, then add right extras
+            if (frame.hadContent) {
+                // Non-empty inline span: ensure left extras flushed, and DO NOT
+                // add a trailing right-extras placeholder. Let painting extend
+                // the last fragment's right edge by padding/border instead.
+                // This avoids creating an extra paragraph line that contains
+                // only the right extras, which looks like an odd gap after text.
                 _flushPendingLeftExtras();
-                if (frame.rightExtras > 0) {
-                  final rs = frame.box.renderStyle;
-                  final (ph, bo) = _measureTextMetricsFor(rs);
-                  pb.addPlaceholder(frame.rightExtras, ph, ui.PlaceholderAlignment.baseline,
-                      baseline: TextBaseline.alphabetic, baselineOffset: bo);
-                  paraPos += 1;
-                  _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
-                  if (debugLogInlineLayoutEnabled) {
-                    renderingLogger.finer('[IFC] close extras </${_getElementDescription(frame.box)}> rightExtras='
-                        '${frame.rightExtras.toStringAsFixed(2)}');
-                  }
+                if (debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
+                  renderingLogger.finer('[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
+                      'rightExtras=${frame.rightExtras.toStringAsFixed(2)} (painted via fragment extension)');
                 }
               } else {
                 // Empty span: merge left+right extras into a single placeholder to avoid wrapping
@@ -883,15 +894,74 @@ class InlineFormattingContext {
         renderingLogger.finer('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
             'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left.toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
       }
-      for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
+      // Helper to find the paragraph line that a rect intersects most.
+      int _lineIndexForRect(ui.TextBox tb) {
+        int best = -1;
+        double bestOverlap = 0;
+        for (int i = 0; i < _paraLines.length; i++) {
+          final lm = _paraLines[i];
+          final double lt = lm.baseline - lm.ascent;
+          final double lb = lm.baseline + lm.descent;
+          final double overlap = math.max(0, math.min(tb.bottom, lb) - math.max(tb.top, lt));
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            best = i;
+          }
+        }
+        return best;
+      }
+
+      // Log all placeholders including extras (left/right/empty) and atomics
+      for (int i = 0; i < _placeholderBoxes.length && i < _allPlaceholders.length; i++) {
         final tb = _placeholderBoxes[i];
-        final rb = _placeholderOrder[i];
-        renderingLogger.finer('  [ph $i] rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
-            'child=<${_getElementDescription(rb is RenderBoxModel ? rb : null)}>');
+        final ph = _allPlaceholders[i];
+        final kind = ph.kind.toString().split('.').last;
+        String ownerDesc = 'n/a';
+        if (ph.owner != null) ownerDesc = _getElementDescription(ph.owner!);
+        double height = tb.bottom - tb.top;
+        final li = _lineIndexForRect(tb);
+        String lineStr = '';
+        if (li >= 0) {
+          final lm = _paraLines[li];
+          final lt = lm.baseline - lm.ascent;
+          final lb = lm.baseline + lm.descent;
+          final dt = tb.top - lt;
+          final db = lb - tb.bottom;
+          lineStr = ' line=$li lineTop=${lt.toStringAsFixed(2)} lineBottom=${lb.toStringAsFixed(2)} '
+              'topDelta=${dt.toStringAsFixed(2)} bottomDelta=${db.toStringAsFixed(2)}';
+        }
+        if (ph.kind == _PHKind.leftExtra && ph.owner != null) {
+          final (h, b) = _measureTextMetricsFor(ph.owner!.renderStyle);
+          final effLH = _effectiveLineHeightPx(ph.owner!.renderStyle);
+          renderingLogger.finer('  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+              'h=${height.toStringAsFixed(2)} metrics(height=${h.toStringAsFixed(2)}, baselineOffset=${b.toStringAsFixed(2)}, effLineHeight=${effLH.toStringAsFixed(2)})$lineStr');
+        } else {
+          String childDesc = '';
+          if (ph.kind == _PHKind.atomic && i < _placeholderOrder.length) {
+            final rb = _placeholderOrder[i];
+            childDesc = ' child=<${_getElementDescription(rb is RenderBoxModel ? rb : null)}>';
+          }
+          renderingLogger.finer('  [ph $i] kind=$kind owner=<$ownerDesc> rect=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+              'h=${height.toStringAsFixed(2)}$childDesc$lineStr');
+        }
       }
       // Log element ranges
       _elementRanges.forEach((rb, range) {
         renderingLogger.finer('  [range] <${_getElementDescription(rb)}> ${range.$1}..${range.$2}');
+        final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+        for (int i = 0; i < rects.length && i < 4; i++) {
+          final tb = rects[i];
+          final li = _lineIndexForRect(tb);
+          if (li >= 0) {
+            final lm = _paraLines[li];
+            final lt = lm.baseline - lm.ascent;
+            final lb = lm.baseline + lm.descent;
+            final dt = tb.top - lt;
+            final db = lb - tb.bottom;
+            renderingLogger.finer('    [frag $i] tb=(${tb.left.toStringAsFixed(2)},${tb.top.toStringAsFixed(2)} - ${tb.right.toStringAsFixed(2)},${tb.bottom.toStringAsFixed(2)}) '
+                '→ line=$li topDelta=${dt.toStringAsFixed(2)} bottomDelta=${db.toStringAsFixed(2)}');
+          }
+        }
       });
     }
   }
@@ -1043,8 +1113,11 @@ class InlineFormattingContext {
                 '-> top=${top.toStringAsFixed(2)}');
           }
         } else {
-          // Real text fragment: move outward by padding+border to reach border-box top-left
-          left = tb.left - (padL + bL);
+          // Real text range: if we inserted a left-extras placeholder for this
+          // inline element, the first rect already starts at the border-box
+          // left edge. Otherwise, extend outward by padding+border.
+          final bool hasLeftPH = _elementHasLeftExtrasPlaceholder(box);
+          left = tb.left - (hasLeftPH ? 0.0 : (padL + bL));
           top = tb.top - (padT + bT);
         }
 
@@ -1082,14 +1155,40 @@ class InlineFormattingContext {
             tEdge = tb.top - (lineHeight + padT + bT);
             bEdge = tb.top + (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
           } else {
-            // Union across fragments: first/last horizontally; min/max vertically
-            lEdge = rects.first.left - (padL + bL);
+            // Union across fragments: first/last horizontally; min/max vertically.
+            // Clamp each fragment vertically to its line band to avoid glyph overshoot.
+            final bool hasLeftPH = _elementHasLeftExtrasPlaceholder(box);
+            lEdge = rects.first.left - (hasLeftPH ? 0.0 : (padL + bL));
             rEdge = rects.last.right + (style.paddingRight.computedValue + (style.borderRightWidth?.computedValue ?? 0.0));
-            double minTop = rects.map((e) => e.top).reduce(math.min) - (padT + bT);
-            double maxBottom = rects.map((e) => e.bottom).reduce(math.max) +
-                (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
-            tEdge = minTop;
-            bEdge = maxBottom;
+
+            double minTop = double.infinity;
+            double maxBottom = -double.infinity;
+            for (final r in rects) {
+              double bandTop = r.top;
+              double bandBottom = r.bottom;
+              double bestOverlap = -1;
+              for (final lm in _paraLines) {
+                final double lt = lm.baseline - lm.ascent;
+                final double lb = lm.baseline + lm.descent;
+                final double overlap = math.max(0, math.min(r.bottom, lb) - math.max(r.top, lt));
+                if (overlap > bestOverlap) {
+                  bestOverlap = overlap;
+                  bandTop = lt;
+                  bandBottom = lb;
+                }
+              }
+              final double ct = math.max(r.top, bandTop);
+              final double cb = math.min(r.bottom, bandBottom);
+              if (ct < minTop) minTop = ct;
+              if (cb > maxBottom) maxBottom = cb;
+            }
+            tEdge = minTop - (padT + bT);
+            bEdge = maxBottom + (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
+            if (debugLogInlineLayoutEnabled) {
+              renderingLogger.finer('[IFC] inline visual rect for <${_getElementDescription(box)}>: '
+                  'hasLeftPH=$hasLeftPH lEdge=${lEdge.toStringAsFixed(2)} rEdge=${rEdge.toStringAsFixed(2)} '
+                  'tEdge=${tEdge.toStringAsFixed(2)} bEdge=${bEdge.toStringAsFixed(2)}');
+          }
           }
           final Rect contentRect = Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
           final Size visualSize = Size(contentRect.width, contentRect.height);
@@ -1155,6 +1254,20 @@ class InlineFormattingContext {
         double top = tb.top;
         double bottom = tb.bottom;
 
+        // Option A: Clamp non-synthetic fragment rects to the line band to avoid
+        // glyph overshoot changing the fragment height relative to the line box.
+        if (lineTop != null && lineBottom != null && !e.synthetic) {
+          final double oTop = top;
+          final double oBottom = bottom;
+          if (top < lineTop) top = lineTop;
+          if (bottom > lineBottom) bottom = lineBottom;
+          if (debugLogInlineLayoutEnabled && (top != oTop || bottom != oBottom)) {
+            renderingLogger.finer('    [clamp] span frag to line band: '
+                'top ${oTop.toStringAsFixed(2)}→${top.toStringAsFixed(2)} '
+                'bottom ${oBottom.toStringAsFixed(2)}→${bottom.toStringAsFixed(2)}');
+          }
+        }
+
         // If the text box has zero height (empty span), synthesize a content height
         // based on CSS line-height semantics so padding/border wrap visible content.
         if ((bottom - top).abs() < 0.5) {
@@ -1173,7 +1286,10 @@ class InlineFormattingContext {
 
         // Extend horizontally on first/last fragments
         if (!e.synthetic) {
-          if (isFirst) left -= (padL + bL);
+          // Do not double subtract left padding/border when a left-extras
+          // placeholder was inserted for this inline element.
+          final bool hasLeftPH = _elementHasLeftExtrasPlaceholder(e.box);
+          if (isFirst && !hasLeftPH) left -= (padL + bL);
           if (isLast) right += (padR + bR);
         }
         // Each line fragment paints its full vertical content (padding + border)
