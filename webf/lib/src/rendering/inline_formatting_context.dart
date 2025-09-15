@@ -76,7 +76,7 @@ class InlineFormattingContext {
   bool _needsCollectInlines = true;
 
   /// The line boxes created by layout.
-  List<LineBox> _lineBoxes = [];
+  final List<LineBox> _lineBoxes = [];
 
   List<LineBox> get lineBoxes => _lineBoxes;
 
@@ -224,159 +224,6 @@ class InlineFormattingContext {
 
     if (debugPaintInlineLayoutEnabled) {
       _debugPaintParagraph(context, offset);
-    }
-  }
-
-  /// Debug paint a line box to visualize its layout.
-  void _debugPaintLineBox(PaintingContext context, LineBox lineBox, Offset offset) {
-    final canvas = context.canvas;
-
-    // Paint line box bounds
-    final lineBoxPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
-      ..color = const Color(0xFF00FF00); // Green for line box
-
-    canvas.drawRect(
-      Rect.fromLTWH(offset.dx, offset.dy, lineBox.width, lineBox.height),
-      lineBoxPaint,
-    );
-
-    // Paint baseline
-    final baselinePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0
-      ..color = const Color(0xFFFF0000); // Red for baseline
-
-    canvas.drawLine(
-      Offset(offset.dx, offset.dy + lineBox.baseline),
-      Offset(offset.dx + lineBox.width, offset.dy + lineBox.baseline),
-      baselinePaint,
-    );
-
-    // Debug paint individual items
-    for (final item in lineBox.items) {
-      if (item is TextLineBoxItem) {
-        // Paint text item bounds
-        final textPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.5
-          ..color = const Color(0xFF0000FF); // Blue for text
-
-        canvas.drawRect(
-          Rect.fromLTWH(
-            offset.dx + item.offset.dx,
-            offset.dy + item.offset.dy,
-            item.size.width,
-            item.size.height,
-          ),
-          textPaint,
-        );
-      } else if (item is BoxLineBoxItem) {
-        // Paint inline box bounds (includes margins in WebF)
-        final boxPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0
-          ..color = const Color(0xFFFF00FF); // Magenta for inline boxes
-
-        canvas.drawRect(
-          Rect.fromLTWH(
-            offset.dx + item.offset.dx,
-            offset.dy + item.offset.dy,
-            item.size.width,
-            item.size.height,
-          ),
-          boxPaint,
-        );
-
-        // Paint margin areas if present
-        final marginLeft = item.style.marginLeft.computedValue;
-        final marginRight = item.style.marginRight.computedValue;
-
-        if (marginLeft > 0) {
-          final marginPaint = Paint()
-            ..style = PaintingStyle.fill
-            ..color = const Color(0x30FF0000); // Semi-transparent red for left margin
-
-          canvas.drawRect(
-            Rect.fromLTWH(
-              offset.dx + item.offset.dx,
-              offset.dy + item.offset.dy,
-              marginLeft,
-              item.size.height,
-            ),
-            marginPaint,
-          );
-        }
-
-        if (marginRight > 0) {
-          final marginPaint = Paint()
-            ..style = PaintingStyle.fill
-            ..color = const Color(0x3000FF00); // Semi-transparent green for right margin
-
-          canvas.drawRect(
-            Rect.fromLTWH(
-              offset.dx + item.offset.dx + item.size.width - marginRight,
-              offset.dy + item.offset.dy,
-              marginRight,
-              item.size.height,
-            ),
-            marginPaint,
-          );
-        }
-
-        // Paint padding areas
-        final paddingLeft = item.style.paddingLeft.computedValue;
-        final paddingRight = item.style.paddingRight.computedValue;
-
-        if (paddingLeft > 0 || paddingRight > 0) {
-          final paddingPaint = Paint()
-            ..style = PaintingStyle.fill
-            ..color = const Color(0x300000FF); // Semi-transparent blue for padding
-
-          // Left padding
-          if (paddingLeft > 0) {
-            canvas.drawRect(
-              Rect.fromLTWH(
-                offset.dx + item.offset.dx + marginLeft,
-                offset.dy + item.offset.dy,
-                paddingLeft,
-                item.size.height,
-              ),
-              paddingPaint,
-            );
-          }
-
-          // Right padding
-          if (paddingRight > 0) {
-            canvas.drawRect(
-              Rect.fromLTWH(
-                offset.dx + item.offset.dx + item.size.width - marginRight - paddingRight,
-                offset.dy + item.offset.dy,
-                paddingRight,
-                item.size.height,
-              ),
-              paddingPaint,
-            );
-          }
-        }
-      } else if (item is AtomicLineBoxItem) {
-        // Paint atomic inline item bounds (inline-block, images, etc.)
-        final atomicPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0
-          ..color = const Color(0xFFFF8800); // Orange for atomic inlines
-
-        canvas.drawRect(
-          Rect.fromLTWH(
-            offset.dx + item.offset.dx,
-            offset.dy + item.offset.dy,
-            item.size.width,
-            item.size.height,
-          ),
-          atomicPaint,
-        );
-      }
     }
   }
 
@@ -641,53 +488,6 @@ class InlineFormattingContext {
       }
     }
     return null;
-  }
-
-  /// Update child RenderBox parentData offsets based on line box layout.
-  void _updateChildOffsets() {
-    double lineY = 0;
-
-    for (final lineBox in _lineBoxes) {
-      // Find the minimum y offset in this line to ensure no negative positions
-      double minY = 0;
-      for (final item in lineBox.items) {
-        if (item.offset.dy < minY) {
-          minY = item.offset.dy;
-        }
-      }
-
-      // Calculate adjustment to ensure all items have non-negative y positions
-      final yAdjustment = minY < 0 ? -minY : 0;
-
-      for (final item in lineBox.items) {
-        RenderBox? renderBox;
-
-        if (item is AtomicLineBoxItem) {
-          renderBox = item.renderBox;
-        } else if (item is BoxLineBoxItem) {
-          renderBox = item.renderBox;
-        }
-
-        if (renderBox != null) {
-          // Find the actual child of the inline formatting context
-          // by walking up the parent chain
-          RenderBox? directChild = renderBox;
-          while (directChild != null && directChild.parent != container) {
-            directChild = directChild.parent as RenderBox?;
-          }
-
-          // Update the direct child's parent data offset
-          // Apply the y adjustment to ensure no negative positions
-          if (directChild != null) {
-            final parentData = directChild.parentData;
-            if (parentData is BoxParentData) {
-              parentData.offset = Offset(item.offset.dx, lineY + item.offset.dy + yAdjustment);
-            }
-          }
-        }
-      }
-      lineY += lineBox.height;
-    }
   }
 
   // Build and layout a Paragraph from collected inline items
@@ -1542,36 +1342,6 @@ class InlineFormattingContext {
       return rs.fontSize.computedValue * 1.2;
     }
     return v;
-  }
-
-  // Get ascent/descent at a given baseline y using paragraph line metrics when available.
-  // Falls back to splitting effective line-height into ascent/descent (0.8/0.2) if metrics are unavailable.
-  (double ascent, double descent) _ascentDescentAtBaselineY(double baselineY, CSSRenderStyle style) {
-    if (_paraLines.isNotEmpty) {
-      ui.LineMetrics? best;
-      double bestDist = double.infinity;
-      for (final lm in _paraLines) {
-        final double dist = (lm.baseline - baselineY).abs();
-        // Prefer the line whose baseline is closest to the given y
-        if (dist < bestDist) {
-          best = lm;
-          bestDist = dist;
-        }
-        // Or where y falls within the line box vertically
-        final double lineTop = lm.baseline - lm.ascent;
-        final double lineBottom = lm.baseline + lm.descent;
-        if (baselineY >= lineTop && baselineY <= lineBottom) {
-          best = lm;
-          break;
-        }
-      }
-      if (best != null && best!.ascent > 0 && best!.descent >= 0) {
-        return (best!.ascent, best!.descent);
-      }
-    }
-    final double lh = _effectiveLineHeightPx(style);
-    // Reasonable split for ascent/descent when metrics are missing
-    return (lh * 0.8, lh * 0.2);
   }
 
   /// Get a description of the element from a RenderBoxModel.
