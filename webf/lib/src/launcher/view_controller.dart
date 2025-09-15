@@ -78,7 +78,7 @@ class WebFViewController with Diagnosticable implements WidgetsBindingObserver {
       debugPaintSizeEnabled = true;
     }
 
-    _contextId = await initBridge(this, runningThread, enableBlink || bool.fromEnvironment("WEBF_ENABLE_BLINK"));
+    _contextId = await initBridge(this, runningThread, enableBlink);
 
     _inited = true;
 
