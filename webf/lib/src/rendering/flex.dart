@@ -333,6 +333,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   double? _getFlexBasis(RenderBox child) {
     if (child is RenderBoxModel && child.renderStyle.flexBasis != CSSLengthValue.auto) {
+      // flex-basis: content → base size is content-based; do not return a numeric value here
+      if (child.renderStyle.flexBasis?.type == CSSLengthType.CONTENT) {
+        return null;
+      }
       double? flexBasis = child.renderStyle.flexBasis?.computedValue;
 
       // Clamp flex-basis by min and max size.
@@ -647,10 +651,12 @@ class RenderFlexLayout extends RenderLayoutBox {
         );
       }
 
-      // 2) For flex main-axis auto size, avoid inheriting container’s main-axis cap.
+      // 2) For flex main-axis auto size (or flex-basis: content), avoid inheriting the container’s
+      //    main-axis cap so content can determine its natural size.
       //    This prevents items from measuring at full container width/height.
+      final bool isFlexBasisContent = s.flexBasis?.type == CSSLengthType.CONTENT;
       if (_isHorizontalFlexDirection) {
-        if (s.width.isAuto) {
+        if (s.width.isAuto || isFlexBasisContent) {
           c = BoxConstraints(
             minWidth: c.minWidth,
             maxWidth: double.infinity,
@@ -661,12 +667,12 @@ class RenderFlexLayout extends RenderLayoutBox {
       } else {
         // For column direction, constrain cross-axis (width) to container's width
         // when child doesn't have explicit width and needs constraint
-        bool needsCrossAxisConstraint = s.width.isAuto && (
+        bool needsCrossAxisConstraint = (s.width.isAuto || isFlexBasisContent) && (
           renderStyle.flexWrap != FlexWrap.nowrap || // Wrapping enabled
           renderStyle.alignItems == AlignItems.stretch // Stretching needed
         );
 
-        if (s.height.isAuto) {
+        if (s.height.isAuto || isFlexBasisContent) {
           c = BoxConstraints(
             minWidth: c.minWidth,
             maxWidth: needsCrossAxisConstraint ? math.min(constraints.maxWidth, c.maxWidth) : c.maxWidth,
@@ -683,6 +689,30 @@ class RenderFlexLayout extends RenderLayoutBox {
               maxHeight: c.maxHeight,
             );
           }
+        }
+      }
+
+      // 3) Honor explicit flex-basis for intrinsic sizing in the main axis.
+      //    When flex-basis is not 'auto', it overrides the main-size property
+      //    (width/height) for the flex base size per the spec. Use a tight
+      //    constraint equal to the resolved flex-basis so intrinsic measurement
+      //    does not expand to the width property.
+      double? basis = _getFlexBasis(child);
+      if (basis != null) {
+        if (_isHorizontalFlexDirection) {
+          c = BoxConstraints(
+            minWidth: basis,
+            maxWidth: basis,
+            minHeight: c.minHeight,
+            maxHeight: c.maxHeight,
+          );
+        } else {
+          c = BoxConstraints(
+            minWidth: c.minWidth,
+            maxWidth: c.maxWidth,
+            minHeight: basis,
+            maxHeight: basis,
+          );
         }
       }
 
@@ -1886,6 +1916,30 @@ class RenderFlexLayout extends RenderLayoutBox {
         bool isChildNeedsLayout = childMainSizeChanged || childCrossSizeChanged || (child.needsRelayout);
         if (!isChildNeedsLayout && desiredPreservedMain != null && (desiredPreservedMain != childOldMainSize)) {
           isChildNeedsLayout = true;
+        }
+
+        // CSS Flexbox: When an item does not flex (no grow/shrink applied), its
+        // used main size equals its flex base size. Even if the measured size from
+        // the first pass equals that base size, we must relayout with a tight main-axis
+        // constraint so inline formatting (IFC) inside the item uses the definite
+        // available width for text alignment and line breaking.
+        //
+        // Previously, items with flex-basis in a row-direction container were laid out
+        // initially with constraints like minW=flex-basis, maxW=∞. If the resulting
+        // border-box width happened to equal flex-basis, we skipped relayout and the
+        // IFC kept using unbounded width, breaking text-align semantics.
+        //
+        // Here we detect that situation (auto main-size, non-tight constraint) and
+        // force a relayout to tighten the main-axis constraint to the preserved base size.
+        if (!isChildNeedsLayout && desiredPreservedMain != null && childFlexedMainSize == null) {
+          final BoxConstraints applied = child.constraints;
+          final bool autoMain = _isHorizontalFlexDirection ? child.renderStyle.width.isAuto : child.renderStyle.height.isAuto;
+          final bool wasNonTightMain = _isHorizontalFlexDirection
+              ? !applied.hasTightWidth
+              : !applied.hasTightHeight;
+          if (autoMain && wasNonTightMain) {
+            isChildNeedsLayout = true;
+          }
         }
 
         // Special-case: empty flex items with percentage max-width/height should not expand

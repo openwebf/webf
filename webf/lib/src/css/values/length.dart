@@ -46,6 +46,8 @@ enum CSSLengthType {
   // normal
   NORMAL,
   INITIAL,
+  // flex-basis: content keyword (CSS Sizing-3)
+  CONTENT,
 }
 
 class CSSLengthValue {
@@ -101,6 +103,8 @@ class CSSLengthValue {
       case CSSLengthType.NORMAL:
       case CSSLengthType.INITIAL:
         break;
+      case CSSLengthType.CONTENT:
+        return 'content';
     }
     return '';
   }
@@ -580,6 +584,12 @@ class CSSLengthValue {
             break;
         }
         break;
+      case CSSLengthType.CONTENT:
+        // The 'content' keyword is only valid for certain properties like flex-basis.
+        // Defer resolution to the layout algorithm; treat as 0 length here so callers
+        // that incorrectly query computedValue don't crash. Layout code must special-case.
+        _computedValue = 0;
+        break;
       default:
         // @FIXME: Type AUTO not always resolves to 0, in cases such as `margin: auto`, `width: auto`.
         _computedValue = 0;
@@ -787,6 +797,9 @@ class CSSLength {
       return CSSLengthValue.auto;
     } else if (text == NONE) {
       return CSSLengthValue.none;
+    } else if (text.toLowerCase() == 'content') {
+      // flex-basis: content
+      return CSSLengthValue(null, CSSLengthType.CONTENT, renderStyle, propertyName, axisType);
     } else if (text.endsWith(REM)) {
       value = double.tryParse(text.split(REM)[0]);
       unit = CSSLengthType.REM;

@@ -275,20 +275,19 @@ abstract class RenderLayoutBox extends RenderBoxModel
       marginAddSizeRight = marginLeft < 0 ? -marginLeft : 0;
       marginAddSizeLeft = marginRight < 0 ? -marginRight : 0;
     }
-    // Flex-basis participates in the flex base size calculation, but should
-    // not override the used width/height when the item is flexible. Only when
-    // the flex item is inflexible (flex-grow:0 and flex-shrink:0) does
-    // flex-basis act like a preferred main size.
+    // Flex items: when flex-basis is specified (not 'auto'), it overrides the
+    // main-size property (width/height) for the base size per CSS Flexbox.
+    // Use the resolved flex-basis as the specified content size on the main axis
+    // so the item measures to its base size during intrinsic layout.
     if (renderStyle.isParentRenderFlexLayout()) {
       final CSSRenderStyle? parentRenderStyle = renderStyle.getParentRenderStyle();
-      final double? flexBasis = renderStyle.flexBasis == CSSLengthValue.auto
+      final CSSLengthValue? flexBasisLV = renderStyle.flexBasis;
+      final bool isFlexBasisContent = flexBasisLV?.type == CSSLengthType.CONTENT;
+      final double? flexBasis = (flexBasisLV == null || flexBasisLV == CSSLengthValue.auto || isFlexBasisContent)
           ? null
-          : renderStyle.flexBasis?.computedValue;
+          : flexBasisLV.computedValue;
 
-      // Consider the item “flexible” if either grow or shrink is non-zero.
-      final bool isFlexible = (renderStyle.flexGrow > 0) || (renderStyle.flexShrink > 0);
-
-      if (flexBasis != null && !isFlexible && parentRenderStyle != null) {
+      if (flexBasis != null && parentRenderStyle != null) {
         if (CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection)) {
           if (!hasOverrideContentLogicalWidth) {
             specifiedContentWidth = _getContentWidth(flexBasis);
