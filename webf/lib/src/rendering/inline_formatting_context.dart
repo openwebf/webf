@@ -529,12 +529,51 @@ class InlineFormattingContext {
           'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
     }
 
+    // Measure text metrics (height and baseline offset) for a given CSS text style.
+    // Returns (height, baselineOffset) where baselineOffset is distance from top to alphabetic baseline.
+    (double, double) _measureTextMetricsFor(CSSRenderStyle rs) {
+      // Use same text height behavior as the main paragraph to match leading distribution.
+      final mpb = ui.ParagraphBuilder(ui.ParagraphStyle(
+        textDirection: style.direction,
+        textHeightBehavior: const ui.TextHeightBehavior(
+          applyHeightToFirstAscent: true,
+          applyHeightToLastDescent: true,
+          leadingDistribution: ui.TextLeadingDistribution.even,
+        ),
+        maxLines: 1,
+      ));
+      mpb.pushStyle(_uiTextStyleFromCss(rs));
+      // Use a representative glyph to materialize font metrics.
+      mpb.addText('M');
+      final mp = mpb.build();
+      mp.layout(const ui.ParagraphConstraints(width: 1000000.0));
+      // Prefer Paragraph.computeLineMetrics when available (Flutter stable API).
+      final lines = mp.computeLineMetrics();
+      if (lines.isNotEmpty) {
+        final lm = lines.first;
+        final double ascent = lm.ascent;
+        final double descent = lm.descent;
+        return (ascent + descent, ascent);
+      }
+      // Fallback for odd cases: derive from paragraph metrics.
+      final double baseline = mp.alphabeticBaseline;
+      final double ph = mp.height; // single-line paragraph height
+      if (ph.isFinite && ph > 0 && baseline.isFinite && baseline > 0) {
+        return (ph, baseline);
+      }
+      // Last resort: approximate using font size when metrics are unavailable.
+      final fs = rs.fontSize.computedValue;
+      return (fs, fs * 0.8);
+    }
+
     // Helper to flush pending left extras for all open frames (from outermost to innermost)
     void _flushPendingLeftExtras() {
       for (final frame in openFrames) {
         if (!frame.leftFlushed && frame.leftExtras > 0) {
-          pb.addPlaceholder(frame.leftExtras, 0.0001, ui.PlaceholderAlignment.baseline,
-              baseline: TextBaseline.alphabetic, baselineOffset: 0);
+          final rs = frame.box.renderStyle;
+          final (ph, bo) = _measureTextMetricsFor(rs);
+          pb.addPlaceholder(frame.leftExtras, ph, ui.PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic, baselineOffset: bo);
           paraPos += 1; // account for placeholder char
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
           frame.leftFlushed = true;
@@ -593,8 +632,10 @@ class InlineFormattingContext {
                 // Non-empty: ensure left extras flushed, then add right extras
                 _flushPendingLeftExtras();
                 if (frame.rightExtras > 0) {
-                  pb.addPlaceholder(frame.rightExtras, 0.0001, ui.PlaceholderAlignment.baseline,
-                      baseline: TextBaseline.alphabetic, baselineOffset: 0);
+                  final rs = frame.box.renderStyle;
+                  final (ph, bo) = _measureTextMetricsFor(rs);
+                  pb.addPlaceholder(frame.rightExtras, ph, ui.PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic, baselineOffset: bo);
                   paraPos += 1;
                   _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
                   if (debugLogInlineLayoutEnabled) {
@@ -606,8 +647,10 @@ class InlineFormattingContext {
                 // Empty span: merge left+right extras into a single placeholder to avoid wrapping
                 final double merged = frame.leftExtras + frame.rightExtras;
                 if (merged > 0) {
-                  pb.addPlaceholder(merged, 0.0001, ui.PlaceholderAlignment.baseline,
-                      baseline: TextBaseline.alphabetic, baselineOffset: 0);
+                  final rs = frame.box.renderStyle;
+                  final (ph, bo) = _measureTextMetricsFor(rs);
+                  pb.addPlaceholder(merged, ph, ui.PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic, baselineOffset: bo);
                   paraPos += 1;
                   _allPlaceholders.add(_InlinePlaceholder.emptySpan(frame.box, merged));
                   if (debugLogInlineLayoutEnabled) {
