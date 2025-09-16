@@ -524,14 +524,15 @@ class CSSPositionedLayout {
     CSSLengthValue parentPaddingLeft,
     CSSLengthValue parentPaddingTop,
   ) {
-    // Only process absolutely positioned elements within their containing block
-    if (child.renderStyle.position != CSSPositionType.absolute ||
-        child.renderStyle.target.parentElement != parent.renderStyle.target) {
+    // Only process absolutely positioned elements
+    if (child.renderStyle.position != CSSPositionType.absolute) {
       return staticPositionOffset;
     }
 
     RenderPositionPlaceholder? placeholder = child.renderStyle.getSelfPositionPlaceHolder();
-    if (placeholder == null || placeholder.parent != parent) {
+    // Placeholder may live under a different parent than the containing block (e.g., under inline ancestor);
+    // still valid: we can compute its offset to the containing block.
+    if (placeholder == null) {
       return staticPositionOffset;
     }
 
@@ -548,6 +549,50 @@ class CSSPositionedLayout {
     bool needsCorrection = _staticPositionNeedsCorrection(placeholder, staticPositionOffset, parent);
 
     if (!needsCorrection) {
+      // Special-case: Inline Formatting Context containers with no in-flow content
+      // For absolutely positioned descendants with all insets auto, browsers position
+      // them at the bottom-right of the padding box when there's no static flow to anchor.
+      // Detect this by checking IFC and placeholder being the first child (no previous sibling).
+      bool isIFC = parent is RenderFlowLayout && (parent as RenderFlowLayout).establishIFC;
+      if (isIFC && (left.isAuto && right.isAuto || top.isAuto && bottom.isAuto)) {
+        // Only consider when the placeholder is the first child under the IFC container
+        if (placeholder != null && placeholder.parentData is RenderLayoutParentData) {
+          final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
+          final bool isFirst = pd.previousSibling == null;
+          if (isFirst) {
+            // Compute bottom-right inside padding box as the static position.
+            final double padLeft = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
+            final double padTop = parentBorderTopWidth.computedValue + parentPaddingTop.computedValue;
+            final double padRight = parentBorderRightWidth.computedValue;
+            final double padBottom = parentBorderBottomWidth.computedValue;
+            final Size parentSize = parent.boxSize ?? Size.zero;
+            final Size childSize = child.boxSize ?? Size.zero;
+
+            double correctedX = staticPositionOffset.dx;
+            double correctedY = staticPositionOffset.dy;
+
+            if (left.isAuto && right.isAuto) {
+              // Right edge of padding box (inside border) minus child width
+              final double rightEdge = parentSize.width - parentBorderRightWidth.computedValue;
+              correctedX = rightEdge - childSize.width;
+              // Clamp to left padding edge to avoid negative when content width is 0
+              final double leftEdge = padLeft;
+              if (correctedX < leftEdge) correctedX = leftEdge;
+            }
+
+            if (top.isAuto && bottom.isAuto) {
+              // Bottom edge of padding box (inside border) minus child height
+              final double bottomEdge = parentSize.height - parentBorderBottomWidth.computedValue;
+              correctedY = bottomEdge - childSize.height;
+              // Clamp to top padding edge
+              final double topEdge = padTop;
+              if (correctedY < topEdge) correctedY = topEdge;
+            }
+
+            return Offset(correctedX, correctedY);
+          }
+        }
+      }
       return staticPositionOffset;
     }
 
