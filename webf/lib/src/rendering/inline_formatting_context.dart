@@ -1510,7 +1510,7 @@ class InlineFormattingContext {
     // using 1.2× font-size instead of letting Flutter pick a font-driven band.
     final double? heightMultiple = ((){
       if (rs.lineHeight.type == CSSLengthType.NORMAL) {
-        return 1.2; // CSS 'normal' approximation
+        return kTextHeightNone; // CSS 'normal' approximation
       }
       if (rs.lineHeight.type == CSSLengthType.EM) {
         return rs.lineHeight.value;
