@@ -161,7 +161,17 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
   }
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
-    setState(() {});
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    // Avoid setState during build; defer to next frame.
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      setState(() {});
+    }
   }
 
   @override
@@ -728,8 +738,16 @@ class WebFReplacedElementWidgetState extends flutter.State<WebFReplacedElementWi
 
   void requestForChildNodeUpdate(AdapterUpdateReason reason) {
     if (reason is UpdateChildNodeUpdateReason) return;
-
-    setState(() {});
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() {});
+      });
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      setState(() {});
+    }
   }
 
   @override

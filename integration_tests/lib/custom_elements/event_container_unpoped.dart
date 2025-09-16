@@ -22,7 +22,10 @@ class EventContainerUnpopedState extends WebFWidgetElementState {
         // Normal event are not propagated.
         widgetElement.dispatchEvent(Event('tapped'));
       },
-      child: Column(
+      child: WebFHTMLElement(
+        tagName: 'DIV',
+        controller: widgetElement.controller,
+        parentElement: widgetElement,
         children: [
           Text('Flutter Text'),
           ...widgetElement.childNodes.toWidgetList()

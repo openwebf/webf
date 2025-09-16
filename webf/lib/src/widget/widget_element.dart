@@ -252,12 +252,20 @@ abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
   WebFWidgetElementState(this.widgetElement);
 
   void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
-    if (mounted) {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    void doSetState() {
+      if (!mounted) return;
       setState(() {
-        if (callback != null) {
-          callback();
-        }
+        if (callback != null) callback();
       });
+    }
+    // Avoid setState during build; defer to next frame.
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => doSetState());
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      doSetState();
     }
   }
 
@@ -278,12 +286,19 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
   WidgetElement get widgetElement => super.webFElement as WidgetElement;
 
   void requestUpdateState([VoidCallback? callback, AdapterUpdateReason? reason]) {
-    if (mounted) {
+    if (!mounted) return;
+    final phase = SchedulerBinding.instance.schedulerPhase;
+    void doSetState() {
+      if (!mounted) return;
       setState(() {
-        if (callback != null) {
-          callback();
-        }
+        if (callback != null) callback();
       });
+    }
+    if (phase == SchedulerPhase.persistentCallbacks || phase == SchedulerPhase.midFrameMicrotasks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => doSetState());
+      SchedulerBinding.instance.scheduleFrame();
+    } else {
+      doSetState();
     }
   }
 
