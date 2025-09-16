@@ -58,6 +58,10 @@ describe('containing-block', () => {
   });
   it('003', async () => {
     let div1;
+    let innerDiv;
+    let clickedElement: string = '';
+    let clickCount = 0;
+
     div1 = createElement(
       'div',
       {
@@ -76,7 +80,8 @@ describe('containing-block', () => {
         },
       },
       [
-        createElement('div', {
+        innerDiv = createElement('div', {
+          id: 'inner-div',
           style: {
             background: 'green',
             height: '100px',
@@ -89,9 +94,27 @@ describe('containing-block', () => {
         }),
       ]
     );
+
+    innerDiv.addEventListener('click', () => {
+      clickedElement = 'inner';
+      clickCount++;
+    });
+
     document.body.appendChild(div1);
 
     await snapshot();
+
+    await simulateClick(79, 79);
+    expect(clickCount).toBe(1);
+    expect(clickedElement).toBe('inner');
+
+    await simulateClick(99, 99);
+    expect(clickCount).toBe(1);
+    expect(clickedElement).toBe('inner');
+
+    const rect = innerDiv.getBoundingClientRect();
+    expect(rect.width).toBe(100);
+    expect(rect.height).toBe(100);
   });
   it('004', async () => {
     let p;

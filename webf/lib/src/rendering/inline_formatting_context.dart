@@ -412,7 +412,9 @@ class InlineFormattingContext {
     // Use visual longest line that includes trailing extras for shrink-to-fit behavior
     final double width = _computeVisualLongestLine();
     final double height = para.height;
-
+    // After paragraph is ready, update parentData.offset for atomic inline children so that
+    // paint and hit testing can rely on the standard Flutter offset mechanism.
+    _applyAtomicInlineParentDataOffsets();
     return Size(width, height);
   }
 
@@ -451,7 +453,13 @@ class InlineFormattingContext {
       }
     }
 
-    // Paint atomic inline children at placeholder positions (content-relative)
+    // Paint atomic inline children using parentData.offset for consistency.
+    // Convert container-origin offsets to content-local by subtracting the content origin.
+    final double contentOriginX =
+        container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue;
+    final double contentOriginY =
+        container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue;
+
     for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
@@ -463,15 +471,9 @@ class InlineFormattingContext {
         p = p.parent;
       }
       if (!paintBox.hasSize) continue;
-      final tb = _placeholderBoxes[i];
-      double left = tb.left;
-      double top = tb.top;
-      if (rb is RenderBoxModel) {
-        left += rb.renderStyle.marginLeft.computedValue;
-        top += rb.renderStyle.marginTop.computedValue;
-      }
-      final Offset paintOffset = offset + Offset(left, top);
-      context.paintChild(paintBox, paintOffset);
+      final RenderLayoutParentData pd = paintBox.parentData as RenderLayoutParentData;
+      final Offset contentLocalOffset = Offset(pd.offset.dx - contentOriginX, pd.offset.dy - contentOriginY);
+      context.paintChild(paintBox, offset + contentLocalOffset);
     }
 
     if (debugPaintInlineLayoutEnabled) {
@@ -572,7 +574,12 @@ class InlineFormattingContext {
 
   /// Hit test the inline content.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // Paragraph path: hit test atomic inlines at placeholder positions (content-relative)
+    // Paragraph path: hit test atomic inlines at parentData offsets (content-relative)
+    final double contentOriginX =
+        container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue;
+    final double contentOriginY =
+        container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue;
+
     for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
@@ -583,16 +590,10 @@ class InlineFormattingContext {
         if (p is RenderBox) hitBox = p;
         p = p.parent;
       }
-      final tb = _placeholderBoxes[i];
-      double left = tb.left;
-      double top = tb.top;
-      if (rb is RenderBoxModel) {
-        left += rb.renderStyle.marginLeft.computedValue;
-        top += rb.renderStyle.marginTop.computedValue;
-      }
-      final Offset paintOffset = Offset(left, top);
+      final RenderLayoutParentData pd = hitBox.parentData as RenderLayoutParentData;
+      final Offset contentLocalOffset = Offset(pd.offset.dx - contentOriginX, pd.offset.dy - contentOriginY);
       final bool isHit = result.addWithPaintOffset(
-        offset: paintOffset,
+        offset: contentLocalOffset,
         position: position,
         hitTest: (BoxHitTestResult res, Offset transformed) {
           return hitBox.hitTest(res, position: transformed);
@@ -699,6 +700,53 @@ class InlineFormattingContext {
       }
     }
     return false;
+  }
+
+  /// Update parentData.offset for atomic inline children so that paint and hit testing
+  /// can rely on Flutter's standard offset mechanism. Offsets are set in container-origin
+  /// coordinates (i.e., include padding and border).
+  void _applyAtomicInlineParentDataOffsets() {
+    if (_placeholderBoxes.isEmpty || _placeholderOrder.isEmpty) return;
+
+    final double contentOriginX =
+        container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue;
+    final double contentOriginY =
+        container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue;
+
+    for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
+      final rb = _placeholderOrder[i];
+      if (rb == null) continue;
+
+      // Find the direct RenderBox child under the container; it carries RenderLayoutParentData
+      RenderBox paintBox = rb;
+      RenderObject? p = rb.parent;
+      while (p != null && p != container) {
+        if (p is RenderBox) paintBox = p;
+        p = p.parent;
+      }
+
+      final tb = _placeholderBoxes[i];
+      double left = tb.left;
+      double top = tb.top;
+      // Add box margins and conditionally add CSS relative offset.
+      // If the direct child under the container is a RenderBoxModel, let
+      // CSSPositionedLayout.applyRelativeOffset add the style offset.
+      // Otherwise (wrappers), pre-add the relative offset from the atomic inline (rb).
+      if (rb is RenderBoxModel) {
+        left += rb.renderStyle.marginLeft.computedValue;
+        top += rb.renderStyle.marginTop.computedValue;
+        if (paintBox is! RenderBoxModel) {
+          final Offset? rel = CSSPositionedLayout.getRelativeOffset(rb.renderStyle);
+          if (rel != null) {
+            left += rel.dx;
+            top += rel.dy;
+          }
+        }
+      }
+
+      final Offset relativeOffset = Offset(contentOriginX + left, contentOriginY + top);
+      CSSPositionedLayout.applyRelativeOffset(relativeOffset, paintBox);
+    }
   }
 
   /// Get the bounding rectangle for a specific inline element across all line fragments.
