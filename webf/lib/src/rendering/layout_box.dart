@@ -288,14 +288,30 @@ abstract class RenderLayoutBox extends RenderBoxModel
           : flexBasisLV.computedValue;
 
       if (flexBasis != null && parentRenderStyle != null) {
-        if (CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection)) {
-          if (!hasOverrideContentLogicalWidth) {
-            specifiedContentWidth = _getContentWidth(flexBasis);
+        final bool isRow = CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection);
+        final bool isParentMainDefinite = isRow
+            ? parentRenderStyle.contentBoxLogicalWidth != null
+            : parentRenderStyle.contentBoxLogicalHeight != null;
+        final bool isPctBasis = flexBasisLV!.type == CSSLengthType.PERCENTAGE;
+
+        // Follow CSS spec: percentage flex-basis resolves against the flex container's main size;
+        // if that size is indefinite, the used value is 'content'. In that case, do not override
+        // the specified content size here—let content determine sizing.
+        if (isPctBasis && !isParentMainDefinite) {
+          // Skip overriding specified content size.
+        } else if (flexBasis > 0) {
+          // Only apply positive, resolvable flex-basis to content sizing here.
+          if (isRow) {
+            if (!hasOverrideContentLogicalWidth) {
+              specifiedContentWidth = _getContentWidth(flexBasis);
+            }
+          } else {
+            if (!hasOverrideContentLogicalHeight) {
+              specifiedContentHeight = _getContentHeight(flexBasis);
+            }
           }
         } else {
-          if (!hasOverrideContentLogicalHeight) {
-            specifiedContentHeight = _getContentHeight(flexBasis);
-          }
+          // Non-positive flex-basis should not clamp intrinsic content to zero here.
         }
       }
     }

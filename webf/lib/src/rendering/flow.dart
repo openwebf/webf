@@ -707,6 +707,8 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     minContentWidth = _getMainAxisAutoSize(_lineMetrics);
     minContentHeight = _getCrossAxisAutoSize(_lineMetrics);
+
+    // logging removed
   }
 
   // Set size when layout has no child.

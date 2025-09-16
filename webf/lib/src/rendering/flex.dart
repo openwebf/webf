@@ -358,13 +358,15 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Note: When flex-basis is 0%, it should remain 0, not be changed to minContentWidth
       // The commented code below was incorrectly setting flexBasis to minContentWidth for 0% values
       if (flexBasis != null && flexBasis == 0 && child.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
-        // Only convert flex-basis: 0% to content size when the container's main size is indefinite
-        bool isMainSizeDefinite = _isHorizontalFlexDirection ?
-            renderStyle.contentBoxLogicalWidth != null :
-            renderStyle.contentBoxLogicalHeight != null;
-
+        // When the flex container’s main size is indefinite, CSS says the used
+        // value of a percentage flex-basis becomes 'content'. Defer to content-based
+        // sizing by returning null here so the item measures itself naturally first.
+        // This avoids prematurely substituting an uninitialized min-content size (0).
+        bool isMainSizeDefinite = _isHorizontalFlexDirection
+            ? renderStyle.contentBoxLogicalWidth != null
+            : renderStyle.contentBoxLogicalHeight != null;
         if (!isMainSizeDefinite) {
-          flexBasis = _isHorizontalFlexDirection ? child.minContentWidth : child.minContentHeight;
+          return null;
         }
       }
 
@@ -570,7 +572,6 @@ class RenderFlexLayout extends RenderLayoutBox {
         autoMinSize = contentSize;
       }
     }
-
     return autoMinSize;
   }
 
@@ -693,12 +694,12 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       // 3) Honor explicit flex-basis for intrinsic sizing in the main axis.
-      //    When flex-basis is not 'auto', it overrides the main-size property
-      //    (width/height) for the flex base size per the spec. Use a tight
-      //    constraint equal to the resolved flex-basis so intrinsic measurement
-      //    does not expand to the width property.
+      //    When flex-basis is not 'auto' AND greater than 0, it should guide intrinsic
+      //    measurement along the main axis. Do NOT tighten to 0, as that collapses
+      //    items like `flex: 1 1 0` and prevents content-based sizing per spec
+      //    (min-size:auto -> min-content size applies when the main size is auto).
       double? basis = _getFlexBasis(child);
-      if (basis != null) {
+      if (basis != null && basis > 0) {
         if (_isHorizontalFlexDirection) {
           c = BoxConstraints(
             minWidth: basis,
@@ -1333,6 +1334,15 @@ class RenderFlexLayout extends RenderLayoutBox {
         renderingLogger.finer('[Flex] base main-size ${_childDesc(child)} '
             'intrinsic=${(_isHorizontalFlexDirection ? childSize.width : childSize.height).toStringAsFixed(1)} '
             'clamped=${intrinsicMain.toStringAsFixed(1)}');
+      }
+
+      // Enforce automatic minimum main size (min-size:auto) so preserved sizes
+      // never fall below min-content contributions in the main axis.
+      if (child is RenderBoxModel) {
+        final double autoMinMain = _getMinMainAxisSize(child);
+        if (intrinsicMain < autoMinMain) {
+          intrinsicMain = autoMinMain;
+        }
       }
 
       _childrenIntrinsicMainSizes[child.hashCode] = intrinsicMain;
