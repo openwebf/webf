@@ -90,6 +90,7 @@ class WebFPage extends StatelessWidget {
                 createController: () => WebFController(
                     viewportWidth: 360,
                     viewportHeight: 640,
+                    background: Colors.white10,
                     onControllerInit: (controller) async {
                       double contextId = controller.view.contextId;
                       Pointer<Void> testContext = initTestFramework(contextId);

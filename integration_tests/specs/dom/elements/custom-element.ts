@@ -185,10 +185,10 @@ describe('custom widget element', () => {
     BODY.append(container);
 
     img.addEventListener('load', async () => {
-      await simulateClick(5, 5);
+      await simulateClick(100, 5);
       expect([containerClickedCount, imgClickedCount]).toEqual([1, 0]);
 
-      await simulateClick(15, 50);
+      await simulateClick(15, 5);
       expect([containerClickedCount, imgClickedCount]).toEqual([1, 1]);
 
       await snapshot();
@@ -228,7 +228,7 @@ describe('custom widget element', () => {
     await simulateClick(window.screen.width / 2, 5);
     expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([1, 1, 0, 1]);
 
-    await simulateClick(5, 40);
+    await simulateClick(5, 30);
 
     expect([bodyClickedCount, bodyCaptureClickedCount, innerElementClickedCount, containerClickedCount]).toEqual([2, 2, 1, 2]);
 
