@@ -13,7 +13,8 @@ mixin CSSObjectPositionMixin on RenderStyle {
   set objectPosition(Alignment? value) {
     if (_objectPosition == value) return;
     _objectPosition = value;
-    markNeedsLayout();
+    target.updateElementKey();
+    requestWidgetToRebuild(UpdateRenderReplacedUpdateReason());
   }
 
   static Alignment resolveObjectPosition(String? position) {
