@@ -239,6 +239,209 @@ class InlineFormattingContext {
     }
     return false;
   }
+
+  // Return the line band's top, bottom and baseline for a given line index.
+  (double top, double bottom, double baseline) _bandForLine(int lineIndex) {
+    final lm = _paraLines[lineIndex];
+    final double lt = lm.baseline - lm.ascent;
+    final double lb = lm.baseline + lm.descent;
+    return (lt, lb, lm.baseline);
+  }
+
+  // Find paragraph line index with maximum vertical overlap for a TextBox.
+  int _bestOverlapLineIndexForBox(ui.TextBox tb, List<ui.LineMetrics> lines) {
+    int best = -1;
+    double bestOverlap = -1;
+    for (int i = 0; i < lines.length; i++) {
+      final lm = lines[i];
+      final double lt = lm.baseline - lm.ascent;
+      final double lb = lm.baseline + lm.descent;
+      final double overlap = math.max(0, math.min(tb.bottom, lb) - math.max(tb.top, lt));
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  // Traverse wrapper chain and find the direct child of the container to which
+  // parentData.offset should be assigned. Returns (target, hasWrapper).
+  (RenderBox target, bool hadWrapper) _findDirectChildTarget(RenderBox box) {
+    RenderBox target = box;
+    RenderObject? p = box.parent;
+    bool hasWrapper = false;
+    while (p != null && p != container) {
+      if (p is RenderBox) {
+        target = p;
+        hasWrapper = true;
+      }
+      p = p.parent;
+    }
+    return (target, hasWrapper);
+  }
+
+  // Assign offset to the direct container child for a given box (handling wrappers)
+  // and zero out the inner box offset when wrapped.
+  void _assignOffsetToDirectChild(RenderBox box, Offset offset) {
+    final (target, hadWrapper) = _findDirectChildTarget(box);
+    if (target.parent == container) {
+      final pd = target.parentData as ContainerBoxParentData<RenderBox>;
+      pd.offset = offset;
+      if (hadWrapper && box.parentData is BoxParentData) {
+        (box.parentData as BoxParentData).offset = Offset.zero;
+      }
+      if (debugLogInlineLayoutEnabled) {
+        renderingLogger.finer('[IFC] set inline parentData for <${_getElementDescription(box is RenderBoxModel ? (box as RenderBoxModel) : null)}>'
+            ' target=${target.runtimeType} offset=(${offset.dx.toStringAsFixed(2)},${offset.dy.toStringAsFixed(2)})');
+      }
+    }
+  }
+
+  // Compute TextBoxes for a span's painting by removing a leading rect that
+  // equals the left-extras placeholder, if present.
+  List<ui.TextBox> _computeSpanRectsForPainting(RenderBoxModel box, (int,int) range) {
+    List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+    if (rects.isEmpty) {
+      rects = _synthesizeRectsForEmptySpan(box);
+      return rects;
+    }
+    final tbPH = _leftExtraTextBoxFor(box);
+    if (tbPH != null && rects.isNotEmpty && _sameRect(rects.first, tbPH)) {
+      rects = rects.sublist(1);
+    }
+    return rects;
+  }
+
+  // Compute inline visual rect (border-box) from a list of paragraph rects.
+  // Applies first/last horizontal extensions and vertical min/max across fragments;
+  // for synthesized (empty span) uses effective line-height fallbacks.
+  Rect _computeInlineVisualRect(RenderBoxModel box, List<ui.TextBox> rects, CSSRenderStyle style, {required bool synthesized}) {
+    final padL = style.paddingLeft.computedValue;
+    final padR = style.paddingRight.computedValue;
+    final padT = style.paddingTop.computedValue;
+    final padB = style.paddingBottom.computedValue;
+    final bL = style.borderLeftWidth?.computedValue ?? 0.0;
+    final bR = style.borderRightWidth?.computedValue ?? 0.0;
+    final bT = style.borderTopWidth?.computedValue ?? 0.0;
+    final bB = style.borderBottomWidth?.computedValue ?? 0.0;
+
+    if (synthesized) {
+      final tb = rects.first;
+      final double lineHeight = _effectiveLineHeightPx(style);
+      final lEdge = tb.left;
+      final rEdge = tb.right;
+      final tEdge = tb.top - (lineHeight + padT + bT);
+      final bEdge = tb.top + (padB + bB);
+      return Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
+    }
+
+    // Non-synthesized: union across fragments; extend first/last horizontally.
+    final lEdge = rects.first.left - (padL + bL);
+    final rEdge = rects.last.right + (padR + bR);
+    double minTop = double.infinity;
+    double maxBottom = -double.infinity;
+    for (final r in rects) {
+      // Clamp to the best-overlap band for this fragment
+      if (_paraLines.isNotEmpty) {
+        final li = _bestOverlapLineIndexForBox(r, _paraLines);
+        if (li >= 0) {
+          final (lt, lb, _) = _bandForLine(li);
+          final ct = math.max(r.top, lt);
+          final cb = math.min(r.bottom, lb);
+          minTop = math.min(minTop, ct);
+          maxBottom = math.max(maxBottom, cb);
+          continue;
+        }
+      }
+      minTop = math.min(minTop, r.top);
+      maxBottom = math.max(maxBottom, r.bottom);
+    }
+    final tEdge = minTop - (padT + bT);
+    final bEdge = maxBottom + (padB + bB);
+    return Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
+  }
+
+  // Build decoration entries (span fragments to paint) with rects filtered
+  // for extras placeholders; includes only elements that actually paint.
+  List<_SpanPaintEntry> _buildDecorationEntriesForPainting() {
+    final entries = <_SpanPaintEntry>[];
+    _elementRanges.forEach((box, range) {
+      final style = box.renderStyle;
+      final hasBg = style.backgroundColor?.value != null;
+      final hasBorder = ((style.borderLeftWidth?.value ?? 0) > 0) ||
+          ((style.borderTopWidth?.value ?? 0) > 0) ||
+          ((style.borderRightWidth?.value ?? 0) > 0) ||
+          ((style.borderBottomWidth?.value ?? 0) > 0);
+      final hasPadding = ((style.paddingLeft?.value ?? 0) > 0) ||
+          ((style.paddingTop?.value ?? 0) > 0) ||
+          ((style.paddingRight?.value ?? 0) > 0) ||
+          ((style.paddingBottom?.value ?? 0) > 0);
+      if (!hasBg && !hasBorder && !hasPadding) return;
+
+      List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+      bool synthesized = false;
+      if (rects.isEmpty) {
+        rects = _synthesizeRectsForEmptySpan(box);
+        if (rects.isEmpty) return;
+        synthesized = true;
+      } else {
+        // Filter leading placeholder box when present
+        final tbPH = _leftExtraTextBoxFor(box);
+        if (tbPH != null && _sameRect(rects.first, tbPH)) {
+          rects = rects.sublist(1);
+        }
+      }
+      entries.add(_SpanPaintEntry(box, style, rects, _depthFromContainer(box), synthesized));
+    });
+    entries.sort((a, b) => a.depth.compareTo(b.depth));
+    return entries;
+  }
+
+  // Shrink paragraph width only as needed so the last line can accommodate
+  // trailing extras (padding/border/margin) without overflow.
+  void _shrinkWidthForLastLineTrailingExtras(ui.Paragraph paragraph, BoxConstraints constraints) {
+    if (!constraints.hasBoundedWidth || !constraints.maxWidth.isFinite || constraints.maxWidth <= 0) return;
+    final lines = paragraph.computeLineMetrics();
+    if (lines.isEmpty) return;
+    final int lastIndex = lines.length - 1;
+    double trailingReserve = 0;
+    _elementRanges.forEach((box, range) {
+      final int sIdx = range.$1;
+      final int eIdx = range.$2;
+      if (eIdx <= sIdx) return;
+      final rects = paragraph.getBoxesForRange(sIdx, eIdx);
+      if (rects.isEmpty) return;
+      final last = rects.last;
+      final li = _bestOverlapLineIndexForBox(last, lines);
+      if (li != lastIndex) return;
+      final s = box.renderStyle;
+      trailingReserve += s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+    });
+    if (trailingReserve <= 0) return;
+    final double maxW = constraints.maxWidth;
+    final double need = lines.last.width + trailingReserve - maxW;
+    if (need <= 0.5) return;
+    double hi = maxW;
+    double lo = math.max(0.0, maxW - trailingReserve);
+    double chosen = hi;
+    for (int it = 0; it < 6; it++) {
+      final double mid = (hi + lo) / 2.0;
+      paragraph.layout(ui.ParagraphConstraints(width: mid));
+      final lw = paragraph.computeLineMetrics().last.width;
+      if (lw + trailingReserve <= maxW + 0.1) {
+        chosen = mid;
+        lo = mid;
+      } else {
+        hi = mid;
+      }
+    }
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.fine('[IFC] reserve trailing extras (last-line only): width '
+          '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)} (reserve=${trailingReserve.toStringAsFixed(2)})');
+    }
+    paragraph.layout(ui.ParagraphConstraints(width: chosen));
+  }
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
     _needsCollectInlines = true;
@@ -1011,74 +1214,7 @@ class InlineFormattingContext {
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }
-    // Reserve trailing extras only as much as necessary so the last line can
-    // accommodate right-side extras (padding/border/margin) without overflow.
-    // This mirrors browser behavior: earlier lines keep full width; only the
-    // last line requires enough slack for trailing extras.
-    if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
-      final lines = paragraph.computeLineMetrics();
-      if (lines.isNotEmpty) {
-        // Sum trailing extras of all inline elements that end on the last line.
-        final int lastIndex = lines.length - 1;
-        double trailingReserve = 0;
-        _elementRanges.forEach((box, range) {
-          final int sIdx = range.$1;
-          final int eIdx = range.$2;
-          if (eIdx <= sIdx) return;
-          final rects = paragraph.getBoxesForRange(sIdx, eIdx);
-          if (rects.isEmpty) return;
-          final last = rects.last;
-          // Map last fragment to a line index
-          int li = -1;
-          double bestOverlap = -1;
-          for (int i = 0; i < lines.length; i++) {
-            final lm = lines[i];
-            final double lt = lm.baseline - lm.ascent;
-            final double lb = lm.baseline + lm.descent;
-            final double overlap = math.max(0, math.min(last.bottom, lb) - math.max(last.top, lt));
-            if (overlap > bestOverlap) {
-              bestOverlap = overlap;
-              li = i;
-            }
-          }
-          if (li != lastIndex) return;
-          final s = box.renderStyle;
-          trailingReserve += s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
-        });
-        if (trailingReserve > 0) {
-          // If last line plus reserve exceeds max width, iteratively shrink
-          // shaping width to the minimal value that satisfies it.
-          final double maxW = constraints.maxWidth;
-          double hi = maxW; // no shrink
-          double lo = math.max(0.0, maxW - trailingReserve); // worst-case shrink
-          double chosen = hi;
-          // Quick check
-          final double need = lines.last.width + trailingReserve - maxW;
-          if (need > 0.5) {
-            // Binary search minimal width
-            for (int it = 0; it < 6; it++) {
-              final double mid = (hi + lo) / 2.0;
-              paragraph.layout(ui.ParagraphConstraints(width: mid));
-              final lastWidth = paragraph.computeLineMetrics().last.width;
-              if (lastWidth + trailingReserve <= maxW + 0.1) {
-                // ok, try wider
-                chosen = mid;
-                lo = mid;
-              } else {
-                // still too wide, shrink more
-                hi = mid;
-              }
-            }
-            if (debugLogInlineLayoutEnabled) {
-              renderingLogger.fine('[IFC] reserve trailing extras (last-line only): '
-                  'width ${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)} '
-                  '(reserve=${trailingReserve.toStringAsFixed(2)})');
-            }
-            paragraph.layout(ui.ParagraphConstraints(width: chosen));
-          }
-        }
-      }
-    }
+    _shrinkWidthForLastLineTrailingExtras(paragraph, constraints);
 
     _paragraph = paragraph;
     _paraLines = paragraph.computeLineMetrics();
@@ -1213,72 +1349,34 @@ class InlineFormattingContext {
         left += rb.renderStyle.marginLeft.computedValue;
         top += rb.renderStyle.marginTop.computedValue;
       }
-      // ParentData offsets are container-relative
-      Offset childOffset = contentOffset + Offset(left, top);
+      final Offset childOffset = contentOffset + Offset(left, top);
+      _assignOffsetToDirectChild(rb, childOffset);
+      // Compute and record a visual border-box size for atomic inline to be applied via tight constraints later.
       if (rb is RenderBoxModel) {
-        // already included margins
-      }
-
-      // Walk up to find the direct child of the container to assign offset
-      RenderBox target = rb;
-      RenderObject? p = rb.parent;
-      bool hasWrapper = false;
-      while (p != null && p != container) {
-        if (p is RenderBox) {
-          target = p;
-          hasWrapper = true;
-        }
-        p = p.parent;
-      }
-      if (p == container && target is RenderBox) {
-        final pd = target.parentData as ContainerBoxParentData<RenderBox>;
-        pd.offset = childOffset;
-        if (debugLogInlineLayoutEnabled) {
-          renderingLogger.finer('[IFC] set parentData for <${_getElementDescription(rb is RenderBoxModel ? rb : null)}> target=${target.runtimeType} offset=(${childOffset.dx.toStringAsFixed(2)},${childOffset.dy.toStringAsFixed(2)})');
-        }
-        // Ensure the atomic render box itself has zero local offset inside wrapper
-        // so wrapper's parentData carries the full translation.
-        if (hasWrapper && rb.parentData is BoxParentData) {
-          (rb.parentData as BoxParentData).offset = Offset.zero;
-        }
-        // Compute and record a visual border-box size for atomic inline to be applied via tight constraints later.
-        if (rb is RenderBoxModel) {
-          final CSSRenderStyle s = rb.renderStyle;
-          final double padL = s.paddingLeft.computedValue;
-          final double padR = s.paddingRight.computedValue;
-          final double padT = s.paddingTop.computedValue;
-          final double padB = s.paddingBottom.computedValue;
-          final double bL = s.borderLeftWidth?.computedValue ?? 0.0;
-          final double bR = s.borderRightWidth?.computedValue ?? 0.0;
-          final double bT = s.borderTopWidth?.computedValue ?? 0.0;
-          final double bB = s.borderBottomWidth?.computedValue ?? 0.0;
-          final double bw = (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0));
-          final double bh = (rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0));
-          final double visualW = bw + padL + padR + bL + bR;
-          final double visualH = bh + padT + padB + bT + bB;
-          _measuredVisualSizes[target] = Size(visualW, visualH);
-        }
+        final CSSRenderStyle s = rb.renderStyle;
+        final double padL = s.paddingLeft.computedValue;
+        final double padR = s.paddingRight.computedValue;
+        final double padT = s.paddingTop.computedValue;
+        final double padB = s.paddingBottom.computedValue;
+        final double bL = s.borderLeftWidth?.computedValue ?? 0.0;
+        final double bR = s.borderRightWidth?.computedValue ?? 0.0;
+        final double bT = s.borderTopWidth?.computedValue ?? 0.0;
+        final double bB = s.borderBottomWidth?.computedValue ?? 0.0;
+        final double bw = (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0));
+        final double bh = (rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0));
+        final double visualW = bw + padL + padR + bL + bR;
+        final double visualH = bh + padT + padB + bT + bB;
+        final (target, _) = _findDirectChildTarget(rb);
+        _measuredVisualSizes[target] = Size(visualW, visualH);
       }
     }
 
     // Also set offsets for non-atomic inline boxes using paragraph ranges.
     if (_paragraph != null && _elementRanges.isNotEmpty) {
       _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
-        List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-        bool synthesized = false;
-        if (rects.isEmpty) {
-          rects = _synthesizeRectsForEmptySpan(box);
-          if (rects.isEmpty) return;
-          synthesized = true;
-        }
-        // Drop leading rect if it equals the left-extras placeholder; we will
-        // expand the real first fragment by padding/border instead.
-        if (!synthesized && rects.isNotEmpty) {
-          final tbPH = _leftExtraTextBoxFor(box);
-          if (tbPH != null && _sameRect(rects.first, tbPH)) {
-            rects = rects.sublist(1);
-          }
-        }
+        List<ui.TextBox> rects = _computeSpanRectsForPainting(box, range);
+        bool synthesized = rects.isNotEmpty ? false : true;
+        if (rects.isEmpty) return;
 
         // Use the first fragment as the anchor
         final style = box.renderStyle;
@@ -1312,77 +1410,10 @@ class InlineFormattingContext {
 
         final Offset childOffset = contentOffset + Offset(left, top);
 
-        // Assign offset to the direct child (wrapper if present)
-        RenderBox target = box;
-        RenderObject? p = box.parent;
-        bool hasWrapper = false;
-        while (p != null && p != container) {
-          if (p is RenderBox) {
-            target = p;
-            hasWrapper = true;
-          }
-          p = p.parent;
-        }
-        if (p == container && target is RenderBox) {
-          final pd = target.parentData as ContainerBoxParentData<RenderBox>;
-          pd.offset = childOffset;
-          if (debugLogInlineLayoutEnabled) {
-            renderingLogger.finer('[IFC] set inline parentData for <${_getElementDescription(box)}> target=${target.runtimeType} offset=(${childOffset.dx.toStringAsFixed(2)},${childOffset.dy.toStringAsFixed(2)})');
-          }
-          if (hasWrapper && box.parentData is BoxParentData) {
-            (box.parentData as BoxParentData).offset = Offset.zero;
-          }
-
-          // Compute and store a debug visual size/rect for the inline element for Inspector.
-          double lEdge, rEdge, tEdge, bEdge;
-          if (synthesized) {
-            // Synthesized rect from extras: include content height using effective line-height
-            // to better match painted area of empty inline spans.
-            final double lineHeight = _effectiveLineHeightPx(style);
-            lEdge = tb.left;
-            rEdge = tb.right;
-            tEdge = tb.top - (lineHeight + padT + bT);
-            bEdge = tb.top + (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
-          } else {
-            // Union across fragments: first/last horizontally; min/max vertically.
-            // Clamp each fragment vertically to its line band to avoid glyph overshoot.
-            lEdge = rects.first.left - (padL + bL);
-            rEdge = rects.last.right + (style.paddingRight.computedValue + (style.borderRightWidth?.computedValue ?? 0.0));
-
-            double minTop = double.infinity;
-            double maxBottom = -double.infinity;
-            for (final r in rects) {
-              double bandTop = r.top;
-              double bandBottom = r.bottom;
-              double bestOverlap = -1;
-              for (final lm in _paraLines) {
-                final double lt = lm.baseline - lm.ascent;
-                final double lb = lm.baseline + lm.descent;
-                final double overlap = math.max(0, math.min(r.bottom, lb) - math.max(r.top, lt));
-                if (overlap > bestOverlap) {
-                  bestOverlap = overlap;
-                  bandTop = lt;
-                  bandBottom = lb;
-                }
-              }
-              final double ct = math.max(r.top, bandTop);
-              final double cb = math.min(r.bottom, bandBottom);
-              if (ct < minTop) minTop = ct;
-              if (cb > maxBottom) maxBottom = cb;
-            }
-            tEdge = minTop - (padT + bT);
-            bEdge = maxBottom + (style.paddingBottom.computedValue + (style.borderBottomWidth?.computedValue ?? 0.0));
-            if (debugLogInlineLayoutEnabled) {
-              renderingLogger.finer('[IFC] inline visual rect for <${_getElementDescription(box)}>: '
-                  'lEdge=${lEdge.toStringAsFixed(2)} rEdge=${rEdge.toStringAsFixed(2)} '
-                  'tEdge=${tEdge.toStringAsFixed(2)} bEdge=${bEdge.toStringAsFixed(2)}');
-            }
-          }
-          final Rect contentRect = Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
-          final Size visualSize = Size(contentRect.width, contentRect.height);
-          // Record measured size for the direct child to be laid out tightly later.
-          _measuredVisualSizes[target] = visualSize;
-        }
+        _assignOffsetToDirectChild(box, childOffset);
+        final Rect contentRect = _computeInlineVisualRect(box, rects, style, synthesized: synthesized);
+        final (target, _) = _findDirectChildTarget(box);
+        _measuredVisualSizes[target] = Size(contentRect.width, contentRect.height);
       });
     }
   }
@@ -1392,42 +1423,7 @@ class InlineFormattingContext {
     if (_elementRanges.isEmpty || _paragraph == null) return;
 
     // Build entries with depth for proper painting order (parents first)
-    final entries = <_SpanPaintEntry>[];
-    _elementRanges.forEach((box, range) {
-      final style = box.renderStyle;
-      final hasBg = style.backgroundColor?.value != null;
-      final hasBorder = ((style.borderLeftWidth?.value ?? 0) > 0) ||
-          ((style.borderTopWidth?.value ?? 0) > 0) ||
-          ((style.borderRightWidth?.value ?? 0) > 0) ||
-          ((style.borderBottomWidth?.value ?? 0) > 0);
-      final hasPadding = ((style.paddingLeft?.value ?? 0) > 0) ||
-          ((style.paddingTop?.value ?? 0) > 0) ||
-          ((style.paddingRight?.value ?? 0) > 0) ||
-          ((style.paddingBottom?.value ?? 0) > 0);
-      if (!hasBg && !hasBorder && !hasPadding) return;
-
-      List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-      bool synthesized = false;
-      if (rects.isEmpty) {
-        // Synthesize rect for empty spans using extras placeholders
-        rects = _synthesizeRectsForEmptySpan(box);
-        if (rects.isEmpty) return;
-        synthesized = true;
-      }
-      // If a left-extras placeholder exists for this element and paragraph
-      // produced a leading rect that equals the placeholder box, drop it so we
-      // can expand the first real fragment by padding/border instead of double
-      // counting the placeholder.
-      if (!synthesized && rects.isNotEmpty) {
-        final tbPH = _leftExtraTextBoxFor(box);
-        if (tbPH != null && _sameRect(rects.first, tbPH)) {
-          rects = rects.sublist(1);
-        }
-      }
-      entries.add(_SpanPaintEntry(box, style, rects, _depthFromContainer(box), synthesized));
-    });
-
-    entries.sort((a, b) => a.depth.compareTo(b.depth));
+    final entries = _buildDecorationEntriesForPainting();
     final canvas = context.canvas;
 
     // Identify current line index if painting per-line.
