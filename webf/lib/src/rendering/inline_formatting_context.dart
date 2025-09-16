@@ -265,102 +265,10 @@ class InlineFormattingContext {
     return best;
   }
 
-  // Traverse wrapper chain and find the direct child of the container to which
-  // parentData.offset should be assigned. Returns (target, hasWrapper).
-  (RenderBox target, bool hadWrapper) _findDirectChildTarget(RenderBox box) {
-    RenderBox target = box;
-    RenderObject? p = box.parent;
-    bool hasWrapper = false;
-    while (p != null && p != container) {
-      if (p is RenderBox) {
-        target = p;
-        hasWrapper = true;
-      }
-      p = p.parent;
-    }
-    return (target, hasWrapper);
-  }
-
-  // Assign offset to the direct container child for a given box (handling wrappers)
-  // and zero out the inner box offset when wrapped.
-  void _assignOffsetToDirectChild(RenderBox box, Offset offset) {
-    final (target, hadWrapper) = _findDirectChildTarget(box);
-    if (target.parent == container) {
-      final pd = target.parentData as ContainerBoxParentData<RenderBox>;
-      pd.offset = offset;
-      if (hadWrapper && box.parentData is BoxParentData) {
-        (box.parentData as BoxParentData).offset = Offset.zero;
-      }
-      if (debugLogInlineLayoutEnabled) {
-        renderingLogger.finer('[IFC] set inline parentData for <${_getElementDescription(box is RenderBoxModel ? (box as RenderBoxModel) : null)}>'
-            ' target=${target.runtimeType} offset=(${offset.dx.toStringAsFixed(2)},${offset.dy.toStringAsFixed(2)})');
-      }
-    }
-  }
-
-  // Compute TextBoxes for a span's painting by removing a leading rect that
-  // equals the left-extras placeholder, if present.
-  List<ui.TextBox> _computeSpanRectsForPainting(RenderBoxModel box, (int,int) range) {
-    List<ui.TextBox> rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
-    if (rects.isEmpty) {
-      rects = _synthesizeRectsForEmptySpan(box);
-      return rects;
-    }
-    final tbPH = _leftExtraTextBoxFor(box);
-    if (tbPH != null && rects.isNotEmpty && _sameRect(rects.first, tbPH)) {
-      rects = rects.sublist(1);
-    }
-    return rects;
-  }
-
-  // Compute inline visual rect (border-box) from a list of paragraph rects.
-  // Applies first/last horizontal extensions and vertical min/max across fragments;
-  // for synthesized (empty span) uses effective line-height fallbacks.
-  Rect _computeInlineVisualRect(RenderBoxModel box, List<ui.TextBox> rects, CSSRenderStyle style, {required bool synthesized}) {
-    final padL = style.paddingLeft.computedValue;
-    final padR = style.paddingRight.computedValue;
-    final padT = style.paddingTop.computedValue;
-    final padB = style.paddingBottom.computedValue;
-    final bL = style.borderLeftWidth?.computedValue ?? 0.0;
-    final bR = style.borderRightWidth?.computedValue ?? 0.0;
-    final bT = style.borderTopWidth?.computedValue ?? 0.0;
-    final bB = style.borderBottomWidth?.computedValue ?? 0.0;
-
-    if (synthesized) {
-      final tb = rects.first;
-      final double lineHeight = _effectiveLineHeightPx(style);
-      final lEdge = tb.left;
-      final rEdge = tb.right;
-      final tEdge = tb.top - (lineHeight + padT + bT);
-      final bEdge = tb.top + (padB + bB);
-      return Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
-    }
-
-    // Non-synthesized: union across fragments; extend first/last horizontally.
-    final lEdge = rects.first.left - (padL + bL);
-    final rEdge = rects.last.right + (padR + bR);
-    double minTop = double.infinity;
-    double maxBottom = -double.infinity;
-    for (final r in rects) {
-      // Clamp to the best-overlap band for this fragment
-      if (_paraLines.isNotEmpty) {
-        final li = _bestOverlapLineIndexForBox(r, _paraLines);
-        if (li >= 0) {
-          final (lt, lb, _) = _bandForLine(li);
-          final ct = math.max(r.top, lt);
-          final cb = math.min(r.bottom, lb);
-          minTop = math.min(minTop, ct);
-          maxBottom = math.max(maxBottom, cb);
-          continue;
-        }
-      }
-      minTop = math.min(minTop, r.top);
-      maxBottom = math.max(maxBottom, r.bottom);
-    }
-    final tEdge = minTop - (padT + bT);
-    final bEdge = maxBottom + (padB + bB);
-    return Rect.fromLTRB(lEdge, tEdge, rEdge, bEdge);
-  }
+  // Note: paragraph-based IFC no longer assigns per-child parentData offsets.
+  // Inline content is painted via paragraph; positioned descendants are painted
+  // separately. Atomic inlines can be painted directly at placeholder rects if
+  // needed, without mutating parentData here.
 
   // Build decoration entries (span fragments to paint) with rects filtered
   // for extras placeholders; includes only elements that actually paint.
@@ -504,9 +412,6 @@ class InlineFormattingContext {
     // Use visual longest line that includes trailing extras for shrink-to-fit behavior
     final double width = _computeVisualLongestLine();
     final double height = para.height;
-
-    // Update children offsets from placeholder boxes (atomic inlines)
-    _updateChildOffsetsFromParagraph();
 
     return Size(width, height);
   }
@@ -1324,98 +1229,6 @@ class InlineFormattingContext {
       return box.computeCssLastBaselineOf(TextBaseline.alphabetic);
     }
     return null;
-  }
-
-  void _updateChildOffsetsFromParagraph() {
-    if (debugLogInlineLayoutEnabled) {
-      renderingLogger.finer('[IFC] updateChildOffsetsFromParagraph placeholders=${_placeholderBoxes.length} order=${_placeholderOrder.length}');
-    }
-    // Base content offset (padding + border) to convert content-relative positions
-    // to the container's coordinate space, matching actual paint offset usage.
-    final contentOffset = Offset(
-      container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue,
-      container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue,
-    );
-    // Apply offsets to actual children housed in this container
-    // We need to map RenderEventListener wrappers to their real children when present.
-    for (int i = 0; i < _placeholderBoxes.length && i < _placeholderOrder.length; i++) {
-      final rb = _placeholderOrder[i];
-      if (rb == null) continue;
-      final rect = _placeholderBoxes[i];
-      // Place child at placeholder's top + margin-top; baseline alignment already encoded by rect
-      double left = rect.left;
-      double top = rect.top;
-      if (rb is RenderBoxModel) {
-        left += rb.renderStyle.marginLeft.computedValue;
-        top += rb.renderStyle.marginTop.computedValue;
-      }
-      final Offset childOffset = contentOffset + Offset(left, top);
-      _assignOffsetToDirectChild(rb, childOffset);
-      // Compute and record a visual border-box size for atomic inline to be applied via tight constraints later.
-      if (rb is RenderBoxModel) {
-        final CSSRenderStyle s = rb.renderStyle;
-        final double padL = s.paddingLeft.computedValue;
-        final double padR = s.paddingRight.computedValue;
-        final double padT = s.paddingTop.computedValue;
-        final double padB = s.paddingBottom.computedValue;
-        final double bL = s.borderLeftWidth?.computedValue ?? 0.0;
-        final double bR = s.borderRightWidth?.computedValue ?? 0.0;
-        final double bT = s.borderTopWidth?.computedValue ?? 0.0;
-        final double bB = s.borderBottomWidth?.computedValue ?? 0.0;
-        final double bw = (rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0));
-        final double bh = (rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0));
-        final double visualW = bw + padL + padR + bL + bR;
-        final double visualH = bh + padT + padB + bT + bB;
-        final (target, _) = _findDirectChildTarget(rb);
-        _measuredVisualSizes[target] = Size(visualW, visualH);
-      }
-    }
-
-    // Also set offsets for non-atomic inline boxes using paragraph ranges.
-    if (_paragraph != null && _elementRanges.isNotEmpty) {
-      _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
-        List<ui.TextBox> rects = _computeSpanRectsForPainting(box, range);
-        bool synthesized = rects.isNotEmpty ? false : true;
-        if (rects.isEmpty) return;
-
-        // Use the first fragment as the anchor
-        final style = box.renderStyle;
-        final padL = style.paddingLeft.computedValue;
-        final padT = style.paddingTop.computedValue;
-        final bL = style.borderLeftWidth?.computedValue ?? 0.0;
-        final bT = style.borderTopWidth?.computedValue ?? 0.0;
-        final mL = style.marginLeft.computedValue;
-
-        final tb = rects.first;
-        double left;
-        double top;
-        if (synthesized) {
-          // Synthetic rect spans left/right extras. Anchor to the paragraph line band
-          // like real text fragments: use line top minus padding+border, not CSS line-height.
-          left = tb.left + mL;
-          top = tb.top - (padT + bT);
-          if (debugLogInlineLayoutEnabled) {
-            renderingLogger.finer('[IFC] synthesize offset for <${_getElementDescription(box)}>: '
-                'tb.top=${tb.top.toStringAsFixed(2)} padT=${padT.toStringAsFixed(2)} bT=${bT.toStringAsFixed(2)} '
-                '-> top=${top.toStringAsFixed(2)}');
-          }
-        } else {
-          // Real text range: if we inserted a left-extras placeholder for this
-          // inline element, the first rect already starts at the border-box
-          // left edge. Otherwise, extend outward by padding+border.
-          final bool hasLeftPH = _elementHasLeftExtrasPlaceholder(box);
-          left = tb.left - (hasLeftPH ? 0.0 : (padL + bL));
-          top = tb.top - (padT + bT);
-        }
-
-        final Offset childOffset = contentOffset + Offset(left, top);
-
-        _assignOffsetToDirectChild(box, childOffset);
-        final Rect contentRect = _computeInlineVisualRect(box, rects, style, synthesized: synthesized);
-        final (target, _) = _findDirectChildTarget(box);
-        _measuredVisualSizes[target] = Size(contentRect.width, contentRect.height);
-      });
-    }
   }
 
   // Paint backgrounds and borders for non-atomic inline elements using paragraph range boxes
