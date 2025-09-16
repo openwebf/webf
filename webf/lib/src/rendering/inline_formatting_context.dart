@@ -83,6 +83,8 @@ class InlineFormattingContext {
   // New: Paragraph-based layout artifacts
   ui.Paragraph? _paragraph;
   List<ui.LineMetrics> _paraLines = const [];
+  // Track how many code units were added to the paragraph (text + placeholders)
+  int _paraCharCount = 0;
 
   // Expose paragraph line metrics for baseline consumers
   List<ui.LineMetrics> get paragraphLineMetrics => _paraLines;
@@ -411,7 +413,12 @@ class InlineFormattingContext {
     final para = _paragraph!;
     // Use visual longest line that includes trailing extras for shrink-to-fit behavior
     final double width = _computeVisualLongestLine();
-    final double height = para.height;
+    double height = para.height;
+    // If there is no text and no placeholders, an IFC with purely out-of-flow content
+    // contributes 0 to the in-flow content height per CSS.
+    if (_paraCharCount == 0 && _placeholderBoxes.isEmpty) {
+      height = 0;
+    }
     // After paragraph is ready, update parentData.offset for atomic inline children so that
     // paint and hit testing can rely on the standard Flutter offset mechanism.
     _applyAtomicInlineParentDataOffsets();
@@ -953,7 +960,9 @@ class InlineFormattingContext {
                       'rightExtras=${frame.rightExtras.toStringAsFixed(2)} (painted via fragment extension)');
                 }
               } else {
-                // Empty span: merge left+right extras into a single placeholder to avoid wrapping
+                // Empty span: merge left+right extras into a single placeholder only if non-zero.
+                // When merged == 0, do NOT add any placeholder; an empty inline with no extras
+                // must not create a line box contribution (content height should remain 0).
                 final double merged = frame.leftExtras + frame.rightExtras;
                 if (merged > 0) {
                   final rs = frame.box.renderStyle;
@@ -965,6 +974,11 @@ class InlineFormattingContext {
                   if (debugLogInlineLayoutEnabled) {
                     renderingLogger.finer('[IFC] empty span extras <${_getElementDescription(frame.box)}>'
                         ' merged=${merged.toStringAsFixed(2)}');
+                  }
+                } else {
+                  if (debugLogInlineLayoutEnabled) {
+                    renderingLogger.finer('[IFC] suppress empty span placeholder for '
+                        '<${_getElementDescription(frame.box)}> (no padding/border/margins)');
                   }
                 }
               }
@@ -1185,6 +1199,7 @@ class InlineFormattingContext {
     _paragraph = paragraph;
     _paraLines = paragraph.computeLineMetrics();
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
+    _paraCharCount = paraPos; // record final character count
 
     if (debugLogInlineLayoutEnabled) {
       renderingLogger.fine('[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
