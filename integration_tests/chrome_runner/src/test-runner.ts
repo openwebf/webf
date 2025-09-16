@@ -582,11 +582,67 @@ export class ChromeTestRunner {
       };
 
       // Initialize Jasmine boot
-      (window as any).jasmine.getEnv().configure({
+      const jasmineEnv = (window as any).jasmine.getEnv();
+      jasmineEnv.configure({
         random: false,
         stopOnSpecFailure: false,
         stopSpecOnExpectationFailure: false
       });
+
+      // Override it, fit functions to support both async and done callback patterns
+      const originalIt = (window as any).it;
+      const originalFit = (window as any).fit;
+
+      function createTestFunction(originalFn: Function) {
+        return function(this: any, description: string, testFn: Function, timeout?: number) {
+          // If function has both async and done parameter, handle it specially
+          if (testFn.constructor.name === 'AsyncFunction' && testFn.length > 0) {
+            // Function is async and takes a done callback
+            const wrappedFn = function(done: any) {
+              const timeoutMs = timeout || 5000;
+              const timer = setTimeout(() => {
+                if (done && typeof done.fail === 'function') {
+                  done.fail('Test timeout after ' + timeoutMs + 'ms');
+                } else if (typeof done === 'function') {
+                  done(new Error('Test timeout after ' + timeoutMs + 'ms'));
+                }
+              }, timeoutMs);
+
+              try {
+                const result = testFn(done);
+                if (result && typeof result.then === 'function') {
+                  // Handle case where async function returns a promise
+                  result.then(() => {
+                    clearTimeout(timer);
+                    // done() should be called by the test itself
+                  }).catch((err: any) => {
+                    clearTimeout(timer);
+                    if (done && typeof done.fail === 'function') {
+                      done.fail(err);
+                    } else if (typeof done === 'function') {
+                      done(err);
+                    }
+                  });
+                }
+              } catch (err) {
+                clearTimeout(timer);
+                if (done && typeof done.fail === 'function') {
+                  done.fail(err);
+                } else if (typeof done === 'function') {
+                  done(err);
+                }
+              }
+            };
+            return originalFn.call(this, description, wrappedFn, timeout);
+          } else {
+            // Standard case - pass through to original function
+            return originalFn.call(this, description, testFn, timeout);
+          }
+        };
+      }
+
+      (window as any).it = createTestFunction(originalIt);
+      (window as any).fit = createTestFunction(originalFit);
 
       // Add global afterEach hook to clean up DOM between tests
       (window as any).afterEach(() => {
