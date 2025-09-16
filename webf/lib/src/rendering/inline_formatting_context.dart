@@ -451,11 +451,11 @@ class InlineFormattingContext {
       }
     }
 
-    // Paint atomic inline children at their parentData offsets (container-relative)
-    for (int i = 0; i < _placeholderOrder.length; i++) {
+    // Paint atomic inline children at placeholder positions (content-relative)
+    for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
-      // Find the direct child of container that owns the parentData.offset we set in layout
+      // Choose the direct child (wrapper) to paint
       RenderBox paintBox = rb;
       RenderObject? p = rb.parent;
       while (p != null && p != container) {
@@ -463,8 +463,15 @@ class InlineFormattingContext {
         p = p.parent;
       }
       if (!paintBox.hasSize) continue;
-      final pd = paintBox.parentData as ContainerBoxParentData<RenderBox>;
-      context.paintChild(paintBox, offset + pd.offset);
+      final tb = _placeholderBoxes[i];
+      double left = tb.left;
+      double top = tb.top;
+      if (rb is RenderBoxModel) {
+        left += rb.renderStyle.marginLeft.computedValue;
+        top += rb.renderStyle.marginTop.computedValue;
+      }
+      final Offset paintOffset = offset + Offset(left, top);
+      context.paintChild(paintBox, paintOffset);
     }
 
     if (debugPaintInlineLayoutEnabled) {
@@ -565,13 +572,8 @@ class InlineFormattingContext {
 
   /// Hit test the inline content.
   bool hitTest(BoxHitTestResult result, {required Offset position}) {
-    // Paragraph path: hit test atomic inlines using their parentData offsets
-    // Convert content-relative position to container-relative to match parentData.offset space
-    final contentOffset = Offset(
-      container.renderStyle.paddingLeft.computedValue + container.renderStyle.effectiveBorderLeftWidth.computedValue,
-      container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue,
-    );
-    for (int i = 0; i < _placeholderOrder.length; i++) {
+    // Paragraph path: hit test atomic inlines at placeholder positions (content-relative)
+    for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
       // Use the direct child (wrapper) that carries the parentData offset
@@ -581,11 +583,22 @@ class InlineFormattingContext {
         if (p is RenderBox) hitBox = p;
         p = p.parent;
       }
-      final parentData = hitBox.parentData as ContainerBoxParentData<RenderBox>;
-      final local = (position + contentOffset) - (parentData.offset);
-      if (hitBox.hitTest(result, position: local)) {
-        return true;
+      final tb = _placeholderBoxes[i];
+      double left = tb.left;
+      double top = tb.top;
+      if (rb is RenderBoxModel) {
+        left += rb.renderStyle.marginLeft.computedValue;
+        top += rb.renderStyle.marginTop.computedValue;
       }
+      final Offset paintOffset = Offset(left, top);
+      final bool isHit = result.addWithPaintOffset(
+        offset: paintOffset,
+        position: position,
+        hitTest: (BoxHitTestResult res, Offset transformed) {
+          return hitBox.hitTest(res, position: transformed);
+        },
+      );
+      if (isHit) return true;
     }
 
     // Paragraph path: hit test non-atomic inline elements (e.g., <span>) using text ranges
