@@ -103,6 +103,57 @@ class InlineFormattingContext {
 
   Size? measuredVisualSizeOf(RenderBox box) => _measuredVisualSizes[box];
 
+  // Map a paragraph TextBox to its line index (best overlap), or -1 if none.
+  int _lineIndexForRect(ui.TextBox tb) {
+    if (_paraLines.isEmpty) return -1;
+    int best = -1;
+    double bestOverlap = 0;
+    for (int i = 0; i < _paraLines.length; i++) {
+      final lm = _paraLines[i];
+      final double lt = lm.baseline - lm.ascent;
+      final double lb = lm.baseline + lm.descent;
+      final double overlap = math.max(0, math.min(tb.bottom, lb) - math.max(tb.top, lt));
+      if (overlap > bestOverlap) {
+        bestOverlap = overlap;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  // Compute a visual longest line that accounts for trailing extras (padding/border/margin)
+  // on the last fragment of inline elements. This adjusts for our choice to not insert
+  // right-extras placeholders for non-empty spans.
+  double _computeVisualLongestLine() {
+    if (_paragraph == null || _paraLines.isEmpty) return _paragraph?.longestLine ?? 0;
+    // Base rights from paragraph line metrics
+    final rights = List<double>.generate(
+      _paraLines.length,
+      (i) => _paraLines[i].left + _paraLines[i].width,
+      growable: false,
+    );
+    // Extend rights by trailing extras of inline elements that end on a line
+    _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+      final int sIdx = range.$1;
+      final int eIdx = range.$2;
+      if (eIdx <= sIdx) return;
+      List<ui.TextBox> rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
+      if (rects.isEmpty) return;
+      final last = rects.last;
+      final li = _lineIndexForRect(last);
+      if (li < 0) return;
+      final s = box.renderStyle;
+      final double padR = s.paddingRight.computedValue;
+      final double bR = s.borderRightWidth?.computedValue ?? 0.0;
+      final double mR = s.marginRight.computedValue;
+      final double extended = last.right + padR + bR + mR;
+      if (extended > rights[li]) rights[li] = extended;
+    });
+    double baseLongest = _paragraph!.longestLine;
+    double visualLongest = rights.fold<double>(0, (p, v) => v > p ? v : p);
+    return visualLongest > baseLongest ? visualLongest : baseLongest;
+  }
+
   // Whether this inline element had a left-extras placeholder inserted.
   bool _elementHasLeftExtrasPlaceholder(RenderBoxModel box) {
     for (final ph in _allPlaceholders) {
@@ -169,8 +220,8 @@ class InlineFormattingContext {
 
     // Compute size from paragraph
     final para = _paragraph!;
-    // Use actual content width (longestLine) for shrink-to-fit behavior
-    final double width = para.longestLine;
+    // Use visual longest line that includes trailing extras for shrink-to-fit behavior
+    final double width = _computeVisualLongestLine();
     final double height = para.height;
 
     // Update children offsets from placeholder boxes (atomic inlines)
@@ -882,6 +933,54 @@ class InlineFormattingContext {
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }
+    // Reserve trailing extras space for line wrapping: if any inline element
+    // ends on a line with trailing extras (padding/border/margin on the right),
+    // shrink the shaping width by the maximum such extras so text wraps earlier
+    // and the painted right edge does not overflow the container.
+    if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite && constraints.maxWidth > 0) {
+      // Compute per-line reserve from ranges collected during build.
+      double globalReserve = 0;
+      final Map<int, double> lineReserve = {};
+      _elementRanges.forEach((box, range) {
+        final int sIdx = range.$1;
+        final int eIdx = range.$2;
+        if (eIdx <= sIdx) return;
+        final rects = paragraph.getBoxesForRange(sIdx, eIdx);
+        if (rects.isEmpty) return;
+        final last = rects.last;
+        // Map last fragment to a line index
+        int li = -1;
+        double bestOverlap = -1;
+        for (int i = 0; i < paragraph.computeLineMetrics().length; i++) {
+          final lm = paragraph.computeLineMetrics()[i];
+          final double lt = lm.baseline - lm.ascent;
+          final double lb = lm.baseline + lm.descent;
+          final double overlap = math.max(0, math.min(last.bottom, lb) - math.max(last.top, lt));
+          if (overlap > bestOverlap) {
+            bestOverlap = overlap;
+            li = i;
+          }
+        }
+        if (li < 0) return;
+        final s = box.renderStyle;
+        final double reserve = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+        if (reserve <= 0) return;
+        lineReserve[li] = math.max(lineReserve[li] ?? 0, reserve);
+        globalReserve = math.max(globalReserve, reserve);
+      });
+      if (globalReserve > 0) {
+        final double newWidth = math.max(0.0, (constraints.maxWidth) - globalReserve);
+        // Only shrink if it actually changes shaping.
+        if ((newWidth + 0.5) < paragraph.width || (newWidth + 0.5) < initialWidth) {
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.fine('[IFC] reserve trailing extras: shrink width '
+                '${constraints.maxWidth.toStringAsFixed(2)} → ${newWidth.toStringAsFixed(2)} (reserve=${globalReserve.toStringAsFixed(2)})');
+          }
+          paragraph.layout(ui.ParagraphConstraints(width: newWidth));
+        }
+      }
+    }
+
     _paragraph = paragraph;
     _paraLines = paragraph.computeLineMetrics();
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
@@ -894,23 +993,6 @@ class InlineFormattingContext {
         renderingLogger.finer('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '
             'ascent=${lm.ascent.toStringAsFixed(2)} descent=${lm.descent.toStringAsFixed(2)} left=${lm.left.toStringAsFixed(2)} width=${lm.width.toStringAsFixed(2)}');
       }
-      // Helper to find the paragraph line that a rect intersects most.
-      int _lineIndexForRect(ui.TextBox tb) {
-        int best = -1;
-        double bestOverlap = 0;
-        for (int i = 0; i < _paraLines.length; i++) {
-          final lm = _paraLines[i];
-          final double lt = lm.baseline - lm.ascent;
-          final double lb = lm.baseline + lm.descent;
-          final double overlap = math.max(0, math.min(tb.bottom, lb) - math.max(tb.top, lt));
-          if (overlap > bestOverlap) {
-            bestOverlap = overlap;
-            best = i;
-          }
-        }
-        return best;
-      }
-
       // Log all placeholders including extras (left/right/empty) and atomics
       for (int i = 0; i < _placeholderBoxes.length && i < _allPlaceholders.length; i++) {
         final tb = _placeholderBoxes[i];
@@ -1332,12 +1414,13 @@ class InlineFormattingContext {
 
         // Borders
         final p = Paint()..style = PaintingStyle.fill;
-        // Top/bottom borders on every fragment to match full per-line painting
+        // Paint top border on every fragment. Paint bottom border only on the
+        // last fragment to avoid double-thick borders at internal line joins.
         if (bT > 0) {
           p.color = s.borderTopColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
         }
-        if (bB > 0) {
+        if (isLast && bB > 0) {
           p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
         }
