@@ -169,9 +169,10 @@ void ElementRuleCollector::CollectMatchingRulesForList(
   }
     
     SelectorChecker::MatchResult match_result;
-    const AtomicString& selector_tag = context.selector->TagQName().LocalName();
-    WEBF_LOG(VERBOSE) << "Author rule tag: " << selector_tag.GetString()
-                      << " element: " << element_->localName().GetString();
+    // Avoid calling TagQName() unless the selector is a tag selector.
+    // Non-tag selectors (class, id, attribute, pseudo, etc.) would hit
+    // a DCHECK in CSSSelector::TagQName(). Logging is omitted here to
+    // keep this path safe across all selector types.
     bool matched = selector_checker_.Match(context, match_result);
     if (matched) {
       WEBF_LOG(VERBOSE) << "Author rule matched!";
