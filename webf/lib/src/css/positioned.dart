@@ -407,7 +407,19 @@ class CSSPositionedLayout {
     );
 
     final Offset finalOffset = Offset(x, y) - ancestorOffset;
-    childParentData.offset = finalOffset;
+    // If this positioned element is wrapped (e.g., by RenderEventListener), ensure
+    // the wrapper is placed at the positioned offset so its background/border align
+    // with the child content. The child uses internal offsets relative to the wrapper.
+    bool placedWrapper = false;
+    final RenderObject? directParent = child.parent;
+    if (directParent is RenderEventListener) {
+      final RenderLayoutParentData pd = directParent.parentData as RenderLayoutParentData;
+      pd.offset = finalOffset;
+      placedWrapper = true;
+    }
+    if (!placedWrapper) {
+      childParentData.offset = finalOffset;
+    }
 
     if (debugLogPositionedEnabled) {
       renderingLogger.finer('[ABS] final offset=(${finalOffset.dx.toStringAsFixed(2)},${finalOffset.dy.toStringAsFixed(2)}) '
@@ -548,65 +560,55 @@ class CSSPositionedLayout {
     // Check if current static position may be inaccurate due to flow layout artifacts
     bool needsCorrection = _staticPositionNeedsCorrection(placeholder, staticPositionOffset, parent);
 
-    if (!needsCorrection) {
-      // Special-case: Inline Formatting Context containers with no in-flow content
-      // For absolutely positioned descendants with all insets auto, browsers position
-      // them at the bottom-right of the padding box when there's no static flow to anchor.
-      // Detect this by checking IFC and placeholder being the first child (no previous sibling).
-      bool isIFC = parent is RenderFlowLayout && (parent as RenderFlowLayout).establishIFC;
-      if (isIFC && (left.isAuto && right.isAuto || top.isAuto && bottom.isAuto)) {
-        // Only consider when the placeholder is the first child under the IFC container
-        if (placeholder != null && placeholder.parentData is RenderLayoutParentData) {
-          final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
-          final bool isFirst = pd.previousSibling == null;
-          if (isFirst) {
-            // Compute bottom-right inside padding box as the static position.
-            final double padLeft = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
-            final double padTop = parentBorderTopWidth.computedValue + parentPaddingTop.computedValue;
-            final double padRight = parentBorderRightWidth.computedValue;
-            final double padBottom = parentBorderBottomWidth.computedValue;
-            final Size parentSize = parent.boxSize ?? Size.zero;
-            final Size childSize = child.boxSize ?? Size.zero;
+    // Special-case: Inline Formatting Context containers with no in-flow content
+    // For absolutely positioned descendants with all insets auto, browsers position
+    // them at the bottom-right of the padding box when there's no static flow to anchor.
+    // Detect this by checking IFC and placeholder being the first child (no previous sibling).
+    bool isIFC = parent is RenderFlowLayout && (parent as RenderFlowLayout).establishIFC;
+    if (!needsCorrection && isIFC && (left.isAuto && right.isAuto || top.isAuto && bottom.isAuto)) {
+      if (placeholder.parentData is RenderLayoutParentData) {
+        final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
+        final bool isFirst = pd.previousSibling == null;
+        if (isFirst) {
+          final double padLeft = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
+          final double padTop = parentBorderTopWidth.computedValue + parentPaddingTop.computedValue;
+          final Size parentSize = parent.boxSize ?? Size.zero;
+          final Size childSize = child.boxSize ?? Size.zero;
 
-            double correctedX = staticPositionOffset.dx;
-            double correctedY = staticPositionOffset.dy;
+          double correctedX = staticPositionOffset.dx;
+          double correctedY = staticPositionOffset.dy;
 
-            if (left.isAuto && right.isAuto) {
-              // Right edge of padding box (inside border) minus child width
-              final double rightEdge = parentSize.width - parentBorderRightWidth.computedValue;
-              correctedX = rightEdge - childSize.width;
-              // Clamp to left padding edge to avoid negative when content width is 0
-              final double leftEdge = padLeft;
-              if (correctedX < leftEdge) correctedX = leftEdge;
-            }
-
-            if (top.isAuto && bottom.isAuto) {
-              // Bottom edge of padding box (inside border) minus child height
-              final double bottomEdge = parentSize.height - parentBorderBottomWidth.computedValue;
-              correctedY = bottomEdge - childSize.height;
-              // Clamp to top padding edge
-              final double topEdge = padTop;
-              if (correctedY < topEdge) correctedY = topEdge;
-            }
-
-            return Offset(correctedX, correctedY);
+          if (left.isAuto && right.isAuto) {
+            final double rightEdge = parentSize.width - parentBorderRightWidth.computedValue;
+            correctedX = rightEdge - childSize.width;
+            final double leftEdge = padLeft;
+            if (correctedX < leftEdge) correctedX = leftEdge;
           }
+
+          if (top.isAuto && bottom.isAuto) {
+            final double bottomEdge = parentSize.height - parentBorderBottomWidth.computedValue;
+            correctedY = bottomEdge - childSize.height;
+            final double topEdge = padTop;
+            if (correctedY < topEdge) correctedY = topEdge;
+          }
+
+          return Offset(correctedX, correctedY);
         }
       }
-      return staticPositionOffset;
     }
 
     // Calculate the true normal flow position following W3C static position rules
     double contentAreaX = parentBorderLeftWidth.computedValue + parentPaddingLeft.computedValue;
 
-    // For horizontal axis: use content area start (inline flow beginning)
-    double correctedX = shouldUseAccurateHorizontalPosition ? contentAreaX : staticPositionOffset.dx;
+    // For horizontal axis: use content area start only when a correction is necessary.
+    double correctedX = (shouldUseAccurateHorizontalPosition && needsCorrection)
+        ? contentAreaX
+        : staticPositionOffset.dx;
 
-    // For vertical axis: use actual static position from normal flow (not content area start)
-    // This ensures elements appear where they would in normal document flow
-    double correctedY = shouldUseAccurateVerticalPosition ?
-        _calculateTrueVerticalStaticPosition(placeholder, parent, staticPositionOffset) :
-        staticPositionOffset.dy;
+    // For vertical axis: always use the true normal-flow static position (handles first-child case).
+    double correctedY = shouldUseAccurateVerticalPosition
+        ? _calculateTrueVerticalStaticPosition(placeholder, parent, staticPositionOffset)
+        : staticPositionOffset.dy;
 
     return Offset(correctedX, correctedY);
   }
@@ -661,41 +663,18 @@ class CSSPositionedLayout {
     if (placeholder.parentData is! RenderLayoutParentData) {
       return currentStaticPosition.dy;
     }
-
-    RenderLayoutParentData placeholderData = placeholder.parentData as RenderLayoutParentData;
-    RenderBox? previousSibling = placeholderData.previousSibling;
-
-    if (previousSibling == null) {
-      // No previous sibling - use content area start
-      RenderStyle parentStyle = parent.renderStyle;
-      return parentStyle.effectiveBorderTopWidth.computedValue +
-             parentStyle.paddingTop.computedValue;
+    final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
+    final bool isFirst = pd.previousSibling == null;
+    // For the first abs-pos inline box, Flow's placeholder offset already includes
+    // the intended top margin; for subsequent ones, Flow may omit margin-top in the
+    // placeholder offset. Add the element's margin-top to align text to the same
+    // vertical position (e.g., y=21) as the first.
+    double extra = 0;
+    final RenderBoxModel? positioned = placeholder.positioned;
+    if (!isFirst && positioned != null) {
+      extra = positioned.renderStyle.marginTop.computedValue;
     }
-
-    // Calculate position after the previous sibling
-    // This represents where the element would appear in normal block flow
-    if (previousSibling.parentData is RenderLayoutParentData) {
-      RenderLayoutParentData siblingData = previousSibling.parentData as RenderLayoutParentData;
-
-      // Get sibling height without accessing size directly
-      double siblingHeight = 0;
-      if (previousSibling is RenderBoxModel) {
-        siblingHeight = previousSibling.boxSize?.height ?? 0;
-        // Add margin bottom
-        siblingHeight += previousSibling.renderStyle.marginBottom.computedValue;
-      } else if (previousSibling.hasSize) {
-        // For other render objects that are laid out, we can use constraints
-        siblingHeight = previousSibling.constraints.smallest.height;
-      }
-
-      // Position after previous sibling: sibling's top + sibling's height
-      double siblingBottom = siblingData.offset.dy + siblingHeight;
-
-      return siblingBottom;
-    }
-
-    // Fallback to current static position if we can't calculate from siblings
-    return currentStaticPosition.dy;
+    return currentStaticPosition.dy + extra;
   }
 
   /// Checks if the static position has significant offset that may indicate
