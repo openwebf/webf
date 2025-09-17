@@ -601,6 +601,95 @@ class RenderFlowLayout extends RenderLayoutBox {
     return crossSize;
   }
 
+  // Compute the total cross-axis content size accounting for inter-run
+  // vertical margin collapsing (prev sibling bottom vs current top).
+  // Mirrors the positioning logic in _setChildrenOffset so that the
+  // final container height matches the actually collapsed layout.
+  double _getRunsCrossSizeWithCollapse(List<RunMetrics> runMetrics) {
+    double crossSize = 0;
+
+    double? carriedPrevCollapsedBottom;
+    double? lastPrevCollapsedBottom;
+    for (int i = 0; i < runMetrics.length; i++) {
+      final RunMetrics run = runMetrics[i];
+
+      // Track previous child's collapsed bottom within the run,
+      // seeded from the previous run's carry.
+      double? prevCollapsedBottom = carriedPrevCollapsedBottom;
+      double runFirstOwnTop = 0;
+      double runFirstTopContribution = 0;
+      bool firstTopCaptured = false;
+
+      // Iterate run children to update prevCollapsedBottom and capture first child margins.
+      for (final RenderBox child in run.runChildren) {
+        RenderBoxModel? childRenderBoxModel;
+        if (child is RenderBoxModel) {
+          childRenderBoxModel = child;
+        } else if (child is RenderPositionPlaceholder) {
+          childRenderBoxModel = child.positioned;
+        }
+
+        if (childRenderBoxModel != null) {
+          final double collapsedTop = getChildMarginTop(childRenderBoxModel);
+          double topContribution;
+          if (prevCollapsedBottom == null) {
+            topContribution = collapsedTop;
+          } else {
+            if (collapsedTop >= 0 && prevCollapsedBottom >= 0) {
+              topContribution = math.max(collapsedTop, prevCollapsedBottom) - prevCollapsedBottom;
+            } else if (collapsedTop <= 0 && prevCollapsedBottom <= 0) {
+              topContribution = math.min(collapsedTop, prevCollapsedBottom) - prevCollapsedBottom;
+            } else {
+              topContribution = collapsedTop;
+            }
+          }
+
+          if (!firstTopCaptured) {
+            runFirstOwnTop = collapsedTop;
+            runFirstTopContribution = topContribution;
+            firstTopCaptured = true;
+          }
+
+          // Advance prevCollapsedBottom for following siblings in this run
+          prevCollapsedBottom = getChildMarginBottom(childRenderBoxModel);
+        }
+      }
+
+      // Cross advance for this run equals the positioned height increment
+      // used when placing the next run: runCrossAxisExtent minus the first
+      // child's own collapsed top, plus the effective top contribution after
+      // collapsing with the previous run's bottom.
+      final double crossAdvance = run.crossAxisExtent - runFirstOwnTop + runFirstTopContribution;
+      crossSize += crossAdvance;
+
+      // Carry prev collapsed bottom to next run for inter-run collapsing.
+      carriedPrevCollapsedBottom = prevCollapsedBottom;
+      lastPrevCollapsedBottom = prevCollapsedBottom;
+    }
+
+    // If the container qualifies for bottom-margin collapsing with its last
+    // in-flow child, do not count that final collapsed bottom into its content
+    // height. This mirrors how the parent’s bottom margin collapses with the
+    // last child per CSS 2.1, and prevents an extra gap at the bottom.
+    if (lastPrevCollapsedBottom != null) {
+      final rs = renderStyle;
+      final bool isOverflowVisible = rs.effectiveOverflowY == CSSOverflowType.visible || rs.effectiveOverflowY == CSSOverflowType.clip;
+      final bool qualifies = rs.isLayoutBox() &&
+          rs.height.isAuto &&
+          rs.minHeight.isAuto &&
+          rs.maxHeight.isNone &&
+          rs.effectiveDisplay == CSSDisplay.block &&
+          isOverflowVisible &&
+          rs.paddingBottom.computedValue == 0 &&
+          rs.effectiveBorderBottomWidth.computedValue == 0;
+      if (qualifies) {
+        crossSize -= lastPrevCollapsedBottom;
+      }
+    }
+
+    return crossSize;
+  }
+
   // Record the main size of all lines.
   void _recordRunsMainSize(RunMetrics runMetrics, List<double> runMainSize) {
     List<RenderBox> runChildren = runMetrics.runChildren;
@@ -696,7 +785,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     double runMaxMainSize = _getRunsMaxMainSize(_lineMetrics);
-    double runCrossSize = _getRunsCrossSize(_lineMetrics);
+    // Compute cross size with proper margin collapsing across runs so
+    // the box height aligns with the actual positioned children.
+    double runCrossSize = _getRunsCrossSizeWithCollapse(_lineMetrics);
 
     Size layoutContentSize = getContentSize(
       contentWidth: runMaxMainSize + adjustWidth,
@@ -706,7 +797,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     size = getBoxSize(layoutContentSize);
 
     minContentWidth = _getMainAxisAutoSize(_lineMetrics);
-    minContentHeight = _getCrossAxisAutoSize(_lineMetrics);
+    // Keep min-content height consistent with collapsed cross size to
+    // avoid overestimating intrinsic size and leaving extra space.
+    minContentHeight = runCrossSize;
 
     // logging removed
   }
@@ -1136,7 +1229,11 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (child == null || child is! RenderBoxModel) {
       return 0;
     }
-    return child.renderStyle.collapsedMarginBottom;
+    // Use sibling-oriented collapsed bottom that does not prematurely
+    // collapse with the parent. This ensures correct spacing when the
+    // following in-flow content is represented by an anonymous block
+    // created at layout time (e.g., inline text sequences).
+    return child.renderStyle.collapsedMarginBottomForSibling;
   }
 
 

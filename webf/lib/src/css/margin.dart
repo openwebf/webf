@@ -254,6 +254,55 @@ mixin CSSMarginMixin on RenderStyle {
     return _marginBottom;
   }
 
+  // Collapsed bottom margin to be used when resolving adjacency with the next
+  // in-flow sibling. This value collapses with self and the last in-flow child
+  // (descendant) when applicable, but it DOES NOT collapse with the parent.
+  //
+  // Rationale: Whether a box’s bottom margin collapses with its parent depends
+  // on the parent’s context (padding/border/height/overflow) and on whether the
+  // box is actually the last in-flow fragment for that parent. Layout is the
+  // right place to decide parent collapsing. Using this sibling-oriented value
+  // prevents prematurely zeroing out the bottom margin in cases where an
+  // anonymous block (from inline content) follows this element.
+  double get collapsedMarginBottomForSibling {
+    // Start with own collapse-with-self result (empty-block handling), then
+    // optionally fold in last-child collapse when eligible.
+    RenderStyle? renderStyle = getSelfRenderStyle();
+    if (renderStyle == null) return 0.0;
+
+    double marginBottom = _collapsedMarginBottomWithSelf;
+
+    double paddingBottom = renderStyle.paddingBottom.computedValue;
+    double borderBottom = renderStyle.effectiveBorderBottomWidth.computedValue;
+    bool isOverflowVisible = renderStyle.effectiveOverflowY == CSSOverflowType.visible;
+    bool isOverflowClip = renderStyle.effectiveOverflowY == CSSOverflowType.clip;
+
+    if (isLayoutBox() &&
+        renderStyle.height.isAuto &&
+        renderStyle.minHeight.isAuto &&
+        renderStyle.maxHeight.isNone &&
+        renderStyle.effectiveDisplay == CSSDisplay.block &&
+        (isOverflowVisible || isOverflowClip) &&
+        paddingBottom == 0 &&
+        borderBottom == 0) {
+      if (isLastChildAreRenderBoxModel() &&
+          isLastChildStyleMatch((rs) => rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex)) {
+        double childMarginBottom = isLastChildAreRenderLayoutBox()
+            ? getLastChildRenderStyle<CSSMarginMixin>()!._collapsedMarginBottomWithLastChild
+            : getLastChildRenderStyle<CSSMarginMixin>()!.marginBottom.computedValue;
+        if (marginBottom < 0 && childMarginBottom < 0) {
+          return math.min(marginBottom, childMarginBottom);
+        } else if (marginBottom > 0 && childMarginBottom > 0) {
+          return math.max(marginBottom, childMarginBottom);
+        } else {
+          return marginBottom + childMarginBottom;
+        }
+      }
+    }
+
+    return marginBottom;
+  }
+
   // The bottom margin of an in-flow block box with a 'height' of 'auto' and a 'min-height' of zero collapses
   // with its last in-flow block-level child's bottom margin if the box has no bottom padding and no bottom
   // border and the child's bottom margin does not collapse with a top margin that has clearance.
