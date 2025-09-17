@@ -1904,18 +1904,31 @@ class RenderFlexLayout extends RenderLayoutBox {
         bool childMainSizeChanged = childFlexedMainSize != null && childFlexedMainSize != childOldMainSize;
 
         bool childCrossSizeChanged = false;
-        // Child cross size adjusted due to align-items/align-self style.
-        double? childStretchedCrossSize;
+      // Child cross size adjusted due to align-items/align-self style.
+      double? childStretchedCrossSize;
 
-        if (_needToStretchChildCrossSize(child)) {
-          childStretchedCrossSize = _getChildStretchedCrossSize(child, metrics.crossAxisExtent, runBetweenSpace);
-          if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
-            double childCrossAxisMargin =
-                _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
-            childStretchedCrossSize += childCrossAxisMargin.abs();
-          }
-          childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
+      if (_needToStretchChildCrossSize(child)) {
+        childStretchedCrossSize = _getChildStretchedCrossSize(child, metrics.crossAxisExtent, runBetweenSpace);
+        if (child is RenderLayoutBox && child.isNegativeMarginChangeHSize) {
+          double childCrossAxisMargin =
+              _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
+          childStretchedCrossSize += childCrossAxisMargin.abs();
         }
+        childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
+      }
+
+      // Column flex: if the child ended up with a definite cross size (width) and
+      // its width is not explicitly specified (auto), propagate this definite
+      // width to the child's render style so descendants can resolve percentage
+      // paddings/margins against it. This mirrors CSS where the flex item forms
+      // the containing block for its contents with a definite inline size.
+      if (!_isHorizontalFlexDirection && child is RenderBoxModel) {
+        final bool childHasExplicitWidth = !child.renderStyle.width.isAuto;
+        final double measuredCross = child.size.width;
+        if (!childHasExplicitWidth && measuredCross.isFinite && measuredCross > 0) {
+          _overrideChildContentBoxLogicalWidth(child, measuredCross);
+        }
+      }
 
         // Also relayout if our preserved intrinsic main size (from PASS 2) differs from current size
         double? desiredPreservedMain;
