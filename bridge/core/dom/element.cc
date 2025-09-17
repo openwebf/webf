@@ -953,10 +953,21 @@ void Element::ParseAttribute(const webf::Element::AttributeModificationParams& p
   if (params.name == html_names::kIdAttr) {
     // Update the ID for style resolution
     EnsureUniqueElementData().SetIdForStyleResolution(params.new_value);
+  } else if (params.name == html_names::kClassAttr) {
+    // Update parsed class tokens for selector matching
+    // Match Blink: only call SetClass when non-empty; clear otherwise.
+    const AtomicString& v = params.new_value;
+    if (v.IsNull() || v.empty()) {
+      EnsureUniqueElementData().ClearClass();
+    } else {
+      EnsureUniqueElementData().SetClassFoldingCase(ctx(), v);
+    }
   } else if (params.name == html_names::kStyleAttr) {
     // Update inline style from style attribute
     StyleAttributeChanged(params.new_value, params.reason);
   }
+
+  // TODO(CGQAQ): other attrs should be set so that attr-seelctor could work as expected.
 }
 
 void Element::StyleAttributeChanged(const AtomicString& new_style_string,
