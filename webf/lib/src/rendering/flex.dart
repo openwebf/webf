@@ -655,9 +655,12 @@ class RenderFlexLayout extends RenderLayoutBox {
       // 2) For flex main-axis auto size (or flex-basis: content), avoid inheriting the container’s
       //    main-axis cap so content can determine its natural size.
       //    This prevents items from measuring at full container width/height.
+      //    Exception: replaced elements (e.g., <img>) should not be relaxed to ∞,
+      //    otherwise they pick viewport-sized widths; keep their container-bounded constraints.
       final bool isFlexBasisContent = s.flexBasis?.type == CSSLengthType.CONTENT;
+      final bool isReplaced = s.isSelfRenderReplaced();
       if (_isHorizontalFlexDirection) {
-        if (s.width.isAuto || isFlexBasisContent) {
+        if (!isReplaced && (s.width.isAuto || isFlexBasisContent)) {
           c = BoxConstraints(
             minWidth: c.minWidth,
             maxWidth: double.infinity,
@@ -2197,9 +2200,33 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Allow child to expand beyond parent's maxHeight if content requires it
     // This matches browser behavior where content can overflow constrained parents
+    // Cap child's cross-axis max constraint by the flex container's
+    // available cross size so non-stretched items don't exceed it.
+    if (_isHorizontalFlexDirection) {
+      final double parentMaxH = contentConstraints!.maxHeight;
+      if (parentMaxH.isFinite) {
+        maxConstraintHeight = math.min(maxConstraintHeight, parentMaxH);
+      }
+      // Normalize: ensure min <= max after capping
+      if (minConstraintHeight > maxConstraintHeight) {
+        minConstraintHeight = maxConstraintHeight;
+      }
+    } else {
+      final double parentMaxW = contentConstraints!.maxWidth;
+      if (parentMaxW.isFinite) {
+        maxConstraintWidth = math.min(maxConstraintWidth, parentMaxW);
+      }
+      // Normalize: ensure min <= max after capping
+      if (minConstraintWidth > maxConstraintWidth) {
+        minConstraintWidth = maxConstraintWidth;
+      }
+    }
+
     double adjustedMaxHeight = maxConstraintHeight;
-    if (contentMinHeight > maxConstraintHeight) {
-      adjustedMaxHeight = contentMinHeight;
+    // Do NOT expand beyond the capped max height inside flex layout; overflow
+    // should be handled by painting/scrolling rather than inflating constraints.
+    if (contentMinHeight > adjustedMaxHeight) {
+      // Keep adjustedMaxHeight as the cap.
     }
 
     // If the child did not flex in the main axis, preserve its measured main size

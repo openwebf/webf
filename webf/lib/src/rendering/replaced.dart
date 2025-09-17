@@ -54,37 +54,36 @@ class RenderReplaced extends RenderBoxModel with RenderObjectWithChildMixin<Rend
 
       double? width;
       double? height;
-      bool hasFiniteWidth = false;
-      bool hasFiniteHeight = false;
-
       // Only use computed values if they are finite; unresolved percentages compute to infinity.
       if (renderStyle.width.isNotAuto) {
         final double w = renderStyle.width.computedValue;
-        if (w.isFinite) {
-          width = w;
-          hasFiniteWidth = true;
-        }
+        if (w.isFinite) width = w;
       }
       if (renderStyle.height.isNotAuto) {
         final double h = renderStyle.height.computedValue;
-        if (h.isFinite) {
-          height = h;
-          hasFiniteHeight = true;
-        }
+        if (h.isFinite) height = h;
       }
 
-      if (hasFiniteWidth && hasFiniteHeight) {
+      // Clamp specified sizes to the available constraints first (includes max-width/min-width from style).
+      if (width != null) {
+        width = width!.clamp(childConstraints.minWidth, childConstraints.maxWidth);
+      }
+      if (height != null) {
+        height = height!.clamp(childConstraints.minHeight, childConstraints.maxHeight);
+      }
+
+      // Apply aspect-ratio when only one dimension is specified.
+      final double? ratio = renderStyle.aspectRatio;
+      if (width != null && height != null) {
         childConstraints = childConstraints.tighten(width: width, height: height);
-      } else if (hasFiniteWidth) {
-        childConstraints = childConstraints.tighten(
-          width: width,
-          height: renderStyle.aspectRatio != null ? width! * renderStyle.aspectRatio! : null,
-        );
-      } else if (hasFiniteHeight) {
-        childConstraints = childConstraints.tighten(
-          width: renderStyle.aspectRatio != null ? height! * renderStyle.aspectRatio! : null,
-          height: height,
-        );
+      } else if (width != null) {
+        final double? h = ratio != null ? (width! / ratio) : null;
+        final double? clampedH = h != null ? h.clamp(childConstraints.minHeight, childConstraints.maxHeight) : null;
+        childConstraints = childConstraints.tighten(width: width, height: clampedH);
+      } else if (height != null) {
+        final double? w = ratio != null ? (height! * ratio) : null;
+        final double? clampedW = w != null ? w.clamp(childConstraints.minWidth, childConstraints.maxWidth) : null;
+        childConstraints = childConstraints.tighten(width: clampedW, height: height);
       }
 
       // Avoid passing unconstrained infinity to child render box. Clamp to viewport when unbounded.
