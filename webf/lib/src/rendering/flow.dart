@@ -795,8 +795,14 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
 
         if (childRenderBoxModel is RenderBoxModel) {
-          childMarginLeft = childRenderBoxModel.renderStyle.marginLeft.computedValue;
+          final rs = childRenderBoxModel.renderStyle;
+          childMarginLeft = rs.marginLeft.computedValue;
           childMarginTop = getChildMarginTop(childRenderBoxModel);
+          if (debugLogFlowEnabled) {
+            final prev = rs.isPreviousSiblingAreRenderObject();
+            renderingLogger.finer('[Flow] child <${rs.target.tagName.toLowerCase()}> mt=${rs.marginTop.computedValue.toStringAsFixed(2)} '
+                'collapsedTop=${childMarginTop?.toStringAsFixed(2)} prevRender=$prev');
+          }
         }
 
         // No need to add padding and border for scrolling content box.

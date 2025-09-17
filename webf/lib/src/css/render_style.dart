@@ -593,7 +593,66 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
   @pragma('vm:prefer-inline')
   bool isPreviousSiblingAreRenderObject() {
-    return target.attachedRenderPreviousSibling?.attachedRenderer is RenderObject;
+    // Fast path: if a previous attached render sibling exists, return true
+    if (target.attachedRenderPreviousSibling?.attachedRenderer is RenderObject) return true;
+
+    // Fallback: look backward in the DOM for an in-flow, renderable previous sibling.
+    // This covers cases where inline text is wrapped into an anonymous block at
+    // the widget/render layer, so collapsing with the parent should NOT occur.
+    final parent = target.parentElement;
+    if (parent == null) return false;
+
+    bool reachedSelf = false;
+    for (int i = parent.childNodes.length - 1; i >= 0; i--) {
+      final node = parent.childNodes.elementAt(i);
+      if (!reachedSelf) {
+        if (identical(node, target)) {
+          reachedSelf = true;
+        }
+        continue;
+      }
+      if (node is TextNode) {
+        // Any non-whitespace text means there is an in-flow block created from it
+        // (anonymous block), preventing margin-top from collapsing with the parent.
+        if (node.data.trim().isNotEmpty) return true;
+        continue;
+      }
+      if (node is Element) {
+        final rs = node.renderStyle;
+        // Skip out-of-flow or non-rendered nodes
+        if (rs.position == CSSPositionType.absolute || rs.position == CSSPositionType.fixed) continue;
+        if (rs.display == CSSDisplay.none) continue;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Whether there exists any previous in-flow sibling in the DOM order that should
+  // prevent this element's margin-top from collapsing with its parent. This returns
+  // true when there is a non-empty text node (which will form an anonymous block)
+  // or an in-flow element (display not none, position not absolute/fixed) before
+  // this element.
+  bool hasPreviousInFlowDomSibling() {
+    final parent = target.parentElement;
+    if (parent == null) return false;
+    for (final node in parent.childNodes) {
+      if (identical(node, target)) break;
+      if (node is TextNode) {
+        if (node.data.trim().isNotEmpty) return true;
+        continue;
+      }
+      if (node is Element) {
+        final rs = node.renderStyle;
+        if (rs.display == CSSDisplay.none) continue;
+        if (rs.position == CSSPositionType.absolute || rs.position == CSSPositionType.fixed) continue;
+        return true;
+      }
+    }
+    if (debugLogFlowEnabled) {
+      renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> hasPreviousInFlowDomSibling=false');
+    }
+    return false;
   }
 
   @pragma('vm:prefer-inline')

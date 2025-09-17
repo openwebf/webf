@@ -180,6 +180,10 @@ class InlineItemsBuilder {
     }
   }
 
+  // Note: Trailing segment breaks (\n/\r) in WhiteSpace.normal/nowrap are handled by
+  // WhitespaceProcessor (transformed to a space and collapsed). We do not inject
+  // extra line breaks here; block-level siblings already force a new line.
+
   /// Add text content.
   void _addText(RenderTextBox textBox) {
     // Ensure RenderTextBox is laid out to avoid semantics errors

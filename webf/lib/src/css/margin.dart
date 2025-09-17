@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/src/foundation/logger.dart';
 
 mixin CSSMarginMixin on RenderStyle {
   /// The amount to margin the child in each dimension.
@@ -85,6 +86,9 @@ mixin CSSMarginMixin on RenderStyle {
       _marginTop = 0;
       // Cache computed value.
       cacheComputedValue(this, propertyName, _marginTop);
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> inline -> collapsedMarginTop=0');
+      }
       return _marginTop;
     }
 
@@ -96,21 +100,57 @@ mixin CSSMarginMixin on RenderStyle {
       _marginTop = marginTop.computedValue;
       // Cache computed value.
       cacheComputedValue(this, propertyName, _marginTop);
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> no-collapse-context -> collapsedMarginTop=${_marginTop.toStringAsFixed(2)}');
+      }
       return _marginTop;
     }
 
-    if (!isPreviousSiblingAreRenderObject()) {
-      // Margin top collapse with its parent if it is the first child of its parent and its value is 0.
+    final bool hasPrevInFlow = hasPreviousInFlowDomSibling();
+    if (!hasPrevInFlow) {
+      // No previous in-flow sibling (including anonymous block from text): allow possible
+      // parent collapse for the very first in-flow child.
       _marginTop = _collapsedMarginTopWithParent;
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> branch=parent '
+            '-> ${_marginTop.toStringAsFixed(2)}');
+      }
     } else {
-      // Margin top collapse with margin-bottom of its previous sibling, get the difference between
-      // the margin top of itself and the margin bottom of ite previous sibling. Set it to 0 if the
-      // difference is negative.
-      _marginTop = _collapsedMarginTopWithPreSibling;
+      // There is previous in-flow content. If the previous sibling is a render element,
+      // collapse with its margin-bottom; otherwise (e.g., text → anonymous block), treat
+      // previous bottom margin as 0 which leaves our marginTop intact.
+      final bool prevIsRender = isPreviousSiblingAreRenderObject();
+      final bool prevIsBlockOrFlex = prevIsRender &&
+          isPreviousSiblingStyleMatch((renderStyle) =>
+              renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex);
+      if (debugLogFlowEnabled) {
+        double? prevBottom;
+        String prevTag = 'unknown';
+        if (prevIsRender) {
+          final prev = getPreviousSiblingRenderStyle<CSSMarginMixin>();
+          if (prev != null) {
+            prevBottom = prev.collapsedMarginBottom;
+            prevTag = prev.target.tagName.toLowerCase();
+          }
+        }
+        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> branch=prev '
+            'prevIsRender=$prevIsRender prevIsBlockOrFlex=$prevIsBlockOrFlex prevTag=<$prevTag> '
+            'prevCollapsedBottom=${prevBottom?.toStringAsFixed(2) ?? 'null'}');
+      }
+      if (prevIsBlockOrFlex) {
+        _marginTop = _collapsedMarginTopWithPreSibling;
+      } else {
+        _marginTop = _collapsedMarginTopWithSelf; // leave own margin-top (no parent collapse)
+      }
     }
 
     // Cache computed value.
     cacheComputedValue(this, propertyName, _marginTop);
+    if (debugLogFlowEnabled) {
+      renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> hasPrevInFlow=$hasPrevInFlow '
+          'collapsedMarginTop=${_marginTop.toStringAsFixed(2)} '
+          'mt=${marginTop.computedValue.toStringAsFixed(2)} mb=${marginBottom.computedValue.toStringAsFixed(2)}');
+    }
     return _marginTop;
   }
 
@@ -210,17 +250,27 @@ mixin CSSMarginMixin on RenderStyle {
   // The bottom margin of an in-flow block-level element always collapses with the top margin of its next
   // in-flow block-level sibling, unless that sibling has clearance.
   double get _collapsedMarginTopWithPreSibling {
-    double marginTop = _collapsedMarginTopWithFirstChild;
+    // Compute the contribution of this element's margin-top given the previous
+    // sibling's collapsed margin-bottom. Since the layout adds the previous
+    // sibling's collapsed bottom already, the additional top contribution here
+    // should be: collapse(prevBottom, selfTop) - prevBottom.
+    double selfTop = _collapsedMarginTopWithFirstChild;
     if (isPreviousSiblingAreRenderObject() &&
         (isPreviousSiblingStyleMatch((renderStyle) =>
             renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex))) {
-      double preSiblingMarginBottom = getPreviousSiblingRenderStyle<CSSMarginMixin>()!.collapsedMarginBottom;
-      if (marginTop > 0 && preSiblingMarginBottom > 0) {
-        return math.max(marginTop - preSiblingMarginBottom, 0);
+      double prevBottom = getPreviousSiblingRenderStyle<CSSMarginMixin>()!.collapsedMarginBottom;
+      double collapsed;
+      if (selfTop >= 0 && prevBottom >= 0) {
+        collapsed = math.max(selfTop, prevBottom);
+      } else if (selfTop <= 0 && prevBottom <= 0) {
+        collapsed = math.min(selfTop, prevBottom);
+      } else {
+        collapsed = selfTop + prevBottom;
       }
+      return collapsed - prevBottom;
     }
 
-    return marginTop;
+    return selfTop;
   }
 
   // Margin bottom of in-flow block-level box which has collapsed margin.
