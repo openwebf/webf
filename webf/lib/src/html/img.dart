@@ -65,6 +65,9 @@ class ImageElement extends Element {
 
   bool _isSVGImage = false;
   Uint8List? _svgBytes;
+  // Prefetched response used to avoid duplicate network fetch when
+  // we need to detect content-type before choosing render path.
+  ImageLoadResponse? _prefetchedImageResponse;
 
   // https://html.spec.whatwg.org/multipage/embedded-content.html#dom-img-complete-dev
   // A boolean value which indicates whether or not the image has completely loaded.
@@ -559,14 +562,54 @@ class ImageElement extends Element {
         return;
       }
 
-      _loadImg() {
+      _loadImg() async {
         // Increment load event delay count before decode.
         ownerDocument.incrementLoadEventDelayCount();
 
+        // Fast path if URL/data scheme indicates SVG
         if (_isSVGMode) {
           _loadSVGImage();
-        } else {
-          _loadNormalImage();
+          return;
+        }
+
+        // Otherwise prefetch to inspect content-type and sniff as needed
+        try {
+          final ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
+          final String? mime = response.mime?.toLowerCase();
+
+          bool isSvg = false;
+          if (mime != null) {
+            isSvg = mime.contains('image/svg');
+          }
+          if (!isSvg) {
+            // Sniff bytes for SVG signatures when header is absent/misleading
+            final int probeLen = response.bytes.length < 256 ? response.bytes.length : 256;
+            try {
+              final String head = String.fromCharCodes(response.bytes.sublist(0, probeLen));
+              final String headLower = head.toLowerCase();
+              if (headLower.contains('<svg') ||
+                  (headLower.contains('<?xml') && headLower.contains('svg')) ||
+                  headLower.contains('xmlns="http://www.w3.org/2000/svg"')) {
+                isSvg = true;
+              }
+            } catch (_) {}
+          }
+
+          if (isSvg) {
+            _applySVGResponse(response);
+            // Decrement load event delay here for prefetch SVG path
+            ownerDocument.decrementLoadEventDelayCount();
+          } else {
+            // Hand off to raster pipeline and avoid double-fetch
+            _prefetchedImageResponse = response;
+            _isSVGImage = false;
+            _loadNormalImage();
+          }
+        } catch (e, stack) {
+          debugPrint('$e\n$stack');
+          _dispatchErrorEvent();
+          // Decrement on failure
+          ownerDocument.decrementLoadEventDelayCount();
         }
       }
 
@@ -584,36 +627,7 @@ class ImageElement extends Element {
   void _loadSVGImage() async {
     try {
       ImageLoadResponse response = await obtainImage(this, _resolvedUri!);
-      _svgBytes = response.bytes;
-      _resizeImage();
-      _isSVGImage = true;
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        // Apply the same fix for SVG images
-        final currentState = state;
-        if (currentState != null) {
-          currentState.requestStateUpdate();
-          _hasPendingImageUpdate = false;
-        } else if (_imageState.isNotEmpty) {
-          // There are states but none are mounted yet, mark update as pending
-          _hasPendingImageUpdate = true;
-
-          // Also schedule update for next frame as a fallback
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            if (_hasPendingImageUpdate) {
-              state?.requestStateUpdate();
-              _hasPendingImageUpdate = false;
-            }
-          });
-          SchedulerBinding.instance.scheduleFrame();
-        }
-        // Report FP first (if not already reported)
-        ownerDocument.controller.reportFP();
-        // Report FCP when SVG image is first painted
-        ownerDocument.controller.reportFCP();
-      });
-      SchedulerBinding.instance.scheduleFrame();
-
-      _dispatchLoadEvent();
+      _applySVGResponse(response);
     } catch (e, stack) {
       print('$e\n$stack');
       _dispatchErrorEvent();
@@ -622,6 +636,39 @@ class ImageElement extends Element {
       ownerDocument.decrementLoadEventDelayCount();
     }
     return;
+  }
+
+  void _applySVGResponse(ImageLoadResponse response) {
+    _svgBytes = response.bytes;
+    _resizeImage();
+    _isSVGImage = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      // Apply the same fix for SVG images
+      final currentState = state;
+      if (currentState != null) {
+        currentState.requestStateUpdate();
+        _hasPendingImageUpdate = false;
+      } else if (_imageState.isNotEmpty) {
+        // There are states but none are mounted yet, mark update as pending
+        _hasPendingImageUpdate = true;
+
+        // Also schedule update for next frame as a fallback
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (_hasPendingImageUpdate) {
+            state?.requestStateUpdate();
+            _hasPendingImageUpdate = false;
+          }
+        });
+        SchedulerBinding.instance.scheduleFrame();
+      }
+      // Report FP first (if not already reported)
+      ownerDocument.controller.reportFP();
+      // Report FCP when SVG image is first painted
+      ownerDocument.controller.reportFCP();
+    });
+    SchedulerBinding.instance.scheduleFrame();
+
+    _dispatchLoadEvent();
   }
 
   // https://html.spec.whatwg.org/multipage/images.html#decoding-images
@@ -676,6 +723,12 @@ class ImageElement extends Element {
   // https://html.spec.whatwg.org/multipage/images.html#when-to-obtain-images
   static Future<ImageLoadResponse> obtainImage(Element element, Uri url) async {
     var self = element as ImageElement;
+    // Use prefetched response if available to avoid duplicate network fetches
+    if (self._prefetchedImageResponse != null && self._resolvedUri == url) {
+      final ImageLoadResponse resp = self._prefetchedImageResponse!;
+      self._prefetchedImageResponse = null; // consume once
+      return resp;
+    }
     ImageRequest request = self._currentRequest = ImageRequest.fromUri(url);
     // Increment count when request.
     self.ownerDocument.incrementRequestCount();
@@ -714,7 +767,7 @@ class ImageElement extends Element {
       PaintingBinding.instance.imageCache.evict(previousUnSizedKey, includeLive: true);
     }
 
-    if (_isSVGMode) {
+    if (_isSVGImage) {
       // In svg mode, we don't need to reload
     } else {
       _debounce.run(() {
