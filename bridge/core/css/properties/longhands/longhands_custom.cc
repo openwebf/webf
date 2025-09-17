@@ -3089,45 +3089,8 @@ void Color::ApplyInitial(webf::StyleResolverState& state) const {
 }
 
 void Color::ApplyValue(webf::StyleResolverState& state, const webf::CSSValue& value, webf::CSSProperty::ValueMode) const {
-  if (value.IsColorValue()) {
-    const auto& color_value = static_cast<const cssvalue::CSSColor&>(value);
-    state.StyleBuilder().SetColor(color_value.Value());
-  } else if (value.IsIdentifierValue()) {
-    const auto& ident_value = static_cast<const CSSIdentifierValue&>(value);
-    if (ident_value.GetValueID() == CSSValueID::kCurrentcolor) {
-      // For currentColor, we should use the inherited color
-      state.StyleBuilder().SetColor(state.ParentStyle()->Color());
-    } else {
-      // Handle common color keywords
-      webf::Color color;
-      bool converted = false;
-      
-      switch (ident_value.GetValueID()) {
-        case CSSValueID::kBlue:
-          color = webf::Color(0, 0, 255);
-          converted = true;
-          break;
-        case CSSValueID::kPurple:
-          color = webf::Color(128, 0, 128);
-          converted = true;
-          break;
-        case CSSValueID::kRed:
-          color = webf::Color(255, 0, 0);
-          converted = true;
-          break;
-        case CSSValueID::kGreen:
-          color = webf::Color(0, 128, 0);
-          converted = true;
-          break;
-        default:
-          break;
-      }
-      
-      if (converted) {
-        state.StyleBuilder().SetColor(color);
-      }
-    }
-  }
+  // Use the shared color converter to support CSSColor and all named keywords.
+  state.StyleBuilder().SetColor(StyleBuilderConverter::ConvertColor(state, value));
 }
 
 void LineClamp::ApplyInitial(webf::StyleResolverState&) const {}

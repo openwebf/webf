@@ -752,7 +752,7 @@ bool IsIdentifier(const CSSValue& value, CSSValueID ident) {
 
 bool IsIdentifierPair(const CSSValue& value, CSSValueID ident) {
   const auto* pair_value = DynamicTo<CSSValuePair>(value);
-  return pair_value && IsIdentifier(*pair_value->First(), ident) && IsIdentifier(*pair_value->Second(), ident);
+  return pair_value && IsIdentifier(pair_value->FirstRef(), ident) && IsIdentifier(pair_value->SecondRef(), ident);
 }
 
 std::shared_ptr<const CSSValue> TimelineValueItem(size_t index,
@@ -1539,9 +1539,9 @@ String StylePropertySerializer::GetShorthandValueForColumns(const StylePropertyS
 
   StringBuilder result;
   for (unsigned i = 0; i < shorthand.length(); ++i) {
-    const CSSValue* value = property_set_.GetPropertyCSSValue(*shorthand.properties()[i]).get();
+    const std::shared_ptr<const CSSValue> value = property_set_.GetPropertyCSSValue(*shorthand.properties()[i]);
     String value_text = value->CssText();
-    if (const auto* ident_value = DynamicTo<CSSIdentifierValue>(value);
+    if (const auto* ident_value = DynamicTo<CSSIdentifierValue>(value.get());
         ident_value && ident_value->GetValueID() == CSSValueID::kAuto) {
       continue;
     }
@@ -1567,7 +1567,7 @@ String StylePropertySerializer::GetShorthandValueForDoubleBarCombinator(
     //        << "Without InitialValue() implemented, 'initial' will show up in the "
     //           "serialization below.";
     assert(!longhand->InitialValue()->IsInitialValue());
-    const CSSValue* value = property_set_.GetPropertyCSSValue(*longhand).get();
+    const std::shared_ptr<const CSSValue> value = property_set_.GetPropertyCSSValue(*longhand);
     if (*value == *longhand->InitialValue()) {
       continue;
     }
@@ -1831,20 +1831,22 @@ String StylePropertySerializer::BorderImagePropertyValue() const {
                                      &GetCSSPropertyBorderImageRepeat()};
   size_t length = std::size(properties);
   for (size_t i = 0; i < length; ++i) {
-    const CSSValue& value = *property_set_.GetPropertyCSSValue(*properties[i]);
+    const std::shared_ptr<const CSSValue> value_ptr = property_set_.GetPropertyCSSValue(*properties[i]);
     if (!result.IsEmpty()) {
       result.Append(" "_s);
     }
     if (i == 2 || i == 3) {
       result.Append("/ "_s);
     }
-    result.Append(value.CssText());
+    result.Append(value_ptr->CssText());
   }
   return result.ReleaseString();
 }
 
 String StylePropertySerializer::BorderRadiusValue() const {
-  auto serialize = [](const CSSValue& top_left, const CSSValue& top_right, const CSSValue& bottom_right,
+  auto serialize = [](const CSSValue& top_left,
+                      const CSSValue& top_right,
+                      const CSSValue& bottom_right,
                       const CSSValue& bottom_left) -> String {
     bool show_bottom_left = !(top_right == bottom_left);
     bool show_bottom_right = !(top_left == bottom_right) || show_bottom_left;
@@ -1867,20 +1869,45 @@ String StylePropertySerializer::BorderRadiusValue() const {
     return result.ReleaseString();
   };
 
-  const auto& top_left = To<CSSValuePair>(*property_set_.GetPropertyCSSValue(GetCSSPropertyBorderTopLeftRadius()));
-  const auto& top_right = To<CSSValuePair>(*property_set_.GetPropertyCSSValue(GetCSSPropertyBorderTopRightRadius()));
-  const auto& bottom_right =
-      To<CSSValuePair>(*property_set_.GetPropertyCSSValue(GetCSSPropertyBorderBottomRightRadius()));
-  const auto& bottom_left =
-      To<CSSValuePair>(*property_set_.GetPropertyCSSValue(GetCSSPropertyBorderBottomLeftRadius()));
+  // Hold shared_ptrs locally to keep the underlying CSSValue objects alive
+  // while we take references to CSSValuePair. This avoids dangling refs
+  // caused by dereferencing temporaries returned by value.
+  const std::shared_ptr<const CSSValue> top_left_value =
+      property_set_.GetPropertyCSSValue(GetCSSPropertyBorderTopLeftRadius());
+  const std::shared_ptr<const CSSValue> top_right_value =
+      property_set_.GetPropertyCSSValue(GetCSSPropertyBorderTopRightRadius());
+  const std::shared_ptr<const CSSValue> bottom_right_value =
+      property_set_.GetPropertyCSSValue(GetCSSPropertyBorderBottomRightRadius());
+  const std::shared_ptr<const CSSValue> bottom_left_value =
+      property_set_.GetPropertyCSSValue(GetCSSPropertyBorderBottomLeftRadius());
+
+  // Be defensive: if any longhand is not a CSSValuePair (e.g., CSS-wide
+  // keywords, unresolved variables), bail out to avoid bad casts.
+  const CSSValuePair* top_left = DynamicTo<CSSValuePair>(top_left_value.get());
+  const CSSValuePair* top_right = DynamicTo<CSSValuePair>(top_right_value.get());
+  const CSSValuePair* bottom_right = DynamicTo<CSSValuePair>(bottom_right_value.get());
+  const CSSValuePair* bottom_left = DynamicTo<CSSValuePair>(bottom_left_value.get());
+  if (!top_left || !top_right || !bottom_right || !bottom_left) {
+    return String::EmptyString();
+  }
+
+  // Extract and hold the corner values as shared_ptrs to guarantee lifetime
+  const CSSValue& tl1 = top_left->FirstRef();
+  const CSSValue& tr1 = top_right->FirstRef();
+  const CSSValue& br1 = bottom_right->FirstRef();
+  const CSSValue& bl1 = bottom_left->FirstRef();
+
+  const CSSValue& tl2 = top_left->SecondRef();
+  const CSSValue& tr2 = top_right->SecondRef();
+  const CSSValue& br2 = bottom_right->SecondRef();
+  const CSSValue& bl2 = bottom_left->SecondRef();
 
   StringBuilder builder;
-  builder.Append(serialize(*top_left.First(), *top_right.First(), *bottom_right.First(), *bottom_left.First()));
+  builder.Append(serialize(tl1, tr1, br1, bl1));
 
-  if (!(top_left.First() == top_left.Second()) || !(top_right.First() == top_right.Second()) ||
-      !(bottom_right.First() == bottom_right.Second()) || !(bottom_left.First() == bottom_left.Second())) {
+  if (!(tl1 == tl2 && tr1 == tr2 && br1 == br2 && bl1 == bl2)) {
     builder.Append(" / "_s);
-    builder.Append(serialize(*top_left.Second(), *top_right.Second(), *bottom_right.Second(), *bottom_left.Second()));
+    builder.Append(serialize(tl2, tr2, br2, bl2));
   }
 
   return builder.ReleaseString();

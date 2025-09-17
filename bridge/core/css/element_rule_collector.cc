@@ -257,22 +257,31 @@ void ElementRuleCollector::SortMatchedRules() {
   // Sort by cascade order
   std::stable_sort(matched_rules_.begin(), matched_rules_.end(),
       [](const MatchedRule& a, const MatchedRule& b) {
-        // First by origin
+        // CSS Cascade order:
+        // 1) Origin (UA < User < Author < Animation < Transition)
         if (a.cascade_origin != b.cascade_origin) {
           return static_cast<int>(a.cascade_origin) < static_cast<int>(b.cascade_origin);
         }
-        
-        // Then by cascade layer
+
+        // 2) Cascade layer (lower layer order first)
         if (a.cascade_layer != b.cascade_layer) {
           return a.cascade_layer < b.cascade_layer;
         }
-        
-        // Then by specificity
+
+        // 3) Specificity (sort ascending so higher specificity appears later and wins)
         if (a.specificity != b.specificity) {
           return a.specificity < b.specificity;
         }
-        
-        // Finally by order of appearance
+
+        // 4) Source order tie-breaker: stylesheet index, then rule position
+        if (a.style_sheet_index != b.style_sheet_index) {
+          return a.style_sheet_index < b.style_sheet_index;
+        }
+        if (a.rule_data && b.rule_data && a.rule_data->Position() != b.rule_data->Position()) {
+          return a.rule_data->Position() < b.rule_data->Position();
+        }
+
+        // 5) Fallback to collection order (stable)
         return a.cascade_order < b.cascade_order;
       });
 }

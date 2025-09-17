@@ -44,8 +44,15 @@ class CSSValuePair : public CSSValue {
     assert(second_);
   }
 
+  // Existing accessors return shared_ptr, which can incur refcount churn when
+  // called in hot paths. For serialization and read-only use, prefer the
+  // ref-returning accessors below to avoid unnecessary shared_ptr copies.
   std::shared_ptr<const CSSValue> First() const { return first_; }
   std::shared_ptr<const CSSValue> Second() const { return second_; }
+
+  // Lightweight accessors that avoid shared_ptr copies.
+  const CSSValue& FirstRef() const { return *first_; }
+  const CSSValue& SecondRef() const { return *second_; }
 
   bool KeepIdenticalValues() const { return identical_values_policy_ == kKeepIdenticalValues; }
 
