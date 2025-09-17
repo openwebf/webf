@@ -450,7 +450,7 @@ template <typename T>
 bool MutableCSSPropertyValueSet::RemoveProperty(const T& property, String* return_text) {
   if (RemoveShorthandProperty(property)) {
     if (return_text) {
-      *return_text = String();
+      *return_text = ""_s;
     }
     return true;
   }
@@ -614,7 +614,7 @@ ALWAYS_INLINE CSSPropertyValue* MutableCSSPropertyValueSet::FindInsertionPointFo
 bool MutableCSSPropertyValueSet::RemovePropertyAtIndex(int property_index, String* return_text) {
   if (property_index == -1) {
     if (return_text) {
-      *return_text = String();
+      *return_text = ""_s;
     }
     return false;
   }
