@@ -733,6 +733,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     double crossAxisOffset = runLeadingSpace;
     double mainAxisContentSize = contentSize.width;
 
+    // Carry collapsed bottom margin across runs so sibling margin collapsing works
+    // even when a block-level child is placed in its own run.
+    double? carriedPrevCollapsedBottom;
+
     // Set offset of children in each line.
     for (int i = 0; i < _lineMetrics.length; ++i) {
       final RunMetrics metrics = _lineMetrics[i];
@@ -747,6 +751,19 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       double childMainPosition = childLeadingSpace;
 
+      // Track previous child's collapsed bottom margin; init with carried value from previous run
+      double? prevCollapsedBottom = carriedPrevCollapsedBottom;
+      // Track the first child's own collapsed top margin in this run so we can remove it
+      // from the crossAxisOffset carry to avoid double-counting across runs.
+      double runFirstOwnTop = 0;
+      double runFirstTopContribution = 0;
+      bool firstOwnTopCaptured = false;
+
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow-Run] index=' + i.toString() +
+            ' carriedPrevBottom=' + (carriedPrevCollapsedBottom?.toStringAsFixed(2) ?? 'null') +
+            ' runCrossAxisExtent=' + runCrossAxisExtent.toStringAsFixed(2));
+      }
       for (RenderBox child in metrics.runChildren) {
         final double childMainAxisExtent = _getMainAxisExtent(child);
         final double childCrossAxisExtent = _getCrossAxisExtent(child);
@@ -786,6 +803,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
         double? childMarginLeft = 0;
         double? childMarginTop = 0;
+        double? childMarginBottom = 0;
 
         RenderBoxModel? childRenderBoxModel;
         if (child is RenderBoxModel) {
@@ -797,11 +815,42 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (childRenderBoxModel is RenderBoxModel) {
           final rs = childRenderBoxModel.renderStyle;
           childMarginLeft = rs.marginLeft.computedValue;
-          childMarginTop = getChildMarginTop(childRenderBoxModel);
+          // Collapsed top as computed by the child (self/parent collapse only)
+          final double collapsedTop = getChildMarginTop(childRenderBoxModel);
+          // Collapsed bottom of previous sibling in this run
+          final double? prevBottom = prevCollapsedBottom;
+          // Compute sibling-collapsed top contribution: collapse(prevBottom, collapsedTop) - prevBottom
+          double topContribution;
+          if (prevBottom == null) {
+            topContribution = collapsedTop; // first child: child already handled parent collapse
+          } else {
+            if (collapsedTop >= 0 && prevBottom >= 0) {
+              topContribution = math.max(collapsedTop, prevBottom) - prevBottom;
+            } else if (collapsedTop <= 0 && prevBottom <= 0) {
+              topContribution = math.min(collapsedTop, prevBottom) - prevBottom;
+            } else {
+              topContribution = collapsedTop;
+            }
+          }
+          if (!firstOwnTopCaptured) {
+            runFirstOwnTop = collapsedTop;
+            runFirstTopContribution = topContribution;
+            firstOwnTopCaptured = true;
+          }
+          childMarginTop = topContribution;
+          childMarginBottom = getChildMarginBottom(childRenderBoxModel);
+          if (debugLogFlowEnabled && prevCollapsedBottom != null) {
+            final tag = rs.target.tagName.toLowerCase();
+            renderingLogger.finer('[Flow-MarginCollapse] prevBottom=' +
+                prevCollapsedBottom!.toStringAsFixed(2) +
+                ' currTop=' + collapsedTop.toStringAsFixed(2) +
+                ' contrib=' + topContribution.toStringAsFixed(2) +
+                ' child=<' + tag + '>');
+          }
           if (debugLogFlowEnabled) {
-            final prev = rs.isPreviousSiblingAreRenderObject();
-            renderingLogger.finer('[Flow] child <${rs.target.tagName.toLowerCase()}> mt=${rs.marginTop.computedValue.toStringAsFixed(2)} '
-                'collapsedTop=${childMarginTop?.toStringAsFixed(2)} prevRender=$prev');
+            renderingLogger.finer('[Flow-Child] <' + rs.target.tagName.toLowerCase() + '>' +
+                ' collapsedTop=' + collapsedTop.toStringAsFixed(2) +
+                ' collapsedBottom=' + (childMarginBottom ?? 0).toStringAsFixed(2));
           }
         }
 
@@ -815,14 +864,30 @@ class RenderFlowLayout extends RenderLayoutBox {
                 childLineExtent +
                 renderStyle.paddingTop.computedValue +
                 renderStyle.effectiveBorderTopWidth.computedValue +
-                childMarginTop);
+                (childMarginTop ?? 0));
         // Apply position relative offset change.
         CSSPositionedLayout.applyRelativeOffset(relativeOffset, child);
 
         childMainPosition += childMainAxisExtent + childBetweenSpace;
+
+        // Update previous collapsed bottom margin for next sibling in the run
+        if (childMarginBottom != null) {
+          prevCollapsedBottom = childMarginBottom;
+        }
       }
 
-      crossAxisOffset += runCrossAxisExtent + runBetweenSpace;
+      // Remove the first child's own collapsed top from the carry to avoid adding
+      // both top and bottom margins of the previous run when computing the next run's start.
+      final double crossAdvance = (runCrossAxisExtent - runFirstOwnTop + runFirstTopContribution) + runBetweenSpace;
+      crossAxisOffset += crossAdvance;
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow-RunEnd] index=' + i.toString() +
+            ' runFirstOwnTop=' + runFirstOwnTop.toStringAsFixed(2) +
+            ' crossAdvance=' + crossAdvance.toStringAsFixed(2) +
+            ' newCarryPrevBottom=' + (prevCollapsedBottom?.toStringAsFixed(2) ?? 'null'));
+      }
+      // Carry over prev collapsed bottom margin to next run
+      carriedPrevCollapsedBottom = prevCollapsedBottom;
     }
   }
 

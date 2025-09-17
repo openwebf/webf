@@ -72,23 +72,10 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin top of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginTop {
-    String propertyName = 'collapsedMarginTop';
-
-    // Use cached value if exits.
-    double? cachedValue = getCachedComputedValue(this, propertyName);
-    if (cachedValue != null) {
-      return cachedValue;
-    }
-
     double _marginTop;
 
     if (effectiveDisplay == CSSDisplay.inline) {
       _marginTop = 0;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginTop);
-      if (debugLogFlowEnabled) {
-        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> inline -> collapsedMarginTop=0');
-      }
       return _marginTop;
     }
 
@@ -98,59 +85,19 @@ mixin CSSMarginMixin on RenderStyle {
     // 3. Inner renderBox of element with overflow auto/scroll
     if (isDocumentRootBox() || (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex)) {
       _marginTop = marginTop.computedValue;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginTop);
-      if (debugLogFlowEnabled) {
-        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> no-collapse-context -> collapsedMarginTop=${_marginTop.toStringAsFixed(2)}');
-      }
       return _marginTop;
     }
 
-    final bool hasPrevInFlow = hasPreviousInFlowDomSibling();
+    final bool hasPrevInFlow = isPreviousSiblingAreRenderObject();
     if (!hasPrevInFlow) {
-      // No previous in-flow sibling (including anonymous block from text): allow possible
-      // parent collapse for the very first in-flow child.
+      // First in-flow child: may collapse with parent top
       _marginTop = _collapsedMarginTopWithParent;
-      if (debugLogFlowEnabled) {
-        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> branch=parent '
-            '-> ${_marginTop.toStringAsFixed(2)}');
-      }
     } else {
-      // There is previous in-flow content. If the previous sibling is a render element,
-      // collapse with its margin-bottom; otherwise (e.g., text → anonymous block), treat
-      // previous bottom margin as 0 which leaves our marginTop intact.
-      final bool prevIsRender = isPreviousSiblingAreRenderObject();
-      final bool prevIsBlockOrFlex = prevIsRender &&
-          isPreviousSiblingStyleMatch((renderStyle) =>
-              renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex);
-      if (debugLogFlowEnabled) {
-        double? prevBottom;
-        String prevTag = 'unknown';
-        if (prevIsRender) {
-          final prev = getPreviousSiblingRenderStyle<CSSMarginMixin>();
-          if (prev != null) {
-            prevBottom = prev.collapsedMarginBottom;
-            prevTag = prev.target.tagName.toLowerCase();
-          }
-        }
-        renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> branch=prev '
-            'prevIsRender=$prevIsRender prevIsBlockOrFlex=$prevIsBlockOrFlex prevTag=<$prevTag> '
-            'prevCollapsedBottom=${prevBottom?.toStringAsFixed(2) ?? 'null'}');
-      }
-      if (prevIsBlockOrFlex) {
-        _marginTop = _collapsedMarginTopWithPreSibling;
-      } else {
-        _marginTop = _collapsedMarginTopWithSelf; // leave own margin-top (no parent collapse)
-      }
+      // Subsequent in-flow child: do not collapse with previous sibling here.
+      // Parent layout combines prev bottom and this top per spec.
+      _marginTop = _collapsedMarginTopWithFirstChild;
     }
 
-    // Cache computed value.
-    cacheComputedValue(this, propertyName, _marginTop);
-    if (debugLogFlowEnabled) {
-      renderingLogger.finer('[MARGIN] <${target.tagName.toLowerCase()}> hasPrevInFlow=$hasPrevInFlow '
-          'collapsedMarginTop=${_marginTop.toStringAsFixed(2)} '
-          'mt=${marginTop.computedValue.toStringAsFixed(2)} mb=${marginBottom.computedValue.toStringAsFixed(2)}');
-    }
     return _marginTop;
   }
 
@@ -276,21 +223,11 @@ mixin CSSMarginMixin on RenderStyle {
   // Margin bottom of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginBottom {
-    String propertyName = 'collapsedMarginBottom';
-
-    // Use cached value if exits.
-    double? cachedValue = getCachedComputedValue(this, propertyName);
-    if (cachedValue != null) {
-      return cachedValue;
-    }
-
     double _marginBottom;
 
     // Margin is invalid for inline element.
     if (effectiveDisplay == CSSDisplay.inline) {
       _marginBottom = 0;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginBottom);
       return _marginBottom;
     }
 
@@ -300,8 +237,6 @@ mixin CSSMarginMixin on RenderStyle {
     // 3. Inner renderBox of element with overflow auto/scroll
     if (isDocumentRootBox() || (effectiveDisplay != CSSDisplay.block && effectiveDisplay != CSSDisplay.flex)) {
       _marginBottom = marginBottom.computedValue;
-      // Cache computed value.
-      cacheComputedValue(this, propertyName, _marginBottom);
       return _marginBottom;
     }
 
@@ -316,8 +251,6 @@ mixin CSSMarginMixin on RenderStyle {
       _marginBottom = _collapsedMarginBottomWithLastChild;
     }
 
-    // Cache computed value.
-    cacheComputedValue(this, propertyName, _marginBottom);
     return _marginBottom;
   }
 
