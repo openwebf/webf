@@ -2165,6 +2165,19 @@ class RenderFlexLayout extends RenderLayoutBox {
         ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
         : (oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight);
 
+    // If a stretched cross size was computed for this item, apply it directly to
+    // the child's constraints in the cross axis. This avoids relying on override
+    // flags that can be obscured by wrappers like RenderEventListener.
+    if (childStretchedCrossSize != null && childStretchedCrossSize > 0) {
+      if (_isHorizontalFlexDirection) {
+        minConstraintHeight = childStretchedCrossSize;
+        maxConstraintHeight = childStretchedCrossSize;
+      } else {
+        minConstraintWidth = childStretchedCrossSize;
+        maxConstraintWidth = childStretchedCrossSize;
+      }
+    }
+
     // For <text /> elements or any inline-level elements in horizontal flex layout,
     // avoid tight height constraints during secondary layout passes.
     // This allows text to properly reflow and adjust its height when width changes.
@@ -2200,33 +2213,11 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     // Allow child to expand beyond parent's maxHeight if content requires it
     // This matches browser behavior where content can overflow constrained parents
-    // Cap child's cross-axis max constraint by the flex container's
-    // available cross size so non-stretched items don't exceed it.
-    if (_isHorizontalFlexDirection) {
-      final double parentMaxH = contentConstraints!.maxHeight;
-      if (parentMaxH.isFinite) {
-        maxConstraintHeight = math.min(maxConstraintHeight, parentMaxH);
-      }
-      // Normalize: ensure min <= max after capping
-      if (minConstraintHeight > maxConstraintHeight) {
-        minConstraintHeight = maxConstraintHeight;
-      }
-    } else {
-      final double parentMaxW = contentConstraints!.maxWidth;
-      if (parentMaxW.isFinite) {
-        maxConstraintWidth = math.min(maxConstraintWidth, parentMaxW);
-      }
-      // Normalize: ensure min <= max after capping
-      if (minConstraintWidth > maxConstraintWidth) {
-        minConstraintWidth = maxConstraintWidth;
-      }
-    }
-
     double adjustedMaxHeight = maxConstraintHeight;
-    // Do NOT expand beyond the capped max height inside flex layout; overflow
-    // should be handled by painting/scrolling rather than inflating constraints.
+    // Allow child to expand beyond parent's maxHeight if content requires it
+    // This matches browser behavior where content can overflow constrained parents
     if (contentMinHeight > adjustedMaxHeight) {
-      // Keep adjustedMaxHeight as the cap.
+      adjustedMaxHeight = contentMinHeight;
     }
 
     // If the child did not flex in the main axis, preserve its measured main size
