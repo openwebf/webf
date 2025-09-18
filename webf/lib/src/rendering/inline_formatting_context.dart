@@ -240,7 +240,7 @@ class InlineFormattingContext {
       if (li < 0) return;
       final s = box.renderStyle;
       final double padR = s.paddingRight.computedValue;
-      final double bR = s.borderRightWidth?.computedValue ?? 0.0;
+      final double bR = s.effectiveBorderRightWidth.computedValue;
       final double mR = s.marginRight.computedValue;
       final double extended = last.right + padR + bR + mR;
       if (extended > rights[li]) rights[li] = extended;
@@ -369,7 +369,7 @@ class InlineFormattingContext {
         // Skip reserve if a right-extras placeholder already accounts for it.
         if (hasRightPH.contains(box)) return;
         final s = box.renderStyle;
-        final double extra = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+        final double extra = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
         if (extra > reserves[li]) reserves[li] = extra;
       });
       return reserves;
@@ -512,7 +512,7 @@ class InlineFormattingContext {
       final (int sIdx, int eIdx) = entry.value;
       if (eIdx <= sIdx) continue;
       final styleR = box.renderStyle;
-      final double extraR = styleR.paddingRight.computedValue + (styleR.borderRightWidth?.computedValue ?? 0.0) + styleR.marginRight.computedValue;
+      final double extraR = styleR.paddingRight.computedValue + styleR.effectiveBorderRightWidth.computedValue + styleR.marginRight.computedValue;
       if (extraR <= 0) continue;
       final rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
       if (rects.isEmpty) continue;
@@ -587,7 +587,7 @@ class InlineFormattingContext {
             final int li = _lineIndexForRect(last);
             if (li != i) return;
             final s = box.renderStyle;
-            final double extraR = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
             if (extraR > 0) {
               shiftSum += extraR;
               if (last.right > boundaryX) boundaryX = last.right;
@@ -701,7 +701,7 @@ class InlineFormattingContext {
             final int li = _lineIndexForRect(last);
             if (li != i) return; // consider owners ending on this line only
             final s = box.renderStyle;
-            final double extraR = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
             if (extraR > 0) {
               if (last.right > boundaryX) boundaryX = last.right;
               shiftSum += extraR;
@@ -759,10 +759,10 @@ class InlineFormattingContext {
         final padR = s.paddingRight.computedValue;
         final padT = s.paddingTop.computedValue;
         final padB = s.paddingBottom.computedValue;
-        final bL = s.borderLeftWidth?.computedValue ?? 0.0;
-        final bR = s.borderRightWidth?.computedValue ?? 0.0;
-        final bT = s.borderTopWidth?.computedValue ?? 0.0;
-        final bB = s.borderBottomWidth?.computedValue ?? 0.0;
+        final bL = s.effectiveBorderLeftWidth.computedValue;
+        final bR = s.effectiveBorderRightWidth.computedValue;
+        final bT = s.effectiveBorderTopWidth.computedValue;
+        final bB = s.effectiveBorderBottomWidth.computedValue;
 
         for (int i = 0; i < e.rects.length; i++) {
           final tb = e.rects[i];
@@ -847,10 +847,10 @@ class InlineFormattingContext {
         final padR = style.paddingRight.computedValue;
         final padT = style.paddingTop.computedValue;
         final padB = style.paddingBottom.computedValue;
-        final bL = style.borderLeftWidth?.computedValue ?? 0.0;
-        final bR = style.borderRightWidth?.computedValue ?? 0.0;
-        final bT = style.borderTopWidth?.computedValue ?? 0.0;
-        final bB = style.borderBottomWidth?.computedValue ?? 0.0;
+        final bL = style.effectiveBorderLeftWidth.computedValue;
+        final bR = style.effectiveBorderRightWidth.computedValue;
+        final bT = style.effectiveBorderTopWidth.computedValue;
+        final bB = style.effectiveBorderBottomWidth.computedValue;
 
         for (int i = 0; i < rects.length; i++) {
           final tb = rects[i];
@@ -994,9 +994,9 @@ class InlineFormattingContext {
             // For synthesized empty spans, include effective line-height vertically to match visual area
             final style = targetBox.renderStyle;
             final padT = style.paddingTop.computedValue;
-            final bT = style.borderTopWidth?.computedValue ?? 0.0;
+            final bT = style.effectiveBorderTopWidth.computedValue;
             final padB = style.paddingBottom.computedValue;
-            final bB = style.borderBottomWidth?.computedValue ?? 0.0;
+            final bB = style.effectiveBorderBottomWidth.computedValue;
             final lh = _effectiveLineHeightPx(style);
             final tb = rects.first;
             final double left = tb.left;
@@ -1204,10 +1204,10 @@ class InlineFormattingContext {
           final st = item.style!;
           // Defer left extras until we know this span has content; for empty spans we will merge.
           final leftExtras = (st.marginLeft.computedValue) +
-              (st.borderLeftWidth?.computedValue ?? 0.0) +
+              (st.effectiveBorderLeftWidth.computedValue) +
               (st.paddingLeft.computedValue);
           final rightExtras = (st.paddingRight.computedValue) +
-              (st.borderRightWidth?.computedValue ?? 0.0) +
+              (st.effectiveBorderRightWidth.computedValue) +
               (st.marginRight.computedValue);
           if (rb is RenderBoxModel) {
             openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
@@ -1715,10 +1715,11 @@ class InlineFormattingContext {
       final padR = s.paddingRight.computedValue;
       final padT = s.paddingTop.computedValue;
       final padB = s.paddingBottom.computedValue;
-      final bL = s.borderLeftWidth?.computedValue ?? 0.0;
-      final bR = s.borderRightWidth?.computedValue ?? 0.0;
-      final bT = s.borderTopWidth?.computedValue ?? 0.0;
-      final bB = s.borderBottomWidth?.computedValue ?? 0.0;
+      // Use effective border widths so `border-*-style: none` collapses to 0
+      final bL = s.effectiveBorderLeftWidth.computedValue;
+      final bR = s.effectiveBorderRightWidth.computedValue;
+      final bT = s.effectiveBorderTopWidth.computedValue;
+      final bB = s.effectiveBorderBottomWidth.computedValue;
       // Cache metrics per style for all its fragments in this loop
       final (double mHeight, double mBaseline) = _measureTextMetricsForStyle(s);
 
@@ -1783,8 +1784,8 @@ class InlineFormattingContext {
           final cs = childEntry.style;
           final cPadL = cs.paddingLeft.computedValue;
           final cPadR = cs.paddingRight.computedValue;
-          final cBL = cs.borderLeftWidth?.computedValue ?? 0.0;
-          final cBR = cs.borderRightWidth?.computedValue ?? 0.0;
+          final cBL = cs.effectiveBorderLeftWidth.computedValue;
+          final cBR = cs.effectiveBorderRightWidth.computedValue;
           for (int j = 0; j < childEntry.rects.length; j++) {
             final cr = childEntry.rects[j];
             if (lineTop != null && lineBottom != null) {

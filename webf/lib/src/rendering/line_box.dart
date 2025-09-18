@@ -201,9 +201,9 @@ class BoxLineBoxItem extends LineBoxItem {
     // Get padding values
     final paddingTop = style.paddingTop.computedValue;
     final paddingBottom = style.paddingBottom.computedValue;
-    // Border widths
-    final borderTop = style.borderTopWidth?.computedValue ?? 0.0;
-    final borderBottom = style.borderBottomWidth?.computedValue ?? 0.0;
+    // Use effective border widths so border-style: none results in zero width
+    final borderTop = style.effectiveBorderTopWidth.computedValue;
+    final borderBottom = style.effectiveBorderBottomWidth.computedValue;
 
     // For inline elements, the background covers the content area plus padding
     // and, by default, the border box (background-clip: border-box)
@@ -230,10 +230,10 @@ class BoxLineBoxItem extends LineBoxItem {
     }
 
     // Paint borders on the padding box
-    if ((style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) ||
-        (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) ||
-        (style.borderRightWidth?.value != null && style.borderRightWidth!.value! > 0 ) ||
-        (style.borderBottomWidth?.value != null && style.borderBottomWidth!.value! > 0)) {
+    if ((style.effectiveBorderLeftWidth.computedValue > 0) ||
+        (style.effectiveBorderTopWidth.computedValue > 0) ||
+        (style.effectiveBorderRightWidth.computedValue > 0) ||
+        (style.effectiveBorderBottomWidth.computedValue > 0)) {
       _paintBorder(canvas, paintRect);
     }
   }
@@ -241,24 +241,23 @@ class BoxLineBoxItem extends LineBoxItem {
   void _paintBorder(Canvas canvas, Rect rect) {
     final paint = Paint()..style = PaintingStyle.fill;
 
-
     // Top border
-    if (style.borderTopWidth?.value != null && style.borderTopWidth!.value! > 0) {
+    if (style.effectiveBorderTopWidth.computedValue > 0) {
       paint.color = style.borderTopColor?.value ?? const Color(0xFF000000);
       final borderRect = Rect.fromLTRB(
         rect.left,
         rect.top,
         rect.right,
-        rect.top + style.borderTopWidth!.value!
+        rect.top + style.effectiveBorderTopWidth.computedValue
       );
       canvas.drawRect(borderRect, paint);
     }
 
     // Right border - only paint if this is the last fragment
-    if (isLastFragment && style.borderRightWidth?.value != null && style.borderRightWidth!.value! > 0) {
+    if (isLastFragment && style.effectiveBorderRightWidth.computedValue > 0) {
       paint.color = style.borderRightColor?.value ?? const Color(0xFF000000);
       final borderRect = Rect.fromLTRB(
-        rect.right - style.borderRightWidth!.value!,
+        rect.right - style.effectiveBorderRightWidth.computedValue,
         rect.top,
         rect.right,
         rect.bottom
@@ -267,11 +266,11 @@ class BoxLineBoxItem extends LineBoxItem {
     }
 
     // Bottom border
-    if (style.borderBottomWidth?.value != null && style.borderBottomWidth!.value! > 0) {
+    if (style.effectiveBorderBottomWidth.computedValue > 0) {
       paint.color = style.borderBottomColor?.value ?? const Color(0xFF000000);
       final borderRect = Rect.fromLTRB(
         rect.left,
-        rect.bottom - style.borderBottomWidth!.value!,
+        rect.bottom - style.effectiveBorderBottomWidth.computedValue,
         rect.right,
         rect.bottom
       );
@@ -279,12 +278,12 @@ class BoxLineBoxItem extends LineBoxItem {
     }
 
     // Left border - only paint if this is the first fragment
-    if (isFirstFragment && style.borderLeftWidth?.value != null && style.borderLeftWidth!.value! > 0) {
+    if (isFirstFragment && style.effectiveBorderLeftWidth.computedValue > 0) {
       paint.color = style.borderLeftColor?.value ?? const Color(0xFF000000);
       final borderRect = Rect.fromLTRB(
         rect.left,
         rect.top,
-        rect.left + style.borderLeftWidth!.value!,
+        rect.left + style.effectiveBorderLeftWidth.computedValue,
         rect.bottom
       );
       canvas.drawRect(borderRect, paint);
