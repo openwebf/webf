@@ -478,6 +478,20 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Set container size.
       _setContainerSize();
 
+      // For inline-block containers with auto width, after computing the
+      // shrink-to-fit content width, stretch block-level auto-width children
+      // to the container's content width so they visually fill the line.
+      // This matches browsers where a block child inside an auto-width
+      // inline-block expands to the container’s shrink-to-fit width.
+      final bool stretched = _reflowAutoWidthBlockChildrenToContentWidth(children);
+
+      // If any child was stretched, refresh run metrics from current child sizes
+      // and recompute container size so offsets and box sizes reflect updates
+      if (stretched) {
+        _refreshRunMetricsFromChildSizes();
+        _setContainerSize();
+      }
+
       // Set children offset based on alignment properties.
       _setChildrenOffset();
 
@@ -487,6 +501,65 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Set the baseline value for this box
       calculateBaseline();
     }
+  }
+
+  // Refresh stored run metrics to reflect current child sizes without re-laying out
+  // children. This preserves any manual reflow (e.g., tightened widths) applied
+  // to children in the current pass.
+  void _refreshRunMetricsFromChildSizes() {
+    for (int i = 0; i < _lineMetrics.length; i++) {
+      final run = _lineMetrics[i];
+      double newMain = 0;
+      for (final RenderBox child in run.runChildren) {
+        newMain += RenderFlowLayout.getPureMainAxisExtent(child);
+      }
+      _lineMetrics[i] = RunMetrics(newMain, run.crossAxisExtent, run.runChildren, baseline: run.baseline);
+    }
+  }
+
+  bool _reflowAutoWidthBlockChildrenToContentWidth(List<RenderBox> children) {
+    // Only applies to inline-block containers with auto width.
+    if (renderStyle.effectiveDisplay != CSSDisplay.inlineBlock || !renderStyle.width.isAuto) {
+      return false;
+    }
+    final double targetWidth = contentSize.width;
+    if (!targetWidth.isFinite || targetWidth <= 0) return false;
+
+    bool any = false;
+
+    for (final child in children) {
+      RenderBoxModel? childBoxModel;
+      if (child is RenderBoxModel) {
+        childBoxModel = child;
+      } else if (child is RenderEventListener) {
+        final RenderBox? wrapped = child.child;
+        if (wrapped is RenderBoxModel) childBoxModel = wrapped;
+      }
+      if (childBoxModel == null) continue;
+
+      final CSSRenderStyle crs = childBoxModel.renderStyle;
+      // Stretch only block-level auto-width children; do not touch inline-level (e.g., inline-block) or replaced.
+      final bool isBlockLevel = crs.effectiveDisplay == CSSDisplay.block || crs.effectiveDisplay == CSSDisplay.flex;
+      if (!isBlockLevel || !crs.width.isAuto) continue;
+
+      // Relayout the child wrapper with the container's content width tightly,
+      // so an empty block (no content) still expands to the intended width.
+      // Let height be determined by the child (e.g., specified height).
+      final BoxConstraints stretch = BoxConstraints(
+        minWidth: targetWidth,
+        maxWidth: targetWidth,
+        minHeight: 0,
+        maxHeight: double.infinity,
+      );
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow] -> reflow block auto-width child ${child.runtimeType} to contentWidth='
+            '${targetWidth.toStringAsFixed(2)} with ${_fmtC(stretch)}');
+      }
+      // Layout the visible wrapper so offsets/painting use the updated size.
+      child.layout(stretch, parentUsesSize: true);
+      any = true;
+    }
+    return any;
   }
 
   static RenderFlowLayout? getRenderFlowLayoutNext(RenderObject renderObject) {

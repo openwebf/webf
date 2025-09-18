@@ -410,9 +410,10 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
       return false;
     }
 
-    // Only block containers can create anonymous block boxes for mixed content
-    // Inline containers are handled by their parent via Case 4 detection below.
-    if (display != CSSDisplay.block) {
+    // Block-like containers (block and inline-block) can create anonymous block
+    // boxes for mixed content. Inline containers are handled by their parent via
+    // Case 4 detection below.
+    if (display != CSSDisplay.block && display != CSSDisplay.inlineBlock) {
       return false;
     }
 
