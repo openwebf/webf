@@ -1196,6 +1196,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Total cross size of previous lines.
     double preLinesCrossSize = 0;
     for (RunMetrics runMetric in _lineMetrics) {
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow-Scroll] ---- line start ----');
+        renderingLogger.finer('[Flow-Scroll] preLinesCrossSize=${preLinesCrossSize.toStringAsFixed(2)} run.crossAxisExtent=${runMetric.crossAxisExtent.toStringAsFixed(2)}');
+      }
       List<RenderBox> runChildren = runMetric.runChildren;
 
       List<RenderBox> runChildrenList = [];
@@ -1232,9 +1236,11 @@ class RenderFlowLayout extends RenderLayoutBox {
           // which includes margin, position and transform offset.
           // https://www.w3.org/TR/css-overflow-3/#scrollable-overflow-region
 
-          // Add offset of margin.
+          // Add horizontal margins to main axis size (X).
           childOffsetX += childRenderStyle.marginLeft.computedValue + childRenderStyle.marginRight.computedValue;
-          childOffsetY += getChildMarginTop(child) + getChildMarginBottom(child);
+          // Do NOT add vertical margins here; run.crossAxisExtent already accounts for
+          // inter-run margin collapsing and contributes to preLinesCrossSize. Including
+          // margins again here would double-count and inflate the vertical scrollable size.
 
           // Add offset of position relative.
           // Offset of position absolute and fixed is added in layout stage of positioned renderBox.
@@ -1253,11 +1259,26 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
 
         scrollableMainSizeOfChildren.add(preSiblingsMainSize + childScrollableSize.width + childOffsetX);
+        // Exclude vertical margins; only include additional vertical offsets (relative/transform).
         scrollableCrossSizeOfChildren.add(childScrollableSize.height + childOffsetY);
         runChildrenList.add(child);
       }
 
       runChildren.forEach(iterateRunChildren);
+
+      if (debugLogFlowEnabled) {
+        for (int i = 0; i < runChildren.length; i++) {
+          final child = runChildren[i];
+          final Size? sz = _getChildSize(child);
+          final RenderStyle? crs = _getChildRenderStyle(child);
+          if (crs != null && sz != null) {
+            final mt = getChildMarginTop(child);
+            final mb = getChildMarginBottom(child);
+            renderingLogger.finer('[Flow-Scroll-Child] <${crs.target.tagName.toLowerCase()}> size=${sz.width.toStringAsFixed(2)}×${sz.height.toStringAsFixed(2)} '
+                'mt=${mt.toStringAsFixed(2)} mb=${mb.toStringAsFixed(2)}');
+          }
+        }
+      }
 
       // Max scrollable main size of all the children in the line.
       double maxScrollableMainSizeOfLine = scrollableMainSizeOfChildren.reduce((double curr, double next) {
@@ -1273,6 +1294,13 @@ class RenderFlowLayout extends RenderLayoutBox {
       scrollableMainSizeOfLines.add(maxScrollableMainSizeOfLine);
       scrollableCrossSizeOfLines.add(maxScrollableCrossSizeOfLine);
       preLinesCrossSize += runMetric.crossAxisExtent;
+
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow-Scroll] line childCrossMax=' +
+            (scrollableCrossSizeOfChildren.reduce((a,b)=> a>b?a:b)).toStringAsFixed(2) +
+            ' lineBottom=' + maxScrollableCrossSizeOfLine.toStringAsFixed(2) +
+            ' preLinesCrossSize→' + preLinesCrossSize.toStringAsFixed(2));
+      }
     }
 
     // Max scrollable main size of all lines.
@@ -1289,13 +1317,13 @@ class RenderFlowLayout extends RenderLayoutBox {
         renderStyle.paddingLeft.computedValue +
         (isScrollContainer ? renderStyle.paddingRight.computedValue : 0);
 
-    // Max scrollable cross size of all lines.
-    double maxScrollableCrossSizeOfLines = scrollableCrossSizeOfLines.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
+    // Collapsed vertical stack height across runs (accounts for inter-run margin collapsing
+    // and matches the positioning used during layout). This avoids double-counting margins
+    // that are already included in run.crossAxisExtent and inter-run collapsing logic.
+    final double collapsedCrossStack = _getRunsCrossSizeWithCollapse(_lineMetrics);
 
     // Padding in the end direction of axis should be included in scroll container.
-    double maxScrollableCrossSizeOfChildren = maxScrollableCrossSizeOfLines +
+    double maxScrollableCrossSizeOfChildren = collapsedCrossStack +
         renderStyle.paddingTop.computedValue +
         (isScrollContainer ? renderStyle.paddingBottom.computedValue : 0);
 
@@ -1313,6 +1341,13 @@ class RenderFlowLayout extends RenderLayoutBox {
     assert(maxScrollableMainSize.isFinite);
     assert(maxScrollableCrossSize.isFinite);
     scrollableSize = Size(maxScrollableMainSize, maxScrollableCrossSize);
+
+    if (debugLogFlowEnabled) {
+      renderingLogger.finer('[Flow-Scroll] result main=' + maxScrollableMainSize.toStringAsFixed(2) +
+          ' cross=' + maxScrollableCrossSize.toStringAsFixed(2) +
+          ' padding(top=' + renderStyle.paddingTop.computedValue.toStringAsFixed(2) + ', bottom=' +
+          (isScrollContainer ? renderStyle.paddingBottom.computedValue.toStringAsFixed(2) : '0') + ')');
+    }
   }
 
   // Get child size through boxSize to avoid flutter error when parentUsesSize is set to false.

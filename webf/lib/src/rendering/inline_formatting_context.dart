@@ -98,6 +98,20 @@ class InlineFormattingContext {
   // Track all placeholders (atomic and extras) to synthesize boxes for empty spans
   final List<_InlinePlaceholder> _allPlaceholders = [];
 
+  // Two-pass control: suppress right-extras placeholders in the first pass so
+  // we can observe natural line breaks, then selectively re-enable them for
+  // inline elements that don't fragment across lines.
+  bool _suppressAllRightExtras = false;
+  final Set<RenderBoxModel> _forceRightExtrasOwners = <RenderBoxModel>{};
+
+  // When any ancestor establishes horizontal scrolling on X (overflow-x: scroll/auto),
+  // avoid breaking within ASCII words and shape with a very wide width to keep
+  // long sequences unwrapped. Also, do not shrink paragraph width for trailing
+  // extras in this mode to preserve single-line content for scrollers.
+  bool _avoidWordBreakInScrollableX = false;
+
+  // Pass-1 bookkeeping was previously used for leading spacers; removed.
+
   // For mapping inline element RenderBox -> range in paragraph text
   final Map<RenderBoxModel, (int start, int end)> _elementRanges = {};
   // Measured visual sizes (border-box) for inline render boxes (including wrappers)
@@ -200,6 +214,8 @@ class InlineFormattingContext {
     }
     return best;
   }
+
+  // (moved) _Boundary is defined at top-level below.
 
   // Compute a visual longest line that accounts for trailing extras (padding/border/margin)
   // on the last fragment of inline elements. This adjusts for our choice to not insert
@@ -312,49 +328,111 @@ class InlineFormattingContext {
     return entries;
   }
 
-  // Shrink paragraph width only as needed so the last line can accommodate
-  // trailing extras (padding/border/margin) without overflow.
-  void _shrinkWidthForLastLineTrailingExtras(ui.Paragraph paragraph, BoxConstraints constraints) {
+  // Shrink paragraph width, if needed, so EACH line can accommodate trailing
+  // extras (padding/border/margin) of inline elements that end on that line,
+  // without causing glyphs to overlap borders. Avoids over-reserving by
+  // skipping elements that already have a right-extras placeholder (their
+  // width is already accounted for by the paragraph).
+  void _shrinkWidthForTrailingExtras(ui.Paragraph paragraph, BoxConstraints constraints) {
     if (!constraints.hasBoundedWidth || !constraints.maxWidth.isFinite || constraints.maxWidth <= 0) return;
-    final lines = paragraph.computeLineMetrics();
-    if (lines.isEmpty) return;
-    final int lastIndex = lines.length - 1;
-    double trailingReserve = 0;
-    _elementRanges.forEach((box, range) {
-      final int sIdx = range.$1;
-      final int eIdx = range.$2;
-      if (eIdx <= sIdx) return;
-      final rects = paragraph.getBoxesForRange(sIdx, eIdx);
-      if (rects.isEmpty) return;
-      final last = rects.last;
-      final li = _bestOverlapLineIndexForBox(last, lines);
-      if (li != lastIndex) return;
-      final s = box.renderStyle;
-      trailingReserve += s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
-    });
-    if (trailingReserve <= 0) return;
-    final double maxW = constraints.maxWidth;
-    final double need = lines.last.width + trailingReserve - maxW;
-    if (need <= 0.5) return;
-    double hi = maxW;
-    double lo = math.max(0.0, maxW - trailingReserve);
-    double chosen = hi;
-    for (int it = 0; it < 6; it++) {
-      final double mid = (hi + lo) / 2.0;
-      paragraph.layout(ui.ParagraphConstraints(width: mid));
-      final lw = paragraph.computeLineMetrics().last.width;
-      if (lw + trailingReserve <= maxW + 0.1) {
-        chosen = mid;
-        lo = mid;
-      } else {
-        hi = mid;
+    // Do not shrink paragraph width in scrollable-X mode; we want a single line
+    // with horizontal overflow rather than forced wrapping.
+    if (_avoidWordBreakInScrollableX) return;
+
+    double maxW = constraints.maxWidth;
+
+    // Helper to compute per-line trailing reserve based on current paragraph layout.
+    List<double> _computePerLineReserve(ui.Paragraph p) {
+      final lines = p.computeLineMetrics();
+      if (lines.isEmpty) return const [];
+      final reserves = List<double>.filled(lines.length, 0.0, growable: false);
+
+      // Build a quick lookup for which elements already emitted a right-extras placeholder
+      final Set<RenderBoxModel> hasRightPH = {};
+      for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
+        final ph = _allPlaceholders[i];
+        if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+          hasRightPH.add(ph.owner!);
+        }
       }
+
+      _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+        final int sIdx = range.$1;
+        final int eIdx = range.$2;
+        if (eIdx <= sIdx) return;
+        final rects = p.getBoxesForRange(sIdx, eIdx);
+        if (rects.isEmpty) return;
+        final last = rects.last;
+        final linesLocal = p.computeLineMetrics();
+        final int li = _bestOverlapLineIndexForBox(last, linesLocal);
+        if (li < 0) return;
+        // Skip reserve if a right-extras placeholder already accounts for it.
+        if (hasRightPH.contains(box)) return;
+        final s = box.renderStyle;
+        final double extra = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+        if (extra > reserves[li]) reserves[li] = extra;
+      });
+      return reserves;
     }
+
+    // Iteratively shrink width so each line satisfies width + reserve <= maxW.
+    // Cap iterations to avoid long loops.
+    double chosen = maxW;
+    for (int iter = 0; iter < 6; iter++) {
+      final lines = paragraph.computeLineMetrics();
+      if (lines.isEmpty) break;
+      final reserves = _computePerLineReserve(paragraph);
+      if (reserves.isEmpty) break;
+      bool ok = true;
+      if (debugLogInlineLayoutEnabled) {
+        for (int i = 0; i < lines.length && i < reserves.length; i++) {
+          renderingLogger.finer('[IFC] line[$i] width=${lines[i].width.toStringAsFixed(2)} '
+              '+ reserve=${reserves[i].toStringAsFixed(2)} '
+              '→ sum=${(lines[i].width + reserves[i]).toStringAsFixed(2)} maxW=${maxW.toStringAsFixed(2)}');
+        }
+      }
+      for (int i = 0; i < lines.length && i < reserves.length; i++) {
+        if (lines[i].width + reserves[i] > maxW + 0.1) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) break;
+
+      // Compute a lower bound shrink based on the worst offending line.
+      double worstNeed = 0.0;
+      for (int i = 0; i < lines.length && i < reserves.length; i++) {
+        final double need = (lines[i].width + reserves[i]) - maxW;
+        if (need > worstNeed) worstNeed = need;
+      }
+      // Binary search between maxW and a reduced width until constraints satisfied
+      double hi = chosen;
+      double lo = math.max(0.0, chosen - worstNeed);
+      double midChosen = chosen;
+      for (int it = 0; it < 6; it++) {
+        final double mid = (hi + lo) / 2.0;
+        paragraph.layout(ui.ParagraphConstraints(width: mid));
+        final testLines = paragraph.computeLineMetrics();
+        final testRes = _computePerLineReserve(paragraph);
+        bool pass = true;
+        for (int i = 0; i < testLines.length && i < testRes.length; i++) {
+          if (testLines[i].width + testRes[i] > maxW + 0.1) { pass = false; break; }
+        }
+        if (pass) {
+          midChosen = mid;
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      chosen = midChosen;
+      paragraph.layout(ui.ParagraphConstraints(width: chosen));
+    }
+
     if (debugLogInlineLayoutEnabled) {
-      renderingLogger.fine('[IFC] reserve trailing extras (last-line only): width '
-          '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)} (reserve=${trailingReserve.toStringAsFixed(2)})');
+      renderingLogger.fine('[IFC] reserve trailing extras (all lines): width '
+          '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)}');
     }
-    paragraph.layout(ui.ParagraphConstraints(width: chosen));
   }
   /// Mark that inline collection is needed.
   void setNeedsCollectInlines() {
@@ -399,6 +477,9 @@ class InlineFormattingContext {
   // Expose paragraph object for consumers (Flow) that need paragraph height fallback.
   ui.Paragraph? get paragraph => _paragraph;
 
+  // Leading spacer logic removed; pass 2 only re-enables right extras for
+  // single-line owners and relies on per-line reserves for others.
+
   /// Collect inline items from the render tree.
   void _collectInlines() {
     final builder = InlineItemsBuilder(
@@ -417,8 +498,39 @@ class InlineFormattingContext {
   Size layout(BoxConstraints constraints) {
     // Prepare items if needed
     prepareLayout();
-    // New path: build a single Paragraph using dart:ui APIs
+    // Two-pass build: first lay out without right-extras placeholders to
+    // observe natural breaks, then re-layout with right-extras only for
+    // inline elements that do not fragment across lines.
+    _suppressAllRightExtras = true;
+    _forceRightExtrasOwners.clear();
     _buildAndLayoutParagraph(constraints);
+
+    // Second pass: Only add right-extras placeholders for inline elements that
+    // did NOT fragment across lines in pass 1. For fragmented spans, we rely on
+    // per-line trailing reserves to avoid altering the chosen breaks.
+    _forceRightExtrasOwners.clear();
+    for (final entry in _elementRanges.entries) {
+      final box = entry.key;
+      final (int sIdx, int eIdx) = entry.value;
+      if (eIdx <= sIdx) continue;
+      final styleR = box.renderStyle;
+      final double extraR = styleR.paddingRight.computedValue + (styleR.borderRightWidth?.computedValue ?? 0.0) + styleR.marginRight.computedValue;
+      if (extraR <= 0) continue;
+      final rects = _paragraph!.getBoxesForRange(sIdx, eIdx);
+      if (rects.isEmpty) continue;
+      final int firstLine = _lineIndexForRect(rects.first);
+      final int lastLine = _lineIndexForRect(rects.last);
+      if (firstLine >= 0 && firstLine == lastLine) {
+        _forceRightExtrasOwners.add(box);
+      }
+    }
+    if (_forceRightExtrasOwners.isNotEmpty) {
+      _suppressAllRightExtras = false;
+      if (debugLogInlineLayoutEnabled) {
+        renderingLogger.fine('[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners');
+      }
+      _buildAndLayoutParagraph(constraints);
+    }
 
     // Compute size from paragraph
     final para = _paragraph!;
@@ -457,21 +569,65 @@ class InlineFormattingContext {
         // Paint only the decorations belonging to this line
         _paintInlineSpanDecorations(context, offset, lineTop: lineTop, lineBottom: lineBottom);
 
-        // Clip to the current line and paint the paragraph text for this band
-        // Use the per-line visual width when available to avoid over-clipping
-        // in cases where paragraph.width is smaller than actual glyph extents
-        // (e.g., shaped with width 0 to enforce breaks). This keeps text visible
-        // even when content width is zero due to padding/border.
+        // Determine aggregate right-extras shift for multi-line owners that end on this line.
+        double shiftSum = 0.0;
+        double boundaryX = lm.left; // rightmost boundary among owners on this line
+        if (_elementRanges.isNotEmpty && _allPlaceholders.isNotEmpty) {
+          final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+          for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+            final ph = _allPlaceholders[p];
+            if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+              hasRightPH.add(ph.owner!);
+            }
+          }
+          _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+            if (range.$2 <= range.$1) return;
+            if (hasRightPH.contains(box)) return; // single-line owners already accounted
+            final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+            if (rects.isEmpty) return;
+            final last = rects.last;
+            final int li = _lineIndexForRect(last);
+            if (li != i) return;
+            final s = box.renderStyle;
+            final double extraR = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+            if (extraR > 0) {
+              shiftSum += extraR;
+              if (last.right > boundaryX) boundaryX = last.right;
+            }
+          });
+        }
+
+        // Clip to the current line and paint the paragraph text for this band in up to two slices:
+        // [left..boundaryX] without shift, [boundaryX..right] shifted by total right-extras.
         final double lineRight = lm.left + lm.width;
-        final double clipRight = math.max(para.width, lineRight);
-        final Rect clip = Rect.fromLTRB(
+        final double clipRight = math.max(para.width, lineRight + shiftSum);
+        final double lineClipTop = offset.dy + lineTop;
+        final double lineClipBottom = offset.dy + lineBottom;
+
+        // Left slice (no shift)
+        final Rect clipLeft = Rect.fromLTRB(
           offset.dx,
-          offset.dy + lineTop,
-          offset.dx + clipRight,
-          offset.dy + lineBottom,
+          lineClipTop,
+          offset.dx + boundaryX,
+          lineClipBottom,
         );
         context.canvas.save();
-        context.canvas.clipRect(clip);
+        context.canvas.clipRect(clipLeft);
+        context.canvas.drawParagraph(para, offset);
+        context.canvas.restore();
+
+        // Right slice (apply shift if needed)
+        final Rect clipRightRect = Rect.fromLTRB(
+          offset.dx + boundaryX + shiftSum,
+          lineClipTop,
+          offset.dx + clipRight,
+          lineClipBottom,
+        );
+        context.canvas.save();
+        context.canvas.clipRect(clipRightRect);
+        if (shiftSum != 0.0) {
+          context.canvas.translate(shiftSum, 0.0);
+        }
         context.canvas.drawParagraph(para, offset);
         context.canvas.restore();
       }
@@ -521,18 +677,53 @@ class InlineFormattingContext {
         ..strokeWidth = 1.0
         ..color = const Color(0xFFFF0000); // Red for baseline
 
-      for (final lm in _paraLines) {
+      // Build lookup for owners that already emitted a right-extras placeholder
+      final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+      for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+        final ph = _allPlaceholders[p];
+        if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+          hasRightPH.add(ph.owner!);
+        }
+      }
+
+      for (int i = 0; i < _paraLines.length; i++) {
+        final lm = _paraLines[i];
         final double lineTop = lm.baseline - lm.ascent;
+
+        // Compute visual right bound for this line to match paint() behavior
+        double boundaryX = lm.left;
+        double shiftSum = 0.0;
+        if (_elementRanges.isNotEmpty) {
+          _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+            if (range.$2 <= range.$1) return;
+            if (hasRightPH.contains(box)) return; // single-line owners handled by placeholder
+            final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+            if (rects.isEmpty) return;
+            final last = rects.last;
+            final int li = _lineIndexForRect(last);
+            if (li != i) return; // consider owners ending on this line only
+            final s = box.renderStyle;
+            final double extraR = s.paddingRight.computedValue + (s.borderRightWidth?.computedValue ?? 0.0) + s.marginRight.computedValue;
+            if (extraR > 0) {
+              if (last.right > boundaryX) boundaryX = last.right;
+              shiftSum += extraR;
+            }
+          });
+        }
+
+        // Match paint(): the right slice is translated by shiftSum, so the
+        // visual right edge extends to line.width + shiftSum from line.left.
+        final double visualRight = lm.left + lm.width + shiftSum;
         final rect = Rect.fromLTWH(
           offset.dx + lm.left,
           offset.dy + lineTop,
-          lm.width,
+          visualRight - lm.left,
           lm.height,
         );
         canvas.drawRect(rect, lineRectPaint);
         // Baseline line across the visual line width
         final double by = offset.dy + lm.baseline;
-        canvas.drawLine(Offset(offset.dx + lm.left, by), Offset(offset.dx + lm.left + lm.width, by), baselinePaint);
+        canvas.drawLine(Offset(offset.dx + lm.left, by), Offset(offset.dx + visualRight, by), baselinePaint);
       }
     }
 
@@ -825,6 +1016,10 @@ class InlineFormattingContext {
   // Build and layout a Paragraph from collected inline items
   void _buildAndLayoutParagraph(BoxConstraints constraints) {
     final style = (container as RenderBoxModel).renderStyle;
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.fine('[IFC] PASS ${_suppressAllRightExtras ? '1' : '2'}: '
+          'suppressRightExtras=${_suppressAllRightExtras} forceRightCount=${_forceRightExtrasOwners.length}');
+    }
     // Lay out atomic inlines first to obtain sizes for placeholders
     _layoutAtomicInlineItemsForParagraph();
 
@@ -999,9 +1194,11 @@ class InlineFormattingContext {
       return sb.toString();
     }
 
-    final bool _avoidWordBreakInScrollableX = _ancestorHasHorizontalScroll();
+    _avoidWordBreakInScrollableX = _ancestorHasHorizontalScroll();
 
+    int _itemIndex = -1;
     for (final item in _items) {
+      _itemIndex += 1;
       if (item.isOpenTag && item.renderBox != null) {
         final rb = item.renderBox!;
         elementStack.add(rb);
@@ -1046,20 +1243,29 @@ class InlineFormattingContext {
               final frame = openFrames.removeAt(idx);
             if (frame.hadContent) {
                 // Non-empty inline span: ensure left extras flushed, then add a trailing
-                // right-extras placeholder so subsequent inline content advances after
-                // padding/border/margin on the right edge. Painting still extends the last
-                // fragment visually; the placeholder only reserves layout width.
+                // right-extras placeholder only if allowed in this pass.
                 _flushPendingLeftExtras();
                 if (frame.rightExtras > 0) {
-                  final rs = frame.box.renderStyle;
-                  final (ph, bo) = _measureTextMetricsFor(rs);
-                  pb.addPlaceholder(frame.rightExtras, ph, ui.PlaceholderAlignment.baseline,
-                      baseline: TextBaseline.alphabetic, baselineOffset: bo);
-                  paraPos += 1;
-                  _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
-                  if (debugLogInlineLayoutEnabled) {
-                    renderingLogger.finer('[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
-                        'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
+                  // Only add a right-extras placeholder in PASS 2 for inline elements
+                  // that did not fragment across lines in PASS 1. For fragmented spans,
+                  // we reserve trailing extras per-line instead (via width shrink) to
+                  // avoid shifting break positions and placing the right border on the
+                  // wrong line.
+                  final shouldAddRight = !_suppressAllRightExtras && _forceRightExtrasOwners.contains(frame.box);
+                  if (shouldAddRight) {
+                    final rs = frame.box.renderStyle;
+                    final (ph, bo) = _measureTextMetricsFor(rs);
+                    pb.addPlaceholder(frame.rightExtras, ph, ui.PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic, baselineOffset: bo);
+                    paraPos += 1;
+                    _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
+                    if (debugLogInlineLayoutEnabled) {
+                      renderingLogger.finer('[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
+                          'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
+                    }
+                  } else if (debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
+                    renderingLogger.finer('[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
+                        '(pass=${_suppressAllRightExtras ? '1' : '2'})');
                   }
                 }
               } else {
@@ -1357,7 +1563,7 @@ class InlineFormattingContext {
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     }
-    _shrinkWidthForLastLineTrailingExtras(paragraph, constraints);
+    _shrinkWidthForTrailingExtras(paragraph, constraints);
 
     _paragraph = paragraph;
     _paraLines = paragraph.computeLineMetrics();
@@ -2024,3 +2230,7 @@ class _SpanPaintEntry {
   final int depth;
   final bool synthetic;
 }
+
+//
+
+// No leading-spacer placeholders retained.
