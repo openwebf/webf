@@ -482,6 +482,18 @@ abstract class RenderBoxModel extends RenderBox
       }
     }
 
+    // Normalize constraints to satisfy Flutter's requirement: min <= max.
+    // This can happen when the computed minimum width from border/padding
+    // exceeds the available max width from the parent (e.g., inline-block
+    // with large horizontal padding inside a narrow container). In such
+    // cases, cap the minimum to the maximum so constraints are valid.
+    if (minConstraintWidth > maxConstraintWidth) {
+      minConstraintWidth = maxConstraintWidth;
+    }
+    if (minConstraintHeight > maxConstraintHeight) {
+      minConstraintHeight = maxConstraintHeight;
+    }
+
     BoxConstraints constraints = BoxConstraints(
       minWidth: minConstraintWidth,
       maxWidth: maxConstraintWidth,

@@ -458,10 +458,16 @@ class InlineFormattingContext {
         _paintInlineSpanDecorations(context, offset, lineTop: lineTop, lineBottom: lineBottom);
 
         // Clip to the current line and paint the paragraph text for this band
+        // Use the per-line visual width when available to avoid over-clipping
+        // in cases where paragraph.width is smaller than actual glyph extents
+        // (e.g., shaped with width 0 to enforce breaks). This keeps text visible
+        // even when content width is zero due to padding/border.
+        final double lineRight = lm.left + lm.width;
+        final double clipRight = math.max(para.width, lineRight);
         final Rect clip = Rect.fromLTRB(
           offset.dx,
           offset.dy + lineTop,
-          offset.dx + para.width,
+          offset.dx + clipRight,
           offset.dy + lineBottom,
         );
         context.canvas.save();
@@ -1235,6 +1241,27 @@ class InlineFormattingContext {
     }
 
     double initialWidth;
+    bool _shapedWithZeroWidth = false; // Track when we intentionally shape with 0 width
+
+    // Decide whether shaping with zero width is appropriate. We only do this
+    // when there are natural break opportunities between items (e.g., between
+    // atomic inline boxes, explicit breaks) or whitespace within text. For a
+    // single unbreakable text run (e.g., "11111"), we avoid zero-width shaping
+    // to prevent per-character wrapping and instead let it overflow.
+    bool _containsSoftWrapWhitespace(String s) {
+      // Matches common whitespace that creates soft wrap opportunities
+      return s.contains(RegExp(r"[\s\u200B\u2060]")); // include ZWSP/WORD JOINER
+    }
+    bool _hasAtomicInlines = _items.any((it) => it.isAtomicInline);
+    bool _hasExplicitBreaks = _items.any((it) => it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
+    bool _hasWhitespaceInText = false;
+    for (final it in _items) {
+      if (it.isText) {
+        final t = it.getText(_textContent);
+        if (_containsSoftWrapWhitespace(t)) { _hasWhitespaceInText = true; break; }
+      }
+    }
+    final bool _preferZeroWidthShaping = _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText;
     if (!constraints.hasBoundedWidth) {
       // Unbounded: prefer a reasonable fallback if available, otherwise use a very large width
       initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
@@ -1244,14 +1271,24 @@ class InlineFormattingContext {
       if (constraints.maxWidth > 0) {
         initialWidth = constraints.maxWidth;
       } else {
-        // Bounded but maxWidth <= 0: use fallback content width when available (even in flex),
-        // otherwise fall back to a large width to allow natural shaping.
-        initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-            ? fallbackContentMaxWidth
-            : 1000000.0;
-        if (debugLogInlineLayoutEnabled) {
-          renderingLogger.fine('[IFC] adjust initialWidth due to maxWidth=${constraints.maxWidth} '
-              '→ ${initialWidth.toStringAsFixed(2)} (fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
+        // Bounded but maxWidth <= 0: respect zero available inline-size only when
+        // there are natural break opportunities (atomic inlines, whitespace, explicit breaks).
+        // Otherwise, avoid forcing per-character wrapping for an unbreakable run
+        // and shape with a reasonable fallback width so content overflows instead.
+        if (_preferZeroWidthShaping) {
+          initialWidth = 0.0;
+          _shapedWithZeroWidth = true;
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.fine('[IFC] respect zero maxWidth for shaping (has breaks)');
+          }
+        } else {
+          initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+              ? fallbackContentMaxWidth
+              : 1000000.0;
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.fine('[IFC] avoid zero-width shaping for unbreakable text; '
+                'use fallback=${initialWidth.toStringAsFixed(2)}');
+          }
         }
       }
     }
@@ -1289,14 +1326,21 @@ class InlineFormattingContext {
             : paragraph.longestLine;
         paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       } else if (constraints.maxWidth <= 0) {
-        final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
-            ? fallbackContentMaxWidth
-            : paragraph.longestLine;
-        if (debugLogInlineLayoutEnabled) {
-          renderingLogger.fine('[IFC] block-like reflow with fallback width '
-              '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
+        // When we intentionally shaped with zero width to enforce line breaks (due to zero
+        // available content width), do not reflow with a fallback width. Keep the 0-width
+        // shaping so each atomic/text fragment occupies its own line as expected.
+        if (!_shapedWithZeroWidth) {
+          final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
+              ? fallbackContentMaxWidth
+              : paragraph.longestLine;
+          if (debugLogInlineLayoutEnabled) {
+            renderingLogger.fine('[IFC] block-like reflow with fallback width '
+                '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
+          }
+          paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
+        } else if (debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC] keep zero-width shaping for block-like container');
         }
-        paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
       }
     } else {
       // Non block-like (theoretically unused here) — retain previous behavior.
