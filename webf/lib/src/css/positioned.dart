@@ -660,21 +660,19 @@ class CSSPositionedLayout {
     RenderBoxModel parent,
     Offset currentStaticPosition,
   ) {
-    if (placeholder.parentData is! RenderLayoutParentData) {
-      return currentStaticPosition.dy;
-    }
-    final RenderLayoutParentData pd = placeholder.parentData as RenderLayoutParentData;
-    final bool isFirst = pd.previousSibling == null;
-    // For the first abs-pos inline box, Flow's placeholder offset already includes
-    // the intended top margin; for subsequent ones, Flow may omit margin-top in the
-    // placeholder offset. Add the element's margin-top to align text to the same
-    // vertical position (e.g., y=21) as the first.
-    double extra = 0;
+    // Static position should reflect where the element would appear in normal
+    // flow without collapsing with the parent. Use the element's own top margin
+    // collapsed only with its first in-flow child (if any), i.e., ignoring
+    // parent collapse, so positioned elements' margins do not disappear.
     final RenderBoxModel? positioned = placeholder.positioned;
-    if (!isFirst && positioned != null) {
-      extra = positioned.renderStyle.marginTop.computedValue;
+    if (positioned != null) {
+      // For absolutely positioned elements, the static position uses the box's
+      // own used margin values (no margin-collapsing with descendants).
+      // Use the specified margin-top to offset from the placeholder position.
+      final double ownTopMargin = positioned.renderStyle.marginTop.computedValue;
+      return currentStaticPosition.dy + ownTopMargin;
     }
-    return currentStaticPosition.dy + extra;
+    return currentStaticPosition.dy;
   }
 
   /// Checks if the static position has significant offset that may indicate

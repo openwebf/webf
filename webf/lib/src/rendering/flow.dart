@@ -773,7 +773,11 @@ class RenderFlowLayout extends RenderLayoutBox {
           isOverflowVisible &&
           rs.paddingBottom.computedValue == 0 &&
           rs.effectiveBorderBottomWidth.computedValue == 0;
-      if (qualifies) {
+      // Do not collapse the container's bottom with its last child when the
+      // container is a flex item. Flex items establish an independent
+      // formatting context for their contents per CSS Flexbox; their children's
+      // margins must not collapse with the flex item itself.
+      if (qualifies && !rs.isParentRenderFlexLayout() && !rs.isSelfPositioned()) {
         crossSize -= lastPrevCollapsedBottom;
       }
     }

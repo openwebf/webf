@@ -124,8 +124,9 @@ mixin CSSMarginMixin on RenderStyle {
         paddingTop == 0 &&
         borderTop == 0) {
       if (isFirstChildAreRenderBoxModel() &&
-          (isFirstChildStyleMatch((renderStyle) =>
-              renderStyle.effectiveDisplay == CSSDisplay.block || renderStyle.effectiveDisplay == CSSDisplay.flex))) {
+          // Only collapse with the first in-flow block-level child. Ignore positioned children.
+          isFirstChildStyleMatch((rs) =>
+              (rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned())) {
         double childMarginTop = isFirstChildAreRenderFlowLayoutBox()
             ? getFirstChildRenderStyle<CSSMarginMixin>()!._collapsedMarginTopWithFirstChild
             : getFirstChildRenderStyle()!.marginTop.computedValue;
@@ -182,6 +183,22 @@ mixin CSSMarginMixin on RenderStyle {
     RenderStyle? parentRenderStyle = getParentRenderStyle();
 
     if (parentRenderStyle == null) return 0.0;
+
+    // Flex item guard: a flex item establishes an independent formatting context
+    // for its contents. Per CSS Flexbox, margins of a flex item's descendants
+    // must not collapse with the flex item itself. If our parent is a flex item
+    // (i.e., its own parent is a flex container), do not collapse this element's
+    // top margin with that parent.
+    if (parentRenderStyle.isParentRenderFlexLayout()) {
+      return marginTop;
+    }
+    // Positioned parent guard: margins of in-flow children do not collapse
+    // with absolutely/fixed positioned ancestors. Preserve the element's own
+    // top (already collapsed with its first child), and do not collapse with
+    // the positioned parent.
+    if (parentRenderStyle.isSelfPositioned()) {
+      return marginTop;
+    }
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
@@ -301,7 +318,9 @@ mixin CSSMarginMixin on RenderStyle {
         paddingBottom == 0 &&
         borderBottom == 0) {
       if (isLastChildAreRenderBoxModel() &&
-          isLastChildStyleMatch((rs) => rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex)) {
+          // Only collapse with the last in-flow block-level child. Ignore positioned children.
+          isLastChildStyleMatch((rs) =>
+              (rs.effectiveDisplay == CSSDisplay.block || rs.effectiveDisplay == CSSDisplay.flex) && !rs.isSelfPositioned())) {
         double childMarginBottom = isLastChildAreRenderLayoutBox()
             ? getLastChildRenderStyle<CSSMarginMixin>()!._collapsedMarginBottomWithLastChild
             : getLastChildRenderStyle<CSSMarginMixin>()!.marginBottom.computedValue;
@@ -393,6 +412,18 @@ mixin CSSMarginMixin on RenderStyle {
     RenderStyle? parentRenderStyle = getParentRenderStyle<CSSMarginMixin>();
 
     if (parentRenderStyle == null) return 0.0;
+
+    // Flex item guard: when the parent is a flex item (its own parent is a
+    // flex container), the child's bottom margin must not collapse with the
+    // parent. Preserve the child's bottom margin contribution.
+    if (parentRenderStyle.isParentRenderFlexLayout()) {
+      return marginBottom;
+    }
+    // Positioned parent guard: do not collapse the last in-flow child's bottom
+    // margin with an absolutely/fixed positioned parent.
+    if (parentRenderStyle.isSelfPositioned()) {
+      return marginBottom;
+    }
 
     bool isParentOverflowVisible = parentRenderStyle.effectiveOverflowY == CSSOverflowType.visible;
     bool isParentOverflowClip = parentRenderStyle.effectiveOverflowY == CSSOverflowType.clip;
