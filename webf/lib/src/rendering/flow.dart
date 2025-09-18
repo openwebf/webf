@@ -696,7 +696,12 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Track previous child's collapsed bottom within the run,
       // seeded from the previous run's carry.
       double? prevCollapsedBottom = carriedPrevCollapsedBottom;
-      double runFirstOwnTop = 0;
+      // Track the first child's own top value as it was counted in
+      // run.crossAxisExtent (ownTopInExtent), and the effective top
+      // contribution after collapsing with the previous run's bottom
+      // (runFirstTopContribution). We subtract the former and add the
+      // latter to align the cross-size with the actual positioned gaps.
+      double runFirstOwnTopInExtent = 0;
       double runFirstTopContribution = 0;
       bool firstTopCaptured = false;
 
@@ -710,27 +715,33 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
 
         if (childRenderBoxModel != null) {
-          final double collapsedTop = getChildMarginTop(childRenderBoxModel);
+          // The top margin that was actually counted in run.crossAxisExtent for this child.
+          final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
+          // The element's own top ignoring parent collapse (collapsed with its first child only).
+          final double selfTopIgnoringParent = childRenderBoxModel.renderStyle.collapsedMarginTopIgnoringParent;
+
+          // Compute the effective additional spacing before this run relative to the
+          // previous run's collapsed bottom using formatting-context adjacency.
           double topContribution;
           if (prevCollapsedBottom == null) {
-            topContribution = collapsedTop;
+            topContribution = ownTopInExtent;
           } else {
-            if (collapsedTop >= 0 && prevCollapsedBottom >= 0) {
-              topContribution = math.max(collapsedTop, prevCollapsedBottom) - prevCollapsedBottom;
-            } else if (collapsedTop <= 0 && prevCollapsedBottom <= 0) {
-              topContribution = math.min(collapsedTop, prevCollapsedBottom) - prevCollapsedBottom;
+            if (selfTopIgnoringParent >= 0 && prevCollapsedBottom >= 0) {
+              topContribution = math.max(selfTopIgnoringParent, prevCollapsedBottom) - prevCollapsedBottom;
+            } else if (selfTopIgnoringParent <= 0 && prevCollapsedBottom <= 0) {
+              topContribution = math.min(selfTopIgnoringParent, prevCollapsedBottom) - prevCollapsedBottom;
             } else {
-              topContribution = collapsedTop;
+              topContribution = selfTopIgnoringParent;
             }
           }
 
           if (!firstTopCaptured) {
-            runFirstOwnTop = collapsedTop;
+            runFirstOwnTopInExtent = ownTopInExtent;
             runFirstTopContribution = topContribution;
             firstTopCaptured = true;
           }
 
-          // Advance prevCollapsedBottom for following siblings in this run
+          // Advance prevCollapsedBottom for following siblings in this run.
           prevCollapsedBottom = getChildMarginBottom(childRenderBoxModel);
         }
       }
@@ -739,7 +750,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       // used when placing the next run: runCrossAxisExtent minus the first
       // child's own collapsed top, plus the effective top contribution after
       // collapsing with the previous run's bottom.
-      final double crossAdvance = run.crossAxisExtent - runFirstOwnTop + runFirstTopContribution;
+      final double crossAdvance = run.crossAxisExtent - runFirstOwnTopInExtent + runFirstTopContribution;
       crossSize += crossAdvance;
 
       // Carry prev collapsed bottom to next run for inter-run collapsing.
@@ -988,25 +999,28 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (childRenderBoxModel is RenderBoxModel) {
           final rs = childRenderBoxModel.renderStyle;
           childMarginLeft = rs.marginLeft.computedValue;
-          // Collapsed top as computed by the child (self/parent collapse only)
-          final double collapsedTop = getChildMarginTop(childRenderBoxModel);
+          // The top margin as counted in the run's cross extent for this child.
+          final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
+          // Use the element's self/first-child collapsed top (ignoring parent collapse)
+          // to compute inter-run collapsing relative to the previous run's bottom.
+          final double selfTopIgnoringParent = rs.collapsedMarginTopIgnoringParent;
           // Collapsed bottom of previous sibling in this run
           final double? prevBottom = prevCollapsedBottom;
-          // Compute sibling-collapsed top contribution: collapse(prevBottom, collapsedTop) - prevBottom
+          // Compute top contribution as collapse(selfTopIgnoringParent, prevBottom) - prevBottom
           double topContribution;
           if (prevBottom == null) {
-            topContribution = collapsedTop; // first child: child already handled parent collapse
+            topContribution = ownTopInExtent;
           } else {
-            if (collapsedTop >= 0 && prevBottom >= 0) {
-              topContribution = math.max(collapsedTop, prevBottom) - prevBottom;
-            } else if (collapsedTop <= 0 && prevBottom <= 0) {
-              topContribution = math.min(collapsedTop, prevBottom) - prevBottom;
+            if (selfTopIgnoringParent >= 0 && prevBottom >= 0) {
+              topContribution = math.max(selfTopIgnoringParent, prevBottom) - prevBottom;
+            } else if (selfTopIgnoringParent <= 0 && prevBottom <= 0) {
+              topContribution = math.min(selfTopIgnoringParent, prevBottom) - prevBottom;
             } else {
-              topContribution = collapsedTop;
+              topContribution = selfTopIgnoringParent;
             }
           }
           if (!firstOwnTopCaptured) {
-            runFirstOwnTop = collapsedTop;
+            runFirstOwnTop = ownTopInExtent;
             runFirstTopContribution = topContribution;
             firstOwnTopCaptured = true;
           }
@@ -1016,13 +1030,18 @@ class RenderFlowLayout extends RenderLayoutBox {
             final tag = rs.target.tagName.toLowerCase();
             renderingLogger.finer('[Flow-MarginCollapse] prevBottom=' +
                 prevCollapsedBottom!.toStringAsFixed(2) +
-                ' currTop=' + collapsedTop.toStringAsFixed(2) +
+                ' currTop=' + ((() {
+                  final p = prevCollapsedBottom!;
+                  if (selfTopIgnoringParent >= 0 && p >= 0) return math.max(selfTopIgnoringParent, p);
+                  if (selfTopIgnoringParent <= 0 && p <= 0) return math.min(selfTopIgnoringParent, p);
+                  return selfTopIgnoringParent;
+                })()).toStringAsFixed(2) +
                 ' contrib=' + topContribution.toStringAsFixed(2) +
                 ' child=<' + tag + '>');
           }
           if (debugLogFlowEnabled) {
             renderingLogger.finer('[Flow-Child] <' + rs.target.tagName.toLowerCase() + '>' +
-                ' collapsedTop=' + collapsedTop.toStringAsFixed(2) +
+                ' collapsedTop=' + ownTopInExtent.toStringAsFixed(2) +
                 ' collapsedBottom=' + (childMarginBottom ?? 0).toStringAsFixed(2));
           }
         }
@@ -1325,6 +1344,10 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (child == null || child is! RenderBoxModel) {
       return 0;
     }
+    // Default to the child's own collapsed top (which may include
+    // parent collapsing when the child is the first in-flow child).
+    // Call sites that are resolving sibling adjacency will adjust to
+    // use the sibling-oriented top when appropriate.
     double result = child.renderStyle.collapsedMarginTop;
     return result;
   }

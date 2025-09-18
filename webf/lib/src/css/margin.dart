@@ -141,6 +141,14 @@ mixin CSSMarginMixin on RenderStyle {
     return marginTop;
   }
 
+  // Expose the element’s own collapsed top ignoring parent collapse.
+  // This equals the top margin collapsed with its first in-flow block-level
+  // child (descendant) when applicable, but does NOT zero out when this box
+  // is the first in-flow child of its parent. Useful for formatting-context
+  // run-to-run margin collapsing where the previous content may be an
+  // anonymous block rather than a DOM sibling.
+  double get collapsedMarginTopIgnoringParent => _collapsedMarginTopWithFirstChild;
+
   // A box's own margins collapse if the 'min-height' property is zero, and it has neither top or bottom
   // borders nor top or bottom padding, and it has a 'height' of either 0 or 'auto', and it does not
   // contain a line box, and all of its in-flow children's margins (if any) collapse.
