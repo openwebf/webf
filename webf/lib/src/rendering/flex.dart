@@ -1904,7 +1904,12 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Child need to layout when main axis size or cross size has changed
         // due to flex-grow/flex-shrink/align-items/align-self specified.
-        bool childMainSizeChanged = childFlexedMainSize != null && childFlexedMainSize != childOldMainSize;
+        // If the flex algorithm produced a flexed main size, we must relayout the item
+        // with tightened main-axis constraints so its descendants (e.g., block auto-width)
+        // see a definite available width. Always trigger relayout for flexed items,
+        // even if the numeric size matches the previous pass, to propagate constraints.
+        bool childMainSizeChanged = childFlexedMainSize != null ||
+            (childFlexedMainSize != null && childFlexedMainSize != childOldMainSize);
 
         bool childCrossSizeChanged = false;
       // Child cross size adjusted due to align-items/align-self style.
