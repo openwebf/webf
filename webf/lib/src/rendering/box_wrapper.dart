@@ -40,8 +40,13 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
     super.performLayout();
 
     if (child is RenderBoxModel) {
-      double childMarginTop = renderStyle.collapsedMarginTop;
-      double childMarginBottom = renderStyle.collapsedMarginBottom;
+      // For list-like widget containers (ListView children), sibling margin
+      // collapsing must be handled within each wrapped item since the parent
+      // is a Flutter RenderObject that doesn't implement CSS collapsing.
+      // Use sibling-oriented collapsed margins so the inter-item spacing equals
+      // the CSS collapsed result between previous bottom and current top.
+      double childMarginTop = renderStyle.collapsedMarginTopForSibling;
+      double childMarginBottom = renderStyle.collapsedMarginBottomForSibling;
       Size scrollableSize = (child as RenderBoxModel).renderStyle.isSelfScrollingContainer()
           ? child!.size
           : (child as RenderBoxModel).scrollableSize;

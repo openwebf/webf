@@ -231,7 +231,11 @@ class InlineFormattingContext {
     });
     double baseLongest = _paragraph!.longestLine;
     double visualLongest = rights.fold<double>(0, (p, v) => v > p ? v : p);
-    return visualLongest > baseLongest ? visualLongest : baseLongest;
+    final double result = visualLongest > baseLongest ? visualLongest : baseLongest;
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.fine('[IFC] visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})');
+    }
+    return result;
   }
 
   // Whether this inline element had a left-extras placeholder inserted.
@@ -387,6 +391,13 @@ class InlineFormattingContext {
     }
     return 0;
   }
+
+  // Expose visual longest line width (accounts for trailing extras) for
+  // consumers that need a scrollable content width when using paragraph path.
+  double get paragraphVisualMaxLineWidth => _computeVisualLongestLine();
+
+  // Expose paragraph object for consumers (Flow) that need paragraph height fallback.
+  ui.Paragraph? get paragraph => _paragraph;
 
   /// Collect inline items from the render tree.
   void _collectInlines() {
@@ -844,6 +855,13 @@ class InlineFormattingContext {
           'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
     }
 
+    // Record overflow flags for debugging
+    final CSSOverflowType containerOverflowX = style.effectiveOverflowX;
+    final CSSOverflowType containerOverflowY = style.effectiveOverflowY;
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.fine('[IFC] overflow flags: overflowX=$containerOverflowX overflowY=$containerOverflowY');
+    }
+
     // Measure text metrics (height and baseline offset) for a given CSS text style.
     // Returns (height, baselineOffset) where baselineOffset is distance from top to alphabetic baseline.
     (double, double) _measureTextMetricsFor(CSSRenderStyle rs) {
@@ -904,6 +922,78 @@ class InlineFormattingContext {
         }
       }
     }
+
+    // Determine whether we should avoid breaking within ASCII words.
+    // This helps match CSS behavior where long unbreakable words in a
+    // horizontally scrollable container should overflow and allow scroll
+    // instead of wrapping arbitrarily.
+    bool _ancestorHasHorizontalScroll() {
+      RenderObject? p = container.parent;
+      while (p != null) {
+        if (p is RenderBoxModel) {
+          // Ignore the document root and body (page scroller); they should not
+          // trigger wide shaping for general layout like flex items.
+          final tag = p.renderStyle.target.tagName;
+          if (tag == 'HTML' || tag == 'BODY') {
+            p = (p as RenderObject).parent;
+            continue;
+          }
+          final o = p.renderStyle.effectiveOverflowX;
+          if (o == CSSOverflowType.scroll || o == CSSOverflowType.auto) {
+            if (debugLogInlineLayoutEnabled) {
+              final t = p.renderStyle.target.tagName.toLowerCase();
+              renderingLogger.fine('[IFC] ancestor scroll-x detected at <$t> overflowX=$o');
+            }
+            return true;
+          }
+        }
+        // Stop at widget boundary to avoid leaking outside this subtree
+        if (p is RenderWidget) break;
+        p = (p is RenderObject) ? (p as RenderObject).parent : null;
+      }
+      return false;
+    }
+
+    bool _whiteSpaceEligibleForNoWordBreak(WhiteSpace ws) =>
+        ws == WhiteSpace.normal || ws == WhiteSpace.preLine || ws == WhiteSpace.nowrap;
+
+    String _insertWordJoinersForAsciiWords(String input) {
+      if (input.isEmpty) return input;
+      const int A = 0x41, Z = 0x5A; // A-Z
+      const int a = 0x61, z = 0x7A; // a-z
+      const int zero = 0x30, nine = 0x39; // 0-9
+      bool isAsciiAlphaNum(int cu) =>
+          (cu >= A && cu <= Z) || (cu >= a && cu <= z) || (cu >= zero && cu <= nine);
+
+      final sb = StringBuffer();
+      int i = 0;
+      final int n = input.length;
+      while (i < n) {
+        final int cu = input.codeUnitAt(i);
+        if (isAsciiAlphaNum(cu)) {
+          // start of a run
+          int start = i;
+          // write first char
+          sb.writeCharCode(cu);
+          i++;
+          while (i < n) {
+            final int c = input.codeUnitAt(i);
+            if (!isAsciiAlphaNum(c)) break;
+            // Insert a WORD JOINER (U+2060) between ascii alphanumerics
+            sb.write('\u2060');
+            sb.writeCharCode(c);
+            i++;
+          }
+          // Done with this run
+        } else {
+          sb.writeCharCode(cu);
+          i++;
+        }
+      }
+      return sb.toString();
+    }
+
+    final bool _avoidWordBreakInScrollableX = _ancestorHasHorizontalScroll();
 
     for (final item in _items) {
       if (item.isOpenTag && item.renderBox != null) {
@@ -1035,7 +1125,7 @@ class InlineFormattingContext {
               'placeholder=(w:${width.toStringAsFixed(2)}, h:${height.toStringAsFixed(2)}, baselineOffset:${baselineOffset.toStringAsFixed(2)})');
         }
       } else if (item.isText) {
-        final text = item.getText(_textContent);
+        String text = item.getText(_textContent);
         if (text.isEmpty || item.style == null) continue;
         // First content inside any open frames
         if (openFrames.isNotEmpty) {
@@ -1043,6 +1133,12 @@ class InlineFormattingContext {
             f.hadContent = true;
           }
           _flushPendingLeftExtras();
+        }
+        // If any ancestor establishes horizontal scroll/auto overflow,
+        // prevent breaking within ASCII words so long sequences (e.g., digits)
+        // overflow horizontally and can be scrolled instead of wrapping.
+        if (_avoidWordBreakInScrollableX && _whiteSpaceEligibleForNoWordBreak(item.style!.whiteSpace)) {
+          text = _insertWordJoinersForAsciiWords(text);
         }
         pb.pushStyle(_uiTextStyleFromCss(item.style!));
         pb.addText(text);
@@ -1159,6 +1255,22 @@ class InlineFormattingContext {
         }
       }
     }
+
+    // If an ancestor has horizontal scrolling, shape with a very large width
+    // to avoid forced wrapping. The container itself will still size to its
+    // own constraints (e.g., 100px), and overflow/scroll metrics will use the
+    // paragraph's visual longest line.
+    if (_avoidWordBreakInScrollableX) {
+      initialWidth = 1000000.0;
+      if (debugLogInlineLayoutEnabled) {
+        renderingLogger.fine('[IFC] ancestor horizontal scroll → shape wide initialWidth=${initialWidth.toStringAsFixed(2)}');
+      }
+    }
+    if (debugLogInlineLayoutEnabled) {
+      renderingLogger.fine('[IFC] initialWidth=${initialWidth.toStringAsFixed(2)} '
+          '(bounded=${constraints.hasBoundedWidth}, maxW=${constraints.maxWidth.toStringAsFixed(2)}, '
+          'fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
+    }
     paragraph.layout(ui.ParagraphConstraints(width: initialWidth));
 
     // Use container's available content width to preserve text-align behavior
@@ -1202,8 +1314,20 @@ class InlineFormattingContext {
     _paraCharCount = paraPos; // record final character count
 
     if (debugLogInlineLayoutEnabled) {
+      // Try to extract intrinsic widths when available on this engine.
+      double? minIntrinsic;
+      double? maxIntrinsic;
+      try { minIntrinsic = (paragraph as dynamic).minIntrinsicWidth as double?; } catch (_) {}
+      try { maxIntrinsic = (paragraph as dynamic).maxIntrinsicWidth as double?; } catch (_) {}
+
       renderingLogger.fine('[IFC] paragraph: width=${paragraph.width.toStringAsFixed(2)} height=${paragraph.height.toStringAsFixed(2)} '
           'longestLine=${paragraph.longestLine.toStringAsFixed(2)} maxLines=${style.lineClamp} exceeded=${paragraph.didExceedMaxLines}');
+      if (minIntrinsic != null || maxIntrinsic != null) {
+        renderingLogger.fine('[IFC] intrinsic: min=${(minIntrinsic ?? double.nan).toStringAsFixed(2)} '
+            'max=${(maxIntrinsic ?? double.nan).toStringAsFixed(2)}');
+      }
+      // Log flags related to break avoidance in scrollable containers.
+      renderingLogger.fine('[IFC] flags: avoidWordBreakInScrollableX=${_avoidWordBreakInScrollableX} whiteSpace=${style.whiteSpace}');
       for (int i = 0; i < _paraLines.length; i++) {
         final lm = _paraLines[i];
         renderingLogger.finer('  [line $i] baseline=${lm.baseline.toStringAsFixed(2)} height=${lm.height.toStringAsFixed(2)} '

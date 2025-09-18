@@ -998,41 +998,58 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   // Set the size of scrollable overflow area for inline formatting context.
   void _setMaxScrollableSizeFromIFC() {
-    if (_inlineFormattingContext == null || _inlineFormattingContext!.lineBoxes.isEmpty) {
+    if (_inlineFormattingContext == null) {
       scrollableSize = size;
       return;
     }
 
+    final hasLineBoxes = _inlineFormattingContext!.lineBoxes.isNotEmpty;
+
     double maxScrollableWidth = 0;
     double maxScrollableHeight = 0;
 
-    // Calculate the scrollable size from line boxes
-    for (final lineBox in _inlineFormattingContext!.lineBoxes) {
-      double lineWidth = 0;
-      double lineHeight = lineBox.height;
+    if (hasLineBoxes) {
+      // Calculate the scrollable size from line boxes (legacy path)
+      for (final lineBox in _inlineFormattingContext!.lineBoxes) {
+        double lineWidth = 0;
+        double lineHeight = lineBox.height;
 
-      // Calculate the maximum width needed by this line
-      for (final item in lineBox.items) {
-        if (item is AtomicLineBoxItem || item is BoxLineBoxItem) {
-          final renderBox = (item is AtomicLineBoxItem) ? item.renderBox : (item as BoxLineBoxItem).renderBox;
+        // Calculate the maximum width needed by this line
+        for (final item in lineBox.items) {
+          if (item is AtomicLineBoxItem || item is BoxLineBoxItem) {
+            final renderBox = (item is AtomicLineBoxItem) ? item.renderBox : (item as BoxLineBoxItem).renderBox;
 
-          if (renderBox != null) {
-            double itemRight = item.offset.dx + item.size.width;
+            if (renderBox != null) {
+              double itemRight = item.offset.dx + item.size.width;
 
-            // Add margins for RenderBoxModel
-            if (renderBox is RenderBoxModel) {
-              itemRight += renderBox.renderStyle.marginRight.computedValue;
+              // Add margins for RenderBoxModel
+              if (renderBox is RenderBoxModel) {
+                itemRight += renderBox.renderStyle.marginRight.computedValue;
+              }
+
+              lineWidth = math.max(lineWidth, itemRight);
             }
-
-            lineWidth = math.max(lineWidth, itemRight);
+          } else if (item is TextLineBoxItem) {
+            lineWidth = math.max(lineWidth, item.offset.dx + item.size.width);
           }
-        } else if (item is TextLineBoxItem) {
-          lineWidth = math.max(lineWidth, item.offset.dx + item.size.width);
         }
-      }
 
-      maxScrollableWidth = math.max(maxScrollableWidth, lineWidth);
-      maxScrollableHeight += lineHeight;
+        maxScrollableWidth = math.max(maxScrollableWidth, lineWidth);
+        maxScrollableHeight += lineHeight;
+      }
+    } else {
+      // Paragraph path: use visual longest line and total height from paragraph metrics
+      final double paraWidth = _inlineFormattingContext!.paragraphVisualMaxLineWidth;
+      final lines = _inlineFormattingContext!.paragraphLineMetrics;
+      final double paraHeight = lines.isEmpty
+          ? (_inlineFormattingContext!.paragraph?.height ?? 0)
+          : lines.fold<double>(0.0, (h, lm) => h + lm.height);
+      maxScrollableWidth = paraWidth;
+      maxScrollableHeight = paraHeight;
+      if (debugLogFlowEnabled) {
+        renderingLogger.finer('[Flow] scrollable from IFC paragraph: visualLongest=${paraWidth.toStringAsFixed(2)} '
+            'height=${maxScrollableHeight.toStringAsFixed(2)}');
+      }
     }
 
     // Add padding to scrollable size
@@ -1061,6 +1078,13 @@ class RenderFlowLayout extends RenderLayoutBox {
         maxScrollableHeight);
 
     scrollableSize = Size(finalScrollableWidth, finalScrollableHeight);
+
+    if (debugLogFlowEnabled) {
+      renderingLogger.finer('[Flow] scrollable from IFC: width=${finalScrollableWidth.toStringAsFixed(2)} '
+          'height=${finalScrollableHeight.toStringAsFixed(2)} '
+          'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY} '
+          'via=${hasLineBoxes ? 'lineBoxes' : 'paragraph'}');
+    }
   }
 
   // Set the size of scrollable overflow area for flow layout.

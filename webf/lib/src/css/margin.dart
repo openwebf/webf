@@ -220,6 +220,13 @@ mixin CSSMarginMixin on RenderStyle {
     return selfTop;
   }
 
+  // Public accessor for sibling-collapsed top contribution.
+  // Returns the effective additional top spacing for this element when placed
+  // after its previous in-flow block-level sibling. This equals
+  // collapse(prevBottom, selfTop) - prevBottom when a previous sibling exists,
+  // otherwise it falls back to this element's own self/first-child collapsed top.
+  double get collapsedMarginTopForSibling => _collapsedMarginTopWithPreSibling;
+
   // Margin bottom of in-flow block-level box which has collapsed margin.
   // https://www.w3.org/TR/CSS2/box.html#collapsing-margins
   double get collapsedMarginBottom {
