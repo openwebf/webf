@@ -399,15 +399,13 @@ class InlineFormattingContext {
       }
       if (ok) break;
 
-      // Compute a lower bound shrink based on the worst offending line.
-      double worstNeed = 0.0;
-      for (int i = 0; i < lines.length && i < reserves.length; i++) {
-        final double need = (lines[i].width + reserves[i]) - maxW;
-        if (need > worstNeed) worstNeed = need;
-      }
-      // Binary search between maxW and a reduced width until constraints satisfied
+      // Compute an estimate of how much we need to shrink, but broaden the
+      // search space to allow crossing word-break thresholds. Limiting the
+      // lower bound to (chosen - worstNeed) can be insufficient when a tiny
+      // reduction does not trigger a new line break. Use [0, chosen] to ensure
+      // we find a width that satisfies width + reserve <= maxW.
       double hi = chosen;
-      double lo = math.max(0.0, chosen - worstNeed);
+      double lo = 0.0;
       double midChosen = chosen;
       for (int it = 0; it < 6; it++) {
         final double mid = (hi + lo) / 2.0;
