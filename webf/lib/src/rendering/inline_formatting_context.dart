@@ -1045,15 +1045,22 @@ class InlineFormattingContext {
             if (idx != -1) {
               final frame = openFrames.removeAt(idx);
             if (frame.hadContent) {
-                // Non-empty inline span: ensure left extras flushed, and DO NOT
-                // add a trailing right-extras placeholder. Let painting extend
-                // the last fragment's right edge by padding/border instead.
-                // This avoids creating an extra paragraph line that contains
-                // only the right extras, which looks like an odd gap after text.
+                // Non-empty inline span: ensure left extras flushed, then add a trailing
+                // right-extras placeholder so subsequent inline content advances after
+                // padding/border/margin on the right edge. Painting still extends the last
+                // fragment visually; the placeholder only reserves layout width.
                 _flushPendingLeftExtras();
-                if (debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
-                  renderingLogger.finer('[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
-                      'rightExtras=${frame.rightExtras.toStringAsFixed(2)} (painted via fragment extension)');
+                if (frame.rightExtras > 0) {
+                  final rs = frame.box.renderStyle;
+                  final (ph, bo) = _measureTextMetricsFor(rs);
+                  pb.addPlaceholder(frame.rightExtras, ph, ui.PlaceholderAlignment.baseline,
+                      baseline: TextBaseline.alphabetic, baselineOffset: bo);
+                  paraPos += 1;
+                  _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
+                  if (debugLogInlineLayoutEnabled) {
+                    renderingLogger.finer('[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
+                        'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
+                  }
                 }
               } else {
                 // Empty span: merge left+right extras into a single placeholder only if non-zero.
