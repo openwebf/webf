@@ -538,9 +538,16 @@ class RenderFlowLayout extends RenderLayoutBox {
       if (childBoxModel == null) continue;
 
       final CSSRenderStyle crs = childBoxModel.renderStyle;
-      // Stretch only block-level auto-width children; do not touch inline-level (e.g., inline-block) or replaced.
-      final bool isBlockLevel = crs.effectiveDisplay == CSSDisplay.block || crs.effectiveDisplay == CSSDisplay.flex;
+      // Stretch only block-level auto-width children; do not touch inline-level (e.g., inline-block),
+      // replaced, or flex containers (flex container inside inline-block contributes its own
+      // min/max content widths to shrink-to-fit and must not be force-stretched here).
+      final CSSDisplay disp = crs.effectiveDisplay;
+      final bool isBlockLevel = disp == CSSDisplay.block || disp == CSSDisplay.flex;
       if (!isBlockLevel || !crs.width.isAuto) continue;
+      if (disp == CSSDisplay.flex || disp == CSSDisplay.inlineFlex) {
+        // Skip stretching flex containers to preserve correct shrink-to-fit of the inline-block.
+        continue;
+      }
 
       // Relayout the child wrapper with the container's content width tightly,
       // so an empty block (no content) still expands to the intended width.

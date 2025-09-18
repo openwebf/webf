@@ -2422,14 +2422,28 @@ class CSSRenderStyle extends RenderStyle
       } else if (logicalWidth == null && (renderStyle.isSelfRouterLinkElement() && getCurrentViewportBox() is! RootRenderViewportBox)) {
         logicalWidth = getCurrentViewportBox()!.boxSize!.width;
       } else if (logicalWidth == null && parentStyle != null) {
-        // Block element (except replaced element) will stretch to the content width of its parent in flow layout.
-        // But NOT in flex layout - flex items do not stretch to parent width by default.
-        // Replaced element can stretch in flex layout if align-items is stretch (handled elsewhere).
-        // Do not stretch absolutely/fixed positioned elements; their auto width is determined by abs formatting rules.
-        if (!renderStyle.isSelfRenderReplaced() &&
-            !renderStyle.isParentRenderFlexLayout() &&
+        // Resolve whether the direct parent is a flex item (its render box's parent is a flex container).
+        // Determine if our direct parent is a flex item: i.e., the parent's parent is a flex container.
+        final bool parentIsFlexItem = parentStyle.isParentRenderFlexLayout();
+
+        // Case A: inside a flex item — stretch block-level auto width to the flex item's measured width.
+        if (parentIsFlexItem &&
+            !renderStyle.isSelfRenderReplaced() &&
             renderStyle.position != CSSPositionType.absolute &&
             renderStyle.position != CSSPositionType.fixed) {
+          final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
+          final BoxConstraints? pcc = parentBox?.contentConstraints;
+          if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
+            logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
+          }
+
+        // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
+        // and adopt its content box logical width or bounded content constraints.
+        } else if (!parentIsFlexItem &&
+            !renderStyle.isSelfRenderReplaced() &&
+            renderStyle.position != CSSPositionType.absolute &&
+            renderStyle.position != CSSPositionType.fixed &&
+            !renderStyle.isParentRenderFlexLayout()) {
           RenderStyle? ancestorRenderStyle = _findAncestorWithNoDisplayInline();
           // Should ignore renderStyle of display inline when searching for ancestors to stretch width.
           if (ancestorRenderStyle != null) {
@@ -2444,6 +2458,9 @@ class CSSRenderStyle extends RenderStyle
             } else {
               logicalWidth = ancestorRenderStyle.contentBoxLogicalWidth;
             }
+
+            // No fallback to unrelated ancestors for flex scenarios here; if ancestor is a
+            // flex item but has no bounded width yet, defer stretching (leave null).
 
             // Should subtract horizontal margin of own from its parent content width.
             if (logicalWidth != null) {
