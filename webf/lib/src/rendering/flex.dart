@@ -669,30 +669,44 @@ class RenderFlexLayout extends RenderLayoutBox {
           );
         }
       } else {
-        // For column direction, constrain cross-axis (width) to container's width
-        // when child doesn't have explicit width and needs constraint
-        bool needsCrossAxisConstraint = (s.width.isAuto || isFlexBasisContent) && (
-          renderStyle.flexWrap != FlexWrap.nowrap || // Wrapping enabled
-          renderStyle.alignItems == AlignItems.stretch // Stretching needed
-        );
+        // Column direction: main axis vertical, cross axis is width.
+        // For intrinsic measurement of auto-width flex items, relax only the parent-imposed
+        // width cap while preserving the item's own definite max-width/min-width.
+        // This prevents runaway expansion to the container width but still honors
+        // author-specified constraints like max-width: 100px.
+        if (!isReplaced && (s.width.isAuto || isFlexBasisContent)) {
+          // Determine if the container has a definite cross size (width).
+          final bool containerCrossDefinite =
+              (renderStyle.contentBoxLogicalWidth != null) || (contentConstraints?.hasTightWidth ?? false);
 
-        if (s.height.isAuto || isFlexBasisContent) {
+          double newMaxW;
+          if (containerCrossDefinite) {
+            // Clamp to the container's border-box width to ensure text wraps correctly.
+            double containerMaxBorderW = constraints.maxWidth.isFinite ? constraints.maxWidth : double.infinity;
+            newMaxW = containerMaxBorderW;
+          } else {
+            // No definite container width: let content determine size (shrink-to-fit scenarios).
+            newMaxW = double.infinity;
+          }
+          // Also honor the child's own definite max-width (non-percentage) if any.
+          if (s.maxWidth.isNotNone && s.maxWidth.type != CSSLengthType.PERCENTAGE) {
+            newMaxW = math.min(newMaxW, s.maxWidth.computedValue);
+          }
+
           c = BoxConstraints(
-            minWidth: c.minWidth,
-            maxWidth: needsCrossAxisConstraint ? math.min(constraints.maxWidth, c.maxWidth) : c.maxWidth,
+            minWidth: 0,
+            maxWidth: newMaxW,
             minHeight: c.minHeight,
             maxHeight: double.infinity,
           );
         } else {
-          // Even with explicit height, constrain width if needed
-          if (needsCrossAxisConstraint) {
-            c = BoxConstraints(
-              minWidth: c.minWidth,
-              maxWidth: math.min(constraints.maxWidth, c.maxWidth),
-              minHeight: c.minHeight,
-              maxHeight: c.maxHeight,
-            );
-          }
+          // Preserve existing constraints for non-auto widths or replaced elements.
+          c = BoxConstraints(
+            minWidth: c.minWidth,
+            maxWidth: c.maxWidth,
+            minHeight: c.minHeight,
+            maxHeight: c.maxHeight,
+          );
         }
       }
 
@@ -1911,7 +1925,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         bool childMainSizeChanged = childFlexedMainSize != null ||
             (childFlexedMainSize != null && childFlexedMainSize != childOldMainSize);
 
-        bool childCrossSizeChanged = false;
+      bool childCrossSizeChanged = false;
       // Child cross size adjusted due to align-items/align-self style.
       double? childStretchedCrossSize;
 
@@ -1925,18 +1939,28 @@ class RenderFlexLayout extends RenderLayoutBox {
         childCrossSizeChanged = childStretchedCrossSize != childOldCrossSize;
       }
 
-      // Column flex: if the child ended up with a definite cross size (width) and
-      // its width is not explicitly specified (auto), propagate this definite
-      // width to the child's render style so descendants can resolve percentage
-      // paddings/margins against it. This mirrors CSS where the flex item forms
-      // the containing block for its contents with a definite inline size.
-      if (!_isHorizontalFlexDirection && child is RenderBoxModel) {
-        final bool childHasExplicitWidth = !child.renderStyle.width.isAuto;
-        final double measuredCross = child.size.width;
-        if (!childHasExplicitWidth && measuredCross.isFinite && measuredCross > 0) {
-          _overrideChildContentBoxLogicalWidth(child, measuredCross);
+      // When not stretching, enforce the child's own min/max cross-size constraints.
+      // If the measured cross size from the intrinsic pass exceeds a definite
+      // max-width/max-height (absolute, not percentage), clamp and relayout.
+      if (!_isHorizontalFlexDirection && child is RenderBoxModel && childStretchedCrossSize == null) {
+        final RenderStyle cs = child.renderStyle;
+        double measuredCross = childOldCrossSize; // width in column direction
+        double clamped = measuredCross;
+        if (cs.maxWidth.isNotNone && cs.maxWidth.type != CSSLengthType.PERCENTAGE) {
+          clamped = math.min(clamped, cs.maxWidth.computedValue);
+        }
+        if (cs.minWidth.isNotAuto) {
+          clamped = math.max(clamped, cs.minWidth.computedValue);
+        }
+        if (clamped != measuredCross) {
+          childStretchedCrossSize = clamped;
+          childCrossSizeChanged = true;
         }
       }
+
+      // Removed: Do not propagate measured cross width to child render style.
+      // This could freeze an unintended small width from the intrinsic pass
+      // (e.g., padding-only width) and break later relayout/clamping.
 
         // Also relayout if our preserved intrinsic main size (from PASS 2) differs from current size
         double? desiredPreservedMain;
@@ -2229,6 +2253,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     // to prevent block-level expansion to the available width when max-width is percentage
     // and there is no content. This matches the flex algorithm: items are laid out using
     // their resolved main size.
+    // Preserve main-axis size only for row-direction containers to provide
+    // a definite inline-size to descendants. For column-direction, do NOT
+    // clamp height to the preserved base size; letting the item re-measure
+    // after cross-axis width becomes definite is required for correct text wrapping.
     if (preserveMainAxisSize != null && childFlexedMainSize == null) {
       if (_isHorizontalFlexDirection) {
         // Only tighten width when width is auto (no explicit width) and child is not replaced.
@@ -2236,12 +2264,6 @@ class RenderFlexLayout extends RenderLayoutBox {
           double clamped = preserveMainAxisSize.clamp(0, maxConstraintWidth);
           minConstraintWidth = clamped;
           maxConstraintWidth = clamped;
-        }
-      } else {
-        if (child.renderStyle.height.isAuto && !child.renderStyle.isSelfRenderReplaced()) {
-          double clamped = preserveMainAxisSize.clamp(0, maxConstraintHeight);
-          minConstraintHeight = clamped;
-          adjustedMaxHeight = clamped;
         }
       }
     }
@@ -2971,7 +2993,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // If the cross size property of the flex item computes to auto, and neither of
     // the cross axis margins are auto, the flex item is stretched.
     // https://www.w3.org/TR/css-flexbox-1/#valdef-align-items-stretch
-    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && (isChildLengthAuto)) {
+    if (isChildAlignmentStretch && !_isChildCrossAxisMarginAutoExist(child) && isChildLengthAuto) {
       return true;
     }
 
