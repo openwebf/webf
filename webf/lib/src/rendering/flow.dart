@@ -1043,63 +1043,77 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (child is RenderBoxModel) {
           childRenderBoxModel = child;
         } else if (isPlaceholder) {
-          // Do not let out-of-flow placeholders affect sibling margin collapsing.
-          childRenderBoxModel = null;
+          // Use the positioned element's render style for horizontal margin and width calculations
+          // so the placeholder's X offset reflects margin-left/right. We'll skip vertical collapsing below.
+          childRenderBoxModel = (child as RenderPositionPlaceholder).positioned;
         }
 
         if (childRenderBoxModel is RenderBoxModel) {
           final rs = childRenderBoxModel.renderStyle;
           childMarginLeft = rs.marginLeft.computedValue;
-          // The top margin as counted in the run's cross extent for this child.
-          final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
-          // Use the element's self/first-child collapsed top (ignoring parent collapse)
-          // to compute inter-run collapsing relative to the previous run's bottom.
-          final double selfTopIgnoringParent = rs.collapsedMarginTopIgnoringParent;
-          // Collapsed bottom of previous sibling in this run
-          final double? prevBottom = prevCollapsedBottom;
-          // Compute top contribution as collapse(selfTopIgnoringParent, prevBottom) - prevBottom
-          double topContribution;
-          if (prevBottom == null) {
-            topContribution = ownTopInExtent;
-          } else {
-            if (selfTopIgnoringParent >= 0 && prevBottom >= 0) {
-              topContribution = math.max(selfTopIgnoringParent, prevBottom) - prevBottom;
-            } else if (selfTopIgnoringParent <= 0 && prevBottom <= 0) {
-              topContribution = math.min(selfTopIgnoringParent, prevBottom) - prevBottom;
+          double? dbgOwnTopInExtent;
+          double? dbgSelfTopIgnoringParent;
+          double? dbgTopContribution;
+          if (!isPlaceholder) {
+            // The top margin as counted in the run's cross extent for this child.
+            final double ownTopInExtent = getChildMarginTop(childRenderBoxModel);
+            // Use the element's self/first-child collapsed top (ignoring parent collapse)
+            // to compute inter-run collapsing relative to the previous run's bottom.
+            final double selfTopIgnoringParent = rs.collapsedMarginTopIgnoringParent;
+            // Collapsed bottom of previous sibling in this run
+            final double? prevBottom = prevCollapsedBottom;
+            // Compute top contribution as collapse(selfTopIgnoringParent, prevBottom) - prevBottom
+            double topContribution;
+            if (prevBottom == null) {
+              topContribution = ownTopInExtent;
             } else {
-              topContribution = selfTopIgnoringParent;
+              if (selfTopIgnoringParent >= 0 && prevBottom >= 0) {
+                topContribution = math.max(selfTopIgnoringParent, prevBottom) - prevBottom;
+              } else if (selfTopIgnoringParent <= 0 && prevBottom <= 0) {
+                topContribution = math.min(selfTopIgnoringParent, prevBottom) - prevBottom;
+              } else {
+                topContribution = selfTopIgnoringParent;
+              }
+            }
+            if (!firstOwnTopCaptured) {
+              runFirstOwnTop = ownTopInExtent;
+              runFirstTopContribution = topContribution;
+              firstOwnTopCaptured = true;
+            }
+            childMarginTop = topContribution;
+            childMarginBottom = getChildMarginBottom(childRenderBoxModel);
+
+            // Save for debug logging below
+            dbgOwnTopInExtent = ownTopInExtent;
+            dbgSelfTopIgnoringParent = selfTopIgnoringParent;
+            dbgTopContribution = topContribution;
+          } else {
+            // Placeholders: do not contribute vertical margins to collapsing.
+            childMarginTop = 0;
+            childMarginBottom = 0;
+          }
+          if (!isPlaceholder) {
+            if (debugLogFlowEnabled && prevCollapsedBottom != null) {
+              final tag = rs.target.tagName.toLowerCase();
+              final double p = prevCollapsedBottom!;
+              final double st = dbgSelfTopIgnoringParent ?? 0;
+              final double currTop = (st >= 0 && p >= 0)
+                  ? math.max(st, p)
+                  : (st <= 0 && p <= 0)
+                      ? math.min(st, p)
+                      : st;
+              renderingLogger.finer('[Flow-MarginCollapse] prevBottom=' +
+                  p.toStringAsFixed(2) +
+                  ' currTop=' + currTop.toStringAsFixed(2) +
+                  ' contrib=' + (dbgTopContribution ?? 0).toStringAsFixed(2) +
+                  ' child=<' + tag + '>');
+            }
+            if (debugLogFlowEnabled) {
+              renderingLogger.finer('[Flow-Child] <' + rs.target.tagName.toLowerCase() + '>' +
+                  ' collapsedTop=' + (dbgOwnTopInExtent ?? 0).toStringAsFixed(2) +
+                  ' collapsedBottom=' + (childMarginBottom ?? 0).toStringAsFixed(2));
             }
           }
-          if (!firstOwnTopCaptured) {
-            runFirstOwnTop = ownTopInExtent;
-            runFirstTopContribution = topContribution;
-            firstOwnTopCaptured = true;
-          }
-          childMarginTop = topContribution;
-          childMarginBottom = getChildMarginBottom(childRenderBoxModel);
-          if (debugLogFlowEnabled && prevCollapsedBottom != null) {
-            final tag = rs.target.tagName.toLowerCase();
-            renderingLogger.finer('[Flow-MarginCollapse] prevBottom=' +
-                prevCollapsedBottom!.toStringAsFixed(2) +
-                ' currTop=' + ((() {
-                  final p = prevCollapsedBottom!;
-                  if (selfTopIgnoringParent >= 0 && p >= 0) return math.max(selfTopIgnoringParent, p);
-                  if (selfTopIgnoringParent <= 0 && p <= 0) return math.min(selfTopIgnoringParent, p);
-                  return selfTopIgnoringParent;
-                })()).toStringAsFixed(2) +
-                ' contrib=' + topContribution.toStringAsFixed(2) +
-                ' child=<' + tag + '>');
-          }
-          if (debugLogFlowEnabled) {
-            renderingLogger.finer('[Flow-Child] <' + rs.target.tagName.toLowerCase() + '>' +
-                ' collapsedTop=' + ownTopInExtent.toStringAsFixed(2) +
-                ' collapsedBottom=' + (childMarginBottom ?? 0).toStringAsFixed(2));
-          }
-        } else {
-          // Placeholder: zero margins for collapsing purposes.
-          childMarginLeft = (childMarginLeft ?? 0);
-          childMarginTop = 0;
-          childMarginBottom = 0;
         }
 
         // No need to add padding and border for scrolling content box.
@@ -1119,7 +1133,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         childMainPosition += childMainAxisExtent + childBetweenSpace;
 
         // Update previous collapsed bottom margin for next in-flow sibling in the run
-        if (childMarginBottom != null && childRenderBoxModel != null) {
+        if (childMarginBottom != null && childRenderBoxModel != null && !isPlaceholder) {
           prevCollapsedBottom = childMarginBottom;
         }
       }
