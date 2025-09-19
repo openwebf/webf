@@ -14,12 +14,6 @@ import 'package:webf/css.dart';
 import 'package:webf/src/html/text.dart';
 import 'package:webf/src/foundation/logger.dart';
 
-// Enable verbose baseline logging for flex baseline alignment.
-// Toggle at runtime: import 'package:webf/rendering.dart' and set to true.
-bool debugLogFlexBaselineEnabled = false;
-// Verbose logging for flex sizing and constraints; toggle at runtime.
-bool debugLogFlexEnabled = false;
-
 String _fmtC(BoxConstraints c) =>
     'C[minW=${c.minWidth.toStringAsFixed(1)}, maxW=${c.maxWidth.isFinite ? c.maxWidth.toStringAsFixed(1) : '∞'}, '
     'minH=${c.minHeight.toStringAsFixed(1)}, maxH=${c.maxHeight.isFinite ? c.maxHeight.toStringAsFixed(1) : '∞'}]';
@@ -736,7 +730,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
       }
 
-      if (debugLogFlexEnabled) {
+      if (DebugFlags.debugLogFlexEnabled) {
         final s = child.renderStyle;
         renderingLogger.finer('[Flex] intrinsicConstraints for ${_childDesc(child)} '
             'autoMain=${_isHorizontalFlexDirection ? s.width.isAuto : s.height.isAuto} -> ${_fmtC(c)}');
@@ -1071,7 +1065,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       return;
     }
 
-    if (debugLogFlexEnabled) {
+    if (DebugFlags.debugLogFlexEnabled) {
       final dir = renderStyle.flexDirection;
       final jc = renderStyle.justifyContent;
       final ai = renderStyle.alignItems;
@@ -1135,7 +1129,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     // _runMetrics maybe update after adjust, set flex containerSize again
     _setContainerSize(_runMetrics);
 
-    if (debugLogFlexEnabled) {
+    if (DebugFlags.debugLogFlexEnabled) {
       renderingLogger.fine('[Flex] container sizes content=${_fmtS(contentSize)} box=${_fmtS(size)}');
     }
 
@@ -1244,7 +1238,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       child.layout(childConstraints, parentUsesSize: true);
       intrinsicSizes[child.hashCode] = child.size;
 
-      if (debugLogFlexEnabled) {
+      if (DebugFlags.debugLogFlexEnabled) {
         renderingLogger.finer('[Flex] intrinsic child ${_childDesc(child)} '
             'constraints=${_fmtC(childConstraints)} size=${_fmtS(child.size)}');
       }
@@ -1349,7 +1343,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
       }
 
-      if (debugLogFlexEnabled) {
+      if (DebugFlags.debugLogFlexEnabled) {
         renderingLogger.finer('[Flex] base main-size ${_childDesc(child)} '
             'intrinsic=${(_isHorizontalFlexDirection ? childSize.width : childSize.height).toStringAsFixed(1)} '
             'clamped=${intrinsicMain.toStringAsFixed(1)}');
@@ -1409,7 +1403,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           childMarginTop = child.renderStyle.marginTop.computedValue;
           childMarginBottom = child.renderStyle.marginBottom.computedValue;
         }
-        if (debugLogFlexBaselineEnabled) {
+        if (DebugFlags.debugLogFlexBaselineEnabled) {
           final Size? ic = intrinsicChildSize;
           renderingLogger.finer('[FlexBaseline] PASS2 child='
               '${child.runtimeType}#${child.hashCode} '
@@ -1426,7 +1420,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           maxSizeBelowBaseline,
         );
         runCrossAxisExtent = maxSizeAboveBaseline + maxSizeBelowBaseline;
-        if (debugLogFlexBaselineEnabled) {
+        if (DebugFlags.debugLogFlexBaselineEnabled) {
           renderingLogger.finer('[FlexBaseline] RUN update: maxAbove='
               '${maxSizeAboveBaseline.toStringAsFixed(2)} '
               'maxBelow=${maxSizeBelowBaseline.toStringAsFixed(2)} '
@@ -1521,7 +1515,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       _runMetrics.add(_RunMetrics(
           runMainAxisExtent, runCrossAxisExtent, totalFlexGrow, totalFlexShrink, maxSizeAboveBaseline, runChildren, 0));
 
-      if (debugLogFlexEnabled) {
+      if (DebugFlags.debugLogFlexEnabled) {
         renderingLogger.fine('[Flex] run end main=${runMainAxisExtent.toStringAsFixed(1)} '
             'cross=${runCrossAxisExtent.toStringAsFixed(1)} flexGrow=$totalFlexGrow flexShrink=$totalFlexShrink '
             'limit=${flexLineLimit.isFinite ? flexLineLimit.toStringAsFixed(1) : '∞'}');
@@ -2150,7 +2144,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     double? childStretchedCrossSize,
     {double? preserveMainAxisSize}
   ) {
-    if (debugLogFlexEnabled) {
+    if (DebugFlags.debugLogFlexEnabled) {
       renderingLogger.finer('[Flex] adjustConstraints ${_childDesc(child)} '
           'flexedMain=${childFlexedMainSize?.toStringAsFixed(1)} '
           'stretchedCross=${childStretchedCrossSize?.toStringAsFixed(1)} '
@@ -2279,7 +2273,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       maxHeight: adjustedMaxHeight,
     );
 
-    if (debugLogFlexEnabled) {
+    if (DebugFlags.debugLogFlexEnabled) {
       renderingLogger.finer('[Flex] -> childConstraints ${_childDesc(child)} ${_fmtC(childConstraints)}');
     }
 
@@ -3130,7 +3124,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         // Distance from top to baseline of child.
         double childAscent = _getChildAscent(child);
         final double offset = crossStartAddedOffset + lineBoxLeading / 2 + (runBaselineExtent - childAscent);
-        if (debugLogFlexBaselineEnabled) {
+        if (DebugFlags.debugLogFlexBaselineEnabled) {
           // ignore: avoid_print
           print('[FlexBaseline] offset child=${child.runtimeType}#${child.hashCode} '
               'runBaseline=${runBaselineExtent.toStringAsFixed(2)} '
@@ -3184,7 +3178,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         final RenderBox? wrapped = child.child;
         if (wrapped is RenderBoxModel) {
           childAscent = wrapped.computeCssFirstBaseline();
-          if (debugLogFlexBaselineEnabled) {
+          if (DebugFlags.debugLogFlexBaselineEnabled) {
             // ignore: avoid_print
             print('[FlexBaseline] unwrap baseline from child content: '
                 '${wrapped.runtimeType}#${wrapped.hashCode} => baseline=${childAscent?.toStringAsFixed(2)}');
@@ -3210,7 +3204,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         : childMarginTop + childSize!.height;
     // When baseline of children not found, use boundary of margin bottom as baseline.
     double extentAboveBaseline = childAscent ?? baseline;
-    if (debugLogFlexBaselineEnabled) {
+    if (DebugFlags.debugLogFlexBaselineEnabled) {
       // ignore: avoid_print
       print('[FlexBaseline] _getChildAscent child='
           '${child.runtimeType}#${child.hashCode} '

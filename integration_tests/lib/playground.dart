@@ -27,12 +27,12 @@ import 'modules/array_buffer_module.dart';
 // By CLI: `KRAKEN_ENABLE_TEST=true flutter run`
 void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
-  debugLogInlineLayoutEnabled = true;
+  DebugFlags.debugLogInlineLayoutEnabled = true;
   debugPaintBaselinesEnabled = true;
-  debugPaintInlineLayoutEnabled = true;
+  // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
-  debugLogFlowEnabled = true;
-  debugLogFlexEnabled = true;
+  DebugFlags.debugLogFlowEnabled = true;
+  DebugFlags.debugLogFlexEnabled = true;
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

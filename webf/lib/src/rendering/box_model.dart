@@ -705,7 +705,7 @@ abstract class RenderBoxModel extends RenderBox
     assert(value.isFinite);
     if (_maxScrollableSize != value) {
       // Verbose logging to diagnose scrollable sizing
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Overflow] set scrollableSize '
             'from=${_maxScrollableSize.width.toStringAsFixed(2)}×${_maxScrollableSize.height.toStringAsFixed(2)} '
             'to=${value.width.toStringAsFixed(2)}×${value.height.toStringAsFixed(2)} '
@@ -842,7 +842,7 @@ abstract class RenderBoxModel extends RenderBox
         _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue));
 
     setUpOverflowScroller(scrollableSize, scrollableViewportSize);
-    if (debugLogFlowEnabled) {
+    if (DebugFlags.debugLogFlowEnabled) {
       renderingLogger.finer('[Overflow] didLayout <${renderStyle.target.tagName.toLowerCase()}> '
           'box=${size.width.toStringAsFixed(2)}×${size.height.toStringAsFixed(2)} '
           'content=${_contentSize!.width.toStringAsFixed(2)}×${_contentSize!.height.toStringAsFixed(2)} '

@@ -102,7 +102,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     assert(scrollListener != null);
     // If scroll is happening, that element has been unmounted, prevent null usage.
     if (scrollOffsetX != null) {
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         final double maxX = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
         renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
             '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
@@ -115,7 +115,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   void scrollYListener() {
     assert(scrollListener != null);
     if (scrollOffsetY != null) {
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         final double maxY = math.max(0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
         renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
             '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
@@ -141,7 +141,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     _scrollableSize = scrollableSize;
     _viewportSize = viewportSize;
     // Debug: report setup parameters
-    if (debugLogFlowEnabled) {
+    if (DebugFlags.debugLogFlowEnabled) {
       renderingLogger.finer('[Overflow-Setup] <${renderStyle.target.tagName.toLowerCase()}> '
           'viewport=${viewportSize.width.toStringAsFixed(2)}×${viewportSize.height.toStringAsFixed(2)} '
           'scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} '
@@ -149,7 +149,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     }
     if (_scrollOffsetX != null) {
       _setUpScrollX();
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
         renderingLogger.finer('[Overflow-Setup]   X controller maxScroll=${maxX.toStringAsFixed(2)} '
             'viewportW=${_viewportSize!.width.toStringAsFixed(2)} contentW=${_scrollableSize!.width.toStringAsFixed(2)}');
@@ -158,7 +158,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     if (_scrollOffsetY != null) {
       _setUpScrollY();
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         final double maxY = math.max(0.0, _scrollableSize!.height - _viewportSize!.height);
         renderingLogger.finer('[Overflow-Setup]   Y controller maxScroll=${maxY.toStringAsFixed(2)} '
             'viewportH=${_viewportSize!.height.toStringAsFixed(2)} contentH=${_scrollableSize!.height.toStringAsFixed(2)}');

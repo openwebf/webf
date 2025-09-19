@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show debugPaintSizeEnabled;
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/launcher.dart';
 import 'package:webf/widget.dart';
 import 'package:webf/src/devtools/panel/console_store.dart';
@@ -2159,10 +2160,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           value: 0,
           child: _buildSwitchRow(
             label: 'Paint Inline Layout',
-            value: debugPaintInlineLayoutEnabled,
+            value: DebugFlags.debugPaintInlineLayoutEnabled,
             onChanged: (v) {
               setState(() {
-                debugPaintInlineLayoutEnabled = v;
+                DebugFlags.debugPaintInlineLayoutEnabled = v;
               });
               Navigator.pop(context);
             },
@@ -2172,10 +2173,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           value: 1,
           child: _buildSwitchRow(
             label: 'Log Inline Layout',
-            value: debugLogInlineLayoutEnabled,
+            value: DebugFlags.debugLogInlineLayoutEnabled,
             onChanged: (v) {
               setState(() {
-                debugLogInlineLayoutEnabled = v;
+                DebugFlags.debugLogInlineLayoutEnabled = v;
               });
               Navigator.pop(context);
             },
@@ -2185,10 +2186,10 @@ class _WebFInspectorBottomSheetState extends State<_WebFInspectorBottomSheet> wi
           value: 2,
           child: _buildSwitchRow(
             label: 'Log Flex Baseline',
-            value: debugLogFlexBaselineEnabled,
+            value: DebugFlags.debugLogFlexBaselineEnabled,
             onChanged: (v) {
               setState(() {
-                debugLogFlexBaselineEnabled = v;
+                DebugFlags.debugLogFlexBaselineEnabled = v;
               });
               Navigator.pop(context);
             },

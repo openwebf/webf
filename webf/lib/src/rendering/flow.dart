@@ -10,15 +10,13 @@ import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
 import 'package:webf/html.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/rendering.dart';
 import 'inline_formatting_context.dart';
 import 'line_box.dart';
 import 'text.dart';
 import 'event_listener.dart';
 import 'package:webf/src/foundation/logger.dart';
-
-// Toggle for verbose RenderFlowLayout sizing logs.
-bool debugLogFlowEnabled = false;
 
 // Pretty format for BoxConstraints in debug logs.
 String _fmtC(BoxConstraints c) =>
@@ -184,7 +182,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         offset.dy + renderStyle.paddingTop.computedValue + renderStyle.effectiveBorderTopWidth.computedValue,
       );
 
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         final tag = renderStyle.target.tagName.toLowerCase();
         renderingLogger.finer('[Flow] <$tag> paint IFC content at (${contentOffset.dx.toStringAsFixed(2)},'
             '${contentOffset.dy.toStringAsFixed(2)})');
@@ -209,7 +207,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         if (shouldPaint) {
           final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
           if (child.hasSize) {
-            if (debugLogFlowEnabled) {
+            if (DebugFlags.debugLogFlowEnabled) {
               String name;
               if (child is RenderBoxModel) {
                 name = child.renderStyle.target.tagName.toLowerCase();
@@ -222,7 +220,7 @@ class RenderFlowLayout extends RenderLayoutBox {
                   '(${child.size.width.toStringAsFixed(2)}x${child.size.height.toStringAsFixed(2)})');
             }
             context.paintChild(child, childParentData.offset + offset);
-          } else if (debugLogFlowEnabled) {
+          } else if (DebugFlags.debugLogFlowEnabled) {
             String name;
             if (child is RenderBoxModel) {
               name = child.renderStyle.target.tagName.toLowerCase();
@@ -268,14 +266,14 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         if (child.hasSize) {
-          if (debugLogFlowEnabled) {
+          if (DebugFlags.debugLogFlowEnabled) {
             final tag = child.renderStyle.target.tagName.toLowerCase();
             renderingLogger.finer('[Flow] paint positioned <$tag> at '
                 '(${paintOffset.dx.toStringAsFixed(2)},${paintOffset.dy.toStringAsFixed(2)}) size='
                 '(${child.size.width.toStringAsFixed(2)}x${child.size.height.toStringAsFixed(2)})');
           }
           context.paintChild(child, paintOffset);
-        } else if (debugLogFlowEnabled) {
+        } else if (DebugFlags.debugLogFlowEnabled) {
           final tag = child.renderStyle.target.tagName.toLowerCase();
           renderingLogger.finer('[Flow] skip paint positioned <$tag>: hasSize=false');
         }
@@ -324,7 +322,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     beforeLayout();
 
     _establishIFC = renderStyle.shouldEstablishInlineFormattingContext();
-    if (debugLogFlowEnabled) {
+    if (DebugFlags.debugLogFlowEnabled) {
       final tag = renderStyle.target.tagName.toLowerCase();
       renderingLogger.fine('[Flow] <$tag> establishIFC=$_establishIFC constraints=$constraints contentConstraints=$contentConstraints');
     }
@@ -473,7 +471,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     minContentWidth = minIntrW;
     minContentHeight = ifcSize.height;
 
-    if (debugLogFlowEnabled) {
+    if (DebugFlags.debugLogFlowEnabled) {
       renderingLogger.fine('[Flow] IFC size=${ifcSize.width.toStringAsFixed(1)}×${ifcSize.height.toStringAsFixed(1)} '
           'contentConstraints=${contentConstraints == null ? 'null' : contentConstraints!.toString()} '
           'final contentSize=${layoutContentSize.width.toStringAsFixed(1)}×${layoutContentSize.height.toStringAsFixed(1)} '
@@ -497,7 +495,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       Size layoutSize = _inlineFormattingContext!.layout(contentConstraints!);
 
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow] IFC layout with constraints=${contentConstraints} -> ${layoutSize}');
       }
 
@@ -599,7 +597,7 @@ class RenderFlowLayout extends RenderLayoutBox {
         minHeight: 0,
         maxHeight: double.infinity,
       );
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow] -> reflow block auto-width child ${child.runtimeType} to contentWidth='
             '${targetWidth.toStringAsFixed(2)} with ${_fmtC(stretch)}');
       }
@@ -671,7 +669,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       if (isChildNeedsLayout) {
         bool parentUseSize = !(child is RenderBoxModel && child.isSizeTight || child is RenderPositionPlaceholder);
-        if (debugLogFlowEnabled) {
+        if (DebugFlags.debugLogFlowEnabled) {
           renderingLogger.finer('[Flow] -> layout child ${child.runtimeType} '
               'with ${_fmtC(childConstraints)} parentUsesSize=$parentUseSize');
         }
@@ -992,7 +990,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       double runFirstTopContribution = 0;
       bool firstOwnTopCaptured = false;
 
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow-Run] index=' + i.toString() +
             ' carriedPrevBottom=' + (carriedPrevCollapsedBottom?.toStringAsFixed(2) ?? 'null') +
             ' runCrossAxisExtent=' + runCrossAxisExtent.toStringAsFixed(2));
@@ -1093,7 +1091,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             childMarginBottom = 0;
           }
           if (!isPlaceholder) {
-            if (debugLogFlowEnabled && prevCollapsedBottom != null) {
+            if (DebugFlags.debugLogFlowEnabled && prevCollapsedBottom != null) {
               final tag = rs.target.tagName.toLowerCase();
               final double p = prevCollapsedBottom!;
               final double st = dbgSelfTopIgnoringParent ?? 0;
@@ -1108,7 +1106,7 @@ class RenderFlowLayout extends RenderLayoutBox {
                   ' contrib=' + (dbgTopContribution ?? 0).toStringAsFixed(2) +
                   ' child=<' + tag + '>');
             }
-            if (debugLogFlowEnabled) {
+            if (DebugFlags.debugLogFlowEnabled) {
               renderingLogger.finer('[Flow-Child] <' + rs.target.tagName.toLowerCase() + '>' +
                   ' collapsedTop=' + (dbgOwnTopInExtent ?? 0).toStringAsFixed(2) +
                   ' collapsedBottom=' + (childMarginBottom ?? 0).toStringAsFixed(2));
@@ -1142,7 +1140,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       // both top and bottom margins of the previous run when computing the next run's start.
       final double crossAdvance = (runCrossAxisExtent - runFirstOwnTop + runFirstTopContribution) + runBetweenSpace;
       crossAxisOffset += crossAdvance;
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow-RunEnd] index=' + i.toString() +
             ' runFirstOwnTop=' + runFirstOwnTop.toStringAsFixed(2) +
             ' crossAdvance=' + crossAdvance.toStringAsFixed(2) +
@@ -1215,7 +1213,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           : lines.fold<double>(0.0, (h, lm) => h + lm.height);
       maxScrollableWidth = paraWidth;
       maxScrollableHeight = paraHeight;
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow] scrollable from IFC paragraph: visualLongest=${paraWidth.toStringAsFixed(2)} '
             'height=${maxScrollableHeight.toStringAsFixed(2)}');
       }
@@ -1248,7 +1246,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
     scrollableSize = Size(finalScrollableWidth, finalScrollableHeight);
 
-    if (debugLogFlowEnabled) {
+    if (DebugFlags.debugLogFlowEnabled) {
       renderingLogger.finer('[Flow] scrollable from IFC: width=${finalScrollableWidth.toStringAsFixed(2)} '
           'height=${finalScrollableHeight.toStringAsFixed(2)} '
           'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY} '
@@ -1266,7 +1264,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Total cross size of previous lines.
     double preLinesCrossSize = 0;
     for (RunMetrics runMetric in _lineMetrics) {
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow-Scroll] ---- line start ----');
         renderingLogger.finer('[Flow-Scroll] preLinesCrossSize=${preLinesCrossSize.toStringAsFixed(2)} run.crossAxisExtent=${runMetric.crossAxisExtent.toStringAsFixed(2)}');
       }
@@ -1341,7 +1339,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Width contribution should not exceed the available content width.
             final double usedW = getChildSize(child)?.width ?? math.min(textFull.width, availW.isFinite ? availW : textFull.width);
             childScrollableSize = Size(usedW, textFull.height);
-            if (debugLogFlowEnabled) {
+            if (DebugFlags.debugLogFlowEnabled) {
               renderingLogger.finer('[Flow-Scroll] text child fullSize=${textFull.width.toStringAsFixed(2)}×${textFull.height.toStringAsFixed(2)} '
                   'usedW=${usedW.toStringAsFixed(2)} availW=${(availW.isFinite ? availW : double.infinity).toStringAsFixed(2)}');
             }
@@ -1359,7 +1357,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       runChildren.forEach(iterateRunChildren);
 
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         for (int i = 0; i < runChildren.length; i++) {
           final child = runChildren[i];
           final Size? sz = _getChildSize(child);
@@ -1388,7 +1386,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       scrollableCrossSizeOfLines.add(maxScrollableCrossSizeOfLine);
       preLinesCrossSize += runMetric.crossAxisExtent;
 
-      if (debugLogFlowEnabled) {
+      if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow-Scroll] line childCrossMax=' +
             (scrollableCrossSizeOfChildren.reduce((a,b)=> a>b?a:b)).toStringAsFixed(2) +
             ' lineBottom=' + maxScrollableCrossSizeOfLine.toStringAsFixed(2) +
@@ -1440,7 +1438,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     assert(maxScrollableCrossSize.isFinite);
     scrollableSize = Size(maxScrollableMainSize, maxScrollableCrossSize);
 
-    if (debugLogFlowEnabled) {
+    if (DebugFlags.debugLogFlowEnabled) {
       renderingLogger.finer('[Flow-Scroll] result main=' + maxScrollableMainSize.toStringAsFixed(2) +
           ' cross=' + maxScrollableCrossSize.toStringAsFixed(2) +
           ' padding(top=' + renderStyle.paddingTop.computedValue.toStringAsFixed(2) + ', bottom=' +
@@ -1520,7 +1518,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           firstBaseline = lines.first.baseline + paddingTop + borderTop;
           lastBaseline = lines.last.baseline + paddingTop + borderTop;
         }
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
               'last=${lastBaseline.toStringAsFixed(2)} '
               'paddingTop=${paddingTop.toStringAsFixed(2)} borderTop=${borderTop.toStringAsFixed(2)}');
@@ -1541,7 +1539,7 @@ class RenderFlowLayout extends RenderLayoutBox {
           firstBaseline = first.baseline + paddingTop + borderTop;
           lastBaseline = y + last.baseline + paddingTop + borderTop;
         }
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC-legacy] setCssBaselines first=${firstBaseline.toStringAsFixed(2)} '
               'last=${lastBaseline.toStringAsFixed(2)}');
         }

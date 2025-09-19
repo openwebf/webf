@@ -22,36 +22,6 @@ import 'line_box.dart';
 import 'inline_items_builder.dart';
 import 'inline_layout_debugger.dart';
 
-/// Debug flag to enable inline layout visualization.
-/// When true, paints debug information for line boxes, margins, padding, etc.
-///
-/// To enable debug painting:
-/// ```dart
-/// import 'package:webf/rendering.dart';
-///
-/// // Enable debug paint
-/// debugPaintInlineLayoutEnabled = true;
-///
-/// // Your WebF widget will now show debug visualizations
-/// ```
-///
-/// Debug visualizations include:
-/// - Green outline: Line box bounds
-/// - Red line: Text baseline
-/// - Blue outline: Text item bounds
-/// - Magenta outline: Inline box bounds (span, etc.)
-/// - Red semi-transparent fill: Left margin area
-/// - Green semi-transparent fill: Right margin area
-/// - Blue semi-transparent fill: Padding area
-///
-/// This is useful for debugging inline layout issues such as:
-/// - Margin gaps not appearing correctly
-/// - Text alignment problems
-/// - Line box height calculations
-/// - Padding and border rendering
-bool debugPaintInlineLayoutEnabled = false;
-bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
-
 /// Manages the inline formatting context for a block container.
 /// Based on Blink's InlineNode.
 class InlineFormattingContext {
@@ -248,7 +218,7 @@ class InlineFormattingContext {
     double baseLongest = _paragraph!.longestLine;
     double visualLongest = rights.fold<double>(0, (p, v) => v > p ? v : p);
     final double result = visualLongest > baseLongest ? visualLongest : baseLongest;
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       renderingLogger.fine('[IFC] visualLongestLine=${result.toStringAsFixed(2)} (base=${baseLongest.toStringAsFixed(2)})');
     }
     return result;
@@ -384,7 +354,7 @@ class InlineFormattingContext {
       final reserves = _computePerLineReserve(paragraph);
       if (reserves.isEmpty) break;
       bool ok = true;
-      if (debugLogInlineLayoutEnabled) {
+      if (DebugFlags.debugLogInlineLayoutEnabled) {
         for (int i = 0; i < lines.length && i < reserves.length; i++) {
           renderingLogger.finer('[IFC] line[$i] width=${lines[i].width.toStringAsFixed(2)} '
               '+ reserve=${reserves[i].toStringAsFixed(2)} '
@@ -427,7 +397,7 @@ class InlineFormattingContext {
       paragraph.layout(ui.ParagraphConstraints(width: chosen));
     }
 
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       renderingLogger.fine('[IFC] reserve trailing extras (all lines): width '
           '${maxW.toStringAsFixed(2)} → ${chosen.toStringAsFixed(2)}');
     }
@@ -524,7 +494,7 @@ class InlineFormattingContext {
     }
     if (_forceRightExtrasOwners.isNotEmpty) {
       _suppressAllRightExtras = false;
-      if (debugLogInlineLayoutEnabled) {
+      if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.fine('[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners');
       }
       _buildAndLayoutParagraph(constraints);
@@ -654,7 +624,7 @@ class InlineFormattingContext {
       context.paintChild(paintBox, offset + contentLocalOffset);
     }
 
-    if (debugPaintInlineLayoutEnabled) {
+    if (DebugFlags.debugPaintInlineLayoutEnabled) {
       _debugPaintParagraph(context, offset);
     }
   }
@@ -1014,7 +984,7 @@ class InlineFormattingContext {
   // Build and layout a Paragraph from collected inline items
   void _buildAndLayoutParagraph(BoxConstraints constraints) {
     final style = (container as RenderBoxModel).renderStyle;
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       renderingLogger.fine('[IFC] PASS ${_suppressAllRightExtras ? '1' : '2'}: '
           'suppressRightExtras=${_suppressAllRightExtras} forceRightCount=${_forceRightExtrasOwners.length}');
     }
@@ -1048,7 +1018,7 @@ class InlineFormattingContext {
     // Track an inline element stack to record ranges
     final List<RenderBoxModel> elementStack = [];
 
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       // Log high-level container info
       renderingLogger.fine('[IFC] Build paragraph: maxWidth=${constraints.maxWidth.toStringAsFixed(2)} '
           'dir=${style.direction} textAlign=${style.textAlign} lineClamp=${style.lineClamp}');
@@ -1057,7 +1027,7 @@ class InlineFormattingContext {
     // Record overflow flags for debugging
     final CSSOverflowType containerOverflowX = style.effectiveOverflowX;
     final CSSOverflowType containerOverflowY = style.effectiveOverflowY;
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       renderingLogger.fine('[IFC] overflow flags: overflowX=$containerOverflowX overflowY=$containerOverflowY');
     }
 
@@ -1111,7 +1081,7 @@ class InlineFormattingContext {
           paraPos += 1; // account for placeholder char
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
           frame.leftFlushed = true;
-          if (debugLogInlineLayoutEnabled) {
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
             final effLH = _effectiveLineHeightPx(rs);
             renderingLogger.finer('[IFC] open extras <${_getElementDescription(frame.box)}> '
                 'leftExtras=${frame.leftExtras.toStringAsFixed(2)} '
@@ -1139,7 +1109,7 @@ class InlineFormattingContext {
           }
           final o = p.renderStyle.effectiveOverflowX;
           if (o == CSSOverflowType.scroll || o == CSSOverflowType.auto) {
-            if (debugLogInlineLayoutEnabled) {
+            if (DebugFlags.debugLogInlineLayoutEnabled) {
               final t = p.renderStyle.target.tagName.toLowerCase();
               renderingLogger.fine('[IFC] ancestor scroll-x detected at <$t> overflowX=$o');
             }
@@ -1213,7 +1183,7 @@ class InlineFormattingContext {
             openFrames.add(_OpenInlineFrame(rb, leftExtras: leftExtras, rightExtras: rightExtras));
           }
           pb.pushStyle(_uiTextStyleFromCss(st));
-          if (debugLogInlineLayoutEnabled) {
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
             final fam = st.fontFamily;
             final fs = st.fontSize.computedValue;
             renderingLogger.finer('[IFC] pushStyle <${_getElementDescription(rb)}> fontSize=${fs.toStringAsFixed(2)} family=${fam?.join(',') ?? 'default'}');
@@ -1230,7 +1200,7 @@ class InlineFormattingContext {
         }
         if (item.style != null) {
           pb.pop();
-          if (debugLogInlineLayoutEnabled) {
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
             renderingLogger.finer('[IFC] popStyle </${_getElementDescription(item.renderBox!)}>');
           }
           // Handle right extras or merged extras for empty spans
@@ -1257,11 +1227,11 @@ class InlineFormattingContext {
                         baseline: TextBaseline.alphabetic, baselineOffset: bo);
                     paraPos += 1;
                     _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
-                    if (debugLogInlineLayoutEnabled) {
+                    if (DebugFlags.debugLogInlineLayoutEnabled) {
                       renderingLogger.finer('[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
                           'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
                     }
-                  } else if (debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
+                  } else if (DebugFlags.debugLogInlineLayoutEnabled && frame.rightExtras > 0) {
                     renderingLogger.finer('[IFC] suppress right extras placeholder for </${_getElementDescription(frame.box)}> '
                         '(pass=${_suppressAllRightExtras ? '1' : '2'})');
                   }
@@ -1278,12 +1248,12 @@ class InlineFormattingContext {
                       baseline: TextBaseline.alphabetic, baselineOffset: bo);
                   paraPos += 1;
                   _allPlaceholders.add(_InlinePlaceholder.emptySpan(frame.box, merged));
-                  if (debugLogInlineLayoutEnabled) {
+                  if (DebugFlags.debugLogInlineLayoutEnabled) {
                     renderingLogger.finer('[IFC] empty span extras <${_getElementDescription(frame.box)}>'
                         ' merged=${merged.toStringAsFixed(2)}');
                   }
                 } else {
-                  if (debugLogInlineLayoutEnabled) {
+                  if (DebugFlags.debugLogInlineLayoutEnabled) {
                     renderingLogger.finer('[IFC] suppress empty span placeholder for '
                         '<${_getElementDescription(frame.box)}> (no padding/border/margins)');
                   }
@@ -1334,7 +1304,7 @@ class InlineFormattingContext {
         _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
         paraPos += 1; // placeholder adds a single object replacement char
 
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           final bw = rb.boxSize?.width ?? (rb.hasSize ? rb.size.width : 0.0);
           final bh = rb.boxSize?.height ?? (rb.hasSize ? rb.size.height : 0.0);
           renderingLogger.finer('[IFC] placeholder <${_getElementDescription(rb)}> borderBox=(${bw.toStringAsFixed(2)}x${bh.toStringAsFixed(2)}) '
@@ -1361,7 +1331,7 @@ class InlineFormattingContext {
         pb.addText(text);
         pb.pop();
         paraPos += text.length;
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           final t = text.replaceAll('\n', '\\n');
           renderingLogger.finer('[IFC] addText len=${text.length} at=$paraPos "$t"');
         }
@@ -1380,7 +1350,7 @@ class InlineFormattingContext {
         pb.addText(text);
         pb.pop();
         paraPos += text.length;
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           final t = text.replaceAll('\n', '\\n');
           renderingLogger.finer('[IFC] addCtrl len=${text.length} at=$paraPos "$t"');
         }
@@ -1489,14 +1459,14 @@ class InlineFormattingContext {
         if (_preferZeroWidthShaping) {
           initialWidth = 0.0;
           _shapedWithZeroWidth = true;
-          if (debugLogInlineLayoutEnabled) {
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
             renderingLogger.fine('[IFC] respect zero maxWidth for shaping (has breaks)');
           }
         } else {
           initialWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
               ? fallbackContentMaxWidth
               : 1000000.0;
-          if (debugLogInlineLayoutEnabled) {
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
             renderingLogger.fine('[IFC] avoid zero-width shaping for unbreakable text; '
                 'use fallback=${initialWidth.toStringAsFixed(2)}');
           }
@@ -1510,11 +1480,11 @@ class InlineFormattingContext {
     // paragraph's visual longest line.
     if (_avoidWordBreakInScrollableX) {
       initialWidth = 1000000.0;
-      if (debugLogInlineLayoutEnabled) {
+      if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.fine('[IFC] ancestor horizontal scroll → shape wide initialWidth=${initialWidth.toStringAsFixed(2)}');
       }
     }
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       renderingLogger.fine('[IFC] initialWidth=${initialWidth.toStringAsFixed(2)} '
           '(bounded=${constraints.hasBoundedWidth}, maxW=${constraints.maxWidth.toStringAsFixed(2)}, '
           'fallback=${(fallbackContentMaxWidth ?? 0).toStringAsFixed(2)})');
@@ -1544,12 +1514,12 @@ class InlineFormattingContext {
           final double targetWidth = (fallbackContentMaxWidth != null && fallbackContentMaxWidth > 0)
               ? fallbackContentMaxWidth
               : paragraph.longestLine;
-          if (debugLogInlineLayoutEnabled) {
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
             renderingLogger.fine('[IFC] block-like reflow with fallback width '
                 '${targetWidth.toStringAsFixed(2)} (had maxWidth=${constraints.maxWidth})');
           }
           paragraph.layout(ui.ParagraphConstraints(width: targetWidth));
-        } else if (debugLogInlineLayoutEnabled) {
+        } else if (DebugFlags.debugLogInlineLayoutEnabled) {
           renderingLogger.fine('[IFC] keep zero-width shaping for block-like container');
         }
       }
@@ -1568,7 +1538,7 @@ class InlineFormattingContext {
     _placeholderBoxes = paragraph.getBoxesForPlaceholders();
     _paraCharCount = paraPos; // record final character count
 
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       // Try to extract intrinsic widths when available on this engine.
       double? minIntrinsic;
       double? maxIntrinsic;
@@ -1650,7 +1620,7 @@ class InlineFormattingContext {
         final child = item.renderBox!;
         if (laidOut.contains(child)) continue;
         final constraints = child.getConstraints();
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           renderingLogger.finer('[IFC] layout atomic <${_getElementDescription(child is RenderBoxModel ? child : null)}>'
               ' constraints=${constraints.toString()}');
         }
@@ -1746,7 +1716,7 @@ class InlineFormattingContext {
           final lm = _paraLines[currentLineIndex];
           final double baseTop = lm.baseline - mBaseline;
           final double baseBottom = baseTop + mHeight;
-          if (debugLogInlineLayoutEnabled && ((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
+          if (DebugFlags.debugLogInlineLayoutEnabled && ((top - baseTop).abs() > 0.5 || (bottom - baseBottom).abs() > 0.5)) {
             renderingLogger.finer('    [metrics] span frag to content band: '
                 'top ${top.toStringAsFixed(2)}→${baseTop.toStringAsFixed(2)} '
                 'bottom ${bottom.toStringAsFixed(2)}→${baseBottom.toStringAsFixed(2)}');
@@ -1804,7 +1774,7 @@ class InlineFormattingContext {
 
         final rect = Rect.fromLTRB(left, top, right, bottom).shift(offset);
 
-        if (debugLogInlineLayoutEnabled) {
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
           final bool drawTop = (bT > 0);
           final bool drawBottom = (bB > 0);
           final bool drawLeft = (isFirst && bL > 0);
@@ -1853,7 +1823,7 @@ class InlineFormattingContext {
       }
     }
 
-    if (debugLogInlineLayoutEnabled) {
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
       for (final e in entries) {
         for (int i = 0; i < e.rects.length; i++) {
           final tb = e.rects[i];
