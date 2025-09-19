@@ -711,12 +711,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
 
       // 3) Honor explicit flex-basis for intrinsic sizing in the main axis.
-      //    When flex-basis is not 'auto' AND greater than 0, it should guide intrinsic
-      //    measurement along the main axis. Do NOT tighten to 0, as that collapses
-      //    items like `flex: 1 1 0` and prevents content-based sizing per spec
-      //    (min-size:auto -> min-content size applies when the main size is auto).
+      //    Per CSS Flexbox, the flex base size is the used value of flex-basis when it
+      //    is a definite length. This includes 0. For percentage flex-basis with an
+      //    indefinite main size, _getFlexBasis() returns null to defer to content sizing.
+      //    We therefore clamp the main-axis constraints to the numeric basis whenever
+      //    it’s non-null (including 0), letting later min-size:auto enforcement raise
+      //    the size if needed.
       double? basis = _getFlexBasis(child);
-      if (basis != null && basis > 0) {
+      if (basis != null) {
         if (_isHorizontalFlexDirection) {
           c = BoxConstraints(
             minWidth: basis,
@@ -2259,8 +2261,10 @@ class RenderFlexLayout extends RenderLayoutBox {
     // after cross-axis width becomes definite is required for correct text wrapping.
     if (preserveMainAxisSize != null && childFlexedMainSize == null) {
       if (_isHorizontalFlexDirection) {
-        // Only tighten width when width is auto (no explicit width) and child is not replaced.
-        if (child.renderStyle.width.isAuto && !child.renderStyle.isSelfRenderReplaced()) {
+        // Preserve base main size for non-flexed items.
+        // If a definite flex-basis is specified, it overrides width per spec.
+        final bool hasDefiniteFlexBasis = _getFlexBasis(child) != null;
+        if (hasDefiniteFlexBasis || (child.renderStyle.width.isAuto && !child.renderStyle.isSelfRenderReplaced())) {
           double clamped = preserveMainAxisSize.clamp(0, maxConstraintWidth);
           minConstraintWidth = clamped;
           maxConstraintWidth = clamped;

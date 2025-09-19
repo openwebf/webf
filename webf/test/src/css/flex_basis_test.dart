@@ -179,6 +179,28 @@ void main() {
       expect(item2.offsetWidth, equals(200.0)); // 2/3 of 300px
     });
 
+    testWidgets('flex-basis 0 overrides width', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-basis-zero-overrides-width-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <p>Test passes if there is a filled green square and <strong>no red</strong>.</p>
+              <div id="container" style="background-color: green; display: flex; width: 100px; height: 100px;">
+                <div id="test" style="background-color: red; flex-basis: 0; width: 100px; height: 100px;"></div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final testDiv = prepared.getElementById('test');
+      // Even though width is 100px, flex-basis: 0 must produce a 0 used main size when not flexing.
+      expect(testDiv.offsetWidth, equals(0.0));
+      expect(testDiv.offsetHeight, equals(100.0));
+    });
+
     testWidgets('should respect min/max constraints', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
