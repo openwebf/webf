@@ -1474,11 +1474,10 @@ class InlineFormattingContext {
       }
     }
 
-    // If an ancestor has horizontal scrolling, shape with a very large width
-    // to avoid forced wrapping. The container itself will still size to its
-    // own constraints (e.g., 100px), and overflow/scroll metrics will use the
-    // paragraph's visual longest line.
-    if (_avoidWordBreakInScrollableX) {
+    // If an ancestor has horizontal scrolling and our width is unbounded,
+    // shape with a very large width to avoid forced wrapping. Do not override
+    // bounded widths (e.g., flex items): those should wrap to the available width.
+    if (_avoidWordBreakInScrollableX && !constraints.hasBoundedWidth) {
       initialWidth = 1000000.0;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.fine('[IFC] ancestor horizontal scroll → shape wide initialWidth=${initialWidth.toStringAsFixed(2)}');
