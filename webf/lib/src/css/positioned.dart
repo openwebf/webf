@@ -605,10 +605,10 @@ class CSSPositionedLayout {
         ? contentAreaX
         : staticPositionOffset.dx;
 
-    // For vertical axis: always use the true normal-flow static position (handles first-child case).
-    double correctedY = shouldUseAccurateVerticalPosition
-        ? _calculateTrueVerticalStaticPosition(placeholder, parent, staticPositionOffset)
-        : staticPositionOffset.dy;
+    // Vertical axis: when both top and bottom are auto, use the placeholder's
+    // laid-out position plus the element's own margin-top. The placeholder
+    // offset is already aligned to the following in-flow sibling by Flow.
+    double correctedY = staticPositionOffset.dy + (shouldUseAccurateVerticalPosition ? child.renderStyle.marginTop.computedValue : 0);
 
     return Offset(correctedX, correctedY);
   }

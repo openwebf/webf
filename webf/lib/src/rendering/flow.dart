@@ -368,6 +368,12 @@ class RenderFlowLayout extends RenderLayoutBox {
     // calculate all flexItem child overflow size
     addOverflowLayoutFromChildren(nonPositionedChildren);
 
+    // Optionally adjust placeholders' offsets to align with the next in-flow sibling
+    // so that static-position for absolutely positioned elements anchors next to
+    // following normal-flow content. This offset is only used by positioned layout
+    // and does not affect normal-flow layout (placeholders remain 0×0 and skipped).
+    _alignPositionPlaceholdersToFollowingSiblings();
+
     // Set offset of positioned element after flex box size is set.
     for (RenderBoxModel child in positionedChildren) {
       Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
@@ -413,6 +419,41 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     didLayout();
+  }
+
+  // Move each position placeholder vertically to the offset of its first
+  // following in-flow sibling (skipping other placeholders and positioned boxes).
+  // This provides a stable anchor for absolute static-position (top/bottom:auto)
+  // that matches browsers: abspos element sits near the subsequent content.
+  void _alignPositionPlaceholdersToFollowingSiblings() {
+    RenderBox? child = firstChild;
+    while (child != null) {
+      if (child is RenderPositionPlaceholder) {
+        final RenderLayoutParentData phPD = child.parentData as RenderLayoutParentData;
+        RenderBox? sib = phPD.nextSibling;
+        RenderLayoutParentData? anchorPD;
+        while (sib != null) {
+          if (sib is RenderPositionPlaceholder) {
+            sib = (sib.parentData as RenderLayoutParentData).nextSibling;
+            continue;
+          }
+          if (sib is RenderBoxModel && sib.renderStyle.isSelfPositioned()) {
+            sib = (sib.parentData as RenderLayoutParentData).nextSibling;
+            continue;
+          }
+          if (sib.parentData is RenderLayoutParentData) {
+            anchorPD = sib.parentData as RenderLayoutParentData;
+          }
+          break;
+        }
+        if (anchorPD != null) {
+          // Align placeholder Y to the anchor's laid-out Y within this container.
+          phPD.offset = Offset(phPD.offset.dx, anchorPD.offset.dy);
+        }
+      }
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      child = pd.nextSibling;
+    }
   }
 
   void _setContainerSizeFromIFC(Size ifcSize) {
@@ -707,6 +748,10 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       // Iterate run children to update prevCollapsedBottom and capture first child margins.
       for (final RenderBox child in run.runChildren) {
+        // Out-of-flow placeholders must not participate in sibling margin collapsing.
+        if (child is RenderPositionPlaceholder) {
+          continue;
+        }
         RenderBoxModel? childRenderBoxModel;
         if (child is RenderBoxModel) {
           childRenderBoxModel = child;
@@ -741,7 +786,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             firstTopCaptured = true;
           }
 
-          // Advance prevCollapsedBottom for following siblings in this run.
+          // Advance prevCollapsedBottom for following in-flow siblings in this run.
           prevCollapsedBottom = getChildMarginBottom(childRenderBoxModel);
         }
       }
@@ -994,10 +1039,12 @@ class RenderFlowLayout extends RenderLayoutBox {
         double? childMarginBottom = 0;
 
         RenderBoxModel? childRenderBoxModel;
+        final bool isPlaceholder = child is RenderPositionPlaceholder;
         if (child is RenderBoxModel) {
           childRenderBoxModel = child;
-        } else if (child is RenderPositionPlaceholder) {
-          childRenderBoxModel = child.positioned;
+        } else if (isPlaceholder) {
+          // Do not let out-of-flow placeholders affect sibling margin collapsing.
+          childRenderBoxModel = null;
         }
 
         if (childRenderBoxModel is RenderBoxModel) {
@@ -1048,6 +1095,11 @@ class RenderFlowLayout extends RenderLayoutBox {
                 ' collapsedTop=' + ownTopInExtent.toStringAsFixed(2) +
                 ' collapsedBottom=' + (childMarginBottom ?? 0).toStringAsFixed(2));
           }
+        } else {
+          // Placeholder: zero margins for collapsing purposes.
+          childMarginLeft = (childMarginLeft ?? 0);
+          childMarginTop = 0;
+          childMarginBottom = 0;
         }
 
         // No need to add padding and border for scrolling content box.
@@ -1066,8 +1118,8 @@ class RenderFlowLayout extends RenderLayoutBox {
 
         childMainPosition += childMainAxisExtent + childBetweenSpace;
 
-        // Update previous collapsed bottom margin for next sibling in the run
-        if (childMarginBottom != null) {
+        // Update previous collapsed bottom margin for next in-flow sibling in the run
+        if (childMarginBottom != null && childRenderBoxModel != null) {
           prevCollapsedBottom = childMarginBottom;
         }
       }
