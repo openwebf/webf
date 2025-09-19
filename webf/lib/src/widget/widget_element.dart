@@ -274,6 +274,11 @@ abstract class WebFWidgetElementState extends State<WebFWidgetElement> {
   }
 
   @override
+  String toStringShort() {
+    return '${super.toStringShort()} $widgetElement';
+  }
+
+  @override
   void dispose() {
     widgetElement._removeWidgetElementState(this);
     super.dispose();
@@ -320,7 +325,7 @@ class WebFWidgetElementAdapterState extends dom.WebFElementWidgetState {
 
     List<Widget> children = [child];
 
-    widgetElement.fixedPositionElements.forEach((element) {
+    widgetElement.outOfFlowPositionedElements.forEach((element) {
       children.add(element.toWidget());
     });
 

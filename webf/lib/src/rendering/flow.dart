@@ -174,7 +174,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   @override
   void performPaint(PaintingContext context, Offset offset) {
-    // If using inline formatting context, delegate painting to it
+    // If using inline formatting context, delegate painting to it first.
     if (establishIFC && _inlineFormattingContext != null) {
       // Calculate content offset (adjust for padding and border)
       final contentOffset = Offset(
@@ -191,134 +191,38 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Paint the inline formatting context content
       _inlineFormattingContext!.paint(context, contentOffset);
 
-      // Paint positioned descendants with scroll-clip awareness. This ensures
-      // abspos/fixed under empty inline wrappers still render, while avoiding
-      // bypassing nested scroll-container clips.
-      _paintPositionedDescendantsWithClipGuard(context, offset);
-    } else {
-      // Regular flow layout painting: skip RenderTextBox unless it paints itself (non-IFC)
-      for (int i = 0; i < paintingOrder.length; i++) {
-        RenderBox child = paintingOrder[i];
-        bool shouldPaint = !isPositionPlaceholder(child);
-
-        // Skip text boxes that are handled by IFC, but paint text boxes that paint themselves
-        if (child is RenderTextBox) {
-          shouldPaint = shouldPaint && (child as RenderTextBox).paintsSelf;
+      // Paint positioned direct children in proper stacking order.
+      for (final RenderBox child in paintingOrder) {
+        if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+          final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+          if (child.hasSize) context.paintChild(child, pd.offset + offset);
         }
+      }
+      return;
+    }
 
-        if (shouldPaint) {
-          final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-          if (child.hasSize) {
-            if (DebugFlags.debugLogFlowEnabled) {
-              String name;
-              if (child is RenderBoxModel) {
-                name = child.renderStyle.target.tagName.toLowerCase();
-              } else {
-                name = child.runtimeType.toString();
-              }
-              final dx = (childParentData.offset + offset).dx.toStringAsFixed(2);
-              final dy = (childParentData.offset + offset).dy.toStringAsFixed(2);
-              renderingLogger.finer('[Flow] paint <$name> at ($dx,$dy) size='
-                  '(${child.size.width.toStringAsFixed(2)}x${child.size.height.toStringAsFixed(2)})');
-            }
-            context.paintChild(child, childParentData.offset + offset);
-          } else if (DebugFlags.debugLogFlowEnabled) {
-            String name;
-            if (child is RenderBoxModel) {
-              name = child.renderStyle.target.tagName.toLowerCase();
-            } else {
-              name = child.runtimeType.toString();
-            }
-            renderingLogger.finer('[Flow] skip paint <$name>: hasSize=false');
-          }
+    // Regular flow layout painting: skip RenderTextBox unless it paints itself (non-IFC)
+    for (int i = 0; i < paintingOrder.length; i++) {
+      RenderBox child = paintingOrder[i];
+      bool shouldPaint = !isPositionPlaceholder(child);
+
+      // Skip text boxes that are handled by IFC, but paint text boxes that paint themselves
+      if (child is RenderTextBox) {
+        shouldPaint = shouldPaint && (child as RenderTextBox).paintsSelf;
+      }
+
+      if (shouldPaint) {
+        final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
+        if (child.hasSize) {
+          context.paintChild(child, childParentData.offset + offset);
         }
       }
     }
   }
 
-  // Paint positioned descendants while guarding against bypassing scroll clips.
-  // Stop recursion when encountering a scroll container (overflow != visible)
-  // other than this container; descendants inside will be painted (and clipped)
-  // by that container's own paint path.
-  void _paintPositionedDescendantsWithClipGuard(PaintingContext context, Offset offset) {
-    final RenderBoxModel self = this;
-
-    void maybePaintPositioned(RenderBox node) {
-      if (node is! RenderBoxModel) return;
-      if (!node.renderStyle.isSelfPositioned()) return;
-
-      // Choose paint target: wrapper if present, to keep backgrounds/borders aligned.
-      RenderBox paintTarget = node;
-      final RenderObject? parent = node.parent;
-      if (parent is RenderEventListener) paintTarget = parent;
-
-      // Compute offset of paintTarget relative to this container.
-      Offset rel = Offset.zero;
-      if (paintTarget is RenderBoxModel) {
-        // Measure relative to the ancestor's border-box origin; do not subtract
-        // ancestor border, otherwise we miss border widths in final paint offsets.
-        rel = paintTarget.getOffsetToAncestor(Offset.zero, self, excludeScrollOffset: false, excludeAncestorBorderTop: false);
-      } else if (paintTarget is RenderEventListener) {
-        rel = (paintTarget as RenderBoxModel)
-            .getOffsetToAncestor(Offset.zero, self, excludeScrollOffset: false, excludeAncestorBorderTop: false);
-      }
-
-      if (paintTarget.hasSize) {
-        if (DebugFlags.debugLogFlowEnabled) {
-          final String name = paintTarget is RenderBoxModel
-              ? paintTarget.renderStyle.target.tagName.toLowerCase()
-              : paintTarget.runtimeType.toString();
-          renderingLogger.finer('[Flow] paint positioned <$name> at '
-              '(${(offset + rel).dx.toStringAsFixed(2)},${(offset + rel).dy.toStringAsFixed(2)}) size='
-              '(${paintTarget.size.width.toStringAsFixed(2)}x${paintTarget.size.height.toStringAsFixed(2)})');
-        }
-        context.paintChild(paintTarget, offset + rel);
-      } else if (DebugFlags.debugLogFlowEnabled) {
-        final String name = paintTarget is RenderBoxModel
-            ? paintTarget.renderStyle.target.tagName.toLowerCase()
-            : paintTarget.runtimeType.toString();
-        renderingLogger.finer('[Flow] skip paint positioned <$name>: hasSize=false');
-      }
-    }
-
-    bool isScrollContainer(RenderBox box) {
-      if (box is RenderBoxModel) {
-        return box.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
-            box.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
-      }
-      return false;
-    }
-
-    // DFS from each direct child, but do not recurse into nested scroll containers.
-    void dfs(RenderBox root) {
-      // Do not traverse into nested scroll containers to preserve their clipping.
-      if (root != self && isScrollContainer(root)) {
-        return;
-      }
-
-      // Paint positioned node at this level if any.
-      maybePaintPositioned(root);
-
-      // Recurse to children
-      if (root is ContainerRenderObjectMixin<RenderBox, ContainerBoxParentData<RenderBox>>) {
-        RenderBox? c = (root as dynamic).firstChild;
-        while (c != null) {
-          dfs(c);
-          c = (root as dynamic).childAfter(c);
-        }
-      } else if (root is RenderObjectWithChildMixin<RenderBox>) {
-        final RenderBox? c = (root as dynamic).child;
-        if (c != null) dfs(c);
-      }
-    }
-
-    RenderBox? child = firstChild;
-    while (child != null) {
-      dfs(child);
-      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
-      child = pd.nextSibling;
-    }
-  }
+  // Removed nested DFS positioned painting. With positioned elements
+  // reparented to their containing block, painting simply iterates
+  // direct children as needed.
 
   @override
   void performLayout() {
@@ -406,20 +310,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     // and does not affect normal-flow layout (placeholders remain 0×0 and skipped).
     _alignPositionPlaceholdersToFollowingSiblings();
 
-    // Set offset of positioned element after flex box size is set.
+    // Apply offset for positioned elements that are direct children (containing block = this).
     for (RenderBoxModel child in positionedChildren) {
-      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
-      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
-
-      if (child.renderStyle.position == CSSPositionType.absolute) {
-        containingBlockElement.attachedRenderer!.positionedChildren.add(child);
-        if (!containingBlockElement.attachedRenderer!.needsLayout) {
-          CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
-        }
-      } else {
-        CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      }
-      // Position of positioned element affect the scroll size of container.
+      CSSPositionedLayout.applyPositionedChildOffset(this, child);
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
     }

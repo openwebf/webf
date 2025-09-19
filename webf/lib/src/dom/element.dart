@@ -521,13 +521,13 @@ abstract class Element extends ContainerNode
   /// Normally element in scroll box will not repaint on scroll because of repaint boundary optimization
   /// So it needs to manually mark element needs paint and add scroll offset in paint stage
   void _applyFixedChildrenOffset(double scrollOffset, AxisDirection axisDirection) {
-    // Only root element has fixed children.
-    for (Element fixedElement in fixedPositionElements) {
-      // Save scrolling offset for paint
+    // Only apply scroll-compensation to fixed-positioned descendants.
+    for (Element positioned in outOfFlowPositionedElements) {
+      if (positioned.renderStyle.position != CSSPositionType.fixed) continue;
       if (axisDirection == AxisDirection.down) {
-        fixedElement.attachedRenderer?.additionalPaintOffsetY = scrollOffset;
+        positioned.attachedRenderer?.additionalPaintOffsetY = scrollOffset;
       } else if (axisDirection == AxisDirection.right) {
-        fixedElement.attachedRenderer?.additionalPaintOffsetX = scrollOffset;
+        positioned.attachedRenderer?.additionalPaintOffsetX = scrollOffset;
       }
     }
   }
@@ -569,13 +569,28 @@ abstract class Element extends ContainerNode
     // changes between static and relative.
     if (currentPosition == CSSPositionType.absolute ||
         currentPosition == CSSPositionType.sticky) {
-      // Find the renderBox of its containing block.
-      Element? containingBlockElement = getContainingBlockElement();
+      // Determine new containing block and attach there.
+      Element? newContainingBlockElement = getContainingBlockElement();
+      if (newContainingBlockElement == null) return;
 
-      if (containingBlockElement == null) return;
+      // If previously attached to a different containing block as positioned, remove it.
+      if (holderAttachedContainingBlockElement != null &&
+          holderAttachedContainingBlockElement != newContainingBlockElement) {
+        holderAttachedContainingBlockElement!.removeOutOfFlowPositionedElement(this);
+        holderAttachedContainingBlockElement!.renderStyle
+            .requestWidgetToRebuild(UpdateChildNodeUpdateReason());
+      }
 
-      renderStyle.requestWidgetToRebuild(
-          ToPositionPlaceHolderUpdateReason(positionedElement: this, containingBlockElement: containingBlockElement));
+      // Keep placeholder at original location for static-position anchor.
+      renderStyle.requestWidgetToRebuild(ToPositionPlaceHolderUpdateReason(
+          positionedElement: this, containingBlockElement: newContainingBlockElement));
+
+      // Ensure the actual positioned renderObject is a direct child of the containing block.
+      // Avoid duplicate attachment if it already exists.
+      if (!newContainingBlockElement.outOfFlowPositionedElements.contains(this)) {
+        newContainingBlockElement.renderStyle.requestWidgetToRebuild(
+            AttachPositionedChild(positionedElement: this, containingBlockElement: newContainingBlockElement));
+      }
     } else if (currentPosition == CSSPositionType.fixed) {
       // Find the renderBox of its containing block.
       Element? containingBlockElement = getContainingBlockElement();
@@ -589,9 +604,12 @@ abstract class Element extends ContainerNode
 
       Element? elementNeedsToRebuild;
 
-      if (oldPosition == CSSPositionType.fixed) {
+      if (oldPosition == CSSPositionType.fixed ||
+          oldPosition == CSSPositionType.absolute ||
+          oldPosition == CSSPositionType.sticky) {
+        // Remove from the (previous) containing block's positioned list.
         Element? containingBlockElement = getContainingBlockElement(positionType: oldPosition);
-        containingBlockElement?.removeFixedPositionedElement(this);
+        containingBlockElement?.removeOutOfFlowPositionedElement(this);
         elementNeedsToRebuild = containingBlockElement;
       } else {
         elementNeedsToRebuild = parentElement;
@@ -698,7 +716,7 @@ abstract class Element extends ContainerNode
     ownerDocument.clearElementStyleDirty(this);
     holderAttachedPositionedElement = null;
     holderAttachedContainingBlockElement = null;
-    clearFixedPositionedElements();
+    clearOutOfFlowPositionedElements();
     _beforeElement?.dispose();
     _beforeElement = null;
     _afterElement?.dispose();
@@ -805,8 +823,10 @@ abstract class Element extends ContainerNode
     super.disconnectedCallback();
     _updateIDMap(null, oldID: _id);
     _updateNameMap(null, oldName: getAttribute(_nameAttr));
-    if (renderStyle.position == CSSPositionType.fixed || renderStyle.position == CSSPositionType.absolute) {
-      holderAttachedContainingBlockElement?.removeFixedPositionedElement(this);
+    if (renderStyle.position == CSSPositionType.fixed ||
+        renderStyle.position == CSSPositionType.absolute ||
+        renderStyle.position == CSSPositionType.sticky) {
+      holderAttachedContainingBlockElement?.removeOutOfFlowPositionedElement(this);
       holderAttachedContainingBlockElement?.renderStyle.requestWidgetToRebuild(UpdateChildNodeUpdateReason());
     }
     _connectedCompleter = null;

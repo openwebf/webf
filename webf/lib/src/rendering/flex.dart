@@ -1003,20 +1003,9 @@ class RenderFlexLayout extends RenderLayoutBox {
       _layoutPositionPlaceholder(child);
     }
 
-    // Set offset of positioned element after flex box size is set.
+    // Apply offset for positioned elements that are direct children (containing block = this).
     for (RenderBoxModel child in _positionedChildren) {
-      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
-      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
-
-      if (child.renderStyle.position == CSSPositionType.absolute) {
-        containingBlockElement.attachedRenderer!.positionedChildren.add(child);
-        if (!containingBlockElement.attachedRenderer!.needsLayout) {
-          CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
-        }
-      } else {
-        CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      }
-      // Position of positioned element affect the scroll size of container.
+      CSSPositionedLayout.applyPositionedChildOffset(this, child);
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
     }

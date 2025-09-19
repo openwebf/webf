@@ -40,36 +40,37 @@ class ScreenEvent {
 }
 
 mixin ElementAdapterMixin on ElementBase {
-  final List<Element> _fixedPositionElements = [];
+  // Holds out-of-flow positioned descendants (absolute, sticky, fixed)
+  final List<Element> _outOfFlowPositionedElements = [];
 
   // Track the screen state and event queue
   final List<ScreenEvent> _screenEventQueue = [];
   bool _isProcessingQueue = false;
 
   @flutter.immutable
-  List<Element> get fixedPositionElements => _fixedPositionElements;
+  List<Element> get outOfFlowPositionedElements => _outOfFlowPositionedElements;
 
-  void addFixedPositionedElement(Element newElement) {
+  void addOutOfFlowPositionedElement(Element newElement) {
     assert(() {
-      if (_fixedPositionElements.contains(newElement)) {
-        throw FlutterError('Found repeat element in $_fixedPositionElements for $newElement');
+      if (_outOfFlowPositionedElements.contains(newElement)) {
+        throw FlutterError('Found repeat element in $_outOfFlowPositionedElements for $newElement');
       }
 
       return true;
     }());
-    _fixedPositionElements.add(newElement);
+    _outOfFlowPositionedElements.add(newElement);
   }
 
-  Element? getFixedPositionedElementByIndex(int index) {
-    return (index >= 0 && index < _fixedPositionElements.length ? _fixedPositionElements[index] : null);
+  Element? getOutOfFlowPositionedElementByIndex(int index) {
+    return (index >= 0 && index < _outOfFlowPositionedElements.length ? _outOfFlowPositionedElements[index] : null);
   }
 
-  void removeFixedPositionedElement(Element element) {
-    _fixedPositionElements.remove(element);
+  void removeOutOfFlowPositionedElement(Element element) {
+    _outOfFlowPositionedElements.remove(element);
   }
 
-  void clearFixedPositionedElements() {
-    _fixedPositionElements.clear();
+  void clearOutOfFlowPositionedElements() {
+    _outOfFlowPositionedElements.clear();
   }
 
   // Rendering this element as an RenderPositionHolder
@@ -206,11 +207,12 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           if (node is Element &&
               (node.renderStyle.position == CSSPositionType.absolute ||
                   node.renderStyle.position == CSSPositionType.sticky)) {
+            // Keep the placeholder in normal flow to capture the original layout offset
+            // but do NOT add the actual positioned element here. It will be attached
+            // directly under its containing block during that element's build.
             if (node.holderAttachedPositionedElement != null) {
               children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
             }
-
-            children.add(node.toWidget());
             continue;
           } else if (node is Element && node.renderStyle.position == CSSPositionType.fixed) {
             children.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
@@ -256,7 +258,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           }
         }
       }
-      for (final positionedElement in webFElement.fixedPositionElements) {
+      for (final positionedElement in webFElement.outOfFlowPositionedElements) {
         children.add(positionedElement.toWidget());
       }
     }
@@ -514,18 +516,16 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
             if (isFlexContainer) {
               flushInlineGroup();
               result.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-              result.add(node.toWidget());
             } else {
               currentInlineGroup.add(PositionPlaceHolder(node.holderAttachedPositionedElement!, node));
-              currentInlineGroup.add(node.toWidget());
             }
           } else {
             // For flex containers, absolutely positioned elements don't participate in flex layout
             if (isFlexContainer) {
               flushInlineGroup();
-              result.add(node.toWidget());
+              // The actual positioned renderObject is attached to the containing block; skip here.
             } else {
-              currentInlineGroup.add(node.toWidget());
+              // The actual positioned renderObject is attached to the containing block; skip here.
             }
           }
           continue;
@@ -666,7 +666,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           if (child.holderAttachedPositionedElement != null) {
             pendingInlineGroup.add(PositionPlaceHolder(child.holderAttachedPositionedElement!, child));
           }
-          pendingInlineGroup.add(child.toWidget());
+          // The actual positioned element will be attached to its containing block; skip here.
           continue;
         } else if (pos == CSSPositionType.fixed) {
           pendingInlineGroup.add(PositionPlaceHolder(child.holderAttachedPositionedElement!, child));
@@ -1036,6 +1036,13 @@ class _PositionedPlaceHolderElement extends flutter.SingleChildRenderObjectEleme
   void mount(flutter.Element? parent, Object? newSlot) {
     super.mount(parent, newSlot);
     widget.selfElement.positionHolderElements.add(this);
+    // If the positioned element's renderObject is already mounted (e.g., attached
+    // under its containing block earlier in this frame), connect the placeholder now.
+    final RenderBoxModel? rbm = widget.positionedElement.renderStyle.attachedRenderBoxModel;
+    if (rbm != null) {
+      rbm.renderPositionPlaceholder = renderObject as RenderPositionPlaceholder;
+      (renderObject as RenderPositionPlaceholder).positioned = rbm;
+    }
   }
 
   @override

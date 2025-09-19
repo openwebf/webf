@@ -107,6 +107,69 @@ class RenderWidget extends RenderBoxModel
     CSSPositionedLayout.applyRelativeOffset(offset, child);
   }
 
+  // Compute painting order similar to RenderLayoutBox: negative z-index first,
+  // then normal children, then stacking children sorted by z-index.
+  List<RenderBox> _computePaintingOrder() {
+    if (childCount == 0) return const [];
+    if (childCount == 1) return <RenderBox>[firstChild as RenderBox];
+
+    List<RenderBox> normal = [];
+    List<RenderBox> negative = [];
+    List<RenderBoxModel> stacking = [];
+
+    visitChildren((RenderObject c) {
+      if (c is RenderBoxModel) {
+        final rs = c.renderStyle;
+        if (rs.zIndex != null && rs.zIndex! < 0) {
+          negative.add(c);
+        } else if (rs.needsStacking) {
+          stacking.add(c);
+        } else {
+          normal.add(c);
+        }
+      } else {
+        normal.add(c as RenderBox);
+      }
+    });
+
+    stacking.sort((a, b) => ((a.renderStyle.zIndex ?? 0) <= (b.renderStyle.zIndex ?? 0)) ? -1 : 1);
+
+    final List<RenderBox> ordered = [];
+    ordered.addAll(negative);
+    ordered.addAll(normal);
+    ordered.addAll(stacking);
+    return ordered;
+  }
+
+  List<RenderBox>? _cachedPaintingOrder;
+
+  List<RenderBox> get paintingOrder {
+    _cachedPaintingOrder ??= _computePaintingOrder();
+    return _cachedPaintingOrder!;
+  }
+
+  void markChildrenNeedsSort() {
+    _cachedPaintingOrder = null;
+  }
+
+  @override
+  void insert(RenderBox child, {RenderBox? after}) {
+    super.insert(child, after: after);
+    _cachedPaintingOrder = null;
+  }
+
+  @override
+  void remove(RenderBox child) {
+    super.remove(child);
+    _cachedPaintingOrder = null;
+  }
+
+  @override
+  void move(RenderBox child, {RenderBox? after}) {
+    super.move(child, after: after);
+    _cachedPaintingOrder = null;
+  }
+
   @override
   void performLayout() {
     beforeLayout();
@@ -143,17 +206,7 @@ class RenderWidget extends RenderBoxModel
     }
 
     for (RenderBoxModel child in _positionedChildren) {
-      Element? containingBlockElement = child.renderStyle.target.getContainingBlockElement();
-      if (containingBlockElement == null || containingBlockElement.attachedRenderer == null) continue;
-
-      if (child.renderStyle.position == CSSPositionType.absolute) {
-        containingBlockElement.attachedRenderer!.positionedChildren.add(child);
-        if (!containingBlockElement.attachedRenderer!.needsLayout) {
-          CSSPositionedLayout.applyPositionedChildOffset(containingBlockElement.attachedRenderer!, child);
-        }
-      } else {
-        CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      }
+      CSSPositionedLayout.applyPositionedChildOffset(this, child);
     }
 
     // // Calculate the offset of its sticky children.
@@ -233,18 +286,10 @@ class RenderWidget extends RenderBoxModel
       }
     }
 
-    RenderBox? child = firstChild;
-    while (child != null) {
-      final RenderLayoutParentData childParentData = child.parentData as RenderLayoutParentData;
-
-      Offset childPaintOffset = childParentData.offset;
-      if (child is RenderBoxModel && child.renderStyle.position == CSSPositionType.fixed) {
-        Offset totalScrollOffset = getTotalScrollOffset();
-        childPaintOffset += totalScrollOffset;
-      }
-
-      context.paintChild(child, offset + childPaintOffset);
-      child = childParentData.nextSibling;
+    for (final RenderBox child in paintingOrder) {
+      if (isPositionPlaceholder(child)) continue;
+      final RenderLayoutParentData pd = child.parentData as RenderLayoutParentData;
+      if (child.hasSize) context.paintChild(child, offset + pd.offset);
     }
   }
 

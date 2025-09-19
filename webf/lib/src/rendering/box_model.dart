@@ -163,8 +163,8 @@ abstract class RenderBoxModel extends RenderBox
     _needsRecalculateStyle = true;
   }
 
-  // Cached positioned children for apply offsets when self had layout
-  final Set<RenderBoxModel> positionedChildren = {};
+  // Positioned children are now handled directly during the containing
+  // block's layout; no cached set is maintained at this level.
 
   @override
   String toStringShort() {
@@ -831,12 +831,6 @@ abstract class RenderBoxModel extends RenderBox
 
   // Hooks when content box had layout.
   void didLayout() {
-    for (RenderBoxModel child in positionedChildren) {
-      if (child.attached) {
-        CSSPositionedLayout.applyPositionedChildOffset(this, child);
-      }
-    }
-
     scrollableViewportSize = constraints.constrain(Size(
         _contentSize!.width + renderStyle.paddingLeft.computedValue + renderStyle.paddingRight.computedValue,
         _contentSize!.height + renderStyle.paddingTop.computedValue + renderStyle.paddingBottom.computedValue));
@@ -1098,7 +1092,7 @@ abstract class RenderBoxModel extends RenderBox
     // Evict render decoration image cache.
     renderStyle.backgroundImage?.image?.evict();
 
-    positionedChildren.clear();
+    // no-op: no positioned children cache
   }
 
   Offset getTotalScrollOffset() {

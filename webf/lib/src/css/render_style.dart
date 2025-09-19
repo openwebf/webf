@@ -462,7 +462,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
         target.holderAttachedContainingBlockElement = null;
         break;
       case AttachPositionedChild:
-        target.addFixedPositionedElement((reason as AttachPositionedChild).positionedElement);
+        target.addOutOfFlowPositionedElement((reason as AttachPositionedChild).positionedElement);
         break;
       default:
         break;
@@ -978,6 +978,8 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
   void markChildrenNeedsSort() {
     everyAttachedWidgetRenderBox((_, renderBoxModel) {
       if (renderBoxModel is RenderLayoutBox) {
+        renderBoxModel.markChildrenNeedsSort();
+      } else if (renderBoxModel is RenderWidget) {
         renderBoxModel.markChildrenNeedsSort();
       }
 

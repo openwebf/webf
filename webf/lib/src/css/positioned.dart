@@ -360,15 +360,10 @@ class CSSPositionedLayout {
           '(${adjustedStaticPosition.dx.toStringAsFixed(2)},${adjustedStaticPosition.dy.toStringAsFixed(2)})');
     }
 
+    // Child renderObject is reparented under its containing block at build time,
+    // and staticPositionOffset is already measured relative to the containing block.
+    // No additional ancestor offset adjustment is needed.
     Offset ancestorOffset = Offset.zero;
-
-    if (child.renderStyle.position == CSSPositionType.absolute) {
-      bool containingBlockEqualToParent = child.renderStyle.target.parentElement == parent.renderStyle.target;
-      if (!containingBlockEqualToParent) {
-        ancestorOffset = child.renderStyle.target.parentElement!.attachedRenderer?.getOffsetToAncestor(Offset.zero, parent,
-                    excludeScrollOffset: true, excludeAncestorBorderTop: false) ?? Offset.zero;
-      }
-    }
 
     // ScrollTop and scrollLeft will be added to offset of renderBox in the paint stage
     // for positioned fixed element.
