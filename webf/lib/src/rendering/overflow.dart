@@ -6,6 +6,7 @@
 import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/css.dart';
 import 'package:webf/gesture.dart';
 
@@ -36,18 +37,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return true;
     }
 
-    // Overflow value other than 'visible' always need to clip content.
+    // Per spec, overflow other than 'visible' establishes a clipping context at the
+    // padding edge. Always clip in this case so translated scroll contents (non-zero
+    // paint offset) cannot bleed outside the container, even when the content size
+    // currently fits within the viewport. This also ensures inner padding is honored.
     // https://www.w3.org/TR/css-overflow-3/#overflow-properties
     CSSOverflowType effectiveOverflowX = renderStyle.effectiveOverflowX;
     if (effectiveOverflowX != CSSOverflowType.visible) {
-      Size scrollableSize = renderBoxModel.scrollableSize;
-      Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
-      // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.width > scrollableViewportSize.width ||
-          borderRadius != null ||
-          (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.left < 0)) {
-        return true;
-      }
+      return true;
     }
 
     return false;
@@ -64,18 +61,14 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
       return true;
     }
 
-    // Overflow value other than 'visible' always need to clip content.
+    // Always clip when overflow is not 'visible' to enforce the padding-edge
+    // clipping boundary regardless of current content size. This prevents text
+    // or children from painting outside the container when scrolled and ensures
+    // padding acts as the inner clip inset.
     // https://www.w3.org/TR/css-overflow-3/#overflow-properties
     CSSOverflowType effectiveOverflowY = renderStyle.effectiveOverflowY;
     if (effectiveOverflowY != CSSOverflowType.visible) {
-      Size scrollableSize = renderBoxModel.scrollableSize;
-      Size scrollableViewportSize = renderBoxModel.scrollableViewportSize;
-      // Border-radius always to clip inner content when overflow is not visible.
-      if (scrollableSize.height > scrollableViewportSize.height ||
-          borderRadius != null ||
-          (renderBoxModel.overflowRect != null && renderBoxModel.overflowRect!.top < 0)) {
-        return true;
-      }
+      return true;
     }
     return false;
   }
@@ -109,6 +102,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     assert(scrollListener != null);
     // If scroll is happening, that element has been unmounted, prevent null usage.
     if (scrollOffsetX != null) {
+      if (debugLogFlowEnabled) {
+        final double maxX = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+        renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
+            '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
+      }
       scrollListener!(scrollOffsetX!.pixels, AxisDirection.right);
       markNeedsPaint();
     }
@@ -117,6 +115,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   void scrollYListener() {
     assert(scrollListener != null);
     if (scrollOffsetY != null) {
+      if (debugLogFlowEnabled) {
+        final double maxY = math.max(0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
+        renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
+            '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
+      }
       scrollListener!(scrollOffsetY!.pixels, AxisDirection.down);
       markNeedsPaint();
     }
@@ -137,12 +140,29 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
 
     _scrollableSize = scrollableSize;
     _viewportSize = viewportSize;
+    // Debug: report setup parameters
+    if (debugLogFlowEnabled) {
+      renderingLogger.finer('[Overflow-Setup] <${renderStyle.target.tagName.toLowerCase()}> '
+          'viewport=${viewportSize.width.toStringAsFixed(2)}×${viewportSize.height.toStringAsFixed(2)} '
+          'scrollable=${scrollableSize.width.toStringAsFixed(2)}×${scrollableSize.height.toStringAsFixed(2)} '
+          'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY}');
+    }
     if (_scrollOffsetX != null) {
       _setUpScrollX();
+      if (debugLogFlowEnabled) {
+        final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
+        renderingLogger.finer('[Overflow-Setup]   X controller maxScroll=${maxX.toStringAsFixed(2)} '
+            'viewportW=${_viewportSize!.width.toStringAsFixed(2)} contentW=${_scrollableSize!.width.toStringAsFixed(2)}');
+      }
     }
 
     if (_scrollOffsetY != null) {
       _setUpScrollY();
+      if (debugLogFlowEnabled) {
+        final double maxY = math.max(0.0, _scrollableSize!.height - _viewportSize!.height);
+        renderingLogger.finer('[Overflow-Setup]   Y controller maxScroll=${maxY.toStringAsFixed(2)} '
+            'viewportH=${_viewportSize!.height.toStringAsFixed(2)} contentH=${_scrollableSize!.height.toStringAsFixed(2)}');
+      }
     }
   }
   double get _paintOffsetX {

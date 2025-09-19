@@ -52,6 +52,23 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   
   bool get _paintsSelf => paintsSelf;
 
+  // Measure the full text size for a given available width without being clipped by
+  // the parent's height constraints. This is used by scroll container sizing to
+  // determine scrollable overflow, especially when the parent does not establish IFC.
+  Size computeFullTextSizeForWidth(double maxWidth) {
+    // Reuse span building to keep style consistent with actual painting.
+    final span = _buildTextSpan();
+    final tp = TextPainter(
+      text: span,
+      textAlign: renderStyle.textAlign,
+      textDirection: renderStyle.direction,
+      ellipsis: (renderStyle.effectiveTextOverflow == TextOverflow.ellipsis) ? '…' : null,
+      maxLines: renderStyle.lineClamp, // honor line-clamp if any
+    );
+    tp.layout(minWidth: 0, maxWidth: maxWidth.isFinite ? maxWidth : double.infinity);
+    return Size(tp.width, tp.height);
+  }
+
   TextSpan _buildTextSpan() {
     // Phase I whitespace processing to approximate CSS behavior outside IFC
     final processed = WhitespaceProcessor.processPhaseOne(_data, renderStyle.whiteSpace);

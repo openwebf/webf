@@ -1326,6 +1326,29 @@ class RenderFlowLayout extends RenderLayoutBox {
             childOffsetX = transformOffset.dx > 0 ? childOffsetX + transformOffset.dx : childOffsetX;
             childOffsetY = transformOffset.dy > 0 ? childOffsetY + transformOffset.dy : childOffsetY;
           }
+        } else if (child is RenderTextBox) {
+          // When the container is a scroll container (overflow not visible), a text
+          // child should contribute its full laid-out height (across all lines) to the
+          // scrollable size rather than the clipped box height. Measure text height
+          // using the container's content width.
+          final bool containerScrolls = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+              renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+          if (containerScrolls) {
+            final double availW = (contentConstraints?.maxWidth.isFinite == true)
+                ? contentConstraints!.maxWidth
+                : (constraints.hasBoundedWidth ? constraints.maxWidth : double.infinity);
+            final Size textFull = child.computeFullTextSizeForWidth(availW.isFinite ? availW : (getChildSize(child)?.width ?? 0));
+            // Width contribution should not exceed the available content width.
+            final double usedW = getChildSize(child)?.width ?? math.min(textFull.width, availW.isFinite ? availW : textFull.width);
+            childScrollableSize = Size(usedW, textFull.height);
+            if (debugLogFlowEnabled) {
+              renderingLogger.finer('[Flow-Scroll] text child fullSize=${textFull.width.toStringAsFixed(2)}×${textFull.height.toStringAsFixed(2)} '
+                  'usedW=${usedW.toStringAsFixed(2)} availW=${(availW.isFinite ? availW : double.infinity).toStringAsFixed(2)}');
+            }
+          } else {
+            // Not a scroll container: use the actual box size.
+            childScrollableSize = getChildSize(child) ?? Size.zero;
+          }
         }
 
         scrollableMainSizeOfChildren.add(preSiblingsMainSize + childScrollableSize.width + childOffsetX);
@@ -1374,9 +1397,9 @@ class RenderFlowLayout extends RenderLayoutBox {
     }
 
     // Max scrollable main size of all lines.
-    double maxScrollableMainSizeOfLines = scrollableMainSizeOfLines.reduce((double curr, double next) {
-      return curr > next ? curr : next;
-    });
+    double maxScrollableMainSizeOfLines = scrollableMainSizeOfLines.isEmpty
+        ? 0.0
+        : scrollableMainSizeOfLines.reduce((double curr, double next) => curr > next ? curr : next);
 
     RenderBoxModel container = this;
     bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
@@ -1392,8 +1415,13 @@ class RenderFlowLayout extends RenderLayoutBox {
     // that are already included in run.crossAxisExtent and inter-run collapsing logic.
     final double collapsedCrossStack = _getRunsCrossSizeWithCollapse(_lineMetrics);
 
-    // Padding in the end direction of axis should be included in scroll container.
-    double maxScrollableCrossSizeOfChildren = collapsedCrossStack +
+    // Compute cross-axis scrollable size from measured child scrollable heights rather than
+    // from the laid-out run cross extents. This ensures text inside scroll containers
+    // contributes its full height (beyond clipped layout) to the scroll area.
+    final double linesCrossMax = scrollableCrossSizeOfLines.isEmpty
+        ? 0.0
+        : scrollableCrossSizeOfLines.reduce((double curr, double next) => curr > next ? curr : next);
+    double maxScrollableCrossSizeOfChildren = linesCrossMax +
         renderStyle.paddingTop.computedValue +
         (isScrollContainer ? renderStyle.paddingBottom.computedValue : 0);
 
