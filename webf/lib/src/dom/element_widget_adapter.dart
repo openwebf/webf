@@ -264,8 +264,11 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
     flutter.Widget widget;
 
     if (webFElement.hasScroll) {
-      CSSOverflowType overflowX = webFElement.renderStyle.overflowX;
-      CSSOverflowType overflowY = webFElement.renderStyle.overflowY;
+      // Use effective overflow values so that when one axis is 'visible'
+      // and the other is non-visible, the 'visible' side computes to 'auto'
+      // per CSS Overflow spec. This ensures correct bi-axis scrollability.
+      CSSOverflowType overflowX = webFElement.renderStyle.effectiveOverflowX;
+      CSSOverflowType overflowY = webFElement.renderStyle.effectiveOverflowY;
 
       flutter.Widget? scrollableX;
       if (overflowX == CSSOverflowType.scroll ||
@@ -316,7 +319,8 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                         return NestedScrollCoordinator(
                             axis: flutter.Axis.horizontal,
                             controller: webFElement.scrollControllerX!,
-                            enabled: (webFElement.renderStyle.overflowX != CSSOverflowType.hidden),
+                            // Base on effective overflow to honor visible->auto conversion
+                            enabled: (webFElement.renderStyle.effectiveOverflowX != CSSOverflowType.hidden),
                             child: flutter.Scrollable(
                                 controller: webFElement.scrollControllerX,
                                 axisDirection: AxisDirection.right,
