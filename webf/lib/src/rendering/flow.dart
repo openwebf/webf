@@ -1408,18 +1408,21 @@ class RenderFlowLayout extends RenderLayoutBox {
         renderStyle.paddingLeft.computedValue +
         (isScrollContainer ? renderStyle.paddingRight.computedValue : 0);
 
-    // Collapsed vertical stack height across runs (accounts for inter-run margin collapsing
-    // and matches the positioning used during layout). This avoids double-counting margins
-    // that are already included in run.crossAxisExtent and inter-run collapsing logic.
+    // Prefer collapsed stack height to avoid double-counting margins between block siblings.
+    // For the special case of a single RenderTextBox child inside a scroll container,
+    // use the measured full text height to capture multi-line overflow.
     final double collapsedCrossStack = _getRunsCrossSizeWithCollapse(_lineMetrics);
+    bool singleRunTextOnly = _lineMetrics.length == 1 &&
+        _lineMetrics.first.runChildren.length == 1 &&
+        _lineMetrics.first.runChildren.first is RenderTextBox;
 
-    // Compute cross-axis scrollable size from measured child scrollable heights rather than
-    // from the laid-out run cross extents. This ensures text inside scroll containers
-    // contributes its full height (beyond clipped layout) to the scroll area.
     final double linesCrossMax = scrollableCrossSizeOfLines.isEmpty
         ? 0.0
         : scrollableCrossSizeOfLines.reduce((double curr, double next) => curr > next ? curr : next);
-    double maxScrollableCrossSizeOfChildren = linesCrossMax +
+
+    final double chosenCross = singleRunTextOnly ? linesCrossMax : collapsedCrossStack;
+
+    double maxScrollableCrossSizeOfChildren = chosenCross +
         renderStyle.paddingTop.computedValue +
         (isScrollContainer ? renderStyle.paddingBottom.computedValue : 0);
 

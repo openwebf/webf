@@ -1436,10 +1436,18 @@ class InlineFormattingContext {
     bool _hasAtomicInlines = _items.any((it) => it.isAtomicInline);
     bool _hasExplicitBreaks = _items.any((it) => it.type == InlineItemType.control || it.type == InlineItemType.lineBreakOpportunity);
     bool _hasWhitespaceInText = false;
+    bool _hasInteriorWhitespaceInText = false;
     for (final it in _items) {
       if (it.isText) {
         final t = it.getText(_textContent);
-        if (_containsSoftWrapWhitespace(t)) { _hasWhitespaceInText = true; break; }
+        if (_containsSoftWrapWhitespace(t)) { _hasWhitespaceInText = true; }
+        // Detect interior (between non-space) soft wrap whitespace, not just leading/trailing
+        if (!_hasInteriorWhitespaceInText) {
+          if (RegExp(r"\S\s+\S").hasMatch(t)) {
+            _hasInteriorWhitespaceInText = true;
+          }
+        }
+        if (_hasWhitespaceInText && _hasInteriorWhitespaceInText) break;
       }
     }
     final bool _preferZeroWidthShaping = _hasAtomicInlines || _hasExplicitBreaks || _hasWhitespaceInText;
@@ -1474,10 +1482,13 @@ class InlineFormattingContext {
       }
     }
 
-    // If an ancestor has horizontal scrolling and our width is unbounded,
-    // shape with a very large width to avoid forced wrapping. Do not override
-    // bounded widths (e.g., flex items): those should wrap to the available width.
-    if (_avoidWordBreakInScrollableX && !constraints.hasBoundedWidth) {
+    // If an ancestor has horizontal scrolling and there are no interior
+    // whitespace break opportunities (e.g., a single long word/number),
+    // shape very wide to avoid forced word breaking; let it overflow X and
+    // be scrolled. For regular sentences (with interior spaces), keep
+    // bounded shaping so they wrap normally.
+    final bool _wideShapeForScrollableX = _avoidWordBreakInScrollableX && !_hasInteriorWhitespaceInText;
+    if (_wideShapeForScrollableX) {
       initialWidth = 1000000.0;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.fine('[IFC] ancestor horizontal scroll → shape wide initialWidth=${initialWidth.toStringAsFixed(2)}');
