@@ -529,25 +529,18 @@ class InlineFormattingContext {
       _paintInlineSpanDecorations(context, offset);
       context.canvas.drawParagraph(para, offset);
     } else {
-      for (int i = 0; i < _paraLines.length; i++) {
-        final lm = _paraLines[i];
-        final double lineTop = lm.baseline - lm.ascent;
-        final double lineBottom = lm.baseline + lm.descent;
-
-        // Paint only the decorations belonging to this line
-        _paintInlineSpanDecorations(context, offset, lineTop: lineTop, lineBottom: lineBottom);
-
-        // Determine aggregate right-extras shift for multi-line owners that end on this line.
-        double shiftSum = 0.0;
-        double boundaryX = lm.left; // rightmost boundary among owners on this line
-        if (_elementRanges.isNotEmpty && _allPlaceholders.isNotEmpty) {
-          final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
-          for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
-            final ph = _allPlaceholders[p];
-            if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
-              hasRightPH.add(ph.owner!);
-            }
+      // Pre-scan lines to see if any requires right-side shifting for trailing extras.
+      bool anyShift = false;
+      if (_elementRanges.isNotEmpty) {
+        final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+        for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+          final ph = _allPlaceholders[p];
+          if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+            hasRightPH.add(ph.owner!);
           }
+        }
+        for (int i = 0; i < _paraLines.length && !anyShift; i++) {
+          double shiftSum = 0.0;
           _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
             if (range.$2 <= range.$1) return;
             if (hasRightPH.contains(box)) return; // single-line owners already accounted
@@ -558,46 +551,88 @@ class InlineFormattingContext {
             if (li != i) return;
             final s = box.renderStyle;
             final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
-            if (extraR > 0) {
-              shiftSum += extraR;
-              if (last.right > boundaryX) boundaryX = last.right;
-            }
+            if (extraR > 0) shiftSum += extraR;
           });
+          if (shiftSum > 0) anyShift = true;
         }
+      }
 
-        // Clip to the current line and paint the paragraph text for this band in up to two slices:
-        // [left..boundaryX] without shift, [boundaryX..right] shifted by total right-extras.
-        final double lineRight = lm.left + lm.width;
-        final double clipRight = math.max(para.width, lineRight + shiftSum);
-        final double lineClipTop = offset.dy + lineTop;
-        final double lineClipBottom = offset.dy + lineBottom;
-
-        // Left slice (no shift)
-        final Rect clipLeft = Rect.fromLTRB(
-          offset.dx,
-          lineClipTop,
-          offset.dx + boundaryX,
-          lineClipBottom,
-        );
-        context.canvas.save();
-        context.canvas.clipRect(clipLeft);
+      // If no line needs shifting for trailing extras, just paint decorations once and draw paragraph once.
+      // This avoids per-line paragraph re-draws which would otherwise cause text to appear thicker.
+      if (!anyShift) {
+        _paintInlineSpanDecorations(context, offset);
         context.canvas.drawParagraph(para, offset);
-        context.canvas.restore();
+      } else {
+        for (int i = 0; i < _paraLines.length; i++) {
+          final lm = _paraLines[i];
+          final double lineTop = lm.baseline - lm.ascent;
+          final double lineBottom = lm.baseline + lm.descent;
 
-        // Right slice (apply shift if needed)
-        final Rect clipRightRect = Rect.fromLTRB(
-          offset.dx + boundaryX + shiftSum,
-          lineClipTop,
-          offset.dx + clipRight,
-          lineClipBottom,
-        );
-        context.canvas.save();
-        context.canvas.clipRect(clipRightRect);
-        if (shiftSum != 0.0) {
-          context.canvas.translate(shiftSum, 0.0);
+          // Paint only the decorations belonging to this line
+          _paintInlineSpanDecorations(context, offset, lineTop: lineTop, lineBottom: lineBottom);
+
+          // Determine aggregate right-extras shift for multi-line owners that end on this line.
+          double shiftSum = 0.0;
+          double boundaryX = lm.left; // rightmost boundary among owners on this line
+           if (_elementRanges.isNotEmpty) {
+             final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+             for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+               final ph = _allPlaceholders[p];
+               if (ph.kind == _PHKind.rightExtra && ph.owner != null) {
+                 hasRightPH.add(ph.owner!);
+               }
+             }
+            _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+              if (range.$2 <= range.$1) return;
+              if (hasRightPH.contains(box)) return; // single-line owners already accounted
+              final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+              if (rects.isEmpty) return;
+              final last = rects.last;
+              final int li = _lineIndexForRect(last);
+              if (li != i) return;
+              final s = box.renderStyle;
+              final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+              if (extraR > 0) {
+                shiftSum += extraR;
+                if (last.right > boundaryX) boundaryX = last.right;
+              }
+            });
+          }
+
+          // Clip to the current line and paint the paragraph text for this band in up to two slices:
+          // [left..boundaryX] without shift, [boundaryX..right] shifted by total right-extras.
+          final double lineRight = lm.left + lm.width;
+          final double clipRight = math.max(para.width, lineRight + shiftSum);
+          final double lineClipTop = offset.dy + lineTop;
+          final double lineClipBottom = offset.dy + lineBottom;
+
+          // Left slice (no shift)
+          final Rect clipLeft = Rect.fromLTRB(
+            offset.dx,
+            lineClipTop,
+            offset.dx + boundaryX,
+            lineClipBottom,
+          );
+          context.canvas.save();
+          context.canvas.clipRect(clipLeft);
+          context.canvas.drawParagraph(para, offset);
+          context.canvas.restore();
+
+          // Right slice (apply shift if needed)
+          final Rect clipRightRect = Rect.fromLTRB(
+            offset.dx + boundaryX + shiftSum,
+            lineClipTop,
+            offset.dx + clipRight,
+            lineClipBottom,
+          );
+          context.canvas.save();
+          context.canvas.clipRect(clipRightRect);
+          if (shiftSum != 0.0) {
+            context.canvas.translate(shiftSum, 0.0);
+          }
+          context.canvas.drawParagraph(para, offset);
+          context.canvas.restore();
         }
-        context.canvas.drawParagraph(para, offset);
-        context.canvas.restore();
       }
     }
 
