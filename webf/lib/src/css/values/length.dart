@@ -126,16 +126,25 @@ class CSSLengthValue {
   double? _computedValue;
 
   static bool _isPercentageRelativeContainerRenderStyle(RenderStyle renderStyle) {
-    bool isBlockLevelBox = renderStyle.display == CSSDisplay.block || renderStyle.display == CSSDisplay.flex;
-    bool isBlockInlineHaveSize = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
-            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
-        renderStyle.width.value != null;
-    // Inline-block with auto width should also be a percentage container
-    // This follows CSS spec where inline-block establishes a containing block
-    bool isInlineBlockAutoWidth = (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock ||
-            renderStyle.effectiveDisplay == CSSDisplay.inlineFlex) &&
-        renderStyle.width.isAuto;
-    return isBlockLevelBox || isBlockInlineHaveSize || isInlineBlockAutoWidth;
+    // Use effectiveDisplay so that blockification/inlinification is respected
+    // per CSS Display spec. In particular, absolutely/fixed positioned boxes
+    // are blockified and should act as percentage containers for their
+    // positioned descendants.
+    final CSSDisplay eff = renderStyle.effectiveDisplay;
+
+    // Block-level containers establish percentage reference sizes.
+    final bool isBlockLevelBox = eff == CSSDisplay.block || eff == CSSDisplay.flex;
+
+    // Inline-block/inline-flex with explicit width also establish a percentage container.
+    final bool isInlineWithExplicitSize =
+        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex) && renderStyle.width.value != null;
+
+    // Inline-block/inline-flex with auto width still establish a containing block;
+    // percentages resolve against the available inline size determined by ancestors.
+    final bool isInlineBlockAutoWidth =
+        (eff == CSSDisplay.inlineBlock || eff == CSSDisplay.inlineFlex) && renderStyle.width.isAuto;
+
+    return isBlockLevelBox || isInlineWithExplicitSize || isInlineBlockAutoWidth;
   }
 
   // Whether the container has a definite inline (horizontal) size that
