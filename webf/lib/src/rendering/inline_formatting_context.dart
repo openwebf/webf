@@ -12,7 +12,9 @@ import 'dart:ui' as ui
         TextStyle,
         TextHeightBehavior,
         TextLeadingDistribution,
-        StrutStyle;
+        StrutStyle,
+        Path,
+        PathOperation;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -62,6 +64,13 @@ class InlineFormattingContext {
 
   // Placeholder boxes as reported by Paragraph, in the order placeholders were added.
   List<ui.TextBox> _placeholderBoxes = const [];
+  // For text-run placeholders (vertical-align on non-atomic text), store sub-paragraphs
+  // aligned by index with _allPlaceholders; null for non text-run placeholders.
+  List<ui.Paragraph?> _textRunParas = const [];
+  // Baseline offsets computed from a prior layout pass for text-run placeholders.
+  // Indexed by occurrence order of textRun placeholders only.
+  List<double>? _textRunBaselineOffsets;
+  int _textRunBuildIndex = 0;
 
   // For mapping placeholder index -> RenderBox (atomic inline items only)
   final List<RenderBox?> _placeholderOrder = [];
@@ -478,6 +487,8 @@ class InlineFormattingContext {
     _suppressAllRightExtras = true;
     _forceRightExtrasOwners.clear();
     _buildAndLayoutParagraph(constraints);
+    // Compute baseline offsets for text-run vertical-align placeholders (top/middle/bottom)
+    bool needsVARebuild = _computeTextRunBaselineOffsets();
 
     // Second pass: Only add right-extras placeholders for inline elements that
     // did NOT fragment across lines in pass 1. For fragmented spans, we rely on
@@ -498,12 +509,15 @@ class InlineFormattingContext {
         _forceRightExtrasOwners.add(box);
       }
     }
-    if (_forceRightExtrasOwners.isNotEmpty) {
+    if (_forceRightExtrasOwners.isNotEmpty || needsVARebuild) {
       _suppressAllRightExtras = false;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine('[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners');
+        renderingLogger.fine('[IFC] PASS 2: enable right extras for ${_forceRightExtrasOwners.length} single-line owners'
+            '${needsVARebuild ? ' + apply text-run baseline offsets' : ''}');
       }
       _buildAndLayoutParagraph(constraints);
+      // Clear offsets after they are consumed in PASS 2
+      _textRunBaselineOffsets = null;
     }
 
     // Compute size from paragraph
@@ -520,6 +534,54 @@ class InlineFormattingContext {
     // paint and hit testing can rely on the standard Flutter offset mechanism.
     _applyAtomicInlineParentDataOffsets();
     return Size(width, height);
+  }
+
+  // Compute baseline offsets for text-run placeholders from the current paragraph layout.
+  // Returns true if any offsets were computed (triggering a second build to apply them).
+  bool _computeTextRunBaselineOffsets() {
+    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return false;
+    // Count number of textRun placeholders and compute offsets in their encounter order.
+    final List<double> offsets = [];
+    bool any = false;
+    for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.textRun) continue;
+      final tb = _placeholderBoxes[i];
+      final int li = _lineIndexForRect(tb);
+      if (li < 0 || li >= _paraLines.length) { offsets.add(0.0); continue; }
+      final lm = _paraLines[li];
+      final double h = tb.bottom - tb.top;
+      // Determine desired alignment from the owner style
+      final va = ph.owner?.renderStyle.verticalAlign ?? VerticalAlign.baseline;
+      double baselineOffset;
+      switch (va) {
+        case VerticalAlign.top:
+        case VerticalAlign.textTop:
+          baselineOffset = lm.ascent;
+          break;
+        case VerticalAlign.bottom:
+        case VerticalAlign.textBottom:
+          baselineOffset = h - lm.descent;
+          break;
+        case VerticalAlign.middle:
+          baselineOffset = (lm.ascent - lm.descent + h) / 2.0;
+          break;
+        default:
+          // baseline (or others): keep baseline alignment with default sub-para baseline
+          baselineOffset = h; // fallback harmless value; will not be used if va==baseline
+          break;
+      }
+      offsets.add(baselineOffset);
+      if (va != VerticalAlign.baseline) any = true;
+      if (DebugFlags.debugLogInlineLayoutEnabled) {
+        renderingLogger.finer('[IFC] compute VA offset kind=textRun line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
+            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset.toStringAsFixed(2)}');
+      }
+    }
+    if (any) {
+      _textRunBaselineOffsets = offsets;
+    }
+    return any;
   }
 
   /// Paint the inline content.
@@ -563,9 +625,53 @@ class InlineFormattingContext {
         }
       }
 
-      // If no line needs shifting for trailing extras, just paint decorations once and draw paragraph once.
-      // This avoids per-line paragraph re-draws which would otherwise cause text to appear thicker.
-      if (!anyShift) {
+      // Collect per-line vertical-align adjustments for non-atomic inline spans (not needed when using
+      // text-run placeholders, but kept for future parity; remains empty in common paths).
+      final Map<int, List<(ui.TextBox tb, double dy)>> vaAdjust = <int, List<(ui.TextBox,double)>>{};
+      if (_elementRanges.isNotEmpty) {
+        _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+          final va = box.renderStyle.verticalAlign;
+          if (va == VerticalAlign.baseline) return;
+          if (range.$2 <= range.$1) return;
+          final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+          if (rects.isEmpty) return;
+          for (final tb in rects) {
+            final int li = _lineIndexForRect(tb);
+            if (li < 0 || li >= _paraLines.length) continue;
+            final (bandTop, bandBottom, _) = _bandForLine(li);
+            double dy = 0.0;
+            switch (va) {
+              case VerticalAlign.top:
+                dy = bandTop - tb.top;
+                break;
+              case VerticalAlign.bottom:
+                dy = bandBottom - tb.bottom;
+                break;
+              case VerticalAlign.middle:
+                final double lineMid = (bandTop + bandBottom) / 2.0;
+                final double boxMid = (tb.top + tb.bottom) / 2.0;
+                dy = lineMid - boxMid;
+                break;
+              default:
+                // Approximate text-top/text-bottom using line box top/bottom
+                dy = (va == VerticalAlign.textTop)
+                    ? (bandTop - tb.top)
+                    : (va == VerticalAlign.textBottom)
+                        ? (bandBottom - tb.bottom)
+                        : 0.0;
+                break;
+            }
+            if (dy.abs() > 0.01) {
+              (vaAdjust[li] ??= []).add((tb, dy));
+            }
+          }
+        });
+      }
+      final bool anyVAAdjust = vaAdjust.values.any((l) => l.isNotEmpty);
+
+      // If no line needs shifting for trailing extras, and no vertical-align adjustment,
+      // just paint decorations once and draw paragraph once.
+      if (!anyShift && !anyVAAdjust) {
         _paintInlineSpanDecorations(context, offset);
         context.canvas.drawParagraph(para, offset);
       } else {
@@ -605,40 +711,152 @@ class InlineFormattingContext {
             });
           }
 
-          // Clip to the current line and paint the paragraph text for this band in up to two slices:
-          // [left..boundaryX] without shift, [boundaryX..right] shifted by total right-extras.
+          // Build clip regions for normal paint (excluding vertical-align adjusted fragments)
           final double lineRight = lm.left + lm.width;
           final double clipRight = math.max(para.width, lineRight + shiftSum);
           final double lineClipTop = offset.dy + lineTop;
           final double lineClipBottom = offset.dy + lineBottom;
 
-          // Left slice (no shift)
-          final Rect clipLeft = Rect.fromLTRB(
+          final Rect leftBase = Rect.fromLTRB(
             offset.dx,
             lineClipTop,
             offset.dx + boundaryX,
             lineClipBottom,
           );
-          context.canvas.save();
-          context.canvas.clipRect(clipLeft);
-          context.canvas.drawParagraph(para, offset);
-          context.canvas.restore();
-
-          // Right slice (apply shift if needed)
-          final Rect clipRightRect = Rect.fromLTRB(
+          final Rect rightBase = Rect.fromLTRB(
             offset.dx + boundaryX + shiftSum,
             lineClipTop,
             offset.dx + clipRight,
             lineClipBottom,
           );
+
+          ui.Path _clipMinusVA(Rect base, bool isRightSlice) {
+            ui.Path p = ui.Path()..addRect(base);
+            final adj = vaAdjust[i] ?? const <(ui.TextBox,double)>[];
+            if (adj.isEmpty) return p;
+            ui.Path sub = ui.Path();
+            for (final (tb, _) in adj) {
+              final double xShift = isRightSlice ? shiftSum : 0.0;
+              final Rect r = Rect.fromLTRB(
+                offset.dx + tb.left + xShift,
+                offset.dy + tb.top,
+                offset.dx + tb.right + xShift,
+                offset.dy + tb.bottom,
+              );
+              if (r.overlaps(base)) sub.addRect(r.intersect(base));
+            }
+            if (sub.getBounds().isEmpty) return p;
+            return ui.Path.combine(ui.PathOperation.difference, p, sub);
+          }
+
+          // Left slice (no horizontal shift)
           context.canvas.save();
-          context.canvas.clipRect(clipRightRect);
+          context.canvas.clipPath(_clipMinusVA(leftBase, false));
+          context.canvas.drawParagraph(para, offset);
+          context.canvas.restore();
+
+          // Right slice (apply shift if needed)
+          context.canvas.save();
+          context.canvas.clipPath(_clipMinusVA(rightBase, true));
           if (shiftSum != 0.0) {
             context.canvas.translate(shiftSum, 0.0);
           }
           context.canvas.drawParagraph(para, offset);
           context.canvas.restore();
+
+          // Repaint vertical-align adjusted fragments with vertical translation (and horizontal if in right slice)
+          final adj = vaAdjust[i] ?? const <(ui.TextBox,double)>[];
+          for (final (tb, dy) in adj) {
+            final double leftPartRight = math.min(tb.right, boundaryX);
+            final double rightPartLeft = math.max(tb.left, boundaryX);
+
+            // Left portion (no x shift)
+            if (tb.left < boundaryX && leftPartRight > tb.left) {
+              final Rect target = Rect.fromLTRB(
+                offset.dx + tb.left,
+                offset.dy + tb.top + dy,
+                offset.dx + leftPartRight,
+                offset.dy + tb.bottom + dy,
+              );
+              context.canvas.save();
+              context.canvas.clipRect(target);
+              context.canvas.translate(0.0, dy);
+              context.canvas.drawParagraph(para, offset);
+              context.canvas.restore();
+            }
+            // Right portion (apply x shift)
+            if (tb.right > boundaryX && rightPartLeft < tb.right) {
+              final Rect target = Rect.fromLTRB(
+                offset.dx + rightPartLeft + shiftSum,
+                offset.dy + tb.top + dy,
+                offset.dx + tb.right + shiftSum,
+                offset.dy + tb.bottom + dy,
+              );
+              context.canvas.save();
+              context.canvas.clipRect(target);
+              context.canvas.translate(shiftSum, dy);
+              context.canvas.drawParagraph(para, offset);
+              context.canvas.restore();
+            }
+          }
         }
+      }
+    }
+
+    // Paint synthetic text-run placeholders (vertical-align on text spans)
+    if (_textRunParas.isNotEmpty && _allPlaceholders.isNotEmpty && _placeholderBoxes.isNotEmpty) {
+      // Precompute per-line boundary and shift for right-extras, mirroring the logic above
+      final List<(double boundaryX, double shiftSum)> lineShift = List.filled(_paraLines.length, (0.0, 0.0));
+      if (_elementRanges.isNotEmpty) {
+        final Set<RenderBoxModel> hasRightPH = <RenderBoxModel>{};
+        for (int p = 0; p < _allPlaceholders.length && p < _placeholderBoxes.length; p++) {
+          final ph = _allPlaceholders[p];
+          if (ph.kind == _PHKind.rightExtra && ph.owner != null) hasRightPH.add(ph.owner!);
+        }
+        for (int i = 0; i < _paraLines.length; i++) {
+          double boundaryX = _paraLines[i].left;
+          double shiftSum = 0.0;
+          _elementRanges.forEach((RenderBoxModel box, (int start, int end) range) {
+            if (range.$2 <= range.$1) return;
+            if (hasRightPH.contains(box)) return;
+            final rects = _paragraph!.getBoxesForRange(range.$1, range.$2);
+            if (rects.isEmpty) return;
+            final last = rects.last;
+            final int li = _lineIndexForRect(last);
+            if (li != i) return;
+            final s = box.renderStyle;
+            final double extraR = s.paddingRight.computedValue + s.effectiveBorderRightWidth.computedValue + s.marginRight.computedValue;
+            if (extraR > 0) {
+              if (last.right > boundaryX) boundaryX = last.right;
+              shiftSum += extraR;
+            }
+          });
+          lineShift[i] = (boundaryX, shiftSum);
+        }
+      }
+
+      for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length && i < _textRunParas.length; i++) {
+        final ph = _allPlaceholders[i];
+        final sub = _textRunParas[i];
+        if (ph.kind != _PHKind.textRun || sub == null) continue;
+        final tb = _placeholderBoxes[i];
+        final li = _lineIndexForRect(tb);
+        double xShift = 0.0;
+        if (li >= 0 && li < lineShift.length) {
+          final (boundaryX, shiftSum) = lineShift[li];
+          if (tb.right > boundaryX) xShift = shiftSum;
+        }
+        context.canvas.save();
+        // Clip to placeholder rect (with applied horizontal shift) to avoid overdraw
+        final Rect clip = Rect.fromLTRB(
+          offset.dx + tb.left + xShift,
+          offset.dy + tb.top,
+          offset.dx + tb.right + xShift,
+          offset.dy + tb.bottom,
+        );
+        context.canvas.clipRect(clip);
+        context.canvas.drawParagraph(sub, offset.translate(tb.left + xShift, tb.top));
+        context.canvas.restore();
       }
     }
 
@@ -1076,6 +1294,8 @@ class InlineFormattingContext {
 
     _placeholderOrder.clear();
     _allPlaceholders.clear();
+    _textRunParas = <ui.Paragraph?>[];
+    _textRunBuildIndex = 0;
     _elementRanges.clear();
     _measuredVisualSizes.clear();
     // Track open inline element frames for deferred extras handling
@@ -1148,6 +1368,7 @@ class InlineFormattingContext {
               baseline: TextBaseline.alphabetic, baselineOffset: bo);
           paraPos += 1; // account for placeholder char
           _allPlaceholders.add(_InlinePlaceholder.leftExtra(frame.box));
+          _textRunParas.add(null);
           frame.leftFlushed = true;
           if (DebugFlags.debugLogInlineLayoutEnabled) {
             final effLH = _effectiveLineHeightPx(rs);
@@ -1302,6 +1523,7 @@ class InlineFormattingContext {
                         baseline: TextBaseline.alphabetic, baselineOffset: bo);
                     paraPos += 1;
                     _allPlaceholders.add(_InlinePlaceholder.rightExtra(frame.box));
+                    _textRunParas.add(null);
                     if (DebugFlags.debugLogInlineLayoutEnabled) {
                       renderingLogger.finer('[IFC] add right extras placeholder for </${_getElementDescription(frame.box)}> '
                           'rightExtras=${frame.rightExtras.toStringAsFixed(2)}');
@@ -1323,6 +1545,7 @@ class InlineFormattingContext {
                       baseline: TextBaseline.alphabetic, baselineOffset: bo);
                   paraPos += 1;
                   _allPlaceholders.add(_InlinePlaceholder.emptySpan(frame.box, merged));
+                  _textRunParas.add(null);
                   if (DebugFlags.debugLogInlineLayoutEnabled) {
                     renderingLogger.finer('[IFC] empty span extras <${_getElementDescription(frame.box)}>'
                         ' merged=${merged.toStringAsFixed(2)}');
@@ -1377,6 +1600,7 @@ class InlineFormattingContext {
             baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
         _placeholderOrder.add(rb);
         _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
+        _textRunParas.add(null);
         paraPos += 1; // placeholder adds a single object replacement char
 
         if (DebugFlags.debugLogInlineLayoutEnabled) {
@@ -1402,13 +1626,57 @@ class InlineFormattingContext {
         if (_avoidWordBreakInScrollableX && _whiteSpaceEligibleForNoWordBreak(item.style!.whiteSpace)) {
           text = _insertWordJoinersForAsciiWords(text);
         }
-        pb.pushStyle(_uiTextStyleFromCss(item.style!));
-        pb.addText(text);
-        pb.pop();
-        paraPos += text.length;
-        if (DebugFlags.debugLogInlineLayoutEnabled) {
-          final t = text.replaceAll('\n', '\\n');
-          renderingLogger.finer('[IFC] addText len=${text.length} at=$paraPos "$t"');
+        // If the nearest enclosing inline element specifies vertical-align other than baseline,
+        // represent this text segment as a placeholder so Flutter positions it by alignment.
+        RenderBoxModel? ownerBox = elementStack.isNotEmpty ? elementStack.last : null;
+        final VerticalAlign ownerVA = ownerBox?.renderStyle.verticalAlign ?? VerticalAlign.baseline;
+        final bool usePlaceholderForText = ownerBox != null && ownerVA != VerticalAlign.baseline;
+        if (usePlaceholderForText) {
+          // Shape the text in its own paragraph to measure width/height.
+          final subPB = ui.ParagraphBuilder(ui.ParagraphStyle(
+            textDirection: style.direction,
+            textHeightBehavior: const ui.TextHeightBehavior(
+              applyHeightToFirstAscent: true,
+              applyHeightToLastDescent: true,
+              leadingDistribution: ui.TextLeadingDistribution.even,
+            ),
+          ));
+          subPB.pushStyle(_uiTextStyleFromCss(item.style!));
+          subPB.addText(text);
+          subPB.pop();
+          final subPara = subPB.build();
+          subPara.layout(const ui.ParagraphConstraints(width: 1000000.0));
+          final double phWidth = subPara.longestLine;
+          final double phHeight = subPara.height;
+          // Prefer baseline alignment with a precomputed baselineOffset when available from a prior pass,
+          // so we can align to line top/bottom/middle precisely.
+          final double? preOffset = _textRunBaselineOffsets != null && _textRunBuildIndex < (_textRunBaselineOffsets?.length ?? 0)
+              ? _textRunBaselineOffsets![_textRunBuildIndex]
+              : null;
+          if (preOffset != null) {
+            pb.addPlaceholder(phWidth, phHeight, ui.PlaceholderAlignment.baseline,
+                baseline: TextBaseline.alphabetic, baselineOffset: preOffset);
+          } else {
+            pb.addPlaceholder(phWidth, phHeight, _placeholderAlignmentFromCss(ownerVA));
+          }
+          paraPos += 1;
+          _allPlaceholders.add(_InlinePlaceholder.textRun(ownerBox!));
+          _textRunParas.add(subPara);
+          _textRunBuildIndex += 1;
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
+            final t = text.replaceAll('\n', '\\n');
+            renderingLogger.finer('[IFC] addText-as-placeholder len=${text.length} at=$paraPos "$t" '
+                'size=(${phWidth.toStringAsFixed(2)}x${phHeight.toStringAsFixed(2)}) va=$ownerVA');
+          }
+        } else {
+          pb.pushStyle(_uiTextStyleFromCss(item.style!));
+          pb.addText(text);
+          pb.pop();
+          paraPos += text.length;
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
+            final t = text.replaceAll('\n', '\\n');
+            renderingLogger.finer('[IFC] addText len=${text.length} at=$paraPos "$t"');
+          }
         }
       } else if (item.type == InlineItemType.control) {
         // Control characters (e.g., from <br>) act as hard line breaks.
@@ -2278,7 +2546,7 @@ class _OpenInlineFrame {
 
 // Placeholder descriptor to map paragraph placeholders back to owners
 // for both atomic inlines and extras (left/right).
-enum _PHKind { atomic, leftExtra, rightExtra, emptySpan }
+enum _PHKind { atomic, leftExtra, rightExtra, emptySpan, textRun }
 
 class _InlinePlaceholder {
   final _PHKind kind;
@@ -2291,6 +2559,7 @@ class _InlinePlaceholder {
   factory _InlinePlaceholder.rightExtra(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.rightExtra, owner: owner);
   factory _InlinePlaceholder.emptySpan(RenderBoxModel owner, double width) =>
       _InlinePlaceholder._(_PHKind.emptySpan, owner: owner, width: width);
+  factory _InlinePlaceholder.textRun(RenderBoxModel owner) => _InlinePlaceholder._(_PHKind.textRun, owner: owner);
 }
 
 class _SpanPaintEntry {
