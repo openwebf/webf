@@ -308,6 +308,11 @@ class InlineFormattingContext {
     // Do not shrink paragraph width in scrollable-X mode; we want a single line
     // with horizontal overflow rather than forced wrapping.
     if (_avoidWordBreakInScrollableX) return;
+    // Also skip shrinking when CSS white-space suppresses soft wrapping
+    // (nowrap or pre). In these modes, automatic line breaks must not be
+    // introduced by width shrinking; overflow should remain horizontal.
+    final WhiteSpace ws = (container as RenderBoxModel).renderStyle.whiteSpace;
+    if (ws == WhiteSpace.nowrap || ws == WhiteSpace.pre) return;
 
     double maxW = constraints.maxWidth;
 
@@ -1538,6 +1543,20 @@ class InlineFormattingContext {
       initialWidth = 1000000.0;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
         renderingLogger.fine('[IFC] ancestor horizontal scroll → shape wide initialWidth=${initialWidth.toStringAsFixed(2)}');
+      }
+    }
+
+    // CSS white-space: nowrap and white-space: pre both suppress automatic
+    // line wrapping. Lines only break at explicit line breaks (<br> or
+    // newline characters). To honor this, shape with a very wide width so
+    // that soft wrapping never occurs; the final content width is taken from
+    // the paragraph's longestLine, and painting/clipping is handled by the
+    // container.
+    final bool _noSoftWrap = style.whiteSpace == WhiteSpace.nowrap || style.whiteSpace == WhiteSpace.pre;
+    if (_noSoftWrap) {
+      initialWidth = 1000000.0;
+      if (DebugFlags.debugLogInlineLayoutEnabled) {
+        renderingLogger.fine('[IFC] white-space=${style.whiteSpace} → disable soft wrap; initialWidth=${initialWidth.toStringAsFixed(2)}');
       }
     }
     if (DebugFlags.debugLogInlineLayoutEnabled) {
