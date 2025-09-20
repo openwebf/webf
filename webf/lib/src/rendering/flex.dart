@@ -2248,9 +2248,12 @@ class RenderFlexLayout extends RenderLayoutBox {
         // If a definite flex-basis is specified, it overrides width per spec.
         final bool hasDefiniteFlexBasis = _getFlexBasis(child) != null;
         if (hasDefiniteFlexBasis || (child.renderStyle.width.isAuto && !child.renderStyle.isSelfRenderReplaced())) {
-          double clamped = preserveMainAxisSize.clamp(0, maxConstraintWidth);
-          minConstraintWidth = clamped;
-          maxConstraintWidth = clamped;
+          // Old constraints may reflect an earlier intrinsic pass that forced a tight
+          // width of 0 due to flex-basis: 0. Do not clamp the preserved size to that.
+          // Use the preserved main size directly, and let the child’s own min/max
+          // constraints (handled below) cap it if necessary.
+          minConstraintWidth = preserveMainAxisSize;
+          maxConstraintWidth = preserveMainAxisSize;
         }
       }
     }
