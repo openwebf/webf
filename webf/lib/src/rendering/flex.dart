@@ -664,20 +664,46 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
       } else {
         // Column direction: main axis vertical, cross axis is width.
-        // For intrinsic measurement of auto-width flex items, relax only the parent-imposed
-        // width cap while preserving the item's own definite max-width/min-width.
-        // This prevents runaway expansion to the container width but still honors
-        // author-specified constraints like max-width: 100px.
+        // For intrinsic measurement of auto-width flex items, prefer using the container's
+        // available cross-axis width when it is bounded (definite). This ensures inline
+        // content (IFC) inside the item wraps within the container width, matching browsers.
+        // When the container cross size is truly indefinite, relax to Infinity and let the
+        // content determine its own size (shrink-to-fit scenarios).
         if (!isReplaced && (s.width.isAuto || isFlexBasisContent)) {
           // Determine if the container has a definite cross size (width).
+          // Determine whether the flex container's cross size (width in column direction)
+          // is definite at this point. A width is definite if:
+          // - The container has a specified content-box width (CSS width), or
+          // - The container's contentConstraints report a tight width, or
+          // - The outer constraints are tight in width (e.g., fixed-size slot), AND the
+          //   container is not inline-flex with auto width (inline-flex shrink-to-fit should
+          //   be treated as indefinite during intrinsic measurement).
+          final bool isInlineFlexAuto =
+              renderStyle.effectiveDisplay == CSSDisplay.inlineFlex && renderStyle.width.isAuto;
           final bool containerCrossDefinite =
-              (renderStyle.contentBoxLogicalWidth != null) || (contentConstraints?.hasTightWidth ?? false);
+              (renderStyle.contentBoxLogicalWidth != null) ||
+              (contentConstraints?.hasTightWidth ?? false) ||
+              (constraints.hasTightWidth && !isInlineFlexAuto) ||
+              (((contentConstraints?.hasBoundedWidth ?? false) || constraints.hasBoundedWidth) && !isInlineFlexAuto);
 
           double newMaxW;
           if (containerCrossDefinite) {
-            // Clamp to the container's border-box width to ensure text wraps correctly.
-            double containerMaxBorderW = constraints.maxWidth.isFinite ? constraints.maxWidth : double.infinity;
-            newMaxW = containerMaxBorderW;
+            // Clamp to the container's available width. Prefer tight widths;
+            // otherwise, for non-inline-flex, a bounded width is acceptable for wrapping.
+            double boundedContainerW = double.infinity;
+            if (constraints.hasTightWidth && constraints.maxWidth.isFinite) {
+              boundedContainerW = constraints.maxWidth;
+            } else if ((contentConstraints?.hasTightWidth ?? false) && contentConstraints!.maxWidth.isFinite) {
+              boundedContainerW = contentConstraints!.maxWidth;
+            } else if (!isInlineFlexAuto) {
+              // Fall back to bounded (non-tight) width for block-level flex containers.
+              if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite) {
+                boundedContainerW = constraints.maxWidth;
+              } else if ((contentConstraints?.hasBoundedWidth ?? false) && contentConstraints!.maxWidth.isFinite) {
+                boundedContainerW = contentConstraints!.maxWidth;
+              }
+            }
+            newMaxW = boundedContainerW;
           } else {
             // No definite container width: let content determine size (shrink-to-fit scenarios).
             newMaxW = double.infinity;
