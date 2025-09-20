@@ -46,6 +46,8 @@ const Map<String, bool> _CSSShorthandProperty = {
 
 // Reorder the properties for control render style init order, the last is the largest.
 List<String> _propertyOrders = [
+  // Ensure direction is resolved before logical properties mapping
+  DIRECTION,
   LINE_CLAMP,
   WHITE_SPACE,
   FONT_SIZE,

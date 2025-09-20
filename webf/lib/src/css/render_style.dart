@@ -1548,40 +1548,41 @@ class CSSRenderStyle extends RenderStyle
       }
     }
 
-    // Map logical properties to physical properties for LTR mode
+    // Map logical properties to physical properties based on current direction
     String propertyName = name;
+    final bool isRTL = direction == TextDirection.rtl;
 
-    // Handle inline-start properties (for LTR, maps to left side)
+    // Handle inline-start properties (maps to left in LTR, right in RTL)
     if (name == MARGIN_INLINE_START) {
-      propertyName = MARGIN_LEFT;
+      propertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
     } else if (name == PADDING_INLINE_START) {
-      propertyName = PADDING_LEFT;
+      propertyName = isRTL ? PADDING_RIGHT : PADDING_LEFT;
     } else if (name == BORDER_INLINE_START) {
-      propertyName = BORDER_LEFT;
+      propertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (name == BORDER_INLINE_START_WIDTH) {
-      propertyName = BORDER_LEFT_WIDTH;
+      propertyName = isRTL ? BORDER_RIGHT_WIDTH : BORDER_LEFT_WIDTH;
     } else if (name == BORDER_INLINE_START_STYLE) {
-      propertyName = BORDER_LEFT_STYLE;
+      propertyName = isRTL ? BORDER_RIGHT_STYLE : BORDER_LEFT_STYLE;
     } else if (name == BORDER_INLINE_START_COLOR) {
-      propertyName = BORDER_LEFT_COLOR;
+      propertyName = isRTL ? BORDER_RIGHT_COLOR : BORDER_LEFT_COLOR;
     } else if (name == INSET_INLINE_START) {
-      propertyName = LEFT;
+      propertyName = isRTL ? RIGHT : LEFT;
     }
-    // Handle inline-end properties (for LTR, maps to right side)
+    // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (name == MARGIN_INLINE_END) {
-      propertyName = MARGIN_RIGHT;
+      propertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
     } else if (name == PADDING_INLINE_END) {
-      propertyName = PADDING_RIGHT;
+      propertyName = isRTL ? PADDING_LEFT : PADDING_RIGHT;
     } else if (name == BORDER_INLINE_END) {
-      propertyName = BORDER_RIGHT;
+      propertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (name == BORDER_INLINE_END_WIDTH) {
-      propertyName = BORDER_RIGHT_WIDTH;
+      propertyName = isRTL ? BORDER_LEFT_WIDTH : BORDER_RIGHT_WIDTH;
     } else if (name == BORDER_INLINE_END_STYLE) {
-      propertyName = BORDER_RIGHT_STYLE;
+      propertyName = isRTL ? BORDER_LEFT_STYLE : BORDER_RIGHT_STYLE;
     } else if (name == BORDER_INLINE_END_COLOR) {
-      propertyName = BORDER_RIGHT_COLOR;
+      propertyName = isRTL ? BORDER_LEFT_COLOR : BORDER_RIGHT_COLOR;
     } else if (name == INSET_INLINE_END) {
-      propertyName = RIGHT;
+      propertyName = isRTL ? LEFT : RIGHT;
     }
     // Handle block-start properties (maps to top)
     else if (name == MARGIN_BLOCK_START) {
@@ -2009,40 +2010,41 @@ class CSSRenderStyle extends RenderStyle
   dynamic resolveValue(String propertyName, String propertyValue, {String? baseHref}) {
     RenderStyle renderStyle = this;
 
-    // Map logical properties to physical properties for LTR mode
+    // Map logical properties to physical properties based on current direction
     String mappedPropertyName = propertyName;
+    final bool isRTL = direction == TextDirection.rtl;
 
-    // Handle inline-start properties (for LTR, maps to left side)
+    // Handle inline-start properties (maps to left in LTR, right in RTL)
     if (propertyName == MARGIN_INLINE_START) {
-      mappedPropertyName = MARGIN_LEFT;
+      mappedPropertyName = isRTL ? MARGIN_RIGHT : MARGIN_LEFT;
     } else if (propertyName == PADDING_INLINE_START) {
-      mappedPropertyName = PADDING_LEFT;
+      mappedPropertyName = isRTL ? PADDING_RIGHT : PADDING_LEFT;
     } else if (propertyName == BORDER_INLINE_START) {
-      mappedPropertyName = BORDER_LEFT;
+      mappedPropertyName = isRTL ? BORDER_RIGHT : BORDER_LEFT;
     } else if (propertyName == BORDER_INLINE_START_WIDTH) {
-      mappedPropertyName = BORDER_LEFT_WIDTH;
+      mappedPropertyName = isRTL ? BORDER_RIGHT_WIDTH : BORDER_LEFT_WIDTH;
     } else if (propertyName == BORDER_INLINE_START_STYLE) {
-      mappedPropertyName = BORDER_LEFT_STYLE;
+      mappedPropertyName = isRTL ? BORDER_RIGHT_STYLE : BORDER_LEFT_STYLE;
     } else if (propertyName == BORDER_INLINE_START_COLOR) {
-      mappedPropertyName = BORDER_LEFT_COLOR;
+      mappedPropertyName = isRTL ? BORDER_RIGHT_COLOR : BORDER_LEFT_COLOR;
     } else if (propertyName == INSET_INLINE_START) {
-      mappedPropertyName = LEFT;
+      mappedPropertyName = isRTL ? RIGHT : LEFT;
     }
-    // Handle inline-end properties (for LTR, maps to right side)
+    // Handle inline-end properties (maps to right in LTR, left in RTL)
     else if (propertyName == MARGIN_INLINE_END) {
-      mappedPropertyName = MARGIN_RIGHT;
+      mappedPropertyName = isRTL ? MARGIN_LEFT : MARGIN_RIGHT;
     } else if (propertyName == PADDING_INLINE_END) {
-      mappedPropertyName = PADDING_RIGHT;
+      mappedPropertyName = isRTL ? PADDING_LEFT : PADDING_RIGHT;
     } else if (propertyName == BORDER_INLINE_END) {
-      mappedPropertyName = BORDER_RIGHT;
+      mappedPropertyName = isRTL ? BORDER_LEFT : BORDER_RIGHT;
     } else if (propertyName == BORDER_INLINE_END_WIDTH) {
-      mappedPropertyName = BORDER_RIGHT_WIDTH;
+      mappedPropertyName = isRTL ? BORDER_LEFT_WIDTH : BORDER_RIGHT_WIDTH;
     } else if (propertyName == BORDER_INLINE_END_STYLE) {
-      mappedPropertyName = BORDER_RIGHT_STYLE;
+      mappedPropertyName = isRTL ? BORDER_LEFT_STYLE : BORDER_RIGHT_STYLE;
     } else if (propertyName == BORDER_INLINE_END_COLOR) {
-      mappedPropertyName = BORDER_RIGHT_COLOR;
+      mappedPropertyName = isRTL ? BORDER_LEFT_COLOR : BORDER_RIGHT_COLOR;
     } else if (propertyName == INSET_INLINE_END) {
-      mappedPropertyName = RIGHT;
+      mappedPropertyName = isRTL ? LEFT : RIGHT;
     }
     // Handle block-start properties (maps to top)
     else if (propertyName == MARGIN_BLOCK_START) {
