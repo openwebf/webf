@@ -11,7 +11,8 @@ import 'dart:ui' as ui
         LineMetrics,
         TextStyle,
         TextHeightBehavior,
-        TextLeadingDistribution;
+        TextLeadingDistribution,
+        StrutStyle;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/foundation.dart';
@@ -1031,6 +1032,30 @@ class InlineFormattingContext {
     // Lay out atomic inlines first to obtain sizes for placeholders
     _layoutAtomicInlineItemsForParagraph();
 
+    // Configure a paragraph-level strut so the block container's computed line-height
+    // establishes the minimum line box height for each line, per CSS. This centers
+    // smaller runs (e.g., inline elements with smaller line-height) inside a taller
+    // block line-height without requiring per-line paint shifts.
+    ui.StrutStyle? _paragraphStrut;
+    final CSSRenderStyle _containerStyle = (container as RenderBoxModel).renderStyle;
+    final CSSLengthValue _containerLH = _containerStyle.lineHeight;
+    if (_containerLH.type != CSSLengthType.NORMAL) {
+      final double fontSize = _containerStyle.fontSize.computedValue;
+      final double multiple = _containerLH.computedValue / fontSize;
+      // Guard against non-finite or non-positive multiples
+      if (multiple.isFinite && multiple > 0) {
+        _paragraphStrut = ui.StrutStyle(
+          fontSize: fontSize,
+          height: multiple,
+          fontFamilyFallback: _containerStyle.fontFamily,
+          fontStyle: _containerStyle.fontStyle,
+          fontWeight: _containerStyle.fontWeight,
+          // Use as minimum line height; let larger content expand the line.
+          forceStrutHeight: false,
+        );
+      }
+    }
+
     final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
       textAlign: style.textAlign,
       textDirection: style.direction,
@@ -1044,6 +1069,9 @@ class InlineFormattingContext {
         applyHeightToLastDescent: true,
         leadingDistribution: ui.TextLeadingDistribution.even,
       ),
+      // Apply strut when the container specifies a concrete line-height; this makes the
+      // paragraph respect the block container’s min line box height across all lines.
+      strutStyle: _paragraphStrut,
     ));
 
     _placeholderOrder.clear();
