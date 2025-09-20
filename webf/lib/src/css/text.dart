@@ -492,28 +492,23 @@ mixin CSSTextMixin on RenderStyle {
   }
 
   static TextAlign? resolveTextAlign(String value) {
-    TextAlign? alignment;
-
+    // CSS mapping: left/right are physical; start/end are logical.
     switch (value) {
-      case 'end':
-      case 'right':
-        alignment = TextAlign.end;
-        break;
-      case 'center':
-        alignment = TextAlign.center;
-        break;
-      case 'justify':
-        alignment = TextAlign.justify;
-        break;
-      case 'start':
       case 'left':
-        alignment = TextAlign.start;
-      // Like inherit, which is the same with parent element.
-      // Not impl it due to performance consideration.
-      // case 'match-parent':
+        return TextAlign.left;
+      case 'right':
+        return TextAlign.right;
+      case 'start':
+        return TextAlign.start;
+      case 'end':
+        return TextAlign.end;
+      case 'center':
+        return TextAlign.center;
+      case 'justify':
+        return TextAlign.justify;
+      default:
+        return null;
     }
-
-    return alignment;
   }
 
   static TextDirection? resolveDirection(String value) {
