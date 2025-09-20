@@ -1197,7 +1197,14 @@ class InlineFormattingContext {
       return sb.toString();
     }
 
-    _avoidWordBreakInScrollableX = _ancestorHasHorizontalScroll();
+    // Avoid breaking within ASCII words when:
+    // - this container itself clips or scrolls horizontally (overflow-x != visible), or
+    // - any ancestor (excluding HTML/BODY) scrolls horizontally.
+    // This matches CSS expectations that long unbreakable words should overflow
+    // (and be clipped/scrollable) rather than wrap arbitrarily when overflow-x
+    // is not visible.
+    final bool localClipsOrScrollsX = container.renderStyle.effectiveOverflowX != CSSOverflowType.visible;
+    _avoidWordBreakInScrollableX = localClipsOrScrollsX || _ancestorHasHorizontalScroll();
 
     int _itemIndex = -1;
     for (final item in _items) {
@@ -1519,10 +1526,14 @@ class InlineFormattingContext {
 
     // If an ancestor has horizontal scrolling and there are no interior
     // whitespace break opportunities (e.g., a single long word/number),
-    // shape very wide to avoid forced word breaking; let it overflow X and
-    // be scrolled. For regular sentences (with interior spaces), keep
-    // bounded shaping so they wrap normally.
-    final bool _wideShapeForScrollableX = _avoidWordBreakInScrollableX && !_hasInteriorWhitespaceInText;
+    // shape very wide to avoid forced word breaking only when the container
+    // (or an ancestor) is horizontally scrollable (overflow-x: auto|scroll).
+    // For overflow-x: hidden, keep shaping bounded to the available width so
+    // alignment stays correct and extra content is simply clipped.
+    final bool _ancestorScrollX = _ancestorHasHorizontalScroll();
+    final bool _localIsScrollableX = style.effectiveOverflowX == CSSOverflowType.scroll ||
+        style.effectiveOverflowX == CSSOverflowType.auto;
+    final bool _wideShapeForScrollableX = (_ancestorScrollX || _localIsScrollableX) && !_hasInteriorWhitespaceInText;
     if (_wideShapeForScrollableX) {
       initialWidth = 1000000.0;
       if (DebugFlags.debugLogInlineLayoutEnabled) {

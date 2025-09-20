@@ -2974,12 +2974,12 @@ class CSSRenderStyle extends RenderStyle
       return false;
     }
 
-    // Do not establish IFC on scroll/auto/hidden/clip containers to avoid
-    // placeholder-based paragraph layout interfering with block children order.
-    // These should layout using regular flow and let descendants establish IFC.
-    if (effectiveOverflowX != CSSOverflowType.visible || effectiveOverflowY != CSSOverflowType.visible) {
-      return false;
-    }
+    // Per CSS Inline Layout (css-inline-3) and CSS 2.1 §9.4.2, a block container
+    // establishes an inline formatting context for its inline-level content
+    // regardless of the 'overflow' property. Overflow only affects painting and
+    // scrollability (block formatting context establishment), not whether inline
+    // content forms line boxes. Therefore, do NOT early-return here when overflow
+    // is not visible; allow IFC when the content qualifies.
 
     // Do not special-case BODY/HTML here. They can also establish IFC
     // when they contain only inline content and no block-level content.

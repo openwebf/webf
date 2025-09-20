@@ -420,10 +420,34 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (establishIFC) {
       assert(_inlineFormattingContext != null);
 
-      Size layoutSize = _inlineFormattingContext!.layout(contentConstraints!);
+      // Use content constraints for IFC, but if this element has been given a
+      // tight width by its parent (e.g., as a flex item after resolving flex),
+      // shape the paragraph to that tight content width instead of any stale
+      // pre-flex content constraint (such as an author-specified width).
+      BoxConstraints ifcConstraints = contentConstraints!;
+      if (constraints.hasTightWidth) {
+        final double tightContentMaxWidth = math.max(
+          0.0,
+          constraints.maxWidth -
+              renderStyle.effectiveBorderLeftWidth.computedValue -
+              renderStyle.effectiveBorderRightWidth.computedValue -
+              renderStyle.paddingLeft.computedValue -
+              renderStyle.paddingRight.computedValue,
+        );
+        if (tightContentMaxWidth.isFinite && tightContentMaxWidth >= 0) {
+          ifcConstraints = BoxConstraints(
+            minWidth: 0,
+            maxWidth: tightContentMaxWidth,
+            minHeight: ifcConstraints.minHeight,
+            maxHeight: ifcConstraints.maxHeight,
+          );
+        }
+      }
+
+      Size layoutSize = _inlineFormattingContext!.layout(ifcConstraints);
 
       if (DebugFlags.debugLogFlowEnabled) {
-        renderingLogger.finer('[Flow] IFC layout with constraints=${contentConstraints} -> ${layoutSize}');
+        renderingLogger.finer('[Flow] IFC layout with constraints=${ifcConstraints} -> ${layoutSize}');
       }
 
       // Ensure all render objects inside IFC are laid out to avoid
