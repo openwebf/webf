@@ -6,6 +6,9 @@ class DebugFlags {
   // Controls verbose CSS/media/variables/style logs added for diagnostics.
   static bool enableCssLogs = false;
 
+  // Controls verbose IMG element logs added for diagnostics.
+  static bool enableImageLogs = false;
+
   // Verbose logging for flow sizing and constraints; toggle at runtime.
   static bool debugLogFlowEnabled = false;
 
