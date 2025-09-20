@@ -53,8 +53,9 @@
       "specs/css/css-display/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-box/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-flow/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-sizing/**/*.{js,jsx,ts,tsx,html}",
       "specs/css/css-inline/**/*.{js,jsx,ts,tsx,html}",
-      "specs/css/css-sizing/**/*.{js,jsx,ts,tsx,html}"
+      "specs/css/css-inline-formatting/**/*.{js,jsx,ts,tsx,html}",
     ]
   },
   {

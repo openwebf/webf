@@ -78,6 +78,7 @@ describe('Overflow', () => {
     container.appendChild(div1);
 
     requestAnimationFrame(async () => {
+      await waitForOnScreen(div1);
       div1.scroll(20, 20);
       await snapshot();
       done();
