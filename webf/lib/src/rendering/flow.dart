@@ -383,8 +383,25 @@ class RenderFlowLayout extends RenderLayoutBox {
 
   void _setContainerSizeFromIFC(Size ifcSize) {
     InlineFormattingContext inlineFormattingContext = _inlineFormattingContext!;
+    double usedContentWidth = ifcSize.width;
+    // For inline-block with auto width and a max-width, if the inline content's
+    // max-intrinsic width exceeds the max-width, the shrink-to-fit result should
+    // use the max-width as the used width (content box). This matches browsers
+    // where long text wraps but the inline-block still occupies the full max-width.
+    if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
+        renderStyle.width.isAuto &&
+        renderStyle.maxWidth.isNotNone &&
+        contentConstraints != null &&
+        contentConstraints!.maxWidth.isFinite) {
+      final double constraintContentMax = contentConstraints!.maxWidth;
+      final double paraMax = inlineFormattingContext.paragraphMaxIntrinsicWidth;
+      if (paraMax > constraintContentMax + 0.5) {
+        usedContentWidth = constraintContentMax;
+      }
+    }
+
     Size layoutContentSize = getContentSize(
-      contentWidth: ifcSize.width,
+      contentWidth: usedContentWidth,
       contentHeight: ifcSize.height,
     );
 

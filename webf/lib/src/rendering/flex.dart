@@ -2226,12 +2226,16 @@ class RenderFlexLayout extends RenderLayoutBox {
             child.renderStyle.display == CSSDisplay.inlineBlock ||
             child.renderStyle.display == CSSDisplay.inlineFlex) &&
         (child.renderStyle.isSelfRenderFlowLayout() || child.renderStyle.isSelfRenderFlexLayout());
+    // Block-level flex items whose contents form an inline formatting context (e.g., a <div> with only text)
+    // also need height to be unconstrained on the secondary pass so text can wrap after flex-shrink.
+    // This mirrors browser behavior: first resolve the used main size, then measure cross size with auto height.
+    bool establishesIFC = child.renderStyle.shouldEstablishInlineFormattingContext();
     bool isSecondaryLayoutPass = child.hasSize;
 
     // Allow dynamic height adjustment during secondary layout when width has changed and height is auto
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
-        (isTextElement || isInlineElementWithText) &&
+        (isTextElement || isInlineElementWithText || establishesIFC) &&
         childFlexedMainSize != null &&
         child.renderStyle.height.isAuto;
 
@@ -2239,6 +2243,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       // Remove tight height constraints to allow text to reflow properly
       minConstraintHeight = 0;
       maxConstraintHeight = double.infinity;
+      // Clear any previously overridden content logical height so getContentSize
+      // uses the measured IFC height rather than a stale fixed value.
+      child.hasOverrideContentLogicalHeight = false;
+      child.renderStyle.contentBoxLogicalHeight = null;
     }
     // Calculate minimum height needed for child's content (padding + border + content)
     double contentMinHeight = 0;

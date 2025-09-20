@@ -461,6 +461,20 @@ class InlineFormattingContext {
   // consumers that need a scrollable content width when using paragraph path.
   double get paragraphVisualMaxLineWidth => _computeVisualLongestLine();
 
+  // Expose max-intrinsic width when available from the engine; fall back to
+  // longestLine which approximates the unwrapped content width.
+  double get paragraphMaxIntrinsicWidth {
+    if (_paragraph != null) {
+      try {
+        final double w = ( _paragraph as dynamic).maxIntrinsicWidth as double? ?? _paragraph!.longestLine;
+        return w.isFinite ? w : _paragraph!.longestLine;
+      } catch (_) {
+        return _paragraph!.longestLine;
+      }
+    }
+    return 0;
+  }
+
   // Expose paragraph object for consumers (Flow) that need paragraph height fallback.
   ui.Paragraph? get paragraph => _paragraph;
 

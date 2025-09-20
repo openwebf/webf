@@ -76,7 +76,7 @@ void main() {
       expect(span.attachedRenderer!.renderStyle.color.value, equals(const Color(0xFFFF0000)));
     });
 
-    testWidgets('should handle inline-block elements', (WidgetTester tester) async {
+  testWidgets('should handle inline-block elements', (WidgetTester tester) async {
       final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
         tester: tester,
         controllerName: 'inline-block-${DateTime.now().millisecondsSinceEpoch}',
@@ -244,5 +244,25 @@ void main() {
       expect(span1.attachedRenderer!.renderStyle.textDecorationLine, equals(TextDecoration.underline));
       expect(span2.attachedRenderer!.renderStyle.textDecorationLine, equals(TextDecoration.lineThrough));
     });
+  });
+
+  testWidgets('inline-block honors max-width when content is larger', (WidgetTester tester) async {
+    final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+      tester: tester,
+      controllerName: 'inline-block-maxwidth-wrap-${DateTime.now().millisecondsSinceEpoch}',
+      html: '''
+        <html>
+          <body style="margin:0; padding:0;">
+            <div id="ib" style="display:inline-block; max-width:200px; border:2px solid #000;">
+              This text should be wrapped This text should be wrapped This text should be wrapped
+            </div>
+          </body>
+        </html>
+      ''',
+    );
+
+    final ib = prepared.getElementById('ib');
+    // Border-box width should equal 200 (max-width) when content exceeds it.
+    expect(ib.offsetWidth, equals(200.0));
   });
 }

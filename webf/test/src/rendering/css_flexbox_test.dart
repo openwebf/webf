@@ -920,6 +920,42 @@ void main() {
       // Child2 should shrink
       expect(child2.offsetWidth, equals(20.0));
     });
+
+    testWidgets('inline text wraps and increases item height when flex-shrunk', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-shrink-wrap-text-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="flexContainer" style="
+                display: flex;
+                max-width: 200px;
+                background-color: #e0e0e0;
+              ">
+                <div id="item" style="
+                  flex-shrink: 1;
+                  padding: 10px;
+                  background-color: #f0f0f0;
+                ">
+                  <span>This text in a flex-shrink item should wrap within the flex container max-width</span>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final container = prepared.getElementById('flexContainer');
+      final item = prepared.getElementById('item');
+
+      // After shrink to 200px max-width, the text should wrap to multiple lines
+      // causing the flex item (and thus the container line) to grow in height.
+      // Assert the container height is noticeably larger than a single-line block with 10px padding.
+      expect(container.offsetWidth, equals(200.0));
+      expect(item.offsetHeight, greaterThan(60.0));
+      expect(container.offsetHeight, equals(item.offsetHeight));
+    });
   });
 
   group('Flex Basis', () {
