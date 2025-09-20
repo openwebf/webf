@@ -1300,6 +1300,41 @@ class RenderFlexLayout extends RenderLayoutBox {
       Size childSize = intrinsicSizes[childNodeId]!;
       double intrinsicMain = _isHorizontalFlexDirection ? childSize.width : childSize.height;
 
+      // CSS Flexbox §9.2: For flex-basis:auto with an auto main-size, the flex base size
+      // should come from the item's max-content contribution in the main axis, not from
+      // the block formatting context's "fill-available" used size. Our intrinsic pass can
+      // mistakenly inherit a container-bounded width for block-level items that establish
+      // an inline formatting context (IFC), causing the base size to equal the container
+      // width. Detect that case and prefer the IFC's max-intrinsic width instead.
+      if (_isHorizontalFlexDirection && child is RenderFlowLayout) {
+        final RenderFlowLayout flowChild = child;
+        final CSSRenderStyle cs = flowChild.renderStyle;
+        final bool autoMain = cs.width.isAuto;
+        final bool hasDefiniteBasis = _getFlexBasis(flowChild) != null;
+        if (autoMain && !hasDefiniteBasis && flowChild.inlineFormattingContext != null) {
+          // Paragraph max-intrinsic width approximates the max-content contribution.
+          final double paraMax = flowChild.inlineFormattingContext!.paragraphMaxIntrinsicWidth;
+          // Convert content-width to border-box width by adding horizontal padding + borders.
+          final double paddingBorderH =
+              cs.paddingLeft.computedValue +
+              cs.paddingRight.computedValue +
+              cs.effectiveBorderLeftWidth.computedValue +
+              cs.effectiveBorderRightWidth.computedValue;
+          final double candidate = (paraMax.isFinite ? paraMax : 0) + paddingBorderH;
+          // If the currently measured intrinsic width is larger (e.g., filled to container),
+          // prefer the content-based candidate to avoid unintended expansion.
+          if (candidate > 0 && candidate < intrinsicMain) {
+            if (DebugFlags.debugLogFlexEnabled) {
+              renderingLogger.finer('[Flex] base-size tweak ${_childDesc(child)} '
+                  'autoMain width: paraMax=${paraMax.toStringAsFixed(2)} '
+                  'p+b=${paddingBorderH.toStringAsFixed(2)} '
+                  'candidate=${candidate.toStringAsFixed(2)} prev=${intrinsicMain.toStringAsFixed(2)}');
+            }
+            intrinsicMain = candidate;
+          }
+        }
+      }
+
       // Clamp intrinsic main size by child's min/max constraints before flexing,
       // so percentage max-width/height act as caps on the base size per spec.
       if (child is RenderBoxModel) {

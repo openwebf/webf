@@ -2427,18 +2427,30 @@ class CSSRenderStyle extends RenderStyle
         // Resolve whether the direct parent is a flex item (its render box's parent is a flex container).
         // Determine if our direct parent is a flex item: i.e., the parent's parent is a flex container.
         final bool parentIsFlexItem = parentStyle.isParentRenderFlexLayout();
+        // Whether THIS element is a flex item (its own parent is a flex container).
+        // When true, width:auto must not be stretched to the parent’s width in the main axis;
+        // the flex base size is content-based per CSS Flexbox §9.2.
+        final bool thisIsFlexItem = this.isParentRenderFlexLayout();
 
         // Case A: inside a flex item — stretch block-level auto width to the flex item's measured width.
-        if (parentIsFlexItem &&
+        if (parentIsFlexItem && !thisIsFlexItem &&
             !renderStyle.isSelfRenderReplaced() &&
             renderStyle.position != CSSPositionType.absolute &&
             renderStyle.position != CSSPositionType.fixed) {
           final RenderBoxModel? parentBox = parentStyle.attachedRenderBoxModel;
           final BoxConstraints? pcc = parentBox?.contentConstraints;
           if (pcc != null && pcc.hasBoundedWidth && pcc.maxWidth.isFinite) {
+            if (DebugFlags.debugLogFlowEnabled || DebugFlags.debugLogFlexEnabled) {
+              try {
+                final tag = target.tagName.toLowerCase();
+                renderingLogger.finer('[Style] <$tag> computeContentBoxLogicalWidth: '
+                    'inherit from flex-item parent contentConstraints.maxW='
+                    '${pcc.maxWidth.toStringAsFixed(2)} marginH=${renderStyle.margin.horizontal.toStringAsFixed(2)}');
+              } catch (_) {}
+            }
             logicalWidth = pcc.maxWidth - renderStyle.margin.horizontal;
           }
-
+        
         // Case B: normal flow (not inside a flex item) — find the nearest non-inline ancestor
         // and adopt its content box logical width or bounded content constraints.
         } else if (!parentIsFlexItem &&

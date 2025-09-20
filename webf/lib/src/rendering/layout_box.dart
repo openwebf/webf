@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/rendering.dart';
+import 'package:webf/foundation.dart';
 
 abstract class RenderLayoutBox extends RenderBoxModel
     with
@@ -259,6 +260,16 @@ abstract class RenderLayoutBox extends RenderBoxModel
     required double contentWidth,
     required double contentHeight,
   }) {
+    if (DebugFlags.debugLogFlowEnabled || DebugFlags.debugLogFlexEnabled) {
+      try {
+        final tag = renderStyle.target.tagName.toLowerCase();
+        final disp = renderStyle.effectiveDisplay;
+        final pType = parent?.runtimeType.toString() ?? 'null';
+        renderingLogger.finer('[BoxSize] <$tag> getContentSize in='
+            '${contentWidth.toStringAsFixed(2)}×${contentHeight.toStringAsFixed(2)} '
+            'display=$disp parent=$pType');
+      } catch (_) {}
+    }
     double finalContentWidth = contentWidth;
     double finalContentHeight = contentHeight;
 
@@ -365,6 +376,19 @@ abstract class RenderLayoutBox extends RenderBoxModel
     }
 
     Size finalContentSize = Size(finalContentWidth, finalContentHeight);
+
+    if (DebugFlags.debugLogFlowEnabled || DebugFlags.debugLogFlexEnabled) {
+      try {
+        final tag = renderStyle.target.tagName.toLowerCase();
+        final paddL = renderStyle.paddingLeft.computedValue;
+        final paddR = renderStyle.paddingRight.computedValue;
+        final bordL = renderStyle.effectiveBorderLeftWidth.computedValue;
+        final bordR = renderStyle.effectiveBorderRightWidth.computedValue;
+        renderingLogger.finer('[BoxSize] <$tag> getContentSize out='
+            '${finalContentSize.width.toStringAsFixed(2)}×${finalContentSize.height.toStringAsFixed(2)} '
+            'padH=${(paddL + paddR).toStringAsFixed(2)} borderH=${(bordL + bordR).toStringAsFixed(2)}');
+      } catch (_) {}
+    }
     return finalContentSize;
   }
 

@@ -384,6 +384,10 @@ class RenderFlowLayout extends RenderLayoutBox {
   void _setContainerSizeFromIFC(Size ifcSize) {
     InlineFormattingContext inlineFormattingContext = _inlineFormattingContext!;
     double usedContentWidth = ifcSize.width;
+    if (DebugFlags.debugLogFlowEnabled) {
+      final tag = renderStyle.target.tagName.toLowerCase();
+      renderingLogger.finer('[Flow] <$tag> IFC usedContentWidth init=' + usedContentWidth.toStringAsFixed(2));
+    }
     // For inline-block with auto width and a max-width, if the inline content's
     // max-intrinsic width exceeds the max-width, the shrink-to-fit result should
     // use the max-width as the used width (content box). This matches browsers
@@ -397,6 +401,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       final double paraMax = inlineFormattingContext.paragraphMaxIntrinsicWidth;
       if (paraMax > constraintContentMax + 0.5) {
         usedContentWidth = constraintContentMax;
+        if (DebugFlags.debugLogFlowEnabled) {
+          final tag = renderStyle.target.tagName.toLowerCase();
+          renderingLogger.finer('[Flow] <$tag> IFC shrink-to-fit: paraMax='
+              '${paraMax.toStringAsFixed(2)} → used=${usedContentWidth.toStringAsFixed(2)}');
+        }
       }
     }
 
@@ -406,6 +415,23 @@ class RenderFlowLayout extends RenderLayoutBox {
     );
 
     size = getBoxSize(layoutContentSize);
+
+    if (DebugFlags.debugLogFlowEnabled) {
+      try {
+        final tag = renderStyle.target.tagName.toLowerCase();
+        final paddL = renderStyle.paddingLeft.computedValue;
+        final paddR = renderStyle.paddingRight.computedValue;
+        final bordL = renderStyle.effectiveBorderLeftWidth.computedValue;
+        final bordR = renderStyle.effectiveBorderRightWidth.computedValue;
+        renderingLogger.finer('[Flow] <$tag> IFC width breakdown: '
+            'paraW=${ifcSize.width.toStringAsFixed(2)} '
+            'usedW=${usedContentWidth.toStringAsFixed(2)} '
+            'contentW=${layoutContentSize.width.toStringAsFixed(2)} '
+            'padH=${(paddL + paddR).toStringAsFixed(2)} '
+            'borderH=${(bordL + bordR).toStringAsFixed(2)} '
+            'boxW=${size.width.toStringAsFixed(2)}');
+      } catch (_) {}
+    }
 
     // For IFC, min-content width should reflect the paragraph's
     // min intrinsic width (approximate CSS min-content), not the

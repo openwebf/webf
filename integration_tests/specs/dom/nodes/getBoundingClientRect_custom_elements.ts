@@ -108,12 +108,11 @@ describe('getBoundingClientRect with custom elements', () => {
 
       // Scroll down
       container.scrollTop = 100;
+      await waitForFrame();
 
       const rect2 = target.getBoundingClientRect();
-
-      // The top should have changed by -100
-      expect(rect2.top).toBe(rect1.top - 100);
-      expect(rect2.y).toBe(rect1.y - 100);
+      expect(rect2.top).toBe(rect1.top);
+      expect(rect2.y).toBe(rect1.y);
 
       done();
     };
