@@ -71,6 +71,10 @@ class InlineFormattingContext {
   // Indexed by occurrence order of textRun placeholders only.
   List<double>? _textRunBaselineOffsets;
   int _textRunBuildIndex = 0;
+  // Baseline offsets computed for atomic (inline-block/replaced) placeholders with
+  // CSS vertical-align != baseline. Indexed by encounter order of atomic placeholders.
+  List<double>? _atomicBaselineOffsets;
+  int _atomicBuildIndex = 0;
 
   // For mapping placeholder index -> RenderBox (atomic inline items only)
   final List<RenderBox?> _placeholderOrder = [];
@@ -488,7 +492,7 @@ class InlineFormattingContext {
     _forceRightExtrasOwners.clear();
     _buildAndLayoutParagraph(constraints);
     // Compute baseline offsets for text-run vertical-align placeholders (top/middle/bottom)
-    bool needsVARebuild = _computeTextRunBaselineOffsets();
+    bool needsVARebuild = _computeTextRunBaselineOffsets() | _computeAtomicBaselineOffsets();
 
     // Second pass: Only add right-extras placeholders for inline elements that
     // did NOT fragment across lines in pass 1. For fragmented spans, we rely on
@@ -518,6 +522,7 @@ class InlineFormattingContext {
       _buildAndLayoutParagraph(constraints);
       // Clear offsets after they are consumed in PASS 2
       _textRunBaselineOffsets = null;
+      _atomicBaselineOffsets = null;
     }
 
     // Compute size from paragraph
@@ -580,6 +585,55 @@ class InlineFormattingContext {
     }
     if (any) {
       _textRunBaselineOffsets = offsets;
+    }
+    return any;
+  }
+
+  // Compute baseline offsets for atomic (inline-block/replaced) placeholders with
+  // CSS vertical-align set to top/middle/bottom. This aligns their margin-box
+  // top/middle/bottom to the line band's top/middle/bottom per CSS.
+  bool _computeAtomicBaselineOffsets() {
+    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return false;
+    final List<double> offsets = [];
+    bool any = false;
+    for (int i = 0; i < _allPlaceholders.length && i < _placeholderBoxes.length; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      final rb = _placeholderOrder[i];
+      if (rb is! RenderBoxModel) { offsets.add(0.0); continue; }
+      final va = rb.renderStyle.verticalAlign;
+      if (va == VerticalAlign.baseline) continue;
+      final tb = _placeholderBoxes[i];
+      final int li = _lineIndexForRect(tb);
+      if (li < 0 || li >= _paraLines.length) { offsets.add(0.0); any = true; continue; }
+      final lm = _paraLines[li];
+      final double h = tb.bottom - tb.top;
+      double baselineOffset;
+      switch (va) {
+        case VerticalAlign.top:
+        case VerticalAlign.textTop:
+          baselineOffset = lm.ascent; // baseline - ascent = line top
+          break;
+        case VerticalAlign.bottom:
+        case VerticalAlign.textBottom:
+          baselineOffset = h - lm.descent; // baseline - (h - desc) = line bottom - h
+          break;
+        case VerticalAlign.middle:
+          baselineOffset = (lm.ascent - lm.descent + h) / 2.0;
+          break;
+        default:
+          baselineOffset = h; // should not be used
+          break;
+      }
+      offsets.add(baselineOffset);
+      any = true;
+      if (DebugFlags.debugLogInlineLayoutEnabled) {
+        renderingLogger.finer('[IFC] compute atomic VA offset line=$li ascent=${lm.ascent.toStringAsFixed(2)} '
+            'descent=${lm.descent.toStringAsFixed(2)} h=${h.toStringAsFixed(2)} va=$va → baselineOffset=${baselineOffset.toStringAsFixed(2)}');
+      }
+    }
+    if (any) {
+      _atomicBaselineOffsets = offsets;
     }
     return any;
   }
@@ -1296,6 +1350,7 @@ class InlineFormattingContext {
     _allPlaceholders.clear();
     _textRunParas = <ui.Paragraph?>[];
     _textRunBuildIndex = 0;
+    _atomicBuildIndex = 0;
     _elementRanges.clear();
     _measuredVisualSizes.clear();
     // Track open inline element frames for deferred extras handling
@@ -1595,12 +1650,32 @@ class InlineFormattingContext {
         // Map CSS vertical-align to dart:ui PlaceholderAlignment for atomic inline items.
         // For textTop/textBottom we approximate using top/bottom as Flutter does not
         // distinguish font-box vs line-box alignment at this level.
-        pb.addPlaceholder(width, height,
-            _placeholderAlignmentFromCss(rbStyle.verticalAlign),
-            baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
+        final ui.PlaceholderAlignment align = _placeholderAlignmentFromCss(rbStyle.verticalAlign);
+        // If we have a precomputed baseline offset for atomic vertical-align, prefer baseline alignment
+        // to precisely match CSS line box top/middle/bottom against paragraph metrics.
+        final double? preOffset = (rbStyle.verticalAlign != VerticalAlign.baseline &&
+                _atomicBaselineOffsets != null && _atomicBuildIndex < (_atomicBaselineOffsets?.length ?? 0))
+            ? _atomicBaselineOffsets![_atomicBuildIndex]
+            : null;
+        if (preOffset != null) {
+          pb.addPlaceholder(width, height, ui.PlaceholderAlignment.baseline,
+              baseline: TextBaseline.alphabetic, baselineOffset: preOffset);
+        } else {
+          if (align == ui.PlaceholderAlignment.baseline ||
+              align == ui.PlaceholderAlignment.aboveBaseline ||
+              align == ui.PlaceholderAlignment.belowBaseline) {
+            pb.addPlaceholder(width, height, align,
+                baseline: TextBaseline.alphabetic, baselineOffset: baselineOffset);
+          } else {
+            pb.addPlaceholder(width, height, align);
+          }
+        }
         _placeholderOrder.add(rb);
         _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
         _textRunParas.add(null);
+        if (rbStyle.verticalAlign != VerticalAlign.baseline) {
+          _atomicBuildIndex += 1;
+        }
         paraPos += 1; // placeholder adds a single object replacement char
 
         if (DebugFlags.debugLogInlineLayoutEnabled) {

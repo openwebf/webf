@@ -29,7 +29,7 @@ void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
   DebugFlags.debugLogInlineLayoutEnabled = true;
   debugPaintBaselinesEnabled = true;
-  // DebugFlags.debugPaintInlineLayoutEnabled = true;
+  DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
   DebugFlags.debugLogFlowEnabled = true;
   DebugFlags.debugLogFlexEnabled = true;
