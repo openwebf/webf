@@ -956,6 +956,34 @@ void main() {
       expect(item.offsetHeight, greaterThan(60.0));
       expect(container.offsetHeight, equals(item.offsetHeight));
     });
+
+    testWidgets('nested spans wrap and grow height within flex item', (WidgetTester tester) async {
+      final prepared = await WebFWidgetTestUtils.prepareWidgetTest(
+        tester: tester,
+        controllerName: 'flex-nested-spans-wrap-${DateTime.now().millisecondsSinceEpoch}',
+        html: '''
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <div id="flex" style="display: flex; max-width: 200px; border: 1px solid #000">
+                <div id="block" style="margin-left: 10px; padding: 5px 10px; max-width: 100px; border: 1px solid #000;">
+                  <span><span><span>123123123 123 12312 3123 12312 312</span></span></span>
+                </div>
+              </div>
+            </body>
+          </html>
+        ''',
+      );
+
+      final flex = prepared.getElementById('flex');
+      final block = prepared.getElementById('block');
+
+      // Block should be clamped to its max-width (100px border-box)
+      expect(block.offsetWidth, equals(100.0));
+      // Text should wrap to multiple lines, making height noticeably larger than single line with padding (≈34)
+      expect(block.offsetHeight, greaterThan(60.0));
+      // Flex container line height should expand to contain the block
+      expect(flex.offsetHeight, equals(block.offsetHeight));
+    });
   });
 
   group('Flex Basis', () {

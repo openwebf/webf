@@ -2062,6 +2062,7 @@ class RenderFlexLayout extends RenderLayoutBox {
           child,
           childFlexedMainSize,
           childStretchedCrossSize,
+          runChildrenList.length,
           preserveMainAxisSize: desiredPreservedMain,
         );
 
@@ -2157,6 +2158,7 @@ class RenderFlexLayout extends RenderLayoutBox {
     RenderBoxModel child,
     double? childFlexedMainSize,
     double? childStretchedCrossSize,
+    int lineChildrenCount,
     {double? preserveMainAxisSize}
   ) {
     if (DebugFlags.debugLogFlexEnabled) {
@@ -2236,7 +2238,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     bool allowDynamicHeight = _isHorizontalFlexDirection &&
         isSecondaryLayoutPass &&
         (isTextElement || isInlineElementWithText || establishesIFC) &&
-        childFlexedMainSize != null &&
+        // For non-flexed items, only allow when this is the only item on the line
+        // so the line cross-size is content-driven.
+        (childFlexedMainSize != null || (preserveMainAxisSize != null && lineChildrenCount == 1)) &&
+        // Do not override stretch to a sibling's definite height when multiple items exist.
+        (childStretchedCrossSize == null || lineChildrenCount == 1) &&
         child.renderStyle.height.isAuto;
 
     if (allowDynamicHeight) {
