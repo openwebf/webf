@@ -201,12 +201,50 @@ class RenderFlexLayout extends RenderLayoutBox {
     return CSSFlex.isHorizontalFlexDirection(renderStyle.flexDirection);
   }
 
+  // Determine if the main-axis start maps to the physical left (for horizontal)
+  // or top (for vertical). This accounts for both flex-direction and text direction.
+  bool _isMainAxisStartAtPhysicalStart() {
+    final dir = renderStyle.direction;
+    switch (renderStyle.flexDirection) {
+      case FlexDirection.row:
+        return dir != TextDirection.rtl; // LTR → left is start; RTL → right is start
+      case FlexDirection.rowReverse:
+        return dir == TextDirection.rtl; // row-reverse flips inline start/end
+      case FlexDirection.column:
+        return true; // top is start
+      case FlexDirection.columnReverse:
+        return false; // bottom is start
+    }
+  }
+
+  // Whether the main axis flows in the reverse physical direction
+  // (e.g., horizontal RTL row, or column-reverse).
+  bool _isMainAxisReversed() {
+    if (_isHorizontalFlexDirection) {
+      // Horizontal: reversed when main-start is at the physical right
+      return !_isMainAxisStartAtPhysicalStart();
+    } else {
+      // Vertical: reversed when column-reverse
+      return renderStyle.flexDirection == FlexDirection.columnReverse;
+    }
+  }
+
   // Get start/end padding in the main axis according to flex direction.
   double _flowAwareMainAxisPadding({bool isEnd = false}) {
     if (_isHorizontalFlexDirection) {
-      return isEnd ? renderStyle.paddingRight.computedValue : renderStyle.paddingLeft.computedValue;
+      final bool startIsLeft = _isMainAxisStartAtPhysicalStart();
+      if (!isEnd) {
+        return startIsLeft ? renderStyle.paddingLeft.computedValue : renderStyle.paddingRight.computedValue;
+      } else {
+        return startIsLeft ? renderStyle.paddingRight.computedValue : renderStyle.paddingLeft.computedValue;
+      }
     } else {
-      return isEnd ? renderStyle.paddingBottom.computedValue : renderStyle.paddingTop.computedValue;
+      final bool startIsTop = _isMainAxisStartAtPhysicalStart();
+      if (!isEnd) {
+        return startIsTop ? renderStyle.paddingTop.computedValue : renderStyle.paddingBottom.computedValue;
+      } else {
+        return startIsTop ? renderStyle.paddingBottom.computedValue : renderStyle.paddingTop.computedValue;
+      }
     }
   }
 
@@ -222,13 +260,27 @@ class RenderFlexLayout extends RenderLayoutBox {
   // Get start/end border in the main axis according to flex direction.
   double _flowAwareMainAxisBorder({bool isEnd = false}) {
     if (_isHorizontalFlexDirection) {
-      return isEnd
-          ? renderStyle.effectiveBorderRightWidth.computedValue
-          : renderStyle.effectiveBorderLeftWidth.computedValue;
+      final bool startIsLeft = _isMainAxisStartAtPhysicalStart();
+      if (!isEnd) {
+        return startIsLeft
+            ? renderStyle.effectiveBorderLeftWidth.computedValue
+            : renderStyle.effectiveBorderRightWidth.computedValue;
+      } else {
+        return startIsLeft
+            ? renderStyle.effectiveBorderRightWidth.computedValue
+            : renderStyle.effectiveBorderLeftWidth.computedValue;
+      }
     } else {
-      return isEnd
-          ? renderStyle.effectiveBorderBottomWidth.computedValue
-          : renderStyle.effectiveBorderTopWidth.computedValue;
+      final bool startIsTop = _isMainAxisStartAtPhysicalStart();
+      if (!isEnd) {
+        return startIsTop
+            ? renderStyle.effectiveBorderTopWidth.computedValue
+            : renderStyle.effectiveBorderBottomWidth.computedValue;
+      } else {
+        return startIsTop
+            ? renderStyle.effectiveBorderBottomWidth.computedValue
+            : renderStyle.effectiveBorderTopWidth.computedValue;
+      }
     }
   }
 
@@ -258,13 +310,27 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
 
     if (_isHorizontalFlexDirection) {
-      return isEnd
-          ? childRenderBoxModel.renderStyle.marginRight.computedValue
-          : childRenderBoxModel.renderStyle.marginLeft.computedValue;
+      final bool startIsLeft = _isMainAxisStartAtPhysicalStart();
+      if (!isEnd) {
+        return startIsLeft
+            ? childRenderBoxModel.renderStyle.marginLeft.computedValue
+            : childRenderBoxModel.renderStyle.marginRight.computedValue;
+      } else {
+        return startIsLeft
+            ? childRenderBoxModel.renderStyle.marginRight.computedValue
+            : childRenderBoxModel.renderStyle.marginLeft.computedValue;
+      }
     } else {
-      return isEnd
-          ? childRenderBoxModel.renderStyle.marginBottom.computedValue
-          : childRenderBoxModel.renderStyle.marginTop.computedValue;
+      final bool startIsTop = _isMainAxisStartAtPhysicalStart();
+      if (!isEnd) {
+        return startIsTop
+            ? childRenderBoxModel.renderStyle.marginTop.computedValue
+            : childRenderBoxModel.renderStyle.marginBottom.computedValue;
+      } else {
+        return startIsTop
+            ? childRenderBoxModel.renderStyle.marginBottom.computedValue
+            : childRenderBoxModel.renderStyle.marginTop.computedValue;
+      }
     }
   }
 
@@ -2783,11 +2849,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       final int runChildrenCount = runChildren.length;
 
-      // flipMainAxis is used to decide whether to lay out left-to-right/top-to-bottom (false), or
-      // right-to-left/bottom-to-top (true). The _startIsTopLeft will return null if there's only
-      // one child and the relevant direction is null, in which case we arbitrarily decide not to
-      // flip, but that doesn't have any detectable effect.
-      final bool flipMainAxis = !(_startIsTopLeft(renderStyle.flexDirection) ?? true);
+      // flipMainAxis decides whether the main axis increases toward the physical end
+      // (false: LTR row or column; true: RTL row or column-reverse). This incorporates
+      // both flex-direction and text direction for horizontal axes.
+      final bool flipMainAxis = _isMainAxisReversed();
       switch (renderStyle.justifyContent) {
         case JustifyContent.flexStart:
         case JustifyContent.start:
