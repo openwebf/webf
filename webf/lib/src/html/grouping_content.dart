@@ -4,6 +4,7 @@
  */
 import 'package:webf/css.dart';
 import 'package:webf/dom.dart';
+import 'package:webf/foundation.dart';
 import 'package:webf/bridge.dart';
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element#text_content
@@ -230,9 +231,6 @@ class LIElement extends Element {
 
     void _ensurePseudo() {
       style.pseudoBeforeStyle ??= CSSStyleDeclaration();
-      if (style.pseudoBeforeStyle!.getPropertyValue(FONT_SIZE).isEmpty) {
-        style.pseudoBeforeStyle!.setProperty(FONT_SIZE, '1.2em');
-      }
     }
 
     final type = _effectiveListStyleType();
