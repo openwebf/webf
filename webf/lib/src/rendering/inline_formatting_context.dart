@@ -2281,6 +2281,7 @@ class InlineFormattingContext {
             (lineTop != null && lineBottom != null && currentLineIndex >= 0)
                 ? currentLineIndex
                 : _lineIndexForRect(r);
+        // Visual edge within the current line band
         bool isFirst = true;
         bool isLast = true;
         for (int k = 0; k < e.rects.length; k++) {
@@ -2297,6 +2298,13 @@ class InlineFormattingContext {
         // Physical edge flags (before adjustments below)
         final bool physLeftEdge = isFirst;
         final bool physRightEdge = isLast;
+
+        // Logical fragment edges across the entire element (independent of line).
+        // These are used for left/right border painting so borders only appear
+        // on the very first and very last fragment of the element, not on
+        // every per-line fragment.
+        final bool logicalFirstFrag = (i == 0);
+        final bool logicalLastFrag = (i == e.rects.length - 1);
 
         // Extend horizontally on first/last fragments
         if (!e.synthetic) {
@@ -2331,10 +2339,11 @@ class InlineFormattingContext {
               if (isLast) isLast = false;
             }
           }
-          // Expand horizontally: first fragment includes left padding/border;
-          // last fragment includes right padding/border.
-          if (isFirst) left -= (padL + bL);
-          if (isLast) right += (padR + bR);
+          // Expand horizontally using logical edges so horizontal padding/border
+          // is only attached once (first/last fragment across the element),
+          // matching browser behavior for multi-line inline boxes.
+          if (logicalFirstFrag) left -= (padL + bL);
+          if (logicalLastFrag) right += (padR + bR);
         }
         // Apply vertical padding on every fragment (matches browsers: inline
         // vertical padding is painted around each fragment but does not affect
@@ -2421,8 +2430,8 @@ class InlineFormattingContext {
         if (DebugFlags.debugLogInlineLayoutEnabled) {
           final bool drawTop = (bT > 0);
           final bool drawBottom = (bB > 0);
-          final bool drawLeft = (isFirst && bL > 0);
-          final bool drawRight = (isLast && bR > 0);
+          final bool drawLeft = (logicalFirstFrag && bL > 0);
+          final bool drawRight = (logicalLastFrag && bR > 0);
           final String lineInfo = (currentLineIndex >= 0)
               ? ' line=$currentLineIndex'
               : '';
@@ -2496,11 +2505,11 @@ class InlineFormattingContext {
           p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
         }
-        if (!suppressEdge && isFirst && bL > 0) {
+        if (!suppressEdge && logicalFirstFrag && bL > 0) {
           p.color = s.borderLeftColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
         }
-        if (!suppressEdge && isLast && bR > 0) {
+        if (!suppressEdge && logicalLastFrag && bR > 0) {
           p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
         }
