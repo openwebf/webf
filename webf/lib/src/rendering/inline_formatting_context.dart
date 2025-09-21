@@ -300,10 +300,11 @@ class InlineFormattingContext {
         if (rects.isEmpty) return;
         synthesized = true;
       } else {
-        // Filter leading placeholder box when present
+        // Filter out any left-extras placeholder boxes for this owner wherever they appear
+        // in the rects list (bidi reordering may place them non-leading visually).
         final tbPH = _leftExtraTextBoxFor(box);
-        if (tbPH != null && _sameRect(rects.first, tbPH)) {
-          rects = rects.sublist(1);
+        if (tbPH != null) {
+          rects = rects.where((r) => !_sameRect(r, tbPH)).toList(growable: false);
         }
       }
       entries.add(_SpanPaintEntry(box, style, rects, _depthFromContainer(box), synthesized));
@@ -2188,11 +2189,67 @@ class InlineFormattingContext {
         // For empty height rects we keep the clamped band; vertical padding/border
         // will be applied conditionally below to avoid exaggerated heights.
 
-        final bool isFirst = (i == 0);
-        final bool isLast = (i == e.rects.length - 1);
+        // Determine visual-first/last fragments on this line (physical left/right),
+        // instead of relying on logical order (i==0/last). This is important in RTL,
+        // where the first logical fragment can be at the visual right.
+        bool _overlapsLine(ui.TextBox r) {
+          if (lineTop == null || lineBottom == null) return true;
+          return !(r.bottom <= lineTop || r.top >= lineBottom);
+        }
+        int _lineOf(ui.TextBox r) =>
+            (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                ? currentLineIndex
+                : _lineIndexForRect(r);
+        bool isFirst = true;
+        bool isLast = true;
+        for (int k = 0; k < e.rects.length; k++) {
+          if (k == i) continue;
+          final rk = e.rects[k];
+          if (!_overlapsLine(rk)) continue;
+          // Only compare fragments that belong to the same line band
+          if (_lineOf(rk) != _lineOf(tb)) continue;
+          if (rk.left < left - 0.01) isFirst = false; // there's something more to the left
+          if (rk.right > right + 0.01) isLast = false; // there's something more to the right
+          if (!isFirst && !isLast) break;
+        }
+
+        // Physical edge flags (before adjustments below)
+        final bool physLeftEdge = isFirst;
+        final bool physRightEdge = isLast;
 
         // Extend horizontally on first/last fragments
         if (!e.synthetic) {
+          // Heuristic: avoid attaching padding/border to edge fragments that are
+          // effectively only collapsible whitespace on the line edge. If this
+          // fragment is very narrow and there exists another wider fragment on
+          // the same line for this element, treat this as not-first/last.
+          final double fs = s.fontSize.computedValue;
+          final double smallThresh = math.max(1.0, fs * 0.35);
+          final double fragWidth = right - left;
+          if (isFirst || isLast) {
+            bool hasOtherWideOnLine = false;
+            for (int k = 0; k < e.rects.length; k++) {
+              if (k == i) continue;
+              final rk = e.rects[k];
+              if (lineTop != null && lineBottom != null) {
+                if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
+              }
+              // Same line only
+              final liK = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                  ? currentLineIndex
+                  : _lineIndexForRect(rk);
+              final liI = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                  ? currentLineIndex
+                  : _lineIndexForRect(tb);
+              if (liK != liI) continue;
+              final double w = rk.right - rk.left;
+              if (w > smallThresh) { hasOtherWideOnLine = true; break; }
+            }
+            if (fragWidth <= smallThresh && hasOtherWideOnLine) {
+              if (isFirst) isFirst = false;
+              if (isLast) isLast = false;
+            }
+          }
           // Expand horizontally: first fragment includes left padding/border;
           // last fragment includes right padding/border.
           if (isFirst) left -= (padL + bL);
@@ -2223,8 +2280,54 @@ class InlineFormattingContext {
             }
             double cLeft = cr.left;
             double cRight = cr.right;
-            final cIsFirst = (j == 0);
-            final cIsLast = (j == childEntry.rects.length - 1);
+            // Use visual-first/last for child fragments too (important in RTL).
+            bool cIsFirst = true;
+            bool cIsLast = true;
+            for (int m = 0; m < childEntry.rects.length; m++) {
+              if (m == j) continue;
+              final rm = childEntry.rects[m];
+              if (lineTop != null && lineBottom != null) {
+                if (rm.bottom <= lineTop || rm.top >= lineBottom) continue;
+              }
+              // Same line only
+              final lmIdx = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                  ? currentLineIndex
+                  : _lineIndexForRect(rm);
+              final ljIdx = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                  ? currentLineIndex
+                  : _lineIndexForRect(cr);
+              if (lmIdx != ljIdx) continue;
+              if (rm.left < cLeft - 0.01) cIsFirst = false;
+              if (rm.right > cRight + 0.01) cIsLast = false;
+              if (!cIsFirst && !cIsLast) break;
+            }
+            // Avoid attaching padding to whitespace-only edge fragments for child.
+            final double fsC = cs.fontSize.computedValue;
+            final double smallThreshC = math.max(1.0, fsC * 0.35);
+            final double cFragW = cRight - cLeft;
+            if ((cIsFirst || cIsLast) && cFragW <= smallThreshC) {
+              bool hasOtherWide = false;
+              for (int m = 0; m < childEntry.rects.length; m++) {
+                if (m == j) continue;
+                final rm = childEntry.rects[m];
+                if (lineTop != null && lineBottom != null) {
+                  if (rm.bottom <= lineTop || rm.top >= lineBottom) continue;
+                }
+                final lmIdx = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                    ? currentLineIndex
+                    : _lineIndexForRect(rm);
+                final ljIdx = (lineTop != null && lineBottom != null && currentLineIndex >= 0)
+                    ? currentLineIndex
+                    : _lineIndexForRect(cr);
+                if (lmIdx != ljIdx) continue;
+                final double w = rm.right - rm.left;
+                if (w > smallThreshC) { hasOtherWide = true; break; }
+              }
+              if (hasOtherWide) {
+                if (cIsFirst) cIsFirst = false;
+                if (cIsLast) cIsLast = false;
+              }
+            }
             if (cIsFirst) cLeft -= (cPadL + cBL);
             if (cIsLast) cRight += (cPadR + cBR);
             if (cLeft < left) left = cLeft;
@@ -2242,6 +2345,21 @@ class InlineFormattingContext {
           final String lineInfo = (currentLineIndex >= 0)
               ? ' line=$currentLineIndex'
               : '';
+          // Diagnostics for tiny-edge suppression
+          final double _dbgFs = s.fontSize.computedValue;
+          final double _dbgThresh = math.max(1.0, _dbgFs * 0.35);
+          final double _dbgFragW = right - left;
+          bool _dbgHasOtherWide = false;
+          for (int k = 0; k < e.rects.length; k++) {
+            if (k == i) continue;
+            final rk = e.rects[k];
+            if (lineTop != null && lineBottom != null) {
+              if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
+            }
+            if (_lineOf(rk) != _lineOf(tb)) continue;
+            if ((rk.right - rk.left) > _dbgThresh) { _dbgHasOtherWide = true; break; }
+          }
+          final bool _dbgTinyEdge = (_dbgFragW <= _dbgThresh) && _dbgHasOtherWide && (physLeftEdge || physRightEdge);
           renderingLogger.finer('[DECOR] <${_getElementDescription(e.box)}> frag=${i}'+
               lineInfo+
               ' rect=(${rect.left.toStringAsFixed(2)},${rect.top.toStringAsFixed(2)} - '+
@@ -2250,11 +2368,36 @@ class InlineFormattingContext {
               'borders(T:${drawTop ? bT.toStringAsFixed(2) : '0'}, '+
               'R:${drawRight ? bR.toStringAsFixed(2) : '0'}, '+
               'B:${drawBottom ? bB.toStringAsFixed(2) : '0'}, '+
-              'L:${drawLeft ? bL.toStringAsFixed(2) : '0'})');
+              'L:${drawLeft ? bL.toStringAsFixed(2) : '0'}) '
+              'phys(L:${physLeftEdge},R:${physRightEdge}) '
+              'fragW=${_dbgFragW.toStringAsFixed(2)} thresh=${_dbgThresh.toStringAsFixed(2)} '
+              'hasOtherWide=${_dbgHasOtherWide} tinyEdge=${_dbgTinyEdge}');
         }
 
-        // Background
-        if (s.backgroundColor?.value != null) {
+        // Background: optionally suppress tiny edge whitespace fragment painting to avoid slivers
+        bool _suppressTinyEdgePaint() {
+          final double fs = s.fontSize.computedValue;
+          final double smallThresh = math.max(1.0, fs * 0.35);
+          final double fragW = right - left;
+          if (!(physLeftEdge || physRightEdge)) return false;
+          if (fragW > smallThresh) return false;
+          for (int k = 0; k < e.rects.length; k++) {
+            if (k == i) continue;
+            final rk = e.rects[k];
+            if (lineTop != null && lineBottom != null) {
+              if (rk.bottom <= lineTop || rk.top >= lineBottom) continue;
+            }
+            if (_lineOf(rk) != _lineOf(tb)) continue;
+            if ((rk.right - rk.left) > smallThresh) return true;
+          }
+          return false;
+        }
+        final bool suppressEdge = _suppressTinyEdgePaint();
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
+          renderingLogger.finer('    [paint] frag=${i} suppressEdge=${suppressEdge} '+
+              'phys(L:${physLeftEdge},R:${physRightEdge}) w=${(right-left).toStringAsFixed(2)}');
+        }
+        if (!suppressEdge && s.backgroundColor?.value != null) {
           final bg = Paint()..color = s.backgroundColor!.value;
           canvas.drawRect(rect, bg);
         }
@@ -2263,20 +2406,20 @@ class InlineFormattingContext {
         final p = Paint()..style = PaintingStyle.fill;
         // Paint top border on every fragment (spec behavior). With clamped bands
         // and conditional padding, the shared join sits at a single y.
-        if (bT > 0) {
+        if (!suppressEdge && bT > 0) {
           p.color = s.borderTopColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, bT), p);
         }
         // Paint bottom border on every fragment.
-        if (bB > 0) {
+        if (!suppressEdge && bB > 0) {
           p.color = s.borderBottomColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - bB, rect.width, bB), p);
         }
-        if (isFirst && bL > 0) {
+        if (!suppressEdge && isFirst && bL > 0) {
           p.color = s.borderLeftColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, bL, rect.height), p);
         }
-        if (isLast && bR > 0) {
+        if (!suppressEdge && isLast && bR > 0) {
           p.color = s.borderRightColor?.value ?? const Color(0xFF000000);
           canvas.drawRect(Rect.fromLTWH(rect.right - bR, rect.top, bR, rect.height), p);
         }
