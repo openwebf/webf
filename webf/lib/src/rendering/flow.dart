@@ -388,23 +388,31 @@ class RenderFlowLayout extends RenderLayoutBox {
       final tag = renderStyle.target.tagName.toLowerCase();
       renderingLogger.finer('[Flow] <$tag> IFC usedContentWidth init=' + usedContentWidth.toStringAsFixed(2));
     }
-    // For inline-block with auto width and a max-width, if the inline content's
-    // max-intrinsic width exceeds the max-width, the shrink-to-fit result should
-    // use the max-width as the used width (content box). This matches browsers
-    // where long text wraps but the inline-block still occupies the full max-width.
-    if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock &&
-        renderStyle.width.isAuto &&
-        renderStyle.maxWidth.isNotNone &&
-        contentConstraints != null &&
-        contentConstraints!.maxWidth.isFinite) {
-      final double constraintContentMax = contentConstraints!.maxWidth;
-      final double paraMax = inlineFormattingContext.paragraphMaxIntrinsicWidth;
-      if (paraMax > constraintContentMax + 0.5) {
-        usedContentWidth = constraintContentMax;
+    // CSS shrink-to-fit width for inline-block with auto width:
+    // used = min( max(min-content, available), max-content )
+    if (renderStyle.effectiveDisplay == CSSDisplay.inlineBlock && renderStyle.width.isAuto) {
+      final double? avail = (contentConstraints != null && contentConstraints!.hasBoundedWidth)
+          ? contentConstraints!.maxWidth
+          : (constraints.hasBoundedWidth ? constraints.maxWidth : double.nan);
+      if (avail != null && avail.isFinite) {
+        final double minContent = inlineFormattingContext.paragraphMinIntrinsicWidth;
+        final double maxContent = inlineFormattingContext.paragraphMaxIntrinsicWidth;
+        // Guard against degenerate values
+        final double clampedMin = minContent.isFinite && minContent > 0 ? minContent : 0;
+        final double clampedMax = maxContent.isFinite && maxContent > 0 ? maxContent : clampedMin;
+        final double step1 = math.max(clampedMin, avail);
+        final double shrinkToFit = math.min(step1, clampedMax);
+        usedContentWidth = shrinkToFit;
+        // Ensure the paragraph inside the inline-block is also shaped to the
+        // final shrink-to-fit used width so its text aligns at the content edge.
+        if ((ifcSize.width - usedContentWidth).abs() > 0.5) {
+          inlineFormattingContext.relayoutParagraphToWidth(usedContentWidth);
+        }
         if (DebugFlags.debugLogFlowEnabled) {
           final tag = renderStyle.target.tagName.toLowerCase();
-          renderingLogger.finer('[Flow] <$tag> IFC shrink-to-fit: paraMax='
-              '${paraMax.toStringAsFixed(2)} → used=${usedContentWidth.toStringAsFixed(2)}');
+          renderingLogger.finer('[Flow] <$tag> IFC shrink-to-fit: avail=${avail.toStringAsFixed(2)} '
+              'min=${clampedMin.toStringAsFixed(2)} max=${clampedMax.toStringAsFixed(2)} '
+              '→ used=${usedContentWidth.toStringAsFixed(2)}');
         }
       }
     }

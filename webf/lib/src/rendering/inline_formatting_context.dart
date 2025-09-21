@@ -479,6 +479,20 @@ class InlineFormattingContext {
   // Expose paragraph object for consumers (Flow) that need paragraph height fallback.
   ui.Paragraph? get paragraph => _paragraph;
 
+  // Relayout the existing paragraph to a new width and refresh line/placeholder caches.
+  // Used by shrink-to-fit adjustments (e.g., inline-block auto width) so that
+  // text inside the element is positioned relative to the final used width.
+  void relayoutParagraphToWidth(double width) {
+    if (_paragraph == null) return;
+    if (!width.isFinite || width <= 0) return;
+    _paragraph!.layout(ui.ParagraphConstraints(width: width));
+    _paraLines = _paragraph!.computeLineMetrics();
+    _placeholderBoxes = _paragraph!.getBoxesForPlaceholders();
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
+      renderingLogger.fine('[IFC] relayout paragraph to width=${width.toStringAsFixed(2)}');
+    }
+  }
+
   // Leading spacer logic removed; pass 2 only re-enables right extras for
   // single-line owners and relies on per-line reserves for others.
 
