@@ -1238,6 +1238,31 @@ class InlineFormattingContext {
     final double contentOriginY =
         container.renderStyle.paddingTop.computedValue + container.renderStyle.effectiveBorderTopWidth.computedValue;
 
+    // In RTL, distribute atomic inline boxes from the right by reversing the
+    // mapping of placeholders-to-rects within each visual line. Flutter's
+    // placeholder ordering is left-to-right; CSS inline formatting in RTL packs
+    // boxes from the right edge. Compute a per-line remap: index -> TextBox.
+    Map<int, ui.TextBox>? rtlRemap;
+    if ((container as RenderBoxModel).renderStyle.direction == TextDirection.rtl) {
+      // Group indices by paragraph line index.
+      final Map<int, List<int>> byLine = <int, List<int>>{};
+      for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
+        final tb = _placeholderBoxes[i];
+        final int li = _lineIndexForRect(tb);
+        if (li < 0) continue;
+        byLine.putIfAbsent(li, () => <int>[]).add(i);
+      }
+      // Build remap: for each line, reverse the order of TextBoxes.
+      rtlRemap = <int, ui.TextBox>{};
+      byLine.forEach((int li, List<int> idxs) {
+        for (int j = 0; j < idxs.length; j++) {
+          final int src = idxs[j];
+          final int dst = idxs[idxs.length - 1 - j];
+          rtlRemap![src] = _placeholderBoxes[dst];
+        }
+      });
+    }
+
     for (int i = 0; i < _placeholderOrder.length && i < _placeholderBoxes.length; i++) {
       final rb = _placeholderOrder[i];
       if (rb == null) continue;
@@ -1250,7 +1275,7 @@ class InlineFormattingContext {
         p = p.parent;
       }
 
-      final tb = _placeholderBoxes[i];
+      final tb = (rtlRemap != null && rtlRemap.containsKey(i)) ? rtlRemap[i]! : _placeholderBoxes[i];
       double left = tb.left;
       double top = tb.top;
       // Add box margins and conditionally add CSS relative offset.
@@ -1700,6 +1725,15 @@ class InlineFormattingContext {
           }
         }
         _placeholderOrder.add(rb);
+        // In RTL, ensure atomic placeholders participate as strong RTL so that
+        // sequences of inline-blocks order visually right-to-left. Insert an RLM
+        // (U+200F) as a zero-width strong RTL character prior to the placeholder.
+        if (style.direction == TextDirection.rtl) {
+          pb.pushStyle(_uiTextStyleFromCss(style));
+          pb.addText('\u200F');
+          pb.pop();
+          paraPos += 1;
+        }
         _allPlaceholders.add(_InlinePlaceholder.atomic(rb));
         _textRunParas.add(null);
         if (rbStyle.verticalAlign != VerticalAlign.baseline) {
