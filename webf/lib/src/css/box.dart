@@ -6,7 +6,9 @@
 import 'dart:core';
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 
 // CSS Box Model: https://drafts.csswg.org/css-box-4/
 mixin CSSBoxMixin on RenderStyle {
@@ -66,7 +68,7 @@ mixin CSSBoxMixin on RenderStyle {
       );
     }
 
-    return _cachedDecoration = CSSBoxDecoration(
+    final CSSBoxDecoration built = CSSBoxDecoration(
       boxShadow: shadows,
       color: gradient != null ? null : backgroundColor?.value, // FIXME: chrome will work with gradient and color.
       image: decorationImage,
@@ -74,6 +76,17 @@ mixin CSSBoxMixin on RenderStyle {
       borderRadius: borderRadius,
       gradient: gradient,
     );
+
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] build decoration: ' +
+          'color=' + (built.color?.toString() ?? 'null') + ', ' +
+          'image=' + (image != null ? backgroundImage?.cssText() ?? 'none' : 'none') + ', ' +
+          'repeat=' + backgroundRepeat.cssText() + ', ' +
+          'position=' + backgroundPositionX.cssText() + ' ' + backgroundPositionY.cssText() + ', ' +
+          'size=' + backgroundSize.cssText());
+    }
+
+    return _cachedDecoration = built;
   }
 }
 

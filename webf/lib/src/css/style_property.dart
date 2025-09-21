@@ -4,6 +4,8 @@
  */
 
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
+import 'package:flutter/foundation.dart';
 import 'package:webf/src/css/css_animation.dart';
 
 // aB to a-b
@@ -126,17 +128,46 @@ class CSSStyleProperty {
     List<String?>? values = _getBackgroundValues(shorthandValue);
     if (values == null) return;
 
-    properties[BACKGROUND_COLOR] = values[0];
-    properties[BACKGROUND_IMAGE] = values[1];
-    properties[BACKGROUND_REPEAT] = values[2];
-    properties[BACKGROUND_ATTACHMENT] = values[3];
-    String? backgroundPosition = values[4];
-    if (backgroundPosition != null) {
-      List<String> positions = CSSPosition.parsePositionShorthand(backgroundPosition);
+    // Debug: log shorthand parsing input/output
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] shorthand input="' + shorthandValue + '" parsed=' + values.toString());
+    }
+
+    // Per CSS Backgrounds spec, unspecified subproperties reset to their initial values.
+    // Initials: color=transparent, image=none, repeat=repeat, attachment=scroll,
+    // position=0% 0%, size=auto. Origin/clip not parsed here.
+    final String color = values[0] ?? 'transparent';
+    final String image = values[1] ?? 'none';
+    final String repeat = values[2] ?? 'repeat';
+    final String attachment = values[3] ?? 'scroll';
+    final String? positionShorthand = values[4];
+    final String size = values[5] ?? 'auto';
+
+    properties[BACKGROUND_COLOR] = color;
+    properties[BACKGROUND_IMAGE] = image;
+    properties[BACKGROUND_REPEAT] = repeat;
+    properties[BACKGROUND_ATTACHMENT] = attachment;
+    if (positionShorthand != null) {
+      List<String> positions = CSSPosition.parsePositionShorthand(positionShorthand);
       properties[BACKGROUND_POSITION_X] = positions[0];
       properties[BACKGROUND_POSITION_Y] = positions[1];
+    } else {
+      // Reset to initial when not specified
+      properties[BACKGROUND_POSITION_X] = '0%';
+      properties[BACKGROUND_POSITION_Y] = '0%';
     }
-    properties[BACKGROUND_SIZE] = values[5];
+    properties[BACKGROUND_SIZE] = size;
+
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] expanded -> ' +
+          'color=' + properties[BACKGROUND_COLOR]!.toString() + ', ' +
+          'image=' + properties[BACKGROUND_IMAGE]!.toString() + ', ' +
+          'repeat=' + properties[BACKGROUND_REPEAT]!.toString() + ', ' +
+          'attachment=' + properties[BACKGROUND_ATTACHMENT]!.toString() + ', ' +
+          'position-x=' + properties[BACKGROUND_POSITION_X]!.toString() + ', ' +
+          'position-y=' + properties[BACKGROUND_POSITION_Y]!.toString() + ', ' +
+          'size=' + properties[BACKGROUND_SIZE]!.toString());
+    }
   }
 
   static void removeShorthandBackground(CSSStyleDeclaration style, [bool? isImportant]) {
@@ -398,7 +429,7 @@ class CSSStyleProperty {
     if (borderRightWidth != null) properties[BORDER_RIGHT_WIDTH] = borderRightWidth;
     if (borderBottomWidth != null) properties[BORDER_BOTTOM_WIDTH] = borderBottomWidth;
     if (borderLeftWidth != null) properties[BORDER_LEFT_WIDTH] = borderLeftWidth;
-    
+
     // Logical properties
     if (borderInlineStartWidth != null) properties[BORDER_INLINE_START_WIDTH] = borderInlineStartWidth;
     if (borderInlineStartStyle != null) properties[BORDER_INLINE_START_STYLE] = borderInlineStartStyle;

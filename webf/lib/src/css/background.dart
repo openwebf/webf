@@ -304,6 +304,9 @@ class CSSBackgroundImage {
         if (url.isNotEmpty) {
           uri = controller.uriParser!.resolve(Uri.parse(baseHref ?? controller.url), uri);
           FlutterView ownerFlutterView = controller.ownerFlutterView!;
+          if (kDebugMode && DebugFlags.enableCssLogs) {
+            cssLogger.fine('[background] resolve image url: ' + uri.toString());
+          }
           return _image = BoxFitImage(
             boxFit: renderStyle.backgroundSize.fit,
             url: uri,
@@ -314,6 +317,9 @@ class CSSBackgroundImage {
             devicePixelRatio: ownerFlutterView.devicePixelRatio);
         }
       }
+    }
+    if (kDebugMode && DebugFlags.enableCssLogs) {
+      cssLogger.fine('[background] no image/gradient found');
     }
     return null;
   }
@@ -492,30 +498,26 @@ class CSSBackgroundImage {
   }
 
   String cssText() {
-    if (image != null) {
-      switch (image.runtimeType) {
-        case NetworkImage:
-          return (image as NetworkImage).url;
-        case FileImage:
-          return (image as FileImage).file.uri.path;
-        case MemoryImage:
-          return 'data:image/png;base64, ${base64Encode((image as MemoryImage).bytes)}';
-        case AssetImage:
-          return 'assets://${(image as AssetImage).assetName}';
-        default:
-          return 'none';
-      }
-    }
-    if (gradient != null) {
-      switch (gradient!.runtimeType) {
-        case CSSLinearGradient:
-          return (gradient as CSSLinearGradient).cssText();
-        case CSSRadialGradient:
-          return (gradient as CSSRadialGradient).cssText();
-        case CSSConicGradient:
-          return (gradient as CSSConicGradient).cssText();
-        default:
-          return 'none';
+    // Prefer stable serialization from functions rather than provider types.
+    for (final method in functions) {
+      switch (method.name) {
+        case 'url':
+          String url = method.args.isNotEmpty ? method.args[0] : '';
+          url = removeQuotationMark(url);
+          if (url.isEmpty) return 'none';
+          // Resolve against baseHref/controller.url for computed style output
+          final resolved = controller.uriParser!
+              .resolve(Uri.parse(baseHref ?? controller.url), Uri.parse(url))
+              .toString();
+          return 'url($resolved)';
+        case 'linear-gradient':
+        case 'repeating-linear-gradient':
+          return (gradient as CSSLinearGradient?)?.cssText() ?? 'none';
+        case 'radial-gradient':
+        case 'repeating-radial-gradient':
+          return (gradient as CSSRadialGradient?)?.cssText() ?? 'none';
+        case 'conic-gradient':
+          return (gradient as CSSConicGradient?)?.cssText() ?? 'none';
       }
     }
     return 'none';
@@ -614,6 +616,8 @@ class CSSBackground {
   }
 
   static bool isValidBackgroundImageValue(String value) {
+    // According to CSS Backgrounds spec, 'none' is a valid <bg-image> keyword.
+    if (value == 'none') return true;
     return (value.lastIndexOf(')') == value.length - 1) &&
         (value.startsWith('url(') ||
             value.startsWith('linear-gradient(') ||

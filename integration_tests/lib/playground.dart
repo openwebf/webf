@@ -30,6 +30,7 @@ void main() async {
   DebugFlags.debugLogInlineLayoutEnabled = true;
   debugPaintBaselinesEnabled = true;
   DebugFlags.enableDomLogs = true;
+  DebugFlags.enableCssLogs = true;
   DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
   DebugFlags.debugLogFlowEnabled = true;

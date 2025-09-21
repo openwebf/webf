@@ -1,5 +1,5 @@
 describe('Background shorthand resets', () => {
-  it('background: none resets images and subproperties to initial', async (done) => {
+  it('background: none resets images and subproperties to initial', async () => {
     const target = createElement('div', {
       style: {
         width: '100px',
@@ -10,20 +10,23 @@ describe('Background shorthand resets', () => {
     });
     append(BODY, target);
 
-    target.ononscreen = () => {
-      // Apply background: none and verify computed values
-      target.style.background = 'none';
-      const cs = window.getComputedStyle(target);
-      expect(cs.getPropertyValue('background-image')).toBe('none');
-      expect(cs.getPropertyValue('background-repeat')).toBe('repeat');
-      expect(cs.getPropertyValue('background-attachment')).toBe('scroll');
-      expect(cs.getPropertyValue('background-position')).toBe('0% 0%');
-      // size is a list with / auto in shorthand; computed typically 'auto'
-      expect(cs.getPropertyValue('background-size')).toBe('auto');
-      // color should reset to transparent as not specified
-      expect(cs.getPropertyValue('background-color')).toBe('rgba(0, 0, 0, 0)');
-      done();
-    };
+    await snapshot(1);
+
+    // Apply background: none and verify computed values
+    target.style.background = 'none';
+
+    await waitForFrame();
+
+    const cs = window.getComputedStyle(target);
+    expect(cs.getPropertyValue('background-image')).toBe('none');
+    expect(cs.getPropertyValue('background-repeat')).toBe('repeat');
+    expect(cs.getPropertyValue('background-attachment')).toBe('scroll');
+    expect(cs.getPropertyValue('background-position')).toBe('0% 0%');
+    // size is a list with / auto in shorthand; computed typically 'auto'
+    expect(cs.getPropertyValue('background-size')).toBe('auto');
+    // color should reset to transparent as not specified
+    expect(cs.getPropertyValue('background-color')).toBe('rgba(0, 0, 0, 0)');
+    await snapshot();
   });
 
   it('setting background color via shorthand resets other subproperties', async (done) => {
