@@ -114,6 +114,58 @@ class LIElement extends Element {
 
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
+
+  // Inject a default marker for UL > LI using ::before content.
+  // This approximates UA list-style for unordered lists and respects RTL by
+  // leveraging inline content order.
+  @override
+  void applyStyle(CSSStyleDeclaration style) {
+    // 1) Apply element default styles (UA defaults).
+    if (defaultStyle.isNotEmpty) {
+      defaultStyle.forEach((propertyName, value) {
+        if (style.contains(propertyName) == false) {
+          style.setProperty(propertyName, value);
+        }
+      });
+    }
+
+    // 2) Initialize display early so layout can proceed even before flush.
+    renderStyle.initDisplay(style);
+
+    // 3) Provide a default ::before bullet for UL list items.
+    // Author styles can override via li::before { content: ... } since
+    // handlePseudoRules() merges later with higher priority.
+    if (parentElement is UListElement) {
+      style.pseudoBeforeStyle ??= CSSStyleDeclaration();
+      // Only set a default if author CSS hasn't already provided one.
+      if (style.pseudoBeforeStyle!.getPropertyValue(CONTENT).isEmpty) {
+        style.pseudoBeforeStyle!.setProperty(CONTENT, '"• "');
+        // Make the bullet closer to UA disc size.
+        if (style.pseudoBeforeStyle!.getPropertyValue(FONT_SIZE).isEmpty) {
+          style.pseudoBeforeStyle!.setProperty(FONT_SIZE, '1.2em');
+        }
+      }
+    }
+
+    // 4) Attribute styles (none for LI currently but keep for completeness).
+    applyAttributeStyle(style);
+
+    // 5) Inline styles (highest priority among author styles).
+    if (inlineStyle.isNotEmpty) {
+      inlineStyle.forEach((propertyName, value) {
+        style.setProperty(propertyName, value, isImportant: true);
+      });
+    }
+
+    // 6) Stylesheet rules matching this element.
+    final ElementRuleCollector collector = ElementRuleCollector();
+    final CSSStyleDeclaration matchRule = collector.collectionFromRuleSet(ownerDocument.ruleSet, this);
+    style.union(matchRule);
+
+    // 7) Pseudo rules (::before/::after) from stylesheets to override defaults.
+    final List<CSSStyleRule> pseudoRules = collector.matchedPseudoRules(ownerDocument.ruleSet, this);
+    style.handlePseudoRules(this, pseudoRules);
+  }
 }
 
 // https://html.spec.whatwg.org/multipage/grouping-content.html#htmlpreelement
