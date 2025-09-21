@@ -37,13 +37,15 @@ const Map<String, dynamic> _bDefaultStyle = {
   DISPLAY: BLOCK,
   MARGIN_TOP: '1em',
   MARGIN_BOTTOM: '1em',
-  MARGIN_LEFT: '40px',
-  MARGIN_RIGHT: '40px'
+  // Logical margins to remain symmetric under RTL/LTR.
+  MARGIN_INLINE_START: '40px',
+  MARGIN_INLINE_END: '40px'
 };
 
 const Map<String, dynamic> _ddDefaultStyle = {
   DISPLAY: BLOCK,
-  MARGIN_LEFT: '40px',
+  // Term descriptions are indented on the inline-start side per UA stylesheet.
+  MARGIN_INLINE_START: '40px',
 };
 
 Map<String, dynamic> _pDefaultStyle = {DISPLAY: BLOCK, MARGIN_TOP: '1em', MARGIN_BOTTOM: '1em'};
