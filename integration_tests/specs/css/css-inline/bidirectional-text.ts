@@ -1,4 +1,4 @@
-fdescribe('Bidirectional Text (Phase 1)', () => {
+describe('Bidirectional Text (Phase 1)', () => {
   // Basic RTL Text Tests (1.1-1.6)
 
   it('should render RTL text correctly', async () => {

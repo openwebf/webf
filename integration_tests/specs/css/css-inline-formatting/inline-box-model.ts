@@ -382,7 +382,7 @@ describe('Inline Box Model', () => {
   });
 
   // Hit testing inline elements with padding
-  it('should handle hit testing on inline elements with padding', async () => {
+  fit('should handle hit testing on inline elements with padding', async () => {
     let container;
     let clickedElement: any = null;
     let clickCount = 0;
@@ -531,7 +531,7 @@ describe('Inline Box Model', () => {
   });
 
   // Hit testing nested inline elements
-  it('should handle hit testing on nested inline elements with padding', async () => {
+  fit('should handle hit testing on nested inline elements with padding', async () => {
     let container;
     let clickedElements = [];
 
