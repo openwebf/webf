@@ -132,21 +132,6 @@ class LIElement extends Element {
     // 2) Initialize display early so layout can proceed even before flush.
     renderStyle.initDisplay(style);
 
-    // 3) Provide a default ::before bullet for UL list items.
-    // Author styles can override via li::before { content: ... } since
-    // handlePseudoRules() merges later with higher priority.
-    if (parentElement is UListElement) {
-      style.pseudoBeforeStyle ??= CSSStyleDeclaration();
-      // Only set a default if author CSS hasn't already provided one.
-      if (style.pseudoBeforeStyle!.getPropertyValue(CONTENT).isEmpty) {
-        style.pseudoBeforeStyle!.setProperty(CONTENT, '"• "');
-        // Make the bullet closer to UA disc size.
-        if (style.pseudoBeforeStyle!.getPropertyValue(FONT_SIZE).isEmpty) {
-          style.pseudoBeforeStyle!.setProperty(FONT_SIZE, '1.2em');
-        }
-      }
-    }
-
     // 4) Attribute styles (none for LI currently but keep for completeness).
     applyAttributeStyle(style);
 
@@ -165,6 +150,134 @@ class LIElement extends Element {
     // 7) Pseudo rules (::before/::after) from stylesheets to override defaults.
     final List<CSSStyleRule> pseudoRules = collector.matchedPseudoRules(ownerDocument.ruleSet, this);
     style.handlePseudoRules(this, pseudoRules);
+
+    // 8) List marker generation based on list-style-type
+    String _getProp(CSSStyleDeclaration s, String camel, String kebab) {
+      final v1 = s.getPropertyValue(camel);
+      if (v1.isNotEmpty) return v1;
+      return s.getPropertyValue(kebab);
+    }
+
+    String? _effectiveListStyleType() {
+      // Check self
+      String t = _getProp(style, 'listStyleType', 'list-style-type');
+      if (t.isNotEmpty) return t;
+      // Check parent
+      if (parentElement != null) {
+        String pt = _getProp(parentElement!.style, 'listStyleType', 'list-style-type');
+        if (pt.isNotEmpty) return pt;
+      }
+      // Defaults by parent tag
+      if (parentElement is OListElement) return 'decimal';
+      if (parentElement is UListElement) return 'disc';
+      return null;
+    }
+
+    int _indexWithinList() {
+      final p = parentElement;
+      if (p == null) return 1;
+      int idx = 0;
+      for (final child in p.children) {
+        if (child is LIElement) idx++;
+        if (identical(child, this)) break;
+      }
+      return idx == 0 ? 1 : idx;
+    }
+
+    String _toAlpha(int n, {bool upper = false}) {
+      // 1->a, 26->z, 27->aa
+      int num = n;
+      StringBuffer sb = StringBuffer();
+      while (num > 0) {
+        num--; // make it 0-based
+        int rem = num % 26;
+        sb.writeCharCode((upper ? 65 : 97) + rem);
+        num ~/= 26;
+      }
+      return sb.toString().split('').reversed.join();
+    }
+
+    String _toRoman(int n, {bool upper = false}) {
+      if (n <= 0) return upper ? 'N' : 'n';
+      final List<List<dynamic>> map = [
+        [1000, 'M'],
+        [900, 'CM'],
+        [500, 'D'],
+        [400, 'CD'],
+        [100, 'C'],
+        [90, 'XC'],
+        [50, 'L'],
+        [40, 'XL'],
+        [10, 'X'],
+        [9, 'IX'],
+        [5, 'V'],
+        [4, 'IV'],
+        [1, 'I'],
+      ];
+      int num = n;
+      StringBuffer sb = StringBuffer();
+      for (final pair in map) {
+        int val = pair[0] as int;
+        String sym = pair[1] as String;
+        while (num >= val) {
+          sb.write(sym);
+          num -= val;
+        }
+      }
+      String s = sb.toString();
+      return upper ? s : s.toLowerCase();
+    }
+
+    void _ensurePseudo() {
+      style.pseudoBeforeStyle ??= CSSStyleDeclaration();
+      if (style.pseudoBeforeStyle!.getPropertyValue(FONT_SIZE).isEmpty) {
+        style.pseudoBeforeStyle!.setProperty(FONT_SIZE, '1.2em');
+      }
+    }
+
+    final type = _effectiveListStyleType();
+    if (type != null) {
+      // Only set when author didn't explicitly set ::before content
+      final hasAuthorContent = style.pseudoBeforeStyle?.getPropertyValue(CONTENT).isNotEmpty == true;
+      if (!hasAuthorContent) {
+        if (type == 'none') {
+          // no marker
+          if (style.pseudoBeforeStyle != null) {
+            style.pseudoBeforeStyle!.setProperty(CONTENT, '');
+          }
+        } else if (type == 'disc') {
+          // bullet
+          _ensurePseudo();
+          style.pseudoBeforeStyle!.setProperty(CONTENT, '"• "');
+        } else {
+          // ordered styles
+          final idx = _indexWithinList();
+          String marker;
+          switch (type) {
+            case 'decimal':
+              marker = idx.toString();
+              break;
+            case 'lower-alpha':
+              marker = _toAlpha(idx, upper: false);
+              break;
+            case 'upper-alpha':
+              marker = _toAlpha(idx, upper: true);
+              break;
+            case 'lower-roman':
+              marker = _toRoman(idx, upper: false);
+              break;
+            case 'upper-roman':
+              marker = _toRoman(idx, upper: true);
+              break;
+            default:
+              marker = idx.toString();
+              break;
+          }
+          _ensurePseudo();
+          style.pseudoBeforeStyle!.setProperty(CONTENT, '"' + marker + '. "');
+        }
+      }
+    }
   }
 }
 
