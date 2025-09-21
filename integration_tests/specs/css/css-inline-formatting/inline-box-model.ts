@@ -382,7 +382,7 @@ describe('Inline Box Model', () => {
   });
 
   // Hit testing inline elements with padding
-  fit('should handle hit testing on inline elements with padding', async () => {
+  it('should handle hit testing on inline elements with padding', async () => {
     let container;
     let clickedElement: any = null;
     let clickCount = 0;
@@ -408,7 +408,6 @@ describe('Inline Box Model', () => {
               border: '2px solid blue',
             },
             onclick: (e) => {
-              console.log('clicked', e.target, e.currentTarget);
               clickedElement = e.target.id;
               clickCount++;
             },
@@ -420,11 +419,6 @@ describe('Inline Box Model', () => {
     );
     BODY.appendChild(container);
 
-    // Add document click handler for debugging
-    document.addEventListener('click', (e) => {
-      console.log('Document clicked at:', e.clientX, e.clientY, 'target:', e.target);
-    });
-
     // Wait for layout to complete
     await new Promise(resolve => requestAnimationFrame(resolve));
 
@@ -433,44 +427,20 @@ describe('Inline Box Model', () => {
     const rect = span.getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
-    console.log('Span rect:', rect);
-    console.log('Container rect:', containerRect);
-    console.log('Container has padding 20px, so content starts at y=20');
-    console.log('Span computed style padding:', window.getComputedStyle(span).paddingLeft, window.getComputedStyle(span).paddingRight);
-    console.log('Span rect width:', rect.width, 'Expected content width without padding:', rect.width - 60); // 30px left + 30px right
-
-    // Try to understand where the padding area actually is
-    const textBefore = container.childNodes[0];
-    const textAfter = container.childNodes[2];
-    console.log('Text before:', textBefore.textContent, 'length:', textBefore.textContent.length);
-    console.log('Span text:', span.textContent);
-
-    // Calculate expected positions with padding
-    const expectedLeftWithPadding = rect.left - 30; // 30px left padding
-    const expectedRightWithPadding = rect.right + 30; // 30px right padding
-    console.log('Expected span bounds with padding:', expectedLeftWithPadding, 'to', expectedRightWithPadding);
-    console.log('Click position:', rect.left + 10, rect.top + 10);
-
     // Test 0: First try clicking in the center to verify basic hit testing works
     const centerX_ = rect.left + rect.width / 2;
     const centerY_ = rect.top + rect.height / 2;
-    console.log('Clicking at center:', centerX_, centerY_);
     await simulateClick(centerX_, centerY_);
-    console.log('After center click - clickCount:', clickCount, 'clickedElement:', clickedElement);
 
     // Also try clicking on the actual text position
     // The text 'Click me' might be shifted by the padding
-    const textStartEstimate = rect.left; // This might actually be where the padded content starts
-    console.log('Estimated text start:', textStartEstimate);
 
     // Test 1a: Click just to the left of the rect (use center Y to ensure we're in the right vertical position)
     // In Chrome, getBoundingClientRect includes padding, so clicking outside the rect won't hit the span
     // Updated to click inside the rect bounds
     clickCount = 0;
     clickedElement = null;
-    console.log('Clicking just inside rect left edge:', rect.left + 5, centerY_);
     await simulateClick(rect.left + 5, centerY_);
-    console.log('After left edge click - clickCount:', clickCount, 'clickedElement:', clickedElement);
     expect(clickCount).toBe(1);
     expect(clickedElement).toBe('padded-span');
 
@@ -479,26 +449,20 @@ describe('Inline Box Model', () => {
     // may not be clickable if it's outside the span's actual bounds
     clickCount = 0;
     clickedElement = null;
-    console.log('Clicking in left padding:', rect.left - 20, centerY_);
     await simulateClick(rect.left - 20, centerY_);
-    console.log('After padding click - clickCount:', clickCount, 'clickedElement:', clickedElement);
     // This click is in the overlapping area between text and padding, so it hits the container
 
     // Test 1c: Click on the left padding area (should hit span in Chrome)
     clickCount = 0;
     clickedElement = null;
-    console.log('Clicking in left padding area:', rect.left + 10, centerY_);
     await simulateClick(rect.left + 10, centerY_);
-    console.log('After left padding click - clickCount:', clickCount, 'clickedElement:', clickedElement);
     expect(clickCount).toBe(1);
     expect(clickedElement).toBe('padded-span');
 
     // Test 1d: Click in the content area (should definitely hit span)
     clickCount = 0;
     clickedElement = null;
-    console.log('Clicking in content:', rect.left + 20, centerY_);
     await simulateClick(rect.left + 20, centerY_);
-    console.log('After content click - clickCount:', clickCount, 'clickedElement:', clickedElement);
     expect(clickCount).toBe(1);
     expect(clickedElement).toBe('padded-span');
 
@@ -531,7 +495,7 @@ describe('Inline Box Model', () => {
   });
 
   // Hit testing nested inline elements
-  fit('should handle hit testing on nested inline elements with padding', async () => {
+  it('should handle hit testing on nested inline elements with padding', async () => {
     let container;
     let clickedElements = [];
 
@@ -585,20 +549,27 @@ describe('Inline Box Model', () => {
     );
     BODY.appendChild(container);
 
+    // Ensure layout has completed before measuring rects
+    await waitForOnScreen(container);
+
     // Get both span elements
     const outerSpan = container.querySelector('#outer-span');
     const innerSpan = container.querySelector('#inner-span');
     const outerRect = outerSpan.getBoundingClientRect();
     const innerRect = innerSpan.getBoundingClientRect();
+    const innerCenterX = innerRect.left + innerRect.width / 2;
+    const innerCenterY = innerRect.top + innerRect.height / 2;
+    const outerPaddingX = outerRect.left + 5;
+    const outerPaddingY = outerRect.top + 5;
 
     // Test 1: Click on inner span (should hit inner only due to stopPropagation)
     clickedElements = [];
-    await simulateClick(innerRect.left + innerRect.width / 2, innerRect.top + innerRect.height / 2);
+    await simulateClick(innerCenterX, innerCenterY);
     expect(clickedElements).toEqual(['inner']);
 
     // Test 2: Click on outer span padding (should hit outer only)
     clickedElements = [];
-    await simulateClick(outerRect.left + 5, outerRect.top + 5);
+    await simulateClick(outerPaddingX, outerPaddingY);
     expect(clickedElements).toEqual(['outer']);
 
     await snapshot();

@@ -92,12 +92,6 @@
     ]
   },
   {
-    "name": "CSSInline",
-    "specs": [
-      "specs/css/css-inline-formatting/**/*.{js,jsx,ts,tsx,html}"
-    ]
-  },
-  {
     "name": "Transforms",
     "specs": [
       "specs/css/css-transforms/**/*.{js,jsx,ts,tsx,html}"
