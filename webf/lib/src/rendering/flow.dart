@@ -382,8 +382,9 @@ class RenderFlowLayout extends RenderLayoutBox {
           markerText = idx.toString();
           break;
       }
-      // Append period to match common UA formatting
-      markerText = '$markerText.';
+      // In RTL, period precedes the marker number/alpha; in LTR, it follows.
+      final bool isRTLDir = renderStyle.direction == TextDirection.rtl;
+      markerText = isRTLDir ? '.$markerText' : '$markerText.';
     }
 
     // Measure marker and a single space using current text style
@@ -421,14 +422,13 @@ class RenderFlowLayout extends RenderLayoutBox {
       baselineY = contentOffset.dy + markerBaseline;
     }
 
-    // Compute X based on writing direction; place outside border box with a space gap
+    // Compute X outside the border box on the inline-start side with a space gap
     final bool isRTL = renderStyle.direction == TextDirection.rtl;
-    double drawX;
-    if (isRTL) {
-      drawX = borderOffset.dx + size.width + spaceW;
-    } else {
-      drawX = borderOffset.dx - markerW - spaceW;
-    }
+    final double drawX = isRTL
+        // Place to the right of the border box for RTL
+        ? borderOffset.dx + size.width + spaceW
+        // Place to the left of the border box for LTR
+        : borderOffset.dx - markerW - spaceW;
     final double drawY = baselineY - markerBaseline;
 
     // Paint paragraph at computed position
