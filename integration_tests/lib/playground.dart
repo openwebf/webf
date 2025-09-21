@@ -29,10 +29,11 @@ void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
   DebugFlags.debugLogInlineLayoutEnabled = true;
   debugPaintBaselinesEnabled = true;
-  // DebugFlags.debugPaintInlineLayoutEnabled = true;
+  DebugFlags.enableDomLogs = true;
+  DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
   DebugFlags.debugLogFlowEnabled = true;
-  DebugFlags.debugLogFlexEnabled = true;
+  // DebugFlags.debugLogFlexEnabled = true;
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

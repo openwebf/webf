@@ -222,8 +222,8 @@ class BoxLineBoxItem extends LineBoxItem {
       contentHeight + paddingTop + paddingBottom + borderTop + borderBottom,  // Content + padding + borders
     );
 
-    // Paint background
-    if (style.backgroundColor?.value != null) {
+    // Paint background unless background-clip:text (handled by IFC glyph mask)
+    if (style.backgroundColor?.value != null && style.backgroundClip != CSSBackgroundBoundary.text) {
       final paint = Paint()
         ..color = style.backgroundColor!.value;
       canvas.drawRect(paintRect, paint);

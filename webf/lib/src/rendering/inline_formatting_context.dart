@@ -82,6 +82,8 @@ class InlineFormattingContext {
   // Track all placeholders (atomic and extras) to synthesize boxes for empty spans
   final List<_InlinePlaceholder> _allPlaceholders = [];
 
+  // Debug variables removed after stabilization.
+
   // Two-pass control: suppress right-extras placeholders in the first pass so
   // we can observe natural line breaks, then selectively re-enable them for
   // inline elements that don't fragment across lines.
@@ -160,8 +162,12 @@ class InlineFormattingContext {
     if (families != null && families.isNotEmpty) {
       CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
     }
+    final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
+    final Color baseColor = rs.color.value;
+    final Color effectiveColor = clipText ? baseColor.withAlpha(0xFF) : baseColor;
     return ui.TextStyle(
-      color: rs.backgroundClip != CSSBackgroundBoundary.text ? rs.color.value : null,
+      // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
+      color: effectiveColor,
       decoration: rs.textDecorationLine,
       decorationColor: rs.textDecorationColor?.value,
       decorationStyle: rs.textDecorationStyle,
@@ -671,6 +677,10 @@ class InlineFormattingContext {
   void paint(PaintingContext context, Offset offset) {
     if (_paragraph == null) return;
 
+    final CSSRenderStyle containerStyle = (container as RenderBoxModel).renderStyle;
+    final bool _clipText = containerStyle.backgroundClip == CSSBackgroundBoundary.text;
+    
+
     // Interleave line background and text painting so that later lines can
     // visually overlay earlier lines when they cross vertically.
     // For each paragraph line: paint decorations for that line, then clip and paint text for that line.
@@ -678,7 +688,7 @@ class InlineFormattingContext {
     if (_paraLines.isEmpty) {
       // Fallback: paint decorations then text if no line metrics
       _paintInlineSpanDecorations(context, offset);
-      context.canvas.drawParagraph(para, offset);
+        if (!_clipText) { context.canvas.drawParagraph(para, offset); }
     } else {
       // Pre-scan lines to see if any requires right-side shifting for trailing extras.
       bool anyShift = false;
@@ -754,9 +764,9 @@ class InlineFormattingContext {
 
       // If no line needs shifting for trailing extras, and no vertical-align adjustment,
       // just paint decorations once and draw paragraph once.
-      if (!anyShift && !anyVAAdjust) {
+          if (!anyShift && !anyVAAdjust) {
         _paintInlineSpanDecorations(context, offset);
-        context.canvas.drawParagraph(para, offset);
+          if (!_clipText) { context.canvas.drawParagraph(para, offset); }
       } else {
         for (int i = 0; i < _paraLines.length; i++) {
           final lm = _paraLines[i];
@@ -833,19 +843,23 @@ class InlineFormattingContext {
           }
 
           // Left slice (no horizontal shift)
-          context.canvas.save();
-          context.canvas.clipPath(_clipMinusVA(leftBase, false));
-          context.canvas.drawParagraph(para, offset);
-          context.canvas.restore();
+            if (!_clipText) {
+              context.canvas.save();
+              context.canvas.clipPath(_clipMinusVA(leftBase, false));
+              context.canvas.drawParagraph(para, offset);
+              context.canvas.restore();
+            }
 
           // Right slice (apply shift if needed)
-          context.canvas.save();
-          context.canvas.clipPath(_clipMinusVA(rightBase, true));
-          if (shiftSum != 0.0) {
-            context.canvas.translate(shiftSum, 0.0);
-          }
-          context.canvas.drawParagraph(para, offset);
-          context.canvas.restore();
+            if (!_clipText) {
+              context.canvas.save();
+              context.canvas.clipPath(_clipMinusVA(rightBase, true));
+              if (shiftSum != 0.0) {
+                context.canvas.translate(shiftSum, 0.0);
+              }
+              context.canvas.drawParagraph(para, offset);
+              context.canvas.restore();
+            }
 
           // Repaint vertical-align adjusted fragments with vertical translation (and horizontal if in right slice)
           final adj = vaAdjust[i] ?? const <(ui.TextBox,double)>[];
@@ -861,11 +875,13 @@ class InlineFormattingContext {
                 offset.dx + leftPartRight,
                 offset.dy + tb.bottom + dy,
               );
-              context.canvas.save();
-              context.canvas.clipRect(target);
-              context.canvas.translate(0.0, dy);
-              context.canvas.drawParagraph(para, offset);
-              context.canvas.restore();
+              if (!_clipText) {
+                context.canvas.save();
+                context.canvas.clipRect(target);
+                context.canvas.translate(0.0, dy);
+                context.canvas.drawParagraph(para, offset);
+                context.canvas.restore();
+              }
             }
             // Right portion (apply x shift)
             if (tb.right > boundaryX && rightPartLeft < tb.right) {
@@ -875,11 +891,13 @@ class InlineFormattingContext {
                 offset.dx + tb.right + shiftSum,
                 offset.dy + tb.bottom + dy,
               );
-              context.canvas.save();
-              context.canvas.clipRect(target);
-              context.canvas.translate(shiftSum, dy);
-              context.canvas.drawParagraph(para, offset);
-              context.canvas.restore();
+              if (!_clipText) {
+                context.canvas.save();
+                context.canvas.clipRect(target);
+                context.canvas.translate(shiftSum, dy);
+                context.canvas.drawParagraph(para, offset);
+                context.canvas.restore();
+              }
             }
           }
         }
@@ -943,6 +961,65 @@ class InlineFormattingContext {
       }
     }
 
+    // Gradient text via background-clip: text
+    // Draw a gradient (or background color) clipped to glyphs when requested on the container.
+    final CSSRenderStyle _rs = (container as RenderBoxModel).renderStyle;
+    if (_rs.backgroundClip == CSSBackgroundBoundary.text) {
+      final ui.Paragraph? _para = _paragraph;
+      if (_para != null) {
+        final Gradient? _grad = _rs.backgroundImage?.gradient;
+        final Color? _bgc = _rs.backgroundColor?.value;
+        if (_grad != null || (_bgc != null && _bgc.alpha != 0)) {
+          final double w = _para.longestLine;
+          final double h = _para.height;
+          if (w > 0 && h > 0) {
+            final Rect layer = Rect.fromLTWH(offset.dx, offset.dy, w, h);
+
+            // Compute container border-box rect in current canvas coordinates.
+            final double padL = _rs.paddingLeft.computedValue;
+            final double padT = _rs.paddingTop.computedValue;
+            final double borL = _rs.effectiveBorderLeftWidth.computedValue;
+            final double borT = _rs.effectiveBorderTopWidth.computedValue;
+            final double contLeft = offset.dx - padL - borL;
+            final double contTop = offset.dy - padT - borT;
+            final Rect contRect = Rect.fromLTWH(contLeft, contTop, container.size.width, container.size.height);
+
+            // Removed verbose background-clip text diagnostics after stabilization.
+
+            // Use a layer so we can mask the background with glyph alpha using srcIn.
+            context.canvas.saveLayer(layer, Paint());
+            // Draw the paragraph shape into the layer (uses its own style; color may be null/black).
+            context.canvas.drawParagraph(_para, offset);
+            // Now overlay the background with srcIn so it is clipped to the glyphs we just drew.
+            final Paint p = Paint()..blendMode = BlendMode.srcIn;
+            if (_grad != null) {
+              p.shader = _grad.createShader(contRect);
+              context.canvas.drawRect(layer, p);
+            } else {
+              p.color = _bgc!;
+              context.canvas.drawRect(layer, p);
+            }
+            context.canvas.restore();
+
+            // Overlay text fill color on top (browser paints text after background).
+            // This allows CSS color alpha to tint/cover the gradient, matching browser behavior.
+            final Color textFill = _rs.color.value;
+            if (textFill.alpha != 0) {
+              context.canvas.saveLayer(layer, Paint());
+              // Paragraph as mask again
+              context.canvas.drawParagraph(_para, offset);
+              final Paint fill = Paint()
+                ..blendMode = BlendMode.srcIn
+                ..color = textFill;
+              context.canvas.drawRect(layer, fill);
+              context.canvas.restore();
+            }
+            // End glyph-mask background pass
+          }
+        }
+      }
+    }
+
     // Paint atomic inline children using parentData.offset for consistency.
     // Convert container-origin offsets to content-local by subtracting the content origin.
     final double contentOriginX =
@@ -969,6 +1046,7 @@ class InlineFormattingContext {
     if (DebugFlags.debugPaintInlineLayoutEnabled) {
       _debugPaintParagraph(context, offset);
     }
+
   }
 
   /// Debug paint for paragraph-based layout path: visualizes lines, baselines,
@@ -2487,7 +2565,8 @@ class InlineFormattingContext {
           renderingLogger.finer('    [paint] frag=${i} suppressEdge=${suppressEdge} '+
               'phys(L:${physLeftEdge},R:${physRightEdge}) w=${(right-left).toStringAsFixed(2)}');
         }
-        if (!suppressEdge && s.backgroundColor?.value != null) {
+        // Skip painting inline background rectangles when background-clip:text is set
+        if (!suppressEdge && s.backgroundColor?.value != null && s.backgroundClip != CSSBackgroundBoundary.text) {
           final bg = Paint()..color = s.backgroundColor!.value;
           canvas.drawRect(rect, bg);
         }
@@ -2624,8 +2703,12 @@ class InlineFormattingContext {
       return rs.lineHeight.computedValue / rs.fontSize.computedValue;
     })();
 
+    final bool clipText = (container as RenderBoxModel).renderStyle.backgroundClip == CSSBackgroundBoundary.text;
+    final Color baseColor = rs.color.value;
+    final Color effectiveColor = clipText ? baseColor.withAlpha(0xFF) : baseColor;
     return ui.TextStyle(
-      color: rs.backgroundClip != CSSBackgroundBoundary.text ? rs.color.value : null,
+      // For clip-text, force fully-opaque glyphs for the mask (ignore alpha).
+      color: effectiveColor,
       decoration: rs.textDecorationLine,
       decorationColor: rs.textDecorationColor?.value,
       decorationStyle: rs.textDecorationStyle,

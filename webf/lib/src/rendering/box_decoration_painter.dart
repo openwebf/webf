@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:webf/css.dart';
+import 'package:webf/foundation.dart';
 
 // A circular list implementation that allows access in a circular fashion.
 class CircularIntervalList<T> {
@@ -581,6 +582,13 @@ class BoxDecorationPainter extends BoxPainter {
     final TextDirection? textDirection = configuration.textDirection;
     bool hasLocalAttachment = _hasLocalBackgroundImage();
 
+    // When background-clip: text is specified, the background should be applied
+    // to glyphs only (handled in InlineFormattingContext). Skip painting box
+    // background color/image here to avoid a solid rectangle behind the text.
+    if (renderStyle.backgroundClip == CSSBackgroundBoundary.text) {
+      return;
+    }
+
     // Rect of background color
     Rect backgroundColorRect = _getBackgroundClipRect(baseOffset, configuration);
     _paintBackgroundColor(canvas, backgroundColorRect, textDirection);
@@ -676,13 +684,15 @@ class BoxDecorationPainter extends BoxPainter {
 
     bool hasLocalAttachment = _hasLocalBackgroundImage();
     if (!hasLocalAttachment) {
-      Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
-      _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
+      if (renderStyle.backgroundClip != CSSBackgroundBoundary.text) {
+        Rect backgroundClipRect = _getBackgroundClipRect(offset, configuration);
+        _paintBackgroundColor(canvas, backgroundClipRect, textDirection);
 
-      Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
-      Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
+        Rect backgroundOriginRect = _getBackgroundOriginRect(offset, configuration);
+        Rect backgroundImageRect = backgroundClipRect.intersect(backgroundOriginRect);
 
-      _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+        _paintBackgroundImage(canvas, backgroundImageRect, configuration);
+      }
     }
 
     // Check if we have a dashed border
