@@ -357,37 +357,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     final type = _effectiveListStyleTypeFor(el);
     if (type == null || type == 'none') return;
 
-    String markerText;
-    if (type == 'disc') {
-      markerText = '•';
-    } else {
-      final idx = _listIndexFor(el);
-      switch (type) {
-        case 'decimal':
-          markerText = idx.toString();
-          break;
-        case 'lower-alpha':
-          markerText = _alphaFromIndex(idx, upper: false);
-          break;
-        case 'upper-alpha':
-          markerText = _alphaFromIndex(idx, upper: true);
-          break;
-        case 'lower-roman':
-          markerText = _romanFromIndex(idx, upper: false);
-          break;
-        case 'upper-roman':
-          markerText = _romanFromIndex(idx, upper: true);
-          break;
-        default:
-          markerText = idx.toString();
-          break;
-      }
-      // In RTL, period precedes the marker number/alpha; in LTR, it follows.
-      final bool isRTLDir = renderStyle.direction == TextDirection.rtl;
-      markerText = isRTLDir ? '.$markerText' : '$markerText.';
-    }
-
-    // Measure marker and a single space using current text style
+    // Build paragraphs for marker components with stable spacing (no kerning between '.' and digits)
     final ts = _uiTextStyleFromCss(renderStyle);
     ui.Paragraph _buildPara(String text) {
       final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
@@ -402,16 +372,47 @@ class RenderFlowLayout extends RenderLayoutBox {
       pb.pushStyle(ts);
       pb.addText(text);
       final para = pb.build();
-      // Use a very large width to allow natural intrinsic sizing for single line
       para.layout(const ui.ParagraphConstraints(width: 1000000.0));
       return para;
     }
 
-    final paraMarker = _buildPara(markerText);
-    final paraSpace = _buildPara(' ');
-    final double markerW = paraMarker.maxIntrinsicWidth;
-    final double spaceW = paraSpace.maxIntrinsicWidth;
-    final double markerBaseline = paraMarker.alphabeticBaseline; // distance from top to baseline
+    // Fixed outside gap between marker and border box
+    final double spaceW = _buildPara(' ').maxIntrinsicWidth;
+
+    // Components
+    ui.Paragraph? dotPara;
+    ui.Paragraph? numPara;
+    double markerBaseline;
+    if (type == 'disc') {
+      dotPara = _buildPara('•');
+      markerBaseline = dotPara.alphabeticBaseline;
+    } else {
+      final idx = _listIndexFor(el);
+      String numText;
+      switch (type) {
+        case 'decimal':
+          numText = idx.toString();
+          break;
+        case 'lower-alpha':
+          numText = _alphaFromIndex(idx, upper: false);
+          break;
+        case 'upper-alpha':
+          numText = _alphaFromIndex(idx, upper: true);
+          break;
+        case 'lower-roman':
+          numText = _romanFromIndex(idx, upper: false);
+          break;
+        case 'upper-roman':
+          numText = _romanFromIndex(idx, upper: true);
+          break;
+        default:
+          numText = idx.toString();
+          break;
+      }
+      dotPara = _buildPara('.');
+      numPara = _buildPara(numText);
+      markerBaseline = math.max(dotPara.alphabeticBaseline, numPara.alphabeticBaseline);
+    }
 
     // Compute baseline Y: align to first line of content if available
     double baselineY;
@@ -422,17 +423,31 @@ class RenderFlowLayout extends RenderLayoutBox {
       baselineY = contentOffset.dy + markerBaseline;
     }
 
-    // Compute X outside the border box on the inline-start side with a space gap
     final bool isRTL = renderStyle.direction == TextDirection.rtl;
-    final double drawX = isRTL
-        // Place to the right of the border box for RTL
+    final double baseX = isRTL
         ? borderOffset.dx + size.width + spaceW
-        // Place to the left of the border box for LTR
-        : borderOffset.dx - markerW - spaceW;
+        : borderOffset.dx - spaceW; // will subtract widths per component
     final double drawY = baselineY - markerBaseline;
 
-    // Paint paragraph at computed position
-    context.canvas.drawParagraph(paraMarker, Offset(drawX, drawY));
+    if (type == 'disc') {
+      final double dotW = dotPara!.maxIntrinsicWidth;
+      final double x = isRTL ? baseX : baseX - dotW;
+      context.canvas.drawParagraph(dotPara, Offset(x, drawY));
+    } else {
+      final double dotW = dotPara!.maxIntrinsicWidth;
+      final double numW = numPara!.maxIntrinsicWidth;
+      if (isRTL) {
+        final double xDot = baseX;
+        final double xNum = xDot + dotW;
+        context.canvas.drawParagraph(dotPara, Offset(xDot, drawY));
+        context.canvas.drawParagraph(numPara, Offset(xNum, drawY));
+      } else {
+        final double xNum = baseX - numW - dotW;
+        final double xDot = xNum + numW;
+        context.canvas.drawParagraph(numPara, Offset(xNum, drawY));
+        context.canvas.drawParagraph(dotPara, Offset(xDot, drawY));
+      }
+    }
   }
 
   // Removed nested DFS positioned painting. With positioned elements
