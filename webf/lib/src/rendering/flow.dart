@@ -1015,12 +1015,20 @@ class RenderFlowLayout extends RenderLayoutBox {
           // 'margin-left' + 'border-left-width' + 'padding-left' + 'width' + 'padding-right' +
           // 'border-right-width' + 'margin-right' = width of containing block
           if (childEffectiveDisplay == CSSDisplay.block || childEffectiveDisplay == CSSDisplay.flex) {
+            final double remainingSpace = mainAxisContentSize - childMainAxisExtent;
             if (marginLeft.isAuto) {
-              double remainingSpace = mainAxisContentSize - childMainAxisExtent;
               if (marginRight.isAuto) {
                 childMainPosition = remainingSpace / 2;
               } else {
                 childMainPosition = remainingSpace;
+              }
+            } else if (!marginRight.isAuto) {
+              // Neither margin is auto; per CSS 2.1 §10.3.3 the extra space is added to
+              // the end-side margin: right in LTR, left in RTL. Implement this by
+              // shifting the child to the start in LTR (no-op) and to the left by the
+              // remaining space in RTL.
+              if (remainingSpace > 0 && renderStyle.direction == TextDirection.rtl) {
+                childMainPosition += remainingSpace;
               }
             }
           }
