@@ -52,7 +52,8 @@ const Map<String, dynamic> _lDefaultStyle = {
   DISPLAY: BLOCK,
   MARGIN_TOP: '1em',
   MARGIN_BOTTOM: '1em',
-  PADDING_LEFT: '40px'
+  // Use logical property so inline-start padding follows writing direction.
+  PADDING_INLINE_START: '40px'
 };
 
 class DivElement extends Element {
