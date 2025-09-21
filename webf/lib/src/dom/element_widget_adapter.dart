@@ -278,6 +278,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
           overflowX == CSSOverflowType.hidden) {
         webFElement._scrollControllerX ??= flutter.ScrollController();
         final bool xScrollable = overflowX != CSSOverflowType.hidden;
+        final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
         scrollableX = LayoutBoxWrapper(
             ownerElement: webFElement,
             child: NestedScrollCoordinator(
@@ -286,7 +287,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                 enabled: xScrollable,
                 child: flutter.Scrollable(
                     controller: webFElement.scrollControllerX,
-                    axisDirection: AxisDirection.right,
+                    axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                     physics: xScrollable ? null : const flutter.NeverScrollableScrollPhysics(),
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset position) {
                       flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
@@ -318,6 +319,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                     controller: webFElement.scrollControllerY,
                     viewportBuilder: (flutter.BuildContext context, ViewportOffset positionY) {
                       if (scrollableX != null) {
+                        final bool isRTL = webFElement.renderStyle.direction == TextDirection.rtl;
                         return NestedScrollCoordinator(
                             axis: flutter.Axis.horizontal,
                             controller: webFElement.scrollControllerX!,
@@ -325,7 +327,7 @@ class WebFElementWidgetState extends flutter.State<WebFElementWidget> with flutt
                             enabled: (webFElement.renderStyle.effectiveOverflowX != CSSOverflowType.hidden),
                             child: flutter.Scrollable(
                                 controller: webFElement.scrollControllerX,
-                                axisDirection: AxisDirection.right,
+                                axisDirection: isRTL ? AxisDirection.left : AxisDirection.right,
                                 viewportBuilder: (flutter.BuildContext context, ViewportOffset positionX) {
                                   flutter.Widget adapter = WebFRenderLayoutWidgetAdaptor(
                                     webFElement: webFElement,

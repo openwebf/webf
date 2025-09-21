@@ -107,7 +107,8 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
             '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
       }
-      scrollListener!(scrollOffsetX!.pixels, AxisDirection.right);
+      final AxisDirection dir = (renderStyle.direction == TextDirection.rtl) ? AxisDirection.left : AxisDirection.right;
+      scrollListener!(scrollOffsetX!.pixels, dir);
       markNeedsPaint();
     }
   }
@@ -153,6 +154,18 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
         renderingLogger.finer('[Overflow-Setup]   X controller maxScroll=${maxX.toStringAsFixed(2)} '
             'viewportW=${_viewportSize!.width.toStringAsFixed(2)} contentW=${_scrollableSize!.width.toStringAsFixed(2)}');
+      }
+      // In RTL, default visual position should show the right edge. If the current
+      // horizontal scroll position is still at zero (initial), jump to max.
+      if (renderStyle.direction == TextDirection.rtl) {
+        final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
+        if (maxX > 0 && (_scrollOffsetX!.pixels == 0.0)) {
+          try {
+            (scrollOffsetX as dynamic).jumpTo(maxX);
+          } catch (_) {
+            // Some engines may not support jumpTo through ViewportOffset; ignore.
+          }
+        }
       }
     }
 
