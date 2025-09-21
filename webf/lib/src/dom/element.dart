@@ -620,6 +620,186 @@ abstract class Element extends ContainerNode
     }
   }
 
+  // Parse 'counter-*' shorthand values into a simple map: name -> integer
+  Map<String, int> _parseCounterList(String value) {
+    Map<String, int> result = {};
+    // Split by whitespace, treat pairs of (ident [number]?)
+    final parts = value.trim().split(RegExp(r"\s+"));
+    int i = 0;
+    while (i < parts.length) {
+      final name = parts[i];
+      if (name.isEmpty) { i++; continue; }
+      int step = 0;
+      // Default for reset is 0; for increment, caller may override default=1
+      if (i + 1 < parts.length) {
+        final next = parts[i + 1];
+        final n = int.tryParse(next);
+        if (n != null) {
+          step = n;
+          i += 2;
+          result[name] = step;
+          continue;
+        }
+      }
+      result[name] = step;
+      i++;
+    }
+    return result;
+  }
+
+  Map<String, int> _parseCounterIncrementList(String value) {
+    Map<String, int> result = {};
+    final parts = value.trim().split(RegExp(r"\s+"));
+    int i = 0;
+    while (i < parts.length) {
+      final name = parts[i];
+      if (name.isEmpty) { i++; continue; }
+      int step = 1; // default increment is 1
+      if (i + 1 < parts.length) {
+        final next = parts[i + 1];
+        final n = int.tryParse(next);
+        if (n != null) {
+          step = n;
+          i += 2;
+          result[name] = step;
+          continue;
+        }
+      }
+      result[name] = step;
+      i++;
+    }
+    return result;
+  }
+
+  // Compute the current counter value for a given name at this element's point
+  int _computeCounterValue(String name) {
+    String _getProp(CSSStyleDeclaration style, String camel, String kebab) {
+      final v1 = style.getPropertyValue(camel);
+      if (v1.isNotEmpty) return v1;
+      return style.getPropertyValue(kebab);
+    }
+
+    // 1) Find nearest ancestor that resets the counter
+    Element? scope = this;
+    int initial = 0;
+    while (scope != null) {
+      final reset = _getProp(scope.style, 'counterReset', 'counter-reset');
+      if (reset.isNotEmpty && reset != 'none') {
+        final map = _parseCounterList(reset);
+        if (map.containsKey(name)) {
+          initial = map[name] ?? 0;
+          if (DebugFlags.enableDomLogs) {
+            domLogger.fine('[Counter] reset at <${scope.tagName.toLowerCase()}> $name=$initial raw="$reset"');
+          }
+          break;
+        }
+      }
+      scope = scope.parentElement;
+    }
+
+    // 2) Walk document order from scope to this, summing increments
+    int value = initial;
+    if (scope == null) scope = ownerDocument.documentElement;
+    bool reached = false;
+
+    void walk(Node node) {
+      if (reached) return;
+      if (node is Element) {
+        // increments on element itself
+        final incEl = _getProp(node.style, 'counterIncrement', 'counter-increment');
+        if (incEl.isNotEmpty && incEl != 'none') {
+          final map = _parseCounterIncrementList(incEl);
+          final add = (map[name] ?? 0);
+          value += add;
+          if (add != 0 && DebugFlags.enableDomLogs) {
+            domLogger.fine('[Counter] element <${node.tagName.toLowerCase()}> inc $name += $add (raw="$incEl") → $value');
+          }
+        }
+        // increments on ::before pseudo only for the current element being evaluated
+        if (identical(node, this)) {
+          final incBefore = node.style.pseudoBeforeStyle == null
+              ? ''
+              : _getProp(node.style.pseudoBeforeStyle!, 'counterIncrement', 'counter-increment');
+          if (incBefore.isNotEmpty && incBefore != 'none') {
+            final map = _parseCounterIncrementList(incBefore);
+            final add = (map[name] ?? 0);
+            value += add;
+            if (add != 0 && DebugFlags.enableDomLogs) {
+              domLogger.fine('[Counter] ::before of <${node.tagName.toLowerCase()}> inc $name += $add (raw="$incBefore") → $value');
+            }
+          }
+        }
+        if (identical(node, this)) {
+          if (DebugFlags.enableDomLogs) {
+            domLogger.fine('[Counter] reached target <${node.tagName.toLowerCase()}> $name = $value');
+          }
+          reached = true;
+          return;
+        }
+      }
+      for (final child in node.childNodes) {
+        if (reached) return;
+        walk(child);
+      }
+    }
+
+    if (scope != null) walk(scope);
+    if (DebugFlags.enableDomLogs) {
+      domLogger.fine('[Counter] final for <${tagName.toLowerCase()}> $name = $value');
+    }
+    return value;
+  }
+
+  String _evaluateContent(String content) {
+    StringBuffer out = StringBuffer();
+    int i = 0;
+    while (i < content.length) {
+      final ch = content[i];
+      if (ch == '"' || ch == '\'') {
+        final quote = ch;
+        i++;
+        int start = i;
+        while (i < content.length && content[i] != quote) i++;
+        out.write(content.substring(start, i));
+        if (i < content.length && content[i] == quote) i++;
+        if (i < content.length && content[i] == ' ') i++;
+        continue;
+      }
+      // try function: counter(name)
+      // read identifier
+      int startIdent = i;
+      while (i < content.length && RegExp(r'[a-zA-Z_-]').hasMatch(content[i])) i++;
+      final ident = content.substring(startIdent, i);
+      if (ident.isNotEmpty && i < content.length && content[i] == '(') {
+        // parse args until ')'
+        i++; // skip '('
+        int argStart = i;
+        while (i < content.length && content[i] != ')') i++;
+        String args = content.substring(argStart, i).trim();
+        if (i < content.length && content[i] == ')') i++;
+        if (ident == 'counter') {
+          // args: name [ , style ]? (we handle only name)
+          String counterName = args.split(',')[0].trim();
+          if (counterName.startsWith('"') || counterName.startsWith('\'')) {
+            counterName = counterName.substring(1, counterName.length - 1);
+          }
+          final v = _computeCounterValue(counterName);
+          if (DebugFlags.enableDomLogs) {
+            domLogger.fine('[Content] counter($counterName) → $v');
+          }
+          out.write(v.toString());
+        }
+        // skip optional spaces
+        while (i < content.length && content[i] == ' ') i++;
+        continue;
+      }
+      // otherwise skip or write char
+      out.write(ch);
+      i++;
+    }
+    return out.toString();
+  }
+
   PseudoElement _createOrUpdatePseudoElement(
       String contentValue, PseudoKind kind, PseudoElement? previousPseudoElement) {
     var pseudoValue = CSSPseudo.resolveContent(contentValue);
@@ -651,13 +831,21 @@ abstract class Element extends ContainerNode
       }
     }
 
-    // We plan to support content values only with quoted strings.
+    // Support quoted strings, and minimal function handling for counter().
+    String? textContent;
     if (pseudoValue is QuoteStringContentValue) {
+      textContent = pseudoValue.value;
+    } else if (pseudoValue is FunctionContentValue || pseudoValue is KeywordContentValue) {
+      // Evaluate a composite content string with counter() and quoted strings.
+      textContent = _evaluateContent(contentValue);
+    }
+
+    if (textContent != null) {
       if (previousPseudoElement.firstChild != null) {
-        (previousPseudoElement.firstChild as TextNode).data = pseudoValue.value;
+        (previousPseudoElement.firstChild as TextNode).data = textContent;
       } else {
         final textNode = ownerDocument.createTextNode(
-            pseudoValue.value, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
+            textContent, BindingContext(ownerDocument.controller.view, contextId!, allocateNewBindingObject()));
         previousPseudoElement.appendChild(textNode);
       }
     }

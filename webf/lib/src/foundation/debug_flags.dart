@@ -47,4 +47,7 @@ class DebugFlags {
   /// - Padding and border rendering
   static bool debugPaintInlineLayoutEnabled = false;
   static bool debugLogInlineLayoutEnabled = false; // Enable verbose logging for paragraph-based IFC
+
+  // Enable verbose DOM logs (tree walks, counters, pseudo, etc.)
+  static bool enableDomLogs = false;
 }
