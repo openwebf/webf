@@ -135,15 +135,16 @@ class BoxDecorationPainter extends BoxPainter {
       final double dashLength = side.width * 3;
       final double dashGap = side.width * 3;
 
-      // Create the path for the complete border
+      // Create the path for the complete border, aligned to sit fully inside
+      // the border box by deflating half the stroke width.
       Path borderPath = Path();
 
-      // Handle differently based on whether we have border radius
+      final double inset = side.width / 2.0;
       if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-        RRect rrect = _decoration.borderRadius!.toRRect(rect);
+        RRect rrect = _decoration.borderRadius!.toRRect(rect).deflate(inset);
         borderPath.addRRect(rrect);
       } else {
-        borderPath.addRect(rect);
+        borderPath.addRect(rect.deflate(inset));
       }
 
       // Draw the dashed border
@@ -255,46 +256,49 @@ class BoxDecorationPainter extends BoxPainter {
     Path borderPath = Path();
 
     if (rrect != null) {
+      // Align stroke inside by deflating half the stroke width
+      final double inset = side.width / 2.0;
+      final RRect rr = rrect.deflate(inset);
       // Handle rounded corners
       switch (direction) {
         case _BorderDirection.top:
-          borderPath.moveTo(rrect.left, rrect.top + rrect.tlRadiusY);
+          borderPath.moveTo(rr.left, rr.top + rr.tlRadiusY);
           borderPath.arcToPoint(
-            Offset(rrect.left + rrect.tlRadiusX, rrect.top),
-            radius: Radius.elliptical(rrect.tlRadiusX, rrect.tlRadiusY),
+            Offset(rr.left + rr.tlRadiusX, rr.top),
+            radius: Radius.elliptical(rr.tlRadiusX, rr.tlRadiusY),
             clockwise: false,
           );
-          borderPath.lineTo(rrect.right - rrect.trRadiusX, rrect.top);
+          borderPath.lineTo(rr.right - rr.trRadiusX, rr.top);
           borderPath.arcToPoint(
-            Offset(rrect.right, rrect.top + rrect.trRadiusY),
-            radius: Radius.elliptical(rrect.trRadiusX, rrect.trRadiusY),
+            Offset(rr.right, rr.top + rr.trRadiusY),
+            radius: Radius.elliptical(rr.trRadiusX, rr.trRadiusY),
             clockwise: true,
           );
           break;
         case _BorderDirection.right:
-          borderPath.moveTo(rrect.right, rrect.top + rrect.trRadiusY);
-          borderPath.lineTo(rrect.right, rrect.bottom - rrect.brRadiusY);
+          borderPath.moveTo(rr.right, rr.top + rr.trRadiusY);
+          borderPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
           borderPath.arcToPoint(
-            Offset(rrect.right - rrect.brRadiusX, rrect.bottom),
-            radius: Radius.elliptical(rrect.brRadiusX, rrect.brRadiusY),
+            Offset(rr.right - rr.brRadiusX, rr.bottom),
+            radius: Radius.elliptical(rr.brRadiusX, rr.brRadiusY),
             clockwise: true,
           );
           break;
         case _BorderDirection.bottom:
-          borderPath.moveTo(rrect.right - rrect.brRadiusX, rrect.bottom);
-          borderPath.lineTo(rrect.left + rrect.blRadiusX, rrect.bottom);
+          borderPath.moveTo(rr.right - rr.brRadiusX, rr.bottom);
+          borderPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
           borderPath.arcToPoint(
-            Offset(rrect.left, rrect.bottom - rrect.blRadiusY),
-            radius: Radius.elliptical(rrect.blRadiusX, rrect.blRadiusY),
+            Offset(rr.left, rr.bottom - rr.blRadiusY),
+            radius: Radius.elliptical(rr.blRadiusX, rr.blRadiusY),
             clockwise: true,
           );
           break;
         case _BorderDirection.left:
-          borderPath.moveTo(rrect.left, rrect.bottom - rrect.blRadiusY);
-          borderPath.lineTo(rrect.left, rrect.top + rrect.tlRadiusY);
+          borderPath.moveTo(rr.left, rr.bottom - rr.blRadiusY);
+          borderPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
           borderPath.arcToPoint(
-            Offset(rrect.left + rrect.tlRadiusX, rrect.top),
-            radius: Radius.elliptical(rrect.tlRadiusX, rrect.tlRadiusY),
+            Offset(rr.left + rr.tlRadiusX, rr.top),
+            radius: Radius.elliptical(rr.tlRadiusX, rr.tlRadiusY),
             clockwise: false,
           );
           break;
@@ -303,20 +307,20 @@ class BoxDecorationPainter extends BoxPainter {
       // Handle non-rounded corners
       switch (direction) {
         case _BorderDirection.top:
-          borderPath.moveTo(rect.left, rect.top);
-          borderPath.lineTo(rect.right, rect.top);
+          borderPath.moveTo(rect.left + side.width / 2.0, rect.top + side.width / 2.0);
+          borderPath.lineTo(rect.right - side.width / 2.0, rect.top + side.width / 2.0);
           break;
         case _BorderDirection.right:
-          borderPath.moveTo(rect.right, rect.top);
-          borderPath.lineTo(rect.right, rect.bottom);
+          borderPath.moveTo(rect.right - side.width / 2.0, rect.top + side.width / 2.0);
+          borderPath.lineTo(rect.right - side.width / 2.0, rect.bottom - side.width / 2.0);
           break;
         case _BorderDirection.bottom:
-          borderPath.moveTo(rect.right, rect.bottom);
-          borderPath.lineTo(rect.left, rect.bottom);
+          borderPath.moveTo(rect.right - side.width / 2.0, rect.bottom - side.width / 2.0);
+          borderPath.lineTo(rect.left + side.width / 2.0, rect.bottom - side.width / 2.0);
           break;
         case _BorderDirection.left:
-          borderPath.moveTo(rect.left, rect.bottom);
-          borderPath.lineTo(rect.left, rect.top);
+          borderPath.moveTo(rect.left + side.width / 2.0, rect.bottom - side.width / 2.0);
+          borderPath.lineTo(rect.left + side.width / 2.0, rect.top + side.width / 2.0);
           break;
       }
     }

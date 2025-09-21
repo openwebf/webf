@@ -28,10 +28,10 @@ import 'modules/array_buffer_module.dart';
 void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
   DebugFlags.debugLogInlineLayoutEnabled = true;
-  debugPaintBaselinesEnabled = true;
+  // debugPaintBaselinesEnabled = true;
   DebugFlags.enableDomLogs = true;
   DebugFlags.enableCssLogs = true;
-  DebugFlags.debugPaintInlineLayoutEnabled = true;
+  // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
   DebugFlags.debugLogFlowEnabled = true;
   // DebugFlags.debugLogFlexEnabled = true;
