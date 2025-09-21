@@ -127,6 +127,7 @@ const String WORD_SPACING = 'wordSpacing';
 const String WHITE_SPACE = 'whiteSpace';
 const String LINE_CLAMP = 'lineClamp';
 const String TAB_SIZE = 'tabSize';
+const String TEXT_INDENT = 'textIndent';
 
 const String FLEX = 'flex';
 const String FLEX_GROW = 'flexGrow';

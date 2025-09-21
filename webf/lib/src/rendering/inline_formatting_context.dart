@@ -1465,6 +1465,39 @@ class InlineFormattingContext {
       return (fs, fs * 0.8);
     }
 
+    // Apply text-indent on the first line by inserting a leading placeholder.
+    // Positive values indent from the inline-start; negative values create a hanging indent.
+    // For now, we support positive values by reserving space; for negative values, we still
+    // insert a placeholder of zero width (layout unaffected) and rely on authors to pair
+    // with padding-inline-start to simulate hanging markers (common pattern).
+    final CSSLengthValue indent = style.textIndent;
+    double indentPx = 0;
+    if (indent.type != CSSLengthType.INITIAL && indent.type != CSSLengthType.UNKNOWN && indent.type != CSSLengthType.AUTO) {
+      indentPx = indent.computedValue;
+    }
+    if (indentPx != 0) {
+      final (ph, bo) = _measureTextMetricsFor(style);
+      final double reserved = indentPx > 0 ? indentPx : 0.0;
+      if (reserved > 0) {
+        pb.addPlaceholder(reserved, ph, ui.PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic, baselineOffset: bo);
+        paraPos += 1;
+        _textRunParas.add(null);
+        // In RTL, reserve space on the inline-start (right) by forcing the
+        // indent placeholder to precede content visually: insert a zero-width
+        // no-break space with strong RTL property.
+        if (style.direction == TextDirection.rtl) {
+          pb.pushStyle(_uiTextStyleFromCss(style));
+          pb.addText('\uFEFF'); // ZWNBSP to ensure grapheme advance at start
+          pb.pop();
+          paraPos += 1;
+        }
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
+          renderingLogger.finer('[IFC] apply text-indent=${indentPx.toStringAsFixed(2)} dir=${style.direction} reserved=${reserved.toStringAsFixed(2)}');
+        }
+      }
+    }
+
     // Helper to flush pending left extras for all open frames (from outermost to innermost)
     void _flushPendingLeftExtras() {
       for (final frame in openFrames) {

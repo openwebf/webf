@@ -1497,6 +1497,8 @@ class CSSRenderStyle extends RenderStyle
       case TAB_SIZE:
         // Returns effective tab-size (number of spaces) from CSSTextMixin
         return tabSize;
+      case TEXT_INDENT:
+        return textIndent;
       case VERTICAL_ALIGN:
         return verticalAlign;
       case TEXT_ALIGN:
@@ -1879,6 +1881,17 @@ class CSSRenderStyle extends RenderStyle
       case TAB_SIZE:
         tabSize = value;
         break;
+      case TEXT_INDENT:
+        // Accept CSSLengthValue or parse from string
+        if (value is CSSLengthValue) {
+          textIndent = value;
+        } else if (value is String) {
+          final parsed = CSSLength.parseLength(value, this, TEXT_INDENT, Axis.horizontal);
+          if (parsed != CSSLengthValue.unknown) {
+            textIndent = parsed;
+          }
+        }
+        break;
       case VERTICAL_ALIGN:
         verticalAlign = value;
         break;
@@ -2204,6 +2217,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case TEXT_ALIGN:
         value = CSSTextMixin.resolveTextAlign(propertyValue);
+        break;
+      case TEXT_INDENT:
+        value = CSSLength.resolveLength(propertyValue, renderStyle, TEXT_INDENT);
         break;
       case DIRECTION:
         value = CSSTextMixin.resolveDirection(propertyValue);

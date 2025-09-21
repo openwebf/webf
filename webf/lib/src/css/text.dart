@@ -275,6 +275,23 @@ mixin CSSTextMixin on RenderStyle {
     _markChildrenTextNeedsLayout(this, WORD_SPACING);
   }
 
+  // text-indent (inherited)
+  CSSLengthValue? _textIndent;
+
+  CSSLengthValue get textIndent {
+    final parent = getParentRenderStyle<CSSRenderStyle>();
+    if (_textIndent == null && parent != null) {
+      return parent.textIndent;
+    }
+    return _textIndent ?? CSSLengthValue.zero;
+  }
+
+  set textIndent(CSSLengthValue? value) {
+    if (_textIndent == value) return;
+    _textIndent = value;
+    _markChildrenTextNeedsLayout(this, TEXT_INDENT);
+  }
+
   List<Shadow>? _textShadow;
 
   @override
