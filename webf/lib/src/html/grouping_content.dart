@@ -116,9 +116,9 @@ class LIElement extends Element {
   @override
   Map<String, dynamic> get defaultStyle => _defaultStyle;
 
-  // Inject a default marker for UL > LI using ::before content.
-  // This approximates UA list-style for unordered lists and respects RTL by
-  // leveraging inline content order.
+  // Only synthesize ::before markers for list-style-position: inside.
+  // For the default outside position, markers are painted by renderer
+  // as separate marker boxes and must not participate in IFC.
   @override
   void applyStyle(CSSStyleDeclaration style) {
     // 1) Apply element default styles (UA defaults).
@@ -233,46 +233,64 @@ class LIElement extends Element {
       style.pseudoBeforeStyle ??= CSSStyleDeclaration();
     }
 
+    String _effectiveListStylePosition() {
+      String p = _getProp(style, 'listStylePosition', 'list-style-position');
+      if (p.isNotEmpty) return p;
+      if (parentElement != null) {
+        String pp = _getProp(parentElement!.style, 'listStylePosition', 'list-style-position');
+        if (pp.isNotEmpty) return pp;
+      }
+      return 'outside';
+    }
+
     final type = _effectiveListStyleType();
+    final pos = _effectiveListStylePosition();
     if (type != null) {
-      // Only set when author didn't explicitly set ::before content
-      final hasAuthorContent = style.pseudoBeforeStyle?.getPropertyValue(CONTENT).isNotEmpty == true;
-      if (!hasAuthorContent) {
-        if (type == 'none') {
-          // no marker
-          if (style.pseudoBeforeStyle != null) {
-            style.pseudoBeforeStyle!.setProperty(CONTENT, '');
+      if (pos == 'inside') {
+        // Only set when author didn't explicitly set ::before content
+        final hasAuthorContent = style.pseudoBeforeStyle?.getPropertyValue(CONTENT).isNotEmpty == true;
+        if (!hasAuthorContent) {
+          if (type == 'none') {
+            // no marker
+            if (style.pseudoBeforeStyle != null) {
+              style.pseudoBeforeStyle!.setProperty(CONTENT, '');
+            }
+          } else if (type == 'disc') {
+            // bullet
+            _ensurePseudo();
+            style.pseudoBeforeStyle!.setProperty(CONTENT, '"• "');
+          } else {
+            // ordered styles
+            final idx = _indexWithinList();
+            String marker;
+            switch (type) {
+              case 'decimal':
+                marker = idx.toString();
+                break;
+              case 'lower-alpha':
+                marker = _toAlpha(idx, upper: false);
+                break;
+              case 'upper-alpha':
+                marker = _toAlpha(idx, upper: true);
+                break;
+              case 'lower-roman':
+                marker = _toRoman(idx, upper: false);
+                break;
+              case 'upper-roman':
+                marker = _toRoman(idx, upper: true);
+                break;
+              default:
+                marker = idx.toString();
+                break;
+            }
+            _ensurePseudo();
+            style.pseudoBeforeStyle!.setProperty(CONTENT, '"' + marker + '. "');
           }
-        } else if (type == 'disc') {
-          // bullet
-          _ensurePseudo();
-          style.pseudoBeforeStyle!.setProperty(CONTENT, '"• "');
-        } else {
-          // ordered styles
-          final idx = _indexWithinList();
-          String marker;
-          switch (type) {
-            case 'decimal':
-              marker = idx.toString();
-              break;
-            case 'lower-alpha':
-              marker = _toAlpha(idx, upper: false);
-              break;
-            case 'upper-alpha':
-              marker = _toAlpha(idx, upper: true);
-              break;
-            case 'lower-roman':
-              marker = _toRoman(idx, upper: false);
-              break;
-            case 'upper-roman':
-              marker = _toRoman(idx, upper: true);
-              break;
-            default:
-              marker = idx.toString();
-              break;
-          }
-          _ensurePseudo();
-          style.pseudoBeforeStyle!.setProperty(CONTENT, '"' + marker + '. "');
+        }
+      } else {
+        // Ensure no stale inside-style ::before remains when using outside markers
+        if (style.pseudoBeforeStyle != null && style.pseudoBeforeStyle!.getPropertyValue(CONTENT).isNotEmpty) {
+          style.pseudoBeforeStyle!.setProperty(CONTENT, '');
         }
       }
     }

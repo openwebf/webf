@@ -3,6 +3,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 import 'dart:math' as math;
+import 'dart:ui' as ui show Paragraph, ParagraphBuilder, ParagraphConstraints, ParagraphStyle, TextStyle, TextHeightBehavior, TextLeadingDistribution;
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -191,6 +192,9 @@ class RenderFlowLayout extends RenderLayoutBox {
       // Paint the inline formatting context content
       _inlineFormattingContext!.paint(context, contentOffset);
 
+      // Paint outside list marker if needed after IFC content
+      _paintListMarkerIfNeeded(context, offset, contentOffset);
+
       // Paint positioned direct children in proper stacking order.
       for (final RenderBox child in paintingOrder) {
         if (child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
@@ -218,6 +222,217 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
       }
     }
+
+    // Non-IFC flow: still attempt to paint outside marker if applicable
+    _paintListMarkerIfNeeded(context, offset, offset + Offset(
+      renderStyle.paddingLeft.computedValue + renderStyle.effectiveBorderLeftWidth.computedValue,
+      renderStyle.paddingTop.computedValue + renderStyle.effectiveBorderTopWidth.computedValue,
+    ));
+  }
+
+  // Determine effective list-style-type for an LI element
+  String? _effectiveListStyleTypeFor(Element el) {
+    String _getProp(CSSStyleDeclaration s, String camel, String kebab) {
+      final v1 = s.getPropertyValue(camel);
+      if (v1.isNotEmpty) return v1;
+      return s.getPropertyValue(kebab);
+    }
+    final t = _getProp(el.style, 'listStyleType', 'list-style-type');
+    if (t.isNotEmpty) return t;
+    final p = el.parentElement;
+    if (p != null) {
+      final pt = _getProp(p.style, 'listStyleType', 'list-style-type');
+      if (pt.isNotEmpty) return pt;
+      if (p is OListElement) return 'decimal';
+      if (p is UListElement) return 'disc';
+    }
+    return null;
+  }
+
+  String _effectiveListStylePositionFor(Element el) {
+    String _getProp(CSSStyleDeclaration s, String camel, String kebab) {
+      final v1 = s.getPropertyValue(camel);
+      if (v1.isNotEmpty) return v1;
+      return s.getPropertyValue(kebab);
+    }
+    final t = _getProp(el.style, 'listStylePosition', 'list-style-position');
+    if (t.isNotEmpty) return t;
+    final p = el.parentElement;
+    if (p != null) {
+      final pt = _getProp(p.style, 'listStylePosition', 'list-style-position');
+      if (pt.isNotEmpty) return pt;
+    }
+    return 'outside';
+  }
+
+  int _listIndexFor(Element el) {
+    final p = el.parentElement;
+    if (p == null) return 1;
+    int idx = 0;
+    for (final child in p.children) {
+      if (child is LIElement) idx++;
+      if (identical(child, el)) break;
+    }
+    return idx == 0 ? 1 : idx;
+  }
+
+  String _alphaFromIndex(int n, {bool upper = false}) {
+    int num = n;
+    final sb = StringBuffer();
+    while (num > 0) {
+      num--;
+      final rem = num % 26;
+      sb.writeCharCode((upper ? 65 : 97) + rem);
+      num ~/= 26;
+    }
+    return sb.toString().split('').reversed.join();
+  }
+
+  String _romanFromIndex(int n, {bool upper = false}) {
+    if (n <= 0) return upper ? 'N' : 'n';
+    final map = const [
+      [1000, 'M'],
+      [900, 'CM'],
+      [500, 'D'],
+      [400, 'CD'],
+      [100, 'C'],
+      [90, 'XC'],
+      [50, 'L'],
+      [40, 'XL'],
+      [10, 'X'],
+      [9, 'IX'],
+      [5, 'V'],
+      [4, 'IV'],
+      [1, 'I'],
+    ];
+    int num = n;
+    final sb = StringBuffer();
+    for (final pair in map) {
+      final val = pair[0] as int;
+      final sym = pair[1] as String;
+      while (num >= val) {
+        sb.write(sym);
+        num -= val;
+      }
+    }
+    final s = sb.toString();
+    return upper ? s : s.toLowerCase();
+  }
+
+  ui.TextStyle _uiTextStyleFromCss(CSSRenderStyle rs) {
+    final families = rs.fontFamily;
+    if (families != null && families.isNotEmpty) {
+      CSSFontFace.ensureFontLoaded(families[0], rs.fontWeight, rs);
+    }
+    return ui.TextStyle(
+      color: rs.backgroundClip != CSSBackgroundBoundary.text ? rs.color.value : null,
+      decoration: rs.textDecorationLine,
+      decorationColor: rs.textDecorationColor?.value,
+      decorationStyle: rs.textDecorationStyle,
+      fontWeight: rs.fontWeight,
+      fontStyle: rs.fontStyle,
+      textBaseline: CSSText.getTextBaseLine(),
+      fontFamily: (families != null && families.isNotEmpty) ? families.first : null,
+      fontFamilyFallback: families,
+      fontSize: rs.fontSize.computedValue,
+      letterSpacing: rs.letterSpacing?.computedValue,
+      wordSpacing: rs.wordSpacing?.computedValue,
+      // Do not apply CSS line-height here; markers align via baseline offsets.
+      locale: CSSText.getLocale(),
+      background: CSSText.getBackground(),
+      foreground: CSSText.getForeground(),
+      shadows: rs.textShadow,
+    );
+  }
+
+  void _paintListMarkerIfNeeded(PaintingContext context, Offset borderOffset, Offset contentOffset) {
+    // Only for <li> elements
+    final Element el = renderStyle.target;
+    if (el is! LIElement) return;
+
+    // Respect list-style-position; only handle outside here.
+    final pos = _effectiveListStylePositionFor(el);
+    if (pos != 'outside') return;
+
+    final type = _effectiveListStyleTypeFor(el);
+    if (type == null || type == 'none') return;
+
+    String markerText;
+    if (type == 'disc') {
+      markerText = '•';
+    } else {
+      final idx = _listIndexFor(el);
+      switch (type) {
+        case 'decimal':
+          markerText = idx.toString();
+          break;
+        case 'lower-alpha':
+          markerText = _alphaFromIndex(idx, upper: false);
+          break;
+        case 'upper-alpha':
+          markerText = _alphaFromIndex(idx, upper: true);
+          break;
+        case 'lower-roman':
+          markerText = _romanFromIndex(idx, upper: false);
+          break;
+        case 'upper-roman':
+          markerText = _romanFromIndex(idx, upper: true);
+          break;
+        default:
+          markerText = idx.toString();
+          break;
+      }
+      // Append period to match common UA formatting
+      markerText = '$markerText.';
+    }
+
+    // Measure marker and a single space using current text style
+    final ts = _uiTextStyleFromCss(renderStyle);
+    ui.Paragraph _buildPara(String text) {
+      final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
+        textDirection: TextDirection.ltr,
+        textHeightBehavior: const ui.TextHeightBehavior(
+          applyHeightToFirstAscent: true,
+          applyHeightToLastDescent: true,
+          leadingDistribution: ui.TextLeadingDistribution.even,
+        ),
+        maxLines: 1,
+      ));
+      pb.pushStyle(ts);
+      pb.addText(text);
+      final para = pb.build();
+      // Use a very large width to allow natural intrinsic sizing for single line
+      para.layout(const ui.ParagraphConstraints(width: 1000000.0));
+      return para;
+    }
+
+    final paraMarker = _buildPara(markerText);
+    final paraSpace = _buildPara(' ');
+    final double markerW = paraMarker.maxIntrinsicWidth;
+    final double spaceW = paraSpace.maxIntrinsicWidth;
+    final double markerBaseline = paraMarker.alphabeticBaseline; // distance from top to baseline
+
+    // Compute baseline Y: align to first line of content if available
+    double baselineY;
+    if (_inlineFormattingContext != null && _inlineFormattingContext!.paragraphLineMetrics.isNotEmpty) {
+      baselineY = contentOffset.dy + _inlineFormattingContext!.paragraphLineMetrics.first.baseline;
+    } else {
+      // Approximate using font metrics
+      baselineY = contentOffset.dy + markerBaseline;
+    }
+
+    // Compute X based on writing direction; place outside border box with a space gap
+    final bool isRTL = renderStyle.direction == TextDirection.rtl;
+    double drawX;
+    if (isRTL) {
+      drawX = borderOffset.dx + size.width + spaceW;
+    } else {
+      drawX = borderOffset.dx - markerW - spaceW;
+    }
+    final double drawY = baselineY - markerBaseline;
+
+    // Paint paragraph at computed position
+    context.canvas.drawParagraph(paraMarker, Offset(drawX, drawY));
   }
 
   // Removed nested DFS positioned painting. With positioned elements
