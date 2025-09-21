@@ -51,7 +51,7 @@ describe('background-attachment', () => {
 
   it('scroll', async () => {
     let container = createElementWithStyle('div', {
-      'background-attachment': 'local',
+      'background-attachment': 'scroll',
       backgroundRepeat: 'no-repeat',
       'background-image':
         'url(assets/cat.png)',
