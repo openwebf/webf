@@ -69,7 +69,7 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
       // Determine scroll direction - default to vertical
       Axis scrollDirection = Axis.vertical;
       if (ancestor is RenderWidget && ancestor.renderStyle.target is WebFListViewElement) {
-        scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).scrollDirection;
+        scrollDirection = (ancestor.renderStyle.target as WebFListViewElement).axis;
       }
 
       Offset sliverScrollOffset = scrollDirection == Axis.vertical ? Offset(0, layoutOffset) : Offset(layoutOffset, 0);
@@ -571,9 +571,9 @@ abstract class RenderBoxModel extends RenderBox
   // Call this method before content box layout.
   void beforeLayout() {
     BoxConstraints contentConstraints =
-        (parent is RenderEventListener ? (parent as RenderEventListener).parent : parent) is RenderBoxModel
-            ? constraints
-            : getConstraints();
+    (parent is RenderEventListener ? (parent as RenderEventListener).parent : parent) is RenderBoxModel
+        ? constraints
+        : getConstraints();
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);

@@ -29,8 +29,8 @@ void main() async {
   // Inline formatter + paragraph logs (placeholders, baselines, lines)
   // DebugFlags.debugLogInlineLayoutEnabled = true;
   // debugPaintBaselinesEnabled = true;
-  DebugFlags.enableDomLogs = true;
-  DebugFlags.enableCssLogs = true;
+  // DebugFlags.enableDomLogs = true;
+  // DebugFlags.enableCssLogs = true;
   // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
   DebugFlags.debugLogFlowEnabled = true;
@@ -92,7 +92,7 @@ class WebFPage extends StatelessWidget {
                 createController: () => WebFController(
                     viewportWidth: 360,
                     viewportHeight: 640,
-                    background: Colors.white12,
+                    background: Colors.black12,
                     onControllerInit: (controller) async {
                       double contextId = controller.view.contextId;
                       Pointer<Void> testContext = initTestFramework(contextId);
