@@ -300,10 +300,15 @@ function createCommand(target: string, options: { framework: string; packageName
     }
 
     const indexFilePath = path.join(srcDir, 'index.ts');
-    const indexContent = _.template(reactIndexTpl)({
-      components: [],
-    });
-    writeFileIfChanged(indexFilePath, indexContent);
+    if (!fs.existsSync(indexFilePath)) {
+      const indexContent = _.template(reactIndexTpl)({
+        components: [],
+      });
+      writeFileIfChanged(indexFilePath, indexContent);
+    } else {
+      // Do not overwrite existing index.ts created by the user
+      // Leave merge to the codegen step which appends exports safely
+    }
 
     spawnSync(NPM, ['install', '--omit=peer'], {
       cwd: target,

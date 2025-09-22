@@ -53,6 +53,11 @@ export interface WebFListViewProps {
    */
   shrinkWrap?: boolean;
   /**
+   * Whether the ListView should shrink-wrap its contents
+   * @default true
+   */
+  scrollDirection?: 'horizontal' | 'vertical';
+  /**
    * Fired when pull-to-refresh is triggered
    */
   onRefresh?: (event: Event) => void;
@@ -166,10 +171,12 @@ export const WebFListView = createWebFComponent<WebFListViewElement, WebFListVie
   // Map props to attributes
   attributeProps: [
     'shrinkWrap',
+    'scrollDirection',
   ],
   // Convert prop names to attribute names if needed
   attributeMap: {
     shrinkWrap: 'shrink-wrap',
+    scrollDirection: 'scroll-direction',
   },
   // Event handlers
   events: [
