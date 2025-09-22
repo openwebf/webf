@@ -1421,12 +1421,17 @@ class RenderFlowLayout extends RenderLayoutBox {
     double maxScrollableHeight = 0;
 
     if (hasLineBoxes) {
-      // Calculate the scrollable size from line boxes (legacy path)
+      // Calculate the scrollable size from line boxes (legacy path), but also
+      // account for atomic inline boxes whose own scrollable height exceeds
+      // the line box height per CSS overflow propagation.
+      double preLinesCross = 0.0;
       for (final lineBox in _inlineFormattingContext!.lineBoxes) {
         double lineWidth = 0;
         double lineHeight = lineBox.height;
+        double lineMaxBottom = preLinesCross + lineHeight;
 
-        // Calculate the maximum width needed by this line
+        // Calculate the maximum width needed by this line and the deepest bottom
+        // contributed by atomic inline items.
         for (final item in lineBox.items) {
           if (item is AtomicLineBoxItem || item is BoxLineBoxItem) {
             final renderBox = (item is AtomicLineBoxItem) ? item.renderBox : (item as BoxLineBoxItem).renderBox;
@@ -1434,9 +1439,22 @@ class RenderFlowLayout extends RenderLayoutBox {
             if (renderBox != null) {
               double itemRight = item.offset.dx + item.size.width;
 
-              // Add margins for RenderBoxModel
+              // Add margins for RenderBoxModel (horizontal only)
               if (renderBox is RenderBoxModel) {
                 itemRight += renderBox.renderStyle.marginRight.computedValue;
+                // Compute candidate visual bottom using the child's effective scrollable height.
+                final rs = renderBox.renderStyle;
+                final bool childScrolls = rs.effectiveOverflowX != CSSOverflowType.visible ||
+                    rs.effectiveOverflowY != CSSOverflowType.visible;
+                final Size childExtent = childScrolls
+                    ? (renderBox.boxSize ?? renderBox.size)
+                    : (renderBox is RenderBoxModel ? renderBox.scrollableSize : (renderBox.size));
+                double candidateBottom = preLinesCross + item.offset.dy + (childExtent.height.isFinite ? childExtent.height : 0.0);
+                final Offset? rel = CSSPositionedLayout.getRelativeOffset(rs);
+                if (rel != null && rel.dy > 0) candidateBottom += rel.dy;
+                final Offset? tr = rs.effectiveTransformOffset;
+                if (tr != null && tr.dy > 0) candidateBottom += tr.dy;
+                lineMaxBottom = math.max(lineMaxBottom, candidateBottom);
               }
 
               lineWidth = math.max(lineWidth, itemRight);
@@ -1447,23 +1465,30 @@ class RenderFlowLayout extends RenderLayoutBox {
         }
 
         maxScrollableWidth = math.max(maxScrollableWidth, lineWidth);
-        maxScrollableHeight += lineHeight;
+        // Extend by the larger of the line height or atomic bottom depth for this line.
+        maxScrollableHeight = math.max(maxScrollableHeight, lineMaxBottom);
+        preLinesCross += lineHeight;
       }
     } else {
-      // Paragraph path: use visual longest line and total height from paragraph metrics
+      // Paragraph path: use visual longest line and total height from paragraph metrics,
+      // then extend horizontally to include atomic boxes that overflow their own inline
+      // width (scrollable width beyond the placeholder width).
       final double paraWidth = _inlineFormattingContext!.paragraphVisualMaxLineWidth;
       final lines = _inlineFormattingContext!.paragraphLineMetrics;
       final double paraHeight = lines.isEmpty
           ? (_inlineFormattingContext!.paragraph?.height ?? 0)
           : lines.fold<double>(0.0, (h, lm) => h + lm.height);
-      // Include extra positive vertical overflow introduced by relative/transform
-      // on atomic inline boxes so scrollers can reach translated content.
-      final double extraY = _inlineFormattingContext!.additionalPositiveYOffsetFromAtomicPlaceholders();
-      maxScrollableWidth = paraWidth;
+      // Include extra vertical overflow from atomic inline boxes: relative/transform offsets
+      // and intrinsic overflow (child scrollable height beyond its line box height).
+      final double extraRelTransform = _inlineFormattingContext!.additionalPositiveYOffsetFromAtomicPlaceholders();
+      final double extraAtomicOverflow = _inlineFormattingContext!.additionalOverflowHeightFromAtomicPlaceholders();
+      final double extraY = math.max(extraRelTransform, extraAtomicOverflow);
+      final double extraX = _inlineFormattingContext!.additionalPositiveXOverflowFromAtomicPlaceholders();
+      maxScrollableWidth = paraWidth + extraX;
       maxScrollableHeight = paraHeight + extraY;
       if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow] scrollable from IFC paragraph: visualLongest=${paraWidth.toStringAsFixed(2)} '
-            'height=${maxScrollableHeight.toStringAsFixed(2)}');
+            'extraX=${extraX.toStringAsFixed(2)} height=${maxScrollableHeight.toStringAsFixed(2)}');
       }
     }
 
@@ -1684,7 +1709,11 @@ class RenderFlowLayout extends RenderLayoutBox {
         ? 0.0
         : scrollableCrossSizeOfLines.reduce((double curr, double next) => curr > next ? curr : next);
 
-    final double chosenCross = singleRunTextOnly ? linesCrossMax : collapsedCrossStack;
+    // Choose the larger of collapsed cross stack (margin-collapsed layout height)
+    // and the deepest visual bottom across lines that includes children's own
+    // scrollable overflow. This ensures overflow:visible content participates in
+    // scrollable overflow propagation without double-counting margins.
+    final double chosenCross = math.max(collapsedCrossStack, linesCrossMax);
 
     double maxScrollableCrossSizeOfChildren = chosenCross +
         renderStyle.paddingTop.computedValue +

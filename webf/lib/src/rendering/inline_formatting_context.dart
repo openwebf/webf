@@ -157,6 +157,109 @@ class InlineFormattingContext {
     return extra > 0 ? extra : 0.0;
   }
 
+  // Additional vertical overflow beyond the paragraph's total line-height
+  // introduced by atomic inline boxes (e.g., inline-block, replaced). If an
+  // atomic box's own scrollable height exceeds the line box height it occupies,
+  // the container's scrollable overflow should extend to include that bottom.
+  // This mirrors CSS Overflow propagation for inline formatting contexts where
+  // overflow is visible.
+  double additionalOverflowHeightFromAtomicPlaceholders() {
+    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return 0.0;
+
+    // Base paragraph height measured as sum of line heights when available.
+    final double baseHeight = _paraLines.isEmpty
+        ? (_paragraph?.height ?? 0.0)
+        : _paraLines.fold<double>(0.0, (sum, lm) => sum + lm.height);
+
+    double maxBottom = baseHeight;
+    final int n = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+    for (int i = 0; i < n; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      // Paragraph-reported box for the placeholder position in paragraph space.
+      final tb = _placeholderBoxes[i];
+      // Map placeholder index to the corresponding render box (may be a wrapper).
+      final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+      if (rb == null) continue;
+
+      // Resolve to a RenderBoxModel that carries CSS styles/scrollable sizes.
+      final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
+      if (styleBox == null || !styleBox.hasSize) continue;
+
+      // Determine child's effective scrollable height: use scrollableSize when the
+      // child is not itself a scroll container (overflow visible); otherwise the
+      // element's own box size defines its scroll range contribution.
+      final rs = styleBox.renderStyle;
+      final bool childScrolls = rs.effectiveOverflowX != CSSOverflowType.visible ||
+          rs.effectiveOverflowY != CSSOverflowType.visible;
+      final Size childExtent = childScrolls
+          ? (styleBox.boxSize ?? styleBox.size)
+          : styleBox.scrollableSize;
+
+      double candidateBottom = tb.top + (childExtent.height.isFinite ? childExtent.height : 0.0);
+
+      // Account for positive downward relative/transform offsets on the atomic box.
+      final Offset? rel = CSSPositionedLayout.getRelativeOffset(rs);
+      if (rel != null && rel.dy > 0) candidateBottom += rel.dy;
+      final Offset? tr = rs.effectiveTransformOffset;
+      if (tr != null && tr.dy > 0) candidateBottom += tr.dy;
+
+      if (candidateBottom > maxBottom) {
+        maxBottom = candidateBottom;
+      }
+    }
+
+    final double extra = maxBottom - baseHeight;
+    return extra > 0 ? extra : 0.0;
+  }
+
+  // Additional horizontal overflow to the right beyond the paragraph's
+  // visual max line width introduced by atomic inline boxes whose own
+  // scrollable width exceeds the inline box width used for line layout.
+  // Returns the extra width in px to add to paragraph width.
+  double additionalPositiveXOverflowFromAtomicPlaceholders() {
+    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return 0.0;
+
+    // Base paragraph right edge is the visual max line width.
+    final double baseRight = (_paraLines.isEmpty)
+        ? (_paragraph?.maxIntrinsicWidth ?? _paragraph?.width ?? 0.0)
+        : _paraLines.fold<double>(0.0, (maxR, lm) => math.max(maxR, lm.left + lm.width));
+
+    double maxRight = baseRight;
+    final int n = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+    for (int i = 0; i < n; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      final tb = _placeholderBoxes[i];
+      final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+      if (rb == null) continue;
+      final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
+      if (styleBox == null || !styleBox.hasSize) continue;
+
+      final rs = styleBox.renderStyle;
+      final bool childScrolls = rs.effectiveOverflowX != CSSOverflowType.visible ||
+          rs.effectiveOverflowY != CSSOverflowType.visible;
+      final Size childExtent = childScrolls
+          ? (styleBox.boxSize ?? styleBox.size)
+          : styleBox.scrollableSize;
+
+      double candidateRight = tb.left + (childExtent.width.isFinite ? childExtent.width : 0.0);
+      final Offset? rel = CSSPositionedLayout.getRelativeOffset(rs);
+      if (rel != null && rel.dx > 0) candidateRight += rel.dx;
+      final Offset? tr = rs.effectiveTransformOffset;
+      if (tr != null && tr.dx > 0) candidateRight += tr.dx;
+
+      // Include right margin since line layout accounts for margins horizontally
+      // when distributing inline-level boxes.
+      candidateRight += rs.marginRight.computedValue;
+
+      if (candidateRight > maxRight) maxRight = candidateRight;
+    }
+
+    final double extra = maxRight - baseRight;
+    return extra > 0 ? extra : 0.0;
+  }
+
   // Find the TextBox for a left-extras placeholder of a given inline element, if any.
   ui.TextBox? _leftExtraTextBoxFor(RenderBoxModel box) {
     for (int i = 0; i < _allPlaceholders.length; i++) {
