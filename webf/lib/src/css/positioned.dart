@@ -373,6 +373,14 @@ class CSSPositionedLayout {
       child.additionalPaintOffsetY = scrollOffset.dy;
     }
 
+    // When the parent is a scroll container (overflow on either axis not visible),
+    // convert positioned offsets to the scrolling content box coordinate space.
+    // Overflow paint translates children relative to the content edge, so offsets
+    // computed from the padding edge must exclude border and padding for alignment.
+    final bool parentIsScrollContainer =
+        parent.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+        parent.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+
     double x = _computePositionedOffset(
       Axis.horizontal,
       false,
@@ -400,6 +408,13 @@ class CSSPositionedLayout {
       marginTop,
       marginBottom,
     );
+
+    if (debugLogPositionedEnabled) {
+      final dir = parent.renderStyle.direction;
+      renderingLogger.finer('[ABS] apply offset for <${child.renderStyle.target.tagName.toLowerCase()}> '
+          'dir=$dir parentScroll=${parentIsScrollContainer} right=${right.cssText()} left=${left.cssText()} '
+          'final=(${x.toStringAsFixed(2)},${y.toStringAsFixed(2)}) ');
+    }
 
     final Offset finalOffset = Offset(x, y) - ancestorOffset;
     // If this positioned element is wrapped (e.g., by RenderEventListener), ensure

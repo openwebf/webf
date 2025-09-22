@@ -541,8 +541,14 @@ class RenderFlowLayout extends RenderLayoutBox {
     _alignPositionPlaceholdersToFollowingSiblings();
 
     // Apply offset for positioned elements that are direct children (containing block = this).
+    // Do not let out-of-flow positioned children expand scrollable area when this
+    // container is a scroll container; per CSS, abspos/fixed do not contribute to
+    // scroll range of overflow boxes.
     for (RenderBoxModel child in positionedChildren) {
       CSSPositionedLayout.applyPositionedChildOffset(this, child);
+      // Let positioned children contribute to scrollable size; filtering
+      // for intersection with the scrollport is handled inside
+      // extendMaxScrollableSize.
       extendMaxScrollableSize(child);
       addOverflowLayoutFromChild(child);
     }
@@ -563,9 +569,8 @@ class RenderFlowLayout extends RenderLayoutBox {
       }
     }
 
-    bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+    final bool isScrollContainer = renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
         renderStyle.effectiveOverflowY != CSSOverflowType.visible;
-
     if (isScrollContainer) {
       // Calculate the offset of its sticky children.
       for (RenderBoxModel stickyChild in stickyChildren) {

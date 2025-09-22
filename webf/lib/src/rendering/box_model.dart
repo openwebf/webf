@@ -751,55 +751,66 @@ abstract class RenderBoxModel extends RenderBox
     }
 
     Matrix4? transform = (childRenderStyle as CSSRenderStyle).transformMatrix;
-    double maxScrollableX = childRenderStyle.left.computedValue + childScrollableSize!.width;
 
-    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
-    // but in this stage, the parent's size will always to zero during the first initial layout.
-    if (maxScrollableX.isInfinite) return;
-
-    if (transform != null) {
-      maxScrollableX += transform.getTranslation()[0];
-    }
-
-    if (childRenderStyle.right.isNotAuto && parent is RenderBoxModel) {
-      if ((parent as RenderBoxModel).widthSizeType == BoxSizeType.specified) {
-        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
-        maxScrollableX = math.max(
-            maxScrollableX,
-            -childRenderStyle.right.computedValue +
-                overflowContainerBox.renderStyle.width.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderLeftWidth.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderRightWidth.computedValue);
-      } else {
-        maxScrollableX = math.max(maxScrollableX, -childRenderStyle.right.computedValue + _contentSize!.width);
+    // Determine container content box size for positioned computations.
+    double containerContentWidth = _contentSize!.width;
+    double containerContentHeight = _contentSize!.height;
+    if (parent is RenderBoxModel) {
+      final RenderBoxModel p = parent as RenderBoxModel;
+      if (p.widthSizeType == BoxSizeType.specified) {
+        containerContentWidth = p.renderStyle.width.computedValue -
+            p.renderStyle.effectiveBorderLeftWidth.computedValue -
+            p.renderStyle.effectiveBorderRightWidth.computedValue;
+      }
+      if (p.heightSizeType == BoxSizeType.specified) {
+        containerContentHeight = p.renderStyle.height.computedValue -
+            p.renderStyle.effectiveBorderTopWidth.computedValue -
+            p.renderStyle.effectiveBorderBottomWidth.computedValue;
       }
     }
 
-    double maxScrollableY = childRenderStyle.top.computedValue + childScrollableSize.height;
-
-    // maxScrollableX could be infinite due to the percentage value which depends on the parent box size,
-    // but in this stage, the parent's size will always to zero during the first initial layout.
-    if (maxScrollableY.isInfinite) return;
+    // Compute positioned box edges relative to the content (padding) box origin.
+    final Size childSize = childScrollableSize!;
+    double childLeft;
+    if (childRenderStyle.left.isNotAuto) {
+      childLeft = childRenderStyle.left.computedValue;
+    } else if (childRenderStyle.right.isNotAuto) {
+      childLeft = containerContentWidth - childSize.width - childRenderStyle.right.computedValue;
+    } else {
+      childLeft = 0;
+    }
+    double childTop;
+    if (childRenderStyle.top.isNotAuto) {
+      childTop = childRenderStyle.top.computedValue;
+    } else if (childRenderStyle.bottom.isNotAuto) {
+      childTop = containerContentHeight - childSize.height - childRenderStyle.bottom.computedValue;
+    } else {
+      childTop = 0;
+    }
 
     if (transform != null) {
-      maxScrollableY += transform.getTranslation()[1];
-    }
-    if (childRenderStyle.bottom.isNotAuto && parent is RenderBoxModel) {
-      if ((parent as RenderBoxModel).heightSizeType == BoxSizeType.specified) {
-        RenderBoxModel overflowContainerBox = parent as RenderBoxModel;
-        maxScrollableY = math.max(
-            maxScrollableY,
-            -childRenderStyle.bottom.computedValue +
-                overflowContainerBox.renderStyle.height.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderTopWidth.computedValue -
-                overflowContainerBox.renderStyle.effectiveBorderBottomWidth.computedValue);
-      } else {
-        maxScrollableY = math.max(maxScrollableY, -childRenderStyle.bottom.computedValue + _contentSize!.height);
-      }
+      childLeft += transform.getTranslation()[0];
+      childTop += transform.getTranslation()[1];
     }
 
-    maxScrollableX = math.max(maxScrollableX, scrollableSize.width);
-    maxScrollableY = math.max(maxScrollableY, scrollableSize.height);
+    final double childRight = childLeft + childSize.width;
+    final double childBottom = childTop + childSize.height;
+
+    // Only extend scroll area when the positioned box intersects the scrollport
+    // (padding box). Boxes entirely outside (e.g., start at exactly the trailing
+    // edge and extend outward) should not create scrollbars.
+    final bool intersectsH = childRight > 0 && childLeft < containerContentWidth;
+    final bool intersectsV = childBottom > 0 && childTop < containerContentHeight;
+
+    double maxScrollableX = scrollableSize.width;
+    double maxScrollableY = scrollableSize.height;
+
+    if (intersectsH) {
+      maxScrollableX = math.max(maxScrollableX, math.max(containerContentWidth, childRight));
+    }
+    if (intersectsV) {
+      maxScrollableY = math.max(maxScrollableY, math.max(containerContentHeight, childBottom));
+    }
 
     scrollableSize = Size(maxScrollableX, maxScrollableY);
   }
@@ -816,6 +827,20 @@ abstract class RenderBoxModel extends RenderBox
     if (!child.hasSize || (child is! RenderBoxModel && child is! RenderReplaced)) {
       return;
     }
+    // Out-of-flow positioned descendants (absolute/fixed) do not expand the
+    // scrollable overflow area of a scroll container per CSS overflow/positioning
+    // expectations. They are clipped to the padding edge and scrolled as a part
+    // of the content, but must not affect the scroll range calculation.
+    if (this is RenderBoxModel) {
+      final RenderBoxModel self = this as RenderBoxModel;
+      final bool isScrollContainer =
+          self.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+          self.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
+      if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
+        return;
+      }
+    }
+
     CSSRenderStyle style = (child as RenderBoxModel).renderStyle;
     Rect overflowRect = Rect.fromLTWH(
         childParentData.offset.dx, childParentData.offset.dy, child.boxSize!.width, child.boxSize!.height);
