@@ -67,9 +67,14 @@
     ]
   },
   {
-    "name": "FlexBoxLayoutAndPositionedLayout",
+    "name": "FlexBoxLayout",
     "specs": [
-      "specs/css/css-flexbox/**/*.{js,jsx,ts,tsx,html}",
+      "specs/css/css-flexbox/**/*.{js,jsx,ts,tsx,html}"
+    ]
+  },
+  {
+    "name": "PositionedLayout",
+    "specs": [
       "specs/css/css-position/**/*.{js,jsx,ts,tsx,html}"
     ]
   },
