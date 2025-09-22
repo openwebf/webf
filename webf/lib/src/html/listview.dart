@@ -393,6 +393,15 @@ class WebFListViewState extends WebFWidgetElementState {
           return buildListViewItemByIndex(index);
         });
 
+    // Honor CSS 'direction' for horizontal lists by providing a Directionality
+    // so Flutter computes axisDirection = left for RTL and right for LTR.
+    if (widgetElement.scrollDirection == Axis.horizontal) {
+      listView = Directionality(
+        textDirection: widgetElement.renderStyle.direction,
+        child: listView,
+      );
+    }
+
     // Wrap the ListView with NestedScrollCoordinator to handle incoming scroll from nested elements
     // This allows the ListView to receive scroll events from nested overflow containers or ListViews
     Widget result = listView;
