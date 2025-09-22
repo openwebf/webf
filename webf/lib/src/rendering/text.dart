@@ -39,16 +39,29 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   CSSRenderStyle renderStyle;
 
   bool get paintsSelf {
-    // Only defer painting to the nearest RenderFlowLayout that establishes IFC.
-    // More distant IFC ancestors do not paint this text (e.g., when this text
-    // lives inside an absolutely positioned element that has its own layout).
+    // Defer painting when this text participates in an ancestor inline
+    // formatting context (IFC). But if we are inside an out-of-flow positioned
+    // ancestor (absolute/fixed), that subtree does not participate in the
+    // ancestor's IFC and we should paint ourselves.
     RenderObject? p = parent;
     while (p != null) {
+      if (p is RenderBoxModel) {
+        final pos = p.renderStyle.position;
+        if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
+          // Out-of-flow positioned subtree: text paints itself.
+          return true;
+        }
+      }
       if (p is RenderFlowLayout) {
-        return !p.establishIFC;
+        if (p.establishIFC) {
+          // Ancestor IFC paints inline text; avoid self painting.
+          return false;
+        }
+        // Otherwise, continue searching upward for an establishing IFC.
       }
       p = p.parent;
     }
+    // No ancestor IFC found; paint ourselves.
     return true;
   }
   
