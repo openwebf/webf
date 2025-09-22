@@ -20,7 +20,10 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "declaration": false,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
   "include": [
     "src/**/*.ts"

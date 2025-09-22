@@ -83,18 +83,19 @@ ${enumValues};
 }
 
 function generateReturnType(type: ParameterType, enumName?: string) {
+  // Handle union types first (e.g., 'left' | 'center' | 'right')
+  // so we don't incorrectly treat string literal unions as pointer types.
+  if (Array.isArray(type.value)) {
+    // If we have an enum name, use it; otherwise fall back to String
+    return enumName || 'String';
+  }
+
   if (isPointerType(type)) {
     const pointerType = getPointerType(type);
     return pointerType;
   }
   if (type.isArray && typeof type.value === 'object' && !Array.isArray(type.value)) {
     return `${getPointerType(type.value)}[]`;
-  }
-  
-  // Handle union types (e.g., 'left' | 'center' | 'right')
-  if (Array.isArray(type.value)) {
-    // If we have an enum name, use it; otherwise fall back to String
-    return enumName || 'String';
   }
   
   // Handle when type.value is a ParameterType object (nested type)
@@ -278,7 +279,7 @@ interface ${object.name} {
   
   // Generate enums for union types
   const enums: { name: string; definition: string }[] = [];
-  const enumMap: Map<string, string> = new Map(); // prop name -> enum name
+  const enumMap: Map<string, string> = new Map(); // camelCase prop name -> enum name
   
   if (componentProperties) {
     for (const prop of componentProperties.props) {
@@ -290,7 +291,8 @@ interface ${object.name} {
             name: enumName,
             definition: generateDartEnum(enumName, values)
           });
-          enumMap.set(prop.name, enumName);
+          // Store by camelCase prop name to match template usage
+          enumMap.set(_.camelCase(prop.name), enumName);
         }
       }
     }
