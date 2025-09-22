@@ -155,18 +155,11 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
         renderingLogger.finer('[Overflow-Setup]   X controller maxScroll=${maxX.toStringAsFixed(2)} '
             'viewportW=${_viewportSize!.width.toStringAsFixed(2)} contentW=${_scrollableSize!.width.toStringAsFixed(2)}');
       }
-      // In RTL, default visual position should show the right edge. If the current
-      // horizontal scroll position is still at zero (initial), jump to max.
-      if (renderStyle.direction == TextDirection.rtl) {
-        final double maxX = math.max(0.0, _scrollableSize!.width - _viewportSize!.width);
-        if (maxX > 0 && (_scrollOffsetX!.pixels == 0.0)) {
-          try {
-            (scrollOffsetX as dynamic).jumpTo(maxX);
-          } catch (_) {
-            // Some engines may not support jumpTo through ViewportOffset; ignore.
-          }
-        }
-      }
+      // Do not auto-jump scroll position for RTL containers.
+      // Per CSS/UA expectations, initial scroll position is the start edge
+      // of the scroll range, and user agent should not forcibly move it to
+      // the visual right edge for RTL. Keeping 0 preserves expected behavior
+      // for cases where overflow content lies entirely to the right.
     }
 
     if (_scrollOffsetY != null) {
@@ -180,6 +173,12 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
+    // For RTL horizontal scrolling, the visual forward direction is towards left,
+    // so the paint transform should move content positively as pixels increase.
+    // For LTR, paint transform moves content negatively as pixels increase.
+    if (renderStyle.direction == TextDirection.rtl) {
+      return _scrollOffsetX!.pixels;
+    }
     return -_scrollOffsetX!.pixels;
   }
 
@@ -187,6 +186,9 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     if (_scrollOffsetY == null) return 0.0;
     return -_scrollOffsetY!.pixels;
   }
+
+  // Expose effective paint scroll offset for use in hit testing
+  Offset get paintScrollOffset => Offset(_paintOffsetX, _paintOffsetY);
 
   double get scrollTop {
     if (_scrollOffsetY == null) return 0.0;

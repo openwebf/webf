@@ -723,16 +723,6 @@ abstract class RenderBoxModel extends RenderBox
   /// Extend max scrollable size of renderBoxModel by offset of positioned child,
   /// get the max scrollable size of children of normal flow and single positioned child.
   void extendMaxScrollableSize(RenderBoxModel child) {
-    // Per CSS Overflow spec, out-of-flow positioned descendants (absolute/fixed)
-    // do not contribute to the scrollable overflow area of a scroll container.
-    // They are clipped to the padding edge when overflow is not 'visible', but
-    // must not expand scrollWidth/scrollHeight nor create scrollbars.
-    // https://www.w3.org/TR/css-overflow-3/#scrollable-overflow
-    final CSSPositionType pos = child.renderStyle.position;
-    if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
-      return;
-    }
-
     Size? childScrollableSize;
     RenderStyle childRenderStyle = child.renderStyle;
     CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
@@ -1157,8 +1147,10 @@ abstract class RenderBoxModel extends RenderBox
       transform: renderStyle.effectiveTransformMatrix,
       position: position,
       hitTest: (BoxHitTestResult result, Offset transformPosition) {
+        // Apply the same paint scroll offset used during painting so hit testing aligns in RTL/LTR.
+        final Offset scrollPaintOffset = this.paintScrollOffset;
         return result.addWithPaintOffset(
-            offset: (scrollLeft != 0.0 || scrollTop != 0.0) ? Offset(-scrollLeft, -scrollTop) : null,
+            offset: (scrollPaintOffset.dx != 0.0 || scrollPaintOffset.dy != 0.0) ? scrollPaintOffset : null,
             position: transformPosition,
             hitTest: (BoxHitTestResult result, Offset position) {
               // CSSPositionType positionType = renderStyle.position;

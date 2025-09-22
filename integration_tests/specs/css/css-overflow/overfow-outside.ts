@@ -1,19 +1,7 @@
 /*auto generated*/
 describe('overfow-outside', () => {
-  it('padding', async () => {
-    let target;
-    let target_1;
-    let target_2;
-    let target_3;
-    let target_4;
-    let target_5;
-    let container;
-    let container_1;
-    let container_2;
-    let container_3;
-    let container_4;
-    let container_5;
-    container = createElement(
+  it('padding htb', async () => {
+    const container = createElement(
       'div',
       {
         class: 'container htb',
@@ -30,7 +18,7 @@ describe('overfow-outside', () => {
         },
       },
       [
-        (target = createElement('div', {
+        createElement('div', {
           class: 'target',
           style: {
             position: 'absolute',
@@ -40,13 +28,16 @@ describe('overfow-outside', () => {
             'box-sizing': 'border-box',
             top: '-1000px',
           },
-        })),
-        createText(`
-  htb
-`),
+        }),
+        createText('htb'),
       ]
     );
-    container_1 = createElement(
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
+  it('padding htb rtl', async () => {
+    const container = createElement(
       'div',
       {
         class: 'container htb rtl',
@@ -64,7 +55,7 @@ describe('overfow-outside', () => {
         },
       },
       [
-        (target_1 = createElement('div', {
+        createElement('div', {
           class: 'target',
           style: {
             position: 'absolute',
@@ -74,13 +65,16 @@ describe('overfow-outside', () => {
             'box-sizing': 'border-box',
             right: '-1000px',
           },
-        })),
-        createText(`
-  htb rtl
-`),
+        }),
+        createText('htb rtl'),
       ]
     );
-    container_2 = createElement(
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
+  it('padding vrl', async () => {
+    const container = createElement(
       'div',
       {
         class: 'container vrl',
@@ -97,7 +91,7 @@ describe('overfow-outside', () => {
         },
       },
       [
-        (target_2 = createElement('div', {
+        createElement('div', {
           class: 'target',
           style: {
             position: 'absolute',
@@ -107,13 +101,16 @@ describe('overfow-outside', () => {
             'box-sizing': 'border-box',
             top: '-1000px',
           },
-        })),
-        createText(`
-  vrl
-`),
+        }),
+        createText('vrl'),
       ]
     );
-    container_3 = createElement(
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
+  it('padding vrl rtl', async () => {
+    const container = createElement(
       'div',
       {
         class: 'container vrl rtl',
@@ -131,7 +128,7 @@ describe('overfow-outside', () => {
         },
       },
       [
-        (target_3 = createElement('div', {
+        createElement('div', {
           class: 'target',
           style: {
             position: 'absolute',
@@ -141,13 +138,16 @@ describe('overfow-outside', () => {
             'box-sizing': 'border-box',
             bottom: '-1000px',
           },
-        })),
-        createText(`
-  vrl rtl
-`),
+        }),
+        createText('vrl rtl'),
       ]
     );
-    container_4 = createElement(
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
+  it('padding vlr', async () => {
+    const container = createElement(
       'div',
       {
         class: 'container vlr',
@@ -164,7 +164,7 @@ describe('overfow-outside', () => {
         },
       },
       [
-        (target_4 = createElement('div', {
+        createElement('div', {
           class: 'target',
           style: {
             position: 'absolute',
@@ -174,13 +174,16 @@ describe('overfow-outside', () => {
             'box-sizing': 'border-box',
             top: '-1000px',
           },
-        })),
-        createText(`
-  vlr
-`),
+        }),
+        createText('vlr'),
       ]
     );
-    container_5 = createElement(
+    BODY.appendChild(container);
+    await snapshot();
+  });
+
+  it('padding vlr rtl', async () => {
+    const container = createElement(
       'div',
       {
         class: 'container vlr rtl',
@@ -198,7 +201,7 @@ describe('overfow-outside', () => {
         },
       },
       [
-        (target_5 = createElement('div', {
+        createElement('div', {
           class: 'target',
           style: {
             position: 'absolute',
@@ -208,19 +211,11 @@ describe('overfow-outside', () => {
             'box-sizing': 'border-box',
             left: '-1000px',
           },
-        })),
-        createText(`
-  vlr rtl
-`),
+        }),
+        createText('vlr rtl'),
       ]
     );
     BODY.appendChild(container);
-    BODY.appendChild(container_1);
-    BODY.appendChild(container_2);
-    BODY.appendChild(container_3);
-    BODY.appendChild(container_4);
-    BODY.appendChild(container_5);
-
     await snapshot();
   });
 });
