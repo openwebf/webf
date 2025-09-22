@@ -711,6 +711,9 @@ class RenderFlowLayout extends RenderLayoutBox {
       // shape the paragraph to that tight content width instead of any stale
       // pre-flex content constraint (such as an author-specified width).
       BoxConstraints ifcConstraints = contentConstraints!;
+      // Do not reserve space for classic scrollbars. WebF treats scrollbars
+      // as overlay, so available inline-size for line breaking remains the
+      // content box width. This keeps layout deterministic across platforms.
       if (constraints.hasTightWidth) {
         final double tightContentMaxWidth = math.max(
           0.0,

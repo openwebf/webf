@@ -144,7 +144,7 @@ describe('scrollable-size', () => {
     let div = createElement('div', {
       style: {
         overflow: 'scroll',
-        width: '350px',
+        width: '300px',
         height: '350px',
         padding: '25px',
         backgroundColor: 'yellow',

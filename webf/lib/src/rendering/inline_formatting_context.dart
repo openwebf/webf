@@ -2237,19 +2237,22 @@ class InlineFormattingContext {
     }
 
     // If an ancestor has horizontal scrolling and there are no interior
-    // whitespace break opportunities (e.g., a single long word/number),
-    // shape very wide to avoid forced word breaking only when the container
-    // (or an ancestor) is horizontally scrollable (overflow-x: auto|scroll).
-    // For overflow-x: hidden, keep shaping bounded to the available width so
-    // alignment stays correct and extra content is simply clipped.
+    // Avoid disabling wrapping solely due to scrollable-X. CSS allows breaks
+    // between atomic inline-level boxes regardless of ancestor scrollability.
+    // We only shape to an extremely wide width when the content has no natural
+    // break opportunities at all (no atomic inlines, no explicit breaks, and
+    // no whitespace in text), i.e. a single unbreakable run, so that long
+    // words/numbers can overflow horizontally for scrolling.
     final bool _ancestorScrollX = _ancestorHasHorizontalScroll();
     final bool _localIsScrollableX = style.effectiveOverflowX == CSSOverflowType.scroll ||
         style.effectiveOverflowX == CSSOverflowType.auto;
-    final bool _wideShapeForScrollableX = (_ancestorScrollX || _localIsScrollableX) && !_hasInteriorWhitespaceInText;
+    final bool _contentHasNoBreaks = !_hasAtomicInlines && !_hasExplicitBreaks && !_hasWhitespaceInText;
+    final bool _wideShapeForScrollableX = (_ancestorScrollX || _localIsScrollableX) && _contentHasNoBreaks;
     if (_wideShapeForScrollableX) {
       initialWidth = 1000000.0;
       if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine('[IFC] ancestor horizontal scroll → shape wide initialWidth=${initialWidth.toStringAsFixed(2)}');
+        renderingLogger.fine('[IFC] scrollable-x with unbreakable content → shape wide initialWidth='
+            '${initialWidth.toStringAsFixed(2)}');
       }
     }
 
