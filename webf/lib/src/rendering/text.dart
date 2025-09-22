@@ -39,15 +39,17 @@ class RenderTextBox extends RenderBox with RenderObjectWithChildMixin<RenderBox>
   CSSRenderStyle renderStyle;
 
   bool get paintsSelf {
-    if (parent is! RenderFlowLayout) return true;
-    
-    // If parent is RenderFlowLayout but doesn't establish IFC (i.e., block layout),
-    // the text should measure and paint itself
-    final flowParent = parent as RenderFlowLayout;
-    bool result = !flowParent.establishIFC;
-    
-    
-    return result;
+    // Only defer painting to the nearest RenderFlowLayout that establishes IFC.
+    // More distant IFC ancestors do not paint this text (e.g., when this text
+    // lives inside an absolutely positioned element that has its own layout).
+    RenderObject? p = parent;
+    while (p != null) {
+      if (p is RenderFlowLayout) {
+        return !p.establishIFC;
+      }
+      p = p.parent;
+    }
+    return true;
   }
   
   bool get _paintsSelf => paintsSelf;

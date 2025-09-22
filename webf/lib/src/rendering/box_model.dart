@@ -380,14 +380,30 @@ abstract class RenderBoxModel extends RenderBox
       if (parentIsInlineBlockAutoWidth) {
         parentBoxContentConstraintsWidth = double.infinity;
       } else {
-        parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle
-            .deflateMarginConstraints(parentRenderBoxModel.contentConstraints!)
-            .maxWidth;
+        // Prefer the actual layout parent's content constraints if available,
+        // because CSS parent may not yet have computed contentConstraints during IFC layout.
+        BoxConstraints? candidate;
+        if (parent is RenderBoxModel) {
+          candidate = (parent as RenderBoxModel).contentConstraints;
+        }
+        candidate ??= parentRenderBoxModel.contentConstraints;
 
-        // When inner minimal content size are larger that parent's constraints,
-        // still use parent constraints but ensure minConstraintWidth is properly handled later
-        if (parentBoxContentConstraintsWidth < minConstraintWidth) {
-          // Keep parentBoxContentConstraintsWidth; resolution happens below.
+        if (candidate != null) {
+          // When using CSS parent constraints, deflate with the current element's margins
+          // to match previous behavior; otherwise use the raw layout parent's constraints.
+          if (identical(candidate, parentRenderBoxModel.contentConstraints)) {
+            parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle
+                .deflateMarginConstraints(candidate)
+                .maxWidth;
+          } else {
+            parentBoxContentConstraintsWidth = candidate.maxWidth;
+          }
+
+          // When inner minimal content size are larger that parent's constraints,
+          // still use parent constraints but ensure minConstraintWidth is properly handled later
+          if (parentBoxContentConstraintsWidth < minConstraintWidth) {
+            // Keep parentBoxContentConstraintsWidth; resolution happens below.
+          }
         }
       }
 

@@ -1451,8 +1451,11 @@ class RenderFlowLayout extends RenderLayoutBox {
       final double paraHeight = lines.isEmpty
           ? (_inlineFormattingContext!.paragraph?.height ?? 0)
           : lines.fold<double>(0.0, (h, lm) => h + lm.height);
+      // Include extra positive vertical overflow introduced by relative/transform
+      // on atomic inline boxes so scrollers can reach translated content.
+      final double extraY = _inlineFormattingContext!.additionalPositiveYOffsetFromAtomicPlaceholders();
       maxScrollableWidth = paraWidth;
-      maxScrollableHeight = paraHeight;
+      maxScrollableHeight = paraHeight + extraY;
       if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow] scrollable from IFC paragraph: visualLongest=${paraWidth.toStringAsFixed(2)} '
             'height=${maxScrollableHeight.toStringAsFixed(2)}');

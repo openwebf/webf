@@ -105,6 +105,58 @@ class InlineFormattingContext {
 
   Size? measuredVisualSizeOf(RenderBox box) => _measuredVisualSizes[box];
 
+  // Resolve the RenderBoxModel that carries CSS styles for a placeholder's
+  // render box (which may be a wrapper). Walk down a few levels if necessary.
+  RenderBoxModel? _resolveStyleBoxForPlaceholder(RenderBox rb) {
+    if (rb is RenderBoxModel) return rb;
+    RenderBox? cur = rb;
+    for (int i = 0; i < 3; i++) {
+      if (cur is RenderObjectWithChildMixin<RenderBox>) {
+        final RenderBox? child = (cur as dynamic).child as RenderBox?;
+        if (child == null) break;
+        if (child is RenderBoxModel) return child;
+        cur = child;
+        continue;
+      }
+      break;
+    }
+    return null;
+  }
+
+  // Extra positive Y overflow beyond the paragraph's baseline-bottom caused by
+  // CSS relative offsets or transforms on atomic inline boxes. This is used by
+  // the container to extend its scrollable height when using the paragraph path.
+  double additionalPositiveYOffsetFromAtomicPlaceholders() {
+    if (_paragraph == null || _placeholderBoxes.isEmpty || _allPlaceholders.isEmpty) return 0.0;
+
+    // Base paragraph height measured as sum of line heights when available.
+    final double baseHeight = _paraLines.isEmpty
+        ? (_paragraph?.height ?? 0.0)
+        : _paraLines.fold<double>(0.0, (sum, lm) => sum + lm.height);
+
+    double maxBottom = baseHeight;
+    final int n = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+    for (int i = 0; i < n; i++) {
+      final ph = _allPlaceholders[i];
+      if (ph.kind != _PHKind.atomic) continue;
+      final tb = _placeholderBoxes[i];
+      // Map placeholder index to the corresponding render box (may be a wrapper).
+      RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+      if (rb == null) continue;
+      final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
+      if (styleBox == null) continue;
+      double extraDy = 0.0;
+      final Offset? rel = CSSPositionedLayout.getRelativeOffset(styleBox.renderStyle);
+      if (rel != null && rel.dy > 0) extraDy += rel.dy;
+      final Offset? tr = styleBox.renderStyle.effectiveTransformOffset;
+      if (tr != null && tr.dy > 0) extraDy += tr.dy;
+      final double bottom = tb.bottom + extraDy;
+      if (bottom > maxBottom) maxBottom = bottom;
+    }
+    final double extra = maxBottom - baseHeight;
+    return extra > 0 ? extra : 0.0;
+  }
+
   // Find the TextBox for a left-extras placeholder of a given inline element, if any.
   ui.TextBox? _leftExtraTextBoxFor(RenderBoxModel box) {
     for (int i = 0; i < _allPlaceholders.length; i++) {
@@ -2261,7 +2313,10 @@ class InlineFormattingContext {
           renderingLogger.finer('[IFC] layout atomic <${_getElementDescription(child is RenderBoxModel ? child : null)}>'
               ' constraints=${constraints.toString()}');
         }
-        child.layout(constraints, parentUsesSize: true);
+        // Pre-measure atomic inline without depending on parent's size readbacks.
+        // Using parentUsesSize=false avoids relying on parent's relayout boundary
+        // when IFC pre-measures before the parent completes its own layout pass.
+        child.layout(constraints, parentUsesSize: false);
         laidOut.add(child);
       }
     }
