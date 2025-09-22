@@ -28,6 +28,14 @@ class CircularIntervalList<T> {
 
 enum _BorderDirection { top, bottom, left, right }
 
+// Dashed border sizing constraints.
+// Nominal dash unit relative to border width.
+// Increase to make each dashed segment longer on average.
+// Example: 1.8 means nominal unit ≈ 1.8 × border width.
+const double _kDashedBorderAvgUnitRatio = 1.8;
+// Minimum gap length as a ratio of border width to avoid micro-gaps.
+const double _kDashedBorderMinGapWidthRatio = 0.5;
+
 /// An object that paints a [BoxDecoration] into a canvas.
 class BoxDecorationPainter extends BoxPainter {
   BoxDecorationPainter(this.padding, this.renderStyle, VoidCallback onChanged) : super(onChanged);
@@ -117,44 +125,39 @@ class BoxDecorationPainter extends BoxPainter {
     bool isUniform = _isUniformDashedBorder(border);
 
     if (isUniform) {
-      // Use the original implementation for uniform borders
-      // Get side properties from the top border
-      ExtendedBorderSide side = border.top as ExtendedBorderSide;
-
-      // Skip if the border side is not visible or not dashed
+      // Uniform borders: if rounded corners are present, paint as a single
+      // continuous dashed path around the rounded rectangle to match browsers
+      // (natural ~45° appearance at extreme points). Otherwise, paint per side
+      // to preserve crisp "L" corners on rectangular borders.
+      final ExtendedBorderSide side = border.top as ExtendedBorderSide;
       if (side.extendBorderStyle != CSSBorderStyleType.dashed || side.width == 0.0) return;
 
-      // Create a paint object for the border
-      final Paint paint = Paint()
-        ..color = side.color
-        ..strokeWidth = side.width
-        ..style = PaintingStyle.stroke;
-
-      // Define dash pattern (dash length, gap length)
-      // Standard dash pattern is 3x the line width for the dash, 3x for the gap
-      final double dashLength = side.width * 3;
-      final double dashGap = side.width * 3;
-
-      // Create the path for the complete border, aligned to sit fully inside
-      // the border box by deflating half the stroke width.
-      Path borderPath = Path();
-
-      final double inset = side.width / 2.0;
       if (_decoration.hasBorderRadius && _decoration.borderRadius != null) {
-        RRect rrect = _decoration.borderRadius!.toRRect(rect).deflate(inset);
-        borderPath.addRRect(rrect);
-      } else {
-        borderPath.addRect(rect.deflate(inset));
-      }
+        final Paint paint = Paint()
+          ..color = side.color
+          ..strokeWidth = side.width
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.square
+          ..strokeJoin = StrokeJoin.miter;
 
-      // Draw the dashed border
-      canvas.drawPath(
-        dashPath(
-          borderPath,
-          dashArray: CircularIntervalList<double>([dashLength, dashGap]),
-        ),
-        paint,
-      );
+        final double inset = side.width / 2.0;
+        final RRect rr = _decoration.borderRadius!.toRRect(rect).deflate(inset);
+
+        final Path borderPath = Path()..addRRect(rr);
+        final double baseDash = (side.width * _kDashedBorderAvgUnitRatio).clamp(side.width, double.infinity);
+        final dashArray = CircularIntervalList<double>([baseDash, baseDash]);
+
+        canvas.drawPath(
+          dashPath(borderPath, dashArray: dashArray),
+          paint,
+        );
+      } else {
+        // No border radius: per-side painting for sharp corners.
+        _paintDashedBorderSide(canvas, rect, null, border.top as ExtendedBorderSide, _BorderDirection.top);
+        _paintDashedBorderSide(canvas, rect, null, border.right as ExtendedBorderSide, _BorderDirection.right);
+        _paintDashedBorderSide(canvas, rect, null, border.bottom as ExtendedBorderSide, _BorderDirection.bottom);
+        _paintDashedBorderSide(canvas, rect, null, border.left as ExtendedBorderSide, _BorderDirection.left);
+      }
     } else {
       // Handle non-uniform borders - draw each side individually if it's dashed
       // Check which sides have dashed borders
@@ -244,13 +247,34 @@ class BoxDecorationPainter extends BoxPainter {
     final Paint paint = Paint()
       ..color = side.color
       ..strokeWidth = side.width
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      // Square caps create proper right-angle corner dashes ("L" shape)
+      ..strokeCap = StrokeCap.square
+      ..strokeJoin = StrokeJoin.miter;
 
     // Define dash pattern (dash length, gap length)
-    // Standard dash pattern is 3x the line width for the dash, 3x for the gap
-    final double dashLength = side.width * 3;
-    final double dashGap = side.width * 3;
-    final dashArray = CircularIntervalList<double>([dashLength, dashGap]);
+    // Prefer to start and end sides with a dash to form a right angle at corners.
+    late final CircularIntervalList<double> dashArray;
+
+    if (rrect == null) {
+      // Non-rounded corners: compute dash/gap to start and end with a dash.
+      final double sideLength;
+      if (direction == _BorderDirection.top || direction == _BorderDirection.bottom) {
+        // Path goes from left+sw/2 to right-sw/2
+        sideLength = rect.width - side.width;
+      } else {
+        // Left/Right: from top+sw/2 to bottom-sw/2
+        sideLength = rect.height - side.width;
+      }
+
+      final List<double> pattern = _computeDashPattern(sideLength, side.width);
+      dashArray = CircularIntervalList<double>([pattern[0], pattern[1]]);
+    } else {
+      // Rounded corners: use constrained ratio for both dash and gap.
+      final double dashLength = side.width * _kDashedBorderAvgUnitRatio;
+      final double dashGap = side.width * _kDashedBorderAvgUnitRatio;
+      dashArray = CircularIntervalList<double>([dashLength, dashGap]);
+    }
 
     // Create the path for just this side
     Path borderPath = Path();
@@ -259,9 +283,11 @@ class BoxDecorationPainter extends BoxPainter {
       // Align stroke inside by deflating half the stroke width
       final double inset = side.width / 2.0;
       final RRect rr = rrect.deflate(inset);
-      // Handle rounded corners
+      // Handle rounded corners. Assign corner arcs only to horizontal sides
+      // (top and bottom) to avoid duplication and direction reversals.
       switch (direction) {
         case _BorderDirection.top:
+          // Include both top-left and top-right arcs on the top side.
           borderPath.moveTo(rr.left, rr.top + rr.tlRadiusY);
           borderPath.arcToPoint(
             Offset(rr.left + rr.tlRadiusX, rr.top),
@@ -276,16 +302,18 @@ class BoxDecorationPainter extends BoxPainter {
           );
           break;
         case _BorderDirection.right:
+          // Vertical segment only; corner arcs handled by top/bottom.
           borderPath.moveTo(rr.right, rr.top + rr.trRadiusY);
           borderPath.lineTo(rr.right, rr.bottom - rr.brRadiusY);
+          break;
+        case _BorderDirection.bottom:
+          // Include both bottom-right and bottom-left arcs on the bottom side.
+          borderPath.moveTo(rr.right, rr.bottom - rr.brRadiusY);
           borderPath.arcToPoint(
             Offset(rr.right - rr.brRadiusX, rr.bottom),
             radius: Radius.elliptical(rr.brRadiusX, rr.brRadiusY),
             clockwise: true,
           );
-          break;
-        case _BorderDirection.bottom:
-          borderPath.moveTo(rr.right - rr.brRadiusX, rr.bottom);
           borderPath.lineTo(rr.left + rr.blRadiusX, rr.bottom);
           borderPath.arcToPoint(
             Offset(rr.left, rr.bottom - rr.blRadiusY),
@@ -294,13 +322,9 @@ class BoxDecorationPainter extends BoxPainter {
           );
           break;
         case _BorderDirection.left:
+          // Vertical segment only; corner arcs handled by top/bottom.
           borderPath.moveTo(rr.left, rr.bottom - rr.blRadiusY);
           borderPath.lineTo(rr.left, rr.top + rr.tlRadiusY);
-          borderPath.arcToPoint(
-            Offset(rr.left + rr.tlRadiusX, rr.top),
-            radius: Radius.elliptical(rr.tlRadiusX, rr.tlRadiusY),
-            clockwise: false,
-          );
           break;
       }
     } else {
@@ -333,6 +357,55 @@ class BoxDecorationPainter extends BoxPainter {
       ),
       paint,
     );
+  }
+
+  // Compute dash/gap so a side starts and ends with a dash.
+  // Keep dash length ≈ border-width × _kDashedBorderAvgUnitRatio and adjust gap to fit.
+  List<double> _computeDashPattern(double length, double strokeWidth) {
+    // Base dash length target with constraint.
+    final double baseDash = (strokeWidth * _kDashedBorderAvgUnitRatio)
+        .clamp(strokeWidth, double.infinity)
+        .toDouble();
+
+    // If the side is very short, draw a single dash covering the length.
+    if (length <= baseDash) {
+      return <double>[length, baseDash];
+    }
+
+    // We want: length = n * dash + (n - 1) * gap, starting and ending with dash.
+    // Fix dash = baseDash and solve for n (integer) and gap >= 0.
+    // For feasibility: n <= (length + dash) / (2 * dash).
+    int n = ((length + baseDash) / (2 * baseDash)).floor();
+    if (n < 1) n = 1;
+
+    // If n==1, just one dash across the side.
+    if (n == 1) {
+      return <double>[length, baseDash];
+    }
+
+    double gap = (length - n * baseDash) / (n - 1);
+    // Ensure non-negative gap; if negative, reduce n until it fits.
+    while (gap < 0 && n > 1) {
+      n -= 1;
+      if (n == 1) break;
+      gap = (length - n * baseDash) / (n - 1);
+    }
+
+    if (n == 1) {
+      return <double>[length, baseDash];
+    }
+
+    // Optional: Avoid excessively tiny gaps by reducing n.
+    final double minGap = strokeWidth * _kDashedBorderMinGapWidthRatio;
+    while (gap < minGap && n > 1) {
+      n -= 1;
+      if (n == 1) {
+        return <double>[length, baseDash];
+      }
+      gap = (length - n * baseDash) / (n - 1);
+    }
+
+    return <double>[baseDash, gap];
   }
 
   // Helper function to create a dashed path
