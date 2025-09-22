@@ -173,13 +173,15 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
-    // For RTL horizontal scrolling, the visual forward direction is towards left,
-    // so the paint transform should move content positively as pixels increase.
-    // For LTR, paint transform moves content negatively as pixels increase.
-    if (renderStyle.direction == TextDirection.rtl) {
-      return _scrollOffsetX!.pixels;
-    }
-    return -_scrollOffsetX!.pixels;
+    // Compute logical content position of the left edge within the scrollable content.
+    // For LTR: logical = pixels (distance from left).
+    // For RTL: logical = (maxScroll - pixels) so that pixels=0 shows the rightmost content.
+    final double maxScroll = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+    final double logical = (renderStyle.direction == TextDirection.rtl)
+        ? (maxScroll - _scrollOffsetX!.pixels)
+        : _scrollOffsetX!.pixels;
+    // Paint offset translates content left by the logical left-edge distance.
+    return -logical;
   }
 
   double get _paintOffsetY {
