@@ -136,7 +136,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
     );
   }
 
-  // Sort children by zIndex, used for paint and hitTest.
+  // Sort children into CSS painting order, used for paint and hitTest.
   List<RenderBox> _computePaintingOrder() {
     RenderLayoutBox containerLayoutBox = this;
 
@@ -148,33 +148,83 @@ abstract class RenderLayoutBox extends RenderBoxModel
       final List<RenderBox> order = <RenderBox>[containerLayoutBox.firstChild as RenderBox];
       return order;
     } else {
-      // Sort by zIndex.
-      List<RenderBox> children = [];
-      List<RenderBox> negativeStackingChildren = [];
-      List<RenderBoxModel> stackingChildren = [];
+      // Implement CSS painting order buckets for a stacking context.
+      List<RenderBox> normalFlow = [];
+      List<RenderBoxModel> negatives = [];
+      List<RenderBoxModel> positionedAutoOrZero = [];
+      List<RenderBoxModel> positives = [];
+
       containerLayoutBox.visitChildren((RenderObject child) {
         if (child is RenderBoxModel) {
-          bool isNeedsStacking = child.renderStyle.needsStacking;
-          if (child.renderStyle.zIndex != null && child.renderStyle.zIndex! < 0) {
-            negativeStackingChildren.add(child);
-          } else if (isNeedsStacking) {
-            stackingChildren.add(child);
+          final rs = child.renderStyle;
+          final int? zi = rs.zIndex;
+          final bool positioned = rs.position != CSSPositionType.static;
+          if (zi != null && zi < 0) {
+            negatives.add(child);
+          } else if (zi != null && zi > 0) {
+            positives.add(child);
+          } else if (zi == 0) {
+            // z-index: 0 establishes a stacking level similar to positioned auto/0,
+            // including for flex/grid items which can have z-index without being positioned.
+            positionedAutoOrZero.add(child);
+          } else if (positioned && zi == null) {
+            // Positioned with z-index: auto
+            positionedAutoOrZero.add(child);
           } else {
-            children.add(child);
+            // Non-positioned descendants (including non-positioned stacking contexts)
+            normalFlow.add(child);
           }
         } else {
-          children.add(child as RenderBox);
+          normalFlow.add(child as RenderBox);
         }
       });
 
-      stackingChildren.sort((RenderBoxModel left, RenderBoxModel right) {
-        return (left.renderStyle.zIndex ?? 0) <= (right.renderStyle.zIndex ?? 0) ? -1 : 1;
+      // Precompute DOM order index for each item we sort (decorate-sort-undecorate) to avoid
+      // creating per-compare objects and reduce transient allocations.
+      final Map<RenderBoxModel, int> _domIndexMap = {};
+      void _ensureDomIndex(RenderBoxModel m) {
+        if (_domIndexMap.containsKey(m)) return;
+        final el = m.renderStyle.target;
+        final parent = el.parentElement;
+        if (parent == null) {
+          _domIndexMap[m] = 0;
+          return;
+        }
+        int i = 0;
+        for (final childEl in parent.children) {
+          if (identical(childEl, el)) break;
+          i++;
+        }
+        _domIndexMap[m] = i;
+      }
+      int _domIndex(RenderBoxModel m) {
+        _ensureDomIndex(m);
+        return _domIndexMap[m] ?? 0;
+      }
+
+      negatives.sort((a, b) {
+        final int az = a.renderStyle.zIndex ?? 0;
+        final int bz = b.renderStyle.zIndex ?? 0;
+        if (az != bz) return az.compareTo(bz);
+        return _domIndex(a).compareTo(_domIndex(b));
       });
 
-      children.insertAll(0, negativeStackingChildren);
-      children.addAll(stackingChildren);
+      positionedAutoOrZero.sort((a, b) => _domIndex(a).compareTo(_domIndex(b)));
 
-      return children;
+      positives.sort((a, b) {
+        final int az = a.renderStyle.zIndex ?? 0;
+        final int bz = b.renderStyle.zIndex ?? 0;
+        if (az != bz) return az.compareTo(bz);
+        return _domIndex(a).compareTo(_domIndex(b));
+      });
+
+      final List<RenderBox> ordered = [];
+      ordered.addAll(negatives.cast<RenderBox>());
+      ordered.addAll(normalFlow);
+      ordered.addAll(positionedAutoOrZero.cast<RenderBox>());
+      ordered.addAll(positives.cast<RenderBox>());
+
+      return ordered;
     }
   }
 

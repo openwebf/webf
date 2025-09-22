@@ -107,23 +107,30 @@ class RenderWidget extends RenderBoxModel
     CSSPositionedLayout.applyRelativeOffset(offset, child);
   }
 
-  // Compute painting order similar to RenderLayoutBox: negative z-index first,
-  // then normal children, then stacking children sorted by z-index.
+  // Compute painting order using CSS stacking categories:
+  // negatives → normal-flow → positioned(auto/0) → positives.
   List<RenderBox> _computePaintingOrder() {
     if (childCount == 0) return const [];
     if (childCount == 1) return <RenderBox>[firstChild as RenderBox];
 
     List<RenderBox> normal = [];
-    List<RenderBox> negative = [];
-    List<RenderBoxModel> stacking = [];
+    List<RenderBoxModel> negatives = [];
+    List<RenderBoxModel> positionedAutoOrZero = [];
+    List<RenderBoxModel> positives = [];
 
     visitChildren((RenderObject c) {
       if (c is RenderBoxModel) {
         final rs = c.renderStyle;
-        if (rs.zIndex != null && rs.zIndex! < 0) {
-          negative.add(c);
-        } else if (rs.needsStacking) {
-          stacking.add(c);
+        final int? zi = rs.zIndex;
+        final bool positioned = rs.position != CSSPositionType.static;
+        if (zi != null && zi < 0) {
+          negatives.add(c);
+        } else if (zi != null && zi > 0) {
+          positives.add(c);
+        } else if (zi == 0) {
+          positionedAutoOrZero.add(c);
+        } else if (positioned && zi == null) {
+          positionedAutoOrZero.add(c);
         } else {
           normal.add(c);
         }
@@ -132,12 +139,52 @@ class RenderWidget extends RenderBoxModel
       }
     });
 
-    stacking.sort((a, b) => ((a.renderStyle.zIndex ?? 0) <= (b.renderStyle.zIndex ?? 0)) ? -1 : 1);
+    // Precompute DOM order index per item to minimize comparator work and allocations.
+    final Map<RenderBoxModel, int> _domIndexMap = {};
+    void _ensureDomIndex(RenderBoxModel m) {
+      if (_domIndexMap.containsKey(m)) return;
+      final el = m.renderStyle.target;
+      final parent = el.parentElement;
+      if (parent == null) {
+        _domIndexMap[m] = 0;
+        return;
+      }
+      int i = 0;
+      for (final childEl in parent.children) {
+        if (identical(childEl, el)) break;
+        i++;
+      }
+      _domIndexMap[m] = i;
+    }
+    int _domIndex(RenderBoxModel m) {
+      _ensureDomIndex(m);
+      return _domIndexMap[m] ?? 0;
+    }
+
+    // Negative z-index first (ascending)
+    negatives.sort((a, b) {
+      final int az = a.renderStyle.zIndex ?? 0;
+      final int bz = b.renderStyle.zIndex ?? 0;
+      if (az != bz) return az.compareTo(bz);
+      return _domIndex(a).compareTo(_domIndex(b));
+    });
+
+    // Positioned auto/0 by DOM order
+    positionedAutoOrZero.sort((a, b) => _domIndex(a).compareTo(_domIndex(b)));
+
+    // Positive z-index ascending
+    positives.sort((a, b) {
+      final int az = a.renderStyle.zIndex ?? 0;
+      final int bz = b.renderStyle.zIndex ?? 0;
+      if (az != bz) return az.compareTo(bz);
+      return _domIndex(a).compareTo(_domIndex(b));
+    });
 
     final List<RenderBox> ordered = [];
-    ordered.addAll(negative);
+    ordered.addAll(negatives.cast<RenderBox>());
     ordered.addAll(normal);
-    ordered.addAll(stacking);
+    ordered.addAll(positionedAutoOrZero.cast<RenderBox>());
+    ordered.addAll(positives.cast<RenderBox>());
     return ordered;
   }
 

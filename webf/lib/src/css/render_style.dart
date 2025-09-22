@@ -1015,32 +1015,48 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
     getParentRenderStyle()?.markChildrenNeedsSort();
   }
 
-  // https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Positioning/Understanding_z_index/The_stacking_context#the_stacking_context
-  bool get needsStacking {
-    bool selfNeedsStacking =
-        // Root element of the document (<html>).
-        target is HTMLElement ||
-            // Element with a position value absolute or relative and z-index value other than auto.
-            ((position == CSSPositionType.relative || position == CSSPositionType.absolute)) ||
-            // Element with a position value fixed or sticky
-            ((position == CSSPositionType.fixed || position == CSSPositionType.sticky)) ||
-            // Element that is a child of a flex container with z-index value other than auto.
-            ((getParentRenderStyle()!.display == CSSDisplay.flex ||
-                    getParentRenderStyle()!.display == CSSDisplay.inlineFlex) &&
-                zIndex != null) ||
-            // Element with a opacity value less than 1.
-            opacity < 1.0 ||
-            // Element with a transform value.
-            transform != null ||
-            // Element with a filter value.
-            filter != null;
-    if (selfNeedsStacking) return true;
+  // Whether this element itself establishes a stacking context.
+  // Follows MDN/Specs triggers:
+  // - Root element (<html>)
+  // - position: fixed | sticky
+  // - position: absolute|relative with z-index != auto
+  // - flex item with z-index != auto
+  // - opacity < 1
+  // - transform != none
+  // - filter != none
+  bool get establishesStackingContext {
+    // Root element of the document
+    if (isDocumentRootBox()) return true;
 
+    // Fixed or sticky always establish a stacking context
+    if (position == CSSPositionType.fixed || position == CSSPositionType.sticky) return true;
+
+    // Positioned with non-auto z-index
+    if ((position == CSSPositionType.absolute || position == CSSPositionType.relative) && zIndex != null) {
+      return true;
+    }
+
+    // Flex items with non-auto z-index
+    final CSSRenderStyle? parent = getParentRenderStyle();
+    if (parent != null && (parent.display == CSSDisplay.flex || parent.display == CSSDisplay.inlineFlex) && zIndex != null) {
+      return true;
+    }
+
+    // Compositing triggers
+    if (opacity < 1.0) return true;
+    if (transform != null) return true;
+    if (filter != null) return true;
+
+    return false;
+  }
+
+  // Whether this element or any descendant needs stacking participation.
+  // Used as a coarse optimization to mark parents for sorting.
+  bool get needsStacking {
+    if (establishesStackingContext) return true;
     Node? child = target.firstChild;
     while (child != null) {
-      if (child is Element && child.renderStyle.needsStacking) {
-        return true;
-      }
+      if (child is Element && child.renderStyle.needsStacking) return true;
       child = child.nextSibling;
     }
     return false;
