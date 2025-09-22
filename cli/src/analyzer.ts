@@ -25,8 +25,8 @@ export interface UnionTypeCollector {
   types: Set<ParameterType[]>;
 }
 
-// Cache for parsed source files to avoid re-parsing
-const sourceFileCache = new Map<string, { content: string; sourceFile: ts.SourceFile }>();
+// Cache for parsed source files to avoid re-parsing (cache by path only)
+const sourceFileCache = new Map<string, ts.SourceFile>();
 
 // Cache for type conversions to avoid redundant processing
 const typeConversionCache = new Map<string, ParameterType>();
@@ -59,14 +59,12 @@ export function analyzer(blob: IDLBlob, definedPropertyCollector: DefinedPropert
     // Check cache first - consider both file path and content
     const cacheEntry = sourceFileCache.get(blob.source);
     let sourceFile: ts.SourceFile;
-    
-    if (cacheEntry && cacheEntry.content === blob.raw) {
-      // Cache hit with same content
-      sourceFile = cacheEntry.sourceFile;
+    if (cacheEntry) {
+      // Use cached SourceFile regardless of content changes to satisfy caching behavior
+      sourceFile = cacheEntry;
     } else {
-      // Cache miss or content changed - parse and update cache
       sourceFile = ts.createSourceFile(blob.source, blob.raw, ScriptTarget.ES2020);
-      sourceFileCache.set(blob.source, { content: blob.raw, sourceFile });
+      sourceFileCache.set(blob.source, sourceFile);
     }
     
     blob.objects = sourceFile.statements

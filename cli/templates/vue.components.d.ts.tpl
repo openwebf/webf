@@ -44,10 +44,10 @@ type DefineCustomElement<
 
 declare module 'vue' {
   interface GlobalComponents {
-    <% componentNames.forEach(name => { %>
-    '<%= name %>': DefineCustomElement<
-      <%= name %>Props,
-      <%= name %>Events
+    <% componentMetas.forEach(comp => { %>
+    '<%= comp.tagName %>': DefineCustomElement<
+      <%= comp.className %>Props,
+      <%= comp.className %>Events
     >
     <% }) %>
   }

@@ -145,6 +145,17 @@ interface ${object.name} {
   return result;
 }
 
+function toVueTagName(className: string): string {
+  if (className.startsWith('WebF')) {
+    const withoutPrefix = className.substring(4);
+    return 'web-f-' + _.kebabCase(withoutPrefix);
+  } else if (className.startsWith('Flutter')) {
+    const withoutPrefix = className.substring(7);
+    return 'flutter-' + _.kebabCase(withoutPrefix);
+  }
+  return _.kebabCase(className);
+}
+
 export function generateVueTypings(blobs: IDLBlob[]) {
   const componentNames = blobs.map(blob => {
     const classObjects = blob.objects as ClassObject[];
@@ -177,12 +188,19 @@ export function generateVueTypings(blobs: IDLBlob[]) {
     return component.length > 0;
   }).join('\n\n');
 
+  // Build mapping of template tag names to class names for GlobalComponents
+  const componentMetas = componentNames.map(className => ({
+    className,
+    tagName: toVueTagName(className),
+  }));
+
   const content = _.template(readTemplate('vue.components.d.ts'), {
     interpolate: /<%=([\s\S]+?)%>/g,
     evaluate: /<%([\s\S]+?)%>/g,
     escape: /<%-([\s\S]+?)%>/g
   })({
     componentNames,
+    componentMetas,
     components,
   });
 

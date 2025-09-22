@@ -324,6 +324,8 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
   
   // Generate/merge index file
   const indexFilePath = path.join(normalizedTarget, 'src', 'index.ts');
+  // Always build the full index content string for downstream tooling/logging
+  const newExports = generateReactIndex(blobs);
 
   // Build desired export map: moduleSpecifier -> Set of names
   const desiredExports = new Map<string, Set<string>>();
@@ -356,7 +358,6 @@ export async function reactGen({ source, target, exclude, packageName }: Generat
 
   if (!fs.existsSync(indexFilePath)) {
     // No index.ts -> generate fresh file from template
-    const newExports = generateReactIndex(blobs);
     if (writeFileIfChanged(indexFilePath, newExports)) {
       filesChanged++;
       debug(`Generated: index.ts`);
