@@ -173,11 +173,16 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   }
   double get _paintOffsetX {
     if (_scrollOffsetX == null) return 0.0;
-    // Paint translation is always based on the real scroll pixels from the
-    // content's left edge, independent of text direction. This ensures the
-    // initial visual viewport (pixels=0) shows the leftmost content for both
-    // LTR and RTL, matching WebF test expectations for overflow behavior.
-    return -_scrollOffsetX!.pixels;
+    // Compute logical left-edge position within the scrollable content.
+    // LTR: logical distance from left is the raw pixels.
+    // RTL: logical distance from left is (maxScroll - pixels) so that
+    // an initial pixels=0 aligns the visual viewport to the right edge.
+    final double maxScroll = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
+    final double logicalLeft = (renderStyle.direction == TextDirection.rtl)
+        ? (maxScroll - _scrollOffsetX!.pixels)
+        : _scrollOffsetX!.pixels;
+    // Translate content left by the logical left distance.
+    return -logicalLeft;
   }
 
   double get _paintOffsetY {
