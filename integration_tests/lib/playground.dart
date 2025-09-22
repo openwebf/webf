@@ -34,7 +34,7 @@ void main() async {
   // DebugFlags.debugPaintInlineLayoutEnabled = true;
   // Flow layout baseline logs
   DebugFlags.debugLogFlowEnabled = true;
-  // DebugFlags.debugLogFlexEnabled = true;
+  DebugFlags.debugLogFlexEnabled = true;
 
   // Initialize the controller manager
   WebFControllerManager.instance.initialize(WebFControllerManagerConfig(

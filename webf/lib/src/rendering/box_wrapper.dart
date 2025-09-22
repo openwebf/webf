@@ -3,6 +3,7 @@
  */
 
 import 'package:flutter/widgets.dart';
+import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:webf/css.dart';
 import 'package:webf/html.dart';
@@ -70,6 +71,28 @@ class RenderLayoutBoxWrapper extends RenderBoxModel
         maxHeight: double.infinity,
       );
     }
+
+    // Intersect child's CSS-derived constraints with the wrapper's incoming constraints.
+    // This allows outer layout (e.g., flex) to enforce a definite inline/cross size.
+    // Without this, the wrapper would ignore tight sizes from its parent and the
+    // inner WebF render boxes would keep unbounded widths.
+    BoxConstraints _intersect(BoxConstraints a, BoxConstraints b) {
+      double minW = math.max(a.minWidth, b.minWidth);
+      double minH = math.max(a.minHeight, b.minHeight);
+      double maxW = a.maxWidth;
+      double maxH = a.maxHeight;
+      if (b.hasBoundedWidth) {
+        maxW = math.min(a.maxWidth, b.maxWidth);
+      }
+      if (b.hasBoundedHeight) {
+        maxH = math.min(a.maxHeight, b.maxHeight);
+      }
+      if (minW > maxW) minW = maxW;
+      if (minH > maxH) minH = maxH;
+      return BoxConstraints(minWidth: minW, maxWidth: maxW, minHeight: minH, maxHeight: maxH);
+    }
+
+    childConstraints = _intersect(childConstraints, constraints);
 
     if (DebugFlags.debugLogFlowEnabled) {
       try {
