@@ -723,6 +723,16 @@ abstract class RenderBoxModel extends RenderBox
   /// Extend max scrollable size of renderBoxModel by offset of positioned child,
   /// get the max scrollable size of children of normal flow and single positioned child.
   void extendMaxScrollableSize(RenderBoxModel child) {
+    // Per CSS Overflow spec, out-of-flow positioned descendants (absolute/fixed)
+    // do not contribute to the scrollable overflow area of a scroll container.
+    // They are clipped to the padding edge when overflow is not 'visible', but
+    // must not expand scrollWidth/scrollHeight nor create scrollbars.
+    // https://www.w3.org/TR/css-overflow-3/#scrollable-overflow
+    final CSSPositionType pos = child.renderStyle.position;
+    if (pos == CSSPositionType.absolute || pos == CSSPositionType.fixed) {
+      return;
+    }
+
     Size? childScrollableSize;
     RenderStyle childRenderStyle = child.renderStyle;
     CSSOverflowType overflowX = childRenderStyle.effectiveOverflowX;
@@ -1019,7 +1029,7 @@ abstract class RenderBoxModel extends RenderBox
         renderStyle.effectiveBorderLeftWidth.computedValue,
         renderStyle.effectiveBorderTopWidth.computedValue,
         renderStyle.effectiveBorderRightWidth.computedValue,
-        renderStyle.effectiveBorderLeftWidth.computedValue);
+        renderStyle.effectiveBorderBottomWidth.computedValue);
     CSSBoxDecoration? decoration = renderStyle.decoration;
 
     bool hasLocalAttachment = _hasLocalBackgroundImage(renderStyle);
