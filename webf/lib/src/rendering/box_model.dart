@@ -796,11 +796,14 @@ abstract class RenderBoxModel extends RenderBox
     final double childRight = childLeft + childSize.width;
     final double childBottom = childTop + childSize.height;
 
-    // Only extend scroll area when the positioned box intersects the scrollport
-    // (padding box). Boxes entirely outside (e.g., start at exactly the trailing
-    // edge and extend outward) should not create scrollbars.
-    final bool intersectsH = childRight > 0 && childLeft < containerContentWidth;
-    final bool intersectsV = childBottom > 0 && childTop < containerContentHeight;
+    // Extend scroll area when the positioned box reaches or crosses the
+    // scrollport (padding box) boundary.
+    // For LTR, treat boxes that start exactly at the trailing edge as contributing
+    // (<=) so users can scroll to reveal them. For RTL, keep strict (<) to avoid
+    // shifting initial visual alignment for cases like right:-N content.
+    final bool parentIsRTL = renderStyle.direction == TextDirection.rtl;
+    final bool intersectsH = childRight > 0 && (parentIsRTL ? (childLeft < containerContentWidth) : (childLeft <= containerContentWidth));
+    final bool intersectsV = childBottom > 0 && childTop <= containerContentHeight;
 
     double maxScrollableX = scrollableSize.width;
     double maxScrollableY = scrollableSize.height;
@@ -808,7 +811,10 @@ abstract class RenderBoxModel extends RenderBox
     if (intersectsH) {
       maxScrollableX = math.max(maxScrollableX, math.max(containerContentWidth, childRight));
     }
-    if (intersectsV) {
+    // Only extend vertical scroll when the positioned box also intersects (or
+    // reaches) the scrollport horizontally. Purely off-axis content should not
+    // create scroll in the other axis.
+    if (intersectsV && intersectsH) {
       maxScrollableY = math.max(maxScrollableY, math.max(containerContentHeight, childBottom));
     }
 
