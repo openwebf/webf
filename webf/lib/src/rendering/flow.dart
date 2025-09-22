@@ -1471,18 +1471,34 @@ class RenderFlowLayout extends RenderLayoutBox {
     maxScrollableWidth += paddingLeft + paddingRight;
     maxScrollableHeight += paddingTop + paddingBottom;
 
-    // Ensure scrollable size is at least as large as the container size
-    double finalScrollableWidth = math.max(
-        size.width -
-            renderStyle.effectiveBorderLeftWidth.computedValue -
-            renderStyle.effectiveBorderRightWidth.computedValue,
-        maxScrollableWidth);
+    // Compute viewport (content + padding) size inside borders
+    final double viewportW = size.width -
+        renderStyle.effectiveBorderLeftWidth.computedValue -
+        renderStyle.effectiveBorderRightWidth.computedValue;
+    final double viewportH = size.height -
+        renderStyle.effectiveBorderTopWidth.computedValue -
+        renderStyle.effectiveBorderBottomWidth.computedValue;
 
-    double finalScrollableHeight = math.max(
-        size.height -
-            renderStyle.effectiveBorderTopWidth.computedValue -
-            renderStyle.effectiveBorderBottomWidth.computedValue,
-        maxScrollableHeight);
+    // Decide effective scrollable extents per axis based on overflow policy.
+    // For hidden/clip, do not create additional scrollable area; clamp to viewport.
+    // For auto/scroll/visible, allow content-driven overflow region so ancestors
+    // can account for visual overflow.
+    final CSSOverflowType effOX = renderStyle.effectiveOverflowX;
+    final CSSOverflowType effOY = renderStyle.effectiveOverflowY;
+
+    double finalScrollableWidth;
+    if (effOX == CSSOverflowType.hidden || effOX == CSSOverflowType.clip) {
+      finalScrollableWidth = viewportW;
+    } else {
+      finalScrollableWidth = math.max(viewportW, maxScrollableWidth);
+    }
+
+    double finalScrollableHeight;
+    if (effOY == CSSOverflowType.hidden || effOY == CSSOverflowType.clip) {
+      finalScrollableHeight = viewportH;
+    } else {
+      finalScrollableHeight = math.max(viewportH, maxScrollableHeight);
+    }
 
     scrollableSize = Size(finalScrollableWidth, finalScrollableHeight);
 

@@ -14,7 +14,7 @@ describe('overflow-ellipsis', () => {
           'box-sizing': 'border-box',
         },
       },
-      [createText(`short`)]
+      [createText(`short short shortshortshortshortshortshortshortshortshortshortshort`)]
     );
     BODY.appendChild(p);
 

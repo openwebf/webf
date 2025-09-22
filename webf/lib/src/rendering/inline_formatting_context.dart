@@ -1460,10 +1460,17 @@ class InlineFormattingContext {
       }
     }
 
+    // Compute an effective maxLines for paragraph shaping. In CSS, text-overflow: ellipsis
+    // works with white-space: nowrap and overflow not visible. For Flutter's paragraph
+    // engine to emit ellipsis glyphs, a maxLines must be provided. When nowrap+ellipsis
+    // are active and no explicit line-clamp is set, constrain to a single line.
+    final int? _effectiveMaxLines = style.lineClamp ??
+        ((style.whiteSpace == WhiteSpace.nowrap && style.effectiveTextOverflow == TextOverflow.ellipsis) ? 1 : null);
+
     final pb = ui.ParagraphBuilder(ui.ParagraphStyle(
       textAlign: style.textAlign,
       textDirection: style.direction,
-      maxLines: style.lineClamp,
+      maxLines: _effectiveMaxLines,
       ellipsis: style.effectiveTextOverflow == TextOverflow.ellipsis ? '\u2026' : null,
       // Distribute extra line-height evenly above/below the glyphs so a single
       // line with large line-height (e.g., equal to box height) is vertically
@@ -2099,9 +2106,19 @@ class InlineFormattingContext {
     // container.
     final bool _noSoftWrap = style.whiteSpace == WhiteSpace.nowrap || style.whiteSpace == WhiteSpace.pre;
     if (_noSoftWrap) {
-      initialWidth = 1000000.0;
-      if (DebugFlags.debugLogInlineLayoutEnabled) {
-        renderingLogger.fine('[IFC] white-space=${style.whiteSpace} → disable soft wrap; initialWidth=${initialWidth.toStringAsFixed(2)}');
+      // Preserve bounded shaping when we intend to show ellipsis; otherwise disable soft wraps
+      // by shaping with a very wide width.
+      final bool wantsEllipsis = style.effectiveTextOverflow == TextOverflow.ellipsis &&
+          // Ellipsis only effective when overflow is not visible.
+          (style.effectiveOverflowX != CSSOverflowType.visible);
+      if (!wantsEllipsis) {
+        initialWidth = 1000000.0;
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC] white-space=${style.whiteSpace} → disable soft wrap; initialWidth='
+              '${initialWidth.toStringAsFixed(2)}');
+        }
+      } else if (DebugFlags.debugLogInlineLayoutEnabled) {
+        renderingLogger.fine('[IFC] nowrap + ellipsis → keep bounded width for truncation');
       }
     }
     if (DebugFlags.debugLogInlineLayoutEnabled) {
