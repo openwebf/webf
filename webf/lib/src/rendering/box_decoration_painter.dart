@@ -252,6 +252,34 @@ class BoxDecorationPainter extends BoxPainter {
       ..strokeCap = StrokeCap.square
       ..strokeJoin = StrokeJoin.miter;
 
+    // Fallback when the stroke is thicker than the side length. In this case,
+    // producing a dashed stroked path is numerically unstable (negative/zero
+    // path length). Browsers effectively fill the side area with the border
+    // color. Emulate that by drawing a filled rectangle for the side.
+    final double sideExtent = (direction == _BorderDirection.top || direction == _BorderDirection.bottom)
+        ? rect.width
+        : rect.height;
+    if (side.width >= sideExtent) {
+      final Paint fill = Paint()
+        ..color = side.color
+        ..style = PaintingStyle.fill;
+      switch (direction) {
+        case _BorderDirection.top:
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, rect.width, side.width), fill);
+          break;
+        case _BorderDirection.bottom:
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.bottom - side.width, rect.width, side.width), fill);
+          break;
+        case _BorderDirection.left:
+          canvas.drawRect(Rect.fromLTWH(rect.left, rect.top, side.width, rect.height), fill);
+          break;
+        case _BorderDirection.right:
+          canvas.drawRect(Rect.fromLTWH(rect.right - side.width, rect.top, side.width, rect.height), fill);
+          break;
+      }
+      return;
+    }
+
     // Define dash pattern (dash length, gap length)
     // Prefer to start and end sides with a dash to form a right angle at corners.
     late final CircularIntervalList<double> dashArray;
@@ -369,7 +397,9 @@ class BoxDecorationPainter extends BoxPainter {
 
     // If the side is very short, draw a single dash covering the length.
     if (length <= baseDash) {
-      return <double>[length, baseDash];
+      final double dash = length.clamp(0.0, double.infinity);
+      final double gap = baseDash; // gap value unused for a single dash
+      return <double>[dash, gap];
     }
 
     // We want: length = n * dash + (n - 1) * gap, starting and ending with dash.

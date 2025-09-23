@@ -426,7 +426,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('024', async () => {
+  it('024', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
@@ -659,7 +659,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('037', async () => {
+  it('037', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
