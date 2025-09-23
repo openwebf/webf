@@ -88,9 +88,8 @@ Offset getLayoutTransformTo(RenderObject current, RenderObject ancestor, {bool e
   return stackOffsets.reduce((prev, next) => prev + next);
 }
 
-
 mixin RenderBoxModelBase on RenderBox {
-   CSSRenderStyle get renderStyle;
+  CSSRenderStyle get renderStyle;
 }
 
 abstract class RenderBoxModel extends RenderBox
@@ -368,7 +367,8 @@ abstract class RenderBoxModel extends RenderBox
         renderStyle.paddingRight.computedValue;
 
     double? parentBoxContentConstraintsWidth;
-    if (renderStyle.isParentRenderBoxModel() && (renderStyle.isSelfRenderLayoutBox() || renderStyle.isSelfRenderWidget())) {
+    if (renderStyle.isParentRenderBoxModel() &&
+        (renderStyle.isSelfRenderLayoutBox() || renderStyle.isSelfRenderWidget())) {
       RenderBoxModel parentRenderBoxModel = (renderStyle.getParentRenderStyle()!.attachedRenderBoxModel!);
 
       // Inline-block shrink-to-fit: when the parent is inline-block with auto width,
@@ -392,9 +392,8 @@ abstract class RenderBoxModel extends RenderBox
           // When using CSS parent constraints, deflate with the current element's margins
           // to match previous behavior; otherwise use the raw layout parent's constraints.
           if (identical(candidate, parentRenderBoxModel.contentConstraints)) {
-            parentBoxContentConstraintsWidth = parentRenderBoxModel.renderStyle
-                .deflateMarginConstraints(candidate)
-                .maxWidth;
+            parentBoxContentConstraintsWidth =
+                parentRenderBoxModel.renderStyle.deflateMarginConstraints(candidate).maxWidth;
           } else {
             parentBoxContentConstraintsWidth = candidate.maxWidth;
           }
@@ -407,9 +406,33 @@ abstract class RenderBoxModel extends RenderBox
         }
       }
 
-      // FlexItems with flex:none won't inherit parent box's constraints
-      if (parent is RenderFlexLayout && (parent as RenderFlexLayout).isFlexNone(this)) {
-        parentBoxContentConstraintsWidth = null;
+      // Flex context adjustments
+      if (renderStyle.isParentRenderFlexLayout()) {
+        final RenderFlexLayout flexParent =
+            renderStyle.getParentRenderStyle()!.attachedRenderBoxModel! as RenderFlexLayout;
+        // FlexItems with flex:none won't inherit parent box's constraints
+        if (flexParent.isFlexNone(this)) {
+          parentBoxContentConstraintsWidth = null;
+        }
+
+        // In a column-direction flex container, a flex item with auto cross-size (width)
+        // that is not stretched in the cross axis should not inherit the container's
+        // bounded width during its own constraint computation. Let it shrink-to-fit
+        // its contents instead (so percentage paddings resolve against the item's
+        // own width rather than the container width).
+        final bool isColumn = !CSSFlex.isHorizontalFlexDirection(flexParent.renderStyle.flexDirection);
+        if (isColumn) {
+          // Determine if this flex item would be stretched in the cross axis.
+          final AlignSelf self = renderStyle.alignSelf;
+          final bool parentStretch = flexParent.renderStyle.alignItems == AlignItems.stretch;
+          final bool shouldStretch = self == AlignSelf.auto ? parentStretch : self == AlignSelf.stretch;
+          final bool crossAuto = renderStyle.width.isAuto;
+
+          if (!shouldStretch && crossAuto) {
+            // Do not adopt the parent's bounded width; use intrinsic sizing.
+            parentBoxContentConstraintsWidth = null;
+          }
+        }
       }
     } else if (isDisplayInline && parent is RenderFlowLayout) {
       // For inline elements inside a flow layout, check if we should inherit parent's constraints
@@ -530,6 +553,7 @@ abstract class RenderBoxModel extends RenderBox
 
   // Box size equals to RenderBox.size to avoid flutter complain when read size property.
   Size? _boxSize;
+
   Size? get boxSize {
     assert(_boxSize != null, 'box does not have laid out.');
     return _boxSize;
@@ -587,9 +611,9 @@ abstract class RenderBoxModel extends RenderBox
   // Call this method before content box layout.
   void beforeLayout() {
     BoxConstraints contentConstraints =
-    (parent is RenderEventListener ? (parent as RenderEventListener).parent : parent) is RenderBoxModel
-        ? constraints
-        : getConstraints();
+        (parent is RenderEventListener ? (parent as RenderEventListener).parent : parent) is RenderBoxModel
+            ? constraints
+            : getConstraints();
 
     // Deflate border constraints.
     contentConstraints = renderStyle.deflateBorderConstraints(contentConstraints);
@@ -603,7 +627,6 @@ abstract class RenderBoxModel extends RenderBox
         renderStyle.effectiveTextOverflow == TextOverflow.ellipsis &&
         contentConstraints.maxWidth.isInfinite &&
         constraints.hasBoundedWidth) {
-
       // Recalculate the content constraints using the original bounded constraints
       BoxConstraints boundedConstraints = renderStyle.deflateBorderConstraints(constraints);
       boundedConstraints = renderStyle.deflatePaddingConstraints(boundedConstraints);
@@ -802,7 +825,8 @@ abstract class RenderBoxModel extends RenderBox
     // (<=) so users can scroll to reveal them. For RTL, keep strict (<) to avoid
     // shifting initial visual alignment for cases like right:-N content.
     final bool parentIsRTL = renderStyle.direction == TextDirection.rtl;
-    final bool intersectsH = childRight > 0 && (parentIsRTL ? (childLeft < containerContentWidth) : (childLeft <= containerContentWidth));
+    final bool intersectsH =
+        childRight > 0 && (parentIsRTL ? (childLeft < containerContentWidth) : (childLeft <= containerContentWidth));
     final bool intersectsV = childBottom > 0 && childTop <= containerContentHeight;
 
     double maxScrollableX = scrollableSize.width;
@@ -839,8 +863,7 @@ abstract class RenderBoxModel extends RenderBox
     // of the content, but must not affect the scroll range calculation.
     if (this is RenderBoxModel) {
       final RenderBoxModel self = this as RenderBoxModel;
-      final bool isScrollContainer =
-          self.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
+      final bool isScrollContainer = self.renderStyle.effectiveOverflowX != CSSOverflowType.visible ||
           self.renderStyle.effectiveOverflowY != CSSOverflowType.visible;
       if (isScrollContainer && child is RenderBoxModel && child.renderStyle.isSelfPositioned()) {
         return;

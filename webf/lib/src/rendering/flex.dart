@@ -757,12 +757,16 @@ class RenderFlexLayout extends RenderLayoutBox {
         }
       } else {
         // Column direction: main axis vertical, cross axis is width.
-        // For intrinsic measurement of auto-width flex items, prefer using the container's
-        // available cross-axis width when it is bounded (definite). This ensures inline
-        // content (IFC) inside the item wraps within the container width, matching browsers.
-        // When the container cross size is truly indefinite, relax to Infinity and let the
-        // content determine its own size (shrink-to-fit scenarios).
+        // For intrinsic measurement of auto-width flex items, use the container's available
+        // width only when the item would actually be stretched in the cross axis. Otherwise,
+        // for align-self not stretching, let the item shrink-to-fit its contents so that
+        // percentage paddings and similar effects resolve against the item's own width.
         if (!isReplaced && (s.width.isAuto || isFlexBasisContent)) {
+          // Determine if child should be stretched in cross axis.
+          final AlignSelf self = s.alignSelf;
+          final bool parentStretch = renderStyle.alignItems == AlignItems.stretch;
+          final bool shouldStretch = self == AlignSelf.auto ? parentStretch : self == AlignSelf.stretch;
+
           // Determine if the container has a definite cross size (width).
           // Determine whether the flex container's cross size (width in column direction)
           // is definite at this point. A width is definite if:
@@ -780,7 +784,7 @@ class RenderFlexLayout extends RenderLayoutBox {
               (((contentConstraints?.hasBoundedWidth ?? false) || constraints.hasBoundedWidth) && !isInlineFlexAuto);
 
           double newMaxW;
-          if (containerCrossDefinite) {
+          if (containerCrossDefinite && shouldStretch) {
             // Clamp to the container's available width. Prefer tight widths;
             // otherwise, for non-inline-flex, a bounded width is acceptable for wrapping.
             double boundedContainerW = double.infinity;
@@ -797,8 +801,32 @@ class RenderFlexLayout extends RenderLayoutBox {
               }
             }
             newMaxW = boundedContainerW;
+          } else if (containerCrossDefinite && !shouldStretch) {
+            // Not stretching: if this flex item will establish an IFC, bound it by the
+            // container's available cross width so inline content performs shrink-to-fit
+            // within that width. If it won't establish IFC (pure block children), do not
+            // clamp here to avoid over-expansion of percent-based descendants.
+            double available = double.infinity;
+            if (constraints.hasTightWidth && constraints.maxWidth.isFinite) {
+              available = constraints.maxWidth;
+            } else if ((contentConstraints?.hasBoundedWidth ?? false) && contentConstraints!.maxWidth.isFinite) {
+              available = contentConstraints!.maxWidth;
+            } else if (constraints.hasBoundedWidth && constraints.maxWidth.isFinite) {
+              available = constraints.maxWidth;
+            }
+
+            final bool willEstablishIFC = (child is RenderBoxModel) &&
+                (child as RenderBoxModel).renderStyle.shouldEstablishInlineFormattingContext();
+
+            if (willEstablishIFC && available.isFinite) {
+              final double paddingBorderH =
+                  child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal;
+              newMaxW = available + paddingBorderH;
+            } else {
+              newMaxW = double.infinity;
+            }
           } else {
-            // No definite container width: let content determine size (shrink-to-fit scenarios).
+            // No definite container width: let content determine size.
             newMaxW = double.infinity;
           }
           // Also honor the child's own definite max-width (non-percentage) if any.
@@ -2424,6 +2452,29 @@ class RenderFlexLayout extends RenderLayoutBox {
       } else {
         minConstraintWidth = childStretchedCrossSize;
         maxConstraintWidth = childStretchedCrossSize;
+      }
+    }
+
+    // Column flex: when not stretching in the cross axis, lock the item's used cross size
+    // (width) during the relayout pass so its descendants see a definite containing block width.
+    // This ensures percentage paddings/margins inside the item resolve against the item's
+    // actual width (e.g., padding-bottom:50% → height=width/2), matching browsers.
+    if (!_isHorizontalFlexDirection && childStretchedCrossSize == null) {
+      final bool childCrossAuto = child.renderStyle.width.isAuto;
+      if (childCrossAuto) {
+        double fixedW = child.size.width;
+        // Clamp to the container's available cross-axis width when present,
+        // so overly large intrinsic widths don't cause misplaced centering
+        // or incorrect percentage resolution.
+        final double containerCrossMax = contentConstraints?.maxWidth ?? double.infinity;
+        if (containerCrossMax.isFinite) {
+          fixedW = math.min(fixedW, containerCrossMax);
+        }
+        if (fixedW.isFinite && fixedW > 0) {
+          minConstraintWidth = fixedW;
+          maxConstraintWidth = fixedW;
+          _overrideChildContentBoxLogicalWidth(child, fixedW);
+        }
       }
     }
 
