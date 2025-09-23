@@ -35,6 +35,7 @@
 #include "element_rule_collector.h"
 
 #include <algorithm>
+#include <limits>
 #include "core/css/css_property_value_set.h"
 #include "core/css/css_rule_list.h"
 #include "core/css/css_selector.h"
@@ -257,23 +258,30 @@ void ElementRuleCollector::SortMatchedRules() {
   // Sort by cascade order
   std::stable_sort(matched_rules_.begin(), matched_rules_.end(),
       [](const MatchedRule& a, const MatchedRule& b) {
-        // CSS Cascade order:
+        // CSS Cascade order (aligned with CascadePriority::ForLayerComparison):
         // 1) Origin (UA < User < Author < Animation < Transition)
         if (a.cascade_origin != b.cascade_origin) {
           return static_cast<int>(a.cascade_origin) < static_cast<int>(b.cascade_origin);
         }
 
-        // 2) Cascade layer (lower layer order first)
+        // 2) Inline style vs. stylesheet rules: non-inline first, inline last.
+        //    This ensures ForLayerComparison is non-decreasing when adding
+        //    to CascadeMap, preventing assertion failures.
+        if (a.is_inline_style != b.is_inline_style) {
+          return b.is_inline_style; // false < true
+        }
+
+        // 3) Cascade layer (lower layer order first)
         if (a.cascade_layer != b.cascade_layer) {
           return a.cascade_layer < b.cascade_layer;
         }
 
-        // 3) Specificity (sort ascending so higher specificity appears later and wins)
+        // 4) Specificity (sort ascending so higher specificity appears later and wins)
         if (a.specificity != b.specificity) {
           return a.specificity < b.specificity;
         }
 
-        // 4) Source order tie-breaker: stylesheet index, then rule position
+        // 5) Source order tie-breaker: stylesheet index, then rule position
         if (a.style_sheet_index != b.style_sheet_index) {
           return a.style_sheet_index < b.style_sheet_index;
         }
@@ -281,13 +289,19 @@ void ElementRuleCollector::SortMatchedRules() {
           return a.rule_data->Position() < b.rule_data->Position();
         }
 
-        // 5) Fallback to collection order (stable)
+        // 6) Fallback to collection order (stable)
         return a.cascade_order < b.cascade_order;
       });
 }
 
 void ElementRuleCollector::TransferMatchedRules() {
   for (const auto& matched_rule : matched_rules_) {
+    if (matched_rule.is_inline_style) {
+      if (matched_rule.inline_properties) {
+        result_.AddInlineStyleProperties(matched_rule.inline_properties);
+      }
+      continue;
+    }
     if (matched_rule.rule_data && matched_rule.rule_data->Rule()) {
       result_.AddMatchedProperties(
           &matched_rule.rule_data->Rule()->Properties(),
@@ -313,8 +327,17 @@ void ElementRuleCollector::AddElementStyleProperties(
     return;
   }
   
-  // Use the new method for inline styles
-  result_.AddInlineStyleProperties(property_set.get());
+  // Queue inline style into matched list so it participates in sorting.
+  MatchedRule matched_rule;
+  matched_rule.rule_data = nullptr;
+  matched_rule.specificity = 0;
+  matched_rule.cascade_origin = CascadeOrigin::kAuthor;
+  matched_rule.cascade_layer = 0;
+  matched_rule.style_sheet_index = std::numeric_limits<unsigned>::max();
+  matched_rule.cascade_order = current_cascade_order_++;
+  matched_rule.is_inline_style = true;
+  matched_rule.inline_properties = property_set.get();
+  matched_rules_.push_back(matched_rule);
 }
 
 void ElementRuleCollector::SetPseudoElementStyleRequest(

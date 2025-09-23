@@ -34,7 +34,7 @@ class LegacyInlineCssStyleDeclaration : public LegacyCssStyleDeclaration {
   [[nodiscard]] unsigned length() const override;
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
+  void setProperty(const AtomicString& key, const ScriptValue& value, const AtomicString& priority, ExceptionState& exception_state) override;
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
   [[nodiscard]] String ToString() const;

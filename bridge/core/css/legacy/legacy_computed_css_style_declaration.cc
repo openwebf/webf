@@ -64,12 +64,14 @@ AtomicString LegacyComputedCssStyleDeclaration::getPropertyValue(const AtomicStr
 
 void LegacyComputedCssStyleDeclaration::setProperty(const AtomicString& key,
                                               const ScriptValue& value,
+                                              const AtomicString& priority,
                                               ExceptionState& exception_state) {
   SetItem(key, value, exception_state);
 }
 
 void LegacyComputedCssStyleDeclaration::setProperty_async(const webf::AtomicString& key,
                                                     const webf::ScriptValue& value,
+                                                    const AtomicString& priority,
                                                     webf::ExceptionState& exception_state) {
   NativeValue arguments[] = {
       NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key),

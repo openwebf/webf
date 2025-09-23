@@ -64,4 +64,29 @@ String InlineCssStyleDeclaration::ToString() const {
   return PropertySet().AsText();
 }
 
+bool InlineCssStyleDeclaration::SetItem(const AtomicString& key,
+                                        const ScriptValue& value,
+                                        ExceptionState& exception_state) {
+  // Delegate to CSSStyleDeclaration named setter so we reuse
+  // parsing/validation and property routing.
+  // Returns true to indicate the set succeeded (matches generator expectations).
+  return AnonymousNamedSetter(key, value);
+}
+
+bool InlineCssStyleDeclaration::DeleteItem(const AtomicString& key,
+                                           ExceptionState& exception_state) {
+  // Removing a property via bracket delete: mutate the underlying property set
+  // directly, mirroring AbstractPropertySetCSSStyleDeclaration::removeProperty.
+  StyleAttributeMutationScope mutation_scope(this);
+  WillMutate();
+
+  bool changed = PropertySet().RemoveProperty(key);
+
+  DidMutate(changed ? kPropertyChanged : kNoChanges);
+  if (changed) {
+    mutation_scope.EnqueueMutationRecord();
+  }
+  return true;
+}
+
 }  // namespace webf

@@ -151,6 +151,7 @@ void StyleCascade::AnalyzeMatchResult() {
   
   // WEBF_LOG(VERBOSE) << "AnalyzeMatchResult: " << matched_properties.size() << " matched property sets";
   
+  uint16_t block_index = 0;
   for (const auto& entry : matched_properties) {
     if (!entry.properties) {
       continue;
@@ -169,7 +170,8 @@ void StyleCascade::AnalyzeMatchResult() {
     // Process each property in the set
     // WEBF_LOG(VERBOSE) << "Property set has " << properties.PropertyCount() << " properties, origin: " << static_cast<int>(entry.origin);
     
-    for (unsigned i = 0; i < properties.PropertyCount(); ++i) {
+    uint16_t declaration_index = 0;
+    for (unsigned i = 0; i < properties.PropertyCount(); ++i, ++declaration_index) {
       const StylePropertySet::PropertyReference property = properties.PropertyAt(i);
       
       if (!property.Value() || !*property.Value()) {
@@ -191,12 +193,15 @@ void StyleCascade::AnalyzeMatchResult() {
             StyleCascadeOrigin::kImportantAuthor : StyleCascadeOrigin::kAuthor;
       }
       
-      // Build cascade priority
-      // CascadePriority(origin, is_inline_style, layer_order, position, tree_order)
-      CascadePriority priority(style_origin, 
-                               entry.is_inline_style,  // is_inline_style
-                               CascadeLayerMap::kImplicitOuterLayerOrder,      // layer_order
-                               position++);  // position
+      // Build cascade priority using layer order and a stable position
+      // Encode position as (block_index << 16) | declaration_index like Blink
+      uint32_t encoded_position = (static_cast<uint32_t>(block_index) << 16) |
+                                  static_cast<uint32_t>(declaration_index);
+      CascadePriority priority(
+          style_origin,
+          entry.is_inline_style,                          // is_inline_style
+          static_cast<uint16_t>(entry.layer_level),       // layer_order
+          encoded_position);                              // position
       
       // Add to cascade map
       if (property.Id() == CSSPropertyID::kVariable) {
@@ -213,6 +218,7 @@ void StyleCascade::AnalyzeMatchResult() {
         map_.Add(resolved_property.PropertyID(), priority);
       }
     }
+    ++block_index;
   }
   
   needs_match_result_analyze_ = false;
@@ -305,33 +311,26 @@ void StyleCascade::LookupAndApplyDeclaration(const CSSProperty& property,
   }
 }
 
-const CSSValue* StyleCascade::ValueAt(const MatchResult& result, 
+const CSSValue* StyleCascade::ValueAt(const MatchResult& result,
                                       uint32_t position) const {
-  // This is a simplified version - we need to map position to actual value
-  // In a real implementation, this would look up the value from the
-  // MatchedProperties based on the position
-  uint32_t current_pos = 0;
-  
-  // WEBF_LOG(VERBOSE) << "ValueAt looking for position " << position;
-  
-  for (const auto& entry : result.GetMatchedProperties()) {
-    if (!entry.properties) {
-      continue;
-    }
-    
-    const StylePropertySet& properties = *entry.properties;
-    for (unsigned i = 0; i < properties.PropertyCount(); ++i) {
-      if (current_pos == position) {
-        const auto& prop = properties.PropertyAt(i);
-        // WEBF_LOG(VERBOSE) << "Found property at position " << position << ": ID=" << static_cast<int>(prop.Id());
-        return prop.Value() ? prop.Value()->get() : nullptr;
-      }
-      current_pos++;
-    }
+  // Decode position as (block_index << 16) | declaration_index
+  uint16_t block_index = static_cast<uint16_t>(position >> 16);
+  uint16_t decl_index = static_cast<uint16_t>(position & 0xFFFF);
+
+  const auto& list = result.GetMatchedProperties();
+  if (block_index >= list.size()) {
+    return nullptr;
   }
-  
-  // WEBF_LOG(VERBOSE) << "No property found at position " << position;
-  return nullptr;
+  const auto& entry = list[block_index];
+  if (!entry.properties) {
+    return nullptr;
+  }
+  const StylePropertySet& properties = *entry.properties;
+  if (decl_index >= properties.PropertyCount()) {
+    return nullptr;
+  }
+  const auto& prop = properties.PropertyAt(decl_index);
+  return prop.Value() ? prop.Value()->get() : nullptr;
 }
 
 const CSSValue* StyleCascade::Resolve(const CSSProperty& property,
@@ -361,27 +360,24 @@ std::shared_ptr<MutableCSSPropertyValueSet> StyleCascade::BuildWinningPropertySe
   // Create a property set in standard HTML mode.
   auto result = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
 
-  // Helper to locate the property reference for a flattened position in
-  // MatchResult. Returns true if found and fills out the reference.
-  auto find_ref_at = [&](uint32_t position,
+  // Helper to locate the property reference for an encoded position
+  // (block_index << 16) | declaration_index. Returns true if found and fills out the reference.
+  auto find_ref_at = [&](uint32_t encoded_position,
                          const StylePropertySet** out_set,
                          unsigned* out_index,
                          CSSPropertyValueSet::PropertyReference* out_prop) -> bool {
-    uint32_t current_pos = 0;
-    for (const auto& entry : match_result_.GetMatchedProperties()) {
-      if (!entry.properties) continue;
-      const StylePropertySet& properties = *entry.properties;
-      unsigned count = properties.PropertyCount();
-      if (position < current_pos + count) {
-        unsigned local_index = position - current_pos;
-        if (out_set) *out_set = &properties;
-        if (out_index) *out_index = local_index;
-        if (out_prop) *out_prop = properties.PropertyAt(local_index);
-        return true;
-      }
-      current_pos += count;
-    }
-    return false;
+    uint16_t block_index = static_cast<uint16_t>(encoded_position >> 16);
+    uint16_t decl_index = static_cast<uint16_t>(encoded_position & 0xFFFF);
+    const auto& list = match_result_.GetMatchedProperties();
+    if (block_index >= list.size()) return false;
+    const auto& entry = list[block_index];
+    if (!entry.properties) return false;
+    const StylePropertySet& properties = *entry.properties;
+    if (decl_index >= properties.PropertyCount()) return false;
+    if (out_set) *out_set = &properties;
+    if (out_index) *out_index = decl_index;
+    if (out_prop) *out_prop = properties.PropertyAt(decl_index);
+    return true;
   };
 
   // Export native properties (non-custom)

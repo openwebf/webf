@@ -101,12 +101,11 @@ bool AbstractPropertySetCSSStyleDeclaration::IsPropertyImplicit(const AtomicStri
   return PropertySet().IsPropertyImplicit(property_id);
 }
 
-void AbstractPropertySetCSSStyleDeclaration::setProperty(const ExecutingContext* execution_context,
-                                                         const AtomicString& property_name,
+void AbstractPropertySetCSSStyleDeclaration::setProperty(const AtomicString& property_name,
                                                          const AtomicString& value,
                                                          const AtomicString& priority,
                                                          ExceptionState& exception_state) {
-  CSSPropertyID property_id = UnresolvedCSSPropertyID(execution_context, String(property_name.Impl()).ToStringView());
+  CSSPropertyID property_id = UnresolvedCSSPropertyID(GetExecutingContext(), String(property_name.Impl()).ToStringView());
   if (!IsValidCSSPropertyID(property_id) || !IsPropertyValid(property_id)) {
     return;
   }

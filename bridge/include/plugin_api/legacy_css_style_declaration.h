@@ -28,7 +28,7 @@ using PublicLegacyCssStyleDeclarationGetCssText = AtomicStringRef (*)(LegacyCssS
 using PublicLegacyCssStyleDeclarationSetCssText = void (*)(LegacyCssStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicLegacyCssStyleDeclarationGetLength = int64_t (*)(LegacyCssStyleDeclaration*);
 using PublicLegacyCssStyleDeclarationGetPropertyValue = AtomicStringRef (*)(LegacyCssStyleDeclaration*, const char*, SharedExceptionState*);
-using PublicLegacyCssStyleDeclarationSetProperty = void (*)(LegacyCssStyleDeclaration*, const char*, NativeValue, SharedExceptionState*);
+using PublicLegacyCssStyleDeclarationSetProperty = void (*)(LegacyCssStyleDeclaration*, const char*, NativeValue, const char*, SharedExceptionState*);
 using PublicLegacyCssStyleDeclarationRemoveProperty = AtomicStringRef (*)(LegacyCssStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicLegacyCssStyleDeclarationRelease = void (*)(LegacyCssStyleDeclaration*);
 using PublicLegacyCssStyleDeclarationDynamicTo = WebFValue<LegacyCssStyleDeclaration, WebFPublicMethods> (*)(LegacyCssStyleDeclaration*, LegacyCssStyleDeclarationType);
@@ -37,7 +37,7 @@ struct LegacyCssStyleDeclarationPublicMethods : public WebFPublicMethods {
   static void SetCssText(LegacyCssStyleDeclaration* legacy_css_style_declaration, const char* cssText, SharedExceptionState* shared_exception_state);
   static int64_t Length(LegacyCssStyleDeclaration* legacy_css_style_declaration);
   static AtomicStringRef GetPropertyValue(LegacyCssStyleDeclaration* legacy_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
-  static void SetProperty(LegacyCssStyleDeclaration* legacy_css_style_declaration, const char* property, NativeValue value, SharedExceptionState* shared_exception_state);
+  static void SetProperty(LegacyCssStyleDeclaration* legacy_css_style_declaration, const char* property, NativeValue value, const char* priority, SharedExceptionState* shared_exception_state);
   static AtomicStringRef RemoveProperty(LegacyCssStyleDeclaration* legacy_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   static void Release(LegacyCssStyleDeclaration* legacy_css_style_declaration);
   static WebFValue<LegacyCssStyleDeclaration, WebFPublicMethods> DynamicTo(LegacyCssStyleDeclaration* legacy_css_style_declaration, LegacyCssStyleDeclarationType legacy_css_style_declaration_type);

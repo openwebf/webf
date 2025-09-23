@@ -10,10 +10,12 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExceptionState exception_state;
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return false;
-    auto* wrapper_type_info = DOMTokenList::GetStaticWrapperTypeInfo();
+    auto* wrapper_type_info = <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>::GetStaticWrapperTypeInfo();
     MemberMutationScope scope{context};
     JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
-    if (JS_HasProperty(ctx, prototype, key)) return true;
+    // If the property exists on the prototype (e.g., methods like setProperty),
+    // do not claim it on the instance so that prototype lookup can resolve it.
+    if (JS_HasProperty(ctx, prototype, key)) return false;
     bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return false;
@@ -64,6 +66,13 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     ExecutingContext* context = ExecutingContext::From(ctx);
     if (!context->IsContextValid()) return JS_NULL;
     MemberMutationScope scope{context};
+    // Do not claim prototype methods/properties (e.g., setProperty).
+    // If the property exists on the prototype, yield to prototype lookup by returning undefined.
+    auto* wrapper_type_info = <% if (className.startsWith('Legacy')) { %>legacy::<% } %><%= className %>::GetStaticWrapperTypeInfo();
+    JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
+    if (JS_HasProperty(ctx, prototype, key)) {
+      return JS_UNDEFINED;
+    }
     ${generateCoreTypeValue(object.indexedProp.type)} result = self->item(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return exception_state.ToQuickJS();

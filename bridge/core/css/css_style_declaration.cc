@@ -172,22 +172,16 @@ bool CSSStyleDeclaration::AnonymousNamedSetter(const webf::AtomicString& name, c
 
   if (value.IsString()) {
     auto string = value.ToString(ctx());
-    if (string.length() <= 128) {
-      uint8_t buffer[128];
-      int len = string.length();
-      SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(buffer, len), false, exception_state);
-      if (exception_state.HasException()) {
-        return true;
-      }
-      return true;
-    }
+    // Fast path: pass the actual string data through; avoid temporary buffers.
+    SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(string), false, exception_state);
+    return true;
   }
 
   // Perform a type conversion from ES value to
   // IDL [LegacyNullToEmptyString] DOMString only after we've confirmed that
   // the property name is a valid CSS attribute name (see bug 1310062).
   auto&& string_value = value.ToLegacyDOMString(ctx());
-  SetPropertyInternal(unresolved_property, AtomicString::Empty(), string_value, false, exception_state);
+  SetPropertyInternal(unresolved_property, AtomicString::Empty(), StringView(string_value), false, exception_state);
   if (exception_state.HasException()) {
     return true;
   }
