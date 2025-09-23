@@ -264,18 +264,21 @@ class RenderFlexLayout extends RenderLayoutBox {
           return false; // vertical inline: bottom is start
         }
       case FlexDirection.column:
-        // Column follows block axis. When inline is horizontal, block is vertical (top start).
-        // When inline is vertical, block is horizontal; use direction for horizontal start.
+        // Column follows block axis.
+        // - horizontal-tb: block is vertical (top is start)
+        // - vertical-rl:  block is horizontal (start at physical right)
+        // - vertical-lr:  block is horizontal (start at physical left)
         if (inlineIsHorizontal) {
           return true; // top is start
         } else {
-          return dir != TextDirection.rtl; // horizontal block axis respects text direction
+          return wm == CSSWritingMode.verticalLr;
         }
       case FlexDirection.columnReverse:
         if (inlineIsHorizontal) {
           return false; // bottom is start
         } else {
-          return dir == TextDirection.rtl; // reversed horizontal block axis
+          // Reverse the block direction of vertical writing modes
+          return wm == CSSWritingMode.verticalRl;
         }
     }
   }
