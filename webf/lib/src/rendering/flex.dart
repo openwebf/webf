@@ -316,24 +316,30 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get start/end padding in the cross axis according to flex direction.
   double _flowAwareCrossAxisPadding({bool isEnd = false}) {
-    // Decide whether cross-start maps to physical left/top considering writing-mode.
+    // Cross axis comes from block axis for row, inline axis for column
     final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
         ? (renderStyle as CSSRenderStyle).writingMode
         : CSSWritingMode.horizontalTb;
-    final bool crossIsHorizontal = !_isHorizontalFlexDirection;
-    bool crossStartIsPhysicalStart;
-    if (crossIsHorizontal) {
-      // Cross uses block axis when main is inline (row). For vertical writing modes,
-      // block direction is horizontal: vertical-rl => right-to-left, vertical-lr => left-to-right.
-      final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
-          renderStyle.flexDirection == FlexDirection.rowReverse;
-      if (usesBlockAxis) {
-        crossStartIsPhysicalStart = (wm == CSSWritingMode.verticalLr);
+    final bool inlineIsHorizontal = (wm == CSSWritingMode.horizontalTb);
+    final bool crossIsHorizontal;
+    bool crossStartIsPhysicalStart; // left for horizontal, top for vertical
+    if (renderStyle.flexDirection == FlexDirection.row || renderStyle.flexDirection == FlexDirection.rowReverse) {
+      crossIsHorizontal = !inlineIsHorizontal; // block axis
+      if (crossIsHorizontal) {
+        crossStartIsPhysicalStart = (wm == CSSWritingMode.verticalLr); // start at left for vertical-lr, right for vertical-rl
       } else {
-        // Cross uses inline axis; inline start is always physical left for horizontal-tb,
-        // and physical top for vertical modes.
-        crossStartIsPhysicalStart = (wm != CSSWritingMode.verticalRl); // default to left/top
+        crossStartIsPhysicalStart = true; // top for horizontal-tb
       }
+    } else {
+      crossIsHorizontal = inlineIsHorizontal; // inline axis
+      if (crossIsHorizontal) {
+        crossStartIsPhysicalStart = (renderStyle.direction != TextDirection.rtl); // left if LTR, right if RTL
+      } else {
+        crossStartIsPhysicalStart = true; // top in vertical writing modes
+      }
+    }
+
+    if (crossIsHorizontal) {
       if (!isEnd) {
         return crossStartIsPhysicalStart
             ? renderStyle.paddingLeft.computedValue
@@ -344,7 +350,6 @@ class RenderFlexLayout extends RenderLayoutBox {
             : renderStyle.paddingLeft.computedValue;
       }
     } else {
-      // Cross is vertical
       return isEnd ? renderStyle.paddingBottom.computedValue : renderStyle.paddingTop.computedValue;
     }
   }
@@ -3557,20 +3562,41 @@ class RenderFlexLayout extends RenderLayoutBox {
     double childCrossAxisStartMargin = _flowAwareChildCrossAxisMargin(child)!;
     double crossStartAddedOffset = crossAxisStartPadding + crossAxisStartBorder + childCrossAxisStartMargin;
 
-    // Determine whether cross-start maps to physical left/top.
+    // Determine cross axis orientation and where cross-start maps physically.
     final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
         ? (renderStyle as CSSRenderStyle).writingMode
         : CSSWritingMode.horizontalTb;
-    final bool crossIsHorizontal = !_isHorizontalFlexDirection;
+    final bool inlineIsHorizontal = (wm == CSSWritingMode.horizontalTb);
+    final bool crossIsHorizontal;
     bool crossStartIsPhysicalStart; // left for horizontal, top for vertical
-    if (crossIsHorizontal) {
-      final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
-          renderStyle.flexDirection == FlexDirection.rowReverse;
-      // For row: cross uses block axis; vertical-rl => start at right (false), vertical-lr => left (true)
-      crossStartIsPhysicalStart = usesBlockAxis ? (wm == CSSWritingMode.verticalLr) : true;
+    if (renderStyle.flexDirection == FlexDirection.row || renderStyle.flexDirection == FlexDirection.rowReverse) {
+      // Cross is block axis
+      crossIsHorizontal = !inlineIsHorizontal;
+      if (crossIsHorizontal) {
+        // vertical-rl => block-start at right; vertical-lr => left
+        crossStartIsPhysicalStart = (wm == CSSWritingMode.verticalLr);
+      } else {
+        // horizontal-tb => block-start at top
+        crossStartIsPhysicalStart = true;
+      }
     } else {
-      // Vertical cross axis always starts at top
-      crossStartIsPhysicalStart = true;
+      // Cross is inline axis
+      crossIsHorizontal = inlineIsHorizontal;
+      if (crossIsHorizontal) {
+        // Inline-start follows text direction in horizontal-tb
+        crossStartIsPhysicalStart = (renderStyle.direction != TextDirection.rtl);
+      } else {
+        // Inline-start is physical top in vertical writing modes
+        crossStartIsPhysicalStart = true;
+      }
+    }
+
+    if (DebugFlags.debugLogFlexEnabled) {
+      renderingLogger.finer('[Flex] cross-offset setup alignment=$alignment child=${_childDesc(child)} '
+          'wm=$wm crossIsHorizontal=$crossIsHorizontal crossStartIsPhysicalStart=$crossStartIsPhysicalStart '
+          'runCross=${runCrossAxisExtent.toStringAsFixed(1)} lineCross=${flexLineCrossSize.toStringAsFixed(1)} '
+          'startPad=${crossAxisStartPadding.toStringAsFixed(1)} startBorder=${crossAxisStartBorder.toStringAsFixed(1)} '
+          'startMargin=${childCrossAxisStartMargin.toStringAsFixed(1)} crossStartOffset=${crossStartAddedOffset.toStringAsFixed(1)}');
     }
 
     // Align-items and align-self have no effect if auto margin of child exists in the cross axis.
@@ -3605,9 +3631,25 @@ class RenderFlexLayout extends RenderLayoutBox {
       case 'center':
         return childCrossPosition = crossStartAddedOffset + (flexLineCrossSize - _getCrossAxisExtent(child)) / 2.0;
       case 'baseline':
+        // In column flex-direction (vertical main axis), baseline alignment behaves
+        // like flex-start per our layout model. Avoid using runBaselineExtent which
+        // is not computed for vertical-main containers.
+        if (!_isHorizontalFlexDirection) {
+          if (DebugFlags.debugLogFlexEnabled) {
+            renderingLogger.finer('[Flex] baseline treated as start (vertical main) child=${_childDesc(child)} '
+                'crossStartOffset=${crossStartAddedOffset.toStringAsFixed(2)}');
+          }
+          return crossStartAddedOffset;
+        }
         // Distance from top to baseline of child.
         double childAscent = _getChildAscent(child);
         final double offset = crossStartAddedOffset + lineBoxLeading / 2 + (runBaselineExtent - childAscent);
+        if (DebugFlags.debugLogFlexEnabled) {
+          renderingLogger.finer('[Flex] cross-offset baseline child=${_childDesc(child)} '
+              'runBaseline=${runBaselineExtent.toStringAsFixed(2)} childAscent=${childAscent.toStringAsFixed(2)} '
+              'lineLeading=${lineBoxLeading.toStringAsFixed(2)} startOffset=${crossStartAddedOffset.toStringAsFixed(2)} '
+              '=> offset=${offset.toStringAsFixed(2)}');
+        }
         if (DebugFlags.debugLogFlexBaselineEnabled) {
           // ignore: avoid_print
           print('[FlexBaseline] offset child=${child.runtimeType}#${child.hashCode} '
