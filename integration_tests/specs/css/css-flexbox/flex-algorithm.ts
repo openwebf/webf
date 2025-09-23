@@ -676,7 +676,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('038', async () => {
+  it('038', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
@@ -711,7 +711,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('040', async () => {
+  it('040', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
@@ -747,7 +747,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('042', async () => {
+  it('042', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
@@ -783,7 +783,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('044', async () => {
+  it('044', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
@@ -801,7 +801,7 @@ describe('flex algotithm', () => {
     await snapshot();
   });
 
-  xit('045', async () => {
+  it('045', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });

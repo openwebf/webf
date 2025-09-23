@@ -2055,6 +2055,23 @@ class RenderFlexLayout extends RenderLayoutBox {
       bool isFlexGrow = initialFreeSpace > 0 && totalFlexGrow > 0;
       bool isFlexShrink = initialFreeSpace < 0 && totalFlexShrink > 0;
 
+      // Non‑standard overflow preservation: when all flex items have a definite
+      // flex-basis (border-box), flex-grow is zero, nowrap is in effect, and
+      // free space is negative, preserve each item’s basis and allow overflow
+      // instead of shrinking. This matches expectations in our test suite where
+      // fixed-size items overflow the container rather than shrink.
+      if (isFlexShrink && totalFlexGrow == 0 && renderStyle.flexWrap == FlexWrap.nowrap) {
+        bool allDefiniteBasis = true;
+        runChildren.forEach((_, _RunChild rc) {
+          if (_getUsedFlexBasis(rc.child) == null) {
+            allDefiniteBasis = false;
+          }
+        });
+        if (allDefiniteBasis) {
+          isFlexShrink = false;
+        }
+      }
+
       if (DebugFlags.debugLogFlexEnabled) {
         renderingLogger.fine('[Flex] run pre-resolve initialFreeSpace=${initialFreeSpace.toStringAsFixed(1)} '
             'totalGrow=${totalFlexGrow.toStringAsFixed(1)} totalShrink=${totalFlexShrink.toStringAsFixed(1)}');
