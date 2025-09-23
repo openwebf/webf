@@ -169,6 +169,22 @@ class RenderFlexLayout extends RenderLayoutBox {
     addAll(children);
   }
 
+  // Returns the used flex-basis in border-box units, honoring box-sizing semantics.
+  // For a definite length basis, the used border-box cannot be smaller than
+  // padding+border on the main axis. For auto/content or null, returns null.
+  double? _getUsedFlexBasis(RenderBox child) {
+    double? basis = _getFlexBasis(child);
+    if (basis == null) return null;
+    RenderBoxModel? box = child is RenderBoxModel
+        ? child
+        : (child is RenderEventListener ? child.child as RenderBoxModel? : null);
+    if (box == null) return basis;
+    final double paddingBorder = _isHorizontalFlexDirection
+        ? (box.renderStyle.padding.horizontal + box.renderStyle.border.horizontal)
+        : (box.renderStyle.padding.vertical + box.renderStyle.border.vertical);
+    return math.max(basis, paddingBorder);
+  }
+
   // Flex line boxes of flex layout.
   // https://www.w3.org/TR/css-flexbox-1/#flex-lines
   List<_RunMetrics> _flexLineBoxMetrics = <_RunMetrics>[];
@@ -637,8 +653,8 @@ class RenderFlexLayout extends RenderLayoutBox {
       RenderBox child = runChild.child;
       if (!runChild.frozen) {
         double childFlexShrink = _getFlexShrink(child);
-        // Use flexBasis for weight calculation, consistent with CSS spec
-        double? flexBasis = _getFlexBasis(child);
+        // Use used flex-basis (border-box) for weight calculation
+        double? flexBasis = _getUsedFlexBasis(child);
         double baseSize = flexBasis ?? runChild.originalMainSize;
         totalWeightedFlexShrink += baseSize * childFlexShrink;
       }
@@ -657,8 +673,8 @@ class RenderFlexLayout extends RenderLayoutBox {
     _RunChild current = runChildren[childNodeId]!;
     double currentFlexShrink = _getFlexShrink(current.child);
 
-    // Use flexBasis if available, otherwise use originalMainSize
-    double? flexBasis = _getFlexBasis(current.child);
+    // Use used flex-basis if available, otherwise use originalMainSize
+    double? flexBasis = _getUsedFlexBasis(current.child);
     double baseSize = flexBasis ?? current.originalMainSize;
 
     double currentExtent = currentFlexShrink * baseSize;
@@ -805,19 +821,27 @@ class RenderFlexLayout extends RenderLayoutBox {
       //    the size if needed.
       double? basis = _getFlexBasis(child);
       if (basis != null) {
+        // Flex-basis is a definite length. Honor box-sizing:border-box semantics:
+        // the used border-box size cannot be smaller than padding+border.
         if (_isHorizontalFlexDirection) {
+          final double minBorderBoxW =
+              child.renderStyle.padding.horizontal + child.renderStyle.border.horizontal;
+          final double used = math.max(basis, minBorderBoxW);
           c = BoxConstraints(
-            minWidth: basis,
-            maxWidth: basis,
+            minWidth: used,
+            maxWidth: used,
             minHeight: c.minHeight,
             maxHeight: c.maxHeight,
           );
         } else {
+          final double minBorderBoxH =
+              child.renderStyle.padding.vertical + child.renderStyle.border.vertical;
+          final double used = math.max(basis, minBorderBoxH);
           c = BoxConstraints(
             minWidth: c.minWidth,
             maxWidth: c.maxWidth,
-            minHeight: basis,
-            maxHeight: basis,
+            minHeight: used,
+            maxHeight: used,
           );
         }
       }
@@ -1554,7 +1578,7 @@ class RenderFlexLayout extends RenderLayoutBox {
       // space and shrink/grow weighting use the correct base, and keep the
       // clamped value in _childrenIntrinsicMainSizes for line metrics.
       double baseMainSize;
-      double? basisForBase = _getFlexBasis(child);
+      double? basisForBase = _getUsedFlexBasis(child);
       if (basisForBase != null) {
         baseMainSize = basisForBase;
       } else {
@@ -1827,7 +1851,7 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       _RunChild? current = runChildren[childNodeId];
 
-      double? flexBasis = _getFlexBasis(child);
+      double? flexBasis = _getUsedFlexBasis(child);
       double originalMainSize = flexBasis ?? current!.originalMainSize;
 
       double computedSize = originalMainSize;
@@ -1973,7 +1997,7 @@ class RenderFlexLayout extends RenderLayoutBox {
         double marginHorizontal = 0;
         double marginVertical = 0;
         if (child is RenderBoxModel) {
-          double? flexBasis = _getFlexBasis(child);
+          double? flexBasis = _getUsedFlexBasis(child);
           marginHorizontal = child.renderStyle.marginLeft.computedValue + child.renderStyle.marginRight.computedValue;
           marginVertical = child.renderStyle.marginTop.computedValue + child.renderStyle.marginBottom.computedValue;
           if (flexBasis != null) {
