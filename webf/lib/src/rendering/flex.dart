@@ -1861,10 +1861,12 @@ class RenderFlexLayout extends RenderLayoutBox {
     Map<int?, _RunChild> runChildren = runMetric.runChildren;
     double totalFlexGrow = totalFlexFactor['flexGrow']!;
     double totalFlexShrink = totalFlexFactor['flexShrink']!;
+    // Determine distribution mode using the current remaining free space, not just the initial value,
+    // because freezing items at min/max can flip the sign mid-iteration.
     bool isFlexGrow = initialFreeSpace > 0 && totalFlexGrow > 0;
     bool isFlexShrink = initialFreeSpace < 0 && totalFlexShrink > 0;
 
-    double sumFlexFactors = isFlexGrow ? totalFlexGrow : totalFlexShrink;
+    double sumFlexFactors = (isFlexGrow ? totalFlexGrow : totalFlexShrink);
 
     // If the sum of the unfrozen flex items’ flex factors is less than one,
     // multiply the initial free space by this sum as remaining free space.
@@ -1905,11 +1907,14 @@ class RenderFlexLayout extends RenderLayoutBox {
       double flexShrink = _getFlexShrink(child);
 
       double remainingFreeSpace = runMetric.remainingFreeSpace;
-      if (isFlexGrow && flexGrow > 0) {
+      // Re-evaluate grow/shrink based on current remaining free space sign.
+      final bool doGrow = remainingFreeSpace > 0 && totalFlexGrow > 0 && flexGrow > 0;
+      final bool doShrink = remainingFreeSpace < 0 && totalFlexShrink > 0 && flexShrink > 0;
+
+      if (doGrow) {
         final double spacePerFlex = totalFlexGrow > 0 ? (remainingFreeSpace / totalFlexGrow) : double.nan;
-        final double flexGrow = _getFlexGrow(child);
         computedSize = originalMainSize + spacePerFlex * flexGrow;
-      } else if (isFlexShrink && flexShrink > 0) {
+      } else if (doShrink) {
         // If child's mainAxis have clips, it will create a new format context in it's children's.
         // so we do't need to care about child's size.
         if (child is RenderBoxModel && _isChildMainAxisClip(child)) {
