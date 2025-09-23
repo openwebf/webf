@@ -349,8 +349,15 @@ abstract class RenderLayoutBox extends RenderBoxModel
           : flexBasisLV.computedValue;
 
       if (flexBasis != null && parentRenderStyle != null) {
-        final bool isRow = CSSFlex.isHorizontalFlexDirection(parentRenderStyle.flexDirection);
-        final bool isParentMainDefinite = isRow
+        // Determine main-axis orientation with writing-mode awareness.
+        final CSSWritingMode wm = (parentRenderStyle is CSSRenderStyle)
+            ? parentRenderStyle.writingMode
+            : CSSWritingMode.horizontalTb;
+        final bool inlineIsHorizontal = (wm == CSSWritingMode.horizontalTb);
+        final bool parentRow = parentRenderStyle.flexDirection == FlexDirection.row ||
+            parentRenderStyle.flexDirection == FlexDirection.rowReverse;
+        final bool isMainAxisHorizontal = parentRow ? inlineIsHorizontal : !inlineIsHorizontal;
+        final bool isParentMainDefinite = isMainAxisHorizontal
             ? parentRenderStyle.contentBoxLogicalWidth != null
             : parentRenderStyle.contentBoxLogicalHeight != null;
         final bool isPctBasis = flexBasisLV!.type == CSSLengthType.PERCENTAGE;
@@ -362,7 +369,7 @@ abstract class RenderLayoutBox extends RenderBoxModel
           // Skip overriding specified content size.
         } else if (flexBasis > 0) {
           // Only apply positive, resolvable flex-basis to content sizing here.
-          if (isRow) {
+          if (isMainAxisHorizontal) {
             if (!hasOverrideContentLogicalWidth) {
               specifiedContentWidth = _getContentWidth(flexBasis);
             }

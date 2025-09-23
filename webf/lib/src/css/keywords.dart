@@ -155,6 +155,7 @@ const String SLIVER_DIRECTION = 'sliverDirection';
 
 const String TRANSFORM = 'transform';
 const String TRANSFORM_ORIGIN = 'transformOrigin';
+const String WRITING_MODE = 'writingMode';
 
 const String TRANSITION = 'transition';
 const String TRANSITION_PROPERTY = 'transitionProperty';

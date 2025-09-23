@@ -225,22 +225,58 @@ class RenderFlexLayout extends RenderLayoutBox {
   }
 
   bool get _isHorizontalFlexDirection {
-    return CSSFlex.isHorizontalFlexDirection(renderStyle.flexDirection);
+    // Map flex direction to physical axis considering writing-mode.
+    // Row follows the inline axis; column follows the block axis.
+    // In horizontal-tb, inline axis is horizontal; in vertical-rl/lr, inline axis is vertical.
+    final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).writingMode
+        : CSSWritingMode.horizontalTb;
+    final bool inlineIsHorizontal = (wm == CSSWritingMode.horizontalTb);
+    switch (renderStyle.flexDirection) {
+      case FlexDirection.row:
+      case FlexDirection.rowReverse:
+        return inlineIsHorizontal;
+      case FlexDirection.column:
+      case FlexDirection.columnReverse:
+        return !inlineIsHorizontal; // block axis is perpendicular to inline axis
+    }
   }
 
   // Determine if the main-axis start maps to the physical left (for horizontal)
   // or top (for vertical). This accounts for both flex-direction and text direction.
   bool _isMainAxisStartAtPhysicalStart() {
     final dir = renderStyle.direction;
+    final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).writingMode
+        : CSSWritingMode.horizontalTb;
+    final bool inlineIsHorizontal = (wm == CSSWritingMode.horizontalTb);
     switch (renderStyle.flexDirection) {
       case FlexDirection.row:
-        return dir != TextDirection.rtl; // LTR → left is start; RTL → right is start
+        if (inlineIsHorizontal) {
+          return dir != TextDirection.rtl; // LTR → left is start; RTL → right is start
+        } else {
+          return true; // vertical inline: top is start
+        }
       case FlexDirection.rowReverse:
-        return dir == TextDirection.rtl; // row-reverse flips inline start/end
+        if (inlineIsHorizontal) {
+          return dir == TextDirection.rtl; // row-reverse flips inline start/end
+        } else {
+          return false; // vertical inline: bottom is start
+        }
       case FlexDirection.column:
-        return true; // top is start
+        // Column follows block axis. When inline is horizontal, block is vertical (top start).
+        // When inline is vertical, block is horizontal; use direction for horizontal start.
+        if (inlineIsHorizontal) {
+          return true; // top is start
+        } else {
+          return dir != TextDirection.rtl; // horizontal block axis respects text direction
+        }
       case FlexDirection.columnReverse:
-        return false; // bottom is start
+        if (inlineIsHorizontal) {
+          return false; // bottom is start
+        } else {
+          return dir == TextDirection.rtl; // reversed horizontal block axis
+        }
     }
   }
 
@@ -277,10 +313,36 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get start/end padding in the cross axis according to flex direction.
   double _flowAwareCrossAxisPadding({bool isEnd = false}) {
-    if (_isHorizontalFlexDirection) {
-      return isEnd ? renderStyle.paddingBottom.computedValue : renderStyle.paddingTop.computedValue;
+    // Decide whether cross-start maps to physical left/top considering writing-mode.
+    final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).writingMode
+        : CSSWritingMode.horizontalTb;
+    final bool crossIsHorizontal = !_isHorizontalFlexDirection;
+    bool crossStartIsPhysicalStart;
+    if (crossIsHorizontal) {
+      // Cross uses block axis when main is inline (row). For vertical writing modes,
+      // block direction is horizontal: vertical-rl => right-to-left, vertical-lr => left-to-right.
+      final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
+          renderStyle.flexDirection == FlexDirection.rowReverse;
+      if (usesBlockAxis) {
+        crossStartIsPhysicalStart = (wm == CSSWritingMode.verticalLr);
+      } else {
+        // Cross uses inline axis; inline start is always physical left for horizontal-tb,
+        // and physical top for vertical modes.
+        crossStartIsPhysicalStart = (wm != CSSWritingMode.verticalRl); // default to left/top
+      }
+      if (!isEnd) {
+        return crossStartIsPhysicalStart
+            ? renderStyle.paddingLeft.computedValue
+            : renderStyle.paddingRight.computedValue;
+      } else {
+        return crossStartIsPhysicalStart
+            ? renderStyle.paddingRight.computedValue
+            : renderStyle.paddingLeft.computedValue;
+      }
     } else {
-      return isEnd ? renderStyle.paddingRight.computedValue : renderStyle.paddingLeft.computedValue;
+      // Cross is vertical
+      return isEnd ? renderStyle.paddingBottom.computedValue : renderStyle.paddingTop.computedValue;
     }
   }
 
@@ -313,14 +375,27 @@ class RenderFlexLayout extends RenderLayoutBox {
 
   // Get start/end border in the cross axis according to flex direction.
   double _flowAwareCrossAxisBorder({bool isEnd = false}) {
-    if (_isHorizontalFlexDirection) {
+    final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).writingMode
+        : CSSWritingMode.horizontalTb;
+    final bool crossIsHorizontal = !_isHorizontalFlexDirection;
+    if (crossIsHorizontal) {
+      final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
+          renderStyle.flexDirection == FlexDirection.rowReverse;
+      final bool crossStartIsPhysicalLeft = usesBlockAxis ? (wm == CSSWritingMode.verticalLr) : true;
+      if (!isEnd) {
+        return crossStartIsPhysicalLeft
+            ? renderStyle.effectiveBorderLeftWidth.computedValue
+            : renderStyle.effectiveBorderRightWidth.computedValue;
+      } else {
+        return crossStartIsPhysicalLeft
+            ? renderStyle.effectiveBorderRightWidth.computedValue
+            : renderStyle.effectiveBorderLeftWidth.computedValue;
+      }
+    } else {
       return isEnd
           ? renderStyle.effectiveBorderBottomWidth.computedValue
           : renderStyle.effectiveBorderTopWidth.computedValue;
-    } else {
-      return isEnd
-          ? renderStyle.effectiveBorderRightWidth.computedValue
-          : renderStyle.effectiveBorderLeftWidth.computedValue;
     }
   }
 
@@ -380,14 +455,27 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (childRenderBoxModel == null) {
       return 0;
     }
-    if (_isHorizontalFlexDirection) {
+    final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).writingMode
+        : CSSWritingMode.horizontalTb;
+    final bool crossIsHorizontal = !_isHorizontalFlexDirection;
+    if (crossIsHorizontal) {
+      final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
+          renderStyle.flexDirection == FlexDirection.rowReverse;
+      final bool crossStartIsPhysicalLeft = usesBlockAxis ? (wm == CSSWritingMode.verticalLr) : true;
+      if (!isEnd) {
+        return crossStartIsPhysicalLeft
+            ? childRenderBoxModel.renderStyle.marginLeft.computedValue
+            : childRenderBoxModel.renderStyle.marginRight.computedValue;
+      } else {
+        return crossStartIsPhysicalLeft
+            ? childRenderBoxModel.renderStyle.marginRight.computedValue
+            : childRenderBoxModel.renderStyle.marginLeft.computedValue;
+      }
+    } else {
       return isEnd
           ? childRenderBoxModel.renderStyle.marginBottom.computedValue
           : childRenderBoxModel.renderStyle.marginTop.computedValue;
-    } else {
-      return isEnd
-          ? childRenderBoxModel.renderStyle.marginRight.computedValue
-          : childRenderBoxModel.renderStyle.marginLeft.computedValue;
     }
   }
 
@@ -887,8 +975,12 @@ class RenderFlexLayout extends RenderLayoutBox {
 
       if (DebugFlags.debugLogFlexEnabled) {
         final s = child.renderStyle;
+        final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+            ? (renderStyle as CSSRenderStyle).writingMode
+            : CSSWritingMode.horizontalTb;
         renderingLogger.finer('[Flex] intrinsicConstraints for ${_childDesc(child)} '
-            'autoMain=${_isHorizontalFlexDirection ? s.width.isAuto : s.height.isAuto} -> ${_fmtC(c)}');
+            'wm=$wm autoMain=${_isHorizontalFlexDirection ? s.width.isAuto : s.height.isAuto} '
+            'basis=${_getFlexBasis(child)} usedBasis=${_getUsedFlexBasis(child)} -> ${_fmtC(c)}');
       }
       return c;
     } else {
@@ -1216,7 +1308,11 @@ class RenderFlexLayout extends RenderLayoutBox {
       final ac = renderStyle.alignContent;
       final cw = renderStyle.contentBoxLogicalWidth;
       final ch = renderStyle.contentBoxLogicalHeight;
-      renderingLogger.fine('[Flex] container start dir=$dir jc=$jc ai=$ai ac=$ac '
+      final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+          ? (renderStyle as CSSRenderStyle).writingMode
+          : CSSWritingMode.horizontalTb;
+      renderingLogger.fine('[Flex] container start dir=$dir jc=$jc ai=$ai ac=$ac wm=$wm '
+          'isHorizontalMain=${_isHorizontalFlexDirection} '
           'constraints=${_fmtC(constraints)} contentConstraints=${_fmtC(contentConstraints!)} '
           'logical=(w:${cw?.toStringAsFixed(1)}, h:${ch?.toStringAsFixed(1)})');
     }
@@ -2300,7 +2396,10 @@ class RenderFlexLayout extends RenderLayoutBox {
 
         // Apply the constraints to the wrapper (if any); it forwards to the inner box.
         if (DebugFlags.debugLogFlexEnabled) {
-          renderingLogger.finer('[Flex] layout item ${_childDesc(child)} with ${_fmtC(childConstraints)} ');
+          renderingLogger.finer('[Flex] layout item ${_childDesc(child)} with ${_fmtC(childConstraints)} '
+              'flexedMain=${childFlexedMainSize?.toStringAsFixed(1)} '
+              'stretchedCross=${childStretchedCrossSize?.toStringAsFixed(1)} '
+              'preserve=${desiredPreservedMain?.toStringAsFixed(1)}');
         }
         child.layout(childConstraints, parentUsesSize: true);
 
@@ -2479,6 +2578,10 @@ class RenderFlexLayout extends RenderLayoutBox {
           minConstraintWidth = fixedW;
           maxConstraintWidth = fixedW;
           _overrideChildContentBoxLogicalWidth(child, fixedW);
+          if (DebugFlags.debugLogFlexEnabled) {
+            renderingLogger.finer('[Flex] cross-lock width for ${_childDesc(child)} fixedW=${fixedW.toStringAsFixed(1)} '
+                'containerCrossMax=${(contentConstraints?.maxWidth ?? double.infinity).toStringAsFixed(1)}');
+          }
         }
       }
     }
@@ -2947,20 +3050,62 @@ class RenderFlexLayout extends RenderLayoutBox {
   ) {
     bool isSingleLine = (renderStyle.flexWrap != FlexWrap.wrap && renderStyle.flexWrap != FlexWrap.wrapReverse);
 
-
     if (isSingleLine) {
-      // Normally the height of flex line in single line equals to flex container's cross size.
-      // But it may change in cases of the cross size of replaced flex item tranferred from
-      // its flexed main size.
-      bool isCrossSizeDefinite = _isHorizontalFlexDirection
-          ? (renderStyle.contentBoxLogicalHeight != null || renderStyle.minHeight.isNotAuto)
-          : (renderStyle.contentBoxLogicalWidth != null || renderStyle.minWidth.isNotAuto);
-
-      if (_needToStretchChildCrossSize(child) && !isCrossSizeDefinite) {
-        return runCrossAxisExtent;
+      // For single-line flex containers, use a definite cross size only if specified on the
+      // container itself (width/height). Do NOT treat parent max constraints as definite,
+      // since shrink-to-fit contexts (e.g., inline-flex) should not stretch to max width.
+      // Always honor a definite min-cross-size.
+      // https://www.w3.org/TR/css-flexbox-1/#algo-cross-line
+      double? explicitContainerCross; // from explicit non-auto width/height
+      double? resolvedContainerCross; // resolved cross size for block-level flex when auto (context-dependent)
+      double? minCrossFromConstraints; // content-box min cross size
+      final CSSDisplay? effectiveDisplay = renderStyle.effectiveDisplay;
+      final bool isInlineFlex = effectiveDisplay == CSSDisplay.inlineFlex;
+      final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+          ? (renderStyle as CSSRenderStyle).writingMode
+          : CSSWritingMode.horizontalTb;
+      // Cross axis is horizontal when main is vertical, meaning cross property is physical width.
+      final bool crossIsWidth = !_isHorizontalFlexDirection;
+      if (_isHorizontalFlexDirection) {
+        // Row: cross is height
+        // Only treat as definite if height is explicitly specified (not auto)
+        if (renderStyle.height.isNotAuto) {
+          explicitContainerCross = renderStyle.contentBoxLogicalHeight;
+        }
+        // Height:auto is generally not definite prior to layout; do not resolve from constraints.
+        if (contentConstraints != null && contentConstraints!.minHeight.isFinite && contentConstraints!.minHeight > 0) {
+          minCrossFromConstraints = contentConstraints!.minHeight;
+        }
       } else {
-        return _getContentCrossSize();
+        // Column: cross is width
+        // Only treat as definite if width is explicitly specified (not auto)
+        if (renderStyle.width.isNotAuto) {
+          explicitContainerCross = renderStyle.contentBoxLogicalWidth;
+        }
+        // For block-level flex with width:auto in horizontal writing mode, the used width
+        // is fill-available and thus definite; only then may we resolve from constraints.
+        if (!isInlineFlex && (explicitContainerCross == null) && crossIsWidth && wm == CSSWritingMode.horizontalTb) {
+          if (contentConstraints != null && contentConstraints!.hasBoundedWidth && contentConstraints!.maxWidth.isFinite) {
+            resolvedContainerCross = contentConstraints!.maxWidth;
+          }
+        }
+        if (contentConstraints != null && contentConstraints!.minWidth.isFinite && contentConstraints!.minWidth > 0) {
+          minCrossFromConstraints = contentConstraints!.minWidth;
+        }
       }
+      // If the container specified an explicit cross size, use it.
+      if (explicitContainerCross != null && explicitContainerCross.isFinite) {
+        return explicitContainerCross;
+      }
+      // For block-level flex, use resolved container cross size when available.
+      if (!isInlineFlex && resolvedContainerCross != null && resolvedContainerCross.isFinite) {
+        return resolvedContainerCross;
+      }
+      // Otherwise clamp to min-cross if present.
+      if (minCrossFromConstraints != null && minCrossFromConstraints.isFinite) {
+        return math.max(runCrossAxisExtent, minCrossFromConstraints);
+      }
+      return runCrossAxisExtent;
     } else {
       // Flex line of align-content stretch should includes between space.
       bool isMultiLineStretch = renderStyle.alignContent == AlignContent.stretch;
@@ -3298,6 +3443,11 @@ class RenderFlexLayout extends RenderLayoutBox {
     double runCrossAxisExtent,
     double runBetweenSpace,
   ) {
+    if (DebugFlags.debugLogFlexEnabled) {
+      renderingLogger.finer('[Flex] stretch-in start child=${_childDesc(child)} '
+          'runCross=${runCrossAxisExtent.toStringAsFixed(1)} between=${runBetweenSpace.toStringAsFixed(1)} '
+          'isHorizontalMain=${_isHorizontalFlexDirection}');
+    }
     bool isFlexWrap = renderStyle.flexWrap == FlexWrap.wrap || renderStyle.flexWrap == FlexWrap.wrapReverse;
     double childCrossAxisMargin = _horizontalMarginNegativeSet(0, child, isHorizontal: !_isHorizontalFlexDirection);
     _isHorizontalFlexDirection ? child.renderStyle.margin.vertical : child.renderStyle.margin.horizontal;
@@ -3334,6 +3484,13 @@ class RenderFlexLayout extends RenderLayoutBox {
     }
     if (minCrossSize != null) {
       childStretchedCrossSize = childStretchedCrossSize < minCrossSize ? minCrossSize : childStretchedCrossSize;
+    }
+
+    if (DebugFlags.debugLogFlexEnabled) {
+      renderingLogger.finer('[Flex] stretch-in result child=${_childDesc(child)} '
+          'lineCross=${flexLineCrossSize.toStringAsFixed(1)} marginCross=${childCrossAxisMargin.toStringAsFixed(1)} '
+          'maxCross=${maxCrossSize?.toStringAsFixed(1)} minCross=${minCrossSize?.toStringAsFixed(1)} '
+          'final=${childStretchedCrossSize.toStringAsFixed(1)}');
     }
 
     return childStretchedCrossSize;
@@ -3397,6 +3554,22 @@ class RenderFlexLayout extends RenderLayoutBox {
     double childCrossAxisStartMargin = _flowAwareChildCrossAxisMargin(child)!;
     double crossStartAddedOffset = crossAxisStartPadding + crossAxisStartBorder + childCrossAxisStartMargin;
 
+    // Determine whether cross-start maps to physical left/top.
+    final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
+        ? (renderStyle as CSSRenderStyle).writingMode
+        : CSSWritingMode.horizontalTb;
+    final bool crossIsHorizontal = !_isHorizontalFlexDirection;
+    bool crossStartIsPhysicalStart; // left for horizontal, top for vertical
+    if (crossIsHorizontal) {
+      final bool usesBlockAxis = renderStyle.flexDirection == FlexDirection.row ||
+          renderStyle.flexDirection == FlexDirection.rowReverse;
+      // For row: cross uses block axis; vertical-rl => start at right (false), vertical-lr => left (true)
+      crossStartIsPhysicalStart = usesBlockAxis ? (wm == CSSWritingMode.verticalLr) : true;
+    } else {
+      // Vertical cross axis always starts at top
+      crossStartIsPhysicalStart = true;
+    }
+
     // Align-items and align-self have no effect if auto margin of child exists in the cross axis.
     if (_isChildCrossAxisMarginAutoExist(child)) {
       return crossStartAddedOffset;
@@ -3404,14 +3577,28 @@ class RenderFlexLayout extends RenderLayoutBox {
 
     switch (alignment) {
       case 'start':
-        return crossStartAddedOffset;
+        if (crossStartIsPhysicalStart) {
+          return crossStartAddedOffset;
+        } else {
+          // Cross-start at right (or bottom): place item flush to that side.
+          return crossAxisStartPadding +
+              crossAxisStartBorder +
+              flexLineCrossSize -
+              _getCrossAxisExtent(child) +
+              childCrossAxisStartMargin;
+        }
       case 'end':
-        // Length returned by _getCrossAxisExtent includes margin, so end alignment should add start margin.
-        return crossAxisStartPadding +
-            crossAxisStartBorder +
-            flexLineCrossSize -
-            _getCrossAxisExtent(child) +
-            childCrossAxisStartMargin;
+        if (crossStartIsPhysicalStart) {
+          // Place at cross-end (right or bottom for normal cases)
+          return crossAxisStartPadding +
+              crossAxisStartBorder +
+              flexLineCrossSize -
+              _getCrossAxisExtent(child) +
+              childCrossAxisStartMargin;
+        } else {
+          // Cross-start at right: cross-end is left
+          return crossStartAddedOffset;
+        }
       case 'center':
         return childCrossPosition = crossStartAddedOffset + (flexLineCrossSize - _getCrossAxisExtent(child)) / 2.0;
       case 'baseline':

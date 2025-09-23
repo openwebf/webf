@@ -1259,6 +1259,7 @@ abstract class RenderStyle extends DiagnosticableTree with Diagnosticable {
 
 class CSSRenderStyle extends RenderStyle
     with
+        CSSWritingModeMixin,
         CSSSizingMixin,
         CSSPaddingMixin,
         CSSBorderMixin,
@@ -1917,6 +1918,9 @@ class CSSRenderStyle extends RenderStyle
       case DIRECTION:
         direction = value;
         break;
+      case WRITING_MODE:
+        writingMode = value as CSSWritingMode;
+        break;
       // Transform
       case TRANSFORM:
         transform = value;
@@ -2239,6 +2243,9 @@ class CSSRenderStyle extends RenderStyle
         break;
       case DIRECTION:
         value = CSSTextMixin.resolveDirection(propertyValue);
+        break;
+      case WRITING_MODE:
+        value = CSSWritingModeMixin.resolveWritingMode(propertyValue);
         break;
       case BACKGROUND_ATTACHMENT:
         value = CSSBackground.resolveBackgroundAttachment(propertyValue);
@@ -3302,5 +3309,33 @@ class CSSRenderStyle extends RenderStyle
   // Subtract padding and border to border-box width to get content-box width.
   double deflatePaddingBorderWidth(double borderBoxWidth) {
     return borderBoxWidth - paddingLeft.computedValue - paddingRight.computedValue - border.left - border.right;
+  }
+}
+
+// Writing-mode support (minimal): determines whether the inline axis is horizontal or vertical.
+// This influences flex main/cross axis mapping in components that opt-in.
+enum CSSWritingMode { horizontalTb, verticalRl, verticalLr }
+
+mixin CSSWritingModeMixin on RenderStyle {
+  CSSWritingMode get writingMode => _writingMode ?? CSSWritingMode.horizontalTb;
+  CSSWritingMode? _writingMode;
+  set writingMode(CSSWritingMode value) {
+    if (_writingMode == value) return;
+    _writingMode = value;
+    if (isSelfRenderFlexLayout()) {
+      markNeedsLayout();
+    }
+  }
+
+  static CSSWritingMode resolveWritingMode(String raw) {
+    switch (raw) {
+      case 'vertical-rl':
+        return CSSWritingMode.verticalRl;
+      case 'vertical-lr':
+        return CSSWritingMode.verticalLr;
+      case 'horizontal-tb':
+      default:
+        return CSSWritingMode.horizontalTb;
+    }
   }
 }
