@@ -43,6 +43,10 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
     <% } %>
     <% if (isAnyType(arg.type)) { %>
   ScriptValue <%=_.snakeCase(arg.name)%>_script_value = ScriptValue(<%= _.snakeCase(className) %>->ctx(), <%=_.snakeCase(arg.name)%>);
+  <% if ((className === 'CSSStyleDeclaration' || className === 'InlineCssStyleDeclaration') && method.name === 'setProperty' && arg.name === 'value') { %>
+  // Convert 'value' any to AtomicString for setProperty
+  webf::AtomicString value_atomic = <%=_.snakeCase(arg.name)%>_script_value.ToLegacyDOMString(<%= _.snakeCase(className) %>->ctx());
+  <% } %>
     <% } %>
     <% if (isPointerType(arg.type)) { %>
   std::shared_ptr<<%= arg.type.value %>> <%= arg.name %>_p = <%= arg.type.value %>::Create();
@@ -66,7 +70,23 @@ void <%= className %>PublicMethods::Set<%= _.startCase(prop.name).replace(/ /g, 
   auto value_atomic = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   return AtomicStringRef(value_atomic);
     <% } else if (isVoidType(method.returnType)) { %>
+  <% if ((className === 'CSSStyleDeclaration' || className === 'InlineCssStyleDeclaration') && method.name === 'setProperty') { %>
+  // Pass converted AtomicString for 'value'
+  <%= _.snakeCase(className) %>->setProperty(<%=
+    // build parameter list manually: property (string), value (atomic), priority (string)
+    (function(){
+      let params = method.args.map(function(a){
+        if (a.name === 'value') return 'value_atomic';
+        if (isStringType(a.type)) return _.snakeCase(a.name) + '_atomic';
+        if (isAnyType(a.type)) return _.snakeCase(a.name) + '_script_value';
+        return _.snakeCase(a.name);
+      });
+      return params.join(', ');
+    })()
+  %>, shared_exception_state->exception_state);
+  <% } else { %>
   <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
+  <% } %>
     <% } else if (isAnyType(method.returnType)) { %>
   auto return_value = <%= _.snakeCase(className) %>-><%= method.name %>(<%= generatePublicParametersName(method.args) %>shared_exception_state->exception_state);
   auto return_native_value = return_value.ToNative(<%= _.snakeCase(className) %>->ctx(), shared_exception_state->exception_state, false);

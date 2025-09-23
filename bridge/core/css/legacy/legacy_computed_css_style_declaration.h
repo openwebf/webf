@@ -33,8 +33,8 @@ class LegacyComputedCssStyleDeclaration : public LegacyCssStyleDeclaration {
   ScriptPromise length_async(ExceptionState& exception_state);
 
   AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) override;
-  void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) override;
-  void setProperty_async(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state);
+  void setProperty(const AtomicString& key, const ScriptValue& value, const AtomicString& priority, ExceptionState& exception_state) override;
+  void setProperty_async(const AtomicString& key, const ScriptValue& value, const AtomicString& priority, ExceptionState& exception_state);
   AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) override;
 
   bool NamedPropertyQuery(const AtomicString&, ExceptionState&) override;

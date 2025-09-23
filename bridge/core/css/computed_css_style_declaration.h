@@ -45,11 +45,10 @@ public:
  AtomicString getPropertyPriority(const AtomicString& property_name) override;
  AtomicString GetPropertyShorthand(const AtomicString& property_name) override;
  bool IsPropertyImplicit(const AtomicString& property_name) override;
- void setProperty(const ExecutingContext* context,
-                  const AtomicString& property_name,
-                  const AtomicString& value,
-                  const AtomicString& priority,
-                  ExceptionState& exception_state) override;
+  void setProperty(const AtomicString& property_name,
+                   const AtomicString& value,
+                   const AtomicString& priority,
+                   ExceptionState& exception_state) override;
  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(CSSPropertyID property_id) override;
  const std::shared_ptr<const CSSValue>* GetPropertyCSSValueInternal(const AtomicString& custom_property_name) override;
  AtomicString GetPropertyValueInternal(CSSPropertyID property_id) override;

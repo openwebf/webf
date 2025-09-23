@@ -35,6 +35,12 @@ class InlineCssStyleDeclaration : public AbstractPropertySetCSSStyleDeclaration 
 
   String ToString() const;
 
+  // Support bracket assignment/deletion via generated QuickJS string property hooks.
+  // style["background-color"] = "blue" → routes here, then to
+  // CSSStyleDeclaration::AnonymousNamedSetter.
+  bool SetItem(const AtomicString& key, const ScriptValue& value, ExceptionState&);
+  bool DeleteItem(const AtomicString& key, ExceptionState&);
+
  private:
   MutableCSSPropertyValueSet& PropertySet() const override;
   CSSStyleSheet* ParentStyleSheet() const override;

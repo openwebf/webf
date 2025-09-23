@@ -128,6 +128,8 @@ class ElementRuleCollector {
     CascadeLayerLevel cascade_layer;
     unsigned style_sheet_index;
     uint16_t cascade_order;
+    bool is_inline_style = false;
+    const StylePropertySet* inline_properties = nullptr;  // used when is_inline_style == true
   };
 
   template <typename RuleDataListType>

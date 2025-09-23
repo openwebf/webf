@@ -52,8 +52,7 @@ class CSSStyleDeclaration : public BindingObject {
   virtual AtomicString GetPropertyShorthand(const AtomicString& property_name) = 0;
 
   virtual bool IsPropertyImplicit(const AtomicString& property_name) = 0;
-  virtual void setProperty(const ExecutingContext*,
-                           const AtomicString& property_name,
+  virtual void setProperty(const AtomicString& property_name,
                            const AtomicString& value,
                            const AtomicString& priority,
                            ExceptionState&) = 0;

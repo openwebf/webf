@@ -795,7 +795,12 @@ ALWAYS_INLINE bool SelectorChecker::CheckOne(const SelectorCheckingContext& cont
    case CSSSelector::kPseudoClass:
      return CheckPseudoClass(context, result);
    case CSSSelector::kPseudoElement:
-     return CheckPseudoElement(context, result);
+    // In Blink, pseudo-element matching is not performed in kQueryingRules mode.
+    // Avoid entering pseudo-element logic when only querying/collecting rules.
+    if (mode_ == kQueryingRules) {
+      return false;
+    }
+    return CheckPseudoElement(context, result);
    default:
      NOTREACHED_IN_MIGRATION();
      return false;
@@ -1927,6 +1932,10 @@ bool SelectorChecker::CheckPseudoAutofill(CSSSelector::PseudoType pseudo_type, E
  return false;
 }
 bool SelectorChecker::CheckPseudoElement(const SelectorCheckingContext& context, MatchResult& result) const {
+ if (mode_ == kQueryingRules) {
+   // Align with Blink: don't match pseudo-elements when only querying rules.
+   return false;
+ }
  const CSSSelector& selector = *context.selector;
  Element& element = *context.element;
  if (context.in_nested_complex_selector) {

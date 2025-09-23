@@ -16,9 +16,18 @@ class ExecutingContext;
 typedef struct NativeValue NativeValue;
 typedef struct AtomicStringRef AtomicStringRef;
 class InlineCssStyleDeclaration;
+using PublicInlineCssStyleDeclarationGetPropertyValue = AtomicStringRef (*)(InlineCssStyleDeclaration*, const char*, SharedExceptionState*);
+using PublicInlineCssStyleDeclarationSetProperty = void (*)(InlineCssStyleDeclaration*, const char*, NativeValue, const char*, SharedExceptionState*);
+using PublicInlineCssStyleDeclarationRemoveProperty = AtomicStringRef (*)(InlineCssStyleDeclaration*, const char*, SharedExceptionState*);
 struct InlineCssStyleDeclarationPublicMethods : public WebFPublicMethods {
+  static AtomicStringRef GetPropertyValue(InlineCssStyleDeclaration* inline_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
+  static void SetProperty(InlineCssStyleDeclaration* inline_css_style_declaration, const char* property, NativeValue value, const char* priority, SharedExceptionState* shared_exception_state);
+  static AtomicStringRef RemoveProperty(InlineCssStyleDeclaration* inline_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   double version{1.0};
   CSSStyleDeclarationPublicMethods css_style_declaration;
+  PublicInlineCssStyleDeclarationGetPropertyValue inline_css_style_declaration_get_property_value{GetPropertyValue};
+  PublicInlineCssStyleDeclarationSetProperty inline_css_style_declaration_set_property{SetProperty};
+  PublicInlineCssStyleDeclarationRemoveProperty inline_css_style_declaration_remove_property{RemoveProperty};
 };
 }  // namespace webf
 #endif  // WEBF_CORE_WEBF_API_PLUGIN_API_INLINE_CSS_STYLE_DECLARATION_H_

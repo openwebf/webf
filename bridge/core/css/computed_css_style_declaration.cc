@@ -6,10 +6,12 @@
 #include "binding_call_methods.h"
 #include "core/binding_object.h"
 #include "core/css/css_rule.h"
+#include "core/css/properties/css_property.h"
 #include "core/dom/element.h"
 // #include "core/dom/exception_code.h"
 #include "foundation/native_value.h"
 #include "foundation/native_value_converter.h"
+#include "foundation/string/string_builder.h"
 
 namespace webf {
 
@@ -24,13 +26,10 @@ ScriptValue ComputedCssStyleDeclaration::item(const AtomicString& key, Exception
   if (IsPrototypeMethods(key)) {
     return ScriptValue::Undefined(ctx());
   }
-
-  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), key)};
-
-  NativeValue result = InvokeBindingMethod(
-      binding_call_methods::kgetPropertyValue, 1, arguments,
-      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
-  return ScriptValue(ctx(), NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
+  // Reuse the shared anonymous named getter logic so shorthand serialization
+  // goes through GetPropertyValueInternal() where we can synthesize values.
+  AtomicString result = AnonymousNamedGetter(key);
+  return ScriptValue(ctx(), result);
 }
 
 // bool ComputedCssStyleDeclaration::DeleteItem(const webf::AtomicString& key, webf::ExceptionState& exception_state) {
@@ -109,8 +108,7 @@ bool ComputedCssStyleDeclaration::IsPropertyImplicit(const AtomicString& propert
   return false;
 }
 
-void ComputedCssStyleDeclaration::setProperty(const ExecutingContext* context,
-                                            const AtomicString& property_name,
+void ComputedCssStyleDeclaration::setProperty(const AtomicString& property_name,
                                             const AtomicString& value,
                                             const AtomicString& priority,
                                             ExceptionState& exception_state) {
@@ -131,8 +129,61 @@ const std::shared_ptr<const CSSValue>* ComputedCssStyleDeclaration::GetPropertyC
 }
 
 AtomicString ComputedCssStyleDeclaration::GetPropertyValueInternal(CSSPropertyID property_id) {
-  // TODO: Implement property value retrieval by ID for computed styles
-  return AtomicString::Empty();
+  // Resolve to hyphenated CSS property name and delegate to Dart side via binding call.
+  // For shorthands that may not be serialized on the Dart side yet, synthesize
+  // a value from computed longhands to match CSSOM expectations.
+  const CSSProperty& prop = CSSProperty::Get(property_id);
+
+  auto get_value_by_name = [&](const AtomicString& name) -> AtomicString {
+    ExceptionState exception_state;
+    NativeValue args[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), name)};
+    NativeValue res = InvokeBindingMethod(
+        binding_call_methods::kgetPropertyValue, 1, args,
+        FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+    if (UNLIKELY(exception_state.HasException())) {
+      return AtomicString::Empty();
+    }
+    return AtomicString(NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(res)));
+  };
+
+  if (prop.IsShorthand()) {
+    switch (property_id) {
+      case CSSPropertyID::kBorderStyle: {
+        AtomicString top = get_value_by_name(CSSProperty::Get(CSSPropertyID::kBorderTopStyle).GetPropertyNameString());
+        AtomicString right = get_value_by_name(CSSProperty::Get(CSSPropertyID::kBorderRightStyle).GetPropertyNameString());
+        AtomicString bottom = get_value_by_name(CSSProperty::Get(CSSPropertyID::kBorderBottomStyle).GetPropertyNameString());
+        AtomicString left = get_value_by_name(CSSProperty::Get(CSSPropertyID::kBorderLeftStyle).GetPropertyNameString());
+
+        // Condense to 1/2/3/4 values per CSS shorthand serialization rules.
+        if (top == right && top == bottom && top == left) {
+          return top;
+        }
+        if (top == bottom && right == left) {
+          StringBuilder sb; sb.Append(top); sb.Append(" "_s); sb.Append(right);
+          return AtomicString(sb.ReleaseString());
+        }
+        if (right == left) {
+          StringBuilder sb; sb.Append(top); sb.Append(" "_s); sb.Append(right); sb.Append(" "_s); sb.Append(bottom);
+          return AtomicString(sb.ReleaseString());
+        }
+        StringBuilder sb; sb.Append(top); sb.Append(" "_s); sb.Append(right); sb.Append(" "_s); sb.Append(bottom); sb.Append(" "_s); sb.Append(left);
+        return AtomicString(sb.ReleaseString());
+      }
+      default:
+        break;
+    }
+  }
+
+  AtomicString css_name = prop.GetPropertyNameString();
+  ExceptionState exception_state;
+  NativeValue arguments[] = {NativeValueConverter<NativeTypeString>::ToNativeValue(ctx(), css_name)};
+  NativeValue result = InvokeBindingMethod(
+      binding_call_methods::kgetPropertyValue, 1, arguments,
+      FlushUICommandReason::kDependentsOnElement | FlushUICommandReason::kDependentsOnLayout, exception_state);
+  if (UNLIKELY(exception_state.HasException())) {
+    return AtomicString::Empty();
+  }
+  return AtomicString(NativeValueConverter<NativeTypeString>::FromNativeValue(ctx(), std::move(result)));
 }
 
 AtomicString ComputedCssStyleDeclaration::GetPropertyValueWithHint(const AtomicString& property_name, unsigned index) {

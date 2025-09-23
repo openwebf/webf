@@ -24,8 +24,8 @@ using PublicLegacyComputedCssStyleDeclarationSetCssText = void (*)(LegacyCompute
 using PublicLegacyComputedCssStyleDeclarationGetLength = int64_t (*)(LegacyComputedCssStyleDeclaration*);
 using PublicLegacyComputedCssStyleDeclarationGetPropertyValue = AtomicStringRef (*)(LegacyComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicLegacyComputedCssStyleDeclarationGetPropertyValueAsync = AtomicStringRef (*)(LegacyComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
-using PublicLegacyComputedCssStyleDeclarationSetProperty = void (*)(LegacyComputedCssStyleDeclaration*, const char*, NativeValue, SharedExceptionState*);
-using PublicLegacyComputedCssStyleDeclarationSetPropertyAsync = void (*)(LegacyComputedCssStyleDeclaration*, const char*, NativeValue, SharedExceptionState*);
+using PublicLegacyComputedCssStyleDeclarationSetProperty = void (*)(LegacyComputedCssStyleDeclaration*, const char*, NativeValue, const char*, SharedExceptionState*);
+using PublicLegacyComputedCssStyleDeclarationSetPropertyAsync = void (*)(LegacyComputedCssStyleDeclaration*, const char*, NativeValue, const char*, SharedExceptionState*);
 using PublicLegacyComputedCssStyleDeclarationRemoveProperty = AtomicStringRef (*)(LegacyComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
 using PublicLegacyComputedCssStyleDeclarationRemovePropertyAsync = AtomicStringRef (*)(LegacyComputedCssStyleDeclaration*, const char*, SharedExceptionState*);
 struct LegacyComputedCssStyleDeclarationPublicMethods : public WebFPublicMethods {
@@ -33,7 +33,7 @@ struct LegacyComputedCssStyleDeclarationPublicMethods : public WebFPublicMethods
   static void SetCssText(LegacyComputedCssStyleDeclaration* legacy_computed_css_style_declaration, const char* cssText, SharedExceptionState* shared_exception_state);
   static int64_t Length(LegacyComputedCssStyleDeclaration* legacy_computed_css_style_declaration);
   static AtomicStringRef GetPropertyValue(LegacyComputedCssStyleDeclaration* legacy_computed_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
-  static void SetProperty(LegacyComputedCssStyleDeclaration* legacy_computed_css_style_declaration, const char* property, NativeValue value, SharedExceptionState* shared_exception_state);
+  static void SetProperty(LegacyComputedCssStyleDeclaration* legacy_computed_css_style_declaration, const char* property, NativeValue value, const char* priority, SharedExceptionState* shared_exception_state);
   static AtomicStringRef RemoveProperty(LegacyComputedCssStyleDeclaration* legacy_computed_css_style_declaration, const char* property, SharedExceptionState* shared_exception_state);
   double version{1.0};
   LegacyCssStyleDeclarationPublicMethods legacy_css_style_declaration;

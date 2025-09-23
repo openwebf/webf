@@ -47,7 +47,7 @@ class LegacyCssStyleDeclaration : public BindingObject {
   virtual void setCssText(const AtomicString& value, ExceptionState& exception_state) {}
 
   virtual AtomicString getPropertyValue(const AtomicString& key, ExceptionState& exception_state) { return AtomicString(); }
-  virtual void setProperty(const AtomicString& key, const ScriptValue& value, ExceptionState& exception_state) {}
+  virtual void setProperty(const AtomicString& key, const ScriptValue& value, const AtomicString& priority, ExceptionState& exception_state) {}
   virtual AtomicString removeProperty(const AtomicString& key, ExceptionState& exception_state) { return AtomicString(); }
 
   virtual bool NamedPropertyQuery(const AtomicString&, ExceptionState&) { return false; }

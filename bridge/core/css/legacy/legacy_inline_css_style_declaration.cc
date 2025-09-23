@@ -163,6 +163,7 @@ AtomicString LegacyInlineCssStyleDeclaration::getPropertyValue(const AtomicStrin
 
 void LegacyInlineCssStyleDeclaration::setProperty(const AtomicString& key,
                                             const ScriptValue& value,
+                                            const AtomicString& priority,
                                             ExceptionState& exception_state) {
   std::string propertyName = key.ToUTF8String();
   bool success = InternalSetProperty(propertyName, value.ToLegacyDOMString(ctx()));

@@ -175,6 +175,34 @@ void StyleEngine::RecalcStyle(Document& document) {
     }
 
     auto property_set = cascade.ExportWinningPropertySet();
+
+    // If cascade export missed some inline declarations (e.g., due to
+    // collection or ordering edge cases), merge inline style as a safety net
+    // so essential properties like width/height/background-color are applied.
+    if (element->IsStyledElement()) {
+      auto inline_style = const_cast<Element&>(*element).EnsureMutableInlineStyle();
+      if (inline_style && inline_style->PropertyCount() > 0) {
+        // Create the export set if missing.
+        if (!property_set) {
+          property_set = std::make_shared<MutableCSSPropertyValueSet>(kHTMLStandardMode);
+        }
+        // Copy inline declarations that are not already present in the export.
+        unsigned icount = inline_style->PropertyCount();
+        for (unsigned i = 0; i < icount; ++i) {
+          auto in_prop = inline_style->PropertyAt(i);
+          CSSPropertyID id = in_prop.Id();
+          // Skip invalid/custom here; custom properties are handled elsewhere.
+          if (id == CSSPropertyID::kInvalid || id == CSSPropertyID::kVariable) continue;
+          if (!property_set->HasProperty(id)) {
+            const auto* vptr = in_prop.Value();
+            if (vptr && *vptr) {
+              property_set->SetProperty(id, *vptr, in_prop.IsImportant());
+            }
+          }
+        }
+      }
+    }
+
     if (!property_set || property_set->IsEmpty()) {
       return;
     }
