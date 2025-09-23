@@ -54,7 +54,7 @@ describe('flex-align', () => {
     await snapshot();
   });
 
-  xit('max-004', async () => {
+  it('max-004', async () => {
     let log;
     let flex;
     log = createElement('div', { id: 'log', style: { 'box-sizing': 'border-box' } });
