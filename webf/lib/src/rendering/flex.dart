@@ -2574,7 +2574,16 @@ class RenderFlexLayout extends RenderLayoutBox {
     if (!_isHorizontalFlexDirection && childStretchedCrossSize == null) {
       final bool childCrossAuto = child.renderStyle.width.isAuto;
       if (childCrossAuto) {
-        double fixedW = child.size.width;
+        double fixedW;
+        // For replaced elements with an aspect ratio and auto width, prefer
+        // computing width from the current (possibly flexed) used height to
+        // preserve the intrinsic aspect ratio.
+        if (child.renderStyle.isSelfRenderReplaced() && child.renderStyle.aspectRatio != null) {
+          final double usedBorderBoxH = child.renderStyle.borderBoxLogicalHeight ?? child.size.height;
+          fixedW = usedBorderBoxH * child.renderStyle.aspectRatio!;
+        } else {
+          fixedW = child.size.width;
+        }
         // Clamp to the container's available cross-axis width when present,
         // so overly large intrinsic widths don't cause misplaced centering
         // or incorrect percentage resolution.
