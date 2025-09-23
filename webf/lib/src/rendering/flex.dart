@@ -408,19 +408,6 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
       double? flexBasis = box.renderStyle.flexBasis?.computedValue;
 
-      // Clamp flex-basis by min and max size.
-      if (flexBasis != null) {
-        double? minWidth = box.renderStyle.minWidth.isAuto ? null : box.renderStyle.minWidth.computedValue;
-        double? minHeight = box.renderStyle.minHeight.isAuto ? null : box.renderStyle.minHeight.computedValue;
-        double? maxWidth = box.renderStyle.maxWidth.isNone ? null : box.renderStyle.maxWidth.computedValue;
-        double? maxHeight = box.renderStyle.maxHeight.isNone ? null : box.renderStyle.maxHeight.computedValue;
-        double? minMainSize = _isHorizontalFlexDirection ? minWidth : minHeight;
-        double? maxMainSize = _isHorizontalFlexDirection ? maxWidth : maxHeight;
-
-        if (minMainSize != null && flexBasis < minMainSize) flexBasis = minMainSize;
-        if (maxMainSize != null && flexBasis > maxMainSize) flexBasis = maxMainSize;
-      }
-
       ///  https://www.w3.org/TR/2018/CR-css-flexbox-1-20181119/#flex-basis-property
       ///  percentage values of flex-basis are resolved against the flex item’s containing block (i.e. its flex container);
       ///  and if that containing block’s size is indefinite, the used value for flex-basis is content.
@@ -1559,14 +1546,25 @@ class RenderFlexLayout extends RenderLayoutBox {
         runCrossAxisExtent = math.max(runCrossAxisExtent, childCrossAxisExtent);
       }
 
-      // Use clamped intrinsic main size as original base size for flexing
-      double _originalMainSize = intrinsicMain;
-      runChildren[childNodeId] = _RunChild(
-        child,
-        _originalMainSize,
-        0,
-        false,
-      );
+      // Per CSS Flexbox §9.7, keep two sizes:
+      // - flex base size: from flex-basis if definite, otherwise the intrinsic
+      //   content-based size BEFORE min/max clamping.
+      // - hypothetical main size: the base size clamped by min/max.
+      // We store the base size in runChild.originalMainSize so remaining free
+      // space and shrink/grow weighting use the correct base, and keep the
+      // clamped value in _childrenIntrinsicMainSizes for line metrics.
+      double baseMainSize;
+      double? basisForBase = _getFlexBasis(child);
+      if (basisForBase != null) {
+        baseMainSize = basisForBase;
+      } else {
+        // childSize is the intrinsic measurement from PASS 1 (pre-clamp).
+        baseMainSize = _isHorizontalFlexDirection ? childSize.width : childSize.height;
+      }
+
+      // Use clamped intrinsic main size as the hypothetical size for line metrics.
+      double _originalMainSize = baseMainSize;
+      runChildren[childNodeId] = _RunChild(child, _originalMainSize, 0, false);
 
       childParentData!.runIndex = _runMetrics.length;
 
@@ -1581,8 +1579,9 @@ class RenderFlexLayout extends RenderLayoutBox {
         totalFlexShrink += flexShrink;
       }
       if (DebugFlags.debugLogFlexEnabled) {
-        renderingLogger.finer('[Flex] PASS2 item ${_childDesc(child)} base=${_childrenIntrinsicMainSizes[child.hashCode]?.toStringAsFixed(1)} '
-            'grow=${flexGrow.toStringAsFixed(1)} shrink=${flexShrink.toStringAsFixed(1)}');
+        final double hypo = _childrenIntrinsicMainSizes[child.hashCode] ?? intrinsicMain;
+        renderingLogger.finer('[Flex] PASS2 item ${_childDesc(child)} base=${baseMainSize.toStringAsFixed(1)} '
+            'hypo=${hypo.toStringAsFixed(1)} grow=${flexGrow.toStringAsFixed(1)} shrink=${flexShrink.toStringAsFixed(1)}');
       }
       if (isHorizontal) {
         RenderBoxModel? box = child is RenderBoxModel
