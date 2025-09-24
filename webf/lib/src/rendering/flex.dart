@@ -539,30 +539,29 @@ class RenderFlexLayout extends RenderLayoutBox {
       if (flexBasis != null && flexBasis == 0 && box.renderStyle.flexBasis?.type == CSSLengthType.PERCENTAGE) {
         // CSS Flexbox: percentage flex-basis is resolved against the flex container’s
         // inner main size. If that size is indefinite, the used value is 'content'.
-        // Our previous check only looked at specified CSS width/height and missed cases
-        // where the container receives a definite size via layout constraints. That
-        // caused 0% to incorrectly behave like 'content' during the second layout pass
-        // even when the container’s main size was known, preventing equal distribution.
-        // Treat the main size as definite if:
-        // - The flex container has a specified content-box size on the main axis, OR
-        // - The layout constraints on the main axis are tight.
+        // Consider explicit sizing, tight constraints, or bounded constraints as definite.
         final bool hasSpecifiedMain = _isHorizontalFlexDirection
             ? (renderStyle.contentBoxLogicalWidth != null)
             : (renderStyle.contentBoxLogicalHeight != null);
         final bool mainTight = _isHorizontalFlexDirection
             ? ((contentConstraints?.hasTightWidth ?? false) || constraints.hasTightWidth)
             : ((contentConstraints?.hasTightHeight ?? false) || constraints.hasTightHeight);
-        final bool mainDefinite = hasSpecifiedMain || mainTight;
+        final bool mainBounded = _isHorizontalFlexDirection
+            ? (((contentConstraints?.hasBoundedWidth ?? false) && (contentConstraints?.maxWidth.isFinite ?? false)) ||
+                (constraints.hasBoundedWidth && constraints.maxWidth.isFinite))
+            : (((contentConstraints?.hasBoundedHeight ?? false) && (contentConstraints?.maxHeight.isFinite ?? false)) ||
+                (constraints.hasBoundedHeight && constraints.maxHeight.isFinite));
+        final bool mainDefinite = hasSpecifiedMain || mainTight || mainBounded;
         if (!mainDefinite) {
           if (DebugFlags.debugLogFlexEnabled) {
             renderingLogger.finer('[Flex] flex-basis % is indefinite for ${_childDesc(box)} '
-                '(basis=0%) hasSpecifiedMain=$hasSpecifiedMain mainTight=$mainTight → usedBasis=content');
+                '(basis=0%) hasSpecifiedMain=$hasSpecifiedMain mainTight=$mainTight -> usedBasis=content');
           }
           return null;
         }
         if (DebugFlags.debugLogFlexEnabled) {
           renderingLogger.finer('[Flex] flex-basis % is definite for ${_childDesc(box)} '
-              '(basis=0%) hasSpecifiedMain=$hasSpecifiedMain mainTight=$mainTight → usedBasis=0 (definite)');
+              '(basis=0%) hasSpecifiedMain=$hasSpecifiedMain mainTight=$mainTight -> usedBasis=0 (definite)');
         }
       }
 
@@ -2621,14 +2620,14 @@ class RenderFlexLayout extends RenderLayoutBox {
         ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
         : oldConstraints.maxWidth;
     double maxConstraintHeight = child.hasOverrideContentLogicalHeight
-        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+            ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
         : oldConstraints.maxHeight;
 
     double minConstraintWidth = child.hasOverrideContentLogicalWidth
         ? math.max(0, child.renderStyle.borderBoxLogicalWidth!)
         : (oldConstraints.minWidth > maxConstraintWidth ? maxConstraintWidth : oldConstraints.minWidth);
     double minConstraintHeight = child.hasOverrideContentLogicalHeight
-        ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
+            ? math.max(0, child.renderStyle.borderBoxLogicalHeight!)
         : (oldConstraints.minHeight > maxConstraintHeight ? maxConstraintHeight : oldConstraints.minHeight);
 
     // If a stretched cross size was computed for this item, apply it directly to
@@ -3703,7 +3702,10 @@ class RenderFlexLayout extends RenderLayoutBox {
       runBetweenSpace,
     );
     double childCrossAxisStartMargin = _flowAwareChildCrossAxisMargin(child)!;
+    // start offset including margin (used by start/end alignment)
     double crossStartAddedOffset = crossAxisStartPadding + crossAxisStartBorder + childCrossAxisStartMargin;
+    // start offset without margin (used by center alignment where we center the margin-box itself)
+    double crossStartNoMargin = crossAxisStartPadding + crossAxisStartBorder;
 
     // Determine cross axis orientation and where cross-start maps physically.
     final CSSWritingMode wm = (renderStyle is CSSRenderStyle)
@@ -3772,44 +3774,61 @@ class RenderFlexLayout extends RenderLayoutBox {
           return crossStartAddedOffset;
         }
       case 'center':
-        // Normal center: align within the content box (flexLineCrossSize) starting after padding/border.
-        // However, if the content box is smaller than the child (e.g., padding exceeds
-        // the container cross size due to being stretched smaller than padding), falling
-        // back to centering within the border-box yields a visually centered result
-        // that matches expectations for over-constrained cases.
-        final double childExtent = _getCrossAxisExtent(child);
-        final double borderBoxCross = _isHorizontalFlexDirection ? size.height : size.width;
-        final double freeInContent = flexLineCrossSize - childExtent;
-        // If the container has cross-axis padding, center within the full border-box
-        // to match typical expectations for button-like flex items with large padding.
-        final double padStart = _flowAwareCrossAxisPadding();
-        final double padEnd = _flowAwareCrossAxisPadding(isEnd: true);
-        if (padStart + padEnd > 0) {
-          final double pos = (borderBoxCross - childExtent) / 2.0;
-          if (DebugFlags.debugLogFlexEnabled) {
-            renderingLogger.finer('[Flex] center align (border-box due to padding) child=${_childDesc(child)} '
-                'borderCross=${borderBoxCross.toStringAsFixed(2)} childCross=${childExtent.toStringAsFixed(2)} '
-                'padStart=${padStart.toStringAsFixed(2)} padEnd=${padEnd.toStringAsFixed(2)} -> cross=${pos.toStringAsFixed(2)}');
+        // Center the child's BORDER-BOX within the flex line's content box.
+        // Compute using the border-box extent by removing margins from the cross extent.
+        final double childExtentWithMargin = _getCrossAxisExtent(child); // includes margins
+        final double startMargin = _flowAwareChildCrossAxisMargin(child)!;
+        final double endMargin = _flowAwareChildCrossAxisMargin(child, isEnd: true)!;
+        final double borderBoxExtent = math.max(0.0, childExtentWithMargin - (startMargin + endMargin));
+        // Center within the content box by default (spec-aligned).
+        // Additionally, for vertical cross-axes (row direction), if the child overflows
+        // the content box (free space < 0) and the container has cross-axis padding,
+        // center within the container border-box for better visual centering of padded
+        // controls, without affecting non-overflow cases (e.g., footers).
+        if (!crossIsHorizontal) {
+          // For vertical cross-axes (row direction), keep centering relative to the
+          // content box even when there is no free space (overflow). Padding should
+          // shift the alignment baseline, not change the alignment container from
+          // content-box to border-box. This matches CSS Flexbox/Box Alignment.
+          final double padStart = _flowAwareCrossAxisPadding();
+          final double padEnd = _flowAwareCrossAxisPadding(isEnd: true);
+          final double freeSpace = flexLineCrossSize - borderBoxExtent;
+          if ((padStart + padEnd) > 0 && freeSpace <= 0) {
+            final double pos = crossStartNoMargin + freeSpace / 2.0;
+            if (DebugFlags.debugLogFlexEnabled) {
+              renderingLogger.finer('[Flex] center align (vertical overflow + padding → content) child=${_childDesc(child)} '
+                  'lineCross=${flexLineCrossSize.toStringAsFixed(2)} borderChild=${borderBoxExtent.toStringAsFixed(2)} '
+                  'free=${freeSpace.toStringAsFixed(2)} startPad=${padStart.toStringAsFixed(2)} endPad=${padEnd.toStringAsFixed(2)} '
+                  '-> cross=${pos.toStringAsFixed(2)}');
+            }
+            return pos.isFinite ? pos : crossStartNoMargin;
           }
-          return pos.isFinite ? pos : crossStartAddedOffset;
-        } else if (freeInContent >= 0) {
-          final double pos = crossStartAddedOffset + freeInContent / 2.0;
-          if (DebugFlags.debugLogFlexEnabled) {
-            renderingLogger.finer('[Flex] center align (content) child=${_childDesc(child)} '
-                'lineCross=${flexLineCrossSize.toStringAsFixed(2)} childCross=${childExtent.toStringAsFixed(2)} '
-                'startPadBorderMargin=${crossStartAddedOffset.toStringAsFixed(2)} -> cross=${pos.toStringAsFixed(2)}');
-          }
-          return pos;
-        } else {
-          // Fallback: center within the border-box (ignore padding for alignment computation)
-          final double pos = (borderBoxCross - childExtent) / 2.0;
-          if (DebugFlags.debugLogFlexEnabled) {
-            renderingLogger.finer('[Flex] center align (fallback border-box) child=${_childDesc(child)} '
-                'borderCross=${borderBoxCross.toStringAsFixed(2)} childCross=${childExtent.toStringAsFixed(2)} '
-                'lineCross=${flexLineCrossSize.toStringAsFixed(2)} -> cross=${pos.toStringAsFixed(2)}');
-          }
-          return pos.isFinite ? pos : crossStartAddedOffset;
         }
+        // If the margin-box is equal to or wider than the line cross size, pin to start
+        // to avoid introducing cross-axis offset that would create horizontal scroll.
+        final double marginBoxExtent = borderBoxExtent + startMargin + endMargin;
+        // Only clamp for horizontal cross-axis (i.e., when cross is width), and only when
+        // overflow is caused by margins (border-box fits, margin-box overflows). If the
+        // border-box itself is wider than the line, we still center (allow negative offset)
+        // per Box Alignment overflow handling.
+        final bool marginOnlyOverflow = borderBoxExtent <= flexLineCrossSize && marginBoxExtent >= flexLineCrossSize;
+        if (crossIsHorizontal && marginOnlyOverflow) {
+          if (DebugFlags.debugLogFlexEnabled) {
+            renderingLogger.finer('[Flex] center align → start clamp (overflow) child='
+                '${_childDesc(child)} lineCross=${flexLineCrossSize.toStringAsFixed(2)} '
+                'borderCross=${borderBoxExtent.toStringAsFixed(2)} marginCross=${marginBoxExtent.toStringAsFixed(2)} '
+                '-> cross=${crossStartNoMargin.toStringAsFixed(2)}');
+          }
+          return crossStartNoMargin;
+        }
+        final double freeInContent = flexLineCrossSize - borderBoxExtent;
+        final double pos = crossStartNoMargin + freeInContent / 2.0;
+        if (DebugFlags.debugLogFlexEnabled) {
+          renderingLogger.finer('[Flex] center align (content) child=${_childDesc(child)} '
+              'lineCross=${flexLineCrossSize.toStringAsFixed(2)} borderCross=${borderBoxExtent.toStringAsFixed(2)} '
+              'startPadBorder=${crossStartNoMargin.toStringAsFixed(2)} -> cross=${pos.toStringAsFixed(2)}');
+        }
+        return pos;
       case 'baseline':
         // In column flex-direction (vertical main axis), baseline alignment behaves
         // like flex-start per our layout model. Avoid using runBaselineExtent which

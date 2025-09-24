@@ -1,5 +1,106 @@
 /*auto generated*/
 describe('flex-grow', () => {
+  it('chat layout with growing list', async () => {
+    const chat = createElement(
+      'div',
+      {
+        class: 'chat',
+        style: {
+          display: 'flex',
+          overflowX: 'hidden',
+          width: '100%',
+          height: '100vh',
+          flexDirection: 'column',
+        },
+      },
+      [
+        createElement(
+          'div',
+          { style: { display: 'flex', flexDirection: 'column', width: '100%' } },
+          [
+            createElement(
+              'div',
+              {
+                class: 'list',
+                style: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  overflow: 'scroll',
+                  flexGrow: '1',
+                  backgroundColor: '#f1f1f1',
+                },
+              },
+              Array.from({ length: 17 }).map((_, i) =>
+                createElement(
+                  'div',
+                  {
+                    class: 'list-item',
+                    style: {
+                      margin: '10px',
+                      padding: '10px',
+                      border: '1px solid #ccc',
+                      backgroundColor: '#fff',
+                      width: '100%',
+                      maxWidth: '500px',
+                      boxSizing: 'border-box',
+                    },
+                  },
+                  [createText(`Item ${i + 1}`)]
+                )
+              )
+            ),
+          ]
+        ),
+        createElement(
+          'div',
+          {
+            class: 'footer',
+            style: {
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#333',
+              color: '#fff',
+              padding: '8px',
+              gap: '8px',
+            },
+          },
+          [
+            createElement('input', {
+              class: 'input',
+              placeholder: 'Enter your message...',
+              style: {
+                display: 'flex',
+                padding: '10px',
+                fontSize: '16px',
+                border: 'none',
+                borderRadius: '0',
+                backgroundColor: '#f1f1f1',
+                boxSizing: 'border-box',
+                outline: 'none',
+              },
+            }),
+            createElement('button', {
+              class: 'button',
+              style: {
+                backgroundColor: '#4CAF50',
+                color: '#fff',
+                padding: '10px',
+                fontSize: '16px',
+                border: 'none',
+                borderRadius: '0',
+              },
+            }, [createText('Send')]),
+          ]
+        ),
+      ]
+    );
+
+    BODY.appendChild(chat);
+    await snapshot();
+  });
+
   it('002', async () => {
     let p;
     let test1;
@@ -696,7 +797,7 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                backgroundColor:'green',
+                backgroundColor: 'green',
                 'box-sizing': 'border-box',
               },
             },
@@ -709,7 +810,7 @@ describe('flex-grow', () => {
             {
               style: {
                 flex: 1,
-                backgroundColor:'yellow',
+                backgroundColor: 'yellow',
                 'box-sizing': 'border-box',
               },
             },
@@ -719,7 +820,7 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                backgroundColor:'red',
+                backgroundColor: 'red',
                 'box-sizing': 'border-box',
               },
             },
@@ -768,7 +869,7 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                backgroundColor:'green',
+                backgroundColor: 'green',
                 'box-sizing': 'border-box',
               },
             },
@@ -781,7 +882,7 @@ describe('flex-grow', () => {
             {
               style: {
                 flex: 1,
-                backgroundColor:'yellow',
+                backgroundColor: 'yellow',
                 'box-sizing': 'border-box',
               },
             },
@@ -791,7 +892,7 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                backgroundColor:'red',
+                backgroundColor: 'red',
                 'box-sizing': 'border-box',
               },
             },
@@ -841,7 +942,7 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                backgroundColor:'green',
+                backgroundColor: 'green',
                 'box-sizing': 'border-box',
               },
             },
@@ -854,7 +955,7 @@ describe('flex-grow', () => {
             {
               style: {
                 flex: 1,
-                backgroundColor:'yellow',
+                backgroundColor: 'yellow',
                 'box-sizing': 'border-box',
               },
             },
@@ -864,7 +965,7 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                backgroundColor:'red',
+                backgroundColor: 'red',
                 'box-sizing': 'border-box',
               },
             },
@@ -913,8 +1014,8 @@ describe('flex-grow', () => {
             'div',
             {
               style: {
-                width:'30px',
-                backgroundColor:'green',
+                width: '30px',
+                backgroundColor: 'green',
                 'box-sizing': 'border-box',
               },
             },
@@ -927,8 +1028,8 @@ describe('flex-grow', () => {
             {
               style: {
                 flex: 1,
-                width:'30px',
-                backgroundColor:'yellow',
+                width: '30px',
+                backgroundColor: 'yellow',
                 'box-sizing': 'border-box',
               },
             },
@@ -939,7 +1040,7 @@ describe('flex-grow', () => {
             {
               style: {
                 width: '30px',
-                backgroundColor:'red',
+                backgroundColor: 'red',
                 'box-sizing': 'border-box',
               },
             },

@@ -2,6 +2,7 @@
  * Copyright (C) 2022-present The WebF authors. All rights reserved.
  */
 
+import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:flutter/foundation.dart';
 
@@ -36,7 +37,7 @@ class WebFLogger {
 
       // In debug mode, use debugPrint for better Flutter integration
       if (kDebugMode) {
-        debugPrint(logMessage);
+        Platform.isMacOS ? print(logMessage) : debugPrint(logMessage);
         if (record.error != null) {
           debugPrint('Error: ${record.error}');
         }
