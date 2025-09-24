@@ -1,21 +1,18 @@
 /*auto generated*/
 describe('columns-auto', () => {
-  it("size 001", async () => {
+  // Group 1: Basic Flex Behavior
+  it("basic flex behavior", async () => {
     let log;
     let flexbox;
     let flexbox_1;
-    let flexbox_2;
-    let flexbox_3;
-    let flexbox_4;
-    let flexbox_5;
-    let flexbox_6;
-    let flexbox_8;
+
     log = createElement("div", {
       id: "log",
       style: {
         "box-sizing": "border-box",
       },
     });
+
     flexbox = createElement(
       "div",
       {
@@ -76,6 +73,7 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
     flexbox_1 = createElement(
       "div",
       {
@@ -147,7 +145,7 @@ describe('columns-auto', () => {
             },
           },
           [
-            (childDiv = createElement("div", {
+            createElement("div", {
               "data-expected-height": "10",
               "data-offset-y": "20",
               class: "child-div",
@@ -157,11 +155,32 @@ describe('columns-auto', () => {
                 "box-sizing": "border-box",
                 height: "10px",
               },
-            })),
+            }),
           ]
         ),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox);
+    BODY.appendChild(flexbox_1);
+
+    await snapshot();
+  });
+
+  // Group 2: Margin and Padding Effects
+  it("margin and padding effects", async () => {
+    let log;
+    let flexbox_2;
+    let flexbox_3;
+
+    log = createElement("div", {
+      id: "log",
+      style: {
+        "box-sizing": "border-box",
+      },
+    });
+
     flexbox_2 = createElement(
       "div",
       {
@@ -225,6 +244,7 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
     flexbox_3 = createElement(
       "div",
       {
@@ -290,6 +310,27 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_2);
+    BODY.appendChild(flexbox_3);
+
+    await snapshot();
+  });
+
+  // Group 3: Flex Shrinking Behavior
+  it("flex shrinking behavior", async () => {
+    let log;
+    let flexbox_4;
+    let flexbox_5;
+
+    log = createElement("div", {
+      id: "log",
+      style: {
+        "box-sizing": "border-box",
+      },
+    });
+
     flexbox_4 = createElement(
       "div",
       {
@@ -352,6 +393,7 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
     flexbox_5 = createElement(
       "div",
       {
@@ -415,6 +457,26 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_4);
+    BODY.appendChild(flexbox_5);
+
+    await snapshot();
+  });
+
+  // Group 4: Size Constraints
+  it("size constraints", async () => {
+    let log;
+    let flexbox_6;
+
+    log = createElement("div", {
+      id: "log",
+      style: {
+        "box-sizing": "border-box",
+      },
+    });
+
     flexbox_6 = createElement(
       "div",
       {
@@ -481,6 +543,25 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
+    BODY.appendChild(log);
+    BODY.appendChild(flexbox_6);
+
+    await snapshot();
+  });
+
+  // Group 5: Overflow Handling
+  it("overflow handling", async () => {
+    let log;
+    let flexbox_8;
+
+    log = createElement("div", {
+      id: "log",
+      style: {
+        "box-sizing": "border-box",
+      },
+    });
+
     flexbox_8 = createElement(
       "div",
       {
@@ -521,21 +602,15 @@ describe('columns-auto', () => {
         ),
       ]
     );
+
     BODY.appendChild(log);
-    BODY.appendChild(flexbox);
-    BODY.appendChild(flexbox_1);
-    BODY.appendChild(flexbox_2);
-    BODY.appendChild(flexbox_3);
-    BODY.appendChild(flexbox_4);
-    BODY.appendChild(flexbox_5);
-    BODY.appendChild(flexbox_6);
     BODY.appendChild(flexbox_8);
 
     await snapshot();
   });
 
   // @TODO: max-width/max-height is not considered when calculating remaining space for flex-shrink.
-  xit("size 002", async () => {
+  it("size 002", async () => {
     let flexbox_7;
     flexbox_7 = createElement(
       "div",
