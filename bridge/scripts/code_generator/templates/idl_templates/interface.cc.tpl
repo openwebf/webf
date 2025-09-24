@@ -14,8 +14,9 @@ JSValue QJS<%= className %>::ConstructorCallback(JSContext* ctx, JSValue func_ob
     MemberMutationScope scope{context};
     JSValue prototype = context->contextData()->prototypeForType(wrapper_type_info);
     // If the property exists on the prototype (e.g., methods like setProperty),
-    // do not claim it on the instance so that prototype lookup can resolve it.
-    if (JS_HasProperty(ctx, prototype, key)) return false;
+    // report it as present so operations like `'prop' in obj` return true,
+    // while still allowing prototype lookup to resolve the value.
+    if (JS_HasProperty(ctx, prototype, key)) return true;
     bool result = self->NamedPropertyQuery(AtomicString(ctx, key), exception_state);
     if (UNLIKELY(exception_state.HasException())) {
       return false;
