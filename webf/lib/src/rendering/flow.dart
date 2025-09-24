@@ -1556,7 +1556,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     // Total cross size of previous lines.
     double preLinesCrossSize = 0;
     for (RunMetrics runMetric in _lineMetrics) {
-      if (DebugFlags.debugLogFlowEnabled) {
+      if (DebugFlags.debugLogScrollableEnabled) {
         renderingLogger.finer('[Flow-Scroll] ---- line start ----');
         renderingLogger.finer('[Flow-Scroll] preLinesCrossSize=${preLinesCrossSize.toStringAsFixed(2)} run.crossAxisExtent=${runMetric.crossAxisExtent.toStringAsFixed(2)}');
       }
@@ -1631,7 +1631,7 @@ class RenderFlowLayout extends RenderLayoutBox {
             // Width contribution should not exceed the available content width.
             final double usedW = getChildSize(child)?.width ?? math.min(textFull.width, availW.isFinite ? availW : textFull.width);
             childScrollableSize = Size(usedW, textFull.height);
-            if (DebugFlags.debugLogFlowEnabled) {
+            if (DebugFlags.debugLogScrollableEnabled) {
               renderingLogger.finer('[Flow-Scroll] text child fullSize=${textFull.width.toStringAsFixed(2)}×${textFull.height.toStringAsFixed(2)} '
                   'usedW=${usedW.toStringAsFixed(2)} availW=${(availW.isFinite ? availW : double.infinity).toStringAsFixed(2)}');
             }
@@ -1649,7 +1649,7 @@ class RenderFlowLayout extends RenderLayoutBox {
 
       runChildren.forEach(iterateRunChildren);
 
-      if (DebugFlags.debugLogFlowEnabled) {
+      if (DebugFlags.debugLogScrollableEnabled) {
         for (int i = 0; i < runChildren.length; i++) {
           final child = runChildren[i];
           final Size? sz = _getChildSize(child);
@@ -1678,7 +1678,7 @@ class RenderFlowLayout extends RenderLayoutBox {
       scrollableCrossSizeOfLines.add(maxScrollableCrossSizeOfLine);
       preLinesCrossSize += runMetric.crossAxisExtent;
 
-      if (DebugFlags.debugLogFlowEnabled) {
+      if (DebugFlags.debugLogScrollableEnabled) {
         renderingLogger.finer('[Flow-Scroll] line childCrossMax=' +
             (scrollableCrossSizeOfChildren.reduce((a,b)=> a>b?a:b)).toStringAsFixed(2) +
             ' lineBottom=' + maxScrollableCrossSizeOfLine.toStringAsFixed(2) +
@@ -1737,7 +1737,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     assert(maxScrollableCrossSize.isFinite);
     scrollableSize = Size(maxScrollableMainSize, maxScrollableCrossSize);
 
-    if (DebugFlags.debugLogFlowEnabled) {
+    if (DebugFlags.debugLogScrollableEnabled) {
       renderingLogger.finer('[Flow-Scroll] result main=' + maxScrollableMainSize.toStringAsFixed(2) +
           ' cross=' + maxScrollableCrossSize.toStringAsFixed(2) +
           ' padding(top=' + renderStyle.paddingTop.computedValue.toStringAsFixed(2) + ', bottom=' +

@@ -12,6 +12,9 @@ class DebugFlags {
   // Verbose logging for flow sizing and constraints; toggle at runtime.
   static bool debugLogFlowEnabled = false;
 
+  // Verbose logging for scrollable sizing; toggle at runtime.
+  static bool debugLogScrollableEnabled = false;
+
   // Enable verbose baseline logging for flex baseline alignment.
   static bool debugLogFlexBaselineEnabled = false;
 

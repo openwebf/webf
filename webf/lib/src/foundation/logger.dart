@@ -12,10 +12,10 @@ class WebFLogger {
   /// Initialize the logger with default configuration
   static void initialize() {
     if (_initialized) return;
-    
+
     // Enable hierarchical logging to allow fine-grained control
     hierarchicalLoggingEnabled = true;
-    
+
     // Set root logger level based on build mode
     if (kReleaseMode) {
       Logger.root.level = Level.WARNING;
@@ -25,17 +25,15 @@ class WebFLogger {
       // Debug mode
       Logger.root.level = Level.ALL;
     }
-    
+
     // Configure the root logger to print messages
     Logger.root.onRecord.listen((LogRecord record) {
-      final time = record.time.toIso8601String();
-      final level = record.level.name.padRight(7);
-      final logger = record.loggerName.padRight(20);
+      final logger = record.loggerName.padRight(5);
       final message = record.message;
-      
+
       // Format: [TIME] LEVEL   LOGGER               MESSAGE
-      final logMessage = '[$time] $level $logger $message';
-      
+      final logMessage = '$logger $message';
+
       // In debug mode, use debugPrint for better Flutter integration
       if (kDebugMode) {
         debugPrint(logMessage);
@@ -51,10 +49,10 @@ class WebFLogger {
         print(logMessage);
       }
     });
-    
+
     _initialized = true;
   }
-  
+
   /// Get a logger instance for a specific component
   static Logger getLogger(String name) {
     if (!_initialized) {

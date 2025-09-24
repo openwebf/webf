@@ -102,7 +102,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
     assert(scrollListener != null);
     // If scroll is happening, that element has been unmounted, prevent null usage.
     if (scrollOffsetX != null) {
-      if (DebugFlags.debugLogFlowEnabled) {
+      if (DebugFlags.debugLogScrollableEnabled) {
         final double maxX = math.max(0.0, (_scrollableSize?.width ?? 0) - (_viewportSize?.width ?? 0));
         renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> X pixels='
             '${scrollOffsetX!.pixels.toStringAsFixed(2)} max=${maxX.toStringAsFixed(2)}');
@@ -116,7 +116,7 @@ mixin RenderOverflowMixin on RenderBoxModelBase {
   void scrollYListener() {
     assert(scrollListener != null);
     if (scrollOffsetY != null) {
-      if (DebugFlags.debugLogFlowEnabled) {
+      if (DebugFlags.debugLogScrollableEnabled) {
         final double maxY = math.max(0.0, (_scrollableSize?.height ?? 0) - (_viewportSize?.height ?? 0));
         renderingLogger.finer('[Overflow-Scroll] <${renderStyle.target.tagName.toLowerCase()}> Y pixels='
             '${scrollOffsetY!.pixels.toStringAsFixed(2)} max=${maxY.toStringAsFixed(2)}');
