@@ -8,8 +8,9 @@
 namespace webf {
 namespace cssvalue {
 
-CSSRatioValue::CSSRatioValue(const CSSPrimitiveValue& first, const CSSPrimitiveValue& second)
-    : CSSValue(kRatioClass), first_(&first), second_(&second) {}
+CSSRatioValue::CSSRatioValue(std::shared_ptr<const CSSPrimitiveValue> first,
+                             std::shared_ptr<const CSSPrimitiveValue> second)
+    : CSSValue(kRatioClass), first_(std::move(first)), second_(std::move(second)) {}
 
 String CSSRatioValue::CustomCSSText() const {
   StringBuilder builder;
