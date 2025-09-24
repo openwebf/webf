@@ -2589,6 +2589,25 @@ class RenderFlexLayout extends RenderLayoutBox {
       }
     }
 
+    // Enforce the automatic minimum size on the main axis when flex-direction is column
+    // and the item did not flex in the main axis. This prevents a definite flex-basis: 0
+    // from collapsing the item’s height below its content-based minimum (min-height: auto).
+    // Spec reference: https://www.w3.org/TR/css-flexbox-1/#min-size-auto
+    if (!_isHorizontalFlexDirection && childFlexedMainSize == null) {
+      // Compute the effective minimum main size (resolves auto to content-based minimum).
+      final double autoMinMain = _getMinMainAxisSize(child);
+      if (autoMinMain > 0) {
+        // Raise the min height to at least the automatic minimum.
+        if (minConstraintHeight < autoMinMain) {
+          minConstraintHeight = autoMinMain;
+        }
+        // Ensure max height is not lower than min height.
+        if (maxConstraintHeight < minConstraintHeight) {
+          maxConstraintHeight = minConstraintHeight;
+        }
+      }
+    }
+
     // Column flex: when not stretching in the cross axis, lock the item's used cross size
     // (width) during the relayout pass so its descendants see a definite containing block width.
     // This ensures percentage paddings/margins inside the item resolve against the item's
