@@ -1491,7 +1491,9 @@ class RenderFlowLayout extends RenderLayoutBox {
       maxScrollableHeight = paraHeight + extraY;
       if (DebugFlags.debugLogFlowEnabled) {
         renderingLogger.finer('[Flow] scrollable from IFC paragraph: visualLongest=${paraWidth.toStringAsFixed(2)} '
-            'extraX=${extraX.toStringAsFixed(2)} height=${maxScrollableHeight.toStringAsFixed(2)}');
+            'baseH=${paraHeight.toStringAsFixed(2)} extraY.rel=${extraRelTransform.toStringAsFixed(2)} '
+            'extraY.overflow=${extraAtomicOverflow.toStringAsFixed(2)} totalH=${maxScrollableHeight.toStringAsFixed(2)} '
+            'extraX=${extraX.toStringAsFixed(2)}');
       }
     }
 
@@ -1541,6 +1543,7 @@ class RenderFlowLayout extends RenderLayoutBox {
     if (DebugFlags.debugLogFlowEnabled) {
       renderingLogger.finer('[Flow] scrollable from IFC: width=${finalScrollableWidth.toStringAsFixed(2)} '
           'height=${finalScrollableHeight.toStringAsFixed(2)} '
+          'viewport=(${viewportW.toStringAsFixed(2)}×${viewportH.toStringAsFixed(2)}) '
           'overflowX=${renderStyle.effectiveOverflowX} overflowY=${renderStyle.effectiveOverflowY} '
           'via=${hasLineBoxes ? 'lineBoxes' : 'paragraph'}');
     }

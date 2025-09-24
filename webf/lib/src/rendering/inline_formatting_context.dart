@@ -742,48 +742,72 @@ class InlineFormattingContext {
       // Determine if the paragraph has any real text glyphs (exclude placeholders).
       final int _placeholderCount = math.min(_placeholderBoxes.length, _allPlaceholders.length);
       final bool _hasTextGlyphs = (_paraCharCount - _placeholderCount) > 0;
+      // When there is no in-flow text (only atomic inline boxes like inline-block/replaced),
+      // browsers size each line to the tallest atomic inline on that line. Vertical margins
+      // do not contribute to the line box height. Flutter's paragraph may include margins or
+      // extra leading in placeholder rectangles; normalize by summing the per-line maximum
+      // owner border-box heights and using that as the paragraph height.
       if (!_hasTextGlyphs) {
+        // Build per-line maxes for two measures:
+        // - owner border-box height (ignores vertical margins)
+        // - placeholder (paragraph) height (includes vertical margins if any)
+        final Map<int, double> lineMaxOwner = <int, double>{};
+        final Map<int, double> lineMaxTB = <int, double>{};
+        final int n = math.min(_placeholderBoxes.length, _allPlaceholders.length);
+        for (int i = 0; i < n; i++) {
+          final ph = _allPlaceholders[i];
+          if (ph.kind != _PHKind.atomic) continue;
+          final tb = _placeholderBoxes[i];
+          final double tbH = tb.bottom - tb.top;
+          final int li = _lineIndexForRect(tb);
+          if (li < 0) continue;
+          final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
+          final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
+          double ownerBorderHeight = 0.0;
+          if (styleBox != null) {
+            final Size sz = styleBox.boxSize ?? (styleBox.hasSize ? styleBox.size : Size.zero);
+            ownerBorderHeight = sz.height.isFinite ? sz.height : 0.0;
+          }
+          final double prevOwner = lineMaxOwner[li] ?? 0.0;
+          if (ownerBorderHeight > prevOwner) lineMaxOwner[li] = ownerBorderHeight;
+          final double prevTB = lineMaxTB[li] ?? 0.0;
+          if (tbH > prevTB) lineMaxTB[li] = tbH;
+          if (DebugFlags.debugLogInlineLayoutEnabled) {
+            renderingLogger.finer('[IFC] lh0 line=$li phIdx=$i ownerH=${ownerBorderHeight.toStringAsFixed(2)} '
+                'tbH=${tbH.toStringAsFixed(2)}');
+          }
+        }
+        double sumOwner = 0.0;
+        if (lineMaxOwner.isNotEmpty) {
+          final keys = lineMaxOwner.keys.toList()..sort();
+          for (final k in keys) {
+            sumOwner += lineMaxOwner[k] ?? 0.0;
+          }
+        }
+        double sumTB = 0.0;
+        if (lineMaxTB.isNotEmpty) {
+          final keys = lineMaxTB.keys.toList()..sort();
+          for (final k in keys) {
+            sumTB += lineMaxTB[k] ?? 0.0;
+          }
+        }
+        if (DebugFlags.debugLogInlineLayoutEnabled) {
+          renderingLogger.fine('[IFC] lh0 adjust: paraH=${para.height.toStringAsFixed(2)} '
+              'sumOwner=${sumOwner.toStringAsFixed(2)} sumTB=${sumTB.toStringAsFixed(2)}');
+        }
+        // Apply spec-driven behavior:
+        // - If line-height<=0 explicitly, use placeholder heights (includes inline-block vertical margins)
+        //   so lines reflect atomic inline margin-box height as browsers do in this case.
+        // - Otherwise, only adjust upward using owner border-box sums when paragraph underestimates.
         final CSSRenderStyle cStyle = (container as RenderBoxModel).renderStyle;
         final CSSLengthValue lh = cStyle.lineHeight;
         if (lh.type != CSSLengthType.NORMAL && lh.computedValue <= 0) {
-          // Build per-line max atomic owner border-box heights (ignore placeholder
-          // rectangles which may incorporate extra leading). Then sum.
-          final Map<int, double> lineMax = <int, double>{};
-          final int n = math.min(_placeholderBoxes.length, _allPlaceholders.length);
-          for (int i = 0; i < n; i++) {
-            final ph = _allPlaceholders[i];
-            if (ph.kind != _PHKind.atomic) continue;
-            final tb = _placeholderBoxes[i];
-            final int li = _lineIndexForRect(tb);
-            if (li < 0) continue;
-            final RenderBox? rb = i < _placeholderOrder.length ? _placeholderOrder[i] : null;
-            final RenderBoxModel? styleBox = _resolveStyleBoxForPlaceholder(rb);
-            double ownerBorderHeight = 0.0;
-            if (styleBox != null) {
-              final Size sz = styleBox.boxSize ?? (styleBox.hasSize ? styleBox.size : Size.zero);
-              ownerBorderHeight = sz.height.isFinite ? sz.height : 0.0;
-            }
-            final double prev = lineMax[li] ?? 0.0;
-            if (ownerBorderHeight > prev) lineMax[li] = ownerBorderHeight;
-            if (DebugFlags.debugLogInlineLayoutEnabled) {
-              renderingLogger.finer('[IFC] lh0 line=$li phIdx=$i ownerH=${ownerBorderHeight.toStringAsFixed(2)} '
-                  'tbH=${(tb.bottom - tb.top).toStringAsFixed(2)}');
-            }
+          if (sumTB > 0.0) {
+            height = sumTB;
           }
-          double sum = 0.0;
-          if (lineMax.isNotEmpty) {
-            final keys = lineMax.keys.toList()
-              ..sort();
-            for (final k in keys) {
-              sum += lineMax[k] ?? 0.0;
-            }
-          }
-          if (DebugFlags.debugLogInlineLayoutEnabled) {
-            renderingLogger.fine(
-                '[IFC] lh0 adjust: paraH=${para.height.toStringAsFixed(2)} sumLines=${sum.toStringAsFixed(2)}');
-          }
-          if (sum > 0.0 && (sum - height).abs() > 0.5) {
-            height = sum;
+        } else {
+          if (sumOwner > 0.0 && (sumOwner - height) > 0.5) {
+            height = sumOwner;
           }
         }
       }
@@ -793,6 +817,19 @@ class InlineFormattingContext {
     if (_paraCharCount == 0 && _placeholderBoxes.isEmpty) {
       height = 0;
     }
+    // Emit diagnostics on paragraph sizing vs. atomic overflow so callers can
+    // understand why container scrollable height may exceed box height.
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
+      final double baseHeight = _paraLines.isEmpty
+          ? (_paragraph?.height ?? 0.0)
+          : _paraLines.fold<double>(0.0, (sum, lm) => sum + lm.height);
+      final double extraRel = additionalPositiveYOffsetFromAtomicPlaceholders();
+      final double extraAtomic = additionalOverflowHeightFromAtomicPlaceholders();
+      renderingLogger.finer('[IFC] size result width=${width.toStringAsFixed(2)} height=${height.toStringAsFixed(2)} '
+          'baseParaH=${baseHeight.toStringAsFixed(2)} extraY(rel/transform)=${extraRel.toStringAsFixed(2)} '
+          'extraY(atomicOverflow)=${extraAtomic.toStringAsFixed(2)}');
+    }
+
     // After paragraph is ready, update parentData.offset for atomic inline children so that
     // paint and hit testing can rely on the standard Flutter offset mechanism.
     _applyAtomicInlineParentDataOffsets();

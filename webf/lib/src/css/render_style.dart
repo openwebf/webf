@@ -3147,7 +3147,13 @@ class CSSRenderStyle extends RenderStyle
 
     // Establish IFC if we have inline content (including anonymous blocks)
     // and no regular block content
-    return hasInlineContent && !hasBlockContent;
+    final bool establish = hasInlineContent && !hasBlockContent;
+    if (DebugFlags.debugLogInlineLayoutEnabled) {
+      final tag = target.tagName.toLowerCase();
+      renderingLogger.finer('[IFC] decision <${tag}> inline=${hasInlineContent} block=${hasBlockContent} '
+          'effectiveDisplay=${effectiveDisplay} → establishIFC=${establish}');
+    }
+    return establish;
   }
 
   RenderBoxModel createRenderBoxModel() {
