@@ -411,7 +411,7 @@ describe('flex-grow-001', () => {
   });
 
   // Test 9: flex-grow with flex-basis
-  xit('009-flex-grow-with-basis', async () => {
+  it('009-flex-grow-with-basis', async () => {
     let container;
     let item1, item2, item3;
     container = createElement(
@@ -465,32 +465,11 @@ describe('flex-grow-001', () => {
       ]
     );
     BODY.appendChild(container);
-
-    //  createElement('div', {
-    //       style: {
-    //         'flex-basis': '50px',
-    //         height: '100px',
-    //         'background-color': 'blue',
-    //         'text-align': 'center',
-    //         'line-height': '100px',
-    //       },
-    //     }, [createText('no-grow')]),
-    
-    // Add debugging to verify if constraints fix the flex-grow: 0 issue
-    requestAnimationFrame(() => {
-      console.log('WebF Flex-basis + flex-grow with constraints:');
-      console.log('Container width:', container.offsetWidth);
-      console.log('Item1 (basis:50, grow:1):', item1.offsetWidth);
-      console.log('Item2 (basis:100, grow:1):', item2.offsetWidth);
-      console.log('Item3 (basis:50, grow:0, constrained):', item3.offsetWidth);
-      console.log('Total:', item1.offsetWidth + item2.offsetWidth + item3.offsetWidth);
-    });
-    
     await snapshot();
   });
 
   // Test 10: flex-grow with dynamic changes
-  xit('010-flex-grow-dynamic', async () => {
+  it('010-flex-grow-dynamic', async () => {
     let container;
     let growItem;
     container = createElement(
@@ -538,10 +517,10 @@ describe('flex-grow-001', () => {
       ]
     );
     BODY.appendChild(container);
-    
+
     // Initial state
     await snapshot();
-    
+
     // Change flex-grow
     growItem.style.flexGrow = '2';
     await snapshot();
@@ -913,7 +892,7 @@ describe('flex-grow-001', () => {
   });
 
   // Test 18: flex-grow with percentage width
-  xit('018-flex-grow-percentage-width', async () => {
+  it('018-flex-grow-percentage-width', async () => {
     let container;
     container = createElement(
       'div',
